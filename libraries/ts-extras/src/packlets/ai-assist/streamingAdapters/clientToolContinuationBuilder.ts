@@ -197,11 +197,15 @@ export function buildOpenAiContinuation(
 ): IAiClientToolContinuation {
   const items: JsonObject[] = [];
 
-  // Emit function_call items for each call (model's side).
+  // Emit function_call items for each call (model's side). Per the Responses API spec
+  // (ResponseFunctionToolCall), `call_id` is the required correlation field — it must
+  // match the matching function_call_output's `call_id` below. The optional `id` field
+  // is the output-item id (`fc_*`) used to reference the streamed item; we omit it
+  // because it is not load-bearing for input items.
   for (const [callId, call] of calls) {
     items.push({
       type: 'function_call',
-      id: callId,
+      call_id: callId,
       name: call.name,
       arguments: call.argsBuffer
     });
@@ -312,10 +316,15 @@ export interface IExecuteClientToolTurnParams {
    * message. Used to supply the output of {@link AiAssist.IAiClientToolContinuation}'s
    * `messages` field from a prior turn back to the provider in the follow-up request.
    *
-   * Each message is projected to `{ role, content }` — fields beyond `role` and
-   * `content` are dropped, and entries missing either field are skipped. This is
-   * sufficient for Anthropic thinking blocks and `tool_result` arrays, which
-   * carry all meaningful content in those two fields.
+   * Each provider applies its own shape guard to the supplied wire objects:
+   * - Anthropic: projects each entry to `{ role, content }` (sufficient for
+   *   thinking blocks and `tool_result` arrays).
+   * - OpenAI / xAI Responses: passes each item verbatim (`function_call` /
+   *   `function_call_output` items carry distinct fields per `type`); only guards
+   *   that each entry is a JSON object.
+   * - Gemini: projects each entry to `{ role, parts }`.
+   *
+   * Entries that fail their provider's shape check are silently skipped.
    */
   readonly continuationMessages?: ReadonlyArray<JsonObject>;
   /** Temperature (default: 0.7). */
@@ -456,7 +465,8 @@ export function executeClientToolTurn(
           logger,
           signal,
           resolvedThinking,
-          openAiCallMap
+          openAiCallMap,
+          continuationMessages
         );
       case 'gemini':
         return callGeminiStream(
@@ -468,7 +478,8 @@ export function executeClientToolTurn(
           logger,
           signal,
           resolvedThinking,
-          geminiCalls
+          geminiCalls,
+          continuationMessages
         );
       /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
       default: {

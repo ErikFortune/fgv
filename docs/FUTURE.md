@@ -80,16 +80,46 @@ Layer 1 (harness-supplied tools) shipped: `IAiClientTool`, `executeClientToolTur
 
 ## Live-wire-shape verification testbed scenarios per provider
 
-The `ai-assist-client-tools` cluster surfaced three consecutive bugs (PR #447 P1-1, PR #448 missing-browser-export, PR #449 thinking-config wire shape + dated-snapshot model) where unit tests passed because they mocked the response side and never validated the request body against the provider's documented contract. The codified L37 discipline (`code-reviewer` runs before 100%-coverage closure) covers the principle; the structural fix is **per-provider live testbed scenarios** that exercise the full wire shape against a real API.
+**Status: shipped 2026-06-05 via the `per-provider-testbed-scenarios` cluster** (parent PR #453 + sub-stream PRs #454, #457, #458). Three new scenarios (`openaiClientTools`, `geminiClientTools`, `xaiClientTools`) in `samples/testbed/` parallel the existing `anthropicClientTools` scenario; all four PASS on live API as of cluster close. Empirical loop ran four times during the cluster; each round surfaced a real wire-shape bug that 100%-coverage unit tests missed and that the live runs caught. See `.ai/tasks/completed/2026-06/per-provider-testbed-scenarios/README.md` for the full arc.
 
-**Shape (Erik 2026-06-04):** one scenario per provider, each exercising that provider's full feature surface — Anthropic (thinking + client tools + server tools, already exists as `anthropicClientTools`), OpenAI (thinking + client tools + server tools + Responses API), Gemini (thinking + client tools + server tools), xAI (thinking + client tools). ~4 scenarios total, each gated on the relevant `<PROVIDER>_API_KEY` env var, each emitting a clear PASS/FAIL summary with a request-shape breakdown.
+**Remaining future scope (carried forward):**
 
-**Companion concern (Erik 2026-06-04):** generic-version-alias library support — Anthropic's latest SDK accepts version-pinned aliases like `'claude-sonnet-4-6'` (no dated suffix, no `-latest` suffix — the alias resolves to the current 4-6 dated snapshot server-side). The bare family alias (`'sonnet'`) also resolves to always-latest. OpenAI / Gemini / xAI use different conventions and may or may not publish equivalent aliases; best practice per provider needs research. The registry's `defaultModel` per provider currently pins a specific dated snapshot that goes stale (e.g. `claude-sonnet-4-5-20250929` while Sonnet is on 4.8). The two concerns interact: the per-provider testbed scenarios should themselves use version-pinned aliases (`'claude-sonnet-4-6'` for the Anthropic scenario, equivalents for the others once researched) so they don't bake in snapshot drift.
+### Generic-version-alias library surface (companion concern)
 
-**Library surface (Erik 2026-06-04):** `<provider>:<family>-<major>-<minor>`-style canonical aliases resolving to the current dated snapshot via a registry-maintained mapping. The exact alias syntax should match the underlying SDK / API conventions per provider (e.g. Anthropic accepts `'claude-sonnet-4-6'` directly per the latest SDK; OpenAI's pattern is different). Provider-specific subaliases stay. Roughly 1-2 days of implementation work alongside the testbed-scenarios stream.
+`<provider>:<family>-<major>-<minor>`-style canonical aliases resolving to the current dated snapshot via a registry-maintained mapping. The exact alias syntax should match the underlying SDK / API conventions per provider (e.g. Anthropic accepts `'claude-sonnet-4-6'` directly per the latest SDK; OpenAI / Gemini / xAI use different conventions). Provider-specific subaliases stay. The registry's `defaultModel` per provider currently pins a specific dated snapshot that goes stale (e.g. `gpt-4o` is not reasoning-capable but is the OpenAI default, so the new OpenAI testbed scenario had to explicitly pin `gpt-5.1`). Roughly 1-2 days of implementation work.
 
-**Why deferred (to a sprint, not indefinite):** the ai-assist-client-tools cluster is mid-promotion; queuing this after the cluster closes keeps the cluster-close prep clean. Once the cluster lands, this should commission as a stream of its own.
+**Dependencies:** per-provider SDK convention research.
 
-**Dependencies:** ai-assist-client-tools cluster closed to release. Per-provider API key availability (Anthropic confirmed; OpenAI / Gemini / xAI need confirmation).
+**Reference:** `.ai/tasks/completed/2026-06/per-provider-testbed-scenarios/` (scenario model pins are the proximate use case).
+
+### Gemini-side drift instrumentation
+
+The closeout sub-stream (PR #458) shipped warn-on-unrecognized-event drift instrumentation on the Anthropic and OpenAI Responses adapters but **deferred Gemini** because Gemini's `generateContent` streaming response is JSON-chunk-shaped, not named SSE events — the allowlist-by-event-name concept doesn't translate. The structural alternative is to dispatch on chunk sub-structure (`candidates[i].content.parts[j]` shape; top-level chunk keys; `finishReason` enum values) and warn on unknown sub-shapes. More nuanced than the allowlist; needs design before commissioning.
+
+**Why deferred:** Gemini's wire is richer in structure; naive "warn on every unhandled JSON key" would be noisy. The four-round empirical loop never surfaced a Gemini drift-class bug, so the urgency is lower. Commission proactively if symmetric self-diagnosing posture is wanted across all three adapters, OR reactively when a Gemini API evolution surfaces a real gap.
+
+**Reference:** `.ai/tasks/completed/2026-06/ai-assist-responses-reasoning-events/findings/inbox/2026-06-05-gemini-drift-instrument-deferred.md`.
+
+### Library default `max_output_tokens` for reasoning models
+
+OpenAI Responses + reasoning models can silently truncate when the consumer doesn't set `max_output_tokens` and the model's reasoning + tool-use steps consume the default output budget before emitting visible text. The cluster's empirical loop surfaced this as the leading hypothesis on round 3 (ruled out via `incompleteReason` capture in round 4). Real root cause was the `item_id ↔ call_id` adapter bug, not budget exhaustion, but the usability gap is real: naive consumers calling with `reasoning.effort: 'low'` on a simple question can still hit budget exhaustion under realistic prompts.
+
+**Proposed fix:** the OpenAI Responses adapter applies a sane default `max_output_tokens` for reasoning models when the consumer doesn't supply one. Consumer can override via the existing `otherParams` mechanism.
+
+**Why deferred:** usability call, not a bug. The current behavior (consumer must supply `max_output_tokens` for reasoning workloads OR set `incompleteReason: 'max_output_tokens'` is the diagnostic) is correct but easy to miss.
+
+### Provider-side request validation (fail-fast on impossible combinations)
+
+Gemini's API forbids combining built-in grounding (`web_search`) with function calling in the same request — surfaces as HTTP 400 with `INVALID_ARGUMENT`. The cluster's per-provider-testbed-scenarios round 2 hit this; the resolution was a scenario-side fix (drop `web_search` from the Gemini scenario), but a library-side improvement could fail-fast at request-build time with a clearer error pointing to the mutual-exclusion constraint.
+
+Could generalize to a per-provider "incompatible request shapes" registry that callers benefit from without provider-API-spec familiarity.
+
+**Why deferred:** the current behavior (provider HTTP-400s with its own message) isn't silent corruption; the quality-of-life improvement is real but bounded.
+
+### Caller-visible thinking-content stream events (`ai-assist-thinking-events`)
+
+Current ai-assist adapters discard thinking / reasoning content by design — only the final answer + tool-call events surface to the consumer. The provider-drift instrumentation in PR #458 explicitly classifies reasoning events as "intentionally silent" rather than "unrecognized." Surfacing them is a separate scope decision (consumer-facing API change; raises questions about per-provider differences in reasoning event shape).
+
+**Dependencies:** Phase A-style design on the caller-facing event API; agreement on which providers' reasoning content should surface.
 
 **Reference:** 2026-06-04 conversation; PR #447 P1-1 + PR #449 thinking-wire-shape + PR #448 browser-export demonstrate the failure mode; L37 codification (PR #445) is the principle; `samples/testbed/src/scenarios/anthropicClientTools/` is the shape template.

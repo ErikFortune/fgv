@@ -213,10 +213,14 @@ export async function callGeminiStream(
   logger?: Logging.ILogger,
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
-  functionCalls?: IAccumulatedGeminiFunctionCall[]
+  functionCalls?: IAccumulatedGeminiFunctionCall[],
+  continuationMessages?: ReadonlyArray<JsonObject>
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/models/${config.model}:streamGenerateContent?alt=sse`;
-  const contents = buildGeminiContents(prompt, { head: messagesBefore });
+  const contents = buildGeminiContents(prompt, {
+    head: messagesBefore,
+    rawTail: continuationMessages
+  });
   const generationConfig: Record<string, unknown> = { temperature };
   if (resolvedThinking?.geminiThinkingBudget !== undefined) {
     generationConfig.thinkingConfig = { thinkingBudget: resolvedThinking.geminiThinkingBudget };

@@ -11,9 +11,12 @@
 
 import type { IScenario } from '../shell';
 import { anthropicClientToolsScenario } from './anthropicClientTools';
+import { geminiClientToolsScenario } from './geminiClientTools';
 import { localClassifierSafetyScenario } from './localClassifierSafety';
 import { localEmbeddingSearchScenario } from './localEmbeddingSearch';
 import { localSummarizationScenario } from './localSummarization';
+import { openaiClientToolsScenario } from './openaiClientTools';
+import { xaiClientToolsScenario } from './xaiClientTools';
 
 /**
  * All scenarios surfaced by the testbed shell (web sidebar + CLI list).
@@ -21,6 +24,9 @@ import { localSummarizationScenario } from './localSummarization';
  */
 export const scenarios: readonly IScenario[] = [
   anthropicClientToolsScenario,
+  openaiClientToolsScenario,
+  geminiClientToolsScenario,
+  xaiClientToolsScenario,
   localClassifierSafetyScenario,
   localEmbeddingSearchScenario,
   localSummarizationScenario

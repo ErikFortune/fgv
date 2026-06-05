@@ -76,6 +76,29 @@ async function collect(iter: AsyncIterable<AiAssist.IAiStreamEvent>): Promise<Ai
   return out;
 }
 
+/**
+ * Mocks `global.fetch` to serve the supplied SSE chunks while capturing the
+ * request body of the outbound call. Returns an accessor for the parsed body
+ * so tests can assert on the constructed request shape.
+ */
+function mockSseResponseCapturingBody(chunks: ReadonlyArray<string>): {
+  getBody: () => Record<string, unknown> | undefined;
+} {
+  let capturedBody: Record<string, unknown> | undefined;
+  (global.fetch as jest.Mock).mockImplementation((...args: unknown[]) => {
+    const init = args[1] as RequestInit;
+    capturedBody = JSON.parse(init.body as string) as Record<string, unknown>;
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      body: makeReadable(chunks),
+      text: jest.fn().mockResolvedValue(''),
+      headers: new Map([['content-type', 'text/event-stream']])
+    });
+  });
+  return { getBody: () => capturedBody };
+}
+
 // ============================================================================
 // SSE body builders
 // ============================================================================
@@ -248,6 +271,16 @@ function anthropicRedactedThinkingSse(parts: {
 
 /**
  * Builds an OpenAI Responses API SSE stream with a function_call item.
+ *
+ * Wire-shape note: the live Responses API uses two distinct identifiers per
+ * function_call — the output-item id (`fc_*`, surfaced as `item.id` and the
+ * `item_id` on subsequent argument events) and the call id (`call_*`, surfaced
+ * as `item.call_id` and used in continuation input items). The
+ * `function_call_arguments.{delta,done}` events carry **only** `item_id`; the
+ * adapter must correlate `item_id` → `call_id` via the earlier
+ * `response.output_item.added` event. The fixture mirrors that — if the test
+ * caller does not supply an explicit `itemId`, it defaults to the `callId`
+ * so the existing C2 tests keep their original ids.
  */
 function responsesApiFunctionCallSse(parts: {
   callId: string;
@@ -255,32 +288,33 @@ function responsesApiFunctionCallSse(parts: {
   argChunks: ReadonlyArray<string>;
   fullArgs?: string;
   textDeltas?: ReadonlyArray<string>;
+  itemId?: string;
 }): string[] {
-  const { callId, name, argChunks, fullArgs, textDeltas = [] } = parts;
+  const { callId, name, argChunks, fullArgs, textDeltas = [], itemId = callId } = parts;
   const concatenated = argChunks.join('');
   const events: string[] = [];
 
-  // function_call output item added
+  // function_call output item added: item.id is the item_id (fc_*); item.call_id is the call_id (call_*).
   events.push(
     `event: response.output_item.added\ndata: ${JSON.stringify({
-      item: { type: 'function_call', id: callId, call_id: callId, name }
+      item: { type: 'function_call', id: itemId, call_id: callId, name }
     })}\n\n`
   );
 
-  // arg delta events
+  // arg delta events — keyed by item_id (the live wire shape).
   for (const chunk of argChunks) {
     events.push(
       `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
-        call_id: callId,
+        item_id: itemId,
         delta: chunk
       })}\n\n`
     );
   }
 
-  // args done event
+  // args done event — keyed by item_id.
   events.push(
     `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
-      call_id: callId,
+      item_id: itemId,
       arguments: fullArgs ?? concatenated
     })}\n\n`
   );
@@ -957,10 +991,10 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
       })}\n\n`
     );
 
-    // Args deltas for fc_A
+    // Args deltas for fc_A — keyed by item_id (matches the live wire shape).
     events.push(
       `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
-        call_id: 'fc_A',
+        item_id: 'fc_A',
         delta: '{"p":1}'
       })}\n\n`
     );
@@ -968,7 +1002,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     // Args deltas for fc_B
     events.push(
       `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
-        call_id: 'fc_B',
+        item_id: 'fc_B',
         delta: '{"q":2}'
       })}\n\n`
     );
@@ -976,7 +1010,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     // Done for fc_A
     events.push(
       `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
-        call_id: 'fc_A',
+        item_id: 'fc_A',
         arguments: '{"p":1}'
       })}\n\n`
     );
@@ -984,7 +1018,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     // Done for fc_B
     events.push(
       `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
-        call_id: 'fc_B',
+        item_id: 'fc_B',
         arguments: '{"q":2}'
       })}\n\n`
     );
@@ -1079,9 +1113,10 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
       `event: response.output_item.added\ndata: ${JSON.stringify({
         item: { type: 'function_call', id: 'fc_nodelta', call_id: 'fc_nodelta', name: 'nodelta_tool' }
       })}\n\n`,
-      // No function_call_arguments.delta events — provider delivered nothing before .done
+      // No function_call_arguments.delta events — provider delivered nothing before .done.
+      // .done is keyed by item_id, matching the live wire shape.
       `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
-        call_id: 'fc_nodelta',
+        item_id: 'fc_nodelta',
         arguments: '{"answer":42}'
       })}\n\n`,
       `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
@@ -1125,6 +1160,339 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     const entry = callMap.get('fc_nodelta');
     expect(entry).toBeDefined();
     expect(entry?.argsBuffer).toBe('{"answer":42}');
+  });
+
+  test('surfaces incompleteReason on the done event when status is incomplete', async () => {
+    const sseChunks: string[] = [
+      `event: response.output_text.delta\ndata: ${JSON.stringify({ delta: 'partial' })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({
+        response: { status: 'incomplete', incomplete_details: { reason: 'max_output_tokens' } }
+      })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    const done = events[events.length - 1] as AiAssist.IAiStreamDone;
+    expect(done.type).toBe('done');
+    expect(done.truncated).toBe(true);
+    expect(done.incompleteReason).toBe('max_output_tokens');
+  });
+
+  test('leaves incompleteReason undefined on a normally completed response', async () => {
+    const sseChunks: string[] = [
+      `event: response.output_text.delta\ndata: ${JSON.stringify({ delta: 'all done' })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    const done = events[events.length - 1] as AiAssist.IAiStreamDone;
+    expect(done.type).toBe('done');
+    expect(done.truncated).toBe(false);
+    expect(done.incompleteReason).toBeUndefined();
+  });
+
+  test('does not leak incompleteReason when status is not incomplete but details are present', async () => {
+    // Defensive: a provider should never send incomplete_details on a completed payload,
+    // but if it does, the reason must not leak through (contract: meaningful only when truncated).
+    const sseChunks: string[] = [
+      `event: response.completed\ndata: ${JSON.stringify({
+        response: { status: 'completed', incomplete_details: { reason: 'max_output_tokens' } }
+      })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    const done = events[events.length - 1] as AiAssist.IAiStreamDone;
+    expect(done.type).toBe('done');
+    expect(done.truncated).toBe(false);
+    expect(done.incompleteReason).toBeUndefined();
+  });
+
+  test('clears a stale incompleteReason if a later completed event reports not-incomplete', async () => {
+    // Defensive: the Responses API sends exactly one completed event, but if a duplicate
+    // arrived (first incomplete, then completed), truncated and incompleteReason must move
+    // together so the done event never reports truncated:false with a stale reason.
+    const sseChunks: string[] = [
+      `event: response.completed\ndata: ${JSON.stringify({
+        response: { status: 'incomplete', incomplete_details: { reason: 'max_output_tokens' } }
+      })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    const done = events[events.length - 1] as AiAssist.IAiStreamDone;
+    expect(done.type).toBe('done');
+    expect(done.truncated).toBe(false);
+    expect(done.incompleteReason).toBeUndefined();
+  });
+
+  test('leaves incompleteReason undefined when status is incomplete but no details are present', async () => {
+    const sseChunks: string[] = [
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'incomplete' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    const done = events[events.length - 1] as AiAssist.IAiStreamDone;
+    expect(done.type).toBe('done');
+    expect(done.truncated).toBe(true);
+    expect(done.incompleteReason).toBeUndefined();
+  });
+
+  // ========================================================================
+  // Reasoning-model wire-shape tests
+  // ========================================================================
+  //
+  // Live OpenAI / xAI captures (2026-06) showed reasoning-capable models emit
+  // a leading reasoning output_item.{added,done} pair before the function_call
+  // item, AND the subsequent function_call_arguments.{delta,done} events are
+  // keyed by `item_id` (the fc_*/output-item id) rather than `call_id` (the
+  // call_*/continuation id). The adapter must:
+  //   1. Skip reasoning items without yielding events for them (reasoning
+  //      content is discarded by design — separate `ai-assist-thinking-events`
+  //      follow-up stream owns surfacing reasoning to callers).
+  //   2. Correlate item_id → call_id via the function_call output_item.added
+  //      event so the arg-accumulation handlers can resolve the call.
+  //
+  // These tests assert the actual IAiStreamEvent sequence produced from
+  // realistic SSE fixtures that mirror live captures — per the L37 reference
+  // observation, tests must verify emitted events from real wire shapes,
+  // not call success.
+
+  test('reasoning models: skips leading reasoning items and correctly correlates item_id → call_id for function calls', async () => {
+    // Mirrors the live OpenAI gpt-5.1 capture: reasoning item added+done, then
+    // function_call output_item.added with item.id !== item.call_id, then
+    // arguments.{delta,done} events carrying only item_id.
+    const reasoningItemId = 'rs_0bc550c3652817eb006a2258f29810819b8547b089f4772919';
+    const fcItemId = 'fc_0352bf740c76b6d0006a22591d70c0819b8124c7544b233685';
+    const fcCallId = 'call_m3NwZgvp5ZHRgtV3EHYHqIJX';
+    const sseChunks: string[] = [
+      `event: response.output_item.added\ndata: ${JSON.stringify({
+        item: { type: 'reasoning', id: reasoningItemId, content: [], summary: [] }
+      })}\n\n`,
+      `event: response.output_item.done\ndata: ${JSON.stringify({
+        item: { type: 'reasoning', id: reasoningItemId, content: [], summary: [] }
+      })}\n\n`,
+      `event: response.output_item.added\ndata: ${JSON.stringify({
+        item: {
+          type: 'function_call',
+          id: fcItemId,
+          call_id: fcCallId,
+          name: 'recall_memory',
+          status: 'in_progress',
+          arguments: ''
+        }
+      })}\n\n`,
+      `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
+        item_id: fcItemId,
+        delta: '{"key":'
+      })}\n\n`,
+      `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
+        item_id: fcItemId,
+        delta: '"display-mode"}'
+      })}\n\n`,
+      `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
+        item_id: fcItemId,
+        arguments: '{"key":"display-mode"}'
+      })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    // No events should fire for the reasoning item (discarded by design).
+    const start = events.find((e) => e.type === 'client-tool-call-start') as
+      | AiAssist.IAiStreamToolUseStart
+      | undefined;
+    expect(start?.toolName).toBe('recall_memory');
+    // client-tool-call-start carries the call_id (continuation id), NOT the item_id.
+    expect(start?.callId).toBe(fcCallId);
+
+    const done = events.find((e) => e.type === 'client-tool-call-done') as
+      | AiAssist.IAiStreamToolUseDelta
+      | undefined;
+    expect(done?.toolName).toBe('recall_memory');
+    // Critical: done.callId is the call_* id even though the delta/done SSE events
+    // carry only item_id — adapter correlates them.
+    expect(done?.callId).toBe(fcCallId);
+    expect(done?.args).toEqual({ key: 'display-mode' });
+
+    const doneEvent = events[events.length - 1] as AiAssist.IAiStreamDone;
+    expect(doneEvent.type).toBe('done');
+    expect(doneEvent.truncated).toBe(false);
+  });
+
+  test('reasoning models: text-delta events still fire when the model produces a final answer', async () => {
+    // Mirrors the simple gpt-5.1 capture: reasoning item, then a message item with text deltas.
+    const sseChunks: string[] = [
+      `event: response.output_item.added\ndata: ${JSON.stringify({
+        item: { type: 'reasoning', id: 'rs_1', content: [], summary: [] }
+      })}\n\n`,
+      `event: response.output_item.done\ndata: ${JSON.stringify({
+        item: { type: 'reasoning', id: 'rs_1', content: [], summary: [] }
+      })}\n\n`,
+      `event: response.output_item.added\ndata: ${JSON.stringify({
+        item: { type: 'message', id: 'msg_1', role: 'assistant', status: 'in_progress' }
+      })}\n\n`,
+      `event: response.output_text.delta\ndata: ${JSON.stringify({ delta: 'Hi' })}\n\n`,
+      `event: response.output_text.delta\ndata: ${JSON.stringify({ delta: ' there.' })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    const textDeltas = events.filter((e) => e.type === 'text-delta');
+    expect(textDeltas).toHaveLength(2);
+    expect((textDeltas[0] as AiAssist.IAiStreamTextDelta).delta).toBe('Hi');
+    expect((textDeltas[1] as AiAssist.IAiStreamTextDelta).delta).toBe(' there.');
+
+    const doneEvent = events[events.length - 1] as AiAssist.IAiStreamDone;
+    expect(doneEvent.fullText).toBe('Hi there.');
+  });
+
+  test('reasoning models: reasoning_summary_* events from xAI/grok are ignored without disrupting downstream function-call flow', async () => {
+    // Mirrors the live xAI grok-4.3 capture: reasoning_summary text streams while the
+    // reasoning item is open, then a function_call follows.
+    const reasoningId = 'rs_82d9f851-a8e0-4054-b2b0-4ceb5e1d077e';
+    const fcItemId = 'fc_82d9f851-a8e0-4054-b2b0-4ceb5e1d077e_0';
+    const fcCallId = 'call-f3e96b46-b07a-484e-b1c6-426e37271e79-0';
+    const sseChunks: string[] = [
+      `event: response.output_item.added\ndata: ${JSON.stringify({
+        item: { type: 'reasoning', id: reasoningId, summary: [], status: 'in_progress' }
+      })}\n\n`,
+      `event: response.reasoning_summary_part.added\ndata: ${JSON.stringify({
+        item_id: reasoningId,
+        part: { type: 'summary_text', text: '' }
+      })}\n\n`,
+      `event: response.reasoning_summary_text.delta\ndata: ${JSON.stringify({
+        item_id: reasoningId,
+        delta: 'Thinking about preferences...'
+      })}\n\n`,
+      `event: response.reasoning_summary_text.done\ndata: ${JSON.stringify({
+        item_id: reasoningId,
+        text: 'Thinking about preferences...'
+      })}\n\n`,
+      `event: response.reasoning_summary_part.done\ndata: ${JSON.stringify({
+        item_id: reasoningId
+      })}\n\n`,
+      `event: response.output_item.done\ndata: ${JSON.stringify({
+        item: { type: 'reasoning', id: reasoningId, status: 'completed' }
+      })}\n\n`,
+      `event: response.output_item.added\ndata: ${JSON.stringify({
+        item: {
+          type: 'function_call',
+          id: fcItemId,
+          call_id: fcCallId,
+          name: 'recall_memory',
+          status: 'in_progress',
+          arguments: ''
+        }
+      })}\n\n`,
+      `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
+        item_id: fcItemId,
+        delta: '{"key":"display-mode"}'
+      })}\n\n`,
+      `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
+        item_id: fcItemId,
+        arguments: '{"key":"display-mode"}'
+      })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    // No text-delta events for reasoning summary content (reasoning is discarded).
+    expect(events.some((e) => e.type === 'text-delta')).toBe(false);
+
+    // Function-call flow still surfaces correctly after the reasoning items.
+    const done = events.find((e) => e.type === 'client-tool-call-done') as
+      | AiAssist.IAiStreamToolUseDelta
+      | undefined;
+    expect(done?.toolName).toBe('recall_memory');
+    expect(done?.callId).toBe(fcCallId);
+    expect(done?.args).toEqual({ key: 'display-mode' });
   });
 });
 
@@ -1235,5 +1603,303 @@ describe('Gemini streaming adapter — C2 client tool extensions', () => {
     expect(functionCalls).toHaveLength(1);
     expect(functionCalls[0].name).toBe('do_thing');
     expect(functionCalls[0].args).toEqual({ param: 'value' });
+  });
+});
+
+// ============================================================================
+// Tests — cross-provider client-tool continuation wire forwarding
+//
+// Verifies that `continuationMessages` (the prior turn's reconstructed
+// assistant turn + tool outputs) reach the request body for OpenAI Responses,
+// Gemini, and (by `apiFormat: 'openai'` routing) xAI — paralleling the
+// Anthropic C4 coverage above. The load-bearing assertions check the actual
+// request body shape, not just that the call succeeds.
+// ============================================================================
+
+describe('cross-provider client-tool continuation wire forwarding', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  // OpenAI Responses input completion stream: a text delta + completed event.
+  const openAiDoneSse: ReadonlyArray<string> = [
+    `event: response.output_text.delta\ndata: ${JSON.stringify({ delta: 'ok' })}\n\n`,
+    `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+  ];
+
+  test('OpenAI Responses: appends function_call + function_call_output items after the user message', async () => {
+    const continuationMessages: ReadonlyArray<JsonObject> = [
+      {
+        type: 'function_call',
+        id: 'fc_1',
+        name: 'recall_memory',
+        arguments: '{"key":"display-mode"}'
+      },
+      { type: 'function_call_output', call_id: 'fc_1', output: 'dark mode' }
+    ];
+
+    const bodyCapture = mockSseResponseCapturingBody(openAiDoneSse);
+    const { callOpenAiResponsesStream } = await import(
+      '../../../packlets/ai-assist/streamingAdapters/openaiResponses'
+    );
+
+    const streamConfig = {
+      baseUrl: 'https://api.openai.com/v1',
+      model: 'gpt-4o',
+      apiKey: 'sk-test'
+    };
+
+    const streamResult = await callOpenAiResponsesStream(
+      streamConfig,
+      TEST_PROMPT,
+      [{ type: 'web_search' }],
+      undefined,
+      0.5,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      continuationMessages
+    );
+
+    expect(streamResult).toSucceed();
+    if (!streamResult.isSuccess()) return;
+    await collect(streamResult.value);
+
+    const input = bodyCapture.getBody()?.input as Array<Record<string, unknown>>;
+    expect(input).toBeDefined();
+    // input: [{ role: 'system' }, { role: 'user' }, function_call, function_call_output]
+    expect(input).toHaveLength(4);
+    expect(input[1].role).toBe('user');
+    expect(input[2]).toEqual({
+      type: 'function_call',
+      id: 'fc_1',
+      name: 'recall_memory',
+      arguments: '{"key":"display-mode"}'
+    });
+    expect(input[3]).toEqual({
+      type: 'function_call_output',
+      call_id: 'fc_1',
+      output: 'dark mode'
+    });
+  });
+
+  test('OpenAI Responses: skips malformed (non-object) continuation items', async () => {
+    const continuationMessages: ReadonlyArray<JsonObject> = [
+      { type: 'function_call', id: 'fc_ok', name: 't', arguments: '{}' },
+      // Malformed: not a JSON object — must be skipped, not transmitted.
+      'not-an-object' as unknown as JsonObject
+    ];
+
+    const bodyCapture = mockSseResponseCapturingBody(openAiDoneSse);
+    const { callOpenAiResponsesStream } = await import(
+      '../../../packlets/ai-assist/streamingAdapters/openaiResponses'
+    );
+
+    const streamResult = await callOpenAiResponsesStream(
+      { baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o', apiKey: 'sk-test' },
+      TEST_PROMPT,
+      [{ type: 'web_search' }],
+      undefined,
+      0.5,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      continuationMessages
+    );
+
+    expect(streamResult).toSucceed();
+    if (!streamResult.isSuccess()) return;
+    await collect(streamResult.value);
+
+    const input = bodyCapture.getBody()?.input as Array<Record<string, unknown>>;
+    // [system, user, fc_ok] — the malformed entry is dropped.
+    expect(input).toHaveLength(3);
+    expect(input[2].id).toBe('fc_ok');
+  });
+
+  test('Gemini: appends model functionCall + user functionResponse turns after the user message', async () => {
+    const continuationMessages: ReadonlyArray<JsonObject> = [
+      {
+        role: 'model',
+        parts: [{ functionCall: { name: 'recall_memory', args: { key: 'display-mode' } } }] as JsonArray
+      },
+      {
+        role: 'user',
+        parts: [
+          { functionResponse: { name: 'recall_memory', response: { content: 'dark mode' } } }
+        ] as JsonArray
+      }
+    ];
+
+    const bodyCapture = mockSseResponseCapturingBody(
+      geminiFunctionCallSse({ calls: [], textDeltas: ['ok'] })
+    );
+    const { callGeminiStream } = await import('../../../packlets/ai-assist/streamingAdapters/gemini');
+
+    const streamResult = await callGeminiStream(
+      {
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        model: 'gemini-1.5-pro',
+        apiKey: 'sk-test'
+      },
+      TEST_PROMPT,
+      undefined,
+      0.5,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      continuationMessages
+    );
+
+    expect(streamResult).toSucceed();
+    if (!streamResult.isSuccess()) return;
+    await collect(streamResult.value);
+
+    const contents = bodyCapture.getBody()?.contents as Array<Record<string, unknown>>;
+    expect(contents).toBeDefined();
+    // contents: [{ role: 'user' }, model functionCall turn, user functionResponse turn]
+    expect(contents).toHaveLength(3);
+    expect(contents[0].role).toBe('user');
+    expect(contents[1].role).toBe('model');
+    expect(contents[1].parts).toEqual([
+      { functionCall: { name: 'recall_memory', args: { key: 'display-mode' } } }
+    ]);
+    expect(contents[2].role).toBe('user');
+    expect(contents[2].parts).toEqual([
+      { functionResponse: { name: 'recall_memory', response: { content: 'dark mode' } } }
+    ]);
+  });
+
+  test('Gemini: skips malformed continuation items (invalid role)', async () => {
+    const continuationMessages: ReadonlyArray<JsonObject> = [
+      {
+        role: 'model',
+        parts: [{ functionCall: { name: 't', args: {} } }] as JsonArray
+      },
+      // Malformed: 'assistant' is not a valid Gemini role (only 'user' / 'model').
+      { role: 'assistant', parts: [] as JsonArray } as unknown as JsonObject
+    ];
+
+    const bodyCapture = mockSseResponseCapturingBody(
+      geminiFunctionCallSse({ calls: [], textDeltas: ['ok'] })
+    );
+    const { callGeminiStream } = await import('../../../packlets/ai-assist/streamingAdapters/gemini');
+
+    const streamResult = await callGeminiStream(
+      {
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        model: 'gemini-1.5-pro',
+        apiKey: 'sk-test'
+      },
+      TEST_PROMPT,
+      undefined,
+      0.5,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      continuationMessages
+    );
+
+    expect(streamResult).toSucceed();
+    if (!streamResult.isSuccess()) return;
+    await collect(streamResult.value);
+
+    const contents = bodyCapture.getBody()?.contents as Array<Record<string, unknown>>;
+    // [user, model] — the invalid-role entry is dropped.
+    expect(contents).toHaveLength(2);
+    expect(contents[1].role).toBe('model');
+  });
+
+  test('xAI (apiFormat openai) forwards continuationMessages through executeClientToolTurn into the request body', async () => {
+    // xAI routes through the OpenAI Responses adapter via apiFormat: 'openai',
+    // so it inherits the continuation forwarding once executeClientToolTurn's
+    // openai switch arm passes continuationMessages through. This test verifies
+    // that inheritance end-to-end (not just that the adapter accepts the param).
+    const continuationMessages: ReadonlyArray<JsonObject> = [
+      { type: 'function_call', id: 'fc_x', name: 'recall_memory', arguments: '{"key":"k"}' },
+      { type: 'function_call_output', call_id: 'fc_x', output: 'v' }
+    ];
+
+    const bodyCapture = mockSseResponseCapturingBody(openAiDoneSse);
+
+    const xaiDescriptor: IAiProviderDescriptor = {
+      id: 'xai-grok',
+      label: 'xAI',
+      buttonLabel: 'AI Assist | xAI',
+      needsSecret: true,
+      apiFormat: 'openai',
+      baseUrl: 'https://api.x.ai/v1',
+      defaultModel: 'grok-3',
+      supportedTools: ['web_search'],
+      corsRestricted: false,
+      streamingCorsRestricted: false,
+      acceptsImageInput: true,
+      thinkingMode: 'optional'
+    };
+
+    const turnResult = AiAssist.executeClientToolTurn({
+      descriptor: xaiDescriptor,
+      apiKey: 'sk-test',
+      prompt: TEST_PROMPT,
+      tools: [{ type: 'web_search' }],
+      clientTools: [],
+      continuationMessages
+    });
+
+    expect(turnResult).toSucceed();
+    if (!turnResult.isSuccess()) return;
+    await collect(turnResult.value.events);
+    await turnResult.value.nextTurn;
+
+    const input = bodyCapture.getBody()?.input as Array<Record<string, unknown>>;
+    expect(input).toBeDefined();
+    expect(input[input.length - 2]).toEqual({
+      type: 'function_call',
+      id: 'fc_x',
+      name: 'recall_memory',
+      arguments: '{"key":"k"}'
+    });
+    expect(input[input.length - 1]).toEqual({
+      type: 'function_call_output',
+      call_id: 'fc_x',
+      output: 'v'
+    });
+  });
+});
+
+// ============================================================================
+// Tests — chatRequestBuilders rawTail short-circuit (no options supplied)
+//
+// Exercises the `options === undefined` branch of the `options?.rawTail`
+// optional chain in buildMessages / buildGeminiContents — the path where no
+// continuation messages (and no head/tail) are woven around the user message.
+// ============================================================================
+
+describe('chatRequestBuilders — builders called without options', () => {
+  test('buildMessages emits only system + user when no options are supplied', async () => {
+    const { buildMessages } = await import('../../../packlets/ai-assist/chatRequestBuilders');
+    const messages = buildMessages('system prompt', 'user text');
+    expect(messages).toEqual([
+      { role: 'system', content: 'system prompt' },
+      { role: 'user', content: 'user text' }
+    ]);
+  });
+
+  test('buildGeminiContents emits only the user turn when no options are supplied', async () => {
+    const { buildGeminiContents } = await import('../../../packlets/ai-assist/chatRequestBuilders');
+    const contents = buildGeminiContents(TEST_PROMPT);
+    expect(contents).toEqual([{ role: 'user', parts: [{ text: 'hello' }] }]);
   });
 });

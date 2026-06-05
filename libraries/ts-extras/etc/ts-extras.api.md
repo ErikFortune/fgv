@@ -935,6 +935,7 @@ interface IAiProviderDescriptor {
 // @public
 interface IAiStreamDone {
     readonly fullText: string;
+    readonly incompleteReason?: string;
     readonly truncated: boolean;
     // (undocumented)
     readonly type: 'done';
