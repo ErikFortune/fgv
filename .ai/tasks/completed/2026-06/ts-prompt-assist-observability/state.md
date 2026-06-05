@@ -2,7 +2,7 @@
 
 **Stream:** `ts-prompt-assist-observability`
 **Integration branch:** `ts-prompt-assist-observability`
-**Status:** Phase B complete; Phase C ready to commission (2026-06-04)
+**Status:** Phase C COMPLETE — cluster ready to close (2026-06-04). Artifacts migrated to `completed/2026-06/` in PR #456.
 
 ---
 
@@ -58,4 +58,25 @@ Targets the existing integration branch `ts-prompt-assist-observability`. Agent 
 
 ## Follow-up findings filed
 
-(empty so far)
+- `findings/inbox/2026-06-04-ring-buffer-seq-authority.md` — Phase C refinement of the Phase A buffer sketch: `RetainingRingBuffer<T>` ships as a **pure seq-ring** (caller mints seq+timestamp); `PromptLibrary` owns the single seq authority. Forced by OQ-5 `linkedResolveSeq` cross-store consistency under multi-observer fan-out. Also the minimal-blast-radius shape for the `retaining-logger-ring-buffer-refactor` fast-follow. **Read this before the fast-follow.**
+
+## Phase C progress (implementation in flight)
+
+- [x] `RetainingRingBuffer<T>` in `@fgv/ts-utils` collections packlet; 25 unit tests; 100% on the file
+- [x] `observe` packlet in `@fgv/ts-prompt-assist`: `IPromptObserver`, `IPromptObservationRecord` union, `IPromptObservationQuery`, `PromptObservationStore`
+- [x] additive `observers?` on `IPromptLibraryCreateParams`; `_observe` fan-out at the three public boundaries
+- [x] OQ-3 awaited-default + fire-and-forget opt-in (per-observer `fireAndForget` flag) — tested both directions
+- [x] build + lint clean in both libraries; 224 ts-prompt-assist tests green
+- [x] `code-reviewer` pass on cumulative diff — 0 P1, 3 P2, 3 P3:
+  - P2-1 (swallow airtight): verified correct, no change.
+  - P2-2 (2 new `ae-unresolved-link` warnings): **fixed** — promoted `IRetainedRecord` / `IRetainingRingBufferCreateParams` / `IRetainingRingBufferQuery` to top-level exports; warnings cleared.
+  - P2-3 (`_observationNow` no test seam): accepted — intentional (single additive field); reviewer confirmed no coverage gap.
+  - P3-1 (`onFailure` returning `fail` misleading): **applied** — `_safeObserve` now uses `isFailure()`.
+  - P3-2 (`IPromptObservationStoreCreateParams` placement): accepted — matches `IPromptLibraryCreateParams` (co-located with its class).
+  - P3-3 (member-level `@link`): accepted — pre-existing API Extractor limitation.
+  - Coverage rec (mixed awaited+fire-and-forget test): **added**.
+- [x] coverage closure: `@fgv/ts-utils` 1594 tests, `RetainingRingBuffer` 100%; `@fgv/ts-prompt-assist` 226 tests, observe + promptLibrary.ts 100% (all metrics)
+- [x] LIBRARY_CAPABILITIES.md updates (both libraries)
+- [x] `rushx build` / `rushx lint` (clean) / `rushx test` (100%) / `rushx fixlint` — both libraries
+- [x] PR onto integration branch — **#456**
+- [x] Copilot review loop (implementer-driven): **stopped at round 2 on diminishing returns.** Round 1 = 10 substantive comments (contentHash doc/impl drift, additive-default invariant, flaky-timing tests), all resolved. Round 2 = 1 doc-clarification nitpick (`durationMs` semantics), resolved. No round 3 requested.

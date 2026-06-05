@@ -33,6 +33,7 @@ export * from './common';
 export * from './keyValueConverters';
 export * from './readonlyResultMap';
 export * from './readOnlyConvertingResultMap';
+export * from './retainingRingBuffer';
 export * from './resultMap';
 export * from './resultMapValidator';
 export * from './validatingCollector';

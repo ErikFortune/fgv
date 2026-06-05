@@ -309,6 +309,7 @@ export interface IPromptJoinPolicy {
 export interface IPromptLibraryCreateParams<TResponse extends IPromptResponseBase = IPromptResponseBase, TQualifierNames extends string = string> {
     readonly cacheListener?: Runtime.IResourceResolverCacheListener;
     readonly logger?: Logging.ILogger;
+    readonly observers?: ReadonlyArray<IPromptObserver>;
     readonly qualifiers: IPromptLibraryQualifiersInput<TQualifierNames>;
     readonly qualifierTypes?: QualifierTypes.ReadOnlyQualifierTypeCollector;
     readonly registry?: IPromptRegistry<TResponse>;
@@ -322,6 +323,58 @@ export interface IPromptLibraryCreateParams<TResponse extends IPromptResponseBas
 export type IPromptLibraryQualifiersInput<TQualifierNames extends string = string> = Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<TQualifierNames | (Qualifiers.IQualifierDecl & {
     readonly name: TQualifierNames;
 })>;
+
+// @public
+export interface IPromptObservationBase {
+    readonly chain: ReadonlyArray<ScopeKey>;
+    readonly contentHash: string;
+    readonly durationMs: number;
+    readonly promptId: PromptId;
+    readonly qualifierContext: IQualifierContext;
+    readonly seq: number;
+    readonly substitutions?: PromptSubstitutions;
+    readonly timestamp: number;
+}
+
+// @public
+export interface IPromptObservationQuery {
+    readonly filter?: (record: IPromptObservationRecord) => boolean;
+    readonly hasSafeguardFindings?: boolean;
+    readonly limit?: number;
+    readonly outcome?: 'success' | 'failure';
+    readonly outputKind?: PromptObservationOutputKind;
+    readonly phase?: PromptObservationPhase;
+    readonly promptId?: PromptId;
+    readonly qualifiers?: IQualifierContext;
+    readonly safeguardDisposition?: SafeguardDisposition;
+    readonly scope?: ScopeKey;
+    readonly since?: number;
+    readonly sinceSeq?: number;
+    readonly until?: number;
+}
+
+// @public
+export type IPromptObservationRecord = IPromptResolveObservation | IPromptOutputObservation;
+
+// @public
+export interface IPromptObservationStoreCreateParams {
+    readonly maxRecords?: number;
+}
+
+// @public
+export interface IPromptObserver {
+    readonly fireAndForget?: boolean;
+    observe(record: IPromptObservationRecord): Promise<Result<unknown>>;
+}
+
+// @public
+export interface IPromptOutputObservation extends IPromptObservationBase {
+    readonly error?: string;
+    readonly linkedResolveSeq: number;
+    readonly outcome: 'success' | 'failure';
+    readonly phase: 'json-output' | 'free-text-output';
+    readonly rawOutput: string;
+}
 
 // @public
 export interface IPromptOutputValidationRegistry<TResponse extends IPromptResponseBase> {
@@ -354,6 +407,18 @@ export interface IPromptRegistry<TResponse extends IPromptResponseBase = IPrompt
     readonly outputValidations: IPromptOutputValidationRegistry<TResponse>;
     // (undocumented)
     readonly slotKinds: IPromptSlotKindRegistry;
+}
+
+// @public
+export interface IPromptResolveObservation extends IPromptObservationBase {
+    readonly body?: string;
+    readonly error?: string;
+    readonly outcome: 'success' | 'failure';
+    readonly outputKind?: PromptObservationOutputKind;
+    readonly phase: 'resolve';
+    readonly safeguardFindings?: ReadonlyArray<ISafeguardFinding>;
+    readonly trace?: IPromptResolveTrace;
+    readonly winningScope?: ScopeKey;
 }
 
 // @public
@@ -626,6 +691,22 @@ export class PromptLibrary<TResponse extends IPromptResponseBase = IPromptRespon
         kind: K;
     }>>>;
     readonly resourceBindingDepthLimit: number;
+}
+
+// @public
+export type PromptObservationOutputKind = 'free-text' | 'json';
+
+// @public
+export type PromptObservationPhase = 'resolve' | 'json-output' | 'free-text-output';
+
+// @public
+export class PromptObservationStore implements IPromptObserver {
+    clear(): void;
+    static create(params?: IPromptObservationStoreCreateParams): Result<PromptObservationStore>;
+    get lastSeq(): number;
+    observe(record: IPromptObservationRecord): Promise<Result<unknown>>;
+    query(criteria?: IPromptObservationQuery): ReadonlyArray<IPromptObservationRecord>;
+    get size(): number;
 }
 
 // @public

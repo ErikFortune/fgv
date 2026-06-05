@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Logging, Normalizer, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+import { Hash, Logging, Normalizer, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { sanitizeJsonObject } from '@fgv/ts-json-base';
 import {
   QualifierTypes,
@@ -33,6 +33,13 @@ import {
 } from '../types';
 import { IPromptStore } from '../store';
 import { IPromptRegistry } from '../registry';
+import {
+  IPromptObservationBase,
+  IPromptObservationRecord,
+  IPromptObserver,
+  IPromptOutputObservation,
+  IPromptResolveObservation
+} from '../observe';
 import { applySafeguards } from '../safeguards';
 import { assertOutputValidationsCompatible, runOutputValidationPipeline } from '../output';
 import { walkScopeChain } from './chainWalker';
@@ -171,6 +178,15 @@ export interface IPromptLibraryCreateParams<
    * no regex screening runs, and no anti-jailbreak preface is injected.
    */
   readonly safetyPolicy?: IPromptSafetyPolicy;
+  /**
+   * Optional observers fired once per public `resolve` / `resolveJsonOutput` /
+   * `resolveFreeTextOutput` call (never for nested resource-binding resolves).
+   * Purely additive — when absent, no observation records are produced and
+   * existing behavior is unchanged. Observer errors never affect the resolve
+   * result; they are swallowed and logged to {@link IPromptLibraryCreateParams.logger | logger}
+   * at `warn`. See {@link IPromptObserver} and {@link PromptObservationStore}.
+   */
+  readonly observers?: ReadonlyArray<IPromptObserver>;
 }
 
 /**
@@ -275,6 +291,24 @@ export class PromptLibrary<
   private readonly _cacheListener?: Runtime.IResourceResolverCacheListener;
   private readonly _safetyPolicy?: IPromptSafetyPolicy;
   /**
+   * Observers fired once per public resolve / output call. Empty when the
+   * consumer supplied none — the fan-out fast-paths out without allocating.
+   */
+  private readonly _observers: ReadonlyArray<IPromptObserver>;
+  /**
+   * Per-instance monotonic counter feeding every observation record's `seq`.
+   * A single authority (not per-store) so a `'resolve'` record and its linked
+   * `'json-output'` / `'free-text-output'` record share a consistent `seq`
+   * space across every observer the record fans out to — which is what makes
+   * `IPromptOutputObservation.linkedResolveSeq` correlation work.
+   */
+  private _nextObservationSeq: number;
+  /**
+   * Injected clock stamping observation records. Private (not a `create`
+   * param) so the additive DI surface stays a single `observers?` field.
+   */
+  private readonly _observationNow: () => number;
+  /**
    * Set of RFC 8785 canonical-JSON keys for descriptors that have
    * already passed the loader-side compatibility check (see
    * `assertOutputValidationsCompatible` in the `output` packlet).
@@ -311,6 +345,7 @@ export class PromptLibrary<
     readonly logger: Logging.ILogger;
     readonly resourceBindingDepthLimit: number;
     readonly safetyPolicy?: IPromptSafetyPolicy;
+    readonly observers: ReadonlyArray<IPromptObserver>;
   }) {
     this._store = params.store;
     this._registry = params.registry;
@@ -328,6 +363,9 @@ export class PromptLibrary<
     this.resourceBindingDepthLimit = params.resourceBindingDepthLimit;
     this._safetyPolicy = params.safetyPolicy;
     this._validatedRegistryKeys = new Set();
+    this._observers = params.observers;
+    this._nextObservationSeq = 0;
+    this._observationNow = () => Date.now();
   }
 
   /**
@@ -388,7 +426,8 @@ export class PromptLibrary<
                       cacheListener: params.cacheListener,
                       logger: params.logger ?? new Logging.NoOpLogger(),
                       resourceBindingDepthLimit: depthLimit,
-                      safetyPolicy: params.safetyPolicy
+                      safetyPolicy: params.safetyPolicy,
+                      observers: params.observers ?? []
                     })
                   )
                 )
@@ -454,7 +493,33 @@ export class PromptLibrary<
    * hit across the recursion.
    */
   public async resolve(req: IPromptResolveRequest<TQualifierNames>): Promise<Result<IResolvedPrompt>> {
-    return this._resolveInternal(req, 0, []);
+    return (await this._resolveObserved(req)).result;
+  }
+
+  /**
+   * Runs the depth-0 resolve and fires the single `'resolve'` observation
+   * (success or failure), returning both the result and the observation's
+   * `seq` so the output methods can cross-link their own records via
+   * `linkedResolveSeq`. The observation fires here — at the public-method
+   * boundary — never inside the re-entrant `_resolveInternal`, so nested
+   * resource-binding resolves roll up under the outer record's
+   * `trace.resourceBindingResolutions[].innerTrace` rather than firing their
+   * own observation.
+   */
+  private async _resolveObserved(
+    req: IPromptResolveRequest<string>
+  ): Promise<{ readonly result: Result<IResolvedPrompt>; readonly resolveSeq: number }> {
+    // Pay nothing in the additive-default (no-observers) path: skip the clock
+    // reads and record build entirely.
+    const observing = this._observers.length > 0;
+    const startedAt = observing ? this._observationNow() : 0;
+    const result = await this._resolveInternal(req, 0, []);
+    if (!observing) {
+      return { result, resolveSeq: 0 };
+    }
+    const record = this._buildResolveObservation(req, result, this._observationNow() - startedAt);
+    await this._observe(record);
+    return { result, resolveSeq: record.seq };
   }
 
   /**
@@ -595,7 +660,10 @@ export class PromptLibrary<
     rawOutput: string,
     expectedKind: K
   ): Promise<Result<Extract<TResponse, { kind: K }>>> {
-    return (await this.resolve(req)).onSuccess((resolved) => {
+    const observing = this._observers.length > 0;
+    const startedAt = observing ? this._observationNow() : 0;
+    const { result: resolveResult, resolveSeq } = await this._resolveObserved(req);
+    const outcome = resolveResult.onSuccess((resolved) => {
       const output = resolved.descriptor.output;
       if (output.kind !== 'json') {
         return fail<Extract<TResponse, { kind: K }>>(
@@ -637,6 +705,17 @@ export class PromptLibrary<
           });
         });
     });
+    if (observing) {
+      await this._observeOutput(
+        req,
+        'json-output',
+        rawOutput,
+        outcome,
+        resolveSeq,
+        this._observationNow() - startedAt
+      );
+    }
+    return outcome;
   }
 
   /**
@@ -665,7 +744,10 @@ export class PromptLibrary<
     req: IPromptResolveRequest<TQualifierNames>,
     rawOutput: string
   ): Promise<Result<string>> {
-    return (await this.resolve(req)).onSuccess((resolved) => {
+    const observing = this._observers.length > 0;
+    const startedAt = observing ? this._observationNow() : 0;
+    const { result: resolveResult, resolveSeq } = await this._resolveObserved(req);
+    const outcome = resolveResult.onSuccess((resolved) => {
       const output = resolved.descriptor.output;
       if (output.kind !== 'free-text') {
         return fail<string>(
@@ -674,6 +756,17 @@ export class PromptLibrary<
       }
       return succeed(rawOutput);
     });
+    if (observing) {
+      await this._observeOutput(
+        req,
+        'free-text-output',
+        rawOutput,
+        outcome,
+        resolveSeq,
+        this._observationNow() - startedAt
+      );
+    }
+    return outcome;
   }
 
   private _populateDescriptorCache(
@@ -1000,6 +1093,144 @@ export class PromptLibrary<
       ctx[name] = entry.value;
     });
     return ctx;
+  }
+
+  /**
+   * Fires an output-round-trip observation. Callers gate this on whether any
+   * observers are wired. `outcome` carries the output method's `Result`; its
+   * success / message become the record's `outcome` / `error`.
+   */
+  private async _observeOutput(
+    req: IPromptResolveRequest<string>,
+    phase: IPromptOutputObservation['phase'],
+    rawOutput: string,
+    outcome: Result<unknown>,
+    resolveSeq: number,
+    durationMs: number
+  ): Promise<void> {
+    await this._observe(this._buildOutputObservation(req, phase, rawOutput, outcome, resolveSeq, durationMs));
+  }
+
+  /**
+   * Fans a record out to every observer. Awaited observers extend the call;
+   * `fireAndForget` observers are dispatched without awaiting. Per-observer
+   * errors (failed `Result` or thrown / rejected `observe`) are swallowed and
+   * logged to {@link PromptLibrary.logger | logger} at `warn`, so an observer
+   * never affects the resolve result — the `MultiLogger`-shaped contract.
+   */
+  private async _observe(record: IPromptObservationRecord): Promise<void> {
+    const awaited: Promise<void>[] = [];
+    for (const observer of this._observers) {
+      if (observer.fireAndForget === true) {
+        // Intentionally not awaited: a fire-and-forget observer must not extend
+        // resolve() latency. `_safeObserve` already swallows internally; the
+        // `.catch` keeps the detached promise from being flagged as floating.
+        this._safeObserve(observer, record).catch(() => undefined);
+      } else {
+        awaited.push(this._safeObserve(observer, record));
+      }
+    }
+    await Promise.all(awaited);
+  }
+
+  /**
+   * Invokes one observer, swallowing any failure or throw.
+   */
+  private async _safeObserve(observer: IPromptObserver, record: IPromptObservationRecord): Promise<void> {
+    try {
+      const observed = await observer.observe(record);
+      if (observed.isFailure()) {
+        this.logger.warn(`prompt '${record.promptId}': observer failed (swallowed): ${observed.message}`);
+      }
+    } catch (error) {
+      this.logger.warn(`prompt '${record.promptId}': observer threw (swallowed): ${String(error)}`);
+    }
+  }
+
+  /**
+   * Builds the `'resolve'` observation record from the request and the
+   * resolve `Result`. Assigns a fresh library-global `seq` + `timestamp`.
+   */
+  private _buildResolveObservation(
+    req: IPromptResolveRequest<string>,
+    result: Result<IResolvedPrompt>,
+    durationMs: number
+  ): IPromptResolveObservation {
+    const base = this._observationBase(req, durationMs);
+    if (result.isSuccess()) {
+      const resolved = result.value;
+      return {
+        ...base,
+        phase: 'resolve',
+        outcome: 'success',
+        winningScope: resolved.trace.winningScope,
+        body: resolved.body,
+        outputKind: resolved.descriptor.output.kind,
+        trace: resolved.trace,
+        safeguardFindings: resolved.trace.safeguardFindings
+      };
+    }
+    return { ...base, phase: 'resolve', outcome: 'failure', error: result.message };
+  }
+
+  /**
+   * Builds an output-round-trip observation record cross-linked to its
+   * resolve record via `linkedResolveSeq`. Does not duplicate the rendered
+   * body (it lives on the linked resolve record).
+   */
+  private _buildOutputObservation(
+    req: IPromptResolveRequest<string>,
+    phase: IPromptOutputObservation['phase'],
+    rawOutput: string,
+    outcome: Result<unknown>,
+    resolveSeq: number,
+    durationMs: number
+  ): IPromptOutputObservation {
+    const base = this._observationBase(req, durationMs);
+    return {
+      ...base,
+      phase,
+      linkedResolveSeq: resolveSeq,
+      outcome: outcome.isSuccess() ? 'success' : 'failure',
+      rawOutput,
+      error: outcome.isFailure() ? outcome.message : undefined
+    };
+  }
+
+  /**
+   * Builds the fields common to every observation record, assigning a fresh
+   * library-global `seq` and a `timestamp`. The `contentHash` is best-effort:
+   * a canonicalize / hash failure degrades to an empty string rather than
+   * breaking the resolve.
+   */
+  private _observationBase(req: IPromptResolveRequest<string>, durationMs: number): IPromptObservationBase {
+    this._nextObservationSeq += 1;
+    return {
+      seq: this._nextObservationSeq,
+      contentHash: this._observationContentHash(req),
+      timestamp: this._observationNow(),
+      durationMs,
+      promptId: req.id,
+      chain: req.chain,
+      qualifierContext: req.qualifiers,
+      substitutions: req.substitutions
+    };
+  }
+
+  /**
+   * CRC32 over the RFC 8785 canonical JSON string of the request's identity
+   * tuple. Best-effort — never throws (degrades to `''`).
+   */
+  private _observationContentHash(req: IPromptResolveRequest<string>): string {
+    return sanitizeJsonObject({
+      promptId: req.id,
+      chain: req.chain,
+      qualifierContext: req.qualifiers,
+      substitutions: req.substitutions ?? {}
+    })
+      .onSuccess((sanitized) => this._normalizer.canonicalize(sanitized))
+      .onSuccess((canonical) => succeed(Hash.Crc32Normalizer.crc32Hash([canonical])))
+      .orDefault('');
   }
 }
 
