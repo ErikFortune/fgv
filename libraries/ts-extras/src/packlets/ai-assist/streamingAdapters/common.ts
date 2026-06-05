@@ -107,6 +107,33 @@ export interface IStreamApiConfig {
 export const UNRECOGNIZED_EVENT_WARN_TAG: string = 'ai-assist:unrecognized-event';
 
 /**
+ * Maximum characters of raw SSE payload to include in the
+ * {@link UNRECOGNIZED_EVENT_WARN_TAG} warning. Long enough to identify the JSON
+ * shape that arrived ("the new event carries field X"), short enough that a hot
+ * stream of unknown events with a verbose payload doesn't blow up log volume.
+ *
+ * @internal
+ */
+const UNRECOGNIZED_EVENT_PAYLOAD_PREVIEW_MAX: number = 200;
+
+/**
+ * Length-caps an SSE `data:` payload for inclusion in an unrecognized-event
+ * warning. Newlines collapsed to spaces so the warning stays on one log line.
+ *
+ * Returns `<no payload>` if the input is empty, otherwise the first N chars
+ * (with an ellipsis when truncated).
+ *
+ * @internal
+ */
+export function formatUnrecognizedEventPayloadPreview(data: string): string {
+  if (data.length === 0) return '<no payload>';
+  const collapsed = data.replace(/\s+/g, ' ');
+  return collapsed.length > UNRECOGNIZED_EVENT_PAYLOAD_PREVIEW_MAX
+    ? `${collapsed.slice(0, UNRECOGNIZED_EVENT_PAYLOAD_PREVIEW_MAX)}…`
+    : collapsed;
+}
+
+/**
  * Opens an SSE-style POST connection. Returns the underlying Response on a
  * 2xx; failures (network, non-2xx, missing body) surface as Result.fail
  * carrying the body text.

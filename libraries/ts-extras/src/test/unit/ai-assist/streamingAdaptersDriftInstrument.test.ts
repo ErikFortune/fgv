@@ -176,7 +176,7 @@ describe('OpenAI Responses streaming adapter — unrecognized-event drift instru
     await collect(result.value);
 
     // Exactly two warnings — one per unknown event name (the duplicate `totally_new_event_type`
-    // is deduplicated within the stream).
+    // is deduplicated within the stream — the second occurrence with `foo: 2` is suppressed).
     const warnings = logger.entries.filter((e) => e.level === 'warning');
     expect(warnings).toHaveLength(2);
     expect(warnings[0].message).toContain("'response.totally_new_event_type'");
@@ -187,7 +187,14 @@ describe('OpenAI Responses streaming adapter — unrecognized-event drift instru
       expect(w.message.startsWith('ai-assist:unrecognized-event ')).toBe(true);
       // The warning must also mention the allowlist constant so a developer can find it.
       expect(w.message).toContain('RECOGNIZED_OPENAI_RESPONSES_EVENTS');
+      // The warning must include a payload preview so a triager can see the JSON shape
+      // that arrived without re-running the scenario under a debugger.
+      expect(w.message).toContain('payload preview:');
     }
+    // First warning fires on the first occurrence of `totally_new_event_type` with foo:1
+    // (the second occurrence is deduped). Its preview reflects that payload.
+    expect(warnings[0].message).toContain('"foo":1');
+    expect(warnings[1].message).toContain('"bar":3');
   });
 
   test('does not warn for recognized-but-silently-handled lifecycle, reasoning, and content-part events', async () => {
@@ -248,6 +255,74 @@ describe('OpenAI Responses streaming adapter — unrecognized-event drift instru
     const doneEvent = events[events.length - 1] as AiAssist.IAiStreamDone;
     expect(doneEvent.type).toBe('done');
   });
+
+  test('drift warning truncates verbose payloads with an ellipsis (log-volume bound)', async () => {
+    // Build a payload longer than the 200-char preview cap so the warning's preview gets
+    // truncated. Truncation must produce a stable suffix (ellipsis) and stay on one line.
+    const longString = 'x'.repeat(500);
+    const sseChunks: string[] = [
+      `event: response.verbose_unknown\ndata: ${JSON.stringify({ huge: longString })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const logger = new RecordingLogger();
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools: OPENAI_TOOLS,
+      logger
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    await collect(result.value);
+
+    const warnings = logger.entries.filter((e) => e.level === 'warning');
+    expect(warnings).toHaveLength(1);
+    const msg = warnings[0].message;
+    expect(msg).toContain('payload preview:');
+    // Truncation marker present.
+    expect(msg).toContain('…');
+    // The preview substring sits between the "payload preview: " marker and the trailing
+    // ". This may indicate" sentence; verify it's bounded.
+    const previewStart = msg.indexOf('payload preview: ') + 'payload preview: '.length;
+    const previewEnd = msg.indexOf('. This may indicate', previewStart);
+    expect(previewEnd).toBeGreaterThan(previewStart);
+    const preview = msg.slice(previewStart, previewEnd);
+    // 200-char cap + 1 ellipsis character = 201 chars max in the preview substring.
+    expect(preview.length).toBeLessThanOrEqual(201);
+  });
+
+  test('drift warning includes `<no payload>` marker when an unknown event arrives with no data', async () => {
+    // SSE permits event-only records (no data: lines). The preview helper renders these
+    // as `<no payload>` so the warning still reads cleanly.
+    const sseChunks: string[] = [
+      `event: response.empty_unknown\ndata: \n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const logger = new RecordingLogger();
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools: OPENAI_TOOLS,
+      logger
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    await collect(result.value);
+
+    const warnings = logger.entries.filter((e) => e.level === 'warning');
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].message).toContain('payload preview: <no payload>');
+  });
 });
 
 // ============================================================================
@@ -297,7 +372,12 @@ describe('Anthropic streaming adapter — unrecognized-event drift instrument', 
     for (const w of warnings) {
       expect(w.message.startsWith('ai-assist:unrecognized-event ')).toBe(true);
       expect(w.message).toContain('RECOGNIZED_ANTHROPIC_EVENTS');
+      // The warning must include a payload preview so a triager can see the JSON shape
+      // that arrived without re-running the scenario under a debugger.
+      expect(w.message).toContain('payload preview:');
     }
+    expect(warnings[0].message).toContain('"foo":1');
+    expect(warnings[1].message).toContain('"bar":3');
   });
 
   test('does not warn for recognized-but-silently-handled Anthropic lifecycle events (message_start, ping)', async () => {

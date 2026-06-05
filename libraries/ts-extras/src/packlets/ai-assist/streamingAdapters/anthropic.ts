@@ -42,6 +42,7 @@ import { anthropicEffortToBudgetTokens, type IResolvedThinkingConfig } from '../
 import {
   IStreamApiConfig,
   UNRECOGNIZED_EVENT_WARN_TAG,
+  formatUnrecognizedEventPayloadPreview,
   openSseConnection,
   validateEventPayload
 } from './common';
@@ -434,8 +435,10 @@ async function* translateAnthropicStream(
         warnedEvents.add(eventName);
         logger?.warn(
           `${UNRECOGNIZED_EVENT_WARN_TAG} Anthropic streaming adapter: unrecognized SSE event ` +
-            `'${eventName}'. This may indicate provider drift — if the new event carries data ` +
-            `the adapter should surface, add a handler; otherwise add the name to ` +
+            `'${eventName}'. ` +
+            `payload preview: ${formatUnrecognizedEventPayloadPreview(message.data)}. ` +
+            `This may indicate provider drift — if the new event carries data the adapter ` +
+            `should surface, add a handler; otherwise add the name to ` +
             `RECOGNIZED_ANTHROPIC_EVENTS.`
         );
       }

@@ -42,6 +42,7 @@ import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import {
   IStreamApiConfig,
   UNRECOGNIZED_EVENT_WARN_TAG,
+  formatUnrecognizedEventPayloadPreview,
   openSseConnection,
   validateEventPayload
 } from './common';
@@ -421,8 +422,10 @@ async function* translateOpenAiResponsesStream(
         warnedEvents.add(eventName);
         logger?.warn(
           `${UNRECOGNIZED_EVENT_WARN_TAG} OpenAI Responses adapter: unrecognized SSE event ` +
-            `'${eventName}'. This may indicate provider drift — if the new event carries data ` +
-            `the adapter should surface, add a handler; otherwise add the name to ` +
+            `'${eventName}'. ` +
+            `payload preview: ${formatUnrecognizedEventPayloadPreview(message.data)}. ` +
+            `This may indicate provider drift — if the new event carries data the adapter ` +
+            `should surface, add a handler; otherwise add the name to ` +
             `RECOGNIZED_OPENAI_RESPONSES_EVENTS.`
         );
       }
