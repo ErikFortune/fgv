@@ -292,7 +292,12 @@ async function* translateOpenAiResponsesStream(
         /* c8 ignore next 1 - defensive: payload null branch unreachable after validation */
         if (payload) {
           truncated = payload.response.status === 'incomplete';
-          incompleteReason = payload.response.incomplete_details?.reason;
+          // Per IAiStreamDone.incompleteReason's contract, the reason is meaningful only
+          // when the response was truncated — gate the capture on `truncated` so a stray
+          // incomplete_details on a non-incomplete payload never leaks through.
+          if (truncated) {
+            incompleteReason = payload.response.incomplete_details?.reason;
+          }
         }
         completed = true;
         /* c8 ignore next 1 - defensive: eventName === 'error' alternative not exercised in tests */
