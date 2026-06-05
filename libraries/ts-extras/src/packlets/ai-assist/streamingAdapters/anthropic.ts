@@ -39,7 +39,12 @@ import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } f
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toAnthropicTools } from '../toolFormats';
 import { anthropicEffortToBudgetTokens, type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
-import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
+import {
+  IStreamApiConfig,
+  UNRECOGNIZED_EVENT_WARN_TAG,
+  openSseConnection,
+  validateEventPayload
+} from './common';
 
 // ============================================================================
 // Accumulated block types (internal — used by C3 continuation builder)
@@ -424,9 +429,9 @@ async function* translateAnthropicStream(
         // handled or confirmed safe to ignore.
         warnedEvents.add(eventName);
         logger?.warn(
-          `Anthropic streaming adapter: unrecognized SSE event '${eventName}'. ` +
-            `This may indicate provider drift — if the new event carries data the adapter ` +
-            `should surface, add a handler; otherwise add the name to ` +
+          `${UNRECOGNIZED_EVENT_WARN_TAG} Anthropic streaming adapter: unrecognized SSE event ` +
+            `'${eventName}'. This may indicate provider drift — if the new event carries data ` +
+            `the adapter should surface, add a handler; otherwise add the name to ` +
             `RECOGNIZED_ANTHROPIC_EVENTS.`
         );
       }

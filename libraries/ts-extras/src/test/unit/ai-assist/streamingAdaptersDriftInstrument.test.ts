@@ -181,8 +181,11 @@ describe('OpenAI Responses streaming adapter — unrecognized-event drift instru
     expect(warnings).toHaveLength(2);
     expect(warnings[0].message).toContain("'response.totally_new_event_type'");
     expect(warnings[1].message).toContain("'response.also_unknown'");
-    // Both warnings should mention the allowlist constant name so a developer can find it.
+    // Each warning must start with the stable filter prefix so production deployments
+    // can alert on the prefix without coupling to the per-adapter detail message.
     for (const w of warnings) {
+      expect(w.message.startsWith('ai-assist:unrecognized-event ')).toBe(true);
+      // The warning must also mention the allowlist constant so a developer can find it.
       expect(w.message).toContain('RECOGNIZED_OPENAI_RESPONSES_EVENTS');
     }
   });
@@ -289,7 +292,10 @@ describe('Anthropic streaming adapter — unrecognized-event drift instrument', 
     expect(warnings).toHaveLength(2);
     expect(warnings[0].message).toContain("'future_anthropic_event'");
     expect(warnings[1].message).toContain("'another_unknown'");
+    // Each warning must start with the stable filter prefix so production deployments
+    // can alert on the prefix without coupling to the per-adapter detail message.
     for (const w of warnings) {
+      expect(w.message.startsWith('ai-assist:unrecognized-event ')).toBe(true);
       expect(w.message).toContain('RECOGNIZED_ANTHROPIC_EVENTS');
     }
   });

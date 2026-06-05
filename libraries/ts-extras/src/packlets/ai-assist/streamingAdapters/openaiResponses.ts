@@ -39,7 +39,12 @@ import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } f
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toResponsesApiTools } from '../toolFormats';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
-import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
+import {
+  IStreamApiConfig,
+  UNRECOGNIZED_EVENT_WARN_TAG,
+  openSseConnection,
+  validateEventPayload
+} from './common';
 
 // ============================================================================
 // Accumulated call state (internal — used by C3 continuation builder)
@@ -201,9 +206,9 @@ const responsesErrorPayload: Validator<IResponsesErrorPayload> = Validators.obje
  * a one-time `logger.warn` per stream — making provider drift (new event types from a model
  * update) visible empirically instead of silently no-op'd.
  *
- * Source: official `@anthropic-ai` SDK source `responses.ts` event-type literal-string sweep
- * plus the xAI Responses superset. Add to this set when a new event type is observed and
- * confirmed safe to ignore.
+ * Source: official `openai-node` SDK source (`src/resources/responses/responses.ts`)
+ * event-type literal-string sweep, plus the xAI Responses superset. Add to this set when a
+ * new event type is observed and confirmed safe to ignore.
  *
  * @internal
  */
@@ -415,9 +420,9 @@ async function* translateOpenAiResponsesStream(
         // either handled or confirmed safe to ignore.
         warnedEvents.add(eventName);
         logger?.warn(
-          `OpenAI Responses adapter: unrecognized SSE event '${eventName}'. ` +
-            `This may indicate provider drift — if the new event carries data the adapter ` +
-            `should surface, add a handler; otherwise add the name to ` +
+          `${UNRECOGNIZED_EVENT_WARN_TAG} OpenAI Responses adapter: unrecognized SSE event ` +
+            `'${eventName}'. This may indicate provider drift — if the new event carries data ` +
+            `the adapter should surface, add a handler; otherwise add the name to ` +
             `RECOGNIZED_OPENAI_RESPONSES_EVENTS.`
         );
       }

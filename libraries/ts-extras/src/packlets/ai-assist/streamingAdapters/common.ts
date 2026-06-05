@@ -95,6 +95,18 @@ export interface IStreamApiConfig {
 }
 
 /**
+ * Stable log-line prefix that every streaming adapter's "unrecognized SSE event"
+ * warning starts with. Production deployments can filter / alert on this exact
+ * substring without coupling to the per-adapter detail message. Surfacing this
+ * as a shared constant ensures all adapters emit the same prefix; loosening or
+ * renaming the prefix is a coordinated, intentional change rather than a per-file
+ * accident.
+ *
+ * @internal
+ */
+export const UNRECOGNIZED_EVENT_WARN_TAG: string = 'ai-assist:unrecognized-event';
+
+/**
  * Opens an SSE-style POST connection. Returns the underlying Response on a
  * 2xx; failures (network, non-2xx, missing body) surface as Result.fail
  * carrying the body text.
