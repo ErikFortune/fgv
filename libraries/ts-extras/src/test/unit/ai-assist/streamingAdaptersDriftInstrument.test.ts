@@ -566,6 +566,23 @@ describe('formatUnrecognizedEventPayloadPreview — default-safe structural shap
     }
   });
 
+  test('browser environments without `process` stay default-safe (globalThis-guarded access)', () => {
+    // Simulate a browser bundle: `globalThis.process` is undefined. The optional-chain
+    // access falls through to default-safe without throwing. (This is also why we
+    // access via `globalThis` rather than a bare `process` identifier — webpack's
+    // static analysis would try to bundle/polyfill `process` for browser consumers
+    // otherwise.)
+    const originalProcess = (globalThis as unknown as { process?: unknown }).process;
+    (globalThis as unknown as { process?: unknown }).process = undefined;
+    try {
+      const data = JSON.stringify({ secret: 'should-not-leak' });
+      const preview = formatUnrecognizedEventPayloadPreview(data);
+      expect(preview).toBe(`{ keys: [secret], length: ${data.length} }`);
+    } finally {
+      (globalThis as unknown as { process?: unknown }).process = originalProcess;
+    }
+  });
+
   test('opt-in env var with empty string value stays default-safe', () => {
     const originalEnv = process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD;
     process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD = '';

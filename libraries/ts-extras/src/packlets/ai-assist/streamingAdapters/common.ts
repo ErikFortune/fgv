@@ -161,14 +161,14 @@ export const UNRECOGNIZED_EVENT_FULL_PAYLOAD_ENV_VAR: string = 'AI_ASSIST_UNRECO
 export function formatUnrecognizedEventPayloadPreview(data: string): string {
   if (data.length === 0) return '<no payload>';
 
-  // Opt-in raw preview for ops triage. Browser-safe `process` guard since
-  // this module is also reachable from non-Node bundles.
-  const rawPreviewOptIn =
-    typeof process !== 'undefined' &&
-    process.env !== undefined &&
-    process.env[UNRECOGNIZED_EVENT_FULL_PAYLOAD_ENV_VAR] !== undefined &&
-    process.env[UNRECOGNIZED_EVENT_FULL_PAYLOAD_ENV_VAR] !== '' &&
-    process.env[UNRECOGNIZED_EVENT_FULL_PAYLOAD_ENV_VAR] !== '0';
+  // Opt-in raw preview for ops triage. Accessed via `globalThis` (always
+  // defined) rather than a bare `process` reference, so webpack/rollup never
+  // try to bundle or polyfill `process` for browser consumers. A
+  // `typeof process !== 'undefined'` guard is runtime-safe but still triggers
+  // webpack's static module resolution on the `process` identifier.
+  const proc = (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process;
+  const envValue = proc?.env?.[UNRECOGNIZED_EVENT_FULL_PAYLOAD_ENV_VAR];
+  const rawPreviewOptIn = envValue !== undefined && envValue !== '' && envValue !== '0';
   if (rawPreviewOptIn) {
     const collapsed = data.replace(/\s+/g, ' ');
     return collapsed.length > UNRECOGNIZED_EVENT_PAYLOAD_PREVIEW_MAX
