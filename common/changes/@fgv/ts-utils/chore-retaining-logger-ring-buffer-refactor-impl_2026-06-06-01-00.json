@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Refactor RetainingLogger internals to compose RetainingRingBuffer; extract ILogger interface to base packlet to break circular dependency",
+      "type": "none",
+      "packageName": "@fgv/ts-utils"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

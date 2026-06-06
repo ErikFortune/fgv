@@ -20,8 +20,7 @@
  * SOFTWARE.
  */
 
-import { captureResult, DetailedResult, failWithDetail, Result, succeedWithDetail } from '../base';
-import { ILogger } from '../logging';
+import { ILogger, captureResult, DetailedResult, failWithDetail, Result, succeedWithDetail } from '../base';
 import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
 

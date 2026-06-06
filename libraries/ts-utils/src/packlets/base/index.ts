@@ -21,6 +21,7 @@
  */
 
 export * from './brand';
+export * from './loggerInterface';
 export * from './mapResults';
 export * from './messageAggregator';
 export { Normalizer } from './normalize';
