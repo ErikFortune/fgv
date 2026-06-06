@@ -22,7 +22,7 @@ PR #456 merged 2026-06-04 to the `ts-prompt-assist-observability` integration br
 
 - [x] Design + triage docs internalized (`design.md` / `phase-b-triage.md`)
 - [x] `RetainingRingBuffer<T>` shipped in `@fgv/ts-utils` collections packlet
-- [x] `observe` packlet shipped in `@fgv/ts-prompt-assist`: `IPromptObserver`, `IPromptObservationRecord` (`phase`-discriminated union), `IPromptObservationQuery`, `PromptObservationStore`
+- [x] `observe` packlet shipped in `@fgv/ts-prompt-assist`: `IPromptObserver`, `IPromptObservationRecord` (`phase`-discriminated union), `IPromptObservationQuery`, `PromptObservationStore`, `IQualifierResolver` + `defaultStringEqualityQualifierResolver` (added during cluster-close PR #460 per Copilot R4 + Erik's ts-res framing — see "Cluster-close additions" below)
 - [x] DI wiring: additive `observers?: ReadonlyArray<IPromptObserver>` on `IPromptLibraryCreateParams`
 - [x] Hook fires at the three public method boundaries (`resolve` / `resolveJsonOutput` / `resolveFreeTextOutput`); never inside `_resolveInternal`
 - [x] OQ-3: async + awaited default + fire-and-forget opt-in (per-observer `fireAndForget` flag); documented + tested both directions including the mixed-mode case
@@ -83,3 +83,15 @@ Implementer-driven, stopped at round 2 on diminishing returns:
 ## Follow-up findings filed
 
 - `findings/inbox/2026-06-04-ring-buffer-seq-authority.md` — Phase C refinement of the Phase A buffer sketch: `RetainingRingBuffer<T>` ships as a **pure seq-ring** (caller mints seq+timestamp); `PromptLibrary` owns the single seq authority. Forced by OQ-5 `linkedResolveSeq` cross-store consistency under multi-observer fan-out. Also the minimal-blast-radius shape for the `retaining-logger-ring-buffer-refactor` fast-follow. **Read this before the fast-follow.**
+
+---
+
+## Cluster-close additions (PR #460)
+
+The cluster-close PR landed three substantive additions beyond Phase C's original scope, all driven by reviewer feedback during the layer-2 Copilot loop:
+
+1. **`durationMs` semantic fix.** Copilot R2 identified that the output observation timer started before `_resolveObserved`, so awaited observer-dispatch latency on the resolve record leaked into the output record's `durationMs` (contradicting the `IPromptObservationBase.durationMs` documented semantic). Fixed: `_resolveObserved` now returns `resolveDurationMs` captured BEFORE its own observer dispatch; output methods start a fresh timer after `_resolveObserved` returns and report `resolveDurationMs + (now - outputStartedAt)`.
+
+2. **`_observationContentHash` made genuinely best-effort.** Copilot R4 identified that the chain called `Hash.Crc32Normalizer.crc32Hash` inside `succeed(...)`, so a throw would bypass the Result chain and break `resolve()`. Wrapped in `captureResult` so any exception cleanly degrades to `''` via `.orDefault`.
+
+3. **Injectable `IQualifierResolver`.** Erik's review (2026-06-05) flagged that `_matchesQualifiers` did naive string equality, but records were produced by `PromptLibrary._resolveCandidates`'s ts-res-driven match (qualifier types, BCP47 similarity, priorities) — incompatible. Erik's framing: "consider using ts-res instead of hardcoding custom (and incompatible) qualifier match logic." Verified prompt-assist does use ts-res fully via `Runtime.ValidatingSimpleContextQualifierProvider` + `Runtime.ResourceResolver.resolveDecision`. Factored the qualifier-match strategy into an injectable `IQualifierResolver` interface with a default `defaultStringEqualityQualifierResolver` implementation. The future ts-res-driven swap is now a pure implementation-of-interface change with no API surface churn on the store. Queued in FUTURE.md as priority-uncertain follow-up.

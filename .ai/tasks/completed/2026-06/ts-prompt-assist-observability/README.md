@@ -13,7 +13,7 @@
 A hook to **observe every prompt resolution as it flows**, with a filterable default store — built on a new generic ring-buffer primitive.
 
 - **`@fgv/ts-utils`: `RetainingRingBuffer<T extends { seq: number }>`** (collections) — a generic bounded most-recent-N ring (O(1) eviction), monotonic-`seq` cursor paging, predicate filtering (`query({ sinceSeq?, limit?, filter? })`), `lastSeq` stable across `clear()`. A *pure* substrate: the caller mints each record's `seq`/`timestamp`.
-- **`@fgv/ts-prompt-assist`: `observe` packlet** — `IPromptObserver` (async `observe` + `fireAndForget?`), the `phase`-discriminated `IPromptObservationRecord` union, `IPromptObservationQuery`, and `PromptObservationStore` (implements the observer, composes the ring, schema-aware `query`). `PromptLibrary` gains an additive `observers?` field and fans out at the three public resolve/output boundaries.
+- **`@fgv/ts-prompt-assist`: `observe` packlet** — `IPromptObserver` (async `observe` + `fireAndForget?`), the `phase`-discriminated `IPromptObservationRecord` union, `IPromptObservationQuery`, `IQualifierResolver` (injectable qualifier-match strategy) + `defaultStringEqualityQualifierResolver` (default impl), and `PromptObservationStore` (implements the observer, composes the ring, schema-aware `query` that delegates qualifier matching to the injected resolver). `PromptLibrary` gains an additive `observers?` field and fans out at the three public resolve/output boundaries.
 
 ## How it answers the brief's framing
 
@@ -47,4 +47,14 @@ A hook to **observe every prompt resolution as it flows**, with a filterable def
 
 ## Open after this cluster
 
-`retaining-logger-ring-buffer-refactor` (committed brief, in `active/`) — refactor `RetainingLogger` to compose `RetainingRingBuffer<ILogRecord>`, retiring the duplicated ring. Commission after this cluster closes to `release`.
+**Committed fast-follow:**
+
+- **`retaining-logger-ring-buffer-refactor`** (brief at `.ai/tasks/completed/2026-06/retaining-logger-ring-buffer-refactor/` — rides into `release` with this cluster as queued substrate). Refactor `RetainingLogger` to compose `RetainingRingBuffer<ILogRecord>`, retiring the duplicated ring. **The deferral is sound only if this commission actually lands** — otherwise the two ring implementations drift and the Q1/OQ-6 falsifiability argument retroactively degrades from "existing second consumer" to "hypothetical second consumer." Treat as a committed fast-follow, not a parking-lot reference.
+
+**Queued (priority uncertain — surfaced during cluster-close PR review):**
+
+- **ts-res-driven `IQualifierResolver` implementation.** PR #460 added an injectable qualifier-match strategy (`IQualifierResolver`) to `PromptObservationStore` with a default `defaultStringEqualityQualifierResolver`. The default does naive string equality on supplied (defined) axes — deliberately narrower than `PromptLibrary.resolve`'s ts-res-driven match (BCP47 similarity, qualifier-type priorities, etc.). Erik's framing (2026-06-05): "consider using ts-res instead of hardcoding custom (and incompatible) qualifier match logic." A future `TsResQualifierResolver` impl wraps ts-res's match path and is a pure implementation-of-interface change with no API surface churn on the store. See FUTURE.md → "Prompt observability for `@fgv/ts-prompt-assist`" → "ts-res-driven qualifier matching for `PromptObservationStore.query`" entry for the full disposition.
+
+- **`MultiPromptObserver` standalone class** (Phase B OQ-7 deferred to v0.2; commission when a consumer surfaces a need to compose observers outside the library).
+
+- **Partial-trace threading on failure resolve records** (Phase B OQ-4 deferred; requires `PromptLibrary` internals work).
