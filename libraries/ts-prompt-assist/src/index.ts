@@ -6,6 +6,7 @@ export * from './packlets/converters';
 export * from './packlets/registry';
 export * from './packlets/store';
 export * from './packlets/fixture';
+export * from './packlets/observe';
 export * from './packlets/resolve';
 
 // Selective re-export: `createPatternScreener` is the public screener factory.

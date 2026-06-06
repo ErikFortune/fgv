@@ -470,6 +470,10 @@ declare namespace Collections {
         ConversionErrorHandling,
         IReadOnlyConvertingResultMapConstructorParams,
         ReadOnlyConvertingResultMap,
+        IRetainedRecord,
+        IRetainingRingBufferQuery,
+        IRetainingRingBufferCreateParams,
+        RetainingRingBuffer,
         IResultMapConstructorParams,
         ResultMapValueFactory,
         IResultMap,
@@ -1761,6 +1765,23 @@ export interface IResultReportOptions<TD = unknown> {
 // @beta
 export type IResultValueType<T> = T extends IResult<infer TV> ? TV : never;
 
+// @public
+export interface IRetainedRecord {
+    readonly seq: number;
+}
+
+// @public
+export interface IRetainingRingBufferCreateParams {
+    readonly maxRecords?: number;
+}
+
+// @public
+export interface IRetainingRingBufferQuery<T extends IRetainedRecord> {
+    readonly filter?: (record: T) => boolean;
+    readonly limit?: number;
+    readonly sinceSeq?: number;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2626,6 +2647,17 @@ class RetainingLogger extends LoggerBase {
     // @internal (undocumented)
     protected _logStructured(level: MessageLogLevel, formatted: string, message: unknown, parameters: readonly unknown[]): void;
     get records(): ReadonlyArray<ILogRecord>;
+}
+
+// @public
+export class RetainingRingBuffer<T extends IRetainedRecord> {
+    constructor(params?: IRetainingRingBufferCreateParams);
+    clear(): void;
+    get lastSeq(): number;
+    push(record: T): T;
+    query(query?: IRetainingRingBufferQuery<T>): ReadonlyArray<T>;
+    get records(): ReadonlyArray<T>;
+    get size(): number;
 }
 
 // @public

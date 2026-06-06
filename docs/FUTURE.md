@@ -123,3 +123,46 @@ Current ai-assist adapters discard thinking / reasoning content by design — on
 **Dependencies:** Phase A-style design on the caller-facing event API; agreement on which providers' reasoning content should surface.
 
 **Reference:** 2026-06-04 conversation; PR #447 P1-1 + PR #449 thinking-wire-shape + PR #448 browser-export demonstrate the failure mode; L37 codification (PR #445) is the principle; `samples/testbed/src/scenarios/anthropicClientTools/` is the shape template.
+
+---
+
+## Prompt observability for `@fgv/ts-prompt-assist`
+
+**Status: shipped 2026-06-05 via the `ts-prompt-assist-observability` cluster** (Phase A #455 + Phase B triage commit + Phase C #456). Two new pieces of surface:
+
+- **`@fgv/ts-utils` (collections):** `RetainingRingBuffer<T>` — a generic bounded most-recent-N ring with monotonic-`seq` cursor paging, predicate filtering, and `lastSeq` stable across `clear()`. A *pure* substrate (caller mints `seq`/`timestamp`).
+- **`@fgv/ts-prompt-assist`:** new `observe` packlet — `IPromptObserver` (async `observe` + `fireAndForget?`), `IPromptObservationRecord` (`phase`-discriminated union: resolve vs output, cross-linked via `linkedResolveSeq`), `IPromptObservationQuery`, `PromptObservationStore` (implements the observer, composes the ring, schema-aware `query`). `PromptLibrary` gains additive `IPromptLibraryCreateParams.observers?` and fans out at the three public boundaries (`resolve` / `resolveJsonOutput` / `resolveFreeTextOutput`).
+
+See `.ai/tasks/completed/2026-06/ts-prompt-assist-observability/README.md` for the full arc.
+
+**Remaining future scope (carried forward):**
+
+### `RetainingLogger` refactor to compose `RetainingRingBuffer`
+
+**Status: committed fast-follow, brief queued at `.ai/tasks/completed/2026-06/retaining-logger-ring-buffer-refactor/`.** Phase B explicitly deferred this refactor out of Phase C to keep the implementation additive. Commission immediately after the observability cluster closes to `release`. The deferral is sound **only if this commission actually lands** — otherwise the two ring implementations (`RetainingLogger`'s hand-rolled internal ring + the new `RetainingRingBuffer<T>`) drift, and the Phase A Q1 falsifiability argument retroactively degrades from "abstraction earns its keep via existing second consumer" to "hypothetical second consumer."
+
+The refactor is internal-only: `RetainingLogger`'s public surface (`ILogger` / `LogReporter` / `getRecords` / `lastSeq` / `clear`) is unchanged. The load-bearing check is that `etc/ts-utils.api.md` regenerates as a no-op.
+
+**Reference:** `.ai/tasks/completed/2026-06/retaining-logger-ring-buffer-refactor/brief.md`.
+
+### `MultiPromptObserver` standalone class
+
+Phase B OQ-7 deferred to v0.2: the library itself is the fan-out point today (it holds the `observers` array and runs `_observe`). Add a standalone `MultiPromptObserver` only if a consumer surfaces a need to compose observers *outside* the library (e.g., a tenant-aware fan-out that wraps multiple sub-observers before injection). File the use case as a finding when it appears.
+
+### Partial-trace threading on failure resolve records
+
+Phase B OQ-4 deferred: `IPromptResolveTrace` is constructed only on the success path inside `_renderResolved`. A failed `resolve()` returns a `Result.fail` with just a message. So `IPromptResolveObservation` on `outcome: 'failure'` carries `error` only — no partial trace. Surfacing partial trace would require `PromptLibrary` internals work (threading partial-trace state out of every early-return in `_resolveOnce`). Defer until consumer demand actually surfaces.
+
+### ts-res-driven qualifier matching for `PromptObservationStore.query`
+
+**Status: injection point landed 2026-06-05 via PR #460; default-implementation swap deferred (priority uncertain).**
+
+PR #460 factored qualifier-match into an injectable `IQualifierResolver` dependency on `PromptObservationStore`. The default `defaultStringEqualityQualifierResolver` does naive string equality on supplied (defined) axes — narrower semantics than `PromptLibrary.resolve` itself, which goes through ts-res's full qualifier-type matching (BCP47 language-tag similarity, priority ordering, custom type rules). A record produced under `lang=fr-CA` will NOT be returned by a query asking for `lang=fr` against the default resolver, even though ts-res would have considered them a match.
+
+Erik's framing (2026-06-05): "consider using ts-res instead of hardcoding custom (and incompatible) qualifier match logic." Verified: `PromptLibrary._resolveCandidates` does use ts-res fully (via `Runtime.ValidatingSimpleContextQualifierProvider` + `Runtime.ResourceResolver.resolveDecision`), so the store's narrow default IS a real divergence from how matches were produced.
+
+**Future work:** implement a `TsResQualifierResolver` (or similar) that wraps ts-res's match path — probably via `ValidatingSimpleContextQualifierProvider` + the relevant matching primitives — so consumers can inject it for similarity-aware queries. Since the injection point is already in place, this is a pure implementation-of-interface change with no API surface churn on the store.
+
+**Why deferred:** priority uncertain. The default's narrow semantics are documented (`IPromptObservationQuery.qualifiers` TSDoc explicitly cites the divergence and the injection point). Commission when a consumer surfaces a real need for similarity-aware observability queries, OR proactively if the broader posture warrants it.
+
+**Reference:** PR #460 review thread on `promptObservationStore.ts:195`; the `_resolveCandidates` path in `promptLibrary.ts` is the reference for what a ts-res-equivalent resolver needs to do.
