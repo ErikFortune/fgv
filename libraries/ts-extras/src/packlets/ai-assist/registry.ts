@@ -391,6 +391,11 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
     ],
     groq: [{ idPattern: /./, capabilities: ['chat'] }],
     mistral: [{ idPattern: /./, capabilities: ['chat'] }],
+    // Self-hosted OpenAI-compatible servers (Ollama, LM Studio, llama.cpp) serve
+    // arbitrary, caller-chosen models whose ids we can't enumerate ahead of time.
+    // The catch-all `/./` intentionally departs from the "narrow patterns" rule
+    // above: assume `chat` for everything and let the caller override via
+    // `capabilityConfig` when they know their deployment serves image/embedding models.
     ollama: [{ idPattern: /./, capabilities: ['chat'] }],
     'openai-compat': [{ idPattern: /./, capabilities: ['chat'] }]
   }
