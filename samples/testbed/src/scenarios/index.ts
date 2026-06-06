@@ -15,6 +15,7 @@ import { geminiClientToolsScenario } from './geminiClientTools';
 import { localClassifierSafetyScenario } from './localClassifierSafety';
 import { localEmbeddingSearchScenario } from './localEmbeddingSearch';
 import { localSummarizationScenario } from './localSummarization';
+import { mcpProbeScenario } from './mcpProbe';
 import { openaiClientToolsScenario } from './openaiClientTools';
 import { xaiClientToolsScenario } from './xaiClientTools';
 
@@ -29,5 +30,6 @@ export const scenarios: readonly IScenario[] = [
   xaiClientToolsScenario,
   localClassifierSafetyScenario,
   localEmbeddingSearchScenario,
-  localSummarizationScenario
+  localSummarizationScenario,
+  mcpProbeScenario
 ];

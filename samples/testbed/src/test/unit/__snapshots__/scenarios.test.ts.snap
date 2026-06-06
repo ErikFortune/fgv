@@ -9,5 +9,6 @@ Array [
   "local-classifier-safety",
   "local-embedding-search",
   "local-summarization",
+  "mcp-probe",
 ]
 `;
