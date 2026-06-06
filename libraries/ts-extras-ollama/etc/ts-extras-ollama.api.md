@@ -4,9 +4,13 @@
 
 ```ts
 
+import { JsonSchema } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Ollama } from 'ollama';
 import { Result } from '@fgv/ts-utils';
+
+// @public
+export function chatStructured<T>(client: IOllamaClient, params: IChatStructuredParams<T>): Promise<Result<IOllamaChatStructuredResult<T>>>;
 
 // @public
 export function createOllamaClient(params?: ICreateOllamaClientParams): Result<IOllamaClient>;
@@ -15,10 +19,35 @@ export function createOllamaClient(params?: ICreateOllamaClientParams): Result<I
 export function deleteModel(client: IOllamaClient, model: string): Promise<Result<IOllamaDeleteResult>>;
 
 // @public
+export interface IChatStructuredParams<T> {
+    readonly keepAlive?: string | number;
+    readonly messages: ReadonlyArray<IOllamaChatMessage>;
+    readonly model: string;
+    readonly options?: Readonly<Record<string, JsonValue>>;
+    readonly schema: JsonSchema.ISchemaValidator<T>;
+    readonly signal?: AbortSignal;
+}
+
+// @public
 export interface ICreateOllamaClientParams {
     readonly fetch?: typeof fetch;
     readonly headers?: Record<string, string>;
     readonly host?: string;
+}
+
+// @public
+export interface IOllamaChatMessage {
+    readonly content: string;
+    readonly images?: ReadonlyArray<string>;
+    readonly role: 'system' | 'user' | 'assistant' | 'tool';
+}
+
+// @public
+export interface IOllamaChatStructuredResult<T> {
+    readonly doneReason?: string;
+    readonly model: string;
+    readonly raw: string;
+    readonly value: T;
 }
 
 // @public
