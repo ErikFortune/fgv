@@ -517,12 +517,6 @@
       "projectFolder": "apps/sudoku",
       "shouldPublish": false,
       "tags": ["apps", "sudoku", "react", "ui"]
-    },
-    {
-      "packageName": "@fgv/ts-utils-browser-test",
-      "projectFolder": "apps/ts-utils-browser-test",
-      "shouldPublish": false,
-      "tags": ["apps", "tests", "vite"]
     }
   ]
 }
