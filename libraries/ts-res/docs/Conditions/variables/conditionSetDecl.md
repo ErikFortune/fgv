@@ -6,4 +6,4 @@ Converter which converts to a Conditions.IConditionSetDecl | condition set decla
 
 ## Type
 
-`ObjectConverter<IConditionSetDecl, unknown>`
+`ObjectConverter<IConditionSetDecl<string>, unknown>`

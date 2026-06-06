@@ -2,15 +2,11 @@
 
 ## IAiImageGenerationOptions.size property
 
-Image dimensions. Used by openai-format providers (mapped to the
-provider's `size` field). Ignored by Imagen — use
-IAiImageGenerationOptions.imagen `aspectRatio` instead.
-
-Note: each model has its own accepted set; `dall-e-3` only accepts the
-values listed here.
+Image dimensions for OpenAI models (mapped to `size` field).
+For xAI aspect ratio or Imagen aspect ratio, use the corresponding `models` family block.
 
 **Signature:**
 
 ```typescript
-readonly size: "auto" | "1024x1024" | "1024x1792" | "1792x1024";
+readonly size: AiImageSize;
 ```

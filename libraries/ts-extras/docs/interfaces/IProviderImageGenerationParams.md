@@ -140,7 +140,7 @@ string
 
 </td><td>
 
-Optional override of the descriptor's default base URL.
+Optional override of the descriptor's base URL; per-route suffix is appended unchanged.
 
 </td></tr>
 </tbody></table>

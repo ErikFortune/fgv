@@ -2,6 +2,128 @@
 
 # Namespace: Convert
 
+## Functions
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[typedLooseConditionDecl](./functions/typedLooseConditionDecl.md)
+
+</td><td>
+
+Returns a `Converter` for a `Json.ILooseConditionDecl<TQualifierNames>`
+
+</td></tr>
+<tr><td>
+
+[typedConditionSetDecl](./functions/typedConditionSetDecl.md)
+
+</td><td>
+
+Returns a `Converter` for a `Json.ConditionSetDecl<TQualifierNames>`
+
+</td></tr>
+<tr><td>
+
+[typedLooseResourceCandidateDecl](./functions/typedLooseResourceCandidateDecl.md)
+
+</td><td>
+
+Returns a `Converter` for a `Json.ILooseResourceCandidateDecl<TQualifierNames>`
+
+</td></tr>
+<tr><td>
+
+[typedImporterResourceCandidateDecl](./functions/typedImporterResourceCandidateDecl.md)
+
+</td><td>
+
+Returns a `Converter` for a `Json.IImporterResourceCandidateDecl<TQualifierNames>`
+
+</td></tr>
+<tr><td>
+
+[typedChildResourceCandidateDecl](./functions/typedChildResourceCandidateDecl.md)
+
+</td><td>
+
+Returns a `Converter` for a `Json.IChildResourceCandidateDecl<TQualifierNames>`
+
+</td></tr>
+<tr><td>
+
+[typedLooseResourceDecl](./functions/typedLooseResourceDecl.md)
+
+</td><td>
+
+Returns a `Converter` for a `Json.ILooseResourceDecl<TQualifierNames>`
+
+</td></tr>
+<tr><td>
+
+[typedChildResourceDecl](./functions/typedChildResourceDecl.md)
+
+</td><td>
+
+Returns a `Converter` for a `Json.IChildResourceDecl<TQualifierNames>`
+
+</td></tr>
+<tr><td>
+
+[typedContainerContextDecl](./functions/typedContainerContextDecl.md)
+
+</td><td>
+
+Returns a `Converter` for a `Json.IContainerContextDecl<TQualifierNames>`
+
+</td></tr>
+<tr><td>
+
+[typedResourceTreeChildNodeDecl](./functions/typedResourceTreeChildNodeDecl.md)
+
+</td><td>
+
+Returns a `Converter` for a `Json.IResourceTreeChildNodeDecl<TQualifierNames>`
+
+</td></tr>
+<tr><td>
+
+[typedResourceTreeRootDecl](./functions/typedResourceTreeRootDecl.md)
+
+</td><td>
+
+Returns a `Converter` for a `Json.IResourceTreeRootDecl<TQualifierNames>`
+
+</td></tr>
+<tr><td>
+
+[typedResourceCollectionDecl](./functions/typedResourceCollectionDecl.md)
+
+</td><td>
+
+Returns a `Converter` for a `Json.IResourceCollectionDecl<TQualifierNames>`
+
+</td></tr>
+<tr><td>
+
+[typedImporterResourceCollectionDecl](./functions/typedImporterResourceCollectionDecl.md)
+
+</td><td>
+
+Returns a `Converter` for a `Json.IImporterResourceCollectionDecl<TQualifierNames>`
+
+</td></tr>
+</tbody></table>
+
 ## Variables
 
 <table><thead><tr><th>

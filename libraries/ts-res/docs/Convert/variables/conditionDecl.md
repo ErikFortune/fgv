@@ -6,4 +6,4 @@ Converter for a Conditions.IConditionDecl | condition declaration.
 
 ## Type
 
-`ObjectConverter<ILooseConditionDecl, unknown>`
+`ObjectConverter<IConditionDecl, unknown>`

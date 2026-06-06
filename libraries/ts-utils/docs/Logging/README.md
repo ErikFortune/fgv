@@ -68,6 +68,24 @@ A no-op Logging.LoggerBase | LoggerBase that does not log anything.
 Abstract base class which wraps an existing Logging.ILogger | ILogger to implement
 
 </td></tr>
+<tr><td>
+
+[MultiLogger](./classes/MultiLogger.md)
+
+</td><td>
+
+An Logging.ILogger | ILogger that fans every log call out to N child loggers,
+
+</td></tr>
+<tr><td>
+
+[RetainingLogger](./classes/RetainingLogger.md)
+
+</td><td>
+
+An Logging.ILogger | ILogger that retains structured log records in a bounded
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -82,6 +100,33 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[ILogReporterCreateParams](./interfaces/ILogReporterCreateParams.md)
+
+</td><td>
+
+Parameters for creating a Logging.LogReporter | LogReporter.
+
+</td></tr>
+<tr><td>
+
+[ILogRecord](./interfaces/ILogRecord.md)
+
+</td><td>
+
+A retained log record.
+
+</td></tr>
+<tr><td>
+
+[IGetRecordsOptions](./interfaces/IGetRecordsOptions.md)
+
+</td><td>
+
+Options for Logging.RetainingLogger.getRecords | RetainingLogger.getRecords.
+
+</td></tr>
 <tr><td>
 
 [ILogger](./interfaces/ILogger.md)
@@ -101,15 +146,6 @@ Extended logger interface that supports logging a short summary message at a
 primary level (error/warn) while emitting the full detail at `detail` level.
 
 </td></tr>
-<tr><td>
-
-[ILogReporterCreateParams](./interfaces/ILogReporterCreateParams.md)
-
-</td><td>
-
-Parameters for creating a Logging.LogReporter | LogReporter.
-
-</td></tr>
 </tbody></table>
 
 ## Type Aliases
@@ -126,15 +162,6 @@ Description
 <tbody>
 <tr><td>
 
-[ReporterLogLevel](./type-aliases/ReporterLogLevel.md)
-
-</td><td>
-
-The level of logging to be used.
-
-</td></tr>
-<tr><td>
-
 [LogValueFormatter](./type-aliases/LogValueFormatter.md)
 
 </td><td>
@@ -149,6 +176,15 @@ A function that formats a value for logging.
 </td><td>
 
 A function that formats a message for logging.
+
+</td></tr>
+<tr><td>
+
+[ReporterLogLevel](./type-aliases/ReporterLogLevel.md)
+
+</td><td>
+
+The level of logging to be used.
 
 </td></tr>
 </tbody></table>

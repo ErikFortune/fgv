@@ -38,7 +38,7 @@ Description
 
 </td><td>
 
-[IKeyDerivationParams](../../interfaces/IKeyDerivationParams.md)
+[IKeyDerivationParams](../../type-aliases/IKeyDerivationParams.md)
 
 </td><td>
 

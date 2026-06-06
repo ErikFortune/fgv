@@ -180,6 +180,19 @@ Gets the value associated with a successful IResult | result,
 </td></tr>
 <tr><td>
 
+[shouldNotFail(label, frameDepth)](./Failure.shouldNotFail.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Asserts at the call site that this IResult | result MUST be a success.
+
+</td></tr>
+<tr><td>
+
 [orDefault(dflt)](./Failure.orDefault.md)
 
 </td><td>
@@ -333,6 +346,19 @@ Propagates interior result, appending any error message to the
 </td><td>
 
 Reports the result to the supplied reporter
+
+</td></tr>
+<tr><td>
+
+[withType()](./Failure.withType.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Re-types this Failure | Failure<T> as Failure | Failure<U> for
 
 </td></tr>
 <tr><td>

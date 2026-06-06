@@ -75,6 +75,15 @@ An IEncryptionProvider that uses a pre-supplied key and crypto provider.
 Node.js implementation of CryptoUtils.ICryptoProvider using the built-in crypto module.
 
 </td></tr>
+<tr><td>
+
+[HpkeProvider](./classes/HpkeProvider.md)
+
+</td><td>
+
+HPKE base mode (RFC 9180) — `DHKEM(X25519, HKDF-SHA256) + HKDF-SHA256 + AES-256-GCM`.
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -128,11 +137,38 @@ Output of CryptoUtils.ICryptoProvider.wrapBytes | wrapBytes.
 </td></tr>
 <tr><td>
 
-[IKeyDerivationParams](./interfaces/IKeyDerivationParams.md)
+[IPbkdf2KeyDerivationParams](./interfaces/IPbkdf2KeyDerivationParams.md)
 
 </td><td>
 
-Key derivation parameters stored in encrypted files.
+PBKDF2 key derivation parameters.
+
+</td></tr>
+<tr><td>
+
+[IArgon2idKeyDerivationParams](./interfaces/IArgon2idKeyDerivationParams.md)
+
+</td><td>
+
+Argon2id key derivation parameters (RFC 9106).
+
+</td></tr>
+<tr><td>
+
+[IArgon2idParams](./interfaces/IArgon2idParams.md)
+
+</td><td>
+
+Parameters for Argon2id key derivation (RFC 9106).
+
+</td></tr>
+<tr><td>
+
+[IArgon2idProvider](./interfaces/IArgon2idProvider.md)
+
+</td><td>
+
+Argon2id key derivation provider (RFC 9106).
 
 </td></tr>
 <tr><td>
@@ -198,6 +234,15 @@ WebCrypto parameters for a single CryptoUtils.KeyPairAlgorithm.
 Parameters for creating an CryptoUtils.IEncryptedFile | encrypted file.
 
 </td></tr>
+<tr><td>
+
+[IHpkeSealResult](./interfaces/IHpkeSealResult.md)
+
+</td><td>
+
+Output of HpkeProvider.sealBase.
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases
@@ -246,6 +291,15 @@ Asymmetric keypair algorithms supported by the crypto provider.
 </td><td>
 
 Supported key derivation functions.
+
+</td></tr>
+<tr><td>
+
+[IKeyDerivationParams](./type-aliases/IKeyDerivationParams.md)
+
+</td><td>
+
+Key derivation parameters stored in encrypted files.
 
 </td></tr>
 <tr><td>
@@ -334,6 +388,42 @@ Encodes a `Uint8Array` to a base64 string.
 Attempts to parse and decrypt a JSON object as an CryptoUtils.IEncryptedFile | encrypted file.
 
 </td></tr>
+<tr><td>
+
+[exportPublicKeyAsMultibaseSpki](./functions/exportPublicKeyAsMultibaseSpki.md)
+
+</td><td>
+
+Exports a public `CryptoKey` as a multibase base64url-encoded SPKI blob.
+
+</td></tr>
+<tr><td>
+
+[importPublicKeyFromMultibaseSpki](./functions/importPublicKeyFromMultibaseSpki.md)
+
+</td><td>
+
+Imports a public key from a multibase base64url-encoded SPKI blob.
+
+</td></tr>
+<tr><td>
+
+[multibaseBase64UrlDecode](./functions/multibaseBase64UrlDecode.md)
+
+</td><td>
+
+Decodes a multibase base64url (no-padding) string back to a `Uint8Array`.
+
+</td></tr>
+<tr><td>
+
+[multibaseBase64UrlEncode](./functions/multibaseBase64UrlEncode.md)
+
+</td><td>
+
+Encodes a `Uint8Array` as a multibase base64url (no-padding) string.
+
+</td></tr>
 </tbody></table>
 
 ## Variables
@@ -355,6 +445,24 @@ Description
 </td><td>
 
 All valid key pair algorithms.
+
+</td></tr>
+<tr><td>
+
+[ARGON2ID_OWASP_MIN](./variables/ARGON2ID_OWASP_MIN.md)
+
+</td><td>
+
+Recommended OWASP 2023 minimum Argon2id parameters.
+
+</td></tr>
+<tr><td>
+
+[ARGON2ID_PASSPHRASE](./variables/ARGON2ID_PASSPHRASE.md)
+
+</td><td>
+
+Stronger Argon2id parameters suitable for user-typed passphrases.
 
 </td></tr>
 <tr><td>

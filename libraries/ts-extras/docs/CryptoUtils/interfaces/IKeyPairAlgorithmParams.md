@@ -37,7 +37,7 @@ Description
 
 </td><td>
 
-EcKeyGenParams | RsaHashedKeyGenParams | { name: "Ed25519" }
+EcKeyGenParams | RsaHashedKeyGenParams | { name: "Ed25519" } | { name: "X25519" }
 
 </td><td>
 
@@ -54,7 +54,7 @@ Algorithm parameters for `crypto.subtle.generateKey`.
 
 </td><td>
 
-EcKeyImportParams | RsaHashedImportParams | { name: "Ed25519" }
+EcKeyImportParams | RsaHashedImportParams | { name: "Ed25519" } | { name: "X25519" }
 
 </td><td>
 

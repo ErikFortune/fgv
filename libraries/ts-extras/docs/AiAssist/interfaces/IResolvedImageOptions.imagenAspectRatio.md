@@ -1,0 +1,9 @@
+[Home](../../README.md) > [AiAssist](../README.md) > [IResolvedImageOptions](./IResolvedImageOptions.md) > imagenAspectRatio
+
+## IResolvedImageOptions.imagenAspectRatio property
+
+**Signature:**
+
+```typescript
+readonly imagenAspectRatio: string;
+```

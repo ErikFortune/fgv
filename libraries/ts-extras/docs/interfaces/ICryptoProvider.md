@@ -180,6 +180,32 @@ Re-imports a public-key JWK as a `CryptoKey` usable for verification or
 </td></tr>
 <tr><td>
 
+[exportPublicKeySpki(publicKey)](./ICryptoProvider.exportPublicKeySpki.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Exports a public `CryptoKey` as a DER-encoded SPKI (SubjectPublicKeyInfo) blob.
+
+</td></tr>
+<tr><td>
+
+[importPublicKeySpki(spkiBytes, algorithm)](./ICryptoProvider.importPublicKeySpki.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Imports a public key from a DER-encoded SPKI blob.
+
+</td></tr>
+<tr><td>
+
 [wrapBytes(plaintext, recipientPublicKey, options)](./ICryptoProvider.wrapBytes.md)
 
 </td><td>
@@ -203,6 +229,71 @@ with `recipientPublicKey`.
 </td><td>
 
 Inverse of CryptoUtils.ICryptoProvider.wrapBytes | wrapBytes.
+
+</td></tr>
+<tr><td>
+
+[sign(privateKey, data)](./ICryptoProvider.sign.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Signs `data` with `privateKey` using the algorithm inferred from the key.
+
+</td></tr>
+<tr><td>
+
+[verify(publicKey, signature, data)](./ICryptoProvider.verify.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Verifies a signature produced by ICryptoProvider.sign.
+
+</td></tr>
+<tr><td>
+
+[timingSafeEqual(a, b)](./ICryptoProvider.timingSafeEqual.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Compares two byte arrays in constant time.
+
+</td></tr>
+<tr><td>
+
+[hmacSha256(key, data)](./ICryptoProvider.hmacSha256.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Computes an HMAC-SHA256 authentication code for `data` using `key`.
+
+</td></tr>
+<tr><td>
+
+[verifyHmacSha256(key, signature, data)](./ICryptoProvider.verifyHmacSha256.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Verifies an HMAC-SHA256 authentication code in constant time.
 
 </td></tr>
 </tbody></table>

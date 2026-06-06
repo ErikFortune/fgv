@@ -6,4 +6,4 @@ Default IndexedDB store name for directory handles.
 
 ## Type
 
-`"directory-handles"`
+`string`

@@ -243,4 +243,19 @@ Logs a message at the given level.
 Formats a message and parameters into a string.
 
 </td></tr>
+<tr><td>
+
+[_logStructured(__level, __formatted, __message, __parameters)](./LoggerBase._logStructured.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Inner hook called for logged messages alongside Logging.LoggerBase._log | _log,
+exposing the structured `(level, formatted, message, parameters)` form before it is
+collapsed to the formatted string.
+
+</td></tr>
 </tbody></table>

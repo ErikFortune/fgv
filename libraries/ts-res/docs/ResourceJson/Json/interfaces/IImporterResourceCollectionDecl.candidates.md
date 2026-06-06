@@ -5,5 +5,5 @@
 **Signature:**
 
 ```typescript
-readonly candidates: readonly IImporterResourceCandidateDecl[];
+readonly candidates: readonly IImporterResourceCandidateDecl<TQualifierNames>[];
 ```

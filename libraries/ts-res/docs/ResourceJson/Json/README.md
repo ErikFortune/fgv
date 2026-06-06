@@ -142,7 +142,7 @@ Description
 
 </td><td>
 
-Non-validated declaration of a Conditions.Condition | condition.
+Non-validated array-form declaration of a Conditions.ConditionSet | condition set.
 
 </td></tr>
 <tr><td>
@@ -151,7 +151,7 @@ Non-validated declaration of a Conditions.Condition | condition.
 
 </td><td>
 
-Non-validated declaration of a Conditions.Condition | condition.
+Non-validated record-form declaration of a Conditions.ConditionSet | condition set.
 
 </td></tr>
 <tr><td>
@@ -160,7 +160,7 @@ Non-validated declaration of a Conditions.Condition | condition.
 
 </td><td>
 
-Non-validated declaration of a Conditions.Condition | condition.
+Non-validated declaration of a Conditions.ConditionSet | condition set.
 
 </td></tr>
 <tr><td>

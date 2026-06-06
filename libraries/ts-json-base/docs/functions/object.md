@@ -2,10 +2,10 @@
 
 # Function: object
 
-A helper function to create a JsonCompatible.ObjectValidator | JSON-compatible ObjectValidator<T, TC> which validates a supplied `unknown` value to a valid JsonCompatibleType | JsonCompatible value.
+Creates a schema node for a JSON `object` with a fixed set of typed properties.
 
 ## Signature
 
 ```typescript
-function object(properties: Validation.Classes.FieldValidators<JsonCompatibleType<T>, TC>, params: Omit<ObjectValidatorConstructorParams<JsonCompatibleType<T>, TC>, "fields">): ObjectValidator<T, TC>
+function object(properties: P, opts: IObjectSchemaOptions): ISchemaValidator<{ [K in string | number | symbol]: ({ [K in string | number | symbol]: Static<P[K]> } & { [K in string | number | symbol]?: OptionalPropertyStatic<P[K]> })[K] }>
 ```

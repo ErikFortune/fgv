@@ -5,5 +5,5 @@
 **Signature:**
 
 ```typescript
-readonly resources: Record<string, IChildResourceDecl>;
+readonly resources: Record<string, IChildResourceDecl<TQualifierNames>>;
 ```

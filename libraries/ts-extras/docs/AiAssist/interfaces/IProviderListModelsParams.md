@@ -140,7 +140,7 @@ string
 
 </td><td>
 
-Optional override of the descriptor's default base URL — a well-formed
+Optional override of the descriptor's base URL; per-format `/models` route is appended unchanged.
 
 </td></tr>
 </tbody></table>

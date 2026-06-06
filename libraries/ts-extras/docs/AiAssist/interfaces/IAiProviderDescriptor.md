@@ -215,6 +215,23 @@ Whether this provider's chat completions API accepts image input
 </td></tr>
 <tr><td>
 
+[thinkingMode](./IAiProviderDescriptor.thinkingMode.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[AiThinkingMode](../../type-aliases/AiThinkingMode.md)
+
+</td><td>
+
+Whether this provider supports thinking/reasoning mode.
+
+</td></tr>
+<tr><td>
+
 [imageGeneration](./IAiProviderDescriptor.imageGeneration.md)
 
 </td><td>

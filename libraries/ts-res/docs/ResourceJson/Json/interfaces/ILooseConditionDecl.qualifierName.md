@@ -7,5 +7,5 @@ The name of the Qualifiers.Qualifier | qualifier to be compared.
 **Signature:**
 
 ```typescript
-qualifierName: string;
+qualifierName: TQualifierNames;
 ```

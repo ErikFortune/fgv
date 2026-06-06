@@ -33,7 +33,9 @@ Description
 
 </td><td>
 
-Constructs an AsyncResult wrapping the supplied promise.
+Constructs an AsyncResult wrapping the supplied promise (or any
+`PromiseLike` that resolves to a Result, such as another
+AsyncResult).
 
 </td></tr>
 </tbody></table>

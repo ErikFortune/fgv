@@ -7,5 +7,5 @@ Type guard function to check if a resource candidate declaration is a loose reso
 ## Signature
 
 ```typescript
-function isLooseResourceCandidateDecl(decl: IImporterResourceCandidateDecl): decl is ILooseResourceCandidateDecl
+function isLooseResourceCandidateDecl(decl: IImporterResourceCandidateDecl<TQualifierNames>): decl is ILooseResourceCandidateDecl<TQualifierNames>
 ```

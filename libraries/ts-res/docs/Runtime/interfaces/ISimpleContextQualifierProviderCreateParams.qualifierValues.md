@@ -7,5 +7,5 @@ Optional record of initial qualifier name-value pairs to populate the provider.
 **Signature:**
 
 ```typescript
-qualifierValues: Record<string, QualifierContextValue>;
+qualifierValues: Readonly<Partial<Record<string, QualifierContextValue>>>;
 ```

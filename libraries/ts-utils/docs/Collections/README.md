@@ -133,6 +133,15 @@ A read-only result map that wraps an inner Collections.IReadOnlyResultMap | IRea
 </td></tr>
 <tr><td>
 
+[RetainingRingBuffer](./classes/RetainingRingBuffer.md)
+
+</td><td>
+
+A generic bounded most-recent-N ring of records, with monotonic-`seq` cursor
+
+</td></tr>
+<tr><td>
+
 [ResultMap](./classes/ResultMap.md)
 
 </td><td>
@@ -351,6 +360,34 @@ A readonly `ReadonlyMap<TK, TV>`-like object which reports success or failure
 </td><td>
 
 Parameters for constructing a Collections.ReadOnlyConvertingResultMap | ReadOnlyConvertingResultMap.
+
+</td></tr>
+<tr><td>
+
+[IRetainedRecord](./interfaces/IRetainedRecord.md)
+
+</td><td>
+
+Minimal structural contract a RetainingRingBuffer record must satisfy:
+a monotonic `seq` the buffer pages on.
+
+</td></tr>
+<tr><td>
+
+[IRetainingRingBufferQuery](./interfaces/IRetainingRingBufferQuery.md)
+
+</td><td>
+
+Query options for RetainingRingBuffer.query.
+
+</td></tr>
+<tr><td>
+
+[IRetainingRingBufferCreateParams](./interfaces/IRetainingRingBufferCreateParams.md)
+
+</td><td>
+
+Construction options for RetainingRingBuffer.
 
 </td></tr>
 <tr><td>

@@ -5,5 +5,5 @@
 **Signature:**
 
 ```typescript
-readonly context: IContainerContextDecl;
+readonly context: IContainerContextDecl<TQualifierNames>;
 ```

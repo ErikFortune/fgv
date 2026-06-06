@@ -34,6 +34,56 @@ Context for converting a Conditions.IConditionSetDecl | condition set declaratio
 </td></tr>
 </tbody></table>
 
+## Functions
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[typedConditionDecl](./functions/typedConditionDecl.md)
+
+</td><td>
+
+Returns a `Converter` for an `IConditionDecl<TQualifierNames>` narrowed on a supplied
+
+</td></tr>
+<tr><td>
+
+[typedValidatedConditionDecl](./functions/typedValidatedConditionDecl.md)
+
+</td><td>
+
+Returns a `Converter` for an `IValidatedConditionDecl` narrowed on a supplied
+
+</td></tr>
+<tr><td>
+
+[typedConditionSetDecl](./functions/typedConditionSetDecl.md)
+
+</td><td>
+
+Returns a `Converter` for an `IConditionSetDecl<TQualifierNames>` narrowed on a supplied
+
+</td></tr>
+<tr><td>
+
+[typedValidatedConditionSetDecl](./functions/typedValidatedConditionSetDecl.md)
+
+</td><td>
+
+Returns a `Converter` for an `IValidatedConditionSetDecl` narrowed on a supplied
+
+</td></tr>
+</tbody></table>
+
 ## Variables
 
 <table><thead><tr><th>

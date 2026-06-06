@@ -68,7 +68,7 @@ Description
 
 </td><td>
 
-[ILooseConditionDecl](ILooseConditionDecl.md)[]
+[ILooseConditionDecl](ILooseConditionDecl.md)&lt;string&gt;[]
 
 </td><td>
 

@@ -9,5 +9,5 @@ resource ID from the import context when no explicit ID is provided in the resou
 ## Signature
 
 ```typescript
-function mergeImporterResource(resource: IImporterResourceDecl, baseName: string, baseConditions: readonly ILooseConditionDecl[]): Result<IImporterResourceDecl>
+function mergeImporterResource(resource: IImporterResourceDecl, baseName: string, baseConditions: readonly ILooseConditionDecl<string>[]): Result<IImporterResourceDecl>
 ```
