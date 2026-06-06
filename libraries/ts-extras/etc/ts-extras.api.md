@@ -1205,6 +1205,7 @@ interface IExecuteClientToolTurnParams {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly continuationMessages?: ReadonlyArray<JsonObject>;
     readonly descriptor: IAiProviderDescriptor;
+    readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
     readonly messagesBefore?: ReadonlyArray<IChatMessage>;
     readonly model?: string;

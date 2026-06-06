@@ -52,6 +52,7 @@ import {
   resolveModel
 } from '../model';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
+import { resolveEffectiveBaseUrl } from '../endpoint';
 import { type IAccumulatedBlock } from './anthropic';
 import { type IAccumulatedFunctionCall } from './openaiResponses';
 import { type IAccumulatedGeminiFunctionCall } from './gemini';
@@ -335,6 +336,16 @@ export interface IExecuteClientToolTurnParams {
   readonly clientTools: ReadonlyArray<IAiClientTool>;
   /** Optional abort signal. */
   readonly signal?: AbortSignal;
+  /**
+   * Optional override of the descriptor's default base URL. Same semantics as
+   * the non-streaming completion path and `callProviderCompletionStream`: a
+   * well-formed `http`/`https` URL is substituted for `descriptor.baseUrl`
+   * when composing the per-format request, with the per-format suffix appended
+   * unchanged. Validated at the dispatcher; auth shape is unaffected. Use this
+   * to point a client-tool turn at a local / LAN OpenAI-compatible server
+   * (Ollama, LM Studio, llama.cpp).
+   */
+  readonly endpoint?: string;
   /** Optional logger for diagnostics. */
   readonly logger?: Logging.ILogger;
   /** Optional resolved thinking config (pre-resolved by the caller). */
@@ -402,7 +413,8 @@ export function executeClientToolTurn(
     signal,
     logger,
     resolvedThinking,
-    model
+    model,
+    endpoint
   } = params;
 
   // Build a lookup map of client tools by name for fast access.
@@ -424,8 +436,12 @@ export function executeClientToolTurn(
 
   const effectiveTemperature = temperature ?? 0.7;
   const resolvedModel = model ?? resolveModel(descriptor.defaultModel);
+  const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
+  if (baseUrlResult.isFailure()) {
+    return fail(baseUrlResult.message);
+  }
   const config: IStreamApiConfig = {
-    baseUrl: descriptor.baseUrl,
+    baseUrl: baseUrlResult.value,
     apiKey,
     model: resolvedModel
   };

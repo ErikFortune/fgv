@@ -878,6 +878,84 @@ describe('executeClientToolTurn', () => {
     });
   });
 
+  describe('endpoint override', () => {
+    test('substitutes endpoint for descriptor.baseUrl on the tool-turn request', async () => {
+      mockSseResponse(anthropicDoneSse());
+
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        clientTools: [makeMemoryTool(async () => 'unused')] as IAiClientTool[],
+        model: 'claude-sonnet-4-6',
+        endpoint: 'http://localhost:11434/v1'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      await collect(result.value.events);
+      await result.value.nextTurn;
+
+      const fetchUrl = (global.fetch as jest.Mock).mock.calls[0][0];
+      expect(fetchUrl).toBe('http://localhost:11434/v1/messages');
+    });
+
+    test('falls back to descriptor.baseUrl when no endpoint is supplied', async () => {
+      mockSseResponse(anthropicDoneSse());
+
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        clientTools: [makeMemoryTool(async () => 'unused')] as IAiClientTool[],
+        model: 'claude-sonnet-4-6'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      await collect(result.value.events);
+      await result.value.nextTurn;
+
+      const fetchUrl = (global.fetch as jest.Mock).mock.calls[0][0];
+      expect(fetchUrl).toBe('https://api.anthropic.com/v1/messages');
+    });
+
+    test('honors endpoint when descriptor.baseUrl is empty (local / openai-compat server)', async () => {
+      mockSseResponse(anthropicDoneSse());
+
+      const result = executeClientToolTurn({
+        descriptor: { ...makeAnthropicDescriptor(), baseUrl: '' },
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        clientTools: [makeMemoryTool(async () => 'unused')] as IAiClientTool[],
+        model: 'claude-sonnet-4-6',
+        endpoint: 'http://192.168.1.42:1234/v1'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      await collect(result.value.events);
+      await result.value.nextTurn;
+
+      const fetchUrl = (global.fetch as jest.Mock).mock.calls[0][0];
+      expect(fetchUrl).toBe('http://192.168.1.42:1234/v1/messages');
+    });
+
+    test('rejects a malformed endpoint up front, before opening the stream', () => {
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        clientTools: [makeMemoryTool(async () => 'unused')] as IAiClientTool[],
+        model: 'claude-sonnet-4-6',
+        endpoint: 'not a url'
+      });
+
+      expect(result).toFailWith(/endpoint is not a valid URL/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
+
   describe('model optional — falls back to descriptor.defaultModel when omitted', () => {
     test('uses descriptor.defaultModel when model is not supplied', async () => {
       // P2-5: model is optional; when absent, resolveModel(descriptor.defaultModel) is used.
