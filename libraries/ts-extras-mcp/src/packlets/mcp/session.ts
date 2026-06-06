@@ -33,7 +33,15 @@ import { McpTransport } from './transports';
 
 /** Default client name advertised during the initialize handshake. */
 const DEFAULT_CLIENT_NAME: string = '@fgv/ts-extras-mcp';
-/** Default client version advertised during the initialize handshake. */
+/**
+ * Default client version advertised during the initialize handshake.
+ *
+ * @remarks
+ * Keep in sync with this package's `package.json` version on each release. It is informational
+ * only — MCP servers use it for logging/telemetry, not for behavior — so a drift is low-impact,
+ * but it should be bumped alongside the lockstep version. (Reading it from `package.json` at
+ * runtime is avoided to keep the bundle free of a JSON import / `require` of the manifest.)
+ */
 const DEFAULT_CLIENT_VERSION: string = '5.1.0';
 
 /**

@@ -62,6 +62,12 @@ describe('parseMcpProbeSpecFromEnv', () => {
     ).toSucceedWith({ kind: 'http', url: 'http://localhost/mcp' } as IMcpProbeSpec);
   });
 
+  test('parses an HTTP spec with an empty-valued header pair', () => {
+    expect(
+      parseMcpProbeSpecFromEnv({ MCP_PROBE_URL: 'http://h/mcp', MCP_PROBE_HEADERS: 'x-trace=' })
+    ).toSucceedWith({ kind: 'http', url: 'http://h/mcp', headers: { 'x-trace': '' } } as IMcpProbeSpec);
+  });
+
   test('parses a stdio spec with args and cwd', () => {
     expect(
       parseMcpProbeSpecFromEnv({
@@ -162,10 +168,14 @@ describe('runMcpProbe', () => {
     return { deps, close };
   }
 
-  test('connects, adapts, formats the report, and closes the session', async () => {
+  test('connects, adapts, formats the report (ALL skips), and closes the session', async () => {
+    // Two skips: Constraint 2 requires the report enumerate EVERY adaptation error, not just one.
     const adaptResult: IAdaptMcpToolsResult = {
       tools: [],
-      skipped: [{ name: 'beta', reason: 'pattern', schema: { type: 'object' } }]
+      skipped: [
+        { name: 'beta', reason: 'pattern', schema: { type: 'object' } },
+        { name: 'gamma', reason: 'oneOf', schema: { type: 'object', oneOf: [] } }
+      ]
     };
     const { deps, close } = makeDeps({ adapt: jest.fn(async () => succeed(adaptResult)) });
     const logger = new Logging.InMemoryLogger('all');
@@ -174,6 +184,7 @@ describe('runMcpProbe', () => {
       expect(report).toMatch(/stdio "cmd --flag"/);
       expect(report).toMatch(/Identity: srv@1.0/);
       expect(report).toMatch(/✗ beta/);
+      expect(report).toMatch(/✗ gamma/);
     });
     expect(close).toHaveBeenCalledTimes(1);
   });

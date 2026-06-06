@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import '@fgv/ts-utils-jest';
 import * as mcp from '../../index';
 
 describe('@fgv/ts-extras-mcp package barrel', () => {
@@ -31,5 +32,12 @@ describe('@fgv/ts-extras-mcp package barrel', () => {
     expect(typeof mcp.listMcpTools).toBe('function');
     expect(typeof mcp.callMcpTool).toBe('function');
     expect(typeof mcp.adaptMcpTools).toBe('function');
+  });
+
+  test('the re-exported transport factories are the real (behaving) implementations', () => {
+    // Behavioral signal beyond `typeof`: a renamed-but-still-a-function export would not behave
+    // this way. (The synchronous transport factories validate without touching the SDK/network.)
+    expect(mcp.createStdioTransport({ command: '' })).toFailWith(/command must be a non-empty string/);
+    expect(mcp.createHttpTransport({ url: 'not a url' })).toFailWith(/invalid url/);
   });
 });

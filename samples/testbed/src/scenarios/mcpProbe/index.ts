@@ -55,35 +55,34 @@ import type { IScenario, ICliScenarioImpl, IScenarioContext } from '../../shell'
 import { type IMcpProbeDeps, parseMcpProbeSpecFromEnv, runMcpProbe } from './probe';
 
 const cliImpl: ICliScenarioImpl = {
-  /* c8 ignore start - orchestration seam: wires the node-native @fgv/ts-extras-mcp deps via a
-     webpackIgnore dynamic import and requires a live MCP server. The probe logic (spec parsing,
-     run orchestration, report formatting) is fully covered via injected deps in probe.test.ts;
-     this method's behavior (e.g. the no-spec failure) is exercised there too, but the line/branch
-     coverage of the dynamic-import wiring cannot be unit-measured. */
   async run(context: IScenarioContext): Promise<Result<string>> {
     const specResult = parseMcpProbeSpecFromEnv(process.env);
-    if (specResult.isFailure()) {
-      return fail(specResult.message);
+    // Only the live dispatch below is coverage-ignored; the spec parse + failure return is
+    // exercised by mcpProbe.test.ts (real cli.run with the probe env vars cleared).
+    /* c8 ignore start - orchestration seam: wires the node-native @fgv/ts-extras-mcp deps via a
+       webpackIgnore dynamic import and requires a live MCP server. The probe logic (run
+       orchestration, report formatting) is fully covered via injected deps in probe.test.ts. */
+    if (specResult.isSuccess()) {
+      const mcp = await import(/* webpackIgnore: true */ '@fgv/ts-extras-mcp');
+      const deps: IMcpProbeDeps = {
+        connect: async (spec, logger) => {
+          const transport =
+            spec.kind === 'http'
+              ? mcp.createHttpTransport({ url: spec.url, headers: spec.headers })
+              : mcp.createStdioTransport({ command: spec.command, args: spec.args, cwd: spec.cwd });
+          if (transport.isFailure()) {
+            return fail(transport.message);
+          }
+          return mcp.connectMcpSession({ transport: transport.value, logger });
+        },
+        adapt: (session, logger) => mcp.adaptMcpTools(session, { logger }),
+        close: (session) => mcp.closeMcpSession(session)
+      };
+      return runMcpProbe(specResult.value, deps, context.logger);
     }
-
-    const mcp = await import(/* webpackIgnore: true */ '@fgv/ts-extras-mcp');
-    const deps: IMcpProbeDeps = {
-      connect: async (spec, logger) => {
-        const transport =
-          spec.kind === 'http'
-            ? mcp.createHttpTransport({ url: spec.url, headers: spec.headers })
-            : mcp.createStdioTransport({ command: spec.command, args: spec.args, cwd: spec.cwd });
-        if (transport.isFailure()) {
-          return fail(transport.message);
-        }
-        return mcp.connectMcpSession({ transport: transport.value, logger });
-      },
-      adapt: (session, logger) => mcp.adaptMcpTools(session, { logger }),
-      close: (session) => mcp.closeMcpSession(session)
-    };
-    return runMcpProbe(specResult.value, deps, context.logger);
+    /* c8 ignore stop */
+    return fail(specResult.message);
   }
-  /* c8 ignore stop */
 };
 
 /**
