@@ -8,5 +8,5 @@ These conditions can modify or extend the resource candidates in the cloned mana
 **Signature:**
 
 ```typescript
-readonly candidates: readonly ILooseResourceCandidateDecl[];
+readonly candidates: readonly ILooseResourceCandidateDecl<string>[];
 ```

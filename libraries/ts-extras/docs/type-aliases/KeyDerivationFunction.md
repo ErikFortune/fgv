@@ -7,5 +7,5 @@ Supported key derivation functions.
 ## Type
 
 ```typescript
-type KeyDerivationFunction = "pbkdf2"
+type KeyDerivationFunction = "pbkdf2" | "argon2id"
 ```

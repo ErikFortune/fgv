@@ -2,10 +2,10 @@
 
 # Type Alias: ConditionSetDeclAsArray
 
-Non-validated declaration of a Conditions.Condition | condition.
+Non-validated array-form declaration of a Conditions.ConditionSet | condition set.
 
 ## Type
 
 ```typescript
-type ConditionSetDeclAsArray = ReadonlyArray<ILooseConditionDecl>
+type ConditionSetDeclAsArray = ReadonlyArray<ILooseConditionDecl<TQualifierNames>>
 ```

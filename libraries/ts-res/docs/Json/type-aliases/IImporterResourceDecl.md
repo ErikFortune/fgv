@@ -8,5 +8,5 @@ which can be either a loose or child resource.
 ## Type
 
 ```typescript
-type IImporterResourceDecl = ILooseResourceDecl | IChildResourceDecl
+type IImporterResourceDecl = ILooseResourceDecl<TQualifierNames> | IChildResourceDecl<TQualifierNames>
 ```

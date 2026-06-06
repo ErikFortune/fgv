@@ -7,14 +7,14 @@ Adds conditions to the import context.
 **Signature:**
 
 ```typescript
-withConditions(conditions: ILooseConditionDecl[]): Result<ImportContext>;
+withConditions(conditions: IConditionDecl[]): Result<ImportContext>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>conditions</td><td>ILooseConditionDecl[]</td><td>Conditions to be added to the import context.</td></tr>
+<tr><td>conditions</td><td>IConditionDecl[]</td><td>Conditions to be added to the import context.</td></tr>
 </tbody></table>
 
 **Returns:**

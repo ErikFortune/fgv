@@ -5,5 +5,5 @@
 **Signature:**
 
 ```typescript
-readonly conditions: ConditionSetDecl;
+readonly conditions: ConditionSetDecl<TQualifierNames>;
 ```

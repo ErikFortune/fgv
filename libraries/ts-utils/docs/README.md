@@ -417,6 +417,24 @@ Async continuation callback to be called in the event that a
 </td></tr>
 <tr><td>
 
+[OneOf](./type-aliases/OneOf.md)
+
+</td><td>
+
+Union of all values in an array/tuple type, preserving literal types if possible.
+
+</td></tr>
+<tr><td>
+
+[StringOneOf](./type-aliases/StringOneOf.md)
+
+</td><td>
+
+Union of all string values in an array/tuple type, preserving literal types if possible.
+
+</td></tr>
+<tr><td>
+
 [EnsureArrayResult](./type-aliases/EnsureArrayResult.md)
 
 </td><td>

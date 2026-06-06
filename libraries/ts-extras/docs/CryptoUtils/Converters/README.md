@@ -75,6 +75,24 @@ Converter for CryptoUtils.KeyDerivationFunction | key derivation function type.
 </td></tr>
 <tr><td>
 
+[pbkdf2KeyDerivationParams](./variables/pbkdf2KeyDerivationParams.md)
+
+</td><td>
+
+Converter for CryptoUtils.IPbkdf2KeyDerivationParams | PBKDF2 key derivation parameters.
+
+</td></tr>
+<tr><td>
+
+[argon2idKeyDerivationParams](./variables/argon2idKeyDerivationParams.md)
+
+</td><td>
+
+Converter for CryptoUtils.IArgon2idKeyDerivationParams | Argon2id key derivation parameters.
+
+</td></tr>
+<tr><td>
+
 [keyDerivationParams](./variables/keyDerivationParams.md)
 
 </td><td>

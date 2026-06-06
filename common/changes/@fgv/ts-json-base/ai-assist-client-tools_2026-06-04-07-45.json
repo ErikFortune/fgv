@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Add JsonSchema namespace to browser barrel export (was missing since json-schema-derives-t stream landed)",
+      "type": "none",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

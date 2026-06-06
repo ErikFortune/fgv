@@ -34,7 +34,7 @@ Description
 
 </td><td>
 
-[ILooseConditionDecl](ILooseConditionDecl.md)[]
+[IConditionDecl](../type-aliases/IConditionDecl.md)&lt;TQualifierNames&gt;[]
 
 </td><td>
 

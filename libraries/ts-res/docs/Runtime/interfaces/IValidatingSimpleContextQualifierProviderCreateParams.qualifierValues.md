@@ -8,5 +8,5 @@ Accepts string keys and values which will be converted to strongly-typed values.
 **Signature:**
 
 ```typescript
-qualifierValues: Record<string, string>;
+qualifierValues: Readonly<Partial<Record<string, string>>>;
 ```

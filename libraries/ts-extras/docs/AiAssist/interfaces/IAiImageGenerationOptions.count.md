@@ -2,9 +2,7 @@
 
 ## IAiImageGenerationOptions.count property
 
-Number of images to generate. Default 1.
-
-Note: `dall-e-3` rejects `count > 1`.
+Number of images. Default 1. Some models enforce a maximum.
 
 **Signature:**
 

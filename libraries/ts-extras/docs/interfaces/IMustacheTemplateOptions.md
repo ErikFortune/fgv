@@ -75,4 +75,22 @@ boolean
 Whether to include partial references in variable extraction (default: false)
 
 </td></tr>
+<tr><td>
+
+[escape](./IMustacheTemplateOptions.escape.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MustacheEscapeStrategy](../type-aliases/MustacheEscapeStrategy.md)
+
+</td><td>
+
+Escape strategy applied to double-brace `{{name}}` tokens at render
+time.
+
+</td></tr>
 </tbody></table>

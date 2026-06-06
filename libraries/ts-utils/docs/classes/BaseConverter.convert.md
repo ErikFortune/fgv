@@ -8,7 +8,7 @@ to return a new entity, with any unrecognized properties removed.
 **Signature:**
 
 ```typescript
-convert(from: unknown, context?: TC): Result<T>;
+convert(from: unknown, context?: TC, selfOverride?: Converter<T, TC>): Result<T>;
 ```
 
 **Parameters:**
@@ -18,6 +18,9 @@ convert(from: unknown, context?: TC): Result<T>;
 <tr><td>from</td><td>unknown</td><td>The `unknown` to be converted</td></tr>
 <tr><td>context</td><td>TC</td><td>An optional conversion context of type `<TC>` to be used in
 the conversion.</td></tr>
+<tr><td>selfOverride</td><td>Converter&lt;T, TC&gt;</td><td>An optional override for the `self` reference passed to the
+converter function, enabling outer converters (e.g. discriminated-object) to thread
+themselves through to per-arm converters for recursive parsing.</td></tr>
 </tbody></table>
 
 **Returns:**

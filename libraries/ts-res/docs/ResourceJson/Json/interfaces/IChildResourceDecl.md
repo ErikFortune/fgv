@@ -51,7 +51,7 @@ The name of the type of this resource.
 
 </td><td>
 
-readonly [IChildResourceCandidateDecl](../../../interfaces/IChildResourceCandidateDecl.md)[]
+readonly [IChildResourceCandidateDecl](../../../interfaces/IChildResourceCandidateDecl.md)&lt;TQualifierNames&gt;[]
 
 </td><td>
 

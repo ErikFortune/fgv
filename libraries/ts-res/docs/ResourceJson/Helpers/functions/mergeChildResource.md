@@ -7,5 +7,5 @@ Helper method to merge a child resource with a parent name and conditions.
 ## Signature
 
 ```typescript
-function mergeChildResource(resource: IChildResourceDecl, name: string, parentName: string, parentConditions: readonly ILooseConditionDecl[]): Result<ILooseResourceDecl>
+function mergeChildResource(resource: IChildResourceDecl, name: string, parentName: string, parentConditions: readonly ILooseConditionDecl<string>[]): Result<ILooseResourceDecl>
 ```

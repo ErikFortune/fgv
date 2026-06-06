@@ -72,10 +72,14 @@ export function providerDiscriminatorForId(providerId: string): ThinkingProvider
 /**
  * Resolved thinking wire parameters for a specific provider, after merging
  * all applicable config blocks. Ready for provider-specific wire encoding.
- * @internal
+ *
+ * Callers that pre-resolve thinking config outside of the standard streaming
+ * helpers (e.g. `executeClientToolTurn`) accept this type via the
+ * `resolvedThinking` parameter and pass it directly to the adapter layer.
+ * @public
  */
 export interface IResolvedThinkingConfig {
-  /** Anthropic: output_config.effort value */
+  /** Anthropic: effort level; emit-site converts to `thinking.budget_tokens` via `anthropicEffortToBudgetTokens`. */
   readonly anthropicEffort?: IAnthropicThinkingConfig['effort'];
   /** OpenAI Chat: reasoning_effort value; OpenAI Responses: reasoning.effort */
   readonly openAiEffort?: IOpenAiThinkingConfig['effort'];
@@ -96,6 +100,32 @@ export interface IResolvedThinkingConfig {
  */
 function genericEffortToAnthropic(effort: 'low' | 'medium' | 'high'): IAnthropicThinkingConfig['effort'] {
   return effort; // 1:1 mapping for the common subset
+}
+
+/**
+ * Maps Anthropic effort level to the `thinking.budget_tokens` integer that the
+ * Anthropic API requires when `thinking.type === 'enabled'`.
+ *
+ * Policy: low = 2048, medium = 8192, high = 24000, max = 32000. The lower three
+ * align with the Anthropic-published minimum-meaningful budget, a mid-range
+ * default, and a "deep thinking" allotment respectively. `max` targets Opus 4.6's
+ * deepest budget and stays within typical model limits.
+ *
+ * @public
+ */
+export function anthropicEffortToBudgetTokens(
+  effort: NonNullable<IAnthropicThinkingConfig['effort']>
+): number {
+  switch (effort) {
+    case 'low':
+      return 2048;
+    case 'medium':
+      return 8192;
+    case 'high':
+      return 24000;
+    case 'max':
+      return 32000;
+  }
 }
 
 /**

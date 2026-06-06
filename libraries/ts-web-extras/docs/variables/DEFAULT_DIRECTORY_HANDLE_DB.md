@@ -6,4 +6,4 @@ Default IndexedDB database name for directory handles.
 
 ## Type
 
-`"chocolate-lab-storage"`
+`string`

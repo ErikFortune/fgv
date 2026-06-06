@@ -119,11 +119,11 @@ Base64-encoded encrypted vault contents.
 
 </td><td>
 
-[IKeyDerivationParams](../../../interfaces/IKeyDerivationParams.md)
+[IPbkdf2KeyDerivationParams](../../../interfaces/IPbkdf2KeyDerivationParams.md)
 
 </td><td>
 
-Key derivation parameters (required for key store - always password-derived).
+Key derivation parameters for the vault master key (always PBKDF2).
 
 </td></tr>
 </tbody></table>

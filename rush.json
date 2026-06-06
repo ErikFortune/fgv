@@ -555,12 +555,6 @@
       "tags": ["apps", "sudoku", "react", "ui"]
     },
     {
-      "packageName": "@fgv/ts-utils-browser-test",
-      "projectFolder": "apps/ts-utils-browser-test",
-      "shouldPublish": false,
-      "tags": ["apps", "tests", "vite"]
-    },
-    {
       "packageName": "@fgv/ai-image-gen-sample",
       "projectFolder": "samples/ai-image-gen-sample",
       "shouldPublish": false,

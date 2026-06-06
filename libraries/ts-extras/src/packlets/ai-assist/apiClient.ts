@@ -54,6 +54,7 @@ import {
   resolveModel
 } from './model';
 import {
+  anthropicEffortToBudgetTokens,
   checkTemperatureConflict,
   mergeThinkingConfig,
   providerDiscriminatorForId,
@@ -624,9 +625,9 @@ async function callAnthropicCompletion(
     ...(resolvedThinking?.anthropicEffort === undefined ? { temperature } : {})
   };
 
-  if (resolvedThinking?.anthropicEffort !== undefined) {
-    body.thinking = { type: 'enabled' };
-    body.output_config = { effort: resolvedThinking.anthropicEffort };
+  const effort = resolvedThinking?.anthropicEffort;
+  if (effort !== undefined) {
+    body.thinking = { type: 'enabled', budget_tokens: anthropicEffortToBudgetTokens(effort) };
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
@@ -1926,7 +1927,6 @@ export async function callProxiedCompletion(
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`AI proxy request: provider=${descriptor.id}, proxy=${proxyUrl}`);
-
   const url = `${proxyUrl}/api/ai/completion`;
   const jsonResult = await fetchJson(url, {}, body, logger, signal);
   if (jsonResult.isFailure()) {

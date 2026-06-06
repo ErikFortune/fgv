@@ -8,5 +8,5 @@ to Failure.
 ## Signature
 
 ```typescript
-function captureAsyncResult(func: () => Promise<T>): Promise<Result<T>>
+function captureAsyncResult(func: () => Promise<T>): AsyncResult<T>
 ```

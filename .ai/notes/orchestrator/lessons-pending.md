@@ -457,4 +457,28 @@ Together the three form the durable form of the review-loop stack: Layer 1 (inte
 
 ---
 
+### 2026-06-03 — Workflow-posture triad (L34, L35, L36) codified
+
+**PR:** `chore/codify-l34-l35-l36`. Direct-to-release codification batch (lessons surfaced and graduated in the same session; not parked in the pending inbox first).
+
+**Graduated:**
+
+- **L34. Round count is not the Copilot-loop stop signal — substantive value per round is.** PR #441 (`json-schema-derives-t` revision) ran four Copilot rounds; round 3 surfaced a load-bearing structural validator/convert symmetry bug invisible to top-level tests but real when schemas nested as field validators. Stopping at round 3 because "three rounds feels like enough" would have missed the catch; continuing to round 4 was correct because round 3 was substantive. → codified in `.ai/instructions/CODING_STANDARDS.md` § "Review-loop discipline" with a new subsection "Round count is not the signal — substantive value per round is" + concrete decision examples. Mirrored in `.ai/conventions/workflow/kickoff-prompt-shape.md` as an explicit bullet under the review-loop discipline inheritance. (Reference: PR #441 four-round cycle, especially round-3 finding.)
+- **L35. Substrate housekeeping rides on integration-branch squash; never standalone PR onto `release`.** PR #443 was opened as a standalone housekeeping PR onto release for `discriminated-object-self-fix` substrate move. Erik's noise-reduction directive: release should see one commit per stream, not one commit per stream + N housekeeping commits. PR #443 was closed and the housekeeping commit cherry-picked onto the open `json-schema-derives-t` integration branch, where it rode into release via the cluster-close squash. → codified in `.claude/agents/orchestrator.md` § "Substrate housekeeping posture" with the two acceptable patterns (integration-branch streams: housekeeping rides on integration; direct-to-release streams: housekeeping bundled into the implementation PR itself) and the explicit "never standalone PR onto release" rule. (Reference: PR #443 closure + cherry-pick onto `json-schema-derives-t`; Erik's "noise reduction" framing.)
+- **L36. Multi-phase streams (design-triage-implement) ship all phases on a single integration branch; one cluster-close squash to release per stream.** PR #436 (`ai-assist-client-tools` Phase A design) was opened targeting `release` directly; Erik retargeted to a new `ai-assist-client-tools` integration branch so Phase A design + future Phase B triage + Phase C implementation all ride together as one feature commit on release. Phase A design is substrate that informs the implementation, not a shipping artifact in itself; it doesn't deserve its own release commit. → codified in `.claude/agents/orchestrator.md` § "Design triage cycle" with a new "Integration-branch posture (load-bearing)" subsection naming the 5-step sequencing. Mirrored in `.ai/conventions/workflow/kickoff-prompt-shape.md` so multi-phase kickoff prompts instruct the implementing agent to target the integration branch base, not `release`. (Reference: PR #436 base retarget on 2026-06-03.)
+
+Together the three form a workflow-posture triad complementing the review-loop discipline triad (L31/L32/L33). The review-loop triad governs *how* PRs converge to mergeable state; the workflow-posture triad governs *what shape the merge takes* — single commits per stream, integration branches for multi-phase work, no noise on release.
+
+### 2026-06-04 — L37 codified (review-loop-layer-1 sequencing)
+
+**PR:** rolled into `chore/codify-l34-l35-l36` (PR #445) alongside the L34/L35/L36 triad. Erik's call (2026-06-04): co-located codification — L37 is a structural refinement of the same layer-1 review discipline.
+
+**Graduated:**
+
+- **L37. `code-reviewer` runs BEFORE 100%-measured-coverage closure, not after.** The Phase C (`ai-assist-client-tools`) implementer landed `c8 ignore` directives on the `rawTail` branch in `chatRequestBuilders.ts` because the branch was "only exercised by live continuation scenarios" — defensible in isolation but evidence of the failure mode: the implementer chased 100% measured coverage before any internal review. Erik: "whenever the implementer decides to hit 100% measured coverage, it should first do a code-reviewer pass." Coverage-chasing is the trigger; mid-stream or final-prep, same rule. Code-reviewer catches the class of finding where imperative tests should be Result-chain tests, `c8 ignore` directives mask refactor opportunities, and surface complexity should be simplified — eliminating gaps that would otherwise need closure. Reversing the order locks those artifacts in. → codified in `.ai/instructions/TESTING_GUIDELINES.md` § "Coverage Gap Resolution" with a new "Run `code-reviewer` BEFORE chasing 100% measured coverage" subsection at the top, naming the three-step sequence (scenario tests → code-reviewer → coverage gaps) and three concrete classes of finding the order prevents. Cross-referenced from `.ai/instructions/CODING_STANDARDS.md` § "Review-loop discipline" layer-1 subsection with a load-bearing callout. (Reference: Phase C C4 c8 ignores on rawTail; Erik's framing on 2026-06-04.)
+
+L37 complements L31/L32/L33 (which govern layer-1's place in the broader review stack) and L34 (which governs layer-2 stop signals). The full layer-1 sequence is now: scenario-driven tests → `code-reviewer` pass → coverage-gap closure → all gates pass → open PR. L37 sharpens the second step's position relative to the third.
+
+---
+
 When this file or accumulated peer notes get swept to release: append entry here with date, sweep PR link, and which items graduated to durable form (convention / skill / agent-prompt) vs aged out.

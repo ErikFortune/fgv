@@ -95,6 +95,20 @@ Normalizes the supplied value
 </td></tr>
 <tr><td>
 
+[canonicalize(from)](./HashingNormalizer.canonicalize.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Produces a stable, byte-identical JSON string following RFC 8785
+(JSON Canonicalization Scheme) key-ordering rules.
+
+</td></tr>
+<tr><td>
+
 [normalizeEntries(entries)](./HashingNormalizer.normalizeEntries.md)
 
 </td><td>

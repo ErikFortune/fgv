@@ -7,5 +7,5 @@ Optional array of condition declarations to add to the collector.
 **Signature:**
 
 ```typescript
-conditions: ILooseConditionDecl[];
+conditions: IConditionDecl[];
 ```

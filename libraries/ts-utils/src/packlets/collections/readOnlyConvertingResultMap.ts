@@ -21,7 +21,7 @@
  */
 
 import { captureResult, DetailedResult, failWithDetail, Result, succeedWithDetail } from '../base';
-import { ILogger } from '../logging';
+import { ILogger } from '../logging-interface';
 import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
 

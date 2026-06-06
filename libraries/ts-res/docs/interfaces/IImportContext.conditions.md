@@ -7,5 +7,5 @@ Conditions to be applied to resources imported in this context.
 **Signature:**
 
 ```typescript
-readonly conditions: readonly ILooseConditionDecl[];
+readonly conditions: readonly IConditionDecl[];
 ```

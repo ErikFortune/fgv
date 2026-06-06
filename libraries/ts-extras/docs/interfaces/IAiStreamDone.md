@@ -77,4 +77,21 @@ string
 The full concatenated text from all `text-delta` events.
 
 </td></tr>
+<tr><td>
+
+[incompleteReason](./IAiStreamDone.incompleteReason.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Provider-reported reason a truncated response was cut short (e.g.
+
+</td></tr>
 </tbody></table>

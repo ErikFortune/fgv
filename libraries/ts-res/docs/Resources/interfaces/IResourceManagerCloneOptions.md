@@ -37,7 +37,7 @@ Description
 
 </td><td>
 
-readonly [ILooseResourceCandidateDecl](../../interfaces/ILooseResourceCandidateDecl.md)[]
+readonly [ILooseResourceCandidateDecl](../../interfaces/ILooseResourceCandidateDecl.md)&lt;string&gt;[]
 
 </td><td>
 

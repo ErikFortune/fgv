@@ -319,6 +319,33 @@ CryptoUtils.IKeyDerivationParams | key derivation parameters.
 </td></tr>
 <tr><td>
 
+[addSecretFromPasswordArgon2id(name, password, argon2idProvider, options)](./KeyStore.addSecretFromPasswordArgon2id.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Adds a secret derived from a password using Argon2id (RFC 9106).
+
+</td></tr>
+<tr><td>
+
+[verifySecretFromPasswordArgon2id(name, password, argon2idProvider, keyDerivation)](./KeyStore.verifySecretFromPasswordArgon2id.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Verifies a candidate password against an Argon2id-derived entry using the
+supplied key derivation parameters.
+
+</td></tr>
+<tr><td>
+
 [removeSecret(name)](./KeyStore.removeSecret.md)
 
 </td><td>

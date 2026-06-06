@@ -5,5 +5,5 @@
 **Signature:**
 
 ```typescript
-readonly children: Record<string, IResourceTreeChildNodeDecl>;
+readonly children: Record<string, IResourceTreeChildNodeDecl<TQualifierNames>>;
 ```

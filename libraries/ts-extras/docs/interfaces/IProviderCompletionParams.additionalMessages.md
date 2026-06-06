@@ -2,8 +2,7 @@
 
 ## IProviderCompletionParams.additionalMessages property
 
-Additional messages to append after system+user (e.g. for correction retries).
-These are appended in order after the initial system and user messages.
+Additional messages to append after system+user in order (e.g. for correction retries).
 
 **Signature:**
 

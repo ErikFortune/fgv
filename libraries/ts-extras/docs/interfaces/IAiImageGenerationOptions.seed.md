@@ -2,7 +2,7 @@
 
 ## IAiImageGenerationOptions.seed property
 
-Random seed for reproducibility, where supported.
+Reproducibility seed, where supported.
 
 **Signature:**
 

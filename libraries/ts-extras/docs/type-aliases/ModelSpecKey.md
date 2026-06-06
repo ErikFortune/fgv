@@ -7,5 +7,5 @@ Known context keys for model specification maps.
 ## Type
 
 ```typescript
-type ModelSpecKey = "base" | "tools" | "image"
+type ModelSpecKey = "base" | "tools" | "image" | "thinking"
 ```

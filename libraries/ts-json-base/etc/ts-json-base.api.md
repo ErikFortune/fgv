@@ -28,6 +28,9 @@ type AnyFileTreeDirectoryItem<TCT extends string = string> = IFileTreeDirectoryI
 type AnyFileTreeFileItem<TCT extends string = string> = IFileTreeFileItem<TCT> | IMutableFileTreeFileItem<TCT>;
 
 // @public
+function array<S extends ISchemaValidator<unknown>>(items: S, opts?: ISchemaOptions): ISchemaValidator<Static<S>[]>;
+
+// @public
 type ArrayConverter<T, TC = unknown> = Converter<JsonCompatibleType<T>[], TC>;
 
 // Warning: (ae-forgotten-export) The symbol "JsonCompatible_2" needs to be exported by the entry point index.d.ts
@@ -52,7 +55,10 @@ type ArrayValidator<T, TC = unknown> = Validation.Classes.ArrayValidator<JsonCom
 const boolean: Converter<boolean, IJsonConverterContext>;
 
 // @public
-const boolean_2: Validator<boolean, IJsonValidatorContext>;
+function boolean_2(opts?: ISchemaOptions): ISchemaValidator<boolean>;
+
+// @public
+const boolean_3: Validator<boolean, IJsonValidatorContext>;
 
 // @public
 export function classifyJsonValue(from: unknown): Result<JsonValueType>;
@@ -172,6 +178,9 @@ function enumeratedValue<T>(values: ReadonlyArray<T>, message?: string): Convert
 
 // @public
 function enumeratedValue_2<T>(values: ReadonlyArray<T>, message?: string): Validator<T, IJsonValidatorContext | ReadonlyArray<T>>;
+
+// @public
+function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T>;
 
 // @public
 class FileItem<TCT extends string = string> implements IMutableFileTreeFileItem<TCT> {
@@ -301,6 +310,9 @@ function forFilesystem<TCT extends string = string>(prefix?: string): Result<Fil
 //
 // @public
 function forFilesystem<TCT extends string = string>(params?: IFileTreeInitParams<TCT>): Result<FileTree_2<TCT>>;
+
+// @public
+function fromJson(json: JsonObject): Result<ISchemaValidator<JsonValue>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -436,6 +448,33 @@ interface IJsonValidatorContext {
     ignoreUndefinedProperties?: boolean;
 }
 
+// @public @deprecated
+type ILlmArraySchema<S extends ISchemaValidator<unknown>> = ISchemaValidator<Static<S>[]>;
+
+// @public @deprecated
+type ILlmBooleanSchema = ISchemaValidator<boolean>;
+
+// @public @deprecated
+type ILlmEnumSchema<T extends string> = ISchemaValidator<T>;
+
+// @public @deprecated
+type ILlmNumberSchema = ISchemaValidator<number>;
+
+// @public @deprecated
+type ILlmObjectSchema<P extends ILlmProperties> = ISchemaValidator<ObjectStatic<P>>;
+
+// @public @deprecated
+type ILlmOptional<S extends ISchemaValidator<unknown>> = ISchemaValidator<Static<S> | undefined>;
+
+// @public
+type ILlmProperties = Record<string, ISchemaValidator<unknown>>;
+
+// @public @deprecated (undocumented)
+type ILlmSchema<T> = ISchemaValidator<T>;
+
+// @public @deprecated
+type ILlmStringSchema = ISchemaValidator<string>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -517,6 +556,19 @@ class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFile
 }
 
 // @public
+function integer(opts?: INumberSchemaOptions): ISchemaValidator<number>;
+
+// @public
+interface INumberSchemaOptions extends ISchemaOptions {
+    strict?: boolean;
+}
+
+// @public
+interface IObjectSchemaOptions extends ISchemaOptions {
+    additionalProperties?: boolean;
+}
+
+// @public
 interface IPersistentFileTreeAccessors<TCT extends string = string> extends IMutableFileTreeAccessors<TCT> {
     getDirtyPaths(): string[];
     isDirty(): boolean;
@@ -527,6 +579,19 @@ interface IPersistentFileTreeAccessors<TCT extends string = string> extends IMut
 interface IReadDirectoryItem<T> {
     filename: string;
     item: T;
+}
+
+// @public
+interface ISchemaOptions {
+    description?: string;
+}
+
+// @public
+interface ISchemaValidator<T> extends Validator<T> {
+    readonly __staticType?: T;
+    readonly description?: string;
+    toJson(): JsonObject;
+    readonly _type: SchemaNodeType;
 }
 
 // @public
@@ -691,6 +756,45 @@ type JsonReplacerFunction = (key: string, value: JsonValue) => JsonValue;
 // @public (undocumented)
 type JsonReviver = (key: string, value: JsonValue) => JsonValue;
 
+declare namespace JsonSchema {
+    export {
+        SchemaNodeType,
+        ISchemaValidator,
+        Static,
+        ILlmProperties,
+        OptionalKeys,
+        RequiredKeys,
+        OptionalPropertyStatic,
+        Simplify,
+        ObjectStatic,
+        ILlmSchema,
+        ILlmStringSchema,
+        ILlmNumberSchema,
+        ILlmBooleanSchema,
+        ILlmEnumSchema,
+        ILlmOptional,
+        ILlmArraySchema,
+        ILlmObjectSchema,
+        string_2 as string,
+        number_2 as number,
+        integer,
+        boolean_2 as boolean,
+        enumOf,
+        optional,
+        array,
+        object_3 as object,
+        ISchemaOptions,
+        INumberSchemaOptions,
+        IObjectSchemaOptions,
+        fromJson,
+        jsonSchemaConverter
+    }
+}
+export { JsonSchema }
+
+// @public
+const jsonSchemaConverter: Converter<ISchemaValidator<JsonValue>, string>;
+
 // @public
 class JsonTreeHelper {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -728,10 +832,13 @@ type MutableFileTreeItem<TCT extends string = string> = IMutableFileTreeFileItem
 // @public
 const number: Converter<number, IJsonConverterContext>;
 
+// @public
+function number_2(opts?: INumberSchemaOptions): ISchemaValidator<number>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const number_2: Validation.Classes.NumberValidator<number, IJsonValidatorContext>;
+const number_3: Validation.Classes.NumberValidator<number, IJsonValidatorContext>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -746,10 +853,31 @@ function object<T, TC = unknown>(properties: Conversion.FieldConverters<JsonComp
 function object_2<T, TC = unknown>(properties: Validation.Classes.FieldValidators<JsonCompatibleType<T>, TC>, params?: Omit<Validation.Classes.ObjectValidatorConstructorParams<JsonCompatibleType<T>, TC>, 'fields'>): JsonCompatible_2.ObjectValidator<T, TC>;
 
 // @public
+function object_3<P extends ILlmProperties>(properties: P, opts?: IObjectSchemaOptions): ISchemaValidator<ObjectStatic<P>>;
+
+// @public
 type ObjectConverter<T, TC = unknown> = ObjectConverter_2<JsonCompatibleType<T>, TC>;
 
 // @public
+type ObjectStatic<P extends ILlmProperties> = Simplify<{
+    [K in RequiredKeys<P>]: Static<P[K]>;
+} & {
+    [K in OptionalKeys<P>]?: OptionalPropertyStatic<P[K]>;
+}>;
+
+// @public
 type ObjectValidator<T, TC = unknown> = Validation.Classes.ObjectValidator<JsonCompatibleType<T>, TC>;
+
+// @public
+function optional<S extends ISchemaValidator<unknown>>(schema: S): ISchemaValidator<Static<S> | undefined>;
+
+// @public
+type OptionalKeys<P extends ILlmProperties> = {
+    [K in keyof P]: P[K] extends ISchemaValidator<infer U> ? (undefined extends U ? K : never) : never;
+}[keyof P];
+
+// @public
+type OptionalPropertyStatic<V> = V extends ISchemaValidator<infer U> ? Exclude<U, undefined> : never;
 
 // @public
 export function pickJsonObject(src: JsonObject, path: string): Result<JsonObject>;
@@ -784,6 +912,9 @@ function recordOf_2<T, TC = unknown, TK extends string = string>(validateElement
 type RecordValidator<T, TC = unknown, TK extends string = string> = Validation.Validator<Record<TK, JsonCompatibleType<T>>, TC>;
 
 // @public
+type RequiredKeys<P extends ILlmProperties> = Exclude<keyof P, OptionalKeys<P>>;
+
+// @public
 export function sanitizeJson(from: unknown): Result<JsonValue>;
 
 // @public
@@ -798,6 +929,17 @@ type SaveDetail = SaveCapability | SaveFailureReason;
 // @public
 type SaveFailureReason = 'not-supported' | 'read-only' | 'not-mutable' | 'path-excluded' | 'permission-denied';
 
+// @public
+type SchemaNodeType = 'string' | 'number' | 'integer' | 'boolean' | 'enum' | 'optional' | 'array' | 'object';
+
+// @public
+type Simplify<T> = {
+    [K in keyof T]: T[K];
+} & {};
+
+// @public
+type Static<S extends ISchemaValidator<unknown>> = S extends ISchemaValidator<infer T> ? T : never;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -807,10 +949,13 @@ function strictObject<T, TC = unknown>(properties: Conversion.FieldConverters<Js
 // @public
 const string: StringConverter<string, IJsonConverterContext>;
 
+// @public
+function string_2(opts?: ISchemaOptions): ISchemaValidator<string>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const string_2: Validation.Classes.StringValidator<string, IJsonValidatorContext>;
+const string_3: Validation.Classes.StringValidator<string, IJsonValidatorContext>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -832,9 +977,9 @@ declare namespace Validators {
         jsonObject_2 as jsonObject,
         jsonArray_2 as jsonArray,
         jsonValue_2 as jsonValue,
-        string_2 as string,
-        number_2 as number,
-        boolean_2 as boolean
+        string_3 as string,
+        number_3 as number,
+        boolean_3 as boolean
     }
 }
 export { Validators }

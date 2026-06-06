@@ -208,7 +208,7 @@ class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
     protected _brand?: string;
     // @internal (undocumented)
     protected _context(supplied?: TC): TC | undefined;
-    convert(from: unknown, context?: TC): Result<T>;
+    convert(from: unknown, context?: TC, selfOverride?: Converter<T, TC>): Result<T>;
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     // @internal (undocumented)
     protected readonly _defaultContext?: TC;
@@ -470,6 +470,10 @@ declare namespace Collections {
         ConversionErrorHandling,
         IReadOnlyConvertingResultMapConstructorParams,
         ReadOnlyConvertingResultMap,
+        IRetainedRecord,
+        IRetainingRingBufferQuery,
+        IRetainingRingBufferCreateParams,
+        RetainingRingBuffer,
         IResultMapConstructorParams,
         ResultMapValueFactory,
         IResultMap,
@@ -705,7 +709,7 @@ type ConvertedToType<TCONV> = Infer<TCONV>;
 // @public
 export interface Converter<T, TC = unknown> extends ConverterTraits {
     readonly brand?: string;
-    convert(from: unknown, context?: TC): Result<T>;
+    convert(from: unknown, context?: TC, selfOverride?: Converter<T, TC>): Result<T>;
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     readonly isOptional: boolean;
     map<T2>(mapper: (from: T, context?: TC) => Result<T2>): Converter<T2, TC>;
@@ -1761,6 +1765,23 @@ export interface IResultReportOptions<TD = unknown> {
 // @beta
 export type IResultValueType<T> = T extends IResult<infer TV> ? TV : never;
 
+// @public
+export interface IRetainedRecord {
+    readonly seq: number;
+}
+
+// @public
+export interface IRetainingRingBufferCreateParams {
+    readonly maxRecords?: number;
+}
+
+// @public
+export interface IRetainingRingBufferQuery<T extends IRetainedRecord> {
+    readonly filter?: (record: T) => boolean;
+    readonly limit?: number;
+    readonly sinceSeq?: number;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2629,6 +2650,17 @@ class RetainingLogger extends LoggerBase {
 }
 
 // @public
+export class RetainingRingBuffer<T extends IRetainedRecord> {
+    constructor(params?: IRetainingRingBufferCreateParams);
+    clear(): void;
+    get lastSeq(): number;
+    push(record: T): T;
+    query(query?: IRetainingRingBufferQuery<T>): ReadonlyArray<T>;
+    get records(): ReadonlyArray<T>;
+    get size(): number;
+}
+
+// @public
 function shouldLog(message: MessageLogLevel, reporter: ReporterLogLevel): boolean;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3053,10 +3085,6 @@ const value: typeof literal;
 
 // @public
 export function valuesForRecord<TK extends string, TV>(obj: Record<TK, TV>): TV[];
-
-// Warnings were encountered during analysis:
-//
-// src/packlets/logging/retainingLogger.ts:127:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

@@ -51,7 +51,7 @@ Base ID for the import context for resources imported
 
 </td><td>
 
-readonly [ILooseConditionDecl](ILooseConditionDecl.md)[]
+readonly [IConditionDecl](../type-aliases/IConditionDecl.md)[]
 
 </td><td>
 

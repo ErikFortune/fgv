@@ -51,7 +51,7 @@ The Qualifiers.IReadOnlyQualifierCollector | readonly qualifier collector that d
 
 </td><td>
 
-Record&lt;string, string&gt;
+Readonly&lt;Partial&lt;Record&lt;string, string&gt;&gt;&gt;
 
 </td><td>
 

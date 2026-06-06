@@ -9,7 +9,7 @@ from a set of Resources.ResourceCandidate | resource candidates.
 **Signature:**
 
 ```typescript
-static reduceToChildResourceCandidateDecls(candidates: readonly ResourceCandidate[], filterForContext?: IValidatedContextDecl): Result<IChildResourceCandidateDecl[]>;
+static reduceToChildResourceCandidateDecls(candidates: readonly ResourceCandidate[], filterForContext?: IValidatedContextDecl): Result<IChildResourceCandidateDecl<string>[]>;
 ```
 
 **Parameters:**
@@ -22,6 +22,6 @@ static reduceToChildResourceCandidateDecls(candidates: readonly ResourceCandidat
 
 **Returns:**
 
-Result&lt;[IChildResourceCandidateDecl](../../interfaces/IChildResourceCandidateDecl.md)[]&gt;
+Result&lt;[IChildResourceCandidateDecl](../../interfaces/IChildResourceCandidateDecl.md)&lt;string&gt;[]&gt;
 
 Result with array of reduced candidate declarations, or Failure if reduction fails

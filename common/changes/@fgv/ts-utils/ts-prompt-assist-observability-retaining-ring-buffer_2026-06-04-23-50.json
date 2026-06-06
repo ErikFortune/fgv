@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Add RetainingRingBuffer<T extends { seq: number }> to the collections packlet — a generic bounded most-recent-N ring with O(1) eviction, monotonic-seq cursor paging, and predicate filtering (query({ sinceSeq?, limit?, filter? })). lastSeq is stable across clear(). A pure storage substrate: the caller mints each record (assigning its own seq/timestamp); the buffer only retains/evicts/queries. Companion interfaces IRetainedRecord, IRetainingRingBufferCreateParams, IRetainingRingBufferQuery exported top-level.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

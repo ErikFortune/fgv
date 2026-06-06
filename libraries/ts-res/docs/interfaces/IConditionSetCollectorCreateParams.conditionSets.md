@@ -8,5 +8,5 @@ the collector.
 **Signature:**
 
 ```typescript
-conditionSets: IConditionSetDecl[];
+conditionSets: IConditionSetDecl<string>[];
 ```

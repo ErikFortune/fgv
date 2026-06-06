@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 import { MessageLogLevel, Success, succeed } from '../base';
+import { RetainingRingBuffer } from '../collections';
 import { LoggerBase, ReporterLogLevel, shouldLog } from './logger';
 
 /**
@@ -87,44 +88,26 @@ export interface IGetRecordsOptions {
  */
 export class RetainingLogger extends LoggerBase {
   /**
-   * The fixed ring capacity — the maximum number of records retained before the
-   * oldest is overwritten. A positive integer (see the constructor normalization).
-   * @internal
-   */
-  private readonly _capacity: number;
-
-  /**
    * Injected clock used to timestamp records.
    * @internal
    */
   private readonly _now: () => number;
 
   /**
-   * The backing store, used as a circular buffer. Grows lazily up to `_capacity`,
-   * after which records overwrite the oldest slot in place — eviction is O(1), with
-   * no `shift()` re-indexing regardless of capacity.
+   * The monotonic sequence counter. The logger owns `seq` assignment and
+   * increments this before each push so the buffer receives strictly increasing
+   * sequence numbers.
    * @internal
    */
-  private _buffer: ILogRecord[] = [];
+  private _nextSeq: number = 0;
 
   /**
-   * Index of the oldest retained record within `_buffer` once the ring is full.
+   * The backing ring buffer. Retains up to `maxRecords` log records, evicting
+   * the oldest when full. The buffer is a pure seq-ring — it does not assign
+   * `seq`; the logger does.
    * @internal
    */
-  private _head: number = 0;
-
-  /**
-   * The number of valid records currently retained (`<= _capacity`).
-   * @internal
-   */
-  private _count: number = 0;
-
-  /**
-   * The most recently assigned sequence number; monotonic, stable across eviction
-   * and {@link Logging.RetainingLogger.clear | clear()}.
-   * @internal
-   */
-  private _lastSeq: number = 0;
+  private readonly _ring: RetainingRingBuffer<ILogRecord>;
 
   /**
    * Creates a new retaining logger.
@@ -139,18 +122,15 @@ export class RetainingLogger extends LoggerBase {
     now: () => number = () => Date.now()
   ) {
     super(logLevel);
-    // The ring requires a positive integer capacity to be well-defined; a non-finite
-    // or sub-1 value would make the modular index arithmetic meaningless, so floor it
-    // to a sane minimum of 1 rather than crash on degenerate input.
-    this._capacity = Number.isFinite(maxRecords) && maxRecords >= 1 ? Math.floor(maxRecords) : 1;
     this._now = now;
+    this._ring = new RetainingRingBuffer<ILogRecord>({ maxRecords });
   }
 
   /**
    * The retained records, oldest-first.
    */
   public get records(): ReadonlyArray<ILogRecord> {
-    return this._toOrderedArray();
+    return this._ring.records;
   }
 
   /**
@@ -158,7 +138,7 @@ export class RetainingLogger extends LoggerBase {
    * pass it as `sinceSeq` to page only records logged afterward.
    */
   public get lastSeq(): number {
-    return this._lastSeq;
+    return this._ring.lastSeq;
   }
 
   /**
@@ -167,19 +147,12 @@ export class RetainingLogger extends LoggerBase {
    * @returns The matching records, oldest-first.
    */
   public getRecords(options?: IGetRecordsOptions): ReadonlyArray<ILogRecord> {
-    let result: ReadonlyArray<ILogRecord> = this._toOrderedArray();
-    if (options?.minLevel !== undefined) {
-      const minLevel = options.minLevel;
-      result = result.filter((r) => shouldLog(r.level, minLevel));
-    }
-    if (options?.sinceSeq !== undefined) {
-      const sinceSeq = options.sinceSeq;
-      result = result.filter((r) => r.seq > sinceSeq);
-    }
-    if (options?.limit !== undefined && result.length > options.limit) {
-      result = result.slice(result.length - options.limit);
-    }
-    return result;
+    const minLevel = options?.minLevel;
+    return this._ring.query({
+      sinceSeq: options?.sinceSeq,
+      filter: minLevel !== undefined ? (r) => shouldLog(r.level, minLevel) : undefined,
+      limit: options?.limit
+    });
   }
 
   /**
@@ -187,21 +160,7 @@ export class RetainingLogger extends LoggerBase {
    * holding a `sinceSeq` cursor never re-sees a sequence number.
    */
   public clear(): void {
-    this._buffer = [];
-    this._head = 0;
-    this._count = 0;
-  }
-
-  /**
-   * Materializes the ring into a plain oldest-first array.
-   * @internal
-   */
-  private _toOrderedArray(): ILogRecord[] {
-    const result: ILogRecord[] = [];
-    for (let i = 0; i < this._count; i++) {
-      result.push(this._buffer[(this._head + i) % this._capacity]);
-    }
-    return result;
+    this._ring.clear();
   }
 
   /**
@@ -214,23 +173,15 @@ export class RetainingLogger extends LoggerBase {
     message: unknown,
     parameters: readonly unknown[]
   ): void {
-    this._lastSeq += 1;
+    this._nextSeq += 1;
     const record: ILogRecord = {
-      seq: this._lastSeq,
+      seq: this._nextSeq,
       timestamp: this._now(),
       level,
       message: formatted,
       args: [message, ...parameters]
     };
-    if (this._count < this._capacity) {
-      // Still filling: append to the next free slot (head stays 0 during this phase).
-      this._buffer.push(record);
-      this._count += 1;
-    } else {
-      // Full: overwrite the oldest record in place and advance the head.
-      this._buffer[this._head] = record;
-      this._head = (this._head + 1) % this._capacity;
-    }
+    this._ring.push(record);
   }
 
   /**

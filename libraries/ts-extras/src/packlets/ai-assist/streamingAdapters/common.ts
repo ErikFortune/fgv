@@ -95,6 +95,104 @@ export interface IStreamApiConfig {
 }
 
 /**
+ * Stable log-line prefix that every streaming adapter's "unrecognized SSE event"
+ * warning starts with. Production deployments can filter / alert on this exact
+ * substring without coupling to the per-adapter detail message. Surfacing this
+ * as a shared constant ensures all adapters emit the same prefix; loosening or
+ * renaming the prefix is a coordinated, intentional change rather than a per-file
+ * accident.
+ *
+ * @internal
+ */
+export const UNRECOGNIZED_EVENT_WARN_TAG: string = 'ai-assist:unrecognized-event';
+
+/**
+ * Maximum characters of raw SSE payload to include in the
+ * {@link UNRECOGNIZED_EVENT_WARN_TAG} warning when raw-preview mode is opted in
+ * via {@link UNRECOGNIZED_EVENT_FULL_PAYLOAD_ENV_VAR}. Long enough to identify
+ * the JSON shape that arrived ("the new event carries field X"), short enough
+ * that a hot stream of unknown events with a verbose payload doesn't blow up
+ * log volume.
+ *
+ * @internal
+ */
+const UNRECOGNIZED_EVENT_PAYLOAD_PREVIEW_MAX: number = 200;
+
+/**
+ * Environment variable that opts in to **raw payload preview** in the
+ * {@link UNRECOGNIZED_EVENT_WARN_TAG} warning. Any non-empty, non-`'0'` value
+ * activates the raw preview. **Default behavior** (env var absent / empty /
+ * `'0'`) is **structural-only** preview — top-level JSON keys + payload byte
+ * length, never the values.
+ *
+ * The default-safe posture exists because unrecognized SSE event payloads can
+ * carry tool arguments, tool results, user-conversation text, or other
+ * potentially sensitive content. Emitting them verbatim at `warn` level — which
+ * is the level explicitly designed to surface in production logs / alerting —
+ * is a PII leak waiting to happen.
+ *
+ * Ops triaging an active drift signal (`ai-assist:unrecognized-event` warnings
+ * appearing in production logs after a provider API evolution) can set this
+ * env var to widen the preview and see the actual payload shape during
+ * investigation, then unset it once the new event family is handled.
+ *
+ * @internal
+ */
+export const UNRECOGNIZED_EVENT_FULL_PAYLOAD_ENV_VAR: string = 'AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD';
+
+/**
+ * Renders an SSE `data:` payload for inclusion in an unrecognized-event
+ * warning.
+ *
+ * - Empty payload: returns `<no payload>`.
+ * - Default (env var unset): returns structural-only preview (e.g.
+ *   `{ keys: [type, data], length: 1234 }` for a JSON object payload;
+ *   `<array payload, length=N>` / `<{type} payload, length=N>` /
+ *   `<non-JSON payload, length=N>` for other shapes). Never includes
+ *   field values.
+ * - With {@link UNRECOGNIZED_EVENT_FULL_PAYLOAD_ENV_VAR} set to a truthy
+ *   value: returns the raw payload, newlines collapsed to spaces, capped
+ *   at {@link UNRECOGNIZED_EVENT_PAYLOAD_PREVIEW_MAX} chars with a trailing
+ *   ellipsis on truncation. **Use this mode only for active drift triage**
+ *   — it leaks payload content into warn logs.
+ *
+ * @internal
+ */
+export function formatUnrecognizedEventPayloadPreview(data: string): string {
+  if (data.length === 0) return '<no payload>';
+
+  // Opt-in raw preview for ops triage. Accessed via `globalThis` (always
+  // defined) rather than a bare `process` reference, so webpack/rollup never
+  // try to bundle or polyfill `process` for browser consumers. A
+  // `typeof process !== 'undefined'` guard is runtime-safe but still triggers
+  // webpack's static module resolution on the `process` identifier.
+  const proc = (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process;
+  const envValue = proc?.env?.[UNRECOGNIZED_EVENT_FULL_PAYLOAD_ENV_VAR];
+  const rawPreviewOptIn = envValue !== undefined && envValue !== '' && envValue !== '0';
+  if (rawPreviewOptIn) {
+    const collapsed = data.replace(/\s+/g, ' ');
+    return collapsed.length > UNRECOGNIZED_EVENT_PAYLOAD_PREVIEW_MAX
+      ? `${collapsed.slice(0, UNRECOGNIZED_EVENT_PAYLOAD_PREVIEW_MAX)}…`
+      : collapsed;
+  }
+
+  // Default-safe: structural information only. Never emits payload values.
+  try {
+    const parsed: unknown = JSON.parse(data);
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+      const keys = Object.keys(parsed);
+      return `{ keys: [${keys.join(', ')}], length: ${data.length} }`;
+    }
+    if (Array.isArray(parsed)) {
+      return `<array payload, length=${data.length}>`;
+    }
+    return `<${typeof parsed} payload, length=${data.length}>`;
+  } catch {
+    return `<non-JSON payload, length=${data.length}>`;
+  }
+}
+
+/**
  * Opens an SSE-style POST connection. Returns the underlying Response on a
  * 2xx; failures (network, non-2xx, missing body) surface as Result.fail
  * carrying the body text.

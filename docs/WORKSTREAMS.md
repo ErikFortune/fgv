@@ -204,6 +204,28 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ## Completed workstreams
 
+### `json-schema-derives-t` ✅
+
+**Status:** ✅ shipped via PR #441 to integration branch `json-schema-derives-t`; cluster-close PR open
+**Workflow shape:** alignment stream (single-PR new packlet on integration branch + cluster-close squash to release)
+**Substrate:** `.ai/tasks/completed/2026-06/json-schema-derives-t/{state.md, README.md}` + `.ai/tasks/completed/2026-06/json-schema-converter-alignment/{brief.md, state.md, research.md, derives-t-feasibility-brief.md, derives-t-feasibility.md, README.md}` (alignment spike rides with this stream's squash)
+**Package surface:** `@fgv/ts-json-base` (new `json-schema-builder` packlet, consumer-facing `JsonSchema` namespace) — ~505 lines impl + ~620 lines tests; no surface change to existing exports.
+
+**Mission.** Typed JSON Schema with derived static types for the LLM-tool subset. **Schema IS the validator.** Each factory returns an `ISchemaValidator<T>` that extends `Validator<T>`, carries the phantom `static: T` for `Static<typeof schema>` extraction, and exposes `validate()` / `convert()` / `toJson()` as methods. `fromJson(rawJsonObject)` parses incoming JSON Schema (e.g. from MCP) into an `ISchemaValidator<JsonValue>` via `Converters.discriminatedObject` with arms recursing through `self` (enabled by PR #442's discriminatedObject self-fix). Consumer authors a single typed value and gets verified-not-asserted type safety end-to-end.
+
+**Origin.** Surfaced during `ai-assist-client-tools` Phase A review: a consumer authoring both JSON Schema (wire) and Converter/Validator (runtime) over the same shape is error-prone. Two-phase spike (`json-schema-converter-alignment`) tested feasibility; phase-1 broad survey + phase-2 schema-derives-T feasibility verdict, both shipped as substrate artifacts. Erik chose Option 1 (commission alignment now, hold ai-assist-client-tools Phase B/C). Four Copilot review rounds + structural pivots; round 3 surfaced a load-bearing validator/convert symmetry bug; loop converged on diminishing returns at round 4 (4 of 10 used per L33).
+
+### `discriminated-object-self-fix` ✅
+
+**Status:** ✅ shipped to `release` via PR #442 (2026-06-03).
+**Workflow shape:** single implementation PR direct to `release`
+**Substrate:** `.ai/tasks/completed/2026-06/discriminated-object-self-fix/{brief.md, state.md, README.md}`
+**Package surface:** `@fgv/ts-utils` — `conversion/{converter.ts, baseConverter.ts, basicConverters.ts}` + tests + api-extractor report + `minor` change file.
+
+**Mission.** Three-part additive fix to `Converters.discriminatedObject` so per-arm converter invocations thread `self` (and `context`) — bringing the primitive in line with every other Converter combinator and unblocking recursive discriminated-union parsers. (1) `Converter.convert` interface gained optional `selfOverride?: Converter<T, TC>`; (2) `BaseConverter.convert` honors it via `_converter(from, selfOverride ?? this, context)`; (3) `discriminatedObject` body wraps a `ConverterFunc` and threads `self`/`context` to arms, with `isValidator(arm)` discriminating the in-place validator path from the recursion-capable converter path. `ValidatorBase.validate` needed no change (already threads `self` correctly). 5 new tests cover the recursive-tree case end-to-end including a direct `self === outerConverter` identity assertion.
+
+**Origin.** Surfaced during `json-schema-derives-t` (PR #441) review — the procedural `_parseNode` switch inside `fromJson` is the manual-type-check-with-cast anti-pattern fgv forbids. Correct shape is `Converters.discriminatedObject('type', { ... })` with arms recursing through `self` for nested schemas. Erik called the missing-`self` an outright bug rather than a workaround-worthy debt; this stream fixed the primitive once instead of accumulating lazy-thunk-closure workarounds in every recursive parser. Unblocks the `json-schema-derives-t` revision.
+
 ### `capture-async-result-upgrade` ✅
 
 **Status:** ✅ implementation merged to integration branch (PR #433); cluster-close PR #434 open

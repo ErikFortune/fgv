@@ -2,11 +2,11 @@
 
 ## IQualifierCollectorCreateParams.qualifiers property
 
-Optional list of Qualifiers.IQualifierDecl | declarations for the qualifiers to add to the collection
-upon creation.
+Optional list of Qualifiers.IQualifierDecl | declarations or bare
+axis-name strings for the qualifiers to add to the collection on creation.
 
 **Signature:**
 
 ```typescript
-qualifiers: IQualifierDecl[];
+qualifiers: readonly (string | IQualifierDecl)[];
 ```

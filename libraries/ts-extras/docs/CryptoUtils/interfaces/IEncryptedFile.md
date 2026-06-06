@@ -154,7 +154,7 @@ Optional unencrypted metadata for display/filtering.
 
 </td><td>
 
-[IKeyDerivationParams](../../interfaces/IKeyDerivationParams.md)
+[IKeyDerivationParams](../../type-aliases/IKeyDerivationParams.md)
 
 </td><td>
 

@@ -212,6 +212,98 @@ Imports a public-key JWK as a `CryptoKey` for the requested algorithm.
 </td></tr>
 <tr><td>
 
+[exportPublicKeySpki(publicKey)](./NodeCryptoProvider.exportPublicKeySpki.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Exports a public `CryptoKey` as a DER-encoded SPKI blob.
+
+</td></tr>
+<tr><td>
+
+[importPublicKeySpki(spkiBytes, algorithm)](./NodeCryptoProvider.importPublicKeySpki.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Imports a public key from a DER-encoded SPKI blob.
+
+</td></tr>
+<tr><td>
+
+[sign(privateKey, data)](./NodeCryptoProvider.sign.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Signs `data` with `privateKey` using the algorithm inferred from the key.
+
+</td></tr>
+<tr><td>
+
+[verify(publicKey, signature, data)](./NodeCryptoProvider.verify.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Verifies a signature produced by NodeCryptoProvider.sign.
+
+</td></tr>
+<tr><td>
+
+[timingSafeEqual(a, b)](./NodeCryptoProvider.timingSafeEqual.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Compares two byte arrays in constant time using Node's native
+`crypto.timingSafeEqual`.
+
+</td></tr>
+<tr><td>
+
+[hmacSha256(key, data)](./NodeCryptoProvider.hmacSha256.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Computes an HMAC-SHA256 MAC for `data` using `key`.
+
+</td></tr>
+<tr><td>
+
+[verifyHmacSha256(key, signature, data)](./NodeCryptoProvider.verifyHmacSha256.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Verifies an HMAC-SHA256 MAC in constant time.
+
+</td></tr>
+<tr><td>
+
 [wrapBytes(plaintext, recipientPublicKey, options)](./NodeCryptoProvider.wrapBytes.md)
 
 </td><td>

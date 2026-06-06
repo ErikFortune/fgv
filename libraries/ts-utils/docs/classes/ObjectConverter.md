@@ -167,7 +167,7 @@ Creates a new Conversion.ObjectConverter | ObjectConverter derived from this one
 </td></tr>
 <tr><td>
 
-[convert(from, context)](./BaseConverter.convert.md)
+[convert(from, context, selfOverride)](./BaseConverter.convert.md)
 
 </td><td>
 

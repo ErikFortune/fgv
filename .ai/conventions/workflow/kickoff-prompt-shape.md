@@ -104,6 +104,32 @@ The interleaved shape:
     don't need to re-state the rules, but they should remind the
     worker that the discipline is mandatory and reference the
     `CODING_STANDARDS.md` section.
+  - **Round count is not the stop signal — substantive value per
+    round is.** Round 3 surfacing a load-bearing structural finding
+    is *not* a stop signal; round 2 surfacing only nitpicks *is*.
+    Implementing agents call the stop based on the most recent
+    round's finding profile, not on a round-count threshold.
+  - **`code-reviewer` runs BEFORE 100%-coverage closure (layer 1
+    internal sequencing).** The layer-1 sequence is: scenario-driven
+    tests (positive, negative, edge) → `code-reviewer` pass →
+    coverage-gap closure → all gates pass → open PR. Coverage-
+    chasing is the trigger for the `code-reviewer` pass, whether
+    mid-stream or final-prep. Reversing the order locks in
+    imperative tests that should be Result-chain tests, `c8 ignore`
+    directives that mask refactor opportunities, and surface
+    complexity that should have been simplified. See
+    `TESTING_GUIDELINES.md` § "Coverage Gap Resolution" for the
+    full sequence.
+- **PR base for multi-phase streams targets an integration branch,
+  not `release`.** Stream kickoffs for design-triage-implement
+  workflows should instruct the implementing agent to base their
+  PR on the stream's integration branch (`<stream-id>`, off
+  `release` HEAD). Phase A design, Phase B triage, Phase C
+  implementation all merge onto the same integration branch; the
+  orchestrator opens the cluster-close PR (integration → release)
+  when implementation completes. Phase A design does NOT land on
+  `release` as its own commit. See orchestrator agent prompt §
+  "Design triage cycle" for the integration-branch posture.
 
 ## Anti-patterns
 

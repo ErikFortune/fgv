@@ -5,5 +5,5 @@
 **Signature:**
 
 ```typescript
-readonly resources: readonly ILooseResourceDecl[];
+readonly resources: readonly ILooseResourceDecl<TQualifierNames>[];
 ```

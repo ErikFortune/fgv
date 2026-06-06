@@ -7,5 +7,5 @@ Non-validated declaration of a Conditions.Condition | condition.
 ## Type
 
 ```typescript
-type IConditionDecl = ILooseConditionDecl
+type IConditionDecl = ILooseConditionDecl<TQualifierNames>
 ```

@@ -4,7 +4,7 @@
 
 Non-validated loose declaration of a Resources.ResourceCandidate | resource candidate.
 
-**Extends:** [`IChildResourceCandidateDecl`](../../interfaces/IChildResourceCandidateDecl.md)
+**Extends:** [`IChildResourceCandidateDecl<TQualifierNames>`](../../interfaces/IChildResourceCandidateDecl.md)
 
 ## Properties
 
@@ -70,7 +70,7 @@ The JSON value of the resource.
 
 </td><td>
 
-[ConditionSetDecl](../../type-aliases/ConditionSetDecl.md)
+[ConditionSetDecl](../../type-aliases/ConditionSetDecl.md)&lt;TQualifierNames&gt;
 
 </td><td>
 

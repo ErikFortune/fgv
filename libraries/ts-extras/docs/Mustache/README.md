@@ -89,6 +89,15 @@ Description
 <tbody>
 <tr><td>
 
+[MustacheEscapeStrategy](./type-aliases/MustacheEscapeStrategy.md)
+
+</td><td>
+
+Strategy applied to double-brace `{{name}}` tokens at render time.
+
+</td></tr>
+<tr><td>
+
 [MustacheTokenType](./type-aliases/MustacheTokenType.md)
 
 </td><td>
