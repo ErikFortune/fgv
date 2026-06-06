@@ -34,11 +34,11 @@ Description
 
 </td><td>
 
-"auto" | "1024x1024" | "1024x1792" | "1792x1024"
+[AiImageSize](../../type-aliases/AiImageSize.md)
 
 </td><td>
 
-Image dimensions.
+Image dimensions for OpenAI models (mapped to `size` field).
 
 </td></tr>
 <tr><td>
@@ -55,7 +55,7 @@ number
 
 </td><td>
 
-Number of images to generate.
+Number of images.
 
 </td></tr>
 <tr><td>
@@ -68,11 +68,11 @@ Number of images to generate.
 
 </td><td>
 
-"high" | "standard"
+[AiImageQuality](../../type-aliases/AiImageQuality.md)
 
 </td><td>
 
-Generation quality hint where supported.
+Quality tier.
 
 </td></tr>
 <tr><td>
@@ -89,12 +89,12 @@ number
 
 </td><td>
 
-Random seed for reproducibility, where supported.
+Reproducibility seed, where supported.
 
 </td></tr>
 <tr><td>
 
-[imagen](./IAiImageGenerationOptions.imagen.md)
+[models](./IAiImageGenerationOptions.models.md)
 
 </td><td>
 
@@ -102,11 +102,11 @@ Random seed for reproducibility, where supported.
 
 </td><td>
 
-{ negativePrompt?: string; aspectRatio?: "1:1" | "3:4" | "4:3" | "9:16" | "16:9" }
+readonly [IModelFamilyConfig](../../type-aliases/IModelFamilyConfig.md)[]
 
 </td><td>
 
-Imagen-specific options.
+Optional precision via model-family-scoped blocks.
 
 </td></tr>
 </tbody></table>

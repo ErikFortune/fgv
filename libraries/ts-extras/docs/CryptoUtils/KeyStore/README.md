@@ -48,6 +48,17 @@ Description
 Password-protected key store for managing encryption secrets.
 
 </td></tr>
+<tr><td>
+
+[EncryptedFilePrivateKeyStorage](./classes/EncryptedFilePrivateKeyStorage.md)
+
+</td><td>
+
+CryptoUtils.KeyStore.IPrivateKeyStorage | IPrivateKeyStorage
+implementation that persists each private key as its own AES-256-GCM-encrypted
+file in a directory.
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -190,6 +201,15 @@ Result of adding a password-derived secret.
 </td></tr>
 <tr><td>
 
+[IAddSecretFromPasswordArgon2idOptions](./interfaces/IAddSecretFromPasswordArgon2idOptions.md)
+
+</td><td>
+
+Options for adding an Argon2id password-derived secret.
+
+</td></tr>
+<tr><td>
+
 [IAddKeyPairOptions](./interfaces/IAddKeyPairOptions.md)
 
 </td><td>
@@ -223,6 +243,15 @@ Result of removing a secret from the key store.
 
 Pluggable backend that persists raw asymmetric private keys outside of the
 encrypted keystore vault.
+
+</td></tr>
+<tr><td>
+
+[IEncryptedFilePrivateKeyStorageCreateParams](./interfaces/IEncryptedFilePrivateKeyStorageCreateParams.md)
+
+</td><td>
+
+Parameters for CryptoUtils.KeyStore.EncryptedFilePrivateKeyStorage.create.
 
 </td></tr>
 </tbody></table>

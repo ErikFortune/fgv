@@ -7,5 +7,5 @@ The conditions that must be met for the resource to be selected.
 **Signature:**
 
 ```typescript
-readonly conditions: ConditionSetDecl;
+readonly conditions: ConditionSetDecl<TQualifierNames>;
 ```

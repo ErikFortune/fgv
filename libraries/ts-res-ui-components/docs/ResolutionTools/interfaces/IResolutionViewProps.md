@@ -275,7 +275,7 @@ Factory for creating custom resource types
 
 </td><td>
 
-(added: ILooseResourceDecl[], deleted: string[]) =&gt; void
+(added: ILooseResourceDecl&lt;string&gt;[], deleted: string[]) =&gt; void
 
 </td><td>
 

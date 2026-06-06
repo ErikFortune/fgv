@@ -281,6 +281,19 @@ Indicates whether this operation was successful.
 </td></tr>
 <tr><td>
 
+[shouldNotFail(label, frameDepth)](./Failure.shouldNotFail.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Asserts at the call site that this IResult | result MUST be a success.
+
+</td></tr>
+<tr><td>
+
 [orDefault(dflt)](./Failure.orDefault.md)
 
 </td><td>
@@ -369,6 +382,19 @@ Converts a IResult | IResult<T> to a DetailedResult | DetailedResult<T, TD>,
 </td><td>
 
 Converts a IResult | IResult<T> to a DetailedResult | DetailedResult<T, TD>,
+
+</td></tr>
+<tr><td>
+
+[withType()](./Failure.withType.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Re-types this Failure | Failure<T> as Failure | Failure<U> for
 
 </td></tr>
 <tr><td>

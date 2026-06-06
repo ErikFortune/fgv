@@ -5,7 +5,7 @@
 Non-validated declaration of a resource candidate for import,
 which can be either a loose or child resource candidate.
 
-**Extends:** [`IChildResourceCandidateDecl`](../../../interfaces/IChildResourceCandidateDecl.md)
+**Extends:** [`IChildResourceCandidateDecl<TQualifierNames>`](../../../interfaces/IChildResourceCandidateDecl.md)
 
 ## Properties
 
@@ -88,7 +88,7 @@ The JSON value of the resource.
 
 </td><td>
 
-[ConditionSetDecl](../../../type-aliases/ConditionSetDecl.md)
+[ConditionSetDecl](../../../type-aliases/ConditionSetDecl.md)&lt;TQualifierNames&gt;
 
 </td><td>
 

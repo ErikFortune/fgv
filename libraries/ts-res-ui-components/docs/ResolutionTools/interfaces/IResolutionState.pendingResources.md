@@ -7,5 +7,5 @@ Resources waiting to be added to the system
 **Signature:**
 
 ```typescript
-pendingResources: Map<string, ILooseResourceDecl>;
+pendingResources: Map<string, ILooseResourceDecl<string>>;
 ```

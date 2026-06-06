@@ -34,7 +34,7 @@ Description
 
 </td><td>
 
-string
+TQualifierNames
 
 </td><td>
 

@@ -51,7 +51,7 @@ The Qualifiers.IReadOnlyQualifierCollector | ReadOnlyQualifierCollector used to
 
 </td><td>
 
-[ILooseConditionDecl](ILooseConditionDecl.md)[]
+[IConditionDecl](../type-aliases/IConditionDecl.md)[]
 
 </td><td>
 

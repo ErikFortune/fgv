@@ -8,5 +8,5 @@ This function enables name inheritance for resource candidates, similar to resou
 ## Signature
 
 ```typescript
-function mergeImporterCandidate(candidate: IImporterResourceCandidateDecl, baseName: string, baseConditions: readonly ILooseConditionDecl[]): Result<IImporterResourceCandidateDecl>
+function mergeImporterCandidate(candidate: IImporterResourceCandidateDecl, baseName: string, baseConditions: readonly ILooseConditionDecl<string>[]): Result<IImporterResourceCandidateDecl>
 ```

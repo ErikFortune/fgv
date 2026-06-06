@@ -144,7 +144,7 @@ readonly [IChatMessage](IChatMessage.md)[]
 
 </td><td>
 
-Additional messages to append after system+user (e.g.
+Additional messages to append after system+user in order (e.g.
 
 </td></tr>
 <tr><td>
@@ -246,7 +246,25 @@ string
 
 </td><td>
 
-Optional override of the descriptor's default base URL.
+Optional override of the descriptor's default base URL (scheme + host +
+optional port + path prefix).
+
+</td></tr>
+<tr><td>
+
+[thinking](./IProviderCompletionParams.thinking.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IThinkingConfig](IThinkingConfig.md)
+
+</td><td>
+
+Optional thinking/reasoning config.
 
 </td></tr>
 </tbody></table>

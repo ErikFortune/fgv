@@ -5,5 +5,5 @@
 **Signature:**
 
 ```typescript
-readonly collections: readonly IResourceCollectionDecl[];
+readonly collections: readonly IResourceCollectionDecl<TQualifierNames>[];
 ```

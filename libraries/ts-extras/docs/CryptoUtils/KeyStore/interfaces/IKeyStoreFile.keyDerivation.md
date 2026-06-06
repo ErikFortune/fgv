@@ -2,10 +2,10 @@
 
 ## IKeyStoreFile.keyDerivation property
 
-Key derivation parameters (required for key store - always password-derived).
+Key derivation parameters for the vault master key (always PBKDF2).
 
 **Signature:**
 
 ```typescript
-readonly keyDerivation: IKeyDerivationParams;
+readonly keyDerivation: IPbkdf2KeyDerivationParams;
 ```

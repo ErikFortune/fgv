@@ -9,7 +9,7 @@ from a set of Resources.ResourceCandidate | resource candidates.
 **Signature:**
 
 ```typescript
-static reduceToLooseResourceCandidateDecls(id: ResourceId, candidates: readonly ResourceCandidate[], filterForContext?: IValidatedContextDecl): Result<ILooseResourceCandidateDecl[]>;
+static reduceToLooseResourceCandidateDecls(id: ResourceId, candidates: readonly ResourceCandidate[], filterForContext?: IValidatedContextDecl): Result<ILooseResourceCandidateDecl<string>[]>;
 ```
 
 **Parameters:**
@@ -23,6 +23,6 @@ static reduceToLooseResourceCandidateDecls(id: ResourceId, candidates: readonly 
 
 **Returns:**
 
-Result&lt;[ILooseResourceCandidateDecl](../interfaces/ILooseResourceCandidateDecl.md)[]&gt;
+Result&lt;[ILooseResourceCandidateDecl](../interfaces/ILooseResourceCandidateDecl.md)&lt;string&gt;[]&gt;
 
 Result with array of reduced candidate declarations, or Failure if reduction fails

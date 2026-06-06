@@ -200,7 +200,7 @@ Gets a derived converter which fails if the resulting converted
 </td></tr>
 <tr><td>
 
-[convert(from, context)](./JsonEditorConverter.convert.md)
+[convert(from, context, selfOverride)](./JsonEditorConverter.convert.md)
 
 </td><td>
 

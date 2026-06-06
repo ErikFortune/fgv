@@ -4,7 +4,7 @@
 
 Normalized non-validated declaration of a Resources.Resource | resource tree root.
 
-**Extends:** [`IResourceTreeChildNodeDecl`](../../interfaces/IResourceTreeChildNodeDecl.md)
+**Extends:** [`IResourceTreeChildNodeDecl<TQualifierNames>`](../../interfaces/IResourceTreeChildNodeDecl.md)
 
 ## Properties
 
@@ -36,7 +36,7 @@ Description
 
 </td><td>
 
-[IContainerContextDecl](../../interfaces/IContainerContextDecl.md)
+[IContainerContextDecl](../../interfaces/IContainerContextDecl.md)&lt;TQualifierNames&gt;
 
 </td><td>
 
@@ -53,7 +53,7 @@ Description
 
 </td><td>
 
-Record&lt;string, [IChildResourceDecl](../../interfaces/IChildResourceDecl.md)&gt;
+Record&lt;string, [IChildResourceDecl](../../interfaces/IChildResourceDecl.md)&lt;TQualifierNames&gt;&gt;
 
 </td><td>
 
@@ -70,7 +70,7 @@ Record&lt;string, [IChildResourceDecl](../../interfaces/IChildResourceDecl.md)&g
 
 </td><td>
 
-Record&lt;string, [IResourceTreeChildNodeDecl](../../interfaces/IResourceTreeChildNodeDecl.md)&gt;
+Record&lt;string, [IResourceTreeChildNodeDecl](../../interfaces/IResourceTreeChildNodeDecl.md)&lt;TQualifierNames&gt;&gt;
 
 </td><td>
 

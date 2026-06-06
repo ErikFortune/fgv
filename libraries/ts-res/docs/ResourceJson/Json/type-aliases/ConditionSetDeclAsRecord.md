@@ -2,10 +2,10 @@
 
 # Type Alias: ConditionSetDeclAsRecord
 
-Non-validated declaration of a Conditions.Condition | condition.
+Non-validated record-form declaration of a Conditions.ConditionSet | condition set.
 
 ## Type
 
 ```typescript
-type ConditionSetDeclAsRecord = Record<string, string | IChildConditionDecl>
+type ConditionSetDeclAsRecord = Readonly<Partial<Record<TQualifierNames, string | IChildConditionDecl>>>
 ```

@@ -39,6 +39,7 @@ Description
 </td><td>
 
 The QualifierTypes.QualifierTypeCollector | qualifier types used to
+create Qualifiers.Qualifier | qualifiers from Qualifiers.IQualifierDecl | declarations.
 
 </td></tr>
 <tr><td>
@@ -51,11 +52,11 @@ The QualifierTypes.QualifierTypeCollector | qualifier types used to
 
 </td><td>
 
-[IQualifierDecl](../../interfaces/IQualifierDecl.md)[]
+readonly (string | [IQualifierDecl](../../interfaces/IQualifierDecl.md))[]
 
 </td><td>
 
-Optional list of Qualifiers.IQualifierDecl | declarations for the qualifiers to add to the collection
+Optional list of Qualifiers.IQualifierDecl | declarations or bare
 
 </td></tr>
 </tbody></table>

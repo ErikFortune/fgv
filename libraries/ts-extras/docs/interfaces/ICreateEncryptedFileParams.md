@@ -136,7 +136,7 @@ Optional converter to validate metadata before including.
 
 </td><td>
 
-[IKeyDerivationParams](IKeyDerivationParams.md)
+[IKeyDerivationParams](../type-aliases/IKeyDerivationParams.md)
 
 </td><td>
 

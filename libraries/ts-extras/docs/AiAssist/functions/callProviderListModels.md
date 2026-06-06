@@ -2,11 +2,8 @@
 
 # Function: callProviderListModels
 
-Lists models available from a provider, with capabilities resolved from
-native provider info (where supplied) and a configurable rule set.
-
-Routes based on `descriptor.apiFormat` — listing reuses the existing
-format dispatch and does not require a separate descriptor field.
+Lists models available from a provider, routing by `descriptor.apiFormat`.
+Capabilities are resolved from native provider info and a configurable rule set.
 
 ## Signature
 

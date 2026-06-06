@@ -51,7 +51,7 @@ The Qualifiers.IReadOnlyQualifierCollector | readonly qualifier collector that d
 
 </td><td>
 
-Record&lt;string, [QualifierContextValue](../type-aliases/QualifierContextValue.md)&gt;
+Readonly&lt;Partial&lt;Record&lt;string, [QualifierContextValue](../type-aliases/QualifierContextValue.md)&gt;&gt;&gt;
 
 </td><td>
 

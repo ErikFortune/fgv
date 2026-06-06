@@ -7,5 +7,5 @@ Helper method to merge a resource context declaration with a parent name and con
 ## Signature
 
 ```typescript
-function mergeContextDecl(decl: IContainerContextDecl, parentName: string, parentConditions: readonly ILooseConditionDecl[]): Result<IContainerContextDecl>
+function mergeContextDecl(decl: IContainerContextDecl, parentName: string, parentConditions: readonly ILooseConditionDecl<string>[]): Result<IContainerContextDecl>
 ```

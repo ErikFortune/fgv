@@ -197,4 +197,21 @@ string
 Optional override of the descriptor's default base URL.
 
 </td></tr>
+<tr><td>
+
+[thinking](./IProviderCompletionStreamParams.thinking.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IThinkingConfig](IThinkingConfig.md)
+
+</td><td>
+
+Optional thinking/reasoning mode configuration.
+
+</td></tr>
 </tbody></table>

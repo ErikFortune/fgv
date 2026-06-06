@@ -77,4 +77,106 @@ Whether matching models accept reference images via
 AiAssist.IAiImageGenerationParams.referenceImages.
 
 </td></tr>
+<tr><td>
+
+[acceptedSizes](./IAiImageModelCapability.acceptedSizes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly string[]
+
+</td><td>
+
+Accepted size strings.
+
+</td></tr>
+<tr><td>
+
+[supportsQualityParam](./IAiImageModelCapability.supportsQualityParam.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+When true, quality param is sent.
+
+</td></tr>
+<tr><td>
+
+[acceptedQualities](./IAiImageModelCapability.acceptedQualities.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly string[]
+
+</td><td>
+
+Accepted quality values when supportsQualityParam is true.
+
+</td></tr>
+<tr><td>
+
+[maxCount](./IAiImageModelCapability.maxCount.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+Maximum count (n).
+
+</td></tr>
+<tr><td>
+
+[outputParamStyle](./IAiImageModelCapability.outputParamStyle.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+"none" | "response-format" | "output-format"
+
+</td><td>
+
+How to encode the output format on the wire:
+
+</td></tr>
+<tr><td>
+
+[defaultOutputMimeType](./IAiImageModelCapability.defaultOutputMimeType.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Default MIME type for response images.
+
+</td></tr>
 </tbody></table>

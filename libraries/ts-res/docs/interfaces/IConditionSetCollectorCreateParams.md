@@ -51,7 +51,7 @@ The Conditions.ConditionCollector | ConditionCollector used to create conditions
 
 </td><td>
 
-[IConditionSetDecl](IConditionSetDecl.md)[]
+[IConditionSetDecl](IConditionSetDecl.md)&lt;string&gt;[]
 
 </td><td>
 

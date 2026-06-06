@@ -7,5 +7,5 @@ Possible candidates for this value.
 **Signature:**
 
 ```typescript
-readonly candidates: readonly IChildResourceCandidateDecl[];
+readonly candidates: readonly IChildResourceCandidateDecl<TQualifierNames>[];
 ```

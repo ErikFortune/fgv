@@ -34,7 +34,7 @@ Description
 
 </td><td>
 
-Record&lt;string, [IChildResourceDecl](../../interfaces/IChildResourceDecl.md)&gt;
+Record&lt;string, [IChildResourceDecl](../../interfaces/IChildResourceDecl.md)&lt;TQualifierNames&gt;&gt;
 
 </td><td>
 
@@ -51,7 +51,7 @@ Record&lt;string, [IChildResourceDecl](../../interfaces/IChildResourceDecl.md)&g
 
 </td><td>
 
-Record&lt;string, [IResourceTreeChildNodeDecl](../../interfaces/IResourceTreeChildNodeDecl.md)&gt;
+Record&lt;string, [IResourceTreeChildNodeDecl](../../interfaces/IResourceTreeChildNodeDecl.md)&lt;TQualifierNames&gt;&gt;
 
 </td><td>
 

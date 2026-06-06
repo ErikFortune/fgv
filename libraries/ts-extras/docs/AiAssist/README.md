@@ -50,6 +50,51 @@ Configuration specific to web search tools.
 </td></tr>
 <tr><td>
 
+[IAiClientToolConfig](./interfaces/IAiClientToolConfig.md)
+
+</td><td>
+
+Configuration for a client-defined (harness-supplied) tool.
+
+</td></tr>
+<tr><td>
+
+[IAiClientTool](./interfaces/IAiClientTool.md)
+
+</td><td>
+
+A client-defined tool: configuration + execution callback pair.
+
+</td></tr>
+<tr><td>
+
+[IAiClientToolCallSummary](./interfaces/IAiClientToolCallSummary.md)
+
+</td><td>
+
+Summary of a single client tool call within a turn: the tool name, call ID,
+
+</td></tr>
+<tr><td>
+
+[IAiClientToolContinuation](./interfaces/IAiClientToolContinuation.md)
+
+</td><td>
+
+The provider-specific continuation data needed to build the follow-up request
+
+</td></tr>
+<tr><td>
+
+[IAiClientToolTurnResult](./interfaces/IAiClientToolTurnResult.md)
+
+</td><td>
+
+The result of a single client-tool turn: the optional continuation for the next
+
+</td></tr>
+<tr><td>
+
 [IAiToolEnablement](./interfaces/IAiToolEnablement.md)
 
 </td><td>
@@ -140,6 +185,105 @@ Universal image representation used for both image input (vision prompts)
 </td></tr>
 <tr><td>
 
+[IDallEImageGenerationConfig](./interfaces/IDallEImageGenerationConfig.md)
+
+</td><td>
+
+Provider-specific config for DALL-E models (dall-e-2, dall-e-3).
+
+</td></tr>
+<tr><td>
+
+[IGptImageGenerationConfig](./interfaces/IGptImageGenerationConfig.md)
+
+</td><td>
+
+Provider-specific config for gpt-image-1.
+
+</td></tr>
+<tr><td>
+
+[IGrokImagineImageGenerationConfig](./interfaces/IGrokImagineImageGenerationConfig.md)
+
+</td><td>
+
+Provider-specific config for xAI Grok Imagine models.
+
+</td></tr>
+<tr><td>
+
+[IImagen4GenerationConfig](./interfaces/IImagen4GenerationConfig.md)
+
+</td><td>
+
+Provider-specific config for Google Imagen 4 models.
+
+</td></tr>
+<tr><td>
+
+[IGeminiFlashImageGenerationConfig](./interfaces/IGeminiFlashImageGenerationConfig.md)
+
+</td><td>
+
+Provider-specific config for Gemini Flash Image.
+
+</td></tr>
+<tr><td>
+
+[IDallEModelOptions](./interfaces/IDallEModelOptions.md)
+
+</td><td>
+
+Options block scoped to DALL-E family models.
+
+</td></tr>
+<tr><td>
+
+[IGptImageModelOptions](./interfaces/IGptImageModelOptions.md)
+
+</td><td>
+
+Options block scoped to GPT Image family models.
+
+</td></tr>
+<tr><td>
+
+[IGrokImagineModelOptions](./interfaces/IGrokImagineModelOptions.md)
+
+</td><td>
+
+Options block scoped to xAI Grok Imagine family models.
+
+</td></tr>
+<tr><td>
+
+[IImagen4ModelOptions](./interfaces/IImagen4ModelOptions.md)
+
+</td><td>
+
+Options block scoped to Google Imagen 4 models.
+
+</td></tr>
+<tr><td>
+
+[IGeminiFlashImageModelOptions](./interfaces/IGeminiFlashImageModelOptions.md)
+
+</td><td>
+
+Options block scoped to Gemini Flash Image models.
+
+</td></tr>
+<tr><td>
+
+[IOtherModelOptions](./interfaces/IOtherModelOptions.md)
+
+</td><td>
+
+Escape-hatch options block for models not covered by a named family.
+
+</td></tr>
+<tr><td>
+
 [IAiImageGenerationOptions](./interfaces/IAiImageGenerationOptions.md)
 
 </td><td>
@@ -221,6 +365,34 @@ A server-side tool progress event arriving during a streaming completion.
 </td></tr>
 <tr><td>
 
+[IAiStreamToolUseStart](./interfaces/IAiStreamToolUseStart.md)
+
+</td><td>
+
+Emitted when a client-defined tool call begins streaming.
+
+</td></tr>
+<tr><td>
+
+[IAiStreamToolUseDelta](./interfaces/IAiStreamToolUseDelta.md)
+
+</td><td>
+
+Emitted when a client-defined tool call is complete and its arguments are fully
+accumulated.
+
+</td></tr>
+<tr><td>
+
+[IAiStreamToolUseComplete](./interfaces/IAiStreamToolUseComplete.md)
+
+</td><td>
+
+Emitted after a client-defined tool has been executed and the result is ready
+
+</td></tr>
+<tr><td>
+
 [IAiStreamDone](./interfaces/IAiStreamDone.md)
 
 </td><td>
@@ -244,6 +416,105 @@ Terminal failure event for a streaming completion.
 </td><td>
 
 A model specification: either a simple model string or a record mapping
+
+</td></tr>
+<tr><td>
+
+[IThinkingConfig](./interfaces/IThinkingConfig.md)
+
+</td><td>
+
+Thinking/reasoning mode configuration for a completion request.
+
+</td></tr>
+<tr><td>
+
+[IAnthropicThinkingOptions](./interfaces/IAnthropicThinkingOptions.md)
+
+</td><td>
+
+Anthropic-specific thinking options block.
+
+</td></tr>
+<tr><td>
+
+[IOpenAiThinkingOptions](./interfaces/IOpenAiThinkingOptions.md)
+
+</td><td>
+
+OpenAI-specific thinking options block.
+
+</td></tr>
+<tr><td>
+
+[IGeminiThinkingOptions](./interfaces/IGeminiThinkingOptions.md)
+
+</td><td>
+
+Google Gemini-specific thinking options block.
+
+</td></tr>
+<tr><td>
+
+[IXAiThinkingOptions](./interfaces/IXAiThinkingOptions.md)
+
+</td><td>
+
+xAI-specific thinking options block.
+
+</td></tr>
+<tr><td>
+
+[IOtherThinkingOptions](./interfaces/IOtherThinkingOptions.md)
+
+</td><td>
+
+Escape-hatch options block for providers not covered by typed configs.
+
+</td></tr>
+<tr><td>
+
+[IAnthropicThinkingConfig](./interfaces/IAnthropicThinkingConfig.md)
+
+</td><td>
+
+Anthropic-specific thinking configuration.
+
+</td></tr>
+<tr><td>
+
+[IOpenAiThinkingConfig](./interfaces/IOpenAiThinkingConfig.md)
+
+</td><td>
+
+OpenAI-specific thinking configuration.
+
+</td></tr>
+<tr><td>
+
+[IGeminiThinkingConfig](./interfaces/IGeminiThinkingConfig.md)
+
+</td><td>
+
+Google Gemini-specific thinking configuration.
+
+</td></tr>
+<tr><td>
+
+[IXAiThinkingConfig](./interfaces/IXAiThinkingConfig.md)
+
+</td><td>
+
+xAI-specific thinking configuration.
+
+</td></tr>
+<tr><td>
+
+[IResolvedImageOptions](./interfaces/IResolvedImageOptions.md)
+
+</td><td>
+
+The resolved, merged wire parameters for an image generation request.
 
 </td></tr>
 <tr><td>
@@ -284,6 +555,24 @@ Parameters for a streaming completion request.
 </td></tr>
 <tr><td>
 
+[IExecuteClientToolTurnParams](./interfaces/IExecuteClientToolTurnParams.md)
+
+</td><td>
+
+Parameters for AiAssist.executeClientToolTurn.
+
+</td></tr>
+<tr><td>
+
+[IExecuteClientToolTurnResult](./interfaces/IExecuteClientToolTurnResult.md)
+
+</td><td>
+
+Return value of AiAssist.executeClientToolTurn.
+
+</td></tr>
+<tr><td>
+
 [IFencedStringifiedJsonExtractorOptions](./interfaces/IFencedStringifiedJsonExtractorOptions.md)
 
 </td><td>
@@ -316,6 +605,16 @@ Parameters for AiAssist.generateJsonCompletion.
 </td><td>
 
 Successful result of AiAssist.generateJsonCompletion.
+
+</td></tr>
+<tr><td>
+
+[IResolvedThinkingConfig](./interfaces/IResolvedThinkingConfig.md)
+
+</td><td>
+
+Resolved thinking wire parameters for a specific provider, after merging
+all applicable config blocks.
 
 </td></tr>
 </tbody></table>
@@ -370,6 +669,15 @@ Union of all server-side tool configurations.
 </td></tr>
 <tr><td>
 
+[AiToolConfig](./type-aliases/AiToolConfig.md)
+
+</td><td>
+
+Union of all tool configurations: server-side or client-defined.
+
+</td></tr>
+<tr><td>
+
 [AiApiFormat](./type-aliases/AiApiFormat.md)
 
 </td><td>
@@ -384,6 +692,123 @@ API format categories for provider routing.
 </td><td>
 
 API format categories for image-generation provider routing.
+
+</td></tr>
+<tr><td>
+
+[AiImageSize](./type-aliases/AiImageSize.md)
+
+</td><td>
+
+All accepted image size strings across all providers.
+
+</td></tr>
+<tr><td>
+
+[AiImageQuality](./type-aliases/AiImageQuality.md)
+
+</td><td>
+
+All accepted quality strings across all providers.
+
+</td></tr>
+<tr><td>
+
+[DallE2Size](./type-aliases/DallE2Size.md)
+
+</td><td>
+
+Pixel dimension sizes accepted by dall-e-2.
+
+</td></tr>
+<tr><td>
+
+[DallE3Size](./type-aliases/DallE3Size.md)
+
+</td><td>
+
+Pixel dimension sizes accepted by dall-e-3.
+
+</td></tr>
+<tr><td>
+
+[GptImageSize](./type-aliases/GptImageSize.md)
+
+</td><td>
+
+Pixel dimension sizes accepted by gpt-image-1.
+
+</td></tr>
+<tr><td>
+
+[DallE3Quality](./type-aliases/DallE3Quality.md)
+
+</td><td>
+
+Quality values for dall-e-3.
+
+</td></tr>
+<tr><td>
+
+[GptImageQuality](./type-aliases/GptImageQuality.md)
+
+</td><td>
+
+Quality values for gpt-image-1.
+
+</td></tr>
+<tr><td>
+
+[DallEModelNames](./type-aliases/DallEModelNames.md)
+
+</td><td>
+
+Model names in the DALL-E family.
+
+</td></tr>
+<tr><td>
+
+[GptImageModelNames](./type-aliases/GptImageModelNames.md)
+
+</td><td>
+
+Model names in the GPT Image family.
+
+</td></tr>
+<tr><td>
+
+[GrokImagineModelNames](./type-aliases/GrokImagineModelNames.md)
+
+</td><td>
+
+Model names in the xAI Grok Imagine family.
+
+</td></tr>
+<tr><td>
+
+[Imagen4ModelNames](./type-aliases/Imagen4ModelNames.md)
+
+</td><td>
+
+Model names in the Imagen 4 family.
+
+</td></tr>
+<tr><td>
+
+[GeminiFlashImageModelNames](./type-aliases/GeminiFlashImageModelNames.md)
+
+</td><td>
+
+Model names in the Gemini Flash Image family.
+
+</td></tr>
+<tr><td>
+
+[IModelFamilyConfig](./type-aliases/IModelFamilyConfig.md)
+
+</td><td>
+
+Discriminated union of all model-family option blocks.
 
 </td></tr>
 <tr><td>
@@ -411,6 +836,60 @@ Discriminated union of events emitted by a streaming completion.
 </td><td>
 
 Known context keys for model specification maps.
+
+</td></tr>
+<tr><td>
+
+[AiThinkingMode](./type-aliases/AiThinkingMode.md)
+
+</td><td>
+
+Thinking/reasoning mode support for a provider.
+
+</td></tr>
+<tr><td>
+
+[IThinkingProviderConfig](./type-aliases/IThinkingProviderConfig.md)
+
+</td><td>
+
+Discriminated union of per-provider thinking config blocks.
+
+</td></tr>
+<tr><td>
+
+[AnthropicThinkingModelNames](./type-aliases/AnthropicThinkingModelNames.md)
+
+</td><td>
+
+Model IDs for Anthropic thinking-capable models.
+
+</td></tr>
+<tr><td>
+
+[OpenAiThinkingModelNames](./type-aliases/OpenAiThinkingModelNames.md)
+
+</td><td>
+
+Model IDs for OpenAI thinking-capable models.
+
+</td></tr>
+<tr><td>
+
+[GeminiThinkingModelNames](./type-aliases/GeminiThinkingModelNames.md)
+
+</td><td>
+
+Model IDs for Google Gemini thinking-capable models.
+
+</td></tr>
+<tr><td>
+
+[XAiThinkingModelNames](./type-aliases/XAiThinkingModelNames.md)
+
+</td><td>
+
+Model IDs for xAI thinking-capable models.
 
 </td></tr>
 <tr><td>
@@ -462,6 +941,24 @@ Resolves a ModelSpec to a concrete model string given an optional context key.
 </td><td>
 
 Formats an IAiImageData as a `data:` URL suitable for browser display.
+
+</td></tr>
+<tr><td>
+
+[resolveImageOptions](./functions/resolveImageOptions.md)
+
+</td><td>
+
+Resolves the merged image options for a given model and capability.
+
+</td></tr>
+<tr><td>
+
+[validateResolvedOptions](./functions/validateResolvedOptions.md)
+
+</td><td>
+
+Validates the resolved options against per-model registry constraints.
 
 </td></tr>
 <tr><td>
@@ -536,6 +1033,7 @@ Calls the appropriate image-generation API for a given provider.
 </td><td>
 
 Calls the image-generation endpoint on a proxy server instead of calling
+the provider API directly from the browser.
 
 </td></tr>
 <tr><td>
@@ -544,8 +1042,7 @@ Calls the image-generation endpoint on a proxy server instead of calling
 
 </td><td>
 
-Lists models available from a provider, with capabilities resolved from
-native provider info (where supplied) and a configurable rule set.
+Lists models available from a provider, routing by `descriptor.apiFormat`.
 
 </td></tr>
 <tr><td>
@@ -577,6 +1074,15 @@ Calls the streaming chat endpoint on a proxy server instead of calling
 </td></tr>
 <tr><td>
 
+[executeClientToolTurn](./functions/executeClientToolTurn.md)
+
+</td><td>
+
+Orchestrates a single client-tool streaming turn for any supported provider.
+
+</td></tr>
+<tr><td>
+
 [resolveEffectiveTools](./functions/resolveEffectiveTools.md)
 
 </td><td>
@@ -603,6 +1109,16 @@ Calls AiAssist.callProviderCompletion, then runs the response text
 through a tolerant JSON converter (default:
 AiAssist.fencedStringifiedJson) and the caller's
 `converter`/`validator`.
+
+</td></tr>
+<tr><td>
+
+[anthropicEffortToBudgetTokens](./functions/anthropicEffortToBudgetTokens.md)
+
+</td><td>
+
+Maps Anthropic effort level to the `thinking.budget_tokens` integer that the
+Anthropic API requires when `thinking.type === 'enabled'`.
 
 </td></tr>
 </tbody></table>
@@ -699,6 +1215,15 @@ Converter for IAiWebSearchToolConfig.
 </td><td>
 
 Converter for AiServerToolConfig (discriminated union on `type`).
+
+</td></tr>
+<tr><td>
+
+[aiClientToolConfig](./variables/aiClientToolConfig.md)
+
+</td><td>
+
+Converter for AiAssist.IAiClientToolConfig.
 
 </td></tr>
 <tr><td>

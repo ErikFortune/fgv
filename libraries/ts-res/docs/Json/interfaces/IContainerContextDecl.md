@@ -51,7 +51,7 @@ string
 
 </td><td>
 
-[ConditionSetDecl](../../type-aliases/ConditionSetDecl.md)
+[ConditionSetDecl](../../type-aliases/ConditionSetDecl.md)&lt;TQualifierNames&gt;
 
 </td><td>
 

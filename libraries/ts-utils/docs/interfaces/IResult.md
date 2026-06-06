@@ -161,6 +161,19 @@ Gets the value associated with a successful IResult | result,
 </td></tr>
 <tr><td>
 
+[shouldNotFail(label, frameDepth)](./IResult.shouldNotFail.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Asserts at the call site that this IResult | result MUST be a success.
+
+</td></tr>
+<tr><td>
+
 [orDefault(dflt)](./IResult.orDefault.md)
 
 </td><td>

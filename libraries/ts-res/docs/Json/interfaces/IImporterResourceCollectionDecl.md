@@ -34,7 +34,7 @@ Description
 
 </td><td>
 
-[IContainerContextDecl](../../interfaces/IContainerContextDecl.md)
+[IContainerContextDecl](../../interfaces/IContainerContextDecl.md)&lt;TQualifierNames&gt;
 
 </td><td>
 
@@ -51,7 +51,7 @@ Description
 
 </td><td>
 
-readonly [IImporterResourceCandidateDecl](../../interfaces/IImporterResourceCandidateDecl.md)[]
+readonly [IImporterResourceCandidateDecl](../../interfaces/IImporterResourceCandidateDecl.md)&lt;TQualifierNames&gt;[]
 
 </td><td>
 
@@ -68,7 +68,7 @@ readonly [IImporterResourceCandidateDecl](../../interfaces/IImporterResourceCand
 
 </td><td>
 
-readonly [IImporterResourceDecl](../../type-aliases/IImporterResourceDecl.md)[]
+readonly [IImporterResourceDecl](../../type-aliases/IImporterResourceDecl.md)&lt;TQualifierNames&gt;[]
 
 </td><td>
 
@@ -85,7 +85,7 @@ readonly [IImporterResourceDecl](../../type-aliases/IImporterResourceDecl.md)[]
 
 </td><td>
 
-readonly [IImporterResourceCollectionDecl](../../interfaces/IImporterResourceCollectionDecl.md)[]
+readonly [IImporterResourceCollectionDecl](../../interfaces/IImporterResourceCollectionDecl.md)&lt;TQualifierNames&gt;[]
 
 </td><td>
 

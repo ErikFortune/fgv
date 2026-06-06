@@ -5,5 +5,5 @@
 **Signature:**
 
 ```typescript
-conditions: ILooseConditionDecl[];
+conditions: IConditionDecl<TQualifierNames>[];
 ```

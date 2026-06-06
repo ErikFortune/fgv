@@ -34,7 +34,7 @@ Description
 
 </td><td>
 
-[IContainerContextDecl](../../interfaces/IContainerContextDecl.md)
+[IContainerContextDecl](../../interfaces/IContainerContextDecl.md)&lt;TQualifierNames&gt;
 
 </td><td>
 
@@ -51,7 +51,7 @@ Description
 
 </td><td>
 
-readonly [ILooseResourceCandidateDecl](../../interfaces/ILooseResourceCandidateDecl.md)[]
+readonly [ILooseResourceCandidateDecl](../../interfaces/ILooseResourceCandidateDecl.md)&lt;TQualifierNames&gt;[]
 
 </td><td>
 
@@ -68,7 +68,7 @@ readonly [ILooseResourceCandidateDecl](../../interfaces/ILooseResourceCandidateD
 
 </td><td>
 
-readonly [ILooseResourceDecl](../../interfaces/ILooseResourceDecl.md)[]
+readonly [ILooseResourceDecl](../../interfaces/ILooseResourceDecl.md)&lt;TQualifierNames&gt;[]
 
 </td><td>
 
@@ -85,7 +85,7 @@ readonly [ILooseResourceDecl](../../interfaces/ILooseResourceDecl.md)[]
 
 </td><td>
 
-readonly [IResourceCollectionDecl](../../interfaces/IResourceCollectionDecl.md)[]
+readonly [IResourceCollectionDecl](../../interfaces/IResourceCollectionDecl.md)&lt;TQualifierNames&gt;[]
 
 </td><td>
 
