@@ -8,7 +8,10 @@
 - (A speculative `followup.md` the implementing agent added — written without this brief — was stripped before merge; the authoritative artifacts are `brief.md` + `design.md` here.)
 
 ## Task B — `@fgv/ts-extras-ollama` native-API boundary
-**🛠️ IMPLEMENTED (phases O-1…O-4) into the `ollama-native` integration branch.** Native `embed` remains HELD.
+**🛠️ IMPLEMENTED (phases O-1…O-4) and promoting to `release` via PR #477.** Native `embed` remains HELD.
+
+**Promotion:** PR **#477** (`ollama-native` → `release`). CI green; Copilot review converged in **2 rounds** — round 1 surfaced 5 documentation-accuracy findings (sanitizer-keyword spec wording, `@fgv/ts-utils` dependency-posture in LIBRARY_CAPABILITIES, and three `stream:false`→ratified-`stream:true` / `$schema`-default corrections in design.md), all fixed and the threads resolved; round 2 returned no new findings (loop stopped on convergence). Both ratified decisions (streaming transport for `chatStructured`; draft-07 `format` sanitizer) approved by the owner.
+
 
 | Phase | Scope | PR (→ `ollama-native`) | Status |
 |---|---|---|---|
