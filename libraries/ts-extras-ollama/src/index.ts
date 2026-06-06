@@ -4,8 +4,8 @@
  *
  * A thin facade that wraps the `ollama` client's native-API calls in `Result<T>` from
  * `@fgv/ts-utils`, mirroring the discipline established by `@fgv/ts-extras-webauthn` and
- * `@fgv/ts-extras-transformers`: one-line `captureAsyncResult` wrappers around upstream primitives
- * with **no opinionated orchestration** above the boundary.
+ * `@fgv/ts-extras-transformers`: one-line `captureResult` / `captureAsyncResult` wrappers around
+ * upstream primitives with **no opinionated orchestration** above the boundary.
  *
  * This package owns **exactly and only** the native-Ollama surface that the OpenAI-compatible
  * `/v1` endpoint cannot express: model management (`/api/tags`, `/api/show`, `/api/ps`,
@@ -67,12 +67,7 @@ export type IOllamaClient = Ollama;
  * @public
  */
 export function createOllamaClient(params?: ICreateOllamaClientParams): Result<IOllamaClient> {
-  return captureResult(
-    () =>
-      new Ollama({
-        ...(params?.host !== undefined ? { host: params.host } : {}),
-        ...(params?.fetch !== undefined ? { fetch: params.fetch } : {}),
-        ...(params?.headers !== undefined ? { headers: params.headers } : {})
-      })
-  );
+  // The upstream `Ollama` constructor reads each config field with `?? <default>`, so omitted or
+  // `undefined` fields fall back to the library defaults — no per-field guarding needed.
+  return captureResult(() => new Ollama(params ?? {}));
 }
