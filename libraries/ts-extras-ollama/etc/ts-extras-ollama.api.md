@@ -65,9 +65,32 @@ export interface IOllamaModelInfo {
 }
 
 // @public
+export interface IOllamaPullProgress {
+    readonly completed?: number;
+    readonly digest?: string;
+    readonly status: string;
+    readonly total?: number;
+}
+
+// @public
+export interface IOllamaPullResult {
+    readonly chunkCount: number;
+    readonly finalStatus: string;
+    readonly model: string;
+}
+
+// @public
 export interface IOllamaRunningModel extends IOllamaModelBase {
     readonly expiresAt: Date;
     readonly sizeVram: number;
+}
+
+// @public
+export interface IPullModelParams {
+    readonly insecure?: boolean;
+    readonly model: string;
+    readonly onProgress?: (progress: IOllamaPullProgress) => void;
+    readonly signal?: AbortSignal;
 }
 
 // @public
@@ -75,6 +98,9 @@ export function listModels(client: IOllamaClient): Promise<Result<ReadonlyArray<
 
 // @public
 export function listRunning(client: IOllamaClient): Promise<Result<ReadonlyArray<IOllamaRunningModel>>>;
+
+// @public
+export function pullModel(client: IOllamaClient, params: IPullModelParams): Promise<Result<IOllamaPullResult>>;
 
 // @public
 export function showModel(client: IOllamaClient, model: string, options?: {

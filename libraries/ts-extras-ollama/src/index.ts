@@ -29,7 +29,14 @@
  * @packageDocumentation
  */
 
-import { Ollama, type ListResponse, type ModelResponse, type ModelDetails, type ShowResponse } from 'ollama';
+import {
+  Ollama,
+  type ListResponse,
+  type ModelResponse,
+  type ModelDetails,
+  type ProgressResponse,
+  type ShowResponse
+} from 'ollama';
 import { captureAsyncResult, captureResult, type Result } from '@fgv/ts-utils';
 import { type JsonValue } from '@fgv/ts-json-base';
 
@@ -325,5 +332,129 @@ export async function deleteModel(
   return captureAsyncResult(async () => {
     await client.delete({ model });
     return { model, deleted: true };
+  });
+}
+
+// ─── Pull with streamed progress (§3.4, §5) ─────────────────────────────────────
+
+/**
+ * A single progress chunk from a streamed pull (`/api/pull`). Ollama emits a JSON-lines stream;
+ * each line is one of these. Fields map 1:1 from the upstream `ProgressResponse`; the layer fields
+ * (`digest`/`total`/`completed`) are `undefined` on the manifest / verify / write phases.
+ * @public
+ */
+export interface IOllamaPullProgress {
+  /**
+   * Phase string, e.g. `'pulling manifest'`, `'pulling <digest>'`, `'verifying sha256 digest'`,
+   * `'writing manifest'`, `'success'`.
+   */
+  readonly status: string;
+  /** Layer digest being transferred (present during `'pulling <digest>'` phases). */
+  readonly digest?: string;
+  /** Total bytes for the current layer, when known. */
+  readonly total?: number;
+  /** Bytes transferred so far for the current layer, when known. */
+  readonly completed?: number;
+}
+
+/**
+ * Terminal result of a completed pull. Returns a meaningful value (not `Result<void>`): the final
+ * status plus a count of progress chunks observed.
+ * @public
+ */
+export interface IOllamaPullResult {
+  /** The model that was pulled. */
+  readonly model: string;
+  /** The `status` of the final chunk, normally `'success'`. */
+  readonly finalStatus: string;
+  /** Number of progress chunks observed (useful for tests and diagnostics). */
+  readonly chunkCount: number;
+}
+
+/**
+ * Parameters for {@link pullModel}.
+ * @public
+ */
+export interface IPullModelParams {
+  /** Model to pull, e.g. `'llama3.1:8b'`. */
+  readonly model: string;
+  /** Allow pulling from insecure (non-TLS) registries. */
+  readonly insecure?: boolean;
+  /**
+   * Progress callback, invoked once per JSON-lines chunk as it arrives. The `Result` returned by
+   * {@link pullModel} resolves only after the stream terminates; progress is surfaced here in the
+   * interim. A throw from this callback fails the whole pull (it runs inside the captured loop).
+   */
+  readonly onProgress?: (progress: IOllamaPullProgress) => void;
+  /**
+   * Abort signal. Cancels the in-flight pull; the upstream stream throws an `AbortError`, which
+   * surfaces as `Result.fail`. An already-aborted signal cancels immediately.
+   */
+  readonly signal?: AbortSignal;
+}
+
+/**
+ * Maps an upstream `ProgressResponse` chunk to {@link IOllamaPullProgress}. The upstream type marks
+ * every field required, but the layer fields are omitted (and thus `undefined` at runtime) on the
+ * non-transfer phases — a direct structural copy preserves that, matching the optional fields.
+ */
+function normalizePullProgress(c: ProgressResponse): IOllamaPullProgress {
+  return {
+    status: c.status,
+    digest: c.digest,
+    total: c.total,
+    completed: c.completed
+  };
+}
+
+/**
+ * Pulls a model with streamed progress (`POST /api/pull`). Drives the upstream JSON-lines stream
+ * internally, invoking `params.onProgress` once per chunk, and resolves the `Result` once the
+ * stream terminates. Any upstream error — connection drop, registry 404, abort, or a throwing
+ * `onProgress` — becomes a single `Failure`; success returns a meaningful {@link IOllamaPullResult}
+ * rather than `Result<void>`.
+ *
+ * @param client - A client from {@link createOllamaClient}.
+ * @param params - {@link IPullModelParams} — the model, optional `insecure` flag, optional
+ *   `onProgress` callback, and optional `AbortSignal`.
+ * @returns `Promise<Result<IOllamaPullResult>>`.
+ * @public
+ */
+export async function pullModel(
+  client: IOllamaClient,
+  params: IPullModelParams
+): Promise<Result<IOllamaPullResult>> {
+  return captureAsyncResult(async () => {
+    const request = {
+      model: params.model,
+      stream: true as const,
+      ...(params.insecure !== undefined && { insecure: params.insecure })
+    };
+    const iterator = await client.pull(request);
+
+    // Wire the abort signal to the upstream iterator's abort path. An already-aborted signal
+    // cancels immediately; otherwise abort on first fire (and clean the listener up in `finally`).
+    const abortListener = (): void => iterator.abort();
+    if (params.signal !== undefined) {
+      if (params.signal.aborted) {
+        iterator.abort();
+      } else {
+        params.signal.addEventListener('abort', abortListener, { once: true });
+      }
+    }
+
+    let chunkCount = 0;
+    let finalStatus = '';
+    try {
+      for await (const chunk of iterator) {
+        params.onProgress?.(normalizePullProgress(chunk));
+        chunkCount += 1;
+        finalStatus = chunk.status;
+      }
+    } finally {
+      params.signal?.removeEventListener('abort', abortListener);
+    }
+
+    return { model: params.model, finalStatus, chunkCount };
   });
 }
