@@ -33,7 +33,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Logging } from '@fgv/ts-utils';
+import { Logging, type Result } from '@fgv/ts-utils';
 
 // Real MCP SDK server side — exercised over an in-process linked transport pair. Subpath imports
 // resolve via the tsconfig `paths` mapping (the same seam the package's sdk.ts uses).
@@ -145,16 +145,26 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
     const fixture = await startFixtureServer();
     server = fixture.server;
     // Wrap the SDK in-memory client transport in the package's opaque handle, then connect through
-    // the PUBLIC connectMcpSession (real Client + real initialize handshake).
+    // the PUBLIC connectMcpSession (real Client + real initialize handshake). On a connect failure,
+    // tear the fixture server down before throwing so a failed handshake can't leak open handles.
     const transport = new McpTransport('http', fixture.clientTransport);
-    session = (await connectMcpSession({ transport, clientName: 'e2e', clientVersion: '0.0.0' })).orThrow();
+    const connectResult = await connectMcpSession({ transport, clientName: 'e2e', clientVersion: '0.0.0' });
+    if (connectResult.isFailure()) {
+      await server.close();
+      throw new Error(`fixture connect failed: ${connectResult.message}`);
+    }
+    session = connectResult.value;
   });
 
   afterEach(async () => {
-    // Assert teardown succeeds — a regression in close/transport would otherwise pass silently
-    // (and could leak handles).
-    expect(await closeMcpSession(session)).toSucceedWith(true);
-    await server.close();
+    // Assert teardown succeeds — a regression in close/transport would otherwise pass silently.
+    // `server.close()` runs in `finally` so the fixture is always torn down even if the assertion
+    // throws (otherwise a failed close would leak handles and make later tests flaky).
+    try {
+      expect(await closeMcpSession(session)).toSucceedWith(true);
+    } finally {
+      await server.close();
+    }
   });
 
   test('the initialize handshake reports the real server identity', () => {
@@ -228,13 +238,17 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
     });
 
     test('an adapted tool executes end-to-end against the real server', async () => {
-      const result = (await adaptMcpTools(session)).orThrow();
-      const echo = result.tools.find((t) => t.config.name === 'echo');
-      if (echo === undefined) {
-        throw new Error('expected the `echo` tool to be adapted');
-      }
-      // The adapted execute callback round-trips through callMcpTool → the real server.
-      expect(await echo.execute({ msg: 'roundtrip' })).toSucceedWith('echo: {"msg":"roundtrip"}');
+      // Result-matcher-driven: extract the adapted `echo` tool inside the success satisfier (where
+      // its presence is asserted), then drive its execute callback — which round-trips through
+      // callMcpTool to the real server — with another matcher.
+      let echoExecute: ((args: unknown) => Promise<Result<unknown>>) | undefined;
+      expect(await adaptMcpTools(session)).toSucceedAndSatisfy((result) => {
+        const echo = result.tools.find((t) => t.config.name === 'echo');
+        expect(echo).toBeDefined();
+        echoExecute = echo?.execute;
+      });
+      expect(echoExecute).toBeDefined();
+      expect(await echoExecute?.({ msg: 'roundtrip' })).toSucceedWith('echo: {"msg":"roundtrip"}');
     });
   });
 });
