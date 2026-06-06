@@ -629,6 +629,13 @@
       "tags": ["libraries", "browser"]
     },
     {
+      "packageName": "@fgv/ts-extras-ollama",
+      "projectFolder": "libraries/ts-extras-ollama",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/testbed",
       "projectFolder": "samples/testbed",
       "shouldPublish": false,

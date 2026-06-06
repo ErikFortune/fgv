@@ -191,3 +191,23 @@ Erik's framing (2026-06-05): "consider using ts-res instead of hardcoding custom
 - `@fgv/ts-web-extras` is the browser complement, and its correctness depends on `ts-extras` not bleeding Node-only code into the shared surface.
 
 A future canary should build a minimal Vite/webpack bundle importing the browser-safe entry points of `@fgv/ts-extras` + `@fgv/ts-web-extras`, assert it bundles without `node:*` polyfill errors, **actually run in CI** (do not add it otherwise), and live in a package excluded from the publishable version policy so it generates no change-file noise.
+
+---
+
+## `@fgv/ts-web-extras-ollama` — browser Ollama sibling (O-5)
+
+**Status: parking lot — filed at the `ollama-native` O-4 close (2026-06-06). Not commissioned.**
+
+`@fgv/ts-extras-ollama` shipped Node-only at v0.1 (PRs #472–#475; promoted via #477). The browser path is the natural shape of a future sibling, mirroring `@fgv/ts-web-extras-transformers` to `@fgv/ts-extras-transformers`:
+
+- Wrap `import ollama from 'ollama/browser'` (the `ollama` lib's browser entry) instead of the Node entry.
+- The sidecar must set `OLLAMA_ORIGINS` to allow the browser origin — direct `browser → localhost:11434` is CORS-blocked by default. This is a deployment prerequisite the package can document but not remove.
+- Identical surface to the Node package (the primitives are pure HTTP/data; the `fetch`-injection seam already exists on `createOllamaClient`), so most of the boundary is reusable.
+
+**Why deferred:** no browser consumer yet, and the CORS/`OLLAMA_ORIGINS` story makes the browser path a deliberate opt-in rather than a default. Commission when a browser consumer surfaces.
+
+## Native Ollama `embed` (HELD — gated on `ai-assist-embeddings`)
+
+**Status: HELD (OQ-1), not a parking-lot item — it has a named gate.**
+
+`@fgv/ts-extras-ollama` intentionally does NOT ship native `embed` (`/api/embed`) at v0.1. The gate is the cross-provider `ai-assist-embeddings` design: Ollama embeddings are also reachable via `/v1/embeddings`, so a cross-provider ai-assist embedding primitive may subsume the native path. Build native `embed` in this package only if that design concludes it adds something `/v1`-through-ai-assist can't (native `total_duration` / `prompt_eval_count`, or reusing an already-loaded chat model). See `.ai/tasks/active/ollama-native/design.md` §9 OQ-1.
