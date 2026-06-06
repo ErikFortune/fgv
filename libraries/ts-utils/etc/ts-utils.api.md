@@ -1421,7 +1421,7 @@ interface IConvertingResultMapConstructorParams<TK extends string, TSRC, TTARGET
 }
 
 // @public
-export interface IDetailLogger extends ILogger {
+interface IDetailLogger extends ILogger {
     errorWithDetail(message: string, detail: unknown): Success<string | undefined>;
     warnWithDetail(message: string, detail: unknown): Success<string | undefined>;
 }
@@ -1447,7 +1447,7 @@ interface IKeyValueConverterConstructorParams<TK extends string = string, TV = u
 }
 
 // @public
-export interface ILogger {
+interface ILogger {
     detail(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
     error(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
     info(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
@@ -1797,8 +1797,10 @@ function isA_2<T, TC = unknown>(description: string, guard: TypeGuardWithContext
 // @public
 export function isDeferredResult<T>(result: Result<T> | DeferredResult<T>): result is DeferredResult<T>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IDetailLogger"
+//
 // @public
-export function isDetailLogger(logger: ILogger): logger is IDetailLogger;
+function isDetailLogger(logger: ILogger): logger is IDetailLogger;
 
 // @internal
 export interface _IShouldNotFailFrame {
@@ -1953,12 +1955,12 @@ abstract class LoggerBase implements IDetailLogger {
 declare namespace Logging {
     export {
         BootLogger,
-        IDetailLogger,
-        ILogger,
-        ReporterLogLevel,
-        isDetailLogger,
         shouldLog,
         stringifyLogValue,
+        isDetailLogger,
+        ReporterLogLevel,
+        ILogger,
+        IDetailLogger,
         LoggerBase,
         InMemoryLogger,
         ConsoleLogger,
@@ -2480,7 +2482,7 @@ function recordOf_2<T, TC = unknown, TK extends string = string>(validator: Vali
 export function recordToMap<TS, TD, TK extends string = string>(src: Record<TK, TS>, factory: KeyedThingFactory<TS, TD, TK>): Result<Map<TK, TD>>;
 
 // @public
-export type ReporterLogLevel = 'all' | 'detail' | 'info' | 'warning' | 'error' | 'silent';
+type ReporterLogLevel = 'all' | 'detail' | 'info' | 'warning' | 'error' | 'silent';
 
 // @public
 export type Result<T> = Success<T> | Failure<T>;
@@ -2659,7 +2661,7 @@ export class RetainingRingBuffer<T extends IRetainedRecord> {
 }
 
 // @public
-export function shouldLog(message: MessageLogLevel, reporter: ReporterLogLevel): boolean;
+function shouldLog(message: MessageLogLevel, reporter: ReporterLogLevel): boolean;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2720,7 +2722,7 @@ export class StringConverter<T extends string = string, TC = unknown> extends Ba
 }
 
 // @public
-export function stringifyLogValue(value: unknown, maxLength?: number): string;
+function stringifyLogValue(value: unknown, maxLength?: number): string;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

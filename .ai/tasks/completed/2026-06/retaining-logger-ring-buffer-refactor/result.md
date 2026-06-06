@@ -10,7 +10,10 @@
 
 Refactored `RetainingLogger` internals to compose `RetainingRingBuffer<ILogRecord>` from `@fgv/ts-utils/collections`. Retired the hand-rolled circular buffer (`_buffer`, `_head`, `_count`, `_capacity` fields + `_toOrderedArray()` method). Public API unchanged.
 
-Also: extracted the `ILogger`/`IDetailLogger`/`ReporterLogLevel`/`shouldLog`/`stringifyLogValue`/`isDetailLogger` interface layer from `logging/logger.ts` into a new `base/loggerInterface.ts` file to break the circular packlet dependency that would otherwise be introduced by `logging` importing from `collections`.
+To break the circular packlet dependency (`collections` → `logging` → `collections`), factored the logging packlet into two packlets:
+- **New `logging-interface/` packlet** — pure-contract symbols: `ILogger`, `IDetailLogger`, `ReporterLogLevel`, `isDetailLogger`. Zero implementation dependencies; only imports from `base`.
+- **Existing `logging/` packlet (narrowed)** — implementations (`LoggerBase`, `BootLogger`, `InMemoryLogger`, `ConsoleLogger`, `RetainingLogger`, `MultiLogger`, `Logger`, `LogReporter`) plus `shouldLog` and `stringifyLogValue` (which need `base` helpers). Re-exports everything from `logging-interface` so the `Logging.*` namespace surface is exactly unchanged externally.
+- `collections/readOnlyConvertingResultMap.ts` now imports `ILogger` from `logging-interface` directly.
 
 ---
 
@@ -19,43 +22,60 @@ Also: extracted the `ILogger`/`IDetailLogger`/`ReporterLogLevel`/`shouldLog`/`st
 | File | Change |
 |------|--------|
 | `src/packlets/logging/retainingLogger.ts` | Replace hand-rolled ring with `RetainingRingBuffer<ILogRecord>` composition; 93 lines → 22 lines net change |
-| `src/packlets/base/loggerInterface.ts` | NEW — extracted `ReporterLogLevel`, `shouldLog`, `stringifyLogValue`, `ILogger`, `IDetailLogger`, `isDetailLogger` |
-| `src/packlets/base/index.ts` | Add `export * from './loggerInterface'` |
-| `src/packlets/logging/logger.ts` | Import interfaces from `../base`; re-export for backward compat; remove duplicate definitions (-153 lines) |
-| `src/packlets/collections/readOnlyConvertingResultMap.ts` | Import `ILogger` from `../base` instead of `../logging` |
-| `etc/ts-utils.api.md` | Regenerated — additive change: `ILogger`/`IDetailLogger`/`ReporterLogLevel`/`isDetailLogger` now directly exported from top-level in addition to `Logging` namespace; pre-existing `ae-unresolved-link` warning resolved |
+| `src/packlets/logging-interface/index.ts` | NEW packlet — `ReporterLogLevel`, `ILogger`, `IDetailLogger`, `isDetailLogger` |
+| `src/packlets/logging/logger.ts` | Import interfaces from `../logging-interface`; re-export for backward compat; move `shouldLog`/`stringifyLogValue` back in from former `base/loggerInterface.ts` |
+| `src/packlets/collections/readOnlyConvertingResultMap.ts` | Import `ILogger` from `../logging-interface` instead of `../base` |
+| `src/packlets/base/loggerInterface.ts` | DELETED — approach revised per Erik's review |
+| `src/packlets/base/index.ts` | Remove `export * from './loggerInterface'` |
+| `etc/ts-utils.api.md` | Regenerated — TRUE NO-OP vs release (only change: removal of spurious `ae-unresolved-link` warning introduced by prior branch work) |
+
+---
+
+## Dependency graph after refactor
+
+```
+base (no logging deps)
+logging-interface → base
+collections → base, logging-interface
+logging → base, logging-interface, collections
+```
+
+No cycle. `logging-interface` is dependency-free (only `base`). `collections` can safely import `ILogger` from `logging-interface` without pulling in any implementation.
 
 ---
 
 ## Acceptance criteria check
 
 - [x] `RetainingLogger` internals compose `RetainingRingBuffer<ILogRecord>`; hand-rolled ring retired
-- [x] `etc/ts-utils.api.md` regenerated — additive only (no removed/renamed exports; see notes below)
-- [x] All 23 existing public-API tests pass verbatim
-- [x] `rushx build` PASS (no circular dep warnings, no errors)
-- [x] `rushx lint` PASS (exit 0)
-- [x] `rushx test` PASS — 100% coverage on all modified files including `retainingLogger.ts` (100/100/100/100) and `loggerInterface.ts` (100/100/100/100)
+- [x] `etc/ts-utils.api.md` regenerated — TRUE NO-OP vs origin/release (`git diff origin/release -- etc/ts-utils.api.md` produces only removal of spurious prior warning, zero surface changes)
+- [x] `Logging.*` namespace shape externally unchanged — every symbol that was reachable via `Logging.X` before still is; no new symbols added at `Logging.*`
+- [x] No new top-level package exports (ILogger etc. are NOT directly importable from `@fgv/ts-utils`, same as before)
+- [x] `rushx build` PASS (no errors, no API surface change warning)
+- [x] `rushx lint` PASS (exit 0, clean)
+- [x] `rushx test` PASS — coverage thresholds met (99.2%/99.61%/99.26%/99.2% — same as prior branch state, `logging-interface/index.ts` excluded by `coveragePathIgnorePatterns: ["index.js"]` pattern)
 - [x] `rushx fixlint` run before final commit
-- [x] `code-reviewer` self-pass run before coverage closure — no P1 or P2 findings
-- [x] Rush change file added
-- [x] Stream artifact `result.md` written, `state.md` updated to COMPLETE
+- [x] `code-reviewer` self-pass run on revised diff — no P1 or P2 findings
+- [x] Rush change file retained (unchanged from prior commit)
+- [x] Stream artifact `result.md` updated to reflect revised approach
 
 ---
 
-## api.md notes
+## Revision notes
 
-The api.md change is not a pure no-op due to the circular-dep resolution. The affected symbols (`ILogger`, `IDetailLogger`, `ReporterLogLevel`, `isDetailLogger`) were previously only in the `Logging` namespace export (via re-export from `logger.ts`). After moving to `base`, they also appear as top-level direct exports. This is **additive** — existing consumers who import from `Logging.*` are unaffected; new consumers gain a shorter import path. No exports were removed or renamed.
-
-The pre-existing `ae-unresolved-link` warning on the `_lastSeq` field (which had a broken `@link` reference to `RetainingLogger.clear`) is resolved as a side effect because the field is retired.
+First delivery used `base/loggerInterface.ts` extraction. Erik chose the `logging-interface` packlet factoring instead:
+- Avoids dual-import path confusion
+- Breaks the cycle at the architectural seam (not via type-erasure trick)
+- Zero external delta: `Logging.*` namespace unchanged; no new top-level exports
+- No deprecation burden
 
 ---
 
-## code-reviewer pass summary
+## code-reviewer pass summary (revised diff)
 
-Pre-coverage pass ran on the full diff. Findings:
+Pre-coverage pass ran on the revised diff. Findings:
 
 - **P1**: None
-- **P2**: None  
-- **P3**: The `export { ... }` re-export pattern in `logger.ts` is slightly unusual (explicit named re-exports rather than `export * from '...'`) but is intentional — it avoids re-exporting implementation details from `base` that shouldn't be surfaced through `logging`. Kept as-is.
+- **P2**: None
+- **P3**: The `export { isDetailLogger, ReporterLogLevel, ILogger, IDetailLogger }` explicit re-export in `logger.ts` uses a specific order to match the API Extractor namespace declaration ordering from release. Intentional — ensures TRUE NO-OP on api.md.
 
 No issues requiring changes.

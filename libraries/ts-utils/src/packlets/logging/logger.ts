@@ -19,19 +19,61 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import {
-  IDetailLogger,
-  ILogger,
-  MessageLogLevel,
-  ReporterLogLevel,
-  Success,
-  isDetailLogger,
-  shouldLog,
-  stringifyLogValue,
-  succeed
-} from '../base';
+import { MessageLogLevel, Success, captureResult, succeed } from '../base';
+import { IDetailLogger, ILogger, ReporterLogLevel, isDetailLogger } from '../logging-interface';
 
-export { IDetailLogger, ILogger, ReporterLogLevel, isDetailLogger, shouldLog, stringifyLogValue };
+export { isDetailLogger, ReporterLogLevel, ILogger, IDetailLogger };
+
+/**
+ * Compares two log levels.
+ * @param message - The first log level.
+ * @param reporter - The second log level.
+ * @returns `true` if the message should be logged, `false` if it should be suppressed.
+ * @public
+ */
+export function shouldLog(message: MessageLogLevel, reporter: ReporterLogLevel): boolean {
+  if (reporter === 'all') {
+    return true; // 'all' logs everything, including 'quiet'
+  }
+  if (reporter === 'silent') {
+    return false; // 'silent' suppresses everything
+  }
+  if (message === 'quiet') {
+    return false; // 'quiet' messages only show when reporter is 'all'
+  }
+  switch (reporter) {
+    case 'error':
+      return message === 'error';
+    case 'warning':
+      return message === 'warning' || message === 'error';
+    case 'info':
+      return message !== 'detail';
+  }
+  return true;
+}
+
+/**
+ * Stringifies an arbitrary value for logging.
+ * @param value - The value to stringify.
+ * @returns The stringified value.
+ * @param maxLength - The maximum length of the stringified value.
+ * @public
+ */
+export function stringifyLogValue(value: unknown, maxLength?: number): string {
+  maxLength = maxLength ?? 40;
+  if (typeof value === 'string') {
+    return value;
+  }
+  const str = String(value);
+  if (str === '[object Object]') {
+    return captureResult(() => JSON.stringify(value))
+      .onSuccess((s) => {
+        return succeed(s.length < maxLength ? s : s.substring(0, maxLength - 3) + '...');
+      })
+      .orDefault(str);
+  }
+  return str;
+}
 
 /**
  * Abstract base class which implements {@link Logging.IDetailLogger | IDetailLogger}.
