@@ -336,7 +336,10 @@ export interface IChatStructuredParams<T> {
 
 /**
  * Single-turn grammar-constrained structured chat (`POST /api/chat` with
- * `format` = full JSON schema, `stream: false`).
+ * `format` = full JSON schema). RATIFIED AMENDMENT (see state.md / §9): implemented over the
+ * STREAMING chat path (`stream: true` + `AbortableAsyncIterator.abort()`) so the locked OQ-3
+ * `AbortSignal` can cancel it — the lib threads a signal only on the streaming path. The full
+ * document is assembled from the stream chunks and validated whole.
  * @public
  */
 export function chatStructured<T>(
@@ -408,16 +411,16 @@ The single-source-of-truth mechanism leans entirely on `@fgv/ts-json-base`'s `Js
 
 Because the wire schema and the result validator are the *same object*, they **cannot drift** — exactly the property the brief calls for, and the same discipline ai-assist's client-tool `parametersSchema` already uses (`model.ts:204-216`).
 
-**Implementation sketch** (all inside one `captureAsyncResult`):
+**Implementation sketch** (all inside one `captureAsyncResult`). *RATIFIED AMENDMENT: the transport is `stream: true`, not the `stream: false` originally sketched here — the `ollama` lib threads an `AbortSignal` only on the streaming path, so streaming is the only way to honor the locked OQ-3 amendment. A structured document is still validated whole — the assembly happens before validation.*
 
-1. `const wire = params.schema.toJson();`
-2. `client.chat({ model, messages, format: wire, stream: false, options, keep_alive })` — `stream: false` because a structured document is validated whole; partial JSON has no validation value.
-3. `JSON.parse(response.message.content)` → the model's emitted object (grammar guarantees it parses, but we still capture parse failure for robustness against older daemons).
-4. `params.schema.validate(parsed)` → on success, `{ value, raw: content, model, doneReason }`; on failure, propagate the validator's error with context (`chatStructured(${model}): response failed schema validation: ${msg}`).
+1. `const wire = sanitizeFormatSchema(params.schema.toJson());`
+2. `client.chat({ model, messages, format: wire, stream: true, options, keep_alive })` — the streaming path yields delta chunks and exposes `AbortableAsyncIterator.abort()`.
+3. Assemble `raw` by concatenating `chunk.message.content` across the stream; capture `model` and `done_reason` from the chunks. Then `JSON.parse(raw)` → the model's emitted object (grammar guarantees it parses, but we still capture parse failure for robustness against older daemons).
+4. `params.schema.validate(parsed)` → on success, `{ value, raw, model, doneReason }`; on failure, propagate the validator's error with context (`chatStructured(${model}): response failed schema validation: ${msg}`).
 
 `T` flows end-to-end: `JsonSchema.Static<typeof schema>` derives it at the call site; the function is generic in `T`; the result is `IOllamaChatStructuredResult<T>`. No caller-supplied `T`, no cast. A runtime-discovered schema (`JsonSchema.fromJson(raw)` → `ISchemaValidator<JsonValue>`) flows through with `T = JsonValue`.
 
-**`format` sanitization caveat (decided, with a hedge):** `schema.toJson()` emits draft-07 with `additionalProperties: false` and `$schema` by default. Ollama's `format` accepts a standard JSON schema; unlike Gemini (which the ai-assist Gemini adapter must sanitize), Ollama is expected to tolerate these keywords. **Decided:** send `schema.toJson()` verbatim at v0.1. **Hedge:** if implementation-time testing against a live daemon shows Ollama rejecting `$schema`/`additionalProperties`, add a minimal recursive sanitizer (the ai-assist Gemini adapter is the reference implementation). This is an implementation detail, not a surface change — noted here so the implementer expects it.
+**`format` sanitization (implemented):** `JsonSchema.object(...).toJson()` emits `additionalProperties: false` on object nodes (it does **not** add `$schema` by default — that key only appears if a runtime-discovered schema via `JsonSchema.fromJson(raw)` carries it). `sanitizeFormatSchema` recursively removes both keys **if present** before sending the schema as Ollama's `format`, mirroring the ai-assist Gemini precedent (`toGeminiParameterSchema`). A property literally *named* `additionalProperties` is preserved (it is a property name, not a keyword). This is an implementation detail beneath the boundary, not a surface change. (The original design hedged this as "send verbatim, add a sanitizer only if a live daemon rejects the keys"; the sanitizer was budgeted into O-4 by orchestrator amendment and implemented up front per the Gemini precedent.)
 
 ---
 

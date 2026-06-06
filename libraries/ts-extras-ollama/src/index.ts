@@ -522,9 +522,11 @@ export interface IChatStructuredParams<T> {
 }
 
 /**
- * Recursively strips the draft-07-only keywords (`$schema`, `additionalProperties`) that
- * `JsonSchema.toJson()` emits but Ollama's `format` does not need. Mirrors the ai-assist Gemini
- * precedent (`toGeminiParameterSchema`): the keywords are stripped only where they appear as schema
+ * Recursively removes the JSON-Schema keywords (`$schema`, `additionalProperties`) — *if present*
+ * — that Ollama's `format` does not need. `JsonSchema.object(...).toJson()` emits
+ * `additionalProperties: false` on object nodes; `$schema` is not added by default but may appear
+ * on a runtime-discovered schema (`JsonSchema.fromJson(raw)`). Mirrors the ai-assist Gemini
+ * precedent (`toGeminiParameterSchema`): the keywords are removed only where they appear as schema
  * *keywords* (siblings of `type`/`properties`/…). Inside a `properties` map the keys are
  * user-defined property names, not keywords, so they are preserved verbatim while each property's
  * subschema value is still recursively sanitized. Stripping is infallible, so it returns a plain
