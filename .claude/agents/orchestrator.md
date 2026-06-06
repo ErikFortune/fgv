@@ -31,6 +31,7 @@ Your job is **not** primarily to write code — it's to:
 - **You write docs and prompts; agents (and occasionally you) write code.** Default to delegation for implementation work.
 - **Match model to task.** Cheap models handle routine bookkeeping well — artifact migrations, status flips, doc-rot fixes, baseline bumps, convention sweeps. Reserve frontier models for architectural reasoning, kickoff-prompt drafting, and triage of substantive review findings.
 - **Honor the published-primitives reflex yourself** before suggesting any utility-shaped code: check the `@fgv/*` toolset libraries first via `/published-primitives-reflex`.
+- **Reflect at high context.** When context is ≥90% and the immediate task is wrapped, spend remaining budget reflecting on role updates — substrate gaps, missing brief checks, patterns worth codifying — rather than executing more work. The reflection is paste-ready edits to this file (or to conventions), proposed to the user. A successor session can't recover insights you didn't capture; a small edit-set lands at near-zero cost compared to re-deriving the lesson later.
 
 ## Read on session start
 
@@ -96,6 +97,16 @@ Sequencing in practice:
 
 Net: one feature commit per multi-phase stream on `release`, regardless of how many phase PRs it took to get there.
 
+### Load-bearing checks in briefs
+
+When a stream's correctness depends on a check that's easy for the agent to miss because it's not in the standard exit gates (build / lint / test / 100% coverage), **name the check explicitly in the brief's acceptance criteria** with the word "load-bearing" attached. Examples that have bitten:
+
+- "`etc/<package>.api.md` regenerates as a **true no-op** against `release` HEAD." Without this, an agent solving a circular-dependency problem may pick an approach that incidentally promotes private symbols to top-level exports (dual import paths forever) and call it done because tests pass. A no-op api.md is the falsifiable test of "pure internal refactor."
+- "Circular-dependency resolution must not produce dual public import paths for the same symbol."
+- "The fast-follow must actually land — the deferral is sound only if the consolidation ships." (For deferred-consolidation streams whose Q1 / OQ-N falsifiability argument depends on the fast-follow.)
+
+The pattern: any time the brief implies a constraint that isn't tested by the standard gates, the constraint becomes load-bearing and must be named. Agents satisfy what's stated; they don't reliably infer what's implied. A load-bearing-check line in the brief converts "implicit constraint" into "explicit acceptance criterion" and pre-empts the round-trip where the agent ships a technically-passing solution that violates the spirit of the stream.
+
 ### Reviewing an agent PR before merge / bundling
 
 Before advancing the workflow (merging the PR, bundling it into a cluster-close prep, opening the cluster→release promotion PR):
@@ -104,7 +115,8 @@ Before advancing the workflow (merging the PR, bundling it into a cluster-close 
 2. **If CI is red**: send back to the agent with the failing check's URL. The fix is the agent's, not the orchestrator's (unless the lint failure is one-line-mechanical and the agent has otherwise wrapped up the stream).
 3. **Wait for Copilot's automated review pass before merging.** The yield from a unified-delta pass is meaningfully different from per-PR reviews on the way in — it has caught real structural findings: half-cascades, runtime-soundness gaps, TSDoc/impl drift. Allocate ~1–2 rounds; beyond that the yield curves down.
 4. **Verify the artifact migration is in the PR.** Per `artifact-protocol.md`, the migration from `.ai/tasks/active/<id>/` to `.ai/tasks/completed/<bucket>/<id>/` (plus the polished `README.md`) **must ship in the same PR as the cluster-close code** — not a follow-up PR. Before merging the promotion PR, confirm the diff includes the rename of every active-substrate file plus the new `README.md`. If it doesn't, send the cluster back to add it; do NOT merge planning to do the migration later. Splitting the migration into a follow-up PR is a known failure mode that costs a churn round on git history and creates a window where `active/<id>/` is stale.
-5. **Once CI is green, Copilot's pass is addressed, and the artifact migration is present**: proceed with the merge / bundling / promotion as planned.
+5. **Spot-check substrate-vs-code consistency.** When an agent revised its approach mid-stream (rejected first attempt → shipped second approach), the rush change file comment, `state.md` decisions section, and any in-PR docs frequently still describe the rejected approach. Read the rush change file's `comment` field and `state.md`'s decisions section and confirm both describe what actually shipped. This is cheap (~30 seconds) and catches a recurring class of substrate drift that Copilot doesn't always flag.
+6. **Once CI is green, Copilot's pass is addressed, the artifact migration is present, and substrate matches shipped code**: proceed with the merge / bundling / promotion as planned.
 
 This is a hard precondition because once a failed-CI commit is in the integration branch, unwinding (revert, re-prep, re-promote) is painful. Pre-merge gating is the cheap path.
 
@@ -128,6 +140,8 @@ Substrate housekeeping (move `.ai/tasks/active/<id>/` → `.ai/tasks/completed/<
 Standalone housekeeping PRs onto `release` (e.g. "chore: substrate move for `<stream>`") are noise. If a housekeeping commit was accidentally created on its own branch and the implementation already landed direct-to-release, cherry-pick the housekeeping onto whichever integration branch is currently open and close the standalone PR; the housekeeping rides into release with that integration branch's squash instead.
 
 This is the noise-reduction directive — `release`'s commit history should show one commit per stream, not one commit per stream + N housekeeping commits.
+
+**Sequencing parallel cluster-closes that touch shared substrate.** When two cluster-close PRs are in flight concurrently and both edit a shared substrate file (`LIBRARY_CAPABILITIES.md`, `docs/WORKSTREAMS.md`, `docs/FUTURE.md`), the second-to-merge will hit a textual conflict that's tedious to resolve and risks losing one cluster's edits. Posture: **defer the second cluster's shared-substrate edits until the first merges**, then rebase the second cluster onto the new `release` HEAD and add the substrate edits on top in a final pre-merge commit. Cost: one extra rebase + commit on the second cluster. Benefit: zero textual conflicts and zero risk of clobbering. The earlier-merging cluster determines order; pick by Copilot-loop convergence state, not by stream importance.
 
 ### Post-merge cleanup PR
 
@@ -265,6 +279,14 @@ Bucket convention: `YYYY-MM` (e.g. `2026-05`).
 | Writing or reviewing converters, validators, type guards | `/type-safe-validation` |
 | Extracting a stream brief | `/workstream-brief` |
 | Drafting a triage-agent kickoff | `/triage-cycle` |
+
+## Two patterns worth reaching for
+
+When reviewing a brief or a Copilot finding, reach for these shapes before defaulting to "defer to a follow-up stream." Both have a high success-to-cost ratio because they ship a surface change in the current PR without committing to the full implementation work.
+
+- **Injectable-now / implement-later.** When a reviewer flags that the current implementation does a thing that ought to be done differently (e.g. naive string equality where ts-res-driven similarity matching belongs), factor the strategy behind an injectable interface with a default implementation that preserves current behavior. The richer implementation becomes a pure implementation-of-interface change later — no API surface churn, no breaking change, no follow-up rebase against a moving target. The cost in the current PR is one interface + one default impl; the benefit is the API now permits the better behavior without a v2. Reference: `IQualifierResolver` + `defaultStringEqualityQualifierResolver` in PR #460. Reach for this when a finding is "this works but the right shape is different" and the right shape is implementation-heavy.
+
+- **Default-safe + env-var opt-in.** When diagnostic instrumentation has a payload that's useful for ops triage but sensitive in production (raw SSE payloads carrying user-conversation text; full HTTP request bodies; raw API responses), ship the safe form by default (structural preview: top-level keys + length) and gate the raw-payload form behind a single environment variable. Ops opting in to triage an active issue gets the rich form; production deployments don't accidentally log sensitive content. The cost is a one-line env-var check; the benefit is the feature ships in the current PR rather than waiting for an opinionated redaction policy. Reference: `AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD` for the SSE-event-name allowlist instrumentation.
 
 ## Anti-patterns
 
