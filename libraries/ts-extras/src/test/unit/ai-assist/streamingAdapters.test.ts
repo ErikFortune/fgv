@@ -441,7 +441,7 @@ describe('Anthropic streaming adapter — C2 client tool extensions', () => {
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeAnthropicDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT
+      ...TEST_PROMPT.toRequest()
     });
 
     expect(result).toSucceed();
@@ -478,7 +478,7 @@ describe('Anthropic streaming adapter — C2 client tool extensions', () => {
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeAnthropicDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT
+      ...TEST_PROMPT.toRequest()
     });
 
     expect(result).toSucceed();
@@ -528,7 +528,7 @@ describe('Anthropic streaming adapter — C2 client tool extensions', () => {
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeAnthropicDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT
+      ...TEST_PROMPT.toRequest()
     });
 
     expect(result).toSucceed();
@@ -563,7 +563,7 @@ describe('Anthropic streaming adapter — C2 client tool extensions', () => {
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeAnthropicDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT
+      ...TEST_PROMPT.toRequest()
     });
 
     expect(result).toSucceed();
@@ -784,7 +784,7 @@ describe('Anthropic streaming adapter — C2 client tool extensions', () => {
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeAnthropicDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT
+      ...TEST_PROMPT.toRequest()
     });
 
     expect(result).toSucceed();
@@ -926,7 +926,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools
     });
 
@@ -962,7 +962,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools
     });
 
@@ -1032,7 +1032,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools
     });
 
@@ -1174,7 +1174,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools
     });
 
@@ -1198,7 +1198,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools
     });
 
@@ -1225,7 +1225,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools
     });
 
@@ -1254,7 +1254,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools
     });
 
@@ -1277,7 +1277,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools
     });
 
@@ -1354,7 +1354,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools
     });
 
@@ -1405,7 +1405,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools
     });
 
@@ -1475,7 +1475,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools
     });
 
@@ -1520,7 +1520,7 @@ describe('Gemini streaming adapter — C2 client tool extensions', () => {
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeGeminiDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT
+      ...TEST_PROMPT.toRequest()
     });
 
     expect(result).toSucceed();
@@ -1553,7 +1553,7 @@ describe('Gemini streaming adapter — C2 client tool extensions', () => {
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeGeminiDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT
+      ...TEST_PROMPT.toRequest()
     });
 
     expect(result).toSucceed();
@@ -1852,7 +1852,7 @@ describe('cross-provider client-tool continuation wire forwarding', () => {
     const turnResult = AiAssist.executeClientToolTurn({
       descriptor: xaiDescriptor,
       apiKey: 'sk-test',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools: [{ type: 'web_search' }],
       clientTools: [],
       continuationMessages
@@ -1901,5 +1901,11 @@ describe('chatRequestBuilders — builders called without options', () => {
     const { buildGeminiContents } = await import('../../../packlets/ai-assist/chatRequestBuilders');
     const contents = buildGeminiContents(TEST_PROMPT);
     expect(contents).toEqual([{ role: 'user', parts: [{ text: 'hello' }] }]);
+  });
+
+  test('buildAnthropicMessages emits only the user turn when no options are supplied', async () => {
+    const { buildAnthropicMessages } = await import('../../../packlets/ai-assist/chatRequestBuilders');
+    const messages = buildAnthropicMessages(TEST_PROMPT);
+    expect(messages).toEqual([{ role: 'user', content: 'hello' }]);
   });
 });

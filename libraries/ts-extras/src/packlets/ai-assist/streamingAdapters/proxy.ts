@@ -125,8 +125,8 @@ export async function callProxiedCompletionStream(
   const {
     descriptor,
     apiKey,
-    prompt,
-    messagesBefore,
+    system,
+    messages,
     temperature,
     modelOverride,
     logger,
@@ -135,20 +135,16 @@ export async function callProxiedCompletionStream(
     thinking
   } = params;
 
-  const promptBody: Record<string, unknown> = { system: prompt.system, user: prompt.user };
-  if (prompt.attachments.length > 0) {
-    promptBody.attachments = prompt.attachments;
-  }
   const body: Record<string, unknown> = {
     providerId: descriptor.id,
     apiKey,
-    prompt: promptBody,
+    messages,
     /* c8 ignore next 1 - defensive: temperature always uses default 0.7 in proxy streaming tests */
     temperature: temperature ?? 0.7,
     stream: true
   };
-  if (messagesBefore && messagesBefore.length > 0) {
-    body.messagesBefore = messagesBefore;
+  if (system !== undefined) {
+    body.system = system;
   }
   if (modelOverride !== undefined) {
     body.modelOverride = modelOverride;

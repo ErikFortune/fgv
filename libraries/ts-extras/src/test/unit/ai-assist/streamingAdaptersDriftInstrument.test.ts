@@ -168,7 +168,7 @@ describe('OpenAI Responses streaming adapter — unrecognized-event drift instru
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools: OPENAI_TOOLS,
       logger
     });
@@ -224,7 +224,7 @@ describe('OpenAI Responses streaming adapter — unrecognized-event drift instru
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools: OPENAI_TOOLS,
       logger
     });
@@ -250,7 +250,7 @@ describe('OpenAI Responses streaming adapter — unrecognized-event drift instru
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools: OPENAI_TOOLS
       // intentionally no logger
     });
@@ -278,7 +278,7 @@ describe('OpenAI Responses streaming adapter — unrecognized-event drift instru
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools: OPENAI_TOOLS,
       logger
     });
@@ -316,7 +316,7 @@ describe('OpenAI Responses streaming adapter — unrecognized-event drift instru
       const result = await AiAssist.callProviderCompletionStream({
         descriptor: makeOpenAiResponsesDescriptor(),
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         tools: OPENAI_TOOLS,
         logger
       });
@@ -364,7 +364,7 @@ describe('OpenAI Responses streaming adapter — unrecognized-event drift instru
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeOpenAiResponsesDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools: OPENAI_TOOLS,
       logger
     });
@@ -408,7 +408,7 @@ describe('Anthropic streaming adapter — unrecognized-event drift instrument', 
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeAnthropicDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools: ANTHROPIC_TOOLS,
       logger
     });
@@ -454,7 +454,7 @@ describe('Anthropic streaming adapter — unrecognized-event drift instrument', 
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeAnthropicDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools: ANTHROPIC_TOOLS,
       logger
     });
@@ -476,7 +476,7 @@ describe('Anthropic streaming adapter — unrecognized-event drift instrument', 
     const result = await AiAssist.callProviderCompletionStream({
       descriptor: makeAnthropicDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       tools: ANTHROPIC_TOOLS
       // intentionally no logger
     });

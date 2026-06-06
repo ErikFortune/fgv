@@ -82,33 +82,41 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     global.fetch = originalFetch;
   });
 
-  test('includes additionalMessages in proxy body when provided', async () => {
+  test('sends the ordered messages and system in the proxy body', async () => {
     mockFetchResponse({ content: 'ok' });
 
-    const additionalMessages: AiAssist.IChatMessage[] = [{ role: 'user', content: 'more context' }];
     await AiAssist.callProxiedCompletion('http://localhost:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'test-key',
-      prompt: testPrompt,
-      additionalMessages
+      system: 'You are a helpful assistant',
+      messages: [
+        { role: 'user', content: 'first turn' },
+        { role: 'assistant', content: 'earlier reply' },
+        { role: 'user', content: 'more context' }
+      ]
     });
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-    expect(body.additionalMessages).toEqual([{ role: 'user', content: 'more context' }]);
+    expect(body.system).toBe('You are a helpful assistant');
+    expect(body.messages).toEqual([
+      { role: 'user', content: 'first turn' },
+      { role: 'assistant', content: 'earlier reply' },
+      { role: 'user', content: 'more context' }
+    ]);
   });
 
-  test('omits additionalMessages key when array is empty', async () => {
+  test('omits the system key from the proxy body when not provided', async () => {
     mockFetchResponse({ content: 'ok' });
 
     await AiAssist.callProxiedCompletion('http://localhost:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'test-key',
-      prompt: testPrompt,
-      additionalMessages: []
+      messages: [{ role: 'user', content: 'no system' }]
     });
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-    expect(body.additionalMessages).toBeUndefined();
+    expect(body.system).toBeUndefined();
+    expect(body.messages).toEqual([{ role: 'user', content: 'no system' }]);
   });
 
   test('includes modelOverride in proxy body when provided', async () => {
@@ -117,7 +125,7 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     await AiAssist.callProxiedCompletion('http://localhost:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'test-key',
-      prompt: testPrompt,
+      ...testPrompt.toRequest(),
       modelOverride: 'grok-3'
     });
 
@@ -131,7 +139,7 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     await AiAssist.callProxiedCompletion('http://localhost:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'test-key',
-      prompt: testPrompt
+      ...testPrompt.toRequest()
     });
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -145,7 +153,7 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     await AiAssist.callProxiedCompletion('http://localhost:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'test-key',
-      prompt: testPrompt,
+      ...testPrompt.toRequest(),
       tools
     });
 
@@ -159,7 +167,7 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     await AiAssist.callProxiedCompletion('http://localhost:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'test-key',
-      prompt: testPrompt,
+      ...testPrompt.toRequest(),
       tools: []
     });
 
@@ -173,7 +181,7 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     await AiAssist.callProxiedCompletion('http://localhost:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'test-key',
-      prompt: testPrompt,
+      ...testPrompt.toRequest(),
       temperature: 0.3
     });
 
@@ -187,7 +195,7 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     const result = await AiAssist.callProxiedCompletion('http://localhost:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'test-key',
-      prompt: testPrompt
+      ...testPrompt.toRequest()
     });
 
     expect(result).toFailWith(/ECONNREFUSED/);
@@ -199,7 +207,7 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     const result = await AiAssist.callProxiedCompletion('http://localhost:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'test-key',
-      prompt: testPrompt
+      ...testPrompt.toRequest()
     });
 
     expect(result).toFailWith(/proxy: upstream provider unavailable/);
@@ -211,7 +219,7 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     const result = await AiAssist.callProxiedCompletion('http://localhost:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'test-key',
-      prompt: testPrompt
+      ...testPrompt.toRequest()
     });
 
     expect(result).toFailWith(/proxy returned invalid response: missing content/);
@@ -224,7 +232,7 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     await AiAssist.callProxiedCompletion('http://localhost:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'test-key',
-      prompt: testPrompt,
+      ...testPrompt.toRequest(),
       thinking
     });
 

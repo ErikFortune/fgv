@@ -49,6 +49,7 @@ import {
   type IAiModelInfo,
   type IAiProviderDescriptor,
   type IChatMessage,
+  type IChatRequest,
   type IThinkingConfig,
   type ModelSpec,
   resolveModel
@@ -65,7 +66,8 @@ import {
   buildGeminiContents,
   buildMessages,
   buildOpenAiChatUserContent,
-  buildOpenAiResponsesUserContent
+  buildOpenAiResponsesUserContent,
+  splitChatRequest
 } from './chatRequestBuilders';
 import { bearerAuthHeader, resolveEffectiveBaseUrl } from './endpoint';
 import { DEFAULT_MODEL_CAPABILITY_CONFIG, resolveImageCapability, supportsImageGeneration } from './registry';
@@ -91,18 +93,16 @@ interface IAiApiConfig {
 }
 
 /**
- * Parameters for a provider completion request.
+ * Parameters for a provider completion request. Carries the unified
+ * {@link AiAssist.IChatRequest} shape (`system?` + ordered `messages`, last =
+ * current user turn); history is linearized before the current turn.
  * @public
  */
-export interface IProviderCompletionParams {
+export interface IProviderCompletionParams extends IChatRequest {
   /** The provider descriptor */
   readonly descriptor: IAiProviderDescriptor;
   /** API key for authentication */
   readonly apiKey: string;
-  /** The structured prompt to send */
-  readonly prompt: AiPrompt;
-  /** Additional messages to append after system+user in order (e.g. for correction retries). */
-  readonly additionalMessages?: ReadonlyArray<IChatMessage>;
   /** Sampling temperature (default: 0.7) */
   readonly temperature?: number;
   /** Optional model override — string or context-aware map (uses descriptor.defaultModel otherwise) */
@@ -463,7 +463,7 @@ const geminiResponse: Validator<IGeminiResponse> = Validators.object<IGeminiResp
 async function callOpenAiCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
-  additionalMessages?: ReadonlyArray<IChatMessage>,
+  head?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
@@ -471,7 +471,7 @@ async function callOpenAiCompletion(
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/chat/completions`;
   const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
-    tail: additionalMessages
+    head
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
   const body: Record<string, unknown> = {
@@ -534,7 +534,7 @@ async function callOpenAiResponsesCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
   tools: ReadonlyArray<AiServerToolConfig>,
-  additionalMessages?: ReadonlyArray<IChatMessage>,
+  head?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
@@ -542,7 +542,7 @@ async function callOpenAiResponsesCompletion(
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/responses`;
   const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
-    tail: additionalMessages
+    head
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
   const body: Record<string, unknown> = {
@@ -608,7 +608,7 @@ function extractAnthropicText(content: unknown[]): Result<string> {
 async function callAnthropicCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
-  additionalMessages?: ReadonlyArray<IChatMessage>,
+  head?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
   logger?: Logging.ILogger,
   tools?: ReadonlyArray<AiServerToolConfig>,
@@ -616,7 +616,7 @@ async function callAnthropicCompletion(
   resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
-  const messages = buildAnthropicMessages(prompt, { tail: additionalMessages });
+  const messages = buildAnthropicMessages(prompt, { head });
   const body: Record<string, unknown> = {
     model: config.model,
     system: prompt.system,
@@ -681,7 +681,7 @@ async function callAnthropicCompletion(
 async function callGeminiCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
-  additionalMessages?: ReadonlyArray<IChatMessage>,
+  head?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
   logger?: Logging.ILogger,
   tools?: ReadonlyArray<AiServerToolConfig>,
@@ -689,7 +689,7 @@ async function callGeminiCompletion(
   resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
-  const contents = buildGeminiContents(prompt, { tail: additionalMessages });
+  const contents = buildGeminiContents(prompt, { head });
 
   const generationConfig: Record<string, unknown> = { temperature };
   if (resolvedThinking?.geminiThinkingBudget !== undefined) {
@@ -751,8 +751,8 @@ export async function callProviderCompletion(
   const {
     descriptor,
     apiKey,
-    prompt,
-    additionalMessages,
+    system,
+    messages,
     temperature,
     modelOverride,
     logger,
@@ -761,6 +761,12 @@ export async function callProviderCompletion(
     endpoint,
     thinking
   } = params;
+
+  const splitResult = splitChatRequest(system, messages);
+  if (splitResult.isFailure()) {
+    return fail(splitResult.message);
+  }
+  const { prompt, head } = splitResult.value;
 
   const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
   if (baseUrlResult.isFailure()) {
@@ -824,7 +830,7 @@ export async function callProviderCompletion(
           config,
           prompt,
           tools,
-          additionalMessages,
+          head,
           effectiveTemperature,
           logger,
           signal,
@@ -834,7 +840,7 @@ export async function callProviderCompletion(
       return callOpenAiCompletion(
         config,
         prompt,
-        additionalMessages,
+        head,
         effectiveTemperature,
         logger,
         signal,
@@ -844,7 +850,7 @@ export async function callProviderCompletion(
       return callAnthropicCompletion(
         config,
         prompt,
-        additionalMessages,
+        head,
         effectiveTemperature,
         logger,
         tools,
@@ -855,7 +861,7 @@ export async function callProviderCompletion(
       return callGeminiCompletion(
         config,
         prompt,
-        additionalMessages,
+        head,
         effectiveTemperature,
         logger,
         tools,
@@ -1873,12 +1879,10 @@ export async function callProxiedListModels(
 // ============================================================================
 
 /**
- * Calls the AI completion endpoint on a proxy server instead of calling
- * the provider API directly from the browser.
- *
- * The proxy server handles provider dispatch, CORS, and API key forwarding.
- * The request shape mirrors {@link IProviderCompletionParams} but is serialized
- * as JSON for the proxy endpoint.
+ * Calls the AI completion endpoint on a proxy server instead of calling the
+ * provider API directly from the browser. The proxy handles provider dispatch,
+ * CORS, and API key forwarding. The request body serializes the unified
+ * {@link AiAssist.IChatRequest} shape (`system?` + `messages`).
  *
  * @param proxyUrl - Base URL of the proxy server (e.g. `http://localhost:3001`)
  * @param params - Same parameters as {@link callProviderCompletion}
@@ -1892,8 +1896,8 @@ export async function callProxiedCompletion(
   const {
     descriptor,
     apiKey,
-    prompt,
-    additionalMessages,
+    system,
+    messages,
     temperature,
     modelOverride,
     logger,
@@ -1902,18 +1906,14 @@ export async function callProxiedCompletion(
     thinking
   } = params;
 
-  const promptBody: Record<string, unknown> = { system: prompt.system, user: prompt.user };
-  if (prompt.attachments.length > 0) {
-    promptBody.attachments = prompt.attachments;
-  }
   const body: Record<string, unknown> = {
     providerId: descriptor.id,
     apiKey,
-    prompt: promptBody,
+    messages,
     temperature: temperature ?? 0.7
   };
-  if (additionalMessages && additionalMessages.length > 0) {
-    body.additionalMessages = additionalMessages;
+  if (system !== undefined) {
+    body.system = system;
   }
   if (modelOverride !== undefined) {
     body.modelOverride = modelOverride;

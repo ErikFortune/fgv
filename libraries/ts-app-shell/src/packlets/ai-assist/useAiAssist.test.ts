@@ -1101,7 +1101,7 @@ describe('useAiAssist › streamDirect', () => {
     expect(onEvent).toHaveBeenCalledTimes(1);
   });
 
-  test('forwards tools and messagesBefore to the underlying call', async () => {
+  test('forwards tools and orders messagesBefore before the current turn', async () => {
     directSpy.mockResolvedValueOnce(
       succeed(makeStreamSource([{ type: 'done', truncated: false, fullText: '' }]))
     );
@@ -1114,7 +1114,12 @@ describe('useAiAssist › streamDirect', () => {
     });
     const params = directSpy.mock.calls[0][0];
     expect(params.tools).toEqual([{ type: 'web_search' }]);
-    expect(params.messagesBefore).toEqual([{ role: 'assistant', content: 'previous turn' }]);
+    // The hook lowers to the unified request shape: history precedes the current turn.
+    expect(params.system).toBe('system');
+    expect(params.messages).toEqual([
+      { role: 'assistant', content: 'previous turn' },
+      { role: 'user', content: 'hello' }
+    ]);
   });
 
   test('forwards the abort signal', async () => {

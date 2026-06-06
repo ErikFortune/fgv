@@ -706,7 +706,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [tool] as IAiClientTool[],
         model: 'claude-sonnet-4-6'
       });
@@ -737,7 +737,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools: [{ type: 'web_search' }],
         clientTools: [tool] as IAiClientTool[],
         model: 'claude-sonnet-4-6'
@@ -772,7 +772,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeOpenAiDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [tool] as IAiClientTool[],
         model: 'gpt-4o'
       });
@@ -810,7 +810,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeGeminiDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [tool] as IAiClientTool[],
         model: 'gemini-2.5-flash'
       });
@@ -848,7 +848,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [tool] as IAiClientTool[],
         model: 'claude-sonnet-4-6'
       });
@@ -885,7 +885,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [makeMemoryTool(async () => 'unused')] as IAiClientTool[],
         model: 'claude-sonnet-4-6',
         endpoint: 'http://localhost:11434/v1'
@@ -906,7 +906,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [makeMemoryTool(async () => 'unused')] as IAiClientTool[],
         model: 'claude-sonnet-4-6'
       });
@@ -926,7 +926,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: { ...makeAnthropicDescriptor(), baseUrl: '' },
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [makeMemoryTool(async () => 'unused')] as IAiClientTool[],
         model: 'claude-sonnet-4-6',
         endpoint: 'http://192.168.1.42:1234/v1'
@@ -945,7 +945,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [makeMemoryTool(async () => 'unused')] as IAiClientTool[],
         model: 'claude-sonnet-4-6',
         endpoint: 'not a url'
@@ -982,7 +982,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [] as IAiClientTool[]
         // model is intentionally omitted
       });
@@ -1004,7 +1004,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeGeminiDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [tool] as IAiClientTool[],
         model: 'gemini-2.5-flash'
       });
@@ -1033,7 +1033,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [tool] as IAiClientTool[],
         model: 'claude-sonnet-4-6'
       });
@@ -1057,7 +1057,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [],
         model: 'claude-sonnet-4-6'
       });
@@ -1087,7 +1087,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [tool] as IAiClientTool[],
         model: 'claude-sonnet-4-6'
       });
@@ -1127,7 +1127,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [tool] as IAiClientTool[],
         model: 'claude-sonnet-4-6'
       });
@@ -1170,7 +1170,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [tool] as IAiClientTool[],
         model: 'claude-sonnet-4-6'
       });
@@ -1200,7 +1200,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [],
         model: 'claude-sonnet-4-6'
       });
@@ -1228,7 +1228,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [],
         model: 'claude-sonnet-4-6'
       });
@@ -1266,7 +1266,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [tool],
         model: 'claude-sonnet-4-6'
       });
@@ -1300,7 +1300,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [tool],
         model: 'claude-sonnet-4-6'
       });
@@ -1327,7 +1327,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [tool, duplicate] as IAiClientTool[],
         model: 'claude-sonnet-4-6'
       });
@@ -1343,7 +1343,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [],
         model: 'claude-sonnet-4-6',
         temperature: 0.5
@@ -1381,7 +1381,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeAnthropicDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         clientTools: [],
         model: 'claude-sonnet-4-6'
       });
@@ -1423,7 +1423,7 @@ describe('executeClientToolTurn', () => {
       const result = executeClientToolTurn({
         descriptor: makeOpenAiDescriptor(),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools: [{ type: 'web_search' }],
         clientTools: [tool] as IAiClientTool[],
         model: 'gpt-4o'
