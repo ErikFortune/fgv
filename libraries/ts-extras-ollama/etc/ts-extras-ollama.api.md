@@ -4,11 +4,15 @@
 
 ```ts
 
+import { JsonValue } from '@fgv/ts-json-base';
 import { Ollama } from 'ollama';
 import { Result } from '@fgv/ts-utils';
 
 // @public
 export function createOllamaClient(params?: ICreateOllamaClientParams): Result<IOllamaClient>;
+
+// @public
+export function deleteModel(client: IOllamaClient, model: string): Promise<Result<IOllamaDeleteResult>>;
 
 // @public
 export interface ICreateOllamaClientParams {
@@ -19,5 +23,62 @@ export interface ICreateOllamaClientParams {
 
 // @public
 export type IOllamaClient = Ollama;
+
+// @public
+export interface IOllamaDeleteResult {
+    readonly deleted: true;
+    readonly model: string;
+}
+
+// @public
+export interface IOllamaModel extends IOllamaModelBase {
+    readonly modifiedAt: Date;
+}
+
+// @public
+export interface IOllamaModelBase {
+    readonly details: IOllamaModelDetail;
+    readonly digest: string;
+    readonly model: string;
+    readonly name: string;
+    readonly size: number;
+}
+
+// @public
+export interface IOllamaModelDetail {
+    readonly families?: ReadonlyArray<string>;
+    readonly family?: string;
+    readonly format?: string;
+    readonly parameterSize?: string;
+    readonly parentModel?: string;
+    readonly quantizationLevel?: string;
+}
+
+// @public
+export interface IOllamaModelInfo {
+    readonly capabilities?: ReadonlyArray<string>;
+    readonly details: IOllamaModelDetail;
+    readonly modelfile?: string;
+    readonly modelInfo?: Readonly<Record<string, JsonValue>>;
+    readonly parameters?: string;
+    readonly template?: string;
+}
+
+// @public
+export interface IOllamaRunningModel extends IOllamaModelBase {
+    readonly expiresAt: Date;
+    readonly sizeVram: number;
+}
+
+// @public
+export function listModels(client: IOllamaClient): Promise<Result<ReadonlyArray<IOllamaModel>>>;
+
+// @public
+export function listRunning(client: IOllamaClient): Promise<Result<ReadonlyArray<IOllamaRunningModel>>>;
+
+// @public
+export function showModel(client: IOllamaClient, model: string, options?: {
+    readonly verbose?: boolean;
+}): Promise<Result<IOllamaModelInfo>>;
 
 ```
