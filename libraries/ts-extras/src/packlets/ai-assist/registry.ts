@@ -390,6 +390,8 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
       { idPattern: /^claude-/, capabilities: ['chat', 'tools', 'vision'] }
     ],
     groq: [{ idPattern: /./, capabilities: ['chat'] }],
-    mistral: [{ idPattern: /./, capabilities: ['chat'] }]
+    mistral: [{ idPattern: /./, capabilities: ['chat'] }],
+    ollama: [{ idPattern: /./, capabilities: ['chat'] }],
+    'openai-compat': [{ idPattern: /./, capabilities: ['chat'] }]
   }
 };
