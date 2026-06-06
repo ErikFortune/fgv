@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add catch-all `chat` capability rules for the `ollama` and `openai-compat` providers to `DEFAULT_MODEL_CAPABILITY_CONFIG` so `callProviderListModels` attributes `chat` to models served by self-hosted OpenAI-compatible endpoints (parallel to the existing `groq`/`mistral` entries).",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "ErikFortune@outlook.com"
+}
