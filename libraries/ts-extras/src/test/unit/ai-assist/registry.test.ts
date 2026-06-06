@@ -244,3 +244,29 @@ describe('AiAssist.registry', () => {
     });
   });
 });
+
+describe('DEFAULT_MODEL_CAPABILITY_CONFIG', () => {
+  const config = AiAssist.DEFAULT_MODEL_CAPABILITY_CONFIG;
+
+  test('ollama catch-all assigns chat to any model id', () => {
+    const rules = config.perProvider?.ollama ?? [];
+    const caps = new Set<string>();
+    for (const rule of rules) {
+      if (rule.idPattern.test('llama3.2')) {
+        rule.capabilities.forEach((c) => caps.add(c));
+      }
+    }
+    expect(caps.has('chat')).toBe(true);
+  });
+
+  test('openai-compat catch-all assigns chat to any model id', () => {
+    const rules = config.perProvider?.['openai-compat'] ?? [];
+    const caps = new Set<string>();
+    for (const rule of rules) {
+      if (rule.idPattern.test('some-local-model')) {
+        rule.capabilities.forEach((c) => caps.add(c));
+      }
+    }
+    expect(caps.has('chat')).toBe(true);
+  });
+});

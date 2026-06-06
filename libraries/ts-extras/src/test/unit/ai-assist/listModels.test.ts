@@ -587,6 +587,40 @@ describe('callProviderListModels', () => {
       });
     });
   });
+
+  describe('ollama and openai-compat default config (catch-all chat)', () => {
+    test('ollama: default config assigns chat to any model', async () => {
+      mockFetchResponse(openAiListBody(['llama3.2', 'qwen2.5']));
+      const descriptor = AiAssist.getProviderDescriptor('ollama').orThrow();
+
+      const result = await AiAssist.callProviderListModels({
+        descriptor,
+        apiKey: '',
+        endpoint: 'http://localhost:11434/v1'
+      });
+
+      expect(result).toSucceedAndSatisfy((models) => {
+        for (const m of models) {
+          expect(m.capabilities.has('chat')).toBe(true);
+        }
+      });
+    });
+
+    test('openai-compat: default config assigns chat to any model', async () => {
+      mockFetchResponse(openAiListBody(['local-model']));
+      const descriptor = AiAssist.getProviderDescriptor('openai-compat').orThrow();
+
+      const result = await AiAssist.callProviderListModels({
+        descriptor,
+        apiKey: '',
+        endpoint: 'http://192.168.1.42:1234/v1'
+      });
+
+      expect(result).toSucceedAndSatisfy((models) => {
+        expect(models[0].capabilities.has('chat')).toBe(true);
+      });
+    });
+  });
 });
 
 describe('callProxiedListModels', () => {
