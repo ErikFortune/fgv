@@ -25,6 +25,7 @@ import '@fgv/ts-utils-jest';
 
 import { Converters as ExtraConverters } from '../..';
 import { ExtendedArray, RangeOf } from '../../packlets/experimental';
+import { DateTime } from 'luxon';
 
 describe('Converters module', () => {
   describe('templateString converter', () => {
@@ -69,12 +70,57 @@ describe('Converters module', () => {
       expect(ExtraConverters.isoDate.convert(date)).toSucceedWith(date);
     });
 
+    test('converts a DateTime object to a Date', () => {
+      const date = DateTime.now();
+      expect(ExtraConverters.isoDate.convert(date)).toSucceedWith(date.toJSDate());
+    });
+
     test('fails for a malformed date', () => {
       expect(ExtraConverters.isoDate.convert('whatever')).toFailWith(/invalid date/i);
     });
 
+    test('fails for an invalid DateTime object', () => {
+      const invalid = DateTime.invalid('unit test');
+      expect(ExtraConverters.isoDate.convert(invalid)).toFailWith(/invalid date/i);
+    });
+
     test('fails for an unexpected type', () => {
       expect(ExtraConverters.isoDate.convert({ date: new Date() })).toFailWith(/cannot convert/i);
+    });
+  });
+
+  describe('isoDateTime converter', () => {
+    test('converts an ISO formatted string to a DateTime object', () => {
+      const date = DateTime.now();
+      expect(ExtraConverters.isoDateTime.convert(date.toISO())).toSucceedWith(date);
+    });
+
+    test('converts a number to a DateTime object', () => {
+      const date = DateTime.now();
+      expect(ExtraConverters.isoDateTime.convert(date.toMillis())).toSucceedWith(date);
+    });
+
+    test('converts a Date object to a DateTime', () => {
+      const date = DateTime.now();
+      expect(ExtraConverters.isoDateTime.convert(date)).toSucceedWith(date);
+    });
+
+    test('converts a DateTime object to a DateTime', () => {
+      const date = DateTime.now();
+      expect(ExtraConverters.isoDateTime.convert(date)).toSucceedWith(date);
+    });
+
+    test('fails for a malformed date', () => {
+      expect(ExtraConverters.isoDateTime.convert('whatever')).toFailWith(/invalid date/i);
+    });
+
+    test('fails for an invalid DateTime object', () => {
+      const invalid = DateTime.invalid('unit test');
+      expect(ExtraConverters.isoDateTime.convert(invalid)).toFailWith(/invalid date/i);
+    });
+
+    test('fails for an unexpected type', () => {
+      expect(ExtraConverters.isoDateTime.convert({ date: new Date() })).toFailWith(/cannot convert/i);
     });
   });
 

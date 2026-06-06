@@ -68,10 +68,7 @@ export class KeyValueConverters<TK extends string = string, TV = unknown> {
 
   /**
    * Constructs a new key-value validator.
-   * @param key - Required key {@link Validator | validator}, {@link Converter | converter},
-   * or {@link Conversion.ConverterFunc | converter function}.
-   * @param value - Required value {@link Validator | validator}, {@link Converter | converter},
-   * or {@link Conversion.ConverterFunc | converter function}.
+   * @param params - Key and value converters or validators.
    */
   public constructor({ key, value }: IKeyValueConverterConstructorParams<TK, TV>) {
     this.key = typeof key === 'function' ? Converters.generic(key) : key;

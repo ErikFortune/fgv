@@ -22,7 +22,14 @@
 
 import '../helpers/jest';
 
-import { InMemoryLogger, ILogger, LogReporter, NoOpLogger } from '../../packlets/logging';
+import {
+  BootLogger,
+  InMemoryLogger,
+  ILogger,
+  isDetailLogger,
+  LogReporter,
+  NoOpLogger
+} from '../../packlets/logging';
 
 import { fail, MessageLogLevel, Result, succeed } from '../../packlets/base';
 
@@ -369,6 +376,39 @@ describe('Logger class', () => {
         reporter.reportFailure('info', 'error');
 
         expect(logger.logged).toEqual(['test', 'error']);
+      });
+    });
+
+    describe('createDefault static factory', () => {
+      test('should create LogReporter with NoOpLogger when no logger provided', () => {
+        expect(LogReporter.createDefault()).toSucceedAndSatisfy((reporter) => {
+          expect(reporter).toBeInstanceOf(LogReporter);
+          expect(reporter.logger).toBeInstanceOf(NoOpLogger);
+        });
+      });
+
+      test('should create LogReporter with provided logger', () => {
+        const logger = new InMemoryLogger();
+        expect(LogReporter.createDefault(logger)).toSucceedAndSatisfy((reporter) => {
+          expect(reporter.logger).toBe(logger);
+        });
+      });
+
+      test('should use default value formatter (tryFormatObject)', () => {
+        const logger = new InMemoryLogger();
+        expect(LogReporter.createDefault(logger)).toSucceedAndSatisfy((reporter) => {
+          reporter.reportSuccess('info', { key: 'value' });
+          expect(logger.logged[0]).toBe('{"key":"value"}');
+        });
+      });
+
+      test('should return typed LogReporter<unknown>', () => {
+        expect(LogReporter.createDefault()).toSucceedAndSatisfy((reporter) => {
+          // Should accept any value type
+          reporter.reportSuccess('info', 'string value');
+          reporter.reportSuccess('info', 42);
+          reporter.reportSuccess('info', { complex: 'object' });
+        });
       });
     });
 
@@ -1116,6 +1156,277 @@ describe('Logger class', () => {
           expect(logger.logged).toContain('error message');
         });
       });
+    });
+  });
+
+  describe('IDetailLogger / isDetailLogger', () => {
+    test('isDetailLogger returns true for InMemoryLogger (extends LoggerBase)', () => {
+      const logger = new InMemoryLogger();
+      expect(isDetailLogger(logger)).toBe(true);
+    });
+
+    test('isDetailLogger returns true for NoOpLogger (extends LoggerBase)', () => {
+      const logger = new NoOpLogger();
+      expect(isDetailLogger(logger)).toBe(true);
+    });
+
+    test('isDetailLogger returns true for BootLogger', () => {
+      const boot = new BootLogger();
+      expect(isDetailLogger(boot)).toBe(true);
+    });
+
+    test('isDetailLogger returns true for LogReporter', () => {
+      const reporter = new LogReporter<unknown>({ logger: new InMemoryLogger() });
+      expect(isDetailLogger(reporter)).toBe(true);
+    });
+
+    test('isDetailLogger returns false for plain ILogger without detail methods', () => {
+      const plain: ILogger = {
+        logLevel: 'info',
+        log: () => {
+          return { isSuccess: () => true, value: undefined } as unknown as ReturnType<ILogger['log']>;
+        },
+        detail: () => {
+          return { isSuccess: () => true, value: undefined } as unknown as ReturnType<ILogger['log']>;
+        },
+        info: () => {
+          return { isSuccess: () => true, value: undefined } as unknown as ReturnType<ILogger['log']>;
+        },
+        warn: () => {
+          return { isSuccess: () => true, value: undefined } as unknown as ReturnType<ILogger['log']>;
+        },
+        error: () => {
+          return { isSuccess: () => true, value: undefined } as unknown as ReturnType<ILogger['log']>;
+        }
+      };
+      expect(isDetailLogger(plain)).toBe(false);
+    });
+  });
+
+  describe('LoggerBase errorWithDetail / warnWithDetail', () => {
+    test('errorWithDetail logs detail at detail level and message at error level', () => {
+      const logger = new InMemoryLogger('detail');
+      logger.errorWithDetail('short summary', 'full detail content');
+      expect(logger.logged).toContain('full detail content');
+      expect(logger.logged).toContain('short summary');
+      const detailIdx = logger.logged.indexOf('full detail content');
+      const errorIdx = logger.logged.indexOf('short summary');
+      expect(detailIdx).toBeLessThan(errorIdx);
+    });
+
+    test('errorWithDetail suppresses detail when log level is info', () => {
+      const logger = new InMemoryLogger('info');
+      const result = logger.errorWithDetail('summary', 'verbose detail');
+      expect(result).toSucceedWith('summary');
+      expect(logger.logged).toEqual(['summary']);
+      expect(logger.suppressed).toContain('verbose detail');
+    });
+
+    test('warnWithDetail logs detail at detail level and message at warning level', () => {
+      const logger = new InMemoryLogger('detail');
+      logger.warnWithDetail('warn summary', 'warn detail');
+      expect(logger.logged).toContain('warn detail');
+      expect(logger.logged).toContain('warn summary');
+      const detailIdx = logger.logged.indexOf('warn detail');
+      const warnIdx = logger.logged.indexOf('warn summary');
+      expect(detailIdx).toBeLessThan(warnIdx);
+    });
+
+    test('warnWithDetail suppresses detail when log level is info', () => {
+      const logger = new InMemoryLogger('info');
+      const result = logger.warnWithDetail('warn summary', 'verbose detail');
+      expect(result).toSucceedWith('warn summary');
+      expect(logger.logged).toEqual(['warn summary']);
+      expect(logger.suppressed).toContain('verbose detail');
+    });
+
+    test('errorWithDetail returns the error message result', () => {
+      const logger = new InMemoryLogger();
+      const result = logger.errorWithDetail('the error', 'the detail');
+      expect(result).toSucceedWith('the error');
+    });
+
+    test('warnWithDetail returns the warning message result', () => {
+      const logger = new InMemoryLogger();
+      const result = logger.warnWithDetail('the warning', 'the detail');
+      expect(result).toSucceedWith('the warning');
+    });
+  });
+
+  describe('LogReporter IDetailLogger implementation', () => {
+    test('errorWithDetail delegates to inner IDetailLogger', () => {
+      const inner = new InMemoryLogger('detail');
+      const reporter = new LogReporter<unknown>({ logger: inner });
+      reporter.errorWithDetail('summary', 'detail content');
+      expect(inner.logged).toContain('detail content');
+      expect(inner.logged).toContain('summary');
+    });
+
+    test('errorWithDetail falls back to error+detail when inner logger is plain ILogger', () => {
+      const logged: string[] = [];
+      const plain: ILogger = {
+        logLevel: 'detail' as const,
+        log(__level: unknown, message: unknown, ...params: unknown[]) {
+          logged.push([message, ...params].filter(Boolean).join('') as string);
+          return { isSuccess: () => true, value: message as string } as unknown as ReturnType<ILogger['log']>;
+        },
+        detail(message: unknown) {
+          return this.log('detail', message);
+        },
+        info(message: unknown) {
+          return this.log('info', message);
+        },
+        warn(message: unknown) {
+          return this.log('warning', message);
+        },
+        error(message: unknown) {
+          return this.log('error', message);
+        }
+      };
+      const reporter = new LogReporter<unknown>({ logger: plain });
+      reporter.errorWithDetail('the error', 'the detail');
+      expect(logged).toContain('the detail');
+      expect(logged).toContain('the error');
+    });
+
+    test('warnWithDetail delegates to inner IDetailLogger', () => {
+      const inner = new InMemoryLogger('detail');
+      const reporter = new LogReporter<unknown>({ logger: inner });
+      reporter.warnWithDetail('warn summary', 'warn detail');
+      expect(inner.logged).toContain('warn detail');
+      expect(inner.logged).toContain('warn summary');
+    });
+
+    test('warnWithDetail falls back to warn+detail when inner logger is plain ILogger', () => {
+      const logged: string[] = [];
+      const plain: ILogger = {
+        logLevel: 'detail' as const,
+        log(__level: unknown, message: unknown, ...params: unknown[]) {
+          logged.push([message, ...params].filter(Boolean).join('') as string);
+          return { isSuccess: () => true, value: message as string } as unknown as ReturnType<ILogger['log']>;
+        },
+        detail(message: unknown) {
+          return this.log('detail', message);
+        },
+        info(message: unknown) {
+          return this.log('info', message);
+        },
+        warn(message: unknown) {
+          return this.log('warning', message);
+        },
+        error(message: unknown) {
+          return this.log('error', message);
+        }
+      };
+      const reporter = new LogReporter<unknown>({ logger: plain });
+      reporter.warnWithDetail('the warning', 'the detail');
+      expect(logged).toContain('the detail');
+      expect(logged).toContain('the warning');
+    });
+  });
+
+  describe('BootLogger class', () => {
+    test('starts not ready', () => {
+      const boot = new BootLogger();
+      expect(boot.isReady).toBe(false);
+    });
+
+    test('defaults to detail log level', () => {
+      const boot = new BootLogger();
+      expect(boot.logLevel).toBe('detail');
+    });
+
+    test('accepts a custom log level', () => {
+      const boot = new BootLogger('warning');
+      expect(boot.logLevel).toBe('warning');
+    });
+
+    test('buffers log calls before ready', () => {
+      const boot = new BootLogger();
+      expect(boot.info('hello')).toSucceedWith('hello');
+      expect(boot.warn('caution')).toSucceedWith('caution');
+      expect(boot.error('bad')).toSucceedWith('bad');
+      expect(boot.detail('verbose')).toSucceedWith('verbose');
+      expect(boot.isReady).toBe(false);
+    });
+
+    test('replays buffered entries to the real logger on ready', () => {
+      const boot = new BootLogger();
+      boot.info('msg1');
+      boot.warn('msg2');
+      boot.error('msg3');
+
+      const real = new InMemoryLogger('detail');
+      boot.ready(real);
+
+      expect(boot.isReady).toBe(true);
+      expect(real.logged).toEqual(['msg1', 'msg2', 'msg3']);
+    });
+
+    test('replays entries with correct log levels', () => {
+      const boot = new BootLogger();
+      boot.detail('d');
+      boot.info('i');
+      boot.warn('w');
+      boot.error('e');
+
+      // Use a logger that only accepts errors to verify levels are preserved
+      const errorOnly = new InMemoryLogger('error');
+      boot.ready(errorOnly);
+
+      expect(errorOnly.logged).toEqual(['e']);
+      expect(errorOnly.suppressed).toEqual(['d', 'i', 'w']);
+    });
+
+    test('forwards calls directly after ready', () => {
+      const boot = new BootLogger();
+      const real = new InMemoryLogger('detail');
+      boot.ready(real);
+
+      boot.info('after-ready');
+      expect(real.logged).toEqual(['after-ready']);
+    });
+
+    test('does not double-replay on subsequent calls after ready', () => {
+      const boot = new BootLogger();
+      boot.info('before');
+
+      const real = new InMemoryLogger('detail');
+      boot.ready(real);
+
+      boot.info('after');
+      expect(real.logged).toEqual(['before', 'after']);
+    });
+
+    test('delegates logLevel to the real logger after ready', () => {
+      const boot = new BootLogger('detail');
+      expect(boot.logLevel).toBe('detail');
+
+      const real = new InMemoryLogger('warning');
+      boot.ready(real);
+
+      expect(boot.logLevel).toBe('warning');
+    });
+
+    test('replays log calls with multiple parameters', () => {
+      const boot = new BootLogger();
+      boot.info('count: ', 42, ' items');
+
+      const real = new InMemoryLogger('detail');
+      boot.ready(real);
+
+      expect(real.logged).toEqual(['count: 42 items']);
+    });
+
+    test('log method with explicit level works before and after ready', () => {
+      const boot = new BootLogger();
+      boot.log('warning', 'pre-ready warning');
+
+      const real = new InMemoryLogger('detail');
+      boot.ready(real);
+
+      boot.log('error', 'post-ready error');
+      expect(real.logged).toEqual(['pre-ready warning', 'post-ready error']);
     });
   });
 });

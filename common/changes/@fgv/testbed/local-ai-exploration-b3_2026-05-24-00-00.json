@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/testbed",
+      "comment": "B-3: add local-classifier-safety scenario — wires a local Xenova/toxic-bert text-classification pipeline as an IPromptSafetyPolicy screener on a PromptLibrary. Per-label threshold map interpretation logic in pure, fully unit-tested classifierScreener.ts unit; thin React + CLI shells over the tested core. 100% coverage on all 4 metrics.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/testbed",
+  "email": "noreply@anthropic.com"
+}

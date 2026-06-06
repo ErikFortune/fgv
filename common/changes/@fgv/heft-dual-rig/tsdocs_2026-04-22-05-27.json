@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "update generated docs",
+      "type": "none",
+      "packageName": "@fgv/heft-dual-rig"
+    }
+  ],
+  "packageName": "@fgv/heft-dual-rig",
+  "email": "ErikFortune@outlook.com"
+}

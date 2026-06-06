@@ -20,12 +20,9 @@
  * SOFTWARE.
  */
 import { MessageLogLevel, Success, captureResult, succeed } from '../base';
+import { IDetailLogger, ILogger, ReporterLogLevel, isDetailLogger } from '../logging-interface';
 
-/**
- * The level of logging to be used.
- * @public
- */
-export type ReporterLogLevel = 'all' | 'detail' | 'info' | 'warning' | 'error' | 'silent';
+export { isDetailLogger, ReporterLogLevel, ILogger, IDetailLogger };
 
 /**
  * Compares two log levels.
@@ -79,14 +76,82 @@ export function stringifyLogValue(value: unknown, maxLength?: number): string {
 }
 
 /**
- * Generic Result-aware logger interface with multiple levels of logging.
+ * Abstract base class which implements {@link Logging.IDetailLogger | IDetailLogger}.
  * @public
  */
-export interface ILogger {
+export abstract class LoggerBase implements IDetailLogger {
   /**
    * The level of logging to be used.
    */
-  readonly logLevel: ReporterLogLevel;
+  public logLevel: ReporterLogLevel = 'info';
+
+  protected constructor(logLevel?: ReporterLogLevel) {
+    this.logLevel = logLevel ?? 'info';
+  }
+
+  /**
+   * Logs a detail message.
+   * @param message - The message to log.
+   * @param parameters - The parameters to log.
+   * @returns `Success` with the logged message if the level is enabled, or
+   * `Success` with `undefined` if the message is suppressed.
+   */
+  public detail(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
+    return this.log('detail', message, ...parameters);
+  }
+
+  /**
+   * Logs an info message.
+   * @param message - The message to log.
+   * @param parameters - The parameters to log.
+   * @returns `Success` with the logged message if the level is enabled, or
+   * `Success` with `undefined` if the message is suppressed.
+   */
+  public info(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
+    return this.log('info', message, ...parameters);
+  }
+
+  /**
+   * Logs a warning message.
+   * @param message - The message to log.
+   * @param parameters - The parameters to log.
+   * @returns `Success` with the logged message if the level is enabled, or
+   * `Success` with `undefined` if the message is suppressed.
+   */
+  public warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
+    return this.log('warning', message, ...parameters);
+  }
+
+  /**
+   * Logs an error message.
+   * @param message - The message to log.
+   * @param parameters - The parameters to log.
+   * @returns `Success` with the logged message if the level is enabled, or
+   * `Success` with `undefined` if the message is suppressed.
+   */
+  public error(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
+    return this.log('error', message, ...parameters);
+  }
+
+  /**
+   * Logs a short error summary at `error` level, then emits `detail` at `detail` level.
+   * @param message - Short human-readable summary.
+   * @param detail - Full detail (e.g. raw converter error) logged at `detail` level.
+   */
+  public errorWithDetail(message: string, detail: unknown): Success<string | undefined> {
+    this.detail(detail);
+    return this.error(message);
+  }
+
+  /**
+   * Logs a short warning summary at `warning` level, then emits `detail` at `detail` level.
+   * @param message - Short human-readable summary.
+   * @param detail - Full detail logged at `detail` level.
+   */
+  public warnWithDetail(message: string, detail: unknown): Success<string | undefined> {
+    this.detail(detail);
+    return this.warn(message);
+  }
 
   /**
    * Logs a message at the given level.
@@ -96,90 +161,6 @@ export interface ILogger {
    * @returns `Success` with the logged message if the level is enabled, or
    * `Success` with `undefined` if the message is suppressed.
    */
-  log(level: MessageLogLevel, message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-
-  /**
-   * Logs a detail message.
-   * @param message - The message to log.
-   * @param parameters - The parameters to log.
-   * @returns `Success` with the logged message if the level is enabled, or
-   * `Success` with `undefined` if the message is suppressed.
-   */
-  detail(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-
-  /**
-   * Logs an info message.
-   * @param message - The message to log.
-   * @param parameters - The parameters to log.
-   * @returns `Success` with the logged message if the level is enabled, or
-   * `Success` with `undefined` if the message is suppressed.
-   */
-  info(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-
-  /**
-   * Logs a warning message.
-   * @param message - The message to log.
-   * @param parameters - The parameters to log.
-   * @returns `Success` with the logged message if the level is enabled, or
-   * `Success` with `undefined` if the message is suppressed.
-   */
-  warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-
-  /**
-   * Logs an error message.
-   * @param message - The message to log.
-   * @param parameters - The parameters to log.
-   * @returns `Success` with the logged message if the level is enabled, or
-   * `Success` with `undefined` if the message is suppressed.
-   */
-  error(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-}
-
-/**
- * Abstract base class which implements {@link Logging.ILogger | ILogger}.
- * @public
- */
-export abstract class LoggerBase implements ILogger {
-  /**
-   * {@inheritDoc Logging.ILogger.logLevel}
-   */
-  public logLevel: ReporterLogLevel = 'info';
-
-  protected constructor(logLevel?: ReporterLogLevel) {
-    this.logLevel = logLevel ?? 'info';
-  }
-
-  /**
-   * {@inheritDoc Logging.ILogger.detail}
-   */
-  public detail(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
-    return this.log('detail', message, ...parameters);
-  }
-
-  /**
-   * {@inheritDoc Logging.ILogger.info}
-   */
-  public info(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
-    return this.log('info', message, ...parameters);
-  }
-
-  /**
-   * {@inheritDoc Logging.ILogger.warn}
-   */
-  public warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
-    return this.log('warning', message, ...parameters);
-  }
-
-  /**
-   * {@inheritDoc Logging.ILogger.error}
-   */
-  public error(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
-    return this.log('error', message, ...parameters);
-  }
-
-  /**
-   * {@inheritDoc Logging.ILogger.log}
-   */
   public log(
     level: MessageLogLevel,
     message?: unknown,
@@ -187,6 +168,7 @@ export abstract class LoggerBase implements ILogger {
   ): Success<string | undefined> {
     if (shouldLog(level, this.logLevel)) {
       const formatted = this._format(message, ...parameters);
+      this._logStructured(level, formatted, message, parameters);
       return this._log(formatted, level);
     }
     return this._suppressLog(level, message, ...parameters);
@@ -205,6 +187,27 @@ export abstract class LoggerBase implements ILogger {
     const strings = filtered.map((m) => stringifyLogValue(m));
     const joined = strings.join('');
     return joined;
+  }
+
+  /**
+   * Inner hook called for logged messages alongside {@link Logging.LoggerBase._log | _log},
+   * exposing the structured `(level, formatted, message, parameters)` form before it is
+   * collapsed to the formatted string. The default implementation is a no-op; subclasses
+   * that need to retain structured records (e.g. {@link Logging.RetainingLogger | RetainingLogger})
+   * override this. Fired only in the `shouldLog` branch, so suppressed messages never reach it.
+   * @param __level - The {@link MessageLogLevel | level} of the message.
+   * @param __formatted - The formatted message (same string passed to `_log`).
+   * @param __message - The raw message argument before formatting.
+   * @param __parameters - The raw parameter arguments before formatting.
+   * @public
+   */
+  protected _logStructured(
+    __level: MessageLogLevel,
+    __formatted: string,
+    __message?: unknown,
+    __parameters?: readonly unknown[]
+  ): void {
+    /* no-op; subclasses that retain structured records override this */
   }
 
   /**
@@ -287,10 +290,6 @@ export class InMemoryLogger extends LoggerBase {
 
   /**
    * {@inheritDoc Logging.LoggerBase._suppressLog}
-   * @param level - The level of the message.
-   * @param message - The message to suppress.
-   * @param parameters - The parameters to suppress.
-   * @returns `Success` with `undefined` if the message is suppressed.
    * @internal
    */
   protected _suppressLog(

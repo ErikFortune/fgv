@@ -18,14 +18,14 @@ lib/test/
 lib/**/*.test.*
 lib-commonjs/test/
 lib-commonjs/**/*.test.*
+dist/test/
+dist/**/*.test.*
 
 # Development files
 *.log
 .eslintrc*
 jest.config.*
 tsconfig.json
-*.js.map
-*.d.ts.map
 config/
 
 # Source files (if publishing only built output)
@@ -43,6 +43,7 @@ etc/
 
 # Build artifacts that shouldn't be published
 lib-commonjs/
+dist/
 
 # Documentation source
 docs/

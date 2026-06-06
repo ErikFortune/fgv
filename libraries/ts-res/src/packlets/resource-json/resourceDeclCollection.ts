@@ -40,7 +40,7 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
   public readonly collection: Normalized.IImporterResourceCollectionDecl;
 
   /**
-   * {@inheritdoc ResourceJson.IResourceDeclContainer.context}
+   * {@inheritDoc ResourceJson.IResourceDeclContainer.context}
    */
   public get context(): Normalized.IContainerContextDecl | undefined {
     return this.collection.context;

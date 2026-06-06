@@ -27,11 +27,16 @@ import * as Logging from './packlets/logging';
 import * as Validation from './packlets/validation';
 
 import {
+  AggregatedResultMap,
   Collector,
   ICollectible,
   ConvertingCollector,
   IReadOnlyResultMap,
+  IRetainedRecord,
+  IRetainingRingBufferCreateParams,
+  IRetainingRingBufferQuery,
   ResultMap,
+  RetainingRingBuffer,
   ValidatingCollector,
   ValidatingConvertingCollector,
   ValidatingResultMap
@@ -41,6 +46,7 @@ import { Validator, Validators } from './packlets/validation';
 
 export * from './packlets/base';
 export {
+  AggregatedResultMap,
   Collections,
   Collector,
   ConvertingCollector,
@@ -51,8 +57,12 @@ export {
   ICollectible,
   IReadOnlyResultMap,
   Logging,
+  IRetainedRecord,
+  IRetainingRingBufferCreateParams,
+  IRetainingRingBufferQuery,
   ObjectConverter,
   ResultMap,
+  RetainingRingBuffer,
   StringConverter,
   ValidatingCollector,
   ValidatingConvertingCollector,

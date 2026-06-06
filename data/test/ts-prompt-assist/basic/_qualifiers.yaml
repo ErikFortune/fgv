@@ -1,0 +1,4 @@
+qualifiers:
+  - name: lang
+    typeName: lang
+    defaultPriority: 1000

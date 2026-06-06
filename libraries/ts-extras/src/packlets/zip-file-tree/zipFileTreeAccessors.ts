@@ -26,6 +26,8 @@ import { FileTree, JsonValue } from '@fgv/ts-json-base';
 
 /**
  * Implementation of `FileTree.IFileTreeFileItem` for files in a ZIP archive.
+ * ZIP files are read-only, so this item does not support mutation.
+ * Use {@link FileTree.isMutableFileItem | isMutableFileItem} to check before attempting mutations.
  * @public
  */
 export class ZipFileItem<TCT extends string = string> implements FileTree.IFileTreeFileItem<TCT> {
@@ -186,7 +188,9 @@ export class ZipDirectoryItem<TCT extends string = string> implements FileTree.I
 }
 
 /**
- * File tree accessors for ZIP archives.
+ * Read-only file tree accessors for ZIP archives.
+ * ZIP archives are read-only by design — use {@link FileTree.isMutableAccessors | isMutableAccessors}
+ * to check before attempting mutations.
  * @public
  */
 export class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFileTreeAccessors<TCT> {
@@ -224,8 +228,8 @@ export class ZipFileTreeAccessors<TCT extends string = string> implements FileTr
 
   /**
    * Default function to infer the content type of a file.
-   * @param filePath - The path of the file.
-   * @param provided - Optional supplied content type.
+   * @param __filePath - The path of the file.
+   * @param __provided - Optional supplied content type.
    * @returns `Success` with the content type of the file if successful, or
    * `Failure` with an error message otherwise.
    * @remarks This default implementation always returns `Success` with `undefined`.
@@ -314,7 +318,7 @@ export class ZipFileTreeAccessors<TCT extends string = string> implements FileTr
             resolve(succeed(new ZipFileTreeAccessors<TCT>(files, normalizedParams)));
           }
         });
-        /* c8 ignore next 6 - defensive coding: fflate reports errors via callback, not exceptions */
+        /* c8 ignore next 5 - defensive coding: fflate reports errors via callback, not exceptions */
       } catch (error) {
         resolve(
           fail(`Failed to load ZIP archive: ${error instanceof Error ? error.message : String(error)}`)

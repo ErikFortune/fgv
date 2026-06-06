@@ -1,0 +1,15 @@
+# Multiple tokens in a single filename segment.
+#
+# File path:   data/inferred/messages.geo=GB,lang=en.yaml
+# Resource id: inferred.messages.text
+# Conditions:  currentTerritory=GB, language=en
+#
+# The last dot-segment ("geo=GB,lang=en") is split on commas and every
+# piece is parsed as a token=value pair. This is the most compact way
+# to encode several conditions without creating a folder per qualifier.
+candidates:
+  - id: text
+    resourceTypeName: json
+    json:
+      hello: Good day, old chap
+      source: 'BOTH: GB + en (comma-separated filename tokens)'

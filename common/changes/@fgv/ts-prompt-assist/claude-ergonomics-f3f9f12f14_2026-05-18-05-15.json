@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-prompt-assist",
+      "comment": "Round-1 pressure-test ergonomics absorption (PR C of three): F3 — `PromptLibrary<TResponse, TAxes>` now carries a `TAxes extends string = string` parameter, inferred from a literal `qualifiers: ['tone', 'language'] as const` array on `PromptLibrary.create` so the resolve request's `qualifiers` shape narrows to `Readonly<Partial<Record<TAxes, string>>>` (typos like `tonr` fail at compile time). Pre-built `IReadOnlyQualifierCollector` keeps `TAxes = string` since the collector type doesn't expose its axis-name union; consumers can specify `TAxes` explicitly there. F9 — README adds a 'Wiring into a React app' section showing the canonical `useEffect`-initialiser + cancellation-guard pattern; mirrored in `readmeSmoke.test.ts`. F12 — `IPromptStoreFixtureSeed.records[].descriptor.id` is now optional; the fixture defaults it from the outer `id`, and an explicit-but-mismatched id rejects loudly. The on-disk-YAML schema is unchanged (filename-stem check still applies there). F14 — `IQualifierContext` widened from `Readonly<Record<string, string>>` to `Readonly<Partial<Record<string, string>>>` so the canonical `tone === 'formal' ? { tone } : {}` shape type-checks without an explicit annotation. Mixed-shape `(string | IQualifierDecl)[]` qualifiers input (post-PR-B ts-res change) plumbed through `PromptLibrary.create`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist"
+}

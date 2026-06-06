@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "Add writable file tree ",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

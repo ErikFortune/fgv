@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res",
+      "comment": "Add injectible file converter to make yaml support easier",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-res"
+}

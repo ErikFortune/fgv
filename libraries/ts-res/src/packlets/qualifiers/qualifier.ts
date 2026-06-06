@@ -90,9 +90,8 @@ export class Qualifier implements IValidatedQualifierDecl, ICollectible<Qualifie
   /**
    * Constructs a new instance of a {@link Qualifiers.Qualifier | Qualifier} from the
    * supplied {@link Qualifiers.IValidatedQualifierDecl | validated declaration}.
-   * @param name - The name of the qualifier.
-   * @param type - The {@link QualifierTypes.QualifierType | type} of the qualifier.
-   * @param defaultPriority - The default {@link ConditionPriority | priority} of conditions
+   * @param decl - The {@link Qualifiers.IValidatedQualifierDecl | validated declaration}
+   * describing the qualifier to construct.
    * @public
    */
   protected constructor({
@@ -140,28 +139,28 @@ export class Qualifier implements IValidatedQualifierDecl, ICollectible<Qualifie
   }
 
   /**
-   * {@inheritdoc QualifierTypes.QualifierType.isValidContextValue}
+   * {@inheritDoc QualifierTypes.QualifierType.isValidContextValue}
    */
   public isValidContextValue(value: string): value is QualifierContextValue {
     return this.type.isValidContextValue(value);
   }
 
   /**
-   * {@inheritdoc QualifierTypes.QualifierType.isValidConditionValue}
+   * {@inheritDoc QualifierTypes.QualifierType.isValidConditionValue}
    */
   public isValidConditionValue(value: string): value is QualifierConditionValue {
     return this.type.isValidConditionValue(value);
   }
 
   /**
-   * {@inheritdoc QualifierTypes.QualifierType.validateCondition}
+   * {@inheritDoc QualifierTypes.QualifierType.validateCondition}
    */
   public validateCondition(value: string, operator?: ConditionOperator): Result<QualifierConditionValue> {
     return this.type.validateCondition(value, operator);
   }
 
   /**
-   * {@inheritdoc QualifierTypes.QualifierType.validateContextValue}
+   * {@inheritDoc QualifierTypes.QualifierType.validateContextValue}
    */
   public validateContextValue(value: string): Result<QualifierContextValue> {
     return this.type.validateContextValue(value);

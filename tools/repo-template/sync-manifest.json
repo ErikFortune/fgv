@@ -1,0 +1,222 @@
+{
+  "$schema": "./sync-manifest.schema.json",
+  "description": "Defines which files are shared (synced verbatim) vs templated (generated once, then owned by consumer) across fgv-derived monorepos.",
+  "templateVersion": "1.0.0",
+
+  "shared": {
+    "description": "Files synced verbatim from the source repo. These are overwritten on each sync.",
+    "files": [
+      {
+        "description": "AI instructions - coding standards",
+        "source": ".ai/instructions/CODING_STANDARDS.md",
+        "destination": ".ai/instructions/CODING_STANDARDS.md"
+      },
+      {
+        "description": "AI instructions - testing guidelines",
+        "source": ".ai/instructions/TESTING_GUIDELINES.md",
+        "destination": ".ai/instructions/TESTING_GUIDELINES.md"
+      },
+      {
+        "description": "AI instructions - code review checklist",
+        "source": ".ai/instructions/CODE_REVIEW_CHECKLIST.md",
+        "destination": ".ai/instructions/CODE_REVIEW_CHECKLIST.md"
+      },
+      {
+        "description": "AI instructions - monorepo guide",
+        "source": ".ai/instructions/MONOREPO_GUIDE.md",
+        "destination": ".ai/instructions/MONOREPO_GUIDE.md"
+      },
+      {
+        "description": "AI instructions - README",
+        "source": ".ai/README.md",
+        "destination": ".ai/README.md"
+      },
+      {
+        "description": "Workflow - standard feature",
+        "source": ".ai/workflows/standard-feature.yaml",
+        "destination": ".ai/workflows/standard-feature.yaml"
+      },
+      {
+        "description": "Workflow - bugfix fast",
+        "source": ".ai/workflows/bugfix-fast.yaml",
+        "destination": ".ai/workflows/bugfix-fast.yaml"
+      },
+      {
+        "description": "Workflow - hotfix emergency",
+        "source": ".ai/workflows/hotfix-emergency.yaml",
+        "destination": ".ai/workflows/hotfix-emergency.yaml"
+      },
+      {
+        "description": "Workflow - refactor major",
+        "source": ".ai/workflows/refactor-major.yaml",
+        "destination": ".ai/workflows/refactor-major.yaml"
+      },
+      {
+        "description": "Workflow - documentation",
+        "source": ".ai/workflows/documentation.yaml",
+        "destination": ".ai/workflows/documentation.yaml"
+      },
+      {
+        "description": "Claude agents - README",
+        "source": ".claude/agents/README.md",
+        "destination": ".claude/agents/README.md"
+      },
+      {
+        "description": "Claude agents - task-master",
+        "source": ".claude/agents/task-master.md",
+        "destination": ".claude/agents/task-master.md"
+      },
+      {
+        "description": "Claude agents - senior-sdet",
+        "source": ".claude/agents/senior-sdet.md",
+        "destination": ".claude/agents/senior-sdet.md"
+      },
+      {
+        "description": "Claude agents - code-monkey",
+        "source": ".claude/agents/workflow-only/code-monkey.md",
+        "destination": ".claude/agents/workflow-only/code-monkey.md"
+      },
+      {
+        "description": "Claude agents - code-reviewer",
+        "source": ".claude/agents/workflow-only/code-reviewer.md",
+        "destination": ".claude/agents/workflow-only/code-reviewer.md"
+      },
+      {
+        "description": "Claude agents - o11y-expert",
+        "source": ".claude/agents/workflow-only/o11y-expert.md",
+        "destination": ".claude/agents/workflow-only/o11y-expert.md"
+      },
+      {
+        "description": "Claude agents - sdet-coverage",
+        "source": ".claude/agents/workflow-only/sdet-coverage.md",
+        "destination": ".claude/agents/workflow-only/sdet-coverage.md"
+      },
+      {
+        "description": "Claude agents - sdet-functional",
+        "source": ".claude/agents/workflow-only/sdet-functional.md",
+        "destination": ".claude/agents/workflow-only/sdet-functional.md"
+      },
+      {
+        "description": "Claude agents - senior-developer",
+        "source": ".claude/agents/workflow-only/senior-developer.md",
+        "destination": ".claude/agents/workflow-only/senior-developer.md"
+      },
+      {
+        "description": "Claude agents - test-coverage-expert",
+        "source": ".claude/agents/workflow-only/test-coverage-expert.md",
+        "destination": ".claude/agents/workflow-only/test-coverage-expert.md"
+      },
+      {
+        "description": "Claude agents - tpm-agent",
+        "source": ".claude/agents/workflow-only/tpm-agent.md",
+        "destination": ".claude/agents/workflow-only/tpm-agent.md"
+      },
+      {
+        "description": "Claude agents - ux-designer",
+        "source": ".claude/agents/workflow-only/ux-designer.md",
+        "destination": ".claude/agents/workflow-only/ux-designer.md"
+      },
+      {
+        "description": "Claude settings",
+        "source": ".claude/settings.json",
+        "destination": ".claude/settings.json"
+      },
+      {
+        "description": "Prettier config",
+        "source": ".prettierrc.js",
+        "destination": ".prettierrc.js"
+      },
+      {
+        "description": "Git attributes",
+        "source": ".gitattributes",
+        "destination": ".gitattributes"
+      },
+      {
+        "description": "CI workflow",
+        "source": ".github/workflows/ci.yml",
+        "destination": ".github/workflows/ci.yml"
+      },
+      {
+        "description": "Publish orchestrator workflow",
+        "source": ".github/workflows/publish.yml",
+        "destination": ".github/workflows/publish.yml"
+      },
+      {
+        "description": "Publish release implementation",
+        "source": ".github/workflows/publish-release-impl.yml",
+        "destination": ".github/workflows/publish-release-impl.yml"
+      },
+      {
+        "description": "Publish alpha implementation",
+        "source": ".github/workflows/publish-alpha-impl.yml",
+        "destination": ".github/workflows/publish-alpha-impl.yml"
+      },
+      {
+        "description": "Publish major implementation",
+        "source": ".github/workflows/publish-major-impl.yml",
+        "destination": ".github/workflows/publish-major-impl.yml"
+      },
+      {
+        "description": "Copilot instructions",
+        "source": ".github/copilot-instructions.md",
+        "destination": ".github/copilot-instructions.md"
+      },
+      {
+        "description": "Windsurf adapter",
+        "source": ".windsurfrules",
+        "destination": ".windsurfrules"
+      },
+      {
+        "description": "Cursor adapter",
+        "source": ".cursorrules",
+        "destination": ".cursorrules"
+      },
+      {
+        "description": "Prettier autoinstaller",
+        "source": "common/autoinstallers/rush-prettier/package.json",
+        "destination": "common/autoinstallers/rush-prettier/package.json"
+      }
+    ]
+  },
+
+  "sharedPackages": {
+    "description": "Complete packages (directories) synced verbatim.",
+    "packages": []
+  },
+
+  "templated": {
+    "description": "Files generated during repo creation from templates. After creation, they are owned by the consumer repo and NOT overwritten by sync.",
+    "files": [
+      {
+        "description": "Claude entry point - parameterized with project table and repo info",
+        "template": "scripts/template/templates/CLAUDE.md.tmpl",
+        "destination": "CLAUDE.md"
+      },
+      {
+        "description": "Rush custom commands - generic commands only, domain commands added by consumer",
+        "template": "scripts/template/templates/command-line.json.tmpl",
+        "destination": "common/config/rush/command-line.json"
+      },
+      {
+        "description": "Rush version policies - parameterized with policy name and version",
+        "template": "scripts/template/templates/version-policies.json.tmpl",
+        "destination": "common/config/rush/version-policies.json"
+      },
+      {
+        "description": "Active development guide - domain-specific",
+        "template": "scripts/template/templates/ACTIVE_DEVELOPMENT.md.tmpl",
+        "destination": ".ai/instructions/ACTIVE_DEVELOPMENT.md"
+      },
+      {
+        "description": "Gitignore - base version",
+        "template": "scripts/template/templates/.gitignore.tmpl",
+        "destination": ".gitignore"
+      },
+      {
+        "description": "Root package.json",
+        "template": "scripts/template/templates/package.json.tmpl",
+        "destination": "package.json"
+      }
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+[Home](../README.md) > [ResourceManagerBuilder](./ResourceManagerBuilder.md) > getBuiltResourceTree
+
+## ResourceManagerBuilder.getBuiltResourceTree() method
+
+Builds and returns a hierarchical tree representation of all resources managed by this builder.
+Resources are organized based on their dot-separated resource IDs (e.g., "app.messages.welcome"
+becomes a tree with "app" as root, "messages" as branch, and "welcome" as leaf).
+
+String-based validation is available through the `children.validating` property,
+allowing callers to use `tree.children.validating.getById(stringId)` for validated access.
+
+Uses lazy initialization with caching for performance.
+
+**Signature:**
+
+```typescript
+getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<Resource>>;
+```
+
+**Returns:**
+
+Result&lt;[IReadOnlyResourceTreeRoot](../interfaces/IReadOnlyResourceTreeRoot.md)&lt;[Resource](Resource.md)&gt;&gt;
+
+Result containing the resource tree root, or failure if tree construction fails

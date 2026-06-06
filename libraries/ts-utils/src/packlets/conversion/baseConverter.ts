@@ -31,7 +31,8 @@ import {
 import { GenericDefaultingConverter } from './defaultingConverter';
 
 /**
- * internal
+ * Internal helper that recursively unwraps converter and array types.
+ * @internal
  */
 type InnerInferredType<TCONV> = TCONV extends Converter<infer TTO>
   ? TTO extends Array<infer TTOELEM>
@@ -42,19 +43,35 @@ type InnerInferredType<TCONV> = TCONV extends Converter<infer TTO>
   : TCONV;
 
 /**
- * Infers the type that will be returned by an instantiated converter.  Works
- * for complex as well as simple types.
+ * Infers the type that will be returned by an instantiated converter. Works
+ * for complex as well as simple types, including nested arrays.
  * @example `Infer<typeof Converters.mapOf(Converters.stringArray)>` is `Map<string, string[]>`
- * @beta
+ * @public
  */
 export type Infer<TCONV> = TCONV extends Converter<infer TTO, unknown> ? InnerInferredType<TTO> : never;
 
 /**
- * Deprecated name for Infer<T> retained for compatibility
- * @deprecated use @see Infer instead
- * @internal
+ * Deprecated name for {@link Conversion.Infer | Infer
+ * } retained for compatibility.
+ * @deprecated Use {@link Conversion.Infer | Infer} instead.
+ * @public
  */
 export type ConvertedToType<TCONV> = Infer<TCONV>;
+
+/**
+ * Helper type to extract the result type from a {@link Converter | Converter}.
+ * For simple single-level extraction. For complex nested types, use {@link Conversion.Infer | Infer}.
+ * @public
+ */
+export type ConverterResultType<C> = C extends Converter<infer T, unknown> ? T : never;
+
+/**
+ * Helper type to map a tuple of {@link Converter | Converters} to a tuple of their result types.
+ * @public
+ */
+export type ConverterResultTypes<T extends readonly Converter<unknown, unknown>[]> = {
+  [K in keyof T]: T[K] extends Converter<infer R, unknown> ? R : never;
+};
 
 /**
  * Function signature for a converter function.
@@ -97,28 +114,51 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.isOptional}
+   * Indicates whether this element is explicitly optional.
    */
   public get isOptional(): boolean {
     return this._isOptional;
   }
 
   /**
-   * {@inheritdoc Converter.brand}
+   * Returns the brand for a branded type.
    */
   public get brand(): string | undefined {
     return this._brand;
   }
 
   /**
-   * {@inheritdoc Converter.convert}
+   * Converts from `unknown` to `<T>`. For objects and arrays, is guaranteed
+   * to return a new entity, with any unrecognized properties removed.
+   * @param from - The `unknown` to be converted
+   * @param context - An optional conversion context of type `<TC>` to be used in
+   * the conversion.
+   * @param selfOverride - An optional override for the `self` reference passed to the
+   * converter function, enabling outer converters (e.g. discriminated-object) to thread
+   * themselves through to per-arm converters for recursive parsing.
+   * @returns A {@link Result} with a {@link Success} and a value on success or an
+   * {@link Failure} with a a message on failure.
    */
-  public convert(from: unknown, context?: TC): Result<T> {
-    return this._converter(from, this, context ?? this._defaultContext);
+  public convert(from: unknown, context?: TC, selfOverride?: Converter<T, TC>): Result<T> {
+    return this._converter(from, selfOverride ?? this, context ?? this._defaultContext);
   }
 
   /**
-   * {@inheritdoc Converter.convertOptional}
+   * Converts from `unknown` to `<T>` or `undefined`, as appropriate.
+   *
+   * @remarks
+   * If `onError` is `failOnError`, the converter succeeds for
+   * `undefined` or any convertible value, but reports an error
+   * if it encounters a value that cannot be converted.
+   *
+   * If `onError` is `ignoreErrors` (default) then values that
+   * cannot be converted result in a successful return of `undefined`.
+   * @param from - The `unknown` to be converted
+   * @param context - An optional conversion context of type `<TC>` to be used in
+   * the conversion.
+   * @param onError - Specifies handling of values that cannot be converted (default `ignoreErrors`).
+   * @returns A {@link Result} with a {@link Success} and a value on success or an
+   * {@link Failure} with a a message on failure.
    */
   public convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined> {
     const result = this._converter(from, this, this._context(context));
@@ -130,7 +170,18 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.optional}
+   * Creates a {@link Converter} for an optional value.
+   *
+   * @remarks
+   * If `onError` is `failOnError`, the resulting converter will accept `undefined`
+   * or a convertible value, but report an error if it encounters a value that cannot be
+   * converted.
+   *
+   * If `onError` is `ignoreErrors` (default) then values that cannot be converted will
+   * result in a successful return of `undefined`.
+   *
+   * @param onError - Specifies handling of values that cannot be converted (default `ignoreErrors`).
+   * @returns A new {@link Converter} returning `<T|undefined>`.
    */
   public optional(onError?: OnError): Converter<T | undefined, TC> {
     return new BaseConverter((from: unknown, __self: Converter<T | undefined, TC>, context?: TC) => {
@@ -140,7 +191,11 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.map}
+   * Creates a {@link Converter} which applies a (possibly) mapping conversion to
+   * the converted value of this {@link Converter}.
+   * @param mapper - A function which maps from the the result type `<T>` of this
+   * converter to a new result type `<T2>`.
+   * @returns A new {@link Converter} returning `<T2>`.
    */
   public map<T2>(mapper: (from: T, context?: TC) => Result<T2>): Converter<T2, TC> {
     return new BaseConverter<T2, TC>((from: unknown, __self: Converter<T2, TC>, context?: TC) => {
@@ -153,7 +208,12 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.mapConvert}
+   * Creates a {@link Converter} which applies an additional supplied
+   * converter to the result of this converter.
+   *
+   * @param mapConverter - The {@link Converter} to be applied to the
+   * converted result from this {@link Converter}.
+   * @returns A new {@link Converter} returning `<T2>`.
    */
   public mapConvert<T2>(mapConverter: Converter<T2>): Converter<T2, TC> {
     return new BaseConverter<T2, TC>((from: unknown, __self: Converter<T2, TC>, context?: TC) => {
@@ -166,7 +226,15 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.mapItems}
+   * Creates a {@link Converter} which maps the individual items of a collection
+   * resulting from this {@link Converter} using the supplied map function.
+   *
+   * @remarks
+   * Fails if `from` is not an array.
+   *
+   * @param mapper - The map function to be applied to each element of the
+   * result of this {@link Converter}.
+   * @returns A new {@link Converter} returning `<TI[]>`.
    */
   public mapItems<TI>(mapper: (from: unknown, context?: TC) => Result<TI>): Converter<TI[], TC> {
     return new BaseConverter<TI[], TC>((from: unknown, __self: Converter<TI[], TC>, context?: TC) => {
@@ -180,7 +248,15 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.mapConvertItems}
+   * Creates a {@link Converter} which maps the individual items of a collection
+   * resulting from this {@link Converter} using the supplied {@link Converter}.
+   *
+   * @remarks
+   * Fails if `from` is not an array.
+   *
+   * @param mapConverter - The {@link Converter} to be applied to each element of the
+   * result of this {@link Converter}.
+   * @returns A new {@link Converter} returning `<TI[]>`.
    */
   public mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC> {
     return new BaseConverter<TI[], TC>((from: unknown, __self: Converter<TI[], TC>, context?: TC) => {
@@ -194,7 +270,10 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withAction}
+   * Creates a {@link Converter | Converter} which applies a supplied action after
+   * conversion. The supplied action is always called regardless of success or failure
+   * of the base conversion and is allowed to mutate the return type.
+   * @param action - The action to be applied.
    */
   public withAction<TI>(action: (result: Result<T>, context?: TC) => Result<TI>): Converter<TI, TC> {
     return new BaseConverter<TI, TC>((from: unknown, __self: Converter<TI, TC>, context?: TC) => {
@@ -203,7 +282,11 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withTypeGuard}
+   * Creates a {@link Converter} which applies a supplied type guard to the conversion
+   * result.
+   * @param guard - The type guard function to apply.
+   * @param message - Optional message to be reported if the type guard fails.
+   * @returns A new {@link Converter} returning `<TI>`.
    */
   public withTypeGuard<TI>(
     guard: (from: unknown, context?: TC) => from is TI,
@@ -220,7 +303,15 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withItemTypeGuard}
+   * Creates a {@link Converter} which applies a supplied type guard to each member of
+   * the conversion result from this converter.
+   *
+   * @remarks
+   * Fails if the conversion result is not an array or if any member fails the
+   * type guard.
+   * @param guard - The type guard function to apply to each element.
+   * @param message - Optional message to be reported if the type guard fails.
+   * @returns A new {@link Converter} returning `<TI>`.
    */
   public withItemTypeGuard<TI>(
     guard: (from: unknown, context?: TC) => from is TI,
@@ -244,7 +335,15 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withConstraint}
+   * Creates a {@link Converter} which applies an optional constraint to the result
+   * of this conversion. If this {@link Converter} (the base converter) succeeds, the new
+   * converter calls a supplied constraint evaluation function with the conversion, which
+   * fails the entire conversion if the constraint function returns either `false` or
+   * {@link Failure | Failure<T>}.
+   *
+   * @param constraint - Constraint evaluation function.
+   * @param options - {@link Conversion.ConstraintOptions | Options} for constraint evaluation.
+   * @returns A new {@link Converter} returning `<T>`.
    */
   public withConstraint(
     constraint: (val: T, context?: TC) => boolean | Result<T>,
@@ -268,7 +367,10 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withBrand}
+   * Returns a converter which adds a brand to the type to prevent mismatched usage
+   * of simple types.
+   * @param brand - The brand to be applied to the result value.
+   * @returns A {@link Converter} returning `Brand<T, B>`.
    */
   public withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC> {
     if (this._brand) {
@@ -283,10 +385,19 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withDefault}
+   * Returns a Converter which always succeeds with a default value rather than failing.
+   * @param defaultValue - The default value to use if conversion fails.
    */
   public withDefault<TD = T>(defaultValue: TD): DefaultingConverter<T, TD, TC> {
     return new GenericDefaultingConverter<T, TD, TC>(this, defaultValue);
+  }
+
+  public or(other: Converter<T, TC>): Converter<T, TC> {
+    return new BaseConverter<T, TC>((from: unknown, __self: Converter<T, TC>, context?: TC) => {
+      return this._converter(from, this, this._context(context)).onFailure(() => {
+        return other.convert(from, this._context(context));
+      });
+    });
   }
 
   /**
@@ -297,7 +408,10 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withFormattedError}
+   * Creates a new {@link Converter} which is derived from this one but which returns an
+   * error message formatted by the supplied formatter if the conversion fails.
+   * @param formatter - The formatter to be applied.
+   * @returns A new {@link Converter} returning `<T>`.
    */
   public withFormattedError(formatter: ConversionErrorFormatter<TC>): Converter<T, TC> {
     return new BaseConverter<T, TC>((from: unknown, __self: Converter<T, TC>, context?: TC) => {

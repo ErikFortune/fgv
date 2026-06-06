@@ -3,12 +3,12 @@ on:
   push:
     branches: ['main']
   pull_request:
-    branches: ['main', 'erik/release']
+    branches: ['main', 'release', 'prerelease', 'hotfix']
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Git config user
@@ -16,9 +16,9 @@ jobs:
         with:
           name: ErikFortune
           email: ErikFortune@outlook.com
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22.22.0
       - name: Verify Change Logs
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then

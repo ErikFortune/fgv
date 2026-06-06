@@ -1,0 +1,17 @@
+# Default (no path-inferred conditions).
+#
+# File path:   data/inferred/messages.yaml
+# Resource id: inferred.messages.text
+# Conditions:  (none)
+#
+# The file basename "messages" does not parse as a qualifier value
+# (it is not a valid BCP47 language tag or territory code), so no
+# conditions are inferred. The explicit "text" candidate id combines
+# with the path-derived baseId "inferred.messages" to produce the
+# final resource id.
+candidates:
+  - id: text
+    resourceTypeName: json
+    json:
+      hello: Hello
+      source: DEFAULT

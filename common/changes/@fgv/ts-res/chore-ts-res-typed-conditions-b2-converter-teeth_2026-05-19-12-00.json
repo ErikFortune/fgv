@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "B-2 Converter parameterization: add typed sibling exports (typedConditionDecl, typedValidatedConditionDecl, typedConditionSetDecl, typedValidatedConditionSetDecl in Conditions.Convert; typedLooseConditionDecl, typedConditionSetDecl, typedLooseResourceCandidateDecl, typedImporterResourceCandidateDecl, typedChildResourceCandidateDecl, typedLooseResourceDecl, typedChildResourceDecl, typedContainerContextDecl, typedResourceTreeChildNodeDecl, typedResourceTreeRootDecl, typedResourceCollectionDecl, typedImporterResourceCollectionDecl in ResourceJson.Convert) parameterized on TQualifierNames. Each typed sibling takes a `Converter<TQualifierNames>` argument so consumers can supply e.g. `Converters.enumeratedValue(['tone', 'language'] as const)` and get convert-time rejection of typo'd qualifier names plus a narrowed result type — without manual casts. Also parameterize IConditionDecl<T> and IConditionSetDecl<T> on TQualifierNames (defaulting to string). Existing untyped exports preserved at signature and behavior level; all 11 downstream consumers compile unchanged.",
+      "type": "minor",
+      "packageName": "@fgv/ts-res"
+    }
+  ],
+  "packageName": "@fgv/ts-res",
+  "email": "noreply@anthropic.com"
+}

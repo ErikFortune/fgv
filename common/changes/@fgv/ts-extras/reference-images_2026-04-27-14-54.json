@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add reference image support to ai-assist",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

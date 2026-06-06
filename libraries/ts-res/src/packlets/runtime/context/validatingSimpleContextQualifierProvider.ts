@@ -42,8 +42,15 @@ export interface IValidatingSimpleContextQualifierProviderCreateParams {
   /**
    * Optional record of initial qualifier name-value pairs to populate the provider.
    * Accepts string keys and values which will be converted to strongly-typed values.
+   *
+   * @remarks
+   * Typed as `Readonly<Partial<Record<string, string>>>` so callers can
+   * naturally express conditional context construction, e.g.
+   * `tone === 'formal' ? { tone: 'formal' } : {}`. Entries whose value is
+   * `undefined` are skipped on load - semantically equivalent to omitting
+   * the key.
    */
-  qualifierValues?: Record<string, string>;
+  qualifierValues?: Readonly<Partial<Record<string, string>>>;
 }
 
 /**
@@ -65,13 +72,11 @@ export class ValidatingSimpleContextQualifierProvider extends SimpleContextQuali
    * @param params - {@link Runtime.IValidatingSimpleContextQualifierProviderCreateParams | Parameters} used to create the provider.
    */
   protected constructor(params: IValidatingSimpleContextQualifierProviderCreateParams) {
-    // Convert string values to QualifierContextValue for the base class
-    /* c8 ignore next 5 - functional code path tested but coverage intermittently missed */
-    const convertedValues: Record<string, QualifierContextValue> | undefined = params.qualifierValues
-      ? Object.fromEntries(
-          Object.entries(params.qualifierValues).map(([key, value]) => [key, value as QualifierContextValue])
-        )
-      : undefined;
+    // The branded QualifierContextValue is structurally a string; widen via cast
+    // and let the base class skip undefined entries on load.
+    const convertedValues = params.qualifierValues as
+      | Readonly<Partial<Record<string, QualifierContextValue>>>
+      | undefined;
 
     super({
       qualifiers: params.qualifiers,

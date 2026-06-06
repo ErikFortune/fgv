@@ -6,11 +6,328 @@
 
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { DateTime } from 'luxon';
 import { FileTree } from '@fgv/ts-json-base';
 import { Hash as Hash_2 } from '@fgv/ts-utils';
+import { JsonObject } from '@fgv/ts-json-base';
+import { JsonSchema } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
+import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { Uuid } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
+
+// @public
+const AES_256_KEY_SIZE: number;
+
+// @public
+type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
+
+declare namespace AiAssist {
+    export {
+        AiPrompt,
+        AiModelCapability,
+        AiProviderId,
+        AiServerToolType,
+        AiServerToolConfig,
+        AiToolConfig,
+        IAiWebSearchToolConfig,
+        IAiClientToolConfig,
+        IAiClientTool,
+        IAiClientToolCallSummary,
+        IAiClientToolContinuation,
+        IAiClientToolTurnResult,
+        IAiToolEnablement,
+        IAiCompletionResponse,
+        IChatMessage,
+        AiApiFormat,
+        AiImageApiFormat,
+        IAiImageModelCapability,
+        IAiProviderDescriptor,
+        IAiAssistProviderConfig,
+        IAiAssistSettings,
+        DEFAULT_AI_ASSIST,
+        IAiAssistKeyStore,
+        IAiImageAttachment,
+        IAiImageData,
+        AiImageSize,
+        AiImageQuality,
+        DallE2Size,
+        DallE3Size,
+        GptImageSize,
+        DallE3Quality,
+        GptImageQuality,
+        DallEModelNames,
+        GptImageModelNames,
+        GrokImagineModelNames,
+        Imagen4ModelNames,
+        GeminiFlashImageModelNames,
+        IDallEImageGenerationConfig,
+        IGptImageGenerationConfig,
+        IGrokImagineImageGenerationConfig,
+        IImagen4GenerationConfig,
+        IGeminiFlashImageGenerationConfig,
+        IDallEModelOptions,
+        IGptImageModelOptions,
+        IGrokImagineModelOptions,
+        IImagen4ModelOptions,
+        IGeminiFlashImageModelOptions,
+        IOtherModelOptions,
+        IModelFamilyConfig,
+        IAiImageGenerationOptions,
+        IAiImageGenerationParams,
+        IAiGeneratedImage,
+        IAiImageGenerationResponse,
+        IAiModelCapabilityRule,
+        IAiModelCapabilityConfig,
+        IAiModelInfo,
+        IAiStreamEvent,
+        IAiStreamTextDelta,
+        IAiStreamToolEvent,
+        IAiStreamToolUseStart,
+        IAiStreamToolUseDelta,
+        IAiStreamToolUseComplete,
+        IAiStreamDone,
+        IAiStreamError,
+        ModelSpec,
+        ModelSpecKey,
+        IModelSpecMap,
+        allModelSpecKeys,
+        MODEL_SPEC_BASE_KEY,
+        resolveModel,
+        toDataUrl,
+        AiThinkingMode,
+        IThinkingConfig,
+        IThinkingProviderConfig,
+        IAnthropicThinkingOptions,
+        IOpenAiThinkingOptions,
+        IGeminiThinkingOptions,
+        IXAiThinkingOptions,
+        IOtherThinkingOptions,
+        IAnthropicThinkingConfig,
+        IOpenAiThinkingConfig,
+        IGeminiThinkingConfig,
+        IXAiThinkingConfig,
+        AnthropicThinkingModelNames,
+        OpenAiThinkingModelNames,
+        GeminiThinkingModelNames,
+        XAiThinkingModelNames,
+        IResolvedImageOptions,
+        resolveImageOptions,
+        validateResolvedOptions,
+        allProviderIds,
+        getProviderDescriptors,
+        getProviderDescriptor,
+        resolveImageCapability,
+        supportsImageGeneration,
+        DEFAULT_MODEL_CAPABILITY_CONFIG,
+        callProviderCompletion,
+        callProxiedCompletion,
+        callProviderImageGeneration,
+        callProxiedImageGeneration,
+        callProviderListModels,
+        callProxiedListModels,
+        IProviderCompletionParams,
+        IProviderImageGenerationParams,
+        IProviderListModelsParams,
+        callProviderCompletionStream,
+        callProxiedCompletionStream,
+        IProviderCompletionStreamParams,
+        executeClientToolTurn,
+        IExecuteClientToolTurnParams,
+        IExecuteClientToolTurnResult,
+        aiProviderId,
+        aiServerToolType,
+        aiWebSearchToolConfig,
+        aiServerToolConfig,
+        aiClientToolConfig,
+        aiToolEnablement,
+        aiAssistProviderConfig,
+        aiAssistSettings,
+        modelSpecKey,
+        modelSpec,
+        resolveEffectiveTools,
+        extractJsonText,
+        fencedStringifiedJson,
+        IFencedStringifiedJsonExtractorOptions,
+        IFencedStringifiedJsonOptions,
+        JsonTextExtractor,
+        generateJsonCompletion,
+        SMART_JSON_PROMPT_HINT,
+        IGenerateJsonCompletionParams,
+        IGenerateJsonCompletionResult,
+        JsonPromptHint,
+        anthropicEffortToBudgetTokens,
+        IResolvedThinkingConfig
+    }
+}
+export { AiAssist }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiAssistProviderConfig"
+//
+// @public
+const aiAssistProviderConfig: Converter<IAiAssistProviderConfig>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiAssistSettings"
+//
+// @public
+const aiAssistSettings: Converter<IAiAssistSettings>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const aiClientToolConfig: Converter<IAiClientToolConfig>;
+
+// @public
+type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images' | 'xai-images-edits' | 'gemini-image-out';
+
+// @public
+type AiImageQuality = DallE3Quality | GptImageQuality;
+
+// @public
+type AiImageSize = DallE2Size | DallE3Size | GptImageSize;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation' | 'thinking';
+
+// @public
+class AiPrompt {
+    constructor(user: string, system: string, attachments?: ReadonlyArray<IAiImageAttachment>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly attachments: ReadonlyArray<IAiImageAttachment>;
+    get combined(): string;
+    readonly system: string;
+    readonly user: string;
+}
+
+// @public
+type AiProviderId = 'copy-paste' | 'xai-grok' | 'openai' | 'openai-compat' | 'anthropic' | 'google-gemini' | 'groq' | 'mistral' | 'ollama';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "AiProviderId"
+//
+// @public
+const aiProviderId: Converter<AiProviderId>;
+
+// @public
+type AiServerToolConfig = IAiWebSearchToolConfig;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "AiServerToolConfig"
+//
+// @public
+const aiServerToolConfig: Converter<AiServerToolConfig>;
+
+// @public
+type AiServerToolType = 'web_search';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "AiServerToolType"
+//
+// @public
+const aiServerToolType: Converter<AiServerToolType>;
+
+// @public
+type AiThinkingMode = 'optional' | 'required' | 'unsupported';
+
+// @public
+type AiToolConfig = AiServerToolConfig | IAiClientToolConfig;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiToolEnablement"
+//
+// @public
+const aiToolEnablement: Converter<IAiToolEnablement>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiWebSearchToolConfig"
+//
+// @public
+const aiWebSearchToolConfig: Converter<IAiWebSearchToolConfig>;
+
+// @public
+const allKeyPairAlgorithms: ReadonlyArray<KeyPairAlgorithm>;
+
+// @public
+const allKeyStoreAsymmetricSecretTypes: ReadonlyArray<KeyStoreAsymmetricSecretType>;
+
+// @public
+const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType>;
+
+// @public
+const allKeyStoreSymmetricSecretTypes: ReadonlyArray<KeyStoreSymmetricSecretType>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+//
+// @public
+const allModelSpecKeys: ReadonlyArray<ModelSpecKey>;
+
+// @public
+const allProviderIds: ReadonlyArray<AiProviderId>;
+
+// @public
+function anthropicEffortToBudgetTokens(effort: NonNullable<IAnthropicThinkingConfig['effort']>): number;
+
+// @public
+type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-opus-4-6' | 'claude-opus-4-7';
+
+// @public
+const ARGON2ID_OWASP_MIN: IArgon2idParams;
+
+// @public
+const ARGON2ID_PASSPHRASE: IArgon2idParams;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const argon2idKeyDerivationParams: Converter<IArgon2idKeyDerivationParams>;
+
+// @public
+const base64String: Converter<string>;
+
+// @public
+function callProviderCompletion(params: IProviderCompletionParams): Promise<Result<IAiCompletionResponse>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function callProviderCompletionStream(params: IProviderCompletionStreamParams): Promise<Result<AsyncIterable<IAiStreamEvent>>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiImageModelCapability"
+//
+// @public
+function callProviderImageGeneration(params: IProviderImageGenerationParams): Promise<Result<IAiImageGenerationResponse>>;
+
+// @public
+function callProviderListModels(params: IProviderListModelsParams): Promise<Result<ReadonlyArray<IAiModelInfo>>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IProviderCompletionParams"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "callProviderCompletion"
+//
+// @public
+function callProxiedCompletion(proxyUrl: string, params: IProviderCompletionParams): Promise<Result<IAiCompletionResponse>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function callProxiedCompletionStream(proxyUrl: string, params: IProviderCompletionStreamParams): Promise<Result<AsyncIterable<IAiStreamEvent>>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "callProviderImageGeneration"
+//
+// @public
+function callProxiedImageGeneration(proxyUrl: string, params: IProviderImageGenerationParams): Promise<Result<IAiImageGenerationResponse>>;
+
+// @public
+function callProxiedListModels(proxyUrl: string, params: IProviderListModelsParams): Promise<Result<ReadonlyArray<IAiModelInfo>>>;
+
+declare namespace Constants {
+    export {
+        ENCRYPTED_FILE_FORMAT,
+        DEFAULT_ALGORITHM,
+        AES_256_KEY_SIZE,
+        GCM_IV_SIZE,
+        GCM_AUTH_TAG_SIZE
+    }
+}
 
 declare namespace Converters {
     export {
@@ -18,17 +335,114 @@ declare namespace Converters {
         extendedArrayOf,
         rangeTypeOf,
         rangeOf,
-        isoDate
+        isoDate,
+        isoDateTime
     }
 }
 export { Converters }
 
+declare namespace Converters_2 {
+    export {
+        keystoreFormat,
+        keystoreSecretType,
+        keystoreSymmetricSecretType,
+        keystoreAsymmetricSecretType,
+        keyPairAlgorithm,
+        jsonWebKeyShape,
+        keystoreSymmetricEntryJson,
+        keystoreAsymmetricEntryJson,
+        keystoreSecretEntryJson,
+        keystoreVaultContents,
+        keystoreFile
+    }
+}
+
+declare namespace Converters_3 {
+    export {
+        createEncryptedFileConverter,
+        encryptionAlgorithm,
+        encryptedFileFormat,
+        encryptedFileErrorMode,
+        keyDerivationFunction,
+        pbkdf2KeyDerivationParams,
+        argon2idKeyDerivationParams,
+        keyDerivationParams,
+        base64String,
+        uint8ArrayFromBase64,
+        namedSecret,
+        encryptedFile
+    }
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function createEncryptedFile<TMetadata = JsonValue>(params: ICreateEncryptedFileParams<TMetadata>): Promise<Result<IEncryptedFile<TMetadata>>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function createEncryptedFileConverter<TMetadata = JsonValue>(metadataConverter?: Converter<TMetadata>): Converter<IEncryptedFile<TMetadata>>;
+
+// @public
+function createZipFromTextFiles(files: ReadonlyArray<IZipTextFile>, options?: ICreateZipOptions): Result<Uint8Array>;
+
+declare namespace CryptoUtils {
+    export {
+        Constants,
+        KeyStore,
+        Converters_3 as Converters,
+        DirectEncryptionProvider,
+        IDirectEncryptionProviderParams,
+        IKeyPairAlgorithmParams,
+        keyPairAlgorithmParams,
+        NodeCryptoProvider,
+        nodeCryptoProvider,
+        createEncryptedFile,
+        decryptFile,
+        fromBase64,
+        ICreateEncryptedFileParams,
+        toBase64,
+        tryDecryptFile,
+        exportPublicKeyAsMultibaseSpki,
+        importPublicKeyFromMultibaseSpki,
+        multibaseBase64UrlDecode,
+        multibaseBase64UrlEncode,
+        HpkeProvider,
+        IHpkeSealResult,
+        isEncryptedFile,
+        EncryptionAlgorithm,
+        EncryptedFileFormat,
+        INamedSecret,
+        IEncryptionResult,
+        KeyPairAlgorithm,
+        IWrapBytesOptions,
+        IWrappedBytes,
+        allKeyPairAlgorithms,
+        KeyDerivationFunction,
+        IPbkdf2KeyDerivationParams,
+        IArgon2idKeyDerivationParams,
+        IKeyDerivationParams,
+        IArgon2idParams,
+        ARGON2ID_OWASP_MIN,
+        ARGON2ID_PASSPHRASE,
+        IArgon2idProvider,
+        IEncryptedFile,
+        ICryptoProvider,
+        IEncryptionProvider,
+        EncryptedFileErrorMode,
+        SecretProvider,
+        IEncryptionConfig
+    }
+}
+export { CryptoUtils }
+
 declare namespace Csv {
     export {
         parseCsvString,
+        readCsvFromTree,
         CsvOptions,
-        readCsvFileSync,
-        readCsvFromTree
+        readCsvFileSync
     }
 }
 export { Csv }
@@ -41,11 +455,107 @@ interface CsvOptions {
     delimiter?: string;
 }
 
+// @public
+type DallE2Size = '256x256' | '512x512' | '1024x1024';
+
+// @public
+type DallE3Quality = 'standard' | 'hd';
+
+// @public
+type DallE3Size = '1024x1024' | '1792x1024' | '1024x1792';
+
+// @public
+type DallEModelNames = 'dall-e-2' | 'dall-e-3';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function decryptFile<TPayload extends JsonValue = JsonValue>(file: IEncryptedFile<unknown>, key: Uint8Array, cryptoProvider: ICryptoProvider, payloadConverter?: Converter<TPayload>): Promise<Result<TPayload>>;
+
+// @public
+const DEFAULT_AI_ASSIST: IAiAssistSettings;
+
+// @public
+const DEFAULT_ALGORITHM: "AES-256-GCM";
+
+// @public
+const DEFAULT_KEYSTORE_ITERATIONS: number;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IProviderListModelsParams"
+//
+// @public
+const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const DEFAULT_RANGEOF_FORMATS: RangeOfFormats;
+
+// @public
+const DEFAULT_SECRET_ITERATIONS: number;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptionProvider"
+//
+// @public
+class DirectEncryptionProvider implements IEncryptionProvider {
+    get boundSecretName(): string | undefined;
+    static create(params: IDirectEncryptionProviderParams): Result<DirectEncryptionProvider>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptionProvider"
+    //
+    // (undocumented)
+    encryptByName<TMetadata = JsonValue>(secretName: string, content: JsonValue, metadata?: TMetadata): Promise<Result<IEncryptedFile<TMetadata>>>;
+}
+
+// @public
+const ENCRYPTED_FILE_FORMAT: "encrypted-collection-v1";
+
+// @public
+const encryptedFile: Converter<IEncryptedFile>;
+
+// @public
+type EncryptedFileErrorMode = 'fail' | 'skip' | 'warn';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const encryptedFileErrorMode: Converter<EncryptedFileErrorMode>;
+
+// @public
+type EncryptedFileFormat = typeof Constants.ENCRYPTED_FILE_FORMAT;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const encryptedFileFormat: Converter<EncryptedFileFormat>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
+//
+// @public
+class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: IEncryptedFilePrivateKeyStorageCreateParams): Result<EncryptedFilePrivateKeyStorage>;
+    delete(id: string): Promise<Result<string>>;
+    list(): Promise<Result<readonly string[]>>;
+    load(id: string): Promise<Result<CryptoKey>>;
+    store(id: string, key: CryptoKey): Promise<Result<string>>;
+    readonly supportsNonExtractable: false;
+}
+
+// @public
+type EncryptionAlgorithm = typeof Constants.DEFAULT_ALGORITHM;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const encryptionAlgorithm: Converter<EncryptionAlgorithm>;
+
+// @public
+function executeClientToolTurn(params: IExecuteClientToolTurnParams): Result<IExecuteClientToolTurnResult>;
 
 declare namespace Experimental {
     export {
@@ -64,6 +574,11 @@ declare namespace Experimental {
     }
 }
 export { Experimental }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function exportPublicKeyAsMultibaseSpki(key: CryptoKey, provider: ICryptoProvider): Promise<Result<string>>;
 
 // @beta
 class ExtendedArray<T> extends Array<T> {
@@ -87,6 +602,21 @@ class ExtendedArray<T> extends Array<T> {
 //
 // @beta
 function extendedArrayOf<T, TC = undefined>(label: string, converter: Converter<T, TC>, onError?: Conversion.OnError): Converter<ExtendedArray<T>, TC>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const extractJsonText: JsonTextExtractor;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function fencedStringifiedJson(options?: IFencedStringifiedJsonExtractorOptions): Converter<JsonValue>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function fencedStringifiedJson<T>(options: IFencedStringifiedJsonOptions<T>): Converter<T>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -125,6 +655,45 @@ type FormattersByExtendedTarget<TFT extends FormatTargets, T> = Record<TFT, Form
 // @beta
 type FormattersByTarget<T> = FormattersByExtendedTarget<FormatTargets, T>;
 
+// @public
+function fromBase64(base64: string): Uint8Array;
+
+// @public
+const GCM_AUTH_TAG_SIZE: number;
+
+// @public
+const GCM_IV_SIZE: number;
+
+// @public
+type GeminiFlashImageModelNames = 'gemini-2.5-flash-image';
+
+// @public
+type GeminiThinkingModelNames = 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.5-flash-lite';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function generateJsonCompletion<T>(params: IGenerateJsonCompletionParams<T>): Promise<Result<IGenerateJsonCompletionResult<T>>>;
+
+// @public
+function getProviderDescriptor(id: string): Result<IAiProviderDescriptor>;
+
+// @public
+function getProviderDescriptors(): ReadonlyArray<IAiProviderDescriptor>;
+
+// @public
+type GptImageModelNames = 'gpt-image-1';
+
+// @public
+type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
+
+// @public
+type GptImageSize = '1024x1024' | '1536x1024' | '1024x1536' | 'auto';
+
+// @public
+type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality';
+
 declare namespace Hash {
     export {
         Md5Normalizer
@@ -133,7 +702,1085 @@ declare namespace Hash {
 export { Hash }
 
 // @public
+class HpkeProvider {
+    static create(subtle: SubtleCrypto): Result<HpkeProvider>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "HpkeProvider"
+    static decodeEnvelope(envelope: Uint8Array): Result<IHpkeSealResult>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IHpkeSealResult"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "HpkeProvider"
+    static encodeEnvelope(result: IHpkeSealResult): Uint8Array;
+    hkdf(secret: Uint8Array, salt: Uint8Array, info: Uint8Array, length: number): Promise<Result<Uint8Array>>;
+    openBase(recipientPrivateKey: CryptoKey, info: Uint8Array, aad: Uint8Array, enc: Uint8Array, ciphertext: Uint8Array): Promise<Result<Uint8Array>>;
+    sealBase(recipientPublicKey: CryptoKey, info: Uint8Array, aad: Uint8Array, plaintext: Uint8Array): Promise<Result<IHpkeSealResult>>;
+}
+
+// @public
+interface IAddKeyPairOptions {
+    readonly algorithm: KeyPairAlgorithm;
+    readonly description?: string;
+    readonly replace?: boolean;
+}
+
+// @public
+interface IAddKeyPairResult {
+    readonly entry: IKeyStoreAsymmetricEntry;
+    readonly replaced: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly warning?: string;
+}
+
+// @public
+interface IAddSecretFromPasswordArgon2idOptions {
+    readonly description?: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly params?: IArgon2idParams;
+    readonly replace?: boolean;
+}
+
+// @public
+interface IAddSecretFromPasswordOptions extends IAddSecretOptions {
+    readonly iterations?: number;
+    readonly replace?: boolean;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAddSecretResult"
+//
+// @public
+interface IAddSecretFromPasswordResult extends IAddSecretResult {
+    readonly keyDerivation: IKeyDerivationParams;
+}
+
+// @public
+interface IAddSecretOptions {
+    readonly description?: string;
+}
+
+// @public
+interface IAddSecretResult {
+    readonly entry: IKeyStoreSymmetricEntry;
+    readonly replaced: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly warning?: string;
+}
+
+// @public
+interface IAiAssistKeyStore {
+    getApiKey(name: string): Result<string>;
+    hasSecret(name: string): Result<boolean>;
+    readonly isUnlocked: boolean;
+}
+
+// @public
+interface IAiAssistProviderConfig {
+    readonly endpoint?: string;
+    readonly model?: ModelSpec;
+    readonly provider: AiProviderId;
+    readonly secretName?: string;
+    readonly tools?: ReadonlyArray<IAiToolEnablement>;
+}
+
+// @public
+interface IAiAssistSettings {
+    readonly defaultProvider?: AiProviderId;
+    readonly providers: ReadonlyArray<IAiAssistProviderConfig>;
+    readonly proxyAllProviders?: boolean;
+    readonly proxyUrl?: string;
+}
+
+// @public
+interface IAiClientTool<TParams = unknown> {
+    readonly config: IAiClientToolConfig<TParams>;
+    readonly execute: (args: TParams) => Promise<Result<unknown>>;
+}
+
+// @public
+interface IAiClientToolCallSummary {
+    readonly args: JsonObject;
+    readonly callId?: string;
+    readonly isError: boolean;
+    readonly result: string;
+    readonly toolName: string;
+}
+
+// @public
+interface IAiClientToolConfig<TParams = unknown> {
+    readonly description: string;
+    readonly name: string;
+    readonly parametersSchema: JsonSchema.ISchemaValidator<TParams>;
+    readonly type: 'client_tool';
+}
+
+// @public
+interface IAiClientToolContinuation {
+    readonly messages: ReadonlyArray<JsonObject>;
+    readonly toolCallsSummary: ReadonlyArray<IAiClientToolCallSummary>;
+}
+
+// @public
+interface IAiClientToolTurnResult {
+    readonly continuation: IAiClientToolContinuation | undefined;
+    readonly fullText: string;
+    readonly truncated: boolean;
+}
+
+// @public
+interface IAiCompletionResponse {
+    readonly content: string;
+    readonly truncated: boolean;
+}
+
+// @public
+interface IAiGeneratedImage extends IAiImageData {
+    readonly revisedPrompt?: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiImageData"
+//
+// @public
+interface IAiImageAttachment extends IAiImageData {
+    readonly detail?: 'low' | 'high' | 'auto';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IAiImageData {
+    readonly base64: string;
+    readonly mimeType: string;
+}
+
+// @public
+interface IAiImageGenerationOptions {
+    readonly count?: number;
+    readonly models?: ReadonlyArray<IModelFamilyConfig>;
+    readonly quality?: AiImageQuality;
+    readonly seed?: number;
+    readonly size?: AiImageSize;
+}
+
+// @public
+interface IAiImageGenerationParams {
+    readonly options?: IAiImageGenerationOptions;
+    readonly prompt: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly referenceImages?: ReadonlyArray<IAiImageAttachment>;
+}
+
+// @public
+interface IAiImageGenerationResponse {
+    readonly images: ReadonlyArray<IAiGeneratedImage>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+interface IAiImageModelCapability {
+    readonly acceptedQualities?: ReadonlyArray<string>;
+    readonly acceptedSizes?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly acceptsImageReferenceInput?: boolean;
+    readonly defaultOutputMimeType?: string;
+    readonly format: AiImageApiFormat;
+    readonly maxCount?: number;
+    readonly modelPrefix: string;
+    readonly outputParamStyle?: 'response-format' | 'output-format' | 'none';
+    readonly supportsQualityParam?: boolean;
+}
+
+// @public
+interface IAiModelCapabilityConfig {
+    readonly global?: ReadonlyArray<IAiModelCapabilityRule>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly perProvider?: {
+        readonly [P in AiProviderId]?: ReadonlyArray<IAiModelCapabilityRule>;
+    };
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiModelCapabilityConfig"
+//
+// @public
+interface IAiModelCapabilityRule {
+    readonly capabilities: ReadonlyArray<AiModelCapability>;
+    readonly displayName?: string | ((id: string) => string);
+    readonly idPattern: RegExp;
+}
+
+// @public
+interface IAiModelInfo {
+    readonly capabilities: ReadonlySet<AiModelCapability>;
+    readonly displayName?: string;
+    readonly id: string;
+}
+
+// @public
+interface IAiProviderDescriptor {
+    readonly acceptsImageInput: boolean;
+    readonly apiFormat: AiApiFormat;
+    readonly baseUrl: string;
+    readonly buttonLabel: string;
+    readonly corsRestricted: boolean;
+    readonly defaultModel: ModelSpec;
+    readonly id: AiProviderId;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+    readonly imageGeneration?: ReadonlyArray<IAiImageModelCapability>;
+    readonly label: string;
+    readonly needsSecret: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    readonly streamingCorsRestricted: boolean;
+    readonly supportedTools: ReadonlyArray<AiServerToolType>;
+    readonly thinkingMode: AiThinkingMode;
+}
+
+// @public
+interface IAiStreamDone {
+    readonly fullText: string;
+    readonly incompleteReason?: string;
+    readonly truncated: boolean;
+    // (undocumented)
+    readonly type: 'done';
+}
+
+// @public
+interface IAiStreamError {
+    // (undocumented)
+    readonly message: string;
+    // (undocumented)
+    readonly type: 'error';
+}
+
+// @public
+type IAiStreamEvent = IAiStreamTextDelta | IAiStreamToolEvent | IAiStreamToolUseStart | IAiStreamToolUseDelta | IAiStreamToolUseComplete | IAiStreamDone | IAiStreamError;
+
+// @public
+interface IAiStreamTextDelta {
+    readonly delta: string;
+    // (undocumented)
+    readonly type: 'text-delta';
+}
+
+// @public
+interface IAiStreamToolEvent {
+    readonly detail?: string;
+    readonly phase: 'started' | 'completed';
+    readonly toolType: AiServerToolType;
+    // (undocumented)
+    readonly type: 'tool-event';
+}
+
+// @public
+interface IAiStreamToolUseComplete {
+    readonly callId?: string;
+    readonly isError: boolean;
+    readonly result: string;
+    readonly toolName: string;
+    // (undocumented)
+    readonly type: 'client-tool-result';
+}
+
+// @public
+interface IAiStreamToolUseDelta {
+    readonly args: JsonObject;
+    readonly callId?: string;
+    readonly toolName: string;
+    // (undocumented)
+    readonly type: 'client-tool-call-done';
+}
+
+// @public
+interface IAiStreamToolUseStart {
+    readonly callId?: string;
+    readonly toolName: string;
+    // (undocumented)
+    readonly type: 'client-tool-call-start';
+}
+
+// @public
+interface IAiToolEnablement {
+    readonly config?: AiServerToolConfig;
+    readonly enabled: boolean;
+    readonly type: AiServerToolType;
+}
+
+// @public
+interface IAiWebSearchToolConfig {
+    readonly allowedDomains?: ReadonlyArray<string>;
+    readonly blockedDomains?: ReadonlyArray<string>;
+    readonly enableImageUnderstanding?: boolean;
+    readonly maxUses?: number;
+    // (undocumented)
+    readonly type: 'web_search';
+}
+
+// @public
+interface IAnthropicThinkingConfig {
+    readonly effort?: 'low' | 'medium' | 'high' | 'max';
+}
+
+// @public
+interface IAnthropicThinkingOptions {
+    // (undocumented)
+    readonly config: IAnthropicThinkingConfig;
+    // (undocumented)
+    readonly models?: ReadonlyArray<AnthropicThinkingModelNames>;
+    // (undocumented)
+    readonly provider: 'anthropic';
+}
+
+// @public
+interface IArgon2idKeyDerivationParams {
+    readonly iterations: number;
+    readonly kdf: 'argon2id';
+    readonly memoryKiB: number;
+    readonly parallelism: number;
+    readonly salt: string;
+}
+
+// @public
+interface IArgon2idParams {
+    readonly iterations: number;
+    readonly memoryKiB: number;
+    readonly outputBytes: number;
+    readonly parallelism: number;
+}
+
+// @public
+interface IArgon2idProvider {
+    argon2id(password: Uint8Array | string, salt: Uint8Array, params: IArgon2idParams): Promise<Result<Uint8Array>>;
+}
+
+// @public
+interface IChatMessage {
+    readonly content: string;
+    readonly role: 'system' | 'user' | 'assistant';
+}
+
+// @public
+interface IContextValidationResult {
+    readonly isValid: boolean;
+    readonly missingDetails: readonly IMissingVariableDetail[];
+    readonly missingVariables: readonly string[];
+    readonly presentVariables: readonly string[];
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ICreateEncryptedFileParams<TMetadata = JsonValue> {
+    readonly content: JsonValue;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly cryptoProvider: ICryptoProvider;
+    readonly key: Uint8Array;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly keyDerivation?: IKeyDerivationParams;
+    readonly metadata?: TMetadata;
+    readonly metadataConverter?: Converter<TMetadata>;
+    readonly secretName: string;
+}
+
+// @public
+interface ICreateZipOptions {
+    // (undocumented)
+    readonly level?: ZipCompressionLevel;
+}
+
+// @public
+interface ICryptoProvider {
+    decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
+    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
+    encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
+    exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
+    fromBase64(base64: string): Result<Uint8Array>;
+    generateKey(): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
+    generateRandomBytes(length: number): Result<Uint8Array>;
+    generateUuid(): Result<Uuid>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
+    hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    importPublicKeySpki(spkiBytes: Uint8Array, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
+    sha256(data: string): Promise<Result<string>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    sign(privateKey: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean;
+    toBase64(data: Uint8Array): string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    unwrapBytes(wrapped: IWrappedBytes, recipientPrivateKey: CryptoKey, options: IWrapBytesOptions): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    verify(publicKey: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
+    verifyHmacSha256(key: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    wrapBytes(plaintext: Uint8Array, recipientPublicKey: CryptoKey, options: IWrapBytesOptions): Promise<Result<IWrappedBytes>>;
+}
+
+// @public
+interface IDallEImageGenerationConfig {
+    readonly quality?: DallE3Quality;
+    readonly size?: DallE2Size | DallE3Size;
+    readonly style?: 'vivid' | 'natural';
+}
+
+// Warning: (ae-forgotten-export) The symbol "INamedModelFamilyConfig" needs to be exported by the entry point index.d.ts
+//
+// @public
+interface IDallEModelOptions extends INamedModelFamilyConfig {
+    readonly config: IDallEImageGenerationConfig;
+    readonly family: 'dall-e';
+    readonly models?: DallEModelNames[];
+    readonly provider: 'openai';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "DirectEncryptionProvider"
+//
+// @public
+interface IDirectEncryptionProviderParams {
+    readonly boundSecretName?: string;
+    readonly cryptoProvider: ICryptoProvider;
+    readonly key: Uint8Array;
+}
+
+// @public
+interface IEncryptedFile<TMetadata = JsonValue> {
+    readonly algorithm: EncryptionAlgorithm;
+    readonly authTag: string;
+    readonly encryptedData: string;
+    readonly format: EncryptedFileFormat;
+    readonly iv: string;
+    readonly keyDerivation?: IKeyDerivationParams;
+    readonly metadata?: TMetadata;
+    readonly secretName: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IEncryptedFilePrivateKeyStorageCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly cryptoProvider: ICryptoProvider;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly directory: string;
+    readonly encryptionKey: Uint8Array;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly tree?: FileTree.IFileTreeDirectoryItem;
+}
+
+// @public
+interface IEncryptionConfig {
+    readonly cryptoProvider: ICryptoProvider;
+    readonly onDecryptionError?: EncryptedFileErrorMode;
+    readonly onMissingKey?: EncryptedFileErrorMode;
+    readonly secretProvider?: SecretProvider;
+    readonly secrets?: ReadonlyArray<INamedSecret>;
+}
+
+// @public
+interface IEncryptionProvider {
+    encryptByName<TMetadata = JsonValue>(secretName: string, content: JsonValue, metadata?: TMetadata): Promise<Result<IEncryptedFile<TMetadata>>>;
+}
+
+// @public
+interface IEncryptionResult {
+    readonly authTag: Uint8Array;
+    readonly encryptedData: Uint8Array;
+    readonly iv: Uint8Array;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IExecuteClientToolTurnParams {
+    readonly apiKey: string;
+    readonly clientTools: ReadonlyArray<IAiClientTool>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly continuationMessages?: ReadonlyArray<JsonObject>;
+    readonly descriptor: IAiProviderDescriptor;
+    readonly logger?: Logging.ILogger;
+    readonly messagesBefore?: ReadonlyArray<IChatMessage>;
+    readonly model?: string;
+    readonly prompt: AiPrompt;
+    readonly resolvedThinking?: IResolvedThinkingConfig;
+    readonly signal?: AbortSignal;
+    readonly temperature?: number;
+    readonly tools?: ReadonlyArray<AiServerToolConfig>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IExecuteClientToolTurnResult {
+    readonly events: AsyncIterable<IAiStreamEvent>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly nextTurn: Promise<Result<IAiClientToolTurnResult>>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IFencedStringifiedJsonExtractorOptions {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly extractor?: JsonTextExtractor;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IFencedStringifiedJsonOptions<T> extends IFencedStringifiedJsonExtractorOptions {
+    readonly inner: Converter<T> | Validator<T>;
+}
+
+// @public
+interface IGeminiFlashImageGenerationConfig {
+    readonly aspectRatio?: string;
+}
+
+// @public
+interface IGeminiFlashImageModelOptions extends INamedModelFamilyConfig {
+    // (undocumented)
+    readonly config: IGeminiFlashImageGenerationConfig;
+    // (undocumented)
+    readonly family: 'gemini-flash-image';
+    // (undocumented)
+    readonly models?: GeminiFlashImageModelNames[];
+    // (undocumented)
+    readonly provider: 'google';
+}
+
+// @public
+interface IGeminiThinkingConfig {
+    readonly includeThoughts?: boolean;
+    readonly thinkingBudget?: number;
+}
+
+// @public
+interface IGeminiThinkingOptions {
+    // (undocumented)
+    readonly config: IGeminiThinkingConfig;
+    // (undocumented)
+    readonly models?: ReadonlyArray<GeminiThinkingModelNames>;
+    // (undocumented)
+    readonly provider: 'google';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IGenerateJsonCompletionParams<T> extends IProviderCompletionParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly converter?: Converter<T> | Validator<T>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly jsonConverter?: Converter<T>;
+    readonly promptHint?: JsonPromptHint;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IGenerateJsonCompletionResult<T> {
+    readonly raw: string;
+    readonly response: IAiCompletionResponse;
+    readonly value: T;
+}
+
+// @public
+interface IGptImageGenerationConfig {
+    readonly background?: 'transparent' | 'opaque' | 'auto';
+    readonly moderation?: 'low' | 'auto';
+    readonly outputCompression?: number;
+    readonly outputFormat?: 'png' | 'jpeg' | 'webp';
+    readonly quality?: GptImageQuality;
+    readonly size?: GptImageSize;
+}
+
+// @public
+interface IGptImageModelOptions extends INamedModelFamilyConfig {
+    // (undocumented)
+    readonly config: IGptImageGenerationConfig;
+    // (undocumented)
+    readonly family: 'gpt-image';
+    // (undocumented)
+    readonly models?: GptImageModelNames[];
+    // (undocumented)
+    readonly provider: 'openai';
+}
+
+// @public
+interface IGrokImagineImageGenerationConfig {
+    readonly aspectRatio?: string;
+    readonly resolution?: string;
+}
+
+// @public
+interface IGrokImagineModelOptions extends INamedModelFamilyConfig {
+    // (undocumented)
+    readonly config: IGrokImagineImageGenerationConfig;
+    // (undocumented)
+    readonly family: 'grok-imagine';
+    // (undocumented)
+    readonly models?: GrokImagineModelNames[];
+    // (undocumented)
+    readonly provider: 'xai';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "HpkeProvider"
+//
+// @public
+interface IHpkeSealResult {
+    readonly ciphertext: Uint8Array;
+    readonly enc: Uint8Array;
+}
+
+// @public
+interface IImagen4GenerationConfig {
+    readonly addWatermark?: boolean;
+    readonly aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
+    readonly enhancePrompt?: boolean;
+    readonly imageSize?: '1K' | '2K';
+    readonly outputCompressionQuality?: number;
+    readonly outputMimeType?: 'image/jpeg' | 'image/png';
+    readonly personGeneration?: 'allow_all' | 'allow_adult' | 'dont_allow';
+}
+
+// @public
+interface IImagen4ModelOptions extends INamedModelFamilyConfig {
+    // (undocumented)
+    readonly config: IImagen4GenerationConfig;
+    // (undocumented)
+    readonly family: 'imagen-4';
+    // (undocumented)
+    readonly models?: Imagen4ModelNames[];
+    // (undocumented)
+    readonly provider: 'google';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IImportSecretOptions"
+//
+// @public
+interface IImportKeyOptions extends IImportSecretOptions {
+    readonly type?: KeyStoreSymmetricSecretType;
+}
+
+// @public
+interface IImportSecretOptions extends IAddSecretOptions {
+    readonly replace?: boolean;
+}
+
+// @public
+type IKeyDerivationParams = IPbkdf2KeyDerivationParams | IArgon2idKeyDerivationParams;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IKeyPairAlgorithmParams {
+    readonly generateKey: RsaHashedKeyGenParams | EcKeyGenParams | {
+        readonly name: 'Ed25519';
+    } | {
+        readonly name: 'X25519';
+    };
+    readonly importPublicKey: RsaHashedImportParams | EcKeyImportParams | {
+        readonly name: 'Ed25519';
+    } | {
+        readonly name: 'X25519';
+    };
+    readonly keyPairUsages: ReadonlyArray<KeyUsage>;
+    readonly publicKeyUsages: ReadonlyArray<KeyUsage>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IKeyStoreAsymmetricEntry {
+    readonly algorithm: KeyPairAlgorithm;
+    readonly createdAt: string;
+    readonly description?: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly id: string;
+    readonly name: string;
+    readonly publicKeyJwk: JsonWebKey;
+    readonly type: KeyStoreAsymmetricSecretType;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IKeyStoreAsymmetricEntryJson {
+    readonly algorithm: KeyPairAlgorithm;
+    readonly createdAt: string;
+    readonly description?: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly id: string;
+    readonly name: string;
+    readonly publicKeyJwk: JsonWebKey;
+    readonly type: KeyStoreAsymmetricSecretType;
+}
+
+// @public
+interface IKeyStoreCreateParams {
+    readonly cryptoProvider: ICryptoProvider;
+    readonly iterations?: number;
+    readonly privateKeyStorage?: IPrivateKeyStorage;
+}
+
+// @public
+type IKeyStoreEntry = IKeyStoreSymmetricEntry | IKeyStoreAsymmetricEntry;
+
+// @public
+type IKeyStoreEntryJson = IKeyStoreSymmetricEntryJson | IKeyStoreAsymmetricEntryJson;
+
+// @public
+interface IKeyStoreFile {
+    readonly algorithm: EncryptionAlgorithm;
+    readonly authTag: string;
+    readonly encryptedData: string;
+    readonly format: KeyStoreFormat;
+    readonly iv: string;
+    readonly keyDerivation: IPbkdf2KeyDerivationParams;
+}
+
+// @public
+interface IKeyStoreOpenParams {
+    readonly cryptoProvider: ICryptoProvider;
+    readonly keystoreFile: IKeyStoreFile;
+    readonly privateKeyStorage?: IPrivateKeyStorage;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public @deprecated
+type IKeyStoreSecretEntry = IKeyStoreSymmetricEntry;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public @deprecated
+type IKeyStoreSecretEntryJson = IKeyStoreSymmetricEntryJson;
+
+// @public
+interface IKeyStoreSymmetricEntry {
+    readonly createdAt: string;
+    readonly description?: string;
+    readonly key: Uint8Array;
+    readonly name: string;
+    readonly type: KeyStoreSymmetricSecretType;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IKeyStoreSymmetricEntryJson {
+    readonly createdAt: string;
+    readonly description?: string;
+    readonly key: string;
+    readonly name: string;
+    readonly type: KeyStoreSymmetricSecretType;
+}
+
+// @public
+interface IKeyStoreVaultContents {
+    readonly secrets: Record<string, IKeyStoreEntryJson>;
+    readonly version: KeyStoreFormat;
+}
+
+// @public
+type Imagen4ModelNames = 'imagen-4.0-generate-001' | 'imagen-4.0-ultra-generate-001' | 'imagen-4.0-fast-generate-001';
+
+// @public
+interface IMissingVariableDetail {
+    readonly existingPath: readonly string[];
+    readonly failedAtSegment?: string;
+    readonly variable: IVariableRef;
+}
+
+// @public
+type IModelFamilyConfig = IDallEModelOptions | IGptImageModelOptions | IGrokImagineModelOptions | IImagen4ModelOptions | IGeminiFlashImageModelOptions | IOtherModelOptions;
+
+// @public
+interface IModelSpecMap {
+    // (undocumented)
+    readonly [key: string]: ModelSpec;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function importPublicKeyFromMultibaseSpki(encoded: string, algorithm: KeyPairAlgorithm, provider: ICryptoProvider): Promise<Result<CryptoKey>>;
+
+// @public
+interface IMustacheTemplateOptions {
+    readonly escape?: MustacheEscapeStrategy;
+    readonly includeComments?: boolean;
+    readonly includePartials?: boolean;
+    readonly tags?: readonly [string, string];
+}
+
+// @public
+interface INamedSecret {
+    readonly key: Uint8Array;
+    readonly name: string;
+}
+
+// @public
+interface IOpenAiThinkingConfig {
+    readonly effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
+}
+
+// @public
+interface IOpenAiThinkingOptions {
+    // (undocumented)
+    readonly config: IOpenAiThinkingConfig;
+    // (undocumented)
+    readonly models?: ReadonlyArray<OpenAiThinkingModelNames>;
+    // (undocumented)
+    readonly provider: 'openai';
+}
+
+// @public
+interface IOtherModelOptions {
+    // (undocumented)
+    readonly config: JsonObject;
+    // (undocumented)
+    readonly models: string[];
+    // (undocumented)
+    readonly provider: 'other';
+}
+
+// @public
+interface IOtherThinkingOptions {
+    // (undocumented)
+    readonly config: JsonObject;
+    // (undocumented)
+    readonly models: ReadonlyArray<string>;
+    // (undocumented)
+    readonly provider: 'other';
+}
+
+// @public
+interface IPbkdf2KeyDerivationParams {
+    readonly iterations: number;
+    readonly kdf: 'pbkdf2';
+    readonly salt: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IPrivateKeyStorage {
+    delete(id: string): Promise<Result<string>>;
+    list(): Promise<Result<readonly string[]>>;
+    load(id: string): Promise<Result<CryptoKey>>;
+    store(id: string, key: CryptoKey): Promise<Result<string>>;
+    readonly supportsNonExtractable: boolean;
+}
+
+// @public
+interface IProviderCompletionParams {
+    readonly additionalMessages?: ReadonlyArray<IChatMessage>;
+    readonly apiKey: string;
+    readonly descriptor: IAiProviderDescriptor;
+    readonly endpoint?: string;
+    readonly logger?: Logging.ILogger;
+    readonly modelOverride?: ModelSpec;
+    readonly prompt: AiPrompt;
+    readonly signal?: AbortSignal;
+    readonly temperature?: number;
+    readonly thinking?: IThinkingConfig;
+    readonly tools?: ReadonlyArray<AiServerToolConfig>;
+}
+
+// @public
+interface IProviderCompletionStreamParams {
+    readonly apiKey: string;
+    readonly descriptor: IAiProviderDescriptor;
+    readonly endpoint?: string;
+    readonly logger?: Logging.ILogger;
+    readonly messagesBefore?: ReadonlyArray<IChatMessage>;
+    readonly modelOverride?: ModelSpec;
+    readonly prompt: AiPrompt;
+    readonly signal?: AbortSignal;
+    readonly temperature?: number;
+    readonly thinking?: IThinkingConfig;
+    readonly tools?: ReadonlyArray<AiServerToolConfig>;
+}
+
+// @public
+interface IProviderImageGenerationParams {
+    readonly apiKey: string;
+    readonly descriptor: IAiProviderDescriptor;
+    readonly endpoint?: string;
+    readonly logger?: Logging.ILogger;
+    readonly modelOverride?: ModelSpec;
+    readonly params: IAiImageGenerationParams;
+    readonly signal?: AbortSignal;
+}
+
+// @public
+interface IProviderListModelsParams {
+    readonly apiKey: string;
+    readonly capability?: AiModelCapability;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "DEFAULT_MODEL_CAPABILITY_CONFIG"
+    readonly capabilityConfig?: IAiModelCapabilityConfig;
+    readonly descriptor: IAiProviderDescriptor;
+    readonly endpoint?: string;
+    readonly logger?: Logging.ILogger;
+    readonly signal?: AbortSignal;
+}
+
+// @public
+interface IRemoveSecretResult {
+    readonly entry: IKeyStoreEntry;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly warning?: string;
+}
+
+// @public
+interface IResolvedImageOptions {
+    // (undocumented)
+    readonly addWatermark?: boolean;
+    // (undocumented)
+    readonly aspectRatio?: string;
+    // (undocumented)
+    readonly background?: string;
+    // (undocumented)
+    readonly enhancePrompt?: boolean;
+    // (undocumented)
+    readonly geminiAspectRatio?: string;
+    // (undocumented)
+    readonly imagenAspectRatio?: string;
+    // (undocumented)
+    readonly imagenOutputCompressionQuality?: number;
+    // (undocumented)
+    readonly imagenOutputMimeType?: string;
+    // (undocumented)
+    readonly imageSize?: string;
+    // (undocumented)
+    readonly moderation?: string;
+    readonly n: number;
+    // (undocumented)
+    readonly otherParams?: JsonObject;
+    // (undocumented)
+    readonly outputCompression?: number;
+    // (undocumented)
+    readonly outputFormat?: string;
+    // (undocumented)
+    readonly personGeneration?: string;
+    readonly quality?: string;
+    // (undocumented)
+    readonly resolution?: string;
+    readonly seed?: number;
+    readonly size?: string;
+    // (undocumented)
+    readonly style?: string;
+}
+
+// @public
+interface IResolvedThinkingConfig {
+    readonly anthropicEffort?: IAnthropicThinkingConfig['effort'];
+    readonly geminiThinkingBudget?: number;
+    readonly openAiEffort?: IOpenAiThinkingConfig['effort'];
+    readonly otherParams?: JsonObject;
+    readonly xaiEffort?: IXAiThinkingConfig['effort'];
+}
+
+// @public
+function isEncryptedFile(json: unknown): boolean;
+
+// @public
+function isKeyStoreFile(json: unknown): boolean;
+
+// @public
 const isoDate: Converter<Date, unknown>;
+
+// @public
+const isoDateTime: Converter<DateTime, unknown>;
+
+// @public
+interface IThinkingConfig {
+    readonly effort?: 'low' | 'medium' | 'high';
+    readonly providers?: ReadonlyArray<IThinkingProviderConfig>;
+}
+
+// @public
+type IThinkingProviderConfig = IAnthropicThinkingOptions | IOpenAiThinkingOptions | IGeminiThinkingOptions | IXAiThinkingOptions | IOtherThinkingOptions;
+
+// @public
+interface IVariableRef {
+    readonly isSection: boolean;
+    readonly name: string;
+    readonly path: readonly string[];
+    readonly tokenType: MustacheTokenType;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IWrapBytesOptions {
+    readonly info: Uint8Array;
+    readonly salt: Uint8Array;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IWrappedBytes {
+    readonly ciphertext: string;
+    readonly ephemeralPublicKey: JsonWebKey;
+    readonly nonce: string;
+}
+
+// @public
+interface IXAiThinkingConfig {
+    readonly effort?: 'none' | 'low' | 'medium' | 'high';
+}
+
+// @public
+interface IXAiThinkingOptions {
+    // (undocumented)
+    readonly config: IXAiThinkingConfig;
+    // (undocumented)
+    readonly models?: ReadonlyArray<XAiThinkingModelNames>;
+    // (undocumented)
+    readonly provider: 'xai';
+}
+
+// @public
+interface IYamlSerializeOptions {
+    readonly flowLevel?: number;
+    readonly forceQuotes?: boolean;
+    readonly indent?: number;
+    readonly lineWidth?: number;
+    readonly noArrayIndent?: boolean;
+    readonly noRefs?: boolean;
+    readonly sortKeys?: boolean;
+}
+
+// @public
+interface IZipTextFile {
+    // (undocumented)
+    readonly contents: string;
+    // (undocumented)
+    readonly path: string;
+}
 
 // @public (undocumented)
 type JarFieldPicker<T extends JarRecord = JarRecord> = (record: T) => (keyof T)[];
@@ -149,6 +1796,215 @@ interface JarRecordParserOptions {
     readonly fixedContinuationSize?: number;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type JsonPromptHint = 'smart' | 'none' | (string & {});
+
+// @public
+type JsonTextExtractor = (text: string) => Result<string>;
+
+// @public
+const jsonWebKeyShape: Validator<JsonWebKey>;
+
+// @public
+type KeyDerivationFunction = 'pbkdf2' | 'argon2id';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keyDerivationFunction: Converter<KeyDerivationFunction>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keyDerivationParams: Converter<IKeyDerivationParams>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256' | 'ed25519' | 'x25519';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keyPairAlgorithm: Converter<KeyPairAlgorithm>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keyPairAlgorithmParams: Readonly<Record<KeyPairAlgorithm, IKeyPairAlgorithmParams>>;
+
+declare namespace KeyStore {
+    export {
+        Converters_2 as Converters,
+        KeyStore_2 as KeyStore,
+        EncryptedFilePrivateKeyStorage,
+        IEncryptedFilePrivateKeyStorageCreateParams,
+        isKeyStoreFile,
+        allKeyPairAlgorithms,
+        KeyPairAlgorithm,
+        KeyStoreFormat,
+        KEYSTORE_FORMAT,
+        DEFAULT_KEYSTORE_ITERATIONS,
+        MIN_SALT_LENGTH,
+        KeyStoreSymmetricSecretType,
+        allKeyStoreSymmetricSecretTypes,
+        KeyStoreAsymmetricSecretType,
+        allKeyStoreAsymmetricSecretTypes,
+        KeyStoreSecretType,
+        allKeyStoreSecretTypes,
+        IKeyStoreSymmetricEntry,
+        IKeyStoreAsymmetricEntry,
+        IKeyStoreEntry,
+        IKeyStoreSecretEntry,
+        IKeyStoreSymmetricEntryJson,
+        IKeyStoreAsymmetricEntryJson,
+        IKeyStoreEntryJson,
+        IKeyStoreSecretEntryJson,
+        IKeyStoreVaultContents,
+        IKeyStoreFile,
+        KeyStoreLockState,
+        IKeyStoreCreateParams,
+        IKeyStoreOpenParams,
+        IAddSecretResult,
+        IAddSecretOptions,
+        IImportSecretOptions,
+        IImportKeyOptions,
+        IAddSecretFromPasswordOptions,
+        DEFAULT_SECRET_ITERATIONS,
+        IAddSecretFromPasswordResult,
+        IAddSecretFromPasswordArgon2idOptions,
+        IAddKeyPairOptions,
+        IAddKeyPairResult,
+        IRemoveSecretResult,
+        IPrivateKeyStorage
+    }
+}
+
+// @public
+class KeyStore_2 implements IEncryptionProvider {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    addKeyPair(name: string, options: IAddKeyPairOptions): Promise<Result<IAddKeyPairResult>>;
+    addSecret(name: string, options?: IAddSecretOptions): Promise<Result<IAddSecretResult>>;
+    addSecretFromPassword(name: string, password: string, options?: IAddSecretFromPasswordOptions): Promise<Result<IAddSecretFromPasswordResult>>;
+    addSecretFromPasswordArgon2id(name: string, password: string, argon2idProvider: IArgon2idProvider, options?: IAddSecretFromPasswordArgon2idOptions): Promise<Result<IAddSecretFromPasswordResult>>;
+    changePassword(currentPassword: string, newPassword: string): Promise<Result<KeyStore_2>>;
+    static create(params: IKeyStoreCreateParams): Result<KeyStore_2>;
+    get cryptoProvider(): ICryptoProvider;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptionProvider"
+    //
+    // (undocumented)
+    encryptByName<TMetadata = JsonValue>(secretName: string, content: JsonValue, metadata?: TMetadata): Promise<Result<IEncryptedFile<TMetadata>>>;
+    getApiKey(name: string): Result<string>;
+    getEncryptionConfig(): Result<Pick<IEncryptionConfig, 'secretProvider' | 'cryptoProvider'>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getKeyPair(name: string): Promise<Result<{
+        publicKey: CryptoKey;
+        privateKey: CryptoKey;
+    }>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getPublicKeyJwk(name: string): Result<JsonWebKey>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getSecret(name: string): Result<IKeyStoreEntry>;
+    getSecretProvider(): Result<SecretProvider>;
+    hasSecret(name: string): Result<boolean>;
+    importApiKey(name: string, apiKey: string, options?: IImportSecretOptions): Promise<Result<IAddSecretResult>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
+    importSecret(name: string, key: Uint8Array, options?: IImportKeyOptions): Promise<Result<IAddSecretResult>>;
+    initialize(password: string): Promise<Result<KeyStore_2>>;
+    get isDirty(): boolean;
+    get isNew(): boolean;
+    get isUnlocked(): boolean;
+    listSecrets(): Result<readonly string[]>;
+    listSecretsByType(type: KeyStoreSecretType): Result<readonly string[]>;
+    lock(force?: boolean): Result<KeyStore_2>;
+    static open(params: IKeyStoreOpenParams): Result<KeyStore_2>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    removeSecret(name: string): Promise<Result<IRemoveSecretResult>>;
+    renameSecret(oldName: string, newName: string): Result<IKeyStoreEntry>;
+    save(password: string): Promise<Result<IKeyStoreFile>>;
+    saveWithKey(derivedKey: Uint8Array): Promise<Result<IKeyStoreFile>>;
+    get state(): KeyStoreLockState;
+    unlock(password: string): Promise<Result<KeyStore_2>>;
+    unlockWithKey(derivedKey: Uint8Array): Promise<Result<KeyStore_2>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    verifySecretFromPassword(name: string, password: string, keyDerivation: IKeyDerivationParams): Promise<Result<boolean>>;
+    verifySecretFromPasswordArgon2id(name: string, password: string, argon2idProvider: IArgon2idProvider, keyDerivation: IArgon2idKeyDerivationParams): Promise<Result<boolean>>;
+}
+
+// @public
+const KEYSTORE_FORMAT: KeyStoreFormat;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreAsymmetricEntryJson: Converter<IKeyStoreAsymmetricEntryJson>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type KeyStoreAsymmetricSecretType = 'asymmetric-keypair';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreAsymmetricSecretType: Converter<KeyStoreAsymmetricSecretType>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreFile: Converter<IKeyStoreFile>;
+
+// @public
+type KeyStoreFormat = 'keystore-v1';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreFormat: Converter<KeyStoreFormat>;
+
+// @public
+type KeyStoreLockState = 'locked' | 'unlocked';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreSecretEntryJson: Converter<IKeyStoreEntryJson>;
+
+// @public
+type KeyStoreSecretType = KeyStoreSymmetricSecretType | KeyStoreAsymmetricSecretType;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreSecretType: Converter<KeyStoreSecretType>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreSymmetricEntryJson: Converter<IKeyStoreSymmetricEntryJson>;
+
+// @public
+type KeyStoreSymmetricSecretType = 'encryption-key' | 'api-key';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreSymmetricSecretType: Converter<KeyStoreSymmetricSecretType>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreVaultContents: Converter<IKeyStoreVaultContents>;
+
 // @public
 class Md5Normalizer extends Hash_2.HashingNormalizer {
     constructor();
@@ -156,11 +2012,126 @@ class Md5Normalizer extends Hash_2.HashingNormalizer {
     static md5Hash(parts: string[]): string;
 }
 
+// @public
+const MIN_SALT_LENGTH: number;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
+//
+// @public
+const MODEL_SPEC_BASE_KEY: ModelSpecKey;
+
+// @public (undocumented)
+type ModelSpec = string | IModelSpecMap;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+//
+// @public
+const modelSpec: Converter<ModelSpec>;
+
+// @public
+type ModelSpecKey = 'base' | 'tools' | 'image' | 'thinking';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+//
+// @public
+const modelSpecKey: Converter<ModelSpecKey>;
+
+// @public
+function multibaseBase64UrlDecode(encoded: string): Result<Uint8Array>;
+
+// @public
+function multibaseBase64UrlEncode(data: Uint8Array): string;
+
+declare namespace Mustache {
+    export {
+        IContextValidationResult,
+        IMissingVariableDetail,
+        IMustacheTemplateOptions,
+        IVariableRef,
+        MustacheEscapeStrategy,
+        MustacheTokenType,
+        MustacheTemplate
+    }
+}
+export { Mustache }
+
+// @public
+type MustacheEscapeStrategy = 'html' | 'none' | ((value: string) => string);
+
+// @public
+class MustacheTemplate {
+    static create(template: string, options?: IMustacheTemplateOptions): Result<MustacheTemplate>;
+    extractVariableNames(): readonly string[];
+    extractVariables(): readonly IVariableRef[];
+    // Warning: (ae-forgotten-export) The symbol "IRequiredMustacheTemplateOptions" needs to be exported by the entry point index.d.ts
+    readonly options: Readonly<IRequiredMustacheTemplateOptions>;
+    render(context: unknown): Result<string>;
+    readonly template: string;
+    static validate(template: string, options?: IMustacheTemplateOptions): Result<true>;
+    validate(): Result<true>;
+    validateAndRender(context: unknown): Result<string>;
+    validateContext(context: unknown): Result<IContextValidationResult>;
+}
+
+// @public
+type MustacheTokenType = 'text' | 'name' | '&' | '#' | '^' | '!' | '>' | '=';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const namedSecret: Converter<INamedSecret>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class NodeCryptoProvider implements ICryptoProvider {
+    decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
+    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
+    encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
+    exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
+    fromBase64(base64: string): Result<Uint8Array>;
+    generateKey(): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
+    generateRandomBytes(length: number): Result<Uint8Array>;
+    generateUuid(): Result<Uuid>;
+    hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
+    importPublicKeySpki(spkiBytes: Uint8Array, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
+    sha256(data: string): Promise<Result<string>>;
+    sign(privateKey: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean;
+    toBase64(data: Uint8Array): string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    unwrapBytes(wrapped: IWrappedBytes, recipientPrivateKey: CryptoKey, options: IWrapBytesOptions): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "NodeCryptoProvider"
+    verify(publicKey: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
+    verifyHmacSha256(key: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    wrapBytes(plaintext: Uint8Array, recipientPublicKey: CryptoKey, options: IWrapBytesOptions): Promise<Result<IWrappedBytes>>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const nodeCryptoProvider: NodeCryptoProvider;
+
+// @public
+type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'o3-deep-research' | 'o4-mini-deep-research' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.5' | 'gpt-5-pro';
+
 // @beta
 function parseCsvString(body: string, options?: CsvOptions): Result<unknown>;
 
 // @public
 function parseRecordJarLines(lines: string[], options?: JarRecordParserOptions): Result<JarRecord[]>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const pbkdf2KeyDerivationParams: Converter<IPbkdf2KeyDerivationParams>;
 
 // @public
 class RangeOf<T> implements RangeOfProperties<T> {
@@ -236,17 +2207,88 @@ function readRecordJarFromTree(fileTree: FileTree.FileTree, filePath: string, op
 declare namespace RecordJar {
     export {
         parseRecordJarLines,
+        readRecordJarFromTree,
         JarRecord,
         JarFieldPicker,
         JarRecordParserOptions,
-        readRecordJarFileSync,
-        readRecordJarFromTree
+        readRecordJarFileSync
     }
 }
 export { RecordJar }
 
 // @public
+function resolveEffectiveTools(descriptor: IAiProviderDescriptor, settingsTools?: ReadonlyArray<IAiToolEnablement>, perCallTools?: ReadonlyArray<AiServerToolConfig>): ReadonlyArray<AiServerToolConfig>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function resolveImageCapability(descriptor: IAiProviderDescriptor, modelId: string): IAiImageModelCapability | undefined;
+
+// @public
+function resolveImageOptions(modelId: string, capability: IAiImageModelCapability, options: IAiImageGenerationOptions | undefined): IResolvedImageOptions;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "MODEL_SPEC_BASE_KEY"
+//
+// @public
+function resolveModel(spec: ModelSpec, context?: string): string;
+
+// @public
+type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const SMART_JSON_PROMPT_HINT: string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function supportsImageGeneration(descriptor: IAiProviderDescriptor): boolean;
+
+// @public
 function templateString(defaultContext?: unknown): Conversion.StringConverter<string, unknown>;
+
+// @public
+function toBase64(bytes: Uint8Array): string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiImageData"
+//
+// @public
+function toDataUrl(image: IAiImageData): string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function tryDecryptFile<TPayload extends JsonValue = JsonValue, TMetadata = JsonValue>(json: JsonValue, key: Uint8Array, cryptoProvider: ICryptoProvider, payloadConverter?: Converter<TPayload>, metadataConverter?: Converter<TMetadata>): Promise<Result<TPayload>>;
+
+// @public
+const uint8ArrayFromBase64: Converter<Uint8Array>;
+
+// @public
+function validateResolvedOptions(modelId: string, capability: IAiImageModelCapability, resolved: IResolvedImageOptions): Result<IResolvedImageOptions>;
+
+// @public
+type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4';
+
+declare namespace Yaml {
+    export {
+        yamlConverter,
+        yamlStringify,
+        IYamlSerializeOptions
+    }
+}
+export { Yaml }
+
+// @public
+function yamlConverter<T>(converter: Converter<T>): Converter<T>;
+
+// @public
+function yamlStringify(value: unknown, options?: IYamlSerializeOptions): Result<string>;
+
+// @public
+type ZipCompressionLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 // @public
 class ZipDirectoryItem<TCT extends string = string> implements FileTree.IFileTreeDirectoryItem<TCT> {
@@ -257,6 +2299,8 @@ class ZipDirectoryItem<TCT extends string = string> implements FileTree.IFileTre
     readonly type: 'directory';
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
+//
 // @public
 class ZipFileItem<TCT extends string = string> implements FileTree.IFileTreeFileItem<TCT> {
     constructor(zipFilePath: string, contents: string, accessors: ZipFileTreeAccessors<TCT>);
@@ -277,11 +2321,17 @@ declare namespace ZipFileTree {
     export {
         ZipFileTreeAccessors,
         ZipFileItem,
-        ZipDirectoryItem
+        ZipDirectoryItem,
+        createZipFromTextFiles,
+        IZipTextFile,
+        ZipCompressionLevel,
+        ICreateZipOptions
     }
 }
 export { ZipFileTree }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
+//
 // @public
 class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFileTreeAccessors<TCT> {
     static defaultInferContentType<TCT extends string = string>(__filePath: string, __provided?: string): Result<TCT | undefined>;
@@ -299,6 +2349,11 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
     joinPaths(...paths: string[]): string;
     resolveAbsolutePath(...paths: string[]): string;
 }
+
+// Warnings were encountered during analysis:
+//
+// src/packlets/crypto-utils/keystore/keyStore.ts:1463:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1502:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

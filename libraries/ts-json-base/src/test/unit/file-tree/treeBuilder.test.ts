@@ -451,6 +451,25 @@ describe('TreeBuilder', () => {
     });
   });
 
+  describe('addDirectory method', () => {
+    test('adds nested directory structure', () => {
+      const builder = TreeBuilder.create().orThrow();
+      expect(builder.addDirectory('/a/b/c')).toSucceedAndSatisfy((dir) => {
+        expect(dir.absolutePath).toBe('/a/b/c');
+        expect(builder.byAbsolutePath.get('/a')).toBeInstanceOf(InMemoryDirectory);
+        expect(builder.byAbsolutePath.get('/a/b')).toBeInstanceOf(InMemoryDirectory);
+        expect(builder.byAbsolutePath.get('/a/b/c')).toBe(dir);
+      });
+    });
+
+    test('fails when path conflicts with existing file', () => {
+      const builder = TreeBuilder.create().orThrow();
+      builder.addFile('/parent/file.txt', 'content').orThrow();
+
+      expect(builder.addDirectory('/parent/file.txt/child')).toFailWith(/not a directory/i);
+    });
+  });
+
   describe('error handling and edge cases', () => {
     test('handles empty tree', () => {
       const builder = TreeBuilder.create().orThrow();

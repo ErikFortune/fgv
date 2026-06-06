@@ -1,0 +1,25 @@
+[Home](../../README.md) > [Runtime](../README.md) > [ResourceTreeResolver](./ResourceTreeResolver.md) > resolveComposedResourceTree
+
+## ResourceTreeResolver.resolveComposedResourceTree() method
+
+Resolves a resource tree from a resource ID, building the tree lazily from the resource manager.
+
+**Signature:**
+
+```typescript
+resolveComposedResourceTree(resourceId: string, options?: IResolveResourceTreeOptions): Result<JsonObject | undefined>;
+```
+
+**Parameters:**
+
+<table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>resourceId</td><td>string</td><td>The ID of the root resource to resolve</td></tr>
+<tr><td>options</td><td>IResolveResourceTreeOptions</td><td>Optional configuration for error handling during resolution</td></tr>
+</tbody></table>
+
+**Returns:**
+
+Result&lt;JsonObject | undefined&gt;
+
+Success with the composed JsonObject or undefined, or Failure with error message

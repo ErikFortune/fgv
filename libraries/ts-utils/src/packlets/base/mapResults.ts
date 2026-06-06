@@ -209,14 +209,14 @@ export function firstSuccess<T>(results: Iterable<Result<T> | DeferredResult<T>>
 }
 
 /**
- * String-keyed record of initialization functions to be passed to {@link (populateObject:1)}
- * or {@link (populateObject:2)}.
+ * String-keyed record of initialization functions to be passed to {@link populateObject}
+ * or {@link populateObject}.
  * @public
  */
 export type FieldInitializers<T> = { [key in keyof T]: (state: Partial<T>) => Result<T[key]> };
 
 /**
- * Options for the {@link (populateObject:1)} function.
+ * Options for the {@link populateObject} function.
  * @public
  */
 

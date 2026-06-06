@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/repo-template",
+      "comment": "add init-library command",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/repo-template"
+}

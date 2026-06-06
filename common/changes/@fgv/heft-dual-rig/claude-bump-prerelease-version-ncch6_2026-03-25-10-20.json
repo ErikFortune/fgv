@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add repository field for npm provenance",
+      "type": "none",
+      "packageName": "@fgv/heft-dual-rig"
+    }
+  ],
+  "packageName": "@fgv/heft-dual-rig",
+  "email": "noreply@anthropic.com"
+}

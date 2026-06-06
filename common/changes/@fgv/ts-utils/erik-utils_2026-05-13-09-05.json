@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Add OneOf and StringOneOf",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

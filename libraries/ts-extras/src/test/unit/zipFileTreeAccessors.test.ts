@@ -23,6 +23,7 @@
 import '@fgv/ts-utils-jest';
 import { zipSync, Zippable } from 'fflate';
 import { Validators, fail, succeed, Result } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { ZipFileTreeAccessors, ZipFileItem } from '../../packlets/zip-file-tree';
 
 describe('ZipFileTreeAccessors', () => {
@@ -1022,6 +1023,31 @@ describe('ZipFileTreeAccessors', () => {
         expect(emptyPathChildren).toSucceedAndSatisfy((children) => {
           expect(children.length).toBe(rootChildren.value!.length);
         });
+      });
+    });
+  });
+
+  describe('read-only behavior', () => {
+    let accessors: ZipFileTreeAccessors;
+
+    beforeEach(() => {
+      const zipBuffer = createTestZip();
+      accessors = ZipFileTreeAccessors.fromBuffer(zipBuffer).orThrow();
+    });
+
+    it('isMutableAccessors returns false for ZIP accessors', () => {
+      expect(FileTree.isMutableAccessors(accessors)).toBe(false);
+    });
+
+    it('isMutableFileItem returns false for ZIP file items', () => {
+      expect(accessors.getItem('/manifest.json')).toSucceedAndSatisfy((item) => {
+        expect(FileTree.isMutableFileItem(item)).toBe(false);
+      });
+    });
+
+    it('isMutableDirectoryItem returns false for ZIP directory items', () => {
+      expect(accessors.getItem('/input')).toSucceedAndSatisfy((item) => {
+        expect(FileTree.isMutableDirectoryItem(item)).toBe(false);
       });
     });
   });

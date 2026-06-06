@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Refactor RetainingLogger internals to compose RetainingRingBuffer; factor logging packlet into logging-interface (pure contracts) + logging (implementations) to break the circular dependency with collections. Pure internal refactor — Logging.* namespace surface is byte-for-byte unchanged externally; etc/ts-utils.api.md regenerates as a true no-op.",
+      "type": "none",
+      "packageName": "@fgv/ts-utils"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/testbed",
+      "comment": "B-5: wire shell and CLI to run scenarios — clickable sidebar, initialize lifecycle (loading/error/ready/no-web), IScenarioContext with MessagesProvider logger; CLI --scenario dispatch; fold in #410 review fixes (delete dead mock, fix App.test.tsx comment, fix conventions.md, update README/description). 100% coverage all 4 metrics.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/testbed",
+  "email": "noreply@anthropic.com"
+}

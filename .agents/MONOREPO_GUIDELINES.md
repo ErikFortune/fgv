@@ -83,22 +83,26 @@ rush install
 All operations that can fail should use the Result pattern:
 
 ```typescript
-import { Result, succeed, fail } from '@fgv/ts-utils';
+import { Result, Success, Failure } from '@fgv/ts-utils';
 
 // Good: Use Result<T> for fallible operations
 function parseNumber(input: string): Result<number> {
   const parsed = parseInt(input, 10);
   if (isNaN(parsed)) {
-    return fail(`Invalid number: ${input}`);
+    return Failure.with(`Invalid number: ${input}`);
   }
-  return succeed(parsed);
+  return Success.with(parsed);
 }
 
 // Good: Chain operations with Result methods
 const result = parseNumber("42")
-  .onSuccess(num => succeed(num * 2))
-  .onFailure(err => fail(`Parse error: ${err}`));
+  .onSuccess(num => Success.with(num * 2))
+  .onFailure(err => Failure.with(`Parse error: ${err}`));
 ```
+
+Occasional explicit test of some value or early return makes sense but in general a sequence of tests for .isFailure is a code smell that suggests chaining with .onSuccess and .onFailure would be beneficial.
+
+Use .withFormattedError or .aggregateError or .report as appropriate to format or collect errors.
 
 ### Error Handling
 - Use `.onSuccess()`, `.onFailure()`, `.orThrow()` patterns
@@ -115,6 +119,9 @@ const value = riskyOperation()
 // Good: Throw only when appropriate
 const criticalValue = riskyOperation().orThrow();
 ```
+
+Older code may use `success` and `fail` in place of `Succeed.with` and `Failure.with` - that's fine but the `.with` forms are preferred for new
+code.
 
 ### Validation and Conversion
 Use converters and validators from ts-utils:
@@ -270,7 +277,10 @@ export * from './packlets/feature-b';
 export { SpecificType } from './packlets/internal';
 ```
 
-### Configuration Objects
+### Configuration Objects and Factory Pattern
+
+**Constructors that might throw should be `protected` or `private` and exposed only via a static `create` method that returns `Result<T>`.**
+
 ```typescript
 // Good: Use Result pattern for configuration
 export interface IConfigParams {
@@ -279,11 +289,29 @@ export interface IConfigParams {
 }
 
 export class MyClass {
+  // Constructor is private or protected - never public if it can throw
+  private constructor(params: IConfigParams) {
+    if (params.optionalParam !== undefined && params.optionalParam < 0) {
+      throw new Error('optionalParam must be non-negative');
+    }
+    // ... initialization
+  }
+
+  // Factory method converts throws to Results
   public static create(params: IConfigParams): Result<MyClass> {
     return captureResult(() => new MyClass(params));
   }
 }
+
+// Usage
+const instance = MyClass.create(params).orThrow(); // In setup/initialization
+const result = MyClass.create(params); // In application code - handle Result
 ```
+
+**Constructor visibility rules:**
+- `private` - Class should never be subclassed
+- `protected` - Subclasses need to call the constructor
+- **Never** expose a throwing constructor as `public` without a `create()` factory
 
 ### Error Messages
 ```typescript

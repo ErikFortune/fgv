@@ -1,0 +1,41 @@
+# Icon asset paths keyed by the custom "density" qualifier. The
+# DensityQualifierType lives in
+# src/qualifierTypes/densityQualifierType.ts and knows about the
+# Android-style density buckets (ldpi, mdpi, hdpi, xhdpi, xxhdpi).
+#
+# Because adjacent buckets partially match (score 0.7, see the custom
+# _matchOne in DensityQualifierType), lesson 4 can use this resource to
+# show what "all matching candidates" looks like in priority order -
+# the best bucket wins, but the neighbouring buckets still match.
+#
+# Imported id: resources.icons.icons (import path + explicit id).
+
+resources:
+  - id: icons
+    resourceTypeName: json
+    candidates:
+      - json:
+          home: icons/home.png
+          search: icons/search.png
+          bucket: mdpi
+
+      - conditions:
+          density: hdpi
+        json:
+          home: icons/hdpi/home.png
+          search: icons/hdpi/search.png
+          bucket: hdpi
+
+      - conditions:
+          density: xhdpi
+        json:
+          home: icons/xhdpi/home.png
+          search: icons/xhdpi/search.png
+          bucket: xhdpi
+
+      - conditions:
+          density: xxhdpi
+        json:
+          home: icons/xxhdpi/home.png
+          search: icons/xxhdpi/search.png
+          bucket: xxhdpi

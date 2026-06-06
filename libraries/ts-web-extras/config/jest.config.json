@@ -12,5 +12,8 @@
     }
   },
   "collectCoverage": true,
-  "coverageReporters": ["text", "lcov", "html"]
+  "coverageReporters": ["text", "lcov", "html"],
+  "moduleNameMapper": {
+    "^idb-keyval$": "<rootDir>/lib/test/mocks/idb-keyval.js"
+  }
 }

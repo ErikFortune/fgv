@@ -1,0 +1,78 @@
+# System configuration for the ts-res tutorial.
+#
+# This file defines:
+#   - qualifierTypes: named categories that describe how a value is validated
+#     and matched. Each type is backed by a "systemType" implementation that
+#     the library (or your custom factory) knows how to instantiate.
+#   - qualifiers: named dimensions (language, territory, density, ...) used
+#     to qualify resource candidates. Each qualifier points at a qualifier
+#     type and declares a default priority.
+#   - resourceTypes: the logical "kinds" of resources your app understands.
+#
+# Note the custom "density" qualifier type below. The built-in ts-res
+# configuration factory doesn't know how to build it, so Lesson 3 wires a
+# custom factory that recognises systemType="density" and returns an
+# instance of DensityQualifierType.
+
+qualifierTypes:
+  - name: language
+    systemType: language
+    configuration:
+      allowContextList: true
+
+  - name: territory
+    systemType: territory
+    configuration:
+      allowContextList: false
+
+  - name: theme
+    systemType: literal
+    configuration:
+      allowContextList: false
+      caseSensitive: false
+      enumeratedValues:
+        - light
+        - dark
+
+  # Custom qualifier type - resolved by our DensityQualifierTypeFactory
+  # (see src/qualifierTypes/densityQualifierTypeFactory.ts).
+  - name: density
+    systemType: density
+    configuration:
+      allowContextList: false
+
+qualifiers:
+  # Highest priority wins when it matches. Territory beats language beats
+  # theme beats density in this tutorial - picked only for demonstration.
+  #
+  # tokenIsOptional: true on the territory and language qualifiers lets
+  # Lesson 5 demonstrate "tokenless" inference - a plain `CA` or `fr` in
+  # a folder or filename gets resolved to the right qualifier by trying
+  # each token-optional qualifier in turn.
+  - name: currentTerritory
+    typeName: territory
+    token: geo
+    tokenIsOptional: true
+    defaultPriority: 850
+
+  - name: language
+    typeName: language
+    token: lang
+    tokenIsOptional: true
+    defaultPriority: 800
+
+  - name: theme
+    typeName: theme
+    token: theme
+    defaultPriority: 700
+    defaultValue: light
+
+  - name: density
+    typeName: density
+    token: density
+    defaultPriority: 600
+    defaultValue: mdpi
+
+resourceTypes:
+  - name: json
+    typeName: json

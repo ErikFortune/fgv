@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "per-provider-testbed-scenarios cluster — cross-provider continuation forwarding (continuationMessages flows to OpenAI Responses / Gemini / xAI); Gemini function-declaration schema sanitization (recursive strip of additionalProperties + $schema for the OpenAPI 3.0 subset); IAiStreamDone.incompleteReason?: string captures OpenAI/xAI Responses incomplete_details.reason; OpenAI Responses item_id <-> call_id correlation for reasoning models; buildOpenAiContinuation emits required call_id; provider-drift instrumentation on Anthropic and OpenAI Responses adapters (RECOGNIZED_*_EVENTS allowlists + ai-assist:unrecognized-event warn tag)",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

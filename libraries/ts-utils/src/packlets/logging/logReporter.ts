@@ -19,8 +19,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { ILogger, ReporterLogLevel, NoOpLogger, stringifyLogValue } from './logger';
-import { ErrorFormatter, IResultReporter, MessageLogLevel, Success } from '../base';
+import {
+  IDetailLogger,
+  ILogger,
+  isDetailLogger,
+  ReporterLogLevel,
+  NoOpLogger,
+  stringifyLogValue
+} from './logger';
+import { captureResult, ErrorFormatter, IResultReporter, MessageLogLevel, Result, Success } from '../base';
 
 /**
  * A function that formats a value for logging.
@@ -49,7 +56,7 @@ export interface ILogReporterCreateParams<T, TD = unknown> {
  * both {@link Logging.ILogger | ILogger} and {@link IResultReporter | IResultReporter}.
  * @public
  */
-export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T, TD> {
+export class LogReporter<T, TD = unknown> implements IDetailLogger, IResultReporter<T, TD> {
   /**
    * Base logger used to by this reporter.
    * @public
@@ -78,6 +85,17 @@ export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T,
     this.logger = params.logger ?? new NoOpLogger();
     this._valueFormatter = params.valueFormatter ?? LogReporter.tryFormatObject;
     this._messageFormatter = params.messageFormatter ?? ((message, __detail) => message);
+  }
+
+  /**
+   * Creates a default {@link Logging.LogReporter | LogReporter} with a {@link Logging.NoOpLogger | NoOpLogger} with the
+   * supplied parameters, returning both the logger and reporter.
+   * @param logger - Optional logger to use; defaults to a new {@link Logging.NoOpLogger | NoOpLogger} if not provided.
+   * @returns
+   */
+  public static createDefault(logger?: ILogger): Result<LogReporter<unknown>> {
+    logger = logger ?? new NoOpLogger();
+    return captureResult(() => new LogReporter<unknown>({ logger }));
   }
 
   /**
@@ -113,6 +131,28 @@ export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T,
    */
   public error(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
     return this.logger.error(message, ...parameters);
+  }
+
+  /**
+   * {@inheritDoc Logging.IDetailLogger.errorWithDetail}
+   */
+  public errorWithDetail(message: string, detail: unknown): Success<string | undefined> {
+    if (isDetailLogger(this.logger)) {
+      return this.logger.errorWithDetail(message, detail);
+    }
+    this.logger.detail(detail);
+    return this.logger.error(message);
+  }
+
+  /**
+   * {@inheritDoc Logging.IDetailLogger.warnWithDetail}
+   */
+  public warnWithDetail(message: string, detail: unknown): Success<string | undefined> {
+    if (isDetailLogger(this.logger)) {
+      return this.logger.warnWithDetail(message, detail);
+    }
+    this.logger.detail(detail);
+    return this.logger.warn(message);
   }
 
   /**

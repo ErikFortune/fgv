@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "",
+      "type": "none",
+      "packageName": "@fgv/ts-bcp47"
+    }
+  ],
+  "packageName": "@fgv/ts-bcp47",
+  "email": "noreply@anthropic.com"
+}

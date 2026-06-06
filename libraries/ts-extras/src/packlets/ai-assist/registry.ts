@@ -1,0 +1,395 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/**
+ * Centralized provider registry — single source of truth for all AI provider metadata.
+ * @packageDocumentation
+ */
+
+import { fail, Result, succeed } from '@fgv/ts-utils';
+
+import {
+  type AiProviderId,
+  type IAiImageModelCapability,
+  type IAiModelCapabilityConfig,
+  type IAiProviderDescriptor
+} from './model';
+
+// ============================================================================
+// Built-in providers
+// ============================================================================
+
+/**
+ * All known AI provider descriptors. Copy-paste first, then alphabetical.
+ * @internal
+ */
+const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
+  {
+    id: 'copy-paste',
+    label: 'Copy / Paste',
+    buttonLabel: 'AI Assist | Copy',
+    needsSecret: false,
+    apiFormat: 'openai',
+    baseUrl: '',
+    defaultModel: '',
+    supportedTools: [],
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: false,
+    thinkingMode: 'unsupported'
+  },
+  {
+    id: 'anthropic',
+    label: 'Anthropic Claude',
+    buttonLabel: 'AI Assist | Claude',
+    needsSecret: true,
+    apiFormat: 'anthropic',
+    baseUrl: 'https://api.anthropic.com/v1',
+    defaultModel: 'claude-sonnet-4-5-20250929',
+    supportedTools: ['web_search'],
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: true,
+    thinkingMode: 'optional'
+  },
+  {
+    id: 'google-gemini',
+    label: 'Google Gemini',
+    buttonLabel: 'AI Assist | Gemini',
+    needsSecret: true,
+    apiFormat: 'gemini',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    defaultModel: { base: 'gemini-2.5-flash', image: 'gemini-2.5-flash-image' },
+    supportedTools: ['web_search'],
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: true,
+    thinkingMode: 'optional',
+    imageGeneration: [
+      {
+        // Imagen 4 Ultra: max 1 image
+        modelPrefix: 'imagen-4.0-ultra-',
+        format: 'gemini-imagen',
+        acceptsImageReferenceInput: false,
+        supportsQualityParam: false,
+        maxCount: 1,
+        outputParamStyle: 'none',
+        defaultOutputMimeType: 'image/png'
+      },
+      {
+        // All other Imagen 4 models: max 4 images
+        modelPrefix: 'imagen-',
+        format: 'gemini-imagen',
+        acceptsImageReferenceInput: false,
+        supportsQualityParam: false,
+        maxCount: 4,
+        outputParamStyle: 'none',
+        defaultOutputMimeType: 'image/png'
+      },
+      {
+        // Gemini Flash Image: chat-style generateContent
+        modelPrefix: '',
+        format: 'gemini-image-out',
+        acceptsImageReferenceInput: true,
+        supportsQualityParam: false,
+        maxCount: 1,
+        outputParamStyle: 'none',
+        defaultOutputMimeType: 'image/jpeg'
+      }
+    ]
+  },
+  {
+    id: 'groq',
+    label: 'Groq',
+    buttonLabel: 'AI Assist | Groq',
+    needsSecret: true,
+    apiFormat: 'openai',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    defaultModel: 'llama-3.3-70b-versatile',
+    supportedTools: [],
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: false,
+    thinkingMode: 'unsupported'
+  },
+  {
+    id: 'mistral',
+    label: 'Mistral',
+    buttonLabel: 'AI Assist | Mistral',
+    needsSecret: true,
+    apiFormat: 'openai',
+    baseUrl: 'https://api.mistral.ai/v1',
+    defaultModel: 'mistral-large-latest',
+    supportedTools: [],
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: false,
+    thinkingMode: 'unsupported'
+  },
+  {
+    id: 'ollama',
+    label: 'Ollama (self-hosted)',
+    buttonLabel: 'AI Assist | Ollama',
+    needsSecret: false,
+    apiFormat: 'openai',
+    baseUrl: 'http://localhost:11434/v1',
+    defaultModel: '',
+    supportedTools: [],
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: false,
+    thinkingMode: 'unsupported'
+  },
+  {
+    id: 'openai',
+    label: 'OpenAI',
+    buttonLabel: 'AI Assist | OpenAI',
+    needsSecret: true,
+    apiFormat: 'openai',
+    baseUrl: 'https://api.openai.com/v1',
+    defaultModel: { base: 'gpt-4o', image: 'dall-e-3' },
+    supportedTools: ['web_search'],
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: true,
+    thinkingMode: 'optional',
+    imageGeneration: [
+      {
+        modelPrefix: 'gpt-image-',
+        format: 'openai-images',
+        acceptsImageReferenceInput: true,
+        acceptedSizes: ['1024x1024', '1536x1024', '1024x1536', 'auto'],
+        supportsQualityParam: true,
+        acceptedQualities: ['low', 'medium', 'high', 'auto'],
+        maxCount: 10,
+        outputParamStyle: 'output-format',
+        defaultOutputMimeType: 'image/png'
+      },
+      {
+        modelPrefix: 'dall-e-3',
+        format: 'openai-images',
+        acceptsImageReferenceInput: false,
+        acceptedSizes: ['1024x1024', '1792x1024', '1024x1792'],
+        supportsQualityParam: true,
+        acceptedQualities: ['standard', 'hd'],
+        maxCount: 1,
+        outputParamStyle: 'response-format',
+        defaultOutputMimeType: 'image/png'
+      },
+      {
+        modelPrefix: 'dall-e-2',
+        format: 'openai-images',
+        acceptsImageReferenceInput: false,
+        acceptedSizes: ['256x256', '512x512', '1024x1024'],
+        supportsQualityParam: false,
+        maxCount: 10,
+        outputParamStyle: 'response-format',
+        defaultOutputMimeType: 'image/png'
+      },
+      {
+        modelPrefix: '',
+        format: 'openai-images',
+        outputParamStyle: 'response-format',
+        defaultOutputMimeType: 'image/png'
+      }
+    ]
+  },
+  {
+    id: 'openai-compat',
+    label: 'OpenAI-compatible (self-hosted)',
+    buttonLabel: 'AI Assist | OpenAI-compat',
+    needsSecret: false,
+    apiFormat: 'openai',
+    baseUrl: '',
+    defaultModel: '',
+    supportedTools: [],
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: false,
+    thinkingMode: 'unsupported'
+  },
+  {
+    id: 'xai-grok',
+    label: 'xAI Grok',
+    buttonLabel: 'AI Assist | Grok',
+    needsSecret: true,
+    apiFormat: 'openai',
+    baseUrl: 'https://api.x.ai/v1',
+    defaultModel: {
+      base: 'grok-4.3',
+      tools: 'grok-4.3',
+      thinking: 'grok-4.3',
+      image: 'grok-imagine-image-quality'
+    },
+    supportedTools: ['web_search'],
+    corsRestricted: true,
+    streamingCorsRestricted: true,
+    acceptsImageInput: true,
+    thinkingMode: 'optional',
+    imageGeneration: [
+      {
+        // grok-imagine models use JSON edits with image_url objects (different wire format)
+        modelPrefix: 'grok-imagine-',
+        format: 'xai-images-edits',
+        acceptsImageReferenceInput: true,
+        supportsQualityParam: false,
+        maxCount: 10,
+        outputParamStyle: 'response-format',
+        defaultOutputMimeType: 'image/jpeg'
+      },
+      {
+        // catch-all for other xai image models
+        modelPrefix: '',
+        format: 'xai-images',
+        acceptsImageReferenceInput: false,
+        supportsQualityParam: false,
+        maxCount: 10,
+        outputParamStyle: 'response-format',
+        defaultOutputMimeType: 'image/jpeg'
+      }
+    ]
+  }
+];
+
+/**
+ * Index for O(1) lookup by id.
+ * @internal
+ */
+const PROVIDER_BY_ID: ReadonlyMap<string, IAiProviderDescriptor> = new Map(
+  BUILTIN_PROVIDERS.map((d) => [d.id, d])
+);
+
+// ============================================================================
+// Public API
+// ============================================================================
+
+/**
+ * All valid provider ID values, in the same order as the registry.
+ * @public
+ */
+export const allProviderIds: ReadonlyArray<AiProviderId> = BUILTIN_PROVIDERS.map((d) => d.id);
+
+/**
+ * Get all known provider descriptors. Copy-paste first, then alphabetical.
+ * @returns All built-in provider descriptors
+ * @public
+ */
+export function getProviderDescriptors(): ReadonlyArray<IAiProviderDescriptor> {
+  return BUILTIN_PROVIDERS;
+}
+
+/**
+ * Get a provider descriptor by id.
+ * @param id - The provider identifier
+ * @returns The descriptor, or a failure if the provider is unknown
+ * @public
+ */
+export function getProviderDescriptor(id: string): Result<IAiProviderDescriptor> {
+  const descriptor = PROVIDER_BY_ID.get(id);
+  if (!descriptor) {
+    return fail(`unknown AI provider: ${id}`);
+  }
+  return succeed(descriptor);
+}
+
+/**
+ * Whether a provider declares any image-generation capability at all.
+ *
+ * @param descriptor - The provider descriptor
+ * @returns `true` when {@link IAiProviderDescriptor.imageGeneration} has at
+ *   least one entry; `false` otherwise.
+ * @public
+ */
+export function supportsImageGeneration(descriptor: IAiProviderDescriptor): boolean {
+  return (descriptor.imageGeneration?.length ?? 0) > 0;
+}
+
+/**
+ * Resolve the image-generation capability that applies to a given model id
+ * for a provider. Returns the entry from
+ * {@link IAiProviderDescriptor.imageGeneration} whose `modelPrefix` is the
+ * longest prefix of `modelId`. Ties are broken by first-encountered, so rule
+ * order does not matter for correctness — only for tie-breaking among rules
+ * with identical-length prefixes (an unusual case).
+ *
+ * @param descriptor - The provider descriptor
+ * @param modelId - The resolved image model id
+ * @returns The matching capability, or `undefined` when no rule matches or
+ *   the provider declares no image-generation capabilities.
+ * @public
+ */
+export function resolveImageCapability(
+  descriptor: IAiProviderDescriptor,
+  modelId: string
+): IAiImageModelCapability | undefined {
+  return (descriptor.imageGeneration ?? [])
+    .filter((cap) => modelId.startsWith(cap.modelPrefix))
+    .reduce<IAiImageModelCapability | undefined>(
+      (best, cap) => (best && best.modelPrefix.length >= cap.modelPrefix.length ? best : cap),
+      undefined
+    );
+}
+
+// ============================================================================
+// Default model capability config
+// ============================================================================
+
+/**
+ * Default capability config used by `callProviderListModels` when callers
+ * don't supply their own. Patterns are intentionally narrow — false
+ * positives are worse than missing a model. Caller can override per call
+ * via {@link IProviderListModelsParams.capabilityConfig}.
+ *
+ * @public
+ */
+export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
+  perProvider: {
+    openai: [
+      { idPattern: /^dall-e/, capabilities: ['image-generation'] },
+      { idPattern: /^gpt-image/, capabilities: ['image-generation'] },
+      { idPattern: /^gpt-5/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      { idPattern: /^gpt-4/, capabilities: ['chat', 'tools', 'vision'] },
+      { idPattern: /^gpt-3\.5/, capabilities: ['chat'] },
+      { idPattern: /^o\d/, capabilities: ['chat', 'tools', 'thinking'] }
+    ],
+    'xai-grok': [
+      { idPattern: /-image/, capabilities: ['image-generation'] },
+      { idPattern: /^grok-4\.3/, capabilities: ['chat', 'tools', 'thinking'] },
+      { idPattern: /^grok-4$/, capabilities: ['chat', 'tools', 'thinking'] },
+      { idPattern: /^grok-4/, capabilities: ['chat', 'tools', 'vision'] },
+      { idPattern: /^grok-3-mini/, capabilities: ['chat', 'tools', 'thinking'] },
+      { idPattern: /^grok-3/, capabilities: ['chat', 'tools'] },
+      { idPattern: /^grok-2/, capabilities: ['chat', 'vision'] }
+    ],
+    'google-gemini': [
+      { idPattern: /^imagen/, capabilities: ['image-generation'] },
+      { idPattern: /^gemini-.*-image/, capabilities: ['image-generation'] },
+      { idPattern: /^gemini-2\.5/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      { idPattern: /^gemini-/, capabilities: ['chat', 'tools', 'vision'] }
+    ],
+    anthropic: [
+      { idPattern: /^claude-opus-4/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      { idPattern: /^claude-sonnet-4/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      { idPattern: /^claude-/, capabilities: ['chat', 'tools', 'vision'] }
+    ],
+    groq: [{ idPattern: /./, capabilities: ['chat'] }],
+    mistral: [{ idPattern: /./, capabilities: ['chat'] }]
+  }
+};

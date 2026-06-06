@@ -21,17 +21,35 @@
  */
 
 /* c8 ignore start - Browser-specific export used conditionally in package.json */
+import * as AiAssist from './packlets/ai-assist';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import * as CryptoUtils from './packlets/crypto-utils/index.browser';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import * as Csv from './packlets/csv/index.browser';
 import * as Experimental from './packlets/experimental';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import * as Hash from './packlets/hash/index.browser';
+import * as Mustache from './packlets/mustache';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import * as RecordJar from './packlets/record-jar/index.browser';
+import * as Yaml from './packlets/yaml';
 import * as ZipFileTree from './packlets/zip-file-tree';
 
 import { Converters } from './packlets/conversion';
 
-// Browser-safe exports - Node.js crypto-based hash excluded (using CRC32 instead)
-export { Converters, Csv, Experimental, Hash, RecordJar, ZipFileTree };
+// Browser-safe exports - Node.js crypto-based providers excluded
+// Use BrowserCryptoProvider from @fgv/ts-web-extras for browser crypto
+export {
+  AiAssist,
+  Converters,
+  CryptoUtils,
+  CryptoUtils as Crypto,
+  Csv,
+  Experimental,
+  Hash,
+  Mustache,
+  RecordJar,
+  Yaml,
+  ZipFileTree
+};
 /* c8 ignore stop */
