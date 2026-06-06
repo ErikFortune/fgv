@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add chatStructured to @fgv/ts-extras-ollama (O-4): grammar-constrained structured output via /api/chat format, with one-declaration JsonSchema no-drift (toJson wire format + validate reply), a draft-07 format sanitizer, and AbortSignal support. Native embed is held. Adds README quick-start and LIBRARY_CAPABILITIES entry.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras-ollama"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-ollama",
+  "email": "ErikFortune@outlook.com"
+}

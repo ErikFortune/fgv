@@ -4,7 +4,8 @@ Result-integration boundary over the official [`ollama`](https://github.com/olla
 library for Node-side consumers. Owns **exactly and only** the native-Ollama surface that the
 OpenAI-compatible `/v1` endpoint cannot express.
 
-**Status:** in development (the `ollama-native` stream, phases O-1…O-4).
+**Status:** v0.1 surface complete (the `ollama-native` stream, phases O-1…O-4). Native `embed` is
+held pending the cross-provider `ai-assist-embeddings` design.
 
 ---
 
@@ -32,6 +33,51 @@ and call `callProviderCompletion` / `callProviderCompletionStream` / `executeCli
 | `deleteModel(client, model)` | `client.delete(...)` (`/api/delete`) | O-2 |
 | `pullModel(client, params)` | `client.pull({ stream: true })` (`/api/pull`) | O-3 |
 | `chatStructured(client, params)` | `client.chat({ format })` (`/api/chat`) | O-4 |
+
+## Quick start
+
+```typescript
+import { createOllamaClient, listModels, pullModel, chatStructured } from '@fgv/ts-extras-ollama';
+import { JsonSchema } from '@fgv/ts-json-base';
+
+// Construct a client (defaults to http://127.0.0.1:11434). Returns Result<IOllamaClient>.
+const client = createOllamaClient().orThrow();
+
+// Enumerate locally-pulled models with GGUF metadata the /v1 layer can't surface.
+const models = await listModels(client);
+if (models.isSuccess()) {
+  for (const m of models.value) {
+    console.log(`${m.name} — ${m.details.parameterSize} ${m.details.quantizationLevel}, ${m.size} bytes`);
+  }
+}
+
+// Pull a model with streamed progress; the Result resolves when the stream terminates.
+const pulled = await pullModel(client, {
+  model: 'llama3.1:8b',
+  onProgress: (p) => console.log(p.status, p.completed, '/', p.total)
+});
+
+// Grammar-constrained structured output — one schema is BOTH the wire `format` and the validator.
+const personSchema = JsonSchema.object({
+  name: JsonSchema.string(),
+  age: JsonSchema.integer()
+});
+
+const structured = await chatStructured(client, {
+  model: 'llama3.1:8b',
+  messages: [{ role: 'user', content: 'Invent a person as JSON.' }],
+  schema: personSchema // T is derived via JsonSchema.Static<typeof personSchema> — no cast
+});
+if (structured.isSuccess()) {
+  // structured.value.value is { name: string; age: number }, validated by the same schema.
+  console.log(structured.value.value.name, structured.value.value.age);
+}
+```
+
+For **text completion / streaming / tool-use** against the same daemon, use
+`@fgv/ts-extras/ai-assist` (`callProviderCompletion` / `callProviderCompletionStream` /
+`executeClientToolTurn`) with a provider `endpoint` of `http://localhost:11434/v1` — that path is
+not duplicated here.
 
 ## Explicitly NOT in scope
 
