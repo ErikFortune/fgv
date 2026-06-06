@@ -151,7 +151,9 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
   });
 
   afterEach(async () => {
-    await closeMcpSession(session);
+    // Assert teardown succeeds — a regression in close/transport would otherwise pass silently
+    // (and could leak handles).
+    expect(await closeMcpSession(session)).toSucceedWith(true);
     await server.close();
   });
 

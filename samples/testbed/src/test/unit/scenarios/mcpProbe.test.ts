@@ -22,6 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import { Logging, type Result, fail, succeed } from '@fgv/ts-utils';
+import { JsonSchema } from '@fgv/ts-json-base';
 import type { IAdaptMcpToolsResult, IMcpSession } from '@fgv/ts-extras-mcp';
 
 import {
@@ -34,11 +35,16 @@ import {
 import { mcpProbeScenario } from '../../../scenarios/mcpProbe';
 import type { IScenarioContext } from '../../../shell';
 
-/** Builds a minimal adapted-tool entry for report-formatting tests (intentionally partial). */
+/**
+ * Builds a structurally valid adapted-tool entry for report-formatting tests — a real
+ * `JsonSchema` validator + a no-op `execute`, so the type is checked for real (no `as unknown as`
+ * that could mask an `IAiClientTool` / `IAdaptMcpToolsResult` shape regression).
+ */
 function adaptedTool(name: string): IAdaptMcpToolsResult['tools'][number] {
   return {
-    config: { type: 'client_tool', name, description: name, parametersSchema: {} }
-  } as unknown as IAdaptMcpToolsResult['tools'][number];
+    config: { type: 'client_tool', name, description: name, parametersSchema: JsonSchema.object({}) },
+    execute: async () => succeed(undefined)
+  };
 }
 
 // ---------------------------------------------------------------------------
