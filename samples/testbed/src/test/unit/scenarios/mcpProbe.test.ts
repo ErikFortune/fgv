@@ -22,6 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import { Logging, type Result, fail, succeed } from '@fgv/ts-utils';
+import { JsonSchema } from '@fgv/ts-json-base';
 import type { IAdaptMcpToolsResult, IMcpSession } from '@fgv/ts-extras-mcp';
 
 import {
@@ -33,6 +34,18 @@ import {
 } from '../../../scenarios/mcpProbe/probe';
 import { mcpProbeScenario } from '../../../scenarios/mcpProbe';
 import type { IScenarioContext } from '../../../shell';
+
+/**
+ * Builds a structurally valid adapted-tool entry for report-formatting tests — a real
+ * `JsonSchema` validator + a no-op `execute`, so the type is checked for real (no `as unknown as`
+ * that could mask an `IAiClientTool` / `IAdaptMcpToolsResult` shape regression).
+ */
+function adaptedTool(name: string): IAdaptMcpToolsResult['tools'][number] {
+  return {
+    config: { type: 'client_tool', name, description: name, parametersSchema: JsonSchema.object({}) },
+    execute: async () => succeed(undefined)
+  };
+}
 
 // ---------------------------------------------------------------------------
 // parseMcpProbeSpecFromEnv
@@ -113,14 +126,9 @@ describe('parseMcpProbeSpecFromEnv', () => {
 // ---------------------------------------------------------------------------
 
 describe('formatMcpProbeReport', () => {
-  const adapted = (name: string): IAdaptMcpToolsResult['tools'][number] =>
-    ({
-      config: { type: 'client_tool', name, description: name, parametersSchema: {} }
-    } as unknown as IAdaptMcpToolsResult['tools'][number]);
-
   test('reports a mixed catalog with identity', () => {
     const result: IAdaptMcpToolsResult = {
-      tools: [adapted('alpha')],
+      tools: [adaptedTool('alpha')],
       skipped: [{ name: 'beta', reason: '#/properties/x: pattern', schema: { type: 'object' } }]
     };
     const report = formatMcpProbeReport('HTTP http://h/mcp', { name: 'srv', version: '2.0' }, result);
@@ -135,7 +143,7 @@ describe('formatMcpProbeReport', () => {
   });
 
   test('reports an all-clean catalog with no identity', () => {
-    const result: IAdaptMcpToolsResult = { tools: [adapted('only')], skipped: [] };
+    const result: IAdaptMcpToolsResult = { tools: [adaptedTool('only')], skipped: [] };
     const report = formatMcpProbeReport('stdio "x"', undefined, result);
     expect(report).toMatch(/Identity: \(not reported\)/);
     expect(report).toMatch(/Skipped[^\n]*\(0\):\n {2}\(none\)/);
@@ -168,24 +176,62 @@ describe('runMcpProbe', () => {
     return { deps, close };
   }
 
-  test('connects, adapts, formats the report (ALL skips), and closes the session', async () => {
-    // Two skips: Constraint 2 requires the report enumerate EVERY adaptation error, not just one.
+  test('connects, adapts, and prints the per-tool adapt/skip report for EVERY rejection class', async () => {
+    // Constraint 2: the probe must enumerate ALL adaptation errors, with the raw schema + reason
+    // per skip. The mixed result below mirrors the exact `IAdaptMcpToolsResult` shape that the real
+    // `adaptMcpTools` emits from a real server — proven against an in-memory MCP server in
+    // `@fgv/ts-extras-mcp`'s endToEnd.test.ts (one skip per fromJson-rejected feature). Composed,
+    // those two tests are an end-to-end proof: real server → real adapter output → real probe report.
     const adaptResult: IAdaptMcpToolsResult = {
-      tools: [],
+      tools: [adaptedTool('echo'), adaptedTool('ping')],
       skipped: [
-        { name: 'beta', reason: 'pattern', schema: { type: 'object' } },
-        { name: 'gamma', reason: 'oneOf', schema: { type: 'object', oneOf: [] } }
+        {
+          name: 'ref_tool',
+          reason: "#/properties/x: unsupported JSON Schema keyword '$ref'",
+          schema: { type: 'object', properties: { x: { $ref: '#/$defs/Foo' } } }
+        },
+        {
+          name: 'oneof_tool',
+          reason: "#/properties/x: unsupported JSON Schema keyword 'oneOf'",
+          schema: { type: 'object', properties: { x: { oneOf: [] } } }
+        },
+        {
+          name: 'anyof_tool',
+          reason: "#/properties/x: unsupported JSON Schema keyword 'anyOf'",
+          schema: { type: 'object', properties: { x: { anyOf: [] } } }
+        },
+        {
+          name: 'pattern_tool',
+          reason: "#/properties/code: unsupported JSON Schema keyword 'pattern'",
+          schema: { type: 'object', properties: { code: { type: 'string', pattern: '^[A-Z]+$' } } }
+        },
+        {
+          name: 'union_tool',
+          reason: "#/properties/x: union 'type' arrays are not supported",
+          schema: { type: 'object', properties: { x: { type: ['string', 'null'] } } }
+        }
       ]
     };
     const { deps, close } = makeDeps({ adapt: jest.fn(async () => succeed(adaptResult)) });
-    const logger = new Logging.InMemoryLogger('all');
 
-    expect(await runMcpProbe(stdioSpec, deps, logger)).toSucceedAndSatisfy((report: string) => {
-      expect(report).toMatch(/stdio "cmd --flag"/);
-      expect(report).toMatch(/Identity: srv@1.0/);
-      expect(report).toMatch(/✗ beta/);
-      expect(report).toMatch(/✗ gamma/);
-    });
+    expect(await runMcpProbe(stdioSpec, deps, new Logging.InMemoryLogger())).toSucceedAndSatisfy(
+      (report: string) => {
+        expect(report).toMatch(/stdio "cmd --flag"/);
+        expect(report).toMatch(/Identity: srv@1.0/);
+        expect(report).toMatch(/Tools discovered: 7 — 2 adapted, 5 skipped/);
+        // Adapted tools listed.
+        expect(report).toMatch(/✓ echo/);
+        expect(report).toMatch(/✓ ping/);
+        // EVERY skipped tool surfaced with its name, JSON-pointer reason, AND raw schema verbatim.
+        for (const skipped of adaptResult.skipped) {
+          expect(report).toContain(`✗ ${skipped.name}`);
+          expect(report).toContain(`reason: ${skipped.reason}`);
+          expect(report).toContain(`schema: ${JSON.stringify(skipped.schema)}`);
+        }
+        // The "so we can extend fromJson later" framing is present.
+        expect(report).toMatch(/additively widened in @fgv\/ts-json-base/);
+      }
+    );
     expect(close).toHaveBeenCalledTimes(1);
   });
 
