@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "New package: Result-integration boundary over `@modelcontextprotocol/sdk` (MCP). Connect to MCP servers, discover tools, and adapt each into an `AiAssist.IAiClientTool` (from `@fgv/ts-extras`) that drops directly into `AiAssist.executeClientToolTurn` — making any MCP server's tools callable across all four cloud providers. Surface: `createStdioTransport`/`createHttpTransport`, `connectMcpSession`/`closeMcpSession`, `listMcpTools` (cursor-paginated)/`callMcpTool` (text-block projection; `isError`→`Result.fail`), and the headline `adaptMcpTools` which gracefully degrades on tools whose `inputSchema` is outside the `JsonSchema.fromJson` subset (excluded from `tools`, surfaced on `skipped` with the raw schema + JSON-pointer reason, and NOISY-warned via the injected logger). All SDK imports isolated to one file. Node-only at v0.1.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras-mcp"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "ErikFortune@outlook.com"
+}
