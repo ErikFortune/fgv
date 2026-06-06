@@ -137,14 +137,6 @@ See `.ai/tasks/completed/2026-06/ts-prompt-assist-observability/README.md` for t
 
 **Remaining future scope (carried forward):**
 
-### `RetainingLogger` refactor to compose `RetainingRingBuffer`
-
-**Status: committed fast-follow, brief queued at `.ai/tasks/completed/2026-06/retaining-logger-ring-buffer-refactor/`.** Phase B explicitly deferred this refactor out of Phase C to keep the implementation additive. Commission immediately after the observability cluster closes to `release`. The deferral is sound **only if this commission actually lands** — otherwise the two ring implementations (`RetainingLogger`'s hand-rolled internal ring + the new `RetainingRingBuffer<T>`) drift, and the Phase A Q1 falsifiability argument retroactively degrades from "abstraction earns its keep via existing second consumer" to "hypothetical second consumer."
-
-The refactor is internal-only: `RetainingLogger`'s public surface (`ILogger` / `LogReporter` / `getRecords` / `lastSeq` / `clear`) is unchanged. The load-bearing check is that `etc/ts-utils.api.md` regenerates as a no-op.
-
-**Reference:** `.ai/tasks/completed/2026-06/retaining-logger-ring-buffer-refactor/brief.md`.
-
 ### `MultiPromptObserver` standalone class
 
 Phase B OQ-7 deferred to v0.2: the library itself is the fan-out point today (it holds the `observers` array and runs `_observe`). Add a standalone `MultiPromptObserver` only if a consumer surfaces a need to compose observers *outside* the library (e.g., a tenant-aware fan-out that wraps multiple sub-observers before injection). File the use case as a finding when it appears.

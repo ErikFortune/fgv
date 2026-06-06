@@ -20,12 +20,9 @@
  * SOFTWARE.
  */
 import { MessageLogLevel, Success, captureResult, succeed } from '../base';
+import { IDetailLogger, ILogger, ReporterLogLevel, isDetailLogger } from '../logging-interface';
 
-/**
- * The level of logging to be used.
- * @public
- */
-export type ReporterLogLevel = 'all' | 'detail' | 'info' | 'warning' | 'error' | 'silent';
+export { isDetailLogger, ReporterLogLevel, ILogger, IDetailLogger };
 
 /**
  * Compares two log levels.
@@ -76,100 +73,6 @@ export function stringifyLogValue(value: unknown, maxLength?: number): string {
       .orDefault(str);
   }
   return str;
-}
-
-/**
- * Generic Result-aware logger interface with multiple levels of logging.
- * @public
- */
-export interface ILogger {
-  /**
-   * The level of logging to be used.
-   */
-  readonly logLevel: ReporterLogLevel;
-
-  /**
-   * Logs a message at the given level.
-   * @param level - The level of the message.
-   * @param message - The message to log.
-   * @param parameters - The parameters to log.
-   * @returns `Success` with the logged message if the level is enabled, or
-   * `Success` with `undefined` if the message is suppressed.
-   */
-  log(level: MessageLogLevel, message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-
-  /**
-   * Logs a detail message.
-   * @param message - The message to log.
-   * @param parameters - The parameters to log.
-   * @returns `Success` with the logged message if the level is enabled, or
-   * `Success` with `undefined` if the message is suppressed.
-   */
-  detail(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-
-  /**
-   * Logs an info message.
-   * @param message - The message to log.
-   * @param parameters - The parameters to log.
-   * @returns `Success` with the logged message if the level is enabled, or
-   * `Success` with `undefined` if the message is suppressed.
-   */
-  info(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-
-  /**
-   * Logs a warning message.
-   * @param message - The message to log.
-   * @param parameters - The parameters to log.
-   * @returns `Success` with the logged message if the level is enabled, or
-   * `Success` with `undefined` if the message is suppressed.
-   */
-  warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-
-  /**
-   * Logs an error message.
-   * @param message - The message to log.
-   * @param parameters - The parameters to log.
-   * @returns `Success` with the logged message if the level is enabled, or
-   * `Success` with `undefined` if the message is suppressed.
-   */
-  error(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-}
-
-/**
- * Extended logger interface that supports logging a short summary message at a
- * primary level (error/warn) while emitting the full detail at `detail` level.
- *
- * The detail is suppressed by default (requires log level `'detail'` or `'all'`),
- * keeping the primary log clean while preserving the full context for debugging.
- * @public
- */
-export interface IDetailLogger extends ILogger {
-  /**
-   * Logs a short error summary at `error` level, then emits `detail` at `detail` level.
-   * @param message - Short human-readable summary.
-   * @param detail - Full detail (e.g. raw converter error) logged at `detail` level.
-   */
-  errorWithDetail(message: string, detail: unknown): Success<string | undefined>;
-
-  /**
-   * Logs a short warning summary at `warning` level, then emits `detail` at `detail` level.
-   * @param message - Short human-readable summary.
-   * @param detail - Full detail logged at `detail` level.
-   */
-  warnWithDetail(message: string, detail: unknown): Success<string | undefined>;
-}
-
-/**
- * Type guard that checks whether a logger implements {@link IDetailLogger}.
- * @param logger - The logger to check.
- * @returns `true` if the logger implements `IDetailLogger`.
- * @public
- */
-export function isDetailLogger(logger: ILogger): logger is IDetailLogger {
-  return (
-    typeof (logger as IDetailLogger).errorWithDetail === 'function' &&
-    typeof (logger as IDetailLogger).warnWithDetail === 'function'
-  );
 }
 
 /**
