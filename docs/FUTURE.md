@@ -158,3 +158,20 @@ Erik's framing (2026-06-05): "consider using ts-res instead of hardcoding custom
 **Why deferred:** priority uncertain. The default's narrow semantics are documented (`IPromptObservationQuery.qualifiers` TSDoc explicitly cites the divergence and the injection point). Commission when a consumer surfaces a real need for similarity-aware observability queries, OR proactively if the broader posture warrants it.
 
 **Reference:** PR #460 review thread on `promptObservationStore.ts:195`; the `_resolveCandidates` path in `promptLibrary.ts` is the reference for what a ts-res-equivalent resolver needs to do.
+
+---
+
+## Browser-bundle canary for tree-shaking / node-barrel correctness
+
+**Status: parking lot — priority uncertain. Added 2026-06-06 alongside the removal of `apps/ts-utils-browser-test`.**
+
+`apps/ts-utils-browser-test` was a Vite app that imported `@fgv/ts-utils` in a browser-bundle context — a lightweight smoke test that the library contained no accidental `node:`-only barrel deps (`node:crypto`, `node:fs`). It was removed (on `main` via PR #464, and on `release` via the same surgical deletion) because its test half never ran in CI, it pointed at a pure-computation library with no node-only barrel leaks of its own, and it generated recurring Vite Dependabot noise disproportionate to its coverage value.
+
+**What was lost:** a CI browser-bundle (Vite) smoke test of `@fgv/ts-utils` — the narrowest possible target, since `ts-utils` has no `node:*` imports.
+
+**Recommendation if revived — target `@fgv/ts-extras` and `@fgv/ts-web-extras` instead.** That is where a browser-bundle canary earns its keep:
+
+- `@fgv/ts-extras` contains `NodeCryptoProvider` (`node:crypto`), filesystem helpers (`node:fs`), and other Node-only code; a misplaced barrel export would explode a browser bundle at runtime.
+- `@fgv/ts-web-extras` is the browser complement, and its correctness depends on `ts-extras` not bleeding Node-only code into the shared surface.
+
+A future canary should build a minimal Vite/webpack bundle importing the browser-safe entry points of `@fgv/ts-extras` + `@fgv/ts-web-extras`, assert it bundles without `node:*` polyfill errors, **actually run in CI** (do not add it otherwise), and live in a package excluded from the publishable version policy so it generates no change-file noise.
