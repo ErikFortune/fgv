@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: executeClientToolTurn now honors the endpoint override (new optional IExecuteClientToolTurnParams.endpoint), routed through resolveEffectiveBaseUrl — client-tool turns can target a local Ollama / LAN OpenAI-compatible server, matching callProviderCompletion / callProviderCompletionStream",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "ErikFortune@outlook.com"
+}
