@@ -691,3 +691,19 @@ coverage. Total estimate: well within a single focused stream.
 - [ ] Request-body tests prove taskType/dimensions reach the wire (and are absent on no-op providers).
 - [ ] `code-reviewer` run before coverage closure; findings resolved/dispositioned.
 - [ ] `LIBRARY_CAPABILITIES.md` decision-shortcut + Ollama-redundancy note landed.
+
+---
+
+## 14. Orchestrator review amendments (2026-06-07) — apply during implementation
+
+Erik reviewed and **blessed** the design (build it). Implement as written, with these adjustments folded in:
+
+1. **Naming → `AiEmbeddingApiFormat`** (not `AiEmbeddingFormat`), for symmetry with the existing `AiApiFormat` / `AiImageApiFormat`. Members unchanged (`'openai-embeddings' | 'gemini-embeddings'`).
+2. **Empty-input behavior — pin it (§3.1 was ambiguous):** short-circuit an empty `input` array to `succeed({ vectors: [], model: <resolved>, dimensions: 0 })` with **no wire call** (most providers HTTP-400 on empty input). Cover with a test.
+3. **`maxBatchSize` exceeded → `fail` up front** (no auto-chunking). Fine for v1; file transparent batch-chunking as a `docs/FUTURE.md` follow-up (some RAG consumers will exceed 2048).
+4. **Self-hosted `listModels` capability caveat:** the `ollama`/`openai-compat` catch-all in `DEFAULT_MODEL_CAPABILITY_CONFIG` tags every model `chat` (can't id-detect `nomic-embed-text`), so a self-hosted embedding model won't auto-surface as `embedding` capability. Don't try to fix it; **document the limitation** in the recipe (caller supplies the model + can override `capabilityConfig`).
+5. **`encoding_format: 'float'` is a known assumption** — a strict openai-compat server *could* reject an unknown field. Note it in the per-provider mapping; low risk.
+
+**OQ-7 (cohesion) → RESOLVED: yes.** The cloud-HTTP embedding leg belongs in ai-assist (the research-note rejection was about the *in-process* leg). Proceed.
+
+**Sequencing / base context:** this branch is now re-baselined on a `release` that includes the **message-ordering** unification (#480: every *turn* entry point takes `{ system?, messages }`). The embedding primitive is a **new, separate** entry point taking `input: string | string[]` (NOT conversation messages), so the unification does not change the embedding surface — but **follow the post-message-ordering code structure** of the sibling `callProvider*` functions (params-interface shape, `resolveEffectiveBaseUrl` + model/capability resolution, the proxy mirror) so the new code matches current conventions, not a stale snapshot. The **Ollama-redundancy verdict is settled** (native embed CUT from Ollama B — already shipped without it); this primitive is Ollama's only embedding path via `/v1`.
