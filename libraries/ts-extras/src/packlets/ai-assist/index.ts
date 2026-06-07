@@ -6,6 +6,7 @@
 export {
   AiPrompt,
   type AiModelCapability,
+  allModelCapabilities,
   type AiProviderId,
   type AiServerToolType,
   type AiServerToolConfig,
@@ -22,6 +23,12 @@ export {
   type IChatRequest,
   type AiApiFormat,
   type AiImageApiFormat,
+  type AiEmbeddingApiFormat,
+  type AiEmbeddingTaskType,
+  type IAiEmbeddingModelCapability,
+  type IAiEmbeddingParams,
+  type IAiEmbeddingUsage,
+  type IAiEmbeddingResult,
   type IAiImageModelCapability,
   type IAiProviderDescriptor,
   type IAiAssistProviderConfig,
@@ -106,6 +113,8 @@ export {
   getProviderDescriptor,
   resolveImageCapability,
   supportsImageGeneration,
+  resolveEmbeddingCapability,
+  supportsEmbedding,
   DEFAULT_MODEL_CAPABILITY_CONFIG
 } from './registry';
 
