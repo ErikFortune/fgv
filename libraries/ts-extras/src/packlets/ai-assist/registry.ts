@@ -195,8 +195,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       },
       {
         modelPrefix: '',
-        format: 'openai-embeddings',
-        maxBatchSize: 2048
+        format: 'openai-embeddings'
       }
     ],
     imageGeneration: [

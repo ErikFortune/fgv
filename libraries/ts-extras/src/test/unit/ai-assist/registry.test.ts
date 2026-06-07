@@ -259,6 +259,12 @@ describe('AiAssist.registry', () => {
     test('openai declares a text-embedding-3 default and a dimensions-capable prefix', () => {
       expect(AiAssist.getProviderDescriptor('openai')).toSucceedAndSatisfy((desc) => {
         expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('text-embedding-3-small');
+        expect(AiAssist.resolveEmbeddingCapability(desc, 'text-embedding-3-small')).toMatchObject({
+          modelPrefix: 'text-embedding-3',
+          format: 'openai-embeddings',
+          supportsDimensions: true,
+          maxBatchSize: 2048
+        });
       });
     });
 
@@ -313,6 +319,10 @@ describe('AiAssist.registry', () => {
       });
       expect(
         AiAssist.resolveEmbeddingCapability(descriptor, 'text-embedding-ada-002')?.supportsDimensions
+      ).toBeUndefined();
+      // Catch-all carries no batch-size guard (matches design §5.1).
+      expect(
+        AiAssist.resolveEmbeddingCapability(descriptor, 'text-embedding-ada-002')?.maxBatchSize
       ).toBeUndefined();
     });
 
