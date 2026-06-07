@@ -29,7 +29,7 @@
 
 import { fail, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 
-import { splitChatRequest } from '../chatRequestBuilders';
+import { normalizeOutboundMessages, splitChatRequest } from '../chatRequestBuilders';
 import { type IAiStreamEvent } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { IProviderCompletionStreamParams, openSseConnection, validateEventPayload } from './common';
@@ -150,7 +150,7 @@ export async function callProxiedCompletionStream(
   const body: Record<string, unknown> = {
     providerId: descriptor.id,
     apiKey,
-    messages,
+    messages: normalizeOutboundMessages(splitResult.value),
     /* c8 ignore next 1 - defensive: temperature always uses default 0.7 in proxy streaming tests */
     temperature: temperature ?? 0.7,
     stream: true

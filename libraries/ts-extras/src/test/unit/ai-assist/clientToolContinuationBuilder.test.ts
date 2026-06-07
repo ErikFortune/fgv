@@ -708,6 +708,16 @@ describe('executeClientToolTurn', () => {
     expect(result).toFailWith(/does not accept image input/i);
   });
 
+  test('fails fast when no model resolves (parity with the direct entry points)', () => {
+    const result = executeClientToolTurn({
+      descriptor: { ...makeAnthropicDescriptor(), defaultModel: '' },
+      apiKey: 'test-key',
+      ...testPrompt.toRequest(),
+      clientTools: [makeMemoryTool(async () => 'irrelevant')] as IAiClientTool[]
+    });
+    expect(result).toFailWith(/no model resolved/i);
+  });
+
   describe('client tools reach the provider (P1-1 regression)', () => {
     test('Anthropic: request body tools array contains input_schema entry for client tool', async () => {
       let capturedBody: Record<string, unknown> | undefined;

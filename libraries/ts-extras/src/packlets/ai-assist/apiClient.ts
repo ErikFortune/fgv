@@ -64,6 +64,7 @@ import {
   buildMessages,
   buildOpenAiChatUserContent,
   buildOpenAiResponsesUserContent,
+  normalizeOutboundMessages,
   splitChatRequest
 } from './chatRequestBuilders';
 import { bearerAuthHeader, resolveEffectiveBaseUrl } from './endpoint';
@@ -738,7 +739,6 @@ async function callGeminiCompletion(
  * Calls the appropriate chat completion API for a given provider. Routes by
  * `apiFormat`: `'openai'` (xAI/OpenAI/Groq/Mistral — switches to Responses API
  * when tools are set), `'anthropic'`, or `'gemini'`.
- * @param params - Request parameters (descriptor, API key, system + messages, optional tools)
  * @public
  */
 export async function callProviderCompletion(
@@ -1910,7 +1910,7 @@ export async function callProxiedCompletion(
   const body: Record<string, unknown> = {
     providerId: descriptor.id,
     apiKey,
-    messages,
+    messages: normalizeOutboundMessages(splitResult.value),
     temperature: temperature ?? 0.7
   };
   if (system !== undefined) {

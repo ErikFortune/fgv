@@ -1053,6 +1053,23 @@ describe('callProxiedCompletionStream', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  test('drops attachments from history turns, keeping only the current turn in the proxy body', async () => {
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      messages: [
+        { role: 'user', content: 'old', attachments: [{ mimeType: 'image/png', base64: 'HISTORY' }] },
+        { role: 'user', content: 'now', attachments: [{ mimeType: 'image/png', base64: 'CURRENT' }] }
+      ]
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.messages).toEqual([
+      { role: 'user', content: 'old' },
+      { role: 'user', content: 'now', attachments: [{ mimeType: 'image/png', base64: 'CURRENT' }] }
+    ]);
+  });
+
   test('rejects attachments when the provider does not accept image input (no proxy call)', async () => {
     const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
       descriptor: makeDescriptor({ acceptsImageInput: false }),

@@ -116,6 +116,23 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  test('drops attachments from history turns, keeping only the current turn in the proxy body', async () => {
+    mockFetchResponse({ content: 'ok' });
+    await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      messages: [
+        { role: 'user', content: 'old', attachments: [{ mimeType: 'image/png', base64: 'HISTORY' }] },
+        { role: 'user', content: 'now', attachments: [{ mimeType: 'image/png', base64: 'CURRENT' }] }
+      ]
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.messages).toEqual([
+      { role: 'user', content: 'old' },
+      { role: 'user', content: 'now', attachments: [{ mimeType: 'image/png', base64: 'CURRENT' }] }
+    ]);
+  });
+
   test('rejects attachments when the provider does not accept image input', async () => {
     global.fetch = jest.fn();
     const result = await AiAssist.callProxiedCompletion('http://localhost:3001', {

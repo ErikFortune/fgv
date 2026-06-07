@@ -74,6 +74,23 @@ export function splitChatRequest(
 }
 
 /**
+ * Rebuilds the ordered messages for a proxy wire body so that only the current
+ * turn can carry attachments — history (non-current) messages are reduced to
+ * `{ role, content }`. The direct per-provider builders already drop attachments
+ * on history turns (only the current user turn's attachments are honored), so
+ * normalizing here keeps the proxy wire shape consistent with the direct paths
+ * and avoids transmitting attachment payloads the upstream provider would ignore.
+ *
+ * @internal
+ */
+export function normalizeOutboundMessages(split: ISplitChatRequest): IChatMessage[] {
+  return [
+    ...split.head.map((m) => ({ role: m.role, content: m.content })),
+    ...split.prompt.toRequest().messages
+  ];
+}
+
+/**
  * Converter for a rawTail message entry. Narrows a `JsonObject` to
  * `{ role: string; content: string | unknown[] }` at runtime using the
  * Converter pattern. Entries that fail validation are silently skipped — the

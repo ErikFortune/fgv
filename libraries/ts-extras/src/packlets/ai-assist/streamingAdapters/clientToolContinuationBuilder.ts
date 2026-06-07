@@ -449,6 +449,9 @@ export function executeClientToolTurn(
 
   const effectiveTemperature = temperature ?? 0.7;
   const resolvedModel = model ?? resolveModel(descriptor.defaultModel);
+  if (resolvedModel.length === 0) {
+    return fail(`provider "${descriptor.id}": no model resolved; pass model or set descriptor.defaultModel`);
+  }
   const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
   if (baseUrlResult.isFailure()) {
     return fail(baseUrlResult.message);
