@@ -122,10 +122,6 @@ export interface IProviderCompletionParams extends IChatRequest {
 // ============================================================================
 
 /**
- * Makes an HTTP request and returns the parsed JSON, or a failure.
- * @internal
- */
-/**
  * Makes a multipart/form-data POST request and returns the parsed JSON, or a
  * failure. The Content-Type header (with boundary) is set automatically by
  * `fetch` from the `FormData` body — callers must NOT pass it explicitly.
