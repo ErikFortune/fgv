@@ -27,9 +27,68 @@
  */
 
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
-import { type Converter, Converters } from '@fgv/ts-utils';
+import { type Converter, Converters, fail, Result, succeed } from '@fgv/ts-utils';
 
 import { AiPrompt, type IAiImageAttachment, type IChatMessage, toDataUrl } from './model';
+
+/**
+ * The result of splitting an {@link AiAssist.IChatRequest} into the per-builder
+ * inputs: the current turn (as an {@link AiPrompt}, carrying system + the final
+ * user message + any attachments) and the preceding conversation history.
+ * @internal
+ */
+export interface ISplitChatRequest {
+  /** The current turn lowered to an {@link AiPrompt} (system + user + attachments). */
+  readonly prompt: AiPrompt;
+  /** Prior conversation history — every message before the current turn. */
+  readonly head: ReadonlyArray<IChatMessage>;
+}
+
+/**
+ * Splits a unified {@link AiAssist.IChatRequest} into `{ prompt, head }` for the
+ * per-provider builders. The **last** message is the current `user` turn; the
+ * preceding messages are history (`head`). This is the single linearization
+ * shared by every turn entry point, so the completion path and the client-tool
+ * turn path place history at the identical position relative to the current turn.
+ *
+ * Fails when `messages` is empty (no current turn) or when the last message is
+ * not a `user` turn — relabelling a trailing assistant message as the user turn
+ * would be a silent footgun, so it is rejected loudly instead.
+ *
+ * @internal
+ */
+export function splitChatRequest(
+  system: string | undefined,
+  messages: ReadonlyArray<IChatMessage>
+): Result<ISplitChatRequest> {
+  if (messages.length === 0) {
+    return fail('messages must contain at least one entry (the current user turn)');
+  }
+  const current = messages[messages.length - 1];
+  if (current.role !== 'user') {
+    return fail(`the last message must be the current user turn (role 'user'); got '${current.role}'`);
+  }
+  const head = messages.slice(0, messages.length - 1);
+  const prompt = new AiPrompt(current.content, system ?? '', current.attachments);
+  return succeed({ prompt, head });
+}
+
+/**
+ * Rebuilds the ordered messages for a proxy wire body so that only the current
+ * turn can carry attachments — history (non-current) messages are reduced to
+ * `{ role, content }`. The direct per-provider builders already drop attachments
+ * on history turns (only the current user turn's attachments are honored), so
+ * normalizing here keeps the proxy wire shape consistent with the direct paths
+ * and avoids transmitting attachment payloads the upstream provider would ignore.
+ *
+ * @internal
+ */
+export function normalizeOutboundMessages(split: ISplitChatRequest): IChatMessage[] {
+  return [
+    ...split.head.map((m) => ({ role: m.role, content: m.content })),
+    ...split.prompt.toRequest().messages
+  ];
+}
 
 /**
  * Converter for a rawTail message entry. Narrows a `JsonObject` to
@@ -94,21 +153,18 @@ const geminiRawTailMessageConverter: Converter<{
 );
 
 /**
- * Optional head/tail messages to weave around the prompt's user message.
+ * Optional history (`head`) and raw continuation (`rawTail`) messages to weave
+ * around the prompt's current user message.
  *
  * @internal
  */
 export interface IBuildMessagesOptions {
   /**
-   * Messages inserted between the system prompt and the prompt's user
-   * message (e.g. prior conversation history for multi-turn chat).
+   * Prior conversation history inserted between the system prompt and the
+   * prompt's current user message (multi-turn chat / correction retries). The
+   * single ordered linearization is `[system, ...head, user, ...rawTail]`.
    */
   readonly head?: ReadonlyArray<IChatMessage>;
-  /**
-   * Messages appended after the prompt's user message (e.g. assistant
-   * + correction turns for the JSON-validation retry loop).
-   */
-  readonly tail?: ReadonlyArray<IChatMessage>;
   /**
    * Raw JSON objects appended after the prompt's user message. Used to
    * inject provider-specific continuation messages (e.g. Anthropic assistant
@@ -125,15 +181,16 @@ export interface IBuildMessagesOptions {
    *
    * Entries that fail their builder's shape check are silently skipped (the
    * caller is responsible for supplying well-formed continuation messages).
-   * Takes precedence over (and is appended after) `tail`.
+   * Appended after the current user message.
    */
   readonly rawTail?: ReadonlyArray<JsonObject>;
 }
 
 /**
- * Builds the messages array from prompt + optional head/tail messages.
- * The caller supplies the user content (string for text-only, parts array
- * for vision prompts) since the parts shape differs by format.
+ * Builds the messages array from prompt + optional history (`head`) and raw
+ * continuation (`rawTail`) messages. The caller supplies the user content
+ * (string for text-only, parts array for vision prompts) since the parts shape
+ * differs by format.
  *
  * `rawTail` items (OpenAI / xAI Responses `function_call` /
  * `function_call_output` continuation items) are appended verbatim after the
@@ -150,19 +207,12 @@ export function buildMessages(
   options?: IBuildMessagesOptions
 ): Array<Record<string, unknown>> {
   const messages: Array<Record<string, unknown>> = [{ role: 'system', content: systemPrompt }];
-  /* c8 ignore next 4 - head branch: options?.head short-circuit not reached from current call sites */
   if (options?.head) {
     for (const msg of options.head) {
       messages.push({ role: msg.role, content: msg.content });
     }
   }
   messages.push({ role: 'user', content: userContent });
-  /* c8 ignore next 4 - tail branch: options?.tail short-circuit not reached from current call sites */
-  if (options?.tail) {
-    for (const msg of options.tail) {
-      messages.push({ role: msg.role, content: msg.content });
-    }
-  }
   // OpenAI / xAI Responses continuation items (function_call /
   // function_call_output) are appended verbatim — their field set differs per
   // item type, so the whole object is preserved rather than projected.
@@ -257,10 +307,10 @@ export function buildGeminiUserParts(prompt: AiPrompt): Array<Record<string, unk
 }
 
 /**
- * Builds the Anthropic messages array, weaving any `head` messages between
- * implicit system + the prompt's user message and appending `tail` messages
- * after. System messages are filtered out (Anthropic uses a top-level system
- * field).
+ * Builds the Anthropic messages array, weaving any `head` history messages
+ * between implicit system + the prompt's user message and appending `rawTail`
+ * continuation messages after. System messages are filtered out (Anthropic uses
+ * a top-level system field).
  *
  * @internal
  */
@@ -269,7 +319,6 @@ export function buildAnthropicMessages(
   options?: IBuildMessagesOptions
 ): Array<{ role: string; content: string | unknown[] }> {
   const messages: Array<{ role: string; content: string | unknown[] }> = [];
-  /* c8 ignore next 5 - head branch: options?.head short-circuit not reached from current call sites */
   if (options?.head) {
     for (const msg of options.head) {
       if (msg.role !== 'system') {
@@ -278,15 +327,6 @@ export function buildAnthropicMessages(
     }
   }
   messages.push({ role: 'user', content: buildAnthropicUserContent(prompt) });
-  /* c8 ignore next 5 - tail branch: options?.tail short-circuit not reached from current call sites */
-  if (options?.tail) {
-    for (const msg of options.tail) {
-      if (msg.role !== 'system') {
-        messages.push({ role: msg.role, content: msg.content });
-      }
-    }
-  }
-  /* c8 ignore next 7 - options?.rawTail optional-chain short-circuit (options=undefined) not reached in unit tests */
   if (options?.rawTail) {
     for (const msg of options.rawTail) {
       const converted = rawTailMessageConverter.convert(msg);
@@ -299,10 +339,10 @@ export function buildAnthropicMessages(
 }
 
 /**
- * Builds the Gemini `contents` array, weaving any `head` messages before the
- * prompt's user parts and appending `tail` messages after. System messages
- * are filtered out (Gemini uses a top-level systemInstruction field) and
- * assistant roles are mapped to Gemini's `model` role.
+ * Builds the Gemini `contents` array, weaving any `head` history messages before
+ * the prompt's user parts and appending `rawTail` continuation messages after.
+ * System messages are filtered out (Gemini uses a top-level systemInstruction
+ * field) and assistant roles are mapped to Gemini's `model` role.
  *
  * @internal
  */
@@ -311,7 +351,6 @@ export function buildGeminiContents(
   options?: IBuildMessagesOptions
 ): Array<{ role: string; parts: unknown[] }> {
   const contents: Array<{ role: string; parts: unknown[] }> = [];
-  /* c8 ignore next 7 - head branch: options?.head short-circuit not reached from current call sites */
   if (options?.head) {
     for (const msg of options.head) {
       if (msg.role !== 'system') {
@@ -323,17 +362,6 @@ export function buildGeminiContents(
     }
   }
   contents.push({ role: 'user', parts: buildGeminiUserParts(prompt) });
-  /* c8 ignore next 7 - tail branch: options?.tail short-circuit not reached from current call sites */
-  if (options?.tail) {
-    for (const msg of options.tail) {
-      if (msg.role !== 'system') {
-        contents.push({
-          role: msg.role === 'assistant' ? 'model' : msg.role,
-          parts: [{ text: msg.content }]
-        });
-      }
-    }
-  }
   // Gemini continuation turns (model `functionCall` parts + user
   // `functionResponse` parts) are projected to `{ role, parts }`.
   if (options?.rawTail) {

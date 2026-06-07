@@ -40,18 +40,18 @@ import { captureAsyncResult, fail, type Logging, Result, succeed } from '@fgv/ts
 import { type JsonArray, type JsonObject } from '@fgv/ts-json-base';
 
 import {
-  type AiPrompt,
   type AiServerToolConfig,
   type AiToolConfig,
   type IAiClientTool,
   type IAiClientToolContinuation,
   type IAiClientToolTurnResult,
   type IAiStreamEvent,
-  type IChatMessage,
+  type IChatRequest,
   type IAiProviderDescriptor,
   resolveModel
 } from '../model';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
+import { splitChatRequest } from '../chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from '../endpoint';
 import { type IAccumulatedBlock } from './anthropic';
 import { type IAccumulatedFunctionCall } from './openaiResponses';
@@ -301,19 +301,23 @@ export function buildGeminiContinuation(
 
 /**
  * Parameters for {@link AiAssist.executeClientToolTurn}.
+ *
+ * @remarks
+ * Carries the unified {@link AiAssist.IChatRequest} shape (`system?` + ordered
+ * `messages`): the last message is the current user turn and the preceding
+ * messages are history, linearized before the current turn — identically to the
+ * completion and streaming paths. {@link IExecuteClientToolTurnParams.continuationMessages}
+ * remains a distinct post-current-turn axis (see below).
+ *
  * @public
  */
-export interface IExecuteClientToolTurnParams {
+export interface IExecuteClientToolTurnParams extends IChatRequest {
   /** The provider descriptor for routing (Anthropic / OpenAI / Gemini). */
   readonly descriptor: IAiProviderDescriptor;
   /** API key for authentication. */
   readonly apiKey: string;
-  /** The structured prompt. */
-  readonly prompt: AiPrompt;
-  /** Prior conversation history (excluding the current turn). */
-  readonly messagesBefore?: ReadonlyArray<IChatMessage>;
   /**
-   * Provider-specific continuation messages to append after the prompt's user
+   * Provider-specific continuation messages to append after the current user
    * message. Used to supply the output of {@link AiAssist.IAiClientToolContinuation}'s
    * `messages` field from a prior turn back to the provider in the follow-up request.
    *
@@ -404,8 +408,8 @@ export function executeClientToolTurn(
   const {
     descriptor,
     apiKey,
-    prompt,
-    messagesBefore,
+    system,
+    messages,
     continuationMessages,
     temperature,
     tools,
@@ -416,6 +420,15 @@ export function executeClientToolTurn(
     model,
     endpoint
   } = params;
+
+  const splitResult = splitChatRequest(system, messages);
+  if (splitResult.isFailure()) {
+    return fail(splitResult.message);
+  }
+  const { prompt, head } = splitResult.value;
+  if (prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
+    return fail(`provider "${descriptor.id}" does not accept image input`);
+  }
 
   // Build a lookup map of client tools by name for fast access.
   // Fail fast on duplicate names — silently overwriting would cause one tool
@@ -436,6 +449,9 @@ export function executeClientToolTurn(
 
   const effectiveTemperature = temperature ?? 0.7;
   const resolvedModel = model ?? resolveModel(descriptor.defaultModel);
+  if (resolvedModel.length === 0) {
+    return fail(`provider "${descriptor.id}": no model resolved; pass model or set descriptor.defaultModel`);
+  }
   const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
   if (baseUrlResult.isFailure()) {
     return fail(baseUrlResult.message);
@@ -461,7 +477,7 @@ export function executeClientToolTurn(
         return callAnthropicStream(
           config,
           prompt,
-          messagesBefore,
+          head,
           effectiveTemperature,
           effectiveTools,
           logger,
@@ -476,7 +492,7 @@ export function executeClientToolTurn(
           prompt,
           /* c8 ignore next 1 - defensive: openai path requires tools; empty array fallback unreachable in practice */
           effectiveTools ?? [],
-          messagesBefore,
+          head,
           effectiveTemperature,
           logger,
           signal,
@@ -488,7 +504,7 @@ export function executeClientToolTurn(
         return callGeminiStream(
           config,
           prompt,
-          messagesBefore,
+          head,
           effectiveTemperature,
           effectiveTools,
           logger,

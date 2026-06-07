@@ -114,7 +114,7 @@ describe('callProviderCompletion — endpoint override', () => {
     const result = await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: testPrompt,
+      ...testPrompt.toRequest(),
       endpoint: 'http://localhost:11434/v1',
       modelOverride: 'llama3.2'
     });
@@ -133,7 +133,7 @@ describe('callProviderCompletion — endpoint override', () => {
     await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: testPrompt
+      ...testPrompt.toRequest()
     });
 
     const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
@@ -147,7 +147,7 @@ describe('callProviderCompletion — endpoint override', () => {
     await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: testPrompt,
+      ...testPrompt.toRequest(),
       endpoint: 'http://localhost:11434/v1/',
       modelOverride: 'llama3.2'
     });
@@ -163,7 +163,7 @@ describe('callProviderCompletion — endpoint override', () => {
     await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: testPrompt
+      ...testPrompt.toRequest()
     });
 
     const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
@@ -177,7 +177,7 @@ describe('callProviderCompletion — endpoint override', () => {
     const result = await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: '',
-      prompt: testPrompt,
+      ...testPrompt.toRequest(),
       endpoint: 'http://192.168.1.42:1234/v1',
       modelOverride: 'qwen2.5-coder'
     });
@@ -201,7 +201,7 @@ describe('callProviderCompletion — endpoint override', () => {
     await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: testPrompt,
+      ...testPrompt.toRequest(),
       endpoint: 'http://localhost:8787/anthropic'
     });
 
@@ -220,7 +220,7 @@ describe('callProviderCompletion — endpoint override', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor: makeDescriptor({ apiFormat: 'openai' }),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         endpoint
       });
 
@@ -232,7 +232,7 @@ describe('callProviderCompletion — endpoint override', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor: makeDescriptor({ apiFormat: 'openai' }),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         endpoint: 'http://localhost:11434/v1?token=secret'
       });
 
@@ -247,7 +247,7 @@ describe('callProviderCompletion — endpoint override', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor: makeDescriptor({ apiFormat: 'openai' }),
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         endpoint: 'http://user:hunter2@localhost:11434/v1'
       });
 
@@ -264,7 +264,7 @@ describe('callProviderCompletion — endpoint override', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: '',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toFailWith(/no API endpoint/i);
@@ -276,7 +276,7 @@ describe('callProviderCompletion — endpoint override', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: '',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         endpoint: 'http://10.0.0.5:8080/v1'
       });
 
@@ -293,7 +293,7 @@ describe('callProviderCompletion — endpoint override', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: '',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         modelOverride: 'llama3.2'
       });
 
@@ -308,7 +308,7 @@ describe('callProviderCompletion — endpoint override', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'proxy-token',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         endpoint: 'http://10.0.0.5:8080/v1',
         modelOverride: 'mistral-7b'
       });

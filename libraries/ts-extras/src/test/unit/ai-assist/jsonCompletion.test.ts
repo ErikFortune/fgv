@@ -87,7 +87,7 @@ describe('generateJsonCompletion', () => {
     const result = await AiAssist.generateJsonCompletion({
       descriptor: makeDescriptor(),
       apiKey: 'k',
-      prompt: new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant'),
+      ...new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant').toRequest(),
       converter: shapeConverter
     });
     expect(result).toSucceedAndSatisfy((r) => {
@@ -103,7 +103,7 @@ describe('generateJsonCompletion', () => {
     const result = await AiAssist.generateJsonCompletion({
       descriptor: makeDescriptor(),
       apiKey: 'k',
-      prompt: new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant'),
+      ...new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant').toRequest(),
       converter: shapeConverter
     });
     expect(result).toSucceedAndSatisfy((r) => {
@@ -116,7 +116,7 @@ describe('generateJsonCompletion', () => {
     await AiAssist.generateJsonCompletion({
       descriptor: makeDescriptor(),
       apiKey: 'k',
-      prompt: new AiAssist.AiPrompt('user request', 'system base'),
+      ...new AiAssist.AiPrompt('user request', 'system base').toRequest(),
       converter: shapeConverter
     });
     const body = lastRequestBody();
@@ -131,7 +131,7 @@ describe('generateJsonCompletion', () => {
     await AiAssist.generateJsonCompletion({
       descriptor: makeDescriptor(),
       apiKey: 'k',
-      prompt: new AiAssist.AiPrompt('user request', 'system base'),
+      ...new AiAssist.AiPrompt('user request', 'system base').toRequest(),
       converter: shapeConverter,
       promptHint: 'none'
     });
@@ -145,7 +145,7 @@ describe('generateJsonCompletion', () => {
     await AiAssist.generateJsonCompletion({
       descriptor: makeDescriptor(),
       apiKey: 'k',
-      prompt: new AiAssist.AiPrompt('user request', 'system base'),
+      ...new AiAssist.AiPrompt('user request', 'system base').toRequest(),
       converter: shapeConverter,
       promptHint: 'JSON only please.'
     });
@@ -160,7 +160,7 @@ describe('generateJsonCompletion', () => {
     await AiAssist.generateJsonCompletion({
       descriptor: makeDescriptor(),
       apiKey: 'k',
-      prompt: new AiAssist.AiPrompt('user request', ''),
+      ...new AiAssist.AiPrompt('user request', '').toRequest(),
       converter: shapeConverter
     });
     const body = lastRequestBody();
@@ -185,7 +185,7 @@ describe('generateJsonCompletion', () => {
     const result = await AiAssist.generateJsonCompletion<IShape>({
       descriptor: makeDescriptor(),
       apiKey: 'k',
-      prompt: new AiAssist.AiPrompt('user request', 'system base'),
+      ...new AiAssist.AiPrompt('user request', 'system base').toRequest(),
       jsonConverter: customPipeline
     });
     expect(result).toSucceedAndSatisfy((r) => {
@@ -199,7 +199,7 @@ describe('generateJsonCompletion', () => {
     const result = await AiAssist.generateJsonCompletion({
       descriptor: makeDescriptor(),
       apiKey: 'k',
-      prompt: new AiAssist.AiPrompt('user request', 'system base')
+      ...new AiAssist.AiPrompt('user request', 'system base').toRequest()
     });
     expect(result).toFailWith(/converter or jsonConverter must be provided/i);
     expect(global.fetch).not.toHaveBeenCalled();
@@ -214,7 +214,7 @@ describe('generateJsonCompletion', () => {
     const result = await AiAssist.generateJsonCompletion({
       descriptor: makeDescriptor(),
       apiKey: 'k',
-      prompt: new AiAssist.AiPrompt('user request', 'system base'),
+      ...new AiAssist.AiPrompt('user request', 'system base').toRequest(),
       converter: shapeConverter
     });
     expect(result).toFailWith(/AI API returned 500/);
@@ -225,7 +225,7 @@ describe('generateJsonCompletion', () => {
     const result = await AiAssist.generateJsonCompletion({
       descriptor: makeDescriptor(),
       apiKey: 'k',
-      prompt: new AiAssist.AiPrompt('user request', 'system base'),
+      ...new AiAssist.AiPrompt('user request', 'system base').toRequest(),
       converter: shapeConverter
     });
     expect(result).toFailWith(/^generateJsonCompletion:/);

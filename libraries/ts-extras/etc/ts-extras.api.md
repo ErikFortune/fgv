@@ -40,6 +40,7 @@ declare namespace AiAssist {
         IAiToolEnablement,
         IAiCompletionResponse,
         IChatMessage,
+        IChatRequest,
         AiApiFormat,
         AiImageApiFormat,
         IAiImageModelCapability,
@@ -199,6 +200,8 @@ class AiPrompt {
     readonly attachments: ReadonlyArray<IAiImageAttachment>;
     get combined(): string;
     readonly system: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    toRequest(): IChatRequest;
     readonly user: string;
 }
 
@@ -300,7 +303,7 @@ function callProviderImageGeneration(params: IProviderImageGenerationParams): Pr
 // @public
 function callProviderListModels(params: IProviderListModelsParams): Promise<Result<ReadonlyArray<IAiModelInfo>>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IProviderCompletionParams"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "callProviderCompletion"
 //
 // @public
@@ -1051,8 +1054,17 @@ interface IArgon2idProvider {
 
 // @public
 interface IChatMessage {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly attachments?: ReadonlyArray<IAiImageAttachment>;
     readonly content: string;
     readonly role: 'system' | 'user' | 'assistant';
+}
+
+// @public
+interface IChatRequest {
+    readonly messages: ReadonlyArray<IChatMessage>;
+    readonly system?: string;
 }
 
 // @public
@@ -1197,9 +1209,11 @@ interface IEncryptionResult {
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IExecuteClientToolTurnParams"
 //
 // @public
-interface IExecuteClientToolTurnParams {
+interface IExecuteClientToolTurnParams extends IChatRequest {
     readonly apiKey: string;
     readonly clientTools: ReadonlyArray<IAiClientTool>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1207,9 +1221,7 @@ interface IExecuteClientToolTurnParams {
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
-    readonly messagesBefore?: ReadonlyArray<IChatMessage>;
     readonly model?: string;
-    readonly prompt: AiPrompt;
     readonly resolvedThinking?: IResolvedThinkingConfig;
     readonly signal?: AbortSignal;
     readonly temperature?: number;
@@ -1594,30 +1606,30 @@ interface IPrivateKeyStorage {
     readonly supportsNonExtractable: boolean;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-interface IProviderCompletionParams {
-    readonly additionalMessages?: ReadonlyArray<IChatMessage>;
+interface IProviderCompletionParams extends IChatRequest {
     readonly apiKey: string;
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
     readonly modelOverride?: ModelSpec;
-    readonly prompt: AiPrompt;
     readonly signal?: AbortSignal;
     readonly temperature?: number;
     readonly thinking?: IThinkingConfig;
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-interface IProviderCompletionStreamParams {
+interface IProviderCompletionStreamParams extends IChatRequest {
     readonly apiKey: string;
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
-    readonly messagesBefore?: ReadonlyArray<IChatMessage>;
     readonly modelOverride?: ModelSpec;
-    readonly prompt: AiPrompt;
     readonly signal?: AbortSignal;
     readonly temperature?: number;
     readonly thinking?: IThinkingConfig;
