@@ -426,6 +426,9 @@ export function executeClientToolTurn(
     return fail(splitResult.message);
   }
   const { prompt, head } = splitResult.value;
+  if (prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
+    return fail(`provider "${descriptor.id}" does not accept image input`);
+  }
 
   // Build a lookup map of client tools by name for fast access.
   // Fail fast on duplicate names — silently overwriting would cause one tool

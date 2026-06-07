@@ -695,6 +695,19 @@ describe('executeClientToolTurn', () => {
   // P1-1 regression: client tools must reach the provider in the request body
   // ============================================================================
 
+  test('fails fast when the current turn has attachments and the provider does not accept image input', () => {
+    const result = executeClientToolTurn({
+      descriptor: makeAnthropicDescriptor(),
+      apiKey: 'test-key',
+      messages: [
+        { role: 'user', content: 'describe', attachments: [{ mimeType: 'image/png', base64: 'AA' }] }
+      ],
+      clientTools: [makeMemoryTool(async () => 'irrelevant')] as IAiClientTool[],
+      model: 'claude-sonnet-4-6'
+    });
+    expect(result).toFailWith(/does not accept image input/i);
+  });
+
   describe('client tools reach the provider (P1-1 regression)', () => {
     test('Anthropic: request body tools array contains input_schema entry for client tool', async () => {
       let capturedBody: Record<string, unknown> | undefined;

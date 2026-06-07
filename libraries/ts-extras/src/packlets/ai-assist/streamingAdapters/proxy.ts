@@ -143,6 +143,9 @@ export async function callProxiedCompletionStream(
   if (splitResult.isFailure()) {
     return fail(splitResult.message);
   }
+  if (splitResult.value.prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
+    return fail(`provider "${descriptor.id}" does not accept image input`);
+  }
 
   const body: Record<string, unknown> = {
     providerId: descriptor.id,

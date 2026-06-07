@@ -1053,6 +1053,18 @@ describe('callProxiedCompletionStream', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  test('rejects attachments when the provider does not accept image input (no proxy call)', async () => {
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor({ acceptsImageInput: false }),
+      apiKey: 'sk',
+      messages: [
+        { role: 'user', content: 'describe', attachments: [{ mimeType: 'image/png', base64: 'AA' }] }
+      ]
+    });
+    expect(result).toFailWith(/does not accept image input/i);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   test('translates pre-serialized unified events from the proxy', async () => {
     mockSseResponse([
       `data: ${JSON.stringify({ type: 'text-delta', delta: 'Hi' })}\n\n`,
