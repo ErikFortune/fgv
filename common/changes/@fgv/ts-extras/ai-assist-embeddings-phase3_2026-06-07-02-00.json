@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: complete the embedding primitive (Phase 3) — the Gemini :batchEmbedContents adapter (taskType kebab->SCREAMING_SNAKE mapping, outputDimensionality, models/{id} qualification with no-double-prefix, no usage) wired into callProviderEmbedding, plus callProxiedEmbedding (POST {proxyUrl}/api/ai/embedding mirror of the image-gen proxy leg). Cross-provider embeddings now cover OpenAI/Ollama/openai-compat/Mistral (OpenAI format) and Google Gemini.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

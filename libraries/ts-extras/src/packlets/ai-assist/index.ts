@@ -130,7 +130,11 @@ export {
   type IProviderListModelsParams
 } from './apiClient';
 
-export { callProviderEmbedding, type IProviderEmbeddingParams } from './embeddingClient';
+export {
+  callProviderEmbedding,
+  callProxiedEmbedding,
+  type IProviderEmbeddingParams
+} from './embeddingClient';
 
 export {
   callProviderCompletionStream,

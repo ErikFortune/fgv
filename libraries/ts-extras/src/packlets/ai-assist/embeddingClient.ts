@@ -226,6 +226,102 @@ async function callOpenAiEmbeddings(
 }
 
 // ============================================================================
+// Gemini-format (`:batchEmbedContents`) response validators + adapter
+// ============================================================================
+
+/** @internal */
+interface IGeminiEmbedding {
+  values: number[];
+}
+/** @internal */
+interface IGeminiEmbeddingResponse {
+  embeddings: IGeminiEmbedding[];
+}
+
+const geminiEmbedding: Validator<IGeminiEmbedding> = Validators.object<IGeminiEmbedding>({
+  values: Validators.arrayOf(Validators.number)
+});
+const geminiEmbeddingResponse: Validator<IGeminiEmbeddingResponse> =
+  Validators.object<IGeminiEmbeddingResponse>({
+    embeddings: Validators.arrayOf(geminiEmbedding).withConstraint((arr) => arr.length > 0)
+  });
+
+/**
+ * Maps a cross-provider {@link AiAssist.AiEmbeddingTaskType} (kebab-case) to the
+ * Gemini wire form (`SCREAMING_SNAKE_CASE`), e.g. `'retrieval-document'` becomes
+ * `'RETRIEVAL_DOCUMENT'`.
+ * @internal
+ */
+function toGeminiTaskType(taskType: string): string {
+  return taskType.replace(/-/g, '_').toUpperCase();
+}
+
+/**
+ * Strips a leading `models/` from a model id so the URL path and the per-request
+ * `model` field can each apply the prefix exactly once.
+ * @internal
+ */
+function bareGeminiModel(model: string): string {
+  return model.startsWith('models/') ? model.slice('models/'.length) : model;
+}
+
+/**
+ * Calls the Google Gemini `:batchEmbedContents` endpoint. Always uses the batch
+ * route (a single input is a one-element batch). Sends `taskType` /
+ * `outputDimensionality` only when the capability declares support. Gemini does
+ * not report token usage for embeddings, so `usage` is omitted.
+ * @internal
+ */
+async function callGeminiEmbeddings(
+  config: IAiApiConfig,
+  inputs: ReadonlyArray<string>,
+  request: IAiEmbeddingParams,
+  capability: IAiEmbeddingModelCapability,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<IAiEmbeddingResult>> {
+  const bare = bareGeminiModel(config.model);
+  const qualified = `models/${bare}`;
+  // `request.taskType` is the open `AiEmbeddingTaskType` union (includes `string & {}`),
+  // which `!== undefined` cannot narrow to `string`; resolve it cast-free here.
+  const taskType =
+    capability.supportsTaskType && request.taskType !== undefined
+      ? toGeminiTaskType(request.taskType)
+      : undefined;
+  const sendDimensions = capability.supportsDimensions && request.dimensions !== undefined;
+
+  const requests = inputs.map((text) => ({
+    model: qualified,
+    content: { parts: [{ text }] },
+    ...(taskType !== undefined ? { taskType } : {}),
+    ...(sendDimensions ? { outputDimensionality: request.dimensions } : {})
+  }));
+  const body: Record<string, unknown> = { requests };
+  const headers: Record<string, string> = { 'x-goog-api-key': config.apiKey };
+  const url = `${config.baseUrl}/models/${bare}:batchEmbedContents`;
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`AI embedding: format=gemini-embeddings, model=${bare}, inputs=${inputs.length}`);
+
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  return geminiEmbeddingResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `Gemini embeddings API response: ${msg}`)
+    .onSuccess((response) => {
+      // Gemini returns embeddings aligned to request order (no index field).
+      const vectors = response.embeddings.map((e) => e.values);
+      return succeed({
+        vectors,
+        model: bare,
+        dimensions: vectors[0].length
+      });
+    });
+}
+
+// ============================================================================
 // Dispatcher
 // ============================================================================
 
@@ -335,12 +431,72 @@ function dispatchEmbedding(
     case 'openai-embeddings':
       return callOpenAiEmbeddings(config, inputs, request, capability, logger, signal);
     case 'gemini-embeddings':
-      // Wired in Phase 3 (batchEmbedContents adapter).
-      return Promise.resolve(fail('gemini embeddings adapter not yet implemented'));
+      return callGeminiEmbeddings(config, inputs, request, capability, logger, signal);
     /* c8 ignore next 4 - defensive: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = format;
       return Promise.resolve(fail(`unsupported embedding API format: ${String(_exhaustive)}`));
     }
   }
+}
+
+// ============================================================================
+// Proxied embedding
+// ============================================================================
+
+const proxiedEmbeddingUsage: Validator<IAiEmbeddingUsage> = Validators.object<IAiEmbeddingUsage>({
+  promptTokens: Validators.number.optional(),
+  totalTokens: Validators.number.optional()
+});
+const proxiedEmbeddingResponse: Validator<IAiEmbeddingResult> = Validators.object<IAiEmbeddingResult>({
+  vectors: Validators.arrayOf(Validators.arrayOf(Validators.number)),
+  model: Validators.string,
+  dimensions: Validators.number,
+  usage: proxiedEmbeddingUsage.optional()
+});
+
+/**
+ * Calls the embedding endpoint on a proxy server instead of calling the provider
+ * API directly from the browser. Endpoint: `POST ${proxyUrl}/api/ai/embedding`.
+ * Request body: `{ providerId, apiKey, params, modelOverride? }`. The proxy
+ * handles descriptor lookup, model/capability resolution, and provider dispatch.
+ * Error body `{ error: string }` is surfaced as `proxy: ${error}`.
+ *
+ * @param proxyUrl - Base URL of the proxy server (e.g. `http://localhost:3001`).
+ * @param params - Same parameters as {@link callProviderEmbedding}.
+ * @returns The embedding result, or a failure.
+ * @public
+ */
+export async function callProxiedEmbedding(
+  proxyUrl: string,
+  params: IProviderEmbeddingParams
+): Promise<Result<IAiEmbeddingResult>> {
+  const { descriptor, apiKey, params: request, modelOverride, logger, signal } = params;
+
+  const body: Record<string, unknown> = {
+    providerId: descriptor.id,
+    apiKey,
+    params: request
+  };
+  if (modelOverride !== undefined) {
+    body.modelOverride = modelOverride;
+  }
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`AI embedding proxy request: provider=${descriptor.id}, proxy=${proxyUrl}`);
+
+  const url = `${proxyUrl}/api/ai/embedding`;
+  const jsonResult = await fetchJson(url, {}, body, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+
+  const response = jsonResult.value;
+  if (typeof response.error === 'string') {
+    return fail(`proxy: ${response.error}`);
+  }
+
+  return proxiedEmbeddingResponse
+    .validate(response)
+    .withErrorFormat((msg) => `proxy returned invalid response: ${msg}`);
 }
