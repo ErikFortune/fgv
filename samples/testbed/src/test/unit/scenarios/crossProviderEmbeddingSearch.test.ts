@@ -579,7 +579,8 @@ describe('crossProviderEmbeddingSearchScenario', () => {
     expect(crossProviderEmbeddingSearchScenario.tags).toContain('cross-provider');
     expect(crossProviderEmbeddingSearchScenario.requiredSecrets?.map((s) => s.envVarName)).toEqual([
       'OPENAI_API_KEY',
-      'GEMINI_API_KEY'
+      'GEMINI_API_KEY',
+      'MISTRAL_API_KEY'
     ]);
   });
 

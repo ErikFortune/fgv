@@ -138,8 +138,8 @@ function resolveApiKey(providerId: string, env: Record<string, string | undefine
  * Parse the scenario configuration from environment variables (the CLI-dispatch idiom — the
  * testbed CLI does not forward trailing argv to scenarios).
  *
- * - `EMBED_PROVIDER` selects the provider (default `openai`). Accepts `openai`, `gemini`,
- *   `mistral`, `ollama`, `openai-compat`.
+ * - `EMBED_PROVIDER` selects the provider (default `openai`). Accepts `openai`, `gemini`
+ *   (alias `google-gemini`), `mistral`, `ollama`, `openai-compat`.
  * - `EMBED_MODEL` overrides the embedding model (required for `ollama` / `openai-compat`,
  *   which declare no default embedding model).
  * - `EMBED_DIMENSIONS` requests a reduced output dimensionality (OpenAI 3-* / Gemini).

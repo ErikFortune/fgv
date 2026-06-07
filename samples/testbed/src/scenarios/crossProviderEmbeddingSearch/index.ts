@@ -90,8 +90,9 @@ export const crossProviderEmbeddingSearchScenario: IScenario = {
     'Live-wire verification of AiAssist.callProviderEmbedding: embeds a query + document ' +
     'corpus via a real provider (OpenAI-shaped or Gemini), ranks by cosine similarity, and ' +
     'checks both wire formats, batch alignment, the Gemini taskType retrieval asymmetry, and ' +
-    'dimension honoring. Configure via EMBED_PROVIDER + the provider key (OPENAI_API_KEY / ' +
-    'GEMINI_API_KEY). CLI-only.',
+    'dimension honoring. Configure via EMBED_PROVIDER (openai default; also gemini, mistral, ' +
+    'ollama, openai-compat) + the provider key (OPENAI_API_KEY, GEMINI_API_KEY / GOOGLE_API_KEY, ' +
+    'MISTRAL_API_KEY; self-hosted ollama / openai-compat are keyless). CLI-only.',
   category: 'ai',
   tags: ['ai-assist', 'embeddings', 'semantic-search', 'cross-provider', 'live-api', 'cli'],
   requiredSecrets: [
@@ -103,7 +104,14 @@ export const crossProviderEmbeddingSearchScenario: IScenario = {
     {
       id: 'gemini-api-key',
       envVarName: 'GEMINI_API_KEY',
-      description: 'Gemini API key (EMBED_PROVIDER=gemini) for the batchEmbedContents wire path'
+      description:
+        'Gemini API key (EMBED_PROVIDER=gemini) for the batchEmbedContents wire path; ' +
+        'GOOGLE_API_KEY is also accepted'
+    },
+    {
+      id: 'mistral-api-key',
+      envVarName: 'MISTRAL_API_KEY',
+      description: 'Mistral API key (EMBED_PROVIDER=mistral; mistral-embed is OpenAI-shaped)'
     }
   ],
   cli: cliImpl
