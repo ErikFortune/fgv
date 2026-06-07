@@ -71,10 +71,11 @@ const cliImpl: ICliScenarioImpl = {
     }
 
     const report = formatEmbeddingReport(outcomeResult.value);
-    context.logger.info(report.text);
 
-    // Surface a genuine failure (mis-shaped vectors, mis-ranked, dimension not honored) to the
-    // CLI rather than masking it behind succeed().
+    // Return the report as the single source of output: the CLI prints a success value to stdout
+    // and surfaces a failure value through its structured error path. (Logging report.text here
+    // too would duplicate the whole block on stderr.) The short progress line above stays on
+    // stderr for live diagnostics.
     return report.pass ? succeed(report.text) : fail(report.text);
   }
 };
