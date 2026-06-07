@@ -615,11 +615,25 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-extras-mcp",
+      "projectFolder": "libraries/ts-extras-mcp",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-web-extras-transformers",
       "projectFolder": "libraries/ts-web-extras-transformers",
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["libraries", "browser"]
+    },
+    {
+      "packageName": "@fgv/ts-extras-ollama",
+      "projectFolder": "libraries/ts-extras-ollama",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
     },
     {
       "packageName": "@fgv/testbed",

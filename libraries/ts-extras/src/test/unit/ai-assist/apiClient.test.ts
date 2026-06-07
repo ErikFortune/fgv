@@ -177,7 +177,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toFailWith(/no API endpoint/i);
@@ -190,7 +190,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toFailWith(/ECONNREFUSED/);
@@ -203,7 +203,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toFailWith(/network down/);
@@ -216,7 +216,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toFailWith(/429/);
@@ -234,7 +234,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toFailWith(/invalid JSON/i);
@@ -247,7 +247,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toFailWith(/non-object JSON/i);
@@ -260,7 +260,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         modelOverride: 'custom-model'
       });
 
@@ -292,7 +292,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         signal: controller.signal,
         tools: isResponsesApi ? [{ type: 'web_search' }] : undefined
       });
@@ -310,7 +310,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         signal: new AbortController().signal
       });
 
@@ -331,7 +331,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toSucceedAndSatisfy((response) => {
@@ -346,7 +346,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toSucceedAndSatisfy((response) => {
@@ -360,7 +360,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         temperature: 0.5
       });
 
@@ -384,8 +384,9 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
-        additionalMessages: [
+        system: testPrompt.system,
+        messages: [
+          { role: 'user', content: testPrompt.user },
           { role: 'assistant', content: 'first attempt' },
           { role: 'user', content: 'try again' }
         ]
@@ -403,7 +404,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toFailWith(/OpenAI API response/i);
@@ -428,7 +429,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toSucceedAndSatisfy((response) => {
@@ -443,7 +444,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toSucceedAndSatisfy((response) => {
@@ -457,7 +458,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
@@ -477,8 +478,9 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
-        additionalMessages: [
+        system: testPrompt.system,
+        messages: [
+          { role: 'user', content: testPrompt.user },
           { role: 'assistant', content: 'first attempt' },
           { role: 'system', content: 'should be skipped' },
           { role: 'user', content: 'try again' }
@@ -497,7 +499,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toFailWith(/content is not an array/i);
@@ -509,7 +511,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toFailWith(/stop_reason is missing or not a string/i);
@@ -521,7 +523,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toFailWith(/no text content blocks/i);
@@ -533,7 +535,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toFailWith(/Connection timeout/);
@@ -558,7 +560,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toSucceedAndSatisfy((response) => {
@@ -573,7 +575,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toSucceedAndSatisfy((response) => {
@@ -587,7 +589,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
@@ -608,8 +610,9 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
-        additionalMessages: [
+        system: testPrompt.system,
+        messages: [
+          { role: 'user', content: testPrompt.user },
           { role: 'assistant', content: 'first attempt' },
           { role: 'system', content: 'should be skipped' },
           { role: 'user', content: 'try again' }
@@ -629,7 +632,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toFailWith(/Gemini API response/i);
@@ -641,7 +644,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       expect(result).toFailWith(/DNS resolution failed/);
@@ -662,7 +665,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools
       });
 
@@ -676,7 +679,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools
       });
 
@@ -694,7 +697,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor: splitDescriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools
       });
 
@@ -711,7 +714,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor: splitDescriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools,
         thinking: { effort: 'medium' }
       });
@@ -729,7 +732,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor: splitDescriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -745,7 +748,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor: splitDescriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools,
         thinking: {}
       });
@@ -763,7 +766,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor: splitDescriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools,
         thinking: { providers: [{ provider: 'openai', config: { effort: 'medium' } }] }
       });
@@ -784,7 +787,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor: ollamaDescriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools,
         thinking: { effort: 'medium' }
       });
@@ -799,7 +802,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools
       });
 
@@ -815,7 +818,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools
       });
 
@@ -833,7 +836,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools
       });
 
@@ -846,7 +849,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools
       });
 
@@ -859,7 +862,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt
+        ...testPrompt.toRequest()
       });
 
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
@@ -886,7 +889,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools
       });
 
@@ -900,7 +903,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools
       });
 
@@ -926,7 +929,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools
       });
 
@@ -948,7 +951,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools
       });
 
@@ -964,7 +967,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools
       });
 
@@ -991,7 +994,7 @@ describe('callProviderCompletion', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools
       });
 
@@ -1005,7 +1008,7 @@ describe('callProviderCompletion', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools
       });
 
@@ -1062,7 +1065,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         thinking: { effort: 'high' }
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -1075,7 +1078,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         thinking: {
           providers: [{ provider: 'other', models: ['gpt-4o'], config: { custom_param: 'v' } }]
         }
@@ -1088,7 +1091,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         thinking: { effort: 'high' },
         temperature: 0.7
       });
@@ -1101,7 +1104,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         thinking: { providers: [{ provider: 'openai', config: { effort: 'none' } }] },
         temperature: 0.7
       });
@@ -1126,7 +1129,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools,
         thinking: { effort: 'medium' }
       });
@@ -1140,7 +1143,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools,
         thinking: {
           providers: [{ provider: 'other', models: ['gpt-4o'], config: { extra_param: 99 } }]
@@ -1164,7 +1167,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         thinking: { effort: 'medium' }
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -1177,7 +1180,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         thinking: { providers: [{ provider: 'xai', config: { effort: 'none' } }] },
         temperature: 0.5
       });
@@ -1198,7 +1201,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       await AiAssist.callProviderCompletion({
         descriptor: grok4Descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         thinking: { effort: 'medium' }
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -1218,7 +1221,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       await AiAssist.callProviderCompletion({
         descriptor: grok4Descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         tools,
         thinking: { effort: 'high' }
       });
@@ -1242,7 +1245,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         thinking: { effort: 'high' }
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -1256,7 +1259,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         thinking: {
           providers: [
             {
@@ -1275,7 +1278,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         thinking: { effort: 'high' },
         temperature: 0.7
       });
@@ -1298,7 +1301,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         thinking: { effort: 'low' }
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -1310,7 +1313,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         thinking: {
           providers: [
             {
@@ -1331,7 +1334,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'sk',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         thinking: { effort: 'high' },
         temperature: 0.7
       });
@@ -1350,7 +1353,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
           corsRestricted: false
         }),
         apiKey: '',
-        prompt: testPrompt,
+        ...testPrompt.toRequest(),
         thinking: { effort: 'high' }
       });
       expect(result).toSucceed();
@@ -1377,7 +1380,7 @@ describe('image input (vision) — pre-flight', () => {
     const result = await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: visionPrompt(TEST_PNG)
+      ...visionPrompt(TEST_PNG).toRequest()
     });
 
     expect(result).toFailWith(/does not accept image input/i);
@@ -1391,7 +1394,7 @@ describe('image input (vision) — pre-flight', () => {
     const result = await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: testPrompt
+      ...testPrompt.toRequest()
     });
 
     expect(result).toSucceed();
@@ -1416,7 +1419,7 @@ describe('image input — openai chat completions', () => {
     await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: visionPrompt(TEST_PNG)
+      ...visionPrompt(TEST_PNG).toRequest()
     });
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -1436,7 +1439,7 @@ describe('image input — openai chat completions', () => {
     await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: visionPrompt(TEST_JPEG)
+      ...visionPrompt(TEST_JPEG).toRequest()
     });
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -1454,7 +1457,7 @@ describe('image input — openai chat completions', () => {
     await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: testPrompt
+      ...testPrompt.toRequest()
     });
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -1469,7 +1472,7 @@ describe('image input — openai chat completions', () => {
     await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: visionPrompt(TEST_PNG, TEST_JPEG)
+      ...visionPrompt(TEST_PNG, TEST_JPEG).toRequest()
     });
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -1498,7 +1501,7 @@ describe('image input — openai responses API', () => {
     await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: visionPrompt(TEST_PNG),
+      ...visionPrompt(TEST_PNG).toRequest(),
       tools: [{ type: 'web_search' }] // forces Responses API path
     });
 
@@ -1518,7 +1521,7 @@ describe('image input — openai responses API', () => {
     await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: visionPrompt(TEST_JPEG),
+      ...visionPrompt(TEST_JPEG).toRequest(),
       tools: [{ type: 'web_search' }]
     });
 
@@ -1554,7 +1557,7 @@ describe('image input — anthropic', () => {
     await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: visionPrompt(TEST_PNG)
+      ...visionPrompt(TEST_PNG).toRequest()
     });
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -1577,7 +1580,7 @@ describe('image input — anthropic', () => {
     await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: visionPrompt(TEST_PNG)
+      ...visionPrompt(TEST_PNG).toRequest()
     });
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -1609,7 +1612,7 @@ describe('image input — gemini', () => {
     await AiAssist.callProviderCompletion({
       descriptor,
       apiKey: 'test-key',
-      prompt: visionPrompt(TEST_PNG)
+      ...visionPrompt(TEST_PNG).toRequest()
     });
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -1639,11 +1642,11 @@ describe('image input — proxied completion forwards attachments', () => {
     await AiAssist.callProxiedCompletion('http://localhost:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'test-key',
-      prompt: visionPrompt(TEST_PNG)
+      ...visionPrompt(TEST_PNG).toRequest()
     });
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-    expect(body.prompt.attachments).toEqual([TEST_PNG]);
+    expect(body.messages[body.messages.length - 1].attachments).toEqual([TEST_PNG]);
   });
 
   test('omits attachments key when none present', async () => {
@@ -1652,10 +1655,10 @@ describe('image input — proxied completion forwards attachments', () => {
     await AiAssist.callProxiedCompletion('http://localhost:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'test-key',
-      prompt: testPrompt
+      ...testPrompt.toRequest()
     });
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-    expect(body.prompt.attachments).toBeUndefined();
+    expect(body.messages[body.messages.length - 1].attachments).toBeUndefined();
   });
 });

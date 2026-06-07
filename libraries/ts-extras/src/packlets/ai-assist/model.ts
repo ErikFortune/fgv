@@ -117,6 +117,27 @@ export class AiPrompt {
         : '';
     return `${this.user}${sentinel}\n\n${this.system}`;
   }
+
+  /**
+   * Lowers this prompt to the unified {@link AiAssist.IChatRequest} shape consumed
+   * by the turn entry points (`callProviderCompletion`,
+   * `callProviderCompletionStream`, `generateJsonCompletion`,
+   * `executeClientToolTurn`). The prompt becomes a single current `user` turn
+   * (carrying any attachments) with the system instructions in the distinct
+   * `system` field.
+   */
+  public toRequest(): IChatRequest {
+    return {
+      system: this.system,
+      messages: [
+        {
+          role: 'user',
+          content: this.user,
+          ...(this.attachments.length > 0 ? { attachments: this.attachments } : {})
+        }
+      ]
+    };
+  }
 }
 
 // ============================================================================
@@ -132,6 +153,45 @@ export interface IChatMessage {
   readonly role: 'system' | 'user' | 'assistant';
   /** Message content */
   readonly content: string;
+  /**
+   * Optional image attachments. Only honoured on the **current turn** (the last
+   * message of an {@link AiAssist.IChatRequest}); vision-capable providers include
+   * them in that user message, non-vision providers reject the call up front (see
+   * {@link AiAssist.IAiProviderDescriptor.acceptsImageInput}). Attachments on
+   * history (non-final) messages are ignored.
+   */
+  readonly attachments?: ReadonlyArray<IAiImageAttachment>;
+}
+
+// ============================================================================
+// Chat Request
+// ============================================================================
+
+/**
+ * An ordered chat request: optional system instructions plus the conversation
+ * turns. The **last** entry in `messages` is the current turn (always a `user`
+ * turn); everything before it is prior conversation history.
+ *
+ * @remarks
+ * This is the unified shape accepted by every turn entry point. Both the
+ * completion path and the client-tool turn path linearize it identically:
+ * `[system, ...history, current user turn, ...continuation]`. Keeping `system`
+ * as a distinct field (rather than a `system`-role message) matches how the
+ * per-provider request builders already separate system from the turn list
+ * (Anthropic top-level `system`, Gemini `systemInstruction`, OpenAI a leading
+ * `system`-role message). `messages` should therefore carry only `user` /
+ * `assistant` turns.
+ *
+ * @public
+ */
+export interface IChatRequest {
+  /** System instructions (schema docs, format rules, general guidance). */
+  readonly system?: string;
+  /**
+   * The ordered conversation turns. Must be non-empty; the last entry is the
+   * current `user` turn and the preceding entries are history.
+   */
+  readonly messages: ReadonlyArray<IChatMessage>;
 }
 
 // ============================================================================

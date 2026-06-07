@@ -151,6 +151,17 @@ opportunistically when the right surface area is touched.
 
   **Reference**: PR #329 review — pattern pre-existed the PR, absolved from that review.
 
+- **[P3] `ai-assist/apiClient.ts` is at the 2000-line `max-lines` cap; decompose it.**
+  `libraries/ts-extras/src/packlets/ai-assist/apiClient.ts` sits right at the ESLint `max-lines` ceiling (2000). It is a monolith spanning four largely-independent concerns: chat completion (OpenAI/Anthropic/Gemini adapters + dispatcher), image generation (adapters + dispatcher + response validators), list-models (adapters + capability resolution), and the proxied variants of all three. Every additive change to any one concern now requires trimming JSDoc elsewhere in the file purely to stay under the cap — this happened repeatedly on `ai-assist-message-ordering` (PR #478), where each Copilot round that added a proxy-path guard forced compensating comment cuts. This is unsustainable: doc quality is being traded for line budget, and the next feature touching this file will hit the wall immediately.
+
+  **Trigger**: next substantive change to `apiClient.ts` (any new provider adapter, image format, list-models source, or proxy field), or proactively before the next ai-assist feature stream.
+
+  **Scope sketch**: split by concern into sibling modules under `ai-assist/` (e.g. `completionClient.ts`, `imageGenerationClient.ts`, `listModelsClient.ts`, and a `proxiedClient.ts` — or co-locate each proxied variant with its direct sibling), keeping the shared HTTP helpers (`fetchJson`/`fetchMultipart`/`fetchGetJson`) and response validators in a small internal module. Re-export the public surface unchanged from `index.ts` so `etc/ts-extras.api.md` is unaffected (pure file-organization move, no API change → Rush change `none`). Verify per-file `max-lines` compliance without JSDoc trimming.
+
+  **Not a P2**: no functional or API impact; the file works correctly. This is a maintainability/headroom issue — but it becomes a soft blocker on the *next* edit, so it should be done before, not during, the next feature.
+
+  **Reference**: PR #478 (`ai-assist-message-ordering`) — repeated JSDoc trims to keep the file ≤2000 lines while adding proxy-path validation guards; Erik 2026-06-07 ("we won't be able to cut lines every time").
+
 ## P4 — Doc / minor consistency
 
 - **[P4] `mutableFsTree` `permission-denied for read-only file` test fails when the test container runs as root.**

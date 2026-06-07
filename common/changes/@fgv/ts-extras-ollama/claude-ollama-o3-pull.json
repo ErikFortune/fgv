@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add pullModel to @fgv/ts-extras-ollama (O-3): streamed /api/pull progress via a terminal Result + onProgress callback, with AbortSignal support.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras-ollama"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-ollama",
+  "email": "ErikFortune@outlook.com"
+}

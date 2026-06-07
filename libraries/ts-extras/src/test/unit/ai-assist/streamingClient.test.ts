@@ -225,7 +225,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor({ baseUrl: '' }),
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       expect(result).toFailWith(/no API endpoint/i);
     });
@@ -234,7 +234,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor({ streamingCorsRestricted: true }),
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       expect(result).toFailWith(/requires a proxy for streaming/i);
       expect(global.fetch).not.toHaveBeenCalled();
@@ -244,7 +244,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor({ acceptsImageInput: false }),
         apiKey: 'sk',
-        prompt: new AiAssist.AiPrompt('describe', 'sys', [{ mimeType: 'image/png', base64: 'AA' }])
+        ...new AiAssist.AiPrompt('describe', 'sys', [{ mimeType: 'image/png', base64: 'AA' }]).toRequest()
       });
       expect(result).toFailWith(/does not accept image input/i);
       expect(global.fetch).not.toHaveBeenCalled();
@@ -255,7 +255,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor(),
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       expect(result).toFailWith(/ECONNREFUSED/);
     });
@@ -265,7 +265,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor(),
         apiKey: 'bad',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       expect(result).toFailWith(/401.*Unauthorized/);
     });
@@ -276,7 +276,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor(),
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         signal: controller.signal
       });
       expect(result).toSucceed();
@@ -289,7 +289,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor(),
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         modelOverride: 'gpt-5'
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -307,7 +307,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         tools,
         thinking: { effort: 'medium' }
       });
@@ -325,7 +325,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         tools,
         thinking: {}
       });
@@ -344,7 +344,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         tools,
         thinking: { providers: [{ provider: 'anthropic', config: { effort: 'high' } }] }
       });
@@ -364,7 +364,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor: ollamaDescriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         tools,
         thinking: { effort: 'medium' }
       });
@@ -377,7 +377,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor(),
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         temperature: 0.3
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -393,7 +393,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: '',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         endpoint: 'http://localhost:11434/v1',
         modelOverride: 'llama3.2'
       });
@@ -410,7 +410,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: '',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         endpoint: 'http://192.168.1.42:1234/v1',
         modelOverride: 'qwen2.5-coder'
       });
@@ -424,7 +424,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor(),
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         endpoint: 'not a url'
       });
 
@@ -436,7 +436,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor(),
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         endpoint: 'http://localhost:11434/v1?token=secret'
       });
 
@@ -454,7 +454,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: '',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         endpoint: 'http://localhost:11434/v1',
         modelOverride: 'llama3.2'
       });
@@ -470,7 +470,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: '',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         endpoint: 'http://10.0.0.5:8080/v1'
       });
 
@@ -485,7 +485,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor(),
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       expect(result).toSucceed();
       if (!result.isSuccess()) return;
@@ -502,7 +502,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor(),
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       if (!result.isSuccess()) throw new Error('expected success');
       const events = await collect(result.value);
@@ -520,7 +520,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor(),
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       if (!result.isSuccess()) throw new Error('expected success');
       const events = await collect(result.value);
@@ -539,7 +539,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor(),
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       if (!result.isSuccess()) throw new Error('expected success');
       const events = await collect(result.value);
@@ -552,10 +552,11 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor(),
         apiKey: 'sk',
-        prompt: new AiAssist.AiPrompt('how about pasta?', 'You are a helpful assistant.'),
-        messagesBefore: [
+        system: 'You are a helpful assistant.',
+        messages: [
           { role: 'user', content: 'hi' },
-          { role: 'assistant', content: 'hello' }
+          { role: 'assistant', content: 'hello' },
+          { role: 'user', content: 'how about pasta?' }
         ]
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -572,7 +573,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor({ id: 'openai' }),
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         thinking: { effort: 'high' }
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -585,7 +586,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor({ id: 'xai-grok' }),
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         thinking: { effort: 'low' }
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -598,7 +599,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor({ id: 'xai-grok', defaultModel: 'grok-4' }),
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         thinking: { effort: 'medium' }
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -611,7 +612,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor({ id: 'openai' }),
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         thinking: {
           providers: [
             {
@@ -636,7 +637,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         tools
       });
       if (!result.isSuccess()) throw new Error('expected success');
@@ -656,7 +657,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         tools
       });
       if (!result.isSuccess()) throw new Error('expected success');
@@ -670,7 +671,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         tools
       });
       if (!result.isSuccess()) throw new Error('expected success');
@@ -683,7 +684,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         tools
       });
       if (!result.isSuccess()) throw new Error('expected success');
@@ -696,7 +697,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor({ id: 'openai' }),
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         tools,
         thinking: { effort: 'medium' }
       });
@@ -710,7 +711,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor({ id: 'xai-grok', defaultModel: 'grok-4' }),
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         tools,
         thinking: { effort: 'high' }
       });
@@ -724,7 +725,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor({ id: 'openai' }),
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         tools,
         thinking: {
           providers: [
@@ -755,7 +756,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       if (!result.isSuccess()) throw new Error('expected success');
       const events = await collect(result.value);
@@ -772,7 +773,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         tools: [{ type: 'web_search' }]
       });
       if (!result.isSuccess()) throw new Error('expected success');
@@ -788,7 +789,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       if (!result.isSuccess()) throw new Error('expected success');
       const events = await collect(result.value);
@@ -801,7 +802,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       if (!result.isSuccess()) throw new Error('expected success');
       const events = await collect(result.value);
@@ -813,7 +814,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
       expect(fetchCall[1].headers['x-api-key']).toBe('sk');
@@ -829,7 +830,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       if (!result.isSuccess()) throw new Error('expected success');
       const events = await collect(result.value);
@@ -841,11 +842,12 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: new AiAssist.AiPrompt('how about pasta?', 'You are a helpful assistant.'),
-        messagesBefore: [
+        system: 'You are a helpful assistant.',
+        messages: [
           { role: 'user', content: 'hi' },
           { role: 'assistant', content: 'hello' },
-          { role: 'system', content: 'should be filtered' }
+          { role: 'system', content: 'should be filtered' },
+          { role: 'user', content: 'how about pasta?' }
         ]
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -862,7 +864,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         thinking: { effort: 'high' }
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -876,7 +878,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         thinking: {
           providers: [
             {
@@ -896,7 +898,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         thinking: { effort: 'high' },
         temperature: 0.7
       });
@@ -918,7 +920,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       if (!result.isSuccess()) throw new Error('expected success');
       const events = await collect(result.value);
@@ -935,7 +937,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       if (!result.isSuccess()) throw new Error('expected success');
       const events = await collect(result.value);
@@ -948,7 +950,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       const url = (global.fetch as jest.Mock).mock.calls[0][0];
       expect(url).toContain(':streamGenerateContent?alt=sse');
@@ -962,7 +964,7 @@ describe('callProviderCompletionStream', () => {
       const result = await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT
+        ...TEST_PROMPT.toRequest()
       });
       if (!result.isSuccess()) throw new Error('expected success');
       const events = await collect(result.value);
@@ -974,7 +976,7 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         thinking: { effort: 'medium' }
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -991,7 +993,7 @@ describe('callProviderCompletionStream', () => {
           id: 'google-gemini'
         }),
         apiKey: 'sk',
-        prompt: TEST_PROMPT,
+        ...TEST_PROMPT.toRequest(),
         thinking: {
           providers: [
             {
@@ -1012,10 +1014,11 @@ describe('callProviderCompletionStream', () => {
       await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
-        prompt: new AiAssist.AiPrompt('how about pasta?', 'You are a helpful assistant.'),
-        messagesBefore: [
+        system: 'You are a helpful assistant.',
+        messages: [
           { role: 'user', content: 'hi' },
-          { role: 'assistant', content: 'hello' }
+          { role: 'assistant', content: 'hello' },
+          { role: 'user', content: 'how about pasta?' }
         ]
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
@@ -1040,6 +1043,45 @@ describe('callProxiedCompletionStream', () => {
     global.fetch = originalFetch;
   });
 
+  test('fails fast when the last message is not a user turn (unified invariant, no proxy call)', async () => {
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      messages: [{ role: 'assistant', content: 'oops' }]
+    });
+    expect(result).toFailWith(/last message must be the current user turn/i);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test('drops attachments from history turns, keeping only the current turn in the proxy body', async () => {
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      messages: [
+        { role: 'user', content: 'old', attachments: [{ mimeType: 'image/png', base64: 'HISTORY' }] },
+        { role: 'user', content: 'now', attachments: [{ mimeType: 'image/png', base64: 'CURRENT' }] }
+      ]
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.messages).toEqual([
+      { role: 'user', content: 'old' },
+      { role: 'user', content: 'now', attachments: [{ mimeType: 'image/png', base64: 'CURRENT' }] }
+    ]);
+  });
+
+  test('rejects attachments when the provider does not accept image input (no proxy call)', async () => {
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor({ acceptsImageInput: false }),
+      apiKey: 'sk',
+      messages: [
+        { role: 'user', content: 'describe', attachments: [{ mimeType: 'image/png', base64: 'AA' }] }
+      ]
+    });
+    expect(result).toFailWith(/does not accept image input/i);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   test('translates pre-serialized unified events from the proxy', async () => {
     mockSseResponse([
       `data: ${JSON.stringify({ type: 'text-delta', delta: 'Hi' })}\n\n`,
@@ -1049,7 +1091,7 @@ describe('callProxiedCompletionStream', () => {
     const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT
+      ...TEST_PROMPT.toRequest()
     });
     if (!result.isSuccess()) throw new Error('expected success');
     const events = await collect(result.value);
@@ -1065,7 +1107,7 @@ describe('callProxiedCompletionStream', () => {
     await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT
+      ...TEST_PROMPT.toRequest()
     });
     const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
     expect(fetchCall[0]).toBe('http://proxy.local:3001/api/ai/completion-stream');
@@ -1073,19 +1115,23 @@ describe('callProxiedCompletionStream', () => {
     expect(body).toMatchObject({ providerId: 'openai', apiKey: 'sk', stream: true });
   });
 
-  test('forwards attachments, messagesBefore, modelOverride, and tools', async () => {
+  test('forwards ordered messages with attachments, system, modelOverride, and tools', async () => {
     mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
     await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'sk',
-      prompt: new AiAssist.AiPrompt('q', 's', [{ mimeType: 'image/png', base64: 'A' }]),
-      messagesBefore: [{ role: 'assistant', content: 'prior' }],
+      system: 's',
+      messages: [
+        { role: 'assistant', content: 'prior' },
+        { role: 'user', content: 'q', attachments: [{ mimeType: 'image/png', base64: 'A' }] }
+      ],
       modelOverride: 'custom',
       tools: [{ type: 'web_search' }]
     });
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-    expect(body.prompt.attachments).toHaveLength(1);
-    expect(body.messagesBefore).toHaveLength(1);
+    expect(body.system).toBe('s');
+    expect(body.messages).toHaveLength(2);
+    expect(body.messages[1].attachments).toHaveLength(1);
     expect(body.modelOverride).toBe('custom');
     expect(body.tools).toEqual([{ type: 'web_search' }]);
   });
@@ -1096,7 +1142,7 @@ describe('callProxiedCompletionStream', () => {
     await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       signal: controller.signal
     });
     const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
@@ -1108,7 +1154,7 @@ describe('callProxiedCompletionStream', () => {
     const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT
+      ...TEST_PROMPT.toRequest()
     });
     expect(result).toFailWith(/503/);
   });
@@ -1123,7 +1169,7 @@ describe('callProxiedCompletionStream', () => {
     const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT
+      ...TEST_PROMPT.toRequest()
     });
     if (!result.isSuccess()) throw new Error('expected success');
     const events = await collect(result.value);
@@ -1138,7 +1184,7 @@ describe('callProxiedCompletionStream', () => {
     const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT
+      ...TEST_PROMPT.toRequest()
     });
     if (!result.isSuccess()) throw new Error('expected success');
     const events = await collect(result.value);
@@ -1154,7 +1200,7 @@ describe('callProxiedCompletionStream', () => {
     const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT
+      ...TEST_PROMPT.toRequest()
     });
     if (!result.isSuccess()) throw new Error('expected success');
     const events = await collect(result.value);
@@ -1167,7 +1213,7 @@ describe('callProxiedCompletionStream', () => {
     await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'sk',
-      prompt: TEST_PROMPT,
+      ...TEST_PROMPT.toRequest(),
       thinking
     });
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);

@@ -19,6 +19,7 @@ export {
   type IAiToolEnablement,
   type IAiCompletionResponse,
   type IChatMessage,
+  type IChatRequest,
   type AiApiFormat,
   type AiImageApiFormat,
   type IAiImageModelCapability,

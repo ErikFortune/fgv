@@ -165,8 +165,11 @@ const cliImpl: ICliScenarioImpl = {
     }
     const descriptor = descriptorResult.value;
 
-    // Build the prompt.
-    const prompt = new AiAssist.AiPrompt(USER_QUESTION, SYSTEM_PROMPT);
+    // Build the request (system + the current user turn).
+    const request: AiAssist.IChatRequest = {
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: USER_QUESTION }]
+    };
 
     // Use the version-pinned `claude-sonnet-4-6` alias — points to the current
     // 4.6 dated snapshot without coupling to a specific date. Predictable
@@ -189,7 +192,7 @@ const cliImpl: ICliScenarioImpl = {
     const turnResult = AiAssist.executeClientToolTurn({
       descriptor,
       apiKey,
-      prompt,
+      ...request,
       clientTools: [memoryTool],
       tools: serverTools,
       model,
@@ -261,7 +264,7 @@ const cliImpl: ICliScenarioImpl = {
       const continuationTurnResult = AiAssist.executeClientToolTurn({
         descriptor,
         apiKey,
-        prompt,
+        ...request,
         continuationMessages: continuation.messages,
         clientTools: [memoryTool],
         tools: serverTools,
