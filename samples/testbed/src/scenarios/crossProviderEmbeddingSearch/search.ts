@@ -194,13 +194,23 @@ export function parseEmbeddingScenarioConfig(
                 );
               }
               const endpoint = env.EMBED_ENDPOINT?.trim();
+              const hasEndpoint = endpoint !== undefined && endpoint.length > 0;
+              // A provider with no default base URL (e.g. `openai-compat`, `baseUrl: ''`) needs an
+              // explicit EMBED_ENDPOINT. Fail fast here with a targeted diagnostic rather than
+              // letting the embedding primitive fail later with a vaguer "no API endpoint" error.
+              if (!hasEndpoint && descriptor.baseUrl.length === 0) {
+                return fail(
+                  `cross-provider-embedding-search (provider=${providerLabel}): this provider has ` +
+                    `no default base URL; set EMBED_ENDPOINT (e.g. http://localhost:8000/v1).`
+                );
+              }
               return succeed({
                 providerLabel,
                 descriptor,
                 apiKey,
                 model,
                 ...(dimensions !== undefined ? { dimensions } : {}),
-                ...(endpoint !== undefined && endpoint.length > 0 ? { endpoint } : {})
+                ...(hasEndpoint ? { endpoint } : {})
               });
             })
         )

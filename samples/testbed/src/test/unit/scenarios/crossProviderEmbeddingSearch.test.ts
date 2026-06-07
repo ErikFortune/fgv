@@ -200,6 +200,27 @@ describe('parseEmbeddingScenarioConfig', () => {
     );
   });
 
+  test('fails fast for openai-compat (empty default base URL) without EMBED_ENDPOINT', () => {
+    // Model present, but openai-compat has baseUrl: '' — the endpoint is mandatory.
+    expect(
+      parseEmbeddingScenarioConfig({ EMBED_PROVIDER: 'openai-compat', EMBED_MODEL: 'bge-m3' })
+    ).toFailWith(/no default base URL; set EMBED_ENDPOINT/);
+  });
+
+  test('succeeds for openai-compat when both EMBED_MODEL and EMBED_ENDPOINT are set', () => {
+    expect(
+      parseEmbeddingScenarioConfig({
+        EMBED_PROVIDER: 'openai-compat',
+        EMBED_MODEL: 'bge-m3',
+        EMBED_ENDPOINT: 'http://localhost:8000/v1'
+      })
+    ).toSucceedAndSatisfy((config) => {
+      expect(config.descriptor.id).toBe('openai-compat');
+      expect(config.model).toBe('bge-m3');
+      expect(config.endpoint).toBe('http://localhost:8000/v1');
+    });
+  });
+
   test('parses EMBED_DIMENSIONS as a positive integer', () => {
     expect(
       parseEmbeddingScenarioConfig({ OPENAI_API_KEY: 'sk', EMBED_DIMENSIONS: '512' })
