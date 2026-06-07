@@ -31,7 +31,7 @@ import { type Converter, fail, Result, succeed, type Validator } from '@fgv/ts-u
 
 import { callProviderCompletion, type IProviderCompletionParams } from './apiClient';
 import { fencedStringifiedJson } from './jsonResponse';
-import { AiPrompt, type IAiCompletionResponse } from './model';
+import { type IAiCompletionResponse } from './model';
 
 /**
  * Default system-prompt suffix appended when {@link AiAssist.IGenerateJsonCompletionParams.promptHint}
@@ -102,13 +102,12 @@ export interface IGenerateJsonCompletionResult<T> {
   readonly response: IAiCompletionResponse;
 }
 
-function applyPromptHint(prompt: AiPrompt, hint: JsonPromptHint): AiPrompt {
+function applyPromptHint(system: string | undefined, hint: JsonPromptHint): string | undefined {
   if (hint === 'none') {
-    return prompt;
+    return system;
   }
   const suffix = hint === 'smart' ? SMART_JSON_PROMPT_HINT : hint;
-  const system = prompt.system.length > 0 ? `${prompt.system}\n\n${suffix}` : suffix;
-  return new AiPrompt(prompt.user, system, prompt.attachments);
+  return system !== undefined && system.length > 0 ? `${system}\n\n${suffix}` : suffix;
 }
 
 /**
@@ -133,16 +132,16 @@ function applyPromptHint(prompt: AiPrompt, hint: JsonPromptHint): AiPrompt {
 export async function generateJsonCompletion<T>(
   params: IGenerateJsonCompletionParams<T>
 ): Promise<Result<IGenerateJsonCompletionResult<T>>> {
-  const { converter, jsonConverter, promptHint = 'smart', prompt, ...rest } = params;
+  const { converter, jsonConverter, promptHint = 'smart', system, ...rest } = params;
 
   if (jsonConverter === undefined && converter === undefined) {
     return fail('generateJsonCompletion: either converter or jsonConverter must be provided.');
   }
 
   const pipeline: Converter<T> = jsonConverter ?? fencedStringifiedJson<T>({ inner: converter! });
-  const augmentedPrompt = applyPromptHint(prompt, promptHint);
+  const augmentedSystem = applyPromptHint(system, promptHint);
 
-  const response = await callProviderCompletion({ ...rest, prompt: augmentedPrompt });
+  const response = await callProviderCompletion({ ...rest, system: augmentedSystem });
   if (response.isFailure()) {
     return fail(response.message);
   }

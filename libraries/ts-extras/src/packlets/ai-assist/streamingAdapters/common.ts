@@ -29,10 +29,9 @@
 import { fail, type Logging, Result, succeed, type Validator } from '@fgv/ts-utils';
 
 import {
-  AiPrompt,
   type AiServerToolConfig,
   type IAiProviderDescriptor,
-  type IChatMessage,
+  type IChatRequest,
   type IThinkingConfig,
   type ModelSpec
 } from '../model';
@@ -42,22 +41,19 @@ import {
  * the non-streaming `IProviderCompletionParams`; kept as its own interface
  * so callers can be explicit about which path they're invoking.
  *
+ * @remarks
+ * Carries the unified {@link AiAssist.IChatRequest} shape (`system?` + ordered
+ * `messages`): the last message is the current user turn and the preceding
+ * messages are history, linearized before the current turn (identical to the
+ * completion and client-tool turn paths).
+ *
  * @public
  */
-export interface IProviderCompletionStreamParams {
+export interface IProviderCompletionStreamParams extends IChatRequest {
   /** The provider descriptor */
   readonly descriptor: IAiProviderDescriptor;
   /** API key for authentication */
   readonly apiKey: string;
-  /** The structured prompt to send */
-  readonly prompt: AiPrompt;
-  /**
-   * Prior conversation history to insert between the system prompt and the
-   * prompt's user message. The new user turn (carried by `prompt.user`) is
-   * always sent last, so the wire shape becomes
-   * `[system, ...messagesBefore, user=prompt.user]`.
-   */
-  readonly messagesBefore?: ReadonlyArray<IChatMessage>;
   /** Sampling temperature (default: 0.7) */
   readonly temperature?: number;
   /** Optional model override — string or context-aware map. */
