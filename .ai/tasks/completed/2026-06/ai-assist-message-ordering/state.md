@@ -15,8 +15,8 @@
 - [x] `code-reviewer` (layer 1) run; findings resolved/dispositioned.
 - [x] Copilot loop driven to convergence — stopped at round 4 on diminishing returns (R1–R3 substantive, R4 clean).
 - [x] Follow-up tech debt captured (`apiClient.ts` decomposition, P3).
+- [x] Promote task dir to `.ai/tasks/completed/2026-06/` (done pre-merge to save a commit).
 - [ ] **Merge PR #478** (Erik).
-- [ ] Post-merge: promote task dir to `.ai/tasks/completed/2026-06/`.
 
 ## Open items
 
