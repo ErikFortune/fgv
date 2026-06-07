@@ -34,6 +34,7 @@ import { fail, type Logging, mapResults, Result, succeed, type Validator, Valida
 import {
   AiPrompt,
   type AiModelCapability,
+  allModelCapabilities,
   type AiServerToolConfig,
   type IAiCompletionResponse,
   type IAiGeneratedImage,
@@ -1022,15 +1023,7 @@ interface IProxiedListModelsBody {
 const proxiedListModelsEntry: Validator<IProxiedListModelsEntry> = Validators.object<IProxiedListModelsEntry>(
   {
     id: Validators.string,
-    capabilities: Validators.arrayOf(
-      Validators.enumeratedValue<AiModelCapability>([
-        'chat',
-        'tools',
-        'vision',
-        'image-generation',
-        'thinking'
-      ])
-    ),
+    capabilities: Validators.arrayOf(Validators.enumeratedValue<AiModelCapability>(allModelCapabilities)),
     displayName: Validators.string.optional()
   }
 );
