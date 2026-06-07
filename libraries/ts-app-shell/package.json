@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-app-shell",
-  "version": "5.1.0-34",
+  "version": "5.1.0-35",
   "description": "Shared React UI primitives for application shells: column cascade, sidebar, toast/log messages, command palette, keybinding registry",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

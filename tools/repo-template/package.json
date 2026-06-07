@@ -1,6 +1,6 @@
 {
   "name": "@fgv/repo-template",
-  "version": "5.1.0-34",
+  "version": "5.1.0-35",
   "description": "CLI tool for creating and maintaining fgv-derived Rush monorepos",
   "license": "MIT",
   "main": "lib/index.js",

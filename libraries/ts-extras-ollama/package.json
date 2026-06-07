@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-extras-ollama",
-  "version": "5.1.0",
+  "version": "5.1.0-35",
   "description": "Result-integration boundary over the ollama JS library for Node consumers (model management, streamed pull progress, grammar-constrained structured output)",
   "main": "lib/index.js",
   "types": "dist/ts-extras-ollama.d.ts",
