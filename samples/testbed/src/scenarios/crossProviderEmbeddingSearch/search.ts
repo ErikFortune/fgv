@@ -164,45 +164,43 @@ export function parseEmbeddingScenarioConfig(
     );
   }
 
-  const descriptorResult = AiAssist.getProviderDescriptor(providerId);
-  /* c8 ignore next 3 - unreachable: every id in PROVIDER_LABEL_TO_ID is a registered descriptor. */
-  if (descriptorResult.isFailure()) {
-    return fail(`cross-provider-embedding-search: ${descriptorResult.message}`);
-  }
-  const descriptor = descriptorResult.value;
-
-  const keyResult = resolveApiKey(providerId, env);
-  if (keyResult.isFailure()) {
-    return fail(`cross-provider-embedding-search (provider=${providerLabel}): ${keyResult.message}`);
-  }
-
-  const modelOverride = env.EMBED_MODEL?.trim();
-  const model =
-    modelOverride !== undefined && modelOverride.length > 0
-      ? modelOverride
-      : AiAssist.resolveModel(descriptor.defaultModel, 'embedding');
-  if (model.length === 0) {
-    return fail(
-      `cross-provider-embedding-search (provider=${providerLabel}): no embedding model resolved. ` +
-        `Set EMBED_MODEL (self-hosted providers declare no default embedding model).`
+  // Chain the three fallible resolutions (descriptor, key, dimensions); error context is applied
+  // once at each boundary rather than scattered across imperative `fail()` branches. Chaining
+  // also removes the otherwise-unreachable descriptor-failure branch (every id in
+  // PROVIDER_LABEL_TO_ID is a registered descriptor) without a coverage directive.
+  return AiAssist.getProviderDescriptor(providerId)
+    .withErrorFormat((msg) => `cross-provider-embedding-search: ${msg}`)
+    .onSuccess((descriptor) =>
+      resolveApiKey(providerId, env)
+        .withErrorFormat((msg) => `cross-provider-embedding-search (provider=${providerLabel}): ${msg}`)
+        .onSuccess((apiKey) =>
+          parseDimensions(env.EMBED_DIMENSIONS)
+            .withErrorFormat((msg) => `cross-provider-embedding-search: ${msg}`)
+            .onSuccess((dimensions) => {
+              const modelOverride = env.EMBED_MODEL?.trim();
+              const model =
+                modelOverride !== undefined && modelOverride.length > 0
+                  ? modelOverride
+                  : AiAssist.resolveModel(descriptor.defaultModel, 'embedding');
+              if (model.length === 0) {
+                return fail(
+                  `cross-provider-embedding-search (provider=${providerLabel}): no embedding ` +
+                    `model resolved. Set EMBED_MODEL (self-hosted providers declare no default ` +
+                    `embedding model).`
+                );
+              }
+              const endpoint = env.EMBED_ENDPOINT?.trim();
+              return succeed({
+                providerLabel,
+                descriptor,
+                apiKey,
+                model,
+                ...(dimensions !== undefined ? { dimensions } : {}),
+                ...(endpoint !== undefined && endpoint.length > 0 ? { endpoint } : {})
+              });
+            })
+        )
     );
-  }
-
-  const dimensionsResult = parseDimensions(env.EMBED_DIMENSIONS);
-  if (dimensionsResult.isFailure()) {
-    return fail(`cross-provider-embedding-search: ${dimensionsResult.message}`);
-  }
-
-  const endpoint = env.EMBED_ENDPOINT?.trim();
-
-  return succeed({
-    providerLabel,
-    descriptor,
-    apiKey: keyResult.value,
-    model,
-    ...(dimensionsResult.value !== undefined ? { dimensions: dimensionsResult.value } : {}),
-    ...(endpoint !== undefined && endpoint.length > 0 ? { endpoint } : {})
-  });
 }
 
 /** Parse the optional `EMBED_DIMENSIONS` value into a positive integer, or `undefined`. */
