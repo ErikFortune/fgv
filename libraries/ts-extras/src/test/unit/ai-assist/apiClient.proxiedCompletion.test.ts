@@ -105,6 +105,30 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     ]);
   });
 
+  test('fails fast when messages is empty (unified invariant, no proxy call)', async () => {
+    global.fetch = jest.fn();
+    const result = await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      messages: []
+    });
+    expect(result).toFailWith(/at least one entry/i);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test('rejects attachments when the provider does not accept image input', async () => {
+    global.fetch = jest.fn();
+    const result = await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor({ acceptsImageInput: false }),
+      apiKey: 'test-key',
+      messages: [
+        { role: 'user', content: 'describe', attachments: [{ mimeType: 'image/png', base64: 'AA' }] }
+      ]
+    });
+    expect(result).toFailWith(/does not accept image input/i);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   test('omits the system key from the proxy body when not provided', async () => {
     mockFetchResponse({ content: 'ok' });
 

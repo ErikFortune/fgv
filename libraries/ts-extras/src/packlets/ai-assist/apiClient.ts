@@ -20,13 +20,10 @@
 
 /**
  * Chat completion client for AI assist with support for multiple provider APIs.
- *
  * Supports OpenAI-compatible providers (xAI, OpenAI, Groq, Mistral) directly,
- * plus adapters for Anthropic and Google Gemini.
- *
- * When server-side tools (e.g. web_search) are configured, providers that support
- * them will include tool configuration in the request and handle tool-augmented
- * responses.
+ * plus adapters for Anthropic and Google Gemini. When server-side tools (e.g.
+ * web_search) are configured, providers that support them include tool
+ * configuration in the request and handle tool-augmented responses.
  *
  * @packageDocumentation
  */
@@ -738,11 +735,10 @@ async function callGeminiCompletion(
 // ============================================================================
 
 /**
- * Calls the appropriate chat completion API for a given provider.
- * Routes by `apiFormat`: `'openai'` (xAI/OpenAI/Groq/Mistral — switches to Responses API when
- * tools are set), `'anthropic'`, or `'gemini'`.
- * @param params - Request parameters including descriptor, API key, prompt, and optional tools
- * @returns The completion response with content and truncation status, or a failure
+ * Calls the appropriate chat completion API for a given provider. Routes by
+ * `apiFormat`: `'openai'` (xAI/OpenAI/Groq/Mistral — switches to Responses API
+ * when tools are set), `'anthropic'`, or `'gemini'`.
+ * @param params - Request parameters (descriptor, API key, system + messages, optional tools)
  * @public
  */
 export async function callProviderCompletion(
@@ -1386,13 +1382,12 @@ async function callImagenGeneration(
 // ============================================================================
 
 /**
- * Calls the appropriate image-generation API for a given provider.
- * Routes by the `format` field of the resolved {@link IAiImageModelCapability}:
- * `'openai-images'`, `'xai-images'`, `'xai-images-edits'`, `'gemini-imagen'`,
- * or `'gemini-image-out'`. Rejects up front if `referenceImages` is set but the
+ * Calls the appropriate image-generation API for a given provider. Routes by the
+ * `format` field of the resolved {@link IAiImageModelCapability}:
+ * `'openai-images'`, `'xai-images'`, `'xai-images-edits'`, `'gemini-imagen'`, or
+ * `'gemini-image-out'`. Rejects up front if `referenceImages` is set but the
  * capability does not declare `acceptsImageReferenceInput`.
  * @param params - Request parameters including descriptor, API key, and prompt
- * @returns The generated images, or a failure
  * @public
  */
 export async function callProviderImageGeneration(
@@ -1774,8 +1769,7 @@ async function callGeminiListModels(
 /**
  * Lists models available from a provider, routing by `descriptor.apiFormat`.
  * Capabilities are resolved from native provider info and a configurable rule set.
- * @param params - Request parameters including descriptor, API key, and optional capability filter
- * @returns The resolved model list, or a failure
+ * @param params - Request parameters (descriptor, API key, optional capability filter)
  * @public
  */
 export async function callProviderListModels(
@@ -1827,10 +1821,10 @@ export async function callProviderListModels(
 // ============================================================================
 
 /**
- * Calls the model-listing endpoint on a proxy server.
- * Endpoint: `POST ${proxyUrl}/api/ai/list-models`. Capability config is not
- * forwarded. `capabilities` is serialized as a string array. Error body
- * `{error: string}` is surfaced as `proxy: ${error}`.
+ * Calls the model-listing endpoint on a proxy server. Endpoint:
+ * `POST ${proxyUrl}/api/ai/list-models`. Capability config is not forwarded;
+ * `capabilities` is serialized as a string array. Error body `{error: string}`
+ * is surfaced as `proxy: ${error}`.
  * @public
  */
 export async function callProxiedListModels(
@@ -1882,11 +1876,10 @@ export async function callProxiedListModels(
  * Calls the AI completion endpoint on a proxy server instead of calling the
  * provider API directly from the browser. The proxy handles provider dispatch,
  * CORS, and API key forwarding. The request body serializes the unified
- * {@link AiAssist.IChatRequest} shape (`system?` + `messages`).
- *
- * @param proxyUrl - Base URL of the proxy server (e.g. `http://localhost:3001`)
+ * {@link AiAssist.IChatRequest} shape (`system?` + `messages`). Enforces the same
+ * non-empty / trailing-user-turn and image-input invariants as the direct path.
+ * @param proxyUrl - Base URL of the proxy server
  * @param params - Same parameters as {@link callProviderCompletion}
- * @returns The completion response, or a failure
  * @public
  */
 export async function callProxiedCompletion(
@@ -1905,6 +1898,14 @@ export async function callProxiedCompletion(
     signal,
     thinking
   } = params;
+
+  const splitResult = splitChatRequest(system, messages);
+  if (splitResult.isFailure()) {
+    return fail(splitResult.message);
+  }
+  if (splitResult.value.prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
+    return fail(`provider "${descriptor.id}" does not accept image input`);
+  }
 
   const body: Record<string, unknown> = {
     providerId: descriptor.id,
@@ -1960,9 +1961,8 @@ export async function callProxiedCompletion(
  * lookup, model resolution, provider dispatch, and response normalization
  * (including repackaging `referenceImages` for the upstream wire format).
  * Error body `{error: string}` is surfaced as `proxy: ${error}`.
- * @param proxyUrl - Base URL of the proxy server (e.g. `http://localhost:3001`)
+ * @param proxyUrl - Base URL of the proxy server
  * @param params - Same parameters as {@link callProviderImageGeneration}
- * @returns The generated images, or a failure
  * @public
  */
 export async function callProxiedImageGeneration(

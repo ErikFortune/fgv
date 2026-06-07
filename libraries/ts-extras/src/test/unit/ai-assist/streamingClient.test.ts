@@ -1043,6 +1043,16 @@ describe('callProxiedCompletionStream', () => {
     global.fetch = originalFetch;
   });
 
+  test('fails fast when the last message is not a user turn (unified invariant, no proxy call)', async () => {
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      messages: [{ role: 'assistant', content: 'oops' }]
+    });
+    expect(result).toFailWith(/last message must be the current user turn/i);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   test('translates pre-serialized unified events from the proxy', async () => {
     mockSseResponse([
       `data: ${JSON.stringify({ type: 'text-delta', delta: 'Hi' })}\n\n`,

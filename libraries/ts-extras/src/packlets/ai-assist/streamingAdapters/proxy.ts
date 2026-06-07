@@ -27,8 +27,9 @@
  * @packageDocumentation
  */
 
-import { Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { fail, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 
+import { splitChatRequest } from '../chatRequestBuilders';
 import { type IAiStreamEvent } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { IProviderCompletionStreamParams, openSseConnection, validateEventPayload } from './common';
@@ -134,6 +135,14 @@ export async function callProxiedCompletionStream(
     signal,
     thinking
   } = params;
+
+  // Enforce the same unified-request invariants the direct entry points apply
+  // (non-empty messages, trailing user turn) so an invalid request fails fast
+  // here rather than diverging at the proxy.
+  const splitResult = splitChatRequest(system, messages);
+  if (splitResult.isFailure()) {
+    return fail(splitResult.message);
+  }
 
   const body: Record<string, unknown> = {
     providerId: descriptor.id,
