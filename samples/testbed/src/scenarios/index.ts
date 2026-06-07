@@ -11,6 +11,7 @@
 
 import type { IScenario } from '../shell';
 import { anthropicClientToolsScenario } from './anthropicClientTools';
+import { crossProviderEmbeddingSearchScenario } from './crossProviderEmbeddingSearch';
 import { geminiClientToolsScenario } from './geminiClientTools';
 import { localClassifierSafetyScenario } from './localClassifierSafety';
 import { localEmbeddingSearchScenario } from './localEmbeddingSearch';
@@ -31,5 +32,6 @@ export const scenarios: readonly IScenario[] = [
   localClassifierSafetyScenario,
   localEmbeddingSearchScenario,
   localSummarizationScenario,
-  mcpProbeScenario
+  mcpProbeScenario,
+  crossProviderEmbeddingSearchScenario
 ];
