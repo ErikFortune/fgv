@@ -305,12 +305,15 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
           // Resolve effective tools: per-call override > settings defaults > none
           const effectiveTools = AiAssist.resolveEffectiveTools(descriptor, providerConfig.tools, tools);
 
-          // Call the API — through proxy if configured, otherwise direct
+          // Call the API — through proxy if configured, otherwise direct.
+          // The unified request orders history before the current turn; the
+          // correction-retry turns naturally append after the current user turn.
+          const base = prompt.toRequest();
           const completionParams: AiAssist.IProviderCompletionParams = {
             descriptor,
             apiKey: apiKeyResult.value,
-            prompt,
-            additionalMessages: correctionMessages.length > 0 ? correctionMessages : undefined,
+            system: base.system,
+            messages: [...base.messages, ...correctionMessages],
             modelOverride: providerConfig.model,
             endpoint: providerConfig.endpoint,
             logger,
@@ -515,11 +518,13 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
       }
 
       const effectiveTools = AiAssist.resolveEffectiveTools(descriptor, providerConfig.tools, options?.tools);
+      // Order prior history before the current user turn (the unified request shape).
+      const base = prompt.toRequest();
       const requestParams: AiAssist.IProviderCompletionStreamParams = {
         descriptor,
         apiKey: apiKeyResult.value,
-        prompt,
-        messagesBefore: options?.messagesBefore,
+        system: base.system,
+        messages: [...(options?.messagesBefore ?? []), ...base.messages],
         modelOverride: providerConfig.model,
         endpoint: providerConfig.endpoint,
         logger,

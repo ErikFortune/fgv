@@ -165,8 +165,11 @@ const cliImpl: ICliScenarioImpl = {
     }
     const descriptor = descriptorResult.value;
 
-    // Build the prompt.
-    const prompt = new AiAssist.AiPrompt(USER_QUESTION, SYSTEM_PROMPT);
+    // Build the request (system + the current user turn).
+    const request: AiAssist.IChatRequest = {
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: USER_QUESTION }]
+    };
 
     // Use the version-pinned `grok-4.3` alias — a reasoning-capable model that the Responses
     // API accepts directly. Pinning major.minor avoids the dated-snapshot deprecation trap
@@ -187,7 +190,7 @@ const cliImpl: ICliScenarioImpl = {
     const turnResult = AiAssist.executeClientToolTurn({
       descriptor,
       apiKey,
-      prompt,
+      ...request,
       clientTools: [memoryTool],
       tools: serverTools,
       model,
@@ -258,7 +261,7 @@ const cliImpl: ICliScenarioImpl = {
       const continuationTurnResult = AiAssist.executeClientToolTurn({
         descriptor,
         apiKey,
-        prompt,
+        ...request,
         continuationMessages: continuation.messages,
         clientTools: [memoryTool],
         tools: serverTools,

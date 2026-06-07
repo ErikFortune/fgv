@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add model-management primitives to @fgv/ts-extras-ollama (O-2): listModels, listRunning, showModel, deleteModel, with fgv-owned normalized model types.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras-ollama"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-ollama",
+  "email": "ErikFortune@outlook.com"
+}

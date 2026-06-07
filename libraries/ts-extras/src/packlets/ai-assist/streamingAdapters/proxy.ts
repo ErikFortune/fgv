@@ -27,8 +27,9 @@
  * @packageDocumentation
  */
 
-import { Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { fail, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 
+import { normalizeOutboundMessages, splitChatRequest } from '../chatRequestBuilders';
 import { type IAiStreamEvent } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { IProviderCompletionStreamParams, openSseConnection, validateEventPayload } from './common';
@@ -125,8 +126,8 @@ export async function callProxiedCompletionStream(
   const {
     descriptor,
     apiKey,
-    prompt,
-    messagesBefore,
+    system,
+    messages,
     temperature,
     modelOverride,
     logger,
@@ -135,20 +136,27 @@ export async function callProxiedCompletionStream(
     thinking
   } = params;
 
-  const promptBody: Record<string, unknown> = { system: prompt.system, user: prompt.user };
-  if (prompt.attachments.length > 0) {
-    promptBody.attachments = prompt.attachments;
+  // Enforce the same unified-request invariants the direct entry points apply
+  // (non-empty messages, trailing user turn) so an invalid request fails fast
+  // here rather than diverging at the proxy.
+  const splitResult = splitChatRequest(system, messages);
+  if (splitResult.isFailure()) {
+    return fail(splitResult.message);
   }
+  if (splitResult.value.prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
+    return fail(`provider "${descriptor.id}" does not accept image input`);
+  }
+
   const body: Record<string, unknown> = {
     providerId: descriptor.id,
     apiKey,
-    prompt: promptBody,
+    messages: normalizeOutboundMessages(splitResult.value),
     /* c8 ignore next 1 - defensive: temperature always uses default 0.7 in proxy streaming tests */
     temperature: temperature ?? 0.7,
     stream: true
   };
-  if (messagesBefore && messagesBefore.length > 0) {
-    body.messagesBefore = messagesBefore;
+  if (system !== undefined) {
+    body.system = system;
   }
   if (modelOverride !== undefined) {
     body.modelOverride = modelOverride;

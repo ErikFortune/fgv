@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Test-only: add an end-to-end verification suite exercising the two load-bearing constraints (graceful + NOISY schema-bearing degradation; the probe report) against a REAL in-memory MCP server (SDK `Server` + `InMemoryTransport`), advertising one tool per `JsonSchema.fromJson`-rejected feature ($ref, oneOf, anyOf, pattern, union type[]). Hardens the `sdk.ts` projection casts that line-coverage of a mocked seam cannot reach. No production code change.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras-mcp"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "ErikFortune@outlook.com"
+}

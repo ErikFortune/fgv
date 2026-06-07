@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: unify the turn entry points (callProviderCompletion, callProviderCompletionStream, generateJsonCompletion, executeClientToolTurn, and the proxy variants) onto a single ordered { system?, messages } request shape (IChatRequest), eliminating the head/tail history-ordering asymmetry. BREAKING on the active ai-assist surface: replaces { prompt, additionalMessages } / { prompt, messagesBefore }; AiPrompt gains toRequest(); proxy wire body now sends { system, messages } instead of { prompt, additionalMessages/messagesBefore }.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

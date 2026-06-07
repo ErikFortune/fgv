@@ -27,6 +27,7 @@ import { fail, Result, succeed } from '@fgv/ts-utils';
 
 import {
   type AiProviderId,
+  type IAiEmbeddingModelCapability,
   type IAiImageModelCapability,
   type IAiModelCapabilityConfig,
   type IAiProviderDescriptor
@@ -76,12 +77,25 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'gemini',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    defaultModel: { base: 'gemini-2.5-flash', image: 'gemini-2.5-flash-image' },
+    defaultModel: {
+      base: 'gemini-2.5-flash',
+      image: 'gemini-2.5-flash-image',
+      embedding: 'gemini-embedding-001'
+    },
     supportedTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
     thinkingMode: 'optional',
+    embedding: [
+      {
+        modelPrefix: '',
+        format: 'gemini-embeddings',
+        supportsDimensions: true,
+        supportsTaskType: true,
+        defaultDimensions: 3072
+      }
+    ],
     imageGeneration: [
       {
         // Imagen 4 Ultra: max 1 image
@@ -136,12 +150,13 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.mistral.ai/v1',
-    defaultModel: 'mistral-large-latest',
+    defaultModel: { base: 'mistral-large-latest', embedding: 'mistral-embed' },
     supportedTools: [],
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: false,
-    thinkingMode: 'unsupported'
+    thinkingMode: 'unsupported',
+    embedding: [{ modelPrefix: '', format: 'openai-embeddings' }]
   },
   {
     id: 'ollama',
@@ -155,7 +170,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: false,
-    thinkingMode: 'unsupported'
+    thinkingMode: 'unsupported',
+    embedding: [{ modelPrefix: '', format: 'openai-embeddings' }]
   },
   {
     id: 'openai',
@@ -164,12 +180,24 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.openai.com/v1',
-    defaultModel: { base: 'gpt-4o', image: 'dall-e-3' },
+    defaultModel: { base: 'gpt-4o', image: 'dall-e-3', embedding: 'text-embedding-3-small' },
     supportedTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
     thinkingMode: 'optional',
+    embedding: [
+      {
+        modelPrefix: 'text-embedding-3',
+        format: 'openai-embeddings',
+        supportsDimensions: true,
+        maxBatchSize: 2048
+      },
+      {
+        modelPrefix: '',
+        format: 'openai-embeddings'
+      }
+    ],
     imageGeneration: [
       {
         modelPrefix: 'gpt-image-',
@@ -223,7 +251,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: false,
-    thinkingMode: 'unsupported'
+    thinkingMode: 'unsupported',
+    embedding: [{ modelPrefix: '', format: 'openai-embeddings' }]
   },
   {
     id: 'xai-grok',
@@ -347,6 +376,42 @@ export function resolveImageCapability(
     );
 }
 
+/**
+ * Whether a provider declares any embedding capability at all.
+ *
+ * @param descriptor - The provider descriptor
+ * @returns `true` when {@link IAiProviderDescriptor.embedding} has at least one
+ *   entry; `false` otherwise.
+ * @public
+ */
+export function supportsEmbedding(descriptor: IAiProviderDescriptor): boolean {
+  return (descriptor.embedding?.length ?? 0) > 0;
+}
+
+/**
+ * Resolve the embedding capability that applies to a given model id for a
+ * provider. Returns the entry from {@link IAiProviderDescriptor.embedding} whose
+ * `modelPrefix` is the longest prefix of `modelId`. Ties are broken by
+ * first-encountered.
+ *
+ * @param descriptor - The provider descriptor
+ * @param modelId - The resolved embedding model id
+ * @returns The matching capability, or `undefined` when no rule matches or the
+ *   provider declares no embedding capabilities.
+ * @public
+ */
+export function resolveEmbeddingCapability(
+  descriptor: IAiProviderDescriptor,
+  modelId: string
+): IAiEmbeddingModelCapability | undefined {
+  return (descriptor.embedding ?? [])
+    .filter((cap) => modelId.startsWith(cap.modelPrefix))
+    .reduce<IAiEmbeddingModelCapability | undefined>(
+      (best, cap) => (best && best.modelPrefix.length >= cap.modelPrefix.length ? best : cap),
+      undefined
+    );
+}
+
 // ============================================================================
 // Default model capability config
 // ============================================================================
@@ -364,6 +429,7 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
     openai: [
       { idPattern: /^dall-e/, capabilities: ['image-generation'] },
       { idPattern: /^gpt-image/, capabilities: ['image-generation'] },
+      { idPattern: /^text-embedding/, capabilities: ['embedding'] },
       { idPattern: /^gpt-5/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^gpt-4/, capabilities: ['chat', 'tools', 'vision'] },
       { idPattern: /^gpt-3\.5/, capabilities: ['chat'] },
@@ -381,6 +447,7 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
     'google-gemini': [
       { idPattern: /^imagen/, capabilities: ['image-generation'] },
       { idPattern: /^gemini-.*-image/, capabilities: ['image-generation'] },
+      { idPattern: /embedding/, capabilities: ['embedding'] },
       { idPattern: /^gemini-2\.5/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^gemini-/, capabilities: ['chat', 'tools', 'vision'] }
     ],
@@ -390,6 +457,16 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
       { idPattern: /^claude-/, capabilities: ['chat', 'tools', 'vision'] }
     ],
     groq: [{ idPattern: /./, capabilities: ['chat'] }],
-    mistral: [{ idPattern: /./, capabilities: ['chat'] }]
+    mistral: [
+      { idPattern: /embed/, capabilities: ['embedding'] },
+      { idPattern: /./, capabilities: ['chat'] }
+    ],
+    // Self-hosted OpenAI-compatible servers (Ollama, LM Studio, llama.cpp) serve
+    // arbitrary, caller-chosen models whose ids we can't enumerate ahead of time.
+    // The catch-all `/./` intentionally departs from the "narrow patterns" rule
+    // above: assume `chat` for everything and let the caller override via
+    // `capabilityConfig` when they know their deployment serves image/embedding models.
+    ollama: [{ idPattern: /./, capabilities: ['chat'] }],
+    'openai-compat': [{ idPattern: /./, capabilities: ['chat'] }]
   }
 };

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: add callProviderEmbedding (Phase 2) — the cross-provider embedding dispatcher + OpenAI-format adapter (serves OpenAI, Ollama via /v1, openai-compat self-hosted, and Mistral). Batch in, number[][] out; empty-input short-circuits with no wire call; batch over capability.maxBatchSize fails fast; encoding_format:'float'; caller dimensions/taskType honored where the model supports them and a logged no-op otherwise (preserving the cross-provider call site). Extracts the shared fetchJson + IAiApiConfig HTTP helpers into an internal http.ts module reused by apiClient.ts and embeddingClient.ts. Gemini adapter + callProxiedEmbedding land in Phase 3.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

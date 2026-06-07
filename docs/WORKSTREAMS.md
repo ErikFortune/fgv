@@ -204,6 +204,20 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ## Completed workstreams
 
+### `ai-assist-embeddings` ✅
+
+**Status:** ✅ shipped to integration branch `ai-assist-embeddings` (Phases 1–4 via PRs #481–#484; each squash/merge into the integration branch, promotion to `release` to follow with the rest of the branch).
+**Branch base:** `release` (integration branch `ai-assist-embeddings`)
+**Package surface:** `@fgv/ts-extras/ai-assist` (new `embeddingClient.ts` + shared `http.ts`; `model.ts`, `registry.ts`, `apiClient.ts`, `index.ts`) + `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**Mission.** Add the missing third ai-assist modality — `text → vector` embeddings — as a cross-provider HTTP primitive mirroring the completion and image-generation primitives.
+
+**What shipped.** `callProviderEmbedding` + `callProxiedEmbedding` over a two-member `AiEmbeddingApiFormat` dispatch: `openai-embeddings` (OpenAI / Ollama-via-`/v1` / openai-compat / Mistral) and `gemini-embeddings` (Gemini `batchEmbedContents`, `taskType` + `outputDimensionality`). Additive `embedding?` descriptor capability + `'embedding'` `ModelSpecKey` + `supportsEmbedding`/`resolveEmbeddingCapability`. Cross-provider `dimensions`/`taskType` knobs are no-op-where-unsupported (logged, never a failure), preserving Gemini's retrieval asymmetry. `number[][]` result; empty-input short-circuit; `maxBatchSize` fail-fast; OpenAI response-alignment validation.
+
+**Outcome.** Additive only; all phases green (`build` + `lint` + `test` @ 100% coverage; api report regenerated; `none` change files). Shared `http.ts` (`fetchJson` + `IAiApiConfig`) extracted from `apiClient.ts`, reused by both clients. **Resolved ollama-native OQ-1: native Ollama `embed` is CUT** — Ollama embeddings flow through `callProviderEmbedding` via `/v1`.
+
+**Artifacts:** [`.ai/tasks/completed/2026-06/ai-assist-embeddings/`](../.ai/tasks/completed/2026-06/ai-assist-embeddings/) (brief, design, result, README).
+
 ### `json-schema-derives-t` ✅
 
 **Status:** ✅ shipped via PR #441 to integration branch `json-schema-derives-t`; cluster-close PR open

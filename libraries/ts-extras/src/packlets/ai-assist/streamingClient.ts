@@ -29,6 +29,7 @@
 
 import { fail, Result } from '@fgv/ts-utils';
 
+import { splitChatRequest } from './chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from './endpoint';
 import { type IAiStreamEvent, resolveModel } from './model';
 import { callAnthropicStream } from './streamingAdapters/anthropic';
@@ -93,8 +94,8 @@ export async function callProviderCompletionStream(
   const {
     descriptor,
     apiKey,
-    prompt,
-    messagesBefore,
+    system,
+    messages,
     temperature,
     modelOverride,
     logger,
@@ -103,6 +104,12 @@ export async function callProviderCompletionStream(
     endpoint,
     thinking
   } = params;
+
+  const splitResult = splitChatRequest(system, messages);
+  if (splitResult.isFailure()) {
+    return fail(splitResult.message);
+  }
+  const { prompt, head } = splitResult.value;
 
   const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
   if (baseUrlResult.isFailure()) {
@@ -161,7 +168,7 @@ export async function callProviderCompletionStream(
           config,
           prompt,
           tools,
-          messagesBefore,
+          head,
           effectiveTemperature,
           logger,
           signal,
@@ -171,7 +178,7 @@ export async function callProviderCompletionStream(
       return callOpenAiChatStream(
         config,
         prompt,
-        messagesBefore,
+        head,
         effectiveTemperature,
         logger,
         signal,
@@ -181,7 +188,7 @@ export async function callProviderCompletionStream(
       return callAnthropicStream(
         config,
         prompt,
-        messagesBefore,
+        head,
         effectiveTemperature,
         tools,
         logger,
@@ -192,7 +199,7 @@ export async function callProviderCompletionStream(
       return callGeminiStream(
         config,
         prompt,
-        messagesBefore,
+        head,
         effectiveTemperature,
         tools,
         logger,

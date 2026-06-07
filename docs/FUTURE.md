@@ -69,11 +69,28 @@ Layer 1 (harness-supplied tools) shipped: `IAiClientTool`, `executeClientToolTur
 
 **Remaining future work:**
 
-**MCP tools (layer 2, longer term).** Same conceptual surface, but the tool catalog comes from one or more MCP servers the consumer connects to. Adds: MCP client transport, tool discovery, schema introspection, lifecycle management. Likely a separate consumer-facing API that lowers into the same internal client-tool plumbing.
+**MCP tools (layer 2).** **Slice 1 shipped 2026-06-06 via the `ts-extras-mcp` stream** — the new `@fgv/ts-extras-mcp` (Node) package wraps `@modelcontextprotocol/sdk`, discovers a server's tools, and adapts each into an `AiAssist.IAiClientTool` (`adaptMcpTools`) that drops directly into `executeClientToolTurn`. Graceful degradation: tools whose `inputSchema` is outside the `JsonSchema.fromJson` subset are excluded, surfaced on `skipped`, and NOISY-warned with the raw schema. Compatibility probe: the `samples/testbed` `mcp-probe` scenario. See `.ai/tasks/active/ts-extras-mcp/`.
 
-**Dependencies**: ai-assist-client-tools cluster closed to release (in progress as of 2026-06-04).
+**Dependencies**: ai-assist-client-tools cluster closed to release (done 2026-06-04).
 
-**Reference**: 2026-05-30 conversation (Erik watching personaility's roadmap); `.ai/tasks/active/ai-assist-client-tools/`; PR #447.
+**Reference**: 2026-05-30 conversation (Erik watching personaility's roadmap); `.ai/tasks/active/ai-assist-client-tools/`; PR #447; `.ai/tasks/active/ts-extras-mcp/`.
+
+---
+
+## `@fgv/ts-extras-mcp` slice-2 follow-ups
+
+Deferred from the `ts-extras-mcp` slice-1 stream (2026-06-06). Each is additive on the new package's surface.
+
+- **Browser sibling `@fgv/ts-web-extras-mcp`.** Slice 1 is Node-only (stdio transport spawns a subprocess; HTTP transport is fine in-browser modulo CORS). A browser package would expose `createHttpTransport` + the session/adapter surface backed by the SDK's browser-compatible transports.
+- **MCP resources / prompts / sampling.** Slice 1 covers tool discovery + invocation only. MCP servers also expose resources, prompt templates, and sampling callbacks.
+- **OAuth / managed auth.** Slice 1 supports static headers only (`createHttpTransport({ headers })`). The SDK has an auth provider abstraction for OAuth flows.
+- **Multimodal tool-result passthrough.** `callMcpTool` projects non-text content blocks to a `[<type> block]` summary; image/audio/resource passthrough into the ai-assist round-trip is out of scope.
+- **Cross-server tool-name namespacing.** Connecting multiple servers can collide tool names; duplicates already fail loudly in `executeClientToolTurn`, but a namespacing/prefixing scheme would let multiple servers coexist.
+- **Transport-injection testability seam.** The package exposes only the `createStdioTransport` / `createHttpTransport` factories, so an external consumer cannot inject an in-memory transport to drive the session/adapter in-process against a fake MCP server in their own tests (they'd stand up a real stdio/http server). The package's own e2e test reaches the internal `McpTransport` directly; a public seam (e.g. an exported `createTransportFromSdk` or accepting a pre-built SDK transport) would let consumers do the same. Surfaced by the #471 verification; not a production defect.
+
+**Headline follow-on lever — additively widen `JsonSchema.fromJson`'s supported subset** (in `@fgv/ts-json-base`). The single biggest real-world risk is schema-subset mismatch: real MCP servers advertise `$ref`/`$defs`, `oneOf`, `pattern`, union `type` arrays, etc. that `fromJson` rejects, so those tools land in `adaptMcpTools`' `skipped` set. `$ref`/`$defs` resolution and `pattern` passthrough are the highest-value additions. This is a separate small `ts-json-base` stream, commissioned based on what the `mcp-probe` scenario surfaces against real servers — NOT done in the `ts-extras-mcp` stream.
+
+**Reference**: `.ai/tasks/active/ts-extras-mcp/brief.md` + `design.md`.
 
 
 ---
@@ -175,3 +192,31 @@ Erik's framing (2026-06-05): "consider using ts-res instead of hardcoding custom
 - `@fgv/ts-web-extras` is the browser complement, and its correctness depends on `ts-extras` not bleeding Node-only code into the shared surface.
 
 A future canary should build a minimal Vite/webpack bundle importing the browser-safe entry points of `@fgv/ts-extras` + `@fgv/ts-web-extras`, assert it bundles without `node:*` polyfill errors, **actually run in CI** (do not add it otherwise), and live in a package excluded from the publishable version policy so it generates no change-file noise.
+
+---
+
+## `@fgv/ts-web-extras-ollama` — browser Ollama sibling (O-5)
+
+**Status: parking lot — filed at the `ollama-native` O-4 close (2026-06-06). Not commissioned.**
+
+`@fgv/ts-extras-ollama` shipped Node-only at v0.1 (PRs #472–#475; promoted via #477). The browser path is the natural shape of a future sibling, mirroring `@fgv/ts-web-extras-transformers` to `@fgv/ts-extras-transformers`:
+
+- Wrap `import ollama from 'ollama/browser'` (the `ollama` lib's browser entry) instead of the Node entry.
+- The sidecar must set `OLLAMA_ORIGINS` to allow the browser origin — direct `browser → localhost:11434` is CORS-blocked by default. This is a deployment prerequisite the package can document but not remove.
+- Identical surface to the Node package (the primitives are pure HTTP/data; the `fetch`-injection seam already exists on `createOllamaClient`), so most of the boundary is reusable.
+
+**Why deferred:** no browser consumer yet, and the CORS/`OLLAMA_ORIGINS` story makes the browser path a deliberate opt-in rather than a default. Commission when a browser consumer surfaces.
+
+## Native Ollama `embed` — RESOLVED → CUT (do not build)
+
+**Status: resolved 2026-06-07. Native `embed` is CUT, not held.**
+
+The cross-provider `ai-assist-embeddings` primitive shipped (`AiAssist.callProviderEmbedding`) and owns Ollama embeddings via `/v1/embeddings` — point the `ollama` descriptor at `http://localhost:11434/v1` and pass the embedding model via `modelOverride`. Native `/api/embed` adds only marginal diagnostics (`total_duration` / `prompt_eval_count`), not worth a parallel path, so `@fgv/ts-extras-ollama` intentionally does NOT ship `embed`. Revisit additively only if a concrete consumer demonstrates a hard need for the native-only diagnostics. See `.ai/tasks/completed/2026-06/ai-assist-embeddings/` and the `@fgv/ts-extras-ollama` entry in `LIBRARY_CAPABILITIES.md`.
+
+---
+
+## Transparent batch-chunking for `callProviderEmbedding`
+
+`callProviderEmbedding` fails fast when `input` exceeds the capability's `maxBatchSize` (e.g. OpenAI's 2048) rather than auto-chunking — fine for v0.1, since the failure is explicit and a caller can chunk themselves. Future additive nicety: have the dispatcher transparently split an over-limit batch into `maxBatchSize`-sized sub-requests (sequential or bounded-concurrent) and reassemble `vectors[]` in input order. Adds chunking + reassembly + partial-failure semantics; defer until a RAG consumer actually hits the limit and wants it handled in-library.
+
+**Reference:** `ai-assist-embeddings` design §14 amendment #3.

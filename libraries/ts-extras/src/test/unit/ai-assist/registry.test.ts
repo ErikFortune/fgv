@@ -236,11 +236,148 @@ describe('AiAssist.registry', () => {
     });
   });
 
+  describe('supportsEmbedding', () => {
+    test('is true for providers that declare an embedding capability', () => {
+      for (const id of ['openai', 'google-gemini', 'ollama', 'openai-compat', 'mistral'] as const) {
+        expect(AiAssist.getProviderDescriptor(id)).toSucceedAndSatisfy((desc) => {
+          expect(AiAssist.supportsEmbedding(desc)).toBe(true);
+        });
+      }
+    });
+
+    test('is false for providers without an embedding endpoint', () => {
+      for (const id of ['xai-grok', 'anthropic', 'groq', 'copy-paste'] as const) {
+        expect(AiAssist.getProviderDescriptor(id)).toSucceedAndSatisfy((desc) => {
+          expect(desc.embedding).toBeUndefined();
+          expect(AiAssist.supportsEmbedding(desc)).toBe(false);
+        });
+      }
+    });
+  });
+
+  describe('embedding registry entries', () => {
+    test('openai declares a text-embedding-3 default and a dimensions-capable prefix', () => {
+      expect(AiAssist.getProviderDescriptor('openai')).toSucceedAndSatisfy((desc) => {
+        expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('text-embedding-3-small');
+        expect(AiAssist.resolveEmbeddingCapability(desc, 'text-embedding-3-small')).toMatchObject({
+          modelPrefix: 'text-embedding-3',
+          format: 'openai-embeddings',
+          supportsDimensions: true,
+          maxBatchSize: 2048
+        });
+      });
+    });
+
+    test('gemini declares a gemini-embedding-001 default with taskType + dimensions', () => {
+      expect(AiAssist.getProviderDescriptor('google-gemini')).toSucceedAndSatisfy((desc) => {
+        expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('gemini-embedding-001');
+        const cap = AiAssist.resolveEmbeddingCapability(desc, 'gemini-embedding-001');
+        expect(cap).toMatchObject({
+          format: 'gemini-embeddings',
+          supportsTaskType: true,
+          supportsDimensions: true
+        });
+      });
+    });
+
+    test('mistral declares a mistral-embed default via the openai-embeddings format', () => {
+      expect(AiAssist.getProviderDescriptor('mistral')).toSucceedAndSatisfy((desc) => {
+        expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('mistral-embed');
+        expect(AiAssist.resolveEmbeddingCapability(desc, 'mistral-embed')).toMatchObject({
+          format: 'openai-embeddings'
+        });
+      });
+    });
+
+    test('self-hosted providers declare a catch-all capability and no default embedding model', () => {
+      for (const id of ['ollama', 'openai-compat'] as const) {
+        expect(AiAssist.getProviderDescriptor(id)).toSucceedAndSatisfy((desc) => {
+          expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('');
+          expect(AiAssist.resolveEmbeddingCapability(desc, 'nomic-embed-text')).toMatchObject({
+            modelPrefix: '',
+            format: 'openai-embeddings'
+          });
+        });
+      }
+    });
+  });
+
+  describe('resolveEmbeddingCapability', () => {
+    test('selects the most specific (longest) prefix even when listed after the catch-all', () => {
+      const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
+      // text-embedding-3-large hits the specific prefix (dimensions-capable, batched).
+      expect(AiAssist.resolveEmbeddingCapability(descriptor, 'text-embedding-3-large')).toMatchObject({
+        modelPrefix: 'text-embedding-3',
+        format: 'openai-embeddings',
+        supportsDimensions: true,
+        maxBatchSize: 2048
+      });
+      // text-embedding-ada-002 falls back to the catch-all (no dimensions support).
+      expect(AiAssist.resolveEmbeddingCapability(descriptor, 'text-embedding-ada-002')).toMatchObject({
+        modelPrefix: '',
+        format: 'openai-embeddings'
+      });
+      expect(
+        AiAssist.resolveEmbeddingCapability(descriptor, 'text-embedding-ada-002')?.supportsDimensions
+      ).toBeUndefined();
+      // Catch-all carries no batch-size guard (matches design §5.1).
+      expect(
+        AiAssist.resolveEmbeddingCapability(descriptor, 'text-embedding-ada-002')?.maxBatchSize
+      ).toBeUndefined();
+    });
+
+    test('returns undefined when the provider declares no embedding capabilities', () => {
+      const descriptor = AiAssist.getProviderDescriptor('anthropic').orThrow();
+      expect(AiAssist.resolveEmbeddingCapability(descriptor, 'claude-3-opus')).toBeUndefined();
+    });
+  });
+
   describe('allProviderIds', () => {
     test('contains all provider ids in same order as descriptors', () => {
       const descriptors = AiAssist.getProviderDescriptors();
       const expectedIds = descriptors.map((d) => d.id);
       expect(AiAssist.allProviderIds).toEqual(expectedIds);
     });
+  });
+});
+
+describe('DEFAULT_MODEL_CAPABILITY_CONFIG', () => {
+  const config = AiAssist.DEFAULT_MODEL_CAPABILITY_CONFIG;
+
+  test('ollama catch-all assigns chat to any model id', () => {
+    const rules = config.perProvider?.ollama ?? [];
+    const caps = new Set<string>();
+    for (const rule of rules) {
+      if (rule.idPattern.test('llama3.2')) {
+        rule.capabilities.forEach((c) => caps.add(c));
+      }
+    }
+    expect(caps.has('chat')).toBe(true);
+  });
+
+  test('openai-compat catch-all assigns chat to any model id', () => {
+    const rules = config.perProvider?.['openai-compat'] ?? [];
+    const caps = new Set<string>();
+    for (const rule of rules) {
+      if (rule.idPattern.test('some-local-model')) {
+        rule.capabilities.forEach((c) => caps.add(c));
+      }
+    }
+    expect(caps.has('chat')).toBe(true);
+  });
+
+  test.each([
+    ['openai', 'text-embedding-3-large'],
+    ['google-gemini', 'gemini-embedding-001'],
+    ['mistral', 'mistral-embed']
+  ] as const)('%s tags %s with the embedding capability', (provider, modelId) => {
+    const rules = config.perProvider?.[provider] ?? [];
+    const caps = new Set<string>();
+    for (const rule of rules) {
+      if (rule.idPattern.test(modelId)) {
+        rule.capabilities.forEach((c) => caps.add(c));
+      }
+    }
+    expect(caps.has('embedding')).toBe(true);
   });
 });

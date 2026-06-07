@@ -20,13 +20,10 @@
 
 /**
  * Chat completion client for AI assist with support for multiple provider APIs.
- *
  * Supports OpenAI-compatible providers (xAI, OpenAI, Groq, Mistral) directly,
- * plus adapters for Anthropic and Google Gemini.
- *
- * When server-side tools (e.g. web_search) are configured, providers that support
- * them will include tool configuration in the request and handle tool-augmented
- * responses.
+ * plus adapters for Anthropic and Google Gemini. When server-side tools (e.g.
+ * web_search) are configured, providers that support them include tool
+ * configuration in the request and handle tool-augmented responses.
  *
  * @packageDocumentation
  */
@@ -37,6 +34,7 @@ import { fail, type Logging, mapResults, Result, succeed, type Validator, Valida
 import {
   AiPrompt,
   type AiModelCapability,
+  allModelCapabilities,
   type AiServerToolConfig,
   type IAiCompletionResponse,
   type IAiGeneratedImage,
@@ -49,6 +47,7 @@ import {
   type IAiModelInfo,
   type IAiProviderDescriptor,
   type IChatMessage,
+  type IChatRequest,
   type IThinkingConfig,
   type ModelSpec,
   resolveModel
@@ -65,9 +64,12 @@ import {
   buildGeminiContents,
   buildMessages,
   buildOpenAiChatUserContent,
-  buildOpenAiResponsesUserContent
+  buildOpenAiResponsesUserContent,
+  normalizeOutboundMessages,
+  splitChatRequest
 } from './chatRequestBuilders';
 import { bearerAuthHeader, resolveEffectiveBaseUrl } from './endpoint';
+import { type IAiApiConfig, fetchJson } from './http';
 import { DEFAULT_MODEL_CAPABILITY_CONFIG, resolveImageCapability, supportsImageGeneration } from './registry';
 import {
   resolveImageOptions,
@@ -81,28 +83,16 @@ import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolForm
 // ============================================================================
 
 /**
- * Internal API configuration built from a provider descriptor.
- * @internal
- */
-interface IAiApiConfig {
-  readonly baseUrl: string;
-  readonly apiKey: string;
-  readonly model: string;
-}
-
-/**
- * Parameters for a provider completion request.
+ * Parameters for a provider completion request. Carries the unified
+ * {@link AiAssist.IChatRequest} shape (`system?` + ordered `messages`, last =
+ * current user turn); history is linearized before the current turn.
  * @public
  */
-export interface IProviderCompletionParams {
+export interface IProviderCompletionParams extends IChatRequest {
   /** The provider descriptor */
   readonly descriptor: IAiProviderDescriptor;
   /** API key for authentication */
   readonly apiKey: string;
-  /** The structured prompt to send */
-  readonly prompt: AiPrompt;
-  /** Additional messages to append after system+user in order (e.g. for correction retries). */
-  readonly additionalMessages?: ReadonlyArray<IChatMessage>;
   /** Sampling temperature (default: 0.7) */
   readonly temperature?: number;
   /** Optional model override — string or context-aware map (uses descriptor.defaultModel otherwise) */
@@ -130,65 +120,6 @@ export interface IProviderCompletionParams {
 // ============================================================================
 // Shared helpers
 // ============================================================================
-
-/**
- * Makes an HTTP request and returns the parsed JSON, or a failure.
- * @internal
- */
-async function fetchJson(
-  url: string,
-  headers: Record<string, string>,
-  body: unknown,
-  logger?: Logging.ILogger,
-  signal?: AbortSignal
-): Promise<Result<JsonObject>> {
-  /* c8 ignore next 1 - optional logger */
-  logger?.detail(`AI API request: POST ${url}`);
-
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers
-      },
-      body: JSON.stringify(body),
-      signal
-    });
-  } catch (err: unknown) {
-    const detail = err instanceof Error ? err.message : String(err);
-    /* c8 ignore next 1 - optional logger */
-    logger?.error(`AI API request failed: ${detail}`);
-    return fail(`AI API request failed: ${detail}`);
-  }
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => 'unknown error');
-    /* c8 ignore next 1 - optional logger */
-    logger?.error(`AI API returned ${response.status}: ${errorText}`);
-    return fail(`AI API returned ${response.status}: ${errorText}`);
-  }
-
-  /* c8 ignore next 1 - optional logger */
-  logger?.detail(`AI API response: ${response.status}`);
-
-  let json: unknown;
-  try {
-    json = await response.json();
-  } catch {
-    /* c8 ignore next 1 - optional logger */
-    logger?.error('AI API returned invalid JSON response');
-    return fail('AI API returned invalid JSON response');
-  }
-
-  if (!isJsonObject(json)) {
-    /* c8 ignore next 1 - optional logger */
-    logger?.error('AI API returned non-object JSON response');
-    return fail('AI API returned non-object JSON response');
-  }
-  return succeed(json);
-}
 
 /**
  * Makes a multipart/form-data POST request and returns the parsed JSON, or a
@@ -463,7 +394,7 @@ const geminiResponse: Validator<IGeminiResponse> = Validators.object<IGeminiResp
 async function callOpenAiCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
-  additionalMessages?: ReadonlyArray<IChatMessage>,
+  head?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
@@ -471,7 +402,7 @@ async function callOpenAiCompletion(
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/chat/completions`;
   const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
-    tail: additionalMessages
+    head
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
   const body: Record<string, unknown> = {
@@ -534,7 +465,7 @@ async function callOpenAiResponsesCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
   tools: ReadonlyArray<AiServerToolConfig>,
-  additionalMessages?: ReadonlyArray<IChatMessage>,
+  head?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
@@ -542,7 +473,7 @@ async function callOpenAiResponsesCompletion(
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/responses`;
   const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
-    tail: additionalMessages
+    head
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
   const body: Record<string, unknown> = {
@@ -608,7 +539,7 @@ function extractAnthropicText(content: unknown[]): Result<string> {
 async function callAnthropicCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
-  additionalMessages?: ReadonlyArray<IChatMessage>,
+  head?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
   logger?: Logging.ILogger,
   tools?: ReadonlyArray<AiServerToolConfig>,
@@ -616,7 +547,7 @@ async function callAnthropicCompletion(
   resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
-  const messages = buildAnthropicMessages(prompt, { tail: additionalMessages });
+  const messages = buildAnthropicMessages(prompt, { head });
   const body: Record<string, unknown> = {
     model: config.model,
     system: prompt.system,
@@ -681,7 +612,7 @@ async function callAnthropicCompletion(
 async function callGeminiCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
-  additionalMessages?: ReadonlyArray<IChatMessage>,
+  head?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
   logger?: Logging.ILogger,
   tools?: ReadonlyArray<AiServerToolConfig>,
@@ -689,7 +620,7 @@ async function callGeminiCompletion(
   resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
-  const contents = buildGeminiContents(prompt, { tail: additionalMessages });
+  const contents = buildGeminiContents(prompt, { head });
 
   const generationConfig: Record<string, unknown> = { temperature };
   if (resolvedThinking?.geminiThinkingBudget !== undefined) {
@@ -738,11 +669,9 @@ async function callGeminiCompletion(
 // ============================================================================
 
 /**
- * Calls the appropriate chat completion API for a given provider.
- * Routes by `apiFormat`: `'openai'` (xAI/OpenAI/Groq/Mistral — switches to Responses API when
- * tools are set), `'anthropic'`, or `'gemini'`.
- * @param params - Request parameters including descriptor, API key, prompt, and optional tools
- * @returns The completion response with content and truncation status, or a failure
+ * Calls the appropriate chat completion API for a given provider. Routes by
+ * `apiFormat`: `'openai'` (xAI/OpenAI/Groq/Mistral — switches to Responses API
+ * when tools are set), `'anthropic'`, or `'gemini'`.
  * @public
  */
 export async function callProviderCompletion(
@@ -751,8 +680,8 @@ export async function callProviderCompletion(
   const {
     descriptor,
     apiKey,
-    prompt,
-    additionalMessages,
+    system,
+    messages,
     temperature,
     modelOverride,
     logger,
@@ -761,6 +690,12 @@ export async function callProviderCompletion(
     endpoint,
     thinking
   } = params;
+
+  const splitResult = splitChatRequest(system, messages);
+  if (splitResult.isFailure()) {
+    return fail(splitResult.message);
+  }
+  const { prompt, head } = splitResult.value;
 
   const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
   if (baseUrlResult.isFailure()) {
@@ -824,7 +759,7 @@ export async function callProviderCompletion(
           config,
           prompt,
           tools,
-          additionalMessages,
+          head,
           effectiveTemperature,
           logger,
           signal,
@@ -834,7 +769,7 @@ export async function callProviderCompletion(
       return callOpenAiCompletion(
         config,
         prompt,
-        additionalMessages,
+        head,
         effectiveTemperature,
         logger,
         signal,
@@ -844,7 +779,7 @@ export async function callProviderCompletion(
       return callAnthropicCompletion(
         config,
         prompt,
-        additionalMessages,
+        head,
         effectiveTemperature,
         logger,
         tools,
@@ -855,7 +790,7 @@ export async function callProviderCompletion(
       return callGeminiCompletion(
         config,
         prompt,
-        additionalMessages,
+        head,
         effectiveTemperature,
         logger,
         tools,
@@ -1020,15 +955,7 @@ interface IProxiedListModelsBody {
 const proxiedListModelsEntry: Validator<IProxiedListModelsEntry> = Validators.object<IProxiedListModelsEntry>(
   {
     id: Validators.string,
-    capabilities: Validators.arrayOf(
-      Validators.enumeratedValue<AiModelCapability>([
-        'chat',
-        'tools',
-        'vision',
-        'image-generation',
-        'thinking'
-      ])
-    ),
+    capabilities: Validators.arrayOf(Validators.enumeratedValue<AiModelCapability>(allModelCapabilities)),
     displayName: Validators.string.optional()
   }
 );
@@ -1380,13 +1307,12 @@ async function callImagenGeneration(
 // ============================================================================
 
 /**
- * Calls the appropriate image-generation API for a given provider.
- * Routes by the `format` field of the resolved {@link IAiImageModelCapability}:
- * `'openai-images'`, `'xai-images'`, `'xai-images-edits'`, `'gemini-imagen'`,
- * or `'gemini-image-out'`. Rejects up front if `referenceImages` is set but the
+ * Calls the appropriate image-generation API for a given provider. Routes by the
+ * `format` field of the resolved {@link IAiImageModelCapability}:
+ * `'openai-images'`, `'xai-images'`, `'xai-images-edits'`, `'gemini-imagen'`, or
+ * `'gemini-image-out'`. Rejects up front if `referenceImages` is set but the
  * capability does not declare `acceptsImageReferenceInput`.
  * @param params - Request parameters including descriptor, API key, and prompt
- * @returns The generated images, or a failure
  * @public
  */
 export async function callProviderImageGeneration(
@@ -1768,8 +1694,7 @@ async function callGeminiListModels(
 /**
  * Lists models available from a provider, routing by `descriptor.apiFormat`.
  * Capabilities are resolved from native provider info and a configurable rule set.
- * @param params - Request parameters including descriptor, API key, and optional capability filter
- * @returns The resolved model list, or a failure
+ * @param params - Request parameters (descriptor, API key, optional capability filter)
  * @public
  */
 export async function callProviderListModels(
@@ -1821,10 +1746,10 @@ export async function callProviderListModels(
 // ============================================================================
 
 /**
- * Calls the model-listing endpoint on a proxy server.
- * Endpoint: `POST ${proxyUrl}/api/ai/list-models`. Capability config is not
- * forwarded. `capabilities` is serialized as a string array. Error body
- * `{error: string}` is surfaced as `proxy: ${error}`.
+ * Calls the model-listing endpoint on a proxy server. Endpoint:
+ * `POST ${proxyUrl}/api/ai/list-models`. Capability config is not forwarded;
+ * `capabilities` is serialized as a string array. Error body `{error: string}`
+ * is surfaced as `proxy: ${error}`.
  * @public
  */
 export async function callProxiedListModels(
@@ -1873,16 +1798,13 @@ export async function callProxiedListModels(
 // ============================================================================
 
 /**
- * Calls the AI completion endpoint on a proxy server instead of calling
- * the provider API directly from the browser.
- *
- * The proxy server handles provider dispatch, CORS, and API key forwarding.
- * The request shape mirrors {@link IProviderCompletionParams} but is serialized
- * as JSON for the proxy endpoint.
- *
- * @param proxyUrl - Base URL of the proxy server (e.g. `http://localhost:3001`)
+ * Calls the AI completion endpoint on a proxy server instead of calling the
+ * provider API directly from the browser. The proxy handles provider dispatch,
+ * CORS, and API key forwarding. The request body serializes the unified
+ * {@link AiAssist.IChatRequest} shape (`system?` + `messages`). Enforces the same
+ * non-empty / trailing-user-turn and image-input invariants as the direct path.
+ * @param proxyUrl - Base URL of the proxy server
  * @param params - Same parameters as {@link callProviderCompletion}
- * @returns The completion response, or a failure
  * @public
  */
 export async function callProxiedCompletion(
@@ -1892,8 +1814,8 @@ export async function callProxiedCompletion(
   const {
     descriptor,
     apiKey,
-    prompt,
-    additionalMessages,
+    system,
+    messages,
     temperature,
     modelOverride,
     logger,
@@ -1902,18 +1824,22 @@ export async function callProxiedCompletion(
     thinking
   } = params;
 
-  const promptBody: Record<string, unknown> = { system: prompt.system, user: prompt.user };
-  if (prompt.attachments.length > 0) {
-    promptBody.attachments = prompt.attachments;
+  const splitResult = splitChatRequest(system, messages);
+  if (splitResult.isFailure()) {
+    return fail(splitResult.message);
   }
+  if (splitResult.value.prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
+    return fail(`provider "${descriptor.id}" does not accept image input`);
+  }
+
   const body: Record<string, unknown> = {
     providerId: descriptor.id,
     apiKey,
-    prompt: promptBody,
+    messages: normalizeOutboundMessages(splitResult.value),
     temperature: temperature ?? 0.7
   };
-  if (additionalMessages && additionalMessages.length > 0) {
-    body.additionalMessages = additionalMessages;
+  if (system !== undefined) {
+    body.system = system;
   }
   if (modelOverride !== undefined) {
     body.modelOverride = modelOverride;
@@ -1960,9 +1886,8 @@ export async function callProxiedCompletion(
  * lookup, model resolution, provider dispatch, and response normalization
  * (including repackaging `referenceImages` for the upstream wire format).
  * Error body `{error: string}` is surfaced as `proxy: ${error}`.
- * @param proxyUrl - Base URL of the proxy server (e.g. `http://localhost:3001`)
+ * @param proxyUrl - Base URL of the proxy server
  * @param params - Same parameters as {@link callProviderImageGeneration}
- * @returns The generated images, or a failure
  * @public
  */
 export async function callProxiedImageGeneration(
