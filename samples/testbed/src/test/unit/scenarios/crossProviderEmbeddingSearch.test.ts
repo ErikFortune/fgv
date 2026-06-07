@@ -217,6 +217,15 @@ describe('parseEmbeddingScenarioConfig', () => {
     );
   });
 
+  test('treats a blank/whitespace EMBED_PROVIDER as unset (defaults to openai)', () => {
+    expect(parseEmbeddingScenarioConfig({ EMBED_PROVIDER: '   ', OPENAI_API_KEY: 'sk' })).toSucceedAndSatisfy(
+      (config) => {
+        expect(config.providerLabel).toBe('openai');
+        expect(config.descriptor.id).toBe('openai');
+      }
+    );
+  });
+
   test('treats a blank EMBED_DIMENSIONS / EMBED_MODEL as absent', () => {
     expect(
       parseEmbeddingScenarioConfig({ OPENAI_API_KEY: 'sk', EMBED_DIMENSIONS: '   ', EMBED_MODEL: '  ' })
@@ -402,6 +411,21 @@ describe('runEmbeddingSearch (real callProviderEmbedding + mocked fetch)', () =>
         /batch misalignment.*requested 5.*received 3/
       );
     });
+
+    test('detects extra query vectors that Gemini would otherwise silently return', async () => {
+      // The query is a single-item batch; Gemini's adapter does not enforce count, so a
+      // 2-vector response for a 1-input query must be caught by the scenario, not silently sliced.
+      mockTwoFetches(
+        geminiBody([
+          [1, 0, 0],
+          [0, 1, 0]
+        ]),
+        geminiBody(DOC_VECS)
+      );
+      expect(await runEmbeddingSearch(geminiConfig())).toFailWith(
+        /query batch misalignment: expected exactly 1 query vector, received 2/
+      );
+    });
   });
 
   test('threads a logger through to the primitive (no-op-knob note path)', async () => {
@@ -438,7 +462,9 @@ describe('runEmbeddingSearch (injected EmbedFn — defensive branches)', () => {
         ? succeed({ vectors: [], model: 'm', dimensions: 0 })
         : succeed({ vectors: input.map(() => [1, 0, 0]), model: 'm', dimensions: 3 });
     };
-    expect(await runEmbeddingSearch(openAiConfig(), stub)).toFailWith(/query embedding returned no vector/);
+    expect(await runEmbeddingSearch(openAiConfig(), stub)).toFailWith(
+      /query batch misalignment: expected exactly 1 query vector, received 0/
+    );
   });
 
   test('propagates a query-side failure from the injected embed function', async () => {

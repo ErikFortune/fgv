@@ -155,7 +155,11 @@ function resolveApiKey(providerId: string, env: Record<string, string | undefine
 export function parseEmbeddingScenarioConfig(
   env: Record<string, string | undefined>
 ): Result<IEmbeddingScenarioConfig> {
-  const providerLabel = (env.EMBED_PROVIDER ?? 'openai').trim().toLowerCase();
+  // Treat a blank/whitespace-only EMBED_PROVIDER as unset (default `openai`), consistent with
+  // how EMBED_MODEL / EMBED_DIMENSIONS / EMBED_ENDPOINT treat blank-as-absent.
+  const rawProvider = env.EMBED_PROVIDER?.trim();
+  const providerLabel =
+    rawProvider !== undefined && rawProvider.length > 0 ? rawProvider.toLowerCase() : 'openai';
   const providerId = PROVIDER_LABEL_TO_ID[providerLabel];
   if (providerId === undefined) {
     return fail(
@@ -319,10 +323,15 @@ export async function runEmbeddingSearch(
     );
   }
 
-  const queryVec = query.vectors[0];
-  if (queryVec === undefined) {
-    return fail('query embedding returned no vector');
+  // The query is a single-item batch: require exactly one vector. This catches an empty result
+  // AND extra vectors that would otherwise be silently dropped — notably on the Gemini path,
+  // where the adapter does not enforce the response count against the request.
+  if (query.vectors.length !== 1) {
+    return fail(
+      `query batch misalignment: expected exactly 1 query vector, received ${query.vectors.length}`
+    );
   }
+  const queryVec = query.vectors[0]!;
 
   const corpus: ICorpusEntry[] = CORPUS_DOCUMENTS.map((text, i) => ({
     text,
