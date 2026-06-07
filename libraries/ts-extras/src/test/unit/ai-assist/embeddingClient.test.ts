@@ -634,6 +634,28 @@ describe('callProviderEmbedding', () => {
       });
       expect(result).toFailWith(/503.*unavailable/i);
     });
+
+    test('fails when the embedding count does not match the input count', async () => {
+      // Two inputs, but the server returns only one embedding. Gemini aligns by
+      // request order with no index field, so a short batch must be rejected.
+      mockFetchResponse(geminiEmbeddingBody([[0.1]]));
+      const result = await AiAssist.callProviderEmbedding({
+        descriptor: geminiDescriptor(),
+        apiKey: 'gk-test',
+        params: { input: ['a', 'b'] }
+      });
+      expect(result).toFailWith(/expected 2 embedding\(s\), got 1/i);
+    });
+
+    test('fails when vectors have inconsistent dimensionality', async () => {
+      mockFetchResponse(geminiEmbeddingBody([[0.1, 0.2], [0.3]]));
+      const result = await AiAssist.callProviderEmbedding({
+        descriptor: geminiDescriptor(),
+        apiKey: 'gk-test',
+        params: { input: ['a', 'b'] }
+      });
+      expect(result).toFailWith(/inconsistent vector dimensionality .*vector 1 has length 1, expected 2/i);
+    });
   });
 
   describe('callProxiedEmbedding', () => {

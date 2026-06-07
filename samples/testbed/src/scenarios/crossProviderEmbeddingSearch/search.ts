@@ -17,7 +17,7 @@
  * @packageDocumentation
  */
 
-import { type Logging, Result, fail, succeed } from '@fgv/ts-utils';
+import { type Logging, type Result, fail, succeed } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
 
 import { rankBySimilarity } from '../localEmbeddingSearch/similarity';
@@ -326,6 +326,11 @@ export async function runEmbeddingSearch(
   }
   const docs = docResult.value;
 
+  // The real embedding adapter (callProviderEmbedding) now enforces batch alignment on both
+  // the OpenAI and Gemini paths, so on the production path a count mismatch is already caught
+  // and surfaced through the `query embedding failed:` / `document embedding failed:` wrappers
+  // above. These re-checks guard the injectable `embedFn` seam (a custom or test embed function
+  // is not bound by the adapter's guarantees) so the scenario never indexes past a short batch.
   if (docs.vectors.length !== CORPUS_DOCUMENTS.length) {
     return fail(
       `batch misalignment: requested ${CORPUS_DOCUMENTS.length} document embeddings, ` +
@@ -334,8 +339,7 @@ export async function runEmbeddingSearch(
   }
 
   // The query is a single-item batch: require exactly one vector. This catches an empty result
-  // AND extra vectors that would otherwise be silently dropped — notably on the Gemini path,
-  // where the adapter does not enforce the response count against the request.
+  // AND extra vectors that would otherwise be silently dropped.
   if (query.vectors.length !== 1) {
     return fail(
       `query batch misalignment: expected exactly 1 query vector, received ${query.vectors.length}`

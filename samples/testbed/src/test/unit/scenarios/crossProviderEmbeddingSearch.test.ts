@@ -426,16 +426,17 @@ describe('runEmbeddingSearch (real callProviderEmbedding + mocked fetch)', () =>
     });
 
     test('detects batch misalignment when Gemini returns fewer vectors than documents', async () => {
-      // Gemini's adapter does not enforce the batch count; the scenario does.
+      // The Gemini adapter enforces the batch count; the mismatch surfaces through the
+      // scenario's `document embedding failed:` wrapper.
       mockTwoFetches(geminiBody([QUERY_VEC]), geminiBody(DOC_VECS.slice(0, 3)));
       expect(await runEmbeddingSearch(geminiConfig())).toFailWith(
-        /batch misalignment.*requested 5.*received 3/
+        /document embedding failed.*expected 5 embedding\(s\), got 3/
       );
     });
 
     test('detects extra query vectors that Gemini would otherwise silently return', async () => {
-      // The query is a single-item batch; Gemini's adapter does not enforce count, so a
-      // 2-vector response for a 1-input query must be caught by the scenario, not silently sliced.
+      // The query is a single-item batch; the Gemini adapter rejects a 2-vector response for a
+      // 1-input query, surfacing through the scenario's `query embedding failed:` wrapper.
       mockTwoFetches(
         geminiBody([
           [1, 0, 0],
@@ -444,7 +445,7 @@ describe('runEmbeddingSearch (real callProviderEmbedding + mocked fetch)', () =>
         geminiBody(DOC_VECS)
       );
       expect(await runEmbeddingSearch(geminiConfig())).toFailWith(
-        /query batch misalignment: expected exactly 1 query vector, received 2/
+        /query embedding failed.*expected 1 embedding\(s\), got 2/
       );
     });
   });
@@ -485,6 +486,20 @@ describe('runEmbeddingSearch (injected EmbedFn — defensive branches)', () => {
     };
     expect(await runEmbeddingSearch(openAiConfig(), stub)).toFailWith(
       /query batch misalignment: expected exactly 1 query vector, received 0/
+    );
+  });
+
+  test('fails when the document batch yields fewer vectors than requested', async () => {
+    // A custom embedFn is not bound by the adapter's alignment guarantee, so the scenario's
+    // own re-check is the guard: a short document batch must fail rather than index past it.
+    const stub: EmbedFn = async (params) => {
+      const input = params.params.input;
+      return typeof input === 'string'
+        ? succeed({ vectors: [[1, 0, 0]], model: 'm', dimensions: 3 })
+        : succeed({ vectors: input.slice(0, 3).map(() => [1, 0, 0]), model: 'm', dimensions: 3 });
+    };
+    expect(await runEmbeddingSearch(openAiConfig(), stub)).toFailWith(
+      /batch misalignment: requested 5 document embeddings, received 3/
     );
   });
 
@@ -613,8 +628,11 @@ describe('crossProviderEmbeddingSearchScenario', () => {
 
   function makeContext(): IScenarioContext {
     return {
-      logger: new Logging.LogReporter<unknown>({ logger: new Logging.InMemoryLogger() })
-    } as unknown as IScenarioContext;
+      logger: new Logging.LogReporter<unknown>({ logger: new Logging.InMemoryLogger() }),
+      keyStore: undefined,
+      resolveSecret: jest.fn(),
+      dataTree: {} as IScenarioContext['dataTree']
+    };
   }
 
   test('is a CLI-only ai scenario with the expected id and tags', () => {

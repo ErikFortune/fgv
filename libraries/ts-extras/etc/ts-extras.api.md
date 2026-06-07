@@ -191,9 +191,6 @@ const aiAssistSettings: Converter<IAiAssistSettings>;
 // @public
 const aiClientToolConfig: Converter<IAiClientToolConfig>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "AiApiFormat"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "AiImageApiFormat"
-//
 // @public
 type AiEmbeddingApiFormat = 'openai-embeddings' | 'gemini-embeddings';
 
@@ -278,8 +275,6 @@ const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType>;
 // @public
 const allKeyStoreSymmetricSecretTypes: ReadonlyArray<KeyStoreSymmetricSecretType>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "AiModelCapability"
-//
 // @public
 const allModelCapabilities: ReadonlyArray<AiModelCapability>;
 
