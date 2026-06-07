@@ -19,8 +19,9 @@
 // SOFTWARE.
 
 /**
- * Tests for callProviderEmbedding (Phase 2 — OpenAI-format adapter + dispatcher).
- * Mock fetch, per-format fixtures, no live calls.
+ * Tests for callProviderEmbedding and callProxiedEmbedding — OpenAI and Gemini
+ * adapters, the dispatcher, and the proxy leg. Mock fetch, per-format fixtures,
+ * no live calls.
  */
 
 import '@fgv/ts-utils-jest';
@@ -92,6 +93,15 @@ function openAiEmbeddingBody(
 
 function openAiDescriptor(): IAiProviderDescriptor {
   return AiAssist.getProviderDescriptor('openai').orThrow();
+}
+
+function geminiDescriptor(): IAiProviderDescriptor {
+  return AiAssist.getProviderDescriptor('google-gemini').orThrow();
+}
+
+/** Gemini `:batchEmbedContents` response body. */
+function geminiEmbeddingBody(vectors: number[][]): unknown {
+  return { embeddings: vectors.map((values) => ({ values })) };
 }
 
 // ============================================================================
@@ -491,14 +501,222 @@ describe('callProviderEmbedding', () => {
     });
   });
 
-  describe('gemini-embeddings format (Phase 2 — not yet implemented)', () => {
-    test('the gemini adapter is pending until Phase 3', async () => {
+  describe('Gemini-format adapter', () => {
+    test('embeds a batch via batchEmbedContents with qualified model + parts', async () => {
+      mockFetchResponse(
+        geminiEmbeddingBody([
+          [0.1, 0.2, 0.3],
+          [0.4, 0.5, 0.6]
+        ])
+      );
+
       const result = await AiAssist.callProviderEmbedding({
-        descriptor: AiAssist.getProviderDescriptor('google-gemini').orThrow(),
+        descriptor: geminiDescriptor(),
         apiKey: 'gk-test',
+        params: { input: ['a', 'b'] }
+      });
+
+      expect(result).toSucceedAndSatisfy((embedding) => {
+        expect(embedding.vectors).toEqual([
+          [0.1, 0.2, 0.3],
+          [0.4, 0.5, 0.6]
+        ]);
+        expect(embedding.model).toBe('gemini-embedding-001');
+        expect(embedding.dimensions).toBe(3);
+        // Gemini does not report token usage for embeddings.
+        expect(embedding.usage).toBeUndefined();
+      });
+
+      expect(lastRequestUrl()).toBe(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents'
+      );
+      expect(lastRequestHeaders()['x-goog-api-key']).toBe('gk-test');
+      const body = lastRequestBody();
+      const requests = body.requests as Array<Record<string, unknown>>;
+      expect(requests).toHaveLength(2);
+      expect(requests[0]).toMatchObject({
+        model: 'models/gemini-embedding-001',
+        content: { parts: [{ text: 'a' }] }
+      });
+      expect(requests[1].content).toEqual({ parts: [{ text: 'b' }] });
+    });
+
+    test('maps taskType to SCREAMING_SNAKE on the wire (request-body assertion)', async () => {
+      mockFetchResponse(geminiEmbeddingBody([[0.1]]));
+
+      await AiAssist.callProviderEmbedding({
+        descriptor: geminiDescriptor(),
+        apiKey: 'gk-test',
+        params: { input: 'q', taskType: 'retrieval-query' }
+      });
+
+      const requests = lastRequestBody().requests as Array<Record<string, unknown>>;
+      expect(requests[0].taskType).toBe('RETRIEVAL_QUERY');
+    });
+
+    test('maps a hyphenated taskType (code-retrieval-query) correctly', async () => {
+      mockFetchResponse(geminiEmbeddingBody([[0.1]]));
+
+      await AiAssist.callProviderEmbedding({
+        descriptor: geminiDescriptor(),
+        apiKey: 'gk-test',
+        params: { input: 'q', taskType: 'code-retrieval-query' }
+      });
+
+      const requests = lastRequestBody().requests as Array<Record<string, unknown>>;
+      expect(requests[0].taskType).toBe('CODE_RETRIEVAL_QUERY');
+    });
+
+    test('sends outputDimensionality and reports the reduced length', async () => {
+      // Reduced-dimension response (MRL truncation to 2).
+      mockFetchResponse(geminiEmbeddingBody([[0.1, 0.2]]));
+
+      const result = await AiAssist.callProviderEmbedding({
+        descriptor: geminiDescriptor(),
+        apiKey: 'gk-test',
+        params: { input: 'q', dimensions: 2 }
+      });
+
+      const requests = lastRequestBody().requests as Array<Record<string, unknown>>;
+      expect(requests[0].outputDimensionality).toBe(2);
+      expect(result).toSucceedAndSatisfy((embedding) => {
+        expect(embedding.dimensions).toBe(2);
+      });
+    });
+
+    test('omits taskType and outputDimensionality when not supplied', async () => {
+      mockFetchResponse(geminiEmbeddingBody([[0.1]]));
+
+      await AiAssist.callProviderEmbedding({
+        descriptor: geminiDescriptor(),
+        apiKey: 'gk-test',
+        params: { input: 'q' }
+      });
+
+      const requests = lastRequestBody().requests as Array<Record<string, unknown>>;
+      expect(requests[0].taskType).toBeUndefined();
+      expect(requests[0].outputDimensionality).toBeUndefined();
+    });
+
+    test('does not double-prefix an already-qualified model id', async () => {
+      mockFetchResponse(geminiEmbeddingBody([[0.1]]));
+
+      await AiAssist.callProviderEmbedding({
+        descriptor: geminiDescriptor(),
+        apiKey: 'gk-test',
+        modelOverride: 'models/gemini-embedding-001',
+        params: { input: 'q' }
+      });
+
+      expect(lastRequestUrl()).toBe(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents'
+      );
+      const requests = lastRequestBody().requests as Array<Record<string, unknown>>;
+      expect(requests[0].model).toBe('models/gemini-embedding-001');
+    });
+
+    test('fails when the response is missing the embeddings array', async () => {
+      mockFetchResponse({ notEmbeddings: [] });
+      const result = await AiAssist.callProviderEmbedding({
+        descriptor: geminiDescriptor(),
+        apiKey: 'gk-test',
+        params: { input: 'q' }
+      });
+      expect(result).toFailWith(/Gemini embeddings API response/i);
+    });
+
+    test('surfaces an HTTP error from the Gemini endpoint', async () => {
+      mockFetchHttpError(503, 'unavailable');
+      const result = await AiAssist.callProviderEmbedding({
+        descriptor: geminiDescriptor(),
+        apiKey: 'gk-test',
+        params: { input: 'q' }
+      });
+      expect(result).toFailWith(/503.*unavailable/i);
+    });
+  });
+
+  describe('callProxiedEmbedding', () => {
+    test('posts to the proxy embedding endpoint and returns the validated result', async () => {
+      mockFetchResponse({
+        vectors: [[0.1, 0.2]],
+        model: 'text-embedding-3-small',
+        dimensions: 2,
+        usage: { promptTokens: 3, totalTokens: 3 }
+      });
+
+      const result = await AiAssist.callProxiedEmbedding('http://localhost:3001', {
+        descriptor: openAiDescriptor(),
+        apiKey: 'sk-test',
+        modelOverride: 'text-embedding-3-small',
         params: { input: 'x' }
       });
-      expect(result).toFailWith(/gemini embeddings adapter not yet implemented/i);
+
+      expect(result).toSucceedAndSatisfy((embedding) => {
+        expect(embedding.vectors).toEqual([[0.1, 0.2]]);
+        expect(embedding.dimensions).toBe(2);
+        expect(embedding.usage).toEqual({ promptTokens: 3, totalTokens: 3 });
+      });
+
+      expect(lastRequestUrl()).toBe('http://localhost:3001/api/ai/embedding');
+      expect(lastRequestBody()).toMatchObject({
+        providerId: 'openai',
+        apiKey: 'sk-test',
+        modelOverride: 'text-embedding-3-small',
+        params: { input: 'x' }
+      });
+    });
+
+    test('omits modelOverride from the proxy body when not supplied', async () => {
+      mockFetchResponse({ vectors: [[0.1]], model: 'm', dimensions: 1 });
+
+      await AiAssist.callProxiedEmbedding('http://localhost:3001', {
+        descriptor: openAiDescriptor(),
+        apiKey: 'sk-test',
+        params: { input: 'x' }
+      });
+
+      expect(lastRequestBody().modelOverride).toBeUndefined();
+    });
+
+    test('surfaces a proxy error body', async () => {
+      mockFetchResponse({ error: 'provider exploded' });
+      const result = await AiAssist.callProxiedEmbedding('http://localhost:3001', {
+        descriptor: openAiDescriptor(),
+        apiKey: 'sk-test',
+        params: { input: 'x' }
+      });
+      expect(result).toFailWith(/proxy: provider exploded/i);
+    });
+
+    test('fails when the proxy returns an invalid response shape', async () => {
+      mockFetchResponse({ vectors: 'not-an-array', model: 'm', dimensions: 1 });
+      const result = await AiAssist.callProxiedEmbedding('http://localhost:3001', {
+        descriptor: openAiDescriptor(),
+        apiKey: 'sk-test',
+        params: { input: 'x' }
+      });
+      expect(result).toFailWith(/proxy returned invalid response/i);
+    });
+
+    test('surfaces an HTTP error from the proxy', async () => {
+      mockFetchHttpError(502, 'bad gateway');
+      const result = await AiAssist.callProxiedEmbedding('http://localhost:3001', {
+        descriptor: openAiDescriptor(),
+        apiKey: 'sk-test',
+        params: { input: 'x' }
+      });
+      expect(result).toFailWith(/502.*bad gateway/i);
+    });
+
+    test('surfaces a network error from the proxy', async () => {
+      mockFetchError(new Error('connection refused'));
+      const result = await AiAssist.callProxiedEmbedding('http://localhost:3001', {
+        descriptor: openAiDescriptor(),
+        apiKey: 'sk-test',
+        params: { input: 'x' }
+      });
+      expect(result).toFailWith(/connection refused/i);
     });
   });
 });
