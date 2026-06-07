@@ -1,0 +1,12 @@
+{
+  "extends": "./node_modules/@rushstack/heft-node-rig/profiles/default/tsconfig-base.json",
+  "compilerOptions": {
+    "types": ["heft-jest", "node"],
+    "lib": ["es2018", "DOM"],
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@modelcontextprotocol/sdk/*": ["./node_modules/@modelcontextprotocol/sdk/dist/cjs/*"]
+    }
+  }
+}

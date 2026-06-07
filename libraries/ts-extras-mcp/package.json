@@ -1,0 +1,86 @@
+{
+  "name": "@fgv/ts-extras-mcp",
+  "version": "5.1.0",
+  "description": "Result-integration boundary over @modelcontextprotocol/sdk: connect to MCP servers, discover tools, and adapt them into @fgv/ts-extras ai-assist client tools",
+  "main": "lib/index.js",
+  "types": "dist/ts-extras-mcp.d.ts",
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "default": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "types": "./dist/ts-extras-mcp.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "heft build --clean",
+    "clean": "heft clean",
+    "test": "heft test --clean",
+    "test-handles": "jest --runInBand --detectOpenHandles",
+    "clean-jest": "jest --clear-cache",
+    "update-snapshot": "jest --updateSnapshot",
+    "coverage": "jest --coverage",
+    "lint": "eslint src --ext .ts",
+    "fixlint": "eslint src --ext .ts --fix"
+  },
+  "keywords": [
+    "typescript",
+    "mcp",
+    "model-context-protocol",
+    "ai-assist",
+    "client-tools",
+    "result"
+  ],
+  "author": "Erik Fortune",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ErikFortune/fgv/issues"
+  },
+  "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  },
+  "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
+    "@fgv/ts-utils": "workspace:*",
+    "@fgv/ts-extras": "workspace:*",
+    "@fgv/ts-json-base": "workspace:*",
+    "@fgv/ts-utils-jest": "workspace:*",
+    "@microsoft/api-extractor": "^7.55.2",
+    "@rushstack/eslint-config": "4.6.4",
+    "@rushstack/heft": "1.2.7",
+    "@rushstack/heft-jest-plugin": "1.2.6",
+    "@rushstack/heft-node-rig": "2.11.27",
+    "@types/heft-jest": "1.0.6",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.14.9",
+    "@typescript-eslint/eslint-plugin": "^8.52.0",
+    "@typescript-eslint/parser": "^8.52.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^17.23.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-tsdoc": "~0.5.2",
+    "jest": "^29.7.0",
+    "rimraf": "^6.1.2",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "@fgv/ts-utils": "workspace:*",
+    "@fgv/ts-extras": "workspace:*",
+    "@fgv/ts-json-base": "workspace:*"
+  }
+}

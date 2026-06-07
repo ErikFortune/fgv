@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "New package: @fgv/ts-extras-ollama scaffold — Result-integration boundary over the ollama JS library (O-1: package scaffold + createOllamaClient factory).",
+      "type": "none",
+      "packageName": "@fgv/ts-extras-ollama"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-ollama",
+  "email": "ErikFortune@outlook.com"
+}
