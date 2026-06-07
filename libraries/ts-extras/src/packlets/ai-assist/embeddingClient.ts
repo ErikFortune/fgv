@@ -185,14 +185,41 @@ async function callOpenAiEmbeddings(
     .onSuccess((response) => {
       // The spec allows `data` in any order; align to request order by `index`.
       const ordered = [...response.data].sort((a, b) => a.index - b.index);
+      // Validate the response is well-formed against the request before trusting
+      // the alignment: a compat server could return an incomplete batch, gapped
+      // or duplicate indices, or ragged dimensions — all of which would silently
+      // yield misaligned/partial vectors. (inputs is non-empty here; the
+      // empty-input case short-circuits before the wire call.)
+      if (ordered.length !== inputs.length) {
+        return fail(
+          `OpenAI embeddings API response: expected ${inputs.length} embedding(s), got ${ordered.length}`
+        );
+      }
+      // After sorting, a perfect 0..n-1 sequence has item.index === position at
+      // every slot. Any gap OR duplicate shifts a later element off its position
+      // (the second copy of value k, or the element after a missing k, lands at
+      // position > its index), so this single walk catches both.
+      const misindexed = ordered.findIndex((item, i) => item.index !== i);
+      if (misindexed !== -1) {
+        return fail(
+          `OpenAI embeddings API response: malformed embedding indices ` +
+            `(expected 0..${inputs.length - 1}; gap or duplicate at position ${misindexed})`
+        );
+      }
       const vectors = ordered.map((item) => item.embedding);
+      const dimensions = vectors[0].length;
+      const ragged = vectors.findIndex((v) => v.length !== dimensions);
+      if (ragged !== -1) {
+        return fail(
+          `OpenAI embeddings API response: inconsistent vector dimensionality ` +
+            `(vector ${ragged} has length ${vectors[ragged].length}, expected ${dimensions})`
+        );
+      }
       const usage = toEmbeddingUsage(response.usage);
-      // `vectors` is guaranteed non-empty: the validator constrains `data` to
-      // length > 0 and the empty-input case short-circuits before the wire call.
       return succeed({
         vectors,
         model: response.model ?? config.model,
-        dimensions: vectors[0].length,
+        dimensions,
         ...(usage !== undefined ? { usage } : {})
       });
     });

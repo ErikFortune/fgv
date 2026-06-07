@@ -445,6 +445,50 @@ describe('callProviderEmbedding', () => {
       });
       expect(result).toFailWith(/OpenAI embeddings API response/i);
     });
+
+    test('fails when the embedding count does not match the input count', async () => {
+      // Two inputs, but the server returns only one embedding.
+      mockFetchResponse(openAiEmbeddingBody([[0.1]]));
+      const result = await AiAssist.callProviderEmbedding({
+        descriptor: openAiDescriptor(),
+        apiKey: 'sk-test',
+        params: { input: ['a', 'b'] }
+      });
+      expect(result).toFailWith(/expected 2 embedding\(s\), got 1/i);
+    });
+
+    test('fails when the response indices have a gap or duplicate', async () => {
+      // Two inputs, two embeddings, but indices are {0, 2} — index 1 is missing.
+      mockFetchResponse({
+        object: 'list',
+        data: [
+          { object: 'embedding', index: 0, embedding: [0.1] },
+          { object: 'embedding', index: 2, embedding: [0.2] }
+        ]
+      });
+      const result = await AiAssist.callProviderEmbedding({
+        descriptor: openAiDescriptor(),
+        apiKey: 'sk-test',
+        params: { input: ['a', 'b'] }
+      });
+      expect(result).toFailWith(/malformed embedding indices .*position 1/i);
+    });
+
+    test('fails when vectors have inconsistent dimensionality', async () => {
+      mockFetchResponse({
+        object: 'list',
+        data: [
+          { object: 'embedding', index: 0, embedding: [0.1, 0.2] },
+          { object: 'embedding', index: 1, embedding: [0.3] }
+        ]
+      });
+      const result = await AiAssist.callProviderEmbedding({
+        descriptor: openAiDescriptor(),
+        apiKey: 'sk-test',
+        params: { input: ['a', 'b'] }
+      });
+      expect(result).toFailWith(/inconsistent vector dimensionality .*vector 1 has length 1, expected 2/i);
+    });
   });
 
   describe('gemini-embeddings format (Phase 2 — not yet implemented)', () => {
