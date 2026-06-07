@@ -58,3 +58,28 @@ summary).
 regenerated; `rush change` (type none); no `any`; additive-only. `code-reviewer` run
 on each phase diff before its PR; Copilot review loop driven per phase to diminishing
 returns.
+
+## Live empirical gate (PR #485) — PASSED
+
+The four phased PRs landed with 100% unit coverage but **mock-fetch only** — no real
+network call had ever exercised the adapters. The live gate was commissioned as a
+single `@fgv/testbed` scenario (`cross-provider-embedding-search`, see
+[testbed-scenario-brief.md](./testbed-scenario-brief.md)) and delivered in **PR #485**
+(into `ai-assist-embeddings`; testbed-only, primitive untouched).
+
+- **Scenario:** embeds a query (`retrieval-query`) + a 5-doc corpus in one batch call
+  (`retrieval-document`), cosine-ranks, prints a computed PASS/FAIL gate matrix; runs
+  against OpenAI-shaped providers or Gemini via `EMBED_PROVIDER`. Mock-fetch unit tests
+  drive the **real** `callProviderEmbedding` and assert the outgoing request body
+  (taskType reaching the wire, no-op on OpenAI, dimensions, batch alignment). 204 tests,
+  100% coverage; `code-reviewer` (1 round, no P1) + Copilot (3 rounds → diminishing
+  returns: doc-accuracy → a real query-batch-count silent-ignore gap on the Gemini path,
+  now caught → a fail-fast `EMBED_ENDPOINT` diagnostic).
+- **Live run (Erik, 2026-06-07):** **PASS on both wire formats.** OpenAI
+  `text-embedding-3-small` (1536-d; `EMBED_DIMENSIONS=512` honored → 512-d) and Gemini
+  `gemini-embedding-001` (3072-d, **`taskType` HONORED** — the `batchEmbedContents`
+  retrieval-asymmetry path that had never made a real call). Ranking sane on every run
+  (the password-reset doc ranks #1). **No primitive gap surfaced under live fire.**
+
+**Verdict:** the embedding modality is empirically verified end-to-end; the
+`ai-assist-embeddings` → `release` promotion is unblocked.

@@ -10,5 +10,6 @@ Array [
   "local-embedding-search",
   "local-summarization",
   "mcp-probe",
+  "cross-provider-embedding-search",
 ]
 `;
