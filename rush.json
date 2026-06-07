@@ -615,6 +615,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-extras-mcp",
+      "projectFolder": "libraries/ts-extras-mcp",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-web-extras-transformers",
       "projectFolder": "libraries/ts-web-extras-transformers",
       "shouldPublish": true,

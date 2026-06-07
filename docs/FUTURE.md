@@ -69,11 +69,28 @@ Layer 1 (harness-supplied tools) shipped: `IAiClientTool`, `executeClientToolTur
 
 **Remaining future work:**
 
-**MCP tools (layer 2, longer term).** Same conceptual surface, but the tool catalog comes from one or more MCP servers the consumer connects to. Adds: MCP client transport, tool discovery, schema introspection, lifecycle management. Likely a separate consumer-facing API that lowers into the same internal client-tool plumbing.
+**MCP tools (layer 2).** **Slice 1 shipped 2026-06-06 via the `ts-extras-mcp` stream** — the new `@fgv/ts-extras-mcp` (Node) package wraps `@modelcontextprotocol/sdk`, discovers a server's tools, and adapts each into an `AiAssist.IAiClientTool` (`adaptMcpTools`) that drops directly into `executeClientToolTurn`. Graceful degradation: tools whose `inputSchema` is outside the `JsonSchema.fromJson` subset are excluded, surfaced on `skipped`, and NOISY-warned with the raw schema. Compatibility probe: the `samples/testbed` `mcp-probe` scenario. See `.ai/tasks/active/ts-extras-mcp/`.
 
-**Dependencies**: ai-assist-client-tools cluster closed to release (in progress as of 2026-06-04).
+**Dependencies**: ai-assist-client-tools cluster closed to release (done 2026-06-04).
 
-**Reference**: 2026-05-30 conversation (Erik watching personaility's roadmap); `.ai/tasks/active/ai-assist-client-tools/`; PR #447.
+**Reference**: 2026-05-30 conversation (Erik watching personaility's roadmap); `.ai/tasks/active/ai-assist-client-tools/`; PR #447; `.ai/tasks/active/ts-extras-mcp/`.
+
+---
+
+## `@fgv/ts-extras-mcp` slice-2 follow-ups
+
+Deferred from the `ts-extras-mcp` slice-1 stream (2026-06-06). Each is additive on the new package's surface.
+
+- **Browser sibling `@fgv/ts-web-extras-mcp`.** Slice 1 is Node-only (stdio transport spawns a subprocess; HTTP transport is fine in-browser modulo CORS). A browser package would expose `createHttpTransport` + the session/adapter surface backed by the SDK's browser-compatible transports.
+- **MCP resources / prompts / sampling.** Slice 1 covers tool discovery + invocation only. MCP servers also expose resources, prompt templates, and sampling callbacks.
+- **OAuth / managed auth.** Slice 1 supports static headers only (`createHttpTransport({ headers })`). The SDK has an auth provider abstraction for OAuth flows.
+- **Multimodal tool-result passthrough.** `callMcpTool` projects non-text content blocks to a `[<type> block]` summary; image/audio/resource passthrough into the ai-assist round-trip is out of scope.
+- **Cross-server tool-name namespacing.** Connecting multiple servers can collide tool names; duplicates already fail loudly in `executeClientToolTurn`, but a namespacing/prefixing scheme would let multiple servers coexist.
+- **Transport-injection testability seam.** The package exposes only the `createStdioTransport` / `createHttpTransport` factories, so an external consumer cannot inject an in-memory transport to drive the session/adapter in-process against a fake MCP server in their own tests (they'd stand up a real stdio/http server). The package's own e2e test reaches the internal `McpTransport` directly; a public seam (e.g. an exported `createTransportFromSdk` or accepting a pre-built SDK transport) would let consumers do the same. Surfaced by the #471 verification; not a production defect.
+
+**Headline follow-on lever — additively widen `JsonSchema.fromJson`'s supported subset** (in `@fgv/ts-json-base`). The single biggest real-world risk is schema-subset mismatch: real MCP servers advertise `$ref`/`$defs`, `oneOf`, `pattern`, union `type` arrays, etc. that `fromJson` rejects, so those tools land in `adaptMcpTools`' `skipped` set. `$ref`/`$defs` resolution and `pattern` passthrough are the highest-value additions. This is a separate small `ts-json-base` stream, commissioned based on what the `mcp-probe` scenario surfaces against real servers — NOT done in the `ts-extras-mcp` stream.
+
+**Reference**: `.ai/tasks/active/ts-extras-mcp/brief.md` + `design.md`.
 
 
 ---
