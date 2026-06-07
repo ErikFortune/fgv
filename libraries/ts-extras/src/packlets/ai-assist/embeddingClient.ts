@@ -311,13 +311,28 @@ async function callGeminiEmbeddings(
     .validate(jsonResult.value)
     .withErrorFormat((msg) => `Gemini embeddings API response: ${msg}`)
     .onSuccess((response) => {
-      // Gemini returns embeddings aligned to request order (no index field).
+      // Gemini returns embeddings aligned to request order (no index field), so
+      // there is no per-item index to re-sort or gap-check (unlike the OpenAI
+      // path). Validate the response is well-formed against the request before
+      // trusting the positional alignment: a truncated batch or ragged
+      // dimensions would silently yield misaligned/partial vectors. (inputs is
+      // non-empty here; the empty-input case short-circuits before the wire call.)
       const vectors = response.embeddings.map((e) => e.values);
-      return succeed({
-        vectors,
-        model: bare,
-        dimensions: vectors[0].length
-      });
+      if (vectors.length !== inputs.length) {
+        return fail(
+          `Gemini embeddings API response: expected ${inputs.length} embedding(s), got ${vectors.length}`
+        );
+      }
+      const dimensions = vectors[0].length;
+      const ragged = vectors.findIndex((v) => v.length !== dimensions);
+      if (ragged !== -1) {
+        return fail(
+          `Gemini embeddings API response: inconsistent vector dimensionality ` +
+            `(vector ${ragged} has length ${vectors[ragged].length}, expected ${dimensions})`
+        );
+      }
+      const result: IAiEmbeddingResult = { vectors, model: bare, dimensions };
+      return succeed(result);
     });
 }
 

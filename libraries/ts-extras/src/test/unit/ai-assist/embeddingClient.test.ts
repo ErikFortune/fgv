@@ -625,6 +625,18 @@ describe('callProviderEmbedding', () => {
       expect(result).toFailWith(/Gemini embeddings API response/i);
     });
 
+    test('fails when the response embeddings array is empty', async () => {
+      // Mirrors the OpenAI empty-data case: the non-empty validator constraint
+      // rejects a zero-length batch up front (symmetric with the OpenAI adapter).
+      mockFetchResponse({ embeddings: [] });
+      const result = await AiAssist.callProviderEmbedding({
+        descriptor: geminiDescriptor(),
+        apiKey: 'gk-test',
+        params: { input: 'q' }
+      });
+      expect(result).toFailWith(/Gemini embeddings API response/i);
+    });
+
     test('surfaces an HTTP error from the Gemini endpoint', async () => {
       mockFetchHttpError(503, 'unavailable');
       const result = await AiAssist.callProviderEmbedding({
@@ -633,6 +645,28 @@ describe('callProviderEmbedding', () => {
         params: { input: 'q' }
       });
       expect(result).toFailWith(/503.*unavailable/i);
+    });
+
+    test('fails when the embedding count does not match the input count', async () => {
+      // Two inputs, but the server returns only one embedding. Gemini aligns by
+      // request order with no index field, so a short batch must be rejected.
+      mockFetchResponse(geminiEmbeddingBody([[0.1]]));
+      const result = await AiAssist.callProviderEmbedding({
+        descriptor: geminiDescriptor(),
+        apiKey: 'gk-test',
+        params: { input: ['a', 'b'] }
+      });
+      expect(result).toFailWith(/expected 2 embedding\(s\), got 1/i);
+    });
+
+    test('fails when vectors have inconsistent dimensionality', async () => {
+      mockFetchResponse(geminiEmbeddingBody([[0.1, 0.2], [0.3]]));
+      const result = await AiAssist.callProviderEmbedding({
+        descriptor: geminiDescriptor(),
+        apiKey: 'gk-test',
+        params: { input: ['a', 'b'] }
+      });
+      expect(result).toFailWith(/inconsistent vector dimensionality .*vector 1 has length 1, expected 2/i);
     });
   });
 

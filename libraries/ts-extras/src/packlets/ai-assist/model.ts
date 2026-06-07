@@ -586,8 +586,8 @@ export type AiImageApiFormat =
  *   genuinely divergent shape (different route, auth header, request body, and
  *   the `taskType` retrieval-asymmetry knob that has no OpenAI analog).
  *
- * Named with the `ApiFormat` suffix for symmetry with {@link AiApiFormat} and
- * {@link AiImageApiFormat}.
+ * Named with the `ApiFormat` suffix for symmetry with `AiApiFormat` and
+ * `AiImageApiFormat`.
  *
  * @public
  */
@@ -1280,7 +1280,7 @@ export interface IAiGeneratedImage extends IAiImageData {
 export type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation' | 'thinking' | 'embedding';
 
 /**
- * All valid {@link AiModelCapability} values — the single source of truth for
+ * All valid `AiModelCapability` values — the single source of truth for
  * the capability vocabulary (used by validators and capability filters).
  * @public
  */
