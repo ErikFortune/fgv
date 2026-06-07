@@ -140,6 +140,8 @@ declare namespace AiAssist {
         IProviderCompletionParams,
         IProviderImageGenerationParams,
         IProviderListModelsParams,
+        callProviderEmbedding,
+        IProviderEmbeddingParams,
         callProviderCompletionStream,
         callProxiedCompletionStream,
         IProviderCompletionStreamParams,
@@ -317,6 +319,11 @@ function callProviderCompletion(params: IProviderCompletionParams): Promise<Resu
 //
 // @public
 function callProviderCompletionStream(params: IProviderCompletionStreamParams): Promise<Result<AsyncIterable<IAiStreamEvent>>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function callProviderEmbedding(params: IProviderEmbeddingParams): Promise<Result<IAiEmbeddingResult>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiImageModelCapability"
 //
@@ -1694,6 +1701,19 @@ interface IProviderCompletionStreamParams extends IChatRequest {
     readonly temperature?: number;
     readonly thinking?: IThinkingConfig;
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IProviderEmbeddingParams {
+    readonly apiKey: string;
+    readonly descriptor: IAiProviderDescriptor;
+    readonly endpoint?: string;
+    readonly logger?: Logging.ILogger;
+    readonly modelOverride?: ModelSpec;
+    readonly params: IAiEmbeddingParams;
+    readonly signal?: AbortSignal;
 }
 
 // @public
