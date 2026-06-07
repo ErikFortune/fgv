@@ -251,6 +251,8 @@ describe('callProviderEmbedding', () => {
       });
 
       expect(lastRequestBody().dimensions).toBe(256);
+      // taskType is never part of the OpenAI wire shape.
+      expect(lastRequestBody().taskType).toBeUndefined();
     });
 
     test('omits dimensions (no-op) and logs a note for a model that does not support it', async () => {
