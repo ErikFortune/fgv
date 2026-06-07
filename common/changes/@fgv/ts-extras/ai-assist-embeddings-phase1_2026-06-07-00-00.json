@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: add the embedding modality foundation (Phase 1) — new AiEmbeddingApiFormat, AiEmbeddingTaskType, IAiEmbeddingParams/IAiEmbeddingResult/IAiEmbeddingUsage, IAiEmbeddingModelCapability types; additive embedding? field on IAiProviderDescriptor; 'embedding' added to ModelSpecKey/allModelSpecKeys and AiModelCapability (+ new allModelCapabilities single-source-of-truth constant); registry embedding capabilities for openai/google-gemini/ollama/openai-compat/mistral; supportsEmbedding/resolveEmbeddingCapability helpers; DEFAULT_MODEL_CAPABILITY_CONFIG embedding rules. Additive only — no wire calls yet (dispatcher + adapters land in Phase 2/3).",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

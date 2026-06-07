@@ -34,6 +34,7 @@ import { fail, type Logging, mapResults, Result, succeed, type Validator, Valida
 import {
   AiPrompt,
   type AiModelCapability,
+  allModelCapabilities,
   type AiServerToolConfig,
   type IAiCompletionResponse,
   type IAiGeneratedImage,
@@ -68,6 +69,7 @@ import {
   splitChatRequest
 } from './chatRequestBuilders';
 import { bearerAuthHeader, resolveEffectiveBaseUrl } from './endpoint';
+import { type IAiApiConfig, fetchJson } from './http';
 import { DEFAULT_MODEL_CAPABILITY_CONFIG, resolveImageCapability, supportsImageGeneration } from './registry';
 import {
   resolveImageOptions,
@@ -79,16 +81,6 @@ import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolForm
 // ============================================================================
 // Types
 // ============================================================================
-
-/**
- * Internal API configuration built from a provider descriptor.
- * @internal
- */
-interface IAiApiConfig {
-  readonly baseUrl: string;
-  readonly apiKey: string;
-  readonly model: string;
-}
 
 /**
  * Parameters for a provider completion request. Carries the unified
@@ -128,65 +120,6 @@ export interface IProviderCompletionParams extends IChatRequest {
 // ============================================================================
 // Shared helpers
 // ============================================================================
-
-/**
- * Makes an HTTP request and returns the parsed JSON, or a failure.
- * @internal
- */
-async function fetchJson(
-  url: string,
-  headers: Record<string, string>,
-  body: unknown,
-  logger?: Logging.ILogger,
-  signal?: AbortSignal
-): Promise<Result<JsonObject>> {
-  /* c8 ignore next 1 - optional logger */
-  logger?.detail(`AI API request: POST ${url}`);
-
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers
-      },
-      body: JSON.stringify(body),
-      signal
-    });
-  } catch (err: unknown) {
-    const detail = err instanceof Error ? err.message : String(err);
-    /* c8 ignore next 1 - optional logger */
-    logger?.error(`AI API request failed: ${detail}`);
-    return fail(`AI API request failed: ${detail}`);
-  }
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => 'unknown error');
-    /* c8 ignore next 1 - optional logger */
-    logger?.error(`AI API returned ${response.status}: ${errorText}`);
-    return fail(`AI API returned ${response.status}: ${errorText}`);
-  }
-
-  /* c8 ignore next 1 - optional logger */
-  logger?.detail(`AI API response: ${response.status}`);
-
-  let json: unknown;
-  try {
-    json = await response.json();
-  } catch {
-    /* c8 ignore next 1 - optional logger */
-    logger?.error('AI API returned invalid JSON response');
-    return fail('AI API returned invalid JSON response');
-  }
-
-  if (!isJsonObject(json)) {
-    /* c8 ignore next 1 - optional logger */
-    logger?.error('AI API returned non-object JSON response');
-    return fail('AI API returned non-object JSON response');
-  }
-  return succeed(json);
-}
 
 /**
  * Makes a multipart/form-data POST request and returns the parsed JSON, or a
@@ -1022,15 +955,7 @@ interface IProxiedListModelsBody {
 const proxiedListModelsEntry: Validator<IProxiedListModelsEntry> = Validators.object<IProxiedListModelsEntry>(
   {
     id: Validators.string,
-    capabilities: Validators.arrayOf(
-      Validators.enumeratedValue<AiModelCapability>([
-        'chat',
-        'tools',
-        'vision',
-        'image-generation',
-        'thinking'
-      ])
-    ),
+    capabilities: Validators.arrayOf(Validators.enumeratedValue<AiModelCapability>(allModelCapabilities)),
     displayName: Validators.string.optional()
   }
 );

@@ -436,13 +436,19 @@ export interface IAiClientToolTurnResult {
  * Known context keys for model specification maps.
  * @public
  */
-export type ModelSpecKey = 'base' | 'tools' | 'image' | 'thinking';
+export type ModelSpecKey = 'base' | 'tools' | 'image' | 'thinking' | 'embedding';
 
 /**
  * All valid {@link ModelSpecKey} values.
  * @public
  */
-export const allModelSpecKeys: ReadonlyArray<ModelSpecKey> = ['base', 'tools', 'image', 'thinking'];
+export const allModelSpecKeys: ReadonlyArray<ModelSpecKey> = [
+  'base',
+  'tools',
+  'image',
+  'thinking',
+  'embedding'
+];
 
 /**
  * Default context key used as fallback when resolving a {@link ModelSpec}.
@@ -567,6 +573,25 @@ export type AiImageApiFormat =
   | 'xai-images'
   | 'xai-images-edits'
   | 'gemini-image-out';
+
+/**
+ * API format categories for embedding provider routing.
+ *
+ * @remarks
+ * - `'openai-embeddings'` — OpenAI `/v1/embeddings` shape. Serves OpenAI,
+ *   Ollama (via `/v1`), openai-compat self-hosted servers (vLLM, LM Studio,
+ *   llama.cpp's openai-server), and Mistral (`mistral-embed`) — all of which
+ *   speak the same request/response shape.
+ * - `'gemini-embeddings'` — Google Gemini `:batchEmbedContents` endpoint. A
+ *   genuinely divergent shape (different route, auth header, request body, and
+ *   the `taskType` retrieval-asymmetry knob that has no OpenAI analog).
+ *
+ * Named with the `ApiFormat` suffix for symmetry with `AiApiFormat` and
+ * `AiImageApiFormat`.
+ *
+ * @public
+ */
+export type AiEmbeddingApiFormat = 'openai-embeddings' | 'gemini-embeddings';
 
 // ============================================================================
 // Completion Response
@@ -750,6 +775,23 @@ export interface IAiProviderDescriptor {
    * `defaultModel.image`, e.g. `{ base: 'gpt-4o', image: 'dall-e-3' }`.
    */
   readonly imageGeneration?: ReadonlyArray<IAiImageModelCapability>;
+  /**
+   * Embedding capabilities, scoped to model id prefixes. Empty or undefined
+   * means the provider does not support embeddings.
+   *
+   * @remarks
+   * The dispatcher matches the resolved embedding model id against each rule's
+   * `modelPrefix` and selects the longest match (see
+   * {@link AiAssist.resolveEmbeddingCapability}). An empty `modelPrefix` is the
+   * catch-all and matches every model id.
+   *
+   * Embedding-model selection uses the `embedding` {@link ModelSpecKey}.
+   * Providers that declare `embedding` should declare a model in
+   * `defaultModel.embedding`, e.g. `{ base: 'gpt-4o', embedding: 'text-embedding-3-small' }`.
+   * Self-hosted providers (`ollama`, `openai-compat`) leave it unset — the
+   * caller supplies the embedding model via `modelOverride`.
+   */
+  readonly embedding?: ReadonlyArray<IAiEmbeddingModelCapability>;
 }
 
 /**
@@ -791,6 +833,132 @@ export interface IAiImageModelCapability {
   readonly outputParamStyle?: 'response-format' | 'output-format' | 'none';
   /** Default MIME type for response images. */
   readonly defaultOutputMimeType?: string;
+}
+
+// ============================================================================
+// Embedding — capability + request/result types
+// ============================================================================
+
+/**
+ * Embedding capability for a model family within a provider. Used as an entry
+ * in {@link IAiProviderDescriptor.embedding}.
+ *
+ * @public
+ */
+export interface IAiEmbeddingModelCapability {
+  /**
+   * Prefix matched against the resolved embedding model id. The empty string is
+   * the catch-all and matches every model. When multiple rules' prefixes match
+   * a model id, the longest prefix wins; ties are broken by first-encountered.
+   */
+  readonly modelPrefix: string;
+  /** API format used to dispatch requests for matching models. */
+  readonly format: AiEmbeddingApiFormat;
+  /**
+   * Whether matching models honor a requested output `dimensions`
+   * (OpenAI `text-embedding-3-*`, Gemini `gemini-embedding-001` via MRL
+   * truncation). When false/undefined, a caller-supplied `dimensions` is a
+   * no-op (logged, not failed — see {@link AiAssist.IAiEmbeddingParams}).
+   */
+  readonly supportsDimensions?: boolean;
+  /**
+   * Whether matching models honor a `taskType` hint (Gemini only today). When
+   * false/undefined, a caller-supplied `taskType` is a no-op (logged, not
+   * failed).
+   */
+  readonly supportsTaskType?: boolean;
+  /** Native fixed output dimension, when the model has one (metadata only). */
+  readonly defaultDimensions?: number;
+  /**
+   * Maximum number of inputs accepted per request. When present, the dispatcher
+   * rejects batches larger than this up front (no auto-chunking in v1).
+   */
+  readonly maxBatchSize?: number;
+}
+
+/**
+ * A single embedding task-type hint (Gemini-style). Cross-provider; providers
+ * that don't support task typing ignore it (logged, not failed). Open string
+ * union so new Gemini task types don't force a churn, with the known set
+ * enumerated for ergonomics.
+ *
+ * @remarks
+ * Values are the kebab-case cross-provider form; the Gemini adapter maps them to
+ * `SCREAMING_SNAKE_CASE` on the wire (e.g. `'retrieval-document'` →
+ * `RETRIEVAL_DOCUMENT`).
+ *
+ * @public
+ */
+export type AiEmbeddingTaskType =
+  | 'retrieval-query'
+  | 'retrieval-document'
+  | 'semantic-similarity'
+  | 'classification'
+  | 'clustering'
+  | 'code-retrieval-query'
+  | 'question-answering'
+  | 'fact-verification'
+  | (string & {});
+
+/**
+ * Parameters for an embedding request. Batch is the norm: `input` accepts a
+ * single string or an array; the result always exposes a vector array aligned
+ * by index to the input.
+ *
+ * @public
+ */
+export interface IAiEmbeddingParams {
+  /** One or more input strings. A bare string is treated as a single-element batch. */
+  readonly input: string | ReadonlyArray<string>;
+  /**
+   * Requested output dimensionality. Honored only by models whose capability
+   * declares `supportsDimensions` (OpenAI `text-embedding-3-*`, Gemini
+   * `gemini-embedding-001` via MRL truncation). Ignored — with a `logger.info`
+   * note — by models that don't.
+   */
+  readonly dimensions?: number;
+  /**
+   * Task-type hint. Mapped to Gemini `taskType`; a no-op (with a `logger.info`
+   * note) on OpenAI/Ollama/compat/Mistral. Preserves Gemini's
+   * query-vs-document retrieval asymmetry.
+   */
+  readonly taskType?: AiEmbeddingTaskType;
+}
+
+/**
+ * Token-usage accounting for an embedding call, when the provider reports it.
+ * @public
+ */
+export interface IAiEmbeddingUsage {
+  /** Tokens consumed by the input(s). */
+  readonly promptTokens?: number;
+  /** Total tokens billed. */
+  readonly totalTokens?: number;
+}
+
+/**
+ * Result of an embedding call. `vectors[i]` is the embedding for `input[i]`,
+ * in request order.
+ *
+ * @remarks
+ * Vectors are plain `number[]` (not `Float32Array`) for JSON-wire fidelity and
+ * validator-friendliness — consumers who want a typed array call
+ * `Float32Array.from(vector)` at the vector-store / WebGPU boundary. The
+ * library does not L2-normalize; Gemini's MRL truncation (when
+ * `dimensions < native`) returns un-normalized vectors that the consumer should
+ * normalize if their similarity metric requires it.
+ *
+ * @public
+ */
+export interface IAiEmbeddingResult {
+  /** One vector per input, aligned by index to the request order. */
+  readonly vectors: ReadonlyArray<ReadonlyArray<number>>;
+  /** The resolved provider-native model id that produced the vectors. */
+  readonly model: string;
+  /** Dimensionality of each returned vector (`vectors[0].length`; `0` for empty input). */
+  readonly dimensions: number;
+  /** Token usage, when the provider reports it (OpenAI-format; absent for Gemini). */
+  readonly usage?: IAiEmbeddingUsage;
 }
 
 // ============================================================================
@@ -1109,7 +1277,21 @@ export interface IAiGeneratedImage extends IAiImageData {
  *
  * @public
  */
-export type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation' | 'thinking';
+export type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation' | 'thinking' | 'embedding';
+
+/**
+ * All valid `AiModelCapability` values — the single source of truth for
+ * the capability vocabulary (used by validators and capability filters).
+ * @public
+ */
+export const allModelCapabilities: ReadonlyArray<AiModelCapability> = [
+  'chat',
+  'tools',
+  'vision',
+  'image-generation',
+  'thinking',
+  'embedding'
+];
 
 /**
  * Information about a single model returned by a provider's list endpoint,

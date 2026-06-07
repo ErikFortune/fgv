@@ -207,8 +207,16 @@ A future canary should build a minimal Vite/webpack bundle importing the browser
 
 **Why deferred:** no browser consumer yet, and the CORS/`OLLAMA_ORIGINS` story makes the browser path a deliberate opt-in rather than a default. Commission when a browser consumer surfaces.
 
-## Native Ollama `embed` (HELD — gated on `ai-assist-embeddings`)
+## Native Ollama `embed` — RESOLVED → CUT (do not build)
 
-**Status: HELD (OQ-1), not a parking-lot item — it has a named gate.**
+**Status: resolved 2026-06-07. Native `embed` is CUT, not held.**
 
-`@fgv/ts-extras-ollama` intentionally does NOT ship native `embed` (`/api/embed`) at v0.1. The gate is the cross-provider `ai-assist-embeddings` design: Ollama embeddings are also reachable via `/v1/embeddings`, so a cross-provider ai-assist embedding primitive may subsume the native path. Build native `embed` in this package only if that design concludes it adds something `/v1`-through-ai-assist can't (native `total_duration` / `prompt_eval_count`, or reusing an already-loaded chat model). See `.ai/tasks/active/ollama-native/design.md` §9 OQ-1.
+The cross-provider `ai-assist-embeddings` primitive shipped (`AiAssist.callProviderEmbedding`) and owns Ollama embeddings via `/v1/embeddings` — point the `ollama` descriptor at `http://localhost:11434/v1` and pass the embedding model via `modelOverride`. Native `/api/embed` adds only marginal diagnostics (`total_duration` / `prompt_eval_count`), not worth a parallel path, so `@fgv/ts-extras-ollama` intentionally does NOT ship `embed`. Revisit additively only if a concrete consumer demonstrates a hard need for the native-only diagnostics. See `.ai/tasks/completed/2026-06/ai-assist-embeddings/` and the `@fgv/ts-extras-ollama` entry in `LIBRARY_CAPABILITIES.md`.
+
+---
+
+## Transparent batch-chunking for `callProviderEmbedding`
+
+`callProviderEmbedding` fails fast when `input` exceeds the capability's `maxBatchSize` (e.g. OpenAI's 2048) rather than auto-chunking — fine for v0.1, since the failure is explicit and a caller can chunk themselves. Future additive nicety: have the dispatcher transparently split an over-limit batch into `maxBatchSize`-sized sub-requests (sequential or bounded-concurrent) and reassemble `vectors[]` in input order. Adds chunking + reassembly + partial-failure semantics; defer until a RAG consumer actually hits the limit and wants it handled in-library.
+
+**Reference:** `ai-assist-embeddings` design §14 amendment #3.

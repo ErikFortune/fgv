@@ -107,6 +107,21 @@ describe('resolveModel', () => {
     const spec: AiAssist.ModelSpec = { tools: 'grok-reasoning', image: 'grok-vision' };
     expect(AiAssist.resolveModel(spec)).toBe('grok-reasoning');
   });
+
+  test('resolves the embedding context key from an object spec', () => {
+    const spec: AiAssist.ModelSpec = { base: 'gpt-4o', embedding: 'text-embedding-3-small' };
+    expect(AiAssist.resolveModel(spec, 'embedding')).toBe('text-embedding-3-small');
+  });
+});
+
+describe('capability + spec-key vocabularies', () => {
+  test('allModelSpecKeys includes the embedding key', () => {
+    expect(AiAssist.allModelSpecKeys).toContain('embedding');
+  });
+
+  test('allModelCapabilities includes the embedding capability', () => {
+    expect(AiAssist.allModelCapabilities).toContain('embedding');
+  });
 });
 
 describe('modelSpec converter', () => {

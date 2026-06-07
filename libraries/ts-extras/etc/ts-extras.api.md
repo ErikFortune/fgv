@@ -27,6 +27,7 @@ declare namespace AiAssist {
     export {
         AiPrompt,
         AiModelCapability,
+        allModelCapabilities,
         AiProviderId,
         AiServerToolType,
         AiServerToolConfig,
@@ -43,6 +44,12 @@ declare namespace AiAssist {
         IChatRequest,
         AiApiFormat,
         AiImageApiFormat,
+        AiEmbeddingApiFormat,
+        AiEmbeddingTaskType,
+        IAiEmbeddingModelCapability,
+        IAiEmbeddingParams,
+        IAiEmbeddingUsage,
+        IAiEmbeddingResult,
         IAiImageModelCapability,
         IAiProviderDescriptor,
         IAiAssistProviderConfig,
@@ -121,6 +128,8 @@ declare namespace AiAssist {
         getProviderDescriptor,
         resolveImageCapability,
         supportsImageGeneration,
+        resolveEmbeddingCapability,
+        supportsEmbedding,
         DEFAULT_MODEL_CAPABILITY_CONFIG,
         callProviderCompletion,
         callProxiedCompletion,
@@ -131,6 +140,9 @@ declare namespace AiAssist {
         IProviderCompletionParams,
         IProviderImageGenerationParams,
         IProviderListModelsParams,
+        callProviderEmbedding,
+        callProxiedEmbedding,
+        IProviderEmbeddingParams,
         callProviderCompletionStream,
         callProxiedCompletionStream,
         IProviderCompletionStreamParams,
@@ -180,6 +192,12 @@ const aiAssistSettings: Converter<IAiAssistSettings>;
 const aiClientToolConfig: Converter<IAiClientToolConfig>;
 
 // @public
+type AiEmbeddingApiFormat = 'openai-embeddings' | 'gemini-embeddings';
+
+// @public
+type AiEmbeddingTaskType = 'retrieval-query' | 'retrieval-document' | 'semantic-similarity' | 'classification' | 'clustering' | 'code-retrieval-query' | 'question-answering' | 'fact-verification' | (string & {});
+
+// @public
 type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images' | 'xai-images-edits' | 'gemini-image-out';
 
 // @public
@@ -191,7 +209,7 @@ type AiImageSize = DallE2Size | DallE3Size | GptImageSize;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation' | 'thinking';
+type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation' | 'thinking' | 'embedding';
 
 // @public
 class AiPrompt {
@@ -257,6 +275,9 @@ const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType>;
 // @public
 const allKeyStoreSymmetricSecretTypes: ReadonlyArray<KeyStoreSymmetricSecretType>;
 
+// @public
+const allModelCapabilities: ReadonlyArray<AiModelCapability>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
 //
 // @public
@@ -295,6 +316,11 @@ function callProviderCompletion(params: IProviderCompletionParams): Promise<Resu
 // @public
 function callProviderCompletionStream(params: IProviderCompletionStreamParams): Promise<Result<AsyncIterable<IAiStreamEvent>>>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function callProviderEmbedding(params: IProviderEmbeddingParams): Promise<Result<IAiEmbeddingResult>>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiImageModelCapability"
 //
 // @public
@@ -313,6 +339,11 @@ function callProxiedCompletion(proxyUrl: string, params: IProviderCompletionPara
 //
 // @public
 function callProxiedCompletionStream(proxyUrl: string, params: IProviderCompletionStreamParams): Promise<Result<AsyncIterable<IAiStreamEvent>>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function callProxiedEmbedding(proxyUrl: string, params: IProviderEmbeddingParams): Promise<Result<IAiEmbeddingResult>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "callProviderImageGeneration"
 //
@@ -832,6 +863,40 @@ interface IAiCompletionResponse {
     readonly truncated: boolean;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+interface IAiEmbeddingModelCapability {
+    readonly defaultDimensions?: number;
+    readonly format: AiEmbeddingApiFormat;
+    readonly maxBatchSize?: number;
+    readonly modelPrefix: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly supportsDimensions?: boolean;
+    readonly supportsTaskType?: boolean;
+}
+
+// @public
+interface IAiEmbeddingParams {
+    readonly dimensions?: number;
+    readonly input: string | ReadonlyArray<string>;
+    readonly taskType?: AiEmbeddingTaskType;
+}
+
+// @public
+interface IAiEmbeddingResult {
+    readonly dimensions: number;
+    readonly model: string;
+    readonly usage?: IAiEmbeddingUsage;
+    readonly vectors: ReadonlyArray<ReadonlyArray<number>>;
+}
+
+// @public
+interface IAiEmbeddingUsage {
+    readonly promptTokens?: number;
+    readonly totalTokens?: number;
+}
+
 // @public
 interface IAiGeneratedImage extends IAiImageData {
     readonly revisedPrompt?: string;
@@ -923,6 +988,9 @@ interface IAiProviderDescriptor {
     readonly buttonLabel: string;
     readonly corsRestricted: boolean;
     readonly defaultModel: ModelSpec;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+    readonly embedding?: ReadonlyArray<IAiEmbeddingModelCapability>;
     readonly id: AiProviderId;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
@@ -1636,6 +1704,19 @@ interface IProviderCompletionStreamParams extends IChatRequest {
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IProviderEmbeddingParams {
+    readonly apiKey: string;
+    readonly descriptor: IAiProviderDescriptor;
+    readonly endpoint?: string;
+    readonly logger?: Logging.ILogger;
+    readonly modelOverride?: ModelSpec;
+    readonly params: IAiEmbeddingParams;
+    readonly signal?: AbortSignal;
+}
+
 // @public
 interface IProviderImageGenerationParams {
     readonly apiKey: string;
@@ -2043,7 +2124,7 @@ type ModelSpec = string | IModelSpecMap;
 const modelSpec: Converter<ModelSpec>;
 
 // @public
-type ModelSpecKey = 'base' | 'tools' | 'image' | 'thinking';
+type ModelSpecKey = 'base' | 'tools' | 'image' | 'thinking' | 'embedding';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
 //
@@ -2235,6 +2316,11 @@ function resolveEffectiveTools(descriptor: IAiProviderDescriptor, settingsTools?
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //
 // @public
+function resolveEmbeddingCapability(descriptor: IAiProviderDescriptor, modelId: string): IAiEmbeddingModelCapability | undefined;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
 function resolveImageCapability(descriptor: IAiProviderDescriptor, modelId: string): IAiImageModelCapability | undefined;
 
 // @public
@@ -2253,6 +2339,11 @@ type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
 //
 // @public
 const SMART_JSON_PROMPT_HINT: string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function supportsEmbedding(descriptor: IAiProviderDescriptor): boolean;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //
