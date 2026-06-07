@@ -89,7 +89,7 @@ interface IAdaptMcpToolsResult {
 interface IMcpSkippedTool {
   readonly name: string;
   readonly reason: string;     // JSON-pointer reason verbatim from JsonSchema.fromJson
-  readonly schema: JsonObject;  // the raw failing inputSchema, in hand for fromJson extension
+  readonly schema: JsonValue;  // the raw failing inputSchema (can be null / non-object), in hand for fromJson extension
 }
 ```
 

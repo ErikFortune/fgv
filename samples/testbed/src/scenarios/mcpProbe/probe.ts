@@ -191,7 +191,10 @@ export async function runMcpProbe(
   const session = connectResult.value;
 
   const adaptResult = await deps.adapt(session, logger);
-  await deps.close(session);
+  const closeResult = await deps.close(session);
+  if (closeResult.isFailure()) {
+    logger.warn(`mcp-probe: session close failed: ${closeResult.message}`);
+  }
 
   return adaptResult
     .onSuccess((result) => succeed(formatMcpProbeReport(_describeTarget(spec), session.serverInfo, result)))

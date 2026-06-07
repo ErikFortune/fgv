@@ -263,6 +263,18 @@ describe('runMcpProbe', () => {
     );
     expect(close).toHaveBeenCalledTimes(1);
   });
+
+  test('warns via the logger (but still succeeds) when session close fails', async () => {
+    const { deps } = makeDeps({
+      adapt: jest.fn(async (): Promise<Result<IAdaptMcpToolsResult>> => succeed({ tools: [], skipped: [] })),
+      close: jest.fn(async (): Promise<Result<true>> => fail('teardown boom'))
+    });
+    const logger = new Logging.InMemoryLogger();
+    const warnSpy = jest.spyOn(logger, 'warn');
+
+    expect(await runMcpProbe(httpSpec, deps, logger)).toSucceed();
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringMatching(/session close failed: teardown boom/));
+  });
 });
 
 // ---------------------------------------------------------------------------
