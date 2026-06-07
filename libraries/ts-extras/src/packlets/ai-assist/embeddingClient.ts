@@ -463,7 +463,7 @@ const proxiedEmbeddingResponse: Validator<IAiEmbeddingResult> = Validators.objec
  * Error body `{ error: string }` is surfaced as `proxy: ${error}`.
  *
  * @param proxyUrl - Base URL of the proxy server (e.g. `http://localhost:3001`).
- * @param params - Same parameters as {@link callProviderEmbedding}.
+ * @param params - Same parameters as {@link AiAssist.callProviderEmbedding}.
  * @returns The embedding result, or a failure.
  * @public
  */

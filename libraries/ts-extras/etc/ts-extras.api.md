@@ -345,7 +345,7 @@ function callProxiedCompletion(proxyUrl: string, params: IProviderCompletionPara
 // @public
 function callProxiedCompletionStream(proxyUrl: string, params: IProviderCompletionStreamParams): Promise<Result<AsyncIterable<IAiStreamEvent>>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "callProviderEmbedding"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function callProxiedEmbedding(proxyUrl: string, params: IProviderEmbeddingParams): Promise<Result<IAiEmbeddingResult>>;
