@@ -625,6 +625,18 @@ describe('callProviderEmbedding', () => {
       expect(result).toFailWith(/Gemini embeddings API response/i);
     });
 
+    test('fails when the response embeddings array is empty', async () => {
+      // Mirrors the OpenAI empty-data case: the non-empty validator constraint
+      // rejects a zero-length batch up front (symmetric with the OpenAI adapter).
+      mockFetchResponse({ embeddings: [] });
+      const result = await AiAssist.callProviderEmbedding({
+        descriptor: geminiDescriptor(),
+        apiKey: 'gk-test',
+        params: { input: 'q' }
+      });
+      expect(result).toFailWith(/Gemini embeddings API response/i);
+    });
+
     test('surfaces an HTTP error from the Gemini endpoint', async () => {
       mockFetchHttpError(503, 'unavailable');
       const result = await AiAssist.callProviderEmbedding({
