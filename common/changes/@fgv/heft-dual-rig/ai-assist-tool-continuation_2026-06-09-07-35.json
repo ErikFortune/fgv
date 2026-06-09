@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "make IAiClientToolContinuation.messages cumulative so replace-pattern is correct across all N rounds in executeClientToolTurn",
+      "type": "none",
+      "packageName": "@fgv/heft-dual-rig"
+    }
+  ],
+  "packageName": "@fgv/heft-dual-rig",
+  "email": "noreply@anthropic.com"
+}
