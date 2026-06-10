@@ -1418,6 +1418,349 @@ describe('executeClientToolTurn', () => {
     });
   });
 
+  // ============================================================================
+  // Multi-round cumulative continuation (load-bearing regression reference)
+  // ============================================================================
+
+  describe('multi-round cumulative continuation', () => {
+    // This test is the canonical reference that was missing when the footgun
+    // was introduced. It drives 3 Anthropic tool rounds with mock fetch,
+    // asserting that continuation.messages grows cumulatively each round and
+    // that feeding it back via replace (not manual concat) produces the correct
+    // wire tail on subsequent rounds.
+
+    function anthropicToolUseSseForRound(toolId: string, query: string): string[] {
+      return anthropicToolUseSse(toolId, 'recall_memory', `{"query":"${query}"}`);
+    }
+
+    test('continuation.messages is cumulative across 3 rounds and replace-pattern produces correct wire tail', async () => {
+      const capturedBodies: Record<string, unknown>[] = [];
+
+      // Sequence of fetch responses: rounds 1, 2, 3 each return a tool call; round 4 returns done.
+      const responseQueue: string[][] = [
+        anthropicToolUseSseForRound('toolu_r1', 'round1'),
+        anthropicToolUseSseForRound('toolu_r2', 'round2'),
+        anthropicToolUseSseForRound('toolu_r3', 'round3'),
+        anthropicDoneSse()
+      ];
+      let callIndex = 0;
+      const encoder = new TextEncoder();
+      (global.fetch as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const init = args[1] as RequestInit;
+        capturedBodies.push(JSON.parse(init.body as string) as Record<string, unknown>);
+        const chunks = responseQueue[callIndex++] ?? anthropicDoneSse();
+        const body = new ReadableStream<Uint8Array>({
+          start(controller: ReadableStreamDefaultController<Uint8Array>): void {
+            for (const chunk of chunks) {
+              controller.enqueue(encoder.encode(chunk));
+            }
+            controller.close();
+          }
+        });
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          body,
+          text: jest.fn().mockResolvedValue(''),
+          headers: new Map([['content-type', 'text/event-stream']])
+        });
+      });
+
+      const tool = makeMemoryTool(async (args) => `result-${args.query}`);
+      const descriptor = makeAnthropicDescriptor();
+
+      // --- Round 1: no prior continuation ---
+      const r1 = executeClientToolTurn({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [tool] as IAiClientTool[],
+        model: 'claude-sonnet-4-6'
+        // continuationMessages: omitted (first round)
+      });
+      expect(r1).toSucceed();
+      if (r1.isFailure()) return;
+      await collect(r1.value.events);
+      const r1Result = await r1.value.nextTurn;
+
+      // Round 1 should yield a continuation with exactly 2 messages (assistant + user)
+      expect(r1Result).toSucceedAndSatisfy((r) => {
+        expect(r.continuation).toBeDefined();
+        expect(r.continuation!.messages).toHaveLength(2);
+        expect(r.continuation!.messages[0].role).toBe('assistant');
+        expect(r.continuation!.messages[1].role).toBe('user');
+        // toolCallsSummary is per-round only
+        expect(r.continuation!.toolCallsSummary).toHaveLength(1);
+        expect(r.continuation!.toolCallsSummary[0].toolName).toBe('recall_memory');
+      });
+
+      const tail1 = r1Result.isSuccess() ? r1Result.value.continuation!.messages : [];
+
+      // --- Round 2: supply round-1 tail via replace ---
+      const r2 = executeClientToolTurn({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [tool] as IAiClientTool[],
+        model: 'claude-sonnet-4-6',
+        continuationMessages: tail1
+      });
+      expect(r2).toSucceed();
+      if (r2.isFailure()) return;
+      await collect(r2.value.events);
+      const r2Result = await r2.value.nextTurn;
+
+      // Round 2: continuation.messages must be cumulative (round-1 tail + round-2 tail = 4 messages)
+      expect(r2Result).toSucceedAndSatisfy((r) => {
+        expect(r.continuation).toBeDefined();
+        expect(r.continuation!.messages).toHaveLength(4);
+        // First 2 are round-1's messages
+        expect(r.continuation!.messages[0].role).toBe('assistant');
+        expect(r.continuation!.messages[1].role).toBe('user');
+        // Next 2 are round-2's messages
+        expect(r.continuation!.messages[2].role).toBe('assistant');
+        expect(r.continuation!.messages[3].role).toBe('user');
+        // toolCallsSummary is per-round only (just round 2's call)
+        expect(r.continuation!.toolCallsSummary).toHaveLength(1);
+        expect(r.continuation!.toolCallsSummary[0].toolName).toBe('recall_memory');
+      });
+
+      const tail2 = r2Result.isSuccess() ? r2Result.value.continuation!.messages : [];
+
+      // --- Round 3: supply cumulative round-1+2 tail via replace ---
+      const r3 = executeClientToolTurn({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [tool] as IAiClientTool[],
+        model: 'claude-sonnet-4-6',
+        continuationMessages: tail2
+      });
+      expect(r3).toSucceed();
+      if (r3.isFailure()) return;
+      await collect(r3.value.events);
+      const r3Result = await r3.value.nextTurn;
+
+      // Round 3: continuation.messages must be cumulative (all 3 rounds = 6 messages)
+      expect(r3Result).toSucceedAndSatisfy((r) => {
+        expect(r.continuation).toBeDefined();
+        expect(r.continuation!.messages).toHaveLength(6);
+        // Roles in order: assistant/user/assistant/user/assistant/user
+        expect(r.continuation!.messages[0].role).toBe('assistant');
+        expect(r.continuation!.messages[1].role).toBe('user');
+        expect(r.continuation!.messages[2].role).toBe('assistant');
+        expect(r.continuation!.messages[3].role).toBe('user');
+        expect(r.continuation!.messages[4].role).toBe('assistant');
+        expect(r.continuation!.messages[5].role).toBe('user');
+        // toolCallsSummary is per-round only (just round 3's call)
+        expect(r.continuation!.toolCallsSummary).toHaveLength(1);
+      });
+
+      const tail3 = r3Result.isSuccess() ? r3Result.value.continuation!.messages : [];
+
+      // --- Round 4: final round returns no tool calls → continuation: undefined ---
+      const r4 = executeClientToolTurn({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [tool] as IAiClientTool[],
+        model: 'claude-sonnet-4-6',
+        continuationMessages: tail3
+      });
+      expect(r4).toSucceed();
+      if (r4.isFailure()) return;
+      await collect(r4.value.events);
+      const r4Result = await r4.value.nextTurn;
+
+      expect(r4Result).toSucceedAndSatisfy((r) => {
+        expect(r.continuation).toBeUndefined();
+      });
+
+      // --- Wire tail verification: each round's request body contains the full prior tail ---
+      // Round 1 (capturedBodies[0]): no tail — messages array has only the user turn
+      const r1Messages = capturedBodies[0]?.messages as unknown[] | undefined;
+      expect(r1Messages).toBeDefined();
+      if (!r1Messages) return;
+      // Anthropic wire: messages = [...head, userTurn, ...rawTail] — round 1 has no rawTail
+      expect(r1Messages.filter((m) => (m as Record<string, unknown>).role === 'assistant')).toHaveLength(0);
+
+      // Round 2 (capturedBodies[1]): tail = round-1 tail (2 messages appended after user turn)
+      const r2Messages = capturedBodies[1]?.messages as unknown[] | undefined;
+      expect(r2Messages).toBeDefined();
+      if (!r2Messages) return;
+      const r2AssistantItems = r2Messages.filter((m) => (m as Record<string, unknown>).role === 'assistant');
+      // 1 assistant entry (from round-1 tail)
+      expect(r2AssistantItems).toHaveLength(1);
+
+      // Round 3 (capturedBodies[2]): tail = round-1 + round-2 tail (4 messages appended after user turn)
+      const r3Messages = capturedBodies[2]?.messages as unknown[] | undefined;
+      expect(r3Messages).toBeDefined();
+      if (!r3Messages) return;
+      const r3AssistantItems = r3Messages.filter((m) => (m as Record<string, unknown>).role === 'assistant');
+      // 2 assistant entries (from rounds 1+2 tails)
+      expect(r3AssistantItems).toHaveLength(2);
+
+      // Round 4 (capturedBodies[3]): tail = rounds 1+2+3 (6 messages appended after user turn)
+      const r4Messages = capturedBodies[3]?.messages as unknown[] | undefined;
+      expect(r4Messages).toBeDefined();
+      if (!r4Messages) return;
+      const r4AssistantItems = r4Messages.filter((m) => (m as Record<string, unknown>).role === 'assistant');
+      // 3 assistant entries (from rounds 1+2+3 tails)
+      expect(r4AssistantItems).toHaveLength(3);
+    });
+  });
+
+  describe('multi-round cumulative continuation (OpenAI)', () => {
+    // Verifies the seam is provider-agnostic: OpenAI function_call/function_call_output items
+    // accumulate just like Anthropic role/content messages do.
+
+    function openAiToolCallSse(itemId: string, callId: string, toolName: string, argsJson: string): string[] {
+      return [
+        `event: response.output_item.added\ndata: ${JSON.stringify({
+          item: { type: 'function_call', id: itemId, name: toolName, call_id: callId }
+        })}\n\n`,
+        `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
+          item_id: itemId,
+          delta: argsJson
+        })}\n\n`,
+        `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
+          item_id: itemId,
+          arguments: argsJson
+        })}\n\n`,
+        `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+      ];
+    }
+
+    function openAiDoneSse(): string[] {
+      return [
+        `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+      ];
+    }
+
+    test('continuation.messages accumulates function_call/function_call_output items across 3 rounds', async () => {
+      const capturedBodies: Record<string, unknown>[] = [];
+      const responseQueue: string[][] = [
+        openAiToolCallSse('fc_r1', 'call_r1', 'recall_memory', '{"query":"r1"}'),
+        openAiToolCallSse('fc_r2', 'call_r2', 'recall_memory', '{"query":"r2"}'),
+        openAiToolCallSse('fc_r3', 'call_r3', 'recall_memory', '{"query":"r3"}'),
+        openAiDoneSse()
+      ];
+      let callIndex = 0;
+      const encoder = new TextEncoder();
+      (global.fetch as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const init = args[1] as RequestInit;
+        capturedBodies.push(JSON.parse(init.body as string) as Record<string, unknown>);
+        const chunks = responseQueue[callIndex++] ?? openAiDoneSse();
+        const body = new ReadableStream<Uint8Array>({
+          start(controller: ReadableStreamDefaultController<Uint8Array>): void {
+            for (const chunk of chunks) {
+              controller.enqueue(encoder.encode(chunk));
+            }
+            controller.close();
+          }
+        });
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          body,
+          text: jest.fn().mockResolvedValue(''),
+          headers: new Map([['content-type', 'text/event-stream']])
+        });
+      });
+
+      const tool = makeMemoryTool(async (args) => `res-${args.query}`);
+      const descriptor = makeOpenAiDescriptor();
+
+      // Round 1
+      const r1 = executeClientToolTurn({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [tool] as IAiClientTool[],
+        model: 'gpt-4o'
+      });
+      expect(r1).toSucceed();
+      if (r1.isFailure()) return;
+      await collect(r1.value.events);
+      const r1Result = await r1.value.nextTurn;
+
+      // Round 1: function_call + function_call_output = 2 items
+      expect(r1Result).toSucceedAndSatisfy((r) => {
+        expect(r.continuation).toBeDefined();
+        expect(r.continuation!.messages).toHaveLength(2);
+        expect(r.continuation!.messages[0].type).toBe('function_call');
+        expect(r.continuation!.messages[1].type).toBe('function_call_output');
+      });
+
+      const tail1 = r1Result.isSuccess() ? r1Result.value.continuation!.messages : [];
+
+      // Round 2
+      const r2 = executeClientToolTurn({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [tool] as IAiClientTool[],
+        model: 'gpt-4o',
+        continuationMessages: tail1
+      });
+      expect(r2).toSucceed();
+      if (r2.isFailure()) return;
+      await collect(r2.value.events);
+      const r2Result = await r2.value.nextTurn;
+
+      // Round 2: 4 items cumulative (round-1 + round-2 exchange)
+      expect(r2Result).toSucceedAndSatisfy((r) => {
+        expect(r.continuation).toBeDefined();
+        expect(r.continuation!.messages).toHaveLength(4);
+        expect(r.continuation!.messages[0].type).toBe('function_call');
+        expect(r.continuation!.messages[1].type).toBe('function_call_output');
+        expect(r.continuation!.messages[2].type).toBe('function_call');
+        expect(r.continuation!.messages[3].type).toBe('function_call_output');
+      });
+
+      const tail2 = r2Result.isSuccess() ? r2Result.value.continuation!.messages : [];
+
+      // Round 3
+      const r3 = executeClientToolTurn({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [tool] as IAiClientTool[],
+        model: 'gpt-4o',
+        continuationMessages: tail2
+      });
+      expect(r3).toSucceed();
+      if (r3.isFailure()) return;
+      await collect(r3.value.events);
+      const r3Result = await r3.value.nextTurn;
+
+      // Round 3: 6 items cumulative (rounds 1+2+3)
+      expect(r3Result).toSucceedAndSatisfy((r) => {
+        expect(r.continuation).toBeDefined();
+        expect(r.continuation!.messages).toHaveLength(6);
+        const funcCallItems = r.continuation!.messages.filter((m) => m.type === 'function_call');
+        const outputItems = r.continuation!.messages.filter((m) => m.type === 'function_call_output');
+        expect(funcCallItems).toHaveLength(3);
+        expect(outputItems).toHaveLength(3);
+      });
+
+      // Wire tail verification: round 2 body should contain the round-1 tail as input items
+      const r2Body = capturedBodies[1]?.input as unknown[] | undefined;
+      expect(r2Body).toBeDefined();
+      if (!r2Body) return;
+      const r2FuncCallItems = r2Body.filter((m) => (m as Record<string, unknown>).type === 'function_call');
+      // 1 function_call from round-1 tail
+      expect(r2FuncCallItems).toHaveLength(1);
+
+      // Round 3 body should contain round-1+2 tails (4 items: 2 function_call + 2 function_call_output)
+      const r3Body = capturedBodies[2]?.input as unknown[] | undefined;
+      expect(r3Body).toBeDefined();
+      if (!r3Body) return;
+      const r3FuncCallItems = r3Body.filter((m) => (m as Record<string, unknown>).type === 'function_call');
+      expect(r3FuncCallItems).toHaveLength(2);
+    });
+  });
+
   describe('OpenAI provider routing', () => {
     test('routes to OpenAI Responses adapter and builds function_call continuation', async () => {
       // Live wire shape: function_call_arguments.{delta,done} carry item_id (the fc_*/output-item id),
