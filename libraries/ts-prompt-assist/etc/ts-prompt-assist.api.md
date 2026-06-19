@@ -564,7 +564,18 @@ export interface IResolvedPrompt {
     readonly body: string;
     readonly descriptor: IPromptDescriptor;
     readonly id: PromptId;
+    readonly slots: ReadonlyMap<SlotName, IResolvedPromptSlot>;
     readonly trace: IPromptResolveTrace;
+}
+
+// @public
+export interface IResolvedPromptSlot {
+    readonly directive: SlotDirective;
+    readonly name: SlotName;
+    readonly source: BindingTraceSource;
+    readonly value: string;
+    readonly wasEnforced: boolean;
+    readonly winningScope?: ScopeKey;
 }
 
 // @public

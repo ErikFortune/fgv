@@ -355,6 +355,28 @@ describe('ts-prompt-assist resource bindings (B-2)', () => {
     expect(result).toFailWith(/outer.*slot 'slot'.*missing.*no record found/);
   });
 
+  test('resolved.slots value for a resource-binding slot is the rendered inner body', async () => {
+    const outer = buildPrompt('outer', 'Hi, {{{audience}}}!', [
+      { name: 'audience', defaultBinding: resourceBinding('inner') }
+    ]);
+    const inner = buildPrompt('inner', 'everyone', []);
+    const store = await buildStore({ records: [outer, inner] });
+    const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+    const result = await lib.resolve({
+      id: 'outer' as unknown as PromptId,
+      chain: [TEST_SCOPE],
+      qualifiers: {}
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      const slot = r.slots.get('audience' as unknown as SlotName)!;
+      // The slot value is the rendered inner-prompt body (not the '' placeholder).
+      expect(slot.value).toBe('everyone');
+      expect(slot.source).toBe('default');
+      expect(slot.directive).toBe('prose');
+      expect(slot.wasEnforced).toBe(false);
+    });
+  });
+
   test('nested resource bindings: inner trace recursively populated', async () => {
     // A -> B -> C; expect outer.trace.resourceBindingResolutions[0]
     // .innerTrace.resourceBindingResolutions[0].innerTrace to describe C.

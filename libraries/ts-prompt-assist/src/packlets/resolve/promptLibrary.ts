@@ -29,6 +29,7 @@ import {
   ICandidateMatchTraceEntry,
   IPromptResolveTrace,
   IResolvedPrompt,
+  IResolvedPromptSlot,
   ISafeguardFinding
 } from '../types';
 import { IPromptStore } from '../store';
@@ -1082,11 +1083,23 @@ export class PromptLibrary<
             safeguardFindings: [...mergeResult.safeguardFindings, ...safeguardResult.findings],
             candidateMatches
           };
+          const slots = new Map<SlotName, IResolvedPromptSlot>();
+          finalMerged.forEach((entry, name) => {
+            slots.set(name, {
+              name,
+              value: entry.value,
+              directive: entry.directive,
+              source: entry.source,
+              wasEnforced: entry.wasEnforced,
+              winningScope: entry.winningScope
+            });
+          });
           return succeed<IResolvedPrompt>({
             id: req.id,
             body: finalBody,
             descriptor,
-            trace
+            trace,
+            slots
           });
         })
     );

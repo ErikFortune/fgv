@@ -157,6 +157,47 @@ export interface IPromptResolveTrace {
 }
 
 /**
+ * Per-slot view of a resolved prompt, purpose-typed for horizontal composition
+ * patterns. A stable, supported alternative view over `trace.mergedBindings` for
+ * consumers that read per-slot values to compose a prompt externally — the same
+ * data as the corresponding {@link IBindingTraceEntry}, projected with the slot
+ * `name` and surfaced as a first-class primitive rather than a trace detail.
+ *
+ * @remarks
+ * IMPORTANT (interim safety gap): the `value` here is the resolved slot
+ * content (post-merge, post-resource-binding, pre-Mustache-render) — the
+ * exact string fed into the body template renderer for this slot during
+ * {@link PromptLibrary.resolve}. A consumer that reads these per-slot values
+ * and assembles a prompt *externally* bypasses the `applySafeguards` pass that
+ * `resolve` runs over the resolved whole. Such a consumer **must independently
+ * screen the composed output against its own safety policy.** The durable,
+ * safety-closed path is the in-fgv `HorizontalComposer` (phase B), which runs
+ * `applySafeguards` against a first-class composed descriptor over the merged
+ * slot map.
+ *
+ * @public
+ */
+export interface IResolvedPromptSlot {
+  /** Slot name (key into {@link IResolvedPrompt.slots}). */
+  readonly name: SlotName;
+  /**
+   * Resolved slot value string (post-merge, post-resource-binding,
+   * pre-Mustache-render) — the exact string fed into the body template
+   * renderer as this slot's substitution. Slot values are substituted
+   * literally; they are not themselves rendered through Mustache.
+   */
+  readonly value: string;
+  /** Framing directive for the slot's winning binding. */
+  readonly directive: SlotDirective;
+  /** Source of the winning binding. */
+  readonly source: BindingTraceSource;
+  /** True iff the winning binding was enforced (caller substitutions were rejected). */
+  readonly wasEnforced: boolean;
+  /** Set when `source === 'binding'` — the scope whose `_bindings.yaml` won. */
+  readonly winningScope?: ScopeKey;
+}
+
+/**
  * Output of a successful {@link PromptLibrary.resolve} invocation.
  * @public
  */
@@ -169,4 +210,18 @@ export interface IResolvedPrompt {
   readonly descriptor: IPromptDescriptor;
   /** Full resolve-time trace; see {@link IPromptResolveTrace}. */
   readonly trace: IPromptResolveTrace;
+  /**
+   * Per-slot resolved view, keyed by {@link SlotName} — a stable, supported
+   * projection of `trace.mergedBindings` purpose-typed for horizontal
+   * composition. Each entry is the resolved pre-Mustache-render value plus
+   * its framing/provenance metadata; see {@link IResolvedPromptSlot}.
+   *
+   * @remarks
+   * IMPORTANT (interim safety gap): reading these values to compose a prompt
+   * *externally* bypasses the `applySafeguards` pass `resolve` runs over the
+   * resolved whole — an external composer **must self-screen the composed
+   * output** against its own safety policy. The in-fgv `HorizontalComposer`
+   * (phase B) is the durable, safety-closed path.
+   */
+  readonly slots: ReadonlyMap<SlotName, IResolvedPromptSlot>;
 }
