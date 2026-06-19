@@ -788,6 +788,113 @@ describe('ts-prompt-assist foundation', () => {
       });
     });
 
+    describe('IResolvedPrompt.slots', () => {
+      test('exposes resolved.slots as a projection of trace.mergedBindings', async () => {
+        const store = await buildStore({ records: [buildDescriptor()] });
+        const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+        const resolved = await lib.resolve({
+          id: TEST_PROMPT,
+          chain: [TEST_SCOPE],
+          qualifiers: {},
+          substitutions: { audience: 'world' }
+        });
+        expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+          // One slot entry per merged slot, keyed by SlotName.
+          expect(r.slots.size).toBe(r.trace.mergedBindings.size);
+          const slot = r.slots.get('audience' as unknown as SlotName)!;
+          expect(slot).toBeDefined();
+          expect(slot.name).toBe('audience');
+          expect(slot.value).toBe('world');
+          expect(slot.source).toBe('caller-sub');
+          expect(slot.directive).toBe('prose');
+          expect(slot.wasEnforced).toBe(false);
+          expect(slot.winningScope).toBeUndefined();
+          // Every slot is the exact projection of its mergedBindings entry.
+          r.trace.mergedBindings.forEach((entry, name) => {
+            expect(r.slots.get(name)).toEqual({
+              name,
+              value: entry.value,
+              directive: entry.directive,
+              source: entry.source,
+              wasEnforced: entry.wasEnforced,
+              winningScope: entry.winningScope
+            });
+          });
+        });
+      });
+
+      test('empty (unbound optional) slot surfaces source empty + directive prose', async () => {
+        const store = await buildStore({
+          records: [
+            buildDescriptor({
+              descriptor: {
+                id: TEST_PROMPT,
+                title: 'Greeting',
+                schemaVersion: '1',
+                surface: 'chat',
+                slots: [
+                  {
+                    name: 'audience' as unknown as SlotName,
+                    description: 'Who to greet',
+                    required: false
+                  }
+                ],
+                output: { kind: 'free-text' }
+              },
+              candidates: [{ conditions: {}, body: 'Hello{{{audience}}}' }]
+            })
+          ]
+        });
+        const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+        const resolved = await lib.resolve({ id: TEST_PROMPT, chain: [TEST_SCOPE], qualifiers: {} });
+        expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+          const slot = r.slots.get('audience' as unknown as SlotName)!;
+          expect(slot.source).toBe('empty');
+          expect(slot.directive).toBe('prose');
+          expect(slot.value).toBe('');
+          expect(slot.wasEnforced).toBe(false);
+          expect(slot.winningScope).toBeUndefined();
+        });
+      });
+
+      test('enforced binding slot reflects wasEnforced true with winningScope', async () => {
+        const store = await buildStore({
+          records: [buildDescriptor()],
+          bindings: [
+            {
+              scope: TEST_SCOPE,
+              bindings: new Map([
+                [
+                  'audience' as unknown as SlotName,
+                  {
+                    kind: 'literal',
+                    value: 'enforced-val',
+                    directive: 'constraint',
+                    enforced: true
+                  } as SlotBinding
+                ]
+              ])
+            }
+          ]
+        });
+        const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+        const resolved = await lib.resolve({
+          id: TEST_PROMPT,
+          chain: [TEST_SCOPE],
+          qualifiers: {},
+          substitutions: { audience: 'ignored' }
+        });
+        expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+          const slot = r.slots.get('audience' as unknown as SlotName)!;
+          expect(slot.wasEnforced).toBe(true);
+          expect(slot.value).toBe('enforced-val');
+          expect(slot.source).toBe('binding');
+          expect(slot.directive).toBe('constraint');
+          expect(slot.winningScope).toBe(TEST_SCOPE);
+        });
+      });
+    });
+
     test('describe returns descriptor across any scope', async () => {
       const store = await buildStore({ records: [buildDescriptor()] });
       const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
