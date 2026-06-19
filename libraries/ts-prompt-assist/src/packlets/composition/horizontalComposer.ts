@@ -79,6 +79,11 @@ export class HorizontalComposer {
    * Validates the logical-slot map against the supplied contributors and
    * returns a ready composer. Build-time validation (synchronous, cheap):
    * - contributor provenance values are unique (provenance is the contributor key);
+   * - logical-slot names are unique (a duplicate would silently overwrite an
+   *   earlier merge / trace);
+   * - every `logicalSlotName` is declared in `composedDescriptor.slots` (an
+   *   undeclared logical slot would be merged and rendered but skipped by the
+   *   `applySafeguards` / `allowedDirectives` pass — defeating the safety closure);
    * - every `contributorSlots` entry references a contributor that exists (by
    *   `contributorProvenance`);
    * - every referenced slot appears on that contributor's
@@ -98,7 +103,20 @@ export class HorizontalComposer {
       byProvenance.set(contributor.provenance, contributor);
     }
 
+    const composedSlotNames = new Set(params.composedDescriptor.slots.map((s) => s.name));
+    const seenLogicalSlots = new Set<SlotName>();
     for (const logical of params.logicalSlots) {
+      if (seenLogicalSlots.has(logical.logicalSlotName)) {
+        return fail(
+          `horizontal composition: duplicate logical slot '${logical.logicalSlotName}' (logical slot names must be unique)`
+        );
+      }
+      seenLogicalSlots.add(logical.logicalSlotName);
+      if (!composedSlotNames.has(logical.logicalSlotName)) {
+        return fail(
+          `horizontal composition: logical slot '${logical.logicalSlotName}' is not declared in the composed descriptor's slots (it would be rendered but bypass the safeguard pass)`
+        );
+      }
       for (const ref of logical.contributorSlots) {
         const contributor = byProvenance.get(ref.contributorProvenance);
         if (contributor === undefined) {

@@ -138,6 +138,31 @@ describe('HorizontalComposer', () => {
       expect(HorizontalComposer.create(params)).toFailWith(/duplicate contributor provenance 5/i);
     });
 
+    test('fails on a duplicate logical slot name', () => {
+      const params = {
+        contributors: [contributor(10, 'a', [{ name: 'intro', value: 'hi' }])],
+        logicalSlots: [
+          logical('body', 'concatenate', [{ provenance: 10, slot: 'intro' }]),
+          logical('body', 'overwrite', [{ provenance: 10, slot: 'intro' }])
+        ],
+        composedDescriptor: descriptor('comp', [{ name: 'body' }]),
+        composedBody: '{{body}}'
+      };
+      expect(HorizontalComposer.create(params)).toFailWith(/duplicate logical slot 'body'/i);
+    });
+
+    test('fails when a logical slot is not declared in the composed descriptor', () => {
+      const params = {
+        contributors: [contributor(10, 'a', [{ name: 'intro', value: 'hi' }])],
+        logicalSlots: [logical('body', 'concatenate', [{ provenance: 10, slot: 'intro' }])],
+        composedDescriptor: descriptor('comp', [{ name: 'other' }]),
+        composedBody: '{{other}}'
+      };
+      expect(HorizontalComposer.create(params)).toFailWith(
+        /logical slot 'body' is not declared in the composed descriptor's slots/i
+      );
+    });
+
     test('fails when a logical slot references a missing contributor provenance', () => {
       const params = {
         contributors: [contributor(10, 'a', [{ name: 'intro', value: 'hi' }])],
