@@ -8,6 +8,7 @@ export * from './packlets/store';
 export * from './packlets/fixture';
 export * from './packlets/observe';
 export * from './packlets/resolve';
+export * from './packlets/composition';
 
 // Selective re-export: `createPatternScreener` is the public screener factory.
 // `applySafeguards` / `ISafeguardResult` are `@internal` engine pieces consumed

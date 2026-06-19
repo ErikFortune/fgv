@@ -164,16 +164,18 @@ export interface IPromptResolveTrace {
  * `name` and surfaced as a first-class primitive rather than a trace detail.
  *
  * @remarks
- * IMPORTANT (interim safety gap): the `value` here is the resolved slot
- * content (post-merge, post-resource-binding, pre-Mustache-render) — the
- * exact string fed into the body template renderer for this slot during
- * {@link PromptLibrary.resolve}. A consumer that reads these per-slot values
- * and assembles a prompt *externally* bypasses the `applySafeguards` pass that
- * `resolve` runs over the resolved whole. Such a consumer **must independently
- * screen the composed output against its own safety policy.** The durable,
- * safety-closed path is the in-fgv `HorizontalComposer` (phase B), which runs
+ * The `value` here is the resolved slot content (post-merge,
+ * post-resource-binding, pre-Mustache-render) — the exact string fed into the
+ * body template renderer for this slot during {@link PromptLibrary.resolve}.
+ *
+ * SAFETY: a consumer that reads these per-slot values and assembles a prompt
+ * *externally* bypasses the `applySafeguards` pass that `resolve` runs over the
+ * resolved whole, and **must independently screen the composed output against
+ * its own safety policy.** The durable, safety-closed path is the in-fgv
+ * {@link HorizontalComposer}, which consumes these slots and runs
  * `applySafeguards` against a first-class composed descriptor over the merged
- * slot map.
+ * slot map before returning a body — prefer it over a hand-rolled external
+ * composer.
  *
  * @public
  */
@@ -217,11 +219,12 @@ export interface IResolvedPrompt {
    * its framing/provenance metadata; see {@link IResolvedPromptSlot}.
    *
    * @remarks
-   * IMPORTANT (interim safety gap): reading these values to compose a prompt
-   * *externally* bypasses the `applySafeguards` pass `resolve` runs over the
-   * resolved whole — an external composer **must self-screen the composed
-   * output** against its own safety policy. The in-fgv `HorizontalComposer`
-   * (phase B) is the durable, safety-closed path.
+   * SAFETY: reading these values to compose a prompt *externally* bypasses the
+   * `applySafeguards` pass `resolve` runs over the resolved whole — an external
+   * composer **must self-screen the composed output** against its own safety
+   * policy. The in-fgv {@link HorizontalComposer} is the durable, safety-closed
+   * path: it consumes these slots and re-runs `applySafeguards` against a
+   * first-class composed descriptor over the merged slot map.
    */
   readonly slots: ReadonlyMap<SlotName, IResolvedPromptSlot>;
 }
