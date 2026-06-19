@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "add IResolvedPromptSlot and IResolvedPrompt.slots — a stable, supported per-slot projection of trace.mergedBindings for horizontal composition (Phase A)",
+      "type": "none",
+      "packageName": "@fgv/ts-prompt-assist"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist",
+  "email": "ErikFortune@outlook.com"
+}
