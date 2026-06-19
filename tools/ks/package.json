@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ks",
-  "version": "5.1.0-35",
+  "version": "5.1.0-36",
   "description": "Command-line utility for managing ts-extras keystore files",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
