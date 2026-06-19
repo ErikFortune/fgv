@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "add HorizontalComposer + composition types (IContributorSpec, LogicalSlotStrategy, ILogicalSlotConfig, IHorizontalComposeParams, ISlotProvenanceEntry, IComposedPrompt) — first-class, safety-closed multi-contributor prompt-slot composition (Phase B)",
+      "type": "none",
+      "packageName": "@fgv/ts-prompt-assist"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist",
+  "email": "ErikFortune@outlook.com"
+}

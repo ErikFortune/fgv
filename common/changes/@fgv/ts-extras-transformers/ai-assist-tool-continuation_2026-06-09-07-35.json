@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "make IAiClientToolContinuation.messages cumulative so replace-pattern is correct across all N rounds in executeClientToolTurn",
+      "type": "none",
+      "packageName": "@fgv/ts-extras-transformers"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-transformers",
+  "email": "noreply@anthropic.com"
+}

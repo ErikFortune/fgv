@@ -23,6 +23,18 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## Horizontal composition B+1 — dependency-ordered render-merge-reinject (topo-sort)
+
+`@fgv/ts-prompt-assist`'s `HorizontalComposer` (shipped Phase B) uses **render-then-merge**: each contributor resolves+renders independently, then the composer merges the rendered per-slot values. This loses **cross-slot placeholders** — a contributor slot value that references another logical slot (`{{otherSlot}}`) is inserted literally, not resolved.
+
+B+1 preserves them via **topological-sort rendering**: extract each slot value's `{{…}}` references → build a slot-dependency DAG → render+merge in topo order, so each merged logical slot is available to downstream slots' renders ("render A, merge A, re-inject merged A into B"). It is the **horizontal analogue of the vertical recursive resource binding that already ships** — so the existing RFC-8785 cycle-detection machinery (`buildCycleKey` in `resolve/resourceBindingResolver.ts`, a standalone exported fn that works on slot names unmodified; the stack-frame + 3-line cycle-check templates) is **directly reusable** for the acyclicity check.
+
+**Why deferred**: the requesting consumer (PersonAIlity) authors **no** cross-slot `{{…}}` references today (OQ-5). Phase A/B kept the forward-compat guards (declared `logicalSlots` order is a tiebreaker, NOT semantic processing order; `IResolvedPromptSlot.value` stays named `value`), so B+1 is a non-breaking additive replacement of "declared order" with "topo order" — the public `IComposedPrompt` API is unchanged.
+
+**Dependencies**: the trigger is the **first cross-slot `{{…}}` reference the consumer authors** — they'll flag it. Size L (its own stream).
+
+**Reference**: `.ai/tasks/completed/2026-06/prompt-assist-horizontal-composition/` (design.md §"Phase B+1", + the §"phase-1 must not preclude" guards); 2026-06 horizontal-composition design discussion.
+
 ## Generic editor UX for `@fgv/ts-prompt-assist`
 
 The `ts-prompt-assist` library is shape-agnostic about the consumer's domain (open `surface`, `slot.kind`, `slot.source`; consumer-supplied scope hierarchy encoded into opaque `ScopeKey` strings). Editor UX for authoring prompt descriptors and scope-level binding records is **complex** — qualifier-conditioned candidate editing, slot-binding override visualization, resource-binding navigation, the `IPromptResolveTrace` "where did this value come from" view, validation against registered Converters / serializers / output validators.

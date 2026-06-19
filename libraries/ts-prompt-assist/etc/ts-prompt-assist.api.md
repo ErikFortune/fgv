@@ -117,6 +117,12 @@ export class FileTreePromptStore implements IPromptStore {
 }
 
 // @public
+export class HorizontalComposer {
+    compose(): Promise<Result<IComposedPrompt>>;
+    static create(params: IHorizontalComposeParams): Result<HorizontalComposer>;
+}
+
+// @public
 export interface IBindingMergeResult {
     // (undocumented)
     readonly merged: ReadonlyMap<SlotName, IBindingTraceEntry>;
@@ -170,6 +176,21 @@ export interface IChainWalkResult {
 }
 
 // @public
+export interface IComposedPrompt {
+    readonly body: string;
+    readonly descriptor: IPromptDescriptor;
+    readonly mergedSlots: ReadonlyMap<SlotName, IResolvedPromptSlot>;
+    readonly provenanceTrace: ReadonlyMap<SlotName, ReadonlyArray<ISlotProvenanceEntry>>;
+    readonly safeguardFindings: ReadonlyArray<ISafeguardFinding>;
+}
+
+// @public
+export interface IContributorSpec {
+    readonly provenance: number;
+    readonly resolved: IResolvedPrompt;
+}
+
+// @public
 export interface IDisposable {
     // (undocumented)
     dispose(): void;
@@ -194,6 +215,15 @@ export interface IFileTreePromptStoreCreateParams<TQualifierNames extends string
 }
 
 // @public
+export interface IHorizontalComposeParams {
+    readonly composedBody: string;
+    readonly composedDescriptor: IPromptDescriptor;
+    readonly contributors: ReadonlyArray<IContributorSpec>;
+    readonly logicalSlots: ReadonlyArray<ILogicalSlotConfig>;
+    readonly safetyPolicy?: IPromptSafetyPolicy;
+}
+
+// @public
 export interface IJsonOutputContract {
     readonly converterId: ConverterId;
     readonly kind: 'json';
@@ -207,6 +237,17 @@ export interface ILiteralSlotBinding {
     readonly kind: 'literal';
     // (undocumented)
     readonly value: string;
+}
+
+// @public
+export interface ILogicalSlotConfig {
+    readonly contributorSlots: ReadonlyArray<{
+        readonly contributorProvenance: number;
+        readonly slotName: SlotName;
+    }>;
+    readonly logicalSlotName: SlotName;
+    readonly separator?: string;
+    readonly strategy: LogicalSlotStrategy;
 }
 
 // @public
@@ -564,7 +605,18 @@ export interface IResolvedPrompt {
     readonly body: string;
     readonly descriptor: IPromptDescriptor;
     readonly id: PromptId;
+    readonly slots: ReadonlyMap<SlotName, IResolvedPromptSlot>;
     readonly trace: IPromptResolveTrace;
+}
+
+// @public
+export interface IResolvedPromptSlot {
+    readonly directive: SlotDirective;
+    readonly name: SlotName;
+    readonly source: BindingTraceSource;
+    readonly value: string;
+    readonly wasEnforced: boolean;
+    readonly winningScope?: ScopeKey;
 }
 
 // @public
@@ -628,6 +680,14 @@ export interface IScreenerContext {
 }
 
 // @public
+export interface ISlotProvenanceEntry {
+    readonly contributorSlotName: SlotName;
+    readonly directive: SlotDirective;
+    readonly provenance: number;
+    readonly value: string;
+}
+
+// @public
 export interface ISlotSerializer {
     // (undocumented)
     serialize(value: unknown): Result<string>;
@@ -654,6 +714,9 @@ export interface ITextOutputContract {
 export function joinBodies(selected: ReadonlyArray<{
     readonly candidate: IPromptCandidateRecord;
 }>, policy: IPromptJoinPolicy | undefined): string;
+
+// @public
+export type LogicalSlotStrategy = 'concatenate' | 'overwrite';
 
 // @public
 export function mergeBindings(chain: ReadonlyArray<ScopeKey>, scopeBindings: ReadonlyMap<ScopeKey, IScopeSlotBindingsRecord>, slots: ReadonlyArray<IPromptSlot>, callerSubstitutions: PromptSubstitutions | undefined): Result<IBindingMergeResult>;
