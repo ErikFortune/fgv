@@ -23,6 +23,20 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## `ts-prompt-assist` — cache parsed store records in the resolve path
+
+`PromptLibrary.resolve` re-reads and **re-parses YAML from the store on every call**. The resolve path (`resolve/promptLibrary.ts:585`) calls `walkScopeChain(this._store, …)` unconditionally first, and `FileTreePromptStore` has no record cache — `store.get` → `_readPromptFile` → `yamlConverter.convert(text)` (`store/fileTreePromptStore.ts:160/239/254`) parses on every read. Per resolve this is **O(scope-chain depth) for the requested prompt only** — the `<id>.yaml` in each scope of *that resolve's* chain (`chainWalker.ts:44`) + the per-scope `_bindings.yaml` (`:67`) + recursively the inner-prompt files for any `kind: 'resource'` slots. It is NOT a re-parse of the whole library.
+
+What's already cached (the expensive work): the ts-res **materialization** (`_materialized`, keyed by descriptor-canonical, `:835/851`) and Mustache templates (`_mustacheCache`); `describe()` uses `_descriptorCache` (`:456`), but `resolve` does not. So only the YAML file read + parse of the requested prompt's chain is redundant on a repeat resolve of a hot prompt.
+
+**The fix:** add a parsed-store-record cache in the resolve path (or have `resolve` reuse a record/descriptor cache instead of hitting `walkScopeChain` raw). This is **invalidation-free today** because `FileTreePromptStore` is **read-only at v0.1** — records are immutable for the library's lifetime. The cache key must match the resolve lookup granularity (scope + id, plus the scope `_bindings.yaml`), not just id.
+
+**Why deferred**: not a problem at current scale — the per-resolve parse is a handful of small files and the heavy ts-res setup is already cached. Surfaced as an investigation finding, not a live bottleneck.
+
+**Dependencies**: the per-resolve YAML parse showing up as a real cost in a profiled workload. **Coupling note:** when a write API lands (`put`/`delete`/`watch` — itself a separate FUTURE item, the store is read-only at v0.1), this record cache needs invalidation wired to writes; design the cache so that hook is additive.
+
+**Reference**: 2026-06 investigation — an agent asserted "re-parses all prompt YAML files on every call"; verified the kernel (no record cache → per-resolve re-parse) but corrected the scope (requested prompt's chain files, not the whole library).
+
 ## Horizontal composition B+1 — dependency-ordered render-merge-reinject (topo-sort)
 
 `@fgv/ts-prompt-assist`'s `HorizontalComposer` (shipped Phase B) uses **render-then-merge**: each contributor resolves+renders independently, then the composer merges the rendered per-slot values. This loses **cross-slot placeholders** — a contributor slot value that references another logical slot (`{{otherSlot}}`) is inserted literally, not resolved.
