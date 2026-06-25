@@ -335,6 +335,9 @@ export class KnowledgeLwwPolicy implements IWritePolicy {
 export function limitRecords(records: ReadonlyArray<IMemoryRecord<unknown>>, limit?: number): ReadonlyArray<IMemoryRecord<unknown>>;
 
 // @public
+export const LINK_TRAVERSAL_UNWIRED_MESSAGE: string;
+
+// @public
 export type LinkType = Brand<string, 'LinkType'>;
 
 // @public

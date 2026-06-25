@@ -372,10 +372,22 @@ export class FileTreeMemoryStore implements IMemoryStore {
     try {
       const observed: Result<unknown> = await observer.observe(record);
       if (observed.isFailure()) {
-        this._logger.warn(`memory observer failed (swallowed): ${observed.message}`);
+        this._warnObserverIssue(`memory observer failed (swallowed): ${observed.message}`);
       }
     } catch (error) {
-      this._logger.warn(`memory observer threw (swallowed): ${String(error)}`);
+      this._warnObserverIssue(`memory observer threw (swallowed): ${String(error)}`);
+    }
+  }
+
+  /**
+   * Log an observer-issue warning, swallowing a logger that itself throws —
+   * diagnostic logging must never make a store op reject.
+   */
+  private _warnObserverIssue(message: string): void {
+    try {
+      this._logger.warn(message);
+    } catch {
+      // Diagnostic logging must not affect the store operation.
     }
   }
 

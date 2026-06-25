@@ -8,7 +8,10 @@ import { Result, fail, succeed } from '@fgv/ts-utils';
 import {
   HybridRetriever,
   IIndexedMemoryRecord,
+  IMemoryQuery,
   IMemoryRecord,
+  IMemoryRetriever,
+  IMemoryRetrieverCapabilities,
   IVectorIndex,
   IVectorQueryHit,
   Kind,
@@ -22,7 +25,8 @@ import {
   Tag,
   TagRetriever,
   envelopeConverter,
-  guardRetrieverCapabilities
+  guardRetrieverCapabilities,
+  limitRecords
 } from '../../../index';
 
 interface IRecordSpec {
@@ -95,6 +99,41 @@ describe('retrieve helpers', () => {
       expect(guardRetrieverCapabilities({ asOf: 5, kind: knowledge }, noCaps)).toFailWith(
         /none configured for kind knowledge/i
       );
+    });
+
+    test('fails loudly when a link-traversal axis is requested but unsupported', () => {
+      expect(guardRetrieverCapabilities({ linkedTo: 'x' as MemoryId }, noCaps)).toFailWith(
+        /link traversal requires a backlink index; none configured/i
+      );
+      expect(guardRetrieverCapabilities({ linkedFrom: 'x' as MemoryId }, noCaps)).toFailWith(
+        /link traversal requires/i
+      );
+      expect(guardRetrieverCapabilities({ hops: 2 }, noCaps)).toFailWith(/link traversal requires/i);
+    });
+
+    test('passes a link-traversal axis when the capability is supported', () => {
+      expect(
+        guardRetrieverCapabilities({ linkedTo: 'x' as MemoryId }, { ...noCaps, supportsLinkTraversal: true })
+      ).toSucceed();
+    });
+  });
+
+  describe('limitRecords', () => {
+    const records = buildIndex([{ id: 'a' }, { id: 'b' }, { id: 'c' }])
+      .entries()
+      .map((e) => e.record);
+
+    test('returns all records when no limit is supplied', () => {
+      expect(limitRecords(records)).toHaveLength(3);
+    });
+
+    test('truncates to the top-N for a positive limit', () => {
+      expect(limitRecords(records, 2)).toHaveLength(2);
+    });
+
+    test('returns an empty array for a zero or negative limit', () => {
+      expect(limitRecords(records, 0)).toEqual([]);
+      expect(limitRecords(records, -1)).toEqual([]);
     });
   });
 });
@@ -175,7 +214,25 @@ describe('RecencyRetriever', () => {
     const r = RecencyRetriever.create(buildIndex([{ id: 'a' }])).orThrow();
     expect(await r.retrieve({ semantic: 'hello' })).toFailWith(/semantic recall requires a vector index/i);
   });
+
+  test('degrades loudly on a link-traversal request', async () => {
+    const r = RecencyRetriever.create(buildIndex([{ id: 'a' }])).orThrow();
+    expect(await r.retrieve({ linkedTo: 'a' as MemoryId })).toFailWith(/link traversal requires/i);
+  });
 });
+
+/** A retriever with configurable capabilities that records the query it received. */
+class RecordingRetriever implements IMemoryRetriever {
+  public lastQuery: IMemoryQuery | undefined;
+  public readonly capabilities: IMemoryRetrieverCapabilities;
+  public constructor(capabilities: IMemoryRetrieverCapabilities) {
+    this.capabilities = capabilities;
+  }
+  public retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>> {
+    this.lastQuery = query;
+    return Promise.resolve(succeed([]));
+  }
+}
 
 describe('TagRetriever', () => {
   test('returns records carrying the tag, recency-ordered', async () => {
@@ -230,6 +287,8 @@ describe('StructuredFilterRetriever', () => {
 class FakeVectorIndex implements IVectorIndex {
   private readonly _hits: ReadonlyArray<IVectorQueryHit>;
   private readonly _failQuery: boolean;
+  /** The `topK` the most recent `query` call received — asserts forwarding. */
+  public lastTopK: number | undefined;
   public constructor(hits: ReadonlyArray<IVectorQueryHit>, failQuery: boolean = false) {
     this._hits = hits;
     this._failQuery = failQuery;
@@ -240,7 +299,11 @@ class FakeVectorIndex implements IVectorIndex {
   public remove(id: MemoryId): Promise<Result<MemoryId>> {
     return Promise.resolve(succeed(id));
   }
-  public query(): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
+  public query(
+    __vector: ReadonlyArray<number>,
+    topK: number
+  ): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
+    this.lastTopK = topK;
     return Promise.resolve(this._failQuery ? fail('vector backend down') : succeed(this._hits));
   }
 }
@@ -325,24 +388,31 @@ describe('SemanticRetriever', () => {
     );
   });
 
-  test('applies topK and limit', async () => {
+  test('forwards topK to the vector index and applies the post-filter limit', async () => {
     const index = buildIndex([{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
-    const r = SemanticRetriever.create({
-      index,
-      backend: {
-        vectorIndex: new FakeVectorIndex([
-          { id: 'a' as MemoryId, score: 0.9 },
-          { id: 'b' as MemoryId, score: 0.8 },
-          { id: 'c' as MemoryId, score: 0.7 }
-        ]),
-        embedQuery: okEmbed
-      }
-    }).orThrow();
-    expect(await r.retrieve({ semantic: 'q', topK: 5, limit: 2 })).toSucceedAndSatisfy(
+    const vectorIndex = new FakeVectorIndex([
+      { id: 'a' as MemoryId, score: 0.9 },
+      { id: 'b' as MemoryId, score: 0.8 },
+      { id: 'c' as MemoryId, score: 0.7 }
+    ]);
+    const r = SemanticRetriever.create({ index, backend: { vectorIndex, embedQuery: okEmbed } }).orThrow();
+    expect(await r.retrieve({ semantic: 'q', topK: 2, limit: 2 })).toSucceedAndSatisfy(
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
         expect(ids(records)).toEqual(['a', 'b']);
       }
     );
+    // The retriever must forward the caller's topK to the vector backend, not its default.
+    expect(vectorIndex.lastTopK).toBe(2);
+  });
+
+  test('defaults topK to 10 when the query omits it', async () => {
+    const vectorIndex = new FakeVectorIndex([{ id: 'a' as MemoryId, score: 0.9 }]);
+    const r = SemanticRetriever.create({
+      index: buildIndex([{ id: 'a' }]),
+      backend: { vectorIndex, embedQuery: okEmbed }
+    }).orThrow();
+    expect(await r.retrieve({ semantic: 'q' })).toSucceed();
+    expect(vectorIndex.lastTopK).toBe(10);
   });
 
   test('fails loudly when the embedder fails', async () => {
@@ -474,6 +544,31 @@ describe('HybridRetriever', () => {
         expect([...ids(records)].sort()).toEqual(['a', 'b', 'c']);
       }
     );
+  });
+
+  test('routes link-traversal axes only to the link-capable child', async () => {
+    const linkChild = new RecordingRetriever({
+      supportsSemanticRecall: false,
+      supportsTemporalQuery: false,
+      supportsLinkTraversal: true
+    });
+    const plainChild = new RecordingRetriever({
+      supportsSemanticRecall: false,
+      supportsTemporalQuery: false,
+      supportsLinkTraversal: false
+    });
+    const hybrid = HybridRetriever.create(
+      [linkChild, plainChild],
+      ScoreUnionMergeStrategy.create().orThrow()
+    ).orThrow();
+    expect(hybrid.capabilities.supportsLinkTraversal).toBe(true);
+    // Union supports link traversal, so the hybrid does NOT loud-fail.
+    expect(await hybrid.retrieve({ linkedTo: 'a' as MemoryId, hops: 2 })).toSucceed();
+    // The link-capable child keeps the axes; the plain child has them stripped.
+    expect(linkChild.lastQuery?.linkedTo).toBe('a');
+    expect(linkChild.lastQuery?.hops).toBe(2);
+    expect(plainChild.lastQuery?.linkedTo).toBeUndefined();
+    expect(plainChild.lastQuery?.hops).toBeUndefined();
   });
 
   test('degrades loudly when its union does not support a requested capability', async () => {

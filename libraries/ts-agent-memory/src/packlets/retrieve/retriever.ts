@@ -88,6 +88,15 @@ export interface IMemoryRetriever {
 export const SEMANTIC_UNWIRED_MESSAGE: string = 'semantic recall requires a vector index; none configured';
 
 /**
+ * The loud-degradation message a retriever returns when a link-traversal axis
+ * (`linkedFrom` / `linkedTo` / `hops`) is requested but no backlink index is
+ * wired.
+ * @public
+ */
+export const LINK_TRAVERSAL_UNWIRED_MESSAGE: string =
+  'link traversal requires a backlink index; none configured';
+
+/**
  * The capabilities every non-semantic, non-temporal, non-link v1 retriever
  * exposes (all three flags `false`).
  * @public
@@ -124,6 +133,11 @@ export function guardRetrieverCapabilities(
   }
   if (query.asOf !== undefined && !capabilities.supportsTemporalQuery) {
     return fail(temporalUnwiredMessage(query.kind));
+  }
+  const requestsLinkTraversal: boolean =
+    query.linkedFrom !== undefined || query.linkedTo !== undefined || query.hops !== undefined;
+  if (requestsLinkTraversal && !capabilities.supportsLinkTraversal) {
+    return fail(LINK_TRAVERSAL_UNWIRED_MESSAGE);
   }
   return succeed(true);
 }
@@ -174,12 +188,20 @@ export function selectByQuery(
 
 /**
  * Truncate to `query.limit` records (a no-op when `limit` is absent). Applied
- * last, after ordering, so it always takes the top-N of the ordered result.
+ * last, after ordering, so it always takes the top-N of the ordered result. A
+ * non-positive `limit` is public query input and means "no records" — it returns
+ * an empty array rather than letting a negative value slip into `slice`.
  * @public
  */
 export function limitRecords(
   records: ReadonlyArray<IMemoryRecord<unknown>>,
   limit?: number
 ): ReadonlyArray<IMemoryRecord<unknown>> {
-  return limit !== undefined && records.length > limit ? records.slice(0, limit) : records;
+  if (limit === undefined) {
+    return records;
+  }
+  if (limit <= 0) {
+    return [];
+  }
+  return records.length > limit ? records.slice(0, limit) : records;
 }

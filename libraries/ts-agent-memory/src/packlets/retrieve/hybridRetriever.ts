@@ -126,12 +126,15 @@ export class HybridRetriever implements IMemoryRetriever {
     if (retrievers.length === 0) {
       return fail('HybridRetriever: at least one retriever is required');
     }
+    // Snapshot the caller's array so a later mutation cannot make `retrieve()`
+    // and the cached `capabilities` disagree.
+    const stableRetrievers: ReadonlyArray<IMemoryRetriever> = [...retrievers];
     const capabilities: IMemoryRetrieverCapabilities = {
-      supportsSemanticRecall: retrievers.some((r) => r.capabilities.supportsSemanticRecall),
-      supportsTemporalQuery: retrievers.some((r) => r.capabilities.supportsTemporalQuery),
-      supportsLinkTraversal: retrievers.some((r) => r.capabilities.supportsLinkTraversal)
+      supportsSemanticRecall: stableRetrievers.some((r) => r.capabilities.supportsSemanticRecall),
+      supportsTemporalQuery: stableRetrievers.some((r) => r.capabilities.supportsTemporalQuery),
+      supportsLinkTraversal: stableRetrievers.some((r) => r.capabilities.supportsLinkTraversal)
     };
-    return succeed(new HybridRetriever(retrievers, mergeStrategy, capabilities));
+    return succeed(new HybridRetriever(stableRetrievers, mergeStrategy, capabilities));
   }
 
   /** {@inheritDoc IMemoryRetriever.retrieve} */
@@ -150,8 +153,9 @@ export class HybridRetriever implements IMemoryRetriever {
    * Project the query for one child retriever. Two adjustments:
    *
    * - Strip axes the child does not support (`semantic` / `topK` for a
-   *   non-semantic child, `asOf` for a non-temporal child) so it returns its
-   *   normal results rather than loud-failing on a field a sibling handles.
+   *   non-semantic child, `asOf` for a non-temporal child, the link axes for a
+   *   non-link child) so it returns its normal results rather than loud-failing
+   *   on a field a sibling handles.
    * - Strip `limit` unconditionally: limit is a post-merge concern. A child that
    *   pre-truncated its result set would starve the merge strategy of candidates
    *   it needs to score correctly (a record both children would surface must
@@ -166,6 +170,11 @@ export class HybridRetriever implements IMemoryRetriever {
     }
     if (!retriever.capabilities.supportsTemporalQuery) {
       delete projected.asOf;
+    }
+    if (!retriever.capabilities.supportsLinkTraversal) {
+      delete projected.linkedFrom;
+      delete projected.linkedTo;
+      delete projected.hops;
     }
     return projected;
   }

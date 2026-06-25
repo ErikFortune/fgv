@@ -17,6 +17,7 @@ import {
   IMemoryRecord,
   Kind,
   KnowledgeIdentityCodec,
+  MemoryId,
   MemoryObservationStore,
   envelopeConverter
 } from '../../../index';
@@ -93,7 +94,9 @@ describe('FileTreeMemoryStore observations', () => {
           expect(rec?.envelope.id).toBe('doc-a');
         }
       );
-      expect(await store.delete(knowledgeKind, 'doc-a' as EntityId)).toSucceedWith('doc-a' as never);
+      expect(await store.delete(knowledgeKind, 'doc-a' as EntityId)).toSucceedWith(
+        'doc-a' as unknown as MemoryId
+      );
     });
   });
 
@@ -180,6 +183,19 @@ describe('FileTreeMemoryStore observations', () => {
       const store = createStore([throwing], logger);
       expect(await store.put(makeRecord('doc-a'))).toSucceed();
       expect(logger.logged.some((m) => /observer threw \(swallowed\): .*kaboom/i.test(m))).toBe(true);
+    });
+
+    test('a logger that throws while reporting a failed observer never breaks the store op', async () => {
+      class ThrowingWarnLogger extends Logging.NoOpLogger {
+        public warn(): never {
+          throw new Error('logger down');
+        }
+      }
+      const failing: IMemoryObserver = {
+        observe: () => Promise.resolve(fail('observer boom'))
+      };
+      const store = createStore([failing], new ThrowingWarnLogger());
+      expect(await store.put(makeRecord('doc-a'))).toSucceed();
     });
 
     test('a fire-and-forget observer is dispatched without blocking and errors are swallowed', async () => {
