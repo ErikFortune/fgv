@@ -316,19 +316,25 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return this._readRecord(scope, idStem).onSuccess((existing) => {
       const existingArr: ReadonlyArray<IMemoryRecord<unknown>> = existing === undefined ? [] : [existing];
       const policy: IWritePolicy = this._policyFor(record.envelope.kind);
-      return policy
-        .admit(record, existingArr)
-        .onSuccess((decision) => this._applyDecision(decision, scope))
-        .onSuccess(() => this._buildEnvelope(record, body, existing, policy, hash))
-        .onSuccess((envelope) => this._persist(envelope, body, scope, idStem));
+      return policy.admit(record, existingArr).onSuccess((decision) => {
+        if (decision.decision === 'reject') {
+          return fail(`memory put: rejected by policy: ${decision.reason}`);
+        }
+        // Build and durably persist the new record BEFORE evicting anything: a
+        // cull-oldest decision must not delete existing records until the
+        // replacement is on disk, otherwise a later failure would lose data with
+        // nothing written in its place.
+        return this._buildRecord(record, body, existing, policy, hash)
+          .onSuccess((built) => this._persist(built, scope, idStem))
+          .onSuccess((persisted) =>
+            this._applyEvictions(decision, scope).onSuccess(() => succeed(persisted))
+          );
+      });
     });
   }
 
-  /** Handle an {@link AdmissionDecision}: reject fails; cull-oldest evicts. */
-  private _applyDecision(decision: AdmissionDecision, scope: MemoryScopeKey): Result<true> {
-    if (decision.decision === 'reject') {
-      return fail(`memory put: rejected by policy: ${decision.reason}`);
-    }
+  /** Evict the records named by a `cull-oldest` decision (`accept` is a no-op). */
+  private _applyEvictions(decision: AdmissionDecision, scope: MemoryScopeKey): Result<true> {
     if (decision.decision === 'cull-oldest') {
       return mapResults(decision.evict.map((id) => this._evict(scope, id))).onSuccess(() => succeed(true));
     }
@@ -336,60 +342,65 @@ export class FileTreeMemoryStore implements IMemoryStore {
   }
 
   /**
-   * Build the envelope to persist. On a first write the incoming envelope is the
-   * base; on an update the incoming record's mutable fields are projected into a
-   * merge-patch and the policy's `applyUpdate` merges them over the existing
-   * envelope (preserving `created`). The store then stamps the transaction-time
-   * metadata it owns (`created` / `updated` / `seq` / `contentHash`).
-   *
-   * @remarks
-   * The persisted body is always the (already-validated) incoming `body` string:
-   * B1's only policy is last-write-wins, whose merge-patch replaces the body with
-   * the incoming value, so the merged body equals `body`. `applyUpdate` is run for
-   * its envelope-metadata merge (tags / links / provenance / embeddingRef).
+   * Build the record to persist. On a first write the incoming envelope is the
+   * base (final content equals the incoming content, so the dedup `hash` is
+   * reused). On an update the incoming record's mutable fields are projected into
+   * a merge-patch and the policy's `applyUpdate` merges them over the existing
+   * record (preserving `created`); the persisted body and `contentHash` are then
+   * taken from the policy's actual output, so a body-transforming policy is never
+   * bypassed and the stored hash always matches the stored `{ kind, body, links }`.
+   * The store stamps the transaction-time metadata it owns
+   * (`created` / `updated` / `seq` / `contentHash`).
    */
-  private _buildEnvelope(
+  private _buildRecord(
     incoming: IMemoryRecord<unknown>,
     body: string,
     existing: IMemoryRecord<unknown> | undefined,
     policy: IWritePolicy,
     hash: string
-  ): Result<IMemoryEnvelope> {
+  ): Result<IMemoryRecord<string>> {
     const now: number = this._clock();
     const seq: number = ++this._seq;
     if (existing === undefined) {
       return succeed({
-        ...incoming.envelope,
-        created: now,
-        updated: now,
-        seq,
-        contentHash: hash
+        envelope: { ...incoming.envelope, created: now, updated: now, seq, contentHash: hash },
+        body
       });
     }
     const patch: Record<string, unknown> = this._projectMutablePatch(incoming, policy.mutableFields);
     return policy
       .applyUpdate(existing, patch)
       .withErrorFormat((msg) => `memory put '${incoming.envelope.id}': update failed: ${msg}`)
-      .onSuccess((updated) =>
-        succeed({
-          ...updated.envelope,
-          created: existing.envelope.created,
-          updated: now,
-          seq,
-          contentHash: hash
-        })
-      );
+      .onSuccess((updated) => {
+        if (typeof updated.body !== 'string') {
+          return fail(
+            `memory put '${incoming.envelope.id}': policy returned a non-string body (${typeof updated.body})`
+          );
+        }
+        const finalBody: string = updated.body;
+        return this._contentHash(updated.envelope.kind, finalBody, updated.envelope.links).onSuccess(
+          (finalHash) =>
+            succeed({
+              envelope: {
+                ...updated.envelope,
+                created: existing.envelope.created,
+                updated: now,
+                seq,
+                contentHash: finalHash
+              },
+              body: finalBody
+            })
+        );
+      });
   }
 
   /** Serialize and write a fully-stamped record, then patch the index. */
   private _persist(
-    envelope: IMemoryEnvelope,
-    body: string,
+    record: IMemoryRecord<string>,
     scope: MemoryScopeKey,
     idStem: string
   ): Result<IMemoryRecord<unknown>> {
-    const record: IMemoryRecord<unknown> = { envelope, body };
-    return serializeMemoryFile(envelope, body)
+    return serializeMemoryFile(record.envelope, record.body)
       .onSuccess((raw) => this._writeFile(scope, idStem, raw))
       .onSuccess(() => this._index.patch('put', { scope, record }))
       .onSuccess(() => succeed(record));

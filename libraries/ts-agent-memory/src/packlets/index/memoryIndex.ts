@@ -92,14 +92,19 @@ export class MemoryIndex implements IMemoryIndex {
   private readonly _byKind: Map<Kind, Set<string>>;
   /** tag → set of composite keys. */
   private readonly _byTag: Map<Tag, Set<string>>;
-  /** link target id → set of source ids that link at it. */
-  private readonly _backlinks: Map<MemoryId, Set<MemoryId>>;
+  /**
+   * link target id → (source composite key → source id). Keyed by the source's
+   * `(scope, id)` composite — NOT its bare id — so two distinct source records
+   * that share an id across scopes (e.g. `turn-0` in different conversations)
+   * are tracked independently and removing one never drops the other's edge.
+   */
+  private readonly _backlinks: Map<MemoryId, Map<string, MemoryId>>;
 
   private constructor() {
     this._byKey = new Map<string, IIndexedMemoryRecord>();
     this._byKind = new Map<Kind, Set<string>>();
     this._byTag = new Map<Tag, Set<string>>();
-    this._backlinks = new Map<MemoryId, Set<MemoryId>>();
+    this._backlinks = new Map<MemoryId, Map<string, MemoryId>>();
   }
 
   /** Family-convention factory. */
@@ -163,8 +168,8 @@ export class MemoryIndex implements IMemoryIndex {
 
   /** {@inheritDoc IMemoryIndex.backlinks} */
   public backlinks(target: MemoryId): ReadonlyArray<MemoryId> {
-    const sources: Set<MemoryId> | undefined = this._backlinks.get(target);
-    return sources === undefined ? [] : Array.from(sources);
+    const sources: Map<string, MemoryId> | undefined = this._backlinks.get(target);
+    return sources === undefined ? [] : Array.from(sources.values());
   }
 
   /**
@@ -196,7 +201,7 @@ export class MemoryIndex implements IMemoryIndex {
       this._addToSetMap(this._byTag, tag, key);
     }
     for (const edge of envelope.links) {
-      this._addToSetMap(this._backlinks, edge.target, envelope.id);
+      this._addBacklink(edge.target, key, envelope.id);
     }
   }
 
@@ -213,7 +218,29 @@ export class MemoryIndex implements IMemoryIndex {
       this._removeFromSetMap(this._byTag, tag, key);
     }
     for (const edge of envelope.links) {
-      this._removeFromSetMap(this._backlinks, edge.target, envelope.id);
+      this._removeBacklink(edge.target, key);
+    }
+  }
+
+  /** Register `sourceId` (keyed by its composite `sourceKey`) as linking at `target`. */
+  private _addBacklink(target: MemoryId, sourceKey: string, sourceId: MemoryId): void {
+    const existing: Map<string, MemoryId> | undefined = this._backlinks.get(target);
+    if (existing === undefined) {
+      this._backlinks.set(target, new Map<string, MemoryId>([[sourceKey, sourceId]]));
+    } else {
+      existing.set(sourceKey, sourceId);
+    }
+  }
+
+  /** Drop the backlink from `sourceKey` to `target`, removing the target map when empty. */
+  private _removeBacklink(target: MemoryId, sourceKey: string): void {
+    const existing: Map<string, MemoryId> | undefined = this._backlinks.get(target);
+    if (existing === undefined) {
+      return;
+    }
+    existing.delete(sourceKey);
+    if (existing.size === 0) {
+      this._backlinks.delete(target);
     }
   }
 

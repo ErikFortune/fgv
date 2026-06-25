@@ -159,6 +159,18 @@ describe('MemoryIndex', () => {
       index.patch('delete', a).orThrow();
       expect(index.backlinks('target' as MemoryId)).toHaveLength(0);
     });
+
+    test('tracks same-id sources across scopes independently', () => {
+      // Two distinct records that share the id 'a' under different scopes, both
+      // linking 'target'. Removing one must NOT drop the other's inbound edge.
+      const a1 = makeEntry({ id: 'a', scope: 'conversations/c1', links: ['target'] });
+      const a2 = makeEntry({ id: 'a', scope: 'conversations/c2', links: ['target'] });
+      index.patch('put', a1).orThrow();
+      index.patch('put', a2).orThrow();
+      expect(index.backlinks('target' as MemoryId)).toEqual(['a', 'a']);
+      index.patch('delete', a1).orThrow();
+      expect(index.backlinks('target' as MemoryId)).toEqual(['a']);
+    });
   });
 
   describe('duplicate associations', () => {

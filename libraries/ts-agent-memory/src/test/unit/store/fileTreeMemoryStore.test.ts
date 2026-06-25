@@ -142,11 +142,15 @@ describe('FileTreeMemoryStore', () => {
         { path: 'top-level.md', contents: 'ignored at root' }
       ]);
       const store = createStore({ root }).orThrow();
-      const listed = (await store.list()).orThrow();
-      expect(listed.map((r) => r.envelope.id).sort()).toEqual(['doc-a', 'doc-b']);
+      expect(await store.list()).toSucceedAndSatisfy((listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(listed.map((r) => r.envelope.id).sort()).toEqual(['doc-a', 'doc-b']);
+      });
       // The next put must get seq 8 (highest persisted was 7).
-      const put = (await store.put(makeRecord({ id: 'doc-c' }))).orThrow();
-      expect(put.envelope.seq).toBe(8);
+      expect(await store.put(makeRecord({ id: 'doc-c' }))).toSucceedAndSatisfy(
+        (put: IMemoryRecord<unknown>) => {
+          expect(put.envelope.seq).toBe(8);
+        }
+      );
     });
 
     test('fails loudly when a seeded file id does not match its filename', () => {
@@ -196,11 +200,14 @@ describe('FileTreeMemoryStore', () => {
   describe('put / get round-trip', () => {
     test('first write stamps created/updated/seq/contentHash and is retrievable', async () => {
       const store = createStore().orThrow();
-      const put = (await store.put(makeRecord({ id: 'intro', body: 'hello' }))).orThrow();
-      expect(put.envelope.created).toBe(1000);
-      expect(put.envelope.updated).toBe(1000);
-      expect(put.envelope.seq).toBe(1);
-      expect(put.envelope.contentHash).not.toBe('');
+      expect(await store.put(makeRecord({ id: 'intro', body: 'hello' }))).toSucceedAndSatisfy(
+        (put: IMemoryRecord<unknown>) => {
+          expect(put.envelope.created).toBe(1000);
+          expect(put.envelope.updated).toBe(1000);
+          expect(put.envelope.seq).toBe(1);
+          expect(put.envelope.contentHash).not.toBe('');
+        }
+      );
 
       expect(await store.get(knowledgeKind, 'intro' as EntityId)).toSucceedAndSatisfy(
         (record: IMemoryRecord<unknown> | undefined) => {
@@ -255,17 +262,35 @@ describe('FileTreeMemoryStore', () => {
   describe('content-hash dedup', () => {
     test('an identical re-put is a no-op that returns the existing record', async () => {
       const store = createStore().orThrow();
-      const first = (await store.put(makeRecord({ id: 'doc', body: 'same' }))).orThrow();
-      const second = (await store.put(makeRecord({ id: 'doc', body: 'same' }))).orThrow();
-      expect(second.envelope.seq).toBe(first.envelope.seq);
-      expect(second.envelope.updated).toBe(first.envelope.updated);
+      let firstSeq: number = -1;
+      let firstUpdated: number = -1;
+      expect(await store.put(makeRecord({ id: 'doc', body: 'same' }))).toSucceedAndSatisfy(
+        (first: IMemoryRecord<unknown>) => {
+          firstSeq = first.envelope.seq;
+          firstUpdated = first.envelope.updated;
+        }
+      );
+      expect(await store.put(makeRecord({ id: 'doc', body: 'same' }))).toSucceedAndSatisfy(
+        (second: IMemoryRecord<unknown>) => {
+          expect(second.envelope.seq).toBe(firstSeq);
+          expect(second.envelope.updated).toBe(firstUpdated);
+        }
+      );
     });
 
     test('dedup is scope-wide: a different entity with identical content collapses', async () => {
       const store = createStore().orThrow();
-      const first = (await store.put(makeRecord({ id: 'doc-a', body: 'identical' }))).orThrow();
-      const second = (await store.put(makeRecord({ id: 'doc-b', body: 'identical' }))).orThrow();
-      expect(second.envelope.id).toBe(first.envelope.id);
+      let firstId: string = '';
+      expect(await store.put(makeRecord({ id: 'doc-a', body: 'identical' }))).toSucceedAndSatisfy(
+        (first: IMemoryRecord<unknown>) => {
+          firstId = first.envelope.id as string;
+        }
+      );
+      expect(await store.put(makeRecord({ id: 'doc-b', body: 'identical' }))).toSucceedAndSatisfy(
+        (second: IMemoryRecord<unknown>) => {
+          expect(second.envelope.id).toBe(firstId);
+        }
+      );
       // doc-b was never written.
       expect(await store.get(knowledgeKind, 'doc-b' as EntityId)).toSucceedWith(undefined);
     });
@@ -274,14 +299,24 @@ describe('FileTreeMemoryStore', () => {
   describe('last-write-wins update', () => {
     test('updates mutable fields via applyUpdate, preserving created and bumping seq/updated', async () => {
       const store = createStore().orThrow();
-      const first = (await store.put(makeRecord({ id: 'doc', body: 'v1', tags: ['a'] }))).orThrow();
+      let firstCreated: number = -1;
+      let firstSeq: number = -1;
+      expect(await store.put(makeRecord({ id: 'doc', body: 'v1', tags: ['a'] }))).toSucceedAndSatisfy(
+        (first: IMemoryRecord<unknown>) => {
+          firstCreated = first.envelope.created;
+          firstSeq = first.envelope.seq;
+        }
+      );
       clockValue = 2000;
-      const second = (await store.put(makeRecord({ id: 'doc', body: 'v2', tags: ['b', 'c'] }))).orThrow();
-      expect(second.envelope.created).toBe(first.envelope.created);
-      expect(second.envelope.updated).toBe(2000);
-      expect(second.envelope.seq).toBe(first.envelope.seq + 1);
-      expect(second.body).toBe('v2');
-      expect(second.envelope.tags).toEqual(['b', 'c']);
+      expect(await store.put(makeRecord({ id: 'doc', body: 'v2', tags: ['b', 'c'] }))).toSucceedAndSatisfy(
+        (second: IMemoryRecord<unknown>) => {
+          expect(second.envelope.created).toBe(firstCreated);
+          expect(second.envelope.updated).toBe(2000);
+          expect(second.envelope.seq).toBe(firstSeq + 1);
+          expect(second.body).toBe('v2');
+          expect(second.envelope.tags).toEqual(['b', 'c']);
+        }
+      );
 
       expect(await store.list({ tag: 'a' as Tag })).toSucceedWith([]);
     });
@@ -298,6 +333,24 @@ describe('FileTreeMemoryStore', () => {
       await store.put(makeRecord({ id: 'doc', body: 'v1' }));
       expect(await store.put(makeRecord({ id: 'doc', body: 'v2' }))).toFailWith(
         /update failed: patch blew up/i
+      );
+    });
+
+    test('persists the policy-updated body and fails loudly if it is not a string', async () => {
+      // A policy whose applyUpdate swaps in a non-string body must be rejected at
+      // serialization time, not silently persist the incoming string.
+      const nonStringBodyPolicy: IWritePolicy = {
+        mutableFields: ['body'],
+        admit: (): Result<AdmissionDecision> => succeed({ decision: 'accept' }),
+        applyUpdate: (existing): Result<IMemoryRecord<unknown>> =>
+          succeed({ envelope: existing.envelope, body: { not: 'a string' } })
+      };
+      const store = createStore({
+        writePolicies: new Map<Kind, IWritePolicy>([[knowledgeKind, nonStringBodyPolicy]])
+      }).orThrow();
+      await store.put(makeRecord({ id: 'doc', body: 'v1' }));
+      expect(await store.put(makeRecord({ id: 'doc', body: 'v2' }))).toFailWith(
+        /policy returned a non-string body/i
       );
     });
   });
@@ -332,8 +385,11 @@ describe('FileTreeMemoryStore', () => {
         writePolicies: new Map<Kind, IWritePolicy>([[knowledgeKind, cullPolicy]])
       }).orThrow();
       await store.put(makeRecord({ id: 'old', body: 'old' }));
-      const put = (await store.put(makeRecord({ id: 'new', body: 'new' }))).orThrow();
-      expect(put.envelope.id).toBe('new');
+      expect(await store.put(makeRecord({ id: 'new', body: 'new' }))).toSucceedAndSatisfy(
+        (put: IMemoryRecord<unknown>) => {
+          expect(put.envelope.id).toBe('new');
+        }
+      );
       expect(await store.get(knowledgeKind, 'old' as EntityId)).toSucceedWith(undefined);
     });
 
@@ -359,15 +415,24 @@ describe('FileTreeMemoryStore', () => {
       await store.put(makeRecord({ id: 'a', body: 'a', tags: ['t1'] }));
       await store.put(makeRecord({ id: 'b', body: 'b', tags: ['t2'] }));
 
-      expect((await store.list()).orThrow()).toHaveLength(2);
-      expect((await store.list({ scope: 'knowledge' as MemoryScopeKey })).orThrow()).toHaveLength(2);
-      expect((await store.list({ scope: 'other' as MemoryScopeKey })).orThrow()).toHaveLength(0);
-      expect((await store.list({ kind: knowledgeKind })).orThrow()).toHaveLength(2);
-      expect((await store.list({ kind: 'missing' as Kind })).orThrow()).toHaveLength(0);
+      expect(await store.list()).toSucceedAndSatisfy((r) => expect(r).toHaveLength(2));
+      expect(await store.list({ scope: 'knowledge' as MemoryScopeKey })).toSucceedAndSatisfy((r) =>
+        expect(r).toHaveLength(2)
+      );
+      expect(await store.list({ scope: 'other' as MemoryScopeKey })).toSucceedAndSatisfy((r) =>
+        expect(r).toHaveLength(0)
+      );
+      expect(await store.list({ kind: knowledgeKind })).toSucceedAndSatisfy((r) => expect(r).toHaveLength(2));
+      expect(await store.list({ kind: 'missing' as Kind })).toSucceedAndSatisfy((r) =>
+        expect(r).toHaveLength(0)
+      );
 
-      const byTag = (await store.list({ tag: 't1' as Tag })).orThrow();
-      expect(byTag).toHaveLength(1);
-      expect(byTag[0].envelope.id).toBe('a');
+      expect(await store.list({ tag: 't1' as Tag })).toSucceedAndSatisfy(
+        (byTag: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(byTag).toHaveLength(1);
+          expect(byTag[0].envelope.id).toBe('a');
+        }
+      );
     });
   });
 
@@ -377,7 +442,7 @@ describe('FileTreeMemoryStore', () => {
       await store.put(makeRecord({ id: 'doomed', body: 'x' }));
       expect(await store.delete(knowledgeKind, 'doomed' as EntityId)).toSucceedWith('doomed' as MemoryId);
       expect(await store.get(knowledgeKind, 'doomed' as EntityId)).toSucceedWith(undefined);
-      expect((await store.list()).orThrow()).toHaveLength(0);
+      expect(await store.list()).toSucceedAndSatisfy((r) => expect(r).toHaveLength(0));
     });
 
     test('fails when the record does not exist', async () => {
@@ -394,9 +459,15 @@ describe('FileTreeMemoryStore', () => {
         store.put(makeRecord({ id: 'p2', body: '2' })),
         store.put(makeRecord({ id: 'p3', body: '3' }))
       ]);
-      const seqs = results.map((r) => r.orThrow().envelope.seq).sort((a, b) => a - b);
-      expect(seqs).toEqual([1, 2, 3]);
-      expect((await store.list()).orThrow()).toHaveLength(3);
+      const seqs: number[] = results.map((r) => {
+        let seq: number = -1;
+        expect(r).toSucceedAndSatisfy((rec: IMemoryRecord<unknown>) => {
+          seq = rec.envelope.seq;
+        });
+        return seq;
+      });
+      expect([...seqs].sort((a, b) => a - b)).toEqual([1, 2, 3]);
+      expect(await store.list()).toSucceedAndSatisfy((r) => expect(r).toHaveLength(3));
     });
   });
 
