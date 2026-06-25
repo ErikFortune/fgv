@@ -232,3 +232,50 @@ The cross-provider `ai-assist-embeddings` primitive shipped (`AiAssist.callProvi
 `callProviderEmbedding` fails fast when `input` exceeds the capability's `maxBatchSize` (e.g. OpenAI's 2048) rather than auto-chunking — fine for v0.1, since the failure is explicit and a caller can chunk themselves. Future additive nicety: have the dispatcher transparently split an over-limit batch into `maxBatchSize`-sized sub-requests (sequential or bounded-concurrent) and reassemble `vectors[]` in input order. Adds chunking + reassembly + partial-failure semantics; defer until a RAG consumer actually hits the limit and wants it handled in-library.
 
 **Reference:** `ai-assist-embeddings` design §14 amendment #3.
+
+---
+
+## Structured memory for agents (platform capability)
+
+A structured-memory substrate for agents — an Obsidian-like graph (files + links +
+derived index) as the foundation for **both knowledge and distilled experience** —
+with optional layered capabilities (semantic/vector recall, temporal reasoning,
+observation/audit, qualifier-conditional recall) and a host-driven L3 extract/relate
+ingest pipeline. Anticipatory (no concrete consumer ask yet; one expected from
+personaility) but pursued as **platform**, not consumer-feature, work — the design
+is being fleshed to moderate detail now rather than waiting for a narrow scenario.
+
+Architecture (settled across the 2026-06-25 exploration + refinement passes):
+- **Small invariant core + optional present-when-wired layers.** Core = envelope
+  identity + typed per-kind (consumer-`Converter`) body + attributed edges + FileTree
+  store + transaction-time metadata. Layers = vector, temporal, observe,
+  qualifier-recall — each degrading loudly when not wired.
+- **~80–90% composition** over existing fgv primitives (`FileTree`, the
+  `ts-prompt-assist` store/observe spine, `RetainingRingBuffer`, `Crc32Normalizer`,
+  `callProviderEmbedding`, ai-assist client-tools). The one genuine new-infra item is
+  a minimal in-package cosine/top-k vector index (large-N is out ⇒ no external ANN).
+- **One substrate for knowledge + experience**, unified by a cross-kind provenance
+  link graph; divergences absorbed by per-kind write policy, retriever selection,
+  scope subtrees, and the optional temporal layer.
+- **L3 ingest** = host brings classify/extract/relate judgment; fgv owns the typed
+  validation boundary + content-hash/similarity dedup + edge write/cycle safety +
+  provenance stamping + the `contradicts`→temporal-invalidate interlock.
+
+**Three load-bearing v1 commitments** (cheap now, expensive to retrofit): extensible
+envelope; per-kind-pluggable write policy; attributed (object) edges + structured
+provenance — NOT bare-string links.
+
+**Phase-A seeds to resolve first:** edge/entity identity model (entity-id vs.
+version); episodic-capable-by-construction (yes/no); host-interface granularity
+(staged split vs. single `IMemoryIngestor`). Plus the hedged OQ register (vector
+depth, ts-prompt-assist shared-core extraction, temporal query depth, scope model).
+
+**Why FUTURE, not yet a stream:** stream-commission is a platform-investment
+prioritization call — explicitly NOT gated on a consumer ask (Erik's
+platform-over-features direction, 2026-06-25). Promote to `docs/WORKSTREAMS.md` when
+prioritized; the fleshed design lets it start cold.
+
+**Reference:** `.ai/tasks/active/agent-memory-exploration/` — `exploration.md`
+(design-space note + §9 refinement + §10 unified-substrate / L3 contract) and
+`design.md` (moderate-detail platform design). Floated package name
+`@fgv/ts-agent-memory`.
