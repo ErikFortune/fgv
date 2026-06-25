@@ -654,3 +654,96 @@ observation/audit, qualifier-conditional recall), each present-when-configured a
 degrading loudly when not wired. Temporal is one co-equal optional layer, not the
 headline. OQ-9 (temporal query depth) stands; the v1-universal-capture mandate is
 withdrawn.
+
+---
+
+## 10. One substrate for knowledge + experience, and the L3 ingest contract (2026-06-25)
+
+Principal asked for more than a handwave on (a) using the same substrate +
+index/search for knowledge as for conversations/experiences, and (b) the
+host-supplied classify/extract/relate pipeline.
+
+### 10.1 — One substrate, two kind-families, unified by the link graph
+Knowledge and experience are two **kind-families** in the same store, not two stores:
+- **Knowledge kinds** (`fact`, `entity`, `relation`): lower-volume, durable,
+  upsert/versioned, graph-linked, mostly structured + some prose.
+- **Experience kinds** (`episode`, `observation`, `conversation-summary`):
+  time-ordered, recency-dominant, append/bounded.
+
+Each divergence maps to a seam already in the design — unification is real, not glib:
+
+| Divergence | Seam that absorbs it |
+|---|---|
+| Lifecycle (episodic append/bounded vs. knowledge upsert/versioned) | **per-kind write policy** |
+| Retrieval intent ("what happened/when" vs. "what do I know about X") | **retriever selection** per query |
+| Spatial (experience per-user/session vs. knowledge global/shared) | **scope-encoded subtrees** (`user/<id>/…` vs. shared scope) |
+| Time-placement (experience inherently temporal; many facts not) | **optional temporal layer** (§9.4) |
+
+**Payoff of unifying (why it's worth more than "they share code"):** the **cross-kind
+link graph**. An experience `evidences` / `derived_from` a fact; a fact links back to
+its source experiences. That provenance spine is the whole point — and it is exactly
+what the L3 pipeline (§10.2) produces. One substrate lets extraction wire a fact
+directly to the episode it came from, and recall walk from a belief to its evidence.
+
+**v1 scope note:** what lands here is **distilled** experience (memory-worthy
+records), NOT the raw transcript firehose — that stays in personaility's existing
+pipeline. So unifying does not reintroduce large-N (ruled out, §9.1).
+
+### 10.2 — L3 ingest contract (host brings the smarts; fgv owns the plumbing)
+Host owns classification/extraction/relation *judgment*; fgv owns the typed,
+Result-safe, dedup-aware, provenance-stamping, cycle-safe orchestration. Staged
+pipeline (Cognee ECL shape, concrete on fgv primitives):
+
+1. **Intake** — host hands in `IIngestItem`s (transcript turn / doc / event). fgv does
+   not own acquisition.
+2. **Classify** — host `IMemoryClassifier.classify(item) → Result<IClassification>`:
+   memory-worthy? which kind(s)? confidence? Cheap-first via
+   `@fgv/ts-extras-transformers` `classify`/`classifyAll` or `callProviderEmbedding`;
+   escalate to an LLM when warranted.
+3. **Extract** — host `IFactExtractor.extract(item, classification) →
+   Result<ICandidateRecord[]>`: candidate records in OUR envelope shape, via
+   `generateJsonCompletion<T>` / ollama `chatStructured`. **Boundary:** fgv validates
+   every candidate body against the kind's registered Converter/JsonSchema before it
+   can touch the store — the SAME schema the host extracted against
+   (JsonSchema-derives-T ⇒ extraction and storage validation cannot drift).
+4. **Resolve / dedup** — **fgv ships real machinery, two layers:** deterministic
+   content-hash (`Crc32Normalizer.computeHash` over canonical {kind, body}) → exact
+   dup → no-op; similarity (near-dup / same-entity, e.g. "likes pour-over" vs.
+   "prefers V60") via vector-similarity candidate-gen + threshold default, with the
+   semantic judgment behind an optional host `IEntityResolver`. Output decision:
+   `new` | `duplicate-of(id)` | `supersede(id)` | `merge-into(id)`.
+5. **Relate** — host `IRelationExtractor.relate(record, neighborhood) →
+   Result<IEdge[]>`: propose edges (`relates_to`/`pairs_with`/`contradicts`/
+   `derived_from`). fgv owns the edge schema, the write, and cycle-safety
+   (RFC-8785 `buildCycleKey`). **Interlock:** a `contradicts` edge on a temporal kind
+   triggers §9.4 invalidate-don't-delete — relation extraction is how state
+   transitions get detected, not a separate mechanism.
+6. **Load w/ provenance** — **fgv ships this:** write resolved record + edges,
+   stamping structured `provenance` (source-item ref, producing classifier/extractor/
+   model, confidence, `derived_from` back-link to the source experience). Transaction
+   time is free.
+
+**Non-obvious dependency (stated, not buried): the ingest pipeline is BOTH a reader
+AND a writer of the substrate.** Steps 4–5 query the existing graph (semantic
+candidate-gen for dedup; link/tag neighborhood for relation context) before writing.
+Extraction *consumes* the retriever/index — a third reason substrate + search come
+first: extraction quality is bounded by search quality.
+
+### 10.3 — Two v1 non-foreclosure consequences (reinforce earlier Phase-A seeds)
+- **Structured, extensible `provenance` block** (not a flat enum): source-ref +
+  producing-model + confidence + derived-from. Cheap in v1; expensive to retrofit onto
+  accumulated records.
+- **Edges carry attributes:** extraction wants `confidence` + `provenance` on edges;
+  temporal wants `valid_at`/`invalid_at`. So `links[]` are `{ type, target,
+  confidence?, provenance?, valid_at?, invalid_at? }` **objects, not bare strings** —
+  the bare-string form is the single v1 shape that fights every later layer. This is
+  now the **firmest Phase-A recommendation** (supersedes the looser `links[]` framing
+  in §5's envelope sketch).
+
+**L3 status:** the contract (four host interfaces + fgv-owned orchestration) is
+designed here; implementation is commissioned when the host wires its extractors in.
+Substrate-first sequencing unchanged. **New OQ-10 — host-interface granularity:** one
+`IMemoryIngestor` the host fully implements vs. the four-stage split above. Recommend
+the staged split, *because* fgv's dedup + provenance + temporal-interlock + cycle
+machinery (steps 4–6) is the value-add over a raw write API — a single opaque
+interface would push that machinery back onto the host.
