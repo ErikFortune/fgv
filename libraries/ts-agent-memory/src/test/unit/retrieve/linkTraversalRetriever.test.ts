@@ -7,6 +7,7 @@ import '@fgv/ts-utils-jest';
 import {
   IIndexedMemoryRecord,
   IMemoryRecord,
+  Kind,
   LinkTraversalRetriever,
   LINK_TRAVERSAL_NO_SEED_MESSAGE,
   LINK_TRAVERSAL_UNWIRED_MESSAGE,
@@ -163,7 +164,7 @@ describe('LinkTraversalRetriever', () => {
       ]);
       const retriever = LinkTraversalRetriever.create(index).orThrow();
       expect(
-        await retriever.retrieve({ linkedFrom: 'a' as MemoryId, kind: 'keep' as never })
+        await retriever.retrieve({ linkedFrom: 'a' as MemoryId, kind: 'keep' as unknown as Kind })
       ).toSucceedAndSatisfy((records) => {
         expect(ids(records)).toEqual(['b']);
       });

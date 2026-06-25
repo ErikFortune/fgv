@@ -599,10 +599,10 @@ describe('FileTreeMemoryStore', () => {
       [mtmKind, new MtmIdentityCodec()]
     ]);
 
-    /** Cap-cull policy for the MTM kind (entity-scoped dedup). */
-    function memoryPolicies(): ReadonlyMap<Kind, IWritePolicy> {
+    /** Cap-cull policy for the LTM/MTM kinds (entity-scoped dedup). */
+    function memoryPolicies(maxRecords: number = 5): ReadonlyMap<Kind, IWritePolicy> {
       const capCull = MemoryCapCullPolicy.create({
-        maxRecords: 5,
+        maxRecords,
         mutableFields: ['body', 'tags', 'links', 'provenance', 'embeddingRef']
       }).orThrow();
       return new Map<Kind, IWritePolicy>([
@@ -611,12 +611,15 @@ describe('FileTreeMemoryStore', () => {
       ]);
     }
 
-    function memoryStore(root?: FileTree.IMutableFileTreeDirectoryItem): FileTreeMemoryStore {
+    function memoryStore(
+      root?: FileTree.IMutableFileTreeDirectoryItem,
+      maxRecords: number = 5
+    ): FileTreeMemoryStore {
       return FileTreeMemoryStore.create({
         root: root ?? mutableRoot(),
         registry: multiKindRegistry(),
         codecs: multiKindCodecs,
-        writePolicies: memoryPolicies(),
+        writePolicies: memoryPolicies(maxRecords),
         clock
       }).orThrow();
     }
@@ -714,6 +717,66 @@ describe('FileTreeMemoryStore', () => {
         expect(r.envelope.created).toBe(firstCreated);
         expect(r.envelope.updated).toBe(2000);
         expect(r.envelope.seq).toBe(firstSeq + 1);
+      });
+    });
+
+    test('cap-cull fires end-to-end: writing past maxRecords evicts the oldest in the scope', async () => {
+      // maxRecords: 3 over the shared conversations/conv-1 MTM scope. Four
+      // distinct turns are written with strictly increasing `created`; the
+      // store builds the per-scope/per-kind admission cohort, so the fourth
+      // write culls the oldest (turn-0) and leaves the cap at exactly 3.
+      const store = memoryStore(undefined, 3);
+      for (let turn = 0; turn < 4; turn++) {
+        clockValue = 1000 + turn; // distinct `created` so "oldest" is unambiguous.
+        (
+          await store.put(
+            makeRecord({
+              id: `turn-${turn}`,
+              entityId: `conv-1:${turn}`,
+              kind: 'mtm',
+              body: `turn ${turn}`
+            })
+          )
+        ).orThrow();
+      }
+
+      // turn-0 (oldest) was evicted; turn-1..turn-3 remain → exactly maxRecords.
+      expect(await store.get(mtmKind, 'conv-1:0' as EntityId)).toSucceedWith(undefined);
+      expect(await store.get(mtmKind, 'conv-1:1' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.id).toBe('turn-1');
+      });
+      expect(await store.get(mtmKind, 'conv-1:3' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.id).toBe('turn-3');
+      });
+      expect(await store.list({ kind: mtmKind })).toSucceedAndSatisfy((records) => {
+        expect(records).toHaveLength(3);
+        expect(records.map((r) => r.envelope.id as string).sort()).toEqual(['turn-1', 'turn-2', 'turn-3']);
+      });
+    });
+
+    test('cap-cull does not evict on a same-entity update (replace, not grow)', async () => {
+      // With the cohort excluding the target id, updating an existing turn while
+      // at the cap is a replace: the cohort is maxRecords-1, so no cull fires.
+      const store = memoryStore(undefined, 3);
+      for (let turn = 0; turn < 3; turn++) {
+        clockValue = 1000 + turn;
+        (
+          await store.put(
+            makeRecord({ id: `turn-${turn}`, entityId: `conv-1:${turn}`, kind: 'mtm', body: `v1-${turn}` })
+          )
+        ).orThrow();
+      }
+      clockValue = 2000;
+      (
+        await store.put(makeRecord({ id: 'turn-0', entityId: 'conv-1:0', kind: 'mtm', body: 'v2-0' }))
+      ).orThrow();
+
+      // All three still present (turn-0 updated, not culled).
+      expect(await store.list({ kind: mtmKind })).toSucceedAndSatisfy((records) => {
+        expect(records).toHaveLength(3);
+      });
+      expect(await store.get(mtmKind, 'conv-1:0' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.body).toBe('v2-0');
       });
     });
   });

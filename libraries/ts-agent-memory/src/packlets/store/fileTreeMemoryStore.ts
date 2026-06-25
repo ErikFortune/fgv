@@ -462,8 +462,19 @@ export class FileTreeMemoryStore implements IMemoryStore {
         // Entity-scoped dedup: an identical re-put of the same entity is a no-op.
         return succeed(existing);
       }
-      const existingArr: ReadonlyArray<IMemoryRecord<unknown>> = existing === undefined ? [] : [existing];
-      return policy.admit(record, existingArr).onSuccess((decision) => {
+      // The admission cohort is the set of records the policy's cap applies to:
+      // every record in this scope of this kind EXCEPT the target id. On a first
+      // write the post-write count is `cohort.length + 1`; on an update the prior
+      // same-id record is excluded so the count is still `cohort.length + 1`
+      // (a replace, not a grow). The same-id `existing` record is threaded
+      // separately into `_buildRecord` for the merge-patch. Knowledge LWW ignores
+      // this argument, so its behavior is unchanged by the wider cohort.
+      const cohort: ReadonlyArray<IMemoryRecord<unknown>> = this._admissionCohort(
+        scope,
+        record.envelope.kind,
+        idStem
+      );
+      return policy.admit(record, cohort).onSuccess((decision) => {
         if (decision.decision === 'reject') {
           return fail(`memory put: rejected by policy: ${decision.reason}`);
         }
@@ -600,6 +611,28 @@ export class FileTreeMemoryStore implements IMemoryStore {
       }
     }
     return patch;
+  }
+
+  /**
+   * The admission cohort for a write: every indexed record in `scope` of `kind`
+   * except the one at `idStem` (the record being written or updated). This is
+   * the set a per-kind cap (e.g. {@link MemoryCapCullPolicy}) counts against, so
+   * a bounded-ring policy can keep a per-scope/per-kind family within
+   * `maxRecords`. Excluding the target id makes the post-write count uniform
+   * across first-writes and updates.
+   */
+  private _admissionCohort(
+    scope: MemoryScopeKey,
+    kind: Kind,
+    idStem: string
+  ): ReadonlyArray<IMemoryRecord<unknown>> {
+    return this._index
+      .entries()
+      .filter(
+        (entry) =>
+          entry.scope === scope && entry.record.envelope.kind === kind && entry.record.envelope.id !== idStem
+      )
+      .map((entry) => entry.record);
   }
 
   /** Find a record in `scope` whose `contentHash` equals `hash`, if any. */

@@ -72,8 +72,12 @@ export interface IWritePolicy {
   /**
    * Determine whether the incoming record is admitted.
    * @param incoming - The record about to be written.
-   * @param existing - Current records for this `entityId` in the scope
-   * (empty array on first write).
+   * @param existing - The admission cohort the kind's cap applies to: the
+   * records in the same scope of the same kind, EXCLUDING the record at
+   * `incoming`'s target id. Empty on a first write into an empty cohort.
+   * Excluding the target id makes the post-write count uniform
+   * (`existing.length + 1`) across first-writes and same-id updates. A
+   * last-write-wins policy that has no cap ignores this argument.
    * @returns A {@link AdmissionDecision}.
    */
   admit(
