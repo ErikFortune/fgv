@@ -604,3 +604,53 @@ not the graph-DB/service infra.
 - **OQ-3 (L3 home) → REFRAMED:** the classifier/distillation pipeline is the **consumer's**; our surface is the ingestion **write/merge/provenance API**. Substrate-first sequencing confirmed.
 - **OQ-9 (NEW) — temporal query depth:** capture (bi-temporal + invalidate-don't-delete) is v1; how *deep* the temporal **reasoning/query** goes — point-in-time "as-of" queries? state-transition timelines? full bi-temporal retrieval? — is consumer-driven and deferred. The capture decision is robust under any answer.
 - **OQ-2 (ts-prompt-assist shared core) — UNCHANGED:** still defer extraction; structured-first body narrows the gap but writes/links/temporal/vector divergence keeps memory its own library for now.
+
+### 9.4 — Temporal corrected to an OPTIONAL LAYERED capability
+
+**Supersedes the §9.1 Tier-2 "headline" framing and §9.2's "temporal capture in
+v1" delta.** Principal probe (2026-06-25): not every memory need be temporally
+placeable — define a temporal envelope extension, use it when present, disable
+temporality when absent. **Agreed; this corrects the prior over-rotation.** Temporal
+is NOT a v1-universal mandate — it is one optional layer among several (co-equal with
+vector recall), present-when-configured.
+
+"Temporal" decomposes into three separable things, almost none of which need to be
+universal in v1:
+1. **Temporal envelope extension** — optional `temporal?` block (`valid_at` /
+   `invalid_at`, the world-truth axis). Additive optional fields; temporal kinds
+   carry it, atemporal kinds omit it at zero cost. Pure layer-in.
+2. **Temporal write policy** — invalidate-don't-delete / versioned records — is just
+   one more entry in the **per-kind write-policy** set already planned (alongside
+   append-only / upsert / bounded-ring). Enabled per kind when that kind needs
+   history; from-enablement-forward.
+3. **Temporal retrievers** — "as-of" / "current-valid" / "history-of-X" — added when
+   the temporal extension is in use; key off its presence (same
+   capability-present-when-wired pattern as vector recall).
+
+**Corrected scope of the "un-captured history is unrecoverable" claim.** It does NOT
+imply "capture temporal everywhere in v1." It implies only: *for a kind where you've
+decided you want history, use invalidate-don't-delete from when you start caring.*
+History before a kind opts in is by definition not needed. The **system-learned
+(transaction) time axis is free** — it falls out of the store's write metadata
+(`created`/`updated`/`seq`) regardless; only the **world-truth (valid) axis** is the
+opt-in extension.
+
+**What v1 must actually do** shrinks to two things already wanted for other reasons:
+keep the **envelope extensible** (open to an optional temporal block) and keep the
+write path **per-kind-policy-pluggable**. Temporal forecloses nothing; it rides those
+seams. No temporal-specific v1 burden remains.
+
+**Forward-compat caveat for Phase A** (NOT a v1 forcing function): the **identity
+model must leave room for entity-id vs. version**, so a temporal kind can carry
+multiple versions of a fact without fighting an `id == filename == single current
+value` assumption. A temporal kind adopts a versioned layout (versions/edges under a
+stable entity id) additively — Phase A should just not bake a global
+id-equals-current-value assumption a temporal kind would have to break.
+
+**Unifying model (the real architecture).** A small **invariant core** — envelope
+identity + typed body + links + FileTree store + transaction-time metadata — plus a
+set of **optional layered capabilities** (semantic/vector, temporal,
+observation/audit, qualifier-conditional recall), each present-when-configured and
+degrading loudly when not wired. Temporal is one co-equal optional layer, not the
+headline. OQ-9 (temporal query depth) stands; the v1-universal-capture mandate is
+withdrawn.
