@@ -136,24 +136,30 @@ export class HybridRetriever implements IMemoryRetriever {
 
   /** {@inheritDoc IMemoryRetriever.retrieve} */
   public async retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>> {
-    const guarded: Result<true> = guardRetrieverCapabilities(query, this._capabilities);
-    if (guarded.isFailure()) {
-      return fail(guarded.message);
-    }
-    const perRetriever: Result<ReadonlyArray<IMemoryRecord<unknown>>>[] = await Promise.all(
-      this._retrievers.map((retriever) => retriever.retrieve(this._projectQuery(query, retriever)))
-    );
-    return mapResults(perRetriever)
-      .onSuccess((resultSets) => this._mergeStrategy.merge(resultSets))
-      .onSuccess((merged) => succeed(limitRecords(merged, query.limit)));
+    return guardRetrieverCapabilities(query, this._capabilities).thenOnSuccess(async () => {
+      const perRetriever: Result<ReadonlyArray<IMemoryRecord<unknown>>>[] = await Promise.all(
+        this._retrievers.map((retriever) => retriever.retrieve(this._projectQuery(query, retriever)))
+      );
+      return mapResults(perRetriever)
+        .onSuccess((resultSets) => this._mergeStrategy.merge(resultSets))
+        .onSuccess((merged) => succeed(limitRecords(merged, query.limit)));
+    });
   }
 
   /**
-   * Strip axes a child does not support so it returns its normal results rather
-   * than loud-failing on a field a sibling handles.
+   * Project the query for one child retriever. Two adjustments:
+   *
+   * - Strip axes the child does not support (`semantic` / `topK` for a
+   *   non-semantic child, `asOf` for a non-temporal child) so it returns its
+   *   normal results rather than loud-failing on a field a sibling handles.
+   * - Strip `limit` unconditionally: limit is a post-merge concern. A child that
+   *   pre-truncated its result set would starve the merge strategy of candidates
+   *   it needs to score correctly (a record both children would surface must
+   *   reach the merge to score 2). The hybrid applies `limit` once, after merge.
    */
   private _projectQuery(query: IMemoryQuery, retriever: IMemoryRetriever): IMemoryQuery {
     const projected: { -readonly [K in keyof IMemoryQuery]: IMemoryQuery[K] } = { ...query };
+    delete projected.limit;
     if (!retriever.capabilities.supportsSemanticRecall) {
       delete projected.semantic;
       delete projected.topK;

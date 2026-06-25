@@ -33,7 +33,7 @@ export interface IMemoryObservationStoreCreateParams {
  * substitutes a different observer entirely. Size is the only bounded
  * dimension, via `maxRecords`.
  *
- * The store composes {@link Collections.RetainingRingBuffer} (it does not
+ * The store composes `RetainingRingBuffer` from `@fgv/ts-utils` (it does not
  * hand-roll a ring) and implements {@link IMemoryObserver} directly — `observe`
  * (the hook) and `query` (the read surface) live on the same class. Wire it via
  * {@link IFileTreeMemoryStoreCreateParams.observers}. `seq` and `timestamp` are

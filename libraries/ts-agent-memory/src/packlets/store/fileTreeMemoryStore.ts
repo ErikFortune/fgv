@@ -121,7 +121,7 @@ export interface IFileTreeMemoryStoreCreateParams {
   readonly observers?: ReadonlyArray<IMemoryObserver>;
   /**
    * Diagnostic logger for swallowed observer failures. Defaults to a
-   * {@link Logging.NoOpLogger}.
+   * `Logging.NoOpLogger`.
    */
   readonly logger?: Logging.ILogger;
 }

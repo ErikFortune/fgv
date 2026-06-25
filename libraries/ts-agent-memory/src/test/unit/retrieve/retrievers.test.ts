@@ -493,6 +493,40 @@ describe('HybridRetriever', () => {
     expect(await hybrid.retrieve({ semantic: 'q' })).toFailWith(/vector query failed/i);
   });
 
+  test('does not pre-truncate child result sets: limit is applied only post-merge', async () => {
+    // Recency full order is [d,c,b,a]; semantic surfaces [d,a]. With a correct
+    // (post-merge-only) limit, the merge sees BOTH full sets, so d and a each
+    // score 2 and the limit-2 result is [d,a]. If the limit leaked into the
+    // children, recency would pre-truncate to [d,c] and the result would wrongly
+    // be [d,c] — a never reaching the merge to score 2.
+    const index = buildIndex([
+      { id: 'a', updated: 10 },
+      { id: 'b', updated: 20 },
+      { id: 'c', updated: 30 },
+      { id: 'd', updated: 40 }
+    ]);
+    const recency = RecencyRetriever.create(index).orThrow();
+    const semantic = SemanticRetriever.create({
+      index,
+      backend: {
+        vectorIndex: new FakeVectorIndex([
+          { id: 'd' as MemoryId, score: 0.9 },
+          { id: 'a' as MemoryId, score: 0.8 }
+        ]),
+        embedQuery: () => Promise.resolve(succeed([1]))
+      }
+    }).orThrow();
+    const hybrid = HybridRetriever.create(
+      [recency, semantic],
+      ScoreUnionMergeStrategy.create().orThrow()
+    ).orThrow();
+    expect(await hybrid.retrieve({ semantic: 'q', limit: 2 })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(ids(records)).toEqual(['d', 'a']);
+      }
+    );
+  });
+
   test('applies the hybrid-level limit after merge', async () => {
     const { index } = build();
     const recency = RecencyRetriever.create(index).orThrow();

@@ -104,7 +104,6 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly clock?: () => number;
     readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
     readonly defaultCodec?: IIdentityCodec;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-memory" does not have an export "Logging"
     readonly logger?: Logging.ILogger;
     readonly observers?: ReadonlyArray<IMemoryObserver>;
     readonly registry: IBodyConverterRegistry;
@@ -362,8 +361,6 @@ export type MemoryObservationOutcome = 'success' | 'failure';
 // @public
 export type MemoryObservationPhase = 'read' | 'write' | 'delete' | 'retrieve';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-memory" does not have an export "Collections"
-//
 // @public
 export class MemoryObservationStore implements IMemoryObserver {
     clear(): void;
