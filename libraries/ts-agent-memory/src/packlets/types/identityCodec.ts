@@ -5,6 +5,7 @@
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
 import { Convert, EntityId, MemoryScopeKey } from './ids';
+import { assertPortableFilenameStem } from './filenameSafety';
 
 /**
  * The FileTree storage address an {@link IIdentityCodec} maps a domain key to.
@@ -50,47 +51,6 @@ export interface IIdentityCodec {
 }
 
 /**
- * Reserved Windows device basenames. Includes `COM0..9` and `LPT0..9` — the
- * 0-suffixed variants were added in Windows 11 / Server 2022. Matched
- * case-insensitively against the basename (text before the first `.`).
- */
-const RESERVED_WIN_DEVICES: ReadonlySet<string> = new Set<string>([
-  'CON',
-  'PRN',
-  'AUX',
-  'NUL',
-  ...Array.from({ length: 10 }, (__v, i) => `COM${i}`),
-  ...Array.from({ length: 10 }, (__v, i) => `LPT${i}`)
-]);
-
-const PORTABLE_FILENAME_RE: RegExp = /^[A-Za-z0-9._-]+$/;
-
-/**
- * Validates a single filename stem against the POSIX portable filename set
- * (`[A-Za-z0-9._-]`), rejecting a leading `.` and reserved Windows device
- * names. Shared by the concrete codecs. Exported so Phase C codecs (LTM /
- * MTM) reuse the exact same escaping contract.
- * @public
- */
-export function assertPortableFilenameStem(stem: string): Result<string> {
-  if (stem.length === 0) {
-    return fail('idStem: must be a non-empty string');
-  }
-  if (stem.startsWith('.')) {
-    return fail(`idStem '${stem}': may not begin with '.'`);
-  }
-  if (!PORTABLE_FILENAME_RE.test(stem)) {
-    return fail(
-      `idStem '${stem}': contains characters outside the POSIX portable filename set ([A-Za-z0-9._-])`
-    );
-  }
-  const basename: string = stem.split('.')[0];
-  if (RESERVED_WIN_DEVICES.has(basename.toUpperCase())) {
-    return fail(`idStem '${stem}': basename '${basename}' matches a reserved Windows device name`);
-  }
-  return succeed(stem);
-}
-
 /**
  * Identity codec for the knowledge kind family. A knowledge entity is keyed
  * by its consumer-supplied `docId`, which is used verbatim as the filename

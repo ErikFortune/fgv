@@ -74,4 +74,21 @@ describe('branded id converters', () => {
       expect(Convert.entityId.convert('conv-1:7')).toSucceedWith('conv-1:7' as never);
     });
   });
+
+  describe('memoryId filename-stem constraint', () => {
+    test('accepts a portable filename stem', () => {
+      expect(Convert.memoryId.convert('intro-to-rust.v2')).toSucceedWith('intro-to-rust.v2' as never);
+    });
+
+    test('rejects path-unsafe ids that the relaxed brands accept (id IS the filename stem)', () => {
+      expect(Convert.memoryId.convert('a/b')).toFailWith(/POSIX portable filename set/i);
+      expect(Convert.memoryId.convert('conv-1:7')).toFailWith(/POSIX portable filename set/i);
+      // sanity: EntityId stays relaxed for the same composite domain key
+      expect(Convert.entityId.convert('conv-1:7')).toSucceed();
+    });
+
+    test('still applies the shared hygiene before the stem check', () => {
+      expect(Convert.memoryId.convert('')).toFailWith(/must be a non-empty string/i);
+    });
+  });
 });

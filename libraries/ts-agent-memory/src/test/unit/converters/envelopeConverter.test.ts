@@ -190,6 +190,14 @@ describe('splitFrontmatter / joinFrontmatter', () => {
     });
   });
 
+  test('strips trailing CR so CRLF-authored files parse identically to LF', () => {
+    const raw = '---\r\nid: x\r\nkind: knowledge\r\n---\r\nThe body.\r\nSecond line.';
+    expect(splitFrontmatter(raw)).toSucceedWith({
+      frontmatter: 'id: x\nkind: knowledge',
+      body: 'The body.\nSecond line.'
+    });
+  });
+
   test('fails when the opening delimiter is missing', () => {
     expect(splitFrontmatter('no frontmatter here')).toFailWith(/missing opening frontmatter delimiter/i);
   });

@@ -4,6 +4,7 @@
  */
 
 import { Brand, Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
+import { assertPortableFilenameStem } from './filenameSafety';
 
 /**
  * Stable file-stem identifier for a memory record. Equals the codec-produced
@@ -98,8 +99,18 @@ export const Convert: {
   readonly scopeKey: Converter<MemoryScopeKey>;
   readonly linkType: Converter<LinkType>;
 } = {
-  /** Validates an `unknown` value as a {@link MemoryId}. */
-  memoryId: brandedIdConverter<MemoryId>('MemoryId'),
+  /**
+   * Validates an `unknown` value as a {@link MemoryId}. Unlike the other
+   * brands, `MemoryId` IS the on-disk filename stem (`id === idStem`, enforced
+   * by the store's `verifyFilenameId`), so it additionally enforces the
+   * portable-filename-stem contract — rejecting path-unsafe ids (`a/b`,
+   * `conv-1:7`) at convert time rather than letting them surface as a file-path
+   * failure later. (`EntityId` stays relaxed: a domain key may legitimately be
+   * a composite like `conv-1:7`; the codec maps it to a safe stem.)
+   */
+  memoryId: brandedIdConverter<MemoryId>('MemoryId').map((id) =>
+    assertPortableFilenameStem(id).onSuccess(() => succeed(id))
+  ),
   /** Validates an `unknown` value as an {@link EntityId}. */
   entityId: brandedIdConverter<EntityId>('EntityId'),
   /** Validates an `unknown` value as a {@link Kind}. */

@@ -25,6 +25,10 @@ describe('assertPortableFilenameStem', () => {
     expect(assertPortableFilenameStem('.hidden')).toFailWith(/may not begin with '\.'/i);
   });
 
+  test('rejects a trailing dot (Windows strips trailing dots)', () => {
+    expect(assertPortableFilenameStem('topic.')).toFailWith(/may not end with '\.'/i);
+  });
+
   test('rejects characters outside the portable set', () => {
     expect(assertPortableFilenameStem('has/slash')).toFailWith(/POSIX portable filename set/i);
     expect(assertPortableFilenameStem('has space')).toFailWith(/POSIX portable filename set/i);

@@ -140,7 +140,11 @@ export interface IMemoryFileParts {
  * @public
  */
 export function splitFrontmatter(raw: string): Result<IMemoryFileParts> {
-  const lines: string[] = raw.split('\n');
+  // Split on '\n' and strip a trailing '\r' per line so CRLF-authored files
+  // parse identically to LF — otherwise the '\r' would ride along into the
+  // returned frontmatter (perturbing YAML parsing) and body (corrupting
+  // round-trip fidelity).
+  const lines: string[] = raw.split('\n').map((line) => (line.endsWith('\r') ? line.slice(0, -1) : line));
   if (lines[0].trim() !== FRONTMATTER_DELIMITER) {
     return fail("memory file: missing opening frontmatter delimiter '---'");
   }
