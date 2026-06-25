@@ -13,6 +13,13 @@ the heavier graph-DB alternatives (Zep/Graphiti, Cognee) fail the "files you own
 and "compose, don't build new infra" tests. I prodded those alternatives enough to
 confirm the fork, then went deep on the markdown-vault line.
 
+> **Update (2026-06-25):** a principal walkthrough refined this note — the Tier-1
+> "architecture-inverting" consumer asks largely **dissolved**, **temporal was
+> promoted to the headline concern** (capture in v1, not deferred), vector recall
+> moved **near-term**, and **L3 de-risked** (the consumer owns the pipeline; we
+> own the ingestion target). See **§9 Refinement pass** for the authoritative
+> current state — it supersedes earlier text where they conflict.
+
 ---
 
 ## 1. Layered model recap
@@ -507,3 +514,93 @@ pre-committed now.
   basic-memory exposes ~15 tools; Letta fewer, higher-level. *Why not now:* tool
   granularity is an L2/agent-ergonomics decision that depends on personaility's
   agent design; the substrate is indifferent. Ship a minimal proof set first.
+
+---
+
+## 9. Refinement pass — principal walkthrough (2026-06-25)
+
+Erik walked the consumer-ask triage (the "what would materially move the design"
+lens). Net: **Tier 1 largely dissolves** under stated constraints; **temporal is
+promoted to the headline**; **vector moves near-term**; **L3 de-risks**. Decisions
+below are authoritative and supersede earlier text where they conflict.
+
+### 9.1 — "What consumer ask would materially affect the design?" — the triage
+
+Most consumer variation slots behind seams without reshaping anything (corpus in
+the thousands; retrieval-strategy mix; tag/link/kind vocab; per-kind write policy;
+tool count/ergonomics; qualifier-recall depth; redaction policy; serializer flavor).
+Only a few asks move the design. They were tiered — and the walkthrough resolved
+each:
+
+**Tier 1 — "architecture-inverting" asks → DISSOLVED (none invert it under our constraints):**
+- **Concurrent multi-writer.** Resolution: a **write-lock** on the store/index
+  suffices; **files stay the source of truth**. Index-as-source-of-truth does NOT
+  follow from concurrency — it would only follow from write-*throughput* or
+  cross-record-*transaction* needs, both out of scope. (The original note overreached
+  by claiming the index would become the source of truth.)
+- **Large N.** Explicitly **OUT** for the foreseeable future. Consequences: the
+  in-memory rebuildable index is sufficient indefinitely (no persisted/incremental
+  index needed), and the minimal in-package cosine vector index is the **complete**
+  answer (no external ANN ever required). This **closes OQ-1**.
+- **Service with per-user isolation.** Just a **root-per-user** (one `FileTree` root
+  per user). No substrate incompatibility — the service is a routing/auth wrapper
+  over N vaults.
+- **"We already have a store; give us the index."** Not a threat — the argument
+  *for* the right layering: make the storage backend **injectable** (bring-your-own
+  `FileTree` at v1; bring-your-own `IMemoryStore` ultimately), with
+  index/retrieve/graph/temporal as separable layers over it. Better factoring we
+  want regardless.
+
+**Tier 2 → THE HEADLINE (temporal, promoted from "deferred"):**
+Episodic memory is central to personaility and reasoning-over-time fits it directly.
+Replacing the existing episodic pipeline is not a near-term priority but is **not
+ruled out long-term**. **Load-bearing correction to §4 tension 1:** temporal must be
+**captured in the file format / envelope from v1** — **bi-temporal stamps**
+(valid-time `valid_at`/`invalid_at` + transaction-time `created_at`/`expired_at`) on
+edges/records, and an **invalidate-don't-delete** state-transition discipline — EVEN
+IF rich temporal *query/reasoning* is deferred. Rationale: **un-captured history is
+unrecoverable**; files are forever, so the format must record time from day one; the
+index/query sophistication stays rebuildable and deferrable. This **inverts** the
+original "temporal is deferrable behind the retriever" framing: the **capture** is
+v1, only the **query depth** is the open question (new OQ-9).
+
+Driver — **Zep / Graphiti** (the temporal-memory reference): a knowledge graph of
+entity nodes + fact edges; **bi-temporal** (world-truth time vs. system-learned
+time); **invalidate-don't-delete** so "London → Tokyo" is a queryable timeline, not
+a destructive overwrite; incremental entity-resolved ingestion; hybrid
+(semantic + full-text + graph) retrieval; strong on long-horizon/temporal
+benchmarks. It is a *service over a graph DB with an LLM in the ingestion loop* —
+fgv borrows the **data-model ideas** (bi-temporal edges, invalidate-don't-delete),
+not the graph-DB/service infra.
+
+**Tier 3 — reorder the plan, not the architecture:**
+- **Semantic recall near-term.** Ship the `IVectorIndex` seam in v1; minimal
+  in-package cosine as an **immediate fast-follow**. Large-N being out makes that
+  minimal impl the *permanent* answer.
+- **L3 ingest → DE-RISKED.** personaility owns a rich (and growing) auto-distillation
+  pipeline and will **extend it to feed** this substrate. So OUR L3 scope is NOT a
+  classifier/escalation engine — it is the **ingestion target**: a write/upsert API
+  with content-hash dedup, merge semantics, and provenance tagging that their
+  pipeline calls. Sequencing unchanged — substrate must exist first ("can't deliver
+  a pipeline into nothing") — so substrate-first holds, and our L3 surface is thin,
+  not the novel-risky build §1/§6 implied.
+- **Structured-first body.** Memories will be **mostly structured**; knowledge a
+  **mix of structured + prose**. Confirms: body is per-kind-typed
+  (Converter/JsonSchema); prose+links is **one body variant**, not the default;
+  links/graph stay first-class regardless of body shape. Nudges the package from
+  "markdown vault" toward "**typed-record store with links + temporal + retrievers**"
+  — still its own library (the ts-prompt-assist shared-core extraction stays
+  deferred; memory's writes/links/temporal/vector divergence justifies waiting).
+
+### 9.2 — Updated first-slice deltas (supersede §7)
+- **Temporal capture in v1:** bi-temporal stamps on edges/records + invalidate-don't-delete write discipline. (Capture only; rich temporal query deferred.)
+- **Vector:** `IVectorIndex` seam in v1; minimal in-package cosine as immediate fast-follow (sufficient permanently, large-N out).
+- **Injectable storage backend:** BYO `FileTree` is the v1 seam; the store/index/retrieve/graph/temporal layers are separable.
+- **Structured-first body:** per-kind Converter/JsonSchema bodies; prose+links a variant.
+- **L3 surface (when it comes):** ingestion write/upsert/merge/provenance API for the consumer's pipeline — not a classifier engine.
+
+### 9.3 — OQ register updates (supersede §8)
+- **OQ-1 (vector build-vs-defer) → RESOLVED:** build the minimal in-package cosine; large-N is out so no external ANN is ever needed. Seam in v1, impl as immediate fast-follow.
+- **OQ-3 (L3 home) → REFRAMED:** the classifier/distillation pipeline is the **consumer's**; our surface is the ingestion **write/merge/provenance API**. Substrate-first sequencing confirmed.
+- **OQ-9 (NEW) — temporal query depth:** capture (bi-temporal + invalidate-don't-delete) is v1; how *deep* the temporal **reasoning/query** goes — point-in-time "as-of" queries? state-transition timelines? full bi-temporal retrieval? — is consumer-driven and deferred. The capture decision is robust under any answer.
+- **OQ-2 (ts-prompt-assist shared core) — UNCHANGED:** still defer extraction; structured-first body narrows the gap but writes/links/temporal/vector divergence keeps memory its own library for now.
