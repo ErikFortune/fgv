@@ -354,8 +354,6 @@ export const LINK_TRAVERSAL_NO_SEED_MESSAGE: string;
 // @public
 export const LINK_TRAVERSAL_UNWIRED_MESSAGE: string;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-memory" does not have an export "DEFAULT_HOPS"
-//
 // @public
 export class LinkTraversalRetriever implements IMemoryRetriever {
     get capabilities(): IMemoryRetrieverCapabilities;

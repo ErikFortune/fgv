@@ -213,14 +213,17 @@ describe('LinkTraversalRetriever', () => {
   });
 });
 
-describe('LinkTraversalRetriever wired into a non-link retriever set', () => {
-  test('a retriever without link-traversal still degrades loudly on a link query', async () => {
-    // Sanity check the shared guard message is the one a non-link retriever uses.
+describe('LINK_TRAVERSAL_UNWIRED_MESSAGE constant', () => {
+  test('has the stable public message non-link retrievers use to degrade loudly', () => {
+    // The link-traversal retriever supports the axis, so it never emits this
+    // message; the constant is the shared one the non-link v1 retrievers raise
+    // (asserted here to keep the public string stable).
+    expect(LINK_TRAVERSAL_UNWIRED_MESSAGE).toMatch(/link traversal requires a backlink index/i);
+  });
+
+  test('a link query against the link-capable retriever still succeeds', async () => {
     const index = buildIndex([{ id: 'a', links: ['b'] }, { id: 'b' }]);
     const retriever = LinkTraversalRetriever.create(index).orThrow();
-    // The link-traversal retriever itself supports the axis, so this succeeds;
-    // the constant is asserted to keep the public message stable.
-    expect(LINK_TRAVERSAL_UNWIRED_MESSAGE).toMatch(/link traversal requires a backlink index/i);
     expect(await retriever.retrieve({ linkedFrom: 'a' as MemoryId })).toSucceed();
   });
 });

@@ -169,6 +169,13 @@ export class LtmIdentityCodec implements IIdentityCodec {
  *   preserved verbatim so the round-trip is exact.
  * - Layout: `vault/conversations/<conversationId>/turn-<N>.md`. The `/` in the
  *   scope is handled by the store's multi-segment scope resolver.
+ *
+ * **Verbatim turn index (caller-canonicalization note).** The turn index is
+ * preserved exactly — `conv-1:7` and `conv-1:007` are DISTINCT entities mapping
+ * to distinct files (`turn-7.md` / `turn-007.md`). Verbatim preservation is what
+ * makes the round-trip exact, but it means a caller that formats turn indices
+ * inconsistently (some zero-padded, some not) will silently mint separate
+ * entities. Callers should canonicalize to one form (e.g. no leading zeros).
  * @public
  */
 export class MtmIdentityCodec implements IIdentityCodec {

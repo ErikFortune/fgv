@@ -405,10 +405,12 @@ export class MemoryCapCullPolicy implements IWritePolicy {
   /**
    * Reassemble a record from the merged mutable view. Only the declared mutable
    * fields are taken from the merge; undeclared fields are preserved verbatim
-   * from `existing`. A `null` patch that deletes a declared-and-required field
-   * (`body` / `tags` / `links` / `provenance`) is an error. `embeddingRef`, when
-   * mutable, is restored as `undefined` (absent) if the merge dropped it — same
-   * hash-stable semantics as {@link KnowledgeLwwPolicy}.
+   * from `existing`. A `null` patch that deletes a *declared mutable* required
+   * field (`body` / `tags` / `links` / `provenance`) is an error — a required
+   * field that is NOT declared mutable simply falls through to its `existing.*`
+   * value and is never at risk. `embeddingRef`, when mutable, is restored as
+   * `undefined` (absent) if the merge dropped it — same hash-stable semantics as
+   * {@link KnowledgeLwwPolicy}.
    */
   private _rebuild(existing: IMemoryRecord<unknown>, merged: JsonObject): Result<IMemoryRecord<unknown>> {
     const deleted: ReadonlyArray<string> = this.mutableFields.filter(
@@ -418,6 +420,11 @@ export class MemoryCapCullPolicy implements IWritePolicy {
       return fail(`memory cap-cull: merge patch may not delete required field(s): ${deleted.join(', ')}`);
     }
 
+    // The merged values are JSON projections of the already-validated typed
+    // record; restore the domain types. (The types packlet cannot import the
+    // converters packlet without a cycle, so these are structural restorations
+    // of fields the merge preserved, not fresh untrusted input — mirrors
+    // KnowledgeLwwPolicy._rebuild.)
     const embeddingRefMutable: boolean = this.mutableFields.includes('embeddingRef');
     const envelope: IMemoryEnvelope = {
       ...existing.envelope,

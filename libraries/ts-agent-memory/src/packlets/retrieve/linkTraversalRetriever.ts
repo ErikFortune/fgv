@@ -43,8 +43,8 @@ export const LINK_TRAVERSAL_NO_SEED_MESSAGE: string =
  * - **Direction.** `linkedFrom` walks OUTBOUND edges (each record's
  *   `envelope.links[].target`); `linkedTo` walks INBOUND edges (the index's
  *   `backlinks`). Exactly one is the seed; `linkedFrom` wins if both are set.
- * - **Bound + cycle safety.** Traversal is bounded by `hops` (default
- *   {@link DEFAULT_HOPS}) and a visited-set guard. The graph is keyed by bare
+ * - **Bound + cycle safety.** Traversal is bounded by `hops` (default `1` — a
+ *   single hop) and a visited-set guard. The graph is keyed by bare
  *   string {@link MemoryId}s, so a `Set<string>` visited-set is the exact,
  *   collision-free cycle key — no structural hashing (e.g. `Crc32Normalizer`) is
  *   needed. A self-loop or any multi-hop cycle terminates because a revisited id
@@ -124,6 +124,15 @@ export class LinkTraversalRetriever implements IMemoryRetriever {
    * Group the index's entries by bare {@link MemoryId}. An id can map to more
    * than one entry when distinct scopes reuse a filename stem (e.g. `turn-0` in
    * two conversations), so the value is an array.
+   *
+   * @remarks
+   * **Design note (links are globally-scoped identifiers in this phase).** An
+   * {@link IEdge.target} is a bare `MemoryId`, not a `(scope, id)` pair, so
+   * traversal resolves a target across ALL scopes that hold that id. When two
+   * scopes reuse a stem, following an edge to it reaches every match. This
+   * mirrors the `backlinks` index, which is also keyed by bare id. Scope-
+   * qualified link resolution is intentionally out of scope for Phase C and
+   * would be an additive change here (and to {@link IEdge} / the index).
    */
   private _indexById(): ReadonlyMap<MemoryId, IIndexedMemoryRecord[]> {
     const byId: Map<MemoryId, IIndexedMemoryRecord[]> = new Map<MemoryId, IIndexedMemoryRecord[]>();
