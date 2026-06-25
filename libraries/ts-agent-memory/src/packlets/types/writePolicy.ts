@@ -183,8 +183,13 @@ export class KnowledgeLwwPolicy implements IWritePolicy {
 
   /**
    * Reassemble a record from the merged mutable view. `body` / `tags` /
-   * `links` / `provenance` are required and may not be deleted by a patch;
-   * `embeddingRef` is optional and a delete clears it to `null`.
+   * `links` / `provenance` are required and may not be deleted by a patch.
+   * `embeddingRef` is optional: when it is absent from the merged view —
+   * because the existing record never carried it OR a `null` patch deleted it
+   * (RFC-7386) — it is restored as `undefined` (absent), NOT `null`. This keeps
+   * an originally-absent `embeddingRef` from silently flipping to `null` on an
+   * unrelated update, so the field round-trips hash-stably through the store's
+   * content-hash recomputation.
    */
   private _rebuild(existing: IMemoryRecord<unknown>, merged: JsonObject): Result<IMemoryRecord<unknown>> {
     const required: ReadonlyArray<string> = ['body', 'tags', 'links', 'provenance'];
@@ -202,7 +207,7 @@ export class KnowledgeLwwPolicy implements IWritePolicy {
       tags: merged.tags as unknown as ReadonlyArray<Tag>,
       links: merged.links as unknown as ReadonlyArray<IEdge>,
       provenance: merged.provenance as unknown as IProvenance,
-      embeddingRef: 'embeddingRef' in merged ? (merged.embeddingRef as string | null) : null
+      embeddingRef: 'embeddingRef' in merged ? (merged.embeddingRef as string | null) : undefined
     };
     return succeed({ envelope, body: merged.body });
   }

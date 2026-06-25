@@ -49,4 +49,13 @@
 6. **`IBodyConverterRegistry.getConverter` added** (design-lock §2.6 prose mentioned it but omitted it from the code block; task scope listed it). Returns `Result<Converter<unknown>>`.
 7. **`register`/`registerSchema` return `void`** (per design-lock §2.6 signature) — non-fallible mutators (Map.set semantics), not a `Result<void>` anti-pattern.
 
-**code-reviewer:** run on the final staged diff; findings + dispositions recorded in the PR description.
+**code-reviewer:** run on the final diff — **Approved with advisory items; no P1.** Dispositions:
+- **P2-2b (fixed):** `KnowledgeLwwPolicy._rebuild` flipped an originally-absent `embeddingRef` from `undefined`→`null` on any update, which would destabilize the store's content-hash. Changed the absent-in-merged case to restore `undefined` (RFC-7386 delete → absent), so an absent `embeddingRef` round-trips hash-stably; an explicit `null` is preserved only when present. Updated 3 tests (delete→absent, absent-stays-absent, explicit-null-preserved).
+- **P2-2e (fixed):** added a boundary test for the 0-suffixed reserved Windows device variants (`COM0`/`LPT0`/`COM9`).
+- **P2-2a (dispositioned):** per-instance `JsonEditor` pair (vs. the design-lock module singleton) is intentional — avoids shared mutable state across stores/tests; construction cost is negligible.
+- **P2-2c (dispositioned):** `registerSchema` uses `schema.convert` via `Converters.generic`; `convert`/`validate` route through the same logic for schema validators. No change.
+- **P2-2d (dispositioned):** `serializeMemoryFile` emits `seq`/`contentHash` into frontmatter — by design; `seq` assignment + hash recomputation are store-owned (B1), flagged for the store stream.
+- **P2-2f (dispositioned):** `splitFrontmatter` trims the delimiter line before comparison (lenient `---` match) — conventional frontmatter behavior; the first `---` after the opener legitimately closes the block. No change.
+- **P3 items (dispositioned):** `provenanceConverter`/`edgeConverter`/`temporalConverter` are intentionally `@public` (consumers embed provenance/edges in custom body converters); the two acknowledged casts were assessed justified (cycle constraint; structural restoration of already-validated data via the prescribed `as unknown as T` form).
+
+Post-fix gates re-run green: `rushx build`/`lint`/`test` ✅, 100% coverage (99 tests), api-extractor report unchanged (no public-signature change).

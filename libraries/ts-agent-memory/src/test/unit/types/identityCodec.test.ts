@@ -36,6 +36,12 @@ describe('assertPortableFilenameStem', () => {
     expect(assertPortableFilenameStem('COM1')).toFailWith(/reserved Windows device name/i);
     expect(assertPortableFilenameStem('lpt0.txt')).toFailWith(/reserved Windows device name/i);
   });
+
+  test('rejects the 0-suffixed device variants (Windows 11 / Server 2022)', () => {
+    expect(assertPortableFilenameStem('COM0')).toFailWith(/reserved Windows device name/i);
+    expect(assertPortableFilenameStem('LPT0')).toFailWith(/reserved Windows device name/i);
+    expect(assertPortableFilenameStem('COM9')).toFailWith(/reserved Windows device name/i);
+  });
 });
 
 describe('KnowledgeIdentityCodec', () => {

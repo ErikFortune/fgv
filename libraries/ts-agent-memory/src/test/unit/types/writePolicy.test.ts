@@ -91,15 +91,22 @@ describe('KnowledgeLwwPolicy', () => {
       });
     });
 
-    test('clears embeddingRef to null when the patch deletes it (null = delete)', () => {
+    test('clears embeddingRef (to absent) when the patch deletes it (null = delete, RFC-7386)', () => {
       const existing = makeRecord({ embeddingRef: 'vec-1' });
       expect(policy.applyUpdate(existing, { embeddingRef: null })).toSucceedAndSatisfy((updated) => {
-        expect(updated.envelope.embeddingRef).toBeNull();
+        expect(updated.envelope.embeddingRef).toBeUndefined();
       });
     });
 
-    test('omits an undefined embeddingRef from the view and yields null', () => {
+    test('preserves an absent embeddingRef as absent on an unrelated update (hash-stable)', () => {
       const existing = makeRecord(); // no embeddingRef
+      expect(policy.applyUpdate(existing, { body: { text: 'revised' } })).toSucceedAndSatisfy((updated) => {
+        expect(updated.envelope.embeddingRef).toBeUndefined();
+      });
+    });
+
+    test('preserves an explicit null embeddingRef when the patch does not touch it', () => {
+      const existing = makeRecord({ embeddingRef: null });
       expect(policy.applyUpdate(existing, { body: { text: 'revised' } })).toSucceedAndSatisfy((updated) => {
         expect(updated.envelope.embeddingRef).toBeNull();
       });
