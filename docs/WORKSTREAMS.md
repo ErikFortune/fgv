@@ -128,6 +128,29 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `ts-agent-memory` 🔵
+
+**Status:** 🔵 in flight — commissioned 2026-06-25 (prioritized) on the PersonAIlity consumer ask. Phase A (design-triage: resolve OQ-11 + write-policy interface + domain-keyed identity mapping) starting; `design.md` is the Phase-A input.
+**Workflow shape:** design-triage-implement on a single integration branch `ts-agent-memory` off `release`. `design.md` is already Phase-A-grade, so Phase A is a focused fork-resolution pass against the consumer requirements, not a from-scratch design.
+**Substrate:** `.ai/tasks/active/agent-memory-exploration/` — `exploration.md`, `design.md`, `consumer-requirements-personaility.md`, `consumer-assessment-personaility.md` (currently on PR #495; fold into the integration branch and rename the task dir to `ts-agent-memory` at Phase-A start).
+**Package surface (new):** `libraries/ts-agent-memory` (`@fgv/ts-agent-memory`). Composes `@fgv/ts-json-base` (FileTree), `@fgv/ts-utils` (`Crc32Normalizer`, `RetainingRingBuffer`, conversion/validation, branded ids), `@fgv/ts-json` (`JsonEditor` for RFC-7386 merge-patch); `@fgv/ts-extras` (`callProviderEmbedding`) for the vector fast-follow only. Plus `.ai/instructions/LIBRARY_CAPABILITIES.md`.
+**Out-of-scope (consumer-owned per requirements §6):** three-tier compression pipeline, curator framework, working-memory composition, sentiment/epistemic *interpretation* (stored as opaque body payload), mnemonic/recall, actor/presence scoping, prompt-library integration, measurement. Also out of THIS build: the L2 agent-tool surface (`IAiClientTool` memory tools) and the L3 ingest orchestrator (designed, deferred — the consumer owns their pipeline).
+
+**Mission.** Ship `@fgv/ts-agent-memory` — the app-agnostic storage+retrieval substrate for agent memory and knowledge that PersonAIlity commissioned: a FileTree-backed markdown+frontmatter vault with a typed identity envelope, per-kind Converter-validated bodies (knowledge + experience families), attributed object edges (confidence/provenance/opt-in validity, cycle-safe), content-hash dedup, an injectable per-kind write-policy interface (admission + mutable-fields + JSON-Merge-Patch update), keyed-read + metadata-query retrieval whose interface is stable against a future semantic backend, and the optional-layer seams (vector / temporal / observe / qualifier-recall) each degrading loudly when unwired. **Full substrate commissioned; adoption is knowledge-first.**
+
+**Phase-A forks to resolve (blocking):** OQ-11 domain-keyed identity (`entityId` = the domain key; composite `(conversationId, turnIndex)` → filename-safe `id` + scope; orthogonal to temporal versioning) with a documented mapping; the `IWritePolicy` interface shape; merge-patch composition over `@fgv/ts-json` `JsonEditor`; reconcile entity-identity with the temporal-versioned layout; collapse OQ-10/OQ-13.
+
+**Acceptance criteria (consumer v1 §8 + repo gates):**
+- Both kind families registerable from one FileTree vault; bodies Converter-validated; no `any`.
+- Keyed read + metadata query (`Result`-returning); retrieval interface stable against a future semantic backend (no resignature).
+- Attributed-edge write (cycle-safe) + content-hash dedup on write.
+- Pluggable per-kind write policy accepting admission + mutable-field + merge-patch.
+- All public surface returns `Result`, validates via Converters, does I/O through FileTree.
+- OQ-11 resolved with a documented domain-keyed-identity mapping.
+- `rushx build` + `rushx lint` + `rushx test` (100% coverage) green in `ts-agent-memory`; `rushx fixlint` pre-commit; `code-reviewer` pass; api-extractor report generated.
+
+**Origin.** Promoted from `docs/FUTURE.md` on the PersonAIlity commission (2026-06-25); consumer ask captured in `consumer-requirements-personaility.md` + `consumer-assessment-personaility.md`. Strong validation: PersonAIlity stream-3 independently converged on the same vault model. Commissioned now (prioritized) to capture consumer-#1 adoption rather than let them fork a bespoke knowledge store.
+
 ### `private-key-storage` ✅
 
 **Status:** ✅ implemented + reviewed (PR #427, gates green) — ready for squash to `release`

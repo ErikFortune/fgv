@@ -237,6 +237,10 @@ The cross-provider `ai-assist-embeddings` primitive shipped (`AiAssist.callProvi
 
 ## Structured memory for agents (platform capability)
 
+> **PROMOTED 2026-06-25** → `docs/WORKSTREAMS.md` (`ts-agent-memory`) on the
+> PersonAIlity commission. This entry is retained for context; the stream is now
+> the live record.
+
 A structured-memory substrate for agents — an Obsidian-like graph (files + links +
 derived index) as the foundation for **both knowledge and distilled experience** —
 with optional layered capabilities (semantic/vector recall, temporal reasoning,
