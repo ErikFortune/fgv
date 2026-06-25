@@ -279,7 +279,7 @@ prioritization call — explicitly NOT gated on a consumer ask (Erik's
 platform-over-features direction, 2026-06-25). Promote to `docs/WORKSTREAMS.md` when
 prioritized; the fleshed design lets it start cold.
 
-**Reference:** `.ai/tasks/active/agent-memory-exploration/` — `exploration.md`
+**Reference:** `.ai/tasks/active/ts-agent-memory/` — `exploration.md`
 (design-space note + §9 refinement + §10 unified-substrate / L3 contract) and
 `design.md` (moderate-detail platform design). Floated package name
 `@fgv/ts-agent-memory`.
