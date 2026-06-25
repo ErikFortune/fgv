@@ -5,6 +5,7 @@
 
 export * from './retriever';
 export * from './recencyRetriever';
+export * from './linkTraversalRetriever';
 export * from './tagRetriever';
 export * from './structuredFilterRetriever';
 export * from './semanticRetriever';

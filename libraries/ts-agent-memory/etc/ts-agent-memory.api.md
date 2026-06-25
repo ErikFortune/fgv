@@ -46,6 +46,12 @@ export const Convert: {
 };
 
 // @public
+export type DedupScope = 'content' | 'entity';
+
+// @public
+export const DEFAULT_DEDUP_SCOPE: DedupScope;
+
+// @public
 export function defaultMemoryScopeEncoding(scope: MemoryScopeKey): Result<string>;
 
 // @public
@@ -130,6 +136,12 @@ export interface IIdentityCodecResult {
 export interface IIndexedMemoryRecord {
     readonly record: IMemoryRecord<unknown>;
     readonly scope: MemoryScopeKey;
+}
+
+// @public
+export interface IMemoryCapCullPolicyParams {
+    readonly maxRecords?: number;
+    readonly mutableFields: ReadonlyArray<string>;
 }
 
 // @public
@@ -306,6 +318,7 @@ export interface IVectorQueryHit {
 export interface IWritePolicy {
     admit(incoming: IMemoryRecord<unknown>, existing: ReadonlyArray<IMemoryRecord<unknown>>): Result<AdmissionDecision>;
     applyUpdate(existing: IMemoryRecord<unknown>, patch: Record<string, unknown>): Result<IMemoryRecord<unknown>>;
+    readonly dedupScope?: DedupScope;
     readonly mutableFields: ReadonlyArray<string>;
 }
 
@@ -328,6 +341,7 @@ export class KnowledgeLwwPolicy implements IWritePolicy {
     admit(__incoming: IMemoryRecord<unknown>, __existing: ReadonlyArray<IMemoryRecord<unknown>>): Result<AdmissionDecision>;
     applyUpdate(existing: IMemoryRecord<unknown>, patch: Record<string, unknown>): Result<IMemoryRecord<unknown>>;
     static create(): Result<KnowledgeLwwPolicy>;
+    readonly dedupScope: DedupScope;
     readonly mutableFields: ReadonlyArray<string>;
 }
 
@@ -335,10 +349,39 @@ export class KnowledgeLwwPolicy implements IWritePolicy {
 export function limitRecords(records: ReadonlyArray<IMemoryRecord<unknown>>, limit?: number): ReadonlyArray<IMemoryRecord<unknown>>;
 
 // @public
+export const LINK_TRAVERSAL_NO_SEED_MESSAGE: string;
+
+// @public
 export const LINK_TRAVERSAL_UNWIRED_MESSAGE: string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-memory" does not have an export "DEFAULT_HOPS"
+//
+// @public
+export class LinkTraversalRetriever implements IMemoryRetriever {
+    get capabilities(): IMemoryRetrieverCapabilities;
+    static create(index: IMemoryIndex): Result<LinkTraversalRetriever>;
+    retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+}
 
 // @public
 export type LinkType = Brand<string, 'LinkType'>;
+
+// @public
+export class LtmIdentityCodec implements IIdentityCodec {
+    decode(scope: MemoryScopeKey, encodedStem: string): Result<EntityId>;
+    encode(entityId: EntityId): Result<IIdentityCodecResult>;
+    static readonly scope: MemoryScopeKey;
+    verifyRoundTrip(scope: MemoryScopeKey, stem: string): Result<true>;
+}
+
+// @public
+export class MemoryCapCullPolicy implements IWritePolicy {
+    admit(__incoming: IMemoryRecord<unknown>, existing: ReadonlyArray<IMemoryRecord<unknown>>): Result<AdmissionDecision>;
+    applyUpdate(existing: IMemoryRecord<unknown>, patch: Record<string, unknown>): Result<IMemoryRecord<unknown>>;
+    static create(params: IMemoryCapCullPolicyParams): Result<MemoryCapCullPolicy>;
+    readonly dedupScope: DedupScope;
+    readonly mutableFields: ReadonlyArray<string>;
+}
 
 // @public
 export type MemoryId = Brand<string, 'MemoryId'>;
@@ -376,6 +419,15 @@ export class MemoryObservationStore implements IMemoryObserver {
 
 // @public
 export type MemoryScopeKey = Brand<string, 'MemoryScopeKey'>;
+
+// @public
+export class MtmIdentityCodec implements IIdentityCodec {
+    decode(scope: MemoryScopeKey, encodedStem: string): Result<EntityId>;
+    encode(entityId: EntityId): Result<IIdentityCodecResult>;
+    static readonly rootScopeSegment: string;
+    static readonly turnStemPrefix: string;
+    verifyRoundTrip(scope: MemoryScopeKey, stem: string): Result<true>;
+}
 
 // @public
 export const NON_SEMANTIC_CAPABILITIES: IMemoryRetrieverCapabilities;

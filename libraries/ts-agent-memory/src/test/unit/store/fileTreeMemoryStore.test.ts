@@ -19,8 +19,11 @@ import {
   IWritePolicy,
   Kind,
   KnowledgeIdentityCodec,
+  LtmIdentityCodec,
+  MemoryCapCullPolicy,
   MemoryId,
   MemoryScopeKey,
+  MtmIdentityCodec,
   Tag,
   envelopeConverter,
   joinFrontmatter
@@ -574,6 +577,144 @@ describe('FileTreeMemoryStore', () => {
       }).orThrow();
       const put = (await store.put(makeRecord({ id: 'fallback', body: 'x' }))).orThrow();
       expect(put.envelope.id).toBe('fallback');
+    });
+  });
+
+  describe('experience (memory) kinds — Phase C', () => {
+    const ltmKind: Kind = 'ltm' as Kind;
+    const mtmKind: Kind = 'mtm' as Kind;
+
+    /** A registry that gates the knowledge + LTM + MTM kind bodies (all strings here). */
+    function multiKindRegistry(): IBodyConverterRegistry {
+      const registry = BodyConverterRegistry.create().orThrow();
+      registry.register(knowledgeKind, Converters.string);
+      registry.register(ltmKind, Converters.string);
+      registry.register(mtmKind, Converters.string);
+      return registry;
+    }
+
+    const multiKindCodecs: ReadonlyMap<Kind, IIdentityCodec> = new Map<Kind, IIdentityCodec>([
+      [knowledgeKind, new KnowledgeIdentityCodec()],
+      [ltmKind, new LtmIdentityCodec()],
+      [mtmKind, new MtmIdentityCodec()]
+    ]);
+
+    /** Cap-cull policy for the MTM kind (entity-scoped dedup). */
+    function memoryPolicies(): ReadonlyMap<Kind, IWritePolicy> {
+      const capCull = MemoryCapCullPolicy.create({
+        maxRecords: 5,
+        mutableFields: ['body', 'tags', 'links', 'provenance', 'embeddingRef']
+      }).orThrow();
+      return new Map<Kind, IWritePolicy>([
+        [ltmKind, capCull],
+        [mtmKind, capCull]
+      ]);
+    }
+
+    function memoryStore(root?: FileTree.IMutableFileTreeDirectoryItem): FileTreeMemoryStore {
+      return FileTreeMemoryStore.create({
+        root: root ?? mutableRoot(),
+        registry: multiKindRegistry(),
+        codecs: multiKindCodecs,
+        writePolicies: memoryPolicies(),
+        clock
+      }).orThrow();
+    }
+
+    test('registers all three kind families from one FileTree vault', async () => {
+      const store = memoryStore();
+      (await store.put(makeRecord({ id: 'intro', kind: 'knowledge', body: 'k' }))).orThrow();
+      (await store.put(makeRecord({ id: 'conv-1', entityId: 'conv-1', kind: 'ltm', body: 'l' }))).orThrow();
+      (await store.put(makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'm' }))).orThrow();
+
+      expect(await store.get(knowledgeKind, 'intro' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.kind).toBe('knowledge');
+      });
+      expect(await store.get(ltmKind, 'conv-1' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.kind).toBe('ltm');
+      });
+      expect(await store.get(mtmKind, 'conv-1:5' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.id).toBe('turn-5');
+        expect(r?.envelope.entityId).toBe('conv-1:5');
+      });
+    });
+
+    test('MTM composite key persists at conversations/<id>/turn-<n> and round-trips a reload', async () => {
+      const root = mutableRoot();
+      const store = memoryStore(root);
+      (
+        await store.put(makeRecord({ id: 'turn-0', entityId: 'conv-x:0', kind: 'mtm', body: 'm0' }))
+      ).orThrow();
+
+      // A fresh store over the same root must re-index the MTM record (verifyRoundTrip
+      // exercises the multi-segment scope on load).
+      const reopened = memoryStore(root);
+      expect(await reopened.get(mtmKind, 'conv-x:0' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.id).toBe('turn-0');
+      });
+    });
+
+    test('entity-scoped dedup: two distinct entities with identical content both persist', async () => {
+      // Regression for the flagged collapse bug: turn-5 and turn-9 share the same
+      // { kind, body, links } but are distinct entities and must NOT collapse.
+      const store = memoryStore();
+      const five = (
+        await store.put(makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'identical' }))
+      ).orThrow();
+      const nine = (
+        await store.put(makeRecord({ id: 'turn-9', entityId: 'conv-1:9', kind: 'mtm', body: 'identical' }))
+      ).orThrow();
+
+      expect(five.envelope.id).toBe('turn-5');
+      expect(nine.envelope.id).toBe('turn-9');
+      expect(nine.envelope.id).not.toBe(five.envelope.id);
+
+      // Both are independently retrievable — neither collapsed into the other.
+      expect(await store.get(mtmKind, 'conv-1:5' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.id).toBe('turn-5');
+      });
+      expect(await store.get(mtmKind, 'conv-1:9' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.id).toBe('turn-9');
+      });
+      expect(await store.list({ kind: mtmKind })).toSucceedAndSatisfy((records) => {
+        expect(records).toHaveLength(2);
+      });
+    });
+
+    test('entity-scoped dedup: an identical re-put of the SAME entity is a no-op', async () => {
+      const store = memoryStore();
+      let firstSeq: number = -1;
+      expect(
+        await store.put(makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'same' }))
+      ).toSucceedAndSatisfy((r) => {
+        firstSeq = r.envelope.seq;
+      });
+      expect(
+        await store.put(makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'same' }))
+      ).toSucceedAndSatisfy((r) => {
+        expect(r.envelope.seq).toBe(firstSeq);
+      });
+    });
+
+    test('merge-patch updates the body of an existing memory entity (distinct content)', async () => {
+      const store = memoryStore();
+      let firstCreated: number = -1;
+      let firstSeq: number = -1;
+      expect(
+        await store.put(makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'v1' }))
+      ).toSucceedAndSatisfy((r) => {
+        firstCreated = r.envelope.created;
+        firstSeq = r.envelope.seq;
+      });
+      clockValue = 2000;
+      expect(
+        await store.put(makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'v2' }))
+      ).toSucceedAndSatisfy((r) => {
+        expect(r.body).toBe('v2');
+        expect(r.envelope.created).toBe(firstCreated);
+        expect(r.envelope.updated).toBe(2000);
+        expect(r.envelope.seq).toBe(firstSeq + 1);
+      });
     });
   });
 });
