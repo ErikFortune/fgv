@@ -6,6 +6,7 @@
 
 import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { JsonSchema } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
 
@@ -44,6 +45,9 @@ export const Convert: {
 };
 
 // @public
+export function defaultMemoryScopeEncoding(scope: MemoryScopeKey): Result<string>;
+
+// @public
 export const edgeConverter: Converter<IEdge>;
 
 // @public
@@ -54,6 +58,16 @@ export const envelopeConverter: Converter<IMemoryEnvelope>;
 
 // @public
 export const envelopeYamlConverter: Converter<IMemoryEnvelope>;
+
+// @public
+export class FileTreeMemoryStore implements IMemoryStore {
+    static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore>;
+    delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+    get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
+    getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
+    list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+    put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
+}
 
 // @public
 export interface IBodyConverterRegistry {
@@ -75,6 +89,17 @@ export interface IEdge {
 }
 
 // @public
+export interface IFileTreeMemoryStoreCreateParams {
+    readonly clock?: () => number;
+    readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
+    readonly defaultCodec?: IIdentityCodec;
+    readonly registry: IBodyConverterRegistry;
+    readonly root: FileTree.IMutableFileTreeDirectoryItem;
+    readonly scopeEncoding?: (scope: MemoryScopeKey) => Result<string>;
+    readonly writePolicies?: ReadonlyMap<Kind, IWritePolicy>;
+}
+
+// @public
 export interface IIdentityCodec {
     decode(scope: MemoryScopeKey, encodedStem: string): Result<EntityId>;
     encode(entityId: EntityId): Result<IIdentityCodecResult>;
@@ -85,6 +110,12 @@ export interface IIdentityCodec {
 export interface IIdentityCodecResult {
     readonly idStem: string;
     readonly isVersioned: boolean;
+    readonly scope: MemoryScopeKey;
+}
+
+// @public
+export interface IIndexedMemoryRecord {
+    readonly record: IMemoryRecord<unknown>;
     readonly scope: MemoryScopeKey;
 }
 
@@ -111,9 +142,37 @@ export interface IMemoryFileParts {
 }
 
 // @public
+export interface IMemoryIndex {
+    backlinks(target: MemoryId): ReadonlyArray<MemoryId>;
+    byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>>;
+    byRecency(): ReadonlyArray<IMemoryRecord<unknown>>;
+    byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>>;
+    entries(): ReadonlyArray<IIndexedMemoryRecord>;
+    patch(op: MemoryIndexPatchOp, entry: IIndexedMemoryRecord): Result<IIndexedMemoryRecord>;
+    rebuild(entries: ReadonlyArray<IIndexedMemoryRecord>): Result<number>;
+}
+
+// @public
 export interface IMemoryRecord<TBody = unknown> {
     readonly body: TBody;
     readonly envelope: IMemoryEnvelope;
+}
+
+// @public
+export interface IMemoryStore {
+    delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+    get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
+    getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
+    list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+    put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
+}
+
+// @public
+export interface IMemoryStoreListFilter {
+    readonly asOf?: number;
+    readonly kind?: Kind;
+    readonly scope?: MemoryScopeKey;
+    readonly tag?: Tag;
 }
 
 // @public
@@ -166,6 +225,21 @@ export type LinkType = Brand<string, 'LinkType'>;
 
 // @public
 export type MemoryId = Brand<string, 'MemoryId'>;
+
+// @public
+export class MemoryIndex implements IMemoryIndex {
+    backlinks(target: MemoryId): ReadonlyArray<MemoryId>;
+    byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>>;
+    byRecency(): ReadonlyArray<IMemoryRecord<unknown>>;
+    byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>>;
+    static create(): Result<MemoryIndex>;
+    entries(): ReadonlyArray<IIndexedMemoryRecord>;
+    patch(op: MemoryIndexPatchOp, entry: IIndexedMemoryRecord): Result<IIndexedMemoryRecord>;
+    rebuild(entries: ReadonlyArray<IIndexedMemoryRecord>): Result<number>;
+}
+
+// @public
+export type MemoryIndexPatchOp = 'put' | 'delete';
 
 // @public
 export type MemoryScopeKey = Brand<string, 'MemoryScopeKey'>;
