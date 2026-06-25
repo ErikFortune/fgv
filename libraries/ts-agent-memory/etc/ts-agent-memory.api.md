@@ -8,6 +8,7 @@ import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonSchema } from '@fgv/ts-json-base';
+import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 
 // @public
@@ -70,6 +71,16 @@ export class FileTreeMemoryStore implements IMemoryStore {
 }
 
 // @public
+export function guardRetrieverCapabilities(query: IMemoryQuery, capabilities: IMemoryRetrieverCapabilities): Result<true>;
+
+// @public
+export class HybridRetriever implements IMemoryRetriever {
+    get capabilities(): IMemoryRetrieverCapabilities;
+    static create(retrievers: ReadonlyArray<IMemoryRetriever>, mergeStrategy: IMergeStrategy): Result<HybridRetriever>;
+    retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+}
+
+// @public
 export interface IBodyConverterRegistry {
     convert(kind: Kind, body: unknown): Result<unknown>;
     getConverter(kind: Kind): Result<Converter<unknown>>;
@@ -93,6 +104,9 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly clock?: () => number;
     readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
     readonly defaultCodec?: IIdentityCodec;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-memory" does not have an export "Logging"
+    readonly logger?: Logging.ILogger;
+    readonly observers?: ReadonlyArray<IMemoryObserver>;
     readonly registry: IBodyConverterRegistry;
     readonly root: FileTree.IMutableFileTreeDirectoryItem;
     readonly scopeEncoding?: (scope: MemoryScopeKey) => Result<string>;
@@ -153,9 +167,74 @@ export interface IMemoryIndex {
 }
 
 // @public
+export interface IMemoryObservationQuery {
+    readonly kind?: Kind;
+    readonly limit?: number;
+    readonly outcome?: MemoryObservationOutcome;
+    readonly phase?: MemoryObservationPhase;
+    readonly scope?: MemoryScopeKey;
+    readonly since?: number;
+    readonly sinceSeq?: number;
+    readonly until?: number;
+}
+
+// @public
+export interface IMemoryObservationRecord {
+    readonly error?: string;
+    readonly id?: MemoryId;
+    readonly kind?: Kind;
+    readonly outcome: MemoryObservationOutcome;
+    readonly phase: MemoryObservationPhase;
+    readonly provenance?: IProvenance;
+    readonly querySnapshot?: Readonly<Record<string, unknown>>;
+    readonly scope?: MemoryScopeKey;
+    readonly seq: number;
+    readonly timestamp: number;
+}
+
+// @public
+export interface IMemoryObservationStoreCreateParams {
+    readonly maxRecords?: number;
+}
+
+// @public
+export interface IMemoryObserver {
+    readonly fireAndForget?: boolean;
+    observe(record: IMemoryObservationRecord): Promise<Result<unknown>>;
+}
+
+// @public
+export interface IMemoryQuery {
+    readonly asOf?: number;
+    readonly filter?: (record: IMemoryRecord<unknown>) => boolean;
+    readonly hops?: number;
+    readonly kind?: Kind;
+    readonly limit?: number;
+    readonly linkedFrom?: MemoryId;
+    readonly linkedTo?: MemoryId;
+    readonly scope?: MemoryScopeKey;
+    readonly semantic?: string;
+    readonly tag?: Tag;
+    readonly topK?: number;
+}
+
+// @public
 export interface IMemoryRecord<TBody = unknown> {
     readonly body: TBody;
     readonly envelope: IMemoryEnvelope;
+}
+
+// @public
+export interface IMemoryRetriever {
+    readonly capabilities: IMemoryRetrieverCapabilities;
+    retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+}
+
+// @public
+export interface IMemoryRetrieverCapabilities {
+    readonly supportsLinkTraversal: boolean;
+    readonly supportsSemanticRecall: boolean;
+    readonly supportsTemporalQuery: boolean;
 }
 
 // @public
@@ -176,6 +255,14 @@ export interface IMemoryStoreListFilter {
 }
 
 // @public
+export interface IMergeStrategy {
+    merge(resultSets: ReadonlyArray<ReadonlyArray<IMemoryRecord<unknown>>>): Result<ReadonlyArray<IMemoryRecord<unknown>>>;
+}
+
+// @public
+export function indexedRecordMatchesQuery(entry: IIndexedMemoryRecord, query: IMemoryQuery): boolean;
+
+// @public
 export interface IProvenance {
     readonly [key: string]: unknown;
     readonly by?: string;
@@ -186,9 +273,34 @@ export interface IProvenance {
 }
 
 // @public
+export interface ISemanticBackend {
+    readonly embedQuery: QueryEmbedder;
+    readonly vectorIndex: IVectorIndex;
+}
+
+// @public
+export interface ISemanticRetrieverCreateParams {
+    readonly backend?: ISemanticBackend;
+    readonly index: IMemoryIndex;
+}
+
+// @public
 export interface ITemporalBlock {
     readonly invalid_at?: number | null;
     readonly valid_at?: number;
+}
+
+// @public
+export interface IVectorIndex {
+    add(id: MemoryId, vector: ReadonlyArray<number>): Promise<Result<string>>;
+    query(vector: ReadonlyArray<number>, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    remove(id: MemoryId): Promise<Result<MemoryId>>;
+}
+
+// @public
+export interface IVectorQueryHit {
+    readonly id: MemoryId;
+    readonly score: number;
 }
 
 // @public
@@ -221,6 +333,9 @@ export class KnowledgeLwwPolicy implements IWritePolicy {
 }
 
 // @public
+export function limitRecords(records: ReadonlyArray<IMemoryRecord<unknown>>, limit?: number): ReadonlyArray<IMemoryRecord<unknown>>;
+
+// @public
 export type LinkType = Brand<string, 'LinkType'>;
 
 // @public
@@ -242,7 +357,28 @@ export class MemoryIndex implements IMemoryIndex {
 export type MemoryIndexPatchOp = 'put' | 'delete';
 
 // @public
+export type MemoryObservationOutcome = 'success' | 'failure';
+
+// @public
+export type MemoryObservationPhase = 'read' | 'write' | 'delete' | 'retrieve';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-memory" does not have an export "Collections"
+//
+// @public
+export class MemoryObservationStore implements IMemoryObserver {
+    clear(): void;
+    static create(params?: IMemoryObservationStoreCreateParams): Result<MemoryObservationStore>;
+    get lastSeq(): number;
+    observe(record: IMemoryObservationRecord): Promise<Result<unknown>>;
+    query(criteria?: IMemoryObservationQuery): ReadonlyArray<IMemoryObservationRecord>;
+    get size(): number;
+}
+
+// @public
 export type MemoryScopeKey = Brand<string, 'MemoryScopeKey'>;
+
+// @public
+export const NON_SEMANTIC_CAPABILITIES: IMemoryRetrieverCapabilities;
 
 // @public
 export function parseMemoryFile(raw: string, registry: IBodyConverterRegistry): Result<IMemoryRecord<unknown>>;
@@ -254,16 +390,65 @@ export const provenanceConverter: Converter<IProvenance>;
 export type ProvenanceSource = 'agent' | 'host-ingest' | 'human' | (string & {});
 
 // @public
+export type QueryEmbedder = (text: string) => Promise<Result<ReadonlyArray<number>>>;
+
+// @public
+export function recencyCompare(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number;
+
+// @public
+export class RecencyRetriever implements IMemoryRetriever {
+    get capabilities(): IMemoryRetrieverCapabilities;
+    static create(index: IMemoryIndex): Result<RecencyRetriever>;
+    retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+}
+
+// @public
+export class ScoreUnionMergeStrategy implements IMergeStrategy {
+    static create(): Result<ScoreUnionMergeStrategy>;
+    merge(resultSets: ReadonlyArray<ReadonlyArray<IMemoryRecord<unknown>>>): Result<ReadonlyArray<IMemoryRecord<unknown>>>;
+}
+
+// @public
+export function selectByQuery(entries: ReadonlyArray<IIndexedMemoryRecord>, query: IMemoryQuery): IMemoryRecord<unknown>[];
+
+// @public
+export const SEMANTIC_UNWIRED_MESSAGE: string;
+
+// @public
+export class SemanticRetriever implements IMemoryRetriever {
+    get capabilities(): IMemoryRetrieverCapabilities;
+    static create(params: ISemanticRetrieverCreateParams): Result<SemanticRetriever>;
+    retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+}
+
+// @public
 export function serializeMemoryFile(envelope: IMemoryEnvelope, body: string): Result<string>;
 
 // @public
 export function splitFrontmatter(raw: string): Result<IMemoryFileParts>;
 
 // @public
+export class StructuredFilterRetriever implements IMemoryRetriever {
+    get capabilities(): IMemoryRetrieverCapabilities;
+    static create(index: IMemoryIndex): Result<StructuredFilterRetriever>;
+    retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+}
+
+// @public
 export type Tag = Brand<string, 'Tag'>;
 
 // @public
+export class TagRetriever implements IMemoryRetriever {
+    get capabilities(): IMemoryRetrieverCapabilities;
+    static create(index: IMemoryIndex): Result<TagRetriever>;
+    retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+}
+
+// @public
 export const temporalConverter: Converter<ITemporalBlock>;
+
+// @public
+export function temporalUnwiredMessage(kind?: Kind): string;
 
 // (No @packageDocumentation comment for this package)
 

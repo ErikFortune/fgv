@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Hash, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+import { Hash, Logging, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   AdmissionDecision,
@@ -11,6 +11,7 @@ import {
   IIdentityCodec,
   IMemoryEnvelope,
   IMemoryRecord,
+  IProvenance,
   IWritePolicy,
   Kind,
   KnowledgeLwwPolicy,
@@ -20,6 +21,12 @@ import {
 } from '../types';
 import { IBodyConverterRegistry as IRegistry, parseMemoryFile, serializeMemoryFile } from '../converters';
 import { IIndexedMemoryRecord, IMemoryIndex, MemoryIndex } from '../index';
+import {
+  IMemoryObservationRecord,
+  IMemoryObserver,
+  MemoryObservationOutcome,
+  MemoryObservationPhase
+} from '../observe';
 import { defaultMemoryScopeEncoding } from './scopeEncoding';
 
 /** The on-disk extension for a memory record file. */
@@ -100,9 +107,23 @@ export interface IFileTreeMemoryStoreCreateParams {
   readonly scopeEncoding?: (scope: MemoryScopeKey) => Result<string>;
   /**
    * Transaction-time clock. Defaults to `Date.now`. Injectable so tests can
-   * make `created` / `updated` deterministic.
+   * make `created` / `updated` deterministic. Also stamps observation
+   * `timestamp`s.
    */
   readonly clock?: () => number;
+  /**
+   * Optional observers fired once per public `get` / `put` / `delete` call.
+   * Purely additive — when absent, no observation records are produced and the
+   * store behaves exactly as it did without this parameter. Observer errors
+   * never affect the store operation (swallowed, logged to {@link
+   * IFileTreeMemoryStoreCreateParams.logger | logger} at `warn`).
+   */
+  readonly observers?: ReadonlyArray<IMemoryObserver>;
+  /**
+   * Diagnostic logger for swallowed observer failures. Defaults to a
+   * {@link Logging.NoOpLogger}.
+   */
+  readonly logger?: Logging.ILogger;
 }
 
 interface IInternalParams {
@@ -115,6 +136,8 @@ interface IInternalParams {
   readonly scopeEncoding: (scope: MemoryScopeKey) => Result<string>;
   readonly clock: () => number;
   readonly index: IMemoryIndex;
+  readonly observers: ReadonlyArray<IMemoryObserver>;
+  readonly logger: Logging.ILogger;
 }
 
 /**
@@ -140,9 +163,18 @@ export class FileTreeMemoryStore implements IMemoryStore {
   private readonly _clock: () => number;
   private readonly _index: IMemoryIndex;
   private readonly _hasher: Hash.Crc32Normalizer;
+  private readonly _observers: ReadonlyArray<IMemoryObserver>;
+  private readonly _logger: Logging.ILogger;
 
   /** Monotonic write counter; incremented inside the write-lock on each put. */
   private _seq: number;
+  /**
+   * Monotonic observation-sequence counter. A distinct authority from `_seq`
+   * (the envelope write counter): it numbers the audit stream so a single
+   * {@link MemoryObservationStore} fed by this store sees strictly increasing
+   * `seq`, satisfying the ring buffer's cursor contract.
+   */
+  private _observationSeq: number;
   /** Tail of the write-lock promise chain that serializes mutating ops. */
   private _writeTail: Promise<unknown>;
 
@@ -175,7 +207,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
     this._clock = params.clock;
     this._index = params.index;
     this._hasher = new Hash.Crc32Normalizer();
+    this._observers = params.observers;
+    this._logger = params.logger;
     this._seq = 0;
+    this._observationSeq = 0;
     this._writeTail = Promise.resolve();
   }
 
@@ -196,7 +231,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
           defaultPolicy,
           scopeEncoding: params.scopeEncoding ?? defaultMemoryScopeEncoding,
           clock: params.clock ?? Date.now,
-          index
+          index,
+          observers: params.observers ?? [],
+          logger: params.logger ?? new Logging.NoOpLogger()
         });
         return store._initialIndex().onSuccess(() => succeed(store));
       })
@@ -205,7 +242,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   /** {@inheritDoc IMemoryStore.get} */
   public async get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>> {
-    return this._codecFor(kind).onSuccess((codec) =>
+    const result: Result<IMemoryRecord<unknown> | undefined> = this._codecFor(kind).onSuccess((codec) =>
       codec.encode(entityId).onSuccess((addr) => {
         if (addr.isVersioned) {
           return fail(`memory get '${entityId}': versioned/temporal layout not yet supported`);
@@ -213,6 +250,12 @@ export class FileTreeMemoryStore implements IMemoryStore {
         return this._readRecord(addr.scope, addr.idStem);
       })
     );
+    await this._fireObservation('read', kind, entityId, {
+      outcome: result.isSuccess() ? 'success' : 'failure',
+      id: result.isSuccess() ? result.value?.envelope.id : undefined,
+      error: result.isFailure() ? result.message : undefined
+    });
+    return result;
   }
 
   /** {@inheritDoc IMemoryStore.getById} */
@@ -245,12 +288,25 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   /** {@inheritDoc IMemoryStore.put} */
   public async put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>> {
-    return this._enqueue(() => this._putLocked(record));
+    const result: Result<IMemoryRecord<unknown>> = await this._enqueue(() => this._putLocked(record));
+    await this._fireObservation('write', record.envelope.kind, record.envelope.entityId, {
+      outcome: result.isSuccess() ? 'success' : 'failure',
+      id: result.isSuccess() ? result.value.envelope.id : record.envelope.id,
+      provenance: record.envelope.provenance,
+      error: result.isFailure() ? result.message : undefined
+    });
+    return result;
   }
 
   /** {@inheritDoc IMemoryStore.delete} */
   public async delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>> {
-    return this._enqueue(() => this._deleteLocked(kind, entityId));
+    const result: Result<MemoryId> = await this._enqueue(() => this._deleteLocked(kind, entityId));
+    await this._fireObservation('delete', kind, entityId, {
+      outcome: result.isSuccess() ? 'success' : 'failure',
+      id: result.isSuccess() ? result.value : undefined,
+      error: result.isFailure() ? result.message : undefined
+    });
+    return result;
   }
 
   /**
@@ -264,6 +320,71 @@ export class FileTreeMemoryStore implements IMemoryStore {
       () => undefined
     );
     return result;
+  }
+
+  /**
+   * Build and fan out one observation record for a completed op. A no-op when no
+   * observers are wired (the additive-default path pays nothing). The store is
+   * the seq authority — it mints `seq` / `timestamp` so every observer sees the
+   * same record. The scope is resolved best-effort via the codec.
+   */
+  private async _fireObservation(
+    phase: MemoryObservationPhase,
+    kind: Kind,
+    entityId: EntityId,
+    details: {
+      readonly outcome: MemoryObservationOutcome;
+      readonly id?: MemoryId;
+      readonly provenance?: IProvenance;
+      readonly error?: string;
+    }
+  ): Promise<void> {
+    if (this._observers.length === 0) {
+      return;
+    }
+    const record: IMemoryObservationRecord = {
+      seq: ++this._observationSeq,
+      timestamp: this._clock(),
+      phase,
+      scope: this._scopeBestEffort(kind, entityId),
+      id: details.id,
+      kind,
+      outcome: details.outcome,
+      error: details.error,
+      provenance: details.provenance
+    };
+    const awaited: Promise<void>[] = [];
+    for (const observer of this._observers) {
+      if (observer.fireAndForget === true) {
+        // Intentionally not awaited: a fire-and-forget observer must not extend
+        // the store op's latency. `_safeObserve` swallows internally; the
+        // `.catch` keeps the detached promise from being flagged as floating.
+        this._safeObserve(observer, record).catch(() => undefined);
+      } else {
+        awaited.push(this._safeObserve(observer, record));
+      }
+    }
+    await Promise.all(awaited);
+  }
+
+  /** Invoke one observer, swallowing any failure or throw (logged at `warn`). */
+  private async _safeObserve(observer: IMemoryObserver, record: IMemoryObservationRecord): Promise<void> {
+    try {
+      const observed: Result<unknown> = await observer.observe(record);
+      if (observed.isFailure()) {
+        this._logger.warn(`memory observer failed (swallowed): ${observed.message}`);
+      }
+    } catch (error) {
+      this._logger.warn(`memory observer threw (swallowed): ${String(error)}`);
+    }
+  }
+
+  /** Resolve a scope for an observation, best-effort (undefined when unresolvable). */
+  private _scopeBestEffort(kind: Kind, entityId: EntityId): MemoryScopeKey | undefined {
+    return this._codecFor(kind)
+      .onSuccess((codec) => codec.encode(entityId))
+      .onSuccess((addr) => succeed(addr.scope))
+      .orDefault();
   }
 
   private async _putLocked(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>> {
