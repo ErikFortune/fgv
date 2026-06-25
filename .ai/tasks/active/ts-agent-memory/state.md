@@ -25,3 +25,37 @@
 ## Open for orchestrator (next)
 - Decompose Phase B by dependency tier (avoid the single-agent big-bang that drifted on ts-prompt-assist #359): likely B0 scaffold+types+converters → B1 store+index → B2 retrieve+observe+vector-seam, each reviewed before the next.
 - Note for Phase B implementer: design-lock §5.3 `MemoryCapCullPolicy.applyUpdate` snippet muddles body-vs-envelope merge target — illustrative only; pin the exact merge surface (mutable **body** fields) in implementation; code-reviewer to confirm.
+
+## Phase B0 — scaffold + types + converters ✅ (2026-06-25)
+
+**Branch:** `claude/ts-agent-memory-b0` (off integration branch `ts-agent-memory`); PR target = `ts-agent-memory`.
+
+**Scope shipped:** Rush project scaffold for `libraries/ts-agent-memory` (`@fgv/ts-agent-memory`) + the `types` and `converters` packlets. No store/index/retrieve/observe/vector (later tiers). No file I/O.
+
+**Files shipped:**
+- Scaffold: `rush.json` entry; `package.json` (deps `@fgv/ts-utils`, `@fgv/ts-json-base`, `@fgv/ts-json`, `@fgv/ts-extras` via `rush add`; `sideEffects: false`); `tsconfig.json`, `config/{api-extractor,jest.config,rig}.json`, `eslint.config.js`, `LICENSE`, `README.md` (all mirrored from ts-prompt-assist); `etc/ts-agent-memory.api.md` (api-extractor report, committed).
+- `src/packlets/types/`: `ids.ts` (branded `MemoryId`/`EntityId`/`Kind`/`Tag`/`MemoryScopeKey`/`LinkType` + `Convert` constants), `envelope.ts` (`IMemoryEnvelope` incl. `seq`/`temporal?`/`embeddingRef?`, `IEdge`, `ITemporalBlock`, `IProvenance`, `IMemoryRecord<TBody>`), `identityCodec.ts` (`IIdentityCodec` + `IIdentityCodecResult` + `KnowledgeIdentityCodec` + exported `assertPortableFilenameStem`), `writePolicy.ts` (`IWritePolicy`, `AdmissionDecision`, `KnowledgeLwwPolicy`), `index.ts`.
+- `src/packlets/converters/`: `bodyConverterRegistry.ts` (`IBodyConverterRegistry` + `BodyConverterRegistry`), `envelopeConverter.ts` (provenance/edge/temporal/envelope converters + `splitFrontmatter`/`joinFrontmatter`/`parseMemoryFile`/`serializeMemoryFile`), `index.ts`.
+- `src/index.ts`; tests under `src/test/unit/{types,converters}/` (97 tests).
+
+**Gates:** `rushx build` ✅, `rushx lint` ✅ (0 warnings), `rushx test` ✅ 100% coverage (stmts/branch/funcs/lines), `rushx fixlint` run pre-commit, api-extractor report generated + committed (0 unresolved-link warnings). No `any`; all fallible ops return `Result`; all `unknown`→typed via Converters.
+
+**Deviations / clarifications from design-lock (with rationale):**
+1. **`KnowledgeLwwPolicy.applyUpdate` merge surface pinned (resolves the orchestrator's body-vs-envelope flag).** The design-lock §5.3 snippet read mutable fields off the record root (`existing['tags']` etc.) while those fields live on `existing.envelope`. Pinned decision: project each declared mutable field from its **canonical location** (`body` from the body; `tags`/`links`/`provenance`/`embeddingRef` from the envelope) into one record-level JSON view, run the RFC-7386 merge over that view, then rebuild. `body`/`tags`/`links`/`provenance` are required (a patch may not delete them → loud fail); `embeddingRef` is optional (a `null` patch clears it). The orchestrator's note said "mutable **body** fields" referring to the Phase-C `MemoryCapCullPolicy` (whose `mutableMemoryFields` are body-internal); knowledge LWW's design-locked field list is genuinely mixed record-level, so the projection handles both axes.
+2. **Two `JsonEditor` instances** in `KnowledgeLwwPolicy` (one default-options clone editor, one merge-patch editor) so the persisted record is never mutated in place and a `null` `embeddingRef` survives the clone step before the patch applies. Merge options per design-lock §5.1: `{ nullAsDelete: true, arrayMergeBehavior: 'replace' }`, rules `[]`.
+3. **`applyUpdate` does NOT stamp `updated`/`seq`.** Design-lock §5.3 snippet set `updated: Date.now()` in the policy; pinned decision leaves transaction-time metadata (`updated`/`seq`) store-owned (per §2.5 + §9.1.3) so the policy stays deterministic/pure. The store (B1) stamps them on write.
+4. **`assertPortableFilenameStem` exported** from the types packlet (mirrors `ts-prompt-assist/scopeEncoding`'s POSIX-portable + reserved-Windows-device contract) so the Phase-C LTM/MTM codecs reuse the exact escaping contract.
+5. **`IIdentityCodec.verifyRoundTrip` idStem-mismatch branch is `c8 ignore`d** in `KnowledgeIdentityCodec` — for an identity codec `encode(decode(stem)).idStem` always equals `stem` when both succeed, so the guard is unreachable here; it exists for the non-identity Phase-C codecs. Justified inline.
+6. **`IBodyConverterRegistry.getConverter` added** (design-lock §2.6 prose mentioned it but omitted it from the code block; task scope listed it). Returns `Result<Converter<unknown>>`.
+7. **`register`/`registerSchema` return `void`** (per design-lock §2.6 signature) — non-fallible mutators (Map.set semantics), not a `Result<void>` anti-pattern.
+
+**code-reviewer:** run on the final diff — **Approved with advisory items; no P1.** Dispositions:
+- **P2-2b (fixed):** `KnowledgeLwwPolicy._rebuild` flipped an originally-absent `embeddingRef` from `undefined`→`null` on any update, which would destabilize the store's content-hash. Changed the absent-in-merged case to restore `undefined` (RFC-7386 delete → absent), so an absent `embeddingRef` round-trips hash-stably; an explicit `null` is preserved only when present. Updated 3 tests (delete→absent, absent-stays-absent, explicit-null-preserved).
+- **P2-2e (fixed):** added a boundary test for the 0-suffixed reserved Windows device variants (`COM0`/`LPT0`/`COM9`).
+- **P2-2a (dispositioned):** per-instance `JsonEditor` pair (vs. the design-lock module singleton) is intentional — avoids shared mutable state across stores/tests; construction cost is negligible.
+- **P2-2c (dispositioned):** `registerSchema` uses `schema.convert` via `Converters.generic`; `convert`/`validate` route through the same logic for schema validators. No change.
+- **P2-2d (dispositioned):** `serializeMemoryFile` emits `seq`/`contentHash` into frontmatter — by design; `seq` assignment + hash recomputation are store-owned (B1), flagged for the store stream.
+- **P2-2f (dispositioned):** `splitFrontmatter` trims the delimiter line before comparison (lenient `---` match) — conventional frontmatter behavior; the first `---` after the opener legitimately closes the block. No change.
+- **P3 items (dispositioned):** `provenanceConverter`/`edgeConverter`/`temporalConverter` are intentionally `@public` (consumers embed provenance/edges in custom body converters); the two acknowledged casts were assessed justified (cycle constraint; structural restoration of already-validated data via the prescribed `as unknown as T` form).
+
+Post-fix gates re-run green: `rushx build`/`lint`/`test` ✅, 100% coverage (99 tests), api-extractor report unchanged (no public-signature change).
