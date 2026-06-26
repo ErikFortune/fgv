@@ -591,18 +591,17 @@ export class FileTreeMemoryStore implements IMemoryStore {
     if (decision.decision === 'reject') {
       return fail(`memory put: rejected by policy: ${decision.reason}`);
     }
-    const evicted: ReadonlyArray<MemoryId> = decision.decision === 'cull-oldest' ? decision.evict : [];
     return this._buildRecord(record, body, existing, policy, hash)
       .thenOnSuccess((built) => this._embedOnWrite(built))
       .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, idStem))
       .thenOnSuccess(async (persisted) => {
-        const evictResult: Result<true> = this._applyEvictions(decision, scope);
-        if (evictResult.isFailure()) {
-          return fail(evictResult.message);
-        }
-        // Best-effort: prune the evicted cohort's vectors after their files are
-        // gone. A removal failure is logged, never fatal (the record store has
-        // already committed the eviction).
+        // Everything after the authoritative `_persist` commit is best-effort and
+        // never turns a committed write into a `Failure`:
+        //   - a cull-oldest eviction that fails is logged (the per-(scope,kind)
+        //     cap may be transiently exceeded; the next write's admission restores
+        //     it), and only the successfully-evicted ids flow onward;
+        //   - vector pruning of the evicted cohort is likewise best-effort.
+        const evicted: ReadonlyArray<MemoryId> = this._applyEvictions(decision, scope);
         await this._removeEvictedVectors(evicted);
         return succeed({ record: persisted, evicted });
       });
@@ -643,12 +642,29 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return succeed({ envelope: { ...built.envelope, embeddingRef: added.value }, body: built.body });
   }
 
-  /** Evict the records named by a `cull-oldest` decision (`accept` is a no-op). */
-  private _applyEvictions(decision: AdmissionDecision, scope: MemoryScopeKey): Result<true> {
-    if (decision.decision === 'cull-oldest') {
-      return mapResults(decision.evict.map((id) => this._evict(scope, id))).onSuccess(() => succeed(true));
+  /**
+   * Evict the records named by a `cull-oldest` decision, best-effort. Runs only
+   * after the authoritative `_persist`, so a failed eviction is logged (never
+   * fatal) and the cap self-corrects on the next admission. Returns the ids that
+   * were actually evicted (so observations / vector pruning cover only those).
+   * `accept` / `reject` decisions evict nothing.
+   */
+  private _applyEvictions(decision: AdmissionDecision, scope: MemoryScopeKey): ReadonlyArray<MemoryId> {
+    if (decision.decision !== 'cull-oldest') {
+      return [];
     }
-    return succeed(true);
+    const evicted: MemoryId[] = [];
+    for (const id of decision.evict) {
+      const result: Result<MemoryId> = this._evict(scope, id);
+      if (result.isSuccess()) {
+        evicted.push(result.value);
+      } else {
+        this._warnSwallowed(
+          `memory put: best-effort eviction of '${id}' failed (cap may be transiently exceeded; restored on the next write): ${result.message}`
+        );
+      }
+    }
+    return evicted;
   }
 
   /** Best-effort vector removal for each evicted record (never fails the put). */

@@ -144,3 +144,27 @@ Post-fix gates: `heft build` (+ api-extractor, no surface drift) clean; `heft li
 
 Final gates after the best-effort redesign: `heft build` + api-extractor (no surface drift), `heft
 lint` clean, `heft test` **317 tests, 100% coverage**.
+
+#### CodeRabbit round 3 (on the best-effort commits)
+
+The three round-1 Major findings were confirmed `✅ Addressed`. Round 3 surfaced:
+
+- **`put` returns `Failure` after a committed write if a cap-cull eviction fails** (Major, new) →
+  **fixed**: `_applyEvictions` is now best-effort — it runs only after the authoritative `_persist`,
+  logs an eviction failure via `_warnSwallowed` (the `(scope,kind)` cap may transiently exceed by one;
+  the next write's admission restores it), and returns only the successfully-evicted ids (so
+  observations + vector pruning cover only those). A committed `put` never fails on cleanup. This is
+  strictly safer than CodeRabbit's alternative (evict-before-persist), which would delete old records
+  before the replacement is durable — violating B2's persist-then-evict rule. Test updated:
+  eviction-of-a-missing-record now asserts the put **succeeds** + the failure is logged.
+- **Embed/`add` runs before `_persist`** (Major, Duplicate) → **dispositioned (kept).** This is the
+  irreducible residual of stamping the index-returned `embeddingRef` in a single durable write: under
+  the endorsed best-effort model, embed+add must precede the one `_persist` so the ref lands on disk,
+  OR `embeddingRef` becomes a second-write (untestable failure branch) / a vestigial set-only-on-return
+  hint. The residual — a `_persist` failure *after* a successful same-id `add` — is near-unreachable on
+  the in-memory/git FileTree backends (the only failure points are `Yaml.yamlStringify` and a mutable
+  FileTree write, neither of which realistically fails for a valid envelope) and self-heals via
+  `rebuild` (the vector index is the embedded-truth). Documented inline on `_admitWrite`.
+
+Final gates after round 3: `heft build` + api-extractor (no drift), `heft lint` clean, `heft test`
+**317 tests, 100% coverage**.
