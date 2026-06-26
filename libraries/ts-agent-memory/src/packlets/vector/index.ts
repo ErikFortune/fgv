@@ -4,3 +4,4 @@
  */
 
 export * from './vectorIndex';
+export * from './inMemoryCosineIndex';

@@ -299,17 +299,15 @@ class FakeVectorIndex implements IVectorIndex {
   public remove(id: MemoryId): Promise<Result<MemoryId>> {
     return Promise.resolve(succeed(id));
   }
-  public query(
-    __vector: ReadonlyArray<number>,
-    topK: number
-  ): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
+  public query(__vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
     this.lastTopK = topK;
     return Promise.resolve(this._failQuery ? fail('vector backend down') : succeed(this._hits));
   }
 }
 
 describe('SemanticRetriever', () => {
-  const okEmbed = (): Promise<Result<ReadonlyArray<number>>> => Promise.resolve(succeed([0.1, 0.2]));
+  const okEmbed = (): Promise<Result<Float32Array>> =>
+    Promise.resolve(succeed(Float32Array.from([0.1, 0.2])));
 
   test('reports supportsSemanticRecall=false when no backend is wired', () => {
     const r = SemanticRetriever.create({ index: buildIndex([]) }).orThrow();
@@ -491,7 +489,7 @@ describe('HybridRetriever', () => {
       index,
       backend: {
         vectorIndex: new FakeVectorIndex([]),
-        embedQuery: () => Promise.resolve(succeed([1]))
+        embedQuery: () => Promise.resolve(succeed(Float32Array.from([1])))
       }
     }).orThrow();
     const hybrid = HybridRetriever.create(
@@ -529,7 +527,7 @@ describe('HybridRetriever', () => {
       index,
       backend: {
         vectorIndex: new FakeVectorIndex([{ id: 'b' as MemoryId, score: 0.9 }]),
-        embedQuery: () => Promise.resolve(succeed([1]))
+        embedQuery: () => Promise.resolve(succeed(Float32Array.from([1])))
       }
     }).orThrow();
     const hybrid = HybridRetriever.create(
@@ -582,7 +580,10 @@ describe('HybridRetriever', () => {
     const { index } = build();
     const semantic = SemanticRetriever.create({
       index,
-      backend: { vectorIndex: new FakeVectorIndex([], true), embedQuery: () => Promise.resolve(succeed([1])) }
+      backend: {
+        vectorIndex: new FakeVectorIndex([], true),
+        embedQuery: () => Promise.resolve(succeed(Float32Array.from([1])))
+      }
     }).orThrow();
     const hybrid = HybridRetriever.create([semantic], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
     expect(await hybrid.retrieve({ semantic: 'q' })).toFailWith(/vector query failed/i);
@@ -608,7 +609,7 @@ describe('HybridRetriever', () => {
           { id: 'd' as MemoryId, score: 0.9 },
           { id: 'a' as MemoryId, score: 0.8 }
         ]),
-        embedQuery: () => Promise.resolve(succeed([1]))
+        embedQuery: () => Promise.resolve(succeed(Float32Array.from([1])))
       }
     }).orThrow();
     const hybrid = HybridRetriever.create(

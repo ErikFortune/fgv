@@ -22,7 +22,7 @@ import {
  * `Result`-returning, since a real embedder does a network call.
  * @public
  */
-export type QueryEmbedder = (text: string) => Promise<Result<ReadonlyArray<number>>>;
+export type QueryEmbedder = (text: string) => Promise<Result<Float32Array>>;
 
 /**
  * The semantic backend wired into a {@link SemanticRetriever}: the vector index
@@ -101,7 +101,7 @@ export class SemanticRetriever implements IMemoryRetriever {
     if (this._backend === undefined) {
       return fail(SEMANTIC_UNWIRED_MESSAGE);
     }
-    const embedded: Result<ReadonlyArray<number>> = await this._backend.embedQuery(query.semantic);
+    const embedded: Result<Float32Array> = await this._backend.embedQuery(query.semantic);
     if (embedded.isFailure()) {
       return fail(`semantic recall: query embedding failed: ${embedded.message}`);
     }

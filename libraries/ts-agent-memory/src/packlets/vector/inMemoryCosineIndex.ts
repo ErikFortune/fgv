@@ -1,0 +1,157 @@
+/*
+ * Copyright (c) 2026 Erik Fortune
+ * SPDX-License-Identifier: MIT
+ */
+
+import { Result, fail, succeed } from '@fgv/ts-utils';
+import { IMemoryRecord, MemoryId } from '../types';
+import { IMemoryRecordSource, IVectorIndex, IVectorQueryHit, MemoryEmbedder } from './vectorIndex';
+
+/**
+ * The brute-force, in-memory cosine {@link IVectorIndex}. Stores one
+ * `Float32Array` per record and answers a query by computing cosine similarity
+ * against every stored vector, returning the top-k by descending score.
+ *
+ * @remarks
+ * This is the **complete** vector implementation for the fgv regime — large-N is
+ * explicitly out of scope (the seam stays open for a consumer to swap an external
+ * ANN backend once N grows beyond "thousands of records"). No external dependency
+ * and no ANN structure: a linear scan over a few thousand vectors is well within
+ * an interactive budget.
+ *
+ * The index has a single dimension established by the first vector added; every
+ * subsequent `add` and every `query` vector must match that dimension or fail
+ * loudly — a mismatched dimension is an embedder-wiring bug, never a silent
+ * zero-similarity result. {@link InMemoryCosineIndex.rebuild | rebuild} clears
+ * the index, so a re-embed with a different model (hence dimension) is supported.
+ *
+ * Persistence (a JSON sidecar) is deliberately out of scope for this layer — the
+ * index is in-memory and rebuilt from the store via `rebuild`; a sidecar is a
+ * future nicety.
+ * @public
+ */
+export class InMemoryCosineIndex implements IVectorIndex {
+  private readonly _vectors: Map<MemoryId, Float32Array>;
+  /** The dimension of every stored vector; `undefined` until the first `add`. */
+  private _dimension: number | undefined;
+
+  private constructor() {
+    this._vectors = new Map<MemoryId, Float32Array>();
+    this._dimension = undefined;
+  }
+
+  /** The number of vectors currently held. */
+  public get size(): number {
+    return this._vectors.size;
+  }
+
+  /** Family-convention factory. */
+  public static create(): Result<InMemoryCosineIndex> {
+    return succeed(new InMemoryCosineIndex());
+  }
+
+  /** {@inheritDoc IVectorIndex.add} */
+  public add(id: MemoryId, vector: Float32Array): Promise<Result<string>> {
+    if (vector.length === 0) {
+      return Promise.resolve(fail(`vector index: cannot add '${id}': empty vector`));
+    }
+    if (this._dimension === undefined) {
+      this._dimension = vector.length;
+    } else if (vector.length !== this._dimension) {
+      return Promise.resolve(
+        fail(
+          `vector index: cannot add '${id}': dimension ${vector.length} does not match index dimension ${this._dimension}`
+        )
+      );
+    }
+    this._vectors.set(id, vector);
+    // The in-memory index keys entries by id, so the id IS the entry reference.
+    return Promise.resolve(succeed(id as string));
+  }
+
+  /** {@inheritDoc IVectorIndex.remove} */
+  public remove(id: MemoryId): Promise<Result<MemoryId>> {
+    this._vectors.delete(id);
+    return Promise.resolve(succeed(id));
+  }
+
+  /** {@inheritDoc IVectorIndex.query} */
+  public query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
+    if (topK <= 0 || this._vectors.size === 0) {
+      return Promise.resolve(succeed([]));
+    }
+    if (vector.length !== this._dimension) {
+      return Promise.resolve(
+        fail(
+          `vector index: query dimension ${vector.length} does not match index dimension ${this._dimension}`
+        )
+      );
+    }
+    const queryMagnitude: number = InMemoryCosineIndex._magnitude(vector);
+    const hits: IVectorQueryHit[] = [];
+    for (const [id, stored] of this._vectors) {
+      hits.push({ id, score: InMemoryCosineIndex._cosine(vector, queryMagnitude, stored) });
+    }
+    // Descending by score; a `seq`-free tiebreak is unnecessary here because the
+    // caller (SemanticRetriever) re-resolves hits against the record index.
+    hits.sort((a, b) => b.score - a.score);
+    return Promise.resolve(succeed(hits.length > topK ? hits.slice(0, topK) : hits));
+  }
+
+  /**
+   * Re-embed every record from `source` and rebuild the index from scratch.
+   * Clears the current contents (and the established dimension) first, so a
+   * re-embed with a different model is supported. Returns the number of vectors
+   * indexed.
+   *
+   * @param source - The record source to re-embed (an {@link IMemoryStore}
+   * satisfies this structurally).
+   * @param embed - The embedder applied to each record.
+   */
+  public async rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder): Promise<Result<number>> {
+    const listed: Result<ReadonlyArray<IMemoryRecord<unknown>>> = await source.list();
+    if (listed.isFailure()) {
+      return fail(`vector index rebuild: failed to list records: ${listed.message}`);
+    }
+    this._vectors.clear();
+    this._dimension = undefined;
+    for (const record of listed.value) {
+      const embedded: Result<Float32Array> = await embed(record);
+      if (embedded.isFailure()) {
+        return fail(`vector index rebuild: embedding '${record.envelope.id}' failed: ${embedded.message}`);
+      }
+      const added: Result<string> = await this.add(record.envelope.id, embedded.value);
+      if (added.isFailure()) {
+        return fail(`vector index rebuild: ${added.message}`);
+      }
+    }
+    return succeed(this._vectors.size);
+  }
+
+  /** The Euclidean magnitude (L2 norm) of a vector. */
+  private static _magnitude(vector: Float32Array): number {
+    let sum: number = 0;
+    for (let i: number = 0; i < vector.length; i++) {
+      sum += vector[i] * vector[i];
+    }
+    return Math.sqrt(sum);
+  }
+
+  /**
+   * Cosine similarity between the query (whose magnitude is precomputed once and
+   * reused across the scan) and a stored vector. A zero-magnitude vector on
+   * either side yields `0` rather than `NaN` — a degenerate vector is simply
+   * maximally dissimilar, not an error.
+   */
+  private static _cosine(query: Float32Array, queryMagnitude: number, stored: Float32Array): number {
+    const storedMagnitude: number = InMemoryCosineIndex._magnitude(stored);
+    if (queryMagnitude === 0 || storedMagnitude === 0) {
+      return 0;
+    }
+    let dot: number = 0;
+    for (let i: number = 0; i < query.length; i++) {
+      dot += query[i] * stored[i];
+    }
+    return dot / (queryMagnitude * storedMagnitude);
+  }
+}
