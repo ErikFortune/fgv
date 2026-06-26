@@ -779,5 +779,78 @@ describe('FileTreeMemoryStore', () => {
         expect(r?.body).toBe('v2-0');
       });
     });
+
+    test('cap-cull evicts multiple victims in one write when the cohort starts over cap', async () => {
+      // Seed five turns under cap 5 (no eviction), then reopen the same vault
+      // with cap 2. The next write's cohort is the five seeded records, so the
+      // single admit returns FOUR victims (oldest by `created`) and the post-
+      // write count settles to exactly the new cap.
+      const root = mutableRoot();
+      const seeded = memoryStore(root, 5);
+      for (let turn = 0; turn < 5; turn++) {
+        clockValue = 1000 + turn;
+        (
+          await seeded.put(
+            makeRecord({ id: `turn-${turn}`, entityId: `conv-1:${turn}`, kind: 'mtm', body: `turn ${turn}` })
+          )
+        ).orThrow();
+      }
+
+      const reopened = memoryStore(root, 2);
+      clockValue = 2000;
+      (
+        await reopened.put(makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'turn 5' }))
+      ).orThrow();
+
+      // turn-0..turn-3 (the four oldest) evicted; turn-4 + turn-5 remain.
+      for (const culled of [0, 1, 2, 3]) {
+        expect(await reopened.get(mtmKind, `conv-1:${culled}` as EntityId)).toSucceedWith(undefined);
+      }
+      expect(await reopened.list({ kind: mtmKind })).toSucceedAndSatisfy((records) => {
+        expect(records.map((r) => r.envelope.id as string).sort()).toEqual(['turn-4', 'turn-5']);
+      });
+    });
+
+    test('cap-cull is scoped to (scope, kind): other scopes and kinds are not evicted', async () => {
+      // cap 2 over MTM. A second conversation scope and a knowledge record share
+      // the vault; filling conv-1 past its cap must leave both untouched.
+      const store = memoryStore(undefined, 2);
+      clockValue = 500;
+      (
+        await store.put(makeRecord({ id: 'turn-0', entityId: 'conv-2:0', kind: 'mtm', body: 'other convo' }))
+      ).orThrow();
+      clockValue = 600;
+      (await store.put(makeRecord({ id: 'intro', kind: 'knowledge', body: 'knowledge doc' }))).orThrow();
+
+      for (let turn = 0; turn < 3; turn++) {
+        clockValue = 1000 + turn;
+        (
+          await store.put(
+            makeRecord({
+              id: `turn-${turn}`,
+              entityId: `conv-1:${turn}`,
+              kind: 'mtm',
+              body: `c1 turn ${turn}`
+            })
+          )
+        ).orThrow();
+      }
+
+      // conv-1 culled its oldest (turn-0) down to exactly cap 2.
+      expect(await store.get(mtmKind, 'conv-1:0' as EntityId)).toSucceedWith(undefined);
+      expect(await store.list({ scope: 'conversations/conv-1' as MemoryScopeKey })).toSucceedAndSatisfy(
+        (records) => {
+          expect(records.map((r) => r.envelope.id as string).sort()).toEqual(['turn-1', 'turn-2']);
+        }
+      );
+      // The other conversation scope and the knowledge kind are untouched.
+      expect(await store.get(mtmKind, 'conv-2:0' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.id).toBe('turn-0');
+        expect(r?.body).toBe('other convo');
+      });
+      expect(await store.get(knowledgeKind, 'intro' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.body).toBe('knowledge doc');
+      });
+    });
   });
 });
