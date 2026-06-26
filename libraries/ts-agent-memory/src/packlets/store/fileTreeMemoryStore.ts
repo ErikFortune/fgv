@@ -7,6 +7,8 @@ import { Hash, Logging, Result, fail, mapResults, succeed } from '@fgv/ts-utils'
 import { FileTree } from '@fgv/ts-json-base';
 import {
   AdmissionDecision,
+  DEFAULT_DEDUP_SCOPE,
+  DedupScope,
   EntityId,
   IIdentityCodec,
   IMemoryEnvelope,
@@ -438,18 +440,41 @@ export class FileTreeMemoryStore implements IMemoryStore {
     idStem: string,
     hash: string
   ): Result<IMemoryRecord<unknown>> {
-    // Content-hash dedup runs BEFORE policy: an identical { kind, body, links }
-    // triple anywhere in the scope is a no-op that returns the existing record
-    // unchanged. (Tags / provenance are metadata and are NOT part of the hash —
-    // a tags-only re-put therefore collapses to a no-op; see design-lock §2.5.)
-    const duplicate: IMemoryRecord<unknown> | undefined = this._findByContentHash(scope, hash);
-    if (duplicate !== undefined) {
-      return succeed(duplicate);
+    const policy: IWritePolicy = this._policyFor(record.envelope.kind);
+    const dedupScope: DedupScope = policy.dedupScope ?? DEFAULT_DEDUP_SCOPE;
+    // Content-hash dedup runs BEFORE policy. Its granularity is the kind's
+    // `dedupScope`:
+    //   - 'content': an identical { kind, body, links } triple ANYWHERE in the
+    //     scope (even under a different id) is a no-op (knowledge family).
+    //   - 'entity' (default): only an identical re-put of the SAME id is a no-op;
+    //     two distinct entities with identical content never collapse (experience
+    //     families). The same-id check is folded into the `_readRecord` below.
+    // (Tags / provenance are metadata and are NOT part of the hash; see
+    // design-lock §2.5.)
+    if (dedupScope === 'content') {
+      const duplicate: IMemoryRecord<unknown> | undefined = this._findByContentHash(scope, hash);
+      if (duplicate !== undefined) {
+        return succeed(duplicate);
+      }
     }
     return this._readRecord(scope, idStem).onSuccess((existing) => {
-      const existingArr: ReadonlyArray<IMemoryRecord<unknown>> = existing === undefined ? [] : [existing];
-      const policy: IWritePolicy = this._policyFor(record.envelope.kind);
-      return policy.admit(record, existingArr).onSuccess((decision) => {
+      if (dedupScope === 'entity' && existing !== undefined && existing.envelope.contentHash === hash) {
+        // Entity-scoped dedup: an identical re-put of the same entity is a no-op.
+        return succeed(existing);
+      }
+      // The admission cohort is the set of records the policy's cap applies to:
+      // every record in this scope of this kind EXCEPT the target id. On a first
+      // write the post-write count is `cohort.length + 1`; on an update the prior
+      // same-id record is excluded so the count is still `cohort.length + 1`
+      // (a replace, not a grow). The same-id `existing` record is threaded
+      // separately into `_buildRecord` for the merge-patch. Knowledge LWW ignores
+      // this argument, so its behavior is unchanged by the wider cohort.
+      const cohort: ReadonlyArray<IMemoryRecord<unknown>> = this._admissionCohort(
+        scope,
+        record.envelope.kind,
+        idStem
+      );
+      return policy.admit(record, cohort).onSuccess((decision) => {
         if (decision.decision === 'reject') {
           return fail(`memory put: rejected by policy: ${decision.reason}`);
         }
@@ -586,6 +611,28 @@ export class FileTreeMemoryStore implements IMemoryStore {
       }
     }
     return patch;
+  }
+
+  /**
+   * The admission cohort for a write: every indexed record in `scope` of `kind`
+   * except the one at `idStem` (the record being written or updated). This is
+   * the set a per-kind cap (e.g. {@link MemoryCapCullPolicy}) counts against, so
+   * a bounded-ring policy can keep a per-scope/per-kind family within
+   * `maxRecords`. Excluding the target id makes the post-write count uniform
+   * across first-writes and updates.
+   */
+  private _admissionCohort(
+    scope: MemoryScopeKey,
+    kind: Kind,
+    idStem: string
+  ): ReadonlyArray<IMemoryRecord<unknown>> {
+    return this._index
+      .entries()
+      .filter(
+        (entry) =>
+          entry.scope === scope && entry.record.envelope.kind === kind && entry.record.envelope.id !== idStem
+      )
+      .map((entry) => entry.record);
   }
 
   /** Find a record in `scope` whose `contentHash` equals `hash`, if any. */

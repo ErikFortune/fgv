@@ -19,8 +19,11 @@ import {
   IWritePolicy,
   Kind,
   KnowledgeIdentityCodec,
+  LtmIdentityCodec,
+  MemoryCapCullPolicy,
   MemoryId,
   MemoryScopeKey,
+  MtmIdentityCodec,
   Tag,
   envelopeConverter,
   joinFrontmatter
@@ -574,6 +577,207 @@ describe('FileTreeMemoryStore', () => {
       }).orThrow();
       const put = (await store.put(makeRecord({ id: 'fallback', body: 'x' }))).orThrow();
       expect(put.envelope.id).toBe('fallback');
+    });
+  });
+
+  describe('experience (memory) kinds — Phase C', () => {
+    const ltmKind: Kind = 'ltm' as Kind;
+    const mtmKind: Kind = 'mtm' as Kind;
+
+    /** A registry that gates the knowledge + LTM + MTM kind bodies (all strings here). */
+    function multiKindRegistry(): IBodyConverterRegistry {
+      const registry = BodyConverterRegistry.create().orThrow();
+      registry.register(knowledgeKind, Converters.string);
+      registry.register(ltmKind, Converters.string);
+      registry.register(mtmKind, Converters.string);
+      return registry;
+    }
+
+    const multiKindCodecs: ReadonlyMap<Kind, IIdentityCodec> = new Map<Kind, IIdentityCodec>([
+      [knowledgeKind, new KnowledgeIdentityCodec()],
+      [ltmKind, new LtmIdentityCodec()],
+      [mtmKind, new MtmIdentityCodec()]
+    ]);
+
+    /** Cap-cull policy for the LTM/MTM kinds (entity-scoped dedup). */
+    function memoryPolicies(maxRecords: number = 5): ReadonlyMap<Kind, IWritePolicy> {
+      const capCull = MemoryCapCullPolicy.create({
+        maxRecords,
+        mutableFields: ['body', 'tags', 'links', 'provenance', 'embeddingRef']
+      }).orThrow();
+      return new Map<Kind, IWritePolicy>([
+        [ltmKind, capCull],
+        [mtmKind, capCull]
+      ]);
+    }
+
+    function memoryStore(
+      root?: FileTree.IMutableFileTreeDirectoryItem,
+      maxRecords: number = 5
+    ): FileTreeMemoryStore {
+      return FileTreeMemoryStore.create({
+        root: root ?? mutableRoot(),
+        registry: multiKindRegistry(),
+        codecs: multiKindCodecs,
+        writePolicies: memoryPolicies(maxRecords),
+        clock
+      }).orThrow();
+    }
+
+    test('registers all three kind families from one FileTree vault', async () => {
+      const store = memoryStore();
+      (await store.put(makeRecord({ id: 'intro', kind: 'knowledge', body: 'k' }))).orThrow();
+      (await store.put(makeRecord({ id: 'conv-1', entityId: 'conv-1', kind: 'ltm', body: 'l' }))).orThrow();
+      (await store.put(makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'm' }))).orThrow();
+
+      expect(await store.get(knowledgeKind, 'intro' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.kind).toBe('knowledge');
+      });
+      expect(await store.get(ltmKind, 'conv-1' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.kind).toBe('ltm');
+      });
+      expect(await store.get(mtmKind, 'conv-1:5' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.id).toBe('turn-5');
+        expect(r?.envelope.entityId).toBe('conv-1:5');
+      });
+    });
+
+    test('MTM composite key persists at conversations/<id>/turn-<n> and round-trips a reload', async () => {
+      const root = mutableRoot();
+      const store = memoryStore(root);
+      (
+        await store.put(makeRecord({ id: 'turn-0', entityId: 'conv-x:0', kind: 'mtm', body: 'm0' }))
+      ).orThrow();
+
+      // A fresh store over the same root must re-index the MTM record (verifyRoundTrip
+      // exercises the multi-segment scope on load).
+      const reopened = memoryStore(root);
+      expect(await reopened.get(mtmKind, 'conv-x:0' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.id).toBe('turn-0');
+      });
+    });
+
+    test('entity-scoped dedup: two distinct entities with identical content both persist', async () => {
+      // Regression for the flagged collapse bug: turn-5 and turn-9 share the same
+      // { kind, body, links } but are distinct entities and must NOT collapse.
+      const store = memoryStore();
+      const five = (
+        await store.put(makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'identical' }))
+      ).orThrow();
+      const nine = (
+        await store.put(makeRecord({ id: 'turn-9', entityId: 'conv-1:9', kind: 'mtm', body: 'identical' }))
+      ).orThrow();
+
+      expect(five.envelope.id).toBe('turn-5');
+      expect(nine.envelope.id).toBe('turn-9');
+      expect(nine.envelope.id).not.toBe(five.envelope.id);
+
+      // Both are independently retrievable — neither collapsed into the other.
+      expect(await store.get(mtmKind, 'conv-1:5' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.id).toBe('turn-5');
+      });
+      expect(await store.get(mtmKind, 'conv-1:9' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.id).toBe('turn-9');
+      });
+      expect(await store.list({ kind: mtmKind })).toSucceedAndSatisfy((records) => {
+        expect(records).toHaveLength(2);
+      });
+    });
+
+    test('entity-scoped dedup: an identical re-put of the SAME entity is a no-op', async () => {
+      const store = memoryStore();
+      let firstSeq: number = -1;
+      expect(
+        await store.put(makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'same' }))
+      ).toSucceedAndSatisfy((r) => {
+        firstSeq = r.envelope.seq;
+      });
+      expect(
+        await store.put(makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'same' }))
+      ).toSucceedAndSatisfy((r) => {
+        expect(r.envelope.seq).toBe(firstSeq);
+      });
+    });
+
+    test('merge-patch updates the body of an existing memory entity (distinct content)', async () => {
+      const store = memoryStore();
+      let firstCreated: number = -1;
+      let firstSeq: number = -1;
+      expect(
+        await store.put(makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'v1' }))
+      ).toSucceedAndSatisfy((r) => {
+        firstCreated = r.envelope.created;
+        firstSeq = r.envelope.seq;
+      });
+      clockValue = 2000;
+      expect(
+        await store.put(makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'v2' }))
+      ).toSucceedAndSatisfy((r) => {
+        expect(r.body).toBe('v2');
+        expect(r.envelope.created).toBe(firstCreated);
+        expect(r.envelope.updated).toBe(2000);
+        expect(r.envelope.seq).toBe(firstSeq + 1);
+      });
+    });
+
+    test('cap-cull fires end-to-end: writing past maxRecords evicts the oldest in the scope', async () => {
+      // maxRecords: 3 over the shared conversations/conv-1 MTM scope. Four
+      // distinct turns are written with strictly increasing `created`; the
+      // store builds the per-scope/per-kind admission cohort, so the fourth
+      // write culls the oldest (turn-0) and leaves the cap at exactly 3.
+      const store = memoryStore(undefined, 3);
+      for (let turn = 0; turn < 4; turn++) {
+        clockValue = 1000 + turn; // distinct `created` so "oldest" is unambiguous.
+        (
+          await store.put(
+            makeRecord({
+              id: `turn-${turn}`,
+              entityId: `conv-1:${turn}`,
+              kind: 'mtm',
+              body: `turn ${turn}`
+            })
+          )
+        ).orThrow();
+      }
+
+      // turn-0 (oldest) was evicted; turn-1..turn-3 remain → exactly maxRecords.
+      expect(await store.get(mtmKind, 'conv-1:0' as EntityId)).toSucceedWith(undefined);
+      expect(await store.get(mtmKind, 'conv-1:1' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.id).toBe('turn-1');
+      });
+      expect(await store.get(mtmKind, 'conv-1:3' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.id).toBe('turn-3');
+      });
+      expect(await store.list({ kind: mtmKind })).toSucceedAndSatisfy((records) => {
+        expect(records).toHaveLength(3);
+        expect(records.map((r) => r.envelope.id as string).sort()).toEqual(['turn-1', 'turn-2', 'turn-3']);
+      });
+    });
+
+    test('cap-cull does not evict on a same-entity update (replace, not grow)', async () => {
+      // With the cohort excluding the target id, updating an existing turn while
+      // at the cap is a replace: the cohort is maxRecords-1, so no cull fires.
+      const store = memoryStore(undefined, 3);
+      for (let turn = 0; turn < 3; turn++) {
+        clockValue = 1000 + turn;
+        (
+          await store.put(
+            makeRecord({ id: `turn-${turn}`, entityId: `conv-1:${turn}`, kind: 'mtm', body: `v1-${turn}` })
+          )
+        ).orThrow();
+      }
+      clockValue = 2000;
+      (
+        await store.put(makeRecord({ id: 'turn-0', entityId: 'conv-1:0', kind: 'mtm', body: 'v2-0' }))
+      ).orThrow();
+
+      // All three still present (turn-0 updated, not culled).
+      expect(await store.list({ kind: mtmKind })).toSucceedAndSatisfy((records) => {
+        expect(records).toHaveLength(3);
+      });
+      expect(await store.get(mtmKind, 'conv-1:0' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.body).toBe('v2-0');
+      });
     });
   });
 });
