@@ -237,9 +237,15 @@ The cross-provider `ai-assist-embeddings` primitive shipped (`AiAssist.callProvi
 
 ## Structured memory for agents (platform capability)
 
-> **PROMOTED 2026-06-25** → `docs/WORKSTREAMS.md` (`ts-agent-memory`) on the
-> PersonAIlity commission. This entry is retained for context; the stream is now
-> the live record.
+> **SHIPPED 2026-06-26** — `@fgv/ts-agent-memory` v1 substrate (knowledge + memory)
+> promoted to `release`. Completion record:
+> `.ai/tasks/completed/2026-06/ts-agent-memory/`. Original design context retained below.
+>
+> **Fast-follow streams (deferred; seams already present):** (1) in-package cosine
+> `IVectorIndex` impl + embed-on-write; (2) temporal versioned write path + temporal
+> retrievers (`temporal?` envelope block + codec `isVersioned` flag already ship);
+> (3) L2 agent-tool surface (`IAiClientTool`); (4) L3 ingest orchestrator (the fgv-side
+> ingestion target for the consumer's own pipeline). Commission each when a consumer needs it.
 
 A structured-memory substrate for agents — an Obsidian-like graph (files + links +
 derived index) as the foundation for **both knowledge and distilled experience** —
@@ -279,7 +285,7 @@ prioritization call — explicitly NOT gated on a consumer ask (Erik's
 platform-over-features direction, 2026-06-25). Promote to `docs/WORKSTREAMS.md` when
 prioritized; the fleshed design lets it start cold.
 
-**Reference:** `.ai/tasks/active/ts-agent-memory/` — `exploration.md`
+**Reference:** `.ai/tasks/completed/2026-06/ts-agent-memory/` — `README.md`, `exploration.md`
 (design-space note + §9 refinement + §10 unified-substrate / L3 contract) and
 `design.md` (moderate-detail platform design). Floated package name
 `@fgv/ts-agent-memory`.
