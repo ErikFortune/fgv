@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Converters, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   BodyConverterRegistry,
@@ -110,7 +110,8 @@ class SpyVectorIndex implements IVectorIndex {
 
 function knowledgeStore(
   vectorIndex?: IVectorIndex,
-  embed?: (r: IMemoryRecord<unknown>) => Promise<Result<Float32Array>>
+  embed?: (r: IMemoryRecord<unknown>) => Promise<Result<Float32Array>>,
+  logger?: Logging.ILogger
 ): FileTreeMemoryStore {
   const registry: IBodyConverterRegistry = BodyConverterRegistry.create().orThrow();
   registry.register(knowledgeKind, Converters.string);
@@ -119,7 +120,8 @@ function knowledgeStore(
     registry,
     codecs: new Map<Kind, IIdentityCodec>([[knowledgeKind, new KnowledgeIdentityCodec()]]),
     vectorIndex,
-    embed
+    embed,
+    logger
   }).orThrow();
 }
 
@@ -149,14 +151,14 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       );
     });
 
-    test('re-embeds on a content change: removes the stale vector then adds the new one', async () => {
+    test('re-embeds on a content change by re-adding (replace semantics, no eager remove)', async () => {
       const spy = new SpyVectorIndex();
       const store = knowledgeStore(spy, recordEmbed);
       (await store.put(makeRecord('doc-a', 'cat'))).orThrow();
       (await store.put(makeRecord('doc-a', 'dog'))).orThrow();
-      // First write adds; the content change removes the stale vector before
-      // adding the replacement.
-      expect(spy.calls).toEqual(['add:doc-a', 'remove:doc-a', 'add:doc-a']);
+      // The content change re-adds (IVectorIndex.add replaces for a same id) —
+      // no redundant eager remove.
+      expect(spy.calls).toEqual(['add:doc-a', 'add:doc-a']);
       // The index now reflects the new content ('dog'), not the original.
       expect(await spy.query(featureVector('dog'), 1)).toSucceedAndSatisfy(
         (hits: ReadonlyArray<IVectorQueryHit>) => {
@@ -216,46 +218,68 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       );
     });
 
-    test('fails the put loudly and persists nothing when embedding fails', async () => {
+    test('persists the record (best-effort) and logs when embedding fails', async () => {
       const index = InMemoryCosineIndex.create().orThrow();
+      const logger = new Logging.InMemoryLogger();
       const failEmbed = (): Promise<Result<Float32Array>> => Promise.resolve(fail('no model'));
-      const store = knowledgeStore(index, failEmbed);
-      expect(await store.put(makeRecord('doc-a', 'cat'))).toFailWith(/embedding failed: no model/i);
-      // The file was never written (embed runs before persist) and the index is empty.
-      expect(await store.getById('knowledge' as MemoryScopeKey, 'doc-a' as MemoryId)).toSucceedWith(
-        undefined
+      const store = knowledgeStore(index, failEmbed, logger);
+      // The durable write succeeds; only the derived index is skipped (rebuildable).
+      expect(await store.put(makeRecord('doc-a', 'cat'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+      expect(await store.getById('knowledge' as MemoryScopeKey, 'doc-a' as MemoryId)).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown> | undefined) => {
+          expect(record?.envelope.id).toBe('doc-a');
+        }
       );
       expect(index.size).toBe(0);
+      expect(logger.logged.some((m) => /embedding 'doc-a' failed.*no model/i.test(m))).toBe(true);
     });
 
-    test('fails the put loudly when the vector add fails', async () => {
+    test('persists the record (best-effort) and logs when the vector add fails', async () => {
       const spy = new SpyVectorIndex();
       spy.failAdd = true;
-      const store = knowledgeStore(spy, recordEmbed);
-      expect(await store.put(makeRecord('doc-a', 'cat'))).toFailWith(/vector add failed: add boom/i);
+      const logger = new Logging.InMemoryLogger();
+      const store = knowledgeStore(spy, recordEmbed, logger);
+      expect(await store.put(makeRecord('doc-a', 'cat'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+      expect(await store.getById('knowledge' as MemoryScopeKey, 'doc-a' as MemoryId)).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown> | undefined) => {
+          expect(record?.envelope.id).toBe('doc-a');
+        }
+      );
+      expect(logger.logged.some((m) => /vector add for 'doc-a' failed.*add boom/i.test(m))).toBe(true);
+    });
+
+    test('best-effort embed survives a throwing/rejecting embedder', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const logger = new Logging.InMemoryLogger();
+      const throwingEmbed = (): Promise<Result<Float32Array>> => Promise.reject(new Error('embedder kaboom'));
+      const store = knowledgeStore(index, throwingEmbed, logger);
+      expect(await store.put(makeRecord('doc-a', 'cat'))).toSucceed();
+      expect(index.size).toBe(0);
+      expect(logger.logged.some((m) => /embedding 'doc-a' threw.*embedder kaboom/i.test(m))).toBe(true);
+    });
+
+    test('a committed delete succeeds (best-effort) and logs when vector removal fails', async () => {
+      const spy = new SpyVectorIndex();
+      const logger = new Logging.InMemoryLogger();
+      const store = knowledgeStore(spy, recordEmbed, logger);
+      (await store.put(makeRecord('doc-a', 'cat'))).orThrow();
+      spy.failRemove = true;
+      // The record is already gone; vector cleanup failure must NOT fail the delete.
+      expect(await store.delete(knowledgeKind, 'doc-a' as unknown as EntityId)).toSucceedWith(
+        'doc-a' as MemoryId
+      );
       expect(await store.getById('knowledge' as MemoryScopeKey, 'doc-a' as MemoryId)).toSucceedWith(
         undefined
       );
-    });
-
-    test('fails the put loudly when stale-vector removal fails on a content change', async () => {
-      const spy = new SpyVectorIndex();
-      const store = knowledgeStore(spy, recordEmbed);
-      (await store.put(makeRecord('doc-a', 'cat'))).orThrow();
-      spy.failRemove = true;
-      expect(await store.put(makeRecord('doc-a', 'dog'))).toFailWith(
-        /stale vector removal failed: remove boom/i
-      );
-    });
-
-    test('fails the delete loudly when vector removal fails', async () => {
-      const spy = new SpyVectorIndex();
-      const store = knowledgeStore(spy, recordEmbed);
-      (await store.put(makeRecord('doc-a', 'cat'))).orThrow();
-      spy.failRemove = true;
-      expect(await store.delete(knowledgeKind, 'doc-a' as unknown as EntityId)).toFailWith(
-        /vector removal for 'doc-a' failed: remove boom/i
-      );
+      expect(logger.logged.some((m) => /vector removal for 'doc-a' failed.*remove boom/i.test(m))).toBe(true);
     });
   });
 

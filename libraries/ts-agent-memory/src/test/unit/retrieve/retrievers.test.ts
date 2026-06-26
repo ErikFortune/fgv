@@ -431,6 +431,31 @@ describe('SemanticRetriever', () => {
     }).orThrow();
     expect(await r.retrieve({ semantic: 'q' })).toFailWith(/vector query failed: vector backend down/i);
   });
+
+  test('normalizes a rejecting embedder into a Failure (never escapes as a rejection)', async () => {
+    const r = SemanticRetriever.create({
+      index: buildIndex([{ id: 'a' }]),
+      backend: {
+        vectorIndex: new FakeVectorIndex([]),
+        embedQuery: () => Promise.reject(new Error('embedder blew up'))
+      }
+    }).orThrow();
+    expect(await r.retrieve({ semantic: 'q' })).toFailWith(/query embedding failed: .*embedder blew up/i);
+  });
+
+  test('normalizes a rejecting vector backend into a Failure', async () => {
+    // A vector index whose `query` rejects (throws) rather than returning a fail.
+    const rejectingIndex: IVectorIndex = {
+      add: (id: MemoryId) => Promise.resolve(succeed(`ref-${id}`)),
+      remove: (id: MemoryId) => Promise.resolve(succeed(id)),
+      query: () => Promise.reject(new Error('socket hangup'))
+    };
+    const r = SemanticRetriever.create({
+      index: buildIndex([{ id: 'a' }]),
+      backend: { vectorIndex: rejectingIndex, embedQuery: okEmbed }
+    }).orThrow();
+    expect(await r.retrieve({ semantic: 'q' })).toFailWith(/vector query failed: .*socket hangup/i);
+  });
 });
 
 describe('ScoreUnionMergeStrategy', () => {

@@ -64,7 +64,9 @@ export class InMemoryCosineIndex implements IVectorIndex {
         )
       );
     }
-    this._vectors.set(id, vector);
+    // Defensive copy: the caller may reuse or mutate the buffer after `add`, and
+    // the index must keep serving the embedding it was given.
+    this._vectors.set(id, Float32Array.from(vector));
     // The in-memory index keys entries by id, so the id IS the entry reference.
     return Promise.resolve(succeed(id as string));
   }
@@ -113,11 +115,14 @@ export class InMemoryCosineIndex implements IVectorIndex {
    * @param embed - The embedder applied to each record.
    */
   public async rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder): Promise<Result<number>> {
+    // Reset up front so the "any failure leaves the index empty" contract holds
+    // even when the listing itself fails (no stale vectors survive a failed
+    // rebuild).
+    this._reset();
     const listed: Result<ReadonlyArray<IMemoryRecord<unknown>>> = await source.list();
     if (listed.isFailure()) {
       return fail(`vector index rebuild: failed to list records: ${listed.message}`);
     }
-    this._reset();
     for (const record of listed.value) {
       const embedded: Result<Float32Array> = await embed(record);
       if (embedded.isFailure()) {

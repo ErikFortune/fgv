@@ -440,18 +440,19 @@ export class FileTreeMemoryStore implements IMemoryStore {
     try {
       const observed: Result<unknown> = await observer.observe(record);
       if (observed.isFailure()) {
-        this._warnObserverIssue(`memory observer failed (swallowed): ${observed.message}`);
+        this._warnSwallowed(`memory observer failed (swallowed): ${observed.message}`);
       }
     } catch (error) {
-      this._warnObserverIssue(`memory observer threw (swallowed): ${String(error)}`);
+      this._warnSwallowed(`memory observer threw (swallowed): ${String(error)}`);
     }
   }
 
   /**
-   * Log an observer-issue warning, swallowing a logger that itself throws —
-   * diagnostic logging must never make a store op reject.
+   * Log a swallowed-issue warning (observer failure or best-effort vector
+   * maintenance), tolerating a logger that itself throws — diagnostic logging
+   * must never make a store op reject.
    */
-  private _warnObserverIssue(message: string): void {
+  private _warnSwallowed(message: string): void {
     try {
       this._logger.warn(message);
     } catch {
@@ -560,12 +561,19 @@ export class FileTreeMemoryStore implements IMemoryStore {
   }
 
   /**
-   * Build → embed → persist → evict for an admitted write. Build and durably
-   * persist the new record BEFORE evicting anything: a cull-oldest decision must
-   * not delete existing records until the replacement is on disk, otherwise a
-   * later failure would lose data with nothing written in its place. The embed
-   * step runs before persist so an embedding failure rejects the `put` without
-   * leaving a file on disk that the vector index doesn't know about.
+   * Build → embed → persist → evict for an admitted write.
+   *
+   * The durable record store is authoritative; the vector index is a **derived,
+   * rebuildable** view, so vector maintenance is **best-effort** — a failed embed
+   * or `add` is logged and the durable write still succeeds (the index can be
+   * rebuilt via {@link InMemoryCosineIndex.rebuild}). Only genuine record-store
+   * failures (body/codec/policy, persist, file eviction) fail the `put`.
+   *
+   * Ordering: the embed + `add` run immediately before the single `_persist` so
+   * the index-returned `embeddingRef` lands in one durable write (a post-persist
+   * stamp would need a second write whose failure path is effectively untestable).
+   * Build and persist the replacement BEFORE evicting the cull-oldest cohort, so a
+   * later eviction failure never loses data with nothing written in its place.
    */
   private async _admitWrite(
     record: IMemoryRecord<unknown>,
@@ -582,63 +590,103 @@ export class FileTreeMemoryStore implements IMemoryStore {
     }
     const evicted: ReadonlyArray<MemoryId> = decision.decision === 'cull-oldest' ? decision.evict : [];
     return this._buildRecord(record, body, existing, policy, hash)
-      .thenOnSuccess((built) => this._embedOnWrite(built, existing))
-      .onSuccess((built) => this._persist(built, scope, idStem))
-      .thenOnSuccess(async (persisted) =>
-        (await this._applyEvictions(decision, scope)).onSuccess(() => succeed({ record: persisted, evicted }))
-      );
+      .thenOnSuccess((built) => this._embedOnWrite(built))
+      .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, idStem))
+      .thenOnSuccess(async (persisted) => {
+        const evictResult: Result<true> = this._applyEvictions(decision, scope);
+        if (evictResult.isFailure()) {
+          return fail(evictResult.message);
+        }
+        // Best-effort: prune the evicted cohort's vectors after their files are
+        // gone. A removal failure is logged, never fatal (the record store has
+        // already committed the eviction).
+        await this._removeEvictedVectors(evicted);
+        return succeed({ record: persisted, evicted });
+      });
   }
 
   /**
-   * Embed-on-write hook. When a vector index AND an embedder are wired, embeds the
-   * built record, invalidates a now-stale vector when the content hash changed
-   * (re-embed-on-edit), adds the new vector, and stamps the returned
-   * `embeddingRef` onto the envelope. A pass-through no-op when unwired — the
-   * additive default, so an unwired store persists a byte-identical record.
+   * Best-effort embed-on-write. When a vector index AND an embedder are wired,
+   * embeds the built record, `add`s the vector (replace semantics handle a same-id
+   * re-embed — no explicit remove), and stamps the returned `embeddingRef`. A
+   * failure (returned `fail` OR a thrown/rejected hook) is logged and the
+   * unembedded record is returned unchanged — the put still persists, and the
+   * derived index is reconciled by a later `rebuild`. A pass-through no-op when
+   * unwired (byte-identical record).
    *
-   * Embedding (or index) failure fails the whole `put`: the record is not yet
-   * persisted at this point, so the store never ends up with a file on disk whose
-   * vector is silently missing from the index.
+   * Always succeeds (`Result` is the chain's shape, never a vector-induced
+   * failure).
    */
-  private async _embedOnWrite(
-    built: IMemoryRecord<string>,
-    existing: IMemoryRecord<unknown> | undefined
-  ): Promise<Result<IMemoryRecord<string>>> {
+  private async _embedOnWrite(built: IMemoryRecord<string>): Promise<Result<IMemoryRecord<string>>> {
     if (this._vectorIndex === undefined || this._embed === undefined) {
       return succeed(built);
     }
     const vectorIndex: IVectorIndex = this._vectorIndex;
-    const embedded: Result<Float32Array> = await this._embed(built);
+    const embed: MemoryEmbedder = this._embed;
+    const embedded: Result<Float32Array> = await this._tryVectorOp(
+      () => embed(built),
+      `embedding '${built.envelope.id}'`
+    );
     if (embedded.isFailure()) {
-      return fail(`memory put '${built.envelope.id}': embedding failed: ${embedded.message}`);
+      return succeed(built);
     }
-    // Re-embed-on-edit: a content change makes the prior vector stale. Invalidate
-    // it before adding the replacement. In the flat layout the old and new id are
-    // identical, so the subsequent `add` would overwrite anyway; the explicit
-    // `remove` honors the design-lock contract and keeps a backend whose `add`
-    // does not replace consistent.
-    if (existing !== undefined && existing.envelope.contentHash !== built.envelope.contentHash) {
-      const removed: Result<MemoryId> = await vectorIndex.remove(existing.envelope.id);
-      if (removed.isFailure()) {
-        return fail(`memory put '${built.envelope.id}': stale vector removal failed: ${removed.message}`);
-      }
-    }
-    const added: Result<string> = await vectorIndex.add(built.envelope.id, embedded.value);
+    const added: Result<string> = await this._tryVectorOp(
+      () => vectorIndex.add(built.envelope.id, embedded.value),
+      `vector add for '${built.envelope.id}'`
+    );
     if (added.isFailure()) {
-      return fail(`memory put '${built.envelope.id}': vector add failed: ${added.message}`);
+      return succeed(built);
     }
     return succeed({ envelope: { ...built.envelope, embeddingRef: added.value }, body: built.body });
   }
 
   /** Evict the records named by a `cull-oldest` decision (`accept` is a no-op). */
-  private async _applyEvictions(decision: AdmissionDecision, scope: MemoryScopeKey): Promise<Result<true>> {
+  private _applyEvictions(decision: AdmissionDecision, scope: MemoryScopeKey): Result<true> {
     if (decision.decision === 'cull-oldest') {
-      const evictions: Result<MemoryId>[] = await Promise.all(
-        decision.evict.map((id) => this._evict(scope, id))
-      );
-      return mapResults(evictions).onSuccess(() => succeed(true));
+      return mapResults(decision.evict.map((id) => this._evict(scope, id))).onSuccess(() => succeed(true));
     }
     return succeed(true);
+  }
+
+  /** Best-effort vector removal for each evicted record (never fails the put). */
+  private async _removeEvictedVectors(evicted: ReadonlyArray<MemoryId>): Promise<void> {
+    for (const id of evicted) {
+      await this._removeVectorBestEffort(id);
+    }
+  }
+
+  /**
+   * Run a consumer-supplied vector hook, normalizing a thrown/rejected hook into a
+   * `Failure` and logging any failure at `warn`. Best-effort: the caller proceeds
+   * regardless, since the index is rebuildable.
+   */
+  private async _tryVectorOp<T>(op: () => Promise<Result<T>>, label: string): Promise<Result<T>> {
+    let result: Result<T>;
+    try {
+      result = await op();
+    } catch (err) {
+      result = fail(`${label} threw: ${String(err)}`);
+    }
+    if (result.isFailure()) {
+      this._warnSwallowed(
+        `memory: ${label} failed (best-effort; vector index left for rebuild): ${result.message}`
+      );
+    }
+    return result;
+  }
+
+  /**
+   * Best-effort vector removal. A no-op unless the full vector lifecycle is wired
+   * (both an index AND an embedder), so an unwired store does no vector work and
+   * behaves byte-identically. Failures are logged, never surfaced — a committed
+   * delete/eviction must not fail because a derived index could not be pruned.
+   */
+  private async _removeVectorBestEffort(id: MemoryId): Promise<void> {
+    if (this._vectorIndex === undefined || this._embed === undefined) {
+      return;
+    }
+    const vectorIndex: IVectorIndex = this._vectorIndex;
+    await this._tryVectorOp(() => vectorIndex.remove(id), `vector removal for '${id}'`);
   }
 
   /**
@@ -719,44 +767,29 @@ export class FileTreeMemoryStore implements IMemoryStore {
           if (existing === undefined) {
             return Promise.resolve(fail<MemoryId>(`memory delete '${entityId}': no record found`));
           }
+          // Delete the record file + index entry (authoritative), then prune the
+          // vector best-effort: a committed delete must not fail because the
+          // derived index could not be pruned.
           return this._deleteFile(addr.scope, addr.idStem)
             .onSuccess(() => this._index.patch('delete', { scope: addr.scope, record: existing }))
-            .thenOnSuccess(() => this._removeFromVectorIndex(existing.envelope.id))
-            .onSuccess(() => succeed(existing.envelope.id));
+            .thenOnSuccess(async () => {
+              await this._removeVectorBestEffort(existing.envelope.id);
+              return succeed(existing.envelope.id);
+            });
         });
       });
   }
 
-  /** Evict (physically delete) a single record by id, patching the index. */
-  private async _evict(scope: MemoryScopeKey, id: MemoryId): Promise<Result<MemoryId>> {
-    return this._readRecord(scope, id).thenOnSuccess((existing) => {
+  /** Evict (physically delete) a single record file by id, patching the index. */
+  private _evict(scope: MemoryScopeKey, id: MemoryId): Result<MemoryId> {
+    return this._readRecord(scope, id).onSuccess((existing) => {
       if (existing === undefined) {
-        return Promise.resolve(
-          fail<MemoryId>(`memory put: cannot evict '${id}' in scope '${scope}': not found`)
-        );
+        return fail(`memory put: cannot evict '${id}' in scope '${scope}': not found`);
       }
       return this._deleteFile(scope, id)
         .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
-        .thenOnSuccess(() => this._removeFromVectorIndex(id))
         .onSuccess(() => succeed(id));
     });
-  }
-
-  /**
-   * Remove a record's vector from the index. A no-op unless the full vector
-   * lifecycle is wired (both an index AND an embedder), so an unwired — or only
-   * partially wired — store does no vector work and behaves byte-identically.
-   * The gate mirrors {@link FileTreeMemoryStore._embedOnWrite}: vector
-   * maintenance is wholly on or wholly off, so a `remove` never fires for a
-   * record that was never embedded.
-   */
-  private async _removeFromVectorIndex(id: MemoryId): Promise<Result<MemoryId>> {
-    if (this._vectorIndex === undefined || this._embed === undefined) {
-      return succeed(id);
-    }
-    return (await this._vectorIndex.remove(id)).withErrorFormat(
-      (msg) => `memory: vector removal for '${id}' failed: ${msg}`
-    );
   }
 
   /** Project the incoming record's mutable fields into a merge-patch. */

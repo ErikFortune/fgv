@@ -60,6 +60,21 @@ describe('InMemoryCosineIndex', () => {
       expect(await index.add('a' as MemoryId, new Float32Array(0))).toFailWith(/empty vector/i);
     });
 
+    test('stores a defensive copy — mutating the caller buffer after add does not corrupt the index', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const buffer = Float32Array.from([1, 0]);
+      (await index.add('a' as MemoryId, buffer)).orThrow();
+      // Mutate the caller's buffer after the add; the stored vector must be unaffected.
+      buffer[0] = 0;
+      buffer[1] = 1;
+      expect(await index.query(Float32Array.from([1, 0]), 1)).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          // Still maximally similar to [1,0] — proves the index kept its own copy.
+          expect(hits[0].score).toBeCloseTo(1);
+        }
+      );
+    });
+
     test('fails loudly on a dimension mismatch against the established dimension', async () => {
       const index = InMemoryCosineIndex.create().orThrow();
       expect(await index.add('a' as MemoryId, Float32Array.from([1, 0]))).toSucceed();
@@ -193,8 +208,11 @@ describe('InMemoryCosineIndex', () => {
 
     test('fails loudly when the source list fails', async () => {
       const index = InMemoryCosineIndex.create().orThrow();
+      // Seed an entry so the reset-before-list rollback is observable, not just "stayed empty".
+      (await index.add('seed' as MemoryId, Float32Array.from([1, 1]))).orThrow();
       const source = new FakeSource(fail('disk gone'));
       expect(await index.rebuild(source, embed)).toFailWith(/failed to list records: disk gone/i);
+      expect(index.size).toBe(0);
     });
 
     test('fails loudly and rolls back to empty when an embedding fails mid-rebuild', async () => {
