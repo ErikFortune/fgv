@@ -61,8 +61,8 @@ export interface ISemanticRetrieverCreateParams {
  * loudly — it NEVER returns a silent empty.
  *
  * @remarks
- * The full embed-on-write path (and the in-package cosine index) is a post-v1
- * fast-follow; B2 ships the seam and the loud-degradation behavior.
+ * A consumer-supplied backend that rejects (throws) is normalized into a
+ * `Failure` — `retrieve` always honors its `Promise<Result<...>>` contract.
  * @public
  */
 export class SemanticRetriever implements IMemoryRetriever {

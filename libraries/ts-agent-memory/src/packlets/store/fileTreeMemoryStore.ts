@@ -142,8 +142,11 @@ export interface IFileTreeMemoryStoreCreateParams {
    * {@link IFileTreeMemoryStoreCreateParams.vectorIndex | vectorIndex}. The
    * consumer supplies it (e.g. `callProviderEmbedding` or in-process
    * transformers); the store never calls an embedding provider directly, so the
-   * core stays embedder-agnostic. A failed embedding fails the `put` loudly — a
-   * record is never persisted with a silently missing index entry.
+   * core stays embedder-agnostic. Embedding/index maintenance is **best-effort**:
+   * a failed (or throwing) `embed` / `add` / `remove` is logged at `warn` via
+   * {@link IFileTreeMemoryStoreCreateParams.logger | logger} and the record
+   * operation still succeeds — the vector index is a derived view that a later
+   * `rebuild` reconciles, so a vector failure never fails an authoritative write.
    */
   readonly embed?: MemoryEmbedder;
 }
