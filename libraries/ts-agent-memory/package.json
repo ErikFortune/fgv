@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-agent-memory",
-  "version": "5.1.0",
+  "version": "5.1.0-37",
   "description": "FileTree-backed storage and retrieval substrate for agent memory and knowledge",
   "main": "lib/index.js",
   "types": "dist/ts-agent-memory.d.ts",
