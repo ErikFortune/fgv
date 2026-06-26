@@ -128,29 +128,6 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `ts-agent-memory` ✅
-
-**Status:** ✅ v1 substrate complete — B0 (#496) + B1 (#497) + B2 (#498) + Phase C (#499) + cap-cull follow-up (#500) + vector/semantic recall (#502) merged to the integration branch; promotion PR `ts-agent-memory` → `release` open (knowledge + memory + semantic recall shipped together). Fast-follows (temporal / L2 tools / L3 ingest) deferred to `docs/FUTURE.md`. *(Entry left in this section pending a stale-marker sweep to relocate to Completed.)*
-**Workflow shape:** design-triage-implement on a single integration branch `ts-agent-memory` off `release`. `design.md` is already Phase-A-grade, so Phase A is a focused fork-resolution pass against the consumer requirements, not a from-scratch design.
-**Substrate:** `.ai/tasks/completed/2026-06/ts-agent-memory/` — `README.md`, `brief.md`, `exploration.md`, `design.md`, `design-lock.md`, `consumer-*.md`, `state.md`.
-**Package surface (new):** `libraries/ts-agent-memory` (`@fgv/ts-agent-memory`). Composes `@fgv/ts-json-base` (FileTree), `@fgv/ts-utils` (`Crc32Normalizer`, `RetainingRingBuffer`, conversion/validation, branded ids), `@fgv/ts-json` (`JsonEditor` for RFC-7386 merge-patch); `@fgv/ts-extras` (`callProviderEmbedding`) for the vector fast-follow only. Plus `.ai/instructions/LIBRARY_CAPABILITIES.md`.
-**Out-of-scope (consumer-owned per requirements §6):** three-tier compression pipeline, curator framework, working-memory composition, sentiment/epistemic *interpretation* (stored as opaque body payload), mnemonic/recall, actor/presence scoping, prompt-library integration, measurement. Also out of THIS build: the L2 agent-tool surface (`IAiClientTool` memory tools) and the L3 ingest orchestrator (designed, deferred — the consumer owns their pipeline).
-
-**Mission.** Ship `@fgv/ts-agent-memory` — the app-agnostic storage+retrieval substrate for agent memory and knowledge that PersonAIlity commissioned: a FileTree-backed markdown+frontmatter vault with a typed identity envelope, per-kind Converter-validated bodies (knowledge + experience families), attributed object edges (confidence/provenance/opt-in validity, cycle-safe), content-hash dedup, an injectable per-kind write-policy interface (admission + mutable-fields + JSON-Merge-Patch update), keyed-read + metadata-query retrieval whose interface is stable against a future semantic backend, and the optional-layer seams (vector / temporal / observe / qualifier-recall) each degrading loudly when unwired. **Full substrate commissioned; adoption is knowledge-first.**
-
-**Phase-A forks to resolve (blocking):** OQ-11 domain-keyed identity (`entityId` = the domain key; composite `(conversationId, turnIndex)` → filename-safe `id` + scope; orthogonal to temporal versioning) with a documented mapping; the `IWritePolicy` interface shape; merge-patch composition over `@fgv/ts-json` `JsonEditor`; reconcile entity-identity with the temporal-versioned layout; collapse OQ-10/OQ-13.
-
-**Acceptance criteria (consumer v1 §8 + repo gates):**
-- Both kind families registerable from one FileTree vault; bodies Converter-validated; no `any`.
-- Keyed read + metadata query (`Result`-returning); retrieval interface stable against a future semantic backend (no resignature).
-- Attributed-edge write (cycle-safe) + content-hash dedup on write.
-- Pluggable per-kind write policy accepting admission + mutable-field + merge-patch.
-- All public surface returns `Result`, validates via Converters, does I/O through FileTree.
-- OQ-11 resolved with a documented domain-keyed-identity mapping.
-- `rushx build` + `rushx lint` + `rushx test` (100% coverage) green in `ts-agent-memory`; `rushx fixlint` pre-commit; `code-reviewer` pass; api-extractor report generated.
-
-**Origin.** Promoted from `docs/FUTURE.md` on the PersonAIlity commission (2026-06-25); consumer ask captured in `consumer-requirements-personaility.md` + `consumer-assessment-personaility.md`. Strong validation: PersonAIlity stream-3 independently converged on the same vault model. Commissioned now (prioritized) to capture consumer-#1 adoption rather than let them fork a bespoke knowledge store.
-
 ### `private-key-storage` ✅
 
 **Status:** ✅ implemented + reviewed (PR #427, gates green) — ready for squash to `release`
@@ -226,6 +203,17 @@ Design-triage-implement shape is likely; new public API has real consequences.
 ---
 
 ## Completed workstreams
+
+### `ts-agent-memory` ✅
+
+**Status:** ✅ shipped — `@fgv/ts-agent-memory` v1 (knowledge + memory + semantic recall) promoted to `release` via PR #501 (2026-06-26). Constituent PRs #496–#500 + #502 squashed onto the integration branch; design spike #495 superseded/closed.
+**Package surface:** new `libraries/ts-agent-memory` (`@fgv/ts-agent-memory`) + `.ai/instructions/LIBRARY_CAPABILITIES.md`.
+
+**What shipped.** App-agnostic storage + retrieval substrate for agent memory and knowledge: FileTree markdown+frontmatter vault; typed identity envelope + per-kind Converter-validated bodies (knowledge + experience); domain-keyed identity (`IIdentityCodec`, no minted UUIDs); attributed cycle-safe edges; content-hash dedup with per-kind `dedupScope`; injectable `IWritePolicy` (LWW / cap-cull-oldest + RFC-7386 merge-patch); retrieval stable against a future semantic/temporal backend; ring-backed observation; and **operational semantic recall** (`InMemoryCosineIndex` + embed-on-write, consumer-injected embedder). 314 tests, 100% coverage. Consumer #1: PersonAIlity (knowledge-first behind `IKnowledgeSearchProvider`).
+
+**Fast-follows (deferred; seams present):** temporal versioned write path + retrievers; L2 agent-tool surface; L3 ingest orchestrator. See `docs/FUTURE.md`.
+
+**Artifacts:** [`.ai/tasks/completed/2026-06/ts-agent-memory/`](../.ai/tasks/completed/2026-06/ts-agent-memory/) (+ `ts-agent-memory-vector/`).
 
 ### `ai-assist-embeddings` ✅
 
