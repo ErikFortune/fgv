@@ -204,6 +204,17 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ## Completed workstreams
 
+### `ts-agent-memory` ✅
+
+**Status:** ✅ shipped — `@fgv/ts-agent-memory` v1 (knowledge + memory + semantic recall) promoted to `release` via PR #501 (2026-06-26). Constituent PRs #496–#500 + #502 squashed onto the integration branch; design spike #495 superseded/closed.
+**Package surface:** new `libraries/ts-agent-memory` (`@fgv/ts-agent-memory`) + `.ai/instructions/LIBRARY_CAPABILITIES.md`.
+
+**What shipped.** App-agnostic storage + retrieval substrate for agent memory and knowledge: FileTree markdown+frontmatter vault; typed identity envelope + per-kind Converter-validated bodies (knowledge + experience); domain-keyed identity (`IIdentityCodec`, no minted UUIDs); attributed cycle-safe edges; content-hash dedup with per-kind `dedupScope`; injectable `IWritePolicy` (LWW / cap-cull-oldest + RFC-7386 merge-patch); retrieval stable against a future semantic/temporal backend; ring-backed observation; and **operational semantic recall** (`InMemoryCosineIndex` + embed-on-write, consumer-injected embedder). 314 tests, 100% coverage. Consumer #1: PersonAIlity (knowledge-first behind `IKnowledgeSearchProvider`).
+
+**Fast-follows (deferred; seams present):** temporal versioned write path + retrievers; L2 agent-tool surface; L3 ingest orchestrator. See `docs/FUTURE.md`.
+
+**Artifacts:** [`.ai/tasks/completed/2026-06/ts-agent-memory/`](../.ai/tasks/completed/2026-06/ts-agent-memory/) (+ `ts-agent-memory-vector/`).
+
 ### `ai-assist-embeddings` ✅
 
 **Status:** ✅ shipped to integration branch `ai-assist-embeddings` (Phases 1–4 via PRs #481–#484; each squash/merge into the integration branch, promotion to `release` to follow with the rest of the branch).

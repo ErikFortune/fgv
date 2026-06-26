@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add @fgv/ts-agent-memory: storage + retrieval substrate for agent memory and knowledge (v1)",
+      "type": "none",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}
