@@ -312,9 +312,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
       error: result.isFailure() ? result.message : undefined
     });
     // Fire one `'delete'` observation per record evicted by cap-cull. The
-    // evicted records share the incoming record's `(scope, kind)` cohort, so the
-    // incoming `entityId` resolves the same scope; the observation records the
-    // evicted record's own `id`. A no-op / first-write / reject path yields no
+    // evicted records are always in the same `(scope, kind)` cohort as the
+    // incoming record, so resolving the scope from the incoming `entityId`
+    // yields the evicted record's scope; the observation records the evicted
+    // record's own `id`. A no-op / first-write / reject path yields no
     // evictions, so this loop is empty there.
     if (result.isSuccess()) {
       for (const evictedId of result.value.evicted) {
