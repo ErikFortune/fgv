@@ -128,6 +128,20 @@ export interface IFileTreeMemoryStoreCreateParams {
   readonly logger?: Logging.ILogger;
 }
 
+/**
+ * The internal outcome of a locked `put`: the written (or existing, on a
+ * dedup no-op) record plus the {@link MemoryId}s evicted by a `cull-oldest`
+ * admission decision. The eviction file-deletes and index patches happen
+ * inside the write-lock; the `evicted` ids are surfaced so the public `put`
+ * can fire one `'delete'` observation per evicted record AFTER the lock
+ * releases — consistent with the post-op firing of the other observation
+ * hooks, and avoiding observer re-entrancy into the still-held write-lock.
+ */
+interface IPutOutcome {
+  readonly record: IMemoryRecord<unknown>;
+  readonly evicted: ReadonlyArray<MemoryId>;
+}
+
 interface IInternalParams {
   readonly root: FileTree.IMutableFileTreeDirectoryItem;
   readonly registry: IRegistry;
@@ -290,14 +304,27 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   /** {@inheritDoc IMemoryStore.put} */
   public async put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>> {
-    const result: Result<IMemoryRecord<unknown>> = await this._enqueue(() => this._putLocked(record));
+    const result: Result<IPutOutcome> = await this._enqueue(() => this._putLocked(record));
     await this._fireObservation('write', record.envelope.kind, record.envelope.entityId, {
       outcome: result.isSuccess() ? 'success' : 'failure',
-      id: result.isSuccess() ? result.value.envelope.id : record.envelope.id,
+      id: result.isSuccess() ? result.value.record.envelope.id : record.envelope.id,
       provenance: record.envelope.provenance,
       error: result.isFailure() ? result.message : undefined
     });
-    return result;
+    // Fire one `'delete'` observation per record evicted by cap-cull. The
+    // evicted records share the incoming record's `(scope, kind)` cohort, so the
+    // incoming `entityId` resolves the same scope; the observation records the
+    // evicted record's own `id`. A no-op / first-write / reject path yields no
+    // evictions, so this loop is empty there.
+    if (result.isSuccess()) {
+      for (const evictedId of result.value.evicted) {
+        await this._fireObservation('delete', record.envelope.kind, record.envelope.entityId, {
+          outcome: 'success',
+          id: evictedId
+        });
+      }
+    }
+    return result.onSuccess((outcome) => succeed(outcome.record));
   }
 
   /** {@inheritDoc IMemoryStore.delete} */
@@ -401,7 +428,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       .orDefault();
   }
 
-  private async _putLocked(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>> {
+  private async _putLocked(record: IMemoryRecord<unknown>): Promise<Result<IPutOutcome>> {
     const envelope: IMemoryEnvelope = record.envelope;
     if (typeof record.body !== 'string') {
       return fail(
@@ -439,7 +466,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     scope: MemoryScopeKey,
     idStem: string,
     hash: string
-  ): Result<IMemoryRecord<unknown>> {
+  ): Result<IPutOutcome> {
     const policy: IWritePolicy = this._policyFor(record.envelope.kind);
     const dedupScope: DedupScope = policy.dedupScope ?? DEFAULT_DEDUP_SCOPE;
     // Content-hash dedup runs BEFORE policy. Its granularity is the kind's
@@ -454,13 +481,13 @@ export class FileTreeMemoryStore implements IMemoryStore {
     if (dedupScope === 'content') {
       const duplicate: IMemoryRecord<unknown> | undefined = this._findByContentHash(scope, hash);
       if (duplicate !== undefined) {
-        return succeed(duplicate);
+        return succeed({ record: duplicate, evicted: [] });
       }
     }
     return this._readRecord(scope, idStem).onSuccess((existing) => {
       if (dedupScope === 'entity' && existing !== undefined && existing.envelope.contentHash === hash) {
         // Entity-scoped dedup: an identical re-put of the same entity is a no-op.
-        return succeed(existing);
+        return succeed({ record: existing, evicted: [] });
       }
       // The admission cohort is the set of records the policy's cap applies to:
       // every record in this scope of this kind EXCEPT the target id. On a first
@@ -485,7 +512,12 @@ export class FileTreeMemoryStore implements IMemoryStore {
         return this._buildRecord(record, body, existing, policy, hash)
           .onSuccess((built) => this._persist(built, scope, idStem))
           .onSuccess((persisted) =>
-            this._applyEvictions(decision, scope).onSuccess(() => succeed(persisted))
+            this._applyEvictions(decision, scope).onSuccess(() =>
+              succeed({
+                record: persisted,
+                evicted: decision.decision === 'cull-oldest' ? decision.evict : []
+              })
+            )
           );
       });
     });

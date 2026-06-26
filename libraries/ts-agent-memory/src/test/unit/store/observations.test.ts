@@ -15,10 +15,13 @@ import {
   IMemoryObservationRecord,
   IMemoryObserver,
   IMemoryRecord,
+  IWritePolicy,
   Kind,
   KnowledgeIdentityCodec,
+  MemoryCapCullPolicy,
   MemoryId,
   MemoryObservationStore,
+  MtmIdentityCodec,
   envelopeConverter
 } from '../../../index';
 
@@ -159,6 +162,75 @@ describe('FileTreeMemoryStore observations', () => {
       await store.delete(knowledgeKind, 'doc-a' as EntityId);
       expect(observations.query().map((r) => r.seq)).toEqual([1, 2, 3]);
       expect(observations.lastSeq).toBe(3);
+    });
+  });
+
+  describe('cap-cull eviction observations', () => {
+    const mtmKind: Kind = 'mtm' as Kind;
+
+    function mtmRegistry(): IBodyConverterRegistry {
+      const registry = BodyConverterRegistry.create().orThrow();
+      registry.register(mtmKind, Converters.string);
+      return registry;
+    }
+
+    function makeMtmRecord(turn: number, body: string): IMemoryRecord<unknown> {
+      return {
+        envelope: envelopeConverter
+          .convert({
+            id: `turn-${turn}`,
+            entityId: `conv-1:${turn}`,
+            kind: 'mtm',
+            tags: [],
+            links: [],
+            created: 0,
+            updated: 0,
+            seq: 0,
+            contentHash: '',
+            provenance: { source: 'agent' }
+          })
+          .orThrow(),
+        body
+      };
+    }
+
+    test('fires a delete observation for each record evicted by cap-cull', async () => {
+      const observations = MemoryObservationStore.create().orThrow();
+      const capCull: IWritePolicy = MemoryCapCullPolicy.create({
+        maxRecords: 2,
+        mutableFields: ['body', 'tags', 'links', 'provenance', 'embeddingRef']
+      }).orThrow();
+      const store = FileTreeMemoryStore.create({
+        root: mutableRoot(),
+        registry: mtmRegistry(),
+        codecs: new Map<Kind, IIdentityCodec>([[mtmKind, new MtmIdentityCodec()]]),
+        writePolicies: new Map<Kind, IWritePolicy>([[mtmKind, capCull]]),
+        clock,
+        observers: [observations]
+      }).orThrow();
+
+      for (let turn = 0; turn < 3; turn++) {
+        clockValue = 1000 + turn; // distinct `created` so turn-0 is unambiguously oldest.
+        (await store.put(makeMtmRecord(turn, `turn ${turn}`))).orThrow();
+      }
+
+      // The third put admits turn-2 and evicts the oldest (turn-0): the audit
+      // stream must carry a `'delete'` observation naming the evicted record,
+      // in the same (scope, kind) as the write that triggered it.
+      const deletes: ReadonlyArray<IMemoryObservationRecord> = observations.query({ phase: 'delete' });
+      expect(deletes).toHaveLength(1);
+      expect(deletes[0]).toMatchObject({
+        phase: 'delete',
+        outcome: 'success',
+        id: 'turn-0',
+        kind: 'mtm',
+        scope: 'conversations/conv-1'
+      });
+
+      // Three writes + one eviction delete = four observations, strictly
+      // increasing seq (the store is the single seq authority).
+      expect(observations.query({ phase: 'write' })).toHaveLength(3);
+      expect(observations.query().map((r) => r.seq)).toEqual([1, 2, 3, 4]);
     });
   });
 
