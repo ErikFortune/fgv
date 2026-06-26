@@ -6,7 +6,7 @@
 import { Result, fail, succeed } from '@fgv/ts-utils';
 import { IMemoryRecord, MemoryId } from '../types';
 import { IIndexedMemoryRecord, IMemoryIndex } from '../index';
-import { IVectorIndex } from '../vector';
+import { IVectorIndex, IVectorQueryHit } from '../vector';
 import {
   IMemoryQuery,
   IMemoryRetriever,
@@ -22,7 +22,7 @@ import {
  * `Result`-returning, since a real embedder does a network call.
  * @public
  */
-export type QueryEmbedder = (text: string) => Promise<Result<ReadonlyArray<number>>>;
+export type QueryEmbedder = (text: string) => Promise<Result<Float32Array>>;
 
 /**
  * The semantic backend wired into a {@link SemanticRetriever}: the vector index
@@ -61,8 +61,8 @@ export interface ISemanticRetrieverCreateParams {
  * loudly — it NEVER returns a silent empty.
  *
  * @remarks
- * The full embed-on-write path (and the in-package cosine index) is a post-v1
- * fast-follow; B2 ships the seam and the loud-degradation behavior.
+ * A consumer-supplied backend that rejects (throws) is normalized into a
+ * `Failure` — `retrieve` always honors its `Promise<Result<...>>` contract.
  * @public
  */
 export class SemanticRetriever implements IMemoryRetriever {
@@ -101,13 +101,22 @@ export class SemanticRetriever implements IMemoryRetriever {
     if (this._backend === undefined) {
       return fail(SEMANTIC_UNWIRED_MESSAGE);
     }
-    const embedded: Result<ReadonlyArray<number>> = await this._backend.embedQuery(query.semantic);
+    const backend: ISemanticBackend = this._backend;
+    // The backend hooks are consumer-supplied; a rejecting (throwing) impl must
+    // still surface as a `Failure`, never escape `retrieve` as a rejected
+    // promise. `_callBackend` normalizes both a returned `fail` and a rejection.
+    const embedded: Result<Float32Array> = await SemanticRetriever._callBackend('query embedding', () =>
+      backend.embedQuery(query.semantic as string)
+    );
     if (embedded.isFailure()) {
-      return fail(`semantic recall: query embedding failed: ${embedded.message}`);
+      return fail(embedded.message);
     }
-    const hits = await this._backend.vectorIndex.query(embedded.value, query.topK ?? 10);
+    const hits: Result<ReadonlyArray<IVectorQueryHit>> = await SemanticRetriever._callBackend(
+      'vector query',
+      () => backend.vectorIndex.query(embedded.value, query.topK ?? 10)
+    );
     if (hits.isFailure()) {
-      return fail(`semantic recall: vector query failed: ${hits.message}`);
+      return fail(hits.message);
     }
     const byId: Map<MemoryId, IIndexedMemoryRecord> = new Map(
       this._index.entries().map((entry) => [entry.record.envelope.id, entry])
@@ -120,5 +129,19 @@ export class SemanticRetriever implements IMemoryRetriever {
       }
     }
     return succeed(limitRecords(records, query.limit));
+  }
+
+  /**
+   * Invoke a consumer-supplied backend hook, normalizing both a returned `fail`
+   * and a thrown/rejected promise into a single `semantic recall: <label> failed`
+   * `Failure`. Keeps `retrieve` within the `Promise<Result<...>>` contract even
+   * when the injected `embedQuery` / `vectorIndex` misbehaves.
+   */
+  private static async _callBackend<T>(label: string, op: () => Promise<Result<T>>): Promise<Result<T>> {
+    try {
+      return (await op()).withErrorFormat((msg) => `semantic recall: ${label} failed: ${msg}`);
+    } catch (err) {
+      return fail(`semantic recall: ${label} failed: ${String(err)}`);
+    }
   }
 }

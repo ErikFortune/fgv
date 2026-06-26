@@ -110,11 +110,13 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly clock?: () => number;
     readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
     readonly defaultCodec?: IIdentityCodec;
+    readonly embed?: MemoryEmbedder;
     readonly logger?: Logging.ILogger;
     readonly observers?: ReadonlyArray<IMemoryObserver>;
     readonly registry: IBodyConverterRegistry;
     readonly root: FileTree.IMutableFileTreeDirectoryItem;
     readonly scopeEncoding?: (scope: MemoryScopeKey) => Result<string>;
+    readonly vectorIndex?: IVectorIndex;
     readonly writePolicies?: ReadonlyMap<Kind, IWritePolicy>;
 }
 
@@ -236,6 +238,11 @@ export interface IMemoryRecord<TBody = unknown> {
 }
 
 // @public
+export interface IMemoryRecordSource {
+    list(): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+}
+
+// @public
 export interface IMemoryRetriever {
     readonly capabilities: IMemoryRetrieverCapabilities;
     retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
@@ -274,6 +281,16 @@ export interface IMergeStrategy {
 export function indexedRecordMatchesQuery(entry: IIndexedMemoryRecord, query: IMemoryQuery): boolean;
 
 // @public
+export class InMemoryCosineIndex implements IVectorIndex {
+    add(id: MemoryId, vector: Float32Array): Promise<Result<string>>;
+    static create(): Result<InMemoryCosineIndex>;
+    query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder): Promise<Result<number>>;
+    remove(id: MemoryId): Promise<Result<MemoryId>>;
+    get size(): number;
+}
+
+// @public
 export interface IProvenance {
     readonly [key: string]: unknown;
     readonly by?: string;
@@ -303,8 +320,8 @@ export interface ITemporalBlock {
 
 // @public
 export interface IVectorIndex {
-    add(id: MemoryId, vector: ReadonlyArray<number>): Promise<Result<string>>;
-    query(vector: ReadonlyArray<number>, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    add(id: MemoryId, vector: Float32Array): Promise<Result<string>>;
+    query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
     remove(id: MemoryId): Promise<Result<MemoryId>>;
 }
 
@@ -382,6 +399,9 @@ export class MemoryCapCullPolicy implements IWritePolicy {
 }
 
 // @public
+export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array>>;
+
+// @public
 export type MemoryId = Brand<string, 'MemoryId'>;
 
 // @public
@@ -440,7 +460,7 @@ export const provenanceConverter: Converter<IProvenance>;
 export type ProvenanceSource = 'agent' | 'host-ingest' | 'human' | (string & {});
 
 // @public
-export type QueryEmbedder = (text: string) => Promise<Result<ReadonlyArray<number>>>;
+export type QueryEmbedder = (text: string) => Promise<Result<Float32Array>>;
 
 // @public
 export function recencyCompare(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number;

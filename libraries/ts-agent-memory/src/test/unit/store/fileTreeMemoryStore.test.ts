@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   AdmissionDecision,
@@ -396,18 +396,37 @@ describe('FileTreeMemoryStore', () => {
       expect(await store.get(knowledgeKind, 'old' as EntityId)).toSucceedWith(undefined);
     });
 
-    test("a 'cull-oldest' decision fails when an evicted record is missing", async () => {
+    test("a 'cull-oldest' eviction of a missing record is best-effort: the committed put still succeeds and the failure is logged", async () => {
       const cullPolicy: IWritePolicy = {
         mutableFields: ['body'],
         admit: (): Result<AdmissionDecision> =>
           succeed({ decision: 'cull-oldest', evict: ['ghost' as MemoryId] }),
         applyUpdate: (r): Result<IMemoryRecord<unknown>> => succeed(r)
       };
-      const store = createStore({
-        writePolicies: new Map<Kind, IWritePolicy>([[knowledgeKind, cullPolicy]])
+      const logger = new Logging.InMemoryLogger();
+      const store = FileTreeMemoryStore.create({
+        root: mutableRoot(),
+        registry: knowledgeRegistry(),
+        codecs: knowledgeCodecs,
+        writePolicies: new Map<Kind, IWritePolicy>([[knowledgeKind, cullPolicy]]),
+        clock,
+        logger
       }).orThrow();
-      expect(await store.put(makeRecord({ id: 'new', body: 'new' }))).toFailWith(
-        /cannot evict 'ghost'.*not found/i
+      // The new record is the authoritative commit; a failed best-effort eviction
+      // must NOT fail the put — it is logged and the cap self-heals next write.
+      expect(await store.put(makeRecord({ id: 'new', body: 'new' }))).toSucceedAndSatisfy(
+        (put: IMemoryRecord<unknown>) => {
+          expect(put.envelope.id).toBe('new');
+          expect(put.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+      expect(await store.get(knowledgeKind, 'new' as EntityId)).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown> | undefined) => {
+          expect(record?.envelope.id).toBe('new');
+        }
+      );
+      expect(logger.logged.some((m) => /best-effort eviction of 'ghost' failed.*not found/i.test(m))).toBe(
+        true
       );
     });
   });
