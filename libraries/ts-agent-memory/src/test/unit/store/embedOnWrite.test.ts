@@ -77,7 +77,14 @@ function featureVector(text: string): Float32Array {
   return Float32Array.from(MARKERS.map((m) => lower.split(m).length - 1));
 }
 const recordEmbed = (r: IMemoryRecord<unknown>): Promise<Result<Float32Array>> =>
-  Promise.resolve(succeed(featureVector(r.body as string)));
+  // A real embedder receives an `IMemoryRecord<unknown>` and must validate the
+  // body through a Converter rather than casting — this models that idiom.
+  Promise.resolve(
+    Converters.string
+      .convert(r.body)
+      .withErrorFormat((msg) => `cannot embed: body is not a string: ${msg}`)
+      .onSuccess((body) => succeed(featureVector(body)))
+  );
 const queryEmbed = (text: string): Promise<Result<Float32Array>> =>
   Promise.resolve(succeed(featureVector(text)));
 
@@ -285,7 +292,10 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       (await store.put(makeRecord('dogs', 'dog dog dog'))).orThrow();
       (await store.put(makeRecord('fishes', 'fish fish fish'))).orThrow();
 
-      // Build a record index mirroring the store (knowledge scope) for hydration.
+      // SemanticRetriever takes an IMemoryIndex separate from the store (the
+      // store's derived index is private and the two are intentionally
+      // decoupled), so build a record index mirroring the store — keyed by the
+      // shared vectorIndex instance — for hit hydration.
       const listed: ReadonlyArray<IMemoryRecord<unknown>> = (await store.list()).orThrow();
       const recordIndex = MemoryIndex.create().orThrow();
       recordIndex

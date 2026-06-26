@@ -104,6 +104,10 @@ export class InMemoryCosineIndex implements IVectorIndex {
    * re-embed with a different model is supported. Returns the number of vectors
    * indexed.
    *
+   * On any failure (list, embed, or add) the index is rolled back to empty
+   * rather than left in a partially-rebuilt state — a caller that retries a query
+   * after a failed rebuild sees a clean empty index, never a half-populated one.
+   *
    * @param source - The record source to re-embed (an {@link IMemoryStore}
    * satisfies this structurally).
    * @param embed - The embedder applied to each record.
@@ -113,19 +117,26 @@ export class InMemoryCosineIndex implements IVectorIndex {
     if (listed.isFailure()) {
       return fail(`vector index rebuild: failed to list records: ${listed.message}`);
     }
-    this._vectors.clear();
-    this._dimension = undefined;
+    this._reset();
     for (const record of listed.value) {
       const embedded: Result<Float32Array> = await embed(record);
       if (embedded.isFailure()) {
+        this._reset();
         return fail(`vector index rebuild: embedding '${record.envelope.id}' failed: ${embedded.message}`);
       }
       const added: Result<string> = await this.add(record.envelope.id, embedded.value);
       if (added.isFailure()) {
+        this._reset();
         return fail(`vector index rebuild: ${added.message}`);
       }
     }
     return succeed(this._vectors.size);
+  }
+
+  /** Empty the index and forget the established dimension. */
+  private _reset(): void {
+    this._vectors.clear();
+    this._dimension = undefined;
   }
 
   /** The Euclidean magnitude (L2 norm) of a vector. */

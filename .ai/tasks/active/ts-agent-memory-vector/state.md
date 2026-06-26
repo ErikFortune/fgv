@@ -75,4 +75,34 @@ core (the embedder is consumer-injected — core stays embedder-agnostic, no `ai
 
 ## code-reviewer findings + dispositions
 
-_(filled in below after the layer-1 pass)_
+Layer-1 `code-reviewer` pass on the final diff. **No P1s.** Three P2s, three P3s.
+
+**P1 — none.** Clear of `any`, unsafe casts, `Result<void>`, cross-boundary throws, security issues.
+
+**P2 (all resolved):**
+1. *Unsafe cast `r.body as string` in the test embedder* (`embedOnWrite.test.ts`). **Fixed** —
+   the `recordEmbed` test helper now validates the body via `Converters.string.convert(r.body)`
+   (modelling the idiom a real `MemoryEmbedder` over `IMemoryRecord<unknown>` should use) instead of
+   casting.
+2. *`seeded()` and the zero-magnitude tests discarded `Result`s from `add()`* (`inMemoryCosineIndex.test.ts`).
+   **Fixed** — all setup `add`/`remove` calls are now `(await …).orThrow()`.
+3. *`rebuild` left the index in a partial state on failure* (`inMemoryCosineIndex.ts`). **Fixed** —
+   added a `_reset()` rollback on every failure path (list/embed/add), so a failed rebuild leaves a
+   clean empty index. Documented the contract in TSDoc and added two tests asserting `size === 0`
+   after a mid-rebuild embed failure (seeded beforehand so the rollback is observable) and after an
+   add failure.
+
+**P3:**
+1. *`query` dimension comparison reads `_dimension` (`number | undefined`) without TS narrowing.*
+   **Dispositioned (kept).** The `_vectors.size === 0` guard guarantees `_dimension` is defined when
+   the comparison runs (a dimension is always set on the first `add`). An explicit narrow would
+   introduce an unreachable `undefined` branch requiring a `c8 ignore` directive — net negative
+   against the no-unwarranted-directives discipline. The guard ordering is load-bearing and commented.
+2. *`hits.length > topK ? slice : hits` micro-branch.* **Dispositioned (kept).** Intentional — avoids
+   a redundant full-array copy when `hits.length <= topK`. Both arms are covered.
+3. *e2e test builds a `MemoryIndex` manually.* **Resolved** — added a comment explaining the
+   intentional store/retriever decoupling (the store's derived index is private; the retriever takes a
+   separate `IMemoryIndex`), keyed on the shared `vectorIndex` instance.
+
+Post-fix gates: `heft build` (+ api-extractor, no surface drift) clean; `heft lint` clean; `heft test`
+**314 tests, 100% coverage**.

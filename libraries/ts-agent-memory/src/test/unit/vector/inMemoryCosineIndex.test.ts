@@ -72,9 +72,9 @@ describe('InMemoryCosineIndex', () => {
   describe('query', () => {
     async function seeded(): Promise<InMemoryCosineIndex> {
       const index = InMemoryCosineIndex.create().orThrow();
-      await index.add('a' as MemoryId, Float32Array.from([1, 0]));
-      await index.add('b' as MemoryId, Float32Array.from([0, 1]));
-      await index.add('c' as MemoryId, Float32Array.from([1, 1]));
+      (await index.add('a' as MemoryId, Float32Array.from([1, 0]))).orThrow();
+      (await index.add('b' as MemoryId, Float32Array.from([0, 1]))).orThrow();
+      (await index.add('c' as MemoryId, Float32Array.from([1, 1]))).orThrow();
       return index;
     }
 
@@ -119,8 +119,8 @@ describe('InMemoryCosineIndex', () => {
 
     test('scores a degenerate (zero-magnitude) stored vector as 0 rather than NaN', async () => {
       const index = InMemoryCosineIndex.create().orThrow();
-      await index.add('zero' as MemoryId, Float32Array.from([0, 0]));
-      await index.add('unit' as MemoryId, Float32Array.from([1, 0]));
+      (await index.add('zero' as MemoryId, Float32Array.from([0, 0]))).orThrow();
+      (await index.add('unit' as MemoryId, Float32Array.from([1, 0]))).orThrow();
       expect(await index.query(Float32Array.from([1, 0]), 2)).toSucceedAndSatisfy(
         (hits: ReadonlyArray<IVectorQueryHit>) => {
           expect(hits.map((h) => h.id)).toEqual(['unit', 'zero']);
@@ -131,7 +131,7 @@ describe('InMemoryCosineIndex', () => {
 
     test('scores against a degenerate (zero-magnitude) query as 0 rather than NaN', async () => {
       const index = InMemoryCosineIndex.create().orThrow();
-      await index.add('unit' as MemoryId, Float32Array.from([1, 0]));
+      (await index.add('unit' as MemoryId, Float32Array.from([1, 0]))).orThrow();
       expect(await index.query(Float32Array.from([0, 0]), 1)).toSucceedAndSatisfy(
         (hits: ReadonlyArray<IVectorQueryHit>) => {
           expect(hits[0].score).toBe(0);
@@ -143,8 +143,8 @@ describe('InMemoryCosineIndex', () => {
   describe('remove', () => {
     test('removes a vector and is reflected in subsequent queries', async () => {
       const index = InMemoryCosineIndex.create().orThrow();
-      await index.add('a' as MemoryId, Float32Array.from([1, 0]));
-      await index.add('b' as MemoryId, Float32Array.from([0, 1]));
+      (await index.add('a' as MemoryId, Float32Array.from([1, 0]))).orThrow();
+      (await index.add('b' as MemoryId, Float32Array.from([0, 1]))).orThrow();
       expect(await index.remove('a' as MemoryId)).toSucceedWith('a' as MemoryId);
       expect(index.size).toBe(1);
       expect(await index.query(Float32Array.from([1, 0]), 5)).toSucceedAndSatisfy(
@@ -183,7 +183,7 @@ describe('InMemoryCosineIndex', () => {
     test('clears prior contents and re-establishes the dimension', async () => {
       const index = InMemoryCosineIndex.create().orThrow();
       // Seed a 3-dim vector, then rebuild with a 2-dim embedder.
-      await index.add('old' as MemoryId, Float32Array.from([1, 2, 3]));
+      (await index.add('old' as MemoryId, Float32Array.from([1, 2, 3]))).orThrow();
       const source = new FakeSource(succeed([record('a')]));
       expect(await index.rebuild(source, embed)).toSucceedWith(1);
       expect(index.size).toBe(1);
@@ -197,18 +197,28 @@ describe('InMemoryCosineIndex', () => {
       expect(await index.rebuild(source, embed)).toFailWith(/failed to list records: disk gone/i);
     });
 
-    test('fails loudly when an embedding fails', async () => {
+    test('fails loudly and rolls back to empty when an embedding fails mid-rebuild', async () => {
       const index = InMemoryCosineIndex.create().orThrow();
-      const source = new FakeSource(succeed([record('a')]));
-      const badEmbed = (): Promise<Result<Float32Array>> => Promise.resolve(fail('no model'));
-      expect(await index.rebuild(source, badEmbed)).toFailWith(/embedding 'a' failed: no model/i);
+      // Seed an existing entry so the rollback (not merely "stayed empty") is observable.
+      (await index.add('seed' as MemoryId, Float32Array.from([1, 1]))).orThrow();
+      // First record embeds fine, the second fails — so a naive impl would leave
+      // record 'a' indexed; the rollback must clear it.
+      let calls: number = 0;
+      const flakyEmbed = (r: IMemoryRecord<unknown>): Promise<Result<Float32Array>> => {
+        calls += 1;
+        return Promise.resolve(calls === 1 ? succeed(Float32Array.from([1, 1])) : fail('no model'));
+      };
+      const source = new FakeSource(succeed([record('a'), record('b')]));
+      expect(await index.rebuild(source, flakyEmbed)).toFailWith(/embedding 'b' failed: no model/i);
+      expect(index.size).toBe(0);
     });
 
-    test('fails loudly when adding an embedded vector fails (e.g. empty vector)', async () => {
+    test('fails loudly and rolls back to empty when adding an embedded vector fails', async () => {
       const index = InMemoryCosineIndex.create().orThrow();
       const source = new FakeSource(succeed([record('a')]));
       const emptyEmbed = (): Promise<Result<Float32Array>> => Promise.resolve(succeed(new Float32Array(0)));
       expect(await index.rebuild(source, emptyEmbed)).toFailWith(/empty vector/i);
+      expect(index.size).toBe(0);
     });
   });
 });
