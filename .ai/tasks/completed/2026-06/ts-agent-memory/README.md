@@ -8,7 +8,7 @@
 
 An app-agnostic **storage + retrieval substrate** for agent memory and knowledge: a FileTree-backed markdown + YAML-frontmatter vault with a typed identity envelope, per-kind Converter-validated bodies (knowledge + experience families), attributed cycle-safe object edges, content-hash dedup, an injectable per-kind write-policy, keyed-read + metadata-query retrieval whose interface is stable against a future semantic backend, and the optional-layer seams (vector / temporal / observe / qualifier-recall) each degrading loudly when unwired.
 
-**Small invariant core + optional present-when-wired layers.** All `Result`/Converter/FileTree, no `any`, 100% coverage throughout.
+**Small invariant core + optional present-when-wired layers.** All `Result`/Converter/FileTree, no `any`, 100% coverage throughout. Semantic recall is **operational** in v1 (in-package cosine `InMemoryCosineIndex` + embed-on-write, consumer-injected embedder); temporal and qualifier-conditional recall ship as seams only.
 
 ## Arc
 
@@ -16,7 +16,7 @@ An app-agnostic **storage + retrieval substrate** for agent memory and knowledge
 - **Platform design** (`design.md`) — the moderate-detail platform spec (PR #495 discoverability draft).
 - **Consumer ask** (`consumer-requirements-personaility.md` + `consumer-assessment-personaility.md`) — commissioned prioritized; PersonAIlity's stream-3 had independently converged on the same vault model.
 - **Phase A design-lock** (`design-lock.md`) — pinned interface signatures; resolved OQ-11 (domain-keyed identity via `IIdentityCodec`); verified `JsonEditor` is RFC-7386 with `{ nullAsDelete: true, arrayMergeBehavior: 'replace' }` (compose, no extension); knowledge-first build plan.
-- **Implementation** (tiers on the integration branch): B0 types+converters (#496) · B1 store+index (#497) · B2 retrieve+observe+vector-seam (#498) · Phase C memory slice — codecs, cap-cull, dedup-scope amendment, link-traversal (#499) · cap-cull cohort follow-up — evict observations + scoped/multi-victim tests (#500).
+- **Implementation** (tiers on the integration branch): B0 types+converters (#496) · B1 store+index (#497) · B2 retrieve+observe+vector-seam (#498) · Phase C memory slice — codecs, cap-cull, dedup-scope amendment, link-traversal (#499) · cap-cull cohort follow-up — evict observations + scoped/multi-victim tests (#500) · vector/semantic recall — `InMemoryCosineIndex` + embed-on-write (#502; substrate at `../ts-agent-memory-vector/`).
 
 ## Key decisions (full detail in `state.md` + `design-lock.md`)
 
@@ -28,8 +28,7 @@ An app-agnostic **storage + retrieval substrate** for agent memory and knowledge
 
 ## Fast-follows (deferred — see `docs/FUTURE.md`)
 
-Not shipped in v1; seams are present:
-- In-package cosine `IVectorIndex` impl + embed-on-write (the `IVectorIndex` seam + `embeddingRef` field ship; impl pending).
+Not shipped in v1; seams are present (vector/semantic recall **was** shipped in v1 via #502 — no longer a fast-follow):
 - Temporal versioned write path + temporal retrievers (`temporal?` envelope block + codec `isVersioned` flag present).
 - L2 agent-tool surface (`IAiClientTool`); L3 ingest orchestrator (consumer owns its pipeline; this would be the fgv-side ingestion target).
 

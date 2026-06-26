@@ -241,11 +241,12 @@ The cross-provider `ai-assist-embeddings` primitive shipped (`AiAssist.callProvi
 > promoted to `release`. Completion record:
 > `.ai/tasks/completed/2026-06/ts-agent-memory/`. Original design context retained below.
 >
-> **Fast-follow streams (deferred; seams already present):** (1) in-package cosine
-> `IVectorIndex` impl + embed-on-write; (2) temporal versioned write path + temporal
-> retrievers (`temporal?` envelope block + codec `isVersioned` flag already ship);
-> (3) L2 agent-tool surface (`IAiClientTool`); (4) L3 ingest orchestrator (the fgv-side
-> ingestion target for the consumer's own pipeline). Commission each when a consumer needs it.
+> **Vector / semantic recall shipped in v1** (`InMemoryCosineIndex` + embed-on-write, #502).
+> **Remaining fast-follow streams (deferred; seams already present):** (1) temporal
+> versioned write path + temporal retrievers (`temporal?` envelope block + codec
+> `isVersioned` flag already ship); (2) L2 agent-tool surface (`IAiClientTool`);
+> (3) L3 ingest orchestrator (the fgv-side ingestion target for the consumer's own
+> pipeline). Commission each when a consumer needs it.
 
 A structured-memory substrate for agents — an Obsidian-like graph (files + links +
 derived index) as the foundation for **both knowledge and distilled experience** —

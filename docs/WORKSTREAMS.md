@@ -130,7 +130,7 @@ substrate. Don't queue streams against them here.
 
 ### `ts-agent-memory` ✅
 
-**Status:** ✅ v1 substrate complete — B0 (#496) + B1 (#497) + B2 (#498) + Phase C (#499) + cap-cull follow-up (#500) merged to the integration branch; promotion PR `ts-agent-memory` → `release` open (knowledge + memory shipped together). Fast-follows (vector impl / temporal / L2 tools / L3 ingest) deferred to `docs/FUTURE.md`. *(Entry left in this section pending a stale-marker sweep to relocate to Completed.)*
+**Status:** ✅ v1 substrate complete — B0 (#496) + B1 (#497) + B2 (#498) + Phase C (#499) + cap-cull follow-up (#500) + vector/semantic recall (#502) merged to the integration branch; promotion PR `ts-agent-memory` → `release` open (knowledge + memory + semantic recall shipped together). Fast-follows (temporal / L2 tools / L3 ingest) deferred to `docs/FUTURE.md`. *(Entry left in this section pending a stale-marker sweep to relocate to Completed.)*
 **Workflow shape:** design-triage-implement on a single integration branch `ts-agent-memory` off `release`. `design.md` is already Phase-A-grade, so Phase A is a focused fork-resolution pass against the consumer requirements, not a from-scratch design.
 **Substrate:** `.ai/tasks/completed/2026-06/ts-agent-memory/` — `README.md`, `brief.md`, `exploration.md`, `design.md`, `design-lock.md`, `consumer-*.md`, `state.md`.
 **Package surface (new):** `libraries/ts-agent-memory` (`@fgv/ts-agent-memory`). Composes `@fgv/ts-json-base` (FileTree), `@fgv/ts-utils` (`Crc32Normalizer`, `RetainingRingBuffer`, conversion/validation, branded ids), `@fgv/ts-json` (`JsonEditor` for RFC-7386 merge-patch); `@fgv/ts-extras` (`callProviderEmbedding`) for the vector fast-follow only. Plus `.ai/instructions/LIBRARY_CAPABILITIES.md`.
