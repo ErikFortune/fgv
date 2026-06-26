@@ -424,6 +424,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-agent-memory",
+      "projectFolder": "libraries/ts-agent-memory",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-prompt-assist",
       "projectFolder": "libraries/ts-prompt-assist",
       "shouldPublish": true,
