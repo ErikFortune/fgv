@@ -334,17 +334,18 @@ After:
 ```typescript
 defaultModel: {
   base:      '@google-gemini:flash',
+  thinking:  '@google-gemini:pro',           // DECIDED: Pro is the default thinking-tier model
   image:     '@google-gemini:flash-image',
   embedding: '@google-gemini:embedding'
-  // optional product choice: thinking: '@google-gemini:pro'  (today thinking falls back to base — model.ts:538)
 }
 ```
 
 There is **no explicit `thinking` key** in Gemini's `defaultModel` today, so a thinking-context call
-falls back to `base` via `resolveModel` (`model.ts:538`). Whether the default thinking model should be
-`@google-gemini:pro` (Pro) vs. the base flash line is a **product choice**, flagged for the implementer;
-the migration at minimum aliases base/image/embedding. The `pro` and `flash-lite` aliases are defined
-regardless so consumers and the testbed thinking scenario can reference them.
+currently falls back to `base` via `resolveModel` (`model.ts:538`). **Decision (confirmed): add an
+explicit `thinking: '@google-gemini:pro'` key.** Pro is the reasoning-tier model; letting thinking fall
+back to the flash base line would repeat the `gpt-4o`-not-reasoning-capable mistake that drove the
+testbed to bypass the default (`result.md:16`). The `flash-lite` alias is still defined so consumers
+who want the cheaper thinking tier can reference it explicitly.
 
 ### Imagen retirement → converge on `gemini-3.1-flash-image-preview`
 
@@ -434,10 +435,10 @@ Imagen-retirement removals in §4 (permitted on the active surface). `ModelSpec`
   resolution. **No `defaultModel` changes yet** — proves the layer is inert until aliases are added.
 
 **Tier 2 — Gemini migration.**
-- Add the Gemini `aliases` block (§4); switch Gemini `defaultModel` to aliases.
+- Add the Gemini `aliases` block (§4); switch Gemini `defaultModel` to aliases, **including the explicit
+  `thinking: '@google-gemini:pro'` key** (decided).
 - Remove the retired `imagen-*` capability rules (`registry.ts:100-119`), `Imagen4ModelNames`
   (`model.ts:1021-1024`), `IImagen4ModelOptions` (`model.ts:1158-1163`) and their `index.ts` exports.
-- Product decision: whether to add `thinking: '@google-gemini:pro'` to Gemini `defaultModel`.
 - Update `GeminiThinkingModelNames` (`model.ts:1405`) and the `/^gemini-2\.5/` idPattern
   (`registry.ts:451`) for the 3.x line (the manual axis from §3).
 
@@ -476,9 +477,8 @@ value per §5.)
 
 ## 9. Open questions for the implementer / orchestrator
 
-1. **Default Gemini thinking model** — add `thinking: '@google-gemini:pro'` to `defaultModel`, or leave
-   thinking falling back to base flash? Product call (§4). Recommend adding it (Pro is the
-   reasoning-tier model; flash-as-thinking-default repeats the `gpt-4o` mistake).
+1. **Default Gemini thinking model** — **DECIDED: add `thinking: '@google-gemini:pro'` to `defaultModel`**
+   (Pro is the reasoning-tier model; flash-as-thinking-default would repeat the `gpt-4o` mistake). See §4.
 2. **Imagen rules — remove vs. leave** — design recommends **remove** (active-surface, models being shut
    down). Confirm no internal consumer pins an `imagen-4.0-*` id before deleting the typed surface.
 3. **Map location** — design recommends the **descriptor field** (travels with custom descriptors) over
