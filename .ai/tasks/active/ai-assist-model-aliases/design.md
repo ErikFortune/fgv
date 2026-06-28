@@ -355,14 +355,20 @@ who want the cheaper thinking tier can reference it explicitly.
   `:generateContent` and accepts reference images — exactly right for the flash-image model. So default
   image gen converges on the surviving model with **no capability-rule change required**.
 - The `imagen-4.0-ultra-` / `imagen-` capability rules (`registry.ts:100-119`) become **dead for default
-  usage** (nothing resolves to an `imagen-*` id any more). They can be left in place (harmless — raw
-  `imagen-…` passthrough still works for any caller who explicitly wants it during the shutdown window)
-  or removed as a permitted active-surface cleanup. **Recommendation: remove them** in the migration,
-  since all `imagen-4.0-*` are being shut down (~2026-06/08) and leaving routing for retired models is
-  cruft on an active surface (`ACTIVE_DEVELOPMENT.md`: "Do not leave dead code 'just in case'"). The
-  `Imagen4ModelNames` union (`model.ts:1021-1024`) and `IImagen4ModelOptions` block
-  (`model.ts:1158-1163`) are the corresponding typed-surface removals (breaking, but the active surface
-  permits it).
+  usage** (nothing resolves to an `imagen-*` id any more). **Decision (confirmed): remove the entire
+  deprecated Imagen surface now.** All `imagen-4.0-*` are being shut down (~2026-06/08), and leaving
+  routing for retired models is cruft on an active surface (`ACTIVE_DEVELOPMENT.md`: "Do not leave dead
+  code 'just in case'"). The package is **prerelease**, so the breaking change is absorbed now rather
+  than deferred. The full removal set:
+  - the two `imagen-*` entries in the Gemini `imageGeneration` array (`registry.ts:100-119`);
+  - `Imagen4ModelNames` (`model.ts:1021-1024`);
+  - `IImagen4GenerationConfig` (`model.ts:1080-1095`) and `IImagen4ModelOptions` (`model.ts:1158-1163`),
+    plus the `IImagen4ModelOptions` member of the `IModelFamilyConfig` union (`model.ts:1196-1202`);
+  - their `index.ts` exports.
+
+  (The `gemini-imagen` value of `AiImageApiFormat` — `model.ts:592-597` — and the `'imagen-…'` cleanup
+  in `imageOptionsResolver.ts` should be swept in the same pass; the implementer greps for residual
+  `imagen` references before deleting the format value, in case another provider path references it.)
 
 ---
 
@@ -475,13 +481,17 @@ value per §5.)
 
 ---
 
-## 9. Open questions for the implementer / orchestrator
+## 9. Decisions (resolved — no open questions)
 
-1. **Default Gemini thinking model** — **DECIDED: add `thinking: '@google-gemini:pro'` to `defaultModel`**
+All three product questions are settled:
+
+1. **Default Gemini thinking model — DECIDED: add `thinking: '@google-gemini:pro'` to `defaultModel`**
    (Pro is the reasoning-tier model; flash-as-thinking-default would repeat the `gpt-4o` mistake). See §4.
-2. **Imagen rules — remove vs. leave** — design recommends **remove** (active-surface, models being shut
-   down). Confirm no internal consumer pins an `imagen-4.0-*` id before deleting the typed surface.
-3. **Map location** — design recommends the **descriptor field** (travels with custom descriptors) over
-   a central module const. Confirm this over the "one central object" framing in `docs/FUTURE.md:118`
-   (the field *is* central per-provider; the difference is whether custom descriptors can carry aliases —
-   the field can, the const cannot).
+2. **Deprecated Imagen surface — DECIDED: remove it now.** Full removal set enumerated in §4. The package
+   is prerelease, so the breaking change (the `Imagen4*` typed surface + `gemini-imagen` routing) is
+   absorbed now. Implementer greps for residual `imagen` references before deleting the
+   `AiImageApiFormat` value, in case another path references it.
+3. **Map location — DECIDED: the descriptor field** (`IAiProviderDescriptor.aliases?`), not a central
+   module const. The field is central per-provider *and* travels with custom descriptors a consumer
+   constructs (the const cannot); it composes with the existing `imageGeneration` / `embedding`
+   capability-array pattern already on the descriptor. See §2.
