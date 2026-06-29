@@ -859,6 +859,14 @@ describe('Anthropic streaming adapter — C2 client tool extensions', () => {
     expect(logger.logged.some((m) => m.includes('ai-assist:malformed-tool-use'))).toBe(true);
   });
 
+  test('surfaces (not drops) a tool_use content_block_start with an empty-string id', async () => {
+    // Empty string is a *bad* id, not a present one. Guards the contract against a
+    // future refactor to `id !== undefined` that would reintroduce the malformed-id bug.
+    const logger = new Logging.InMemoryLogger('all');
+    await runOrphanedToolUse({ type: 'tool_use', id: '', name: 'do_thing' }, logger);
+    expect(logger.logged.some((m) => m.includes('ai-assist:malformed-tool-use'))).toBe(true);
+  });
+
   test('orphaned tool_use block is handled without a logger (no throw, no tool call)', async () => {
     // No logger supplied — covers the logger?. undefined branch; must not throw.
     await runOrphanedToolUse({ type: 'tool_use', id: 'toolu_x' });
