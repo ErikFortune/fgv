@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "ai-assist client-tool continuation: correlate each tool_result.tool_use_id (Anthropic) / function_call_output.call_id (OpenAI) to the buffered assistant tool_use id as the single source of truth, failing loud on a missing/empty/mismatched id instead of falling back to the tool name (the production \"malformed identifier\" bug); treat empty-string as a missing id; surface an orphaned Anthropic tool_use content_block_start (missing id/name) via a loud logger.warn with the new ai-assist:malformed-tool-use tag instead of silently dropping it; add a detail-level diagnostic logging the outgoing id pairing; executeClientToolTurn yields an inline error event on a bad correlation",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
