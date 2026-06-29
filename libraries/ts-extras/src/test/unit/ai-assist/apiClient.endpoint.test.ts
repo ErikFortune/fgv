@@ -374,7 +374,7 @@ describe('callProviderImageGeneration — endpoint override', () => {
       endpoint: 'http://localhost:8080/v1'
     });
 
-    expect(result).toFailWith(/no image model resolved/i);
+    expect(result).toFailWith(/no model resolved/i);
     expect(global.fetch).not.toHaveBeenCalled();
   });
 });

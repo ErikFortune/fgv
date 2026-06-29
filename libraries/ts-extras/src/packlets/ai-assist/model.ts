@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { type Result } from '@fgv/ts-utils';
+import { fail, type Result, succeed } from '@fgv/ts-utils';
 import { type JsonObject, type JsonSchema } from '@fgv/ts-json-base';
 
 // ============================================================================
@@ -549,6 +549,118 @@ export function resolveModel(spec: ModelSpec, context?: string): string {
 }
 
 // ============================================================================
+// Model Alias Layer
+// ============================================================================
+
+/**
+ * Canonical fgv alias → concrete provider model map.
+ *
+ * @remarks
+ * Keys are full fgv aliases (`@<providerId>:<role>`, e.g. `@google-gemini:flash`);
+ * values are the current concrete provider model id (or a provider-native alias,
+ * which is resolved with one further indirection hop). Additive; absence of an
+ * `aliases` field on a descriptor means "this provider defines no aliases" and
+ * every model string passes through verbatim.
+ * @public
+ */
+export interface IModelAliasMap {
+  readonly [alias: string]: string;
+}
+
+/**
+ * Marker prefix for an fgv model alias.
+ *
+ * @remarks
+ * A model string is an fgv alias **iff** it begins with this sigil. Everything
+ * else is a raw provider model id and passes through {@link resolveModelAlias}
+ * untouched — this is what keeps the alias layer back-compatible (no current
+ * `defaultModel`, `modelOverride`, or self-hosted `model:tag` id starts with `@`).
+ * @public
+ */
+export const MODEL_ALIAS_SIGIL: '@' = '@';
+
+function resolveModelAliasInner(
+  descriptor: IAiProviderDescriptor,
+  model: string,
+  visited: Set<string>
+): Result<string> {
+  // No sigil → raw provider id; return verbatim (back-compat passthrough).
+  if (!model.startsWith(MODEL_ALIAS_SIGIL)) {
+    return succeed(model);
+  }
+  // Cycle guard: an `@`→`@` loop would otherwise recurse forever.
+  if (visited.has(model)) {
+    return fail(`provider "${descriptor.id}": cyclic model alias "${model}"`);
+  }
+  visited.add(model);
+  const target = descriptor.aliases?.[model];
+  if (target === undefined) {
+    return fail(`provider "${descriptor.id}": unknown model alias "${model}"`);
+  }
+  // Follow the target. A concrete (non-sigil) target terminates the recursion on
+  // the next call; an aliased target (the canonical case: fgv alias → provider-
+  // native alias) is followed in turn, with the visited-set guarding against an
+  // `@`→`@` cycle.
+  return resolveModelAliasInner(descriptor, target, visited);
+}
+
+/**
+ * Resolves a single (possibly-aliased) model string against a provider descriptor.
+ *
+ * @remarks
+ * Resolution rules:
+ * 1. No leading {@link MODEL_ALIAS_SIGIL} → raw provider id, returned verbatim.
+ * 2. Leading sigil + registered in `descriptor.aliases` → the registered target,
+ *    which is itself resolved — so a chain of `@` aliases is followed until a
+ *    non-`@` (concrete provider) id is reached. The canonical case is a single
+ *    hop (an fgv alias targeting a provider-native alias), but longer chains
+ *    resolve too.
+ * 3. Leading sigil + unregistered → fails loudly, naming the provider and alias.
+ *
+ * An `@`→`@` cycle is guarded by a visited-set and fails rather than exhausting
+ * the stack.
+ *
+ * @param descriptor - The provider descriptor whose `aliases` map is consulted.
+ * @param model - The (possibly-aliased) model string to resolve.
+ * @returns `Result` with the concrete provider model id, or a failure.
+ * @public
+ */
+export function resolveModelAlias(descriptor: IAiProviderDescriptor, model: string): Result<string> {
+  return resolveModelAliasInner(descriptor, model, new Set<string>());
+}
+
+/**
+ * The full provider model-resolution chokepoint: the {@link ModelSpecKey} walk
+ * (via {@link resolveModel}) THEN {@link resolveModelAlias}.
+ *
+ * @remarks
+ * Replaces the bare `resolveModel(modelOverride ?? descriptor.defaultModel, context)`
+ * call plus the duplicated empty-result check at each call-time chokepoint. The
+ * `ModelSpec` branch is selected first; the resulting string — which may itself
+ * be an fgv alias — is then resolved to a concrete id.
+ *
+ * @param descriptor - The provider descriptor (supplies `defaultModel` and `aliases`).
+ * @param modelOverride - An optional caller-supplied `ModelSpec` that takes precedence
+ * over `descriptor.defaultModel`. May itself contain or be an alias.
+ * @param context - Optional {@link ModelSpecKey} selecting the spec branch.
+ * @returns `Result` with the concrete provider model id, or a failure.
+ * @public
+ */
+export function resolveProviderModel(
+  descriptor: IAiProviderDescriptor,
+  modelOverride: ModelSpec | undefined,
+  context?: ModelSpecKey
+): Result<string> {
+  const resolved = resolveModel(modelOverride ?? descriptor.defaultModel, context);
+  if (resolved.length === 0) {
+    return fail(
+      `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
+    );
+  }
+  return resolveModelAlias(descriptor, resolved);
+}
+
+// ============================================================================
 // Provider Descriptor
 // ============================================================================
 
@@ -747,6 +859,19 @@ export interface IAiProviderDescriptor {
   readonly baseUrl: string;
   /** Default model specification — string or context-aware map. */
   readonly defaultModel: ModelSpec;
+  /**
+   * Canonical fgv alias → concrete model map for this provider. Absent means the
+   * provider defines no aliases and every model string passes through verbatim.
+   *
+   * @remarks
+   * Keys are full fgv aliases (`@<providerId>:<role>`); values are the current
+   * concrete model id (or a provider-native alias). Consulted by
+   * {@link resolveModelAlias} / {@link resolveProviderModel} at each call-time
+   * resolution chokepoint, downstream of the {@link ModelSpecKey} walk. Additive
+   * and optional — composes with the existing per-descriptor `imageGeneration` /
+   * `embedding` capability arrays.
+   */
+  readonly aliases?: IModelAliasMap;
   /** Which server-side tools this provider supports (empty = none). */
   readonly supportedTools: ReadonlyArray<AiServerToolType>;
   /** Whether this provider's API enforces CORS restrictions that prevent direct browser calls. */

@@ -31,7 +31,7 @@ import { fail, Result } from '@fgv/ts-utils';
 
 import { splitChatRequest } from './chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from './endpoint';
-import { type IAiStreamEvent, resolveModel } from './model';
+import { type IAiStreamEvent, resolveProviderModel } from './model';
 import { callAnthropicStream } from './streamingAdapters/anthropic';
 import { type IProviderCompletionStreamParams, type IStreamApiConfig } from './streamingAdapters/common';
 import { callGeminiStream } from './streamingAdapters/gemini';
@@ -130,12 +130,11 @@ export async function callProviderCompletionStream(
       thinking?.providers?.some((b) => b.provider === 'other' || b.provider === discriminator) === true);
   const modelContext = hasThinkingConfig ? 'thinking' : hasTools ? 'tools' : undefined;
 
-  const model = resolveModel(modelOverride ?? descriptor.defaultModel, modelContext);
-  if (model.length === 0) {
-    return fail(
-      `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
-    );
+  const modelResult = resolveProviderModel(descriptor, modelOverride, modelContext);
+  if (modelResult.isFailure()) {
+    return fail(modelResult.message);
   }
+  const model = modelResult.value;
 
   let resolvedThinking: IResolvedThinkingConfig | undefined;
   if (thinking !== undefined) {

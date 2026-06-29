@@ -103,6 +103,10 @@ declare namespace AiAssist {
         allModelSpecKeys,
         MODEL_SPEC_BASE_KEY,
         resolveModel,
+        IModelAliasMap,
+        MODEL_ALIAS_SIGIL,
+        resolveModelAlias,
+        resolveProviderModel,
         toDataUrl,
         AiThinkingMode,
         IThinkingConfig,
@@ -983,6 +987,10 @@ interface IAiModelInfo {
 // @public
 interface IAiProviderDescriptor {
     readonly acceptsImageInput: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModelAlias"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveProviderModel"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+    readonly aliases?: IModelAliasMap;
     readonly apiFormat: AiApiFormat;
     readonly baseUrl: string;
     readonly buttonLabel: string;
@@ -1590,6 +1598,12 @@ interface IMissingVariableDetail {
 }
 
 // @public
+interface IModelAliasMap {
+    // (undocumented)
+    readonly [alias: string]: string;
+}
+
+// @public
 type IModelFamilyConfig = IDallEModelOptions | IGptImageModelOptions | IGrokImagineModelOptions | IImagen4ModelOptions | IGeminiFlashImageModelOptions | IOtherModelOptions;
 
 // @public
@@ -2109,6 +2123,11 @@ class Md5Normalizer extends Hash_2.HashingNormalizer {
 // @public
 const MIN_SALT_LENGTH: number;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModelAlias"
+//
+// @public
+const MODEL_ALIAS_SIGIL: '@';
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
 //
 // @public
@@ -2331,6 +2350,19 @@ function resolveImageOptions(modelId: string, capability: IAiImageModelCapabilit
 //
 // @public
 function resolveModel(spec: ModelSpec, context?: string): string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "MODEL_ALIAS_SIGIL"
+//
+// @public
+function resolveModelAlias(descriptor: IAiProviderDescriptor, model: string): Result<string>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModel"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModelAlias"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+//
+// @public
+function resolveProviderModel(descriptor: IAiProviderDescriptor, modelOverride: ModelSpec | undefined, context?: ModelSpecKey): Result<string>;
 
 // @public
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
