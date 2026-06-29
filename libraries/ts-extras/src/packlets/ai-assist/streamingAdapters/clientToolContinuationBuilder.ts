@@ -806,9 +806,12 @@ export function executeClientToolTurn(
     }
 
     // A bad id-correlation fails loud here rather than emitting a malformed
-    // continuation the provider would reject as a "malformed identifier".
+    // continuation the provider would reject as a "malformed identifier". Mirror
+    // the stream-open-failure path above: surface an `error` event so a consumer
+    // iterating `events` sees the failure inline, not only via `nextTurn`.
     if (continuationResult.isFailure()) {
       resolveNextTurn(fail(continuationResult.message));
+      yield { type: 'error', message: continuationResult.message };
       return;
     }
     let continuation = continuationResult.value;

@@ -364,13 +364,9 @@ describe('buildAnthropicContinuation', () => {
       expect((userContent[0] as Record<string, unknown>).content).toBe('validation failed');
     });
 
-    // ----------------------------------------------------------------------
-    // id-correlation: divergence repro (the production "malformed identifier"
-    // bug). Before the fix, a missing/empty/mismatched callId was masked by a
-    // `?? toolName` fallback that emitted the tool *name* as the tool_use_id —
-    // a value that can never match a `toolu_*` id. The build must now fail loud
-    // rather than mis-key.
-    // ----------------------------------------------------------------------
+    // id-correlation divergence repro (the production "malformed identifier" bug):
+    // a missing/empty/mismatched callId was masked by a `?? toolName` fallback that
+    // emitted the tool name (never a toolu_* id). The build must now fail loud.
     interface ILooseToolResult {
       toolName: string;
       callId?: string;
@@ -453,13 +449,14 @@ describe('buildAnthropicContinuation', () => {
     // The continuation MUST key every tool_result.tool_use_id off the assistant
     // tool_use.id from the buffer — never the tool name. These assert the positive
     // invariant for single and parallel tool calls.
+    const asString = (v: unknown): string => (typeof v === 'string' ? v : '');
     function toolUseIds(cont: { messages: ReadonlyArray<JsonObject> }): string[] {
       const content = cont.messages[0].content as Record<string, unknown>[];
-      return content.filter((b) => b.type === 'tool_use').map((b) => b.id as string);
+      return content.filter((b) => b.type === 'tool_use').map((b) => asString(b.id));
     }
     function toolResultIds(cont: { messages: ReadonlyArray<JsonObject> }): string[] {
       const content = cont.messages[1].content as Record<string, unknown>[];
-      return content.map((b) => b.tool_use_id as string);
+      return content.map((b) => asString(b.tool_use_id));
     }
 
     test('single call: tool_result.tool_use_id equals the assistant tool_use.id', () => {
@@ -1038,10 +1035,15 @@ describe('executeClientToolTurn', () => {
       expect(result).toSucceed();
       if (result.isFailure()) return;
 
-      await collect(result.value.events);
+      const events = await collect(result.value.events);
       const turnResult = await result.value.nextTurn;
 
       expect(turnResult).toFailWith(/toolu_A.*does not match any buffered/i);
+      // The failure also surfaces inline on the event stream (parity with the
+      // stream-open-failure path), not only via nextTurn.
+      expect(events.some((e) => e.type === 'error' && /does not match any buffered/i.test(e.message))).toBe(
+        true
+      );
     });
   });
 

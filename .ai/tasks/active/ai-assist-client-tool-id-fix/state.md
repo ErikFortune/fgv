@@ -110,7 +110,30 @@ assembled request body). `executeClientToolTurn` threads its `logger` into the b
 - `rushx build` ✅  `rushx lint` ✅ (clean, after `fixlint`)  `rushx test` ✅ (100% stmts/branches/funcs/lines)
 - api-extractor report unchanged (builders are internal-only exports; `executeClientToolTurn`
   signature unchanged) — no regen needed.
-- `code-reviewer` agent run on the final diff — findings: _(to be appended)_
+- `code-reviewer` agent run on the final diff — **no P1**, two P2, two P3. Dispositions below.
+
+### code-reviewer findings + dispositions
+
+- **P2 — continuation-failure path didn't yield an `error` event (builder ~808):** FIXED.
+  `executeClientToolTurn` now `yield`s `{ type: 'error', message }` before returning on a bad
+  id-correlation, mirroring the stream-open-failure path so the failure surfaces inline on the
+  event stream, not only via `nextTurn`. End-to-end test asserts the inline error event.
+- **P2 — add `c8 ignore` to the empty-id buffer guard (builder ~157):** DECLINED (intentional).
+  The branch is *tested* (the "empty buffered id" unit test exercises it; coverage is 100% without
+  a directive). `c8 ignore` is for genuinely unreachable code; ignoring a tested defensive guard
+  would contradict repo guidance ("try chaining/testing first; accept c8 ignore only after
+  determining the code is unreachable"). Kept the test, no directive.
+- **P3 — type-safe extraction in test helpers (test ~456):** FIXED. Replaced `b.id as string` /
+  `b.tool_use_id as string` with an `asString(v)` `typeof` guard.
+- **P3 — diagnostic logs an empty pairing when `toolResults` is empty (builder ~213/307):**
+  DECLINED. Unreachable via `executeClientToolTurn` (short-circuits to `continuation: undefined`
+  at `toolResults.length === 0`). Guarding would add an untested branch for a direct-caller-only
+  noise case of negligible value.
+
+Reviewer's correctness + coverage assessment: id-correlation logic sound, single-source-of-truth
+enforced on both Anthropic and OpenAI paths, no path where a malformed continuation escapes;
+test suite covers all four Anthropic failure paths + OpenAI parity + positive single/parallel
+invariant + orphaned-block (incl. no-logger) + end-to-end. Recommendation: **Approved.**
 
 ## Scope held
 
