@@ -98,7 +98,7 @@ whole point (they outlive snapshots).
 
 | Provider (`id`) | Native alias story | fgv alias posture |
 |---|---|---|
-| **Anthropic** (`anthropic`) | Ships undated server aliases (`claude-sonnet-4-6`); already used as `defaultModel` (`registry.ts:66`). | fgv aliases **optional**; RHS = the native alias (delegate tracking to Anthropic). Lowest priority. |
+| **Anthropic** (`anthropic`) | Ships undated server aliases (e.g. `claude-sonnet-4-6`). The registry today pins the **dated** snapshot `claude-sonnet-4-5-20250929` (`registry.ts:66`), not an undated alias. | fgv aliases **optional**; RHS = the native undated alias (delegate tracking to Anthropic). Lowest priority. |
 | **Google Gemini** (`google-gemini`) | **No** stable line alias; replacements are `-preview` ids that churn. | fgv aliases **required** — fgv owns the tracking. **First migrated provider** (§4). |
 | **OpenAI** (`openai`) | `gpt-4o` is undated but **not reasoning-capable** — the proximate pain. `chatgpt-4o-latest` exists but is chat-only. | fgv aliases **high-value**: e.g. `@openai:reasoning -> gpt-5.1`. Good early adopter (§5). |
 | **xAI** (`xai-grok`) | `grok-4.3` reasonably stable, already the default for base/tools/thinking (`registry.ts:264-268`). | fgv aliases **low urgency**; adopt when a churn event forces it. |
@@ -316,6 +316,10 @@ gets one edit, the scenario goes green — the maintenance loop is closed and ob
 ```typescript
 // in the google-gemini descriptor (registry.ts):
 aliases: {
+  // NOTE: the base flash line is at 3.5 while pro / flash-lite / flash-image are at 3.1 — this is
+  // NOT a typo. The targets come verbatim from Google's official deprecation table (brief.md): the
+  // flash base line advanced to 3.5 while the other roles are on the 3.1 generation. The per-role
+  // version split is exactly why the alias layer exists — consumers never see these numbers.
   '@google-gemini:flash':        'gemini-3.5-flash',               // base  (was gemini-2.5-flash, shutdown 2026-10-16)
   '@google-gemini:pro':          'gemini-3.1-pro-preview',         // thinking (was gemini-2.5-pro, 2026-10-16)
   '@google-gemini:flash-lite':   'gemini-3.1-flash-lite',          // thinking (was gemini-2.5-flash-lite, 2026-10-16)
@@ -386,9 +390,12 @@ Per-provider gotchas:
   (`result.md:16`). A `@openai:reasoning -> gpt-5.1` (or current) alias + a `thinking` key in
   `defaultModel` would fix the proximate pain directly. Note the typed `OpenAiThinkingModelNames`
   (`model.ts:1390-1399`) is the parallel manual axis.
-- **Anthropic** — already on a native undated alias (`claude-sonnet-4-5-20250929` is dated, but
-  `claude-sonnet-4-6` is accepted; `registry.ts:66`, `docs/FUTURE.md:118`). fgv aliases optional; RHS
-  delegates to the native alias. Lowest priority.
+- **Anthropic** — the registry default is the **dated** `claude-sonnet-4-5-20250929` (`registry.ts:66`);
+  Anthropic also accepts the undated `claude-sonnet-4-6` server-side (`docs/FUTURE.md:118`). fgv aliases
+  optional; RHS delegates to the native undated alias. Lowest priority. **Gotcha:** adopting
+  `@anthropic:sonnet → claude-sonnet-4-6` is an **implicit model-version upgrade** (4-5 → 4-6), not just
+  a snapshot-tracking swap — pick the alias target deliberately (stay on 4-5 vs. move to 4-6) rather than
+  treating it as a no-op.
 - **xAI** — `grok-4.3` already stable across base/tools/thinking (`registry.ts:264-268`); adopt on a
   future churn event only.
 - **Self-hosted `ollama` / `openai-compat`** — the **`:`-in-model-id gotcha** that drove the `@` sigil
@@ -474,6 +481,8 @@ value per §5.)
       `resolveModelAlias`, `resolveProviderModel`; Imagen-removal deletions reflected in the `.api.md`).
 - [ ] **Raw-model-ID back-compat preserved** — a test asserts every current `defaultModel` value and an
       arbitrary `modelOverride` (including an Ollama `model:tag`) resolves to itself unchanged.
+- [ ] **Cycle guard tested** — `resolveModelAlias` over a cyclic `@→@` map (e.g. `@p:a → @p:b → @p:a`)
+      returns a `Result.fail` and does **not** exhaust the stack.
 - [ ] **Live-API testbed run confirms the new Gemini ids answer** through the alias layer (Gemini base
       via `@google-gemini:flash`; thinking via `@google-gemini:pro` if adopted).
 - [ ] `code-reviewer` run on the final diff; findings resolved or dispositioned.
