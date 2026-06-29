@@ -164,12 +164,12 @@ describe('callProviderImageGeneration — reference images', () => {
     });
 
     test('rejects when no capability rule matches the resolved model', async () => {
-      // Descriptor declares image generation, but only for `imagen-*` models —
+      // Descriptor declares image generation, but only for `dall-e-*` models —
       // there's no catch-all, and the requested model `gpt-image-1` doesn't
       // match the prefix.
       const descriptor = makeImageDescriptor({
         defaultModel: { base: 'gpt-4o', image: 'gpt-image-1' },
-        imageGeneration: [{ modelPrefix: 'imagen-', format: 'gemini-imagen' }]
+        imageGeneration: [{ modelPrefix: 'dall-e-', format: 'openai-images' }]
       });
 
       const result = await AiAssist.callProviderImageGeneration({
@@ -314,13 +314,10 @@ describe('callProviderImageGeneration — reference images', () => {
       buttonLabel: 'AI Assist | Gemini',
       apiFormat: 'gemini',
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: { base: 'gemini-2.5-flash', image: 'gemini-2.5-flash-image' },
-      // Mirrors the built-in google-gemini descriptor: imagen-* models route to
-      // :predict, everything else to :generateContent. Order matters.
-      imageGeneration: [
-        { modelPrefix: 'imagen-', format: 'gemini-imagen' },
-        { modelPrefix: '', format: 'gemini-image-out', acceptsImageReferenceInput: true }
-      ]
+      defaultModel: { base: 'gemini-3.5-flash', image: 'gemini-3.1-flash-image-preview' },
+      // Mirrors the built-in google-gemini descriptor: a single catch-all routes
+      // every image model to chat-style :generateContent.
+      imageGeneration: [{ modelPrefix: '', format: 'gemini-image-out', acceptsImageReferenceInput: true }]
     });
 
     test('returns image parsed from inlineData parts (text-only request)', async () => {
@@ -340,7 +337,7 @@ describe('callProviderImageGeneration — reference images', () => {
 
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
       expect(fetchCall[0]).toBe(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent'
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent'
       );
       expect(fetchCall[1].headers['x-goog-api-key']).toBe('test-key');
       const body = JSON.parse(fetchCall[1].body);
@@ -456,40 +453,6 @@ describe('callProviderImageGeneration — reference images', () => {
 
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
       expect(fetchCall[1].signal).toBe(controller.signal);
-    });
-
-    // Google's Gemini provider hosts both `:generateContent` (gemini-2.5-flash-image)
-    // and `:predict` (imagen-*) image surfaces. The dispatcher resolves the
-    // capability by model id and routes accordingly.
-    test('routes imagen-* models to :predict when descriptor exposes both rules', async () => {
-      mockFetchResponse({ predictions: [{ bytesBase64Encoded: 'III', mimeType: 'image/png' }] });
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        modelOverride: 'imagen-3.0-generate-002',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toSucceedAndSatisfy((response) => {
-        expect(response.images[0].base64).toBe('III');
-      });
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
-      expect(fetchCall[0]).toBe(
-        'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict'
-      );
-    });
-
-    test('rejects reference images for imagen-* models (predict-only, no refs)', async () => {
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        modelOverride: 'imagen-3.0-generate-002',
-        params: { prompt: 'a cat', referenceImages: [TEST_PNG] }
-      });
-
-      expect(result).toFailWith(/imagen-3\.0-generate-002.*reference images/i);
-      expect((global.fetch as jest.Mock).mock.calls).toHaveLength(0);
     });
   });
 });

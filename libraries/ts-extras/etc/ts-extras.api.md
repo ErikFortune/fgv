@@ -68,17 +68,14 @@ declare namespace AiAssist {
         DallEModelNames,
         GptImageModelNames,
         GrokImagineModelNames,
-        Imagen4ModelNames,
         GeminiFlashImageModelNames,
         IDallEImageGenerationConfig,
         IGptImageGenerationConfig,
         IGrokImagineImageGenerationConfig,
-        IImagen4GenerationConfig,
         IGeminiFlashImageGenerationConfig,
         IDallEModelOptions,
         IGptImageModelOptions,
         IGrokImagineModelOptions,
-        IImagen4ModelOptions,
         IGeminiFlashImageModelOptions,
         IOtherModelOptions,
         IModelFamilyConfig,
@@ -202,7 +199,7 @@ type AiEmbeddingApiFormat = 'openai-embeddings' | 'gemini-embeddings';
 type AiEmbeddingTaskType = 'retrieval-query' | 'retrieval-document' | 'semantic-similarity' | 'classification' | 'clustering' | 'code-retrieval-query' | 'question-answering' | 'fact-verification' | (string & {});
 
 // @public
-type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images' | 'xai-images-edits' | 'gemini-image-out';
+type AiImageApiFormat = 'openai-images' | 'xai-images' | 'xai-images-edits' | 'gemini-image-out';
 
 // @public
 type AiImageQuality = DallE3Quality | GptImageQuality;
@@ -703,10 +700,10 @@ const GCM_AUTH_TAG_SIZE: number;
 const GCM_IV_SIZE: number;
 
 // @public
-type GeminiFlashImageModelNames = 'gemini-2.5-flash-image';
+type GeminiFlashImageModelNames = 'gemini-3.1-flash-image-preview';
 
 // @public
-type GeminiThinkingModelNames = 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.5-flash-lite';
+type GeminiThinkingModelNames = 'gemini-3.1-pro-preview' | 'gemini-3.5-flash' | 'gemini-3.1-flash-lite';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1431,29 +1428,6 @@ interface IHpkeSealResult {
     readonly enc: Uint8Array;
 }
 
-// @public
-interface IImagen4GenerationConfig {
-    readonly addWatermark?: boolean;
-    readonly aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
-    readonly enhancePrompt?: boolean;
-    readonly imageSize?: '1K' | '2K';
-    readonly outputCompressionQuality?: number;
-    readonly outputMimeType?: 'image/jpeg' | 'image/png';
-    readonly personGeneration?: 'allow_all' | 'allow_adult' | 'dont_allow';
-}
-
-// @public
-interface IImagen4ModelOptions extends INamedModelFamilyConfig {
-    // (undocumented)
-    readonly config: IImagen4GenerationConfig;
-    // (undocumented)
-    readonly family: 'imagen-4';
-    // (undocumented)
-    readonly models?: Imagen4ModelNames[];
-    // (undocumented)
-    readonly provider: 'google';
-}
-
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IImportSecretOptions"
 //
@@ -1588,9 +1562,6 @@ interface IKeyStoreVaultContents {
 }
 
 // @public
-type Imagen4ModelNames = 'imagen-4.0-generate-001' | 'imagen-4.0-ultra-generate-001' | 'imagen-4.0-fast-generate-001';
-
-// @public
 interface IMissingVariableDetail {
     readonly existingPath: readonly string[];
     readonly failedAtSegment?: string;
@@ -1604,7 +1575,7 @@ interface IModelAliasMap {
 }
 
 // @public
-type IModelFamilyConfig = IDallEModelOptions | IGptImageModelOptions | IGrokImagineModelOptions | IImagen4ModelOptions | IGeminiFlashImageModelOptions | IOtherModelOptions;
+type IModelFamilyConfig = IDallEModelOptions | IGptImageModelOptions | IGrokImagineModelOptions | IGeminiFlashImageModelOptions | IOtherModelOptions;
 
 // @public
 interface IModelSpecMap {
@@ -1764,23 +1735,11 @@ interface IRemoveSecretResult {
 // @public
 interface IResolvedImageOptions {
     // (undocumented)
-    readonly addWatermark?: boolean;
-    // (undocumented)
     readonly aspectRatio?: string;
     // (undocumented)
     readonly background?: string;
     // (undocumented)
-    readonly enhancePrompt?: boolean;
-    // (undocumented)
     readonly geminiAspectRatio?: string;
-    // (undocumented)
-    readonly imagenAspectRatio?: string;
-    // (undocumented)
-    readonly imagenOutputCompressionQuality?: number;
-    // (undocumented)
-    readonly imagenOutputMimeType?: string;
-    // (undocumented)
-    readonly imageSize?: string;
     // (undocumented)
     readonly moderation?: string;
     readonly n: number;
@@ -1790,8 +1749,6 @@ interface IResolvedImageOptions {
     readonly outputCompression?: number;
     // (undocumented)
     readonly outputFormat?: string;
-    // (undocumented)
-    readonly personGeneration?: string;
     readonly quality?: string;
     // (undocumented)
     readonly resolution?: string;

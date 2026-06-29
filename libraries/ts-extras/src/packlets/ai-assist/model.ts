@@ -694,19 +694,13 @@ export type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
  * - `'xai-images'` — xAI Images API. Text-only JSON generation request.
  * - `'xai-images-edits'` — xAI Images API for Grok Imagine models. Uses JSON
  *   body with `{ type: "image_url" }` objects (not multipart).
- * - `'gemini-imagen'` — Google Imagen `:predict` endpoint. Text-only.
  * - `'gemini-image-out'` — Google Gemini chat-style `:generateContent`
- *   endpoint that returns image parts (Gemini 2.5 Flash Image / "Nano
+ *   endpoint that returns image parts (Gemini Flash Image / "Nano
  *   Banana"). Accepts reference images.
  *
  * @public
  */
-export type AiImageApiFormat =
-  | 'openai-images'
-  | 'gemini-imagen'
-  | 'xai-images'
-  | 'xai-images-edits'
-  | 'gemini-image-out';
+export type AiImageApiFormat = 'openai-images' | 'xai-images' | 'xai-images-edits' | 'gemini-image-out';
 
 /**
  * API format categories for embedding provider routing.
@@ -911,11 +905,9 @@ export interface IAiProviderDescriptor {
    * catch-all and matches every model id.
    *
    * Multiple entries support providers that host more than one image-API
-   * surface under one baseUrl. Google Gemini is the canonical case: the
-   * `imagen-*` family is predict-only via `:predict`, while
-   * `gemini-2.5-flash-image` uses chat-style `:generateContent` and accepts
-   * reference images. Listing both lets callers pick the right model and the
-   * dispatcher routes accordingly.
+   * surface under one baseUrl. The dispatcher selects the longest-matching
+   * prefix, so a provider can list a specific-prefix surface alongside an
+   * empty-prefix catch-all and the right model routes to the right API.
    *
    * Image-model selection reuses the existing `image` {@link ModelSpecKey}.
    * Providers that declare `imageGeneration` should declare a model in
@@ -975,7 +967,7 @@ export interface IAiImageModelCapability {
    * How to encode the output format on the wire:
    * - 'response-format': send response_format: 'b64_json' (dall-e-2, dall-e-3)
    * - 'output-format': send output_format (gpt-image-1)
-   * - 'none': send neither (Imagen, Gemini Flash)
+   * - 'none': send neither (Gemini Flash)
    */
   readonly outputParamStyle?: 'response-format' | 'output-format' | 'none';
   /** Default MIME type for response images. */
@@ -1142,14 +1134,8 @@ export type GptImageModelNames = 'gpt-image-1';
 /** Model names in the xAI Grok Imagine family. @public */
 export type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality';
 
-/** Model names in the Imagen 4 family. @public */
-export type Imagen4ModelNames =
-  | 'imagen-4.0-generate-001'
-  | 'imagen-4.0-ultra-generate-001'
-  | 'imagen-4.0-fast-generate-001';
-
 /** Model names in the Gemini Flash Image family. @public */
-export type GeminiFlashImageModelNames = 'gemini-2.5-flash-image';
+export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image-preview';
 
 // ---- Family-level config shapes ----
 
@@ -1196,27 +1182,6 @@ export interface IGrokImagineImageGenerationConfig {
   readonly aspectRatio?: string;
   /** Resolution hint. */
   readonly resolution?: string;
-}
-
-/**
- * Provider-specific config for Google Imagen 4 models.
- * @public
- */
-export interface IImagen4GenerationConfig {
-  /** Aspect ratio string. */
-  readonly aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
-  /** Output resolution. */
-  readonly imageSize?: '1K' | '2K';
-  /** Whether to add SynthID watermark. Must be false to use seed. */
-  readonly addWatermark?: boolean;
-  /** LLM-based prompt rewriting. */
-  readonly enhancePrompt?: boolean;
-  /** Output MIME type. */
-  readonly outputMimeType?: 'image/jpeg' | 'image/png';
-  /** JPEG compression quality. */
-  readonly outputCompressionQuality?: number;
-  /** Person generation policy. */
-  readonly personGeneration?: 'allow_all' | 'allow_adult' | 'dont_allow';
 }
 
 /**
@@ -1277,17 +1242,6 @@ export interface IGrokImagineModelOptions extends INamedModelFamilyConfig {
 }
 
 /**
- * Options block scoped to Google Imagen 4 models.
- * @public
- */
-export interface IImagen4ModelOptions extends INamedModelFamilyConfig {
-  readonly provider: 'google';
-  readonly family: 'imagen-4';
-  readonly models?: Imagen4ModelNames[];
-  readonly config: IImagen4GenerationConfig;
-}
-
-/**
  * Options block scoped to Gemini Flash Image models.
  * @public
  */
@@ -1322,7 +1276,6 @@ export type IModelFamilyConfig =
   | IDallEModelOptions
   | IGptImageModelOptions
   | IGrokImagineModelOptions
-  | IImagen4ModelOptions
   | IGeminiFlashImageModelOptions
   | IOtherModelOptions;
 
@@ -1355,7 +1308,7 @@ export type IModelFamilyConfig =
 export interface IAiImageGenerationOptions {
   /**
    * Image dimensions for OpenAI models (mapped to `size` field).
-   * For xAI aspect ratio or Imagen aspect ratio, use the corresponding `models` family block.
+   * For xAI or Gemini Flash aspect ratio, use the corresponding `models` family block.
    */
   readonly size?: AiImageSize;
   /** Number of images. Default 1. Some models enforce a maximum. */
@@ -1527,7 +1480,10 @@ export type OpenAiThinkingModelNames =
  * Model IDs for Google Gemini thinking-capable models.
  * @public
  */
-export type GeminiThinkingModelNames = 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.5-flash-lite';
+export type GeminiThinkingModelNames =
+  | 'gemini-3.1-pro-preview'
+  | 'gemini-3.5-flash'
+  | 'gemini-3.1-flash-lite';
 
 /**
  * Model IDs for xAI thinking-capable models.

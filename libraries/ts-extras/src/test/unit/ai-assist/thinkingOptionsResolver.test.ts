@@ -334,12 +334,12 @@ describe('mergeThinkingConfig', () => {
         providers: [
           {
             provider: 'google',
-            models: ['gemini-2.5-pro'],
+            models: ['gemini-3.1-pro-preview'],
             config: { thinkingBudget: 16384 }
           }
         ]
       };
-      const result = mergeThinkingConfig(config, 'gemini-2.5-pro', 'google');
+      const result = mergeThinkingConfig(config, 'gemini-3.1-pro-preview', 'google');
       expect(result).toSucceedAndSatisfy((r) => {
         expect(r.geminiThinkingBudget).toBe(16384);
       });

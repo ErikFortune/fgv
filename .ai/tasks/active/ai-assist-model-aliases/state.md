@@ -104,3 +104,145 @@ including the `clientToolContinuationBuilder` no-context base-key fallback).
 - **P3 — image/embedding error assertions became coarser (accepted).** The unified "no model
   resolved" message is the design's intended consolidation; the test assertions follow it. Documented
   as the sole failure-path message change under "Deviation from design §7" above.
+
+---
+
+## Tier 2 — Gemini migration
+
+Branch `claude/tier-2-gemini-aliases-yg5ku8` off the Tier-1 merge; PR target `ai-assist-model-aliases`.
+
+### Alias map added (`google-gemini` descriptor, `registry.ts`)
+
+```typescript
+aliases: {
+  '@google-gemini:flash':       'gemini-3.5-flash',               // base  (was gemini-2.5-flash, 2026-10-16)
+  '@google-gemini:pro':         'gemini-3.1-pro-preview',         // thinking (was gemini-2.5-pro)
+  '@google-gemini:flash-lite':  'gemini-3.1-flash-lite',          // thinking tier; modelOverride-only, NOT the 'thinking' default
+  '@google-gemini:flash-image': 'gemini-3.1-flash-image-preview', // image (was gemini-2.5-flash-image)
+  '@google-gemini:embedding':   'gemini-embedding-001'            // NOT deprecated — aliased for uniformity only
+}
+```
+
+The per-role version split (flash base at 3.5, the rest at 3.1) is from Google's deprecation table,
+verbatim per design §4.
+
+### `defaultModel` after-state
+
+```typescript
+defaultModel: {
+  base:      '@google-gemini:flash',
+  thinking:  '@google-gemini:pro',          // explicit key added (decided §4/§9) — no flash fallback for thinking
+  image:     '@google-gemini:flash-image',
+  embedding: '@google-gemini:embedding'
+}
+```
+
+Resolution verified: base→`gemini-3.5-flash`, thinking→`gemini-3.1-pro-preview`,
+image→`gemini-3.1-flash-image-preview`, embedding→`gemini-embedding-001` (modelAlias.test.ts +
+registry.test.ts).
+
+### Imagen removal set actually deleted (full cascade)
+
+The design §4 bulleted set, plus the runtime cascade that removing the `AiImageApiFormat` value forces
+(under-specified by §4 but required to keep the build clean — see deviation note):
+
+- **registry.ts** — both `imagen-4.0-ultra-` and `imagen-` capability entries in the Gemini
+  `imageGeneration` array (only the `gemini-image-out` catch-all survives).
+- **model.ts** — `Imagen4ModelNames`, `IImagen4GenerationConfig`, `IImagen4ModelOptions`, the
+  `IImagen4ModelOptions` member of the `IModelFamilyConfig` union, and the `'gemini-imagen'` member of
+  `AiImageApiFormat`. Stale Imagen mentions in surrounding TSDoc swept.
+- **index.ts** — the three exports (`Imagen4ModelNames`, `IImagen4GenerationConfig`,
+  `IImagen4ModelOptions`).
+- **imageOptionsResolver.ts** — the `IImagen4ModelOptions` import, the `isImagen4ModelOptions` guard,
+  the `case 'gemini-imagen'` arm of `providerLineageForFormat` (kept `gemini-image-out → google`), the
+  `applyBlock` imagen-4 branch, and the seven imagen-only fields on `IResolvedImageOptions`
+  (`imagenAspectRatio` / `imageSize` / `addWatermark` / `enhancePrompt` / `imagenOutputMimeType` /
+  `imagenOutputCompressionQuality` / `personGeneration`).
+- **apiClient.ts** — the `callImagenGeneration` function, the `IImagenPrediction` / `IImagenResponse`
+  interfaces + their validators, and the `case 'gemini-imagen'` dispatch arm (the exhaustive
+  `never`-checked default remains correct). Dispatcher TSDoc swept.
+- **etc/ts-extras.api.md** — regenerated; diff is exactly the above removals + the two type edits below,
+  nothing else.
+
+### Residual-`imagen` grep result (reported per §4 / "if stuck")
+
+After the deletions, `grep -rni imagen` over the packlet **production** source returns exactly one hit:
+
+```
+registry.ts: { idPattern: /^imagen/, capabilities: ['image-generation'] }
+```
+
+This is the **capability-detection** idPattern rule used by `listModels` to classify concrete model
+ids a Gemini account surfaces — it is the *detection* axis, not *selection/routing*. It is **not** in
+the design §4 removal set, references no removed type, and nothing routes through it. **Deliberately
+kept** (listModels.test.ts still classifies a live `imagen-3.0-generate-001` as image-generation).
+**No `gemini-imagen` routing path remains; no Vertex or other path needs the format value** — so the
+`AiImageApiFormat` value deletion was safe (the "if stuck" stop condition did not trigger).
+
+### Manual-axis bumps (design §3)
+
+- `GeminiThinkingModelNames` → `'gemini-3.1-pro-preview' | 'gemini-3.5-flash' | 'gemini-3.1-flash-lite'`.
+- `GeminiFlashImageModelNames` → `'gemini-3.1-flash-image-preview'` (was `'gemini-2.5-flash-image'`) —
+  the third manual axis from §3; bumped for consistency with the image-default migration after the
+  code-reviewer flagged it (P2 below).
+- idPattern: added `/^gemini-3/ → ['chat','tools','vision','thinking']` ahead of the kept
+  `/^gemini-2\.5/` rule, so 3.x ids are classified thinking-capable instead of falling to the base
+  `/^gemini-/` set.
+
+### Tests
+
+Updated/replaced everything that referenced the removed surface:
+- modelAlias.test.ts — reframed the Tier-1 "inert for all descriptors" sweep (now: resolved default is
+  always a concrete non-`@` id or a clean failure; non-aliased descriptors stay inert) and the
+  "no descriptor defines aliases" assertion (now: only `google-gemini` defines one). Added a Tier-2
+  block: defaultModel→concrete 3.x for all four keys, each alias→target, unknown alias fails loudly.
+- registry.test.ts — Gemini imageGeneration now length-1 (catch-all); default image/embedding assert
+  the alias from `resolveModel` and the concrete id from `resolveProviderModel`; the `resolveImageCapability`
+  specific-prefix case re-pointed to openai (Gemini no longer has a specific prefix).
+- listModels.test.ts — added positive (gemini-3.5-flash→thinking) and negative (gemini-2.0-flash→no
+  thinking, regex-boundary guard) classification tests.
+- imageOptionsResolver.test.ts / apiClient.imageGeneration.test.ts / apiClient.refImages.test.ts —
+  removed the imagen-4 / gemini-imagen format describe blocks and the `imagenBody` helper; re-pointed
+  the gemini image-out fixtures to `gemini-3.1-flash-image-preview`; deleted the `:predict` imagen
+  routing tests.
+- thinkingOptionsResolver.test.ts — gemini model id 2.5→3.1.
+
+### Gates
+
+- `rushx build` — pass (api-extractor regenerated; diff confined to the intended removals + the two
+  `*ModelNames` edits).
+- `rushx lint` — pass. `rushx fixlint` — run pre-commit, clean.
+- `rushx test` — pass, **100% coverage** on all modified source files.
+- No external monorepo consumers of the removed Imagen exports (grep over libraries/tools/samples).
+
+### code-reviewer findings (layer 1, run on the final diff)
+
+**No P1s.** No `any`, no Result-pattern violations, no unsafe casts; removal cascade confirmed clean
+(no dangling `gemini-imagen` / `Imagen4` / `callImagenGeneration` references); exhaustive-switch
+`never` check intact.
+
+- **P2 — `GeminiFlashImageModelNames` still named the retired 2.5 id (RESOLVED).** Bumped to
+  `'gemini-3.1-flash-image-preview'` and updated the typed `models` filter arrays + resolver fixtures
+  to match. This is the third §3 manual axis; replacing (not appending) is consistent with the
+  `GeminiThinkingModelNames` bump and with ACTIVE_DEVELOPMENT's no-compat-burden rule for the active
+  ai-assist surface.
+- **P2 — two stale `gemini-imagen` references in `.ai/instructions/LIBRARY_CAPABILITIES.md` (lines
+  ~142, ~344) (DISPOSITIONED → Tier 3).** Real and caused by this removal, but `LIBRARY_CAPABILITIES.md`
+  updates are **explicitly Scope-OUT for Tier 2 / Scope-IN for Tier 3** (per the stream brief and design
+  §7 Tier 3). Not touched here to respect the scope boundary; **flagged for Tier 3 to sweep the
+  `gemini-imagen` value out of the ai-assist entry and the image-format decision shortcut** alongside the
+  alias-scheme doc work.
+- **P3 — `@google-gemini:flash-lite` aliased but not a `defaultModel` key (RESOLVED).** Intentional
+  (Pro is the thinking default; flash-lite is the cheaper explicit-override tier). Clarified the inline
+  comment to say so.
+- **P3 — no negative idPattern boundary test (RESOLVED).** Added a `gemini-2.0-flash → no thinking`
+  assertion guarding the `/^gemini-3/` vs `/^gemini-2\.5/` boundary against over-firing.
+
+### Deviation from design §4
+
+§4 enumerated the type-surface removal set and said the `gemini-imagen` `AiImageApiFormat` value +
+`imageOptionsResolver.ts` imagen branch "should be swept in the same pass," but did **not** enumerate
+the `apiClient.ts` runtime cascade (`callImagenGeneration`, Imagen validators, dispatch arm).
+Removing the union member forces those deletions to keep the build clean, and the residual-`imagen`
+grep confirmed nothing else routes to the format — so the full runtime path was removed in the same
+pass. No design intent changed; the §4 list was simply under-specified on the apiClient side.
