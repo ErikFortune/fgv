@@ -853,26 +853,6 @@ const openAiImageResponse: Validator<IOpenAiImageResponse> = Validators.object<I
   data: Validators.arrayOf(openAiImageItem).withConstraint((arr) => arr.length > 0)
 });
 
-// ---- Gemini Imagen format ----
-
-/** @internal */
-interface IImagenPrediction {
-  bytesBase64Encoded: string;
-  mimeType?: string;
-}
-/** @internal */
-interface IImagenResponse {
-  predictions: IImagenPrediction[];
-}
-
-const imagenPrediction: Validator<IImagenPrediction> = Validators.object<IImagenPrediction>({
-  bytesBase64Encoded: Validators.string,
-  mimeType: Validators.string.optional()
-});
-const imagenResponse: Validator<IImagenResponse> = Validators.object<IImagenResponse>({
-  predictions: Validators.arrayOf(imagenPrediction).withConstraint((arr) => arr.length > 0)
-});
-
 // ---- Gemini image-out (`:generateContent` returning image parts) format ----
 
 /** @internal */
@@ -1233,74 +1213,6 @@ async function callGeminiImageOutGeneration(
   );
 }
 
-/** Calls the Gemini Imagen :predict endpoint with Imagen 4 params. @internal */
-async function callImagenGeneration(
-  config: IAiApiConfig,
-  request: IAiImageGenerationParams,
-  resolved: IResolvedImageOptions,
-  logger?: Logging.ILogger,
-  signal?: AbortSignal
-): Promise<Result<IAiImageGenerationResponse>> {
-  const url = `${config.baseUrl}/models/${config.model}:predict`;
-  const parameters: Record<string, unknown> = {
-    sampleCount: resolved.n
-  };
-  if (resolved.imagenAspectRatio !== undefined) {
-    parameters.aspectRatio = resolved.imagenAspectRatio;
-  }
-  if (resolved.imageSize !== undefined) {
-    parameters.imageSize = resolved.imageSize;
-  }
-  if (resolved.addWatermark !== undefined) {
-    parameters.addWatermark = resolved.addWatermark;
-  }
-  if (resolved.enhancePrompt !== undefined) {
-    parameters.enhancePrompt = resolved.enhancePrompt;
-  }
-  if (resolved.imagenOutputMimeType !== undefined || resolved.imagenOutputCompressionQuality !== undefined) {
-    const outputOptions: Record<string, unknown> = {};
-    if (resolved.imagenOutputMimeType !== undefined) {
-      outputOptions.mimeType = resolved.imagenOutputMimeType;
-    }
-    if (resolved.imagenOutputCompressionQuality !== undefined) {
-      outputOptions.compressionQuality = resolved.imagenOutputCompressionQuality;
-    }
-    parameters.outputOptions = outputOptions;
-  }
-  if (resolved.personGeneration !== undefined) {
-    parameters.personGeneration = resolved.personGeneration;
-  }
-  if (resolved.seed !== undefined) {
-    parameters.seed = resolved.seed;
-  }
-  if (resolved.otherParams !== undefined) {
-    Object.assign(parameters, resolved.otherParams);
-  }
-
-  const body: Record<string, unknown> = {
-    instances: [{ prompt: request.prompt }],
-    parameters
-  };
-  const headers: Record<string, string> = { 'x-goog-api-key': config.apiKey };
-
-  /* c8 ignore next 1 - optional logger */
-  logger?.info(`Imagen generation: model=${config.model}, n=${parameters.sampleCount}`);
-  const jsonResult = await fetchJson(url, headers, body, logger, signal);
-  if (jsonResult.isFailure()) {
-    return fail(jsonResult.message);
-  }
-  return imagenResponse
-    .validate(jsonResult.value)
-    .withErrorFormat((msg) => `Imagen API response: ${msg}`)
-    .onSuccess((response) => {
-      const images: IAiGeneratedImage[] = response.predictions.map((p) => ({
-        mimeType: p.mimeType ?? 'image/png',
-        base64: p.bytesBase64Encoded
-      }));
-      return succeed({ images });
-    });
-}
-
 // ============================================================================
 // Image generation — dispatcher
 // ============================================================================
@@ -1308,7 +1220,7 @@ async function callImagenGeneration(
 /**
  * Calls the appropriate image-generation API for a given provider. Routes by the
  * `format` field of the resolved {@link IAiImageModelCapability}:
- * `'openai-images'`, `'xai-images'`, `'xai-images-edits'`, `'gemini-imagen'`, or
+ * `'openai-images'`, `'xai-images'`, `'xai-images-edits'`, or
  * `'gemini-image-out'`. Rejects up front if `referenceImages` is set but the
  * capability does not declare `acceptsImageReferenceInput`.
  * @param params - Request parameters including descriptor, API key, and prompt
@@ -1383,8 +1295,6 @@ export async function callProviderImageGeneration(
       }
       return callXaiImageGeneration(config, request, capability, resolved, logger, signal);
     }
-    case 'gemini-imagen':
-      return callImagenGeneration(config, request, resolved, logger, signal);
     case 'gemini-image-out':
       return callGeminiImageOutGeneration(config, request, resolved, logger, signal);
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */

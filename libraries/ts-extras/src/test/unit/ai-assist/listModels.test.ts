@@ -444,6 +444,51 @@ describe('callProviderListModels', () => {
       });
     });
 
+    test('classifies a gemini-3.x model as thinking-capable via the config idPattern', async () => {
+      mockFetchResponse(geminiListBody([{ name: 'models/gemini-3.5-flash', methods: ['generateContent'] }]));
+
+      const result = await AiAssist.callProviderListModels({
+        descriptor: makeDescriptor({
+          apiFormat: 'gemini',
+          baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+          id: 'google-gemini'
+        }),
+        apiKey: 'test-key'
+      });
+
+      expect(result).toSucceedAndSatisfy((models) => {
+        const m = models[0];
+        // The /^gemini-3/ rule must classify 3.x ids as the full thinking-capable set,
+        // not silently fall through to the base chat/tools/vision rule.
+        expect(m.capabilities.has('chat')).toBe(true);
+        expect(m.capabilities.has('tools')).toBe(true);
+        expect(m.capabilities.has('vision')).toBe(true);
+        expect(m.capabilities.has('thinking')).toBe(true);
+      });
+    });
+
+    test('does not grant thinking to a gemini-2.x (non-2.5) id via the new /^gemini-3/ rule', async () => {
+      mockFetchResponse(geminiListBody([{ name: 'models/gemini-2.0-flash', methods: ['generateContent'] }]));
+
+      const result = await AiAssist.callProviderListModels({
+        descriptor: makeDescriptor({
+          apiFormat: 'gemini',
+          baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+          id: 'google-gemini'
+        }),
+        apiKey: 'test-key'
+      });
+
+      expect(result).toSucceedAndSatisfy((models) => {
+        const m = models[0];
+        // gemini-2.0-flash hits only the base /^gemini-/ rule: chat/tools/vision, no thinking.
+        // Guards the /^gemini-3/ and /^gemini-2\.5/ boundaries against over-firing.
+        expect(m.capabilities.has('chat')).toBe(true);
+        expect(m.capabilities.has('vision')).toBe(true);
+        expect(m.capabilities.has('thinking')).toBe(false);
+      });
+    });
+
     test('handles entries without supportedGenerationMethods', async () => {
       mockFetchResponse(geminiListBody([{ name: 'models/gemini-2.5-flash' }]));
 

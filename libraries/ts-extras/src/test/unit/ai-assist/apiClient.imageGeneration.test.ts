@@ -143,15 +143,6 @@ function openAiImageBody(b64s: string[], revisedPrompt?: string): unknown {
   };
 }
 
-function imagenBody(b64s: string[], mimeType?: string): unknown {
-  return {
-    predictions: b64s.map((b64) => ({
-      bytesBase64Encoded: b64,
-      ...(mimeType !== undefined ? { mimeType } : {})
-    }))
-  };
-}
-
 // ============================================================================
 // callProviderImageGeneration
 // ============================================================================
@@ -575,191 +566,10 @@ describe('callProviderImageGeneration', () => {
     });
   });
 
-  describe('gemini-imagen format', () => {
-    const descriptor = makeImageDescriptor({
-      id: 'google-gemini',
-      label: 'Google Gemini',
-      buttonLabel: 'AI Assist | Gemini',
-      apiFormat: 'gemini',
-      baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: { base: 'gemini-2.5-flash', image: 'imagen-4.0-generate-001' },
-      imageGeneration: [{ modelPrefix: 'imagen-', format: 'gemini-imagen' }]
-    });
-
-    test('returns image using mimeType from prediction', async () => {
-      mockFetchResponse(imagenBody(['GGG'], 'image/webp'));
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toSucceedAndSatisfy((response) => {
-        expect(response.images[0].mimeType).toBe('image/webp');
-        expect(response.images[0].base64).toBe('GGG');
-      });
-    });
-
-    test('falls back to png mime when prediction omits it', async () => {
-      mockFetchResponse(imagenBody(['GGG']));
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toSucceedAndSatisfy((response) => {
-        expect(response.images[0].mimeType).toBe('image/png');
-      });
-    });
-
-    test('sends predict endpoint URL and Imagen request shape', async () => {
-      mockFetchResponse(imagenBody(['GGG']));
-
-      await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: {
-          prompt: 'a cat',
-          options: {
-            count: 2,
-            seed: 123,
-            models: [
-              {
-                provider: 'google',
-                family: 'imagen-4',
-                config: { aspectRatio: '16:9' }
-              }
-            ]
-          }
-        }
-      });
-
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
-      expect(fetchCall[0]).toBe(
-        'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict'
-      );
-      expect(fetchCall[1].headers['x-goog-api-key']).toBe('test-key');
-      const body = JSON.parse(fetchCall[1].body);
-      expect(body).toEqual({
-        instances: [{ prompt: 'a cat' }],
-        parameters: {
-          sampleCount: 2,
-          aspectRatio: '16:9',
-          seed: 123
-        }
-      });
-    });
-
-    test('omits optional Imagen parameters when not provided', async () => {
-      mockFetchResponse(imagenBody(['GGG']));
-
-      await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.parameters).toEqual({ sampleCount: 1 });
-    });
-
-    test('fails when predictions array is empty', async () => {
-      mockFetchResponse({ predictions: [] });
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toFailWith(/Imagen API response/i);
-    });
-
-    test('surfaces Imagen network errors', async () => {
-      mockFetchError(new Error('ETIMEDOUT'));
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toFailWith(/ETIMEDOUT/);
-    });
-
-    test('sends optional Imagen parameters via models block', async () => {
-      mockFetchResponse(imagenBody(['GGG']));
-
-      await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: {
-          prompt: 'a cat',
-          options: {
-            count: 2,
-            seed: 7,
-            models: [
-              {
-                provider: 'google',
-                family: 'imagen-4',
-                config: {
-                  imageSize: '2K',
-                  addWatermark: false,
-                  enhancePrompt: true,
-                  outputMimeType: 'image/jpeg',
-                  outputCompressionQuality: 85,
-                  personGeneration: 'allow_all'
-                }
-              }
-            ]
-          }
-        }
-      });
-
-      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.parameters).toMatchObject({
-        sampleCount: 2,
-        imageSize: '2K',
-        addWatermark: false,
-        enhancePrompt: true,
-        outputOptions: { mimeType: 'image/jpeg', compressionQuality: 85 },
-        personGeneration: 'allow_all',
-        seed: 7
-      });
-    });
-
-    test('merges otherParams into Imagen parameters', async () => {
-      mockFetchResponse(imagenBody(['GGG']));
-
-      await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: {
-          prompt: 'a cat',
-          options: {
-            models: [
-              {
-                provider: 'other',
-                models: ['imagen-4.0-generate-001'],
-                config: { sampleImageStyle: 'photograph' }
-              }
-            ]
-          }
-        }
-      });
-
-      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.parameters.sampleImageStyle).toBe('photograph');
-    });
-  });
-
   describe('validation failures', () => {
     test('fails when count exceeds capability maxCount', async () => {
       const descriptor = makeImageDescriptor({
-        imageGeneration: [{ modelPrefix: '', format: 'gemini-imagen', maxCount: 1 }]
+        imageGeneration: [{ modelPrefix: '', format: 'gemini-image-out', maxCount: 1 }]
       });
 
       const result = await AiAssist.callProviderImageGeneration({
@@ -906,7 +716,7 @@ describe('callProviderImageGeneration', () => {
       buttonLabel: 'AI Assist | Gemini',
       apiFormat: 'gemini',
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: { base: 'gemini-2.5-flash', image: 'gemini-2.5-flash-image' },
+      defaultModel: { base: 'gemini-2.5-flash', image: 'gemini-3.1-flash-image-preview' },
       imageGeneration: [{ modelPrefix: '', format: 'gemini-image-out', acceptsImageReferenceInput: true }]
     });
 
@@ -952,7 +762,7 @@ describe('callProviderImageGeneration', () => {
             models: [
               {
                 provider: 'other',
-                models: ['gemini-2.5-flash-image'],
+                models: ['gemini-3.1-flash-image-preview'],
                 config: { responseModalities: ['IMAGE'] }
               }
             ]

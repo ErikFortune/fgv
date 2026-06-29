@@ -78,9 +78,21 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     apiFormat: 'gemini',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
     defaultModel: {
-      base: 'gemini-2.5-flash',
-      image: 'gemini-2.5-flash-image',
-      embedding: 'gemini-embedding-001'
+      base: '@google-gemini:flash',
+      thinking: '@google-gemini:pro',
+      image: '@google-gemini:flash-image',
+      embedding: '@google-gemini:embedding'
+    },
+    aliases: {
+      // NOTE: the base flash line is at 3.5 while pro / flash-lite / flash-image are at 3.1 — this is
+      // NOT a typo. The targets come verbatim from Google's official deprecation table: the flash base
+      // line advanced to 3.5 while the other roles are on the 3.1 generation. The per-role version
+      // split is exactly why the alias layer exists — consumers never see these numbers.
+      '@google-gemini:flash': 'gemini-3.5-flash', // base (was gemini-2.5-flash, shutdown 2026-10-16)
+      '@google-gemini:pro': 'gemini-3.1-pro-preview', // thinking (was gemini-2.5-pro, 2026-10-16)
+      '@google-gemini:flash-lite': 'gemini-3.1-flash-lite', // thinking tier; available via modelOverride, NOT the 'thinking' default (was gemini-2.5-flash-lite, 2026-10-16)
+      '@google-gemini:flash-image': 'gemini-3.1-flash-image-preview', // image (was gemini-2.5-flash-image, 2026-10-02)
+      '@google-gemini:embedding': 'gemini-embedding-001' // NOT deprecated — aliased for uniformity only
     },
     supportedTools: ['web_search'],
     corsRestricted: false,
@@ -97,26 +109,6 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       }
     ],
     imageGeneration: [
-      {
-        // Imagen 4 Ultra: max 1 image
-        modelPrefix: 'imagen-4.0-ultra-',
-        format: 'gemini-imagen',
-        acceptsImageReferenceInput: false,
-        supportsQualityParam: false,
-        maxCount: 1,
-        outputParamStyle: 'none',
-        defaultOutputMimeType: 'image/png'
-      },
-      {
-        // All other Imagen 4 models: max 4 images
-        modelPrefix: 'imagen-',
-        format: 'gemini-imagen',
-        acceptsImageReferenceInput: false,
-        supportsQualityParam: false,
-        maxCount: 4,
-        outputParamStyle: 'none',
-        defaultOutputMimeType: 'image/png'
-      },
       {
         // Gemini Flash Image: chat-style generateContent
         modelPrefix: '',
@@ -448,6 +440,7 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
       { idPattern: /^imagen/, capabilities: ['image-generation'] },
       { idPattern: /^gemini-.*-image/, capabilities: ['image-generation'] },
       { idPattern: /embedding/, capabilities: ['embedding'] },
+      { idPattern: /^gemini-3/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^gemini-2\.5/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^gemini-/, capabilities: ['chat', 'tools', 'vision'] }
     ],

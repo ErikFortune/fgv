@@ -96,23 +96,18 @@ describe('AiAssist.registry', () => {
 
     test('returns descriptor with image generation support for google-gemini', () => {
       expect(AiAssist.getProviderDescriptor('google-gemini')).toSucceedAndSatisfy((desc) => {
-        expect(desc.imageGeneration).toHaveLength(3);
+        // Only the gemini-image-out catch-all survives after the Imagen surface retirement.
+        expect(desc.imageGeneration).toHaveLength(1);
         expect(desc.imageGeneration?.[0]).toMatchObject({
-          modelPrefix: 'imagen-4.0-ultra-',
-          format: 'gemini-imagen',
-          maxCount: 1
-        });
-        expect(desc.imageGeneration?.[1]).toMatchObject({
-          modelPrefix: 'imagen-',
-          format: 'gemini-imagen',
-          maxCount: 4
-        });
-        expect(desc.imageGeneration?.[2]).toMatchObject({
           modelPrefix: '',
           format: 'gemini-image-out',
           acceptsImageReferenceInput: true
         });
-        expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('gemini-2.5-flash-image');
+        // The default image model is now an alias that resolves to the surviving flash-image id.
+        expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@google-gemini:flash-image');
+        expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith(
+          'gemini-3.1-flash-image-preview'
+        );
       });
     });
 
@@ -170,14 +165,16 @@ describe('AiAssist.registry', () => {
 
   describe('resolveImageCapability', () => {
     test('returns the matching capability for a model that hits a specific prefix', () => {
-      const descriptor = AiAssist.getProviderDescriptor('google-gemini').orThrow();
-      const capability = AiAssist.resolveImageCapability(descriptor, 'imagen-4.0-generate-001');
-      expect(capability).toMatchObject({ modelPrefix: 'imagen-', format: 'gemini-imagen' });
+      // openai hosts multiple image surfaces under one descriptor; gpt-image-1 hits its
+      // dedicated prefix rather than the catch-all.
+      const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
+      const capability = AiAssist.resolveImageCapability(descriptor, 'gpt-image-1');
+      expect(capability).toMatchObject({ modelPrefix: 'gpt-image-', format: 'openai-images' });
     });
 
     test('falls back to the catch-all entry when no specific prefix matches', () => {
       const descriptor = AiAssist.getProviderDescriptor('google-gemini').orThrow();
-      const capability = AiAssist.resolveImageCapability(descriptor, 'gemini-2.5-flash-image');
+      const capability = AiAssist.resolveImageCapability(descriptor, 'gemini-3.1-flash-image-preview');
       expect(capability).toMatchObject({
         modelPrefix: '',
         format: 'gemini-image-out',
@@ -270,7 +267,11 @@ describe('AiAssist.registry', () => {
 
     test('gemini declares a gemini-embedding-001 default with taskType + dimensions', () => {
       expect(AiAssist.getProviderDescriptor('google-gemini')).toSucceedAndSatisfy((desc) => {
-        expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('gemini-embedding-001');
+        // The embedding default is an alias that resolves to the concrete embedding id.
+        expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('@google-gemini:embedding');
+        expect(AiAssist.resolveProviderModel(desc, undefined, 'embedding')).toSucceedWith(
+          'gemini-embedding-001'
+        );
         const cap = AiAssist.resolveEmbeddingCapability(desc, 'gemini-embedding-001');
         expect(cap).toMatchObject({
           format: 'gemini-embeddings',

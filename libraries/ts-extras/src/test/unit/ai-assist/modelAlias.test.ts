@@ -228,22 +228,27 @@ describe('resolveProviderModel', () => {
   });
 });
 
-describe('alias layer is inert for all built-in descriptors (Tier 1 back-compat)', () => {
+describe('alias layer resolution for built-in descriptors', () => {
   const descriptors = AiAssist.getProviderDescriptors();
 
   test.each(descriptors.map((d) => [d.id, d] as const))(
-    'every current defaultModel value of "%s" resolves to itself unchanged',
+    'every resolved defaultModel value of "%s" is a concrete (non-@) id or a clean failure',
     (__id, descriptor) => {
       for (const key of AiAssist.allModelSpecKeys) {
         const direct = AiAssist.resolveModel(descriptor.defaultModel, key);
+        const resolved = AiAssist.resolveProviderModel(descriptor, undefined, key);
         if (direct.length === 0) {
           // Self-hosted providers (defaultModel: '') intentionally resolve to nothing.
-          expect(AiAssist.resolveProviderModel(descriptor, undefined, key)).toFail();
+          expect(resolved).toFail();
         } else {
-          // No built-in descriptor defines aliases in Tier 1, so the alias layer
-          // returns the concrete id verbatim — proving it is inert until aliases
-          // are added.
-          expect(AiAssist.resolveProviderModel(descriptor, undefined, key)).toSucceedWith(direct);
+          // The post-alias result must never leak an unresolved sigil to the wire.
+          expect(resolved).toSucceedAndSatisfy((model) => {
+            expect(model.startsWith(AiAssist.MODEL_ALIAS_SIGIL)).toBe(false);
+          });
+          if (descriptor.aliases === undefined) {
+            // Descriptors without aliases are inert: the concrete id passes through verbatim.
+            expect(resolved).toSucceedWith(direct);
+          }
         }
       }
     }
@@ -257,9 +262,48 @@ describe('alias layer is inert for all built-in descriptors (Tier 1 back-compat)
     expect(AiAssist.resolveProviderModel(ollama, 'llama3.2:3b')).toSucceedWith('llama3.2:3b');
   });
 
-  test('no built-in descriptor defines an aliases map in Tier 1', () => {
+  test('only google-gemini defines an aliases map (Tier 2)', () => {
     for (const descriptor of descriptors) {
-      expect(descriptor.aliases).toBeUndefined();
+      if (descriptor.id === 'google-gemini') {
+        expect(descriptor.aliases).toBeDefined();
+      } else {
+        expect(descriptor.aliases).toBeUndefined();
+      }
     }
+  });
+});
+
+describe('google-gemini Tier 2 alias migration', () => {
+  const gemini = AiAssist.getProviderDescriptor('google-gemini').orThrow();
+
+  test('defaultModel resolves through the aliases to the concrete 3.x ids', () => {
+    expect(AiAssist.resolveProviderModel(gemini, undefined, 'base')).toSucceedWith('gemini-3.5-flash');
+    expect(AiAssist.resolveProviderModel(gemini, undefined, 'thinking')).toSucceedWith(
+      'gemini-3.1-pro-preview'
+    );
+    expect(AiAssist.resolveProviderModel(gemini, undefined, 'image')).toSucceedWith(
+      'gemini-3.1-flash-image-preview'
+    );
+    expect(AiAssist.resolveProviderModel(gemini, undefined, 'embedding')).toSucceedWith(
+      'gemini-embedding-001'
+    );
+  });
+
+  test('each declared alias maps to its concrete target', () => {
+    expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:flash')).toSucceedWith('gemini-3.5-flash');
+    expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:pro')).toSucceedWith('gemini-3.1-pro-preview');
+    expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:flash-lite')).toSucceedWith(
+      'gemini-3.1-flash-lite'
+    );
+    expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:flash-image')).toSucceedWith(
+      'gemini-3.1-flash-image-preview'
+    );
+    expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:embedding')).toSucceedWith(
+      'gemini-embedding-001'
+    );
+  });
+
+  test('an unknown gemini alias fails loudly', () => {
+    expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:flsh')).toFailWith(/unknown model alias/i);
   });
 });
