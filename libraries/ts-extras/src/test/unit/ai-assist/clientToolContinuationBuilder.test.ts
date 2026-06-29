@@ -24,7 +24,7 @@
 
 import '@fgv/ts-utils-jest';
 
-import { fail, succeed } from '@fgv/ts-utils';
+import { fail, Logging, succeed } from '@fgv/ts-utils';
 import { type JsonObject, JsonSchema } from '@fgv/ts-json-base';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import {
@@ -160,7 +160,7 @@ describe('buildAnthropicContinuation', () => {
         }
       ];
 
-      const cont = buildAnthropicContinuation(buffer, results);
+      const cont = buildAnthropicContinuation(buffer, results).orThrow();
 
       expect(cont.messages).toHaveLength(2);
       const assistantMsg = cont.messages[0];
@@ -192,7 +192,7 @@ describe('buildAnthropicContinuation', () => {
         { toolName: 'recall', callId: 'toolu_02', args: {}, result: '"found"', isError: false }
       ];
 
-      const cont = buildAnthropicContinuation(buffer, results);
+      const cont = buildAnthropicContinuation(buffer, results).orThrow();
       const assistantContent = cont.messages[0].content as unknown[];
       expect(assistantContent).toHaveLength(2);
       expect((assistantContent[0] as Record<string, unknown>).type).toBe('text');
@@ -209,7 +209,7 @@ describe('buildAnthropicContinuation', () => {
         { toolName: 'recall', callId: 'toolu_03', args: {}, result: '"found"', isError: false }
       ];
 
-      const cont = buildAnthropicContinuation(buffer, results);
+      const cont = buildAnthropicContinuation(buffer, results).orThrow();
       const assistantContent = cont.messages[0].content as unknown[];
       expect(assistantContent).toHaveLength(1);
       expect((assistantContent[0] as Record<string, unknown>).type).toBe('tool_use');
@@ -223,7 +223,7 @@ describe('buildAnthropicContinuation', () => {
         { toolName: 'recall', callId: 'toolu_04', args: {}, result: '"found"', isError: false }
       ];
 
-      const cont = buildAnthropicContinuation(buffer, results);
+      const cont = buildAnthropicContinuation(buffer, results).orThrow();
       // Neither the assistant message nor the user message should carry a tool_choice field.
       for (const msg of cont.messages) {
         expect(Object.keys(msg)).not.toContain('tool_choice');
@@ -243,7 +243,7 @@ describe('buildAnthropicContinuation', () => {
         { toolName: 'recall', callId: 'toolu_05', args: { q: 'x' }, result: '"result"', isError: false }
       ];
 
-      const cont = buildAnthropicContinuation(buffer, results);
+      const cont = buildAnthropicContinuation(buffer, results).orThrow();
       const assistantContent = cont.messages[0].content as unknown[];
       expect(assistantContent).toHaveLength(2);
       expect((assistantContent[0] as Record<string, unknown>).type).toBe('thinking');
@@ -262,7 +262,7 @@ describe('buildAnthropicContinuation', () => {
 
       const results = [{ toolName: 'recall', callId: 'toolu_06', args: {}, result: '"x"', isError: false }];
 
-      const cont = buildAnthropicContinuation(buffer, results);
+      const cont = buildAnthropicContinuation(buffer, results).orThrow();
       const assistantContent = cont.messages[0].content as unknown[];
       expect((assistantContent[0] as Record<string, unknown>).signature).toBe(fullSignature);
     });
@@ -274,7 +274,7 @@ describe('buildAnthropicContinuation', () => {
 
       const results = [{ toolName: 'recall', callId: 'toolu_07', args: {}, result: '"x"', isError: false }];
 
-      const cont = buildAnthropicContinuation(buffer, results);
+      const cont = buildAnthropicContinuation(buffer, results).orThrow();
       const assistantContent = cont.messages[0].content as unknown[];
       expect((assistantContent[0] as Record<string, unknown>).type).toBe('redacted_thinking');
       expect((assistantContent[0] as Record<string, unknown>).data).toBe('opaque-encrypted-string');
@@ -294,7 +294,7 @@ describe('buildAnthropicContinuation', () => {
         { toolName: 'recall', callId: 'toolu_b', args: { q: 'b' }, result: '"res-b"', isError: false }
       ];
 
-      const cont = buildAnthropicContinuation(buffer, results);
+      const cont = buildAnthropicContinuation(buffer, results).orThrow();
       const assistantContent = cont.messages[0].content as unknown[];
       // Must preserve original interleaved order: thinking, text, tool_use, thinking, tool_use
       expect(assistantContent).toHaveLength(5);
@@ -320,7 +320,7 @@ describe('buildAnthropicContinuation', () => {
         { toolName: 'search', callId: 'toolu_p2', args: { q: 'p2' }, result: '"r2"', isError: false }
       ];
 
-      const cont = buildAnthropicContinuation(buffer, results);
+      const cont = buildAnthropicContinuation(buffer, results).orThrow();
       expect(cont.messages).toHaveLength(2);
       const assistantContent = cont.messages[0].content as unknown[];
       expect(assistantContent).toHaveLength(3);
@@ -341,7 +341,7 @@ describe('buildAnthropicContinuation', () => {
 
       const results = [{ toolName: 'recall', callId: 'toolu_08', args: {}, result: '"x"', isError: false }];
 
-      const cont = buildAnthropicContinuation(buffer, results);
+      const cont = buildAnthropicContinuation(buffer, results).orThrow();
       for (const msg of cont.messages) {
         expect(Object.keys(msg)).not.toContain('tool_choice');
       }
@@ -358,30 +358,71 @@ describe('buildAnthropicContinuation', () => {
         { toolName: 'recall', callId: 'toolu_err', args: {}, result: 'validation failed', isError: true }
       ];
 
-      const cont = buildAnthropicContinuation(buffer, results);
+      const cont = buildAnthropicContinuation(buffer, results).orThrow();
       const userContent = cont.messages[1].content as unknown[];
       expect((userContent[0] as Record<string, unknown>).is_error).toBe(true);
       expect((userContent[0] as Record<string, unknown>).content).toBe('validation failed');
     });
 
-    test('uses toolName as tool_use_id fallback when callId is absent', () => {
+    // id-correlation divergence repro (the production "malformed identifier" bug):
+    // a missing/empty/mismatched callId was masked by a `?? toolName` fallback that
+    // emitted the tool name (never a toolu_* id). The build must now fail loud.
+    interface ILooseToolResult {
+      toolName: string;
+      callId?: string;
+      args: JsonObject;
+      result: string;
+      isError: boolean;
+    }
+
+    test('fails loud (does NOT fall back to toolName) when callId is absent', () => {
       const buffer = new Map<number, IAccumulatedBlock>();
       buffer.set(0, { type: 'tool_use', id: 'toolu_noid', name: 'recall', argsBuffer: '{}' });
 
-      const results = [
+      const results: ILooseToolResult[] = [
         // callId omitted (undefined)
-        { toolName: 'recall', args: {} as JsonObject, result: '"x"', isError: false } as {
-          toolName: string;
-          callId?: string;
-          args: JsonObject;
-          result: string;
-          isError: boolean;
-        }
+        { toolName: 'recall', args: {}, result: '"x"', isError: false }
       ];
 
-      const cont = buildAnthropicContinuation(buffer, results);
-      const userContent = cont.messages[1].content as unknown[];
-      expect((userContent[0] as Record<string, unknown>).tool_use_id).toBe('recall');
+      expect(buildAnthropicContinuation(buffer, results)).toFailWith(/recall.*no call id.*missing or empty/i);
+    });
+
+    test('fails loud when callId is the empty string (?? would not catch it)', () => {
+      const buffer = new Map<number, IAccumulatedBlock>();
+      buffer.set(0, { type: 'tool_use', id: 'toolu_empty', name: 'recall', argsBuffer: '{}' });
+
+      const results: ILooseToolResult[] = [
+        { toolName: 'recall', callId: '', args: {}, result: '"x"', isError: false }
+      ];
+
+      expect(buildAnthropicContinuation(buffer, results)).toFailWith(/recall.*no call id.*missing or empty/i);
+    });
+
+    test('fails loud when callId does not match any buffered tool_use block id', () => {
+      const buffer = new Map<number, IAccumulatedBlock>();
+      buffer.set(0, { type: 'tool_use', id: 'toolu_real', name: 'recall', argsBuffer: '{}' });
+
+      const results = [
+        { toolName: 'recall', callId: 'toolu_mismatch', args: {}, result: '"x"', isError: false }
+      ];
+
+      expect(buildAnthropicContinuation(buffer, results)).toFailWith(
+        /recall.*toolu_mismatch.*does not match any buffered/i
+      );
+    });
+
+    test('fails loud when a buffered tool_use block has an empty id', () => {
+      const buffer = new Map<number, IAccumulatedBlock>();
+      // A tool_use block that somehow reached the buffer with an empty id can
+      // never be referenced by a valid tool_result — emitting it would corrupt
+      // the assistant turn.
+      buffer.set(0, { type: 'tool_use', id: '', name: 'recall', argsBuffer: '{}' });
+
+      const results = [{ toolName: 'recall', callId: '', args: {}, result: '"x"', isError: false }];
+
+      expect(buildAnthropicContinuation(buffer, results)).toFailWith(
+        /buffered tool_use block.*recall.*empty id/i
+      );
     });
   });
 
@@ -394,13 +435,71 @@ describe('buildAnthropicContinuation', () => {
         { toolName: 'recall', callId: 'toolu_sum', args: { q: 'summary' }, result: '"data"', isError: false }
       ];
 
-      const cont = buildAnthropicContinuation(buffer, results);
+      const cont = buildAnthropicContinuation(buffer, results).orThrow();
       expect(cont.toolCallsSummary).toHaveLength(1);
       expect(cont.toolCallsSummary[0].toolName).toBe('recall');
       expect(cont.toolCallsSummary[0].callId).toBe('toolu_sum');
       expect(cont.toolCallsSummary[0].args).toEqual({ q: 'summary' });
       expect(cont.toolCallsSummary[0].result).toBe('"data"');
       expect(cont.toolCallsSummary[0].isError).toBe(false);
+    });
+  });
+
+  describe('id-correlation: tool_use.id === tool_result.tool_use_id (single source of truth)', () => {
+    // The continuation MUST key every tool_result.tool_use_id off the assistant
+    // tool_use.id from the buffer — never the tool name. These assert the positive
+    // invariant for single and parallel tool calls.
+    const asString = (v: unknown): string => (typeof v === 'string' ? v : '');
+    function toolUseIds(cont: { messages: ReadonlyArray<JsonObject> }): string[] {
+      const content = cont.messages[0].content as Record<string, unknown>[];
+      return content.filter((b) => b.type === 'tool_use').map((b) => asString(b.id));
+    }
+    function toolResultIds(cont: { messages: ReadonlyArray<JsonObject> }): string[] {
+      const content = cont.messages[1].content as Record<string, unknown>[];
+      return content.map((b) => asString(b.tool_use_id));
+    }
+
+    test('single call: tool_result.tool_use_id equals the assistant tool_use.id', () => {
+      const buffer = new Map<number, IAccumulatedBlock>();
+      buffer.set(0, { type: 'tool_use', id: 'toolu_single', name: 'recall', argsBuffer: '{}' });
+      const results = [
+        { toolName: 'recall', callId: 'toolu_single', args: {}, result: '"x"', isError: false }
+      ];
+
+      const cont = buildAnthropicContinuation(buffer, results).orThrow();
+      expect(toolUseIds(cont)).toEqual(['toolu_single']);
+      expect(toolResultIds(cont)).toEqual(['toolu_single']);
+    });
+
+    test('parallel calls: each tool_result.tool_use_id equals its assistant tool_use.id', () => {
+      const buffer = new Map<number, IAccumulatedBlock>();
+      buffer.set(0, { type: 'tool_use', id: 'toolu_a', name: 'recall', argsBuffer: '{}' });
+      buffer.set(1, { type: 'tool_use', id: 'toolu_b', name: 'search', argsBuffer: '{}' });
+      // Supply results out of buffer order to prove correlation is by id, not position.
+      const results = [
+        { toolName: 'search', callId: 'toolu_b', args: {}, result: '"rb"', isError: false },
+        { toolName: 'recall', callId: 'toolu_a', args: {}, result: '"ra"', isError: false }
+      ];
+
+      const cont = buildAnthropicContinuation(buffer, results).orThrow();
+      expect(toolUseIds(cont).sort()).toEqual(['toolu_a', 'toolu_b']);
+      // tool_result order follows toolResults order; ids must match their own call.
+      expect(toolResultIds(cont)).toEqual(['toolu_b', 'toolu_a']);
+    });
+  });
+
+  describe('diagnostic logging', () => {
+    test('logs the tool_use.id ↔ tool_result.tool_use_id pairing at detail level', () => {
+      const buffer = new Map<number, IAccumulatedBlock>();
+      buffer.set(0, { type: 'tool_use', id: 'toolu_diag', name: 'recall', argsBuffer: '{}' });
+      const results = [{ toolName: 'recall', callId: 'toolu_diag', args: {}, result: '"x"', isError: false }];
+
+      const logger = new Logging.InMemoryLogger('all');
+      expect(buildAnthropicContinuation(buffer, results, logger)).toSucceed();
+
+      const line = logger.logged.find((m) => m.includes('ai-assist:anthropic-continuation'));
+      expect(line).toBeDefined();
+      expect(line).toContain('recall:toolu_diag');
     });
   });
 });
@@ -424,7 +523,7 @@ describe('buildOpenAiContinuation', () => {
       }
     ];
 
-    const cont = buildOpenAiContinuation(calls, results);
+    const cont = buildOpenAiContinuation(calls, results).orThrow();
     expect(cont.messages).toHaveLength(2);
     // Per ResponseFunctionToolCall spec, call_id is the required correlation field
     // and must match the matching function_call_output's call_id below. The optional
@@ -450,7 +549,7 @@ describe('buildOpenAiContinuation', () => {
       { toolName: 'search', callId: 'call_2', args: { q: 'b' }, result: '"r2"', isError: false }
     ];
 
-    const cont = buildOpenAiContinuation(calls, results);
+    const cont = buildOpenAiContinuation(calls, results).orThrow();
     expect(cont.messages).toHaveLength(4);
     const functionCallItems = cont.messages.filter((m) => m.type === 'function_call');
     const outputItems = cont.messages.filter((m) => m.type === 'function_call_output');
@@ -470,15 +569,17 @@ describe('buildOpenAiContinuation', () => {
 
     const results = [{ toolName: 'recall', callId: 'call_s', args: {}, result: '"x"', isError: false }];
 
-    const cont = buildOpenAiContinuation(calls, results);
+    const cont = buildOpenAiContinuation(calls, results).orThrow();
     expect(cont.toolCallsSummary).toHaveLength(1);
     expect(cont.toolCallsSummary[0].toolName).toBe('recall');
     expect(cont.toolCallsSummary[0].callId).toBe('call_s');
   });
 
-  test('uses toolName as call_id fallback when callId is absent', () => {
+  // OpenAI parity for the id-correlation fix: never key function_call_output by
+  // tool name; fail loud on a missing / empty / mismatched call_id.
+  test('fails loud (does NOT fall back to toolName) when callId is absent', () => {
     const calls = new Map<string, IAccumulatedFunctionCall>();
-    calls.set('recall', { id: 'recall', name: 'recall', argsBuffer: '{}' });
+    calls.set('call_real', { id: 'call_real', name: 'recall', argsBuffer: '{}' });
 
     const results = [
       { toolName: 'recall', args: {} as JsonObject, result: '"x"', isError: false } as {
@@ -490,8 +591,40 @@ describe('buildOpenAiContinuation', () => {
       }
     ];
 
-    const cont = buildOpenAiContinuation(calls, results);
-    expect(cont.messages[1].call_id).toBe('recall');
+    expect(buildOpenAiContinuation(calls, results)).toFailWith(/recall.*no call id.*missing or empty/i);
+  });
+
+  test('fails loud when callId is the empty string', () => {
+    const calls = new Map<string, IAccumulatedFunctionCall>();
+    calls.set('call_real', { id: 'call_real', name: 'recall', argsBuffer: '{}' });
+
+    const results = [{ toolName: 'recall', callId: '', args: {}, result: '"x"', isError: false }];
+
+    expect(buildOpenAiContinuation(calls, results)).toFailWith(/recall.*no call id.*missing or empty/i);
+  });
+
+  test('fails loud when callId does not match any accumulated function_call call_id', () => {
+    const calls = new Map<string, IAccumulatedFunctionCall>();
+    calls.set('call_real', { id: 'call_real', name: 'recall', argsBuffer: '{}' });
+
+    const results = [{ toolName: 'recall', callId: 'call_ghost', args: {}, result: '"x"', isError: false }];
+
+    expect(buildOpenAiContinuation(calls, results)).toFailWith(
+      /recall.*call_ghost.*does not match any accumulated/i
+    );
+  });
+
+  test('logs the function_call.call_id ↔ output.call_id pairing at detail level', () => {
+    const calls = new Map<string, IAccumulatedFunctionCall>();
+    calls.set('call_diag', { id: 'call_diag', name: 'recall', argsBuffer: '{}' });
+    const results = [{ toolName: 'recall', callId: 'call_diag', args: {}, result: '"x"', isError: false }];
+
+    const logger = new Logging.InMemoryLogger('all');
+    expect(buildOpenAiContinuation(calls, results, logger)).toSucceed();
+
+    const line = logger.logged.find((m) => m.includes('ai-assist:openai-continuation'));
+    expect(line).toBeDefined();
+    expect(line).toContain('recall:call_diag');
   });
 });
 
@@ -862,6 +995,57 @@ describe('executeClientToolTurn', () => {
   });
 
   // --------------------------------------------------------------------------
+
+  describe('id-correlation failure surfaces through nextTurn (defense-in-depth)', () => {
+    test('fails nextTurn loud when an executed tool result cannot be correlated to a buffered tool_use id', async () => {
+      // Drive a buffer-index collision: two tool_use blocks reuse SSE index 0, so
+      // the executed result (toolu_A) is keyed to a buffer entry that the later
+      // block (toolu_B) overwrote. The builder must fail loud rather than emit a
+      // continuation whose tool_result references an id absent from the assistant
+      // turn — exactly the "malformed identifier" class. End-to-end proof that the
+      // single-source-of-truth guard wires through executeClientToolTurn.
+      const sse = [
+        `event: content_block_start\ndata: ${JSON.stringify({
+          index: 0,
+          content_block: { type: 'tool_use', id: 'toolu_A', name: 'recall_memory' }
+        })}\n\n`,
+        `event: content_block_delta\ndata: ${JSON.stringify({
+          index: 0,
+          delta: { type: 'input_json_delta', partial_json: '{"query":"a"}' }
+        })}\n\n`,
+        `event: content_block_stop\ndata: ${JSON.stringify({ index: 0 })}\n\n`,
+        // Second tool_use reuses index 0, overwriting toolu_A in the buffer.
+        `event: content_block_start\ndata: ${JSON.stringify({
+          index: 0,
+          content_block: { type: 'tool_use', id: 'toolu_B', name: 'recall_memory' }
+        })}\n\n`,
+        `event: message_delta\ndata: ${JSON.stringify({ delta: { stop_reason: 'tool_use' } })}\n\n`,
+        `event: message_stop\ndata: {}\n\n`
+      ];
+      mockSseResponse(sse);
+      const tool = makeMemoryTool(async (args) => `result-${args.query}`);
+
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [tool] as IAiClientTool[],
+        model: 'claude-sonnet-4-6'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      const events = await collect(result.value.events);
+      const turnResult = await result.value.nextTurn;
+
+      expect(turnResult).toFailWith(/toolu_A.*does not match any buffered/i);
+      // The failure also surfaces inline on the event stream (parity with the
+      // stream-open-failure path), not only via nextTurn.
+      expect(events.some((e) => e.type === 'error' && /does not match any buffered/i.test(e.message))).toBe(
+        true
+      );
+    });
+  });
 
   describe('happy-path round-trip (Anthropic)', () => {
     test('executes memory tool and resolves nextTurn with continuation', async () => {

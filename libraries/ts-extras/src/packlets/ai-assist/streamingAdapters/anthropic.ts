@@ -41,6 +41,7 @@ import { toAnthropicTools } from '../toolFormats';
 import { anthropicEffortToBudgetTokens, type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import {
   IStreamApiConfig,
+  MALFORMED_TOOL_USE_WARN_TAG,
   UNRECOGNIZED_EVENT_WARN_TAG,
   formatUnrecognizedEventPayloadPreview,
   openSseConnection,
@@ -330,14 +331,29 @@ async function* translateAnthropicStream(
           });
         } else if (block.type === 'text') {
           accumulationBuffer.set(index, { type: 'text', text: '' });
-        } else if (block.type === 'tool_use' && block.id && block.name) {
-          accumulationBuffer.set(index, {
-            type: 'tool_use',
-            id: block.id,
-            name: block.name,
-            argsBuffer: ''
-          });
-          yield { type: 'client-tool-call-start', toolName: block.name, callId: block.id };
+        } else if (block.type === 'tool_use') {
+          // A tool_use block_start MUST carry a non-empty id and name: the id is the
+          // sole correlation key for the follow-up tool_result, and dropping the block
+          // silently (then ignoring its input_json_delta chunks at the delta handler
+          // below) is exactly how an orphaned block leaves the harness without a clean
+          // id and corrupts the continuation. Surface it loudly instead of dropping it.
+          if (block.id && block.name) {
+            accumulationBuffer.set(index, {
+              type: 'tool_use',
+              id: block.id,
+              name: block.name,
+              argsBuffer: ''
+            });
+            yield { type: 'client-tool-call-start', toolName: block.name, callId: block.id };
+          } else {
+            logger?.warn(
+              `${MALFORMED_TOOL_USE_WARN_TAG} Anthropic streaming adapter: tool_use content_block_start ` +
+                `at index ${index} is missing a usable id and/or name ` +
+                `(id=${JSON.stringify(block.id)}, name=${JSON.stringify(block.name)}). ` +
+                `No client tool call will be issued for this block; its argument deltas are dropped. ` +
+                `This usually indicates provider drift or a truncated stream.`
+            );
+          }
         } else if (block.type === 'server_tool_use' && block.name === 'web_search') {
           yield { type: 'tool-event', toolType: 'web_search', phase: 'started' };
         } else if (block.type === 'web_search_tool_result') {

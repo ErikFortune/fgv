@@ -82,11 +82,34 @@ interface IToolCallResult {
 // ============================================================================
 
 /**
+ * Returns `true` when `id` is a usable correlation id — present and non-empty.
+ *
+ * `??` is NOT sufficient for this check: an empty string is a *bad* id (a
+ * `tool_use_id: ''` is rejected by Anthropic as a "malformed identifier") but
+ * `'' ?? fallback` yields `''`, silently passing the empty id through. Every id
+ * correlation in this module must use this predicate, never `??`.
+ *
+ * @internal
+ */
+function isUsableId(id: string | undefined): id is string {
+  return id !== undefined && id.length > 0;
+}
+
+/**
  * Builds the Anthropic follow-up messages for a client-tool round-trip.
  *
  * Reconstructs the assistant turn from the ordered accumulation buffer
  * (all block types in original stream order) and appends a user turn
  * with `tool_result` blocks for each executed tool call.
+ *
+ * **Single source of truth for the id (id-correlation fix).** Each
+ * `tool_result.tool_use_id` is drawn from — and validated against — the set of
+ * assistant `tool_use.id`s actually present in the accumulation buffer. The id
+ * is NEVER derived from the tool name: a tool name can never match a `toolu_*`
+ * id, so a name fallback produces exactly the "malformed identifier" the
+ * provider rejects. If any tool result cannot be correlated to a buffered
+ * `tool_use` block with a non-empty id, the build fails loud (naming the tool)
+ * rather than emitting a malformed continuation.
  *
  * **Constraint (E3):** The returned continuation does NOT include a forced
  * `tool_choice` field. When thinking is active, Anthropic rejects
@@ -98,12 +121,16 @@ interface IToolCallResult {
  */
 export function buildAnthropicContinuation(
   accBuffer: Map<number, IAccumulatedBlock>,
-  toolResults: IToolCallResult[]
-): IAiClientToolContinuation {
+  toolResults: IToolCallResult[],
+  logger?: Logging.ILogger
+): Result<IAiClientToolContinuation> {
   // Reconstruct the assistant turn from the ordered accumulation buffer.
   // Sort by buffer key (SSE index) to restore original stream order.
   const sortedKeys = Array.from(accBuffer.keys()).sort((a, b) => a - b);
   const assistantContent: JsonArray = [];
+  // The set of assistant tool_use ids — the single source of truth every
+  // tool_result.tool_use_id must be drawn from.
+  const bufferedToolUseIds = new Set<string>();
 
   for (const key of sortedKeys) {
     const block = accBuffer.get(key);
@@ -125,6 +152,14 @@ export function buildAnthropicContinuation(
         assistantContent.push({ type: 'text', text: block.text });
       }
     } else if (block.type === 'tool_use') {
+      // A buffered tool_use with an empty id can never be referenced by a valid
+      // tool_result; emitting it would corrupt the assistant turn. Fail loud.
+      if (!isUsableId(block.id)) {
+        return fail(
+          `Anthropic continuation: buffered tool_use block for tool '${block.name}' has an empty id; ` +
+            `cannot build a valid continuation`
+        );
+      }
       let parsedInput: JsonObject;
       try {
         /* c8 ignore next 1 - defensive: argsBuffer is JSON-parsed in the adapter before emitting client-tool-call-done */
@@ -134,6 +169,7 @@ export function buildAnthropicContinuation(
         parsedInput = {};
       }
       /* c8 ignore stop */
+      bufferedToolUseIds.add(block.id);
       assistantContent.push({
         type: 'tool_use',
         id: block.id,
@@ -143,19 +179,41 @@ export function buildAnthropicContinuation(
     }
   }
 
-  // Build user turn with tool_result blocks for each tool call.
-  const userContent: JsonArray = toolResults.map((r): JsonObject => {
+  // Build user turn with tool_result blocks for each tool call. Correlate each
+  // result to a buffered tool_use id — the SAME id that keys the assistant
+  // tool_use block — and fail loud on a missing / empty / mismatched id. A
+  // missing callId is a bug to surface, not paper over with a name fallback.
+  const userContent: JsonArray = [];
+  for (const r of toolResults) {
+    if (!isUsableId(r.callId)) {
+      return fail(
+        `Anthropic continuation: tool '${r.toolName}' result has no call id (missing or empty); ` +
+          `cannot correlate it to an assistant tool_use block`
+      );
+    }
+    if (!bufferedToolUseIds.has(r.callId)) {
+      return fail(
+        `Anthropic continuation: tool '${r.toolName}' call id '${r.callId}' does not match any ` +
+          `buffered assistant tool_use block id`
+      );
+    }
     const block: JsonObject = {
       type: 'tool_result',
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      tool_use_id: r.callId ?? r.toolName,
+      tool_use_id: r.callId,
       content: r.result
     };
-    if (r.isError) {
-      return { ...block, is_error: true };
-    }
-    return block;
-  });
+    userContent.push(r.isError ? { ...block, is_error: true } : block);
+  }
+
+  // Decisive diagnostic: the tool_use.id ↔ tool_result.tool_use_id pairing for
+  // the outgoing continuation. A failing turn is field-confirmable by capturing
+  // this line (the pairing is by construction matched here — divergence fails
+  // loud above, before reaching this point).
+  if (logger) {
+    const pairing = toolResults.map((r) => `${r.toolName}:${r.callId}`).join(', ');
+    logger.detail(`ai-assist:anthropic-continuation tool_use.id↔tool_result.tool_use_id [${pairing}]`);
+  }
 
   const assistantMessage: JsonObject = {
     role: 'assistant',
@@ -166,7 +224,7 @@ export function buildAnthropicContinuation(
     content: userContent
   };
 
-  return {
+  return succeed({
     messages: [assistantMessage, userMessage],
     toolCallsSummary: toolResults.map((r) => ({
       toolName: r.toolName,
@@ -175,7 +233,7 @@ export function buildAnthropicContinuation(
       result: r.result,
       isError: r.isError
     }))
-  };
+  });
 }
 
 // ============================================================================
@@ -190,12 +248,20 @@ export function buildAnthropicContinuation(
  * `function_call_output` items (the harness execution result), one pair
  * per executed tool call.
  *
+ * **Single source of truth for the id (id-correlation fix).** Each
+ * `function_call_output.call_id` is drawn from — and validated against — the
+ * set of `function_call.call_id`s in the accumulation map. It is NEVER derived
+ * from the tool name (the OpenAI parity of the Anthropic `tool_use_id` fix). A
+ * missing / empty / unmatched call id fails the build loud rather than emitting
+ * a continuation the provider would reject.
+ *
  * @internal
  */
 export function buildOpenAiContinuation(
   calls: Map<string, IAccumulatedFunctionCall>,
-  toolResults: IToolCallResult[]
-): IAiClientToolContinuation {
+  toolResults: IToolCallResult[],
+  logger?: Logging.ILogger
+): Result<IAiClientToolContinuation> {
   const items: JsonObject[] = [];
 
   // Emit function_call items for each call (model's side). Per the Responses API spec
@@ -203,7 +269,9 @@ export function buildOpenAiContinuation(
   // match the matching function_call_output's `call_id` below. The optional `id` field
   // is the output-item id (`fc_*`) used to reference the streamed item; we omit it
   // because it is not load-bearing for input items.
+  const bufferedCallIds = new Set<string>();
   for (const [callId, call] of calls) {
+    bufferedCallIds.add(callId);
     items.push({
       type: 'function_call',
       call_id: callId,
@@ -212,16 +280,37 @@ export function buildOpenAiContinuation(
     });
   }
 
-  // Emit function_call_output items (harness execution results).
+  // Emit function_call_output items (harness execution results). Correlate each
+  // to a buffered function_call call_id — never the tool name — and fail loud on
+  // a missing / empty / mismatched id.
   for (const r of toolResults) {
+    if (!isUsableId(r.callId)) {
+      return fail(
+        `OpenAI continuation: tool '${r.toolName}' result has no call id (missing or empty); ` +
+          `cannot correlate it to a function_call item`
+      );
+    }
+    if (!bufferedCallIds.has(r.callId)) {
+      return fail(
+        `OpenAI continuation: tool '${r.toolName}' call id '${r.callId}' does not match any ` +
+          `accumulated function_call call_id`
+      );
+    }
     items.push({
       type: 'function_call_output',
-      call_id: r.callId ?? r.toolName,
+      call_id: r.callId,
       output: r.result
     });
   }
 
-  return {
+  // Decisive diagnostic: the function_call.call_id ↔ function_call_output.call_id
+  // pairing for the outgoing continuation (matched by construction here).
+  if (logger) {
+    const pairing = toolResults.map((r) => `${r.toolName}:${r.callId}`).join(', ');
+    logger.detail(`ai-assist:openai-continuation function_call.call_id↔output.call_id [${pairing}]`);
+  }
+
+  return succeed({
     messages: items,
     toolCallsSummary: toolResults.map((r) => ({
       toolName: r.toolName,
@@ -230,7 +319,7 @@ export function buildOpenAiContinuation(
       result: r.result,
       isError: r.isError
     }))
-  };
+  });
 }
 
 // ============================================================================
@@ -695,16 +784,18 @@ export function executeClientToolTurn(
       return;
     }
 
-    let continuation: IAiClientToolContinuation;
+    let continuationResult: Result<IAiClientToolContinuation>;
     switch (descriptor.apiFormat) {
       case 'anthropic':
-        continuation = buildAnthropicContinuation(anthropicBuffer, toolResults);
+        continuationResult = buildAnthropicContinuation(anthropicBuffer, toolResults, logger);
         break;
       case 'openai':
-        continuation = buildOpenAiContinuation(openAiCallMap, toolResults);
+        continuationResult = buildOpenAiContinuation(openAiCallMap, toolResults, logger);
         break;
       case 'gemini':
-        continuation = buildGeminiContinuation(geminiCalls, toolResults);
+        // Gemini correlates by tool name by design (no call ids) — its builder
+        // cannot mis-key and stays non-fallible.
+        continuationResult = succeed(buildGeminiContinuation(geminiCalls, toolResults));
         break;
       /* c8 ignore next 5 - defensive coding: exhaustive switch guaranteed by TypeScript */
       default: {
@@ -713,6 +804,17 @@ export function executeClientToolTurn(
         return;
       }
     }
+
+    // A bad id-correlation fails loud here rather than emitting a malformed
+    // continuation the provider would reject as a "malformed identifier". Mirror
+    // the stream-open-failure path above: surface an `error` event so a consumer
+    // iterating `events` sees the failure inline, not only via `nextTurn`.
+    if (continuationResult.isFailure()) {
+      resolveNextTurn(fail(continuationResult.message));
+      yield { type: 'error', message: continuationResult.message };
+      return;
+    }
+    let continuation = continuationResult.value;
 
     // Prepend inbound continuationMessages so the returned continuation is cumulative.
     // A consumer that does `tail = outcome.continuation.messages` (replace) is then

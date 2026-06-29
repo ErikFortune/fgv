@@ -27,6 +27,7 @@
 
 import '@fgv/ts-utils-jest';
 
+import { Logging } from '@fgv/ts-utils';
 import { AiAssist } from '../../..';
 import type { JsonArray, JsonObject } from '@fgv/ts-json-base';
 // eslint-disable-next-line @rushstack/packlets/mechanics
@@ -796,6 +797,79 @@ describe('Anthropic streaming adapter — C2 client tool extensions', () => {
     expect(types).toContain('client-tool-call-done');
     expect(types).toContain('text-delta');
     expect(types[types.length - 1]).toBe('done');
+  });
+
+  // --------------------------------------------------------------------------
+  // Orphaned tool_use block: a tool_use content_block_start missing a usable id
+  // and/or name must NOT be silently dropped. The id is the sole correlation key
+  // for the follow-up tool_result; a silent drop (and the subsequent silent
+  // ignore of its input_json_delta chunks) is the path that leaves the harness
+  // without a clean id and corrupts the continuation. The adapter must surface it
+  // loudly (logger.warn with the stable MALFORMED_TOOL_USE_WARN_TAG prefix) and
+  // issue no client tool call for the block.
+  // --------------------------------------------------------------------------
+
+  async function runOrphanedToolUse(
+    contentBlock: JsonObject,
+    logger?: Logging.InMemoryLogger
+  ): Promise<{ emitted: AiAssist.IAiStreamEvent[]; accBuffer: Map<number, IAccumulatedBlock> }> {
+    const accBuffer = new Map<number, IAccumulatedBlock>();
+    mockSseResponse([
+      `event: content_block_start\ndata: ${JSON.stringify({ index: 0, content_block: contentBlock })}\n\n`,
+      // A delta for the orphaned index must be harmlessly ignored (no buffer entry to attach to).
+      `event: content_block_delta\ndata: ${JSON.stringify({
+        index: 0,
+        delta: { type: 'input_json_delta', partial_json: '{"q":"v"}' }
+      })}\n\n`,
+      `event: content_block_stop\ndata: ${JSON.stringify({ index: 0 })}\n\n`,
+      `event: message_stop\ndata: ${JSON.stringify({})}\n\n`
+    ]);
+    const { callAnthropicStream } = await import('../../../packlets/ai-assist/streamingAdapters/anthropic');
+    const streamResult = await callAnthropicStream(
+      { baseUrl: 'https://api.anthropic.com/v1', model: 'claude-3-5-sonnet-20241022', apiKey: 'sk-test' },
+      TEST_PROMPT,
+      undefined,
+      0.5,
+      undefined,
+      logger,
+      undefined,
+      undefined,
+      accBuffer
+    );
+    expect(streamResult).toSucceed();
+    const emitted = streamResult.isSuccess() ? await collect(streamResult.value) : [];
+    // The orphaned block issues no tool call and leaves no buffer entry.
+    expect(emitted.some((e) => e.type === 'client-tool-call-start')).toBe(false);
+    expect(emitted.some((e) => e.type === 'client-tool-call-done')).toBe(false);
+    expect(accBuffer.size).toBe(0);
+    return { emitted, accBuffer };
+  }
+
+  test('surfaces (not drops) a tool_use content_block_start missing its name', async () => {
+    const logger = new Logging.InMemoryLogger('all');
+    await runOrphanedToolUse({ type: 'tool_use', id: 'toolu_x' }, logger);
+    const warned = logger.logged.find((m) => m.includes('ai-assist:malformed-tool-use'));
+    expect(warned).toBeDefined();
+    expect(warned).toMatch(/missing a usable id and\/or name/i);
+  });
+
+  test('surfaces (not drops) a tool_use content_block_start missing its id', async () => {
+    const logger = new Logging.InMemoryLogger('all');
+    await runOrphanedToolUse({ type: 'tool_use', name: 'do_thing' }, logger);
+    expect(logger.logged.some((m) => m.includes('ai-assist:malformed-tool-use'))).toBe(true);
+  });
+
+  test('surfaces (not drops) a tool_use content_block_start with an empty-string id', async () => {
+    // Empty string is a *bad* id, not a present one. Guards the contract against a
+    // future refactor to `id !== undefined` that would reintroduce the malformed-id bug.
+    const logger = new Logging.InMemoryLogger('all');
+    await runOrphanedToolUse({ type: 'tool_use', id: '', name: 'do_thing' }, logger);
+    expect(logger.logged.some((m) => m.includes('ai-assist:malformed-tool-use'))).toBe(true);
+  });
+
+  test('orphaned tool_use block is handled without a logger (no throw, no tool call)', async () => {
+    // No logger supplied — covers the logger?. undefined branch; must not throw.
+    await runOrphanedToolUse({ type: 'tool_use', id: 'toolu_x' });
   });
 
   test('appends continuationMessages as rawTail after the prompt user message (C4)', async () => {

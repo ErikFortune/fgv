@@ -103,6 +103,20 @@ export interface IStreamApiConfig {
 export const UNRECOGNIZED_EVENT_WARN_TAG: string = 'ai-assist:unrecognized-event';
 
 /**
+ * Stable prefix every "malformed tool_use block" warning starts with. Emitted
+ * when a streaming adapter sees a client tool_use `content_block_start` that is
+ * missing a usable correlation id and/or name — a block that, if silently
+ * dropped, would orphan its argument deltas and corrupt the follow-up tool
+ * continuation (the id-correlation defect class). Production deployments can
+ * filter / alert on this exact substring. Distinct from
+ * {@link UNRECOGNIZED_EVENT_WARN_TAG} (which is for unrecognized SSE *event
+ * names*); this is a malformed *payload* of a recognized event.
+ *
+ * @internal
+ */
+export const MALFORMED_TOOL_USE_WARN_TAG: string = 'ai-assist:malformed-tool-use';
+
+/**
  * Maximum characters of raw SSE payload to include in the
  * {@link UNRECOGNIZED_EVENT_WARN_TAG} warning when raw-preview mode is opted in
  * via {@link UNRECOGNIZED_EVENT_FULL_PAYLOAD_ENV_VAR}. Long enough to identify
