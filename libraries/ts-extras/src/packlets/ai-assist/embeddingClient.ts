@@ -38,7 +38,7 @@ import {
   type IAiEmbeddingUsage,
   type IAiProviderDescriptor,
   type ModelSpec,
-  resolveModel
+  resolveProviderModel
 } from './model';
 import { bearerAuthHeader, resolveEffectiveBaseUrl } from './endpoint';
 import { resolveEmbeddingCapability, supportsEmbedding } from './registry';
@@ -391,14 +391,11 @@ export async function callProviderEmbedding(
     return fail(`provider "${descriptor.id}" does not support embeddings`);
   }
 
-  const model = resolveModel(modelOverride ?? descriptor.defaultModel, 'embedding');
-  if (model.length === 0) {
-    return fail(
-      `provider "${descriptor.id}": no embedding model resolved; ` +
-        `pass modelOverride or set descriptor.defaultModel ` +
-        `(a plain string, or an object with an "embedding" entry)`
-    );
+  const modelResult = resolveProviderModel(descriptor, modelOverride, 'embedding');
+  if (modelResult.isFailure()) {
+    return fail(modelResult.message);
   }
+  const model = modelResult.value;
 
   const capability = resolveEmbeddingCapability(descriptor, model);
   if (capability === undefined) {

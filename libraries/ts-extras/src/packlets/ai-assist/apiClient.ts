@@ -50,7 +50,7 @@ import {
   type IChatRequest,
   type IThinkingConfig,
   type ModelSpec,
-  resolveModel
+  resolveProviderModel
 } from './model';
 import {
   anthropicEffortToBudgetTokens,
@@ -713,12 +713,11 @@ export async function callProviderCompletion(
       thinking?.providers?.some((b) => b.provider === 'other' || b.provider === discriminator) === true);
   const modelContext = hasThinkingConfig ? 'thinking' : hasTools ? 'tools' : undefined;
 
-  const model = resolveModel(modelOverride ?? descriptor.defaultModel, modelContext);
-  if (model.length === 0) {
-    return fail(
-      `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
-    );
+  const modelResult = resolveProviderModel(descriptor, modelOverride, modelContext);
+  if (modelResult.isFailure()) {
+    return fail(modelResult.message);
   }
+  const model = modelResult.value;
 
   let resolvedThinking: IResolvedThinkingConfig | undefined;
   if (thinking !== undefined) {
@@ -1328,14 +1327,11 @@ export async function callProviderImageGeneration(
     return fail(baseUrlResult.message);
   }
 
-  const model = resolveModel(modelOverride ?? descriptor.defaultModel, 'image');
-  if (model.length === 0) {
-    return fail(
-      `provider "${descriptor.id}": no image model resolved; ` +
-        `pass modelOverride or set descriptor.defaultModel ` +
-        `(a plain string, or an object with an "image" entry)`
-    );
+  const modelResult = resolveProviderModel(descriptor, modelOverride, 'image');
+  if (modelResult.isFailure()) {
+    return fail(modelResult.message);
   }
+  const model = modelResult.value;
   const capability = resolveImageCapability(descriptor, model);
   if (capability === undefined) {
     return fail(`provider "${descriptor.id}" does not support image generation for model "${model}"`);

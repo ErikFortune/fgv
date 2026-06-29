@@ -350,7 +350,7 @@ describe('callProviderEmbedding', () => {
         apiKey: '',
         params: { input: 'x' }
       });
-      expect(result).toFailWith(/no embedding model resolved/i);
+      expect(result).toFailWith(/no model resolved/i);
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
