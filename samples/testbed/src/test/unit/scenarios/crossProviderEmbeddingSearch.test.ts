@@ -221,6 +221,30 @@ describe('parseEmbeddingScenarioConfig', () => {
     });
   });
 
+  test('resolves an fgv model alias supplied via EMBED_MODEL to its concrete id', () => {
+    // Gemini's `@google-gemini:embedding` alias resolves to the concrete embedding id; an
+    // alias passed through EMBED_MODEL is resolved the same way the default path is.
+    expect(
+      parseEmbeddingScenarioConfig({
+        EMBED_PROVIDER: 'gemini',
+        GEMINI_API_KEY: 'g1',
+        EMBED_MODEL: '@google-gemini:embedding'
+      })
+    ).toSucceedAndSatisfy((config) => {
+      expect(config.model).toBe('gemini-embedding-001');
+    });
+  });
+
+  test('fails loudly when EMBED_MODEL is an unregistered fgv alias', () => {
+    expect(
+      parseEmbeddingScenarioConfig({
+        EMBED_PROVIDER: 'gemini',
+        GEMINI_API_KEY: 'g1',
+        EMBED_MODEL: '@google-gemini:does-not-exist'
+      })
+    ).toFailWith(/unknown model alias.*@google-gemini:does-not-exist/i);
+  });
+
   test('parses EMBED_DIMENSIONS as a positive integer', () => {
     expect(
       parseEmbeddingScenarioConfig({ OPENAI_API_KEY: 'sk', EMBED_DIMENSIONS: '512' })

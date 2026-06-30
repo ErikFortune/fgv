@@ -182,17 +182,30 @@ export function parseEmbeddingScenarioConfig(
             .withErrorFormat((msg) => `cross-provider-embedding-search: ${msg}`)
             .onSuccess((dimensions) => {
               const modelOverride = env.EMBED_MODEL?.trim();
-              const model =
+              const selectedModel =
                 modelOverride !== undefined && modelOverride.length > 0
                   ? modelOverride
                   : AiAssist.resolveModel(descriptor.defaultModel, 'embedding');
-              if (model.length === 0) {
+              if (selectedModel.length === 0) {
                 return fail(
                   `cross-provider-embedding-search (provider=${providerLabel}): no embedding ` +
                     `model resolved. Set EMBED_MODEL (self-hosted providers declare no default ` +
                     `embedding model).`
                 );
               }
+              // Resolve any fgv model alias (e.g. Gemini's `defaultModel.embedding` is now
+              // `@google-gemini:embedding`) to its concrete provider id. Raw ids — including a
+              // self-hosted `model:tag` or a caller-supplied EMBED_MODEL — have no `@` sigil and
+              // pass through verbatim. The concrete id is what `resolveEmbeddingCapability` and the
+              // report need; the embedding primitive would also resolve it, but capability lookup
+              // here runs against `config.model` directly.
+              const modelResult = AiAssist.resolveModelAlias(descriptor, selectedModel);
+              if (modelResult.isFailure()) {
+                return fail(
+                  `cross-provider-embedding-search (provider=${providerLabel}): ${modelResult.message}`
+                );
+              }
+              const model = modelResult.value;
               const endpoint = env.EMBED_ENDPOINT?.trim();
               const hasEndpoint = endpoint !== undefined && endpoint.length > 0;
               // A provider with no default base URL (e.g. `openai-compat`, `baseUrl: ''`) needs an
