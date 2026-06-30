@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add canonical model-alias layer (@<provider>:<role> sigil, IModelAliasMap, resolveModelAlias) resolved at completion/image/embedding/tool chokepoints; migrate Gemini descriptor to alias-based defaults and remove retired Imagen capability; round-trip Gemini functionCall thoughtSignature on client-tool continuations (thinking-enabled fix)",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
