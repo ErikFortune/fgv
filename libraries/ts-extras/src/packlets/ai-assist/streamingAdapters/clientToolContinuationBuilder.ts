@@ -355,7 +355,7 @@ export function buildGeminiContinuation(
         name: call.name,
         args: call.args
       },
-      ...(call.thoughtSignature ? { thoughtSignature: call.thoughtSignature } : {})
+      ...(call.thoughtSignature !== undefined ? { thoughtSignature: call.thoughtSignature } : {})
     })
   );
 

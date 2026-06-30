@@ -349,7 +349,7 @@ function geminiFunctionCallSse(parts: {
   for (const call of calls) {
     candidateParts.push({
       functionCall: { name: call.name, args: call.args },
-      ...(call.thoughtSignature ? { thoughtSignature: call.thoughtSignature } : {})
+      ...(call.thoughtSignature !== undefined ? { thoughtSignature: call.thoughtSignature } : {})
     });
   }
   for (const delta of textDeltas) {
