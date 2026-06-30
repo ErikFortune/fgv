@@ -246,3 +246,123 @@ the `apiClient.ts` runtime cascade (`callImagenGeneration`, Imagen validators, d
 Removing the union member forces those deletions to keep the build clean, and the residual-`imagen`
 grep confirmed nothing else routes to the format — so the full runtime path was removed in the same
 pass. No design intent changed; the §4 list was simply under-specified on the apiClient side.
+
+---
+
+## Tier 3 — testbed canary + docs
+
+Branch `claude/ai-assist-tier-3-aliases-53rxf2` off the Tier-2 merge; PR target `ai-assist-model-aliases`.
+**Testbed + docs only — no registry/model/source changes to `@fgv/ts-extras`** (the only ts-extras
+touch is a new packlet README, which is inert to build/lint/test/api-extractor).
+
+### Testbed pin change (the canary)
+
+`samples/testbed/src/scenarios/geminiClientTools/index.ts`:
+
+- Model pin switched from concrete `gemini-2.5-flash` to the fgv alias **`@google-gemini:flash`**. The
+  alias is passed verbatim to `executeClientToolTurn` (which re-resolves it internally via
+  `resolveProviderModel`), so the live run exercises the full alias → concrete → wire path — the point
+  of a canary. The resolved flash line is thinking-capable, which is what this scenario already exercises
+  (thinkingBudget=1024).
+- Added a self-documenting **resolved-id log line** via `AiAssist.resolveModelAlias(descriptor, model)`:
+  `resolved @google-gemini:flash -> <concrete id>`. The summary's `Model:` line now reads
+  `@google-gemini:flash -> <concrete id>`.
+
+There is only one per-provider Gemini scenario (`gemini-client-tools`); it combines client-tools +
+thinking and pins the **base flash** line. No separate dedicated thinking scenario exists, so the
+"thinking scenario → `@google-gemini:pro`" sub-item (conditional "if present") did not apply.
+
+### Tier-2 fallout fixed in the testbed (cross-provider embedding scenario)
+
+`samples/testbed/src/scenarios/crossProviderEmbeddingSearch/search.ts`: Tier 2 changed Gemini's
+`defaultModel.embedding` to the alias `@google-gemini:embedding`. This scenario reads
+`resolveModel(descriptor.defaultModel, 'embedding')` into `config.model`, then feeds `config.model` to
+`resolveEmbeddingCapability` — which matches on **concrete** ids and would have returned `undefined`
+for the alias (a real runtime break, not just a test failure). Tier 2's gates only ran on `ts-extras`,
+so the testbed had never exercised this; Tier 3 surfaced it (the `parseEmbeddingScenarioConfig` Gemini
+test went red expecting `gemini-embedding-001`). Fix: resolve the selected model through
+`AiAssist.resolveModelAlias(descriptor, selectedModel)` before returning the config — raw ids (incl.
+self-hosted `model:tag` and caller `EMBED_MODEL`) have no `@` and pass through unchanged; the Gemini
+alias resolves to `gemini-embedding-001`. Added two tests: alias-via-`EMBED_MODEL` → concrete, and
+unregistered `@google-gemini:does-not-exist` → loud fail.
+
+### Live-API testbed run — STOP-FLAGGED (no Gemini credentials in this environment)
+
+Neither `GEMINI_API_KEY` nor `GOOGLE_API_KEY` is set in this execution environment, so the live run
+that proves the new 3.x `-preview` ids actually answer **could not be run here**. Per the brief, this
+is documented and flagged for the orchestrator to run rather than faked. **Required live runs (from
+`samples/testbed/`):**
+
+```sh
+# 1. Gemini client-tools + thinking canary — proves @google-gemini:flash answers (3.x base, thinking-capable).
+#    Expect the log line: "resolved @google-gemini:flash -> gemini-3.5-flash" and a PASS verdict.
+GEMINI_API_KEY=<key> node bin/testbed.js --scenario gemini-client-tools
+
+# 2. Cross-provider embedding canary — proves @google-gemini:embedding answers.
+#    Expect "model=gemini-embedding-001" in the progress line and a PASS verdict.
+EMBED_PROVIDER=gemini GEMINI_API_KEY=<key> node bin/testbed.js --scenario cross-provider-embedding-search
+```
+
+Expected resolved ids through the alias layer (from the `google-gemini` descriptor's `aliases` map):
+`@google-gemini:flash -> gemini-3.5-flash`, `@google-gemini:pro -> gemini-3.1-pro-preview`,
+`@google-gemini:flash-image -> gemini-3.1-flash-image-preview`,
+`@google-gemini:embedding -> gemini-embedding-001`. **These are `-preview` ids that may be
+wrong/unavailable** — if a live run reports a 404/unavailable id, the alias **map value** needs
+correcting in `registry.ts` (one line), not the testbed (per design §3 / "if stuck"). The current
+testbed scenarios exercise `flash` (base, with thinking budget) and `embedding`; `pro` (thinking
+default) and `flash-image` (image) are not yet exercised by a dedicated testbed scenario.
+
+### Docs
+
+- **`.ai/instructions/LIBRARY_CAPABILITIES.md`** — added the alias scheme to the `@fgv/ts-extras/ai-assist`
+  entry: the `@<provider>:<role>` sigil, raw-id passthrough (structural back-compat), the
+  `resolveModelAlias` / `resolveProviderModel` surface, the **one-map-edit + testbed-run** maintenance
+  loop, the Gemini 3.x defaults, and the explicit boundary (alias layer covers selection/default churn
+  only; idPattern + `*ModelNames` stay manual). **Swept the two stale `gemini-imagen` references**
+  flagged in the Tier-2 note: the image-format list in the entry (Imagen predict endpoint removed) and
+  the `AiImageApiFormat` union in the "Declaring image generation capability" decision shortcut. A repo
+  grep confirms zero residual `imagen` references in the file.
+- **New packlet README** `libraries/ts-extras/src/packlets/ai-assist/README.md` — documents the alias
+  scheme, the descriptor `aliases` map, the two resolver functions, the maintenance loop, the
+  not-covered axes, and the Gemini default table. (The packlet had no README; this is the first.)
+
+### TECH_DEBT entry
+
+`docs/TECH_DEBT.md` P3 — "ai-assist model-alias layer does NOT cover capability-detection or the typed
+`*ModelNames` unions" — names the two residual manual axes from design §3 (the `idPattern` capability
+rules in `registry.ts` and the typed `*ModelNames` unions in `model.ts`), with trigger (any future
+provider line rotation), scope sketch (bump the idPattern + union alongside the one-line alias edit),
+and the "Not a P2" justification (no shipped-behavior regression; the boundary is documented).
+
+### Gates
+
+- `samples/testbed`: `rushx build` ✓, `rushx lint` ✓, `rushx test` ✓ **100% coverage** (modified
+  `search.ts` at 100/100/100/100 under the heft test gate). `rushx fixlint` — clean, no changes.
+- `@fgv/ts-extras`: `rushx lint` ✓, `rushx test` ✓ (0 failures, coverage intact — README-only touch).
+- No api-extractor regen needed (no public-surface change; verified the only ts-extras change is the
+  markdown README).
+
+### code-reviewer findings (layer 1, run on the final diff)
+
+**No P1s.** No `any`, no unsafe casts; alias-resolution `Result` handling correct in both scenarios;
+the canary correctly passes the **alias** (not a pre-resolved id) to `executeClientToolTurn`.
+
+- **P2 — README `@anthropic:sonnet -> claude-sonnet-4-6` example presented an unregistered alias as
+  working (RESOLVED).** Anthropic has no `aliases` map yet, so the example would fail loudly. Rewrote
+  the "The scheme" code block to show only the registered Gemini alias as live, and reframed the
+  Anthropic row as an explicitly-hypothetical illustration of the one-hop `@fgv-alias →
+  provider-native-alias` indirection ("NOT yet registered"). Documents what ships, per
+  CODE_REVIEW_CHECKLIST's doc-accuracy gate.
+- **P3 — alias-failure handling in `search.ts` uses an imperative `if (isFailure) return fail(...)`
+  break instead of `.withErrorFormat()` + `.onSuccess()` (DISPOSITIONED → keep).** The reviewer noted
+  either style is acceptable and the imperative break is "defensible given the nesting depth" (the
+  surrounding chain is already 3 `.onSuccess` deep; chaining would make it 4). It is also locally
+  consistent with the empty-model `if (...length === 0) return fail(...)` check immediately above it.
+  Kept as-is.
+
+### Stream status
+
+**Ready for cluster-close to `release`**, pending only the orchestrator-run live-API canary (the two
+commands above) — credentials were unavailable in the implementing environment. All three tiers
+(core / Gemini migration / testbed + docs) are merged or PR-ready into the `ai-assist-model-aliases`
+integration branch.
