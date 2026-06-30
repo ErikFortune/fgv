@@ -335,17 +335,22 @@ function responsesApiFunctionCallSse(parts: {
  * Builds a Gemini SSE stream with functionCall parts.
  */
 function geminiFunctionCallSse(parts: {
-  calls: ReadonlyArray<{ name: string; args: Record<string, unknown> }>;
+  calls: ReadonlyArray<{ name: string; args: Record<string, unknown>; thoughtSignature?: string }>;
   textDeltas?: ReadonlyArray<string>;
   finishReason?: string;
 }): string[] {
   const { calls, textDeltas = [], finishReason = 'STOP' } = parts;
   const events: string[] = [];
 
-  // Build a single chunk with all functionCall parts (and optional text parts)
+  // Build a single chunk with all functionCall parts (and optional text parts).
+  // When a call carries a thoughtSignature, attach it as a part-level sibling of
+  // functionCall (mirroring Gemini's thinking-enabled wire shape).
   const candidateParts: unknown[] = [];
   for (const call of calls) {
-    candidateParts.push({ functionCall: { name: call.name, args: call.args } });
+    candidateParts.push({
+      functionCall: { name: call.name, args: call.args },
+      ...(call.thoughtSignature ? { thoughtSignature: call.thoughtSignature } : {})
+    });
   }
   for (const delta of textDeltas) {
     candidateParts.push({ text: delta });
@@ -1643,23 +1648,20 @@ describe('Gemini streaming adapter — C2 client tool extensions', () => {
     expect(dones.find((d) => d.toolName === 'tool_b')?.args).toEqual({ y: 2 });
   });
 
-  test('functionCall accumulation buffer populated via callGeminiStream', async () => {
+  // Runs a Gemini stream over the given functionCall parts and returns the
+  // populated accumulation buffer. Shared by the accumulation assertions below.
+  async function accumulateGeminiCalls(
+    calls: ReadonlyArray<{ name: string; args: Record<string, unknown>; thoughtSignature?: string }>
+  ): Promise<IAccumulatedGeminiFunctionCall[]> {
     const { callGeminiStream } = await import('../../../packlets/ai-assist/streamingAdapters/gemini');
-
-    const sseChunks = geminiFunctionCallSse({
-      calls: [{ name: 'do_thing', args: { param: 'value' } }]
-    });
-    mockSseResponse(sseChunks);
-
+    mockSseResponse(geminiFunctionCallSse({ calls }));
     const functionCalls: IAccumulatedGeminiFunctionCall[] = [];
-    const streamConfig = {
-      baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      model: 'gemini-1.5-pro',
-      apiKey: 'sk-test'
-    };
-
     const streamResult = await callGeminiStream(
-      streamConfig,
+      {
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        model: 'gemini-1.5-pro',
+        apiKey: 'sk-test'
+      },
       TEST_PROMPT,
       undefined,
       0.5,
@@ -1669,14 +1671,27 @@ describe('Gemini streaming adapter — C2 client tool extensions', () => {
       undefined,
       functionCalls
     );
-
     expect(streamResult).toSucceed();
-    if (!streamResult.isSuccess()) return;
-    await collect(streamResult.value);
-
+    if (streamResult.isSuccess()) await collect(streamResult.value);
+    return functionCalls;
+  }
+  test('functionCall accumulation buffer populated via callGeminiStream', async () => {
+    const functionCalls = await accumulateGeminiCalls([{ name: 'do_thing', args: { param: 'value' } }]);
     expect(functionCalls).toHaveLength(1);
     expect(functionCalls[0].name).toBe('do_thing');
     expect(functionCalls[0].args).toEqual({ param: 'value' });
+  });
+  test('captures the part-level thoughtSignature onto the accumulated call when present', async () => {
+    const functionCalls = await accumulateGeminiCalls([
+      { name: 'do_thing', args: { param: 'value' }, thoughtSignature: 'sig-abc123' }
+    ]);
+    expect(functionCalls).toHaveLength(1);
+    expect(functionCalls[0].thoughtSignature).toBe('sig-abc123');
+  });
+  test('leaves thoughtSignature undefined on the accumulated call when absent (thinking disabled)', async () => {
+    const functionCalls = await accumulateGeminiCalls([{ name: 'do_thing', args: { param: 'value' } }]);
+    expect(functionCalls).toHaveLength(1);
+    expect(functionCalls[0].thoughtSignature).toBeUndefined();
   });
 });
 

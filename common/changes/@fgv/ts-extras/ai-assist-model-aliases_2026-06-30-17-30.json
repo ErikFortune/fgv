@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: add model-alias layer (@<provider>:<role> indirection) and migrate Gemini defaults to 3.x; round-trip Gemini functionCall thoughtSignature on client-tool continuations so thinking-enabled turns no longer 400",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

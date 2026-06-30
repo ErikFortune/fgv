@@ -333,19 +333,29 @@ export function buildOpenAiContinuation(
  * user turn with `functionResponse` parts (correlation by tool name, since
  * Gemini does not assign call IDs).
  *
+ * When thinking is enabled, Gemini stamps an opaque `thoughtSignature` on each
+ * `functionCall` part and requires it echoed back, verbatim, as a sibling of
+ * `functionCall` on the continuation's model turn — otherwise the follow-up is
+ * rejected with "Function call is missing a thought_signature in functionCall
+ * parts". The captured signature (see {@link IAccumulatedGeminiFunctionCall})
+ * is replayed here only when present; the key is omitted entirely when thinking
+ * was disabled. See https://ai.google.dev/gemini-api/docs/thought-signatures.
+ *
  * @internal
  */
 export function buildGeminiContinuation(
   calls: IAccumulatedGeminiFunctionCall[],
   toolResults: IToolCallResult[]
 ): IAiClientToolContinuation {
-  // Model turn: functionCall parts for each call.
+  // Model turn: functionCall parts for each call. Replay the part-level
+  // thoughtSignature as a sibling of functionCall only when present.
   const modelParts: JsonArray = calls.map(
     (call): JsonObject => ({
       functionCall: {
         name: call.name,
         args: call.args
-      }
+      },
+      ...(call.thoughtSignature ? { thoughtSignature: call.thoughtSignature } : {})
     })
   );
 

@@ -53,6 +53,15 @@ import { IStreamApiConfig, openSseConnection, validateEventPayload } from './com
 export interface IAccumulatedGeminiFunctionCall {
   readonly name: string;
   readonly args: JsonObject;
+  /**
+   * The opaque thought signature Gemini stamps on a `functionCall` part when
+   * thinking is enabled. It must be echoed back, verbatim, on the continuation's
+   * model turn alongside the `functionCall`, or Gemini rejects the follow-up with
+   * "Function call is missing a thought_signature in functionCall parts".
+   * Absent when thinking is disabled. See
+   * https://ai.google.dev/gemini-api/docs/thought-signatures.
+   */
+  readonly thoughtSignature?: string;
 }
 
 // ============================================================================
@@ -67,6 +76,12 @@ export interface IAccumulatedGeminiFunctionCall {
 interface IGeminiStreamPart {
   readonly text?: string;
   readonly functionCall?: { readonly name?: string; readonly args?: JsonObject };
+  /**
+   * The opaque thought signature attached to a `functionCall` part when thinking
+   * is enabled. A sibling of `functionCall`/`text` at the part level (base64
+   * string). Captured for replay on the continuation's model turn.
+   */
+  readonly thoughtSignature?: string;
 }
 
 /**
@@ -105,9 +120,10 @@ const geminiFunctionCallInner: Validator<{ name?: string; args?: JsonObject }> =
 const geminiStreamPart: Validator<IGeminiStreamPart> = Validators.object<IGeminiStreamPart>(
   {
     text: Validators.string.optional(),
-    functionCall: geminiFunctionCallInner.optional()
+    functionCall: geminiFunctionCallInner.optional(),
+    thoughtSignature: Validators.string.optional()
   },
-  { options: { optionalFields: ['text', 'functionCall'] } }
+  { options: { optionalFields: ['text', 'functionCall', 'thoughtSignature'] } }
 );
 
 const geminiStreamContent: Validator<{ parts?: ReadonlyArray<IGeminiStreamPart> }> = Validators.object<{
@@ -171,7 +187,10 @@ async function* translateGeminiStream(
             const { name, args } = part.functionCall;
             /* c8 ignore next 1 - defensive: Gemini always sends args; {} fallback unreachable in practice */
             const callArgs = args ?? {};
-            functionCalls.push({ name, args: callArgs });
+            // Capture the part-level thoughtSignature (sibling of functionCall) so the
+            // continuation builder can replay it on the model turn. Reads as undefined
+            // when thinking is disabled; the builder omits the key in that case.
+            functionCalls.push({ name, args: callArgs, thoughtSignature: part.thoughtSignature });
             yield { type: 'client-tool-call-done', toolName: name, args: callArgs };
           }
         }
