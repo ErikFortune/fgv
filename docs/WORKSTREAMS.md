@@ -204,6 +204,22 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ## Completed workstreams
 
+### `ai-assist-model-aliases` ✅
+
+**Status:** ✅ shipped to integration branch `ai-assist-model-aliases` (Tiers 1–3 via PRs #505–#507 + folded-in Gemini `thoughtSignature` fix; design Phase A #503 rides the branch); promotion PR #508 → `release` (CI build green; live Gemini canaries green). Constituent commits squash to `release` at cluster-close.
+**Branch base:** `release` (integration branch `ai-assist-model-aliases`)
+**Package surface:** `@fgv/ts-extras/ai-assist` (`registry.ts`, `model.ts`, new model-alias module + tests, `streamingAdapters/gemini.ts`, `streamingAdapters/clientToolContinuationBuilder.ts`, packlet README) + `samples/testbed` (canary scenario) + `.ai/instructions/LIBRARY_CAPABILITIES.md`, `docs/TECH_DEBT.md`
+
+**Mission.** An fgv-owned **canonical model-alias layer** (`@<provider>:<role>` sigil) so `defaultModel` and consumers reference stable aliases that resolve centrally to the current concrete provider model — ending the recurring breakage where the registry pins dated snapshots providers later retire. Forcing function: Google retiring the entire Gemini 2.5 line + Imagen (Oct 2026).
+
+**What shipped.** Generic alias core (`MODEL_ALIAS_SIGIL`, `IModelAliasMap`, `resolveModelAlias`/`resolveProviderModel`) resolved at the completion/image/embedding/tool chokepoints (downstream of `ModelSpecKey`, upstream of `idPattern`); raw IDs still work (back-compat). Gemini migrated to alias-based `defaultModel` (incl. `thinking: '@google-gemini:pro'`), Imagen capability removed, `*ModelNames` bumped to 3.x, `/^gemini-3/` idPattern added. Plus a folded-in Gemini wire-fidelity fix: round-trip the part-level `thoughtSignature` on thinking-enabled client-tool continuations (pre-existing latent 400, surfaced by the live canary).
+
+**Outcome.** Additive (Imagen removal is the one break, on the active surface). Build + lint + 100% coverage green; `none` change file. Live Gemini canaries green: `@google-gemini:flash -> gemini-3.5-flash` (client-tools + continuation) and `@google-gemini:embedding -> gemini-embedding-001` (embedding search). **Locked decisions:** thinking alias = Pro; Imagen removed (not aliased); aliases live on the descriptor.
+
+**Fast-follows (deferred):** OpenAI alias adoption (`@openai:reasoning -> gpt-5.1`); retire residual manual axes (idPattern + `*ModelNames`) so a line-bump is a pure map edit (TECH_DEBT P3).
+
+**Artifacts:** [`.ai/tasks/completed/2026-06/ai-assist-model-aliases/`](../.ai/tasks/completed/2026-06/ai-assist-model-aliases/) (brief, design, state, thoughtSignature-fix brief, README).
+
 ### `ts-agent-memory` ✅
 
 **Status:** ✅ shipped — `@fgv/ts-agent-memory` v1 (knowledge + memory + semantic recall) promoted to `release` via PR #501 (2026-06-26). Constituent PRs #496–#500 + #502 squashed onto the integration branch; design spike #495 superseded/closed.
