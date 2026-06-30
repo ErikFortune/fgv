@@ -635,67 +635,51 @@ describe('buildOpenAiContinuation', () => {
 describe('buildGeminiContinuation', () => {
   test('emits model turn + user turn for a single call', () => {
     const calls: IAccumulatedGeminiFunctionCall[] = [{ name: 'recall_memory', args: { query: 'test' } }];
-
     const results = [
       { toolName: 'recall_memory', args: { query: 'test' }, result: '"found"', isError: false }
     ];
-
     const cont = buildGeminiContinuation(calls, results);
     expect(cont.messages).toHaveLength(2);
-
     const modelMsg = cont.messages[0];
     expect(modelMsg.role).toBe('model');
     const modelParts = modelMsg.parts as unknown[];
     expect(modelParts).toHaveLength(1);
     const modelPart = modelParts[0] as Record<string, unknown>;
     expect((modelPart.functionCall as Record<string, unknown>).name).toBe('recall_memory');
-
     const userMsg = cont.messages[1];
     expect(userMsg.role).toBe('user');
     const userParts = userMsg.parts as unknown[];
     expect(userParts).toHaveLength(1);
     const userPart = userParts[0] as Record<string, unknown>;
-    expect((userPart.functionResponse as Record<string, unknown>).name).toBe('recall_memory');
-    expect(
-      ((userPart.functionResponse as Record<string, unknown>).response as Record<string, unknown>).content
-    ).toBe('"found"');
+    const fnResponse = userPart.functionResponse as Record<string, unknown>;
+    expect(fnResponse.name).toBe('recall_memory');
+    expect((fnResponse.response as Record<string, unknown>).content).toBe('"found"');
   });
-
   test('emits multiple functionCall + functionResponse parts for parallel calls', () => {
     const calls: IAccumulatedGeminiFunctionCall[] = [
       { name: 'recall', args: { q: 'a' } },
       { name: 'search', args: { q: 'b' } }
     ];
-
     const results = [
       { toolName: 'recall', args: { q: 'a' }, result: '"r1"', isError: false },
       { toolName: 'search', args: { q: 'b' }, result: '"r2"', isError: false }
     ];
-
     const cont = buildGeminiContinuation(calls, results);
     expect(cont.messages).toHaveLength(2);
-    const modelParts = cont.messages[0].parts as unknown[];
-    expect(modelParts).toHaveLength(2);
-    const userParts = cont.messages[1].parts as unknown[];
-    expect(userParts).toHaveLength(2);
+    expect(cont.messages[0].parts as unknown[]).toHaveLength(2);
+    expect(cont.messages[1].parts as unknown[]).toHaveLength(2);
   });
-
   test('marks error in functionResponse.response when isError is true', () => {
     const calls: IAccumulatedGeminiFunctionCall[] = [{ name: 'recall', args: {} }];
-
     const results = [{ toolName: 'recall', args: {}, result: 'schema failed', isError: true }];
-
     const cont = buildGeminiContinuation(calls, results);
     const userParts = cont.messages[1].parts as unknown[];
     const userPart = userParts[0] as Record<string, unknown>;
-    const response = (userPart.functionResponse as Record<string, unknown>).response as Record<
-      string,
-      unknown
-    >;
+    const fnResponse = userPart.functionResponse as Record<string, unknown>;
+    const response = fnResponse.response as Record<string, unknown>;
     expect(response.error).toBe(true);
     expect(response.content).toBe('schema failed');
   });
-
   test('includes correct toolCallsSummary', () => {
     const calls: IAccumulatedGeminiFunctionCall[] = [{ name: 'recall', args: { q: 'z' } }];
     const results = [{ toolName: 'recall', args: { q: 'z' }, result: '"data"', isError: false }];
@@ -703,6 +687,24 @@ describe('buildGeminiContinuation', () => {
     expect(cont.toolCallsSummary).toHaveLength(1);
     expect(cont.toolCallsSummary[0].toolName).toBe('recall');
     expect(cont.toolCallsSummary[0].args).toEqual({ q: 'z' });
+  });
+
+  const sigResults = [{ toolName: 'recall', args: { q: 'z' }, result: '"data"', isError: false }];
+  test('replays thoughtSignature as a sibling of functionCall on the model part when present', () => {
+    const calls: IAccumulatedGeminiFunctionCall[] = [
+      { name: 'recall', args: { q: 'z' }, thoughtSignature: 'sig-xyz789' }
+    ];
+    const cont = buildGeminiContinuation(calls, sigResults);
+    const modelPart = (cont.messages[0].parts as unknown[])[0] as Record<string, unknown>;
+    // functionCall is unchanged; thoughtSignature is emitted verbatim as its sibling.
+    expect((modelPart.functionCall as Record<string, unknown>).name).toBe('recall');
+    expect(modelPart.thoughtSignature).toBe('sig-xyz789');
+  });
+  test('omits the thoughtSignature key entirely (not just falsy) when the call carries none', () => {
+    const cont = buildGeminiContinuation([{ name: 'recall', args: { q: 'z' } }], sigResults);
+    const modelPart = (cont.messages[0].parts as unknown[])[0] as Record<string, unknown>;
+    // The key must be absent, not present-with-undefined — Gemini reads the part shape literally.
+    expect('thoughtSignature' in modelPart).toBe(false);
   });
 });
 

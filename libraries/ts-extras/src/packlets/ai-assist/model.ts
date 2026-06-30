@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { type Result } from '@fgv/ts-utils';
+import { fail, type Result, succeed } from '@fgv/ts-utils';
 import { type JsonObject, type JsonSchema } from '@fgv/ts-json-base';
 
 // ============================================================================
@@ -549,6 +549,118 @@ export function resolveModel(spec: ModelSpec, context?: string): string {
 }
 
 // ============================================================================
+// Model Alias Layer
+// ============================================================================
+
+/**
+ * Canonical fgv alias → concrete provider model map.
+ *
+ * @remarks
+ * Keys are full fgv aliases (`@<providerId>:<role>`, e.g. `@google-gemini:flash`);
+ * values are the current concrete provider model id (or a provider-native alias,
+ * which is resolved with one further indirection hop). Additive; absence of an
+ * `aliases` field on a descriptor means "this provider defines no aliases" and
+ * every model string passes through verbatim.
+ * @public
+ */
+export interface IModelAliasMap {
+  readonly [alias: string]: string;
+}
+
+/**
+ * Marker prefix for an fgv model alias.
+ *
+ * @remarks
+ * A model string is an fgv alias **iff** it begins with this sigil. Everything
+ * else is a raw provider model id and passes through {@link resolveModelAlias}
+ * untouched — this is what keeps the alias layer back-compatible (no current
+ * `defaultModel`, `modelOverride`, or self-hosted `model:tag` id starts with `@`).
+ * @public
+ */
+export const MODEL_ALIAS_SIGIL: '@' = '@';
+
+function resolveModelAliasInner(
+  descriptor: IAiProviderDescriptor,
+  model: string,
+  visited: Set<string>
+): Result<string> {
+  // No sigil → raw provider id; return verbatim (back-compat passthrough).
+  if (!model.startsWith(MODEL_ALIAS_SIGIL)) {
+    return succeed(model);
+  }
+  // Cycle guard: an `@`→`@` loop would otherwise recurse forever.
+  if (visited.has(model)) {
+    return fail(`provider "${descriptor.id}": cyclic model alias "${model}"`);
+  }
+  visited.add(model);
+  const target = descriptor.aliases?.[model];
+  if (target === undefined) {
+    return fail(`provider "${descriptor.id}": unknown model alias "${model}"`);
+  }
+  // Follow the target. A concrete (non-sigil) target terminates the recursion on
+  // the next call; an aliased target (the canonical case: fgv alias → provider-
+  // native alias) is followed in turn, with the visited-set guarding against an
+  // `@`→`@` cycle.
+  return resolveModelAliasInner(descriptor, target, visited);
+}
+
+/**
+ * Resolves a single (possibly-aliased) model string against a provider descriptor.
+ *
+ * @remarks
+ * Resolution rules:
+ * 1. No leading {@link MODEL_ALIAS_SIGIL} → raw provider id, returned verbatim.
+ * 2. Leading sigil + registered in `descriptor.aliases` → the registered target,
+ *    which is itself resolved — so a chain of `@` aliases is followed until a
+ *    non-`@` (concrete provider) id is reached. The canonical case is a single
+ *    hop (an fgv alias targeting a provider-native alias), but longer chains
+ *    resolve too.
+ * 3. Leading sigil + unregistered → fails loudly, naming the provider and alias.
+ *
+ * An `@`→`@` cycle is guarded by a visited-set and fails rather than exhausting
+ * the stack.
+ *
+ * @param descriptor - The provider descriptor whose `aliases` map is consulted.
+ * @param model - The (possibly-aliased) model string to resolve.
+ * @returns `Result` with the concrete provider model id, or a failure.
+ * @public
+ */
+export function resolveModelAlias(descriptor: IAiProviderDescriptor, model: string): Result<string> {
+  return resolveModelAliasInner(descriptor, model, new Set<string>());
+}
+
+/**
+ * The full provider model-resolution chokepoint: the {@link ModelSpecKey} walk
+ * (via {@link resolveModel}) THEN {@link resolveModelAlias}.
+ *
+ * @remarks
+ * Replaces the bare `resolveModel(modelOverride ?? descriptor.defaultModel, context)`
+ * call plus the duplicated empty-result check at each call-time chokepoint. The
+ * `ModelSpec` branch is selected first; the resulting string — which may itself
+ * be an fgv alias — is then resolved to a concrete id.
+ *
+ * @param descriptor - The provider descriptor (supplies `defaultModel` and `aliases`).
+ * @param modelOverride - An optional caller-supplied `ModelSpec` that takes precedence
+ * over `descriptor.defaultModel`. May itself contain or be an alias.
+ * @param context - Optional {@link ModelSpecKey} selecting the spec branch.
+ * @returns `Result` with the concrete provider model id, or a failure.
+ * @public
+ */
+export function resolveProviderModel(
+  descriptor: IAiProviderDescriptor,
+  modelOverride: ModelSpec | undefined,
+  context?: ModelSpecKey
+): Result<string> {
+  const resolved = resolveModel(modelOverride ?? descriptor.defaultModel, context);
+  if (resolved.length === 0) {
+    return fail(
+      `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
+    );
+  }
+  return resolveModelAlias(descriptor, resolved);
+}
+
+// ============================================================================
 // Provider Descriptor
 // ============================================================================
 
@@ -582,19 +694,13 @@ export type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
  * - `'xai-images'` — xAI Images API. Text-only JSON generation request.
  * - `'xai-images-edits'` — xAI Images API for Grok Imagine models. Uses JSON
  *   body with `{ type: "image_url" }` objects (not multipart).
- * - `'gemini-imagen'` — Google Imagen `:predict` endpoint. Text-only.
  * - `'gemini-image-out'` — Google Gemini chat-style `:generateContent`
- *   endpoint that returns image parts (Gemini 2.5 Flash Image / "Nano
+ *   endpoint that returns image parts (Gemini Flash Image / "Nano
  *   Banana"). Accepts reference images.
  *
  * @public
  */
-export type AiImageApiFormat =
-  | 'openai-images'
-  | 'gemini-imagen'
-  | 'xai-images'
-  | 'xai-images-edits'
-  | 'gemini-image-out';
+export type AiImageApiFormat = 'openai-images' | 'xai-images' | 'xai-images-edits' | 'gemini-image-out';
 
 /**
  * API format categories for embedding provider routing.
@@ -747,6 +853,19 @@ export interface IAiProviderDescriptor {
   readonly baseUrl: string;
   /** Default model specification — string or context-aware map. */
   readonly defaultModel: ModelSpec;
+  /**
+   * Canonical fgv alias → concrete model map for this provider. Absent means the
+   * provider defines no aliases and every model string passes through verbatim.
+   *
+   * @remarks
+   * Keys are full fgv aliases (`@<providerId>:<role>`); values are the current
+   * concrete model id (or a provider-native alias). Consulted by
+   * {@link resolveModelAlias} / {@link resolveProviderModel} at each call-time
+   * resolution chokepoint, downstream of the {@link ModelSpecKey} walk. Additive
+   * and optional — composes with the existing per-descriptor `imageGeneration` /
+   * `embedding` capability arrays.
+   */
+  readonly aliases?: IModelAliasMap;
   /** Which server-side tools this provider supports (empty = none). */
   readonly supportedTools: ReadonlyArray<AiServerToolType>;
   /** Whether this provider's API enforces CORS restrictions that prevent direct browser calls. */
@@ -786,11 +905,9 @@ export interface IAiProviderDescriptor {
    * catch-all and matches every model id.
    *
    * Multiple entries support providers that host more than one image-API
-   * surface under one baseUrl. Google Gemini is the canonical case: the
-   * `imagen-*` family is predict-only via `:predict`, while
-   * `gemini-2.5-flash-image` uses chat-style `:generateContent` and accepts
-   * reference images. Listing both lets callers pick the right model and the
-   * dispatcher routes accordingly.
+   * surface under one baseUrl. The dispatcher selects the longest-matching
+   * prefix, so a provider can list a specific-prefix surface alongside an
+   * empty-prefix catch-all and the right model routes to the right API.
    *
    * Image-model selection reuses the existing `image` {@link ModelSpecKey}.
    * Providers that declare `imageGeneration` should declare a model in
@@ -850,7 +967,7 @@ export interface IAiImageModelCapability {
    * How to encode the output format on the wire:
    * - 'response-format': send response_format: 'b64_json' (dall-e-2, dall-e-3)
    * - 'output-format': send output_format (gpt-image-1)
-   * - 'none': send neither (Imagen, Gemini Flash)
+   * - 'none': send neither (Gemini Flash)
    */
   readonly outputParamStyle?: 'response-format' | 'output-format' | 'none';
   /** Default MIME type for response images. */
@@ -1017,14 +1134,8 @@ export type GptImageModelNames = 'gpt-image-1';
 /** Model names in the xAI Grok Imagine family. @public */
 export type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality';
 
-/** Model names in the Imagen 4 family. @public */
-export type Imagen4ModelNames =
-  | 'imagen-4.0-generate-001'
-  | 'imagen-4.0-ultra-generate-001'
-  | 'imagen-4.0-fast-generate-001';
-
 /** Model names in the Gemini Flash Image family. @public */
-export type GeminiFlashImageModelNames = 'gemini-2.5-flash-image';
+export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image-preview';
 
 // ---- Family-level config shapes ----
 
@@ -1071,27 +1182,6 @@ export interface IGrokImagineImageGenerationConfig {
   readonly aspectRatio?: string;
   /** Resolution hint. */
   readonly resolution?: string;
-}
-
-/**
- * Provider-specific config for Google Imagen 4 models.
- * @public
- */
-export interface IImagen4GenerationConfig {
-  /** Aspect ratio string. */
-  readonly aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
-  /** Output resolution. */
-  readonly imageSize?: '1K' | '2K';
-  /** Whether to add SynthID watermark. Must be false to use seed. */
-  readonly addWatermark?: boolean;
-  /** LLM-based prompt rewriting. */
-  readonly enhancePrompt?: boolean;
-  /** Output MIME type. */
-  readonly outputMimeType?: 'image/jpeg' | 'image/png';
-  /** JPEG compression quality. */
-  readonly outputCompressionQuality?: number;
-  /** Person generation policy. */
-  readonly personGeneration?: 'allow_all' | 'allow_adult' | 'dont_allow';
 }
 
 /**
@@ -1152,17 +1242,6 @@ export interface IGrokImagineModelOptions extends INamedModelFamilyConfig {
 }
 
 /**
- * Options block scoped to Google Imagen 4 models.
- * @public
- */
-export interface IImagen4ModelOptions extends INamedModelFamilyConfig {
-  readonly provider: 'google';
-  readonly family: 'imagen-4';
-  readonly models?: Imagen4ModelNames[];
-  readonly config: IImagen4GenerationConfig;
-}
-
-/**
  * Options block scoped to Gemini Flash Image models.
  * @public
  */
@@ -1197,7 +1276,6 @@ export type IModelFamilyConfig =
   | IDallEModelOptions
   | IGptImageModelOptions
   | IGrokImagineModelOptions
-  | IImagen4ModelOptions
   | IGeminiFlashImageModelOptions
   | IOtherModelOptions;
 
@@ -1230,7 +1308,7 @@ export type IModelFamilyConfig =
 export interface IAiImageGenerationOptions {
   /**
    * Image dimensions for OpenAI models (mapped to `size` field).
-   * For xAI aspect ratio or Imagen aspect ratio, use the corresponding `models` family block.
+   * For xAI or Gemini Flash aspect ratio, use the corresponding `models` family block.
    */
   readonly size?: AiImageSize;
   /** Number of images. Default 1. Some models enforce a maximum. */
@@ -1402,7 +1480,10 @@ export type OpenAiThinkingModelNames =
  * Model IDs for Google Gemini thinking-capable models.
  * @public
  */
-export type GeminiThinkingModelNames = 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.5-flash-lite';
+export type GeminiThinkingModelNames =
+  | 'gemini-3.1-pro-preview'
+  | 'gemini-3.5-flash'
+  | 'gemini-3.1-flash-lite';
 
 /**
  * Model IDs for xAI thinking-capable models.
