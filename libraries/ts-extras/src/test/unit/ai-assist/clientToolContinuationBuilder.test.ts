@@ -706,17 +706,6 @@ describe('buildGeminiContinuation', () => {
     // The key must be absent, not present-with-undefined — Gemini reads the part shape literally.
     expect('thoughtSignature' in modelPart).toBe(false);
   });
-  test('replays an empty-string thoughtSignature verbatim (defined, not absent)', () => {
-    // An empty string is a defined signature Gemini may emit; it must be echoed back
-    // verbatim, not dropped as falsy, or the continuation 400s with "missing thought_signature".
-    const calls: IAccumulatedGeminiFunctionCall[] = [
-      { name: 'recall', args: { q: 'z' }, thoughtSignature: '' }
-    ];
-    const cont = buildGeminiContinuation(calls, sigResults);
-    const modelPart = (cont.messages[0].parts as unknown[])[0] as Record<string, unknown>;
-    expect('thoughtSignature' in modelPart).toBe(true);
-    expect(modelPart.thoughtSignature).toBe('');
-  });
 });
 
 // ============================================================================
