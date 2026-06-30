@@ -22,8 +22,13 @@ A model string is an fgv alias **iff it begins with the `@` sigil** (`MODEL_ALIA
 fgv-stable token (`flash`, `pro`, `flash-image`, `embedding`, …) that outlives provider snapshots.
 
 ```typescript
-'@google-gemini:flash'  ->  'gemini-3.5-flash'           // fgv alias → concrete id
-'@anthropic:sonnet'     ->  'claude-sonnet-4-6'          // fgv alias → provider-native undated alias
+// Registered today (the google-gemini descriptor's `aliases` map):
+'@google-gemini:flash'  ->  'gemini-3.5-flash'   // fgv alias → concrete id
+
+// Illustrative only — NOT yet registered. When a provider adopts the scheme, its RHS may be a
+// provider-native undated alias rather than a dated snapshot, in which case resolution follows
+// one further `@fgv-alias → provider-native-alias` hop (cycle-guarded):
+//   '@anthropic:sonnet'  ->  'claude-sonnet-4-6'  // hypothetical; anthropic has no aliases map yet
 ```
 
 - **Raw-id passthrough (back-compat is structural).** Any string **without** a leading `@` is returned
