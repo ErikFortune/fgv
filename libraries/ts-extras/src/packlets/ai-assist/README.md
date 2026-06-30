@@ -54,7 +54,7 @@ export interface IModelAliasMap {
 
 | Function | Use for |
 |---|---|
-| `resolveModelAlias(descriptor, model)` | Resolve a single (possibly-aliased) string. No `@` → verbatim. `@` + registered → target (following one `@fgv-alias → provider-native-alias` hop; cycle-guarded). `@` + unregistered → loud fail. |
+| `resolveModelAlias(descriptor, model)` | Resolve a single (possibly-aliased) string. No `@` → verbatim. `@` + registered → target, following the `@`-alias chain (one hop is typical; an alias may target another `@`-alias) until a non-`@` id is reached; cycle-guarded. `@` + unregistered → loud fail. |
 | `resolveProviderModel(descriptor, modelOverride, context?)` | The call-time chokepoint: the `ModelSpecKey` walk (`resolveModel`) **then** `resolveModelAlias`. Used by the completion, streaming, image, embedding, and client-tool paths. |
 
 Resolution is **call-time**, not registry-build-time, so the registry stays a pure inspectable data
