@@ -30,12 +30,12 @@ export type ReporterLogLevel = 'all' | 'detail' | 'info' | 'warning' | 'error' |
 
 // Untyped (literal-tuple-inferred) source of truth for allReporterLogLevels, kept separate from the
 // widened public export below so the exhaustiveness check actually inspects the literal values instead
-// of being widened away to `ReporterLogLevel` before the check runs.
+// of being widened away to {@link Logging.ReporterLogLevel | ReporterLogLevel} before the check runs.
 const reporterLogLevelValues = ['all', 'detail', 'info', 'warning', 'error', 'silent'] as const;
 
 /**
  * Compile-time exhaustiveness guard ensuring {@link reporterLogLevelValues} exactly matches every member of
- * `ReporterLogLevel`. Adding or removing a union member without updating the array fails the build.
+ * {@link Logging.ReporterLogLevel | ReporterLogLevel}. Adding or removing a union member without updating the array fails the build.
  * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
  */
 type _ReporterLogLevelExhaustivenessCheck = [
@@ -49,13 +49,13 @@ type _ReporterLogLevelExhaustivenessCheck = [
 const _reporterLogLevelExhaustivenessCheck: _ReporterLogLevelExhaustivenessCheck = true;
 
 /**
- * Exhaustive list of all `ReporterLogLevel` values.
+ * Exhaustive list of all {@link Logging.ReporterLogLevel | ReporterLogLevel} values.
  * @public
  */
 export const allReporterLogLevels: readonly ReporterLogLevel[] = reporterLogLevelValues;
 
 /**
- * A ready-made {@link Converter | Converter} for `ReporterLogLevel` values.
+ * A ready-made {@link Converter | Converter} for {@link Logging.ReporterLogLevel | ReporterLogLevel} values.
  * @public
  */
 export const reporterLogLevel: Converter<
