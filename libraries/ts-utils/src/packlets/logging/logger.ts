@@ -24,23 +24,12 @@ import {
   IDetailLogger,
   ILogger,
   ReporterLogLevel,
-  _ReporterLogLevelExhaustivenessCheck,
-  _reporterLogLevelExhaustivenessCheck,
   allReporterLogLevels,
   isDetailLogger,
-  reporterLogLevelConverter
+  reporterLogLevel
 } from '../logging-interface';
 
-export {
-  isDetailLogger,
-  ReporterLogLevel,
-  ILogger,
-  IDetailLogger,
-  allReporterLogLevels,
-  reporterLogLevelConverter,
-  _ReporterLogLevelExhaustivenessCheck,
-  _reporterLogLevelExhaustivenessCheck
-};
+export { isDetailLogger, ReporterLogLevel, ILogger, IDetailLogger, allReporterLogLevels, reporterLogLevel };
 
 /**
  * Compares two log levels.

@@ -44,25 +44,23 @@ export const allReporterLogLevels: readonly ReporterLogLevel[] = [
 /**
  * Compile-time exhaustiveness guard ensuring {@link allReporterLogLevels} exactly matches every member of
  * {@link ReporterLogLevel}. Adding or removing a union member without updating the array fails the build.
- * @internal
+ * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
  */
-export type _ReporterLogLevelExhaustivenessCheck = [
+type _ReporterLogLevelExhaustivenessCheck = [
   Exclude<ReporterLogLevel, (typeof allReporterLogLevels)[number]>,
   Exclude<(typeof allReporterLogLevels)[number], ReporterLogLevel>
 ] extends [never, never]
   ? true
   : never;
 
-/**
- * @internal
- */
-export const _reporterLogLevelExhaustivenessCheck: _ReporterLogLevelExhaustivenessCheck = true;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _reporterLogLevelExhaustivenessCheck: _ReporterLogLevelExhaustivenessCheck = true;
 
 /**
  * A ready-made {@link Converter | Converter} for {@link ReporterLogLevel} values.
  * @public
  */
-export const reporterLogLevelConverter: Converter<
+export const reporterLogLevel: Converter<
   ReporterLogLevel,
   ReadonlyArray<ReporterLogLevel>
 > = Converters.enumeratedValue<ReporterLogLevel>(allReporterLogLevels);

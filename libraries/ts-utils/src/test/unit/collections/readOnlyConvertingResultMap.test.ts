@@ -24,7 +24,7 @@ import '../../helpers/jest';
 import { fail, succeed } from '../../../packlets/base';
 import {
   allConversionErrorHandling,
-  conversionErrorHandlingConverter,
+  conversionErrorHandling,
   ReadOnlyConvertingResultMap,
   ResultMap,
   ConvertingResultMapValueConverter
@@ -300,22 +300,22 @@ describe('ReadOnlyConvertingResultMap', () => {
   });
 });
 
-describe('conversionErrorHandlingConverter', () => {
+describe('conversionErrorHandling', () => {
   test('has exactly the ConversionErrorHandling union values', () => {
     expect(allConversionErrorHandling).toEqual(['ignore', 'warn', 'fail']);
   });
 
   test('converts each valid ConversionErrorHandling value', () => {
     allConversionErrorHandling.forEach((value) => {
-      expect(conversionErrorHandlingConverter.convert(value)).toSucceedWith(value);
+      expect(conversionErrorHandling.convert(value)).toSucceedWith(value);
     });
   });
 
   test('fails for an invalid string', () => {
-    expect(conversionErrorHandlingConverter.convert('not-a-handling-mode')).toFailWith(/invalid enumerated/i);
+    expect(conversionErrorHandling.convert('not-a-handling-mode')).toFailWith(/invalid enumerated/i);
   });
 
   test('fails for a non-string value', () => {
-    expect(conversionErrorHandlingConverter.convert(123)).toFailWith(/invalid enumerated/i);
+    expect(conversionErrorHandling.convert(123)).toFailWith(/invalid enumerated/i);
   });
 });

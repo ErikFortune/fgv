@@ -125,19 +125,17 @@ export const allMessageLogLevels: readonly MessageLogLevel[] = [
 /**
  * Compile-time exhaustiveness guard ensuring {@link allMessageLogLevels} exactly matches every member of
  * {@link MessageLogLevel}. Adding or removing a union member without updating the array fails the build.
- * @internal
+ * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
  */
-export type _MessageLogLevelExhaustivenessCheck = [
+type _MessageLogLevelExhaustivenessCheck = [
   Exclude<MessageLogLevel, (typeof allMessageLogLevels)[number]>,
   Exclude<(typeof allMessageLogLevels)[number], MessageLogLevel>
 ] extends [never, never]
   ? true
   : never;
 
-/**
- * @internal
- */
-export const _messageLogLevelExhaustivenessCheck: _MessageLogLevelExhaustivenessCheck = true;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _messageLogLevelExhaustivenessCheck: _MessageLogLevelExhaustivenessCheck = true;
 
 /**
  * Details for reporting a message.

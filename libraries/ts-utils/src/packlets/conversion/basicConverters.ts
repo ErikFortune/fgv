@@ -65,7 +65,7 @@ export function enumeratedValue<T>(values: ReadonlyArray<T>): Converter<T, Reado
  * A ready-made {@link Converter | Converter} for {@link MessageLogLevel} values.
  * @public
  */
-export const messageLogLevelConverter: Converter<
+export const messageLogLevel: Converter<
   MessageLogLevel,
   ReadonlyArray<MessageLogLevel>
 > = enumeratedValue<MessageLogLevel>(allMessageLogLevels);
@@ -74,9 +74,7 @@ export const messageLogLevelConverter: Converter<
  * A ready-made {@link Converter | Converter} for {@link OnError} values.
  * @public
  */
-export const onErrorConverter: Converter<OnError, ReadonlyArray<OnError>> = enumeratedValue<OnError>(
-  allOnError
-);
+export const onError: Converter<OnError, ReadonlyArray<OnError>> = enumeratedValue<OnError>(allOnError);
 
 /**
  * Helper function to create a {@link Converter | Converter} which converts `unknown` to one of a set of supplied enumerated

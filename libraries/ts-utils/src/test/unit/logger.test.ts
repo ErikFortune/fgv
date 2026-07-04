@@ -30,7 +30,7 @@ import {
   isDetailLogger,
   LogReporter,
   NoOpLogger,
-  reporterLogLevelConverter
+  reporterLogLevel
 } from '../../packlets/logging';
 
 import { fail, MessageLogLevel, Result, succeed } from '../../packlets/base';
@@ -1433,22 +1433,22 @@ describe('Logger class', () => {
   });
 });
 
-describe('reporterLogLevelConverter', () => {
+describe('reporterLogLevel', () => {
   test('has exactly the ReporterLogLevel union values', () => {
     expect(allReporterLogLevels).toEqual(['all', 'detail', 'info', 'warning', 'error', 'silent']);
   });
 
   test('converts each valid ReporterLogLevel value', () => {
     allReporterLogLevels.forEach((level) => {
-      expect(reporterLogLevelConverter.convert(level)).toSucceedWith(level);
+      expect(reporterLogLevel.convert(level)).toSucceedWith(level);
     });
   });
 
   test('fails for an invalid string', () => {
-    expect(reporterLogLevelConverter.convert('not-a-level')).toFailWith(/invalid enumerated/i);
+    expect(reporterLogLevel.convert('not-a-level')).toFailWith(/invalid enumerated/i);
   });
 
   test('fails for a non-string value', () => {
-    expect(reporterLogLevelConverter.convert(123)).toFailWith(/invalid enumerated/i);
+    expect(reporterLogLevel.convert(123)).toFailWith(/invalid enumerated/i);
   });
 });

@@ -487,9 +487,7 @@ declare namespace Collections {
         ConvertingResultMapValueConverter,
         ConversionErrorHandling,
         allConversionErrorHandling,
-        _ConversionErrorHandlingExhaustivenessCheck,
-        _conversionErrorHandlingExhaustivenessCheck,
-        conversionErrorHandlingConverter,
+        conversionErrorHandling,
         IReadOnlyConvertingResultMapConstructorParams,
         ReadOnlyConvertingResultMap,
         IRetainedRecord,
@@ -702,8 +700,6 @@ declare namespace Conversion {
         BaseConverter,
         OnError,
         allOnError,
-        _OnErrorExhaustivenessCheck,
-        _onErrorExhaustivenessCheck,
         ConverterTraits,
         ConversionErrorFormatter,
         ConstraintOptions,
@@ -728,19 +724,7 @@ type ConversionErrorHandling = 'ignore' | 'warn' | 'fail';
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ConversionErrorHandling"
 //
 // @public
-const conversionErrorHandlingConverter: Converter<ConversionErrorHandling, ReadonlyArray<ConversionErrorHandling>>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "allConversionErrorHandling"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ConversionErrorHandling"
-//
-// @internal
-type _ConversionErrorHandlingExhaustivenessCheck = [
-Exclude<ConversionErrorHandling, (typeof allConversionErrorHandling)[number]>,
-Exclude<(typeof allConversionErrorHandling)[number], ConversionErrorHandling>
-] extends [never, never] ? true : never;
-
-// @internal (undocumented)
-const _conversionErrorHandlingExhaustivenessCheck: _ConversionErrorHandlingExhaustivenessCheck;
+const conversionErrorHandling: Converter<ConversionErrorHandling, ReadonlyArray<ConversionErrorHandling>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -808,8 +792,8 @@ declare namespace Converters {
         discriminatedObject,
         OnError,
         string,
-        messageLogLevelConverter,
-        onErrorConverter,
+        messageLogLevel,
+        onError,
         value,
         number,
         boolean,
@@ -2006,9 +1990,7 @@ declare namespace Logging {
         ILogger,
         IDetailLogger,
         allReporterLogLevels,
-        reporterLogLevelConverter,
-        _ReporterLogLevelExhaustivenessCheck,
-        _reporterLogLevelExhaustivenessCheck,
+        reporterLogLevel,
         LoggerBase,
         InMemoryLogger,
         ConsoleLogger,
@@ -2138,16 +2120,7 @@ export class MessageAggregator implements IMessageAggregator {
 export type MessageLogLevel = 'quiet' | 'detail' | 'info' | 'warning' | 'error';
 
 // @public
-const messageLogLevelConverter: Converter<MessageLogLevel, ReadonlyArray<MessageLogLevel>>;
-
-// @internal
-export type _MessageLogLevelExhaustivenessCheck = [
-Exclude<MessageLogLevel, (typeof allMessageLogLevels)[number]>,
-Exclude<(typeof allMessageLogLevels)[number], MessageLogLevel>
-] extends [never, never] ? true : never;
-
-// @internal (undocumented)
-export const _messageLogLevelExhaustivenessCheck: _MessageLogLevelExhaustivenessCheck;
+const messageLogLevel: Converter<MessageLogLevel, ReadonlyArray<MessageLogLevel>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2418,19 +2391,7 @@ type OnError = 'failOnError' | 'ignoreErrors';
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "OnError"
 //
 // @public
-const onErrorConverter: Converter<OnError, ReadonlyArray<OnError>>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "allOnError"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "OnError"
-//
-// @internal
-type _OnErrorExhaustivenessCheck = [
-Exclude<OnError, (typeof allOnError)[number]>,
-Exclude<(typeof allOnError)[number], OnError>
-] extends [never, never] ? true : never;
-
-// @internal (undocumented)
-const _onErrorExhaustivenessCheck: _OnErrorExhaustivenessCheck;
+const onError: Converter<OnError, ReadonlyArray<OnError>>;
 
 // @public
 const optionalBoolean: Converter<boolean | undefined, unknown>;
@@ -2564,19 +2525,7 @@ type ReporterLogLevel = 'all' | 'detail' | 'info' | 'warning' | 'error' | 'silen
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ReporterLogLevel"
 //
 // @public
-const reporterLogLevelConverter: Converter<ReporterLogLevel, ReadonlyArray<ReporterLogLevel>>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "allReporterLogLevels"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ReporterLogLevel"
-//
-// @internal
-type _ReporterLogLevelExhaustivenessCheck = [
-Exclude<ReporterLogLevel, (typeof allReporterLogLevels)[number]>,
-Exclude<(typeof allReporterLogLevels)[number], ReporterLogLevel>
-] extends [never, never] ? true : never;
-
-// @internal (undocumented)
-const _reporterLogLevelExhaustivenessCheck: _ReporterLogLevelExhaustivenessCheck;
+const reporterLogLevel: Converter<ReporterLogLevel, ReadonlyArray<ReporterLogLevel>>;
 
 // @public
 export type Result<T> = Success<T> | Failure<T>;

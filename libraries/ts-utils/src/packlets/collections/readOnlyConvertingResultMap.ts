@@ -58,26 +58,24 @@ export const allConversionErrorHandling: readonly ConversionErrorHandling[] = [
  * Compile-time exhaustiveness guard ensuring {@link allConversionErrorHandling} exactly matches every
  * member of {@link ConversionErrorHandling}. Adding or removing a
  * union member without updating the array fails the build.
- * @internal
+ * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
  */
-export type _ConversionErrorHandlingExhaustivenessCheck = [
+type _ConversionErrorHandlingExhaustivenessCheck = [
   Exclude<ConversionErrorHandling, (typeof allConversionErrorHandling)[number]>,
   Exclude<(typeof allConversionErrorHandling)[number], ConversionErrorHandling>
 ] extends [never, never]
   ? true
   : never;
 
-/**
- * @internal
- */
-export const _conversionErrorHandlingExhaustivenessCheck: _ConversionErrorHandlingExhaustivenessCheck = true;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _conversionErrorHandlingExhaustivenessCheck: _ConversionErrorHandlingExhaustivenessCheck = true;
 
 /**
  * A ready-made {@link Converter | Converter} for
  * {@link ConversionErrorHandling} values.
  * @public
  */
-export const conversionErrorHandlingConverter: Converter<
+export const conversionErrorHandling: Converter<
   ConversionErrorHandling,
   ReadonlyArray<ConversionErrorHandling>
 > = Converters.enumeratedValue<ConversionErrorHandling>(allConversionErrorHandling);

@@ -36,19 +36,17 @@ export const allOnError: readonly OnError[] = ['failOnError', 'ignoreErrors'] as
 /**
  * Compile-time exhaustiveness guard ensuring {@link allOnError} exactly matches every member of
  * {@link OnError}. Adding or removing a union member without updating the array fails the build.
- * @internal
+ * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
  */
-export type _OnErrorExhaustivenessCheck = [
+type _OnErrorExhaustivenessCheck = [
   Exclude<OnError, (typeof allOnError)[number]>,
   Exclude<(typeof allOnError)[number], OnError>
 ] extends [never, never]
   ? true
   : never;
 
-/**
- * @internal
- */
-export const _onErrorExhaustivenessCheck: _OnErrorExhaustivenessCheck = true;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _onErrorExhaustivenessCheck: _OnErrorExhaustivenessCheck = true;
 
 /**
  * Converter traits.
