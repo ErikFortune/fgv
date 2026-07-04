@@ -35,7 +35,7 @@ const reporterLogLevelValues = ['all', 'detail', 'info', 'warning', 'error', 'si
 
 /**
  * Compile-time exhaustiveness guard ensuring {@link reporterLogLevelValues} exactly matches every member of
- * {@link Logging.ReporterLogLevel | ReporterLogLevel}. Adding or removing a union member without updating the array fails the build.
+ * `ReporterLogLevel`. Adding or removing a union member without updating the array fails the build.
  * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
  */
 type _ReporterLogLevelExhaustivenessCheck = [
@@ -49,13 +49,13 @@ type _ReporterLogLevelExhaustivenessCheck = [
 const _reporterLogLevelExhaustivenessCheck: _ReporterLogLevelExhaustivenessCheck = true;
 
 /**
- * Exhaustive list of all {@link Logging.ReporterLogLevel | ReporterLogLevel} values.
+ * Exhaustive list of all `ReporterLogLevel` values.
  * @public
  */
 export const allReporterLogLevels: readonly ReporterLogLevel[] = reporterLogLevelValues;
 
 /**
- * A ready-made {@link Converter | Converter} for {@link Logging.ReporterLogLevel | ReporterLogLevel} values.
+ * A ready-made {@link Converter | Converter} for `ReporterLogLevel` values.
  * @public
  */
 export const reporterLogLevel: Converter<

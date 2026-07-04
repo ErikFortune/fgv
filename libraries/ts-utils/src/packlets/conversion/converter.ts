@@ -34,7 +34,7 @@ const onErrorValues = ['failOnError', 'ignoreErrors'] as const;
 
 /**
  * Compile-time exhaustiveness guard ensuring {@link onErrorValues} exactly matches every member of
- * {@link Conversion.OnError | OnError}. Adding or removing a union member without updating the array fails the build.
+ * `OnError`. Adding or removing a union member without updating the array fails the build.
  * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
  */
 type _OnErrorExhaustivenessCheck = [
@@ -48,7 +48,7 @@ type _OnErrorExhaustivenessCheck = [
 const _onErrorExhaustivenessCheck: _OnErrorExhaustivenessCheck = true;
 
 /**
- * Exhaustive list of all {@link Conversion.OnError | OnError} values.
+ * Exhaustive list of all `OnError` values.
  * @public
  */
 export const allOnError: readonly OnError[] = onErrorValues;

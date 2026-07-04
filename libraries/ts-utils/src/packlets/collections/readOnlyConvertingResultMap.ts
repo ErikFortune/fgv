@@ -51,7 +51,7 @@ const conversionErrorHandlingValues = ['ignore', 'warn', 'fail'] as const;
 
 /**
  * Compile-time exhaustiveness guard ensuring {@link conversionErrorHandlingValues} exactly matches every
- * member of {@link Collections.ConversionErrorHandling | ConversionErrorHandling}. Adding or removing a
+ * member of `ConversionErrorHandling`. Adding or removing a
  * union member without updating the array fails the build.
  * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
  */
@@ -66,14 +66,14 @@ type _ConversionErrorHandlingExhaustivenessCheck = [
 const _conversionErrorHandlingExhaustivenessCheck: _ConversionErrorHandlingExhaustivenessCheck = true;
 
 /**
- * Exhaustive list of all {@link Collections.ConversionErrorHandling | ConversionErrorHandling} values.
+ * Exhaustive list of all `ConversionErrorHandling` values.
  * @public
  */
 export const allConversionErrorHandling: readonly ConversionErrorHandling[] = conversionErrorHandlingValues;
 
 /**
  * A ready-made {@link Converter | Converter} for
- * {@link Collections.ConversionErrorHandling | ConversionErrorHandling} values.
+ * `ConversionErrorHandling` values.
  * @public
  */
 export const conversionErrorHandling: Converter<
