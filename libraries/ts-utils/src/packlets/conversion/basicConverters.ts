@@ -71,7 +71,7 @@ export const messageLogLevel: Converter<
 > = enumeratedValue<MessageLogLevel>(allMessageLogLevels);
 
 /**
- * A ready-made {@link Converter | Converter} for {@link OnError} values.
+ * A ready-made {@link Converter | Converter} for {@link Conversion.OnError | OnError} values.
  * @public
  */
 export const onError: Converter<OnError, ReadonlyArray<OnError>> = enumeratedValue<OnError>(allOnError);

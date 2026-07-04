@@ -28,27 +28,19 @@ import { Converter, Converters } from '../conversion';
  */
 export type ReporterLogLevel = 'all' | 'detail' | 'info' | 'warning' | 'error' | 'silent';
 
-/**
- * Exhaustive list of all {@link ReporterLogLevel} values.
- * @public
- */
-export const allReporterLogLevels: readonly ReporterLogLevel[] = [
-  'all',
-  'detail',
-  'info',
-  'warning',
-  'error',
-  'silent'
-] as const;
+// Untyped (literal-tuple-inferred) source of truth for allReporterLogLevels, kept separate from the
+// widened public export below so the exhaustiveness check actually inspects the literal values instead
+// of being widened away to `ReporterLogLevel` before the check runs.
+const reporterLogLevelValues = ['all', 'detail', 'info', 'warning', 'error', 'silent'] as const;
 
 /**
- * Compile-time exhaustiveness guard ensuring {@link allReporterLogLevels} exactly matches every member of
- * {@link ReporterLogLevel}. Adding or removing a union member without updating the array fails the build.
+ * Compile-time exhaustiveness guard ensuring {@link reporterLogLevelValues} exactly matches every member of
+ * {@link Logging.ReporterLogLevel | ReporterLogLevel}. Adding or removing a union member without updating the array fails the build.
  * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
  */
 type _ReporterLogLevelExhaustivenessCheck = [
-  Exclude<ReporterLogLevel, (typeof allReporterLogLevels)[number]>,
-  Exclude<(typeof allReporterLogLevels)[number], ReporterLogLevel>
+  Exclude<ReporterLogLevel, (typeof reporterLogLevelValues)[number]>,
+  Exclude<(typeof reporterLogLevelValues)[number], ReporterLogLevel>
 ] extends [never, never]
   ? true
   : never;
@@ -57,7 +49,13 @@ type _ReporterLogLevelExhaustivenessCheck = [
 const _reporterLogLevelExhaustivenessCheck: _ReporterLogLevelExhaustivenessCheck = true;
 
 /**
- * A ready-made {@link Converter | Converter} for {@link ReporterLogLevel} values.
+ * Exhaustive list of all {@link Logging.ReporterLogLevel | ReporterLogLevel} values.
+ * @public
+ */
+export const allReporterLogLevels: readonly ReporterLogLevel[] = reporterLogLevelValues;
+
+/**
+ * A ready-made {@link Converter | Converter} for {@link Logging.ReporterLogLevel | ReporterLogLevel} values.
  * @public
  */
 export const reporterLogLevel: Converter<

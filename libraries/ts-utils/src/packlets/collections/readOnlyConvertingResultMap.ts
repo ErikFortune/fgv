@@ -44,25 +44,20 @@ export type ConvertingResultMapValueConverter<TK extends string, TSRC, TTARGET> 
  */
 export type ConversionErrorHandling = 'ignore' | 'warn' | 'fail';
 
-/**
- * Exhaustive list of all {@link ConversionErrorHandling} values.
- * @public
- */
-export const allConversionErrorHandling: readonly ConversionErrorHandling[] = [
-  'ignore',
-  'warn',
-  'fail'
-] as const;
+// Untyped (literal-tuple-inferred) source of truth for allConversionErrorHandling, kept separate from
+// the widened public export below so the exhaustiveness check actually inspects the literal values
+// instead of being widened away to `ConversionErrorHandling` before the check runs.
+const conversionErrorHandlingValues = ['ignore', 'warn', 'fail'] as const;
 
 /**
- * Compile-time exhaustiveness guard ensuring {@link allConversionErrorHandling} exactly matches every
- * member of {@link ConversionErrorHandling}. Adding or removing a
+ * Compile-time exhaustiveness guard ensuring {@link conversionErrorHandlingValues} exactly matches every
+ * member of {@link Collections.ConversionErrorHandling | ConversionErrorHandling}. Adding or removing a
  * union member without updating the array fails the build.
  * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
  */
 type _ConversionErrorHandlingExhaustivenessCheck = [
-  Exclude<ConversionErrorHandling, (typeof allConversionErrorHandling)[number]>,
-  Exclude<(typeof allConversionErrorHandling)[number], ConversionErrorHandling>
+  Exclude<ConversionErrorHandling, (typeof conversionErrorHandlingValues)[number]>,
+  Exclude<(typeof conversionErrorHandlingValues)[number], ConversionErrorHandling>
 ] extends [never, never]
   ? true
   : never;
@@ -71,8 +66,14 @@ type _ConversionErrorHandlingExhaustivenessCheck = [
 const _conversionErrorHandlingExhaustivenessCheck: _ConversionErrorHandlingExhaustivenessCheck = true;
 
 /**
+ * Exhaustive list of all {@link Collections.ConversionErrorHandling | ConversionErrorHandling} values.
+ * @public
+ */
+export const allConversionErrorHandling: readonly ConversionErrorHandling[] = conversionErrorHandlingValues;
+
+/**
  * A ready-made {@link Converter | Converter} for
- * {@link ConversionErrorHandling} values.
+ * {@link Collections.ConversionErrorHandling | ConversionErrorHandling} values.
  * @public
  */
 export const conversionErrorHandling: Converter<

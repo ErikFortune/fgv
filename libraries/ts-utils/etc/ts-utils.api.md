@@ -125,7 +125,7 @@ class AggregatedResultMapValidator<TCOMPOSITEID extends string, TCOLLECTIONID ex
     update(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ConversionErrorHandling"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const allConversionErrorHandling: readonly ConversionErrorHandling[];
@@ -133,12 +133,12 @@ const allConversionErrorHandling: readonly ConversionErrorHandling[];
 // @public
 export const allMessageLogLevels: readonly MessageLogLevel[];
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "OnError"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const allOnError: readonly OnError[];
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ReporterLogLevel"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const allReporterLogLevels: readonly ReporterLogLevel[];
@@ -721,7 +721,7 @@ type ConversionErrorFormatter<TC = unknown> = (val: unknown, message?: string, c
 // @public
 type ConversionErrorHandling = 'ignore' | 'warn' | 'fail';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ConversionErrorHandling"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const conversionErrorHandling: Converter<ConversionErrorHandling, ReadonlyArray<ConversionErrorHandling>>;
@@ -2388,7 +2388,7 @@ interface OneOfValidatorConstructorParams<T, TC = unknown> extends ValidatorBase
 // @public
 type OnError = 'failOnError' | 'ignoreErrors';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "OnError"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const onError: Converter<OnError, ReadonlyArray<OnError>>;
@@ -2522,7 +2522,7 @@ export function recordToMap<TS, TD, TK extends string = string>(src: Record<TK, 
 // @public
 type ReporterLogLevel = 'all' | 'detail' | 'info' | 'warning' | 'error' | 'silent';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ReporterLogLevel"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const reporterLogLevel: Converter<ReporterLogLevel, ReadonlyArray<ReporterLogLevel>>;
