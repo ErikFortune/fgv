@@ -17,7 +17,7 @@ much lower than the cost of a future migration.
 
 Before writing any utility, consult the FGV canonical capability
 inventory at
-[`LIBRARY_CAPABILITIES.md`](https://github.com/ErikFortune/fgv/blob/release/.agents/LIBRARY_CAPABILITIES.md).
+[`LIBRARY_CAPABILITIES.md`](https://github.com/ErikFortune/fgv/blob/release/.ai/instructions/LIBRARY_CAPABILITIES.md).
 
 If the inventory clearly names the primitive — use it.
 
