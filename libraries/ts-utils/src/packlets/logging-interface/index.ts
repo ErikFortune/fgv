@@ -20,12 +20,52 @@
  * SOFTWARE.
  */
 import { MessageLogLevel, Success } from '../base';
+import { Converter, Converters } from '../conversion';
 
 /**
  * The level of logging to be used.
  * @public
  */
 export type ReporterLogLevel = 'all' | 'detail' | 'info' | 'warning' | 'error' | 'silent';
+
+/**
+ * Exhaustive list of all {@link ReporterLogLevel} values.
+ * @public
+ */
+export const allReporterLogLevels: readonly ReporterLogLevel[] = [
+  'all',
+  'detail',
+  'info',
+  'warning',
+  'error',
+  'silent'
+] as const;
+
+/**
+ * Compile-time exhaustiveness guard ensuring {@link allReporterLogLevels} exactly matches every member of
+ * {@link ReporterLogLevel}. Adding or removing a union member without updating the array fails the build.
+ * @internal
+ */
+export type _ReporterLogLevelExhaustivenessCheck = [
+  Exclude<ReporterLogLevel, (typeof allReporterLogLevels)[number]>,
+  Exclude<(typeof allReporterLogLevels)[number], ReporterLogLevel>
+] extends [never, never]
+  ? true
+  : never;
+
+/**
+ * @internal
+ */
+export const _reporterLogLevelExhaustivenessCheck: _ReporterLogLevelExhaustivenessCheck = true;
+
+/**
+ * A ready-made {@link Converter | Converter} for {@link ReporterLogLevel} values.
+ * @public
+ */
+export const reporterLogLevelConverter: Converter<
+  ReporterLogLevel,
+  ReadonlyArray<ReporterLogLevel>
+> = Converters.enumeratedValue<ReporterLogLevel>(allReporterLogLevels);
 
 /**
  * Generic Result-aware logger interface with multiple levels of logging.

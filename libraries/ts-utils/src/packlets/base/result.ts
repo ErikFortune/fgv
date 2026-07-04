@@ -111,6 +111,35 @@ export interface IResultLogger<TD = unknown> {
 export type MessageLogLevel = 'quiet' | 'detail' | 'info' | 'warning' | 'error';
 
 /**
+ * Exhaustive list of all {@link MessageLogLevel} values.
+ * @public
+ */
+export const allMessageLogLevels: readonly MessageLogLevel[] = [
+  'quiet',
+  'detail',
+  'info',
+  'warning',
+  'error'
+] as const;
+
+/**
+ * Compile-time exhaustiveness guard ensuring {@link allMessageLogLevels} exactly matches every member of
+ * {@link MessageLogLevel}. Adding or removing a union member without updating the array fails the build.
+ * @internal
+ */
+export type _MessageLogLevelExhaustivenessCheck = [
+  Exclude<MessageLogLevel, (typeof allMessageLogLevels)[number]>,
+  Exclude<(typeof allMessageLogLevels)[number], MessageLogLevel>
+] extends [never, never]
+  ? true
+  : never;
+
+/**
+ * @internal
+ */
+export const _messageLogLevelExhaustivenessCheck: _MessageLogLevelExhaustivenessCheck = true;
+
+/**
  * Details for reporting a message.
  * @public
  */

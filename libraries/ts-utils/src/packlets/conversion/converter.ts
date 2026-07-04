@@ -28,6 +28,29 @@ import { Brand, Result, Success } from '../base';
 export type OnError = 'failOnError' | 'ignoreErrors';
 
 /**
+ * Exhaustive list of all {@link OnError} values.
+ * @public
+ */
+export const allOnError: readonly OnError[] = ['failOnError', 'ignoreErrors'] as const;
+
+/**
+ * Compile-time exhaustiveness guard ensuring {@link allOnError} exactly matches every member of
+ * {@link OnError}. Adding or removing a union member without updating the array fails the build.
+ * @internal
+ */
+export type _OnErrorExhaustivenessCheck = [
+  Exclude<OnError, (typeof allOnError)[number]>,
+  Exclude<(typeof allOnError)[number], OnError>
+] extends [never, never]
+  ? true
+  : never;
+
+/**
+ * @internal
+ */
+export const _onErrorExhaustivenessCheck: _OnErrorExhaustivenessCheck = true;
+
+/**
  * Converter traits.
  * @public
  */

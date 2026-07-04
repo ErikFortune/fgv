@@ -20,10 +20,10 @@
  * SOFTWARE.
  */
 
-import { Failure, Result, fail, isKeyOf, succeed } from '../base';
+import { Failure, MessageLogLevel, Result, allMessageLogLevels, fail, isKeyOf, succeed } from '../base';
 import { TypeGuardWithContext, Validator, Base as ValidationBase } from '../validation';
 import { BaseConverter, ConverterFunc } from './baseConverter';
-import { Converter, OnError } from './converter';
+import { Converter, OnError, allOnError } from './converter';
 import { FieldConverters, ObjectConverter, ObjectConverterOptions } from './objectConverter';
 import { StringConverter } from './stringConverter';
 
@@ -60,6 +60,23 @@ export function enumeratedValue<T>(values: ReadonlyArray<T>): Converter<T, Reado
     }
   );
 }
+
+/**
+ * A ready-made {@link Converter | Converter} for {@link MessageLogLevel} values.
+ * @public
+ */
+export const messageLogLevelConverter: Converter<
+  MessageLogLevel,
+  ReadonlyArray<MessageLogLevel>
+> = enumeratedValue<MessageLogLevel>(allMessageLogLevels);
+
+/**
+ * A ready-made {@link Converter | Converter} for {@link OnError} values.
+ * @public
+ */
+export const onErrorConverter: Converter<OnError, ReadonlyArray<OnError>> = enumeratedValue<OnError>(
+  allOnError
+);
 
 /**
  * Helper function to create a {@link Converter | Converter} which converts `unknown` to one of a set of supplied enumerated

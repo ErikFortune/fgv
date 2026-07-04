@@ -21,6 +21,7 @@
  */
 
 import { captureResult, DetailedResult, failWithDetail, Result, succeedWithDetail } from '../base';
+import { Converter, Converters } from '../conversion';
 import { ILogger } from '../logging-interface';
 import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
@@ -42,6 +43,44 @@ export type ConvertingResultMapValueConverter<TK extends string, TSRC, TTARGET> 
  * @public
  */
 export type ConversionErrorHandling = 'ignore' | 'warn' | 'fail';
+
+/**
+ * Exhaustive list of all {@link ConversionErrorHandling} values.
+ * @public
+ */
+export const allConversionErrorHandling: readonly ConversionErrorHandling[] = [
+  'ignore',
+  'warn',
+  'fail'
+] as const;
+
+/**
+ * Compile-time exhaustiveness guard ensuring {@link allConversionErrorHandling} exactly matches every
+ * member of {@link ConversionErrorHandling}. Adding or removing a
+ * union member without updating the array fails the build.
+ * @internal
+ */
+export type _ConversionErrorHandlingExhaustivenessCheck = [
+  Exclude<ConversionErrorHandling, (typeof allConversionErrorHandling)[number]>,
+  Exclude<(typeof allConversionErrorHandling)[number], ConversionErrorHandling>
+] extends [never, never]
+  ? true
+  : never;
+
+/**
+ * @internal
+ */
+export const _conversionErrorHandlingExhaustivenessCheck: _ConversionErrorHandlingExhaustivenessCheck = true;
+
+/**
+ * A ready-made {@link Converter | Converter} for
+ * {@link ConversionErrorHandling} values.
+ * @public
+ */
+export const conversionErrorHandlingConverter: Converter<
+  ConversionErrorHandling,
+  ReadonlyArray<ConversionErrorHandling>
+> = Converters.enumeratedValue<ConversionErrorHandling>(allConversionErrorHandling);
 
 /**
  * Parameters for constructing a {@link Collections.ReadOnlyConvertingResultMap | ReadOnlyConvertingResultMap}.

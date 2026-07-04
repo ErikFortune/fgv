@@ -23,12 +23,14 @@
 import '../helpers/jest';
 
 import {
+  allReporterLogLevels,
   BootLogger,
   InMemoryLogger,
   ILogger,
   isDetailLogger,
   LogReporter,
-  NoOpLogger
+  NoOpLogger,
+  reporterLogLevelConverter
 } from '../../packlets/logging';
 
 import { fail, MessageLogLevel, Result, succeed } from '../../packlets/base';
@@ -1428,5 +1430,25 @@ describe('Logger class', () => {
       boot.log('error', 'post-ready error');
       expect(real.logged).toEqual(['pre-ready warning', 'post-ready error']);
     });
+  });
+});
+
+describe('reporterLogLevelConverter', () => {
+  test('has exactly the ReporterLogLevel union values', () => {
+    expect(allReporterLogLevels).toEqual(['all', 'detail', 'info', 'warning', 'error', 'silent']);
+  });
+
+  test('converts each valid ReporterLogLevel value', () => {
+    allReporterLogLevels.forEach((level) => {
+      expect(reporterLogLevelConverter.convert(level)).toSucceedWith(level);
+    });
+  });
+
+  test('fails for an invalid string', () => {
+    expect(reporterLogLevelConverter.convert('not-a-level')).toFailWith(/invalid enumerated/i);
+  });
+
+  test('fails for a non-string value', () => {
+    expect(reporterLogLevelConverter.convert(123)).toFailWith(/invalid enumerated/i);
   });
 });
