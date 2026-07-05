@@ -147,16 +147,16 @@ describe('resolveProviderModel', () => {
   test('walks the ModelSpecKey branch then returns the concrete id (no aliases)', () => {
     const descriptor = makeDescriptor({
       id: 'openai',
-      defaultModel: { base: 'gpt-4o', tools: 'gpt-4o-tools' }
+      defaultModel: { base: 'gpt-4o', advanced: 'gpt-4o-advanced' }
     });
-    expect(AiAssist.resolveProviderModel(descriptor, undefined, 'tools')).toSucceedWith('gpt-4o-tools');
+    expect(AiAssist.resolveProviderModel(descriptor, undefined, 'advanced')).toSucceedWith('gpt-4o-advanced');
     expect(AiAssist.resolveProviderModel(descriptor, undefined, 'base')).toSucceedWith('gpt-4o');
   });
 
   test('falls back to base when the requested context key is absent', () => {
     const descriptor = makeDescriptor({
       id: 'openai',
-      defaultModel: { base: 'gpt-4o', tools: 'gpt-4o-tools' }
+      defaultModel: { base: 'gpt-4o', advanced: 'gpt-4o-advanced' }
     });
     expect(AiAssist.resolveProviderModel(descriptor, undefined, 'image')).toSucceedWith('gpt-4o');
   });
@@ -278,15 +278,19 @@ describe('google-gemini Tier 2 alias migration', () => {
 
   test('defaultModel resolves through the aliases to the concrete 3.x ids', () => {
     expect(AiAssist.resolveProviderModel(gemini, undefined, 'base')).toSucceedWith('gemini-3.5-flash');
-    expect(AiAssist.resolveProviderModel(gemini, undefined, 'thinking')).toSucceedWith(
-      'gemini-3.1-pro-preview'
-    );
     expect(AiAssist.resolveProviderModel(gemini, undefined, 'image')).toSucceedWith(
       'gemini-3.1-flash-image-preview'
     );
     expect(AiAssist.resolveProviderModel(gemini, undefined, 'embedding')).toSucceedWith(
       'gemini-embedding-001'
     );
+  });
+
+  test('a tier request cascades to base (flash) — no advanced/frontier key defined yet at B1', () => {
+    // The `advanced: '@google-gemini:pro'` key is added in B4; at B1 the Gemini
+    // descriptor has no tier key, so a tier request cascades to base = flash.
+    expect(AiAssist.resolveProviderModel(gemini, undefined, 'advanced')).toSucceedWith('gemini-3.5-flash');
+    expect(AiAssist.resolveProviderModel(gemini, undefined, 'frontier')).toSucceedWith('gemini-3.5-flash');
   });
 
   test('each declared alias maps to its concrete target', () => {

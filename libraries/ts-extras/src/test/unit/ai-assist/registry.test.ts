@@ -52,8 +52,6 @@ describe('AiAssist.registry', () => {
         expect(desc.baseUrl).toBeTruthy();
         expect(desc.defaultModel).toEqual({
           base: 'grok-4.3',
-          tools: 'grok-4.3',
-          thinking: 'grok-4.3',
           image: 'grok-imagine-image-quality'
         });
         expect(desc.supportedTools).toContain('web_search');
