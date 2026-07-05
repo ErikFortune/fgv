@@ -1671,6 +1671,7 @@ interface IProviderCompletionParams extends IChatRequest {
     readonly signal?: AbortSignal;
     readonly temperature?: number;
     readonly thinking?: IThinkingConfig;
+    readonly tier?: 'advanced' | 'frontier';
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
 }
 
@@ -1686,6 +1687,7 @@ interface IProviderCompletionStreamParams extends IChatRequest {
     readonly signal?: AbortSignal;
     readonly temperature?: number;
     readonly thinking?: IThinkingConfig;
+    readonly tier?: 'advanced' | 'frontier';
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
 }
 
@@ -2100,7 +2102,7 @@ type ModelSpec = string | IModelSpecMap;
 const modelSpec: Converter<ModelSpec>;
 
 // @public
-type ModelSpecKey = 'base' | 'tools' | 'image' | 'thinking' | 'embedding';
+type ModelSpecKey = 'base' | 'advanced' | 'frontier' | 'image' | 'embedding';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
 //

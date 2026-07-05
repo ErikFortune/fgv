@@ -297,9 +297,28 @@ describe('callProviderCompletionStream', () => {
       expect(body.stream).toBe(true);
     });
 
-    test('prefers thinking model from ModelSpec when both thinking and tools are provided', async () => {
+    test('tier selects the streaming model; thinking/tools do not (composition)', async () => {
       const descriptor = makeDescriptor({
-        defaultModel: { base: 'gpt-4o', tools: 'gpt-4o-tools', thinking: 'gpt-o3' },
+        defaultModel: { base: 'gpt-4o', advanced: 'gpt-5-adv', frontier: 'gpt-5-front' },
+        supportedTools: ['web_search']
+      });
+      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'advanced',
+        tools,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('gpt-5-adv');
+    });
+
+    test('thinking without a tier resolves the base streaming model', async () => {
+      const descriptor = makeDescriptor({
+        defaultModel: { base: 'gpt-4o', advanced: 'gpt-5-adv' },
         supportedTools: ['web_search']
       });
       const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
@@ -312,64 +331,22 @@ describe('callProviderCompletionStream', () => {
         thinking: { effort: 'medium' }
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.model).toBe('gpt-o3');
+      expect(body.model).toBe('gpt-4o');
     });
 
-    test('does not select thinking model when thinking config is empty object', async () => {
+    test('tier "frontier" cascades to advanced when no frontier key is defined (streaming)', async () => {
       const descriptor = makeDescriptor({
-        defaultModel: { base: 'gpt-4o', tools: 'gpt-4o-tools', thinking: 'gpt-o3' },
-        supportedTools: ['web_search']
+        defaultModel: { base: 'gpt-4o', advanced: 'gpt-5-adv' }
       });
-      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
-      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      mockSseResponse(openAiChatSse(['ok']));
       await AiAssist.callProviderCompletionStream({
         descriptor,
         apiKey: 'sk',
         ...TEST_PROMPT.toRequest(),
-        tools,
-        thinking: {}
+        tier: 'frontier'
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.model).toBe('gpt-4o-tools');
-    });
-
-    test('does not select thinking model when providers block targets a different provider', async () => {
-      const descriptor = makeDescriptor({
-        id: 'xai-grok',
-        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning', thinking: 'grok-4.3' },
-        supportedTools: ['web_search']
-      });
-      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
-      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
-      await AiAssist.callProviderCompletionStream({
-        descriptor,
-        apiKey: 'sk',
-        ...TEST_PROMPT.toRequest(),
-        tools,
-        thinking: { providers: [{ provider: 'anthropic', config: { effort: 'high' } }] }
-      });
-      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.model).toBe('grok-reasoning');
-    });
-
-    test('does not select thinking model for unknown provider even when thinking is provided', async () => {
-      const ollamaDescriptor = makeDescriptor({
-        id: 'ollama',
-        baseUrl: 'http://localhost:11434/v1',
-        defaultModel: { base: 'llama3', tools: 'llama3-tools', thinking: 'llama3-think' },
-        supportedTools: ['web_search']
-      });
-      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
-      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
-      await AiAssist.callProviderCompletionStream({
-        descriptor: ollamaDescriptor,
-        apiKey: 'sk',
-        ...TEST_PROMPT.toRequest(),
-        tools,
-        thinking: { effort: 'medium' }
-      });
-      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.model).toBe('llama3-tools');
+      expect(body.model).toBe('gpt-5-adv');
     });
 
     test('forwards explicit temperature to request body', async () => {

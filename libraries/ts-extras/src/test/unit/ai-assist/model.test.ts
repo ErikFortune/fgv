@@ -76,35 +76,35 @@ describe('toDataUrl', () => {
 describe('resolveModel', () => {
   test('returns a string spec directly regardless of context', () => {
     expect(AiAssist.resolveModel('grok-4-1-fast')).toBe('grok-4-1-fast');
-    expect(AiAssist.resolveModel('grok-4-1-fast', 'tools')).toBe('grok-4-1-fast');
+    expect(AiAssist.resolveModel('grok-4-1-fast', 'advanced')).toBe('grok-4-1-fast');
   });
 
   test('resolves context key from an object spec', () => {
-    const spec: AiAssist.ModelSpec = { base: 'grok-fast', tools: 'grok-reasoning' };
-    expect(AiAssist.resolveModel(spec, 'tools')).toBe('grok-reasoning');
+    const spec: AiAssist.ModelSpec = { base: 'grok-fast', advanced: 'grok-reasoning' };
+    expect(AiAssist.resolveModel(spec, 'advanced')).toBe('grok-reasoning');
   });
 
   test('falls back to base when context key is missing', () => {
-    const spec: AiAssist.ModelSpec = { base: 'grok-fast', tools: 'grok-reasoning' };
+    const spec: AiAssist.ModelSpec = { base: 'grok-fast', advanced: 'grok-reasoning' };
     expect(AiAssist.resolveModel(spec, 'image')).toBe('grok-fast');
   });
 
   test('falls back to base when no context provided', () => {
-    const spec: AiAssist.ModelSpec = { base: 'grok-fast', tools: 'grok-reasoning' };
+    const spec: AiAssist.ModelSpec = { base: 'grok-fast', advanced: 'grok-reasoning' };
     expect(AiAssist.resolveModel(spec)).toBe('grok-fast');
   });
 
   test('resolves nested spec — context key leads to another object', () => {
     const spec: AiAssist.ModelSpec = {
       base: 'grok-fast',
-      tools: { base: 'grok-reasoning', image: 'grok-vision' }
+      advanced: { base: 'grok-reasoning', image: 'grok-vision' }
     };
-    // 'tools' resolves to nested object, which then falls back to 'base'
-    expect(AiAssist.resolveModel(spec, 'tools')).toBe('grok-reasoning');
+    // 'advanced' resolves to nested object, which then falls back to 'base'
+    expect(AiAssist.resolveModel(spec, 'advanced')).toBe('grok-reasoning');
   });
 
   test('falls back to first value when no base key exists', () => {
-    const spec: AiAssist.ModelSpec = { tools: 'grok-reasoning', image: 'grok-vision' };
+    const spec: AiAssist.ModelSpec = { advanced: 'grok-reasoning', image: 'grok-vision' };
     expect(AiAssist.resolveModel(spec)).toBe('grok-reasoning');
   });
 
@@ -112,11 +112,80 @@ describe('resolveModel', () => {
     const spec: AiAssist.ModelSpec = { base: 'gpt-4o', embedding: 'text-embedding-3-small' };
     expect(AiAssist.resolveModel(spec, 'embedding')).toBe('text-embedding-3-small');
   });
+
+  describe('tier cascade (Q2)', () => {
+    test('base-only map: a frontier request cascades to base (back-compat floor)', () => {
+      const spec: AiAssist.ModelSpec = { base: 'X' };
+      expect(AiAssist.resolveModel(spec, 'frontier')).toBe('X');
+    });
+
+    test('base-only map: an advanced request cascades to base', () => {
+      const spec: AiAssist.ModelSpec = { base: 'X' };
+      expect(AiAssist.resolveModel(spec, 'advanced')).toBe('X');
+    });
+
+    test('advanced set, frontier requested: cascade stops at advanced', () => {
+      const spec: AiAssist.ModelSpec = { base: 'B', advanced: 'A' };
+      expect(AiAssist.resolveModel(spec, 'frontier')).toBe('A');
+    });
+
+    test('frontier set: a frontier request hits frontier directly', () => {
+      const spec: AiAssist.ModelSpec = { base: 'B', advanced: 'A', frontier: 'F' };
+      expect(AiAssist.resolveModel(spec, 'frontier')).toBe('F');
+    });
+
+    test('advanced request with advanced+base present hits advanced directly', () => {
+      const spec: AiAssist.ModelSpec = { base: 'B', advanced: 'A' };
+      expect(AiAssist.resolveModel(spec, 'advanced')).toBe('A');
+    });
+
+    test('tier value is a nested spec — recurses into its base branch', () => {
+      const spec: AiAssist.ModelSpec = { base: 'B', frontier: { base: 'F' } };
+      expect(AiAssist.resolveModel(spec, 'frontier')).toBe('F');
+    });
+
+    test('tier value is an alias — returned verbatim (resolved downstream)', () => {
+      const spec: AiAssist.ModelSpec = { base: 'B', frontier: '@openai:pro' };
+      expect(AiAssist.resolveModel(spec, 'frontier')).toBe('@openai:pro');
+    });
+
+    test('a base request never over-reaches into a tier branch', () => {
+      const spec: AiAssist.ModelSpec = { base: 'B', advanced: 'A', frontier: 'F' };
+      expect(AiAssist.resolveModel(spec, 'base')).toBe('B');
+    });
+
+    test('modality key (image) is unchanged — flat resolution, no cascade', () => {
+      const spec: AiAssist.ModelSpec = { base: 'B', image: 'I' };
+      expect(AiAssist.resolveModel(spec, 'image')).toBe('I');
+    });
+
+    test('modality key (embedding) is unchanged — flat resolution, no cascade', () => {
+      const spec: AiAssist.ModelSpec = { base: 'B', embedding: 'E' };
+      expect(AiAssist.resolveModel(spec, 'embedding')).toBe('E');
+    });
+
+    test('an arbitrary (non-tier) string context resolves flat, then falls to base', () => {
+      const spec: AiAssist.ModelSpec = { base: 'B', custom: 'C' };
+      expect(AiAssist.resolveModel(spec, 'custom')).toBe('C');
+      expect(AiAssist.resolveModel(spec, 'other')).toBe('B');
+    });
+
+    test('undefined context resolves to base — unchanged', () => {
+      const spec: AiAssist.ModelSpec = { base: 'B', advanced: 'A', frontier: 'F' };
+      expect(AiAssist.resolveModel(spec)).toBe('B');
+    });
+  });
 });
 
 describe('capability + spec-key vocabularies', () => {
   test('allModelSpecKeys includes the embedding key', () => {
     expect(AiAssist.allModelSpecKeys).toContain('embedding');
+  });
+
+  test('allModelSpecKeys carries the tier keys and not the removed thinking/tools keys', () => {
+    expect(AiAssist.allModelSpecKeys).toEqual(['base', 'advanced', 'frontier', 'image', 'embedding']);
+    expect(AiAssist.allModelSpecKeys).not.toContain('thinking');
+    expect(AiAssist.allModelSpecKeys).not.toContain('tools');
   });
 
   test('allModelCapabilities includes the embedding capability', () => {
@@ -130,16 +199,27 @@ describe('modelSpec converter', () => {
   });
 
   test('converts an object with string values', () => {
-    expect(AiAssist.modelSpec.convert({ base: 'grok-fast', tools: 'grok-reasoning' })).toSucceedWith({
+    expect(AiAssist.modelSpec.convert({ base: 'grok-fast', advanced: 'grok-reasoning' })).toSucceedWith({
       base: 'grok-fast',
-      tools: 'grok-reasoning'
+      advanced: 'grok-reasoning'
     });
+  });
+
+  test('accepts all tier + modality keys', () => {
+    const input = {
+      base: 'b',
+      advanced: 'a',
+      frontier: 'f',
+      image: 'i',
+      embedding: 'e'
+    };
+    expect(AiAssist.modelSpec.convert(input)).toSucceedWith(input);
   });
 
   test('converts a deeply nested object', () => {
     const input = {
       base: 'grok-fast',
-      tools: { base: 'grok-reasoning', image: 'grok-vision' }
+      advanced: { base: 'grok-reasoning', image: 'grok-vision' }
     };
     expect(AiAssist.modelSpec.convert(input)).toSucceedWith(input);
   });
@@ -164,7 +244,12 @@ describe('modelSpec converter', () => {
     expect(AiAssist.modelSpec.convert({ base: 'ok', bogus: 'bad' })).toFailWith(/expected model spec/i);
   });
 
+  test('rejects the removed thinking/tools keys', () => {
+    expect(AiAssist.modelSpec.convert({ base: 'ok', thinking: 'x' })).toFailWith(/expected model spec/i);
+    expect(AiAssist.modelSpec.convert({ base: 'ok', tools: 'x' })).toFailWith(/expected model spec/i);
+  });
+
   test('fails for nested invalid value', () => {
-    expect(AiAssist.modelSpec.convert({ base: 'ok', tools: 123 })).toFailWith(/expected model spec/i);
+    expect(AiAssist.modelSpec.convert({ base: 'ok', advanced: 123 })).toFailWith(/expected model spec/i);
   });
 });

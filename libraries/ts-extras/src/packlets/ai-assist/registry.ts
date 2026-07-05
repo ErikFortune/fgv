@@ -79,7 +79,6 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
     defaultModel: {
       base: '@google-gemini:flash',
-      thinking: '@google-gemini:pro',
       image: '@google-gemini:flash-image',
       embedding: '@google-gemini:embedding'
     },
@@ -89,8 +88,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       // line advanced to 3.5 while the other roles are on the 3.1 generation. The per-role version
       // split is exactly why the alias layer exists — consumers never see these numbers.
       '@google-gemini:flash': 'gemini-3.5-flash', // base (was gemini-2.5-flash, shutdown 2026-10-16)
-      '@google-gemini:pro': 'gemini-3.1-pro-preview', // thinking (was gemini-2.5-pro, 2026-10-16)
-      '@google-gemini:flash-lite': 'gemini-3.1-flash-lite', // thinking tier; available via modelOverride, NOT the 'thinking' default (was gemini-2.5-flash-lite, 2026-10-16)
+      '@google-gemini:pro': 'gemini-3.1-pro-preview', // advanced-tier role (wired to the 'advanced' defaultModel key in B4); reachable via modelOverride until then (was gemini-2.5-pro, 2026-10-16)
+      '@google-gemini:flash-lite': 'gemini-3.1-flash-lite', // cheaper thinking-capable line; available via modelOverride only (was gemini-2.5-flash-lite, 2026-10-16)
       '@google-gemini:flash-image': 'gemini-3.1-flash-image-preview', // image (was gemini-2.5-flash-image, 2026-10-02)
       '@google-gemini:embedding': 'gemini-embedding-001' // NOT deprecated — aliased for uniformity only
     },
@@ -255,8 +254,6 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     baseUrl: 'https://api.x.ai/v1',
     defaultModel: {
       base: 'grok-4.3',
-      tools: 'grok-4.3',
-      thinking: 'grok-4.3',
       image: 'grok-imagine-image-quality'
     },
     supportedTools: ['web_search'],

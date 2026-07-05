@@ -458,7 +458,7 @@ export interface IAiClientToolTurnResult {
  * Known context keys for model specification maps.
  * @public
  */
-export type ModelSpecKey = 'base' | 'tools' | 'image' | 'thinking' | 'embedding';
+export type ModelSpecKey = 'base' | 'advanced' | 'frontier' | 'image' | 'embedding';
 
 /**
  * All valid {@link ModelSpecKey} values.
@@ -466,9 +466,9 @@ export type ModelSpecKey = 'base' | 'tools' | 'image' | 'thinking' | 'embedding'
  */
 export const allModelSpecKeys: ReadonlyArray<ModelSpecKey> = [
   'base',
-  'tools',
+  'advanced',
+  'frontier',
   'image',
-  'thinking',
   'embedding'
 ];
 
@@ -485,18 +485,18 @@ export const MODEL_SPEC_BASE_KEY: ModelSpecKey = 'base';
  * @remarks
  * A bare string is equivalent to `{ base: string }`. This keeps the simple
  * case simple while allowing context-aware model selection (e.g. different
- * models for tool-augmented vs. base completions).
+ * models for different quality tiers).
  *
  * @example
  * ```typescript
  * // Simple — same model for all contexts:
  * const simple: ModelSpec = 'grok-4.3';
  *
- * // Context-aware — different model for tools and thinking:
- * const split: ModelSpec = { base: 'grok-4.3', tools: 'grok-4.3', thinking: 'grok-4.3' };
+ * // Context-aware — different model per quality tier:
+ * const split: ModelSpec = { base: 'gpt-5.4-mini', advanced: 'gpt-5.5', frontier: 'gpt-5.5-pro' };
  *
- * // Future nested — per-tool model selection:
- * const nested: ModelSpec = { base: 'grok-fast', tools: { base: 'grok-r', image: 'grok-v' } };
+ * // Nested — a tier branch is itself a spec:
+ * const nested: ModelSpec = { base: 'grok-fast', advanced: { base: 'grok-r', image: 'grok-v' } };
  * ```
  * @public
  */
@@ -510,17 +510,38 @@ export interface IModelSpecMap {
 export type ModelSpec = string | IModelSpecMap;
 
 /**
+ * Ordered fallback candidates for each quality-tier context key.
+ *
+ * @remarks
+ * A `frontier` request cascades `frontier → advanced → base`; an `advanced`
+ * request cascades `advanced → base`. Any context not listed here (the
+ * `image`/`embedding` modality keys, or an arbitrary caller-supplied string)
+ * resolves flat — just the context itself, then the shared `base` fallback
+ * below — matching the pre-tier behavior. `base` maps to `['base']` so a
+ * `base` request never over-reaches into a tier branch.
+ */
+const TIER_FALLBACK: { readonly [k: string]: ReadonlyArray<ModelSpecKey> } = {
+  base: ['base'],
+  advanced: ['advanced', 'base'],
+  frontier: ['frontier', 'advanced', 'base']
+};
+
+/**
  * Resolves a {@link ModelSpec} to a concrete model string given an optional context key.
  *
  * @remarks
  * Resolution rules:
  * 1. If the spec is a string, return it directly (context is irrelevant).
- * 2. If the spec is an object and the context key exists, recurse into that branch.
+ * 2. If the spec is an object, walk the ordered candidate keys for the context:
+ *    a quality-tier context (`advanced`/`frontier`) cascades through the
+ *    tier-fallback table (`frontier → advanced → base`, `advanced → base`);
+ *    every other context resolves flat (`[context]`); `undefined` resolves to
+ *    the shared `base` fallback. The first present key wins.
  * 3. Otherwise, fall back to the {@link MODEL_SPEC_BASE_KEY | 'base'} key.
  * 4. If neither context nor `'base'` exists, use the first available value.
  *
  * @param spec - The model specification to resolve
- * @param context - Optional context key (e.g. `'tools'`)
+ * @param context - Optional context key (e.g. `'advanced'`)
  * @returns The resolved model string
  * @public
  */
@@ -529,9 +550,14 @@ export function resolveModel(spec: ModelSpec, context?: string): string {
     return spec;
   }
 
-  // Try the requested context key first
-  if (context !== undefined && context in spec) {
-    return resolveModel(spec[context]);
+  // Ordered candidate keys for this context: a tier key cascades via
+  // TIER_FALLBACK; any other key resolves flat as [context]; undefined drops
+  // straight to the shared 'base' fallback below.
+  const order: ReadonlyArray<string> = context === undefined ? [] : TIER_FALLBACK[context] ?? [context];
+  for (const key of order) {
+    if (key in spec) {
+      return resolveModel(spec[key]);
+    }
   }
 
   // Fall back to 'base'

@@ -50,6 +50,7 @@ import {
   type IChatRequest,
   type IThinkingConfig,
   type ModelSpec,
+  type ModelSpecKey,
   resolveProviderModel
 } from './model';
 import {
@@ -97,6 +98,13 @@ export interface IProviderCompletionParams extends IChatRequest {
   readonly temperature?: number;
   /** Optional model override — string or context-aware map (uses descriptor.defaultModel otherwise) */
   readonly modelOverride?: ModelSpec;
+  /**
+   * Optional quality tier selecting which completion model to use. `undefined`
+   * selects the `base` tier; `'frontier'` cascades to `advanced` then `base`
+   * when a tier is unset for a provider. Orthogonal to `thinking` and `tools`,
+   * which never select a model.
+   */
+  readonly tier?: 'advanced' | 'frontier';
   /** Optional logger for request/response observability. */
   readonly logger?: Logging.ILogger;
   /** Server-side tools to include in the request. Overrides settings-level tool config when provided. */
@@ -684,6 +692,7 @@ export async function callProviderCompletion(
     messages,
     temperature,
     modelOverride,
+    tier,
     logger,
     tools,
     signal,
@@ -707,11 +716,9 @@ export async function callProviderCompletion(
 
   const hasTools = tools !== undefined && tools.length > 0;
   const discriminator = providerDiscriminatorForId(descriptor.id);
-  const hasThinkingConfig =
-    discriminator !== undefined &&
-    (thinking?.effort !== undefined ||
-      thinking?.providers?.some((b) => b.provider === 'other' || b.provider === discriminator) === true);
-  const modelContext = hasThinkingConfig ? 'thinking' : hasTools ? 'tools' : undefined;
+  // The quality tier is the only completion-model selector; thinking and tools
+  // are orthogonal request params/capabilities and never pick a model.
+  const modelContext: ModelSpecKey | undefined = tier;
 
   const modelResult = resolveProviderModel(descriptor, modelOverride, modelContext);
   if (modelResult.isFailure()) {
