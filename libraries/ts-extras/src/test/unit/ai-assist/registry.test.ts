@@ -42,6 +42,53 @@ describe('AiAssist.registry', () => {
     });
   });
 
+  describe('openai model tiers (B2)', () => {
+    const desc = AiAssist.getProviderDescriptor('openai').orThrow();
+
+    test('base tier resolves to gpt-5.4-mini', () => {
+      // undefined context falls to base; explicit 'base' resolves identically.
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('gpt-5.4-mini');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gpt-5.4-mini');
+    });
+
+    test('advanced tier resolves to gpt-5.5', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('gpt-5.5');
+    });
+
+    test('frontier tier resolves to gpt-5.5-pro', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('gpt-5.5-pro');
+    });
+
+    test('frontier cascades to the advanced id when no frontier key is present', () => {
+      // A synthetic OpenAI-shaped descriptor whose tiered map omits frontier — a
+      // frontier request must cascade frontier → advanced (→ base), reusing the
+      // real aliases block spread from the descriptor.
+      const noFrontier: AiAssist.IAiProviderDescriptor = {
+        ...desc,
+        defaultModel: { base: '@openai:mini', advanced: '@openai:flagship' }
+      };
+      expect(AiAssist.resolveProviderModel(noFrontier, undefined, 'frontier')).toSucceedWith('gpt-5.5');
+    });
+
+    test('image default resolves @openai:image → gpt-image-1.5 and routes via the gpt-image- capability', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gpt-image-1.5');
+      expect(AiAssist.resolveImageCapability(desc, 'gpt-image-1.5')).toMatchObject({
+        modelPrefix: 'gpt-image-',
+        format: 'openai-images'
+      });
+    });
+
+    test('the non-tier @openai:nano alias resolves via modelOverride only', () => {
+      expect(AiAssist.resolveProviderModel(desc, '@openai:nano', undefined)).toSucceedWith('gpt-5.4-nano');
+    });
+
+    test('a raw modelOverride passes through verbatim (no alias resolution)', () => {
+      expect(AiAssist.resolveProviderModel(desc, 'gpt-custom-tuned:v1', 'advanced')).toSucceedWith(
+        'gpt-custom-tuned:v1'
+      );
+    });
+  });
+
   describe('getProviderDescriptor', () => {
     test('returns descriptor for known provider', () => {
       expect(AiAssist.getProviderDescriptor('xai-grok')).toSucceedAndSatisfy((desc) => {
@@ -66,7 +113,8 @@ describe('AiAssist.registry', () => {
 
     test('returns descriptor with image generation support for openai', () => {
       expect(AiAssist.getProviderDescriptor('openai')).toSucceedAndSatisfy((desc) => {
-        expect(desc.imageGeneration).toHaveLength(4);
+        // The DALL·E entries were retired; only gpt-image- and the openai-images catch-all survive.
+        expect(desc.imageGeneration).toHaveLength(2);
         expect(desc.imageGeneration?.[0]).toMatchObject({
           modelPrefix: 'gpt-image-',
           format: 'openai-images',
@@ -74,21 +122,13 @@ describe('AiAssist.registry', () => {
           outputParamStyle: 'output-format'
         });
         expect(desc.imageGeneration?.[1]).toMatchObject({
-          modelPrefix: 'dall-e-3',
-          format: 'openai-images',
-          outputParamStyle: 'response-format'
-        });
-        expect(desc.imageGeneration?.[2]).toMatchObject({
-          modelPrefix: 'dall-e-2',
-          format: 'openai-images',
-          outputParamStyle: 'response-format'
-        });
-        expect(desc.imageGeneration?.[3]).toMatchObject({
           modelPrefix: '',
           format: 'openai-images',
           outputParamStyle: 'response-format'
         });
-        expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('dall-e-3');
+        // The default image model is now an alias that resolves to the surviving gpt-image id.
+        expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@openai:image');
+        expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gpt-image-1.5');
       });
     });
 
@@ -217,9 +257,9 @@ describe('AiAssist.registry', () => {
         acceptsImageReferenceInput: true,
         outputParamStyle: 'output-format'
       });
-      // dall-e-3 hits the dall-e-3 prefix → response-format style.
-      expect(AiAssist.resolveImageCapability(descriptor, 'dall-e-3')).toMatchObject({
-        modelPrefix: 'dall-e-3',
+      // any other openai image id falls to the catch-all → response-format style.
+      expect(AiAssist.resolveImageCapability(descriptor, 'some-legacy-image')).toMatchObject({
+        modelPrefix: '',
         format: 'openai-images',
         outputParamStyle: 'response-format'
       });
@@ -253,7 +293,10 @@ describe('AiAssist.registry', () => {
   describe('embedding registry entries', () => {
     test('openai declares a text-embedding-3 default and a dimensions-capable prefix', () => {
       expect(AiAssist.getProviderDescriptor('openai')).toSucceedAndSatisfy((desc) => {
-        expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('text-embedding-3-small');
+        expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('@openai:embedding');
+        expect(AiAssist.resolveProviderModel(desc, undefined, 'embedding')).toSucceedWith(
+          'text-embedding-3-small'
+        );
         expect(AiAssist.resolveEmbeddingCapability(desc, 'text-embedding-3-small')).toMatchObject({
           modelPrefix: 'text-embedding-3',
           format: 'openai-embeddings',

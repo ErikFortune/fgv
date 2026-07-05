@@ -171,7 +171,22 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.openai.com/v1',
-    defaultModel: { base: 'gpt-4o', image: 'dall-e-3', embedding: 'text-embedding-3-small' },
+    defaultModel: {
+      base: '@openai:mini', // gpt-5.4-mini (was 'gpt-4o' — EOL-behind)
+      advanced: '@openai:flagship', // gpt-5.5
+      frontier: '@openai:pro', // gpt-5.5-pro (may be access-gated — canary)
+      image: '@openai:image', // gpt-image-1.5 (was 'dall-e-3' — EOL 2026-05-12)
+      embedding: '@openai:embedding' // text-embedding-3-small (unchanged, aliased for uniformity)
+    },
+    aliases: {
+      '@openai:mini': 'gpt-5.4-mini', // base tier
+      '@openai:flagship': 'gpt-5.5', // advanced tier
+      '@openai:pro': 'gpt-5.5-pro', // frontier tier (may be access-gated — canary)
+      '@openai:nano': 'gpt-5.4-nano', // NON-tier alias; modelOverride only
+      '@openai:image': 'gpt-image-1.5', // image (matches the gpt-image- capability prefix)
+      '@openai:embedding': 'text-embedding-3-small' // NOT deprecated — aliased for uniformity
+      // NOTE: gpt-5.1 deliberately absent — retired March 2026.
+    },
     supportedTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
@@ -199,27 +214,6 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
         acceptedQualities: ['low', 'medium', 'high', 'auto'],
         maxCount: 10,
         outputParamStyle: 'output-format',
-        defaultOutputMimeType: 'image/png'
-      },
-      {
-        modelPrefix: 'dall-e-3',
-        format: 'openai-images',
-        acceptsImageReferenceInput: false,
-        acceptedSizes: ['1024x1024', '1792x1024', '1024x1792'],
-        supportsQualityParam: true,
-        acceptedQualities: ['standard', 'hd'],
-        maxCount: 1,
-        outputParamStyle: 'response-format',
-        defaultOutputMimeType: 'image/png'
-      },
-      {
-        modelPrefix: 'dall-e-2',
-        format: 'openai-images',
-        acceptsImageReferenceInput: false,
-        acceptedSizes: ['256x256', '512x512', '1024x1024'],
-        supportsQualityParam: false,
-        maxCount: 10,
-        outputParamStyle: 'response-format',
         defaultOutputMimeType: 'image/png'
       },
       {
@@ -416,7 +410,6 @@ export function resolveEmbeddingCapability(
 export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
   perProvider: {
     openai: [
-      { idPattern: /^dall-e/, capabilities: ['image-generation'] },
       { idPattern: /^gpt-image/, capabilities: ['image-generation'] },
       { idPattern: /^text-embedding/, capabilities: ['embedding'] },
       { idPattern: /^gpt-5/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },

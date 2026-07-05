@@ -54,7 +54,7 @@ function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IA
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.openai.com/v1',
-    defaultModel: { base: 'gpt-4o', image: 'dall-e-3' },
+    defaultModel: { base: 'gpt-4o', image: 'gpt-image-1' },
     supportedTools: [],
     corsRestricted: false,
     acceptsImageInput: true,
@@ -164,12 +164,12 @@ describe('callProviderImageGeneration — reference images', () => {
     });
 
     test('rejects when no capability rule matches the resolved model', async () => {
-      // Descriptor declares image generation, but only for `dall-e-*` models —
+      // Descriptor declares image generation, but only for `imagen-*` models —
       // there's no catch-all, and the requested model `gpt-image-1` doesn't
       // match the prefix.
       const descriptor = makeImageDescriptor({
         defaultModel: { base: 'gpt-4o', image: 'gpt-image-1' },
-        imageGeneration: [{ modelPrefix: 'dall-e-', format: 'openai-images' }]
+        imageGeneration: [{ modelPrefix: 'imagen-', format: 'openai-images' }]
       });
 
       const result = await AiAssist.callProviderImageGeneration({

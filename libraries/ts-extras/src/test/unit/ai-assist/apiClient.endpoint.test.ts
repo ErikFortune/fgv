@@ -56,7 +56,7 @@ function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IA
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.openai.com/v1',
-    defaultModel: { base: 'gpt-4o', image: 'dall-e-3' },
+    defaultModel: { base: 'gpt-4o', image: 'gpt-image-1' },
     supportedTools: [],
     corsRestricted: false,
     acceptsImageInput: true,

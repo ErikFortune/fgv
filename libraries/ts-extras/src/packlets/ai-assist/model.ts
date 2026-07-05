@@ -937,7 +937,7 @@ export interface IAiProviderDescriptor {
    *
    * Image-model selection reuses the existing `image` {@link ModelSpecKey}.
    * Providers that declare `imageGeneration` should declare a model in
-   * `defaultModel.image`, e.g. `{ base: 'gpt-4o', image: 'dall-e-3' }`.
+   * `defaultModel.image`, e.g. `{ base: '@openai:mini', image: '@openai:image' }`.
    */
   readonly imageGeneration?: ReadonlyArray<IAiImageModelCapability>;
   /**
@@ -952,7 +952,7 @@ export interface IAiProviderDescriptor {
    *
    * Embedding-model selection uses the `embedding` {@link ModelSpecKey}.
    * Providers that declare `embedding` should declare a model in
-   * `defaultModel.embedding`, e.g. `{ base: 'gpt-4o', embedding: 'text-embedding-3-small' }`.
+   * `defaultModel.embedding`, e.g. `{ base: '@openai:mini', embedding: '@openai:embedding' }`.
    * Self-hosted providers (`ollama`, `openai-compat`) leave it unset — the
    * caller supplies the embedding model via `modelOverride`.
    */
@@ -991,7 +991,7 @@ export interface IAiImageModelCapability {
   readonly maxCount?: number;
   /**
    * How to encode the output format on the wire:
-   * - 'response-format': send response_format: 'b64_json' (dall-e-2, dall-e-3)
+   * - 'response-format': send response_format: 'b64_json' (openai-images catch-all)
    * - 'output-format': send output_format (gpt-image-1)
    * - 'none': send neither (Gemini Flash)
    */
@@ -1130,32 +1130,20 @@ export interface IAiEmbeddingResult {
 // Image Generation — Layered Options Types
 // ============================================================================
 
-/** Pixel dimension sizes accepted by dall-e-2. @public */
-export type DallE2Size = '256x256' | '512x512' | '1024x1024';
-
-/** Pixel dimension sizes accepted by dall-e-3. @public */
-export type DallE3Size = '1024x1024' | '1792x1024' | '1024x1792';
-
 /** Pixel dimension sizes accepted by gpt-image-1. @public */
 export type GptImageSize = '1024x1024' | '1536x1024' | '1024x1536' | 'auto';
 
 /** All accepted image size strings across all providers. @public */
-export type AiImageSize = DallE2Size | DallE3Size | GptImageSize;
-
-/** Quality values for dall-e-3. @public */
-export type DallE3Quality = 'standard' | 'hd';
+export type AiImageSize = GptImageSize;
 
 /** Quality values for gpt-image-1. @public */
 export type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
 
 /** All accepted quality strings across all providers. @public */
-export type AiImageQuality = DallE3Quality | GptImageQuality;
-
-/** Model names in the DALL-E family. @public */
-export type DallEModelNames = 'dall-e-2' | 'dall-e-3';
+export type AiImageQuality = GptImageQuality;
 
 /** Model names in the GPT Image family. @public */
-export type GptImageModelNames = 'gpt-image-1';
+export type GptImageModelNames = 'gpt-image-1' | 'gpt-image-1.5';
 
 /** Model names in the xAI Grok Imagine family. @public */
 export type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality';
@@ -1164,21 +1152,6 @@ export type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-q
 export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image-preview';
 
 // ---- Family-level config shapes ----
-
-/**
- * Provider-specific config for DALL-E models (dall-e-2, dall-e-3).
- * @remarks
- * style is only valid for dall-e-3; the runtime validator rejects it for dall-e-2.
- * @public
- */
-export interface IDallEImageGenerationConfig {
-  /** Image dimensions (dall-e-2: 256x256|512x512|1024x1024; dall-e-3: 1024x1024|1792x1024|1024x1792). */
-  readonly size?: DallE2Size | DallE3Size;
-  /** dall-e-3 only. Quality tier. */
-  readonly quality?: DallE3Quality;
-  /** dall-e-3 only. Visual style. */
-  readonly style?: 'vivid' | 'natural';
-}
 
 /**
  * Provider-specific config for gpt-image-1.
@@ -1228,21 +1201,6 @@ export interface IGeminiFlashImageGenerationConfig {
  */
 export interface INamedModelFamilyConfig {
   readonly models?: readonly string[];
-}
-
-/**
- * Options block scoped to DALL-E family models.
- * @public
- */
-export interface IDallEModelOptions extends INamedModelFamilyConfig {
-  /** Discriminator: openai provider lineage. */
-  readonly provider: 'openai';
-  /** Family identifier. */
-  readonly family: 'dall-e';
-  /** Optional model names this block applies to. Omit = applies to all DALL-E models. */
-  readonly models?: DallEModelNames[];
-  /** Family-specific config. */
-  readonly config: IDallEImageGenerationConfig;
 }
 
 /**
@@ -1299,7 +1257,6 @@ export interface IOtherModelOptions {
  * @public
  */
 export type IModelFamilyConfig =
-  | IDallEModelOptions
   | IGptImageModelOptions
   | IGrokImagineModelOptions
   | IGeminiFlashImageModelOptions
@@ -1341,7 +1298,6 @@ export interface IAiImageGenerationOptions {
   readonly count?: number;
   /**
    * Quality tier. Accepted values differ per model:
-   * - dall-e-3: 'standard' | 'hd'
    * - gpt-image-1: 'low' | 'medium' | 'high' | 'auto'
    * Other models ignore this field.
    */
@@ -1499,7 +1455,9 @@ export type OpenAiThinkingModelNames =
   | 'gpt-5'
   | 'gpt-5.1'
   | 'gpt-5.2'
+  | 'gpt-5.4-mini'
   | 'gpt-5.5'
+  | 'gpt-5.5-pro'
   | 'gpt-5-pro';
 
 /**

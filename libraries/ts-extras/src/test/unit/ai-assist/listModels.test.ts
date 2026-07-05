@@ -54,7 +54,7 @@ function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IA
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.openai.com/v1',
-    defaultModel: { base: 'gpt-4o', image: 'dall-e-3' },
+    defaultModel: { base: 'gpt-4o', image: 'gpt-image-1' },
     supportedTools: [],
     corsRestricted: false,
     acceptsImageInput: true,
@@ -254,7 +254,7 @@ describe('callProviderListModels', () => {
 
   describe('openai apiFormat (config-derived capabilities)', () => {
     test('returns models with capabilities from default config', async () => {
-      mockFetchResponse(openAiListBody(['dall-e-3', 'gpt-4o', 'gpt-3.5-turbo']));
+      mockFetchResponse(openAiListBody(['gpt-image-1', 'gpt-4o', 'gpt-3.5-turbo']));
 
       const result = await AiAssist.callProviderListModels({
         descriptor: makeImageDescriptor(), // openai
@@ -263,7 +263,7 @@ describe('callProviderListModels', () => {
 
       expect(result).toSucceedAndSatisfy((models) => {
         const byId = new Map(models.map((m) => [m.id, m]));
-        expect(byId.get('dall-e-3')!.capabilities.has('image-generation')).toBe(true);
+        expect(byId.get('gpt-image-1')!.capabilities.has('image-generation')).toBe(true);
         expect(byId.get('gpt-4o')!.capabilities.has('chat')).toBe(true);
         expect(byId.get('gpt-4o')!.capabilities.has('vision')).toBe(true);
         expect(byId.get('gpt-3.5-turbo')!.capabilities.has('chat')).toBe(true);
@@ -272,7 +272,7 @@ describe('callProviderListModels', () => {
     });
 
     test('filters by requested capability', async () => {
-      mockFetchResponse(openAiListBody(['dall-e-3', 'gpt-image-1', 'gpt-4o', 'text-embedding-3-large']));
+      mockFetchResponse(openAiListBody(['gpt-image-1.5', 'gpt-image-1', 'gpt-4o', 'text-embedding-3-large']));
 
       const result = await AiAssist.callProviderListModels({
         descriptor: makeImageDescriptor(),
@@ -281,7 +281,7 @@ describe('callProviderListModels', () => {
       });
 
       expect(result).toSucceedAndSatisfy((models) => {
-        expect(models.map((m) => m.id).sort()).toEqual(['dall-e-3', 'gpt-image-1']);
+        expect(models.map((m) => m.id).sort()).toEqual(['gpt-image-1', 'gpt-image-1.5']);
       });
     });
 
@@ -683,9 +683,9 @@ describe('callProxiedListModels', () => {
     mockFetchResponse({
       models: [
         {
-          id: 'dall-e-3',
+          id: 'gpt-image-1.5',
           capabilities: ['image-generation'],
-          displayName: 'DALL·E 3'
+          displayName: 'GPT Image 1.5'
         },
         { id: 'gpt-4o', capabilities: ['chat', 'tools', 'vision'] }
       ]
@@ -698,10 +698,10 @@ describe('callProxiedListModels', () => {
 
     expect(result).toSucceedAndSatisfy((models) => {
       expect(models).toHaveLength(2);
-      expect(models[0].id).toBe('dall-e-3');
+      expect(models[0].id).toBe('gpt-image-1.5');
       expect(models[0].capabilities).toBeInstanceOf(Set);
       expect(models[0].capabilities.has('image-generation')).toBe(true);
-      expect(models[0].displayName).toBe('DALL·E 3');
+      expect(models[0].displayName).toBe('GPT Image 1.5');
       expect(models[1].displayName).toBeUndefined();
     });
 
