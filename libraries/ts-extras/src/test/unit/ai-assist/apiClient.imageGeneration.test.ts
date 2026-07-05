@@ -101,7 +101,7 @@ function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IA
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.openai.com/v1',
-    defaultModel: { base: 'gpt-4o', image: 'dall-e-3' },
+    defaultModel: { base: 'gpt-image-1', image: 'gpt-image-1' },
     supportedTools: [],
     corsRestricted: false,
     acceptsImageInput: true,
@@ -226,7 +226,7 @@ describe('callProviderImageGeneration', () => {
 
     test('resolves model with image context from default ModelSpec map', async () => {
       mockFetchResponse(openAiImageBody(['AAAA']));
-      const descriptor = makeImageDescriptor(); // defaultModel = { base: 'gpt-4o', image: 'dall-e-3' }
+      const descriptor = makeImageDescriptor(); // defaultModel = { base: 'gpt-image-1', image: 'gpt-image-1' }
 
       await AiAssist.callProviderImageGeneration({
         descriptor,
@@ -235,7 +235,7 @@ describe('callProviderImageGeneration', () => {
       });
 
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.model).toBe('dall-e-3');
+      expect(body.model).toBe('gpt-image-1');
     });
   });
 
@@ -307,7 +307,7 @@ describe('callProviderImageGeneration', () => {
       expect(fetchCall[1].headers['Authorization']).toBe('Bearer test-key');
       const body = JSON.parse(fetchCall[1].body);
       expect(body).toEqual({
-        model: 'dall-e-3',
+        model: 'gpt-image-1',
         prompt: 'a cat',
         n: 1,
         response_format: 'b64_json',
@@ -428,35 +428,6 @@ describe('callProviderImageGeneration', () => {
       expect(body.output_compression).toBe(80);
       expect(body.background).toBe('transparent');
       expect(body.moderation).toBe('low');
-    });
-
-    test('sends style from dall-e options block', async () => {
-      mockFetchResponse(openAiImageBody(['AAAA']));
-      const dallE3Descriptor = makeImageDescriptor({
-        imageGeneration: [
-          {
-            modelPrefix: '',
-            format: 'openai-images',
-            outputParamStyle: 'response-format',
-            supportsQualityParam: true,
-            defaultOutputMimeType: 'image/png'
-          }
-        ]
-      });
-
-      await AiAssist.callProviderImageGeneration({
-        descriptor: dallE3Descriptor,
-        apiKey: 'test-key',
-        params: {
-          prompt: 'a cat',
-          options: {
-            models: [{ provider: 'openai', family: 'dall-e', config: { style: 'vivid' } }]
-          }
-        }
-      });
-
-      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.style).toBe('vivid');
     });
 
     test('sends otherParams merged into request body', async () => {

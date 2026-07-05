@@ -60,20 +60,14 @@ declare namespace AiAssist {
         IAiImageData,
         AiImageSize,
         AiImageQuality,
-        DallE2Size,
-        DallE3Size,
         GptImageSize,
-        DallE3Quality,
         GptImageQuality,
-        DallEModelNames,
         GptImageModelNames,
         GrokImagineModelNames,
         GeminiFlashImageModelNames,
-        IDallEImageGenerationConfig,
         IGptImageGenerationConfig,
         IGrokImagineImageGenerationConfig,
         IGeminiFlashImageGenerationConfig,
-        IDallEModelOptions,
         IGptImageModelOptions,
         IGrokImagineModelOptions,
         IGeminiFlashImageModelOptions,
@@ -202,10 +196,10 @@ type AiEmbeddingTaskType = 'retrieval-query' | 'retrieval-document' | 'semantic-
 type AiImageApiFormat = 'openai-images' | 'xai-images' | 'xai-images-edits' | 'gemini-image-out';
 
 // @public
-type AiImageQuality = DallE3Quality | GptImageQuality;
+type AiImageQuality = GptImageQuality;
 
 // @public
-type AiImageSize = DallE2Size | DallE3Size | GptImageSize;
+type AiImageSize = GptImageSize;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -490,18 +484,6 @@ interface CsvOptions {
     delimiter?: string;
 }
 
-// @public
-type DallE2Size = '256x256' | '512x512' | '1024x1024';
-
-// @public
-type DallE3Quality = 'standard' | 'hd';
-
-// @public
-type DallE3Size = '1024x1024' | '1792x1024' | '1024x1792';
-
-// @public
-type DallEModelNames = 'dall-e-2' | 'dall-e-3';
-
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -718,7 +700,7 @@ function getProviderDescriptor(id: string): Result<IAiProviderDescriptor>;
 function getProviderDescriptors(): ReadonlyArray<IAiProviderDescriptor>;
 
 // @public
-type GptImageModelNames = 'gpt-image-1';
+type GptImageModelNames = 'gpt-image-1' | 'gpt-image-1.5';
 
 // @public
 type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
@@ -1208,23 +1190,6 @@ interface ICryptoProvider {
     wrapBytes(plaintext: Uint8Array, recipientPublicKey: CryptoKey, options: IWrapBytesOptions): Promise<Result<IWrappedBytes>>;
 }
 
-// @public
-interface IDallEImageGenerationConfig {
-    readonly quality?: DallE3Quality;
-    readonly size?: DallE2Size | DallE3Size;
-    readonly style?: 'vivid' | 'natural';
-}
-
-// Warning: (ae-forgotten-export) The symbol "INamedModelFamilyConfig" needs to be exported by the entry point index.d.ts
-//
-// @public
-interface IDallEModelOptions extends INamedModelFamilyConfig {
-    readonly config: IDallEImageGenerationConfig;
-    readonly family: 'dall-e';
-    readonly models?: DallEModelNames[];
-    readonly provider: 'openai';
-}
-
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "DirectEncryptionProvider"
 //
 // @public
@@ -1390,6 +1355,8 @@ interface IGptImageGenerationConfig {
     readonly size?: GptImageSize;
 }
 
+// Warning: (ae-forgotten-export) The symbol "INamedModelFamilyConfig" needs to be exported by the entry point index.d.ts
+//
 // @public
 interface IGptImageModelOptions extends INamedModelFamilyConfig {
     // (undocumented)
@@ -1575,7 +1542,7 @@ interface IModelAliasMap {
 }
 
 // @public
-type IModelFamilyConfig = IDallEModelOptions | IGptImageModelOptions | IGrokImagineModelOptions | IGeminiFlashImageModelOptions | IOtherModelOptions;
+type IModelFamilyConfig = IGptImageModelOptions | IGrokImagineModelOptions | IGeminiFlashImageModelOptions | IOtherModelOptions;
 
 // @public
 interface IModelSpecMap {
@@ -1756,8 +1723,6 @@ interface IResolvedImageOptions {
     readonly resolution?: string;
     readonly seed?: number;
     readonly size?: string;
-    // (undocumented)
-    readonly style?: string;
 }
 
 // @public
@@ -2192,7 +2157,7 @@ class NodeCryptoProvider implements ICryptoProvider {
 const nodeCryptoProvider: NodeCryptoProvider;
 
 // @public
-type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'o3-deep-research' | 'o4-mini-deep-research' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.5' | 'gpt-5-pro';
+type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'o3-deep-research' | 'o4-mini-deep-research' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.4-mini' | 'gpt-5.5' | 'gpt-5.5-pro' | 'gpt-5-pro';
 
 // @beta
 function parseCsvString(body: string, options?: CsvOptions): Result<unknown>;

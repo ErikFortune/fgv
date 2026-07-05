@@ -31,7 +31,6 @@ import type {
   IAiImageGenerationOptions,
   IModelFamilyConfig,
   INamedModelFamilyConfig,
-  IDallEModelOptions,
   IGptImageModelOptions,
   IGrokImagineModelOptions,
   IGeminiFlashImageModelOptions,
@@ -60,10 +59,6 @@ function providerLineageForFormat(format: string): 'openai' | 'xai' | 'google' |
 // ============================================================================
 // Type guards
 // ============================================================================
-
-function isDallEModelOptions(block: IModelFamilyConfig): block is IDallEModelOptions {
-  return block.provider === 'openai' && block.family === 'dall-e';
-}
 
 function isGptImageModelOptions(block: IModelFamilyConfig): block is IGptImageModelOptions {
   return block.provider === 'openai' && block.family === 'gpt-image';
@@ -99,8 +94,6 @@ export interface IResolvedImageOptions {
   readonly quality?: string;
   /** Seed for reproducibility. */
   readonly seed?: number;
-  // DallE-specific
-  readonly style?: string;
   // GptImage-specific
   readonly outputFormat?: string;
   readonly outputCompression?: number;
@@ -207,14 +200,6 @@ function isFamilyGenericBlock(block: IModelFamilyConfig): boolean {
 }
 
 function applyBlock(resolved: IResolvedImageOptions, block: IModelFamilyConfig): IResolvedImageOptions {
-  if (isDallEModelOptions(block)) {
-    return {
-      ...resolved,
-      ...(block.config.size !== undefined ? { size: block.config.size } : {}),
-      ...(block.config.quality !== undefined ? { quality: block.config.quality } : {}),
-      ...(block.config.style !== undefined ? { style: block.config.style } : {})
-    };
-  }
   if (isGptImageModelOptions(block)) {
     return {
       ...resolved,

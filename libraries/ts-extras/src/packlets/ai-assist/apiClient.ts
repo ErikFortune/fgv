@@ -1024,9 +1024,6 @@ function callOpenAiImagesGenerations(
   if (resolved.seed !== undefined) {
     body.seed = resolved.seed;
   }
-  if (resolved.style !== undefined) {
-    body.style = resolved.style;
-  }
   if (resolved.background !== undefined) {
     body.background = resolved.background;
   }

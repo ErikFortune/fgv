@@ -262,9 +262,12 @@ describe('alias layer resolution for built-in descriptors', () => {
     expect(AiAssist.resolveProviderModel(ollama, 'llama3.2:3b')).toSucceedWith('llama3.2:3b');
   });
 
-  test('only google-gemini defines an aliases map (Tier 2)', () => {
+  test('only google-gemini and openai define an aliases map (Tier 2)', () => {
+    // Gemini was migrated first; OpenAI adopted the alias layer in B2. Other
+    // providers still resolve raw ids and carry no aliases map.
+    const withAliases = new Set(['google-gemini', 'openai']);
     for (const descriptor of descriptors) {
-      if (descriptor.id === 'google-gemini') {
+      if (withAliases.has(descriptor.id)) {
         expect(descriptor.aliases).toBeDefined();
       } else {
         expect(descriptor.aliases).toBeUndefined();
