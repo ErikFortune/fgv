@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "ai-assist: Anthropic alias adoption + tier defaults (base=sonnet-5, advanced=opus-4-8) and claude-sonnet-/opus- thinking-capability broadening (B3)",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

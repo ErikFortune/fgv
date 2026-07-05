@@ -285,7 +285,7 @@ const allProviderIds: ReadonlyArray<AiProviderId>;
 function anthropicEffortToBudgetTokens(effort: NonNullable<IAnthropicThinkingConfig['effort']>): number;
 
 // @public
-type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-opus-4-6' | 'claude-opus-4-7';
+type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8';
 
 // @public
 const ARGON2ID_OWASP_MIN: IArgon2idParams;

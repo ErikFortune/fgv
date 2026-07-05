@@ -1435,13 +1435,20 @@ export interface IAiImageGenerationResponse {
 
 /**
  * Model IDs for Anthropic thinking-capable models.
+ *
+ * @remarks
+ * Only thinking-capable lines are listed. The non-tier `@anthropic:haiku` / `@anthropic:fable`
+ * aliases (reachable via `modelOverride` only) are deliberately omitted — they are not
+ * documented as thinking-capable, so naming them in a thinking-model filter would be misleading.
  * @public
  */
 export type AnthropicThinkingModelNames =
   | 'claude-sonnet-4-5'
   | 'claude-sonnet-4-6'
+  | 'claude-sonnet-5'
   | 'claude-opus-4-6'
-  | 'claude-opus-4-7';
+  | 'claude-opus-4-7'
+  | 'claude-opus-4-8';
 
 /**
  * Model IDs for OpenAI thinking-capable models.
