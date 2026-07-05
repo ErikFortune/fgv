@@ -20,9 +20,16 @@
  * SOFTWARE.
  */
 import { MessageLogLevel, Success, captureResult, succeed } from '../base';
-import { IDetailLogger, ILogger, ReporterLogLevel, isDetailLogger } from '../logging-interface';
+import {
+  IDetailLogger,
+  ILogger,
+  ReporterLogLevel,
+  allReporterLogLevels,
+  isDetailLogger,
+  reporterLogLevel
+} from '../logging-interface';
 
-export { isDetailLogger, ReporterLogLevel, ILogger, IDetailLogger };
+export { isDetailLogger, ReporterLogLevel, ILogger, IDetailLogger, allReporterLogLevels, reporterLogLevel };
 
 /**
  * Compares two log levels.

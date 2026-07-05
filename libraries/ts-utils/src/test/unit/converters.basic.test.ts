@@ -23,8 +23,8 @@
 import '../helpers/jest';
 
 import { Validation } from '../../index';
-import { fail, omit, Result, succeed } from '../../packlets/base';
-import { Converters, FieldConverters } from '../../packlets/conversion';
+import { allMessageLogLevels, fail, omit, Result, succeed } from '../../packlets/base';
+import { allOnError, Converters, FieldConverters } from '../../packlets/conversion';
 
 describe('Basic converters', () => {
   describe('string converter', () => {
@@ -94,6 +94,46 @@ describe('Basic converters', () => {
       [1, true, {}, (): string => 'hello', ['true']].forEach((v) => {
         expect(pie.convert(v)).toFailWith(/invalid enumerated/i);
       });
+    });
+  });
+
+  describe('messageLogLevel', () => {
+    test('has exactly the MessageLogLevel union values', () => {
+      expect(allMessageLogLevels).toEqual(['quiet', 'detail', 'info', 'warning', 'error']);
+    });
+
+    test('converts each valid MessageLogLevel value', () => {
+      allMessageLogLevels.forEach((level) => {
+        expect(Converters.messageLogLevel.convert(level)).toSucceedWith(level);
+      });
+    });
+
+    test('fails for an invalid string', () => {
+      expect(Converters.messageLogLevel.convert('not-a-level')).toFailWith(/invalid enumerated/i);
+    });
+
+    test('fails for a non-string value', () => {
+      expect(Converters.messageLogLevel.convert(123)).toFailWith(/invalid enumerated/i);
+    });
+  });
+
+  describe('onError', () => {
+    test('has exactly the OnError union values', () => {
+      expect(allOnError).toEqual(['failOnError', 'ignoreErrors']);
+    });
+
+    test('converts each valid OnError value', () => {
+      allOnError.forEach((value) => {
+        expect(Converters.onError.convert(value)).toSucceedWith(value);
+      });
+    });
+
+    test('fails for an invalid string', () => {
+      expect(Converters.onError.convert('not-an-onerror-value')).toFailWith(/invalid enumerated/i);
+    });
+
+    test('fails for a non-string value', () => {
+      expect(Converters.onError.convert(123)).toFailWith(/invalid enumerated/i);
     });
   });
 

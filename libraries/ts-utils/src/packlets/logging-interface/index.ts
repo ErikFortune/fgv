@@ -20,12 +20,48 @@
  * SOFTWARE.
  */
 import { MessageLogLevel, Success } from '../base';
+import { Converter, Converters } from '../conversion';
 
 /**
  * The level of logging to be used.
  * @public
  */
 export type ReporterLogLevel = 'all' | 'detail' | 'info' | 'warning' | 'error' | 'silent';
+
+// Untyped (literal-tuple-inferred) source of truth for allReporterLogLevels, kept separate from the
+// widened public export below so the exhaustiveness check actually inspects the literal values instead
+// of being widened away to {@link Logging.ReporterLogLevel | ReporterLogLevel} before the check runs.
+const reporterLogLevelValues = ['all', 'detail', 'info', 'warning', 'error', 'silent'] as const;
+
+/**
+ * Compile-time exhaustiveness guard ensuring {@link reporterLogLevelValues} exactly matches every member of
+ * {@link Logging.ReporterLogLevel | ReporterLogLevel}. Adding or removing a union member without updating the array fails the build.
+ * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
+ */
+type _ReporterLogLevelExhaustivenessCheck = [
+  Exclude<ReporterLogLevel, (typeof reporterLogLevelValues)[number]>,
+  Exclude<(typeof reporterLogLevelValues)[number], ReporterLogLevel>
+] extends [never, never]
+  ? true
+  : never;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _reporterLogLevelExhaustivenessCheck: _ReporterLogLevelExhaustivenessCheck = true;
+
+/**
+ * Exhaustive list of all {@link Logging.ReporterLogLevel | ReporterLogLevel} values.
+ * @public
+ */
+export const allReporterLogLevels: readonly ReporterLogLevel[] = reporterLogLevelValues;
+
+/**
+ * A ready-made {@link Converter | Converter} for {@link Logging.ReporterLogLevel | ReporterLogLevel} values.
+ * @public
+ */
+export const reporterLogLevel: Converter<
+  ReporterLogLevel,
+  ReadonlyArray<ReporterLogLevel>
+> = Converters.enumeratedValue<ReporterLogLevel>(allReporterLogLevels);
 
 /**
  * Generic Result-aware logger interface with multiple levels of logging.

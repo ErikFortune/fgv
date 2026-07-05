@@ -27,6 +27,32 @@ import { Brand, Result, Success } from '../base';
  */
 export type OnError = 'failOnError' | 'ignoreErrors';
 
+// Untyped (literal-tuple-inferred) source of truth for allOnError, kept separate from the widened
+// public export below so the exhaustiveness check actually inspects the literal values instead of
+// being widened away to {@link Conversion.OnError | OnError} before the check runs.
+const onErrorValues = ['failOnError', 'ignoreErrors'] as const;
+
+/**
+ * Compile-time exhaustiveness guard ensuring {@link onErrorValues} exactly matches every member of
+ * {@link Conversion.OnError | OnError}. Adding or removing a union member without updating the array fails the build.
+ * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
+ */
+type _OnErrorExhaustivenessCheck = [
+  Exclude<OnError, (typeof onErrorValues)[number]>,
+  Exclude<(typeof onErrorValues)[number], OnError>
+] extends [never, never]
+  ? true
+  : never;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _onErrorExhaustivenessCheck: _OnErrorExhaustivenessCheck = true;
+
+/**
+ * Exhaustive list of all {@link Conversion.OnError | OnError} values.
+ * @public
+ */
+export const allOnError: readonly OnError[] = onErrorValues;
+
 /**
  * Converter traits.
  * @public

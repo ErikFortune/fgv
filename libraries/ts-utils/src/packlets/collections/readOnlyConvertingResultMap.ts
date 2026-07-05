@@ -21,6 +21,7 @@
  */
 
 import { captureResult, DetailedResult, failWithDetail, Result, succeedWithDetail } from '../base';
+import { Converter, Converters } from '../conversion';
 import { ILogger } from '../logging-interface';
 import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
@@ -42,6 +43,43 @@ export type ConvertingResultMapValueConverter<TK extends string, TSRC, TTARGET> 
  * @public
  */
 export type ConversionErrorHandling = 'ignore' | 'warn' | 'fail';
+
+// Untyped (literal-tuple-inferred) source of truth for allConversionErrorHandling, kept separate from
+// the widened public export below so the exhaustiveness check actually inspects the literal values
+// instead of being widened away to {@link Collections.ConversionErrorHandling | ConversionErrorHandling} before the check runs.
+const conversionErrorHandlingValues = ['ignore', 'warn', 'fail'] as const;
+
+/**
+ * Compile-time exhaustiveness guard ensuring {@link conversionErrorHandlingValues} exactly matches every
+ * member of {@link Collections.ConversionErrorHandling | ConversionErrorHandling}. Adding or removing a
+ * union member without updating the array fails the build.
+ * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
+ */
+type _ConversionErrorHandlingExhaustivenessCheck = [
+  Exclude<ConversionErrorHandling, (typeof conversionErrorHandlingValues)[number]>,
+  Exclude<(typeof conversionErrorHandlingValues)[number], ConversionErrorHandling>
+] extends [never, never]
+  ? true
+  : never;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _conversionErrorHandlingExhaustivenessCheck: _ConversionErrorHandlingExhaustivenessCheck = true;
+
+/**
+ * Exhaustive list of all {@link Collections.ConversionErrorHandling | ConversionErrorHandling} values.
+ * @public
+ */
+export const allConversionErrorHandling: readonly ConversionErrorHandling[] = conversionErrorHandlingValues;
+
+/**
+ * A ready-made {@link Converter | Converter} for
+ * {@link Collections.ConversionErrorHandling | ConversionErrorHandling} values.
+ * @public
+ */
+export const conversionErrorHandling: Converter<
+  ConversionErrorHandling,
+  ReadonlyArray<ConversionErrorHandling>
+> = Converters.enumeratedValue<ConversionErrorHandling>(allConversionErrorHandling);
 
 /**
  * Parameters for constructing a {@link Collections.ReadOnlyConvertingResultMap | ReadOnlyConvertingResultMap}.

@@ -110,6 +110,32 @@ export interface IResultLogger<TD = unknown> {
  */
 export type MessageLogLevel = 'quiet' | 'detail' | 'info' | 'warning' | 'error';
 
+// Untyped (literal-tuple-inferred) source of truth for allMessageLogLevels, kept separate from the
+// widened public export below so the exhaustiveness check actually inspects the literal values instead
+// of being widened away to `MessageLogLevel` before the check runs.
+const messageLogLevelValues = ['quiet', 'detail', 'info', 'warning', 'error'] as const;
+
+/**
+ * Compile-time exhaustiveness guard ensuring {@link messageLogLevelValues} exactly matches every member of
+ * {@link MessageLogLevel}. Adding or removing a union member without updating the array fails the build.
+ * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
+ */
+type _MessageLogLevelExhaustivenessCheck = [
+  Exclude<MessageLogLevel, (typeof messageLogLevelValues)[number]>,
+  Exclude<(typeof messageLogLevelValues)[number], MessageLogLevel>
+] extends [never, never]
+  ? true
+  : never;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _messageLogLevelExhaustivenessCheck: _MessageLogLevelExhaustivenessCheck = true;
+
+/**
+ * Exhaustive list of all {@link MessageLogLevel} values.
+ * @public
+ */
+export const allMessageLogLevels: readonly MessageLogLevel[] = messageLogLevelValues;
+
 /**
  * Details for reporting a message.
  * @public
