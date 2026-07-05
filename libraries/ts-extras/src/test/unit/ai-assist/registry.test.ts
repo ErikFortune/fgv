@@ -128,6 +128,52 @@ describe('AiAssist.registry', () => {
     });
   });
 
+  describe('google-gemini model tiers (B4)', () => {
+    const desc = AiAssist.getProviderDescriptor('google-gemini').orThrow();
+
+    test('base tier resolves to gemini-3.5-flash', () => {
+      // undefined context falls to base; explicit 'base' resolves identically.
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('gemini-3.5-flash');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gemini-3.5-flash');
+    });
+
+    test('advanced tier resolves to gemini-3.1-pro-preview (reuses the @google-gemini:pro alias)', () => {
+      expect(AiAssist.resolveModel(desc.defaultModel, 'advanced')).toBe('@google-gemini:pro');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith(
+        'gemini-3.1-pro-preview'
+      );
+    });
+
+    test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
+      // The Gemini map deliberately omits a frontier key, so a frontier request must
+      // cascade frontier → advanced → pro. This is the real registry descriptor, so it is
+      // the live proof of the cascade against the shipped Gemini defaults.
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith(
+        'gemini-3.1-pro-preview'
+      );
+    });
+
+    test('image tier is unchanged by the advanced-key addition', () => {
+      expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@google-gemini:flash-image');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith(
+        'gemini-3.1-flash-image-preview'
+      );
+    });
+
+    test('embedding tier is unchanged by the advanced-key addition', () => {
+      expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('@google-gemini:embedding');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'embedding')).toSucceedWith(
+        'gemini-embedding-001'
+      );
+    });
+
+    test('the non-tier @google-gemini:flash-lite alias resolves via modelOverride only', () => {
+      expect(AiAssist.resolveProviderModel(desc, '@google-gemini:flash-lite', undefined)).toSucceedWith(
+        'gemini-3.1-flash-lite'
+      );
+    });
+  });
+
   describe('getProviderDescriptor', () => {
     test('returns descriptor for known provider', () => {
       expect(AiAssist.getProviderDescriptor('xai-grok')).toSucceedAndSatisfy((desc) => {
