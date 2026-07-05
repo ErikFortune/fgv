@@ -350,6 +350,34 @@ describe('callProviderListModels', () => {
       });
     });
 
+    test('classifies claude-sonnet-5 as thinking-capable via the broadened idPattern (B3)', async () => {
+      // Guards the required Q5 fix: /^claude-sonnet-4/ was broadened to /^claude-sonnet-/ so the
+      // sonnet-5 base default accumulates the thinking capability. Without the broadening,
+      // claude-sonnet-5 would hit only /^claude-/ (chat/tools/vision, no thinking).
+      mockFetchResponse(anthropicListBody([{ id: 'claude-sonnet-5' }, { id: 'claude-opus-4-8' }]));
+
+      const result = await AiAssist.callProviderListModels({
+        descriptor: makeDescriptor({
+          id: 'anthropic',
+          apiFormat: 'anthropic',
+          baseUrl: 'https://api.anthropic.com/v1'
+        }),
+        apiKey: 'test-key'
+      });
+
+      expect(result).toSucceedAndSatisfy((models) => {
+        const byId = new Map(models.map((m) => [m.id, m]));
+        const sonnet = byId.get('claude-sonnet-5')!;
+        expect(sonnet.capabilities.has('chat')).toBe(true);
+        expect(sonnet.capabilities.has('tools')).toBe(true);
+        expect(sonnet.capabilities.has('vision')).toBe(true);
+        expect(sonnet.capabilities.has('thinking')).toBe(true);
+        // The parallel opus broadening keeps claude-opus-4-8 thinking-capable too.
+        const opus = byId.get('claude-opus-4-8')!;
+        expect(opus.capabilities.has('thinking')).toBe(true);
+      });
+    });
+
     test('uses x-api-key auth header', async () => {
       mockFetchResponse(anthropicListBody([{ id: 'claude-1' }]));
 

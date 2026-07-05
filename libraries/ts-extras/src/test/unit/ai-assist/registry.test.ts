@@ -89,6 +89,45 @@ describe('AiAssist.registry', () => {
     });
   });
 
+  describe('anthropic model tiers (B3)', () => {
+    const desc = AiAssist.getProviderDescriptor('anthropic').orThrow();
+
+    test('base tier resolves to claude-sonnet-5', () => {
+      // undefined context falls to base; explicit 'base' resolves identically.
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('claude-sonnet-5');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('claude-sonnet-5');
+    });
+
+    test('advanced tier resolves to claude-opus-4-8', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('claude-opus-4-8');
+    });
+
+    test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
+      // The Anthropic map deliberately omits a frontier key, so a frontier request must
+      // cascade frontier → advanced → opus. This is the real registry descriptor (not a
+      // synthetic one), so it is the live proof of the cascade against shipped defaults.
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('claude-opus-4-8');
+    });
+
+    test('the non-tier @anthropic:haiku alias resolves via modelOverride only', () => {
+      expect(AiAssist.resolveProviderModel(desc, '@anthropic:haiku', undefined)).toSucceedWith(
+        'claude-haiku-4-5-20251001'
+      );
+    });
+
+    test('the non-tier @anthropic:fable alias resolves via modelOverride only', () => {
+      expect(AiAssist.resolveProviderModel(desc, '@anthropic:fable', undefined)).toSucceedWith(
+        'claude-fable-5'
+      );
+    });
+
+    test('a raw modelOverride passes through verbatim (no alias resolution)', () => {
+      expect(AiAssist.resolveProviderModel(desc, 'claude-custom-tuned:v1', 'advanced')).toSucceedWith(
+        'claude-custom-tuned:v1'
+      );
+    });
+  });
+
   describe('getProviderDescriptor', () => {
     test('returns descriptor for known provider', () => {
       expect(AiAssist.getProviderDescriptor('xai-grok')).toSucceedAndSatisfy((desc) => {

@@ -63,7 +63,20 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'anthropic',
     baseUrl: 'https://api.anthropic.com/v1',
-    defaultModel: 'claude-sonnet-4-5-20250929',
+    defaultModel: {
+      base: '@anthropic:sonnet', // claude-sonnet-5 (was 'claude-sonnet-4-5-20250929')
+      advanced: '@anthropic:opus' // claude-opus-4-8
+      // no frontier key → a frontier request cascades advanced → opus (see resolveModel)
+    },
+    aliases: {
+      '@anthropic:sonnet': 'claude-sonnet-5', // base tier
+      '@anthropic:opus': 'claude-opus-4-8', // advanced tier
+      '@anthropic:haiku': 'claude-haiku-4-5-20251001', // NON-tier alias; modelOverride only
+      '@anthropic:fable': 'claude-fable-5' // NON-tier alias; modelOverride only
+      // NOTE: no thinking/image/embedding keys — Anthropic completions are all text; base
+      // (sonnet-5) and advanced (opus-4-8) are both thinking-capable, so a thinking-context
+      // call flat-falls to base safely.
+    },
     supportedTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
@@ -435,8 +448,13 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
       { idPattern: /^gemini-/, capabilities: ['chat', 'tools', 'vision'] }
     ],
     anthropic: [
-      { idPattern: /^claude-opus-4/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
-      { idPattern: /^claude-sonnet-4/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      // Broadened from /^claude-opus-4/ and /^claude-sonnet-4/ so the sonnet-5+ / opus-5+ lines
+      // are detected as thinking-capable. Detection accumulates across matching rules, so this is
+      // purely additive: every existing opus-4 / sonnet-4 id still matches. The sonnet broadening
+      // is required (claude-sonnet-5 otherwise hits only /^claude-/ and loses thinking); the opus
+      // broadening is future-proofing (claude-opus-4-8 already matches /^claude-opus-4/).
+      { idPattern: /^claude-opus-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      { idPattern: /^claude-sonnet-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^claude-/, capabilities: ['chat', 'tools', 'vision'] }
     ],
     groq: [{ idPattern: /./, capabilities: ['chat'] }],
