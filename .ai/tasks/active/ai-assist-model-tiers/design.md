@@ -9,6 +9,12 @@ Builds directly on the shipped alias layer (`.ai/tasks/completed/2026-06/ai-assi
 is already migrated (`registry.ts:80-96`). This design adds **one new axis** (quality tiers) on top of
 that layer and **adopts** the layer for OpenAI + Anthropic.
 
+**Revision note (composition):** per a locked user decision, quality tiers are the *only* completion-model
+selector; thinking and tools are orthogonal request params/capabilities and never select a model. This
+replaces the earlier "modality overrides tier" competition scoping and removes `thinking`/`tools` from
+`ModelSpecKey`. Q1, Q3, Q4, Q6, Q7 reflect this; Q2 (cascade), Q5 (capability audit), Q8 (canary) are
+unchanged except where the composition model ripples.
+
 ---
 
 ## 0. Context — what exists today
@@ -44,40 +50,68 @@ Provider descriptors today:
 
 ---
 
-## Q1 — `ModelSpecKey` extension
+## Q1 — `ModelSpecKey` revision (tiers in, `thinking`/`tools` out)
 
-**Recommendation: add `'advanced' | 'frontier'` to the `ModelSpecKey` union (`model.ts:461`) and append
-both to `allModelSpecKeys` (`model.ts:467-473`). Purely additive; no consumer breaks.**
+**Recommendation: replace the completion-selecting members. Add `'advanced' | 'frontier'`; REMOVE
+`'thinking' | 'tools'`. New enum (`model.ts:461`) and `allModelSpecKeys` (`model.ts:467-473`):**
 
 ```typescript
 // model.ts:461 — after
-export type ModelSpecKey = 'base' | 'advanced' | 'frontier' | 'tools' | 'image' | 'thinking' | 'embedding';
+export type ModelSpecKey = 'base' | 'advanced' | 'frontier' | 'image' | 'embedding';
 
 // model.ts:467 — after
 export const allModelSpecKeys: ReadonlyArray<ModelSpecKey> = [
-  'base', 'advanced', 'frontier', 'tools', 'image', 'thinking', 'embedding'
+  'base', 'advanced', 'frontier', 'image', 'embedding'
 ];
 ```
 
-**Why it's safe — every consumer audited:**
+Rationale for the removal (see Q3 for the full argument): under **composition** (the locked model),
+thinking and tools are *not* model-selectors — thinking is a per-request API param and tools are a
+capability. They never belonged in the selection vocabulary; keeping them invites the exact
+tier-vs-modality competition Q3 removes. The remaining keys are the two things that genuinely pick a
+*different model*: the quality tier (`base`/`advanced`/`frontier`) and the two non-completion modalities
+(`image`/`embedding`). `MODEL_SPEC_BASE_KEY = 'base'` (`model.ts:479`) is unchanged — `base` remains the
+required floor and universal fallback.
 
-1. **`modelSpecKey` converter (`converters.ts:150-151`)** is `Converters.enumeratedValue<ModelSpecKey>(allModelSpecKeys)`
-   — data-driven off `allModelSpecKeys`. Adding the two values makes the converter *accept* `advanced`/`frontier`
-   keys automatically; it never rejects previously-valid input. A consumer config
-   (`IAiAssistProviderConfig.model`, `converters.ts:183`) may now legally carry tier keys, and existing configs
-   (which have none) are unaffected.
-2. **`modelSpec` recursive converter (`converters.ts:160-169`)** constrains map keys via
-   `Converters.recordOf(self, { keyConverter: modelSpecKey })` (`converters.ts:164`) — inherits the same
-   data-driven behavior. *(Minor doc drift: the fallback error string at `converters.ts:166` enumerates
-   "base, tools, image" — a P3 cosmetic update to list the new keys; not load-bearing.)*
-3. **No `switch` over `ModelSpecKey`** exists in the packlet — the only consumers are `index.ts:77-80`
-   (re-export), `converters.ts:39-40` (the two converters above), and `resolveProviderModel`'s `context`
-   param (`model.ts:652`). `grep` for `ModelSpecKey` returns exactly these sites; none is an exhaustive
-   switch that a new member would silently break.
-4. `MODEL_SPEC_BASE_KEY` (`model.ts:479`) is unchanged — `base` remains the required floor and the
-   universal fallback.
+**This is a breaking narrowing on the alpha surface (user-confirmed OK).** Full consumer re-audit:
 
-There is **no exhaustiveness obligation** anywhere, so the union widening is a pure addition.
+1. **`resolveModel` context is typed `string`, not `ModelSpecKey`** (`model.ts:527`). So arbitrary string
+   keys still resolve — the cascade table (Q2) special-cases only the tier keys and falls to `?? [context]`
+   for anything else. The existing `resolveModel` tests that pass `'tools'` as a context/spec key
+   (`model.test.ts:79-108`) still **compile and pass** (they exercise arbitrary-key lookup, which is
+   preserved). Optional P3 cleanup: retarget those illustrative `'tools'` keys to a surviving key so the
+   tests don't read as if `tools` were still a spec key.
+2. **`resolveProviderModel` context IS typed `ModelSpecKey`** (`model.ts:652`). Two kinds of call site break
+   and must change in lockstep with the enum (folded into B1, Q7):
+   - The two completion/streaming chokepoints derive `modelContext` as
+     `hasThinkingConfig ? 'thinking' : hasTools ? 'tools' : undefined` (`apiClient.ts:714`,
+     `streamingClient.ts:131`) and pass it at `apiClient.ts:716` / `streamingClient.ts:133`. After removal
+     the `'thinking'`/`'tools'` literals no longer type-check — but these lines are **rewritten by Q3**
+     (the branches are deleted). Image (`apiClient.ts:1242`, literal `'image'`) and embedding
+     (`embeddingClient.ts:394`, literal `'embedding'`) are untouched.
+   - **Test:** `modelAlias.test.ts:152` calls `resolveProviderModel(descriptor, undefined, 'tools')` —
+     a compile error after narrowing. Retarget `'tools'` → a surviving key (e.g. `'advanced'`), and the
+     paired descriptor literal `{ base:'gpt-4o', tools:'gpt-4o-tools' }` (`modelAlias.test.ts:150,159`)
+     accordingly.
+3. **The converters stop accepting the removed keys** (this is the intended data-driven behavior):
+   `modelSpecKey = Converters.enumeratedValue<ModelSpecKey>(allModelSpecKeys)` (`converters.ts:150-151`) and
+   `modelSpec` via `Converters.recordOf(self, { keyConverter: modelSpecKey })` (`converters.ts:164`). A
+   consumer config (`IAiAssistProviderConfig.model`, `converters.ts:183`) carrying a `thinking`/`tools`
+   model-spec key would now **fail conversion** — the deliberate break. **Tests that break:**
+   `model.test.ts:133` and `model.test.ts:139-144` assert `modelSpec.convert({ base, tools })` *succeeds*;
+   after narrowing they fail. Retarget the `tools` key to a surviving key (`advanced`/`image`).
+   `model.test.ts:168` (`convert({ base:'ok', tools:123 })` expecting *failure*) still passes but should be
+   retargeted for intent (it now fails on the key, not the value). *(The error string at `converters.ts:166`
+   enumerates "base, tools, image" — update it to the new key set as part of the same edit.)*
+4. **Descriptor object literals with `thinking`/`tools` keys still type-check but become dead data.**
+   `IModelSpecMap` is keyed by `string` (`model.ts:503-505`), so the Gemini `thinking` key
+   (`registry.ts:82`) and xAI `tools`/`thinking` keys (`registry.ts:258-259`) do not produce type errors —
+   they are simply never selected once no tier/modality context maps to them. They are stripped in B1 (Q4).
+5. **No `switch` over `ModelSpecKey`** exists (only `index.ts:77-80` re-export, `converters.ts:39-40`, and
+   the `resolveProviderModel` param), so the narrowing cannot silently break an exhaustive switch.
+
+The net breaking surface is: consumer configs using `thinking`/`tools` as *model-spec keys* (none known
+in-repo; alpha surface), plus the enumerated test retargets above.
 
 ---
 
@@ -107,7 +141,7 @@ export function resolveModel(spec: ModelSpec, context?: string): string {
   }
   // Ordered candidate keys for this context:
   //  - a tier key → its cascade (frontier→advanced→base, advanced→base)
-  //  - any other key (tools/image/thinking/embedding) → just [context]
+  //  - any other key (image/embedding, or an arbitrary string) → just [context]
   //  - undefined → [] (falls straight to the base step below — unchanged)
   const order: ReadonlyArray<string> =
     context === undefined ? [] : (TIER_FALLBACK[context] ?? [context]);
@@ -134,7 +168,8 @@ export function resolveModel(spec: ModelSpec, context?: string): string {
   This is exactly the locked semantics (brief §2).
 - **Modality keys are unchanged.** For `context === 'image'` the order is `['image']`; the loop finds
   `image` or falls to the *existing* trailing `base` step — byte-for-byte the current behavior
-  (`model.ts:533-539`). Same for `tools`/`thinking`/`embedding`.
+  (`model.ts:533-539`). Same for `embedding`. (Arbitrary non-tier string keys resolve identically via the
+  `?? [context]` branch, preserving `resolveModel`'s current behavior for any caller-supplied key.)
 - **`undefined` context is unchanged.** Order is `[]`; control drops straight to the trailing `base` step —
   identical to today. Every current non-tool/non-thinking completion (`apiClient.ts:714` yields `undefined`)
   resolves `base` exactly as now.
@@ -167,52 +202,77 @@ key-presence probe — reintroducing exactly the branching the table removes. Pu
 
 ---
 
-## Q3 — Tier × modality interaction (scoping)
+## Q3 — Composition, not competition (thinking/tools are orthogonal to tier)
 
-**Confirmed v1 decision: combining a tier with a modality (e.g. "the frontier *thinking* model") is OUT OF
-SCOPE. Tiers select the text-completion default; modality keys select their modality; the cascade applies
-only among the three tier keys. State this explicitly; the forward path is a 2-D context, noted below.**
+**Locked decision (user): the earlier "modality overrides tier" scoping is WRONG — asking for `advanced`
+while thinking is on silently dropped the tier, which is confusing. Replace competition with composition:
+the requested tier (or `base`) selects the completion model; thinking and tools NEVER participate in model
+selection. Thinking stays a per-request API param (unchanged wire behavior); tools stay a capability. The
+two axes are fully orthogonal.**
 
-### Why this is forced, not just chosen
+### The three axes, kept separate
 
-`resolveModel`/`resolveProviderModel` take a **single** `context: ModelSpecKey` (`model.ts:652`). Tiers and
-modality keys are peers in one flat enum (Q1), so a caller selects exactly one. More concretely, the
-completion/streaming chokepoint already derives a **single** `modelContext` and modality already claims it:
+| Axis | What it does | Where it lives | Touched here? |
+|---|---|---|---|
+| **Quality tier** (`base`/`advanced`/`frontier`) | selects *which completion model* | `ModelSpecKey` + cascade (Q1/Q2) | yes — new |
+| **Thinking** (reasoning effort) | a per-request param sent to the API | `thinking` config → wire field, unchanged | no |
+| **Tools** (server-side tools) | a capability + a per-request tool list | `supportedTools` / request `tools[]`; `idPattern` detection (`registry.ts:419-465`) | no |
+
+The tier axis is the *only* completion-model selector. Thinking and tools are request-shaping/ capability
+concerns that ride *on top of* whatever model the tier picked.
+
+### Why composition needs no capability-driven routing anywhere (load-bearing)
+
+The reason competition ever seemed necessary was fear that a thinking request might land on a
+non-reasoning model. Under the new tier defaults that cannot happen — **every base model is
+thinking-capable**, so thinking composes with *any* tier with zero capability checks:
+
+- **OpenAI** base `gpt-5.4-mini` → `/^gpt-5/` grants `thinking` (`registry.ts:425`).
+- **Gemini** base `gemini-3.5-flash` → `/^gemini-3/` grants `thinking` (`registry.ts:443`).
+- **Anthropic** base `claude-sonnet-5` → `claude-sonnet-*` grants `thinking` (`registry.ts:449`, after the
+  Q5 `/^claude-sonnet-4/ → /^claude-sonnet-/` broadening that fixes the sonnet-5 detection gap).
+
+So a `base + thinking` completion resolves to the cheap base model and simply sends the thinking param to
+it; `advanced + thinking` resolves to the advanced model and sends the same param. No branch anywhere asks
+"is this model thinking-capable?" to pick a model — the capability/`idPattern` axis (Q5) is **detection
+only** and is explicitly NOT a model-selection input. *(Calling this out to prevent conflating the two axes:
+`idPattern` classifies ids a provider's list endpoint returns; it never routes a completion.)*
+
+### Chokepoint wiring — delete the modality-selection branches
+
+The completion/streaming context collapses to the tier alone. The `hasThinkingConfig ? 'thinking' :
+hasTools ? 'tools'` selection branches (`apiClient.ts:714`, `streamingClient.ts:131`) are **deleted**:
 
 ```typescript
-const modelContext = hasThinkingConfig ? 'thinking' : hasTools ? 'tools' : undefined;  // apiClient.ts:714
+// BEFORE (apiClient.ts:714 / streamingClient.ts:131)
+const modelContext = hasThinkingConfig ? 'thinking' : hasTools ? 'tools' : undefined;
+
+// AFTER — tier drives selection; thinking/tools no longer select anything
+const modelContext = params.tier ?? undefined;   // 'advanced' | 'frontier' | undefined (→ base)
 ```
 
-There is no room in this expression for a second axis. Making "frontier thinking" work would require
-`modelContext` to become a *pair* (tier × modality) and `resolveModel` to do a 2-D lookup — a materially
-larger change than the locked scope.
+`params.tier` is a new caller-facing field on the completion/streaming params (added in B1, Q7). The
+thinking config is still read and still sent to the API exactly as today — only its role as a *model
+selector* is removed. Image (`apiClient.ts:1242`) and embedding (`embeddingClient.ts:394`) are untouched
+(they pass their literal modality context).
 
-### The v1 wiring (illustrative — the resolver already supports it; the entry-point param is Phase B)
+### The one intended behavior change: Gemini thinking moves pro → flash at base tier
 
-The resolver designed in Q2 already accepts `context='advanced'|'frontier'`. What's missing is a
-caller-facing way to *request* a tier. The v1 plumbing gives **modality precedence** and lets the tier
-select the plain-completion default:
+Today Gemini has an explicit `thinking: '@google-gemini:pro'` key (`registry.ts:82`), so *any* thinking
+call resolves to Pro. Under composition that key is removed (Q4) and a `base + thinking` call resolves to
+`base = @google-gemini:flash` (cheap flash), while `advanced + thinking` resolves to
+`advanced = @google-gemini:pro`. This is the **intended, more-consistent** behavior: the old pro-for-all-
+thinking was a *preference* baked into selection, not a necessity (flash 3.5 is thinking-capable,
+`registry.ts:443`). Callers who want Pro reasoning now ask for the `advanced` tier explicitly — the same
+knob they use for every other provider. No other provider's thinking behavior changes (Q6 audit): OpenAI
+and Anthropic have no `thinking` key today, and xAI's redundant `thinking` key targets the same model as
+`base` (Q4).
 
-```typescript
-// illustrative Phase-B change at apiClient.ts:714 / streamingClient.ts:131
-const modelContext =
-  hasThinkingConfig ? 'thinking'
-  : hasTools        ? 'tools'
-  : (params.tier ?? undefined);   // 'advanced' | 'frontier' | undefined; only bites for plain completions
-```
+### No forward-path caveat needed
 
-This yields precisely the locked semantics: a bare completion with `tier: 'frontier'` resolves the frontier
-cascade; a *thinking* or *tools* call ignores the tier (modality wins) and resolves its modality key with
-the flat `→ base` fallback. Because base is now itself a strong reasoning-capable model (Q4/Q5), the
-thinking-falls-back-to-base path is safe — it no longer repeats the `gpt-4o`-not-reasoning-capable mistake
-that drove the testbed to bypass the default (alias design §0; `docs/FUTURE.md:118`).
-
-### Forward path (if combination is ever needed)
-
-Promote `context` to a structured `{ tier?: TierKey; modality?: ModalityKey }` and give `resolveModel` a
-two-stage lookup (modality branch first, tier cascade within it). That is a clean additive evolution — the
-tier cascade table (Q2) is reusable as the inner walk — but it is explicitly **not** v1. No current or
-planned consumer needs "frontier thinking"; the four chokepoints each map to one axis.
+Because thinking/tools are orthogonal params rather than competing selectors, "frontier + thinking" is
+just a frontier-tier completion with the thinking param set — already expressible, no 2-D context, no
+future work. The competition problem is dissolved rather than deferred.
 
 ---
 
@@ -282,28 +342,50 @@ aliases: {
 No `thinking`/`image`/`embedding` keys: Anthropic completions are all text; base (sonnet-5) and advanced
 (opus-4-8) are both thinking-capable, so a `thinking`-context call flat-falls to base safely.
 
-### Gemini (extend existing block)
+### Gemini (extend existing block; strip the now-dead `thinking` key)
 
-Aliases already carry `flash` and `pro` (`registry.ts:91-92`) — **no new alias entries needed**. The
-extension is one `defaultModel` key: add `advanced` pointing at the existing `pro` alias (which already
-serves `thinking`, `registry.ts:82`). Frontier stays unset → cascades to advanced = pro.
+Aliases already carry `flash` and `pro` (`registry.ts:91-92`) — **no new alias entries needed**. Two
+`defaultModel` edits: (1) add `advanced` pointing at the existing `pro` alias; (2) **remove the `thinking`
+key** (`registry.ts:82`) — under composition (Q3) it no longer selects a model. Frontier stays unset →
+cascades to advanced = pro.
 
 ```typescript
 // google-gemini descriptor defaultModel (registry.ts:80-85) — after
 defaultModel: {
   base:      '@google-gemini:flash',
   advanced:  '@google-gemini:pro',        // NEW — reuses the existing pro alias (registry.ts:92)
-  thinking:  '@google-gemini:pro',        // unchanged
   image:     '@google-gemini:flash-image',
   embedding: '@google-gemini:embedding'
-  // no frontier → cascades advanced→pro
+  // 'thinking' key REMOVED; no frontier → cascades advanced→pro
 }
 // aliases block (registry.ts:86-96) unchanged
 ```
 
-*(The brief's phrase "extend Gemini's alias block with tier entries" resolves to this single `defaultModel`
-key — Gemini's roles already exist, so no alias-map addition is required. Called out so the implementer
-doesn't add a redundant `@google-gemini:advanced` alias.)*
+Effect (the Q3 intended change): `base + thinking` now resolves to flash (cheap), `advanced + thinking`
+to pro. No redundant `@google-gemini:advanced` alias is added — the roles already exist.
+
+### Full descriptor audit — every `defaultModel` with a `thinking`/`tools` key
+
+The enum narrowing (Q1) means any `thinking`/`tools` key in *any* descriptor becomes dead and must be
+stripped in B1 — not just the three providers in alias-adoption scope. Complete audit of all nine
+descriptors (`registry.ts:44-290`):
+
+| Descriptor | `defaultModel` today | Has `thinking`/`tools` key? | Action / completion-behavior change |
+|---|---|---|---|
+| copy-paste (`registry.ts:52`) | `''` (bare) | no | none |
+| anthropic (`registry.ts:66`) | `'claude-sonnet-4-5-20250929'` (bare) | no | replaced by tiered map (Q4); new map omits thinking/tools |
+| google-gemini (`registry.ts:80-85`) | `{ base, thinking, image, embedding }` | **yes — `thinking`** (`registry.ts:82`) | **strip `thinking`.** Behavior change: `base + thinking` moves pro→flash (Q3) |
+| groq (`registry.ts:131`) | `'llama-3.3-70b-versatile'` (bare) | no | none |
+| mistral (`registry.ts:145`) | `{ base, embedding }` | no | none |
+| ollama (`registry.ts:160`) | `''` (bare) | no | none |
+| openai (`registry.ts:175`) | `{ base, image, embedding }` | no | replaced by tiered map (Q4); new map omits thinking/tools |
+| openai-compat (`registry.ts:241`) | `''` (bare) | no | none |
+| xai-grok (`registry.ts:256-261`) | `{ base:'grok-4.3', tools:'grok-4.3', thinking:'grok-4.3', image }` | **yes — `tools` + `thinking`** (`registry.ts:258-259`) | **strip both.** **No behavior change:** both targeted `grok-4.3`, identical to `base` (`registry.ts:257`), so a tools/thinking completion already resolved to grok-4.3 and still does via the base fallback |
+
+**Only two descriptors carry the keys: Gemini (behavior changes, intended) and xAI (behavior-neutral,
+redundant keys).** xAI is **not** in alias-adoption scope, but it shares the enum, so its dead keys are
+stripped in B1 as pure cleanup — verified safe because they duplicated `base`. The proposed OpenAI and
+Anthropic maps (Q4 above) already omit any `thinking`/`tools` key, confirmed.
 
 ### Resulting cross-provider tier table (all via the alias layer)
 
@@ -374,26 +456,54 @@ standing tech-debt); it does only what the five new ids require to classify corr
 
 ## Q6 — Back-compat analysis
 
-**Bare-string `defaultModel` and base-only maps behave exactly as today; the sole intentional break is the
-dead dall-e capability removal, on the active surface.**
+**Bare-string `defaultModel` and base-only maps behave exactly as today. There are now TWO intentional
+breaks on the active/alpha surface: (a) the `ModelSpecKey` narrowing (removing `thinking`/`tools`), and
+(b) the dead DALL·E capability removal.**
 
 ### What is provably unchanged
 
-- **Bare-string spec** (e.g. today's Anthropic `'claude-sonnet-4-5-20250929'`, `registry.ts:66`; groq
-  `registry.ts:131`; the empty-string self-hosted defaults `registry.ts:52,160,241`): `resolveModel`
-  returns the string at the first line (`model.ts:528-530`) regardless of context — the cascade table is
-  never consulted. Identical to today.
-- **Base-only map, no tier requested:** `context` is a modality or `undefined`; the cascade table only fires
-  for tier keys, so resolution falls to the existing `base` step (Q2). Identical.
+- **Bare-string specs** (copy-paste `registry.ts:52`, anthropic `registry.ts:66` pre-adoption, groq
+  `registry.ts:131`, ollama `registry.ts:160`, openai-compat `registry.ts:241`): `resolveModel` returns the
+  string at its first line (`model.ts:528-530`) regardless of context — cascade table and enum never
+  consulted. Identical.
+- **Base-only / modality-only maps, no tier requested:** context is a surviving modality or `undefined`;
+  falls to the existing `base` step (Q2). Identical.
+- **Arbitrary string keys via `resolveModel`:** its context is `string`-typed (`model.ts:527`), so any
+  caller-supplied key still resolves via the `?? [context]` branch — the `resolveModel` behavior for
+  non-tier keys is unchanged (Q1 item 1).
+
 - **Base-only map, tier requested:** cascade walks `[frontier,advanced,base]`, only `base` present → returns
   base. This is *new input* (no caller passes a tier today) resolving to the safe floor — additive, not a
   behavior change to any existing call.
 - **Alias layer:** untouched. Raw ids still pass through `resolveModelAlias` verbatim (`model.ts:588-590`);
   `@`-prefixed strings still resolve or fail loudly. Every current `modelOverride` and self-hosted
   `model:tag` id is unaffected.
-- **`ModelSpecKey` widening (Q1):** no exhaustive switch exists; the converter only gains acceptance.
+- **Completion behavior across descriptors:** unchanged for every descriptor **except Gemini** — see the
+  per-descriptor list below.
 
-### The one intentional break — dead DALL·E capability removal
+### Descriptors whose completion behavior changes (from the `thinking`/`tools`-key removal)
+
+Per the full audit in Q4, only two descriptors carry a `thinking`/`tools` key, and only one changes:
+
+- **google-gemini** — the removed `thinking` key (`registry.ts:82`) previously routed *all* thinking calls
+  to Pro. Now `base + thinking` → flash, `advanced + thinking` → pro. **Intended change** (Q3).
+- **xai-grok** — the removed `tools`/`thinking` keys (`registry.ts:258-259`) both targeted `grok-4.3`,
+  identical to `base` (`registry.ts:257`). Stripping them leaves resolution at the base fallback = grok-4.3.
+  **No behavior change.**
+
+All seven other descriptors have no such key (bare strings or `{ base, image, embedding }`-shape maps) and
+resolve completions exactly as today.
+
+### Intentional break 1 — `ModelSpecKey` narrowing (removing `thinking`/`tools`)
+
+Removing two members of a public union is a breaking type change. On the alpha surface this is accepted
+(user-confirmed). Blast radius (full detail in Q1): consumer configs using `thinking`/`tools` as
+*model-spec keys* now fail `modelSpec` conversion (`converters.ts:150-164`); the completion/streaming
+chokepoints (`apiClient.ts:714`, `streamingClient.ts:131`) and the enumerated tests
+(`model.test.ts:133,139-144,168`; `modelAlias.test.ts:150-159`) are updated in lockstep in B1. No in-repo
+consumer config uses these keys. **api-extractor regenerated** to reflect the narrowed union.
+
+### Intentional break 2 — dead DALL·E capability removal
 
 DALL·E 2/3 support ended **2026-05-12** (brief §5) and nothing resolves to a `dall-e-*` id after the OpenAI
 `image` default advances to `@openai:image → gpt-image-1.5` (Q4). Mirroring the shipped Gemini Imagen
@@ -423,26 +533,41 @@ type change beyond the capability entries. Two dispositions:
   capability entries + `DallEModelNames`/`IDallEModelOptions` (the routing surface). Surface this to the
   orchestrator if the grep finds such a consumer.
 
-No other export is removed or renamed. All new public surface (`advanced`/`frontier` in the union, the new
-alias entries, the `*ModelNames` additions) is additive; **api-extractor must be regenerated** to reflect
-the union widening, the tier keys, and the dall-e deletions.
+Beyond the two intentional breaks, no other export is removed or renamed. The remaining new public surface
+(the new alias entries, the `*ModelNames` additions) is additive. **api-extractor must be regenerated** to
+reflect the `ModelSpecKey` narrowing (break 1), the tier keys, and the DALL·E deletions (break 2).
 
 ---
 
 ## Q7 — Tiered Phase-B implementation plan
 
-Sliced so each slice is independently buildable, testable, and reviewable, with its own gates. B1 is
-provider-agnostic and ships **no behavior change to any default**; B2–B4 adopt per provider.
+Sliced so each slice is independently buildable, testable, and reviewable, with its own gates. B1 is the
+provider-agnostic axis change (it carries the composition rewire and the xAI/Gemini dead-key strip because
+those are coupled to the enum); B2–B4 adopt per provider.
 
-**B1 — tier axis + cascade resolver (generic; no registry/default change).**
-- `ModelSpecKey` + `allModelSpecKeys` gain `advanced`/`frontier` (Q1); update the `converters.ts:166`
-  error string.
-- `resolveModel` gains the `TIER_FALLBACK` cascade (Q2).
-- Tests: every Q2 edge-case row; base-only-map + tier → base; modality keys unchanged; nested-spec tier;
-  alias-valued tier resolves downstream; `undefined` context unchanged. Converter accepts tier keys;
-  rejects unknown keys.
+**B1 — tier axis + composition rewire (the coupled enum/resolver/chokepoint change).**
+- `ModelSpecKey` + `allModelSpecKeys`: **add** `advanced`/`frontier`, **remove** `thinking`/`tools` (Q1);
+  update the `converters.ts:166` error string to the new key set.
+- `resolveModel` gains the `TIER_FALLBACK` cascade (Q2). *(Cascade table unchanged by this revision — it
+  still governs `frontier→advanced→base`; only the enum membership shrank.)*
+- **Composition chokepoint change (Q3):** at `apiClient.ts:714` and `streamingClient.ts:131`, delete the
+  `hasThinkingConfig ? 'thinking' : hasTools ? 'tools'` selection branches; `modelContext` becomes
+  `params.tier ?? undefined`. Add a caller-facing `tier?: 'advanced' | 'frontier'` field to the completion
+  and streaming params (the request-facing input that drives selection). Thinking config is still read and
+  sent to the wire unchanged.
+- **Strip dead `thinking`/`tools` keys from all descriptors (Q4 audit):** Gemini `thinking` key
+  (`registry.ts:82`); xAI `tools` + `thinking` keys (`registry.ts:258-259`). *(The Gemini `advanced` key is
+  added in B4 with its docs/canary; the bare removal happens here so the enum and the registry never
+  disagree mid-slice. xAI strip is behavior-neutral cleanup.)*
+- Tests: Q2 edge cases; base-only-map + tier → base; nested-spec tier; alias-valued tier resolves
+  downstream; `undefined`/arbitrary-string context unchanged; converter **rejects** `thinking`/`tools`
+  keys, accepts tier keys. **Retarget the breaking tests** (`model.test.ts:133,139-144,168`;
+  `modelAlias.test.ts:150-159`) off the removed keys. Add a test that a `base + thinking` completion
+  resolves the base model (composition — thinking does not upgrade the tier) and Gemini `base + thinking` →
+  flash.
 - Gates: build, **lint** (load-bearing per `CODING_STANDARDS.md`), test @ 100% coverage, `fixlint`,
-  api-extractor. **Proves the axis is inert until a `defaultModel` uses it.**
+  api-extractor (reflects the narrowed union). **Proves composition end-to-end before any provider adopts
+  tiers.**
 
 **B2 — OpenAI adopt + advance + dall-e retirement.**
 - Add the OpenAI `aliases` block; switch `defaultModel` to the tiered map (Q4).
@@ -464,9 +589,11 @@ provider-agnostic and ships **no behavior change to any default**; B2–B4 adopt
 
 **B4 — Gemini extend + docs + canary.**
 - Add the single `advanced: '@google-gemini:pro'` `defaultModel` key (Q4); confirm no alias-map change.
+  *(The Gemini `thinking` key was already removed in B1 with the enum change — B4 only adds `advanced`.)*
 - Docs: update the packlet README maintenance section (`registry.ts:79-81`) and the `LIBRARY_CAPABILITIES.md`
-  ai-assist entry with the tier axis + cascade; note the tier×modality v1 scoping (Q3).
-- Tests: Gemini advanced=pro; frontier cascades to pro.
+  ai-assist entry with the tier axis + cascade; state the **composition model (Q3)** — thinking/tools are
+  orthogonal request params, not model-selectors — and the enum narrowing.
+- Tests: Gemini advanced=pro; frontier cascades to pro; `base + thinking` → flash (the intended change).
 - Run the per-provider live canary (Q8). Gates as B1 **plus** a green canary.
 
 *(B2/B3/B4 are independent after B1 and may parallelize; B1 is the hard prerequisite for all three.)*
@@ -488,10 +615,13 @@ body, and log the resolved concrete id:
 |---|---|---|---|---|
 | OpenAI | gpt-5.4-mini | gpt-5.5 | gpt-5.5-pro | + image scenario resolves `@openai:image → gpt-image-1.5` |
 | Anthropic | claude-sonnet-5 | claude-opus-4-8 | *(cascades → opus-4-8)* | assert frontier request logs the **advanced** id (cascade proof) |
-| Gemini | gemini-3.5-flash | gemini-3.1-pro-preview | *(cascades → pro)* | already-live base/thinking; advanced is the new assertion |
+| Gemini | gemini-3.5-flash | gemini-3.1-pro-preview | *(cascades → pro)* | advanced is the new assertion; add a `base + thinking` scenario asserting it resolves **flash** (the intended pro→flash composition change) |
 
 Each scenario emits, e.g., `logger.info('resolved @openai:pro -> gpt-5.5-pro')` so the run self-documents the
-alias hop (matching the shipped `@google-gemini:flash -> …` log line).
+alias hop (matching the shipped `@google-gemini:flash -> …` log line). Add at least one **composition**
+assertion — a `base + thinking` completion that resolves the *base* concrete id (not an upgraded model) and
+still returns a thinking response — so the live run proves thinking rides on top of the tier rather than
+selecting a model.
 
 ### Flagged risk IDs (canary must confirm, not assume)
 
@@ -527,3 +657,9 @@ No locked decision proved unworkable. The cascade composes cleanly with nested s
 2. **`gpt-image-1.5` and `gpt-5.5-pro` may be access-gated** on the canary key (Q8). These are live-access
    risks, not design risks; the canary plan treats a resolver-correct + access-denied outcome as a
    documented *blocked* line, not a failure.
+3. **The composition rewrite touches xAI, which is not in alias-adoption scope.** B1 strips xAI's redundant
+   `tools`/`thinking` `defaultModel` keys (`registry.ts:258-259`) because they share the narrowed enum. The
+   strip is verified behavior-neutral (both targeted `grok-4.3` = base), but it is an edit to a
+   non-adoption-scope descriptor — flagged so the orchestrator expects the xAI diff in B1. The
+   `ModelSpecKey` narrowing itself is a breaking union change, accepted on the alpha surface per the locked
+   decision.
