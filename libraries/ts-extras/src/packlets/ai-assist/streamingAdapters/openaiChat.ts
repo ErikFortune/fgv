@@ -170,13 +170,12 @@ export async function callOpenAiChatStream(
     body.reasoning_effort = effort;
   }
   // Temperature is sent only when the caller explicitly provided one; omitting it lets the
-  // provider apply its own default (current-gen models reject a caller-supplied default). The
-  // effort gate is a safety net for the (unguarded) client-tool path, which can supply thinking +
-  // temperature together — thinking (non-'none') suppresses temperature on the wire.
-  if (effort === undefined || effort === 'none') {
-    if (temperature !== undefined) {
-      body.temperature = temperature;
-    }
+  // provider apply its own default (current-gen models reject a caller-supplied default). This
+  // adapter is reached only via the conflict-guarded streaming entry point — the client-tool path
+  // routes OpenAI through the Responses adapter, not chat — so, like callOpenAiCompletion, no
+  // effort gate is needed: temperature is present here only when the effort is undefined/'none'.
+  if (temperature !== undefined) {
+    body.temperature = temperature;
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
