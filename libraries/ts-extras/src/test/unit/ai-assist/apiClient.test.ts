@@ -470,6 +470,20 @@ describe('callProviderCompletion', () => {
       ]);
     });
 
+    test('omits temperature when the caller does not provide one', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest()
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      // No default temperature is injected — gpt-5.5 rejects a non-default temperature.
+      expect(body.temperature).toBeUndefined();
+    });
+
     test('includes additional messages', async () => {
       mockFetchResponse(openAiResponse('ok'));
 
@@ -562,6 +576,22 @@ describe('callProviderCompletion', () => {
       expect(body.system).toBe('You are a helpful assistant');
       expect(body.messages[0]).toEqual({ role: 'user', content: 'Generate a recipe' });
       expect(body.max_tokens).toBe(4096);
+      // No default temperature is injected — Claude-5 rejects any temperature value.
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('includes temperature only when explicitly provided', async () => {
+      mockFetchResponse(anthropicResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        temperature: 0.4
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.temperature).toBe(0.4);
     });
 
     test('filters system role from additional messages', async () => {
@@ -693,7 +723,22 @@ describe('callProviderCompletion', () => {
       const body = JSON.parse(fetchCall[1].body);
       expect(body.systemInstruction).toEqual({ parts: [{ text: 'You are a helpful assistant' }] });
       expect(body.contents[0]).toEqual({ role: 'user', parts: [{ text: 'Generate a recipe' }] });
-      expect(body.generationConfig.temperature).toBe(0.7);
+      // No default temperature is injected — the key is omitted so Gemini's default applies.
+      expect(body.generationConfig.temperature).toBeUndefined();
+    });
+
+    test('includes temperature in generationConfig only when explicitly provided', async () => {
+      mockFetchResponse(geminiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        temperature: 0.2
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.generationConfig.temperature).toBe(0.2);
     });
 
     test('maps assistant role to model and filters system', async () => {
@@ -778,6 +823,29 @@ describe('callProviderCompletion', () => {
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
       expect(body.tools).toEqual([{ type: 'web_search' }]);
       expect(body.input).toBeDefined();
+    });
+
+    test('omits temperature by default and includes it only when explicitly provided (Responses API)', async () => {
+      mockFetchResponse(responsesApiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools
+      });
+      const omitted = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(omitted.temperature).toBeUndefined();
+
+      mockFetchResponse(responsesApiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools,
+        temperature: 0.6
+      });
+      const explicit = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+      expect(explicit.temperature).toBe(0.6);
     });
 
     test('tools no longer select a model — resolves base under composition', async () => {

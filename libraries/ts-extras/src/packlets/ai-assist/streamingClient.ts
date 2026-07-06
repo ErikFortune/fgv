@@ -151,8 +151,6 @@ export async function callProviderCompletionStream(
     }
   }
 
-  const effectiveTemperature = temperature ?? 0.7;
-
   const config: IStreamApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
@@ -167,43 +165,17 @@ export async function callProviderCompletionStream(
           prompt,
           tools,
           head,
-          effectiveTemperature,
+          temperature,
           logger,
           signal,
           resolvedThinking
         );
       }
-      return callOpenAiChatStream(
-        config,
-        prompt,
-        head,
-        effectiveTemperature,
-        logger,
-        signal,
-        resolvedThinking
-      );
+      return callOpenAiChatStream(config, prompt, head, temperature, logger, signal, resolvedThinking);
     case 'anthropic':
-      return callAnthropicStream(
-        config,
-        prompt,
-        head,
-        effectiveTemperature,
-        tools,
-        logger,
-        signal,
-        resolvedThinking
-      );
+      return callAnthropicStream(config, prompt, head, temperature, tools, logger, signal, resolvedThinking);
     case 'gemini':
-      return callGeminiStream(
-        config,
-        prompt,
-        head,
-        effectiveTemperature,
-        tools,
-        logger,
-        signal,
-        resolvedThinking
-      );
+      return callGeminiStream(config, prompt, head, temperature, tools, logger, signal, resolvedThinking);
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;
