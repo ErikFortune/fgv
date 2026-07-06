@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "disable flaky ts-sudoku-ui tests",
+      "type": "none",
+      "packageName": "@fgv/ts-sudoku-ui"
+    }
+  ],
+  "packageName": "@fgv/ts-sudoku-ui",
+  "email": "noreply@anthropic.com"
+}
