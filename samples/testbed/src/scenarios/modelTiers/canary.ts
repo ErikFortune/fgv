@@ -86,12 +86,13 @@ export type TierLiveOutcome =
   /** Resolver correct, but the key lacks access (401/403 or org-verification) — canary-blocked, not a failure. */
   | 'access-gated'
   /**
-   * Resolver + id correct, but the model rejected a request **parameter** the default completion
-   * path always sends (e.g. `temperature` deprecated on the Claude-5 family, or unsupported at
-   * `0.7` on GPT-5.5). This is a completion-path/parameter incompatibility, NOT a resolver or id
-   * problem — surfaced as BLOCKED so it is not conflated with a stale alias. The underlying gap is
-   * a real ai-assist finding (the default `temperature` breaks current-gen models) escalated to the
-   * orchestrator; it is out of the tier resolver's scope.
+   * Resolver + id correct, but the model rejected an explicitly-supplied request **parameter**
+   * (e.g. a caller-provided `temperature`, which the Claude-5 family rejects outright and GPT-5.5
+   * rejects at non-default values). This is a completion-path/parameter incompatibility, NOT a
+   * resolver or id problem — surfaced as BLOCKED so it is not conflated with a stale alias. The
+   * default completion path no longer injects `temperature` (fixed in B5: it is sent only when the
+   * caller explicitly provides one), so a keyed run with a minimal request does not hit this; it
+   * remains a classification for an explicitly-incompatible param.
    */
   | 'param-rejected'
   /**
