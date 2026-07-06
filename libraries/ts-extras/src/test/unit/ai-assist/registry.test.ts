@@ -55,19 +55,18 @@ describe('AiAssist.registry', () => {
       expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('gpt-5.5');
     });
 
-    test('frontier tier resolves to gpt-5.5-pro', () => {
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('gpt-5.5-pro');
+    test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
+      // The OpenAI map deliberately omits a frontier key — gpt-5.5-pro is a Responses-API-only
+      // model, uninvokable via chat completions, so a frontier request must cascade
+      // frontier → advanced → gpt-5.5, matching Anthropic/Gemini. This is the real registry
+      // descriptor (B5 frontier drop), the live proof of the cascade against shipped defaults.
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('gpt-5.5');
     });
 
-    test('frontier cascades to the advanced id when no frontier key is present', () => {
-      // A synthetic OpenAI-shaped descriptor whose tiered map omits frontier — a
-      // frontier request must cascade frontier → advanced (→ base), reusing the
-      // real aliases block spread from the descriptor.
-      const noFrontier: AiAssist.IAiProviderDescriptor = {
-        ...desc,
-        defaultModel: { base: '@openai:mini', advanced: '@openai:flagship' }
-      };
-      expect(AiAssist.resolveProviderModel(noFrontier, undefined, 'frontier')).toSucceedWith('gpt-5.5');
+    test('the @openai:pro alias is still reachable via modelOverride (Responses-only frontier)', () => {
+      // The alias is retained (dropped only from the tier map) for modelOverride / future
+      // Responses routing — see docs/FUTURE.md "OpenAI frontier via Responses routing".
+      expect(AiAssist.resolveProviderModel(desc, '@openai:pro', undefined)).toSucceedWith('gpt-5.5-pro');
     });
 
     test('image default resolves @openai:image → gpt-image-1.5 and routes via the gpt-image- capability', () => {

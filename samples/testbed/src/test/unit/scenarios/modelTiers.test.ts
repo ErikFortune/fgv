@@ -53,13 +53,15 @@ function pong(): Result<AiAssist.IAiCompletionResponse> {
 // ---------------------------------------------------------------------------
 
 describe('resolveTierResolutions', () => {
-  test('resolves all three OpenAI tiers to their concrete ids (no cascade — all keys present)', () => {
+  test('resolves OpenAI base/advanced directly and cascades frontier → advanced (gpt-5.5)', () => {
+    // gpt-5.5-pro is Responses-API-only, so the OpenAI defaultModel omits a frontier key (B5 drop):
+    // a frontier request cascades frontier → advanced → gpt-5.5, matching Anthropic/Gemini.
     expect(resolveTierResolutions(openai, ['base', 'advanced', 'frontier'])).toSucceedAndSatisfy(
       (resolutions) => {
         expect(resolutions).toEqual([
           { tier: 'base', alias: '@openai:mini', concrete: 'gpt-5.4-mini', cascaded: false },
           { tier: 'advanced', alias: '@openai:flagship', concrete: 'gpt-5.5', cascaded: false },
-          { tier: 'frontier', alias: '@openai:pro', concrete: 'gpt-5.5-pro', cascaded: false }
+          { tier: 'frontier', alias: '@openai:flagship', concrete: 'gpt-5.5', cascaded: true }
         ]);
       }
     );
@@ -119,6 +121,20 @@ describe('classifyLiveFailure', () => {
     expect(classifyLiveFailure('AI API returned 401: unauthorized')).toBe('access-gated');
     expect(classifyLiveFailure('your organization must be verified to use gpt-image-1.5')).toBe(
       'access-gated'
+    );
+  });
+
+  test('does NOT green-wash a TLS/certificate verification failure as access-gated', () => {
+    // A cert/network "verification" error carries no access meaning and no 401/403 — the tightened
+    // gate must classify it as `error`, not `access-gated` (which would hide a real transport
+    // failure behind a BLOCKED line). Guards against a bare /verif/i match.
+    expect(
+      classifyLiveFailure(
+        'AI API request failed: certificate verification failed (unable to get local issuer certificate)'
+      )
+    ).toBe('error');
+    expect(classifyLiveFailure('TLS handshake error: self-signed certificate verification error')).toBe(
+      'error'
     );
   });
 
@@ -241,7 +257,8 @@ describe('runTierCanary (live — injected completion)', () => {
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/LIVE-VERIFIED/);
       expect(report).toMatch(/\[PASS\] base\s+gpt-5\.4-mini/);
-      expect(report).toMatch(/\[PASS\] frontier\s+gpt-5\.5-pro/);
+      // frontier cascades to advanced (gpt-5.5) after the B5 frontier drop.
+      expect(report).toMatch(/\[PASS\] frontier\s+gpt-5\.5(?!-pro)/);
     });
   });
 
@@ -257,7 +274,7 @@ describe('runTierCanary (live — injected completion)', () => {
     );
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/LIVE BLOCKED/);
-      expect(report).toMatch(/\[BLOCKED\(access\)\] frontier\s+gpt-5\.5-pro\s+\(AI API returned 403/);
+      expect(report).toMatch(/\[BLOCKED\(access\)\] frontier\s+gpt-5\.5(?!-pro)\s+\(AI API returned 403/);
     });
   });
 
@@ -279,7 +296,10 @@ describe('runTierCanary (live — injected completion)', () => {
   });
 
   test('a non-chat-completions id is a real failure tagged FAIL(endpoint) (not a stale id)', async () => {
-    // Mirrors the observed live OpenAI frontier result: gpt-5.5-pro is not a chat model.
+    // Exercises the wrong-endpoint → FAILED verdict wiring (the classifier itself is unit-tested
+    // above). gpt-5.5-pro — the Responses-API-only model whose "not a chat model" 404 motivated
+    // this outcome — is now modelOverride-only after the B5 frontier drop, so the frontier tier
+    // resolves to gpt-5.5; the wiring is driven here via an injected wrong-endpoint failure.
     const deps: ITierCanaryDeps = {
       complete: async (tier: CanaryTier) =>
         tier === 'frontier'
@@ -295,7 +315,7 @@ describe('runTierCanary (live — injected completion)', () => {
       new Logging.InMemoryLogger()
     );
     expect(result).toFailWith(/FAILED — a tier is not chat-completions-callable/);
-    expect(result).toFailWith(/\[FAIL\(endpoint\)\] frontier\s+gpt-5\.5-pro/);
+    expect(result).toFailWith(/\[FAIL\(endpoint\)\] frontier\s+gpt-5\.5(?!-pro)/);
   });
 
   test('a 404 on a tier is a real failure (id-wrong — stale alias value)', async () => {
@@ -317,7 +337,7 @@ describe('runTierCanary (live — injected completion)', () => {
       complete: async () => succeed({ content: '   ', truncated: false })
     };
     const result = await runTierCanary(
-      { providerId: 'gemini', descriptor: gemini, tiers: ['base'] },
+      { providerId: 'google-gemini', descriptor: gemini, tiers: ['base'] },
       deps,
       new Logging.InMemoryLogger()
     );
@@ -327,7 +347,7 @@ describe('runTierCanary (live — injected completion)', () => {
   test('a generic live failure is an error failure', async () => {
     const deps: ITierCanaryDeps = { complete: async () => fail('network boom') };
     const result = await runTierCanary(
-      { providerId: 'gemini', descriptor: gemini, tiers: ['base'] },
+      { providerId: 'google-gemini', descriptor: gemini, tiers: ['base'] },
       deps,
       new Logging.InMemoryLogger()
     );

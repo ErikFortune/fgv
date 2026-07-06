@@ -22,7 +22,7 @@
 
 /**
  * Shared model-tier canary logic for the per-provider tier scenarios
- * (`openai-model-tiers`, `anthropic-model-tiers`, `gemini-model-tiers`).
+ * (`openai-model-tiers`, `anthropic-model-tiers`, `google-gemini-model-tiers`).
  *
  * The canary has two halves, separated so the deterministic half is fully unit-testable
  * without any network access (the `mcpProbe` deps-injection pattern):
@@ -83,7 +83,7 @@ export interface ITierResolution {
 export type TierLiveOutcome =
   /** HTTP 200 + non-empty body: resolver correct AND the id answers. */
   | 'live-pass'
-  /** Resolver correct, but the key lacks access (401/403/verification) — canary-blocked, not a failure. */
+  /** Resolver correct, but the key lacks access (401/403 or org-verification) — canary-blocked, not a failure. */
   | 'access-gated'
   /**
    * Resolver + id correct, but the model rejected a request **parameter** the default completion
@@ -200,9 +200,15 @@ export function resolveTierResolutions(
 }
 
 /**
- * Classifies a live-completion failure message into a {@link TierLiveOutcome}. An auth/verification
- * status (401/403 or a "verif…" message) is `access-gated` (resolver correct, key lacks access);
- * a 404 / unknown-model is `id-wrong` (the alias value is stale); anything else is `error`.
+ * Classifies a live-completion failure message into a {@link TierLiveOutcome}. A real access signal
+ * — an HTTP 401/403, or a specific organization-verification phrase — is `access-gated` (resolver
+ * correct, key lacks access); a 404 / unknown-model is `id-wrong` (the alias value is stale);
+ * anything else is `error`.
+ *
+ * The access-gated gate deliberately does NOT match a bare `/verif/i`: a TLS/certificate
+ * "verification failed" error carries no access meaning, and green-washing it as `access-gated`
+ * would hide a real transport failure behind a BLOCKED line. Such an error (no 401/403, no
+ * org-verification phrase) falls through to `error`.
  * @public
  */
 export function classifyLiveFailure(message: string): TierLiveOutcome {
@@ -223,7 +229,14 @@ export function classifyLiveFailure(message: string): TierLiveOutcome {
   }
   const statusMatch = message.match(/returned (\d{3})/);
   const status = statusMatch ? Number(statusMatch[1]) : undefined;
-  if (status === 401 || status === 403 || /verif/i.test(message)) {
+  // Access-gated requires a real access signal: an HTTP 401/403, or a specific org-verification
+  // phrase. A bare "verif" match is deliberately excluded so a TLS/cert "verification" failure is
+  // NOT green-washed as access-gated (it falls through to `error`).
+  if (
+    status === 401 ||
+    status === 403 ||
+    /organization .*verif|verify your organization|must be verified/i.test(message)
+  ) {
     return 'access-gated';
   }
   if (status === 404 || /model[^a-z]*not[^a-z]*found|not_found|does not exist|unknown model/i.test(message)) {

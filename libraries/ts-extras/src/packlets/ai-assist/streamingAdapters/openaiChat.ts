@@ -154,7 +154,7 @@ export async function callOpenAiChatStream(
   config: IStreamApiConfig,
   prompt: AiPrompt,
   messagesBefore: ReadonlyArray<IChatMessage> | undefined,
-  temperature: number,
+  temperature: number | undefined,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig
@@ -169,8 +169,14 @@ export async function callOpenAiChatStream(
   if (effort !== undefined && supportsReasoning) {
     body.reasoning_effort = effort;
   }
+  // Temperature is sent only when the caller explicitly provided one; omitting it lets the
+  // provider apply its own default (current-gen models reject a caller-supplied default). The
+  // effort gate is a safety net for the (unguarded) client-tool path, which can supply thinking +
+  // temperature together — thinking (non-'none') suppresses temperature on the wire.
   if (effort === undefined || effort === 'none') {
-    body.temperature = temperature;
+    if (temperature !== undefined) {
+      body.temperature = temperature;
+    }
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);

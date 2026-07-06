@@ -227,7 +227,7 @@ export async function callGeminiStream(
   config: IStreamApiConfig,
   prompt: AiPrompt,
   messagesBefore: ReadonlyArray<IChatMessage> | undefined,
-  temperature: number,
+  temperature: number | undefined,
   tools: ReadonlyArray<AiToolConfig> | undefined,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
@@ -240,7 +240,11 @@ export async function callGeminiStream(
     head: messagesBefore,
     rawTail: continuationMessages
   });
-  const generationConfig: Record<string, unknown> = { temperature };
+  // Temperature is sent only when explicitly provided; otherwise Gemini's default applies.
+  const generationConfig: Record<string, unknown> = {};
+  if (temperature !== undefined) {
+    generationConfig.temperature = temperature;
+  }
   if (resolvedThinking?.geminiThinkingBudget !== undefined) {
     generationConfig.thinkingConfig = { thinkingBudget: resolvedThinking.geminiThinkingBudget };
   }

@@ -94,9 +94,12 @@ A tier request walks an **ordered fallback list** and takes the first key presen
 | `advanced` | `advanced → base` | a descriptor with no `advanced` key cascades to `base` |
 | `base` | `base` | always present |
 
-This is why a provider only needs to declare the tiers it actually differentiates. Anthropic and Gemini
-omit `frontier`, so a `frontier` request cascades to their `advanced` model (opus / pro); OpenAI declares
-all three. `image`/`embedding` are unaffected — they keep their flat `modality → base` behavior.
+This is why a provider only needs to declare the tiers it actually differentiates. All three completion
+providers currently omit `frontier`, so a `frontier` request cascades to their `advanced` model
+(gpt-5.5 / opus / pro). (OpenAI's frontier model `gpt-5.5-pro` is Responses-API-only — uninvokable via
+chat completions — so it is intentionally not wired as a completion tier; the `@openai:pro` alias remains
+reachable via `modelOverride`. See `docs/FUTURE.md` "OpenAI frontier via Responses routing".)
+`image`/`embedding` are unaffected — they keep their flat `modality → base` behavior.
 
 ### Composition — thinking and tools are orthogonal, not selectors
 
@@ -122,7 +125,7 @@ there is no 2-D selection and no competition between the axes.
 |---|---|---|---|
 | `base` | `@openai:mini` → `gpt-5.4-mini` | `@anthropic:sonnet` → `claude-sonnet-5` | `@google-gemini:flash` → `gemini-3.5-flash` |
 | `advanced` | `@openai:flagship` → `gpt-5.5` | `@anthropic:opus` → `claude-opus-4-8` | `@google-gemini:pro` → `gemini-3.1-pro-preview` |
-| `frontier` | `@openai:pro` → `gpt-5.5-pro` | *(unset → advanced/opus)* | *(unset → advanced/pro)* |
+| `frontier` | *(unset → advanced/gpt-5.5)* | *(unset → advanced/opus)* | *(unset → advanced/pro)* |
 
 ### Maintenance loop — one map edit + a testbed run
 

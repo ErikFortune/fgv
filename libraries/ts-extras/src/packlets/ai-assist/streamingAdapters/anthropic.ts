@@ -485,7 +485,7 @@ export async function callAnthropicStream(
   config: IStreamApiConfig,
   prompt: AiPrompt,
   messagesBefore: ReadonlyArray<IChatMessage> | undefined,
-  temperature: number,
+  temperature: number | undefined,
   tools: ReadonlyArray<AiToolConfig> | undefined,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
@@ -498,15 +498,21 @@ export async function callAnthropicStream(
     head: messagesBefore,
     rawTail: continuationMessages
   });
-  // When thinking is active, temperature is rejected by Anthropic (validated upstream).
   const body: Record<string, unknown> = {
     model: config.model,
     system: prompt.system,
     messages,
     max_tokens: 4096,
-    ...(resolvedThinking?.anthropicEffort === undefined ? { temperature } : {}),
     stream: true
   };
+  // Temperature is sent only when explicitly provided (Claude-5 rejects any temperature). When
+  // thinking is active it is also rejected — the completion/streaming paths validate this upstream,
+  // and the effort gate here is the safety net for the (unguarded) client-tool path.
+  if (resolvedThinking?.anthropicEffort === undefined) {
+    if (temperature !== undefined) {
+      body.temperature = temperature;
+    }
+  }
   if (resolvedThinking?.anthropicEffort !== undefined) {
     body.thinking = {
       type: 'enabled',

@@ -360,6 +360,18 @@ describe('callProviderCompletionStream', () => {
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
       expect(body.temperature).toBe(0.3);
     });
+
+    test('omits temperature when the caller does not provide one', async () => {
+      mockSseResponse(openAiChatSse(['x']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      // No default temperature is injected — gpt-5.5 rejects a non-default temperature.
+      expect(body.temperature).toBeUndefined();
+    });
   });
 
   describe('endpoint override', () => {
@@ -629,6 +641,29 @@ describe('callProviderCompletionStream', () => {
       expect(done.fullText).toBe('Looking at... recipes.');
     });
 
+    test('omits temperature by default and includes it only when explicitly provided (Responses API stream)', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools
+      });
+      const omitted = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(omitted.temperature).toBeUndefined();
+
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools,
+        temperature: 0.45
+      });
+      const explicit = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+      expect(explicit.temperature).toBe(0.45);
+    });
+
     test('marks truncated for incomplete status', async () => {
       mockSseResponse(responsesApiSse({ textDeltas: ['cut'], truncated: true }));
       const result = await AiAssist.callProviderCompletionStream({
@@ -743,6 +778,28 @@ describe('callProviderCompletionStream', () => {
         .join('');
       expect(text).toBe('Hi there');
       expect(events[events.length - 1].type).toBe('done');
+    });
+
+    test('omits temperature by default and includes it only when explicitly provided', async () => {
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      const omitted = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      // No default temperature is injected — Claude-5 rejects any temperature value.
+      expect(omitted.temperature).toBeUndefined();
+
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        temperature: 0.35
+      });
+      const explicit = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+      expect(explicit.temperature).toBe(0.35);
     });
 
     test('surfaces server_tool_use as tool-event', async () => {
@@ -933,6 +990,28 @@ describe('callProviderCompletionStream', () => {
       expect(url).toContain(':streamGenerateContent?alt=sse');
     });
 
+    test('omits generationConfig.temperature by default and includes it only when explicit', async () => {
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      const omitted = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      // No default temperature is injected — Gemini's own default applies.
+      expect(omitted.generationConfig.temperature).toBeUndefined();
+
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        temperature: 0.15
+      });
+      const explicit = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+      expect(explicit.generationConfig.temperature).toBe(0.15);
+    });
+
     test('emits error when stream ends without finishReason', async () => {
       // Send a chunk with text but no finishReason
       mockSseResponse([
@@ -1090,6 +1169,20 @@ describe('callProxiedCompletionStream', () => {
     expect(fetchCall[0]).toBe('http://proxy.local:3001/api/ai/completion-stream');
     const body = JSON.parse(fetchCall[1].body);
     expect(body).toMatchObject({ providerId: 'openai', apiKey: 'sk', stream: true });
+    // No default temperature is forwarded when the caller omits it.
+    expect(body.temperature).toBeUndefined();
+  });
+
+  test('forwards temperature to the proxy body only when explicitly provided', async () => {
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      temperature: 0.25
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.temperature).toBe(0.25);
   });
 
   test('forwards ordered messages with attachments, system, modelOverride, and tools', async () => {

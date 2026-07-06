@@ -457,7 +457,7 @@ export async function callOpenAiResponsesStream(
   prompt: AiPrompt,
   tools: ReadonlyArray<AiToolConfig>,
   messagesBefore: ReadonlyArray<IChatMessage> | undefined,
-  temperature: number,
+  temperature: number | undefined,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
@@ -480,8 +480,11 @@ export async function callOpenAiResponsesStream(
   if (effort !== undefined && supportsReasoning) {
     body.reasoning = { effort };
   }
+  // Temperature is sent only when the caller explicitly provided one (see callOpenAiChatStream).
   if (effort === undefined || effort === 'none') {
-    body.temperature = temperature;
+    if (temperature !== undefined) {
+      body.temperature = temperature;
+    }
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);

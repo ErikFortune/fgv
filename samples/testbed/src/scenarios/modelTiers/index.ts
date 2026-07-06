@@ -22,7 +22,7 @@
 
 /**
  * Per-provider model-tier canary scenarios (`openai-model-tiers`, `anthropic-model-tiers`,
- * `gemini-model-tiers`). Each resolves its provider's `base` / `advanced` / `frontier` tiers,
+ * `google-gemini-model-tiers`). Each resolves its provider's `base` / `advanced` / `frontier` tiers,
  * logs the `alias -> concrete` hop (matching the shipped `@google-gemini:flash -> …` line), and —
  * when the provider API key is present — fires a minimal live completion per tier to prove the id
  * answers. Without a key the run is the STOP-FLAG state: resolver verified, live canary pending the
@@ -138,19 +138,22 @@ function makeTierScenario(params: ITierScenarioParams): IScenario {
 }
 
 /**
- * OpenAI model-tier canary — exercises `base` / `advanced` / `frontier` (+ the `image` tier
- * resolution). `frontier` (`gpt-5.5-pro`) and `image` (`gpt-image-1.5`) are flagged access risks:
- * a resolver-correct + access-denied outcome is reported BLOCKED, not a failure. Requires
- * `OPENAI_API_KEY` for the live half.
+ * OpenAI model-tier canary — exercises `base` / `advanced` and a `frontier` request that cascades
+ * to the `advanced` (gpt-5.5) id (+ the `image` tier resolution). gpt-5.5-pro is a Responses-API-only
+ * model, so the OpenAI `defaultModel` omits a `frontier` key (B5 drop) — a frontier request cascades
+ * frontier → advanced → gpt-5.5, matching Anthropic/Gemini; the cascade log line is the live proof.
+ * `image` (`gpt-image-1.5`) is a flagged access risk: a resolver-correct + access-denied outcome is
+ * reported BLOCKED, not a failure. Requires `OPENAI_API_KEY` for the live half.
  * @public
  */
 export const openaiModelTiersScenario: IScenario = makeTierScenario({
   providerId: 'openai',
   title: 'OpenAI Model Tiers',
   description:
-    'Resolves and (with OPENAI_API_KEY) live-canaries the OpenAI base/advanced/frontier tiers plus ' +
-    'the image tier. Logs each alias -> concrete id. gpt-5.5-pro (frontier) and gpt-image-1.5 ' +
-    '(image) may be access-gated — reported BLOCKED, not failed. CLI-only.',
+    'Resolves and (with OPENAI_API_KEY) live-canaries the OpenAI base/advanced tiers plus a frontier ' +
+    'request that cascades to the advanced (gpt-5.5) id — the cascade proof — plus the image tier. ' +
+    'Logs each alias -> concrete id. gpt-image-1.5 (image) may be access-gated — reported BLOCKED, ' +
+    'not failed. CLI-only.',
   tags: ['openai'],
   apiKeyEnvVars: ['OPENAI_API_KEY'],
   tiers: ['base', 'advanced', 'frontier'],
@@ -209,6 +212,11 @@ export const geminiModelTiersScenario: IScenario = makeTierScenario({
       id: 'gemini-api-key',
       envVarName: 'GEMINI_API_KEY',
       description: 'Gemini API key for the live tier canary'
+    },
+    {
+      id: 'google-api-key',
+      envVarName: 'GOOGLE_API_KEY',
+      description: 'Google API key for the live tier canary (alternative to GEMINI_API_KEY)'
     }
   ]
 });
