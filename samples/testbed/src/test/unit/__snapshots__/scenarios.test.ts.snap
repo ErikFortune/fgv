@@ -11,5 +11,8 @@ Array [
   "local-summarization",
   "mcp-probe",
   "cross-provider-embedding-search",
+  "openai-model-tiers",
+  "anthropic-model-tiers",
+  "google-gemini-model-tiers",
 ]
 `;

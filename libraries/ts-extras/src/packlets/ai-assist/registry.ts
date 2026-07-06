@@ -92,8 +92,10 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
     defaultModel: {
       base: '@google-gemini:flash',
+      advanced: '@google-gemini:pro', // reuses the existing @google-gemini:pro alias (no new alias entry)
       image: '@google-gemini:flash-image',
       embedding: '@google-gemini:embedding'
+      // no frontier key → a frontier request cascades advanced → pro (see resolveModel)
     },
     aliases: {
       // NOTE: the base flash line is at 3.5 while pro / flash-lite / flash-image are at 3.1 — this is
@@ -101,7 +103,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       // line advanced to 3.5 while the other roles are on the 3.1 generation. The per-role version
       // split is exactly why the alias layer exists — consumers never see these numbers.
       '@google-gemini:flash': 'gemini-3.5-flash', // base (was gemini-2.5-flash, shutdown 2026-10-16)
-      '@google-gemini:pro': 'gemini-3.1-pro-preview', // advanced-tier role (wired to the 'advanced' defaultModel key in B4); reachable via modelOverride until then (was gemini-2.5-pro, 2026-10-16)
+      '@google-gemini:pro': 'gemini-3.1-pro-preview', // advanced-tier role (wired to the 'advanced' defaultModel key); also the frontier cascade target (was gemini-2.5-pro, 2026-10-16)
       '@google-gemini:flash-lite': 'gemini-3.1-flash-lite', // cheaper thinking-capable line; available via modelOverride only (was gemini-2.5-flash-lite, 2026-10-16)
       '@google-gemini:flash-image': 'gemini-3.1-flash-image-preview', // image (was gemini-2.5-flash-image, 2026-10-02)
       '@google-gemini:embedding': 'gemini-embedding-001' // NOT deprecated — aliased for uniformity only
