@@ -122,6 +122,30 @@ describe('classifyLiveFailure', () => {
     );
   });
 
+  test('classifies a non-chat-completions id as wrong-endpoint (checked before the 404 branch)', () => {
+    // OpenAI gpt-5.5-pro returns a 404 whose message says it is not a chat model — must NOT be
+    // conflated with a stale id.
+    expect(
+      classifyLiveFailure(
+        'AI API returned 404: {"error":{"message":"This is not a chat model and thus not supported ' +
+          'in the v1/chat/completions endpoint. Did you mean to use v1/completions?"}}'
+      )
+    ).toBe('wrong-endpoint');
+  });
+
+  test('classifies a rejected request parameter as param-rejected (completion-path, not resolver)', () => {
+    // Anthropic Claude-5: temperature is deprecated (any value rejected).
+    expect(classifyLiveFailure('AI API returned 400: `temperature` is deprecated for this model.')).toBe(
+      'param-rejected'
+    );
+    // OpenAI GPT-5.5: temperature only supports the default (1).
+    expect(
+      classifyLiveFailure(
+        "AI API returned 400: Unsupported value: 'temperature' does not support 0.7 with this model."
+      )
+    ).toBe('param-rejected');
+  });
+
   test('classifies 404 / unknown-model failures as id-wrong (stale alias value)', () => {
     expect(classifyLiveFailure('AI API returned 404: not found')).toBe('id-wrong');
     expect(classifyLiveFailure('The model `claude-opus-9` does not exist')).toBe('id-wrong');
@@ -232,9 +256,46 @@ describe('runTierCanary (live — injected completion)', () => {
       new Logging.InMemoryLogger()
     );
     expect(result).toSucceedAndSatisfy((report: string) => {
-      expect(report).toMatch(/LIVE PARTIAL/);
-      expect(report).toMatch(/\[BLOCKED\] frontier\s+gpt-5\.5-pro\s+\(AI API returned 403/);
+      expect(report).toMatch(/LIVE BLOCKED/);
+      expect(report).toMatch(/\[BLOCKED\(access\)\] frontier\s+gpt-5\.5-pro\s+\(AI API returned 403/);
     });
+  });
+
+  test('a rejected request parameter is BLOCKED(param), not a resolver failure (temperature)', async () => {
+    // Mirrors the observed live Anthropic result: every tier 400s on the deprecated `temperature`
+    // param. Resolver + ids are correct, so the run does NOT fail — it reports LIVE BLOCKED.
+    const deps: ITierCanaryDeps = {
+      complete: async () => fail('AI API returned 400: `temperature` is deprecated for this model.')
+    };
+    const result = await runTierCanary(
+      { providerId: 'anthropic', descriptor: anthropic, tiers: ['base', 'advanced', 'frontier'] },
+      deps,
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/LIVE BLOCKED/);
+      expect(report).toMatch(/\[BLOCKED\(param\)\] base\s+claude-sonnet-5\s+\(AI API returned 400/);
+    });
+  });
+
+  test('a non-chat-completions id is a real failure tagged FAIL(endpoint) (not a stale id)', async () => {
+    // Mirrors the observed live OpenAI frontier result: gpt-5.5-pro is not a chat model.
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier) =>
+        tier === 'frontier'
+          ? fail(
+              'AI API returned 404: This is not a chat model and thus not supported in the ' +
+                'v1/chat/completions endpoint.'
+            )
+          : pong()
+    };
+    const result = await runTierCanary(
+      { providerId: 'openai', descriptor: openai, tiers: ['base', 'advanced', 'frontier'] },
+      deps,
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toFailWith(/FAILED — a tier is not chat-completions-callable/);
+    expect(result).toFailWith(/\[FAIL\(endpoint\)\] frontier\s+gpt-5\.5-pro/);
   });
 
   test('a 404 on a tier is a real failure (id-wrong — stale alias value)', async () => {
@@ -247,7 +308,7 @@ describe('runTierCanary (live — injected completion)', () => {
       deps,
       new Logging.InMemoryLogger()
     );
-    expect(result).toFailWith(/FAILED — resolver bug or stale id/);
+    expect(result).toFailWith(/FAILED — a tier is not chat-completions-callable.*stale id/);
     expect(result).toFailWith(/\[FAIL\(id\)\] advanced/);
   });
 

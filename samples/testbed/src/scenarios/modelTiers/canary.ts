@@ -85,6 +85,21 @@ export type TierLiveOutcome =
   | 'live-pass'
   /** Resolver correct, but the key lacks access (401/403/verification) — canary-blocked, not a failure. */
   | 'access-gated'
+  /**
+   * Resolver + id correct, but the model rejected a request **parameter** the default completion
+   * path always sends (e.g. `temperature` deprecated on the Claude-5 family, or unsupported at
+   * `0.7` on GPT-5.5). This is a completion-path/parameter incompatibility, NOT a resolver or id
+   * problem — surfaced as BLOCKED so it is not conflated with a stale alias. The underlying gap is
+   * a real ai-assist finding (the default `temperature` breaks current-gen models) escalated to the
+   * orchestrator; it is out of the tier resolver's scope.
+   */
+  | 'param-rejected'
+  /**
+   * The id exists but is not callable via the chat-completions endpoint (needs the Responses API /
+   * `v1/completions`) — e.g. OpenAI `gpt-5.5-pro`. A real capability/routing gap, distinct from a
+   * stale id: no one-line alias edit fixes it. Fails the run and is escalated.
+   */
+  | 'wrong-endpoint'
   /** HTTP 404 / unknown-model: the alias value is stale — the maintenance-loop trigger, a real failure. */
   | 'id-wrong'
   /** Any other live failure (or a 200 with an empty body) — a real failure. */
@@ -99,7 +114,7 @@ export type TierLiveOutcome =
 export interface ITierLiveResult {
   readonly resolution: ITierResolution;
   readonly outcome: TierLiveOutcome;
-  /** Free-text detail (e.g. the underlying failure message) for `access-gated` / `id-wrong` / `error`. */
+  /** Free-text detail (the underlying failure message) for any non-`live-pass` / non-`not-run` outcome. */
   readonly detail?: string;
 }
 
@@ -191,6 +206,21 @@ export function resolveTierResolutions(
  * @public
  */
 export function classifyLiveFailure(message: string): TierLiveOutcome {
+  // Endpoint/capability mismatch (checked before the 404 branch, since it arrives as a 404/400):
+  // the id exists but is not a chat-completions model.
+  if (
+    /not a chat model|chat\/completions endpoint|not supported in the v1\/chat\/completions|v1\/completions/i.test(
+      message
+    )
+  ) {
+    return 'wrong-endpoint';
+  }
+  // Completion-path parameter incompatibility (e.g. `temperature` deprecated on Claude-5, or
+  // unsupported at 0.7 on GPT-5.5). Resolver + id are correct; the default request param is the
+  // blocker — a real ai-assist finding, not a resolver bug.
+  if (/temperature|is deprecated for this model|unsupported_value/i.test(message)) {
+    return 'param-rejected';
+  }
   const statusMatch = message.match(/returned (\d{3})/);
   const status = statusMatch ? Number(statusMatch[1]) : undefined;
   if (status === 401 || status === 403 || /verif/i.test(message)) {
@@ -208,7 +238,11 @@ function liveTag(outcome: TierLiveOutcome): string {
     case 'live-pass':
       return 'PASS';
     case 'access-gated':
-      return 'BLOCKED';
+      return 'BLOCKED(access)';
+    case 'param-rejected':
+      return 'BLOCKED(param)';
+    case 'wrong-endpoint':
+      return 'FAIL(endpoint)';
     case 'id-wrong':
       return 'FAIL(id)';
     case 'error':
@@ -227,16 +261,18 @@ export function formatTierCanaryReport(
   liveResults: ReadonlyArray<ITierLiveResult>,
   imageResolution?: IImageResolution
 ): string {
-  const anyRealFailure = liveResults.some((r) => r.outcome === 'id-wrong' || r.outcome === 'error');
+  const anyRealFailure = liveResults.some(
+    (r) => r.outcome === 'id-wrong' || r.outcome === 'error' || r.outcome === 'wrong-endpoint'
+  );
   const anyNotRun = liveResults.some((r) => r.outcome === 'not-run');
-  const anyBlocked = liveResults.some((r) => r.outcome === 'access-gated');
+  const anyBlocked = liveResults.some((r) => r.outcome === 'access-gated' || r.outcome === 'param-rejected');
 
   const verdict = anyRealFailure
-    ? 'FAILED — resolver bug or stale id (see FAIL lines below)'
+    ? 'FAILED — a tier is not chat-completions-callable (wrong endpoint) or resolves to a stale id (see FAIL lines below)'
     : anyNotRun
     ? 'RESOLVER-VERIFIED; LIVE CANARY PENDING (STOP-FLAG: set the provider API key to run the keyed gate)'
     : anyBlocked
-    ? 'RESOLVER-VERIFIED; LIVE PARTIAL (one or more tiers access-gated — surfaced as BLOCKED, not a failure)'
+    ? 'RESOLVER-VERIFIED; LIVE BLOCKED (resolver + ids correct; a tier was access-gated or its live check was blocked by a completion-path parameter incompatibility — see BLOCKED lines)'
     : 'LIVE-VERIFIED (every tier resolved and answered)';
 
   const resolverLines = liveResults.map((r) => {
@@ -337,8 +373,11 @@ export async function runTierCanary(
 
   const report = formatTierCanaryReport(spec, liveResults, imageResolution);
 
-  // Verdict: a stale id (`id-wrong`) or a plain `error` fails the run; `access-gated` (resolver
-  // correct, key lacks access) and `not-run` (STOP-FLAG: pending the keyed run) do not.
-  const realFailure = liveResults.some((r) => r.outcome === 'id-wrong' || r.outcome === 'error');
+  // Verdict: a stale id (`id-wrong`), a non-chat-callable id (`wrong-endpoint`), or a plain `error`
+  // fails the run. `access-gated` / `param-rejected` (resolver + id correct; access or a
+  // completion-path parameter is the blocker) and `not-run` (STOP-FLAG: pending the keyed run) do not.
+  const realFailure = liveResults.some(
+    (r) => r.outcome === 'id-wrong' || r.outcome === 'error' || r.outcome === 'wrong-endpoint'
+  );
   return realFailure ? fail(report) : succeed(report);
 }
