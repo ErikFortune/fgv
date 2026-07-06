@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Enforce jest coverage-threshold misses as build failures (heft-dual-rig testResultsProcessor); consuming packages repoint their jest config at the @fgv/heft-dual-rig profile to inherit the gate. Build-tooling only; no runtime/API change.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras-mcp"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "noreply@anthropic.com"
+}
