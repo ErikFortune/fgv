@@ -93,6 +93,25 @@ describe('SeededRandomSource', () => {
         nowSpy.mockRestore();
       }
     });
+
+    test('tolerates a null argument, using the default step and Date.now seed', () => {
+      // `typeof null === 'object'`, so a null argument reaches the object-form
+      // branch where `init` itself is null; the `init?.step` / `init?.seed`
+      // guards must fall back to their defaults rather than throw.
+      const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(777);
+      try {
+        expect(SeededRandomSource.create(null as unknown as number)).toSucceedAndSatisfy((source) => {
+          expect(source.seed).toBe('777');
+          expect(source.counter).toBe(0);
+          // The default (mulberry) step is in effect, producing values in [0, 1).
+          const value = source.next();
+          expect(value).toBeGreaterThanOrEqual(0);
+          expect(value).toBeLessThan(1);
+        });
+      } finally {
+        nowSpy.mockRestore();
+      }
+    });
   });
 
   describe('deterministic sequences', () => {

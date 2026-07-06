@@ -1,5 +1,6 @@
 {
   "extends": "@fgv/heft-dual-rig/profiles/default/config/jest.config.json",
+  "coveragePathIgnorePatterns": ["index.js", "generator-data"],
   "coverageThreshold": {
     "global": {
       "branches": 100,

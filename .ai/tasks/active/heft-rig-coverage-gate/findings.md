@@ -129,3 +129,47 @@ threshold) is a separate decision for the orchestrator, not part of this fix.
 - **Tools** (`ks`, `ts-res-cli`, `ts-res-browser`, …) are not dual-rig consumers
   (`ks` uses the `ts-jest` preset directly with no coverage gate; the `ts-res-*`
   tools use `@rushstack/rig`). Out of scope for this rig fix.
+
+## Resolution — ts-random brought to a true 100% (exclusion + 2 branch tests)
+
+Orchestrator disposition: exclude ts-random's pure-data + barrel files from
+coverage (matching the ts-utils convention); do not lower the threshold; fill any
+remaining *real* logic gaps with tests.
+
+1. **Exclusion applied** to `libraries/ts-random/config/jest.config.json`:
+   `"coveragePathIgnorePatterns": ["index.js", "generator-data"]`. `src/generator-data/`
+   is pure static data (word lists, `charClasses` string constants) and the
+   `index.ts` files are barrels — no logic to cover. Threshold left at 100 on all
+   four metrics. After the exclusion, statements/functions/lines reached 100% but
+   **branches were 95.89%** — three genuine uncovered branches remained in the
+   real generator logic (`generators.ts:88`, `randomSource.ts:116`, `:117`).
+
+2. **Precise diagnosis (from lcov, not the coverage summary's line column).** The
+   originally-hypothesized gaps (`{ global: true }`, custom `step`, no-seed) were
+   already covered by existing tests. The actually-uncovered branches were the
+   **optional-chaining null-guard paths** — `params?.global`, `init?.step`,
+   `init?.seed` — whose "argument is null/undefined" branch was never exercised.
+   These are reachable (not dead code): because `typeof null === 'object'`, a
+   `create(null)` call flows into the object-form path with `init === null`, so
+   the `?.` guards fall back to defaults instead of throwing. The guards are
+   load-bearing — removing them would make `create(null)` throw a TypeError
+   before `captureResult` wraps construction — so the honest fix is to test the
+   null path, not delete the guard.
+
+3. **Two targeted tests added** (129 tests total, up from 127), following existing
+   conventions with `@fgv/ts-utils-jest` Result matchers and `Date.now` spies:
+   - `randomSource.test.ts` — `SeededRandomSource.create(null as unknown as number)`
+     succeeds with the default (mulberry) step and a `Date.now`-derived seed
+     (covers `init?.step` @116 and `init?.seed` @117 null-guard branches).
+   - `generators.test.ts` — `PseudoRandomGenerator.create(null as unknown as IPseudoRandomGeneratorCreateParams)`
+     succeeds and leaves the global rng unset (covers `params?.global` @88).
+
+**Result:** `heft test` for ts-random now **exits 0 at 100% on statements,
+branches, functions, and lines**, no coverage warning. No threshold lowered, no
+`c8 ignore` added — the exclusion removed only pure-data/barrel files, and the
+two tests cover real, reachable defensive branches.
+
+**Final tally:** all 21 migrated node-rig libraries pass at their declared
+thresholds under the now-live gate. (The web-rig packages and tools remain out of
+scope as noted above; the `rush test` CI-step wiring is a separate phase-2
+follow-up and `ci.yml` was intentionally not touched.)
