@@ -1,5 +1,5 @@
 {
-  "extends": "@rushstack/heft-node-rig/profiles/default/config/jest.config.json",
+  "extends": "@fgv/heft-dual-rig/profiles/default/config/jest.config.json",
   "testEnvironment": "jsdom",
   "coverageThreshold": {
     "global": {

@@ -1,6 +1,11 @@
 import '@fgv/ts-utils-jest';
 
-import { IRandomSequencePickParams, ISequentialPickParams, PseudoRandomGenerator } from '../../generator';
+import {
+  IPseudoRandomGeneratorCreateParams,
+  IRandomSequencePickParams,
+  ISequentialPickParams,
+  PseudoRandomGenerator
+} from '../../generator';
 
 function createGenerator(seed: number | string = 42): PseudoRandomGenerator {
   return PseudoRandomGenerator.create({ seed }).orThrow();
@@ -63,6 +68,19 @@ describe('PseudoRandomGenerator', () => {
     test('does not set global rng when global is omitted', () => {
       PseudoRandomGenerator.create({ seed: 1 }).orThrow();
       expect(PseudoRandomGenerator.getGlobalRng()).toBeUndefined();
+    });
+
+    test('tolerates a null params argument and does not set the global rng', () => {
+      // `typeof null === 'object'`, so a null argument reaches the object-form
+      // branch; the `params?.global` guard must fall through rather than throw,
+      // leaving the global rng unset.
+      expect(PseudoRandomGenerator.getGlobalRng()).toBeUndefined();
+      expect(
+        PseudoRandomGenerator.create(null as unknown as IPseudoRandomGeneratorCreateParams)
+      ).toSucceedAndSatisfy((gen) => {
+        expect(gen.rng).toBeDefined();
+        expect(PseudoRandomGenerator.getGlobalRng()).toBeUndefined();
+      });
     });
   });
 
