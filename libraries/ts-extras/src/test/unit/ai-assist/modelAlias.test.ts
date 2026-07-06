@@ -147,16 +147,16 @@ describe('resolveProviderModel', () => {
   test('walks the ModelSpecKey branch then returns the concrete id (no aliases)', () => {
     const descriptor = makeDescriptor({
       id: 'openai',
-      defaultModel: { base: 'gpt-4o', tools: 'gpt-4o-tools' }
+      defaultModel: { base: 'gpt-4o', advanced: 'gpt-4o-advanced' }
     });
-    expect(AiAssist.resolveProviderModel(descriptor, undefined, 'tools')).toSucceedWith('gpt-4o-tools');
+    expect(AiAssist.resolveProviderModel(descriptor, undefined, 'advanced')).toSucceedWith('gpt-4o-advanced');
     expect(AiAssist.resolveProviderModel(descriptor, undefined, 'base')).toSucceedWith('gpt-4o');
   });
 
   test('falls back to base when the requested context key is absent', () => {
     const descriptor = makeDescriptor({
       id: 'openai',
-      defaultModel: { base: 'gpt-4o', tools: 'gpt-4o-tools' }
+      defaultModel: { base: 'gpt-4o', advanced: 'gpt-4o-advanced' }
     });
     expect(AiAssist.resolveProviderModel(descriptor, undefined, 'image')).toSucceedWith('gpt-4o');
   });
@@ -262,9 +262,12 @@ describe('alias layer resolution for built-in descriptors', () => {
     expect(AiAssist.resolveProviderModel(ollama, 'llama3.2:3b')).toSucceedWith('llama3.2:3b');
   });
 
-  test('only google-gemini defines an aliases map (Tier 2)', () => {
+  test('only google-gemini, openai, and anthropic define an aliases map (Tier 2)', () => {
+    // Gemini was migrated first; OpenAI adopted the alias layer in B2; Anthropic in B3.
+    // Other providers still resolve raw ids and carry no aliases map.
+    const withAliases = new Set(['google-gemini', 'openai', 'anthropic']);
     for (const descriptor of descriptors) {
-      if (descriptor.id === 'google-gemini') {
+      if (withAliases.has(descriptor.id)) {
         expect(descriptor.aliases).toBeDefined();
       } else {
         expect(descriptor.aliases).toBeUndefined();
@@ -278,14 +281,22 @@ describe('google-gemini Tier 2 alias migration', () => {
 
   test('defaultModel resolves through the aliases to the concrete 3.x ids', () => {
     expect(AiAssist.resolveProviderModel(gemini, undefined, 'base')).toSucceedWith('gemini-3.5-flash');
-    expect(AiAssist.resolveProviderModel(gemini, undefined, 'thinking')).toSucceedWith(
-      'gemini-3.1-pro-preview'
-    );
     expect(AiAssist.resolveProviderModel(gemini, undefined, 'image')).toSucceedWith(
       'gemini-3.1-flash-image-preview'
     );
     expect(AiAssist.resolveProviderModel(gemini, undefined, 'embedding')).toSucceedWith(
       'gemini-embedding-001'
+    );
+  });
+
+  test('advanced resolves to pro; frontier cascades (advanced → pro) — B4 tier extension', () => {
+    // B4 adds `advanced: '@google-gemini:pro'` (reusing the existing pro alias). Frontier is
+    // left unset, so a frontier request cascades frontier → advanced → pro.
+    expect(AiAssist.resolveProviderModel(gemini, undefined, 'advanced')).toSucceedWith(
+      'gemini-3.1-pro-preview'
+    );
+    expect(AiAssist.resolveProviderModel(gemini, undefined, 'frontier')).toSucceedWith(
+      'gemini-3.1-pro-preview'
     );
   });
 

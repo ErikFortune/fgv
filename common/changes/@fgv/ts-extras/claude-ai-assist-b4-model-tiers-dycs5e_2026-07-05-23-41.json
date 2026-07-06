@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "ai-assist: Gemini advanced tier (advanced -> @google-gemini:pro; frontier cascades to pro), quality-tier docs (README + LIBRARY_CAPABILITIES), and per-provider model-tier canary scenarios in the testbed",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

@@ -1546,7 +1546,7 @@ describe('executeClientToolTurn', () => {
   });
 
   describe('explicit temperature', () => {
-    test('passes explicit temperature to the underlying adapter (covers temperature ?? default branch)', async () => {
+    test('passes explicit temperature through to the underlying adapter', async () => {
       mockSseResponse(anthropicDoneSse());
 
       const result = executeClientToolTurn({

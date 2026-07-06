@@ -23,6 +23,18 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## OpenAI frontier via Responses routing
+
+`@fgv/ts-extras/ai-assist`'s `callProviderCompletion` uses the chat-completions endpoint for the OpenAI apiFormat. The `frontier` tier alias `@openai:pro → gpt-5.5-pro` is a **Responses-API-only model** — uninvokable via chat completions — so B5 dropped the `frontier` key from the OpenAI `defaultModel` (a frontier request now cascades frontier → advanced → gpt-5.5). The `@openai:pro` alias is retained (reachable via `modelOverride`), but there is no tier that resolves to it for a completion.
+
+This item is to **route Responses-API-only models (gpt-5.5-pro, and any future `-pro` / Responses-only line) through the OpenAI Responses API inside `callProviderCompletion`**, so `@openai:pro` can be restored as an invokable `frontier` tier. The Responses path already exists in the codebase for the streaming and client-tool surfaces (`streamingAdapters/openaiResponses.ts`, `callOpenAiResponsesCompletion` for the tools path) — the work is to select it for the frontier tier (or, more generally, for a per-capability "responses-only" flag on the model descriptor) on the non-tools completion path and re-add the `frontier: '@openai:pro'` `defaultModel` key.
+
+**Why deferred**: out of scope for the model-tiers stream (B5), which fixed the live-wire completion-path bugs and matched OpenAI's tier shape to Anthropic/Gemini (frontier cascades to advanced). Restoring an invokable frontier is a routing change, not a resolver change, and wants its own slice with a live canary against `gpt-5.5-pro`.
+
+**Dependencies**: a concrete consumer need for the frontier tier on OpenAI; the routing decision (frontier-tier-specific vs. a `responsesOnly` capability flag on the model descriptor).
+
+**Reference**: `.ai/tasks/active/ai-assist-model-tiers/design.md` (Q4 OpenAI tier table, Q8 frontier access-gating); B5 slice (completion-path temperature fix + OpenAI frontier cascade).
+
 ## Horizontal composition B+1 — dependency-ordered render-merge-reinject (topo-sort)
 
 `@fgv/ts-prompt-assist`'s `HorizontalComposer` (shipped Phase B) uses **render-then-merge**: each contributor resolves+renders independently, then the composer merges the rendered per-slot values. This loses **cross-slot placeholders** — a contributor slot value that references another logical slot (`{{otherSlot}}`) is inserted literally, not resolved.

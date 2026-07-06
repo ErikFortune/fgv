@@ -204,6 +204,22 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ## Completed workstreams
 
+### `ai-assist-model-tiers` ✅
+
+**Status:** ✅ shipped to integration branch `ai-assist-model-tiers` (B1–B5 via PRs #511–#515; design Phase A + revision ride the branch); **live-verified** (keyed canary: all three providers LIVE across every tier); promotion PR `hmw86u` → `release` open. Constituent commits squash to `release` at cluster-close.
+**Branch base:** `release` (integration branch `claude/ai-assist-model-tiers-hmw86u`)
+**Package surface:** `@fgv/ts-extras/ai-assist` (`model.ts`, `registry.ts`, `apiClient.ts`, `streamingClient.ts`, streaming adapters, `converters.ts`, README) + `samples/testbed` (per-provider tier canaries) + `.ai/instructions/LIBRARY_CAPABILITIES.md`, `docs/FUTURE.md`
+
+**Mission.** A cross-provider **quality-tier axis** (`base`/`advanced`/`frontier`) on the ai-assist `ModelSpec` with cascade fallback, built on the shipped alias layer; adopt aliases for OpenAI + Anthropic (Gemini already aliased); advance stale/EOL OpenAI defaults.
+
+**What shipped.** `ModelSpecKey = base|advanced|frontier|image|embedding`; a `tier?` request param; `TIER_FALLBACK` cascade (`frontier→advanced→base`). **Composition, not competition:** thinking/tools are orthogonal params/capabilities, never model selectors (the `thinking`/`tools` keys were removed) — every base model is thinking-capable so `tier + thinking` composes freely. OpenAI + Anthropic alias adoption + tiered defaults; DALL·E retirement; `claude-sonnet-5` thinking-detection fix. Plus two completion-path bugs the **live canary** caught (the "100% mocked coverage on an unexercised wire" failure mode): unconditional default `temperature` (now sent only when explicit) and OpenAI frontier `gpt-5.5-pro` being Responses-API-only (frontier now cascades to advanced=`gpt-5.5`).
+
+**Outcome.** Breaking on the active/alpha surface (tier keys added, `thinking`/`tools`/DALL·E removed). Build + lint + 100% coverage green; `none`/`minor` change files. **Live-verified** end-to-end on the real wire. **Locked decisions:** 3 tiers + cascade; composition (thinking orthogonal); OpenAI base=gpt-5.4-mini, Anthropic base=claude-sonnet-5; Anthropic/Gemini/OpenAI frontier cascade to advanced.
+
+**Fast-follow (deferred):** OpenAI frontier via Responses routing (`docs/FUTURE.md`).
+
+**Artifacts:** [`.ai/tasks/completed/2026-07/ai-assist-model-tiers/`](../.ai/tasks/completed/2026-07/ai-assist-model-tiers/) (brief, design, README).
+
 ### `ai-assist-model-aliases` ✅
 
 **Status:** ✅ shipped to integration branch `ai-assist-model-aliases` (Tiers 1–3 via PRs #505–#507 + folded-in Gemini `thoughtSignature` fix; design Phase A #503 rides the branch); promotion PR #508 → `release` (CI build green; live Gemini canaries green). Constituent commits squash to `release` at cluster-close.

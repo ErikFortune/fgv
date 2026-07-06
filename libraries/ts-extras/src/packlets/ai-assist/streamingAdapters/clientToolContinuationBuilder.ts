@@ -440,7 +440,10 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
    * normalized-message path strips provider-native fields.
    */
   readonly continuationMessages?: ReadonlyArray<JsonObject>;
-  /** Temperature (default: 0.7). */
+  /**
+   * Sampling temperature. Sent to the provider only when explicitly provided; omitted otherwise
+   * so the provider's own default applies (current-gen models reject a caller-supplied default).
+   */
   readonly temperature?: number;
   /** Server-side tools to include. */
   readonly tools?: ReadonlyArray<AiServerToolConfig>;
@@ -555,7 +558,6 @@ export function executeClientToolTurn(
   const effectiveTools: ReadonlyArray<AiToolConfig> | undefined =
     clientTools.length > 0 ? [...(tools ?? []), ...clientTools.map((t) => t.config)] : tools;
 
-  const effectiveTemperature = temperature ?? 0.7;
   const modelResult = resolveProviderModel(descriptor, model);
   if (modelResult.isFailure()) {
     return fail(modelResult.message);
@@ -587,7 +589,7 @@ export function executeClientToolTurn(
           config,
           prompt,
           head,
-          effectiveTemperature,
+          temperature,
           effectiveTools,
           logger,
           signal,
@@ -602,7 +604,7 @@ export function executeClientToolTurn(
           /* c8 ignore next 1 - defensive: openai path requires tools; empty array fallback unreachable in practice */
           effectiveTools ?? [],
           head,
-          effectiveTemperature,
+          temperature,
           logger,
           signal,
           resolvedThinking,
@@ -614,7 +616,7 @@ export function executeClientToolTurn(
           config,
           prompt,
           head,
-          effectiveTemperature,
+          temperature,
           effectiveTools,
           logger,
           signal,

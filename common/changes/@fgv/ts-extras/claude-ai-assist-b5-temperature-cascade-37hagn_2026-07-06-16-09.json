@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "ai-assist: omit temperature unless explicitly provided (completion + streaming + proxied + client-tool paths) so current-gen models are not 400ed by a default; drop the OpenAI frontier tier key so a frontier request cascades to advanced (gpt-5.5), since gpt-5.5-pro is Responses-API-only",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

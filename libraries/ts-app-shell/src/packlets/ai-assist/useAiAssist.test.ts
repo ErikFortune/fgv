@@ -837,7 +837,7 @@ describe('useAiAssist › listModels', () => {
 
   test('returns the models on success and forwards the capability filter', async () => {
     const models: ReadonlyArray<AiAssist.IAiModelInfo> = [
-      { id: 'dall-e-3', capabilities: new Set(['image-generation']) }
+      { id: 'gpt-image-1.5', capabilities: new Set(['image-generation']) }
     ];
     mockSucceed(directSpy, models);
 

@@ -17,6 +17,11 @@ import { localClassifierSafetyScenario } from './localClassifierSafety';
 import { localEmbeddingSearchScenario } from './localEmbeddingSearch';
 import { localSummarizationScenario } from './localSummarization';
 import { mcpProbeScenario } from './mcpProbe';
+import {
+  anthropicModelTiersScenario,
+  geminiModelTiersScenario,
+  openaiModelTiersScenario
+} from './modelTiers';
 import { openaiClientToolsScenario } from './openaiClientTools';
 import { xaiClientToolsScenario } from './xaiClientTools';
 
@@ -33,5 +38,8 @@ export const scenarios: readonly IScenario[] = [
   localEmbeddingSearchScenario,
   localSummarizationScenario,
   mcpProbeScenario,
-  crossProviderEmbeddingSearchScenario
+  crossProviderEmbeddingSearchScenario,
+  openaiModelTiersScenario,
+  anthropicModelTiersScenario,
+  geminiModelTiersScenario
 ];

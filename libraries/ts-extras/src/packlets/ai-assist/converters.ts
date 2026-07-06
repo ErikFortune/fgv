@@ -163,7 +163,9 @@ export const modelSpec: Converter<ModelSpec> = Converters.generic<ModelSpec>(
       Converters.string,
       Converters.recordOf(self, { keyConverter: modelSpecKey })
     ])
-      .withFormattedError(() => 'expected model spec (string or object with keys: base, tools, image)')
+      .withFormattedError(
+        () => 'expected model spec (string or object with keys: base, advanced, frontier, image, embedding)'
+      )
       .convert(from);
   }
 );

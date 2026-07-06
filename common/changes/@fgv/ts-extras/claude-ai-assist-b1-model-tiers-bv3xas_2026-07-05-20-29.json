@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add quality-tier model axis (base/advanced/frontier) with a cascade resolver; thinking/tools are now orthogonal to completion-model selection (breaking: ModelSpecKey drops 'thinking'/'tools')",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

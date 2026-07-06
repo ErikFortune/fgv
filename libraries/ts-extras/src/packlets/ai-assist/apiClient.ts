@@ -50,6 +50,7 @@ import {
   type IChatRequest,
   type IThinkingConfig,
   type ModelSpec,
+  type ModelSpecKey,
   resolveProviderModel
 } from './model';
 import {
@@ -93,10 +94,20 @@ export interface IProviderCompletionParams extends IChatRequest {
   readonly descriptor: IAiProviderDescriptor;
   /** API key for authentication */
   readonly apiKey: string;
-  /** Sampling temperature (default: 0.7) */
+  /**
+   * Sampling temperature. Sent to the provider only when explicitly provided; omitted otherwise
+   * so the provider's own default applies (current-gen models reject a caller-supplied default).
+   */
   readonly temperature?: number;
   /** Optional model override — string or context-aware map (uses descriptor.defaultModel otherwise) */
   readonly modelOverride?: ModelSpec;
+  /**
+   * Optional quality tier selecting which completion model to use. `undefined`
+   * selects the `base` tier; `'frontier'` cascades to `advanced` then `base`
+   * when a tier is unset for a provider. Orthogonal to `thinking` and `tools`,
+   * which never select a model.
+   */
+  readonly tier?: 'advanced' | 'frontier';
   /** Optional logger for request/response observability. */
   readonly logger?: Logging.ILogger;
   /** Server-side tools to include in the request. Overrides settings-level tool config when provided. */
@@ -395,7 +406,7 @@ async function callOpenAiCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
   head?: ReadonlyArray<IChatMessage>,
-  temperature: number = 0.7,
+  temperature?: number,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig
@@ -408,7 +419,11 @@ async function callOpenAiCompletion(
   const body: Record<string, unknown> = {
     model: config.model,
     messages,
-    ...(effort === undefined || effort === 'none' ? { temperature } : {}),
+    // Temperature is sent only when the caller explicitly provided one — omitting it lets each
+    // provider apply its own default (current-gen models reject a non-default temperature). The
+    // completion path already rejects temperature + non-'none' thinking upstream
+    // (checkTemperatureConflict), so no effort gate is needed here.
+    ...(temperature !== undefined ? { temperature } : {}),
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning_effort: effort } : {})
   };
   if (resolvedThinking?.otherParams !== undefined) {
@@ -466,7 +481,7 @@ async function callOpenAiResponsesCompletion(
   prompt: AiPrompt,
   tools: ReadonlyArray<AiServerToolConfig>,
   head?: ReadonlyArray<IChatMessage>,
-  temperature: number = 0.7,
+  temperature?: number,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig
@@ -480,7 +495,8 @@ async function callOpenAiResponsesCompletion(
     model: config.model,
     input,
     tools: toResponsesApiTools(tools),
-    ...(effort === undefined || effort === 'none' ? { temperature } : {}),
+    // Temperature is sent only when the caller explicitly provided one (see callOpenAiCompletion).
+    ...(temperature !== undefined ? { temperature } : {}),
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {})
   };
   if (resolvedThinking?.otherParams !== undefined) {
@@ -540,7 +556,7 @@ async function callAnthropicCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
   head?: ReadonlyArray<IChatMessage>,
-  temperature: number = 0.7,
+  temperature?: number,
   logger?: Logging.ILogger,
   tools?: ReadonlyArray<AiServerToolConfig>,
   signal?: AbortSignal,
@@ -553,7 +569,10 @@ async function callAnthropicCompletion(
     system: prompt.system,
     messages,
     max_tokens: 4096,
-    ...(resolvedThinking?.anthropicEffort === undefined ? { temperature } : {})
+    // Temperature is sent only when explicitly provided (Claude-5 rejects any temperature). The
+    // completion path rejects temperature + thinking upstream (checkTemperatureConflict), so no
+    // effort gate is needed here.
+    ...(temperature !== undefined ? { temperature } : {})
   };
 
   const effort = resolvedThinking?.anthropicEffort;
@@ -613,7 +632,7 @@ async function callGeminiCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
   head?: ReadonlyArray<IChatMessage>,
-  temperature: number = 0.7,
+  temperature?: number,
   logger?: Logging.ILogger,
   tools?: ReadonlyArray<AiServerToolConfig>,
   signal?: AbortSignal,
@@ -622,7 +641,11 @@ async function callGeminiCompletion(
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
   const contents = buildGeminiContents(prompt, { head });
 
-  const generationConfig: Record<string, unknown> = { temperature };
+  // Temperature is sent only when explicitly provided; otherwise Gemini's default applies.
+  const generationConfig: Record<string, unknown> = {};
+  if (temperature !== undefined) {
+    generationConfig.temperature = temperature;
+  }
   if (resolvedThinking?.geminiThinkingBudget !== undefined) {
     generationConfig.thinkingConfig = { thinkingBudget: resolvedThinking.geminiThinkingBudget };
   }
@@ -684,6 +707,7 @@ export async function callProviderCompletion(
     messages,
     temperature,
     modelOverride,
+    tier,
     logger,
     tools,
     signal,
@@ -707,11 +731,9 @@ export async function callProviderCompletion(
 
   const hasTools = tools !== undefined && tools.length > 0;
   const discriminator = providerDiscriminatorForId(descriptor.id);
-  const hasThinkingConfig =
-    discriminator !== undefined &&
-    (thinking?.effort !== undefined ||
-      thinking?.providers?.some((b) => b.provider === 'other' || b.provider === discriminator) === true);
-  const modelContext = hasThinkingConfig ? 'thinking' : hasTools ? 'tools' : undefined;
+  // The quality tier is the only completion-model selector; thinking and tools
+  // are orthogonal request params/capabilities and never pick a model.
+  const modelContext: ModelSpecKey | undefined = tier;
 
   const modelResult = resolveProviderModel(descriptor, modelOverride, modelContext);
   if (modelResult.isFailure()) {
@@ -735,7 +757,6 @@ export async function callProviderCompletion(
     }
   }
 
-  const effectiveTemperature = temperature ?? 0.7;
   const config: IAiApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
@@ -759,43 +780,26 @@ export async function callProviderCompletion(
           prompt,
           tools,
           head,
-          effectiveTemperature,
+          temperature,
           logger,
           signal,
           resolvedThinking
         );
       }
-      return callOpenAiCompletion(
-        config,
-        prompt,
-        head,
-        effectiveTemperature,
-        logger,
-        signal,
-        resolvedThinking
-      );
+      return callOpenAiCompletion(config, prompt, head, temperature, logger, signal, resolvedThinking);
     case 'anthropic':
       return callAnthropicCompletion(
         config,
         prompt,
         head,
-        effectiveTemperature,
+        temperature,
         logger,
         tools,
         signal,
         resolvedThinking
       );
     case 'gemini':
-      return callGeminiCompletion(
-        config,
-        prompt,
-        head,
-        effectiveTemperature,
-        logger,
-        tools,
-        signal,
-        resolvedThinking
-      );
+      return callGeminiCompletion(config, prompt, head, temperature, logger, tools, signal, resolvedThinking);
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;
@@ -1016,9 +1020,6 @@ function callOpenAiImagesGenerations(
   }
   if (resolved.seed !== undefined) {
     body.seed = resolved.seed;
-  }
-  if (resolved.style !== undefined) {
-    body.style = resolved.style;
   }
   if (resolved.background !== undefined) {
     body.background = resolved.background;
@@ -1741,9 +1742,13 @@ export async function callProxiedCompletion(
   const body: Record<string, unknown> = {
     providerId: descriptor.id,
     apiKey,
-    messages: normalizeOutboundMessages(splitResult.value),
-    temperature: temperature ?? 0.7
+    messages: normalizeOutboundMessages(splitResult.value)
   };
+  // Temperature is forwarded only when explicitly provided, matching the direct path — the proxy
+  // omits it from the upstream request so the provider default applies.
+  if (temperature !== undefined) {
+    body.temperature = temperature;
+  }
   if (system !== undefined) {
     body.system = system;
   }

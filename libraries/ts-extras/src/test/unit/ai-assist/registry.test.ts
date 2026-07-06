@@ -42,6 +42,137 @@ describe('AiAssist.registry', () => {
     });
   });
 
+  describe('openai model tiers (B2)', () => {
+    const desc = AiAssist.getProviderDescriptor('openai').orThrow();
+
+    test('base tier resolves to gpt-5.4-mini', () => {
+      // undefined context falls to base; explicit 'base' resolves identically.
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('gpt-5.4-mini');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gpt-5.4-mini');
+    });
+
+    test('advanced tier resolves to gpt-5.5', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('gpt-5.5');
+    });
+
+    test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
+      // The OpenAI map deliberately omits a frontier key — gpt-5.5-pro is a Responses-API-only
+      // model, uninvokable via chat completions, so a frontier request must cascade
+      // frontier → advanced → gpt-5.5, matching Anthropic/Gemini. This is the real registry
+      // descriptor (B5 frontier drop), the live proof of the cascade against shipped defaults.
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('gpt-5.5');
+    });
+
+    test('the @openai:pro alias is still reachable via modelOverride (Responses-only frontier)', () => {
+      // The alias is retained (dropped only from the tier map) for modelOverride / future
+      // Responses routing — see docs/FUTURE.md "OpenAI frontier via Responses routing".
+      expect(AiAssist.resolveProviderModel(desc, '@openai:pro', undefined)).toSucceedWith('gpt-5.5-pro');
+    });
+
+    test('image default resolves @openai:image → gpt-image-1.5 and routes via the gpt-image- capability', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gpt-image-1.5');
+      expect(AiAssist.resolveImageCapability(desc, 'gpt-image-1.5')).toMatchObject({
+        modelPrefix: 'gpt-image-',
+        format: 'openai-images'
+      });
+    });
+
+    test('the non-tier @openai:nano alias resolves via modelOverride only', () => {
+      expect(AiAssist.resolveProviderModel(desc, '@openai:nano', undefined)).toSucceedWith('gpt-5.4-nano');
+    });
+
+    test('a raw modelOverride passes through verbatim (no alias resolution)', () => {
+      expect(AiAssist.resolveProviderModel(desc, 'gpt-custom-tuned:v1', 'advanced')).toSucceedWith(
+        'gpt-custom-tuned:v1'
+      );
+    });
+  });
+
+  describe('anthropic model tiers (B3)', () => {
+    const desc = AiAssist.getProviderDescriptor('anthropic').orThrow();
+
+    test('base tier resolves to claude-sonnet-5', () => {
+      // undefined context falls to base; explicit 'base' resolves identically.
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('claude-sonnet-5');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('claude-sonnet-5');
+    });
+
+    test('advanced tier resolves to claude-opus-4-8', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('claude-opus-4-8');
+    });
+
+    test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
+      // The Anthropic map deliberately omits a frontier key, so a frontier request must
+      // cascade frontier → advanced → opus. This is the real registry descriptor (not a
+      // synthetic one), so it is the live proof of the cascade against shipped defaults.
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('claude-opus-4-8');
+    });
+
+    test('the non-tier @anthropic:haiku alias resolves via modelOverride only', () => {
+      expect(AiAssist.resolveProviderModel(desc, '@anthropic:haiku', undefined)).toSucceedWith(
+        'claude-haiku-4-5-20251001'
+      );
+    });
+
+    test('the non-tier @anthropic:fable alias resolves via modelOverride only', () => {
+      expect(AiAssist.resolveProviderModel(desc, '@anthropic:fable', undefined)).toSucceedWith(
+        'claude-fable-5'
+      );
+    });
+
+    test('a raw modelOverride passes through verbatim (no alias resolution)', () => {
+      expect(AiAssist.resolveProviderModel(desc, 'claude-custom-tuned:v1', 'advanced')).toSucceedWith(
+        'claude-custom-tuned:v1'
+      );
+    });
+  });
+
+  describe('google-gemini model tiers (B4)', () => {
+    const desc = AiAssist.getProviderDescriptor('google-gemini').orThrow();
+
+    test('base tier resolves to gemini-3.5-flash', () => {
+      // undefined context falls to base; explicit 'base' resolves identically.
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('gemini-3.5-flash');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gemini-3.5-flash');
+    });
+
+    test('advanced tier resolves to gemini-3.1-pro-preview (reuses the @google-gemini:pro alias)', () => {
+      expect(AiAssist.resolveModel(desc.defaultModel, 'advanced')).toBe('@google-gemini:pro');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith(
+        'gemini-3.1-pro-preview'
+      );
+    });
+
+    test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
+      // The Gemini map deliberately omits a frontier key, so a frontier request must
+      // cascade frontier → advanced → pro. This is the real registry descriptor, so it is
+      // the live proof of the cascade against the shipped Gemini defaults.
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith(
+        'gemini-3.1-pro-preview'
+      );
+    });
+
+    test('image tier is unchanged by the advanced-key addition', () => {
+      expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@google-gemini:flash-image');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith(
+        'gemini-3.1-flash-image-preview'
+      );
+    });
+
+    test('embedding tier is unchanged by the advanced-key addition', () => {
+      expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('@google-gemini:embedding');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'embedding')).toSucceedWith(
+        'gemini-embedding-001'
+      );
+    });
+
+    test('the non-tier @google-gemini:flash-lite alias resolves via modelOverride only', () => {
+      expect(AiAssist.resolveProviderModel(desc, '@google-gemini:flash-lite', undefined)).toSucceedWith(
+        'gemini-3.1-flash-lite'
+      );
+    });
+  });
+
   describe('getProviderDescriptor', () => {
     test('returns descriptor for known provider', () => {
       expect(AiAssist.getProviderDescriptor('xai-grok')).toSucceedAndSatisfy((desc) => {
@@ -52,8 +183,6 @@ describe('AiAssist.registry', () => {
         expect(desc.baseUrl).toBeTruthy();
         expect(desc.defaultModel).toEqual({
           base: 'grok-4.3',
-          tools: 'grok-4.3',
-          thinking: 'grok-4.3',
           image: 'grok-imagine-image-quality'
         });
         expect(desc.supportedTools).toContain('web_search');
@@ -68,7 +197,8 @@ describe('AiAssist.registry', () => {
 
     test('returns descriptor with image generation support for openai', () => {
       expect(AiAssist.getProviderDescriptor('openai')).toSucceedAndSatisfy((desc) => {
-        expect(desc.imageGeneration).toHaveLength(4);
+        // The DALL·E entries were retired; only gpt-image- and the openai-images catch-all survive.
+        expect(desc.imageGeneration).toHaveLength(2);
         expect(desc.imageGeneration?.[0]).toMatchObject({
           modelPrefix: 'gpt-image-',
           format: 'openai-images',
@@ -76,21 +206,13 @@ describe('AiAssist.registry', () => {
           outputParamStyle: 'output-format'
         });
         expect(desc.imageGeneration?.[1]).toMatchObject({
-          modelPrefix: 'dall-e-3',
-          format: 'openai-images',
-          outputParamStyle: 'response-format'
-        });
-        expect(desc.imageGeneration?.[2]).toMatchObject({
-          modelPrefix: 'dall-e-2',
-          format: 'openai-images',
-          outputParamStyle: 'response-format'
-        });
-        expect(desc.imageGeneration?.[3]).toMatchObject({
           modelPrefix: '',
           format: 'openai-images',
           outputParamStyle: 'response-format'
         });
-        expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('dall-e-3');
+        // The default image model is now an alias that resolves to the surviving gpt-image id.
+        expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@openai:image');
+        expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gpt-image-1.5');
       });
     });
 
@@ -219,9 +341,9 @@ describe('AiAssist.registry', () => {
         acceptsImageReferenceInput: true,
         outputParamStyle: 'output-format'
       });
-      // dall-e-3 hits the dall-e-3 prefix → response-format style.
-      expect(AiAssist.resolveImageCapability(descriptor, 'dall-e-3')).toMatchObject({
-        modelPrefix: 'dall-e-3',
+      // any other openai image id falls to the catch-all → response-format style.
+      expect(AiAssist.resolveImageCapability(descriptor, 'some-legacy-image')).toMatchObject({
+        modelPrefix: '',
         format: 'openai-images',
         outputParamStyle: 'response-format'
       });
@@ -255,7 +377,10 @@ describe('AiAssist.registry', () => {
   describe('embedding registry entries', () => {
     test('openai declares a text-embedding-3 default and a dimensions-capable prefix', () => {
       expect(AiAssist.getProviderDescriptor('openai')).toSucceedAndSatisfy((desc) => {
-        expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('text-embedding-3-small');
+        expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('@openai:embedding');
+        expect(AiAssist.resolveProviderModel(desc, undefined, 'embedding')).toSucceedWith(
+          'text-embedding-3-small'
+        );
         expect(AiAssist.resolveEmbeddingCapability(desc, 'text-embedding-3-small')).toMatchObject({
           modelPrefix: 'text-embedding-3',
           format: 'openai-embeddings',

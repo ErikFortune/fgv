@@ -458,7 +458,7 @@ export interface IAiClientToolTurnResult {
  * Known context keys for model specification maps.
  * @public
  */
-export type ModelSpecKey = 'base' | 'tools' | 'image' | 'thinking' | 'embedding';
+export type ModelSpecKey = 'base' | 'advanced' | 'frontier' | 'image' | 'embedding';
 
 /**
  * All valid {@link ModelSpecKey} values.
@@ -466,9 +466,9 @@ export type ModelSpecKey = 'base' | 'tools' | 'image' | 'thinking' | 'embedding'
  */
 export const allModelSpecKeys: ReadonlyArray<ModelSpecKey> = [
   'base',
-  'tools',
+  'advanced',
+  'frontier',
   'image',
-  'thinking',
   'embedding'
 ];
 
@@ -485,18 +485,18 @@ export const MODEL_SPEC_BASE_KEY: ModelSpecKey = 'base';
  * @remarks
  * A bare string is equivalent to `{ base: string }`. This keeps the simple
  * case simple while allowing context-aware model selection (e.g. different
- * models for tool-augmented vs. base completions).
+ * models for different quality tiers).
  *
  * @example
  * ```typescript
  * // Simple — same model for all contexts:
  * const simple: ModelSpec = 'grok-4.3';
  *
- * // Context-aware — different model for tools and thinking:
- * const split: ModelSpec = { base: 'grok-4.3', tools: 'grok-4.3', thinking: 'grok-4.3' };
+ * // Context-aware — different model per quality tier:
+ * const split: ModelSpec = { base: 'gpt-5.4-mini', advanced: 'gpt-5.5', frontier: 'gpt-5.5-pro' };
  *
- * // Future nested — per-tool model selection:
- * const nested: ModelSpec = { base: 'grok-fast', tools: { base: 'grok-r', image: 'grok-v' } };
+ * // Nested — a tier branch is itself a spec:
+ * const nested: ModelSpec = { base: 'grok-fast', advanced: { base: 'grok-r', image: 'grok-v' } };
  * ```
  * @public
  */
@@ -510,17 +510,38 @@ export interface IModelSpecMap {
 export type ModelSpec = string | IModelSpecMap;
 
 /**
+ * Ordered fallback candidates for each quality-tier context key.
+ *
+ * @remarks
+ * A `frontier` request cascades `frontier → advanced → base`; an `advanced`
+ * request cascades `advanced → base`. Any context not listed here (the
+ * `image`/`embedding` modality keys, or an arbitrary caller-supplied string)
+ * resolves flat — just the context itself, then the shared `base` fallback
+ * below — matching the pre-tier behavior. `base` maps to `['base']` so a
+ * `base` request never over-reaches into a tier branch.
+ */
+const TIER_FALLBACK: { readonly [k: string]: ReadonlyArray<ModelSpecKey> } = {
+  base: ['base'],
+  advanced: ['advanced', 'base'],
+  frontier: ['frontier', 'advanced', 'base']
+};
+
+/**
  * Resolves a {@link ModelSpec} to a concrete model string given an optional context key.
  *
  * @remarks
  * Resolution rules:
  * 1. If the spec is a string, return it directly (context is irrelevant).
- * 2. If the spec is an object and the context key exists, recurse into that branch.
+ * 2. If the spec is an object, walk the ordered candidate keys for the context:
+ *    a quality-tier context (`advanced`/`frontier`) cascades through the
+ *    tier-fallback table (`frontier → advanced → base`, `advanced → base`);
+ *    every other context resolves flat (`[context]`); `undefined` resolves to
+ *    the shared `base` fallback. The first present key wins.
  * 3. Otherwise, fall back to the {@link MODEL_SPEC_BASE_KEY | 'base'} key.
  * 4. If neither context nor `'base'` exists, use the first available value.
  *
  * @param spec - The model specification to resolve
- * @param context - Optional context key (e.g. `'tools'`)
+ * @param context - Optional context key (e.g. `'advanced'`)
  * @returns The resolved model string
  * @public
  */
@@ -529,9 +550,14 @@ export function resolveModel(spec: ModelSpec, context?: string): string {
     return spec;
   }
 
-  // Try the requested context key first
-  if (context !== undefined && context in spec) {
-    return resolveModel(spec[context]);
+  // Ordered candidate keys for this context: a tier key cascades via
+  // TIER_FALLBACK; any other key resolves flat as [context]; undefined drops
+  // straight to the shared 'base' fallback below.
+  const order: ReadonlyArray<string> = context === undefined ? [] : TIER_FALLBACK[context] ?? [context];
+  for (const key of order) {
+    if (key in spec) {
+      return resolveModel(spec[key]);
+    }
   }
 
   // Fall back to 'base'
@@ -911,7 +937,7 @@ export interface IAiProviderDescriptor {
    *
    * Image-model selection reuses the existing `image` {@link ModelSpecKey}.
    * Providers that declare `imageGeneration` should declare a model in
-   * `defaultModel.image`, e.g. `{ base: 'gpt-4o', image: 'dall-e-3' }`.
+   * `defaultModel.image`, e.g. `{ base: '@openai:mini', image: '@openai:image' }`.
    */
   readonly imageGeneration?: ReadonlyArray<IAiImageModelCapability>;
   /**
@@ -926,7 +952,7 @@ export interface IAiProviderDescriptor {
    *
    * Embedding-model selection uses the `embedding` {@link ModelSpecKey}.
    * Providers that declare `embedding` should declare a model in
-   * `defaultModel.embedding`, e.g. `{ base: 'gpt-4o', embedding: 'text-embedding-3-small' }`.
+   * `defaultModel.embedding`, e.g. `{ base: '@openai:mini', embedding: '@openai:embedding' }`.
    * Self-hosted providers (`ollama`, `openai-compat`) leave it unset — the
    * caller supplies the embedding model via `modelOverride`.
    */
@@ -965,7 +991,7 @@ export interface IAiImageModelCapability {
   readonly maxCount?: number;
   /**
    * How to encode the output format on the wire:
-   * - 'response-format': send response_format: 'b64_json' (dall-e-2, dall-e-3)
+   * - 'response-format': send response_format: 'b64_json' (openai-images catch-all)
    * - 'output-format': send output_format (gpt-image-1)
    * - 'none': send neither (Gemini Flash)
    */
@@ -1104,32 +1130,20 @@ export interface IAiEmbeddingResult {
 // Image Generation — Layered Options Types
 // ============================================================================
 
-/** Pixel dimension sizes accepted by dall-e-2. @public */
-export type DallE2Size = '256x256' | '512x512' | '1024x1024';
-
-/** Pixel dimension sizes accepted by dall-e-3. @public */
-export type DallE3Size = '1024x1024' | '1792x1024' | '1024x1792';
-
 /** Pixel dimension sizes accepted by gpt-image-1. @public */
 export type GptImageSize = '1024x1024' | '1536x1024' | '1024x1536' | 'auto';
 
 /** All accepted image size strings across all providers. @public */
-export type AiImageSize = DallE2Size | DallE3Size | GptImageSize;
-
-/** Quality values for dall-e-3. @public */
-export type DallE3Quality = 'standard' | 'hd';
+export type AiImageSize = GptImageSize;
 
 /** Quality values for gpt-image-1. @public */
 export type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
 
 /** All accepted quality strings across all providers. @public */
-export type AiImageQuality = DallE3Quality | GptImageQuality;
-
-/** Model names in the DALL-E family. @public */
-export type DallEModelNames = 'dall-e-2' | 'dall-e-3';
+export type AiImageQuality = GptImageQuality;
 
 /** Model names in the GPT Image family. @public */
-export type GptImageModelNames = 'gpt-image-1';
+export type GptImageModelNames = 'gpt-image-1' | 'gpt-image-1.5';
 
 /** Model names in the xAI Grok Imagine family. @public */
 export type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality';
@@ -1138,21 +1152,6 @@ export type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-q
 export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image-preview';
 
 // ---- Family-level config shapes ----
-
-/**
- * Provider-specific config for DALL-E models (dall-e-2, dall-e-3).
- * @remarks
- * style is only valid for dall-e-3; the runtime validator rejects it for dall-e-2.
- * @public
- */
-export interface IDallEImageGenerationConfig {
-  /** Image dimensions (dall-e-2: 256x256|512x512|1024x1024; dall-e-3: 1024x1024|1792x1024|1024x1792). */
-  readonly size?: DallE2Size | DallE3Size;
-  /** dall-e-3 only. Quality tier. */
-  readonly quality?: DallE3Quality;
-  /** dall-e-3 only. Visual style. */
-  readonly style?: 'vivid' | 'natural';
-}
 
 /**
  * Provider-specific config for gpt-image-1.
@@ -1202,21 +1201,6 @@ export interface IGeminiFlashImageGenerationConfig {
  */
 export interface INamedModelFamilyConfig {
   readonly models?: readonly string[];
-}
-
-/**
- * Options block scoped to DALL-E family models.
- * @public
- */
-export interface IDallEModelOptions extends INamedModelFamilyConfig {
-  /** Discriminator: openai provider lineage. */
-  readonly provider: 'openai';
-  /** Family identifier. */
-  readonly family: 'dall-e';
-  /** Optional model names this block applies to. Omit = applies to all DALL-E models. */
-  readonly models?: DallEModelNames[];
-  /** Family-specific config. */
-  readonly config: IDallEImageGenerationConfig;
 }
 
 /**
@@ -1273,7 +1257,6 @@ export interface IOtherModelOptions {
  * @public
  */
 export type IModelFamilyConfig =
-  | IDallEModelOptions
   | IGptImageModelOptions
   | IGrokImagineModelOptions
   | IGeminiFlashImageModelOptions
@@ -1315,7 +1298,6 @@ export interface IAiImageGenerationOptions {
   readonly count?: number;
   /**
    * Quality tier. Accepted values differ per model:
-   * - dall-e-3: 'standard' | 'hd'
    * - gpt-image-1: 'low' | 'medium' | 'high' | 'auto'
    * Other models ignore this field.
    */
@@ -1453,13 +1435,20 @@ export interface IAiImageGenerationResponse {
 
 /**
  * Model IDs for Anthropic thinking-capable models.
+ *
+ * @remarks
+ * Only thinking-capable lines are listed. The non-tier `@anthropic:haiku` / `@anthropic:fable`
+ * aliases (reachable via `modelOverride` only) are deliberately omitted — they are not
+ * documented as thinking-capable, so naming them in a thinking-model filter would be misleading.
  * @public
  */
 export type AnthropicThinkingModelNames =
   | 'claude-sonnet-4-5'
   | 'claude-sonnet-4-6'
+  | 'claude-sonnet-5'
   | 'claude-opus-4-6'
-  | 'claude-opus-4-7';
+  | 'claude-opus-4-7'
+  | 'claude-opus-4-8';
 
 /**
  * Model IDs for OpenAI thinking-capable models.
@@ -1473,7 +1462,9 @@ export type OpenAiThinkingModelNames =
   | 'gpt-5'
   | 'gpt-5.1'
   | 'gpt-5.2'
+  | 'gpt-5.4-mini'
   | 'gpt-5.5'
+  | 'gpt-5.5-pro'
   | 'gpt-5-pro';
 
 /**
