@@ -202,6 +202,17 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ---
 
+### `ai-assist-tool-annotations` 🟢
+
+**Status:** 🟢 ready to commission — precursor to `agent-memory-l2-tools` (L2's write tools consume it). Fully spiked 2026-07-07 (ai-assist tool surface + MCP adapter). Consumer: PersonAIlity (mediated agent writes).
+**Branch base:** `release` HEAD.
+**Package surface:** `@fgv/ts-extras/ai-assist` (`model.ts`, `clientToolContinuationBuilder.ts`, `index.ts`) + `@fgv/ts-extras-mcp` (`sdk.ts`, `operations.ts`, `model.ts`, `adapter.ts`).
+**Brief:** `.ai/tasks/active/ai-assist-tool-annotations/brief.md`.
+
+**Mission.** Add client-tool **behavior annotations** + a **before-execute gate hook** to the ai-assist client-tool surface. Three components: (1) `IAiToolAnnotations` + `IAiClientToolConfig.annotations?` (MCP-native names; host-advisory-only — no provider wire slot, so serialization is unaffected); (2) thread MCP `Tool.annotations` → the field through `adaptMcpTools` (validated, per the untrusted-server warning — currently dropped at 3 layers); (3) `onBeforeToolExecute?` gate on `executeClientToolTurn` (deny → synthesized denial tool-result, turn continues — reuses the tested failure→continuation path). Additive on both active surfaces. **Full design (incl. deny-semantics, locked) is in the brief** — built up front because it's well-understood, low-medium effort, and ships *with* the write tools it protects (avoiding the shovel-ready-then-forgotten carrying cost).
+
+---
+
 ### `agent-memory-temporal` 🟡
 
 **Status:** 🟡 drafted, **consumer-validated** (PersonAIlity 2026-07-07, PR #521), not commissioned — gated on their epistemics/contradiction-handling work (after L2). Keystone of the three (L3 hard-depends on it).
@@ -215,7 +226,7 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ### `agent-memory-l2-tools` 🟡
 
-**Status:** 🟡 drafted, **consumer-validated** (PersonAIlity 2026-07-07, PR #521), not commissioned — **nearest-term consumer**; recommended first or in parallel with temporal. **Independent** of temporal/L3.
+**Status:** 🟡 drafted, **consumer-validated** (PersonAIlity 2026-07-07, PR #521), not commissioned — **nearest-term consumer**; recommended first or in parallel with temporal. **Depends on `ai-assist-tool-annotations`** (annotations field + gate hook); independent of temporal/L3.
 **Branch base:** `release` HEAD; reference the ts-agent-memory completion bundle + `@fgv/ts-extras-mcp` `adapter.ts` (the `IAiClientTool` construction idiom).
 **Package surface:** new `@fgv/ts-agent-memory/tools` packlet; consumes `@fgv/ts-extras` ai-assist `IAiClientTool` + `@fgv/ts-json-base` `JsonSchema`.
 **Brief:** `.ai/tasks/active/agent-memory-l2-tools/brief.md`.
