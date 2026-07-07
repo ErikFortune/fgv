@@ -11,6 +11,7 @@ Array [
   "local-embedding-search",
   "local-summarization",
   "mcp-probe",
+  "memory-tools-gate",
   "cross-provider-embedding-search",
   "openai-model-tiers",
   "anthropic-model-tiers",
