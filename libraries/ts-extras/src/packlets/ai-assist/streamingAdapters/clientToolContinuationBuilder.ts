@@ -399,6 +399,27 @@ export function buildGeminiContinuation(
 // ============================================================================
 
 /**
+ * Decision returned by an {@link IExecuteClientToolTurnParams.onBeforeToolExecute}
+ * gate for a single client-tool call.
+ *
+ * @remarks
+ * - `{ action: 'proceed' }` — run the tool's `execute` normally.
+ * - `{ action: 'deny', reason }` — do NOT run `execute`; a synthesized tool-result
+ *   carrying `reason` is fed into the continuation exactly like a normal result so
+ *   the model can react, and a `client-tool-result` event is emitted for the call.
+ *   The turn continues.
+ *
+ * A gate that wants to signal a hard error (as opposed to a deliberate deny) should
+ * return `Result.fail` (or reject) from the callback — that is treated like an
+ * `execute` failure, not a silent deny.
+ *
+ * @public
+ */
+export type IToolExecutionDecision =
+  | { readonly action: 'proceed' }
+  | { readonly action: 'deny'; readonly reason: string };
+
+/**
  * Parameters for {@link AiAssist.executeClientToolTurn}.
  *
  * @remarks
@@ -467,6 +488,24 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
   readonly resolvedThinking?: IResolvedThinkingConfig;
   /** Resolved model string (pre-resolved by the caller). When omitted, uses the descriptor's default model. */
   readonly model?: string;
+  /**
+   * Optional host gate invoked for each client-tool call **after** the model's raw
+   * args have been validated against the tool's `parametersSchema` and **before**
+   * `tool.execute(...)` runs. The full `tool` (including `tool.config.annotations`)
+   * and the validated `args` are passed so gate logic can key off a tool's behavior
+   * annotations (e.g. deny a `destructiveHint` call pending confirmation).
+   *
+   * Returning `{ action: 'proceed' }` (or omitting the callback) runs `execute`
+   * normally. Returning `{ action: 'deny', reason }` skips `execute` and synthesizes
+   * a denial tool-result carrying `reason` into the continuation (the model sees the
+   * denial and can react); the turn continues. A callback that returns `Result.fail`
+   * or rejects is treated as a hard error, exactly like an `execute` failure — a deny
+   * must be explicit.
+   */
+  readonly onBeforeToolExecute?: (
+    tool: IAiClientTool,
+    args: unknown
+  ) => Promise<Result<IToolExecutionDecision>>;
 }
 
 /**
@@ -529,7 +568,8 @@ export function executeClientToolTurn(
     logger,
     resolvedThinking,
     model,
-    endpoint
+    endpoint,
+    onBeforeToolExecute
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -714,6 +754,50 @@ export function executeClientToolTurn(
           yield resultEvent;
           toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
           continue;
+        }
+
+        // Host gate: run after arg-validation, before execute. A `deny` decision
+        // synthesizes a denial tool-result and continues the turn; a `fail`/reject
+        // from the gate itself is a hard error (mirrors an execute failure), never
+        // a silent deny.
+        if (onBeforeToolExecute !== undefined) {
+          const decisionResult: Result<IToolExecutionDecision> = (
+            await captureAsyncResult(async () => onBeforeToolExecute(tool, validationResult.value))
+          ).onSuccess((decision) => decision);
+
+          if (decisionResult.isFailure()) {
+            const errMsg = `${toolName} (callId=${callId}): ${decisionResult.message}`;
+            const resultEvent: IAiStreamEvent = {
+              type: 'client-tool-result',
+              toolName,
+              callId,
+              result: errMsg,
+              isError: true
+            };
+            yield resultEvent;
+            // Gate-fail is a hard, turn-terminating error (unlike a non-fatal `deny`, whose
+            // generator continues). Emit an explicit `error` event so a consumer watching only
+            // `events` sees the fatal failure inline and can distinguish it from a deny — matching
+            // the stream-open / continuation hard-error paths.
+            yield { type: 'error', message: errMsg };
+            toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
+            resolveNextTurn(fail(errMsg));
+            return;
+          }
+
+          if (decisionResult.value.action === 'deny') {
+            const denialMsg = `${toolName} (callId=${callId}): tool execution denied: ${decisionResult.value.reason}`;
+            const resultEvent: IAiStreamEvent = {
+              type: 'client-tool-result',
+              toolName,
+              callId,
+              result: denialMsg,
+              isError: true
+            };
+            yield resultEvent;
+            toolResults.push({ toolName, callId, args, result: denialMsg, isError: true });
+            continue;
+          }
         }
 
         const executeResult = await captureAsyncResult(async () => tool.execute(validationResult.value));

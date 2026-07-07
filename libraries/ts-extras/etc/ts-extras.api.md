@@ -35,6 +35,7 @@ declare namespace AiAssist {
         AiToolConfig,
         IAiWebSearchToolConfig,
         IAiClientToolConfig,
+        IAiToolAnnotations,
         IAiClientTool,
         IAiClientToolCallSummary,
         IAiClientToolContinuation,
@@ -146,6 +147,7 @@ declare namespace AiAssist {
         executeClientToolTurn,
         IExecuteClientToolTurnParams,
         IExecuteClientToolTurnResult,
+        IToolExecutionDecision,
         aiProviderId,
         aiServerToolType,
         aiWebSearchToolConfig,
@@ -838,6 +840,8 @@ interface IAiClientToolCallSummary {
 
 // @public
 interface IAiClientToolConfig<TParams = unknown> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiToolAnnotations"
+    readonly annotations?: IAiToolAnnotations;
     readonly description: string;
     readonly name: string;
     readonly parametersSchema: JsonSchema.ISchemaValidator<TParams>;
@@ -1073,6 +1077,15 @@ interface IAiStreamToolUseStart {
 }
 
 // @public
+interface IAiToolAnnotations {
+    readonly destructiveHint?: boolean;
+    readonly idempotentHint?: boolean;
+    readonly openWorldHint?: boolean;
+    readonly readOnlyHint?: boolean;
+    readonly title?: string;
+}
+
+// @public
 interface IAiToolEnablement {
     readonly config?: AiServerToolConfig;
     readonly enabled: boolean;
@@ -1279,6 +1292,7 @@ interface IExecuteClientToolTurnParams extends IChatRequest {
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
     readonly model?: string;
+    readonly onBeforeToolExecute?: (tool: IAiClientTool, args: unknown) => Promise<Result<IToolExecutionDecision>>;
     readonly resolvedThinking?: IResolvedThinkingConfig;
     readonly signal?: AbortSignal;
     readonly temperature?: number;
@@ -1784,6 +1798,16 @@ interface IThinkingConfig {
 
 // @public
 type IThinkingProviderConfig = IAnthropicThinkingOptions | IOpenAiThinkingOptions | IGeminiThinkingOptions | IXAiThinkingOptions | IOtherThinkingOptions;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IExecuteClientToolTurnParams"
+//
+// @public
+type IToolExecutionDecision = {
+    readonly action: 'proceed';
+} | {
+    readonly action: 'deny';
+    readonly reason: string;
+};
 
 // @public
 interface IVariableRef {

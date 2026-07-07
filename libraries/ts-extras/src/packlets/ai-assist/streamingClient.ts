@@ -67,7 +67,8 @@ export type { IProviderCompletionStreamParams } from './streamingAdapters/common
 export {
   executeClientToolTurn,
   type IExecuteClientToolTurnParams,
-  type IExecuteClientToolTurnResult
+  type IExecuteClientToolTurnResult,
+  type IToolExecutionDecision
 } from './streamingAdapters/clientToolContinuationBuilder';
 
 /**

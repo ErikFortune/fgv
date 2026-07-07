@@ -6,6 +6,7 @@ Array [
   "openai-client-tools",
   "gemini-client-tools",
   "xai-client-tools",
+  "gate-deny-client-tools",
   "local-classifier-safety",
   "local-embedding-search",
   "local-summarization",

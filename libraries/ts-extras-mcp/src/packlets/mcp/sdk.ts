@@ -72,6 +72,12 @@ export interface ISdkToolDescriptor {
   readonly name: string;
   readonly description?: string;
   readonly inputSchema?: unknown;
+  /**
+   * Raw MCP `Tool.annotations` (untrusted). Declared as `unknown` so the SDK field survives
+   * narrowing; the operations layer validates/normalizes it (never propagates raw) per the MCP
+   * spec's untrusted-server warning.
+   */
+  readonly annotations?: unknown;
 }
 
 /**

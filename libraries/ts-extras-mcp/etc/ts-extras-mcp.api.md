@@ -82,12 +82,22 @@ export interface IMcpStdioTransportParams {
 }
 
 // @public
+export interface IMcpToolAnnotations {
+    readonly destructiveHint?: boolean;
+    readonly idempotentHint?: boolean;
+    readonly openWorldHint?: boolean;
+    readonly readOnlyHint?: boolean;
+    readonly title?: string;
+}
+
+// @public
 export interface IMcpToolCallResult {
     readonly content: string;
 }
 
 // @public
 export interface IMcpToolDescriptor {
+    readonly annotations?: IMcpToolAnnotations;
     readonly description: string | undefined;
     readonly inputSchema: JsonValue;
     readonly name: string;

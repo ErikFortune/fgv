@@ -13,6 +13,7 @@ export {
   type AiToolConfig,
   type IAiWebSearchToolConfig,
   type IAiClientToolConfig,
+  type IAiToolAnnotations,
   type IAiClientTool,
   type IAiClientToolCallSummary,
   type IAiClientToolContinuation,
@@ -138,7 +139,8 @@ export {
   type IProviderCompletionStreamParams,
   executeClientToolTurn,
   type IExecuteClientToolTurnParams,
-  type IExecuteClientToolTurnResult
+  type IExecuteClientToolTurnResult,
+  type IToolExecutionDecision
 } from './streamingClient';
 
 export {

@@ -249,6 +249,35 @@ export interface IAiToolEnablement {
 // ============================================================================
 
 /**
+ * Behavior annotations for a client-defined tool.
+ *
+ * @remarks
+ * These are **host-advisory-only hints** describing a tool's side-effect profile.
+ * They are consumed by the host's tool loop (e.g. a before-execute gate) and are
+ * **never serialized to the model** — the provider wire tool-schemas whitelist
+ * `{name, description, parameters}` and ignore this field.
+ *
+ * Field names mirror MCP's `ToolAnnotations` (`@modelcontextprotocol/sdk`) 1:1 so
+ * an MCP tool's annotations pass through unchanged. Per the MCP spec, all fields
+ * are hints — a host should never make tool-use decisions based on annotations
+ * received from an untrusted server without its own validation.
+ *
+ * @public
+ */
+export interface IAiToolAnnotations {
+  /** Optional human-readable display title for the tool. */
+  readonly title?: string;
+  /** Hint: the tool does not modify its environment (read-only). */
+  readonly readOnlyHint?: boolean;
+  /** Hint: the tool may perform destructive updates (only meaningful when not read-only). */
+  readonly destructiveHint?: boolean;
+  /** Hint: repeated calls with the same arguments have no additional effect. */
+  readonly idempotentHint?: boolean;
+  /** Hint: the tool interacts with an open world of external entities. */
+  readonly openWorldHint?: boolean;
+}
+
+/**
  * Configuration for a client-defined (harness-supplied) tool.
  *
  * @remarks
@@ -273,6 +302,12 @@ export interface IAiClientToolConfig<TParams = unknown> {
    * `.toJson()` and validates model-returned args via `.validate(rawArgs)`.
    */
   readonly parametersSchema: JsonSchema.ISchemaValidator<TParams>;
+  /**
+   * Optional host-advisory behavior annotations (read-only / destructive /
+   * idempotent / open-world hints + display title). Consumed by the host's
+   * tool loop; never serialized to the model. See {@link IAiToolAnnotations}.
+   */
+  readonly annotations?: IAiToolAnnotations;
 }
 
 /**
