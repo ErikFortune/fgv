@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { JsonSchema } from '@fgv/ts-json-base';
 import { AiAssist } from '@fgv/ts-extras';
 import { Convert, EntityId, IIdentityCodec, IMemoryRecord, Kind, MemoryId, Tag } from '../types';
@@ -256,8 +256,14 @@ function resolveOptionalKind(ctx: IToolContext, kindStr?: string): Result<Kind |
 
 /** Project a record into an agent-visible result item, applying the host handle hook when present. */
 function projectItem(ctx: IToolContext, record: IMemoryRecord<unknown>): IMemoryToolResultItem {
+  // `handleFor` is a host callback; guard it so a throw degrades to the raw id rather than
+  // escaping the Result chain (and crashing the whole search/context call).
+  const handle =
+    ctx.handleFor !== undefined
+      ? captureResult(() => ctx.handleFor!(record)).orDefault(record.envelope.id)
+      : record.envelope.id;
   return {
-    handle: ctx.handleFor !== undefined ? ctx.handleFor(record) : record.envelope.id,
+    handle,
     kind: record.envelope.kind,
     entityId: record.envelope.entityId,
     tags: record.envelope.tags,

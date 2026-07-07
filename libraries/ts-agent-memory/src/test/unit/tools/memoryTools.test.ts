@@ -605,6 +605,26 @@ describe('createMemoryTools', () => {
       });
     });
 
+    test('falls back to the raw id when a throwing handleFor would otherwise escape', async () => {
+      const retriever = makeRetriever([{ id: 'doc-1', tags: ['topic'] }]);
+      const tool = toolByName(
+        createMemoryTools({
+          store: makeStore(),
+          retriever,
+          registry: registryWith([{ kind: knowledgeKind }]),
+          handleFor: () => {
+            throw new Error('host handle hook blew up');
+          }
+        }),
+        'memory_search'
+      );
+      // A throwing host callback must not crash the search; the item degrades to the raw id.
+      expect(await tool.execute({ tag: 'topic', limit: 5 })).toSucceedAndSatisfy((value) => {
+        const out = value as { results: ReadonlyArray<IMemoryToolResultItem> };
+        expect(out.results[0].handle).toBe('doc-1');
+      });
+    });
+
     test('loud-degrades on the unwired semantic axis', async () => {
       const retriever = makeRetriever([{ id: 'doc-1' }]);
       const tool = toolByName(

@@ -43,7 +43,7 @@
  * @packageDocumentation
  */
 
-import { Converters, fail, succeed } from '@fgv/ts-utils';
+import { Converters, captureResult, fail, succeed } from '@fgv/ts-utils';
 import type { Result } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { AiAssist } from '@fgv/ts-extras';
@@ -122,15 +122,18 @@ function buildMemory(): Result<{
   store: FileTreeMemoryStore;
   tools: ReadonlyArray<AiAssist.IAiClientTool>;
 }> {
-  const tree = FileTree.inMemory([], { mutable: true }).orThrow();
-  const root = tree.getDirectory('/').orThrow();
-  if (!FileTree.isMutableDirectoryItem(root)) {
-    return fail('expected a mutable root directory');
-  }
-  const registry = BodyConverterRegistry.create().orThrow();
-  registry.register(KNOWLEDGE_KIND, Converters.string);
-  const codecs = new Map<Kind, IIdentityCodec>([[KNOWLEDGE_KIND, new KnowledgeIdentityCodec()]]);
-  return FileTreeMemoryStore.create({ root, registry, codecs }).onSuccess((store) => {
+  // Wrap the whole setup so the `.orThrow()` calls convert to a `Failure` instead of
+  // escaping as an unhandled rejection through the async `run` (which must return a Result).
+  return captureResult(() => {
+    const tree = FileTree.inMemory([], { mutable: true }).orThrow();
+    const root = tree.getDirectory('/').orThrow();
+    if (!FileTree.isMutableDirectoryItem(root)) {
+      throw new Error('expected a mutable root directory');
+    }
+    const registry = BodyConverterRegistry.create().orThrow();
+    registry.register(KNOWLEDGE_KIND, Converters.string);
+    const codecs = new Map<Kind, IIdentityCodec>([[KNOWLEDGE_KIND, new KnowledgeIdentityCodec()]]);
+    const store = FileTreeMemoryStore.create({ root, registry, codecs }).orThrow();
     const retriever = HybridRetriever.create(
       [StructuredFilterRetriever.create(MemoryIndex.create().orThrow()).orThrow()],
       ScoreUnionMergeStrategy.create().orThrow()
@@ -145,7 +148,7 @@ function buildMemory(): Result<{
       // Host handle vocabulary: the agent sees mnemonics, not raw ids.
       handleFor: (record) => `@${record.envelope.id}`
     });
-    return succeed({ store, tools });
+    return { store, tools };
   });
 }
 
