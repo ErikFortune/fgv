@@ -23,7 +23,7 @@ import '@fgv/ts-utils-jest';
 import { JsonSchema } from '@fgv/ts-json-base';
 
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { aiClientToolConfig } from '../../../packlets/ai-assist/converters';
+import { aiClientToolConfig, aiToolAnnotations } from '../../../packlets/ai-assist/converters';
 
 // ============================================================================
 // aiClientToolConfig converter
@@ -79,6 +79,51 @@ describe('aiClientToolConfig', () => {
       expect(aiClientToolConfig.convert(validConfig)).toSucceedAndSatisfy((config) => {
         expect(config.parametersSchema.validate({ query: 'test' })).toSucceed();
       });
+    });
+
+    test('projects annotations when present (not dropped)', () => {
+      const withAnnotations = {
+        ...validConfig,
+        annotations: { destructiveHint: true, idempotentHint: true, title: 'Delete Memory' }
+      };
+      expect(aiClientToolConfig.convert(withAnnotations)).toSucceedAndSatisfy((config) => {
+        expect(config.annotations).toEqual({
+          destructiveHint: true,
+          idempotentHint: true,
+          title: 'Delete Memory'
+        });
+      });
+    });
+
+    test('leaves annotations undefined when absent', () => {
+      expect(aiClientToolConfig.convert(validConfig)).toSucceedAndSatisfy((config) => {
+        expect(config.annotations).toBeUndefined();
+      });
+    });
+  });
+
+  describe('aiToolAnnotations converter', () => {
+    test('accepts a partial set of hints', () => {
+      expect(aiToolAnnotations.convert({ readOnlyHint: true })).toSucceedWith({ readOnlyHint: true });
+    });
+
+    test('accepts all five fields', () => {
+      const all = {
+        title: 'Search',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false
+      };
+      expect(aiToolAnnotations.convert(all)).toSucceedWith(all);
+    });
+
+    test('accepts an empty object (all hints optional)', () => {
+      expect(aiToolAnnotations.convert({})).toSucceedWith({});
+    });
+
+    test('rejects a wrong-typed hint', () => {
+      expect(aiToolAnnotations.convert({ readOnlyHint: 'yes' })).toFail();
     });
   });
 

@@ -125,6 +125,31 @@ export interface IMcpSession {
 // ============================================================================
 
 /**
+ * Normalized MCP `Tool.annotations` — the five known host-advisory behavior hints.
+ *
+ * @remarks
+ * Field names mirror MCP's `ToolAnnotations` 1:1 (and map straight onto
+ * `AiAssist.IAiToolAnnotations`). Per the MCP spec these are hints only, and per the
+ * untrusted-server warning they are validated/normalized (known fields kept, malformed
+ * or unknown fields dropped) before they reach {@link IMcpToolDescriptor} — the raw
+ * server blob is never propagated.
+ *
+ * @public
+ */
+export interface IMcpToolAnnotations {
+  /** Optional human-readable display title for the tool. */
+  readonly title?: string;
+  /** Hint: the tool does not modify its environment (read-only). */
+  readonly readOnlyHint?: boolean;
+  /** Hint: the tool may perform destructive updates (only meaningful when not read-only). */
+  readonly destructiveHint?: boolean;
+  /** Hint: repeated calls with the same arguments have no additional effect. */
+  readonly idempotentHint?: boolean;
+  /** Hint: the tool interacts with an open world of external entities. */
+  readonly openWorldHint?: boolean;
+}
+
+/**
  * A tool descriptor discovered from an MCP server via {@link listMcpTools}.
  * @public
  */
@@ -140,6 +165,12 @@ export interface IMcpToolDescriptor {
    * supported subset).
    */
   readonly inputSchema: JsonValue;
+  /**
+   * The tool's normalized behavior annotations, when the server provided any usable ones.
+   * Absent when the server declared no annotations (or only malformed/unknown fields).
+   * See {@link IMcpToolAnnotations}.
+   */
+  readonly annotations?: IMcpToolAnnotations;
 }
 
 /**

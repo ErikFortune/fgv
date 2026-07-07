@@ -71,7 +71,7 @@ function _makeExecute(session: IMcpSession, name: string): (args: unknown) => Pr
  * tool's `inputSchema` is not a JSON object or is outside the `JsonSchema.fromJson` subset.
  */
 function _adaptOne(session: IMcpSession, descriptor: IMcpToolDescriptor): IAdaptOutcome {
-  const { name, description, inputSchema } = descriptor;
+  const { name, description, inputSchema, annotations } = descriptor;
 
   const skip = (reason: string, schema: JsonValue): IAdaptOutcome => ({
     kind: 'skipped',
@@ -92,7 +92,10 @@ function _adaptOne(session: IMcpSession, descriptor: IMcpToolDescriptor): IAdapt
     type: 'client_tool',
     name,
     description: description ?? name,
-    parametersSchema: schemaResult.value
+    parametersSchema: schemaResult.value,
+    // IMcpToolAnnotations maps 1:1 onto AiAssist.IAiToolAnnotations. Only set the field when the
+    // server provided usable annotations, so a tool without them stays exactly as before.
+    ...(annotations !== undefined ? { annotations } : {})
   };
   return {
     kind: 'tool',

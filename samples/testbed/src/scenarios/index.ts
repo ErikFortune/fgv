@@ -12,6 +12,7 @@
 import type { IScenario } from '../shell';
 import { anthropicClientToolsScenario } from './anthropicClientTools';
 import { crossProviderEmbeddingSearchScenario } from './crossProviderEmbeddingSearch';
+import { gateDenyClientToolsScenario } from './gateDenyClientTools';
 import { geminiClientToolsScenario } from './geminiClientTools';
 import { localClassifierSafetyScenario } from './localClassifierSafety';
 import { localEmbeddingSearchScenario } from './localEmbeddingSearch';
@@ -34,6 +35,7 @@ export const scenarios: readonly IScenario[] = [
   openaiClientToolsScenario,
   geminiClientToolsScenario,
   xaiClientToolsScenario,
+  gateDenyClientToolsScenario,
   localClassifierSafetyScenario,
   localEmbeddingSearchScenario,
   localSummarizationScenario,
