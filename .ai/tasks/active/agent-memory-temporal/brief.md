@@ -9,6 +9,14 @@
 **Surface:** `@fgv/ts-agent-memory` (**active** — new library, no external consumers; additive/breaking OK).
 **Ships under the enforced coverage gate** — 100% real.
 
+## Consumer feedback (PersonAIlity, 2026-07-07 — folded in)
+
+From the nearest-term adopter (three `FileTreeMemoryStore` adoptions live, in-place revision via `put()` merge-patch). Timed for "when we get to epistemics / contradiction handling" — after L2.
+
+1. **Pin the merge-patch-under-versioning contract (added to scope item 3).** For a `temporal-versioned` kind, a merge-patch `put()` on an existing entity must produce **a new version + `invalid_at` on the prior** — i.e. merge-patch *composes with* versioning rather than mutating the current version in place. This is the semantics their re-curation path relies on. The brief implied it; it is now pinned against the merge-patch path specifically.
+2. **OQ-11 → subtree-per-entity (consumer-backed).** They back the recommendation; flat+sidecar is "two sources of truth, exactly what bites during crash recovery." Treat subtree-per-entity as the default unless a hard reason emerges.
+3. **Keep the flat / `isVersioned:false` guarantee prominent (load-bearing for them).** Knowledge/LTM/MTM staying flat with **zero impact on shipped stores until a kind opts in** is an explicit adoption guarantee — see scope item 6, elevated.
+
 ## Why this is real work, not plumbing
 
 Every temporal seam is **already present and typed** in v1, but the enforcement is **stubbed to fail loudly**. Nothing about serialization needs to change — the converters already round-trip `temporal?`, `valid_at`, `invalid_at` (`packlets/converters/envelopeConverter.ts:74-77,84-89,109`). What's missing is the write/read *logic*:
@@ -37,7 +45,8 @@ Every temporal seam is **already present and typed** in v1, but the enforcement 
 **OPEN — must be resolved at commission (this brief's first decisions):**
 - **OQ-11 — versioned identity/layout model is NOT locked** (design §6.2:574-577, §12:1124-1136). Two candidates:
   - *Recommended default:* subtree-per-entity — `<scope>/entities/<entityId>/<entityId>-v<seq>.md`; current version = latest with `invalid_at` null/absent.
-  - *Pivot:* keep flat layout + a sidecar version-index file (`<entityId>.index.json`).
+  - *Pivot:* keep flat layout + a sidecar version-index file (`<entityId>.index.json`). **Consumer counsel against this** — "two sources of truth, exactly what bites during crash recovery."
+  - **Consumer-backed default: subtree-per-entity.** PersonAIlity backs the recommendation; treat subtree-per-entity as the default and only revisit for a hard reason.
   - **Non-negotiable:** do NOT bake `id == filename == single current value` as a global assumption.
   - **→ Decide this FIRST.** It drives the codec, the store read/write/delete branches, and the `_verifyLoaded` relaxation.
 - **OQ-9 — temporal query depth** (design §12:1099-1107). Ship point-in-time (`asOf`) + current-valid + history. **Defer** full bi-temporal reasoning (state-transition timelines, "what did the agent believe about X between A and B", LongMemEval-class) — additive later; the capture is already in the envelope.
@@ -46,10 +55,10 @@ Every temporal seam is **already present and typed** in v1, but the enforcement 
 
 1. **Resolve OQ-11** (layout) — recommend subtree-per-entity unless a concrete reason favors the sidecar index; document the choice at the top of the stream's design note.
 2. **Temporal `IIdentityCodec`** returning `isVersioned: true` + the chosen versioned path layout (encode/decode/verifyRoundTrip for `<entityId>-v<seq>` stems).
-3. **`temporal-versioned` `IWritePolicy`** implementing invalidate-don't-delete: `admit` accepts; on a superseding write, set `invalid_at` on the current version and write the new version. Declare `mutableFields`/`dedupScope` consistent with the versioned semantics. (No existing policy to extend — this is a new sibling in `writePolicy.ts`.)
+3. **`temporal-versioned` `IWritePolicy`** implementing invalidate-don't-delete: `admit` accepts; on a superseding write, set `invalid_at` on the current version and write the new version. Declare `mutableFields`/`dedupScope` consistent with the versioned semantics. (No existing policy to extend — this is a new sibling in `writePolicy.ts`.) **Merge-patch-under-versioning contract (consumer-pinned):** a merge-patch `put()` on an existing temporal-versioned entity must compose with versioning — apply the RFC-7386 merge to the current version's content to form the new version's content, write that as **a new version, and set `invalid_at` on the prior** — NOT mutate the current version in place. Test this explicitly (a merge-patch re-`put` yields two persisted versions, prior carrying `invalid_at`).
 4. **Store branches** — replace the three `if (addr.isVersioned) return fail(...)` fail-stops (`:304,:493,:780`) with real versioned read (resolve current or `asOf` version), write (new version + invalidate prior), and delete (invalidate-don't-delete, or hard-delete-all-versions — decide + document). Relax the `id === stem` verify (`:911`) for versioned kinds. Wire `IMemoryStoreListFilter.asOf` (`:53`) to select the version valid at that instant. Extend `_mutableFieldAccessors` if `invalid_at` rides the update path.
 5. **Retrievers** — `AsOfRetriever` / `CurrentValidRetriever` / `HistoryRetriever` declaring `supportsTemporalQuery: true`. The loud-degrade guard (`retriever.ts:134`) and Hybrid `asOf` projection (`hybridRetriever.ts:171`) already accommodate a temporal child — verify they light up the composite.
-6. **Do NOT** touch the non-temporal path (Knowledge/LTM/MTM stay `isVersioned: false`, flat) beyond what the shared code requires; do NOT build the `contradicts` interlock here (that's L3 — see below).
+6. **Preserve the flat-path guarantee (consumer adoption gate).** Knowledge/LTM/MTM stay `isVersioned: false`, flat, with **zero behavioral impact until a kind explicitly opts into a temporal codec** — no shipped store migrates, no persisted record changes shape. Touch the non-temporal path only as the shared code strictly requires, and assert this guarantee in the regression tests. Do NOT build the `contradicts` interlock here (that's L3 — see below).
 
 ## Interdependencies
 

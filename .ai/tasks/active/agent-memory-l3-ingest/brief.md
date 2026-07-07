@@ -8,6 +8,15 @@
 **Surface:** `@fgv/ts-agent-memory` (new `ingest/` packlet); reads `retrieve` + `vector`; writes via `store`. **Active** library.
 **Ships under the enforced coverage gate** — 100% real.
 
+## Consumer feedback (PersonAIlity, 2026-07-07 — folded in)
+
+Furthest-out of the three for them ("L3 furthest out"), but they gave four shaping inputs that **lock two open questions** and add two requirements:
+
+1. **OQ-10 → staged host interface (LOCKED).** They already own classifiers/extractors (their curator framework) and would plug into the classify/extract/relate stages. An opaque "hand me items" ingestor would force them to abandon working machinery. → Ship the staged split, not the opaque `IMemoryIngestor`.
+2. **Single-item incremental ingest is first-class (new requirement).** Their writes are per-turn and streaming; a batch-only orchestrator that only pays off at batch N can't serve their main pipeline (only the smaller knowledge-vault document path). The orchestrator API must accept and be efficient for a **single `IIngestItem`**, not just an array.
+3. **OQ-13 → `IEntityResolver` stays optional (LOCKED).** Their entity keys are deterministic composites (`<conversationId>:<turnIndex>`, `<conversationId>`); a mandatory resolver is dead weight for deterministic-identity hosts.
+4. **Additive/optional provenance guarantee (new).** The provenance fields (`by`/`model`/`confidence`/`derivedFrom` — the memory-lineage substrate they want but don't stamp today) must land **additive/optional**, so already-persisted `mtm`/`ltm` records stay valid with **no migration**. (Already true of the shipped envelope; make it an explicit non-regression the stream must preserve and test.)
+
 ## Goal
 
 The fgv-side ingestion target for a consumer's own extract/relate pipeline. **The host brings classify/extract/relate judgment; fgv owns the typed validation boundary, dedup, edge/cycle safety, provenance stamping, and the `contradicts`→temporal interlock.** Cognee-ECL-shaped six-stage pipeline (design §9).
@@ -33,16 +42,19 @@ The fgv-side ingestion target for a consumer's own extract/relate pipeline. **Th
 - **Body validation boundary**: every `ICandidateRecord.body` validated against the kind's registered Converter before the store (design:829-832).
 - **Attributed edges + structured provenance (not bare strings)** — "firmest Phase-A recommendation," already shipped.
 
-**OPEN — this brief's decisions at commission:**
-- **OQ-10 — host-interface granularity (the central fork).** Staged split (`IMemoryClassifier` + `IFactExtractor` + `IEntityResolver?` + `IRelationExtractor`) — *recommended*, because fgv's stage-4-6 machinery is the value-add and a single opaque `IMemoryIngestor` pushes it back onto the host — vs. one opaque `IMemoryIngestor`. Decide at commission.
-- **OQ-13 — `IEntityResolver` optional (default) vs. required.** Without it, layer-2 near-dup dedup falls back to exact-hash-only. `IEntityResolver` returns `new | duplicate-of | supersede | merge-into`. Not defined anywhere in v1.
+**LOCKED by consumer feedback:**
+- **OQ-10 — staged host interface.** Ship the staged split (`IMemoryClassifier` + `IFactExtractor` + `IEntityResolver?` + `IRelationExtractor`), NOT the opaque `IMemoryIngestor` — the consumer plugs its existing classifier/extractor machinery into the stages (fgv's stage-4-6 machinery is the value-add).
+- **OQ-13 — `IEntityResolver` optional.** Optional, not required — deterministic-identity hosts (composite keys) skip it; without it, layer-2 near-dup dedup falls back to exact-hash-only. Returns `new | duplicate-of | supersede | merge-into`.
+- **Single-item incremental ingest is first-class.** The orchestrator accepts and is efficient for a single `IIngestItem` (per-turn streaming writes), not just a batch array. Batch is a convenience over the single-item path, not the only path.
+
+**Still OPEN — decide at commission:**
 - **Similarity-dedup layer is entirely new.** V1 has exact content-hash dedup only; the vector packlet provides cosine *search* but nothing wires similarity into the write/dedup path. L3 layer-2 = vector candidate-gen + threshold (default unspecified — decide) + optional `IEntityResolver`.
 - **Hash-key discrepancy to reconcile:** store content-hash is over `{kind,body,links}` (`:864`); design stage-4 exact dedup specifies `canonicalize({kind,body})` (design:836). L3 must decide whether to reuse the store's `links`-inclusive hash or compute its own `{kind,body}` key — they differ.
 - **OQ-3 — home:** in-package `ingest/` packlet (recommended default); own-package split deferred.
 
-## Scope (do) — at commission, after OQ-10/OQ-13 decided
+## Scope (do) — OQ-10/OQ-13 locked (see Consumer feedback)
 
-1. New `ingest/` packlet: the four host interfaces (per the OQ-10 decision) + `ICandidateRecord` + `IIngestItem` + the fgv-owned `IMemoryIngestOrchestrator`.
+1. New `ingest/` packlet: the **four staged host interfaces** (`IMemoryClassifier` + `IFactExtractor` + `IEntityResolver?` + `IRelationExtractor`) + `ICandidateRecord` + `IIngestItem` + the fgv-owned `IMemoryIngestOrchestrator`. The orchestrator's entry point takes a **single `IIngestItem`** as the first-class path (a batch overload/loop composes over it) — per-turn streaming ingest must not be second-class. Provenance fields land **additive/optional** (no migration of persisted `mtm`/`ltm`).
 2. **Stage 4 (fgv):** exact dedup (reconcile the hash key) + layer-2 similarity candidate-gen (vector) + threshold + optional `IEntityResolver` dispatch (`new|duplicate-of|supersede|merge-into`).
 3. **Stage 5 (fgv):** write-time edge validation + edge write + **write-time cycle guard** (new — the design's `buildCycleKey`, not the read-time BFS).
 4. **Stage 6 (fgv):** stamp `IProvenance` (`source:'host-ingest'`, `by`/`model`/`confidence` from the host) + `derivedFrom` back-link; admit through the per-kind `IWritePolicy`; `put`.
@@ -62,6 +74,6 @@ The fgv-side ingestion target for a consumer's own extract/relate pipeline. **Th
 ## Constraints / tests / sequence / proof
 
 - No `any`; `Result<T>`; Converters/`JsonSchema` for the validation boundary (host bodies validated against registered converters — no unchecked host data reaches the store); attributed edges + structured provenance only. **100% coverage enforced.**
-- **Tests:** each host-interface contract via a mocked host; stage-4 exact + similarity dedup (incl. the `IEntityResolver` verdicts and the fall-back-to-exact when absent); stage-5 edge validation + write-time cycle guard (reject a cycle-inducing edge); stage-6 provenance/`derivedFrom` stamping + policy admission; the `contradicts` interlock (only if temporal is present — else assert it's deferred/fails-loud); testbed end-to-end.
-- **Sequence:** decide OQ-10/OQ-13 → implement → `code-reviewer` SYNCHRONOUSLY before coverage-chasing → gates @100% → `rush change --bulk --bump-type minor --target-branch origin/release` (committed) → PR onto `release`.
+- **Tests:** each staged host-interface contract via a mocked host; **single-item ingest path** (one `IIngestItem` end-to-end, not just a batch); **additive-provenance non-regression** (a pre-existing `mtm`/`ltm` record with no provenance fields still loads/validates after the stream); stage-4 exact + similarity dedup (incl. the `IEntityResolver` verdicts and the fall-back-to-exact when absent — the deterministic-key host path); stage-5 edge validation + write-time cycle guard (reject a cycle-inducing edge); stage-6 provenance/`derivedFrom` stamping + policy admission; the `contradicts` interlock (only if temporal is present — else assert it's deferred/fails-loud); testbed end-to-end.
+- **Sequence:** implement (OQ-10/OQ-13 locked) → `code-reviewer` SYNCHRONOUSLY before coverage-chasing → gates @100% → `rush change --bulk --bump-type minor --target-branch origin/release` (committed) → PR onto `release`.
 - **Proof:** git log; gate tails (100%); the OQ-10/OQ-13 decision note; the six-stage orchestrator + four host interfaces; dedup (both layers) + cycle-guard + provenance test output; the interlock status (delivered vs. deferred-pending-temporal); code-reviewer findings + dispositions.

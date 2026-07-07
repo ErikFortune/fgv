@@ -204,36 +204,36 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ### `agent-memory-temporal` 🟡
 
-**Status:** 🟡 drafted, not commissioned — consumer-gated (commission when PersonAIlity's episodic pipeline needs point-in-time recall). Keystone of the three agent-memory fast-follows.
+**Status:** 🟡 drafted, **consumer-validated** (PersonAIlity 2026-07-07, PR #521), not commissioned — gated on their epistemics/contradiction-handling work (after L2). Keystone of the three (L3 hard-depends on it).
 **Branch base:** `release` HEAD; reference `.ai/tasks/completed/2026-06/ts-agent-memory/` (README/exploration/design).
 **Package surface:** `@fgv/ts-agent-memory` (types/envelope, identityCodec, store/fileTreeMemoryStore, writePolicy, retrieve).
 **Brief:** `.ai/tasks/active/agent-memory-temporal/brief.md`.
 
-**Mission.** Build the temporal versioned write path + temporal retrievers. All seams ship in v1 but are stubbed to fail loudly (three `if (addr.isVersioned) return fail(...)` fail-stops; every retriever `supportsTemporalQuery:false`; no `temporal-versioned` policy). Adds a versioned codec, the invalidate-don't-delete policy, versioned store branches, and `AsOfRetriever`/`CurrentValidRetriever`/`HistoryRetriever`. **First decision: OQ-11** (subtree-per-entity vs. flat+sidecar-index layout). Converters already round-trip `temporal?`/`valid_at`/`invalid_at` — no serialization work.
+**Mission.** Build the temporal versioned write path + temporal retrievers. All seams ship in v1 but are stubbed to fail loudly (three `if (addr.isVersioned) return fail(...)` fail-stops; every retriever `supportsTemporalQuery:false`; no `temporal-versioned` policy). Adds a versioned codec, the invalidate-don't-delete policy, versioned store branches, and `AsOfRetriever`/`CurrentValidRetriever`/`HistoryRetriever`. **OQ-11 → subtree-per-entity (consumer-backed).** Consumer-pinned: merge-patch `put()` on a temporal-versioned kind = new version + `invalid_at` on prior (composes with versioning); flat/`isVersioned:false` guarantee for Knowledge/LTM/MTM preserved (zero impact until a kind opts in). Converters already round-trip `temporal?`/`valid_at`/`invalid_at` — no serialization work.
 
 ---
 
 ### `agent-memory-l2-tools` 🟡
 
-**Status:** 🟡 drafted, not commissioned — consumer-gated (commission when PersonAIlity wants the agent to curate its own memory via tool-use). **Independent** of temporal/L3; can slot first for early demoable value.
+**Status:** 🟡 drafted, **consumer-validated** (PersonAIlity 2026-07-07, PR #521), not commissioned — **nearest-term consumer**; recommended first or in parallel with temporal. **Independent** of temporal/L3.
 **Branch base:** `release` HEAD; reference the ts-agent-memory completion bundle + `@fgv/ts-extras-mcp` `adapter.ts` (the `IAiClientTool` construction idiom).
 **Package surface:** new `@fgv/ts-agent-memory/tools` packlet; consumes `@fgv/ts-extras` ai-assist `IAiClientTool` + `@fgv/ts-json-base` `JsonSchema`.
 **Brief:** `.ai/tasks/active/agent-memory-l2-tools/brief.md`.
 
-**Mission.** Expose memory ops as an `IAiClientTool` suite (design-settled five-tool proof set: `memory_write/read/search/context/delete`) via `createMemoryTools({ store, retriever, registry, ... })`, authored with `JsonSchema.object` schemas that also pass `JsonSchema.fromJson` (MCP dual-path). Open decisions: tool-arg→domain-key mapping (flat `{scope,id}` doesn't fit `delete(kind,entityId)` or the MTM composite), the factory signature, and tool-boundary safety (admit-reject surfacing, behavior hints).
+**Mission.** Expose memory ops as an `IAiClientTool` suite via `createMemoryTools({ store, retriever, registry, tools?, kinds? })`, `JsonSchema.object` schemas (MCP dual-path via `JsonSchema.fromJson`). **Consumer-locked:** scope isolation is constructor-fixed via a **pre-scoped store** — no tool arg carries `scope` (adoption make-or-break); **per-tool `tools?` subset** (default = read-only `search`+`context`; writes opt in) replaces the coarse `readOnly?`; `memory_search` results carry a host-suppliable **mnemonic handle** (`handleFor?`). Still open: tool-boundary safety (admit-reject surfacing, behavior hints); tool count beyond the five.
 
 ---
 
 ### `agent-memory-l3-ingest` 🟡
 
-**Status:** 🟡 drafted, not commissioned — consumer-gated (commission when PersonAIlity wires extractors). **🔴 hard-blocked on `agent-memory-temporal`** for the `contradicts`→invalidate interlock; ship interlock-deferred only if commissioned earlier. Largest of the three.
+**Status:** 🟡 drafted, **consumer-validated** (PersonAIlity 2026-07-07, PR #521), not commissioned — furthest-out for them. **🔴 hard-blocked on `agent-memory-temporal`** for the `contradicts`→invalidate interlock; ship interlock-deferred only if commissioned earlier. Largest of the three.
 **Branch base:** `release` HEAD (with temporal shipped for the full interlock); reference the ts-agent-memory completion bundle (design §9-§10).
 **Package surface:** new `@fgv/ts-agent-memory/ingest` packlet; reads `retrieve`+`vector`, writes via `store`.
 **Brief:** `.ai/tasks/active/agent-memory-l3-ingest/brief.md`.
 
-**Mission.** The fgv-side ingest orchestrator — host brings classify/extract/relate judgment; fgv owns the typed validation boundary, dedup (exact + new similarity layer), write-time edge/cycle safety, provenance stamping, and the `contradicts`→temporal interlock. Green-field packlet composing shipped seams. **Central fork: OQ-10** (staged host interfaces vs. one opaque `IMemoryIngestor`) + OQ-13 (`IEntityResolver` optional vs. required).
+**Mission.** The fgv-side ingest orchestrator — host brings classify/extract/relate judgment; fgv owns the typed validation boundary, dedup (exact + new similarity layer), write-time edge/cycle safety, provenance stamping, and the `contradicts`→temporal interlock. Green-field packlet composing shipped seams. **Consumer-locked:** OQ-10 → **staged host interfaces** (consumer plugs its own classifiers/extractors); OQ-13 → `IEntityResolver` **optional** (deterministic-key hosts skip it); **single-item incremental ingest first-class** (per-turn streaming, not batch-only); provenance fields land **additive/optional** (no migration of persisted `mtm`/`ltm`).
 
-**Recommended sequencing across the three:** temporal → L2 → L3 (or L2 → temporal → L3; L2 is independent). L3 always last — largest, hard-blocked on temporal, reads vector/retrieve.
+**Recommended sequencing across the three:** **L2 first or in parallel with temporal** (consumer preference — L2 is independent and changes what agents can do soonest), then temporal, then L3. L3 always last — largest, hard-blocked on temporal, reads vector/retrieve.
 
 ---
 
