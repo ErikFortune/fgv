@@ -152,6 +152,7 @@ declare namespace AiAssist {
         aiServerToolType,
         aiWebSearchToolConfig,
         aiServerToolConfig,
+        aiToolAnnotations,
         aiClientToolConfig,
         aiToolEnablement,
         aiAssistProviderConfig,
@@ -248,6 +249,11 @@ const aiServerToolType: Converter<AiServerToolType>;
 
 // @public
 type AiThinkingMode = 'optional' | 'required' | 'unsupported';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const aiToolAnnotations: Converter<IAiToolAnnotations>;
 
 // @public
 type AiToolConfig = AiServerToolConfig | IAiClientToolConfig;

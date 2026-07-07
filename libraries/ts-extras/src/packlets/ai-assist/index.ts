@@ -148,6 +148,7 @@ export {
   aiServerToolType,
   aiWebSearchToolConfig,
   aiServerToolConfig,
+  aiToolAnnotations,
   aiClientToolConfig,
   aiToolEnablement,
   aiAssistProviderConfig,

@@ -410,8 +410,10 @@ export function buildGeminiContinuation(
  *   The turn continues.
  *
  * A gate that wants to signal a hard error (as opposed to a deliberate deny) should
- * return `Result.fail` (or reject) from the callback — that is treated like an
- * `execute` failure, not a silent deny.
+ * return `Result.fail` (or reject) from the callback. Note this is NOT the same as a
+ * `tool.execute` failure: an `execute` failure yields an `isError` tool-result and the
+ * **turn continues**, whereas a gate `fail`/reject **terminates the turn** — it fails
+ * `nextTurn` (and emits an inline `error` event) rather than synthesizing a deny.
  *
  * @public
  */
@@ -498,9 +500,10 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
    * Returning `{ action: 'proceed' }` (or omitting the callback) runs `execute`
    * normally. Returning `{ action: 'deny', reason }` skips `execute` and synthesizes
    * a denial tool-result carrying `reason` into the continuation (the model sees the
-   * denial and can react); the turn continues. A callback that returns `Result.fail`
-   * or rejects is treated as a hard error, exactly like an `execute` failure — a deny
-   * must be explicit.
+   * denial and can react); **the turn continues**. A callback that returns `Result.fail`
+   * or rejects is a hard error that **terminates the turn** (fails `nextTurn` + emits an
+   * inline `error` event) — distinct from a `tool.execute` failure, which continues the
+   * turn with an `isError` result. A deny must therefore be explicit.
    */
   readonly onBeforeToolExecute?: (
     tool: IAiClientTool,
