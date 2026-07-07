@@ -23,6 +23,7 @@ import {
   Tag,
   isTemporalIdentityCodec,
   isTemporalRecord,
+  isVersionCurrent,
   selectCurrentVersion,
   selectVersionAsOf
 } from '../types';
@@ -67,7 +68,9 @@ export interface IMemoryStore {
   /**
    * Keyed read by entity id. Resolves `entityId` to a storage address via the
    * registered {@link IIdentityCodec} for `kind`. Returns `undefined` when no
-   * record exists.
+   * record exists. For a versioned (temporal) kind this returns the current
+   * version, resolved from the derived in-memory index (not re-read/re-verified
+   * from disk per call — the index is kept in sync with every write).
    */
   get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
 
@@ -916,52 +919,75 @@ export class FileTreeMemoryStore implements IMemoryStore {
     const envelope: IMemoryEnvelope = record.envelope;
     const entityId: EntityId = envelope.entityId;
     const kind: Kind = envelope.kind;
-    const hashResult: Result<string> = this._contentHash(kind, body, envelope.links);
-    if (hashResult.isFailure()) {
-      return fail(hashResult.message);
-    }
-    const hash: string = hashResult.value;
+    // Snapshot the entity's versions BEFORE the write. `priorCurrents` is every
+    // still-current version at snapshot time — normally one, but two-or-more if a
+    // prior invalidation partially failed; invalidating all of them lets the write
+    // self-heal a stuck state (P2-7).
     const versions: ReadonlyArray<IMemoryRecord<unknown>> = this._versionsForEntity(scope);
+    const priorCurrents: ReadonlyArray<IMemoryRecord<unknown>> = versions.filter(isVersionCurrent);
     const current: IMemoryRecord<unknown> | undefined = selectCurrentVersion(versions);
     const policy: IWritePolicy = this._policyFor(kind);
     const dedupScope: DedupScope = policy.dedupScope ?? DEFAULT_DEDUP_SCOPE;
-    // Entity-scoped dedup: an identical re-put of the CURRENT content is a no-op
-    // (does not spawn a redundant version). Content-scoped dedup is not a
-    // versioning concern, so only the entity granularity is honored here.
-    if (dedupScope === 'entity' && current !== undefined && current.envelope.contentHash === hash) {
-      return succeed({ record: current, evicted: [] });
-    }
-    // On the versioned path the admission cohort is the entity's ENTIRE version
-    // history (no target id to exclude — the new version does not exist yet), which
-    // differs from the flat path's "cohort excluding target id" shape.
-    const admission: Result<AdmissionDecision> = policy.admit(record, versions);
-    if (admission.isFailure()) {
-      return fail(admission.message);
-    }
-    if (admission.value.decision === 'reject') {
-      return fail(`memory put: rejected by policy: ${admission.value.reason}`);
-    }
-    // No culling on the versioned path — history is retained (invalidate-don't-delete).
-    const now: number = this._clock();
-    const seq: number = ++this._seq;
-    // World-truth start of the new version. The prior current version's world-truth
-    // interval must CLOSE at this same instant (not at `now`) so a backdated/future-dated
-    // `valid_at` leaves no gap or overlap on the valid-time axis.
-    const validAt: number = envelope.temporal?.valid_at ?? now;
-    return codec
-      .encodeVersion(entityId, seq)
-      .withErrorFormat((msg) => `memory put '${entityId}': ${msg}`)
-      .thenOnSuccess((versionStem) =>
-        this._buildVersionedRecord(record, body, current, policy, hash, versionStem, validAt, now, seq)
-          .thenOnSuccess((built) => this._embedOnWrite(built))
-          .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, versionStem))
-          .onSuccess((persisted) =>
-            current === undefined
-              ? succeed(persisted)
-              : this._invalidateVersion(scope, current, validAt, now).onSuccess(() => succeed(persisted))
-          )
-          .onSuccess((persisted) => succeed({ record: persisted, evicted: [] }))
-      );
+    return this._contentHash(kind, body, envelope.links).thenOnSuccess((hash) => {
+      // Entity-scoped dedup: an identical re-put of the CURRENT content is a no-op
+      // (does not spawn a redundant version). Content-scoped dedup is not a
+      // versioning concern, so only the entity granularity is honored here.
+      if (dedupScope === 'entity' && current !== undefined && current.envelope.contentHash === hash) {
+        return Promise.resolve(succeed<IPutOutcome>({ record: current, evicted: [] }));
+      }
+      // On the versioned path the admission cohort is the entity's ENTIRE version
+      // history (no target id to exclude — the new version does not exist yet),
+      // which differs from the flat path's "cohort excluding target id" shape.
+      return policy.admit(record, versions).thenOnSuccess((decision) => {
+        if (decision.decision === 'reject') {
+          return Promise.resolve(fail<IPutOutcome>(`memory put: rejected by policy: ${decision.reason}`));
+        }
+        // No culling on the versioned path — history is retained (invalidate-don't-delete).
+        const now: number = this._clock();
+        const seq: number = ++this._seq;
+        // World-truth start of the new version. Each prior current version's
+        // world-truth interval CLOSES at this same instant (not at `now`) so a
+        // backdated/future-dated `valid_at` leaves no gap or overlap on the
+        // valid-time axis.
+        const validAt: number = envelope.temporal?.valid_at ?? now;
+        return codec
+          .encodeVersion(entityId, seq)
+          .withErrorFormat((msg) => `memory put '${entityId}': ${msg}`)
+          .thenOnSuccess((versionStem) =>
+            this._buildVersionedRecord(record, body, current, policy, hash, versionStem, validAt, now, seq)
+              .thenOnSuccess((built) => this._embedOnWrite(built))
+              .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, versionStem))
+              .onSuccess((persisted) =>
+                this._invalidateCurrents(scope, priorCurrents, validAt, now).onSuccess(() =>
+                  succeed(persisted)
+                )
+              )
+              .onSuccess((persisted) => succeed({ record: persisted, evicted: [] }))
+          );
+      });
+    });
+  }
+
+  /**
+   * Invalidate a set of still-current versions (close each world-truth interval at
+   * `invalidAt`; stamp transaction-time `updated` = `now`). Chained so a mid-list
+   * failure propagates. Invalidating every prior current — not just the
+   * highest-`seq` pick — self-heals a state where a previous write's invalidation
+   * only partially completed (P2-7).
+   */
+  private _invalidateCurrents(
+    scope: MemoryScopeKey,
+    currents: ReadonlyArray<IMemoryRecord<unknown>>,
+    invalidAt: number,
+    now: number
+  ): Result<true> {
+    return currents.reduce<Result<true>>(
+      (acc, version) =>
+        acc.onSuccess(() =>
+          this._invalidateVersion(scope, version, invalidAt, now).onSuccess(() => succeed(true))
+        ),
+      succeed(true)
+    );
   }
 
   /**
@@ -1043,10 +1069,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
     invalidAt: number,
     now: number
   ): Result<IMemoryRecord<unknown>> {
+    /* c8 ignore start -- defensive: every persisted version carries a string body (only string bodies are written) */
     if (typeof version.body !== 'string') {
-      /* c8 ignore next 2 -- defensive: every persisted version carries a string body (only string bodies are written) */
       return fail(`memory put: cannot invalidate version '${version.envelope.id}': non-string body`);
     }
+    /* c8 ignore stop */
     // `invalid_at` is the WORLD-TRUTH close of the interval (the superseding version's
     // `valid_at`, or the delete instant); `updated` is the transaction-time stamp.
     const invalidated: IMemoryRecord<string> = {
@@ -1070,14 +1097,18 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * builds on it), so a hard delete would defeat the purpose.
    */
   private async _deleteVersioned(entityId: EntityId, scope: MemoryScopeKey): Promise<Result<MemoryId>> {
-    const current: IMemoryRecord<unknown> | undefined = this._readVersionedCurrent(scope);
+    const versions: ReadonlyArray<IMemoryRecord<unknown>> = this._versionsForEntity(scope);
+    const currents: ReadonlyArray<IMemoryRecord<unknown>> = versions.filter(isVersionCurrent);
+    const current: IMemoryRecord<unknown> | undefined = selectCurrentVersion(versions);
     if (current === undefined) {
       return fail(`memory delete '${entityId}': no record found`);
     }
     // A delete closes the world-truth interval at the delete instant (`now` for both
-    // the transaction stamp and the `invalid_at` boundary).
+    // the transaction stamp and the `invalid_at` boundary). Every still-current
+    // version is invalidated (self-heals a stuck two-current state — P2-7); the
+    // highest-`seq` current's id is returned.
     const now: number = this._clock();
-    return this._invalidateVersion(scope, current, now, now).onSuccess(() => succeed(current.envelope.id));
+    return this._invalidateCurrents(scope, currents, now, now).onSuccess(() => succeed(current.envelope.id));
   }
 
   /** Evict (physically delete) a single record file by id, patching the index. */

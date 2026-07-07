@@ -147,6 +147,13 @@ export class AsOfRetriever implements IMemoryRetriever {
  * Temporal retriever returning **every** version of each temporal entity matching
  * the query, ordered ascending by `valid_at` (then `seq` as a stable tiebreak) —
  * the entity's full history. Limited after ordering.
+ *
+ * @remarks
+ * When the query matches more than one entity, the result is a single
+ * CROSS-entity list globally sorted by `valid_at` — versions of different
+ * entities interleave, NOT grouped per entity — so `limit` truncates that
+ * globally-sorted list. Constrain to one entity (e.g. via `query.scope`) for a
+ * single entity's contiguous history.
  * @public
  */
 export class HistoryRetriever implements IMemoryRetriever {
@@ -180,14 +187,24 @@ export class HistoryRetriever implements IMemoryRetriever {
     );
   }
 
+  /** A version's world-truth start: its `valid_at`, defaulting to `created` when absent. */
+  private static _startOf(record: IMemoryRecord<unknown>): number {
+    const temporal: IMemoryRecord<unknown>['envelope']['temporal'] = record.envelope.temporal;
+    /* c8 ignore next 3 -- unreachable: HistoryRetriever orders only temporal records (pre-filtered by isTemporalRecord), so `temporal` is always present; the guard keeps the type honest */
+    if (temporal === undefined) {
+      return record.envelope.created;
+    }
+    return temporal.valid_at ?? record.envelope.created;
+  }
+
   /**
    * Ascending-by-`valid_at` comparator (a version's `valid_at` defaults to its
    * `created` when absent), with `seq` as a stable ascending tiebreak so
    * same-instant versions order by write sequence.
    */
   private static _byValidAtAscending(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number {
-    const aStart: number = a.envelope.temporal?.valid_at ?? a.envelope.created;
-    const bStart: number = b.envelope.temporal?.valid_at ?? b.envelope.created;
+    const aStart: number = HistoryRetriever._startOf(a);
+    const bStart: number = HistoryRetriever._startOf(b);
     return aStart !== bStart ? aStart - bStart : a.envelope.seq - b.envelope.seq;
   }
 }

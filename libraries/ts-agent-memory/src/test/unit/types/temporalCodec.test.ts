@@ -116,6 +116,13 @@ describe('TemporalIdentityCodec', () => {
         /non-integer version suffix/i
       );
     });
+
+    test('fails on a non-canonical (zero-padded) seq stem', () => {
+      // `-v007` decodes to seq 7 but re-encodes to `-v7`, so it is not canonical.
+      expect(codec.verifyRoundTrip('facts/entities/fact-1' as MemoryScopeKey, 'fact-1-v007')).toFailWith(
+        /round-trip mismatch/i
+      );
+    });
   });
 });
 
@@ -226,6 +233,14 @@ describe('temporal selection helpers', () => {
     // A fully-invalidated entity has no current version.
     expect(selectCurrentVersion([v1])).toBeUndefined();
     expect(selectCurrentVersion([])).toBeUndefined();
+  });
+
+  test('selectCurrentVersion is order-independent (highest seq wins on an unsorted input)', () => {
+    const v3 = versionRecord(3, 300);
+    // Descending input: the first candidate is already the max, so a later
+    // candidate must NOT displace it.
+    expect(selectCurrentVersion([v3, v2])?.envelope.id).toBe('fact-1-v3');
+    expect(selectCurrentVersion([v2, v3])?.envelope.id).toBe('fact-1-v3');
   });
 
   test('selectVersionAsOf returns the highest-seq version valid at the instant', () => {

@@ -84,5 +84,13 @@ describe('TemporalVersionedPolicy', () => {
         expect(updated.envelope.embeddingRef).toBeUndefined();
       });
     });
+
+    test('carries an untouched embeddingRef through a body-only patch', () => {
+      const existing = makeRecord({ embeddingRef: 'vec-1' }, 'the sky is blue');
+      expect(policy.applyUpdate(existing, { body: 'the sky is grey' })).toSucceedAndSatisfy((updated) => {
+        expect(updated.body).toBe('the sky is grey');
+        expect(updated.envelope.embeddingRef).toBe('vec-1');
+      });
+    });
   });
 });

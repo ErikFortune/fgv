@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Converters, Result, succeed } from '@fgv/ts-utils';
+import { Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   AdmissionDecision,
@@ -13,26 +13,61 @@ import {
   FileTreeMemoryStore,
   IBodyConverterRegistry,
   IIdentityCodec,
+  IMemoryEnvelope,
   IMemoryRecord,
   IWritePolicy,
   Kind,
   KnowledgeIdentityCodec,
+  MemoryId,
   MemoryScopeKey,
   TemporalIdentityCodec,
-  TemporalVersionedPolicy
+  TemporalVersionedPolicy,
+  serializeMemoryFile
 } from '../../../index';
 
 const factKind: Kind = 'fact' as Kind;
 const knowledgeKind: Kind = 'knowledge' as Kind;
 const factScope: MemoryScopeKey = 'facts/entities/fact-1' as MemoryScopeKey;
 
-function mutableRoot(): FileTree.IMutableFileTreeDirectoryItem {
-  const tree = FileTree.inMemory([], { mutable: true }).orThrow();
+function mutableRoot(
+  files: ReadonlyArray<{ path: string; contents: string }> = []
+): FileTree.IMutableFileTreeDirectoryItem {
+  const tree = FileTree.inMemory([...files], { mutable: true }).orThrow();
   const root = tree.getDirectory('/').orThrow();
   if (!FileTree.isMutableDirectoryItem(root)) {
     throw new Error('expected a mutable root directory');
   }
   return root;
+}
+
+/**
+ * A raw seeded `fact-1` version file. `invalidAt` absent → a CURRENT version;
+ * seeding two current versions reproduces a stuck partial-invalidation state.
+ */
+function seedFactVersion(
+  seq: number,
+  validAt: number,
+  invalidAt?: number
+): { path: string; contents: string } {
+  const temporal: Record<string, unknown> =
+    invalidAt === undefined ? { valid_at: validAt } : { valid_at: validAt, invalid_at: invalidAt };
+  const envelope: IMemoryEnvelope = {
+    id: `fact-1-v${seq}` as MemoryId,
+    entityId: 'fact-1' as EntityId,
+    kind: factKind,
+    tags: [],
+    links: [],
+    created: validAt,
+    updated: validAt,
+    seq,
+    contentHash: `seed-${seq}`,
+    provenance: { source: 'agent' },
+    temporal
+  };
+  return {
+    path: `facts/entities/fact-1/fact-1-v${seq}.md`,
+    contents: serializeMemoryFile(envelope, `seed body v${seq}`).orThrow()
+  };
 }
 
 function registry(): IBodyConverterRegistry {
@@ -68,6 +103,12 @@ function factRecord(entityId: string, body: string): IMemoryRecord<unknown> {
     },
     body
   };
+}
+
+/** Like {@link factRecord} but supplying an explicit world-truth `valid_at`. */
+function factRecordAt(entityId: string, body: string, validAt: number): IMemoryRecord<unknown> {
+  const base = factRecord(entityId, body);
+  return { envelope: { ...base.envelope, temporal: { valid_at: validAt } }, body: base.body };
 }
 
 function knowledgeRecord(id: string, body: string): IMemoryRecord<unknown> {
@@ -241,23 +282,123 @@ describe('FileTreeMemoryStore — temporal (versioned) path', () => {
     });
   });
 
+  describe('world-truth valid-time boundary (P2-1)', () => {
+    test('a future-dated supersede closes the prior interval at the NEW valid_at (no gap)', async () => {
+      const store = createStore();
+      expect(await store.put(factRecord('fact-1', 'blue'))).toSucceed(); // v1 valid_at 1000
+      clockValue = 2000;
+      // The new version's world-truth validity starts in the future (5000), while
+      // the transaction happens now (2000).
+      expect(await store.put(factRecordAt('fact-1', 'grey', 5000))).toSucceedAndSatisfy((put) => {
+        expect(put.envelope.temporal).toEqual({ valid_at: 5000 });
+      });
+      // The prior version's interval closes at the NEW valid_at (5000), NOT `now` (2000).
+      expect(await store.getById(factScope, 'fact-1-v1' as never)).toSucceedAndSatisfy((v1) => {
+        expect(v1?.envelope.temporal).toEqual({ valid_at: 1000, invalid_at: 5000 });
+      });
+      // As-of between the two valid_ats still resolves to v1 — no gap on the axis.
+      expect(await store.list({ kind: factKind, asOf: 3000 })).toSucceedAndSatisfy((at3000) => {
+        expect(at3000.map((r) => r.envelope.id)).toEqual(['fact-1-v1']);
+      });
+    });
+  });
+
+  describe('self-healing invalidation (P2-7)', () => {
+    test('a put invalidates EVERY stuck-current prior version', async () => {
+      // Seed a corrupt state: two current versions (a prior invalidation only
+      // partially completed).
+      const root = mutableRoot([seedFactVersion(1, 100), seedFactVersion(2, 200)]);
+      const store = createStore(root);
+      clockValue = 3000;
+      expect(await store.put(factRecord('fact-1', 'v3 body'))).toSucceedAndSatisfy((put) => {
+        expect(put.envelope.id).toBe('fact-1-v3');
+      });
+      // BOTH stuck versions are now invalidated at the new valid_at (3000).
+      expect(await store.getById(factScope, 'fact-1-v1' as never)).toSucceedAndSatisfy((v1) => {
+        expect(v1?.envelope.temporal).toEqual({ valid_at: 100, invalid_at: 3000 });
+      });
+      expect(await store.getById(factScope, 'fact-1-v2' as never)).toSucceedAndSatisfy((v2) => {
+        expect(v2?.envelope.temporal).toEqual({ valid_at: 200, invalid_at: 3000 });
+      });
+      // Exactly one current version remains: the new one.
+      expect(await store.get(factKind, 'fact-1' as EntityId)).toSucceedAndSatisfy((cur) => {
+        expect(cur?.envelope.id).toBe('fact-1-v3');
+      });
+    });
+
+    test('a delete invalidates EVERY stuck-current prior version', async () => {
+      const root = mutableRoot([seedFactVersion(1, 100), seedFactVersion(2, 200)]);
+      const store = createStore(root);
+      clockValue = 4000;
+      expect(await store.delete(factKind, 'fact-1' as EntityId)).toSucceedWith('fact-1-v2' as never);
+      expect(await store.getById(factScope, 'fact-1-v1' as never)).toSucceedAndSatisfy((v1) => {
+        expect(v1?.envelope.temporal).toEqual({ valid_at: 100, invalid_at: 4000 });
+      });
+      expect(await store.getById(factScope, 'fact-1-v2' as never)).toSucceedAndSatisfy((v2) => {
+        expect(v2?.envelope.temporal).toEqual({ valid_at: 200, invalid_at: 4000 });
+      });
+      expect(await store.get(factKind, 'fact-1' as EntityId)).toSucceedWith(undefined);
+    });
+  });
+
   describe('policy admission on the versioned path', () => {
+    function storeWithPolicy(policy: IWritePolicy): FileTreeMemoryStore {
+      return FileTreeMemoryStore.create({
+        root: mutableRoot(),
+        registry: registry(),
+        codecs: new Map<Kind, IIdentityCodec>([[factKind, TemporalIdentityCodec.create('facts').orThrow()]]),
+        writePolicies: new Map<Kind, IWritePolicy>([[factKind, policy]]),
+        clock
+      }).orThrow();
+    }
+
     test('a rejecting policy fails the put', async () => {
-      const rejectingCodec: IIdentityCodec = TemporalIdentityCodec.create('facts').orThrow();
-      const rejectPolicy: IWritePolicy = {
+      const store = storeWithPolicy({
         mutableFields: ['body'],
         dedupScope: 'entity',
         admit: (): Result<AdmissionDecision> => succeed({ decision: 'reject', reason: 'blocked' }),
         applyUpdate: (existing): Result<IMemoryRecord<unknown>> => succeed(existing)
-      };
-      const store = FileTreeMemoryStore.create({
-        root: mutableRoot(),
-        registry: registry(),
-        codecs: new Map<Kind, IIdentityCodec>([[factKind, rejectingCodec]]),
-        writePolicies: new Map<Kind, IWritePolicy>([[factKind, rejectPolicy]]),
-        clock
-      }).orThrow();
+      });
       expect(await store.put(factRecord('fact-1', 'blue'))).toFailWith(/rejected by policy: blocked/i);
+    });
+
+    test('a policy whose admit fails propagates the failure', async () => {
+      const store = storeWithPolicy({
+        mutableFields: ['body'],
+        dedupScope: 'entity',
+        admit: (): Result<AdmissionDecision> => fail('admit exploded'),
+        applyUpdate: (existing): Result<IMemoryRecord<unknown>> => succeed(existing)
+      });
+      expect(await store.put(factRecord('fact-1', 'blue'))).toFailWith(/admit exploded/i);
+    });
+
+    test('a policy omitting dedupScope falls back to the default (entity) dedup', async () => {
+      const store = storeWithPolicy({
+        mutableFields: ['body'],
+        // dedupScope intentionally omitted → the store applies DEFAULT_DEDUP_SCOPE.
+        admit: (): Result<AdmissionDecision> => succeed({ decision: 'accept' }),
+        applyUpdate: (existing): Result<IMemoryRecord<unknown>> => succeed(existing)
+      });
+      expect(await store.put(factRecord('fact-1', 'same'))).toSucceed();
+      clockValue = 2000;
+      // Identical re-put is a no-op under the default entity dedup — no v2.
+      expect(await store.put(factRecord('fact-1', 'same'))).toSucceedAndSatisfy((put) => {
+        expect(put.envelope.id).toBe('fact-1-v1');
+      });
+    });
+
+    test('a policy that returns a non-string merged body fails the update', async () => {
+      const store = storeWithPolicy({
+        mutableFields: ['body'],
+        dedupScope: 'entity',
+        admit: (): Result<AdmissionDecision> => succeed({ decision: 'accept' }),
+        // Corrupt the merge output on the update branch.
+        applyUpdate: (existing): Result<IMemoryRecord<unknown>> =>
+          succeed({ envelope: existing.envelope, body: 42 })
+      });
+      expect(await store.put(factRecord('fact-1', 'v1'))).toSucceed();
+      clockValue = 2000;
+      expect(await store.put(factRecord('fact-1', 'v2'))).toFailWith(/non-string body/i);
     });
   });
 

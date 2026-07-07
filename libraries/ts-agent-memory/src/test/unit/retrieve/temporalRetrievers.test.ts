@@ -152,6 +152,52 @@ describe('temporal retrievers', () => {
         expect(ids(records)).toEqual(['fact-1-v1', 'fact-2-v3']);
       });
     });
+
+    test('orders by created when a version has no valid_at', async () => {
+      const idx = MemoryIndex.create().orThrow();
+      const noValidAt: IIndexedMemoryRecord = {
+        scope: 'facts/entities/nv' as MemoryScopeKey,
+        record: {
+          envelope: envelopeConverter
+            .convert({
+              id: 'nv-v1',
+              entityId: 'nv',
+              kind: 'fact',
+              tags: [],
+              links: [],
+              created: 700,
+              updated: 700,
+              seq: 1,
+              contentHash: 'h',
+              provenance: { source: 'agent' },
+              temporal: {}
+            })
+            .orThrow(),
+          body: 'nv'
+        }
+      };
+      idx.rebuild([noValidAt, versionEntry({ entityId: 'early', seq: 2, validAt: 100 })]).orThrow();
+      const r = HistoryRetriever.create(idx).orThrow();
+      // `nv` has no valid_at → its start defaults to created (700), after early (100).
+      expect(await r.retrieve({})).toSucceedAndSatisfy((records) => {
+        expect(ids(records)).toEqual(['early-v2', 'nv-v1']);
+      });
+    });
+
+    test('breaks an equal-valid_at tie by ascending seq', async () => {
+      // Two versions of one entity sharing a valid_at — the seq tiebreak orders them.
+      const tieIndex = MemoryIndex.create().orThrow();
+      tieIndex
+        .rebuild([
+          versionEntry({ entityId: 'tie', seq: 5, validAt: 500, invalidAt: 500 }),
+          versionEntry({ entityId: 'tie', seq: 4, validAt: 500 })
+        ])
+        .orThrow();
+      const tieRetriever = HistoryRetriever.create(tieIndex).orThrow();
+      expect(await tieRetriever.retrieve({})).toSucceedAndSatisfy((records) => {
+        expect(ids(records)).toEqual(['tie-v4', 'tie-v5']);
+      });
+    });
   });
 
   describe('loud-degrade + Hybrid composite', () => {
