@@ -19,10 +19,25 @@
 // SOFTWARE.
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { Result, Uuid } from '@fgv/ts-utils';
+import { Brand, Result, Uuid } from '@fgv/ts-utils';
 
 import * as Constants from './constants';
 export { Constants };
+
+// ============================================================================
+// Public Key Types
+// ============================================================================
+
+/**
+ * A multibase base64url-encoded SPKI (SubjectPublicKeyInfo) public key string —
+ * a `'m'` multibase prefix followed by a base64url-no-pad body. Produced by
+ * {@link CryptoUtils.exportPublicKeyAsMultibaseSpki} and consumed by
+ * {@link CryptoUtils.importPublicKeyFromMultibaseSpki}. Obtain the brand at a
+ * boundary via {@link CryptoUtils.isValidMultibaseSpkiPublicKey} or the
+ * {@link CryptoUtils.Converters.multibaseSpkiPublicKey} converter.
+ * @public
+ */
+export type MultibaseSpkiPublicKey = Brand<string, 'MultibaseSpkiPublicKey'>;
 
 // ============================================================================
 // Encryption Types

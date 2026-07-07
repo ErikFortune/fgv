@@ -57,10 +57,13 @@ export {
   tryDecryptFile
 } from './encryptedFile';
 
-// Multibase/SPKI helpers
+// Multibase/SPKI + base64url helpers
 export {
+  base64UrlNoPadDecode,
+  base64UrlNoPadEncode,
   exportPublicKeyAsMultibaseSpki,
   importPublicKeyFromMultibaseSpki,
+  isValidMultibaseSpkiPublicKey,
   multibaseBase64UrlDecode,
   multibaseBase64UrlEncode
 } from './spkiHelpers';

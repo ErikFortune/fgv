@@ -4,6 +4,7 @@
 
 ```ts
 
+import { Brand } from '@fgv/ts-utils';
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { DateTime } from 'luxon';
@@ -301,6 +302,16 @@ const argon2idKeyDerivationParams: Converter<IArgon2idKeyDerivationParams>;
 // @public
 const base64String: Converter<string>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function base64UrlNoPadDecode(encoded: string): Result<Uint8Array>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function base64UrlNoPadEncode(data: Uint8Array): string;
+
 // @public
 function callProviderCompletion(params: IProviderCompletionParams): Promise<Result<IAiCompletionResponse>>;
 
@@ -397,6 +408,7 @@ declare namespace Converters_3 {
         argon2idKeyDerivationParams,
         keyDerivationParams,
         base64String,
+        multibaseSpkiPublicKey,
         uint8ArrayFromBase64,
         namedSecret,
         encryptedFile
@@ -433,13 +445,17 @@ declare namespace CryptoUtils {
         ICreateEncryptedFileParams,
         toBase64,
         tryDecryptFile,
+        base64UrlNoPadDecode,
+        base64UrlNoPadEncode,
         exportPublicKeyAsMultibaseSpki,
         importPublicKeyFromMultibaseSpki,
+        isValidMultibaseSpkiPublicKey,
         multibaseBase64UrlDecode,
         multibaseBase64UrlEncode,
         HpkeProvider,
         IHpkeSealResult,
         isEncryptedFile,
+        MultibaseSpkiPublicKey,
         EncryptionAlgorithm,
         EncryptedFileFormat,
         INamedSecret,
@@ -595,7 +611,7 @@ export { Experimental }
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function exportPublicKeyAsMultibaseSpki(key: CryptoKey, provider: ICryptoProvider): Promise<Result<string>>;
+function exportPublicKeyAsMultibaseSpki(key: CryptoKey, provider: ICryptoProvider): Promise<Result<MultibaseSpkiPublicKey>>;
 
 // @beta
 class ExtendedArray<T> extends Array<T> {
@@ -1556,7 +1572,7 @@ interface IModelSpecMap {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function importPublicKeyFromMultibaseSpki(encoded: string, algorithm: KeyPairAlgorithm, provider: ICryptoProvider): Promise<Result<CryptoKey>>;
+function importPublicKeyFromMultibaseSpki(encoded: MultibaseSpkiPublicKey, algorithm: KeyPairAlgorithm, provider: ICryptoProvider): Promise<Result<CryptoKey>>;
 
 // @public
 interface IMustacheTemplateOptions {
@@ -1745,6 +1761,12 @@ const isoDate: Converter<Date, unknown>;
 
 // @public
 const isoDateTime: Converter<DateTime, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isValidMultibaseSpkiPublicKey(value: unknown): value is MultibaseSpkiPublicKey;
 
 // @public
 interface IThinkingConfig {
@@ -2079,6 +2101,19 @@ function multibaseBase64UrlDecode(encoded: string): Result<Uint8Array>;
 
 // @public
 function multibaseBase64UrlEncode(data: Uint8Array): string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type MultibaseSpkiPublicKey = Brand<string, 'MultibaseSpkiPublicKey'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const multibaseSpkiPublicKey: Converter<MultibaseSpkiPublicKey>;
 
 declare namespace Mustache {
     export {
