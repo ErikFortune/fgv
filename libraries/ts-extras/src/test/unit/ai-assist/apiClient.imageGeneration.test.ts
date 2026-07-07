@@ -744,6 +744,126 @@ describe('callProviderImageGeneration', () => {
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
       expect(body.generationConfig).toEqual({ responseModalities: ['IMAGE'] });
     });
+
+    test('extracts image parts on the happy path', async () => {
+      mockFetchResponse(
+        geminiImageOutBody([
+          { mimeType: 'image/png', data: 'PPPP' },
+          { mimeType: 'image/jpeg', data: 'JJJJ' }
+        ])
+      );
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor: geminiImageOutDescriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a robot' }
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.images).toEqual([
+          { mimeType: 'image/png', base64: 'PPPP' },
+          { mimeType: 'image/jpeg', base64: 'JJJJ' }
+        ]);
+      });
+    });
+
+    test('surfaces a content-less refusal candidate as a clean declined error including finishMessage', async () => {
+      mockFetchResponse({
+        candidates: [
+          {
+            finishReason: 'IMAGE_OTHER',
+            finishMessage:
+              'Unable to show the generated image. The model could not generate the image based on the prompt provided. Try rephrasing.'
+          }
+        ]
+      });
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor: geminiImageOutDescriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a robot' }
+      });
+
+      expect(result).toFailWith(/Gemini image generation declined: IMAGE_OTHER/);
+      expect(result).toFailWith(/Try rephrasing\./);
+    });
+
+    test('surfaces a refusal with finishReason but no finishMessage without a dangling separator', async () => {
+      mockFetchResponse({
+        candidates: [{ finishReason: 'IMAGE_OTHER' }]
+      });
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor: geminiImageOutDescriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a robot' }
+      });
+
+      expect(result).toFailWith(/Gemini image generation declined: IMAGE_OTHER$/);
+      expect(result).toFailWith(/^(?!.* — ).*$/);
+    });
+
+    test('routes an empty-parts candidate carrying a finishReason through the declined branch', async () => {
+      mockFetchResponse({
+        candidates: [{ content: { parts: [] }, finishReason: 'SAFETY' }]
+      });
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor: geminiImageOutDescriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a robot' }
+      });
+
+      expect(result).toFailWith(/Gemini image generation declined: SAFETY/);
+    });
+
+    test('preserves the no-image-parts message when no candidate carries a finishReason', async () => {
+      mockFetchResponse({
+        candidates: [{ content: { parts: [{ text: 'here is a description instead' }] } }]
+      });
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor: geminiImageOutDescriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a robot' }
+      });
+
+      expect(result).toFailWith(/Gemini image API response: no image parts in response/);
+    });
+
+    test('treats a benign STOP finishReason with no image parts as no-image, not a decline', async () => {
+      // A normal completion that emitted a text part instead of an image carries
+      // finishReason: 'STOP' — this is not a refusal and must not be reported as declined.
+      mockFetchResponse({
+        candidates: [
+          { content: { parts: [{ text: 'sorry, I cannot generate that image' }] }, finishReason: 'STOP' }
+        ]
+      });
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor: geminiImageOutDescriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a robot' }
+      });
+
+      expect(result).toFailWith(/Gemini image API response: no image parts in response/);
+      expect(result).toFailWith(/^(?!.*declined).*$/);
+    });
+
+    test('treats an empty-string finishMessage as no message, producing no dangling separator', async () => {
+      mockFetchResponse({
+        candidates: [{ finishReason: 'IMAGE_OTHER', finishMessage: '' }]
+      });
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor: geminiImageOutDescriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a robot' }
+      });
+
+      expect(result).toFailWith(/Gemini image generation declined: IMAGE_OTHER$/);
+      expect(result).toFailWith(/^(?!.* — ).*$/);
+    });
   });
 });
 

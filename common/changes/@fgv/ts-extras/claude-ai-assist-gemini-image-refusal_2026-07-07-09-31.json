@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Surface Gemini image-generation refusals (finishReason/finishMessage) as a clean declined error instead of a cryptic content-missing validation failure; treat benign STOP/MAX_TOKENS terminal reasons as no-image rather than a decline",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
