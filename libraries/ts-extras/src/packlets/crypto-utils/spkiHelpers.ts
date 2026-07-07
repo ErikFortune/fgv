@@ -19,20 +19,30 @@
 // SOFTWARE.
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { ICryptoProvider, KeyPairAlgorithm } from './model';
+import { ICryptoProvider, KeyPairAlgorithm, MultibaseSpkiPublicKey } from './model';
 
 /**
- * Encodes a `Uint8Array` as a multibase base64url (no-padding) string.
+ * Shared shape check for a base64url (no-padding) body: only base64url alphabet
+ * characters (`A-Z`, `a-z`, `0-9`, `-`, `_`) and a length that is never `% 4 === 1`
+ * (an impossible base64 remainder). Factored so the decoder and the
+ * {@link isValidMultibaseSpkiPublicKey} guard agree on exactly one rule.
+ */
+function isBase64UrlNoPadBody(body: string): boolean {
+  return /^[A-Za-z0-9_-]*$/.test(body) && body.length % 4 !== 1;
+}
+
+/**
+ * Encodes a `Uint8Array` as a base64url (no-padding) string (RFC 4648 §5).
  *
- * The multibase prefix `'m'` identifies the encoding as RFC 4648 base64url
- * without padding. The body uses base64url alphabet: `+` → `-`, `/` → `_`,
- * and trailing `=` padding is stripped.
+ * The body uses the base64url alphabet (`+` → `-`, `/` → `_`) and trailing `=`
+ * padding is stripped. This is the bare primitive with no multibase prefix; use
+ * {@link CryptoUtils.multibaseBase64UrlEncode} when a multibase-`'m'`-prefixed value is required.
  *
  * @param data - The binary data to encode.
- * @returns A multibase-prefixed base64url string (`'m' + base64url-no-pad`).
+ * @returns The base64url-no-pad string.
  * @public
  */
-export function multibaseBase64UrlEncode(data: Uint8Array): string {
+export function base64UrlNoPadEncode(data: Uint8Array): string {
   let base64: string;
   if (typeof Buffer !== 'undefined') {
     base64 = Buffer.from(data).toString('base64');
@@ -46,8 +56,72 @@ export function multibaseBase64UrlEncode(data: Uint8Array): string {
   }
   /* c8 ignore stop */
   // Convert to base64url: + → -, / → _, strip = padding
-  const base64url = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  return 'm' + base64url;
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
+ * Decodes a base64url (no-padding) string (RFC 4648 §5) back to a `Uint8Array`.
+ *
+ * This is the bare primitive with no multibase prefix; use
+ * {@link CryptoUtils.multibaseBase64UrlDecode} to decode a multibase-`'m'`-prefixed value.
+ *
+ * @param encoded - The base64url-no-pad body to decode.
+ * @returns `Success` with the decoded bytes, or `Failure` with error context.
+ * @public
+ */
+export function base64UrlNoPadDecode(encoded: string): Result<Uint8Array> {
+  if (!isBase64UrlNoPadBody(encoded)) {
+    return fail(`base64UrlNoPadDecode: malformed base64url body`);
+  }
+  // Convert base64url back to standard base64 and restore padding
+  const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+  try {
+    let bytes: Uint8Array;
+    if (typeof Buffer !== 'undefined') {
+      bytes = new Uint8Array(Buffer.from(padded, 'base64'));
+      /* c8 ignore start - browser-only: atob path not available in Node tests */
+    } else {
+      const binary = atob(padded);
+      bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+    }
+    /* c8 ignore stop */
+    return succeed(bytes);
+    /* c8 ignore next 3 - defensive: shape check above prevents invalid chars from reaching here */
+  } catch {
+    return fail(`base64UrlNoPadDecode: malformed base64url body`);
+  }
+}
+
+/**
+ * Type guard for {@link CryptoUtils.MultibaseSpkiPublicKey}: a string that starts
+ * with the multibase `'m'` prefix and whose body matches the base64url-no-pad shape.
+ * Shares the exact body-shape rule used by {@link CryptoUtils.base64UrlNoPadDecode}.
+ *
+ * @param value - The value to test.
+ * @returns `true` if `value` is a well-formed multibase SPKI public key string.
+ * @public
+ */
+export function isValidMultibaseSpkiPublicKey(value: unknown): value is MultibaseSpkiPublicKey {
+  return typeof value === 'string' && value.startsWith('m') && isBase64UrlNoPadBody(value.slice(1));
+}
+
+/**
+ * Encodes a `Uint8Array` as a multibase base64url (no-padding) string.
+ *
+ * The multibase prefix `'m'` identifies the encoding as RFC 4648 base64url
+ * without padding. The body uses base64url alphabet: `+` → `-`, `/` → `_`,
+ * and trailing `=` padding is stripped.
+ *
+ * @param data - The binary data to encode.
+ * @returns A multibase-prefixed base64url string (`'m' + base64url-no-pad`).
+ * @public
+ */
+export function multibaseBase64UrlEncode(data: Uint8Array): string {
+  return 'm' + base64UrlNoPadEncode(data);
 }
 
 /**
@@ -68,31 +142,13 @@ export function multibaseBase64UrlDecode(encoded: string): Result<Uint8Array> {
       }' — expected 'm' (base64url)`
     );
   }
-  const body = encoded.slice(1);
-  if (!/^[A-Za-z0-9_-]*$/.test(body) || body.length % 4 === 1) {
-    return fail(`multibaseBase64UrlDecode: malformed base64url body`);
-  }
-  // Convert base64url back to standard base64 and restore padding
-  const base64 = body.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
-  try {
-    let bytes: Uint8Array;
-    if (typeof Buffer !== 'undefined') {
-      bytes = new Uint8Array(Buffer.from(padded, 'base64'));
-      /* c8 ignore start - browser-only: atob path not available in Node tests */
-    } else {
-      const binary = atob(padded);
-      bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-    }
-    /* c8 ignore stop */
-    return succeed(bytes);
-    /* c8 ignore next 3 - defensive: regex validation above prevents invalid chars from reaching here */
-  } catch {
-    return fail(`multibaseBase64UrlDecode: malformed base64url body`);
-  }
+  // Intentionally pin the exact original message (the delegate has a single failure
+  // mode) to keep this established public function byte-for-byte behavior-preserving
+  // after the extract-and-delegate refactor — do not "fix" this into composing the
+  // delegate's message without updating the delegation-equivalence tests.
+  return base64UrlNoPadDecode(encoded.slice(1)).withErrorFormat(
+    () => `multibaseBase64UrlDecode: malformed base64url body`
+  );
 }
 
 /**
@@ -110,10 +166,14 @@ export function multibaseBase64UrlDecode(encoded: string): Result<Uint8Array> {
 export async function exportPublicKeyAsMultibaseSpki(
   key: CryptoKey,
   provider: ICryptoProvider
-): Promise<Result<string>> {
+): Promise<Result<MultibaseSpkiPublicKey>> {
   return (await provider.exportPublicKeySpki(key))
     .withErrorFormat((e) => `exportPublicKeyAsMultibaseSpki: ${e}`)
-    .onSuccess((buf) => succeed(multibaseBase64UrlEncode(buf)));
+    .onSuccess((buf) =>
+      // The output is a freshly-built valid multibase SPKI string (`'m'` prefix +
+      // base64url-no-pad body), so brand it at the construction site — no re-validation needed.
+      succeed(multibaseBase64UrlEncode(buf) as MultibaseSpkiPublicKey)
+    );
 }
 
 /**
@@ -130,7 +190,7 @@ export async function exportPublicKeyAsMultibaseSpki(
  * @public
  */
 export async function importPublicKeyFromMultibaseSpki(
-  encoded: string,
+  encoded: MultibaseSpkiPublicKey,
   algorithm: KeyPairAlgorithm,
   provider: ICryptoProvider
 ): Promise<Result<CryptoKey>> {

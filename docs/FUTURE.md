@@ -302,3 +302,29 @@ prioritized; the fleshed design lets it start cold.
 (design-space note + §9 refinement + §10 unified-substrate / L3 contract) and
 `design.md` (moderate-detail platform design). Floated package name
 `@fgv/ts-agent-memory`.
+
+## RFC 9421 HTTP-message-signature packlet (prospective `@fgv/ts-extras`)
+
+A strict, Ed25519-only [RFC 9421](https://www.rfc-editor.org/rfc/rfc9421) HTTP
+Message Signatures profile as a new `@fgv/ts-extras` packlet: a signer/verifier
+pair plus a signature-base builder, all built over the crypto-utils
+`ICryptoProvider` (`sign`/`verify`), framework-free (no Express/Fetch coupling —
+the caller supplies the covered-component values) and `Result`-shaped throughout.
+The PersonAIlity V2 identity/signing track is proving this out inside its own
+`signing` packlet against real request/response signing and intends to propose it
+upstream to `@fgv/ts-extras` once its Phase 0 lands and the profile has settled.
+
+**Why deferred**: still being proven against a live consumer's request-signing
+surface; the covered-component set, canonicalization edge cases, and the
+Ed25519-only scoping want to settle in the consumer before being frozen as a
+published primitive.
+
+**Dependencies**: this stream's `base64UrlNoPadEncode` / `base64UrlNoPadDecode`
+(`@fgv/ts-extras/crypto-utils`, the base64url-no-pad primitives) — the RFC 9421
+signature-base and signature encoding both traffic in base64url-no-pad, so the
+packlet builds directly on them rather than re-deriving the codec. Also
+`ICryptoProvider.sign`/`verify` (already shipped).
+
+**Reference**: PersonAIlity V2 identity/signing track (`signing` packlet, Phase 0);
+crypto-utils base64url + branded multibase SPKI hardening stream
+(`.ai/tasks/active/crypto-utils-base64url-hardening/`).

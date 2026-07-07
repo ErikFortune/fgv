@@ -30,8 +30,10 @@ import {
   IKeyDerivationParams,
   INamedSecret,
   IPbkdf2KeyDerivationParams,
-  KeyDerivationFunction
+  KeyDerivationFunction,
+  MultibaseSpkiPublicKey
 } from './model';
+import { isValidMultibaseSpkiPublicKey } from './spkiHelpers';
 
 // ============================================================================
 // Base Converters
@@ -111,6 +113,25 @@ export const base64String: Converter<string> = Converters.string.withConstraint(
     return fail('Invalid base64 encoding');
   }
   return succeed(value);
+});
+
+/**
+ * Converter for {@link CryptoUtils.MultibaseSpkiPublicKey | multibase SPKI public key} strings.
+ * Validates that the value is a string with the `'m'` multibase prefix and a well-formed
+ * base64url-no-pad body, and yields the branded value. Fails with context on a non-string,
+ * bad-prefix, or malformed-body input.
+ * @public
+ */
+export const multibaseSpkiPublicKey: Converter<MultibaseSpkiPublicKey> = Converters.string.map((value) => {
+  if (isValidMultibaseSpkiPublicKey(value)) {
+    return succeed(value);
+  }
+  if (!value.startsWith('m')) {
+    return fail(
+      `multibaseSpkiPublicKey: invalid multibase prefix '${value[0] ?? '(empty)'}' — expected 'm' (base64url)`
+    );
+  }
+  return fail(`multibaseSpkiPublicKey: malformed base64url body`);
 });
 
 // ============================================================================
