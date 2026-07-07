@@ -31,7 +31,7 @@ import { fail, Result } from '@fgv/ts-utils';
 
 import { splitChatRequest } from './chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from './endpoint';
-import { type IAiStreamEvent, type ModelSpecKey, resolveProviderModel } from './model';
+import { type IAiStreamEvent, type ModelSpecKey, isResponsesOnlyModel, resolveProviderModel } from './model';
 import { callAnthropicStream } from './streamingAdapters/anthropic';
 import { type IProviderCompletionStreamParams, type IStreamApiConfig } from './streamingAdapters/common';
 import { callGeminiStream } from './streamingAdapters/gemini';
@@ -159,7 +159,9 @@ export async function callProviderCompletionStream(
 
   switch (descriptor.apiFormat) {
     case 'openai':
-      if (hasTools) {
+      // Responses-API-only models (e.g. gpt-5.5-pro) 400 on /chat/completions, so they route
+      // to the Responses stream even with no tools requested — same path the tools case uses.
+      if (hasTools || isResponsesOnlyModel(descriptor, config.model)) {
         return callOpenAiResponsesStream(
           config,
           prompt,

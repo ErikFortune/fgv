@@ -77,6 +77,7 @@ export {
   MODEL_ALIAS_SIGIL,
   resolveModelAlias,
   resolveProviderModel,
+  isResponsesOnlyModel,
   toDataUrl,
   type AiThinkingMode,
   type IThinkingConfig,

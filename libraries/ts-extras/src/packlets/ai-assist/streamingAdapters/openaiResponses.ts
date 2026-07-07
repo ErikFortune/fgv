@@ -455,7 +455,7 @@ async function* translateOpenAiResponsesStream(
 export async function callOpenAiResponsesStream(
   config: IStreamApiConfig,
   prompt: AiPrompt,
-  tools: ReadonlyArray<AiToolConfig>,
+  tools: ReadonlyArray<AiToolConfig> = [],
   messagesBefore: ReadonlyArray<IChatMessage> | undefined,
   temperature: number | undefined,
   logger?: Logging.ILogger,
@@ -474,9 +474,13 @@ export async function callOpenAiResponsesStream(
   const body: Record<string, unknown> = {
     model: config.model,
     input,
-    tools: toResponsesApiTools(tools),
     stream: true
   };
+  // `tools` is omitted entirely when none are requested — a Responses-only model routed
+  // here for tier/model reasons (not tools) must not send an empty tools array.
+  if (tools.length > 0) {
+    body.tools = toResponsesApiTools(tools);
+  }
   if (effort !== undefined && supportsReasoning) {
     body.reasoning = { effort };
   }

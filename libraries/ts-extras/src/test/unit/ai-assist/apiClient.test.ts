@@ -1015,6 +1015,125 @@ describe('callProviderCompletion', () => {
   });
 
   // ==========================================================================
+  // OpenAI Responses-API-only model routing (no tools) — restores frontier
+  // ==========================================================================
+
+  describe('openai Responses-only model routing (no tools)', () => {
+    // A synthetic openai-format descriptor that marks a model prefix as
+    // Responses-API-only and wires it to the frontier tier via an alias.
+    const descriptor = makeDescriptor({
+      id: 'openai',
+      apiFormat: 'openai',
+      baseUrl: 'https://api.openai.com/v1',
+      defaultModel: { base: 'gpt-5.4-mini', advanced: 'gpt-5.5', frontier: '@openai:pro' },
+      aliases: { '@openai:pro': 'gpt-5.5-pro' },
+      responsesOnlyModelPrefixes: ['gpt-5.5-pro']
+    });
+
+    test('routes a modelOverride of a Responses-only model to /responses even with no tools', async () => {
+      mockFetchResponse(responsesApiResponse('pro answer'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        modelOverride: 'gpt-5.5-pro'
+      });
+
+      expect(result).toSucceedWith({ content: 'pro answer', truncated: false });
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      const body = JSON.parse(fetchCall[1].body);
+      expect(body.model).toBe('gpt-5.5-pro');
+      // No tools were requested, so the tools field must be omitted entirely.
+      expect(body.tools).toBeUndefined();
+      expect('tools' in body).toBe(false);
+      // No default temperature is force-sent on the Responses-only route.
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('frontier tier resolves @openai:pro → gpt-5.5-pro and routes to /responses', async () => {
+      mockFetchResponse(responsesApiResponse('frontier answer'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tier: 'frontier'
+      });
+
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      const body = JSON.parse(fetchCall[1].body);
+      expect(body.model).toBe('gpt-5.5-pro');
+      expect('tools' in body).toBe(false);
+    });
+
+    test('base tier still routes to /chat/completions', async () => {
+      mockFetchResponse(openAiResponse('base answer'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest()
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/chat/completions');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.4-mini');
+    });
+
+    test('advanced tier still routes to /chat/completions', async () => {
+      mockFetchResponse(openAiResponse('advanced answer'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tier: 'advanced'
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/chat/completions');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.5');
+    });
+
+    test('a Responses-only model WITH tools still sends the tools field', async () => {
+      mockFetchResponse(responsesApiResponse('pro + search'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        modelOverride: 'gpt-5.5-pro',
+        tools: [{ type: 'web_search' }]
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      expect(JSON.parse(fetchCall[1].body).tools).toEqual([{ type: 'web_search' }]);
+    });
+
+    test('real OpenAI registry descriptor: frontier resolves gpt-5.5-pro via /responses', async () => {
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      expect(openai.responsesOnlyModelPrefixes).toEqual(['gpt-5.5-pro']);
+      mockFetchResponse(responsesApiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor: openai,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tier: 'frontier'
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.5-pro');
+    });
+  });
+
+  // ==========================================================================
   // Anthropic with tools
   // ==========================================================================
 

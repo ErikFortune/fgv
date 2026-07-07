@@ -228,6 +228,47 @@ describe('resolveProviderModel', () => {
   });
 });
 
+describe('isResponsesOnlyModel', () => {
+  const descriptor = makeDescriptor({
+    id: 'openai',
+    defaultModel: 'gpt-5.4-mini',
+    responsesOnlyModelPrefixes: ['gpt-5.5-pro']
+  });
+
+  test('returns true for an exact Responses-only model id', () => {
+    expect(AiAssist.isResponsesOnlyModel(descriptor, 'gpt-5.5-pro')).toBe(true);
+  });
+
+  test('returns true for a prefixed variant of a Responses-only model id', () => {
+    expect(AiAssist.isResponsesOnlyModel(descriptor, 'gpt-5.5-pro-2026-01-01')).toBe(true);
+  });
+
+  test('returns false for a non-Responses-only model id (chat-completions model)', () => {
+    expect(AiAssist.isResponsesOnlyModel(descriptor, 'gpt-5.5')).toBe(false);
+    expect(AiAssist.isResponsesOnlyModel(descriptor, 'gpt-5.4-mini')).toBe(false);
+  });
+
+  test('returns false when the provider declares no Responses-only prefixes', () => {
+    const noList = makeDescriptor({ id: 'openai', defaultModel: 'gpt-5.4-mini' });
+    expect(AiAssist.isResponsesOnlyModel(noList, 'gpt-5.5-pro')).toBe(false);
+  });
+
+  test('returns false for an empty prefix list', () => {
+    const emptyList = makeDescriptor({
+      id: 'openai',
+      defaultModel: 'gpt-5.4-mini',
+      responsesOnlyModelPrefixes: []
+    });
+    expect(AiAssist.isResponsesOnlyModel(emptyList, 'gpt-5.5-pro')).toBe(false);
+  });
+
+  test('the built-in OpenAI descriptor marks gpt-5.5-pro Responses-only', () => {
+    const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+    expect(AiAssist.isResponsesOnlyModel(openai, 'gpt-5.5-pro')).toBe(true);
+    expect(AiAssist.isResponsesOnlyModel(openai, 'gpt-5.5')).toBe(false);
+  });
+});
+
 describe('alias layer resolution for built-in descriptors', () => {
   const descriptors = AiAssist.getProviderDescriptors();
 

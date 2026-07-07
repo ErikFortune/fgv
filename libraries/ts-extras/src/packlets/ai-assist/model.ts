@@ -686,6 +686,27 @@ export function resolveProviderModel(
   return resolveModelAlias(descriptor, resolved);
 }
 
+/**
+ * Determines whether a concrete (already-resolved) model id must be invoked via
+ * the OpenAI Responses API rather than chat completions.
+ *
+ * @remarks
+ * Matches `modelId` against the descriptor's
+ * {@link IAiProviderDescriptor.responsesOnlyModelPrefixes} by prefix. A provider
+ * that declares no list (the common case) always returns `false`. Consulted by
+ * both the completion (`callProviderCompletion`) and streaming
+ * (`callProviderCompletionStream`) OpenAI dispatch branches so a Responses-only
+ * model (e.g. `gpt-5.5-pro`) routes correctly even with no tools requested.
+ *
+ * @param descriptor - The provider descriptor supplying the prefix list.
+ * @param modelId - The resolved concrete model id to test.
+ * @returns `true` when `modelId` starts with any declared Responses-only prefix.
+ * @public
+ */
+export function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId: string): boolean {
+  return descriptor.responsesOnlyModelPrefixes?.some((p) => modelId.startsWith(p)) ?? false;
+}
+
 // ============================================================================
 // Provider Descriptor
 // ============================================================================
@@ -957,6 +978,22 @@ export interface IAiProviderDescriptor {
    * caller supplies the embedding model via `modelOverride`.
    */
   readonly embedding?: ReadonlyArray<IAiEmbeddingModelCapability>;
+  /**
+   * Concrete model ids (prefix-matched) that must be invoked via the OpenAI
+   * Responses API rather than chat completions — e.g. `gpt-5.5-pro`. Non-OpenAI
+   * `apiFormat`s ignore this.
+   *
+   * @remarks
+   * Some current-generation OpenAI models (the `-pro` tier) are Responses-API-only
+   * and 400 on `/chat/completions`. The completion and streaming dispatch consult
+   * this list (via the sibling predicate {@link AiAssist.isResponsesOnlyModel})
+   * and route a matching model to the Responses path
+   * even when no tools are requested. Mirrors the prefix-matching shape of the
+   * `imageGeneration` / `embedding` capability arrays; adding a new Responses-only
+   * line is a one-entry descriptor edit. Empty or undefined means no model is
+   * Responses-only.
+   */
+  readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
 }
 
 /**
