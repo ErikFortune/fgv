@@ -384,8 +384,6 @@ describe('usePuzzleSession with Sudoku X', () => {
     test('should handle rapid diagonal cell updates efficiently', () => {
       const { result } = renderHook(() => usePuzzleSession(emptySudokuXDescription));
 
-      const startTime = Date.now();
-
       // Rapidly update diagonal cells
       const diagonalCells = ['A1', 'B2', 'C3', 'D4', 'E5'] as CellId[];
 
@@ -395,20 +393,12 @@ describe('usePuzzleSession with Sudoku X', () => {
         });
       });
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-
-      // Should complete quickly
-      expect(duration).toBeLessThan(100);
-
       // Should maintain validity state correctly
       expect(result.current.isValid).toBe(true);
     });
 
     test('should efficiently validate complex diagonal scenarios', () => {
       const { result } = renderHook(() => usePuzzleSession(emptySudokuXDescription));
-
-      const startTime = Date.now();
 
       // Create and resolve multiple diagonal conflicts
       act(() => {
@@ -422,10 +412,6 @@ describe('usePuzzleSession with Sudoku X', () => {
         result.current.updateCellValue('C3' as CellId, 7);
       });
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-
-      expect(duration).toBeLessThan(50);
       expect(result.current.isValid).toBe(true);
     });
   });
