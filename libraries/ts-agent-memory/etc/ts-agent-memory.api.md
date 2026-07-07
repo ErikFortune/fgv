@@ -4,6 +4,7 @@
 
 ```ts
 
+import { AiAssist } from '@fgv/ts-extras';
 import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
@@ -46,10 +47,16 @@ export const Convert: {
 };
 
 // @public
+export function createMemoryTools(params: ICreateMemoryToolsParams): ReadonlyArray<AiAssist.IAiClientTool>;
+
+// @public
 export type DedupScope = 'content' | 'entity';
 
 // @public
 export const DEFAULT_DEDUP_SCOPE: DedupScope;
+
+// @public
+export const DEFAULT_MEMORY_TOOLS: ReadonlyArray<MemoryToolName>;
 
 // @public
 export function defaultMemoryScopeEncoding(scope: MemoryScopeKey): Result<string>;
@@ -93,6 +100,18 @@ export interface IBodyConverterRegistry {
     has(kind: Kind): boolean;
     register<T>(kind: Kind, converter: Converter<T>): void;
     registerSchema<T>(kind: Kind, schema: JsonSchema.ISchemaValidator<T>): void;
+}
+
+// @public
+export interface ICreateMemoryToolsParams {
+    readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
+    readonly defaultCodec?: IIdentityCodec;
+    readonly handleFor?: (record: IMemoryRecord<unknown>) => string;
+    readonly kinds?: ReadonlyArray<Kind>;
+    readonly registry: IBodyConverterRegistry;
+    readonly retriever: IMemoryRetriever;
+    readonly store: IMemoryStore;
+    readonly tools?: ReadonlyArray<MemoryToolName>;
 }
 
 // @public
@@ -273,6 +292,23 @@ export interface IMemoryStoreListFilter {
 }
 
 // @public
+export interface IMemoryToolResultItem {
+    readonly body: unknown;
+    readonly entityId: EntityId;
+    readonly handle: string;
+    readonly kind: Kind;
+    readonly tags: ReadonlyArray<string>;
+}
+
+// @public
+export interface IMemoryWriteResult {
+    readonly entityId: EntityId;
+    readonly id: MemoryId;
+    readonly kind: Kind;
+    readonly outcome: MemoryWriteOutcome;
+}
+
+// @public
 export interface IMergeStrategy {
     merge(resultSets: ReadonlyArray<ReadonlyArray<IMemoryRecord<unknown>>>): Result<ReadonlyArray<IMemoryRecord<unknown>>>;
 }
@@ -437,6 +473,12 @@ export class MemoryObservationStore implements IMemoryObserver {
 
 // @public
 export type MemoryScopeKey = Brand<string, 'MemoryScopeKey'>;
+
+// @public
+export type MemoryToolName = 'memory_write' | 'memory_read' | 'memory_search' | 'memory_context' | 'memory_delete';
+
+// @public
+export type MemoryWriteOutcome = 'written' | 'deduped';
 
 // @public
 export class MtmIdentityCodec implements IIdentityCodec {

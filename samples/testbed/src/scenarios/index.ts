@@ -18,6 +18,7 @@ import { localClassifierSafetyScenario } from './localClassifierSafety';
 import { localEmbeddingSearchScenario } from './localEmbeddingSearch';
 import { localSummarizationScenario } from './localSummarization';
 import { mcpProbeScenario } from './mcpProbe';
+import { memoryToolsGateScenario } from './memoryToolsGate';
 import {
   anthropicModelTiersScenario,
   geminiModelTiersScenario,
@@ -40,6 +41,7 @@ export const scenarios: readonly IScenario[] = [
   localEmbeddingSearchScenario,
   localSummarizationScenario,
   mcpProbeScenario,
+  memoryToolsGateScenario,
   crossProviderEmbeddingSearchScenario,
   openaiModelTiersScenario,
   anthropicModelTiersScenario,

@@ -35,6 +35,17 @@ opportunistically when the right surface area is touched.
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P3] `ts-agent-memory` L2 `createMemoryTools` duplicates the store's codec wiring instead of delegating.**
+  `createMemoryTools({ codecs?, defaultCodec? })` (`libraries/ts-agent-memory/src/packlets/tools/memoryTools.ts`) accepts the per-kind identity codecs a second time, in addition to `FileTreeMemoryStore.create({ codecs })`. `memory_write` needs them because `IMemoryStore.put` (`fileTreeMemoryStore.ts:496-502`) validates `envelope.id === codec-derived idStem` and does not derive/stamp the id itself — so a caller building a new `IMemoryRecord` must compute the same `idStem` up front, which requires the same codec the store was constructed with. The testbed scenario passes the same `codecs` map to both constructors, illustrating the drift risk: a host that re-wires the store's codecs but forgets the mirrored `createMemoryTools` config gets a confusing "envelope id does not match codec-derived stem" failure at `put()` time. Scope isolation is NOT compromised (codec `scope` is derived deterministically from `kind`, not from agent input; a mismatch loudly rejects the write rather than writing cross-scope), so this is a DX/robustness smell, not a security gap.
+
+  **Trigger**: when the temporal write path lands (it touches the same `IMemoryStore` write surface) or the next time `createMemoryTools` is extended.
+
+  **Scope sketch**: add an additive method to `IMemoryStore` — e.g. `resolveWriteAddress(kind, entityId): Result<IIdentityCodecResult>` delegating to the store's already-configured `codecs`/`defaultCodec` — and have `memory_write` call it, dropping the `codecs?`/`defaultCodec?` params from `ICreateMemoryToolsParams`. Purely additive on the active `ts-agent-memory` surface; removes the duplicate config and the drift failure mode.
+
+  **Not a P2**: the current shape ships correctly and the failure mode on host misconfiguration is loud (a `put`-time reject), not silent; scope isolation holds structurally.
+
+  **Reference**: `agent-memory-l2-tools` stream; code-reviewer pass on the L2 diff (2026-07-07).
+
 - **[P2] `ts-prompt-assist` (and adjacent `ts-res` qualifier surface) needs an API documentation pass once the v0.1 surface settles.**
   PR #380 review surfaced that the recently-extended `ts-prompt-assist` surface — `PromptLibrary` + `IPromptLibraryCreateParams` + `IPromptResolveRequest` + the related fixture / resource-binding / resolve-output types — carries minimal TSDoc on individual methods, parameters, and return shapes. The v0.1 surface has been moving fast (Phase B sub-phases + post-merge cleanups + surface-tidy + round-1 ergonomics absorption), so documenting heavily during churn was the right call; with v0.1 effectively settled now, the next concern is consumer-facing TSDoc quality on the public surface.
 
