@@ -875,8 +875,9 @@ interface IGeminiImageOutContent {
 }
 /** @internal */
 interface IGeminiImageOutCandidate {
-  content: IGeminiImageOutContent;
+  content?: IGeminiImageOutContent;
   finishReason?: string;
+  finishMessage?: string;
 }
 /** @internal */
 interface IGeminiImageOutResponse {
@@ -892,12 +893,13 @@ const geminiImageOutPart: Validator<IGeminiImageOutPart> = Validators.object<IGe
   inlineData: geminiImageInlineData.optional()
 });
 const geminiImageOutContent: Validator<IGeminiImageOutContent> = Validators.object<IGeminiImageOutContent>({
-  parts: Validators.arrayOf(geminiImageOutPart).withConstraint((arr) => arr.length > 0)
+  parts: Validators.arrayOf(geminiImageOutPart)
 });
 const geminiImageOutCandidate: Validator<IGeminiImageOutCandidate> =
   Validators.object<IGeminiImageOutCandidate>({
-    content: geminiImageOutContent,
-    finishReason: Validators.string.optional()
+    content: geminiImageOutContent.optional(),
+    finishReason: Validators.string.optional(),
+    finishMessage: Validators.string.optional()
   });
 const geminiImageOutResponse: Validator<IGeminiImageOutResponse> = Validators.object<IGeminiImageOutResponse>(
   {
@@ -1157,6 +1159,15 @@ async function callXaiImageGeneration(
   );
 }
 
+/**
+ * Gemini `finishReason` values that indicate a normal terminal completion rather
+ * than a refusal. `STOP` is set on every successful generation (and on completions
+ * that return a text part instead of an image); `MAX_TOKENS` is a benign truncation.
+ * A candidate carrying only one of these is NOT a decline — treating it as one would
+ * mislabel an ordinary no-image outcome as a policy refusal. @internal
+ */
+const benignGeminiImageFinishReasons: ReadonlySet<string> = new Set(['STOP', 'MAX_TOKENS']);
+
 /** Calls Gemini :generateContent for image output; accepts ref images as inlineData. @internal */
 async function callGeminiImageOutGeneration(
   config: IAiApiConfig,
@@ -1197,7 +1208,7 @@ async function callGeminiImageOutGeneration(
       .onSuccess((response) => {
         const images: IAiGeneratedImage[] = [];
         for (const candidate of response.candidates) {
-          for (const part of candidate.content.parts) {
+          for (const part of candidate.content?.parts ?? []) {
             if (part.inlineData) {
               images.push({
                 mimeType: part.inlineData.mimeType,
@@ -1207,6 +1218,21 @@ async function callGeminiImageOutGeneration(
           }
         }
         if (images.length === 0) {
+          // A candidate with no image parts is a *decline* only when it carries a
+          // refusal-shaped finishReason — i.e. present and not a benign terminal reason
+          // (`STOP`/`MAX_TOKENS`). A normal completion that emitted text-instead-of-image
+          // carries `finishReason: 'STOP'` and must fall through to the no-image message.
+          const declined = response.candidates.find(
+            (candidate) =>
+              candidate.finishReason !== undefined &&
+              !benignGeminiImageFinishReasons.has(candidate.finishReason)
+          );
+          if (declined?.finishReason !== undefined) {
+            // Truthiness (not `!== undefined`) so an empty-string finishMessage is treated
+            // as "no message" and produces no dangling ` — ` separator.
+            const suffix = declined.finishMessage ? ` — ${declined.finishMessage}` : '';
+            return fail(`Gemini image generation declined: ${declined.finishReason}${suffix}`);
+          }
           return fail('Gemini image API response: no image parts in response');
         }
         return succeed({ images });
