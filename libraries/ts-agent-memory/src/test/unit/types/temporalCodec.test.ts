@@ -102,6 +102,14 @@ describe('TemporalIdentityCodec', () => {
         /non-integer version suffix/i
       );
     });
+
+    test('rejects a version suffix outside the safe integer range (corruption/tamper guard)', () => {
+      // A very long digit run passes the regex but overflows Number.MAX_SAFE_INTEGER;
+      // parseInt would silently lose precision, so decode must fail rather than corrupt seq.
+      expect(
+        codec.decodeVersion('facts/entities/fact-1' as MemoryScopeKey, 'fact-1-v99999999999999999999')
+      ).toFailWith(/outside the safe integer range/i);
+    });
   });
 
   describe('verifyRoundTrip', () => {

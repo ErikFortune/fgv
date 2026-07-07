@@ -187,9 +187,16 @@ export class TemporalIdentityCodec implements ITemporalIdentityCodec {
       if (!TemporalIdentityCodec._versionSeqRe.test(seqText)) {
         return fail(`temporal codec: version stem '${stem}' has a non-integer version suffix '${seqText}'`);
       }
-      return Convert.entityId
-        .convert(entityId)
-        .onSuccess((branded) => succeed({ entityId: branded, seq: Number.parseInt(seqText, 10) }));
+      // The regex admits digit strings of unbounded length; `parseInt` would silently
+      // lose precision past MAX_SAFE_INTEGER, decoding a corrupt/tampered filename to a
+      // plausible-but-wrong `seq` that drives version ordering. Reject rather than corrupt.
+      const seq: number = Number.parseInt(seqText, 10);
+      if (!Number.isSafeInteger(seq)) {
+        return fail(
+          `temporal codec: version stem '${stem}' has a version suffix '${seqText}' outside the safe integer range`
+        );
+      }
+      return Convert.entityId.convert(entityId).onSuccess((branded) => succeed({ entityId: branded, seq }));
     });
   }
 
