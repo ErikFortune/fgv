@@ -1,7 +1,7 @@
 {
   "changes": [
     {
-      "comment": "disable flaky ts-sudoku-ui tests",
+      "comment": "disable flaky ts-sudoku-ui tests; add non-gesture multi-select clear-all test to restore 100% coverage",
       "type": "none",
       "packageName": "@fgv/ts-sudoku-ui"
     }

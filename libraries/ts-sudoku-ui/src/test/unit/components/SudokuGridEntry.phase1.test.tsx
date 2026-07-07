@@ -764,6 +764,46 @@ describe('SudokuGridEntry - Phase 1: Core Functionality', () => {
       // Restore Date.now
       jest.restoreAllMocks();
     });
+
+    // Non-gesture replacement for the skipped double-tap test above: exercises the
+    // same multi-select clear-all path (SudokuGridEntry.handleClearAllNotes with
+    // selectedCells.length > 1) via the deterministic Delete-key trigger, so there
+    // is no double-tap/Date.now timing race.
+    test('should clear all notes from multiple selected cells via the Delete key', async () => {
+      customRender(<SudokuGridEntry {...defaultProps} initialPuzzleDescription={simplePuzzleDescription} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sudoku-grid')).toBeInTheDocument();
+      });
+
+      const cellA2 = screen.getByTestId('sudoku-cell-A2');
+      const cellA3 = screen.getByTestId('sudoku-cell-A3');
+      const cellA4 = screen.getByTestId('sudoku-cell-A4');
+
+      // Select multiple cells
+      fireEvent.click(cellA2);
+      fireEvent.click(cellA3, { ctrlKey: true });
+      fireEvent.click(cellA4, { ctrlKey: true });
+
+      // Add notes to all selected cells
+      fireEvent.keyDown(cellA2, { key: '2', code: 'Digit2' });
+      fireEvent.keyDown(cellA2, { key: '5', code: 'Digit5' });
+
+      await waitFor(() => {
+        expect(cellA2).toHaveAttribute('aria-label', expect.stringMatching(/notes: 2, 5/));
+        expect(cellA3).toHaveAttribute('aria-label', expect.stringMatching(/notes: 2, 5/));
+        expect(cellA4).toHaveAttribute('aria-label', expect.stringMatching(/notes: 2, 5/));
+      });
+
+      // Delete on one of the selected cells clears notes from all selected cells
+      fireEvent.keyDown(cellA2, { key: 'Delete', code: 'Delete' });
+
+      await waitFor(() => {
+        expect(cellA2).toHaveAttribute('aria-label', expect.stringMatching(/empty$/));
+        expect(cellA3).toHaveAttribute('aria-label', expect.stringMatching(/empty$/));
+        expect(cellA4).toHaveAttribute('aria-label', expect.stringMatching(/empty$/));
+      });
+    });
   });
 
   describe('Phase 1.3: Keypad Interactions', () => {
