@@ -303,6 +303,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
     const result: Result<IMemoryRecord<unknown> | undefined> = this._codecFor(kind).onSuccess((codec) =>
       codec.encode(entityId).onSuccess((addr) => {
         if (addr.isVersioned) {
+          if (!isTemporalIdentityCodec(codec)) {
+            return fail(
+              `memory get '${entityId}': codec for versioned kind '${kind}' does not implement the temporal codec interface`
+            );
+          }
           // Versioned keyed read resolves the CURRENT version (highest-seq
           // version whose `invalid_at` is null/absent) from the entity subtree,
           // read off the derived index. `asOf` resolution is via `list({ asOf })`
@@ -828,6 +833,13 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return this._codecFor(kind).thenOnSuccess((codec) =>
       codec.encode(entityId).thenOnSuccess((addr) => {
         if (addr.isVersioned) {
+          if (!isTemporalIdentityCodec(codec)) {
+            return Promise.resolve(
+              fail<MemoryId>(
+                `memory delete '${entityId}': codec for versioned kind '${kind}' does not implement the temporal codec interface`
+              )
+            );
+          }
           return this._deleteVersioned(entityId, addr.scope);
         }
         return this._deleteFlat(entityId, addr.scope, addr.idStem);
@@ -919,6 +931,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
     if (dedupScope === 'entity' && current !== undefined && current.envelope.contentHash === hash) {
       return succeed({ record: current, evicted: [] });
     }
+    // On the versioned path the admission cohort is the entity's ENTIRE version
+    // history (no target id to exclude — the new version does not exist yet), which
+    // differs from the flat path's "cohort excluding target id" shape.
     const admission: Result<AdmissionDecision> = policy.admit(record, versions);
     if (admission.isFailure()) {
       return fail(admission.message);
@@ -929,17 +944,21 @@ export class FileTreeMemoryStore implements IMemoryStore {
     // No culling on the versioned path — history is retained (invalidate-don't-delete).
     const now: number = this._clock();
     const seq: number = ++this._seq;
+    // World-truth start of the new version. The prior current version's world-truth
+    // interval must CLOSE at this same instant (not at `now`) so a backdated/future-dated
+    // `valid_at` leaves no gap or overlap on the valid-time axis.
+    const validAt: number = envelope.temporal?.valid_at ?? now;
     return codec
       .encodeVersion(entityId, seq)
       .withErrorFormat((msg) => `memory put '${entityId}': ${msg}`)
       .thenOnSuccess((versionStem) =>
-        this._buildVersionedRecord(record, body, current, policy, hash, versionStem, now, seq)
+        this._buildVersionedRecord(record, body, current, policy, hash, versionStem, validAt, now, seq)
           .thenOnSuccess((built) => this._embedOnWrite(built))
           .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, versionStem))
           .onSuccess((persisted) =>
             current === undefined
               ? succeed(persisted)
-              : this._invalidateVersion(scope, current, now).onSuccess(() => succeed(persisted))
+              : this._invalidateVersion(scope, current, validAt, now).onSuccess(() => succeed(persisted))
           )
           .onSuccess((persisted) => succeed({ record: persisted, evicted: [] }))
       );
@@ -959,13 +978,15 @@ export class FileTreeMemoryStore implements IMemoryStore {
     body: string,
     current: IMemoryRecord<unknown> | undefined,
     policy: IWritePolicy,
-    hash: string,
+    // Reused only for the first-version branch (its content is taken verbatim); a
+    // subsequent version recomputes its hash from the merge-patched content.
+    firstVersionHash: string,
     versionStem: string,
+    validAt: number,
     now: number,
     seq: number
   ): Result<IMemoryRecord<string>> {
     const mintedId: MemoryId = versionStem as MemoryId;
-    const validAt: number = incoming.envelope.temporal?.valid_at ?? now;
     if (current === undefined) {
       const envelope: IMemoryEnvelope = {
         ...incoming.envelope,
@@ -974,7 +995,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
         created: now,
         updated: now,
         seq,
-        contentHash: hash,
+        contentHash: firstVersionHash,
         temporal: { valid_at: validAt }
       };
       return succeed({ envelope, body });
@@ -1019,17 +1040,20 @@ export class FileTreeMemoryStore implements IMemoryStore {
   private _invalidateVersion(
     scope: MemoryScopeKey,
     version: IMemoryRecord<unknown>,
+    invalidAt: number,
     now: number
   ): Result<IMemoryRecord<unknown>> {
     if (typeof version.body !== 'string') {
       /* c8 ignore next 2 -- defensive: every persisted version carries a string body (only string bodies are written) */
       return fail(`memory put: cannot invalidate version '${version.envelope.id}': non-string body`);
     }
+    // `invalid_at` is the WORLD-TRUTH close of the interval (the superseding version's
+    // `valid_at`, or the delete instant); `updated` is the transaction-time stamp.
     const invalidated: IMemoryRecord<string> = {
       envelope: {
         ...version.envelope,
         updated: now,
-        temporal: { ...version.envelope.temporal, invalid_at: now }
+        temporal: { ...version.envelope.temporal, invalid_at: invalidAt }
       },
       body: version.body
     };
@@ -1050,8 +1074,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
     if (current === undefined) {
       return fail(`memory delete '${entityId}': no record found`);
     }
+    // A delete closes the world-truth interval at the delete instant (`now` for both
+    // the transaction stamp and the `invalid_at` boundary).
     const now: number = this._clock();
-    return this._invalidateVersion(scope, current, now).onSuccess(() => succeed(current.envelope.id));
+    return this._invalidateVersion(scope, current, now, now).onSuccess(() => succeed(current.envelope.id));
   }
 
   /** Evict (physically delete) a single record file by id, patching the index. */

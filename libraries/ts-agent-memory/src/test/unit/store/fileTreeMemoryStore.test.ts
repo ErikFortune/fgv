@@ -574,6 +574,18 @@ describe('FileTreeMemoryStore', () => {
         /does not implement the temporal codec interface/i
       );
     });
+
+    test('get fails loudly when a versioned codec omits the temporal interface', async () => {
+      expect(await versionedStore().get(versionedKind, 'v' as EntityId)).toFailWith(
+        /does not implement the temporal codec interface/i
+      );
+    });
+
+    test('delete fails loudly when a versioned codec omits the temporal interface', async () => {
+      expect(await versionedStore().delete(versionedKind, 'v' as EntityId)).toFailWith(
+        /does not implement the temporal codec interface/i
+      );
+    });
   });
 
   describe('default codec', () => {
