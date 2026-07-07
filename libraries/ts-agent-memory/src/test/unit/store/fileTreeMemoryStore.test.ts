@@ -546,8 +546,11 @@ describe('FileTreeMemoryStore', () => {
     });
   });
 
-  describe('versioned codec (loud degradation)', () => {
+  describe('versioned codec misconfiguration', () => {
     const versionedKind: Kind = 'versioned' as Kind;
+    // A codec that reports isVersioned:true but does NOT implement the temporal
+    // codec interface (no encodeVersion/decodeVersion) — a misconfiguration the
+    // store must reject loudly rather than mis-handle.
     const versionedCodec: IIdentityCodec = {
       encode: (entityId: EntityId): Result<IIdentityCodecResult> =>
         succeed({ scope: 'versioned' as MemoryScopeKey, idStem: entityId as string, isVersioned: true }),
@@ -566,21 +569,9 @@ describe('FileTreeMemoryStore', () => {
       }).orThrow();
     }
 
-    test('put fails loudly on a versioned layout', async () => {
+    test('put fails loudly when a versioned codec omits the temporal interface', async () => {
       expect(await versionedStore().put(makeRecord({ id: 'v', kind: 'versioned', body: 'x' }))).toFailWith(
-        /versioned\/temporal layout not yet supported/i
-      );
-    });
-
-    test('get fails loudly on a versioned layout', async () => {
-      expect(await versionedStore().get(versionedKind, 'v' as EntityId)).toFailWith(
-        /versioned\/temporal layout not yet supported/i
-      );
-    });
-
-    test('delete fails loudly on a versioned layout', async () => {
-      expect(await versionedStore().delete(versionedKind, 'v' as EntityId)).toFailWith(
-        /versioned\/temporal layout not yet supported/i
+        /does not implement the temporal codec interface/i
       );
     });
   });

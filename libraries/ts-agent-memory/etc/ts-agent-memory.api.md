@@ -24,6 +24,13 @@ export type AdmissionDecision = {
 };
 
 // @public
+export class AsOfRetriever implements IMemoryRetriever {
+    get capabilities(): IMemoryRetrieverCapabilities;
+    static create(index: IMemoryIndex): Result<AsOfRetriever>;
+    retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+}
+
+// @public
 export function assertPortableFilenameStem(stem: string): Result<string>;
 
 // @public
@@ -48,6 +55,13 @@ export const Convert: {
 
 // @public
 export function createMemoryTools(params: ICreateMemoryToolsParams): ReadonlyArray<AiAssist.IAiClientTool>;
+
+// @public
+export class CurrentValidRetriever implements IMemoryRetriever {
+    get capabilities(): IMemoryRetrieverCapabilities;
+    static create(index: IMemoryIndex): Result<CurrentValidRetriever>;
+    retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+}
 
 // @public
 export type DedupScope = 'content' | 'entity';
@@ -85,6 +99,13 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
 // @public
 export function guardRetrieverCapabilities(query: IMemoryQuery, capabilities: IMemoryRetrieverCapabilities): Result<true>;
+
+// @public
+export class HistoryRetriever implements IMemoryRetriever {
+    get capabilities(): IMemoryRetrieverCapabilities;
+    static create(index: IMemoryIndex): Result<HistoryRetriever>;
+    retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+}
 
 // @public
 export class HybridRetriever implements IMemoryRetriever {
@@ -349,9 +370,33 @@ export interface ISemanticRetrieverCreateParams {
 }
 
 // @public
+export function isTemporalIdentityCodec(codec: IIdentityCodec): codec is ITemporalIdentityCodec;
+
+// @public
+export function isTemporalRecord(record: IMemoryRecord<unknown>): boolean;
+
+// @public
+export function isVersionCurrent(record: IMemoryRecord<unknown>): boolean;
+
+// @public
+export function isVersionValidAt(record: IMemoryRecord<unknown>, asOf: number): boolean;
+
+// @public
 export interface ITemporalBlock {
     readonly invalid_at?: number | null;
     readonly valid_at?: number;
+}
+
+// @public
+export interface ITemporalIdentityCodec extends IIdentityCodec {
+    decodeVersion(scope: MemoryScopeKey, stem: string): Result<ITemporalVersionAddress>;
+    encodeVersion(entityId: EntityId, seq: number): Result<string>;
+}
+
+// @public
+export interface ITemporalVersionAddress {
+    readonly entityId: EntityId;
+    readonly seq: number;
 }
 
 // @public
@@ -524,6 +569,12 @@ export class ScoreUnionMergeStrategy implements IMergeStrategy {
 export function selectByQuery(entries: ReadonlyArray<IIndexedMemoryRecord>, query: IMemoryQuery): IMemoryRecord<unknown>[];
 
 // @public
+export function selectCurrentVersion(versions: ReadonlyArray<IMemoryRecord<unknown>>): IMemoryRecord<unknown> | undefined;
+
+// @public
+export function selectVersionAsOf(versions: ReadonlyArray<IMemoryRecord<unknown>>, asOf: number): IMemoryRecord<unknown> | undefined;
+
+// @public
 export const SEMANTIC_UNWIRED_MESSAGE: string;
 
 // @public
@@ -557,10 +608,35 @@ export class TagRetriever implements IMemoryRetriever {
 }
 
 // @public
+export const TEMPORAL_CAPABILITIES: IMemoryRetrieverCapabilities;
+
+// @public
 export const temporalConverter: Converter<ITemporalBlock>;
 
 // @public
+export class TemporalIdentityCodec implements ITemporalIdentityCodec {
+    readonly baseScope: string;
+    static create(baseScope: string): Result<TemporalIdentityCodec>;
+    decode(scope: MemoryScopeKey, encodedStem: string): Result<EntityId>;
+    decodeVersion(scope: MemoryScopeKey, stem: string): Result<ITemporalVersionAddress>;
+    encode(entityId: EntityId): Result<IIdentityCodecResult>;
+    encodeVersion(entityId: EntityId, seq: number): Result<string>;
+    static readonly entitiesSegment: string;
+    verifyRoundTrip(scope: MemoryScopeKey, stem: string): Result<true>;
+    static readonly versionInfix: string;
+}
+
+// @public
 export function temporalUnwiredMessage(kind?: Kind): string;
+
+// @public
+export class TemporalVersionedPolicy implements IWritePolicy {
+    admit(__incoming: IMemoryRecord<unknown>, __existing: ReadonlyArray<IMemoryRecord<unknown>>): Result<AdmissionDecision>;
+    applyUpdate(existing: IMemoryRecord<unknown>, patch: Record<string, unknown>): Result<IMemoryRecord<unknown>>;
+    static create(): Result<TemporalVersionedPolicy>;
+    readonly dedupScope: DedupScope;
+    readonly mutableFields: ReadonlyArray<string>;
+}
 
 // (No @packageDocumentation comment for this package)
 

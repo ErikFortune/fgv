@@ -445,3 +445,130 @@ export class MemoryCapCullPolicy implements IWritePolicy {
     return succeed({ envelope, body: 'body' in merged ? merged.body : existing.body });
   }
 }
+
+/**
+ * Write policy for a versioned (temporal) kind family, implementing
+ * invalidate-don't-delete. Admission always accepts — history is retained, never
+ * culled — and updates apply the same RFC-7386 merge patch as
+ * {@link KnowledgeLwwPolicy}, restricted to the temporal mutable surface.
+ *
+ * @remarks
+ * The policy does NOT perform the version file writes or set `invalid_at` — that
+ * is the store's versioned write branch, driven by the kind's
+ * {@link ITemporalIdentityCodec}. The policy's role is limited to admission and
+ * the merge that forms the **new version's** content from the **current**
+ * version plus the incoming patch (the merge-patch-under-versioning contract).
+ *
+ * - **Dedup scope.** `'entity'` — an identical re-put of the current content is a
+ *   no-op (the store compares the incoming content hash against the current
+ *   version), so identical writes do not spawn redundant versions.
+ * - **Mutable surface.** `body` + the envelope metadata a consumer may revise
+ *   (`tags` / `links` / `provenance` / `embeddingRef`). `temporal` is NOT mutable
+ *   here — `valid_at` / `invalid_at` are set by the store's versioned branch.
+ * @public
+ */
+export class TemporalVersionedPolicy implements IWritePolicy {
+  /** The temporal mutable surface (mirrors {@link KnowledgeLwwPolicy}). */
+  public readonly mutableFields: ReadonlyArray<string> = [
+    'body',
+    'tags',
+    'links',
+    'provenance',
+    'embeddingRef'
+  ];
+
+  /** Versioned kinds dedup per-entity against the current version (see the class remarks). */
+  public readonly dedupScope: DedupScope = 'entity';
+
+  /** Deep-clones the mutable view without RFC-7386 null-deletion semantics. */
+  private readonly _cloneEditor: JsonEditor;
+  /** Applies the RFC-7386 merge patch. */
+  private readonly _mergeEditor: JsonEditor;
+
+  private constructor(cloneEditor: JsonEditor, mergeEditor: JsonEditor) {
+    this._cloneEditor = cloneEditor;
+    this._mergeEditor = mergeEditor;
+  }
+
+  /**
+   * Family-convention factory. Constructs the shared `JsonEditor` instances (one
+   * for cloning, one for the RFC-7386 merge), rules disabled — the same merge
+   * config as the shipped policies.
+   */
+  public static create(): Result<TemporalVersionedPolicy> {
+    return JsonEditor.create({}, []).onSuccess((cloneEditor) =>
+      JsonEditor.create(MERGE_PATCH_OPTIONS, []).onSuccess((mergeEditor) =>
+        succeed(new TemporalVersionedPolicy(cloneEditor, mergeEditor))
+      )
+    );
+  }
+
+  /** {@inheritDoc IWritePolicy.admit} */
+  public admit(
+    __incoming: IMemoryRecord<unknown>,
+    __existing: ReadonlyArray<IMemoryRecord<unknown>>
+  ): Result<AdmissionDecision> {
+    // Invalidate-don't-delete: always accept. Superseded versions are retained
+    // (invalidated), never culled.
+    return succeed({ decision: 'accept' });
+  }
+
+  /** {@inheritDoc IWritePolicy.applyUpdate} */
+  public applyUpdate(
+    existing: IMemoryRecord<unknown>,
+    patch: Record<string, unknown>
+  ): Result<IMemoryRecord<unknown>> {
+    // Project the mutable fields into a single record-level view, each sourced
+    // from its canonical location. `embeddingRef` is omitted when `undefined`.
+    const view: Record<string, unknown> = {
+      body: existing.body,
+      tags: existing.envelope.tags,
+      links: existing.envelope.links,
+      provenance: existing.envelope.provenance
+    };
+    if (existing.envelope.embeddingRef !== undefined) {
+      view.embeddingRef = existing.envelope.embeddingRef;
+    }
+
+    // Restrict the incoming patch to the declared mutable fields.
+    const scopedPatch: Record<string, unknown> = {};
+    for (const field of this.mutableFields) {
+      if (field in patch) {
+        scopedPatch[field] = patch[field];
+      }
+    }
+
+    // Clone the view (no null-deletion), then apply the RFC-7386 merge patch onto
+    // the clone so the current version is never mutated in place.
+    return this._cloneEditor
+      .mergeObjectInPlace({}, view as JsonObject)
+      .onSuccess((clone) => this._mergeEditor.mergeObjectInPlace(clone, scopedPatch as JsonObject))
+      .onSuccess((merged) => this._rebuild(existing, merged));
+  }
+
+  /**
+   * Reassemble a record from the merged mutable view. `body` / `tags` / `links` /
+   * `provenance` are required and may not be deleted by a patch; `embeddingRef`,
+   * when dropped by the merge, is restored as `undefined` (absent) — the same
+   * hash-stable semantics as {@link KnowledgeLwwPolicy}.
+   */
+  private _rebuild(existing: IMemoryRecord<unknown>, merged: JsonObject): Result<IMemoryRecord<unknown>> {
+    const required: ReadonlyArray<string> = ['body', 'tags', 'links', 'provenance'];
+    const missing: ReadonlyArray<string> = required.filter((field) => !(field in merged));
+    if (missing.length > 0) {
+      return fail(`temporal versioned: merge patch may not delete required field(s): ${missing.join(', ')}`);
+    }
+
+    // The merged values are JSON projections of the already-validated typed
+    // record; restore the domain types (structural restorations, not fresh
+    // untrusted input — mirrors KnowledgeLwwPolicy._rebuild).
+    const envelope: IMemoryEnvelope = {
+      ...existing.envelope,
+      tags: merged.tags as unknown as ReadonlyArray<Tag>,
+      links: merged.links as unknown as ReadonlyArray<IEdge>,
+      provenance: merged.provenance as unknown as IProvenance,
+      embeddingRef: 'embeddingRef' in merged ? (merged.embeddingRef as string | null) : undefined
+    };
+    return succeed({ envelope, body: merged.body });
+  }
+}

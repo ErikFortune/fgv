@@ -7,4 +7,5 @@ export * from './ids';
 export * from './envelope';
 export * from './filenameSafety';
 export * from './identityCodec';
+export * from './temporal';
 export * from './writePolicy';
