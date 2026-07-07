@@ -216,7 +216,7 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 **Outcome.** Breaking on the active/alpha surface (tier keys added, `thinking`/`tools`/DALL·E removed). Build + lint + 100% coverage green; `none`/`minor` change files. **Live-verified** end-to-end on the real wire. **Locked decisions:** 3 tiers + cascade; composition (thinking orthogonal); OpenAI base=gpt-5.4-mini, Anthropic base=claude-sonnet-5; Anthropic/Gemini/OpenAI frontier cascade to advanced.
 
-**Fast-follow (deferred):** OpenAI frontier via Responses routing (`docs/FUTURE.md`).
+**Fast-follow:** OpenAI frontier via Responses routing — ✅ shipped via the `ai-assist-openai-frontier-responses` stream (`responsesOnlyModelPrefixes` marker + `isResponsesOnlyModel`; `frontier: '@openai:pro'` restored, routed on completion + streaming).
 
 **Artifacts:** [`.ai/tasks/completed/2026-07/ai-assist-model-tiers/`](../.ai/tasks/completed/2026-07/ai-assist-model-tiers/) (brief, design, README).
 

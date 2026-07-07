@@ -189,17 +189,17 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     defaultModel: {
       base: '@openai:mini', // gpt-5.4-mini (was 'gpt-4o' — EOL-behind)
       advanced: '@openai:flagship', // gpt-5.5
-      // No frontier key: gpt-5.5-pro is a Responses-API-only model, uninvokable via chat
-      // completions, so a frontier request cascades frontier → advanced (gpt-5.5), matching
-      // Anthropic/Gemini. The @openai:pro alias is retained below for modelOverride / future
-      // Responses routing (see docs/FUTURE.md "OpenAI frontier via Responses routing").
+      // gpt-5.5-pro is a Responses-API-only model (400s on chat completions). The completion
+      // and streaming dispatch route Responses-only models to the Responses API via the
+      // `responsesOnlyModelPrefixes` marker below, so `frontier` is invokable again.
+      frontier: '@openai:pro', // gpt-5.5-pro (Responses-API-only; routed via responsesOnlyModelPrefixes)
       image: '@openai:image', // gpt-image-1.5 (was 'dall-e-3' — EOL 2026-05-12)
       embedding: '@openai:embedding' // text-embedding-3-small (unchanged, aliased for uniformity)
     },
     aliases: {
       '@openai:mini': 'gpt-5.4-mini', // base tier
       '@openai:flagship': 'gpt-5.5', // advanced tier
-      '@openai:pro': 'gpt-5.5-pro', // Responses-API-only; modelOverride / future Responses routing
+      '@openai:pro': 'gpt-5.5-pro', // frontier tier; Responses-API-only (routed via responsesOnlyModelPrefixes)
       '@openai:nano': 'gpt-5.4-nano', // NON-tier alias; modelOverride only
       '@openai:image': 'gpt-image-1.5', // image (matches the gpt-image- capability prefix)
       '@openai:embedding': 'text-embedding-3-small' // NOT deprecated — aliased for uniformity
@@ -210,6 +210,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     streamingCorsRestricted: false,
     acceptsImageInput: true,
     thinkingMode: 'optional',
+    responsesOnlyModelPrefixes: ['gpt-5.5-pro'],
     embedding: [
       {
         modelPrefix: 'text-embedding-3',

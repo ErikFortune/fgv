@@ -99,6 +99,7 @@ declare namespace AiAssist {
         MODEL_ALIAS_SIGIL,
         resolveModelAlias,
         resolveProviderModel,
+        isResponsesOnlyModel,
         toDataUrl,
         AiThinkingMode,
         IThinkingConfig,
@@ -1000,6 +1001,8 @@ interface IAiProviderDescriptor {
     readonly imageGeneration?: ReadonlyArray<IAiImageModelCapability>;
     readonly label: string;
     readonly needsSecret: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     readonly streamingCorsRestricted: boolean;
     readonly supportedTools: ReadonlyArray<AiServerToolType>;
@@ -1761,6 +1764,11 @@ const isoDate: Converter<Date, unknown>;
 
 // @public
 const isoDateTime: Converter<DateTime, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId: string): boolean;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

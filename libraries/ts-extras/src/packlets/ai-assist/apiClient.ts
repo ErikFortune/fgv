@@ -51,6 +51,7 @@ import {
   type IThinkingConfig,
   type ModelSpec,
   type ModelSpecKey,
+  isResponsesOnlyModel,
   resolveProviderModel
 } from './model';
 import {
@@ -479,7 +480,7 @@ function extractResponsesApiText(output: Array<Record<string, unknown>>): Result
 async function callOpenAiResponsesCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
-  tools: ReadonlyArray<AiServerToolConfig>,
+  tools: ReadonlyArray<AiServerToolConfig> = [],
   head?: ReadonlyArray<IChatMessage>,
   temperature?: number,
   logger?: Logging.ILogger,
@@ -494,7 +495,9 @@ async function callOpenAiResponsesCompletion(
   const body: Record<string, unknown> = {
     model: config.model,
     input,
-    tools: toResponsesApiTools(tools),
+    // `tools` is omitted entirely when none are requested — a Responses-only model routed
+    // here for tier/model reasons (not tools) must not send an empty tools array.
+    ...(tools.length > 0 ? { tools: toResponsesApiTools(tools) } : {}),
     // Temperature is sent only when the caller explicitly provided one (see callOpenAiCompletion).
     ...(temperature !== undefined ? { temperature } : {}),
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {})
@@ -774,7 +777,9 @@ export async function callProviderCompletion(
 
   switch (descriptor.apiFormat) {
     case 'openai':
-      if (hasTools) {
+      // Responses-API-only models (e.g. gpt-5.5-pro) 400 on /chat/completions, so they route
+      // to the Responses path even with no tools requested — same path the tools case uses.
+      if (hasTools || isResponsesOnlyModel(descriptor, config.model)) {
         return callOpenAiResponsesCompletion(
           config,
           prompt,

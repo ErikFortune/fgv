@@ -138,12 +138,14 @@ function makeTierScenario(params: ITierScenarioParams): IScenario {
 }
 
 /**
- * OpenAI model-tier canary — exercises `base` / `advanced` and a `frontier` request that cascades
- * to the `advanced` (gpt-5.5) id (+ the `image` tier resolution). gpt-5.5-pro is a Responses-API-only
- * model, so the OpenAI `defaultModel` omits a `frontier` key (B5 drop) — a frontier request cascades
- * frontier → advanced → gpt-5.5, matching Anthropic/Gemini; the cascade log line is the live proof.
- * `image` (`gpt-image-1.5`) is a flagged access risk: a resolver-correct + access-denied outcome is
- * reported BLOCKED, not a failure. Requires `OPENAI_API_KEY` for the live half.
+ * OpenAI model-tier canary — exercises `base` / `advanced` and a `frontier` request that now resolves
+ * to `gpt-5.5-pro` (alias `@openai:pro`) and routes via the OpenAI Responses API (+ the `image` tier
+ * resolution). gpt-5.5-pro is a Responses-API-only model; the completion path now routes it there via
+ * the descriptor's `responsesOnlyModelPrefixes` marker, so the OpenAI `defaultModel` carries a real
+ * `frontier` key again (no longer a cascade to gpt-5.5). This scenario is therefore the live
+ * gpt-5.5-pro frontier canary — the principal runs the keyed half as the final gate. `image`
+ * (`gpt-image-1.5`) is a flagged access risk: a resolver-correct + access-denied outcome is reported
+ * BLOCKED, not a failure. Requires `OPENAI_API_KEY` for the live half.
  * @public
  */
 export const openaiModelTiersScenario: IScenario = makeTierScenario({
@@ -151,9 +153,9 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
   title: 'OpenAI Model Tiers',
   description:
     'Resolves and (with OPENAI_API_KEY) live-canaries the OpenAI base/advanced tiers plus a frontier ' +
-    'request that cascades to the advanced (gpt-5.5) id — the cascade proof — plus the image tier. ' +
-    'Logs each alias -> concrete id. gpt-image-1.5 (image) may be access-gated — reported BLOCKED, ' +
-    'not failed. CLI-only.',
+    'request that resolves to gpt-5.5-pro (@openai:pro) and routes via the Responses API — the ' +
+    'restored-frontier proof — plus the image tier. Logs each alias -> concrete id. gpt-image-1.5 ' +
+    '(image) may be access-gated — reported BLOCKED, not failed. CLI-only.',
   tags: ['openai'],
   apiKeyEnvVars: ['OPENAI_API_KEY'],
   tiers: ['base', 'advanced', 'frontier'],

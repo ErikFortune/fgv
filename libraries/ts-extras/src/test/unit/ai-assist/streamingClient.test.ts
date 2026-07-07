@@ -755,6 +755,109 @@ describe('callProviderCompletionStream', () => {
     });
   });
 
+  describe('openai Responses-only model routing (no tools)', () => {
+    const descriptor = makeDescriptor({
+      id: 'openai',
+      baseUrl: 'https://api.openai.com/v1',
+      defaultModel: { base: 'gpt-5.4-mini', advanced: 'gpt-5.5', frontier: '@openai:pro' },
+      aliases: { '@openai:pro': 'gpt-5.5-pro' },
+      responsesOnlyModelPrefixes: ['gpt-5.5-pro']
+    });
+
+    test('routes a modelOverride of a Responses-only model to /responses even with no tools', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['pro'] }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        modelOverride: 'gpt-5.5-pro'
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      const body = JSON.parse(fetchCall[1].body);
+      expect(body.model).toBe('gpt-5.5-pro');
+      expect(body.stream).toBe(true);
+      // No tools requested → tools field omitted entirely.
+      expect('tools' in body).toBe(false);
+      // No default temperature is force-sent on the Responses-only route.
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('frontier tier resolves @openai:pro → gpt-5.5-pro and routes to /responses', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['front'] }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'frontier'
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      const body = JSON.parse(fetchCall[1].body);
+      expect(body.model).toBe('gpt-5.5-pro');
+      expect('tools' in body).toBe(false);
+    });
+
+    test('base tier still routes to the /chat/completions stream', async () => {
+      mockSseResponse(openAiChatSse(['base']));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/chat/completions');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.4-mini');
+    });
+
+    test('advanced tier still routes to the /chat/completions stream', async () => {
+      mockSseResponse(openAiChatSse(['adv']));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'advanced'
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/chat/completions');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.5');
+    });
+
+    test('a Responses-only model WITH tools still sends the tools field', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['pro+search'] }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        modelOverride: 'gpt-5.5-pro',
+        tools: [{ type: 'web_search' }]
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      expect(JSON.parse(fetchCall[1].body).tools).toEqual([{ type: 'web_search' }]);
+    });
+
+    test('real OpenAI registry descriptor: frontier resolves gpt-5.5-pro via the /responses stream', async () => {
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'frontier'
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.5-pro');
+    });
+  });
+
   describe('anthropic stream', () => {
     const descriptor = makeDescriptor({
       id: 'anthropic',
