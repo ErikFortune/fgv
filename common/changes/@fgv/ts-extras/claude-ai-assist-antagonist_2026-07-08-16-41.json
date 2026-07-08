@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add antagonist torture tests for ai-assist provider-shape and param-rejection near-miss classes",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
