@@ -1,8 +1,8 @@
 {
   "changes": [
     {
-      "comment": "Add antagonist torture tests for ts-agent-memory (cycle guard through existing edges, temporal boundary math, converter round-trip symmetry, resolver/verdict validation parity); test-only, no production changes.",
-      "type": "none",
+      "comment": "Antagonist torture tests plus two store fixes they surfaced: (1) content-scoped dedup no longer swallows a same-id metadata-only update (a same-id re-put with unchanged body/links but revised tags/provenance now reaches applyUpdate instead of being collapsed as a content duplicate; cross-id collapse and identical-re-put idempotence are unchanged); (2) load-time verification now cross-checks the envelope's entityId against the scope-derived entityId, rejecting a tampered/corrupt file whose frontmatter declares a foreign entityId.",
+      "type": "patch",
       "packageName": "@fgv/ts-agent-memory"
     }
   ],

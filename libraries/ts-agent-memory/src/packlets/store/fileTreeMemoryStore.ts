@@ -592,14 +592,32 @@ export class FileTreeMemoryStore implements IMemoryStore {
     // (Tags / provenance are metadata and are NOT part of the hash; see
     // design-lock §2.5.)
     if (dedupScope === 'content') {
-      const duplicate: IMemoryRecord<unknown> | undefined = this._findByContentHash(scope, hash);
+      // Cross-id content collapse: an identical { kind, body, links } triple under
+      // a DIFFERENT id is a no-op (knowledge family). A same-id match is excluded
+      // here and falls through to the LWW path below so a metadata-only revision
+      // (tags / provenance — outside the content hash but inside the policy's
+      // mutableFields) actually applies. Content-dedup must never shadow LWW for
+      // the same entity.
+      const duplicate: IMemoryRecord<unknown> | undefined = this._findByContentHash(
+        scope,
+        hash,
+        record.envelope.id
+      );
       if (duplicate !== undefined) {
         return succeed({ record: duplicate, evicted: [] });
       }
     }
     return this._readRecord(scope, idStem).thenOnSuccess((existing) => {
-      if (dedupScope === 'entity' && existing !== undefined && existing.envelope.contentHash === hash) {
-        // Entity-scoped dedup: an identical re-put of the same entity is a no-op.
+      // Same-id re-put is a no-op ONLY when the content hash matches AND the
+      // mutable metadata is also unchanged. The content hash covers
+      // { kind, body, links }; a matching hash with revised tags/provenance is a
+      // real update that must reach applyUpdate, not be swallowed as a duplicate
+      // (both dedup scopes).
+      if (
+        existing !== undefined &&
+        existing.envelope.contentHash === hash &&
+        this._isMutableMetadataUnchanged(existing, record)
+      ) {
         return Promise.resolve(succeed({ record: existing, evicted: [] }));
       }
       // The admission cohort is the set of records the policy's cap applies to:
@@ -1164,12 +1182,50 @@ export class FileTreeMemoryStore implements IMemoryStore {
       .map((entry) => entry.record);
   }
 
-  /** Find a record in `scope` whose `contentHash` equals `hash`, if any. */
-  private _findByContentHash(scope: MemoryScopeKey, hash: string): IMemoryRecord<unknown> | undefined {
+  /**
+   * Find a record in `scope` whose `contentHash` equals `hash`, if any,
+   * optionally excluding a specific id. `excludeId` lets the content-scoped
+   * dedup skip the same-id record so it does not shadow the LWW update path.
+   */
+  private _findByContentHash(
+    scope: MemoryScopeKey,
+    hash: string,
+    excludeId?: string
+  ): IMemoryRecord<unknown> | undefined {
     const match: IIndexedMemoryRecord | undefined = this._index
       .entries()
-      .find((entry) => entry.scope === scope && entry.record.envelope.contentHash === hash);
+      .find(
+        (entry) =>
+          entry.scope === scope &&
+          entry.record.envelope.contentHash === hash &&
+          entry.record.envelope.id !== excludeId
+      );
     return match?.record;
+  }
+
+  /**
+   * True when `incoming`'s caller-authored mutable metadata (`tags` / `provenance`)
+   * canonically equals `existing`'s. `body` and `links` are covered by the content
+   * hash; `embeddingRef` is store-derived (not caller metadata) and is deliberately
+   * excluded so a same-content re-put is not treated as changed merely because the
+   * store already stamped an embedding. Used to keep an identical re-put a no-op
+   * without swallowing a genuine metadata revision.
+   *
+   * Canonicalization never fails for a validated record (`tags`/`provenance` are
+   * always plain JSON); a failure is defaulted to a non-matching sentinel so the
+   * write flows to `applyUpdate` (which re-validates) rather than silently
+   * no-op-ing on an un-canonicalizable value.
+   */
+  private _isMutableMetadataUnchanged(
+    existing: IMemoryRecord<unknown>,
+    incoming: IMemoryRecord<unknown>
+  ): boolean {
+    const key = (record: IMemoryRecord<unknown>): string =>
+      this._hasher
+        .canonicalize({ tags: record.envelope.tags, provenance: record.envelope.provenance })
+        .orDefault('');
+    const existingKey: string = key(existing);
+    return existingKey !== '' && existingKey === key(incoming);
   }
 
   private _contentHash(kind: Kind, body: string, links: IMemoryEnvelope['links']): Result<string> {
@@ -1214,7 +1270,15 @@ export class FileTreeMemoryStore implements IMemoryStore {
     });
   }
 
-  /** Enforce `envelope.id === filename stem` and the codec round-trip on load. */
+  /**
+   * Enforce `envelope.id === filename stem`, the codec round-trip, AND that the
+   * envelope's own `entityId` agrees with the id decoded from the subtree scope.
+   * The round-trip only validates (scope, stem) consistency; the codec derives
+   * `entityId` from the scope path and never reads the envelope's `entityId`
+   * field, so a tampered/corrupt file whose frontmatter declares a foreign
+   * `entityId` would otherwise load undetected — and `entityId` is trusted
+   * verbatim downstream (e.g. merge-into re-addressing). Cross-check it here.
+   */
   private _verifyLoaded(
     scope: MemoryScopeKey,
     file: FileTree.IFileTreeFileItem,
@@ -1226,9 +1290,18 @@ export class FileTreeMemoryStore implements IMemoryStore {
       );
     }
     return this._codecFor(record.envelope.kind)
-      .onSuccess((codec) => codec.verifyRoundTrip(scope, file.baseName))
+      .onSuccess((codec) =>
+        codec.verifyRoundTrip(scope, file.baseName).onSuccess(() => codec.decode(scope, file.baseName))
+      )
       .withErrorFormat((msg) => `memory file '${file.absolutePath}': ${msg}`)
-      .onSuccess(() => succeed(record));
+      .onSuccess((decodedEntityId) => {
+        if (decodedEntityId !== record.envelope.entityId) {
+          return fail(
+            `memory file '${file.absolutePath}': envelope entityId '${record.envelope.entityId}' does not match scope-derived entityId '${decodedEntityId}'`
+          );
+        }
+        return succeed(record);
+      });
   }
 
   /**
