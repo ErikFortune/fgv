@@ -17,6 +17,7 @@ import {
   LinkType,
   MemoryId,
   MemoryScopeKey,
+  Tag,
   isTemporalRecord,
   isVersionCurrent
 } from '../types';
@@ -164,9 +165,14 @@ interface ICandidatePlan {
   readonly writeEntityId: EntityId;
   /** The reference id used in stage-5 edges (the write target's `idStem`). */
   readonly refId: MemoryId;
+  /** The resolution verdict; carries the target id on its target-bearing arms. */
   readonly verdict: ResolutionVerdict;
-  /** The dedup target id when the verdict is `duplicate-of` (no write). */
-  readonly dedupTargetId?: MemoryId;
+  /**
+   * The pre-ingest target record for a `merge-into` write — its existing
+   * `tags` / `links` / `provenance` are UNIONed with the candidate's at stage 6
+   * so a wholesale-replace merge never wipes them.
+   */
+  readonly mergeTarget?: IMemoryRecord<unknown>;
 }
 
 /**
@@ -328,7 +334,15 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     );
   }
 
-  /** Turn a resolved verdict into a candidate plan (re-addressing merge-into to the target). */
+  /**
+   * Turn a resolved verdict into a candidate plan. A `new` verdict writes under the
+   * candidate's own address. Every TARGET-bearing verdict
+   * (`duplicate-of` / `supersede` / `merge-into`) is validated uniformly: the
+   * target must be a real store record (fgv owns validation — a non-compliant host
+   * resolver never smuggles a bogus id through) AND its kind must equal the
+   * candidate's kind (a cross-kind target would write to the wrong scope). Only
+   * `merge-into` re-addresses the write to the target's entity.
+   */
   private _planFromVerdict(
     item: IIngestItem,
     candidate: ICandidateRecord,
@@ -336,23 +350,33 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     verdict: ResolutionVerdict,
     byId: ReadonlyMap<MemoryId, IMemoryRecord<unknown>>
   ): Result<ICandidatePlan> {
-    if (verdict.verdict === 'duplicate-of') {
+    if (verdict.verdict === 'new') {
       return Convert.memoryId.convert(addr.idStem).onSuccess((refId) =>
         succeed({
           candidate,
           writeAddress: addr,
           writeEntityId: candidate.envelope.entityId,
           refId,
-          verdict,
-          dedupTargetId: verdict.target
+          verdict
         })
       );
     }
+    // duplicate-of | supersede | merge-into: the target must exist and share the
+    // candidate's kind.
+    const target: IMemoryRecord<unknown> | undefined = byId.get(verdict.target);
+    if (target === undefined) {
+      return fail(
+        `ingest '${item.id}': ${verdict.verdict} target '${verdict.target}' does not exist in the store`
+      );
+    }
+    if (target.envelope.kind !== candidate.envelope.kind) {
+      return fail(
+        `ingest '${item.id}': ${verdict.verdict} target '${verdict.target}' is kind '${target.envelope.kind}' but the candidate is kind '${candidate.envelope.kind}'`
+      );
+    }
     if (verdict.verdict === 'merge-into') {
-      const target: IMemoryRecord<unknown> | undefined = byId.get(verdict.target);
-      if (target === undefined) {
-        return fail(`ingest '${item.id}': merge-into target '${verdict.target}' does not exist in the store`);
-      }
+      // Re-address the write to the target's entity, carrying the target record so
+      // stage 6 can UNION its existing tags/links (never overwrite them).
       const targetEntityId: EntityId = target.envelope.entityId;
       return this._resolveAddress(targetEntityId, target.envelope.kind)
         .withErrorFormat((msg) => `ingest '${item.id}': ${msg}`)
@@ -363,12 +387,13 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
               writeAddress: targetAddr,
               writeEntityId: targetEntityId,
               refId,
-              verdict
+              verdict,
+              mergeTarget: target
             })
           )
         );
     }
-    // 'new' | 'supersede': write under the candidate's own address.
+    // duplicate-of | supersede: write under the candidate's own address.
     return Convert.memoryId.convert(addr.idStem).onSuccess((refId) =>
       succeed({
         candidate,
@@ -416,11 +441,19 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     wiring: ISimilarityWiring,
     byId: ReadonlyMap<MemoryId, IMemoryRecord<unknown>>
   ): Promise<Result<ResolutionVerdict>> {
-    const provisional: IMemoryRecord<unknown> = MemoryIngestOrchestrator._provisionalRecord(
-      candidate,
-      addr.idStem,
-      body
+    return MemoryIngestOrchestrator._provisionalRecord(candidate, addr.idStem, body).thenOnSuccess(
+      (provisional) => this._resolveViaSimilarityEmbedded(candidate, addr, wiring, byId, provisional)
     );
+  }
+
+  /** Layer-2 continuation once the candidate has a provisional record to embed. */
+  private async _resolveViaSimilarityEmbedded(
+    candidate: ICandidateRecord,
+    addr: IIdentityCodecResult,
+    wiring: ISimilarityWiring,
+    byId: ReadonlyMap<MemoryId, IMemoryRecord<unknown>>,
+    provisional: IMemoryRecord<unknown>
+  ): Promise<Result<ResolutionVerdict>> {
     const embedded: Result<Float32Array> = await this._capture(
       () => wiring.embed(provisional),
       `ingest '${candidate.envelope.entityId}': embed candidate`
@@ -479,17 +512,34 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     return this._exactKey(kind, body).onSuccess((key) =>
       mapResults(
         cohort.map((record) =>
-          this._exactKey(record.envelope.kind, record.body as string).onSuccess((recordKey) =>
-            succeed({ id: record.envelope.id, key: recordKey })
+          MemoryIngestOrchestrator._recordBodyString(record).onSuccess((recordBody) =>
+            this._exactKey(record.envelope.kind, recordBody).onSuccess((recordKey) =>
+              succeed({ id: record.envelope.id, key: recordKey })
+            )
           )
         )
       ).onSuccess((keyed) => succeed(keyed.find((entry) => entry.key === key)?.id))
     );
   }
 
+  /**
+   * The body of a persisted record, required to be a string (the store persists
+   * only string bodies). Fails loudly rather than blind-casting an `unknown` body
+   * into the exact-dedup hash — a non-string existing body is a store-integrity
+   * fault, surfaced with context, not a silent miscompute.
+   */
+  private static _recordBodyString(record: IMemoryRecord<unknown>): Result<string> {
+    if (typeof record.body !== 'string') {
+      return fail(
+        `ingest: stored record '${record.envelope.id}' has a non-string body (got ${typeof record.body})`
+      );
+    }
+    return succeed(record.body);
+  }
+
   /** The stage-4 exact-dedup key over `{ kind, body }` (design note §1). */
   private _exactKey(kind: Kind, body: string): Result<string> {
-    return this._hasher.computeHash({ kind: kind as string, body });
+    return this._hasher.computeHash({ kind, body });
   }
 
   /** Stage 5 — relate (host), validate edges, and run the write-time cycle guard. */
@@ -510,7 +560,7 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     if (proposed.isFailure()) {
       return proposed;
     }
-    const refIds: ReadonlySet<string> = new Set<string>(writablePlans.map((plan) => plan.refId as string));
+    const refIds: ReadonlySet<string> = new Set<string>(writablePlans.map((plan) => plan.refId));
     const validation: Result<true> = this._validateEdges(item, proposed.value, refIds, byId);
     if (validation.isFailure()) {
       return fail(validation.message);
@@ -539,10 +589,10 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
   ): Result<true> {
     return mapResults(
       edges.map((edge) => {
-        if (!refIds.has(edge.source as string)) {
+        if (!refIds.has(edge.source)) {
           return fail(`ingest '${item.id}': edge source '${edge.source}' is not a candidate being written`);
         }
-        if (!refIds.has(edge.edge.target as string) && byId.get(edge.edge.target) === undefined) {
+        if (!refIds.has(edge.edge.target) && byId.get(edge.edge.target) === undefined) {
           return fail(
             `ingest '${item.id}': edge target '${edge.edge.target}' resolves to neither a sibling candidate nor an existing record`
           );
@@ -560,13 +610,13 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
   ): Promise<Result<IIngestedRecordResult>> {
     const myEdges: ReadonlyArray<ICandidateEdge> = allEdges.filter((e) => e.source === plan.refId);
     if (plan.verdict.verdict === 'duplicate-of') {
-      // No write: the existing target satisfied the candidate.
-      const targetId: MemoryId = plan.dedupTargetId as MemoryId;
+      // No write: the existing target satisfied the candidate. The target id is a
+      // typed field of the narrowed `duplicate-of` verdict — no cast, no guard.
       return succeed({
         candidate: plan.candidate,
         resolution: plan.verdict,
         disposition: 'deduped',
-        id: targetId,
+        id: plan.verdict.target,
         edges: myEdges
       });
     }
@@ -598,28 +648,76 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     plan: ICandidatePlan,
     myEdges: ReadonlyArray<ICandidateEdge>
   ): Result<IMemoryRecord<unknown>> {
-    return Convert.memoryId.convert(plan.writeAddress.idStem).onSuccess((id) => {
-      const base: Omit<IMemoryEnvelope, 'id' | 'seq' | 'contentHash' | 'created' | 'updated'> =
-        plan.candidate.envelope;
-      const provenance: IProvenance = {
-        ...base.provenance,
-        source: HOST_INGEST_PROVENANCE_SOURCE,
-        ...(item.sourceId !== undefined ? { derivedFrom: item.sourceId } : {})
-      };
-      const links: ReadonlyArray<IEdge> = [...base.links, ...myEdges.map((e) => e.edge)];
-      const envelope: IMemoryEnvelope = {
-        ...base,
-        id,
-        entityId: plan.writeEntityId,
-        seq: 0,
-        contentHash: '',
-        created: 0,
-        updated: 0,
-        provenance,
-        links
-      };
-      return succeed({ envelope, body: plan.candidate.body });
-    });
+    const base: Omit<IMemoryEnvelope, 'id' | 'seq' | 'contentHash' | 'created' | 'updated'> =
+      plan.candidate.envelope;
+    // For merge-into the store's `applyUpdate` REPLACES array fields wholesale, so
+    // the persisted envelope must already carry the UNION of the target's existing
+    // tags/links/provenance and the candidate's — otherwise the merge silently
+    // wipes the target's prior links/tags.
+    const target: IMemoryRecord<unknown> | undefined = plan.mergeTarget;
+    const priorLinks: ReadonlyArray<IEdge> = target !== undefined ? target.envelope.links : [];
+    const priorTags: ReadonlyArray<Tag> = target !== undefined ? target.envelope.tags : [];
+    const priorProvenance: IProvenance = target !== undefined ? target.envelope.provenance : { source: '' };
+    return Convert.memoryId.convert(plan.writeAddress.idStem).onSuccess((id) =>
+      // Dedup the combined links by canonical edge key: the target's prior links, the
+      // candidate's own links, and the stage-5 edges (two candidates that resolve
+      // merge-into the SAME target share a `refId` — hence the same `myEdges` — and a
+      // relation extractor may repeat an edge) each appear exactly once.
+      this._dedupEdges([...priorLinks, ...base.links, ...myEdges.map((e) => e.edge)]).onSuccess((links) => {
+        const provenance: IProvenance = {
+          // Preserve the target's provenance extension keys, overlay the candidate's,
+          // then stamp the host-ingest source + derivedFrom (target present only for
+          // merge-into; otherwise the seed is inert).
+          ...(target !== undefined ? priorProvenance : {}),
+          ...base.provenance,
+          source: HOST_INGEST_PROVENANCE_SOURCE,
+          ...(item.sourceId !== undefined ? { derivedFrom: item.sourceId } : {})
+        };
+        const envelope: IMemoryEnvelope = {
+          ...base,
+          id,
+          entityId: plan.writeEntityId,
+          seq: 0,
+          contentHash: '',
+          created: 0,
+          updated: 0,
+          provenance,
+          tags: MemoryIngestOrchestrator._unionTags(priorTags, base.tags),
+          links
+        };
+        return succeed({ envelope, body: plan.candidate.body });
+      })
+    );
+  }
+
+  /** Union two tag lists, de-duplicated, preserving first-occurrence order. */
+  private static _unionTags(prior: ReadonlyArray<Tag>, incoming: ReadonlyArray<Tag>): ReadonlyArray<Tag> {
+    const seen: Set<string> = new Set<string>();
+    const out: Tag[] = [];
+    for (const tag of [...prior, ...incoming]) {
+      if (!seen.has(tag)) {
+        seen.add(tag);
+        out.push(tag);
+      }
+    }
+    return out;
+  }
+
+  /** De-duplicate a link list by canonical edge hash, preserving first-occurrence order. */
+  private _dedupEdges(edges: ReadonlyArray<IEdge>): Result<ReadonlyArray<IEdge>> {
+    const seen: Set<string> = new Set<string>();
+    const deduped: IEdge[] = [];
+    return mapResults(
+      edges.map((edge) =>
+        this._hasher.computeHash(edge).onSuccess((key) => {
+          if (!seen.has(key)) {
+            seen.add(key);
+            deduped.push(edge);
+          }
+          return succeed(key);
+        })
+      )
+    ).onSuccess(() => succeed(deduped));
   }
 
   /** Resolve a `(kind, entityId)` to its storage address via the registered codec. */
@@ -671,16 +769,18 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     candidate: ICandidateRecord,
     idStem: string,
     body: string
-  ): IMemoryRecord<unknown> {
-    const envelope: IMemoryEnvelope = {
-      ...candidate.envelope,
-      id: idStem as MemoryId,
-      seq: 0,
-      contentHash: '',
-      created: 0,
-      updated: 0
-    };
-    return { envelope, body };
+  ): Result<IMemoryRecord<unknown>> {
+    return Convert.memoryId.convert(idStem).onSuccess((id) => {
+      const envelope: IMemoryEnvelope = {
+        ...candidate.envelope,
+        id,
+        seq: 0,
+        contentHash: '',
+        created: 0,
+        updated: 0
+      };
+      return succeed({ envelope, body });
+    });
   }
 
   /** Require a candidate body to be a string (the store persists only string bodies). */

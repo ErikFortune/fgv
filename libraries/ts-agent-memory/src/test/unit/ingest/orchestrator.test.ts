@@ -38,6 +38,7 @@ import {
   Kind,
   KnowledgeIdentityCodec,
   LinkType,
+  LtmIdentityCodec,
   MemoryEmbedder,
   MemoryId,
   MemoryIngestOrchestrator,
@@ -54,6 +55,7 @@ const noteKind: Kind = 'note' as Kind;
 const factKind: Kind = 'fact' as Kind;
 const numKind: Kind = 'num' as Kind;
 const orphanKind: Kind = 'orphan' as Kind;
+const ltmKind: Kind = 'ltm' as Kind;
 
 // --- shared fixtures ----------------------------------------------------------
 let clockValue: number;
@@ -76,12 +78,14 @@ function registry(): IBodyConverterRegistry {
   reg.register(factKind, Converters.string);
   reg.register(numKind, Converters.number);
   reg.register(orphanKind, Converters.string);
+  reg.register(ltmKind, Converters.string);
   return reg;
 }
 
 const codecs: ReadonlyMap<Kind, IIdentityCodec> = new Map<Kind, IIdentityCodec>([
   [noteKind, new KnowledgeIdentityCodec()],
   [numKind, new KnowledgeIdentityCodec()],
+  [ltmKind, new LtmIdentityCodec()],
   [factKind, TemporalIdentityCodec.create('facts').orThrow()]
 ]);
 
@@ -970,5 +974,185 @@ describe('MemoryIngestOrchestrator — optional constructor params', () => {
     }).orThrow();
     expect(await orch.ingestItem({ id: 'doc-1', content: 'x' })).toFailWith(/classifier boom/);
     expect(logger.logged.some((m) => /classifier boom/.test(m))).toBe(true);
+  });
+});
+
+describe('MemoryIngestOrchestrator — review-punch-list fixes', () => {
+  test('a stored record with a non-string body fails the exact-dedup pass loudly', async () => {
+    const weird: IMemoryRecord<unknown> = {
+      envelope: {
+        id: 'weird' as MemoryId,
+        entityId: 'weird' as EntityId,
+        kind: noteKind,
+        tags: [],
+        links: [],
+        created: 0,
+        updated: 0,
+        seq: 0,
+        contentHash: '',
+        provenance: { source: 'agent' }
+      },
+      body: 42
+    };
+    const store = mockStore({ list: () => Promise.resolve(succeed([weird])) });
+    const orch = buildOrchestrator({ store });
+    expect(await orch.ingestItem({ id: 'doc-1', content: 'hello' })).toFailWith(
+      /stored record 'weird' has a non-string body/
+    );
+  });
+
+  test('duplicate stage-5 edges are deduped on the written record', async () => {
+    const store = buildStore();
+    await putNote(store, 'doc-a', 'anchor');
+    const orch = buildOrchestrator({
+      store,
+      extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'goodbye')])),
+      relationExtractor: relater(() =>
+        succeed([candEdge('doc-b', 'rel', 'doc-a'), candEdge('doc-b', 'rel', 'doc-a')])
+      )
+    });
+    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
+      expect(r.records[0].record?.envelope.links).toEqual([{ type: 'rel', target: 'doc-a' }]);
+    });
+  });
+
+  test('two candidates merging into the same target do not duplicate a shared edge', async () => {
+    const vectorIndex = InMemoryCosineIndex.create().orThrow();
+    const store = buildStore({ vectorIndex, embed });
+    await putNote(store, 'doc-a', 'apple pie');
+    await putNote(store, 'doc-x', 'target');
+    const orch = buildOrchestrator({
+      store,
+      vectorIndex,
+      embed,
+      entityResolver: resolver((__c, similar) => succeed({ verdict: 'merge-into', target: similar[0].id })),
+      extractor: extractor(() =>
+        succeed([candidate(noteKind, 'doc-b', 'apple tart'), candidate(noteKind, 'doc-c', 'apple tart')])
+      ),
+      relationExtractor: relater(() => succeed([candEdge('doc-a', 'rel', 'doc-x')]))
+    });
+    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceed();
+    expect(await store.get(noteKind, 'doc-a' as EntityId)).toSucceedAndSatisfy(
+      (rec: IMemoryRecord<unknown> | undefined) => {
+        expect(rec?.envelope.links).toEqual([{ type: 'rel', target: 'doc-x' }]);
+      }
+    );
+  });
+});
+
+describe('MemoryIngestOrchestrator — merge-into safety (second review)', () => {
+  // Seed a record with pre-existing tags + links under a flat codec (id === entityId).
+  async function putFull(
+    store: FileTreeMemoryStore,
+    kind: Kind,
+    entityId: string,
+    body: string,
+    opts: { tags?: ReadonlyArray<string>; links?: IMemoryEnvelope['links'] } = {}
+  ): Promise<void> {
+    const rec: IMemoryRecord<unknown> = {
+      envelope: {
+        id: entityId as MemoryId,
+        entityId: entityId as EntityId,
+        kind,
+        tags: (opts.tags ?? []) as ReadonlyArray<Tag>,
+        links: opts.links ?? [],
+        created: 0,
+        updated: 0,
+        seq: 0,
+        contentHash: '',
+        provenance: { source: 'agent' }
+      },
+      body
+    };
+    (await store.put(rec)).orThrow();
+  }
+
+  test('merge-into UNIONs the target’s existing tags + links (never overwrites them)', async () => {
+    const vectorIndex = InMemoryCosineIndex.create().orThrow();
+    const store = buildStore({ vectorIndex, embed });
+    await putFull(store, noteKind, 'doc-a', 'apple pie', {
+      tags: ['old-tag'],
+      links: [{ type: 'existing' as LinkType, target: 'doc-z' as MemoryId }]
+    });
+    await putFull(store, noteKind, 'doc-x', 'target of stage-5');
+    const orch = buildOrchestrator({
+      store,
+      vectorIndex,
+      embed,
+      entityResolver: resolver((__c, similar) => succeed({ verdict: 'merge-into', target: similar[0].id })),
+      extractor: extractor(() =>
+        succeed([
+          candidate(noteKind, 'doc-b', 'apple tart', {
+            tags: ['new-tag'],
+            links: [{ type: 'candlink' as LinkType, target: 'doc-z' as MemoryId }]
+          })
+        ])
+      ),
+      relationExtractor: relater(() => succeed([candEdge('doc-a', 'stage5', 'doc-x')]))
+    });
+    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
+      expect(r.records[0].disposition).toBe('merged');
+    });
+    expect(await store.get(noteKind, 'doc-a' as EntityId)).toSucceedAndSatisfy(
+      (rec: IMemoryRecord<unknown> | undefined) => {
+        // Original tag preserved AND the candidate's tag gained, each once.
+        expect([...(rec?.envelope.tags ?? [])].sort()).toEqual(['new-tag', 'old-tag']);
+        // Original link + candidate link + stage-5 edge, each exactly once.
+        expect(rec?.envelope.links).toEqual([
+          { type: 'existing', target: 'doc-z' },
+          { type: 'candlink', target: 'doc-z' },
+          { type: 'stage5', target: 'doc-x' }
+        ]);
+      }
+    );
+  });
+
+  test('merge-into a different-kind target fails loudly', async () => {
+    const vectorIndex = InMemoryCosineIndex.create().orThrow();
+    const store = buildStore({ vectorIndex, embed });
+    // A DIFFERENT-kind (ltm) record embedded so it surfaces as a neighbor of a note candidate.
+    await putFull(store, ltmKind, 'conv-1', 'apple pie');
+    const orch = buildOrchestrator({
+      store,
+      vectorIndex,
+      embed,
+      entityResolver: resolver((__c, similar) => succeed({ verdict: 'merge-into', target: similar[0].id })),
+      extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
+    });
+    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
+      /merge-into target 'conv-1' is kind 'ltm' but the candidate is kind 'note'/
+    );
+  });
+
+  test('supersede with a non-existent target fails loudly', async () => {
+    const vectorIndex = InMemoryCosineIndex.create().orThrow();
+    const store = buildStore({ vectorIndex, embed });
+    await putFull(store, noteKind, 'doc-a', 'apple pie');
+    const orch = buildOrchestrator({
+      store,
+      vectorIndex,
+      embed,
+      entityResolver: resolver(() => succeed({ verdict: 'supersede', target: 'ghost' as MemoryId })),
+      extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
+    });
+    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
+      /supersede target 'ghost' does not exist/
+    );
+  });
+
+  test('duplicate-of with a non-existent target fails loudly', async () => {
+    const vectorIndex = InMemoryCosineIndex.create().orThrow();
+    const store = buildStore({ vectorIndex, embed });
+    await putFull(store, noteKind, 'doc-a', 'apple pie');
+    const orch = buildOrchestrator({
+      store,
+      vectorIndex,
+      embed,
+      entityResolver: resolver(() => succeed({ verdict: 'duplicate-of', target: 'ghost' as MemoryId })),
+      extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
+    });
+    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
+      /duplicate-of target 'ghost' does not exist/
+    );
   });
 });

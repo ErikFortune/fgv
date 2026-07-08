@@ -18,17 +18,17 @@ export interface ICycleGuardEdge {
 }
 
 /**
- * Build the design's `buildCycleKey` — a deterministic, canonical
- * ({@link Hash.Crc32Normalizer}, RFC-8785) identity for a directed edge. Used to
- * de-duplicate proposed edges so a repeated `(source, target, type)` proposal
+ * Build the design's `buildCycleKey` — a deterministic, canonical (RFC-8785,
+ * via `Crc32Normalizer` from `@fgv/ts-utils`) identity for a directed edge. Used
+ * to de-duplicate proposed edges so a repeated `(source, target, type)` proposal
  * contributes a single graph edge (and never spuriously "re-closes" a cycle).
  * @public
  */
 export function buildCycleKey(edge: ICycleGuardEdge): Result<string> {
   return new Hash.Crc32Normalizer().computeHash({
-    source: edge.source as string,
-    target: edge.target as string,
-    type: edge.type as string
+    source: edge.source,
+    target: edge.target,
+    type: edge.type
   });
 }
 
@@ -77,7 +77,7 @@ export function assertNoCycles(
         }
         // Reachability: does `target` already reach `source`? If so, adding
         // `source -> target` closes a directed cycle.
-        if (reaches(adjacency, edge.target as string, edge.source as string)) {
+        if (reaches(adjacency, edge.target, edge.source)) {
           return fail(
             `ingest cycle guard: edge '${edge.source}' -${edge.type}-> '${edge.target}' would create a cycle`
           );
@@ -106,8 +106,8 @@ function addEdge(adjacency: Map<string, Set<string>>, seenKeys: Set<string>, key
     return;
   }
   seenKeys.add(keyed.key);
-  const source: string = keyed.edge.source as string;
-  const target: string = keyed.edge.target as string;
+  const source: string = keyed.edge.source;
+  const target: string = keyed.edge.target;
   const targets: Set<string> | undefined = adjacency.get(source);
   if (targets === undefined) {
     adjacency.set(source, new Set<string>([target]));

@@ -46,8 +46,6 @@ export class BodyConverterRegistry implements IBodyConverterRegistry {
     registerSchema<T>(kind: Kind, schema: JsonSchema.ISchemaValidator<T>): void;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-memory" does not have an export "Hash"
-//
 // @public
 export function buildCycleKey(edge: ICycleGuardEdge): Result<string>;
 

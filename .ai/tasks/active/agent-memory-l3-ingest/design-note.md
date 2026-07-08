@@ -57,6 +57,18 @@ Layer-1 exact `{ kind, body }` matches yield `duplicate-of` automatically
 entirely: a non-exact candidate is always `new` — the deterministic-identity
 host path.
 
+**Target-bearing verdict safety (post-review hardening).** Every verdict that
+carries a target (`duplicate-of` / `supersede` / `merge-into`) is validated
+uniformly by fgv before it is acted on: the target must be a real store record
+(a non-compliant host resolver can never smuggle a bogus id into the result) AND
+its `kind` must equal the candidate's `kind` (a cross-kind target would write to
+the wrong scope; fgv rejects loudly). `merge-into` additionally **UNIONs** the
+target's pre-existing `tags` / `links` / `provenance` with the candidate's
+before the write — the store's `applyUpdate` replaces array fields wholesale
+(`arrayMergeBehavior: 'replace'`), so passing only the candidate's (usually
+sparse) fields would silently wipe the target's prior links/tags. The unioned
+link list is de-duplicated by canonical edge key so no edge appears twice.
+
 ## 4. Stage-5 write-time cycle guard
 
 The design specifies a write-time cycle guard (`buildCycleKey` via
