@@ -535,6 +535,23 @@ export interface IExecuteClientToolTurnResult {
 // ============================================================================
 
 /**
+ * True when a request would combine Gemini built-in grounding (a `web_search`
+ * server tool) with client (function) tools — a combination Gemini's
+ * `generateContent` API rejects with HTTP 400 (`INVALID_ARGUMENT`). Callers gate
+ * on `descriptor.apiFormat === 'gemini'` before consulting this; other providers
+ * accept the mix. Kept as a pure predicate so the conflict rule is unit-testable
+ * without a live stream.
+ *
+ * @internal
+ */
+export function hasGeminiToolConflict(
+  tools: ReadonlyArray<AiServerToolConfig> | undefined,
+  clientTools: ReadonlyArray<IAiClientTool>
+): boolean {
+  return clientTools.length > 0 && (tools?.some((t) => t.type === 'web_search') ?? false);
+}
+
+/**
  * Orchestrates a single client-tool streaming turn for any supported provider.
  *
  * Starts a streaming request, iterates the underlying provider stream, and:
@@ -600,6 +617,16 @@ export function executeClientToolTurn(
   // the adapters only received `tools` (server tools). Both must coexist per design §2.5.
   const effectiveTools: ReadonlyArray<AiToolConfig> | undefined =
     clientTools.length > 0 ? [...(tools ?? []), ...clientTools.map((t) => t.config)] : tools;
+
+  // Gemini pre-flight: its generateContent API HTTP-400s (INVALID_ARGUMENT) when
+  // built-in grounding (`web_search`) and function calling (client tools) are
+  // combined in one request. Fail fast with a clear, actionable message rather
+  // than letting the opaque wire 400 surface. Other providers accept the mix.
+  if (descriptor.apiFormat === 'gemini' && hasGeminiToolConflict(tools, clientTools)) {
+    return fail(
+      'executeClientToolTurn: Gemini cannot combine web_search grounding with client (function) tools in the same request; send one or the other'
+    );
+  }
 
   const modelResult = resolveProviderModel(descriptor, model);
   if (modelResult.isFailure()) {
