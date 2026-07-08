@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Temporal versioned write path + temporal retrievers: temporal identity codec, temporal-versioned invalidate-don't-delete write policy, versioned store read/write/delete, AsOf/CurrentValid/History retrievers",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

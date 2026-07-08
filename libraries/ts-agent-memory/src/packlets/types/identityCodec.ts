@@ -51,6 +51,190 @@ export interface IIdentityCodec {
 }
 
 /**
+ * The `(entityId, version seq)` an {@link ITemporalIdentityCodec.decodeVersion}
+ * recovers from a version file address.
+ * @public
+ */
+export interface ITemporalVersionAddress {
+  /** The stable consumer-supplied domain key. */
+  readonly entityId: EntityId;
+  /** The version's monotonic `seq` (the `v<seq>` component of the file stem). */
+  readonly seq: number;
+}
+
+/**
+ * Additive extension of {@link IIdentityCodec} for versioned (temporal) kinds. A
+ * codec whose {@link IIdentityCodec.encode | encode} reports `isVersioned: true`
+ * implements this so the store can form and parse per-version filenames without
+ * knowing the layout. Non-versioned codecs do NOT implement it (probe with
+ * {@link isTemporalIdentityCodec}).
+ * @public
+ */
+export interface ITemporalIdentityCodec extends IIdentityCodec {
+  /**
+   * Form the version filename stem for a specific `(entityId, seq)`. The store
+   * appends the extension and writes it under the entity subtree returned by
+   * {@link IIdentityCodec.encode | encode}.
+   */
+  encodeVersion(entityId: EntityId, seq: number): Result<string>;
+
+  /**
+   * Parse a `(subtree scope, version stem)` back to its
+   * {@link ITemporalVersionAddress}. The subtree scope is authoritative for the
+   * `entityId`, disambiguating a stem whose `entityId` itself ends in
+   * `-v<digits>`.
+   */
+  decodeVersion(scope: MemoryScopeKey, stem: string): Result<ITemporalVersionAddress>;
+}
+
+/**
+ * Narrow an {@link IIdentityCodec} to {@link ITemporalIdentityCodec} by probing
+ * for the versioned methods. Used by the store when an `encode` result reports
+ * `isVersioned: true`.
+ * @public
+ */
+export function isTemporalIdentityCodec(codec: IIdentityCodec): codec is ITemporalIdentityCodec {
+  const candidate: Partial<ITemporalIdentityCodec> = codec as Partial<ITemporalIdentityCodec>;
+  return typeof candidate.encodeVersion === 'function' && typeof candidate.decodeVersion === 'function';
+}
+
+/**
+ * Identity codec for a versioned (temporal) kind family, resolving OQ-11 to the
+ * subtree-per-entity layout: every version of an entity is a distinct file under
+ * a per-entity subtree.
+ *
+ * @remarks
+ * - `encode`: scope = `<baseScope>/entities/<entityId>`, idStem = `<entityId>`,
+ *   `isVersioned = true`. The idStem is the stable entity prefix; the store forms
+ *   each version's filename via {@link TemporalIdentityCodec.encodeVersion}.
+ * - `encodeVersion`: version stem = `<entityId>-v<seq>`.
+ * - `decode` / `decodeVersion`: recover `entityId` (and `seq`) from a
+ *   `(subtree scope, version stem)` pair; the scope is authoritative for the
+ *   `entityId`.
+ * - Escaping: `baseScope` and `entityId` must each match the POSIX portable
+ *   filename set (they become path segments); `seq` is a non-negative integer.
+ * - Layout: `vault/<baseScope>/entities/<entityId>/<entityId>-v<seq>.md`.
+ * @public
+ */
+export class TemporalIdentityCodec implements ITemporalIdentityCodec {
+  /** The fixed subtree segment separating an entity's versions from its scope. */
+  public static readonly entitiesSegment: string = 'entities';
+  /** The version-stem infix: `<entityId>` + this + `<seq>`. */
+  public static readonly versionInfix: string = '-v';
+
+  /** A non-negative integer string (the version seq). */
+  private static readonly _versionSeqRe: RegExp = /^\d+$/;
+
+  /** The base scope segment this codec's entities live under. */
+  public readonly baseScope: string;
+
+  private constructor(baseScope: string) {
+    this.baseScope = baseScope;
+  }
+
+  /**
+   * Family-convention factory. Validates that `baseScope` is a single portable
+   * filename segment (it becomes the top-level path component).
+   */
+  public static create(baseScope: string): Result<TemporalIdentityCodec> {
+    return assertPortableFilenameStem(baseScope)
+      .withErrorFormat((msg) => `temporal codec: baseScope '${baseScope}': ${msg}`)
+      .onSuccess(() => succeed(new TemporalIdentityCodec(baseScope)));
+  }
+
+  /** {@inheritDoc IIdentityCodec.encode} */
+  public encode(entityId: EntityId): Result<IIdentityCodecResult> {
+    return assertPortableFilenameStem(entityId)
+      .withErrorFormat((msg) => `temporal codec: entityId '${entityId}': ${msg}`)
+      .onSuccess((stem) =>
+        succeed({
+          scope: `${this.baseScope}/${TemporalIdentityCodec.entitiesSegment}/${stem}` as MemoryScopeKey,
+          idStem: stem,
+          isVersioned: true
+        })
+      );
+  }
+
+  /** {@inheritDoc ITemporalIdentityCodec.encodeVersion} */
+  public encodeVersion(entityId: EntityId, seq: number): Result<string> {
+    return assertPortableFilenameStem(entityId)
+      .withErrorFormat((msg) => `temporal codec: entityId '${entityId}': ${msg}`)
+      .onSuccess((stem) => {
+        if (!Number.isInteger(seq) || seq < 0) {
+          return fail(`temporal codec: version seq '${seq}' must be a non-negative integer`);
+        }
+        return succeed(`${stem}${TemporalIdentityCodec.versionInfix}${seq}`);
+      });
+  }
+
+  /** {@inheritDoc IIdentityCodec.decode} */
+  public decode(scope: MemoryScopeKey, encodedStem: string): Result<EntityId> {
+    return this.decodeVersion(scope, encodedStem).onSuccess((addr) =>
+      Convert.entityId.convert(addr.entityId)
+    );
+  }
+
+  /** {@inheritDoc ITemporalIdentityCodec.decodeVersion} */
+  public decodeVersion(scope: MemoryScopeKey, stem: string): Result<ITemporalVersionAddress> {
+    return this._entityIdFromScope(scope).onSuccess((entityId) => {
+      const prefix: string = `${entityId}${TemporalIdentityCodec.versionInfix}`;
+      if (!stem.startsWith(prefix)) {
+        return fail(
+          `temporal codec: version stem '${stem}' must begin with '${prefix}' (from scope '${scope}')`
+        );
+      }
+      const seqText: string = stem.slice(prefix.length);
+      if (!TemporalIdentityCodec._versionSeqRe.test(seqText)) {
+        return fail(`temporal codec: version stem '${stem}' has a non-integer version suffix '${seqText}'`);
+      }
+      // The regex admits digit strings of unbounded length; `parseInt` would silently
+      // lose precision past MAX_SAFE_INTEGER, decoding a corrupt/tampered filename to a
+      // plausible-but-wrong `seq` that drives version ordering. Reject rather than corrupt.
+      const seq: number = Number.parseInt(seqText, 10);
+      if (!Number.isSafeInteger(seq)) {
+        return fail(
+          `temporal codec: version stem '${stem}' has a version suffix '${seqText}' outside the safe integer range`
+        );
+      }
+      return Convert.entityId.convert(entityId).onSuccess((branded) => succeed({ entityId: branded, seq }));
+    });
+  }
+
+  /** {@inheritDoc IIdentityCodec.verifyRoundTrip} */
+  public verifyRoundTrip(scope: MemoryScopeKey, stem: string): Result<true> {
+    return this.decodeVersion(scope, stem).onSuccess((addr) =>
+      this.encode(addr.entityId).onSuccess((encoded) =>
+        this.encodeVersion(addr.entityId, addr.seq).onSuccess((reStem) => {
+          if (encoded.scope !== scope || reStem !== stem) {
+            return fail(
+              `temporal codec: round-trip mismatch for scope '${scope}' stem '${stem}' (re-encoded to scope '${encoded.scope}' stem '${reStem}')`
+            );
+          }
+          return succeed(true);
+        })
+      )
+    );
+  }
+
+  /** Validate and extract the `entityId` from a `<baseScope>/entities/<entityId>` scope. */
+  private _entityIdFromScope(scope: MemoryScopeKey): Result<string> {
+    const segments: string[] = scope.split('/');
+    if (
+      segments.length !== 3 ||
+      segments[0] !== this.baseScope ||
+      segments[1] !== TemporalIdentityCodec.entitiesSegment
+    ) {
+      return fail(
+        `temporal codec: scope '${scope}' must be '${this.baseScope}/${TemporalIdentityCodec.entitiesSegment}/<entityId>'`
+      );
+    }
+    const entityId: string = segments[2];
+    return assertPortableFilenameStem(entityId)
+      .withErrorFormat((msg) => `temporal codec: entityId '${entityId}': ${msg}`)
+      .onSuccess(() => succeed(entityId));
+  }
+}
+
 /**
  * Identity codec for the knowledge kind family. A knowledge entity is keyed
  * by its consumer-supplied `docId`, which is used verbatim as the filename
