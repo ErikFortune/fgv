@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add antagonist torture tests for ts-agent-memory (cycle guard through existing edges, temporal boundary math, converter round-trip symmetry, resolver/verdict validation parity); test-only, no production changes.",
+      "type": "none",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "erikfortune@outlook.com"
+}
