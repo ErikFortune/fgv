@@ -1,7 +1,7 @@
 {
   "changes": [
     {
-      "comment": "Antagonist torture tests plus two store fixes they surfaced: (1) content-scoped dedup no longer swallows a same-id metadata-only update (a same-id re-put with unchanged body/links but revised tags/provenance now reaches applyUpdate instead of being collapsed as a content duplicate; cross-id collapse and identical-re-put idempotence are unchanged); (2) load-time verification now cross-checks the envelope's entityId against the scope-derived entityId, rejecting a tampered/corrupt file whose frontmatter declares a foreign entityId.",
+      "comment": "Antagonist torture tests plus two store fixes they surfaced: (1) a same-id metadata-only update is no longer swallowed by content-hash dedup on ANY write path (flat content-scoped, flat entity-scoped, and the temporal-versioned path) — a same-id re-put with unchanged body/links but revised tags/provenance now reaches applyUpdate (minting a new version on the temporal path) instead of being collapsed as a duplicate; cross-id content collapse and identical-re-put idempotence are unchanged; (2) load-time verification now cross-checks the envelope's entityId against the scope-derived entityId, rejecting a tampered/corrupt file whose frontmatter declares a foreign entityId.",
       "type": "patch",
       "packageName": "@fgv/ts-agent-memory"
     }

@@ -33,6 +33,7 @@ import {
   IMemoryRecord,
   IRelationContext,
   IRelationExtractor,
+  InMemoryCosineIndex,
   Kind,
   KnowledgeIdentityCodec,
   MemoryId,
@@ -230,7 +231,6 @@ describe('antagonist — resolver target need not be a surfaced `similar` candid
       await putFull(store, 'doc-a', 'apple pie'); // will be surfaced as `similar`
       await putFull(store, 'doc-q', 'unrelated target'); // exists, but never surfaced
 
-      const { InMemoryCosineIndex } = await import('../../../index');
       const vectorIndex = InMemoryCosineIndex.create().orThrow();
       const embed = (): Promise<Result<Float32Array>> =>
         Promise.resolve(succeed(Float32Array.from([1, 0, 0])));
@@ -285,7 +285,6 @@ describe('antagonist — enum-branch parity: uniform structural rejection across
     async (verdict) => {
       const store = buildStore();
       await putFull(store, 'doc-a', 'apple pie');
-      const { InMemoryCosineIndex } = await import('../../../index');
       const vectorIndex = InMemoryCosineIndex.create().orThrow();
       const embed = (): Promise<Result<Float32Array>> =>
         Promise.resolve(succeed(Float32Array.from([1, 0, 0])));
@@ -338,7 +337,6 @@ describe('antagonist — enum-branch parity: uniform structural rejection across
         body: 'apple pie'
       };
       (await store.put(foreignRec)).orThrow();
-      const { InMemoryCosineIndex } = await import('../../../index');
       const vectorIndex = InMemoryCosineIndex.create().orThrow();
       const embed = (): Promise<Result<Float32Array>> =>
         Promise.resolve(succeed(Float32Array.from([1, 0, 0])));

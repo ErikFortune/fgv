@@ -111,6 +111,19 @@ function factRecordAt(entityId: string, body: string, validAt: number): IMemoryR
   return { envelope: { ...base.envelope, temporal: { valid_at: validAt } }, body: base.body };
 }
 
+/** Like {@link factRecord} but supplying revised `tags` (metadata surface). */
+function factRecordWithTags(
+  entityId: string,
+  body: string,
+  tags: ReadonlyArray<string>
+): IMemoryRecord<unknown> {
+  const base = factRecord(entityId, body);
+  return {
+    envelope: { ...base.envelope, tags: tags as unknown as IMemoryEnvelope['tags'] },
+    body: base.body
+  };
+}
+
 function knowledgeRecord(id: string, body: string): IMemoryRecord<unknown> {
   return {
     envelope: {
@@ -225,6 +238,33 @@ describe('FileTreeMemoryStore — temporal (versioned) path', () => {
       });
       expect(await store.list({ kind: factKind })).toSucceedAndSatisfy((all) => {
         expect(all).toHaveLength(1);
+      });
+    });
+
+    test('a metadata-only revision (same body, revised tags) mints a new version, not swallowed', async () => {
+      // TemporalVersionedPolicy declares tags/provenance mutable and
+      // _buildVersionedRecord merges them via applyUpdate; the content-hash dedup
+      // must NOT short-circuit a metadata-only revision, or that merge branch is
+      // unreachable and the revision is dropped entirely.
+      const store = createStore();
+      expect(await store.put(factRecord('fact-1', 'same'))).toSucceedAndSatisfy((v1) => {
+        expect(v1.envelope.id).toBe('fact-1-v1');
+        expect(v1.envelope.tags).toEqual([]);
+      });
+      clockValue = 2000;
+      expect(await store.put(factRecordWithTags('fact-1', 'same', ['reviewed']))).toSucceedAndSatisfy(
+        (v2) => {
+          expect(v2.envelope.id).toBe('fact-1-v2'); // a NEW version was minted
+          expect(v2.envelope.tags).toEqual(['reviewed']); // metadata merged in
+        }
+      );
+      // History retained (prior version invalidated), current resolves to v2.
+      expect(await store.list({ kind: factKind })).toSucceedAndSatisfy((all) => {
+        expect(all.map((r) => r.envelope.id).sort()).toEqual(['fact-1-v1', 'fact-1-v2']);
+      });
+      expect(await store.get(factKind, 'fact-1' as EntityId)).toSucceedAndSatisfy((cur) => {
+        expect(cur?.envelope.id).toBe('fact-1-v2');
+        expect(cur?.envelope.tags).toEqual(['reviewed']);
       });
     });
   });

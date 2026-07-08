@@ -947,10 +947,19 @@ export class FileTreeMemoryStore implements IMemoryStore {
     const policy: IWritePolicy = this._policyFor(kind);
     const dedupScope: DedupScope = policy.dedupScope ?? DEFAULT_DEDUP_SCOPE;
     return this._contentHash(kind, body, envelope.links).thenOnSuccess((hash) => {
-      // Entity-scoped dedup: an identical re-put of the CURRENT content is a no-op
-      // (does not spawn a redundant version). Content-scoped dedup is not a
-      // versioning concern, so only the entity granularity is honored here.
-      if (dedupScope === 'entity' && current !== undefined && current.envelope.contentHash === hash) {
+      // Entity-scoped dedup: a re-put is a no-op only when the CURRENT content AND
+      // its mutable metadata are unchanged (does not spawn a redundant version).
+      // A metadata-only revision (tags/provenance — declared mutable by
+      // TemporalVersionedPolicy) must NOT be swallowed here: it mints a new
+      // version via the applyUpdate merge in `_buildVersionedRecord`, mirroring
+      // the flat path. Content-scoped dedup is not a versioning concern, so only
+      // the entity granularity is honored here.
+      if (
+        dedupScope === 'entity' &&
+        current !== undefined &&
+        current.envelope.contentHash === hash &&
+        this._isMutableMetadataUnchanged(current, record)
+      ) {
         return Promise.resolve(succeed<IPutOutcome>({ record: current, evicted: [] }));
       }
       // On the versioned path the admission cohort is the entity's ENTIRE version

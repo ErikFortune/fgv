@@ -785,6 +785,30 @@ describe('FileTreeMemoryStore', () => {
       });
     });
 
+    test('entity-scoped dedup: a same-id re-put with unchanged body but revised tags applies the update', async () => {
+      // The metadata-unchanged gate on the same-id no-op is shared across BOTH
+      // dedup scopes; this asserts it on the entity (experience) family too, so a
+      // future split of the two branches cannot silently regress this side.
+      const store = memoryStore();
+      let firstSeq: number = -1;
+      expect(
+        await store.put(
+          makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'same', tags: ['a'] })
+        )
+      ).toSucceedAndSatisfy((r) => {
+        firstSeq = r.envelope.seq;
+        expect(r.envelope.tags).toEqual(['a']);
+      });
+      expect(
+        await store.put(
+          makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'same', tags: ['a', 'b'] })
+        )
+      ).toSucceedAndSatisfy((r) => {
+        expect(r.envelope.tags).toEqual(['a', 'b']);
+        expect(r.envelope.seq).toBe(firstSeq + 1);
+      });
+    });
+
     test('merge-patch updates the body of an existing memory entity (distinct content)', async () => {
       const store = memoryStore();
       let firstCreated: number = -1;
