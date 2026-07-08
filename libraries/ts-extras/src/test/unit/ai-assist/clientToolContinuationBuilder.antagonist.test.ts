@@ -36,6 +36,7 @@
 
 import '@fgv/ts-utils-jest';
 
+import { type JsonObject } from '@fgv/ts-json-base';
 import { AiAssist } from '../../..';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import {
@@ -116,8 +117,7 @@ describe('invalid (non-object) continuation entries are skipped, not thrown on (
       { role: 'assistant' as const, content: 'valid one' },
       ...invalidEntries,
       { role: 'user' as const, content: 'valid two' }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ] as any;
+    ] as unknown as ReadonlyArray<JsonObject>;
     let messages: unknown;
     expect(() => {
       messages = buildAnthropicMessages(TEST_PROMPT, { rawTail });
@@ -134,8 +134,7 @@ describe('invalid (non-object) continuation entries are skipped, not thrown on (
       { role: 'model' as const, parts: [{ text: 'valid one' }] },
       ...invalidEntries,
       { role: 'user' as const, parts: [{ text: 'valid two' }] }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ] as any;
+    ] as unknown as ReadonlyArray<JsonObject>;
     let contents: unknown;
     expect(() => {
       contents = buildGeminiContents(TEST_PROMPT, { rawTail });
@@ -152,8 +151,7 @@ describe('invalid (non-object) continuation entries are skipped, not thrown on (
       { type: 'function_call', call_id: 'c1', name: 'x', arguments: '{}' },
       ...invalidEntries,
       { type: 'function_call_output', call_id: 'c1', output: 'ok' }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ] as any;
+    ] as unknown as ReadonlyArray<JsonObject>;
     let messages: unknown;
     expect(() => {
       messages = buildMessages('system prompt', 'user text', { rawTail });

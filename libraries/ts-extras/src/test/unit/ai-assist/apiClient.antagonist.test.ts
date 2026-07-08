@@ -148,11 +148,16 @@ describe('callProviderImageGeneration — Gemini finishReason decline matrix (an
   // Wrong impl this guards: a case-insensitive or prefix-based benign check (e.g.
   // lower-casing both sides, or checking `startsWith('STOP')`) would incorrectly treat a
   // near-miss spelling/casing of a benign value as benign and swallow a real decline.
-  test.each(['stop', 'Stop', 'STOPPED', 'MAX_TOKEN'])(
+  test.each([
+    ['stop', /Gemini image generation declined: stop$/],
+    ['Stop', /Gemini image generation declined: Stop$/],
+    ['STOPPED', /Gemini image generation declined: STOPPED$/],
+    ['MAX_TOKEN', /Gemini image generation declined: MAX_TOKEN$/]
+  ])(
     'a near-miss spelling/casing of a benign reason (%s) is NOT treated as benign',
-    async (finishReason) => {
+    async (finishReason, pattern) => {
       const result = await runImageGen({ candidates: [{ finishReason }] });
-      expect(result.isFailure() && result.message.includes(`declined: ${finishReason}`)).toBe(true);
+      expect(result).toFailWith(pattern);
     }
   );
 });
