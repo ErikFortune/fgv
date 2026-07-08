@@ -1,9 +1,10 @@
 # Brief — agent-memory antagonist: adversarial torture tests for the near-miss invariant classes
 
-> **STATUS: DRAFT — commission AFTER `agent-memory-l3-ingest` (#527) merges to `release`.**
-> The antagonist tortures the *corrected* substrate, not a known-broken merge-into path.
-> Scope v1: `@fgv/ts-agent-memory` (temporal + L3 ingest + L2 write path). A sibling
-> `ai-assist-antagonist` (provider response-shape + param-rejection class) is a natural follow-on.
+> **STATUS: COMMISSIONED (phase 1) — #527 merged to `release` (`124c19c73`); the antagonist tortures the *corrected* substrate.**
+>
+> **Two-phase plan (principal-directed):**
+> - **Phase 1 (this brief, running now):** `@fgv/ts-agent-memory` (temporal + L3 ingest + L2 write path) — the seven near-miss invariant classes below.
+> - **Phase 2 (GO/NO-GO after phase 1):** a sibling `ai-assist-antagonist` (provider response-shape + param-rejection class — Gemini image-refusal finishReason, frontier routing, thinking/temperature conflicts, converter field-drop). **Do NOT start phase 2** — it is gated on phase 1 proving valuable (real bugs found and/or genuinely-adversarial tests judged worth the pattern). Phase 1's report feeds the go/no-go.
 
 **Surface:** `@fgv/ts-agent-memory` (**active** — additive test-only work; no production behavior change unless a torture test surfaces a real bug, in which case STOP and report it, don't paper over it).
 **Ships under the enforced coverage gate.** New tests only; existing 100% coverage must not regress.
