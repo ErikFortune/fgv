@@ -31,6 +31,9 @@ export class AsOfRetriever implements IMemoryRetriever {
 }
 
 // @public
+export function assertNoCycles(existing: ReadonlyArray<ICycleGuardEdge>, proposed: ReadonlyArray<ICycleGuardEdge>): Result<true>;
+
+// @public
 export function assertPortableFilenameStem(stem: string): Result<string>;
 
 // @public
@@ -42,6 +45,12 @@ export class BodyConverterRegistry implements IBodyConverterRegistry {
     register<T>(kind: Kind, converter: Converter<T>): void;
     registerSchema<T>(kind: Kind, schema: JsonSchema.ISchemaValidator<T>): void;
 }
+
+// @public
+export function buildCycleKey(edge: ICycleGuardEdge): Result<string>;
+
+// @public
+export const CONTRADICTS_LINK_TYPE: LinkType;
 
 // @public
 export const Convert: {
@@ -64,6 +73,9 @@ export class CurrentValidRetriever implements IMemoryRetriever {
 }
 
 // @public
+export type CycleGuardMode = 'reject' | 'off';
+
+// @public
 export type DedupScope = 'content' | 'entity';
 
 // @public
@@ -71,6 +83,12 @@ export const DEFAULT_DEDUP_SCOPE: DedupScope;
 
 // @public
 export const DEFAULT_MEMORY_TOOLS: ReadonlyArray<MemoryToolName>;
+
+// @public
+export const DEFAULT_SIMILARITY_THRESHOLD: number;
+
+// @public
+export const DEFAULT_SIMILARITY_TOP_K: number;
 
 // @public
 export function defaultMemoryScopeEncoding(scope: MemoryScopeKey): Result<string>;
@@ -108,6 +126,9 @@ export class HistoryRetriever implements IMemoryRetriever {
 }
 
 // @public
+export const HOST_INGEST_PROVENANCE_SOURCE: string;
+
+// @public
 export class HybridRetriever implements IMemoryRetriever {
     get capabilities(): IMemoryRetrieverCapabilities;
     static create(retrievers: ReadonlyArray<IMemoryRetriever>, mergeStrategy: IMergeStrategy): Result<HybridRetriever>;
@@ -124,6 +145,18 @@ export interface IBodyConverterRegistry {
 }
 
 // @public
+export interface ICandidateEdge {
+    readonly edge: IEdge;
+    readonly source: MemoryId;
+}
+
+// @public
+export interface ICandidateRecord {
+    readonly body: unknown;
+    readonly envelope: Omit<IMemoryEnvelope, StoreStampedEnvelopeField>;
+}
+
+// @public
 export interface ICreateMemoryToolsParams {
     readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
     readonly defaultCodec?: IIdentityCodec;
@@ -136,6 +169,16 @@ export interface ICreateMemoryToolsParams {
 }
 
 // @public
+export interface ICycleGuardEdge {
+    // (undocumented)
+    readonly source: MemoryId;
+    // (undocumented)
+    readonly target: MemoryId;
+    // (undocumented)
+    readonly type: LinkType;
+}
+
+// @public
 export interface IEdge {
     readonly confidence?: number;
     readonly invalid_at?: number | null;
@@ -143,6 +186,23 @@ export interface IEdge {
     readonly target: MemoryId;
     readonly type: LinkType;
     readonly valid_at?: number;
+}
+
+// @public
+export interface IEntityResolutionCandidate {
+    readonly id: MemoryId;
+    readonly record: IMemoryRecord<unknown>;
+    readonly score: number;
+}
+
+// @public
+export interface IEntityResolver {
+    resolve(candidate: ICandidateRecord, similar: ReadonlyArray<IEntityResolutionCandidate>): Promise<Result<ResolutionVerdict>>;
+}
+
+// @public
+export interface IFactExtractor {
+    extract(item: IIngestItem, classification: IMemoryClassification): Promise<Result<ReadonlyArray<ICandidateRecord>>>;
 }
 
 // @public
@@ -181,9 +241,47 @@ export interface IIndexedMemoryRecord {
 }
 
 // @public
+export interface IIngestedRecordResult {
+    readonly candidate: ICandidateRecord;
+    readonly disposition: IngestDisposition;
+    readonly edges: ReadonlyArray<ICandidateEdge>;
+    readonly id: MemoryId;
+    readonly interlock?: 'temporal-versioned';
+    readonly record?: IMemoryRecord<unknown>;
+    readonly resolution: ResolutionVerdict;
+}
+
+// @public
+export interface IIngestItem {
+    readonly content: unknown;
+    readonly id: string;
+    readonly metadata?: Record<string, unknown>;
+    readonly sourceId?: MemoryId;
+}
+
+// @public
+export interface IIngestItemResult {
+    readonly item: IIngestItem;
+    readonly records: ReadonlyArray<IIngestedRecordResult>;
+}
+
+// @public
 export interface IMemoryCapCullPolicyParams {
     readonly maxRecords?: number;
     readonly mutableFields: ReadonlyArray<string>;
+}
+
+// @public
+export interface IMemoryClassification {
+    readonly [key: string]: unknown;
+    readonly confidence?: number;
+    readonly kind: Kind;
+    readonly tags?: ReadonlyArray<Tag>;
+}
+
+// @public
+export interface IMemoryClassifier {
+    classify(item: IIngestItem): Promise<Result<IMemoryClassification>>;
 }
 
 // @public
@@ -217,6 +315,30 @@ export interface IMemoryIndex {
     entries(): ReadonlyArray<IIndexedMemoryRecord>;
     patch(op: MemoryIndexPatchOp, entry: IIndexedMemoryRecord): Result<IIndexedMemoryRecord>;
     rebuild(entries: ReadonlyArray<IIndexedMemoryRecord>): Result<number>;
+}
+
+// @public
+export interface IMemoryIngestOrchestrator {
+    ingestBatch(items: ReadonlyArray<IIngestItem>): Promise<Result<ReadonlyArray<IIngestItemResult>>>;
+    ingestItem(item: IIngestItem): Promise<Result<IIngestItemResult>>;
+}
+
+// @public
+export interface IMemoryIngestOrchestratorCreateParams {
+    readonly classifier: IMemoryClassifier;
+    readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
+    readonly cycleGuard?: CycleGuardMode;
+    readonly defaultCodec?: IIdentityCodec;
+    readonly embed?: MemoryEmbedder;
+    readonly entityResolver?: IEntityResolver;
+    readonly extractor: IFactExtractor;
+    readonly logger?: Logging.ILogger;
+    readonly registry: IBodyConverterRegistry;
+    readonly relationExtractor: IRelationExtractor;
+    readonly similarityThreshold?: number;
+    readonly similarityTopK?: number;
+    readonly store: IMemoryStore;
+    readonly vectorIndex?: IVectorIndex;
 }
 
 // @public
@@ -338,6 +460,9 @@ export interface IMergeStrategy {
 export function indexedRecordMatchesQuery(entry: IIndexedMemoryRecord, query: IMemoryQuery): boolean;
 
 // @public
+export type IngestDisposition = 'written' | 'deduped' | 'merged';
+
+// @public
 export class InMemoryCosineIndex implements IVectorIndex {
     add(id: MemoryId, vector: Float32Array): Promise<Result<string>>;
     static create(): Result<InMemoryCosineIndex>;
@@ -355,6 +480,23 @@ export interface IProvenance {
     readonly derivedFrom?: MemoryId;
     readonly model?: string;
     readonly source: ProvenanceSource;
+}
+
+// @public
+export interface IRelationCandidate {
+    readonly candidate: ICandidateRecord;
+    readonly id: MemoryId;
+}
+
+// @public
+export interface IRelationContext {
+    readonly candidates: ReadonlyArray<IRelationCandidate>;
+    readonly item: IIngestItem;
+}
+
+// @public
+export interface IRelationExtractor {
+    relate(context: IRelationContext): Promise<Result<ReadonlyArray<ICandidateEdge>>>;
 }
 
 // @public
@@ -501,6 +643,13 @@ export class MemoryIndex implements IMemoryIndex {
 export type MemoryIndexPatchOp = 'put' | 'delete';
 
 // @public
+export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
+    static create(params: IMemoryIngestOrchestratorCreateParams): Result<MemoryIngestOrchestrator>;
+    ingestBatch(items: ReadonlyArray<IIngestItem>): Promise<Result<ReadonlyArray<IIngestItemResult>>>;
+    ingestItem(item: IIngestItem): Promise<Result<IIngestItemResult>>;
+}
+
+// @public
 export type MemoryObservationOutcome = 'success' | 'failure';
 
 // @public
@@ -560,6 +709,20 @@ export class RecencyRetriever implements IMemoryRetriever {
 }
 
 // @public
+export type ResolutionVerdict = {
+    readonly verdict: 'new';
+} | {
+    readonly verdict: 'duplicate-of';
+    readonly target: MemoryId;
+} | {
+    readonly verdict: 'supersede';
+    readonly target: MemoryId;
+} | {
+    readonly verdict: 'merge-into';
+    readonly target: MemoryId;
+};
+
+// @public
 export class ScoreUnionMergeStrategy implements IMergeStrategy {
     static create(): Result<ScoreUnionMergeStrategy>;
     merge(resultSets: ReadonlyArray<ReadonlyArray<IMemoryRecord<unknown>>>): Result<ReadonlyArray<IMemoryRecord<unknown>>>;
@@ -589,6 +752,9 @@ export function serializeMemoryFile(envelope: IMemoryEnvelope, body: string): Re
 
 // @public
 export function splitFrontmatter(raw: string): Result<IMemoryFileParts>;
+
+// @public
+export type StoreStampedEnvelopeField = 'id' | 'seq' | 'contentHash' | 'created' | 'updated';
 
 // @public
 export class StructuredFilterRetriever implements IMemoryRetriever {

@@ -11,3 +11,4 @@ export * from './packlets/retrieve';
 export * from './packlets/observe';
 export * from './packlets/vector';
 export * from './packlets/tools';
+export * from './packlets/ingest';
