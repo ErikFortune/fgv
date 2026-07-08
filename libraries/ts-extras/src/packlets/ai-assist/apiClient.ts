@@ -50,7 +50,9 @@ import {
   type IChatRequest,
   type IThinkingConfig,
   type ModelSpec,
-  resolveModel
+  type ModelSpecKey,
+  isResponsesOnlyModel,
+  resolveProviderModel
 } from './model';
 import {
   anthropicEffortToBudgetTokens,
@@ -93,10 +95,20 @@ export interface IProviderCompletionParams extends IChatRequest {
   readonly descriptor: IAiProviderDescriptor;
   /** API key for authentication */
   readonly apiKey: string;
-  /** Sampling temperature (default: 0.7) */
+  /**
+   * Sampling temperature. Sent to the provider only when explicitly provided; omitted otherwise
+   * so the provider's own default applies (current-gen models reject a caller-supplied default).
+   */
   readonly temperature?: number;
   /** Optional model override — string or context-aware map (uses descriptor.defaultModel otherwise) */
   readonly modelOverride?: ModelSpec;
+  /**
+   * Optional quality tier selecting which completion model to use. `undefined`
+   * selects the `base` tier; `'frontier'` cascades to `advanced` then `base`
+   * when a tier is unset for a provider. Orthogonal to `thinking` and `tools`,
+   * which never select a model.
+   */
+  readonly tier?: 'advanced' | 'frontier';
   /** Optional logger for request/response observability. */
   readonly logger?: Logging.ILogger;
   /** Server-side tools to include in the request. Overrides settings-level tool config when provided. */
@@ -395,7 +407,7 @@ async function callOpenAiCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
   head?: ReadonlyArray<IChatMessage>,
-  temperature: number = 0.7,
+  temperature?: number,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig
@@ -408,7 +420,11 @@ async function callOpenAiCompletion(
   const body: Record<string, unknown> = {
     model: config.model,
     messages,
-    ...(effort === undefined || effort === 'none' ? { temperature } : {}),
+    // Temperature is sent only when the caller explicitly provided one — omitting it lets each
+    // provider apply its own default (current-gen models reject a non-default temperature). The
+    // completion path already rejects temperature + non-'none' thinking upstream
+    // (checkTemperatureConflict), so no effort gate is needed here.
+    ...(temperature !== undefined ? { temperature } : {}),
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning_effort: effort } : {})
   };
   if (resolvedThinking?.otherParams !== undefined) {
@@ -464,9 +480,9 @@ function extractResponsesApiText(output: Array<Record<string, unknown>>): Result
 async function callOpenAiResponsesCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
-  tools: ReadonlyArray<AiServerToolConfig>,
+  tools: ReadonlyArray<AiServerToolConfig> = [],
   head?: ReadonlyArray<IChatMessage>,
-  temperature: number = 0.7,
+  temperature?: number,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig
@@ -479,8 +495,11 @@ async function callOpenAiResponsesCompletion(
   const body: Record<string, unknown> = {
     model: config.model,
     input,
-    tools: toResponsesApiTools(tools),
-    ...(effort === undefined || effort === 'none' ? { temperature } : {}),
+    // `tools` is omitted entirely when none are requested — a Responses-only model routed
+    // here for tier/model reasons (not tools) must not send an empty tools array.
+    ...(tools.length > 0 ? { tools: toResponsesApiTools(tools) } : {}),
+    // Temperature is sent only when the caller explicitly provided one (see callOpenAiCompletion).
+    ...(temperature !== undefined ? { temperature } : {}),
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {})
   };
   if (resolvedThinking?.otherParams !== undefined) {
@@ -540,7 +559,7 @@ async function callAnthropicCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
   head?: ReadonlyArray<IChatMessage>,
-  temperature: number = 0.7,
+  temperature?: number,
   logger?: Logging.ILogger,
   tools?: ReadonlyArray<AiServerToolConfig>,
   signal?: AbortSignal,
@@ -553,7 +572,10 @@ async function callAnthropicCompletion(
     system: prompt.system,
     messages,
     max_tokens: 4096,
-    ...(resolvedThinking?.anthropicEffort === undefined ? { temperature } : {})
+    // Temperature is sent only when explicitly provided (Claude-5 rejects any temperature). The
+    // completion path rejects temperature + thinking upstream (checkTemperatureConflict), so no
+    // effort gate is needed here.
+    ...(temperature !== undefined ? { temperature } : {})
   };
 
   const effort = resolvedThinking?.anthropicEffort;
@@ -613,7 +635,7 @@ async function callGeminiCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
   head?: ReadonlyArray<IChatMessage>,
-  temperature: number = 0.7,
+  temperature?: number,
   logger?: Logging.ILogger,
   tools?: ReadonlyArray<AiServerToolConfig>,
   signal?: AbortSignal,
@@ -622,7 +644,11 @@ async function callGeminiCompletion(
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
   const contents = buildGeminiContents(prompt, { head });
 
-  const generationConfig: Record<string, unknown> = { temperature };
+  // Temperature is sent only when explicitly provided; otherwise Gemini's default applies.
+  const generationConfig: Record<string, unknown> = {};
+  if (temperature !== undefined) {
+    generationConfig.temperature = temperature;
+  }
   if (resolvedThinking?.geminiThinkingBudget !== undefined) {
     generationConfig.thinkingConfig = { thinkingBudget: resolvedThinking.geminiThinkingBudget };
   }
@@ -684,6 +710,7 @@ export async function callProviderCompletion(
     messages,
     temperature,
     modelOverride,
+    tier,
     logger,
     tools,
     signal,
@@ -707,18 +734,15 @@ export async function callProviderCompletion(
 
   const hasTools = tools !== undefined && tools.length > 0;
   const discriminator = providerDiscriminatorForId(descriptor.id);
-  const hasThinkingConfig =
-    discriminator !== undefined &&
-    (thinking?.effort !== undefined ||
-      thinking?.providers?.some((b) => b.provider === 'other' || b.provider === discriminator) === true);
-  const modelContext = hasThinkingConfig ? 'thinking' : hasTools ? 'tools' : undefined;
+  // The quality tier is the only completion-model selector; thinking and tools
+  // are orthogonal request params/capabilities and never pick a model.
+  const modelContext: ModelSpecKey | undefined = tier;
 
-  const model = resolveModel(modelOverride ?? descriptor.defaultModel, modelContext);
-  if (model.length === 0) {
-    return fail(
-      `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
-    );
+  const modelResult = resolveProviderModel(descriptor, modelOverride, modelContext);
+  if (modelResult.isFailure()) {
+    return fail(modelResult.message);
   }
+  const model = modelResult.value;
 
   let resolvedThinking: IResolvedThinkingConfig | undefined;
   if (thinking !== undefined) {
@@ -736,7 +760,6 @@ export async function callProviderCompletion(
     }
   }
 
-  const effectiveTemperature = temperature ?? 0.7;
   const config: IAiApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
@@ -754,49 +777,34 @@ export async function callProviderCompletion(
 
   switch (descriptor.apiFormat) {
     case 'openai':
-      if (hasTools) {
+      // Responses-API-only models (e.g. gpt-5.5-pro) 400 on /chat/completions, so they route
+      // to the Responses path even with no tools requested — same path the tools case uses.
+      if (hasTools || isResponsesOnlyModel(descriptor, config.model)) {
         return callOpenAiResponsesCompletion(
           config,
           prompt,
           tools,
           head,
-          effectiveTemperature,
+          temperature,
           logger,
           signal,
           resolvedThinking
         );
       }
-      return callOpenAiCompletion(
-        config,
-        prompt,
-        head,
-        effectiveTemperature,
-        logger,
-        signal,
-        resolvedThinking
-      );
+      return callOpenAiCompletion(config, prompt, head, temperature, logger, signal, resolvedThinking);
     case 'anthropic':
       return callAnthropicCompletion(
         config,
         prompt,
         head,
-        effectiveTemperature,
+        temperature,
         logger,
         tools,
         signal,
         resolvedThinking
       );
     case 'gemini':
-      return callGeminiCompletion(
-        config,
-        prompt,
-        head,
-        effectiveTemperature,
-        logger,
-        tools,
-        signal,
-        resolvedThinking
-      );
+      return callGeminiCompletion(config, prompt, head, temperature, logger, tools, signal, resolvedThinking);
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;
@@ -854,26 +862,6 @@ const openAiImageResponse: Validator<IOpenAiImageResponse> = Validators.object<I
   data: Validators.arrayOf(openAiImageItem).withConstraint((arr) => arr.length > 0)
 });
 
-// ---- Gemini Imagen format ----
-
-/** @internal */
-interface IImagenPrediction {
-  bytesBase64Encoded: string;
-  mimeType?: string;
-}
-/** @internal */
-interface IImagenResponse {
-  predictions: IImagenPrediction[];
-}
-
-const imagenPrediction: Validator<IImagenPrediction> = Validators.object<IImagenPrediction>({
-  bytesBase64Encoded: Validators.string,
-  mimeType: Validators.string.optional()
-});
-const imagenResponse: Validator<IImagenResponse> = Validators.object<IImagenResponse>({
-  predictions: Validators.arrayOf(imagenPrediction).withConstraint((arr) => arr.length > 0)
-});
-
 // ---- Gemini image-out (`:generateContent` returning image parts) format ----
 
 /** @internal */
@@ -892,8 +880,9 @@ interface IGeminiImageOutContent {
 }
 /** @internal */
 interface IGeminiImageOutCandidate {
-  content: IGeminiImageOutContent;
+  content?: IGeminiImageOutContent;
   finishReason?: string;
+  finishMessage?: string;
 }
 /** @internal */
 interface IGeminiImageOutResponse {
@@ -909,12 +898,13 @@ const geminiImageOutPart: Validator<IGeminiImageOutPart> = Validators.object<IGe
   inlineData: geminiImageInlineData.optional()
 });
 const geminiImageOutContent: Validator<IGeminiImageOutContent> = Validators.object<IGeminiImageOutContent>({
-  parts: Validators.arrayOf(geminiImageOutPart).withConstraint((arr) => arr.length > 0)
+  parts: Validators.arrayOf(geminiImageOutPart)
 });
 const geminiImageOutCandidate: Validator<IGeminiImageOutCandidate> =
   Validators.object<IGeminiImageOutCandidate>({
-    content: geminiImageOutContent,
-    finishReason: Validators.string.optional()
+    content: geminiImageOutContent.optional(),
+    finishReason: Validators.string.optional(),
+    finishMessage: Validators.string.optional()
   });
 const geminiImageOutResponse: Validator<IGeminiImageOutResponse> = Validators.object<IGeminiImageOutResponse>(
   {
@@ -1037,9 +1027,6 @@ function callOpenAiImagesGenerations(
   }
   if (resolved.seed !== undefined) {
     body.seed = resolved.seed;
-  }
-  if (resolved.style !== undefined) {
-    body.style = resolved.style;
   }
   if (resolved.background !== undefined) {
     body.background = resolved.background;
@@ -1177,6 +1164,15 @@ async function callXaiImageGeneration(
   );
 }
 
+/**
+ * Gemini `finishReason` values that indicate a normal terminal completion rather
+ * than a refusal. `STOP` is set on every successful generation (and on completions
+ * that return a text part instead of an image); `MAX_TOKENS` is a benign truncation.
+ * A candidate carrying only one of these is NOT a decline — treating it as one would
+ * mislabel an ordinary no-image outcome as a policy refusal. @internal
+ */
+const benignGeminiImageFinishReasons: ReadonlySet<string> = new Set(['STOP', 'MAX_TOKENS']);
+
 /** Calls Gemini :generateContent for image output; accepts ref images as inlineData. @internal */
 async function callGeminiImageOutGeneration(
   config: IAiApiConfig,
@@ -1217,7 +1213,7 @@ async function callGeminiImageOutGeneration(
       .onSuccess((response) => {
         const images: IAiGeneratedImage[] = [];
         for (const candidate of response.candidates) {
-          for (const part of candidate.content.parts) {
+          for (const part of candidate.content?.parts ?? []) {
             if (part.inlineData) {
               images.push({
                 mimeType: part.inlineData.mimeType,
@@ -1227,79 +1223,26 @@ async function callGeminiImageOutGeneration(
           }
         }
         if (images.length === 0) {
+          // A candidate with no image parts is a *decline* only when it carries a
+          // refusal-shaped finishReason — i.e. present and not a benign terminal reason
+          // (`STOP`/`MAX_TOKENS`). A normal completion that emitted text-instead-of-image
+          // carries `finishReason: 'STOP'` and must fall through to the no-image message.
+          const declined = response.candidates.find(
+            (candidate) =>
+              candidate.finishReason !== undefined &&
+              !benignGeminiImageFinishReasons.has(candidate.finishReason)
+          );
+          if (declined?.finishReason !== undefined) {
+            // Truthiness (not `!== undefined`) so an empty-string finishMessage is treated
+            // as "no message" and produces no dangling ` — ` separator.
+            const suffix = declined.finishMessage ? ` — ${declined.finishMessage}` : '';
+            return fail(`Gemini image generation declined: ${declined.finishReason}${suffix}`);
+          }
           return fail('Gemini image API response: no image parts in response');
         }
         return succeed({ images });
       })
   );
-}
-
-/** Calls the Gemini Imagen :predict endpoint with Imagen 4 params. @internal */
-async function callImagenGeneration(
-  config: IAiApiConfig,
-  request: IAiImageGenerationParams,
-  resolved: IResolvedImageOptions,
-  logger?: Logging.ILogger,
-  signal?: AbortSignal
-): Promise<Result<IAiImageGenerationResponse>> {
-  const url = `${config.baseUrl}/models/${config.model}:predict`;
-  const parameters: Record<string, unknown> = {
-    sampleCount: resolved.n
-  };
-  if (resolved.imagenAspectRatio !== undefined) {
-    parameters.aspectRatio = resolved.imagenAspectRatio;
-  }
-  if (resolved.imageSize !== undefined) {
-    parameters.imageSize = resolved.imageSize;
-  }
-  if (resolved.addWatermark !== undefined) {
-    parameters.addWatermark = resolved.addWatermark;
-  }
-  if (resolved.enhancePrompt !== undefined) {
-    parameters.enhancePrompt = resolved.enhancePrompt;
-  }
-  if (resolved.imagenOutputMimeType !== undefined || resolved.imagenOutputCompressionQuality !== undefined) {
-    const outputOptions: Record<string, unknown> = {};
-    if (resolved.imagenOutputMimeType !== undefined) {
-      outputOptions.mimeType = resolved.imagenOutputMimeType;
-    }
-    if (resolved.imagenOutputCompressionQuality !== undefined) {
-      outputOptions.compressionQuality = resolved.imagenOutputCompressionQuality;
-    }
-    parameters.outputOptions = outputOptions;
-  }
-  if (resolved.personGeneration !== undefined) {
-    parameters.personGeneration = resolved.personGeneration;
-  }
-  if (resolved.seed !== undefined) {
-    parameters.seed = resolved.seed;
-  }
-  if (resolved.otherParams !== undefined) {
-    Object.assign(parameters, resolved.otherParams);
-  }
-
-  const body: Record<string, unknown> = {
-    instances: [{ prompt: request.prompt }],
-    parameters
-  };
-  const headers: Record<string, string> = { 'x-goog-api-key': config.apiKey };
-
-  /* c8 ignore next 1 - optional logger */
-  logger?.info(`Imagen generation: model=${config.model}, n=${parameters.sampleCount}`);
-  const jsonResult = await fetchJson(url, headers, body, logger, signal);
-  if (jsonResult.isFailure()) {
-    return fail(jsonResult.message);
-  }
-  return imagenResponse
-    .validate(jsonResult.value)
-    .withErrorFormat((msg) => `Imagen API response: ${msg}`)
-    .onSuccess((response) => {
-      const images: IAiGeneratedImage[] = response.predictions.map((p) => ({
-        mimeType: p.mimeType ?? 'image/png',
-        base64: p.bytesBase64Encoded
-      }));
-      return succeed({ images });
-    });
 }
 
 // ============================================================================
@@ -1309,7 +1252,7 @@ async function callImagenGeneration(
 /**
  * Calls the appropriate image-generation API for a given provider. Routes by the
  * `format` field of the resolved {@link IAiImageModelCapability}:
- * `'openai-images'`, `'xai-images'`, `'xai-images-edits'`, `'gemini-imagen'`, or
+ * `'openai-images'`, `'xai-images'`, `'xai-images-edits'`, or
  * `'gemini-image-out'`. Rejects up front if `referenceImages` is set but the
  * capability does not declare `acceptsImageReferenceInput`.
  * @param params - Request parameters including descriptor, API key, and prompt
@@ -1328,14 +1271,11 @@ export async function callProviderImageGeneration(
     return fail(baseUrlResult.message);
   }
 
-  const model = resolveModel(modelOverride ?? descriptor.defaultModel, 'image');
-  if (model.length === 0) {
-    return fail(
-      `provider "${descriptor.id}": no image model resolved; ` +
-        `pass modelOverride or set descriptor.defaultModel ` +
-        `(a plain string, or an object with an "image" entry)`
-    );
+  const modelResult = resolveProviderModel(descriptor, modelOverride, 'image');
+  if (modelResult.isFailure()) {
+    return fail(modelResult.message);
   }
+  const model = modelResult.value;
   const capability = resolveImageCapability(descriptor, model);
   if (capability === undefined) {
     return fail(`provider "${descriptor.id}" does not support image generation for model "${model}"`);
@@ -1387,8 +1327,6 @@ export async function callProviderImageGeneration(
       }
       return callXaiImageGeneration(config, request, capability, resolved, logger, signal);
     }
-    case 'gemini-imagen':
-      return callImagenGeneration(config, request, resolved, logger, signal);
     case 'gemini-image-out':
       return callGeminiImageOutGeneration(config, request, resolved, logger, signal);
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
@@ -1835,9 +1773,13 @@ export async function callProxiedCompletion(
   const body: Record<string, unknown> = {
     providerId: descriptor.id,
     apiKey,
-    messages: normalizeOutboundMessages(splitResult.value),
-    temperature: temperature ?? 0.7
+    messages: normalizeOutboundMessages(splitResult.value)
   };
+  // Temperature is forwarded only when explicitly provided, matching the direct path — the proxy
+  // omits it from the upstream request so the provider default applies.
+  if (temperature !== undefined) {
+    body.temperature = temperature;
+  }
   if (system !== undefined) {
     body.system = system;
   }

@@ -54,10 +54,20 @@ export interface IProviderCompletionStreamParams extends IChatRequest {
   readonly descriptor: IAiProviderDescriptor;
   /** API key for authentication */
   readonly apiKey: string;
-  /** Sampling temperature (default: 0.7) */
+  /**
+   * Sampling temperature. Sent to the provider only when explicitly provided; omitted otherwise
+   * so the provider's own default applies (current-gen models reject a caller-supplied default).
+   */
   readonly temperature?: number;
   /** Optional model override — string or context-aware map. */
   readonly modelOverride?: ModelSpec;
+  /**
+   * Optional quality tier selecting which completion model to use. `undefined`
+   * selects the `base` tier; `'frontier'` cascades to `advanced` then `base`
+   * when a tier is unset for a provider. Orthogonal to `thinking` and `tools`,
+   * which never select a model.
+   */
+  readonly tier?: 'advanced' | 'frontier';
   /** Optional logger for request/response observability. */
   readonly logger?: Logging.ILogger;
   /** Server-side tools to include in the request. */
@@ -101,6 +111,20 @@ export interface IStreamApiConfig {
  * @internal
  */
 export const UNRECOGNIZED_EVENT_WARN_TAG: string = 'ai-assist:unrecognized-event';
+
+/**
+ * Stable prefix every "malformed tool_use block" warning starts with. Emitted
+ * when a streaming adapter sees a client tool_use `content_block_start` that is
+ * missing a usable correlation id and/or name — a block that, if silently
+ * dropped, would orphan its argument deltas and corrupt the follow-up tool
+ * continuation (the id-correlation defect class). Production deployments can
+ * filter / alert on this exact substring. Distinct from
+ * {@link UNRECOGNIZED_EVENT_WARN_TAG} (which is for unrecognized SSE *event
+ * names*); this is a malformed *payload* of a recognized event.
+ *
+ * @internal
+ */
+export const MALFORMED_TOOL_USE_WARN_TAG: string = 'ai-assist:malformed-tool-use';
 
 /**
  * Maximum characters of raw SSE payload to include in the

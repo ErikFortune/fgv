@@ -4,6 +4,7 @@
 
 ```ts
 
+import { Brand } from '@fgv/ts-utils';
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { DateTime } from 'luxon';
@@ -34,6 +35,7 @@ declare namespace AiAssist {
         AiToolConfig,
         IAiWebSearchToolConfig,
         IAiClientToolConfig,
+        IAiToolAnnotations,
         IAiClientTool,
         IAiClientToolCallSummary,
         IAiClientToolContinuation,
@@ -60,25 +62,16 @@ declare namespace AiAssist {
         IAiImageData,
         AiImageSize,
         AiImageQuality,
-        DallE2Size,
-        DallE3Size,
         GptImageSize,
-        DallE3Quality,
         GptImageQuality,
-        DallEModelNames,
         GptImageModelNames,
         GrokImagineModelNames,
-        Imagen4ModelNames,
         GeminiFlashImageModelNames,
-        IDallEImageGenerationConfig,
         IGptImageGenerationConfig,
         IGrokImagineImageGenerationConfig,
-        IImagen4GenerationConfig,
         IGeminiFlashImageGenerationConfig,
-        IDallEModelOptions,
         IGptImageModelOptions,
         IGrokImagineModelOptions,
-        IImagen4ModelOptions,
         IGeminiFlashImageModelOptions,
         IOtherModelOptions,
         IModelFamilyConfig,
@@ -103,6 +96,11 @@ declare namespace AiAssist {
         allModelSpecKeys,
         MODEL_SPEC_BASE_KEY,
         resolveModel,
+        IModelAliasMap,
+        MODEL_ALIAS_SIGIL,
+        resolveModelAlias,
+        resolveProviderModel,
+        isResponsesOnlyModel,
         toDataUrl,
         AiThinkingMode,
         IThinkingConfig,
@@ -149,10 +147,12 @@ declare namespace AiAssist {
         executeClientToolTurn,
         IExecuteClientToolTurnParams,
         IExecuteClientToolTurnResult,
+        IToolExecutionDecision,
         aiProviderId,
         aiServerToolType,
         aiWebSearchToolConfig,
         aiServerToolConfig,
+        aiToolAnnotations,
         aiClientToolConfig,
         aiToolEnablement,
         aiAssistProviderConfig,
@@ -198,13 +198,13 @@ type AiEmbeddingApiFormat = 'openai-embeddings' | 'gemini-embeddings';
 type AiEmbeddingTaskType = 'retrieval-query' | 'retrieval-document' | 'semantic-similarity' | 'classification' | 'clustering' | 'code-retrieval-query' | 'question-answering' | 'fact-verification' | (string & {});
 
 // @public
-type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images' | 'xai-images-edits' | 'gemini-image-out';
+type AiImageApiFormat = 'openai-images' | 'xai-images' | 'xai-images-edits' | 'gemini-image-out';
 
 // @public
-type AiImageQuality = DallE3Quality | GptImageQuality;
+type AiImageQuality = GptImageQuality;
 
 // @public
-type AiImageSize = DallE2Size | DallE3Size | GptImageSize;
+type AiImageSize = GptImageSize;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -250,6 +250,11 @@ const aiServerToolType: Converter<AiServerToolType>;
 // @public
 type AiThinkingMode = 'optional' | 'required' | 'unsupported';
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const aiToolAnnotations: Converter<IAiToolAnnotations>;
+
 // @public
 type AiToolConfig = AiServerToolConfig | IAiClientToolConfig;
 
@@ -290,7 +295,7 @@ const allProviderIds: ReadonlyArray<AiProviderId>;
 function anthropicEffortToBudgetTokens(effort: NonNullable<IAnthropicThinkingConfig['effort']>): number;
 
 // @public
-type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-opus-4-6' | 'claude-opus-4-7';
+type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8';
 
 // @public
 const ARGON2ID_OWASP_MIN: IArgon2idParams;
@@ -305,6 +310,16 @@ const argon2idKeyDerivationParams: Converter<IArgon2idKeyDerivationParams>;
 
 // @public
 const base64String: Converter<string>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function base64UrlNoPadDecode(encoded: string): Result<Uint8Array>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function base64UrlNoPadEncode(data: Uint8Array): string;
 
 // @public
 function callProviderCompletion(params: IProviderCompletionParams): Promise<Result<IAiCompletionResponse>>;
@@ -402,6 +417,7 @@ declare namespace Converters_3 {
         argon2idKeyDerivationParams,
         keyDerivationParams,
         base64String,
+        multibaseSpkiPublicKey,
         uint8ArrayFromBase64,
         namedSecret,
         encryptedFile
@@ -438,13 +454,17 @@ declare namespace CryptoUtils {
         ICreateEncryptedFileParams,
         toBase64,
         tryDecryptFile,
+        base64UrlNoPadDecode,
+        base64UrlNoPadEncode,
         exportPublicKeyAsMultibaseSpki,
         importPublicKeyFromMultibaseSpki,
+        isValidMultibaseSpkiPublicKey,
         multibaseBase64UrlDecode,
         multibaseBase64UrlEncode,
         HpkeProvider,
         IHpkeSealResult,
         isEncryptedFile,
+        MultibaseSpkiPublicKey,
         EncryptionAlgorithm,
         EncryptedFileFormat,
         INamedSecret,
@@ -488,18 +508,6 @@ interface CsvOptions {
     // (undocumented)
     delimiter?: string;
 }
-
-// @public
-type DallE2Size = '256x256' | '512x512' | '1024x1024';
-
-// @public
-type DallE3Quality = 'standard' | 'hd';
-
-// @public
-type DallE3Size = '1024x1024' | '1792x1024' | '1024x1792';
-
-// @public
-type DallEModelNames = 'dall-e-2' | 'dall-e-3';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -612,7 +620,7 @@ export { Experimental }
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function exportPublicKeyAsMultibaseSpki(key: CryptoKey, provider: ICryptoProvider): Promise<Result<string>>;
+function exportPublicKeyAsMultibaseSpki(key: CryptoKey, provider: ICryptoProvider): Promise<Result<MultibaseSpkiPublicKey>>;
 
 // @beta
 class ExtendedArray<T> extends Array<T> {
@@ -699,10 +707,10 @@ const GCM_AUTH_TAG_SIZE: number;
 const GCM_IV_SIZE: number;
 
 // @public
-type GeminiFlashImageModelNames = 'gemini-2.5-flash-image';
+type GeminiFlashImageModelNames = 'gemini-3.1-flash-image-preview';
 
 // @public
-type GeminiThinkingModelNames = 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.5-flash-lite';
+type GeminiThinkingModelNames = 'gemini-3.1-pro-preview' | 'gemini-3.5-flash' | 'gemini-3.1-flash-lite';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -717,7 +725,7 @@ function getProviderDescriptor(id: string): Result<IAiProviderDescriptor>;
 function getProviderDescriptors(): ReadonlyArray<IAiProviderDescriptor>;
 
 // @public
-type GptImageModelNames = 'gpt-image-1';
+type GptImageModelNames = 'gpt-image-1' | 'gpt-image-1.5';
 
 // @public
 type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
@@ -838,6 +846,8 @@ interface IAiClientToolCallSummary {
 
 // @public
 interface IAiClientToolConfig<TParams = unknown> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiToolAnnotations"
+    readonly annotations?: IAiToolAnnotations;
     readonly description: string;
     readonly name: string;
     readonly parametersSchema: JsonSchema.ISchemaValidator<TParams>;
@@ -983,6 +993,10 @@ interface IAiModelInfo {
 // @public
 interface IAiProviderDescriptor {
     readonly acceptsImageInput: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModelAlias"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveProviderModel"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+    readonly aliases?: IModelAliasMap;
     readonly apiFormat: AiApiFormat;
     readonly baseUrl: string;
     readonly buttonLabel: string;
@@ -997,6 +1011,8 @@ interface IAiProviderDescriptor {
     readonly imageGeneration?: ReadonlyArray<IAiImageModelCapability>;
     readonly label: string;
     readonly needsSecret: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     readonly streamingCorsRestricted: boolean;
     readonly supportedTools: ReadonlyArray<AiServerToolType>;
@@ -1064,6 +1080,15 @@ interface IAiStreamToolUseStart {
     readonly toolName: string;
     // (undocumented)
     readonly type: 'client-tool-call-start';
+}
+
+// @public
+interface IAiToolAnnotations {
+    readonly destructiveHint?: boolean;
+    readonly idempotentHint?: boolean;
+    readonly openWorldHint?: boolean;
+    readonly readOnlyHint?: boolean;
+    readonly title?: string;
 }
 
 // @public
@@ -1203,23 +1228,6 @@ interface ICryptoProvider {
     wrapBytes(plaintext: Uint8Array, recipientPublicKey: CryptoKey, options: IWrapBytesOptions): Promise<Result<IWrappedBytes>>;
 }
 
-// @public
-interface IDallEImageGenerationConfig {
-    readonly quality?: DallE3Quality;
-    readonly size?: DallE2Size | DallE3Size;
-    readonly style?: 'vivid' | 'natural';
-}
-
-// Warning: (ae-forgotten-export) The symbol "INamedModelFamilyConfig" needs to be exported by the entry point index.d.ts
-//
-// @public
-interface IDallEModelOptions extends INamedModelFamilyConfig {
-    readonly config: IDallEImageGenerationConfig;
-    readonly family: 'dall-e';
-    readonly models?: DallEModelNames[];
-    readonly provider: 'openai';
-}
-
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "DirectEncryptionProvider"
 //
 // @public
@@ -1290,6 +1298,7 @@ interface IExecuteClientToolTurnParams extends IChatRequest {
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
     readonly model?: string;
+    readonly onBeforeToolExecute?: (tool: IAiClientTool, args: unknown) => Promise<Result<IToolExecutionDecision>>;
     readonly resolvedThinking?: IResolvedThinkingConfig;
     readonly signal?: AbortSignal;
     readonly temperature?: number;
@@ -1385,6 +1394,8 @@ interface IGptImageGenerationConfig {
     readonly size?: GptImageSize;
 }
 
+// Warning: (ae-forgotten-export) The symbol "INamedModelFamilyConfig" needs to be exported by the entry point index.d.ts
+//
 // @public
 interface IGptImageModelOptions extends INamedModelFamilyConfig {
     // (undocumented)
@@ -1421,29 +1432,6 @@ interface IGrokImagineModelOptions extends INamedModelFamilyConfig {
 interface IHpkeSealResult {
     readonly ciphertext: Uint8Array;
     readonly enc: Uint8Array;
-}
-
-// @public
-interface IImagen4GenerationConfig {
-    readonly addWatermark?: boolean;
-    readonly aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
-    readonly enhancePrompt?: boolean;
-    readonly imageSize?: '1K' | '2K';
-    readonly outputCompressionQuality?: number;
-    readonly outputMimeType?: 'image/jpeg' | 'image/png';
-    readonly personGeneration?: 'allow_all' | 'allow_adult' | 'dont_allow';
-}
-
-// @public
-interface IImagen4ModelOptions extends INamedModelFamilyConfig {
-    // (undocumented)
-    readonly config: IImagen4GenerationConfig;
-    // (undocumented)
-    readonly family: 'imagen-4';
-    // (undocumented)
-    readonly models?: Imagen4ModelNames[];
-    // (undocumented)
-    readonly provider: 'google';
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
@@ -1580,9 +1568,6 @@ interface IKeyStoreVaultContents {
 }
 
 // @public
-type Imagen4ModelNames = 'imagen-4.0-generate-001' | 'imagen-4.0-ultra-generate-001' | 'imagen-4.0-fast-generate-001';
-
-// @public
 interface IMissingVariableDetail {
     readonly existingPath: readonly string[];
     readonly failedAtSegment?: string;
@@ -1590,7 +1575,13 @@ interface IMissingVariableDetail {
 }
 
 // @public
-type IModelFamilyConfig = IDallEModelOptions | IGptImageModelOptions | IGrokImagineModelOptions | IImagen4ModelOptions | IGeminiFlashImageModelOptions | IOtherModelOptions;
+interface IModelAliasMap {
+    // (undocumented)
+    readonly [alias: string]: string;
+}
+
+// @public
+type IModelFamilyConfig = IGptImageModelOptions | IGrokImagineModelOptions | IGeminiFlashImageModelOptions | IOtherModelOptions;
 
 // @public
 interface IModelSpecMap {
@@ -1604,7 +1595,7 @@ interface IModelSpecMap {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function importPublicKeyFromMultibaseSpki(encoded: string, algorithm: KeyPairAlgorithm, provider: ICryptoProvider): Promise<Result<CryptoKey>>;
+function importPublicKeyFromMultibaseSpki(encoded: MultibaseSpkiPublicKey, algorithm: KeyPairAlgorithm, provider: ICryptoProvider): Promise<Result<CryptoKey>>;
 
 // @public
 interface IMustacheTemplateOptions {
@@ -1686,6 +1677,7 @@ interface IProviderCompletionParams extends IChatRequest {
     readonly signal?: AbortSignal;
     readonly temperature?: number;
     readonly thinking?: IThinkingConfig;
+    readonly tier?: 'advanced' | 'frontier';
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
 }
 
@@ -1701,6 +1693,7 @@ interface IProviderCompletionStreamParams extends IChatRequest {
     readonly signal?: AbortSignal;
     readonly temperature?: number;
     readonly thinking?: IThinkingConfig;
+    readonly tier?: 'advanced' | 'frontier';
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
 }
 
@@ -1750,23 +1743,11 @@ interface IRemoveSecretResult {
 // @public
 interface IResolvedImageOptions {
     // (undocumented)
-    readonly addWatermark?: boolean;
-    // (undocumented)
     readonly aspectRatio?: string;
     // (undocumented)
     readonly background?: string;
     // (undocumented)
-    readonly enhancePrompt?: boolean;
-    // (undocumented)
     readonly geminiAspectRatio?: string;
-    // (undocumented)
-    readonly imagenAspectRatio?: string;
-    // (undocumented)
-    readonly imagenOutputCompressionQuality?: number;
-    // (undocumented)
-    readonly imagenOutputMimeType?: string;
-    // (undocumented)
-    readonly imageSize?: string;
     // (undocumented)
     readonly moderation?: string;
     readonly n: number;
@@ -1776,15 +1757,11 @@ interface IResolvedImageOptions {
     readonly outputCompression?: number;
     // (undocumented)
     readonly outputFormat?: string;
-    // (undocumented)
-    readonly personGeneration?: string;
     readonly quality?: string;
     // (undocumented)
     readonly resolution?: string;
     readonly seed?: number;
     readonly size?: string;
-    // (undocumented)
-    readonly style?: string;
 }
 
 // @public
@@ -1808,6 +1785,17 @@ const isoDate: Converter<Date, unknown>;
 // @public
 const isoDateTime: Converter<DateTime, unknown>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId: string): boolean;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isValidMultibaseSpkiPublicKey(value: unknown): value is MultibaseSpkiPublicKey;
+
 // @public
 interface IThinkingConfig {
     readonly effort?: 'low' | 'medium' | 'high';
@@ -1816,6 +1804,16 @@ interface IThinkingConfig {
 
 // @public
 type IThinkingProviderConfig = IAnthropicThinkingOptions | IOpenAiThinkingOptions | IGeminiThinkingOptions | IXAiThinkingOptions | IOtherThinkingOptions;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IExecuteClientToolTurnParams"
+//
+// @public
+type IToolExecutionDecision = {
+    readonly action: 'proceed';
+} | {
+    readonly action: 'deny';
+    readonly reason: string;
+};
 
 // @public
 interface IVariableRef {
@@ -2109,6 +2107,11 @@ class Md5Normalizer extends Hash_2.HashingNormalizer {
 // @public
 const MIN_SALT_LENGTH: number;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModelAlias"
+//
+// @public
+const MODEL_ALIAS_SIGIL: '@';
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
 //
 // @public
@@ -2124,7 +2127,7 @@ type ModelSpec = string | IModelSpecMap;
 const modelSpec: Converter<ModelSpec>;
 
 // @public
-type ModelSpecKey = 'base' | 'tools' | 'image' | 'thinking' | 'embedding';
+type ModelSpecKey = 'base' | 'advanced' | 'frontier' | 'image' | 'embedding';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
 //
@@ -2136,6 +2139,19 @@ function multibaseBase64UrlDecode(encoded: string): Result<Uint8Array>;
 
 // @public
 function multibaseBase64UrlEncode(data: Uint8Array): string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type MultibaseSpkiPublicKey = Brand<string, 'MultibaseSpkiPublicKey'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const multibaseSpkiPublicKey: Converter<MultibaseSpkiPublicKey>;
 
 declare namespace Mustache {
     export {
@@ -2214,7 +2230,7 @@ class NodeCryptoProvider implements ICryptoProvider {
 const nodeCryptoProvider: NodeCryptoProvider;
 
 // @public
-type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'o3-deep-research' | 'o4-mini-deep-research' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.5' | 'gpt-5-pro';
+type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'o3-deep-research' | 'o4-mini-deep-research' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.4-mini' | 'gpt-5.5' | 'gpt-5.5-pro' | 'gpt-5-pro';
 
 // @beta
 function parseCsvString(body: string, options?: CsvOptions): Result<unknown>;
@@ -2331,6 +2347,19 @@ function resolveImageOptions(modelId: string, capability: IAiImageModelCapabilit
 //
 // @public
 function resolveModel(spec: ModelSpec, context?: string): string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "MODEL_ALIAS_SIGIL"
+//
+// @public
+function resolveModelAlias(descriptor: IAiProviderDescriptor, model: string): Result<string>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModel"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModelAlias"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+//
+// @public
+function resolveProviderModel(descriptor: IAiProviderDescriptor, modelOverride: ModelSpec | undefined, context?: ModelSpecKey): Result<string>;
 
 // @public
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;

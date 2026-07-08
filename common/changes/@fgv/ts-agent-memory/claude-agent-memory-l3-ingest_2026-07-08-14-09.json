@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "L3 ingest orchestrator: staged host interfaces, six-stage single-item-first-class pipeline, exact+similarity dedup, write-time edge/cycle safety, provenance stamping, contradicts->temporal interlock",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

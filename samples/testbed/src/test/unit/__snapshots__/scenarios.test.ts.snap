@@ -6,10 +6,15 @@ Array [
   "openai-client-tools",
   "gemini-client-tools",
   "xai-client-tools",
+  "gate-deny-client-tools",
   "local-classifier-safety",
   "local-embedding-search",
   "local-summarization",
   "mcp-probe",
+  "memory-tools-gate",
   "cross-provider-embedding-search",
+  "openai-model-tiers",
+  "anthropic-model-tiers",
+  "google-gemini-model-tiers",
 ]
 `;

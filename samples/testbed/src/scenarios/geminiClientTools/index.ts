@@ -170,10 +170,22 @@ const cliImpl: ICliScenarioImpl = {
       messages: [{ role: 'user', content: USER_QUESTION }]
     };
 
-    // Use the version-pinned `gemini-2.5-flash` alias — a thinking-capable model that the
-    // generateContent API accepts directly. Pinning major.minor avoids the dated-snapshot
-    // deprecation trap while staying off the moving `*-latest` target.
-    const model = 'gemini-2.5-flash';
+    // Pin the fgv-owned model alias `@google-gemini:flash` instead of a concrete id. The alias
+    // layer maps it to the current concrete Gemini flash line in one central place
+    // (the `google-gemini` descriptor's `aliases` map), so a line rotation is a one-map-edit +
+    // a green run of this scenario — this scenario is the standing canary for that loop. The
+    // resolved flash line is thinking-capable, which is what this scenario exercises.
+    const model = '@google-gemini:flash';
+
+    // Resolve the alias to its concrete target up front so the run is self-documenting: a
+    // reviewer can see exactly which concrete Gemini id answered through the alias layer. The
+    // same resolution happens inside `executeClientToolTurn`; this is purely for the log line.
+    const resolvedModelResult = AiAssist.resolveModelAlias(descriptor, model);
+    if (resolvedModelResult.isFailure()) {
+      return fail(`Failed to resolve model alias '${model}': ${resolvedModelResult.message}`);
+    }
+    const resolvedModel = resolvedModelResult.value;
+    context.logger.info(`resolved ${model} -> ${resolvedModel}`);
 
     // Construct the resolved thinking config directly. geminiThinkingBudget maps to
     // `generationConfig.thinkingConfig.thinkingBudget` on the wire. 1024 is the low-budget
@@ -338,7 +350,7 @@ const cliImpl: ICliScenarioImpl = {
     const summaryLines = [
       `gemini-client-tools scenario: ${pass ? 'PASS' : 'FAIL'}`,
       '',
-      `Model: ${model}`,
+      `Model: ${model} -> ${resolvedModel}`,
       'Thinking: enabled (thinkingBudget=1024)',
       `Client tools invoked: ${clientToolCallCount}`,
       `Server tool events: ${serverToolEventCount} (none requested — provider forbids grounding + function calling)`,

@@ -125,6 +125,24 @@ class AggregatedResultMapValidator<TCOMPOSITEID extends string, TCOLLECTIONID ex
     update(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const allConversionErrorHandling: readonly ConversionErrorHandling[];
+
+// @public
+export const allMessageLogLevels: readonly MessageLogLevel[];
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const allOnError: readonly OnError[];
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const allReporterLogLevels: readonly ReporterLogLevel[];
+
 // @public
 export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T, aggregatedErrors?: IMessageAggregator): Result<T>;
 
@@ -468,6 +486,8 @@ declare namespace Collections {
         IReadOnlyResultMap,
         ConvertingResultMapValueConverter,
         ConversionErrorHandling,
+        allConversionErrorHandling,
+        conversionErrorHandling,
         IReadOnlyConvertingResultMapConstructorParams,
         ReadOnlyConvertingResultMap,
         IRetainedRecord,
@@ -679,6 +699,7 @@ declare namespace Conversion {
         ConverterFunc,
         BaseConverter,
         OnError,
+        allOnError,
         ConverterTraits,
         ConversionErrorFormatter,
         ConstraintOptions,
@@ -699,6 +720,11 @@ type ConversionErrorFormatter<TC = unknown> = (val: unknown, message?: string, c
 
 // @public
 type ConversionErrorHandling = 'ignore' | 'warn' | 'fail';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const conversionErrorHandling: Converter<ConversionErrorHandling, ReadonlyArray<ConversionErrorHandling>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -766,6 +792,8 @@ declare namespace Converters {
         discriminatedObject,
         OnError,
         string,
+        messageLogLevel,
+        onError,
         value,
         number,
         boolean,
@@ -1961,6 +1989,8 @@ declare namespace Logging {
         ReporterLogLevel,
         ILogger,
         IDetailLogger,
+        allReporterLogLevels,
+        reporterLogLevel,
         LoggerBase,
         InMemoryLogger,
         ConsoleLogger,
@@ -2088,6 +2118,9 @@ export class MessageAggregator implements IMessageAggregator {
 
 // @public
 export type MessageLogLevel = 'quiet' | 'detail' | 'info' | 'warning' | 'error';
+
+// @public
+const messageLogLevel: Converter<MessageLogLevel, ReadonlyArray<MessageLogLevel>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2355,6 +2388,11 @@ interface OneOfValidatorConstructorParams<T, TC = unknown> extends ValidatorBase
 // @public
 type OnError = 'failOnError' | 'ignoreErrors';
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const onError: Converter<OnError, ReadonlyArray<OnError>>;
+
 // @public
 const optionalBoolean: Converter<boolean | undefined, unknown>;
 
@@ -2483,6 +2521,11 @@ export function recordToMap<TS, TD, TK extends string = string>(src: Record<TK, 
 
 // @public
 type ReporterLogLevel = 'all' | 'detail' | 'info' | 'warning' | 'error' | 'silent';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const reporterLogLevel: Converter<ReporterLogLevel, ReadonlyArray<ReporterLogLevel>>;
 
 // @public
 export type Result<T> = Success<T> | Failure<T>;

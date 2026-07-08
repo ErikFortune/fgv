@@ -202,7 +202,85 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ---
 
+### `ai-assist-tool-annotations` 🟢
+
+**Status:** 🟢 ready to commission — precursor to `agent-memory-l2-tools` (L2's write tools consume it). Fully spiked 2026-07-07 (ai-assist tool surface + MCP adapter). Consumer: PersonAIlity (mediated agent writes).
+**Branch base:** `release` HEAD.
+**Package surface:** `@fgv/ts-extras/ai-assist` (`model.ts`, `clientToolContinuationBuilder.ts`, `index.ts`) + `@fgv/ts-extras-mcp` (`sdk.ts`, `operations.ts`, `model.ts`, `adapter.ts`).
+**Brief:** `.ai/tasks/active/ai-assist-tool-annotations/brief.md`.
+
+**Mission.** Add client-tool **behavior annotations** + a **before-execute gate hook** to the ai-assist client-tool surface. Three components: (1) `IAiToolAnnotations` + `IAiClientToolConfig.annotations?` (MCP-native names; host-advisory-only — no provider wire slot, so serialization is unaffected); (2) thread MCP `Tool.annotations` → the field through `adaptMcpTools` (validated, per the untrusted-server warning — currently dropped at 3 layers); (3) `onBeforeToolExecute?` gate on `executeClientToolTurn` (deny → synthesized denial tool-result, turn continues — reuses the tested failure→continuation path). Additive on both active surfaces. **Full design (incl. deny-semantics, locked) is in the brief** — built up front because it's well-understood, low-medium effort, and ships *with* the write tools it protects (avoiding the shovel-ready-then-forgotten carrying cost).
+
+---
+
+### `agent-memory-temporal` 🟡
+
+**Status:** 🟡 drafted, **consumer-validated** (PersonAIlity 2026-07-07, PR #521), not commissioned — gated on their epistemics/contradiction-handling work (after L2). Keystone of the three (L3 hard-depends on it).
+**Branch base:** `release` HEAD; reference `.ai/tasks/completed/2026-06/ts-agent-memory/` (README/exploration/design).
+**Package surface:** `@fgv/ts-agent-memory` (types/envelope, identityCodec, store/fileTreeMemoryStore, writePolicy, retrieve).
+**Brief:** `.ai/tasks/active/agent-memory-temporal/brief.md`.
+
+**Mission.** Build the temporal versioned write path + temporal retrievers. All seams ship in v1 but are stubbed to fail loudly (three `if (addr.isVersioned) return fail(...)` fail-stops; every retriever `supportsTemporalQuery:false`; no `temporal-versioned` policy). Adds a versioned codec, the invalidate-don't-delete policy, versioned store branches, and `AsOfRetriever`/`CurrentValidRetriever`/`HistoryRetriever`. **OQ-11 → subtree-per-entity (consumer-backed).** Consumer-pinned: merge-patch `put()` on a temporal-versioned kind = new version + `invalid_at` on prior (composes with versioning); flat/`isVersioned:false` guarantee for Knowledge/LTM/MTM preserved (zero impact until a kind opts in). Converters already round-trip `temporal?`/`valid_at`/`invalid_at` — no serialization work.
+
+---
+
+### `agent-memory-l2-tools` 🟡
+
+**Status:** 🟡 drafted, **consumer-validated** (PersonAIlity 2026-07-07, PR #521), not commissioned — **nearest-term consumer**; recommended first or in parallel with temporal. **Depends on `ai-assist-tool-annotations`** (annotations field + gate hook); independent of temporal/L3.
+**Branch base:** `release` HEAD; reference the ts-agent-memory completion bundle + `@fgv/ts-extras-mcp` `adapter.ts` (the `IAiClientTool` construction idiom).
+**Package surface:** new `@fgv/ts-agent-memory/tools` packlet; consumes `@fgv/ts-extras` ai-assist `IAiClientTool` + `@fgv/ts-json-base` `JsonSchema`.
+**Brief:** `.ai/tasks/active/agent-memory-l2-tools/brief.md`.
+
+**Mission.** Expose memory ops as an `IAiClientTool` suite via `createMemoryTools({ store, retriever, registry, tools?, kinds? })`, `JsonSchema.object` schemas (MCP dual-path via `JsonSchema.fromJson`). **Consumer-locked:** scope isolation is constructor-fixed via a **pre-scoped store** — no tool arg carries `scope` (adoption make-or-break); **per-tool `tools?` subset** (default = read-only `search`+`context`; writes opt in) replaces the coarse `readOnly?`; `memory_search` results carry a host-suppliable **mnemonic handle** (`handleFor?`). Still open: tool-boundary safety (admit-reject surfacing, behavior hints); tool count beyond the five.
+
+---
+
+### `agent-memory-l3-ingest` 🟡
+
+**Status:** 🟡 drafted, **consumer-validated** (PersonAIlity 2026-07-07, PR #521), not commissioned — furthest-out for them. **🔴 hard-blocked on `agent-memory-temporal`** for the `contradicts`→invalidate interlock; ship interlock-deferred only if commissioned earlier. Largest of the three.
+**Branch base:** `release` HEAD (with temporal shipped for the full interlock); reference the ts-agent-memory completion bundle (design §9-§10).
+**Package surface:** new `@fgv/ts-agent-memory/ingest` packlet; reads `retrieve`+`vector`, writes via `store`.
+**Brief:** `.ai/tasks/active/agent-memory-l3-ingest/brief.md`.
+
+**Mission.** The fgv-side ingest orchestrator — host brings classify/extract/relate judgment; fgv owns the typed validation boundary, dedup (exact + new similarity layer), write-time edge/cycle safety, provenance stamping, and the `contradicts`→temporal interlock. Green-field packlet composing shipped seams. **Consumer-locked:** OQ-10 → **staged host interfaces** (consumer plugs its own classifiers/extractors); OQ-13 → `IEntityResolver` **optional** (deterministic-key hosts skip it); **single-item incremental ingest first-class** (per-turn streaming, not batch-only); provenance fields land **additive/optional** (no migration of persisted `mtm`/`ltm`).
+
+**Recommended sequencing across the three:** **L2 first or in parallel with temporal** (consumer preference — L2 is independent and changes what agents can do soonest), then temporal, then L3. L3 always last — largest, hard-blocked on temporal, reads vector/retrieve.
+
+---
+
 ## Completed workstreams
+
+### `ai-assist-model-tiers` ✅
+
+**Status:** ✅ shipped to integration branch `ai-assist-model-tiers` (B1–B5 via PRs #511–#515; design Phase A + revision ride the branch); **live-verified** (keyed canary: all three providers LIVE across every tier); promotion PR `hmw86u` → `release` open. Constituent commits squash to `release` at cluster-close.
+**Branch base:** `release` (integration branch `claude/ai-assist-model-tiers-hmw86u`)
+**Package surface:** `@fgv/ts-extras/ai-assist` (`model.ts`, `registry.ts`, `apiClient.ts`, `streamingClient.ts`, streaming adapters, `converters.ts`, README) + `samples/testbed` (per-provider tier canaries) + `.ai/instructions/LIBRARY_CAPABILITIES.md`, `docs/FUTURE.md`
+
+**Mission.** A cross-provider **quality-tier axis** (`base`/`advanced`/`frontier`) on the ai-assist `ModelSpec` with cascade fallback, built on the shipped alias layer; adopt aliases for OpenAI + Anthropic (Gemini already aliased); advance stale/EOL OpenAI defaults.
+
+**What shipped.** `ModelSpecKey = base|advanced|frontier|image|embedding`; a `tier?` request param; `TIER_FALLBACK` cascade (`frontier→advanced→base`). **Composition, not competition:** thinking/tools are orthogonal params/capabilities, never model selectors (the `thinking`/`tools` keys were removed) — every base model is thinking-capable so `tier + thinking` composes freely. OpenAI + Anthropic alias adoption + tiered defaults; DALL·E retirement; `claude-sonnet-5` thinking-detection fix. Plus two completion-path bugs the **live canary** caught (the "100% mocked coverage on an unexercised wire" failure mode): unconditional default `temperature` (now sent only when explicit) and OpenAI frontier `gpt-5.5-pro` being Responses-API-only (frontier now cascades to advanced=`gpt-5.5`).
+
+**Outcome.** Breaking on the active/alpha surface (tier keys added, `thinking`/`tools`/DALL·E removed). Build + lint + 100% coverage green; `none`/`minor` change files. **Live-verified** end-to-end on the real wire. **Locked decisions:** 3 tiers + cascade; composition (thinking orthogonal); OpenAI base=gpt-5.4-mini, Anthropic base=claude-sonnet-5; Anthropic/Gemini/OpenAI frontier cascade to advanced.
+
+**Fast-follow:** OpenAI frontier via Responses routing — ✅ shipped via the `ai-assist-openai-frontier-responses` stream (`responsesOnlyModelPrefixes` marker + `isResponsesOnlyModel`; `frontier: '@openai:pro'` restored, routed on completion + streaming).
+
+**Artifacts:** [`.ai/tasks/completed/2026-07/ai-assist-model-tiers/`](../.ai/tasks/completed/2026-07/ai-assist-model-tiers/) (brief, design, README).
+
+### `ai-assist-model-aliases` ✅
+
+**Status:** ✅ shipped to integration branch `ai-assist-model-aliases` (Tiers 1–3 via PRs #505–#507 + folded-in Gemini `thoughtSignature` fix; design Phase A #503 rides the branch); promotion PR #508 → `release` (CI build green; live Gemini canaries green). Constituent commits squash to `release` at cluster-close.
+**Branch base:** `release` (integration branch `ai-assist-model-aliases`)
+**Package surface:** `@fgv/ts-extras/ai-assist` (`registry.ts`, `model.ts`, new model-alias module + tests, `streamingAdapters/gemini.ts`, `streamingAdapters/clientToolContinuationBuilder.ts`, packlet README) + `samples/testbed` (canary scenario) + `.ai/instructions/LIBRARY_CAPABILITIES.md`, `docs/TECH_DEBT.md`
+
+**Mission.** An fgv-owned **canonical model-alias layer** (`@<provider>:<role>` sigil) so `defaultModel` and consumers reference stable aliases that resolve centrally to the current concrete provider model — ending the recurring breakage where the registry pins dated snapshots providers later retire. Forcing function: Google retiring the entire Gemini 2.5 line + Imagen (Oct 2026).
+
+**What shipped.** Generic alias core (`MODEL_ALIAS_SIGIL`, `IModelAliasMap`, `resolveModelAlias`/`resolveProviderModel`) resolved at the completion/image/embedding/tool chokepoints (downstream of `ModelSpecKey`, upstream of `idPattern`); raw IDs still work (back-compat). Gemini migrated to alias-based `defaultModel` (incl. `thinking: '@google-gemini:pro'`), Imagen capability removed, `*ModelNames` bumped to 3.x, `/^gemini-3/` idPattern added. Plus a folded-in Gemini wire-fidelity fix: round-trip the part-level `thoughtSignature` on thinking-enabled client-tool continuations (pre-existing latent 400, surfaced by the live canary).
+
+**Outcome.** Additive (Imagen removal is the one break, on the active surface). Build + lint + 100% coverage green; `none` change file. Live Gemini canaries green: `@google-gemini:flash -> gemini-3.5-flash` (client-tools + continuation) and `@google-gemini:embedding -> gemini-embedding-001` (embedding search). **Locked decisions:** thinking alias = Pro; Imagen removed (not aliased); aliases live on the descriptor.
+
+**Fast-follows (deferred):** OpenAI alias adoption (`@openai:reasoning -> gpt-5.1`); retire residual manual axes (idPattern + `*ModelNames`) so a line-bump is a pure map edit (TECH_DEBT P3).
+
+**Artifacts:** [`.ai/tasks/completed/2026-06/ai-assist-model-aliases/`](../.ai/tasks/completed/2026-06/ai-assist-model-aliases/) (brief, design, state, thoughtSignature-fix brief, README).
 
 ### `ts-agent-memory` ✅
 

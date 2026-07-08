@@ -14,12 +14,18 @@ import {
   IMemoryEnvelope,
   IMemoryRecord,
   IProvenance,
+  ITemporalIdentityCodec,
   IWritePolicy,
   Kind,
   KnowledgeLwwPolicy,
   MemoryId,
   MemoryScopeKey,
-  Tag
+  Tag,
+  isTemporalIdentityCodec,
+  isTemporalRecord,
+  isVersionCurrent,
+  selectCurrentVersion,
+  selectVersionAsOf
 } from '../types';
 import { IBodyConverterRegistry as IRegistry, parseMemoryFile, serializeMemoryFile } from '../converters';
 import { IIndexedMemoryRecord, IMemoryIndex, MemoryIndex } from '../index';
@@ -47,8 +53,9 @@ export interface IMemoryStoreListFilter {
   /** Restrict to records carrying this tag (exact match). */
   readonly tag?: Tag;
   /**
-   * For temporal kinds: return only records valid at this epoch ms. No-op in
-   * B1 (no temporal kinds wired).
+   * For temporal (versioned) kinds: collapse each entity to the single version
+   * valid at this epoch ms. Non-temporal records are timeless and pass through
+   * unchanged. Absent = no temporal projection (every version is returned).
    */
   readonly asOf?: number;
 }
@@ -61,7 +68,9 @@ export interface IMemoryStore {
   /**
    * Keyed read by entity id. Resolves `entityId` to a storage address via the
    * registered {@link IIdentityCodec} for `kind`. Returns `undefined` when no
-   * record exists.
+   * record exists. For a versioned (temporal) kind this returns the current
+   * version, resolved from the derived in-memory index (not re-read/re-verified
+   * from disk per call — the index is kept in sync with every write).
    */
   get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
 
@@ -86,7 +95,10 @@ export interface IMemoryStore {
 
   /**
    * Delete a record by `(kind, entityId)`. Non-temporal kinds physically delete
-   * the file. Returns the {@link MemoryId} of the deleted record.
+   * the file and return the deleted record's {@link MemoryId}. Temporal
+   * (versioned) kinds SOFT-delete: the current version is invalidated
+   * (`invalid_at` set), history is retained, and the invalidated version's
+   * {@link MemoryId} is returned.
    */
   delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
 }
@@ -165,16 +177,6 @@ interface IPutOutcome {
   readonly evicted: ReadonlyArray<MemoryId>;
 }
 
-/**
- * The resolved storage address + content hash for a put, produced by the
- * synchronous prefix of `_putLocked` and handed to the async write tail.
- */
-interface IResolvedWriteAddress {
-  readonly scope: MemoryScopeKey;
-  readonly idStem: string;
-  readonly hash: string;
-}
-
 interface IInternalParams {
   readonly root: FileTree.IMutableFileTreeDirectoryItem;
   readonly registry: IRegistry;
@@ -198,9 +200,11 @@ interface IInternalParams {
  * write-lock so the index and the on-disk files never interleave.
  *
  * @remarks
- * B1 supports flat (non-versioned) layout only and string (markdown) bodies.
- * A codec reporting `isVersioned: true`, or a non-string body, fails loudly —
- * the versioned/temporal write path is a fast-follow.
+ * Bodies are string (markdown). Both layouts are supported: flat
+ * (one-file-per-entity, non-versioned) and versioned (subtree-per-entity,
+ * invalidate-don't-delete), dispatched per kind by the codec's `isVersioned`
+ * flag. A kind is flat with zero behavioral impact unless it opts into a
+ * {@link ITemporalIdentityCodec}.
  * @public
  */
 export class FileTreeMemoryStore implements IMemoryStore {
@@ -302,7 +306,16 @@ export class FileTreeMemoryStore implements IMemoryStore {
     const result: Result<IMemoryRecord<unknown> | undefined> = this._codecFor(kind).onSuccess((codec) =>
       codec.encode(entityId).onSuccess((addr) => {
         if (addr.isVersioned) {
-          return fail(`memory get '${entityId}': versioned/temporal layout not yet supported`);
+          if (!isTemporalIdentityCodec(codec)) {
+            return fail(
+              `memory get '${entityId}': codec for versioned kind '${kind}' does not implement the temporal codec interface`
+            );
+          }
+          // Versioned keyed read resolves the CURRENT version (highest-seq
+          // version whose `invalid_at` is null/absent) from the entity subtree,
+          // read off the derived index. `asOf` resolution is via `list({ asOf })`
+          // and the temporal retrievers.
+          return succeed(this._readVersionedCurrent(addr.scope));
         }
         return this._readRecord(addr.scope, addr.idStem);
       })
@@ -340,7 +353,48 @@ export class FileTreeMemoryStore implements IMemoryStore {
         return true;
       })
       .map((entry) => entry.record);
-    return succeed(matches);
+    if (filter?.asOf === undefined) {
+      // No temporal projection requested: byte-identical to the pre-temporal
+      // behavior (the flat-path guarantee — every version is returned).
+      return succeed(matches);
+    }
+    return succeed(FileTreeMemoryStore._projectAsOf(matches, filter.asOf));
+  }
+
+  /**
+   * Collapse temporal records to the single version valid at `asOf` per entity;
+   * non-temporal records are timeless and pass through unchanged (valid-time
+   * `asOf` applies only to versioned kinds; transaction-time / full bi-temporal
+   * filtering is deferred — OQ-9). An entity with no version valid at `asOf`
+   * contributes nothing.
+   */
+  private static _projectAsOf(
+    records: ReadonlyArray<IMemoryRecord<unknown>>,
+    asOf: number
+  ): ReadonlyArray<IMemoryRecord<unknown>> {
+    const passthrough: IMemoryRecord<unknown>[] = [];
+    const groups: Map<string, IMemoryRecord<unknown>[]> = new Map<string, IMemoryRecord<unknown>[]>();
+    for (const record of records) {
+      if (!isTemporalRecord(record)) {
+        passthrough.push(record);
+        continue;
+      }
+      const key: string = `${record.envelope.kind}\0${record.envelope.entityId}`;
+      const existing: IMemoryRecord<unknown>[] | undefined = groups.get(key);
+      if (existing === undefined) {
+        groups.set(key, [record]);
+      } else {
+        existing.push(record);
+      }
+    }
+    const result: IMemoryRecord<unknown>[] = [...passthrough];
+    for (const versions of groups.values()) {
+      const valid: IMemoryRecord<unknown> | undefined = selectVersionAsOf(versions, asOf);
+      if (valid !== undefined) {
+        result.push(valid);
+      }
+    }
+    return result;
   }
 
   /** {@inheritDoc IMemoryStore.put} */
@@ -479,32 +533,37 @@ export class FileTreeMemoryStore implements IMemoryStore {
       );
     }
     const body: string = record.body;
-    // Resolve the synchronous prefix (body validation → codec address → content
-    // hash) into a small descriptor, then bridge to the async write tail (which
-    // embeds on write). Keeping the sync prefix intact preserves the exact
-    // dedup/policy ordering of the original; only the embed step is new.
+    // Resolve the body converter + codec, then dispatch on layout. The flat
+    // (non-versioned) path keeps its exact dedup/policy ordering; the versioned
+    // path is a wholly separate branch so the flat path is behaviorally
+    // unchanged (the consumer adoption guarantee).
     return this._registry
       .convert(envelope.kind, body)
       .withErrorFormat((msg) => `memory put '${envelope.id}': invalid body: ${msg}`)
       .onSuccess(() => this._codecFor(envelope.kind))
-      .onSuccess(
-        (codec): Result<IResolvedWriteAddress> =>
-          codec.encode(envelope.entityId).onSuccess((addr): Result<IResolvedWriteAddress> => {
-            if (addr.isVersioned) {
-              return fail(`memory put '${envelope.entityId}': versioned/temporal layout not yet supported`);
-            }
-            if (envelope.id !== addr.idStem) {
-              return fail(
-                `memory put: envelope id '${envelope.id}' does not match codec-derived stem '${addr.idStem}'`
+      .thenOnSuccess((codec) =>
+        codec.encode(envelope.entityId).thenOnSuccess((addr) => {
+          if (addr.isVersioned) {
+            if (!isTemporalIdentityCodec(codec)) {
+              return Promise.resolve(
+                fail<IPutOutcome>(
+                  `memory put '${envelope.entityId}': codec for versioned kind '${envelope.kind}' does not implement the temporal codec interface`
+                )
               );
             }
-            return this._contentHash(envelope.kind, body, envelope.links).onSuccess((hash) =>
-              succeed({ scope: addr.scope, idStem: addr.idStem, hash })
+            return this._putVersioned(record, body, codec, addr.scope);
+          }
+          if (envelope.id !== addr.idStem) {
+            return Promise.resolve(
+              fail<IPutOutcome>(
+                `memory put: envelope id '${envelope.id}' does not match codec-derived stem '${addr.idStem}'`
+              )
             );
-          })
-      )
-      .thenOnSuccess((resolved) =>
-        this._writeResolved(record, body, resolved.scope, resolved.idStem, resolved.hash)
+          }
+          return this._contentHash(envelope.kind, body, envelope.links).thenOnSuccess((hash) =>
+            this._writeResolved(record, body, addr.scope, addr.idStem, hash)
+          );
+        })
       );
   }
 
@@ -533,14 +592,32 @@ export class FileTreeMemoryStore implements IMemoryStore {
     // (Tags / provenance are metadata and are NOT part of the hash; see
     // design-lock §2.5.)
     if (dedupScope === 'content') {
-      const duplicate: IMemoryRecord<unknown> | undefined = this._findByContentHash(scope, hash);
+      // Cross-id content collapse: an identical { kind, body, links } triple under
+      // a DIFFERENT id is a no-op (knowledge family). A same-id match is excluded
+      // here and falls through to the LWW path below so a metadata-only revision
+      // (tags / provenance — outside the content hash but inside the policy's
+      // mutableFields) actually applies. Content-dedup must never shadow LWW for
+      // the same entity.
+      const duplicate: IMemoryRecord<unknown> | undefined = this._findByContentHash(
+        scope,
+        hash,
+        record.envelope.id
+      );
       if (duplicate !== undefined) {
         return succeed({ record: duplicate, evicted: [] });
       }
     }
     return this._readRecord(scope, idStem).thenOnSuccess((existing) => {
-      if (dedupScope === 'entity' && existing !== undefined && existing.envelope.contentHash === hash) {
-        // Entity-scoped dedup: an identical re-put of the same entity is a no-op.
+      // Same-id re-put is a no-op ONLY when the content hash matches AND the
+      // mutable metadata is also unchanged. The content hash covers
+      // { kind, body, links }; a matching hash with revised tags/provenance is a
+      // real update that must reach applyUpdate, not be swallowed as a duplicate
+      // (both dedup scopes).
+      if (
+        existing !== undefined &&
+        existing.envelope.contentHash === hash &&
+        this._isMutableMetadataUnchanged(existing, record)
+      ) {
         return Promise.resolve(succeed({ record: existing, evicted: [] }));
       }
       // The admission cohort is the set of records the policy's cap applies to:
@@ -774,29 +851,291 @@ export class FileTreeMemoryStore implements IMemoryStore {
   }
 
   private async _deleteLocked(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>> {
-    return this._codecFor(kind)
-      .onSuccess((codec) => codec.encode(entityId))
-      .thenOnSuccess((addr) => {
+    return this._codecFor(kind).thenOnSuccess((codec) =>
+      codec.encode(entityId).thenOnSuccess((addr) => {
         if (addr.isVersioned) {
-          return Promise.resolve(
-            fail<MemoryId>(`memory delete '${entityId}': versioned/temporal layout not yet supported`)
+          if (!isTemporalIdentityCodec(codec)) {
+            return Promise.resolve(
+              fail<MemoryId>(
+                `memory delete '${entityId}': codec for versioned kind '${kind}' does not implement the temporal codec interface`
+              )
+            );
+          }
+          return this._deleteVersioned(entityId, addr.scope);
+        }
+        return this._deleteFlat(entityId, addr.scope, addr.idStem);
+      })
+    );
+  }
+
+  /**
+   * Flat (non-versioned) delete: physically remove the record file + index
+   * entry, then prune the vector best-effort. Structurally unchanged from the
+   * pre-temporal delete path.
+   */
+  private async _deleteFlat(
+    entityId: EntityId,
+    scope: MemoryScopeKey,
+    idStem: string
+  ): Promise<Result<MemoryId>> {
+    return this._readRecord(scope, idStem).thenOnSuccess((existing) => {
+      if (existing === undefined) {
+        return Promise.resolve(fail<MemoryId>(`memory delete '${entityId}': no record found`));
+      }
+      // Delete the record file + index entry (authoritative), then prune the
+      // vector best-effort: a committed delete must not fail because the
+      // derived index could not be pruned.
+      return this._deleteFile(scope, idStem)
+        .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
+        .thenOnSuccess(async () => {
+          await this._removeVectorBestEffort(existing.envelope.id);
+          return succeed(existing.envelope.id);
+        });
+    });
+  }
+
+  /**
+   * Resolve the current version of a temporal entity from the derived index: the
+   * highest-`seq` version under the entity subtree `scope` whose `invalid_at` is
+   * null/absent. `undefined` when the entity has no current version (never
+   * written, or fully invalidated / soft-deleted).
+   */
+  private _readVersionedCurrent(scope: MemoryScopeKey): IMemoryRecord<unknown> | undefined {
+    return selectCurrentVersion(this._versionsForEntity(scope));
+  }
+
+  /**
+   * Every persisted version of the entity whose subtree is `scope`. All version
+   * files for one entity live under exactly that scope (which encodes the
+   * entityId), so a scope filter over the index isolates one entity's versions.
+   */
+  private _versionsForEntity(scope: MemoryScopeKey): ReadonlyArray<IMemoryRecord<unknown>> {
+    return this._index
+      .entries()
+      .filter((entry) => entry.scope === scope)
+      .map((entry) => entry.record);
+  }
+
+  /**
+   * Versioned write (invalidate-don't-delete). Builds the new version's content
+   * (a first version from the incoming record, or a merge of the incoming patch
+   * over the current version), persists it as a NEW version file, then sets
+   * `invalid_at` on the prior current version.
+   *
+   * Durability order: the new version is persisted FIRST. It carries the highest
+   * `seq`, so a crash before the prior-version invalidation completes still
+   * resolves the new version as current (`selectCurrentVersion` breaks a
+   * two-current tie by highest `seq`), and `asOf` reads stay correct because each
+   * version's `valid_at` lower-bounds its interval.
+   */
+  private async _putVersioned(
+    record: IMemoryRecord<unknown>,
+    body: string,
+    codec: ITemporalIdentityCodec,
+    scope: MemoryScopeKey
+  ): Promise<Result<IPutOutcome>> {
+    const envelope: IMemoryEnvelope = record.envelope;
+    const entityId: EntityId = envelope.entityId;
+    const kind: Kind = envelope.kind;
+    // Snapshot the entity's versions BEFORE the write. `priorCurrents` is every
+    // still-current version at snapshot time — normally one, but two-or-more if a
+    // prior invalidation partially failed; invalidating all of them lets the write
+    // self-heal a stuck state (P2-7).
+    const versions: ReadonlyArray<IMemoryRecord<unknown>> = this._versionsForEntity(scope);
+    const priorCurrents: ReadonlyArray<IMemoryRecord<unknown>> = versions.filter(isVersionCurrent);
+    const current: IMemoryRecord<unknown> | undefined = selectCurrentVersion(versions);
+    const policy: IWritePolicy = this._policyFor(kind);
+    const dedupScope: DedupScope = policy.dedupScope ?? DEFAULT_DEDUP_SCOPE;
+    return this._contentHash(kind, body, envelope.links).thenOnSuccess((hash) => {
+      // Entity-scoped dedup: a re-put is a no-op only when the CURRENT content AND
+      // its mutable metadata are unchanged (does not spawn a redundant version).
+      // A metadata-only revision (tags/provenance — declared mutable by
+      // TemporalVersionedPolicy) must NOT be swallowed here: it mints a new
+      // version via the applyUpdate merge in `_buildVersionedRecord`, mirroring
+      // the flat path. Content-scoped dedup is not a versioning concern, so only
+      // the entity granularity is honored here.
+      if (
+        dedupScope === 'entity' &&
+        current !== undefined &&
+        current.envelope.contentHash === hash &&
+        this._isMutableMetadataUnchanged(current, record)
+      ) {
+        return Promise.resolve(succeed<IPutOutcome>({ record: current, evicted: [] }));
+      }
+      // On the versioned path the admission cohort is the entity's ENTIRE version
+      // history (no target id to exclude — the new version does not exist yet),
+      // which differs from the flat path's "cohort excluding target id" shape.
+      return policy.admit(record, versions).thenOnSuccess((decision) => {
+        if (decision.decision === 'reject') {
+          return Promise.resolve(fail<IPutOutcome>(`memory put: rejected by policy: ${decision.reason}`));
+        }
+        // No culling on the versioned path — history is retained (invalidate-don't-delete).
+        const now: number = this._clock();
+        const seq: number = ++this._seq;
+        // World-truth start of the new version. Each prior current version's
+        // world-truth interval CLOSES at this same instant (not at `now`) so a
+        // backdated/future-dated `valid_at` leaves no gap or overlap on the
+        // valid-time axis.
+        const validAt: number = envelope.temporal?.valid_at ?? now;
+        return codec
+          .encodeVersion(entityId, seq)
+          .withErrorFormat((msg) => `memory put '${entityId}': ${msg}`)
+          .thenOnSuccess((versionStem) =>
+            this._buildVersionedRecord(record, body, current, policy, hash, versionStem, validAt, now, seq)
+              .thenOnSuccess((built) => this._embedOnWrite(built))
+              .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, versionStem))
+              .onSuccess((persisted) =>
+                this._invalidateCurrents(scope, priorCurrents, validAt, now).onSuccess(() =>
+                  succeed(persisted)
+                )
+              )
+              .onSuccess((persisted) => succeed({ record: persisted, evicted: [] }))
+          );
+      });
+    });
+  }
+
+  /**
+   * Invalidate a set of still-current versions (close each world-truth interval at
+   * `invalidAt`; stamp transaction-time `updated` = `now`). Chained so a mid-list
+   * failure propagates. Invalidating every prior current — not just the
+   * highest-`seq` pick — self-heals a state where a previous write's invalidation
+   * only partially completed (P2-7).
+   */
+  private _invalidateCurrents(
+    scope: MemoryScopeKey,
+    currents: ReadonlyArray<IMemoryRecord<unknown>>,
+    invalidAt: number,
+    now: number
+  ): Result<true> {
+    return currents.reduce<Result<true>>(
+      (acc, version) =>
+        acc.onSuccess(() =>
+          this._invalidateVersion(scope, version, invalidAt, now).onSuccess(() => succeed(true))
+        ),
+      succeed(true)
+    );
+  }
+
+  /**
+   * Build the new version to persist. A first version takes the incoming
+   * content verbatim (its dedup `hash` is reused); a subsequent version projects
+   * the incoming record's mutable fields into a merge-patch and lets the policy
+   * merge them over the CURRENT version (the merge-patch-under-versioning
+   * contract), recomputing the content hash from the policy's output. Each
+   * version is its own record with its own transaction time (`created` = `now`)
+   * and a store-minted `id` = the version stem, so `id === filename stem` holds.
+   */
+  private _buildVersionedRecord(
+    incoming: IMemoryRecord<unknown>,
+    body: string,
+    current: IMemoryRecord<unknown> | undefined,
+    policy: IWritePolicy,
+    // Reused only for the first-version branch (its content is taken verbatim); a
+    // subsequent version recomputes its hash from the merge-patched content.
+    firstVersionHash: string,
+    versionStem: string,
+    validAt: number,
+    now: number,
+    seq: number
+  ): Result<IMemoryRecord<string>> {
+    const mintedId: MemoryId = versionStem as MemoryId;
+    if (current === undefined) {
+      const envelope: IMemoryEnvelope = {
+        ...incoming.envelope,
+        id: mintedId,
+        entityId: incoming.envelope.entityId,
+        created: now,
+        updated: now,
+        seq,
+        contentHash: firstVersionHash,
+        temporal: { valid_at: validAt }
+      };
+      return succeed({ envelope, body });
+    }
+    const patch: Record<string, unknown> = this._projectMutablePatch(incoming, policy.mutableFields);
+    return policy
+      .applyUpdate(current, patch)
+      .withErrorFormat((msg) => `memory put '${incoming.envelope.entityId}': update failed: ${msg}`)
+      .onSuccess((updated) => {
+        if (typeof updated.body !== 'string') {
+          return fail(
+            `memory put '${
+              incoming.envelope.entityId
+            }': policy returned a non-string body (${typeof updated.body})`
           );
         }
-        return this._readRecord(addr.scope, addr.idStem).thenOnSuccess((existing) => {
-          if (existing === undefined) {
-            return Promise.resolve(fail<MemoryId>(`memory delete '${entityId}': no record found`));
+        const finalBody: string = updated.body;
+        return this._contentHash(updated.envelope.kind, finalBody, updated.envelope.links).onSuccess(
+          (finalHash) => {
+            const envelope: IMemoryEnvelope = {
+              ...updated.envelope,
+              id: mintedId,
+              entityId: incoming.envelope.entityId,
+              created: now,
+              updated: now,
+              seq,
+              contentHash: finalHash,
+              temporal: { valid_at: validAt }
+            };
+            return succeed({ envelope, body: finalBody });
           }
-          // Delete the record file + index entry (authoritative), then prune the
-          // vector best-effort: a committed delete must not fail because the
-          // derived index could not be pruned.
-          return this._deleteFile(addr.scope, addr.idStem)
-            .onSuccess(() => this._index.patch('delete', { scope: addr.scope, record: existing }))
-            .thenOnSuccess(async () => {
-              await this._removeVectorBestEffort(existing.envelope.id);
-              return succeed(existing.envelope.id);
-            });
-        });
+        );
       });
+  }
+
+  /**
+   * Set `invalid_at` on a prior current version (invalidate-don't-delete) and
+   * rewrite its file + index entry. The content hash is unchanged — `invalid_at`
+   * is temporal metadata, not part of `{ kind, body, links }` — so the version's
+   * identity is stable.
+   */
+  private _invalidateVersion(
+    scope: MemoryScopeKey,
+    version: IMemoryRecord<unknown>,
+    invalidAt: number,
+    now: number
+  ): Result<IMemoryRecord<unknown>> {
+    /* c8 ignore start -- defensive: every persisted version carries a string body (only string bodies are written) */
+    if (typeof version.body !== 'string') {
+      return fail(`memory put: cannot invalidate version '${version.envelope.id}': non-string body`);
+    }
+    /* c8 ignore stop */
+    // `invalid_at` is the WORLD-TRUTH close of the interval (the superseding version's
+    // `valid_at`, or the delete instant); `updated` is the transaction-time stamp.
+    const invalidated: IMemoryRecord<string> = {
+      envelope: {
+        ...version.envelope,
+        updated: now,
+        temporal: { ...version.envelope.temporal, invalid_at: invalidAt }
+      },
+      body: version.body
+    };
+    return this._persist(invalidated, scope, version.envelope.id);
+  }
+
+  /**
+   * Versioned delete: SOFT delete (invalidate-don't-delete). Sets `invalid_at` on
+   * the current version, leaving the entity's history intact and the entity with
+   * no current version. Returns the invalidated version's {@link MemoryId}. Fails
+   * with "no record found" when there is no current version — matching the flat
+   * delete's not-found semantics. History is retained deliberately: temporal
+   * kinds exist to preserve the audit trail (and the L3 `contradicts` interlock
+   * builds on it), so a hard delete would defeat the purpose.
+   */
+  private async _deleteVersioned(entityId: EntityId, scope: MemoryScopeKey): Promise<Result<MemoryId>> {
+    const versions: ReadonlyArray<IMemoryRecord<unknown>> = this._versionsForEntity(scope);
+    const currents: ReadonlyArray<IMemoryRecord<unknown>> = versions.filter(isVersionCurrent);
+    const current: IMemoryRecord<unknown> | undefined = selectCurrentVersion(versions);
+    if (current === undefined) {
+      return fail(`memory delete '${entityId}': no record found`);
+    }
+    // A delete closes the world-truth interval at the delete instant (`now` for both
+    // the transaction stamp and the `invalid_at` boundary). Every still-current
+    // version is invalidated (self-heals a stuck two-current state — P2-7); the
+    // highest-`seq` current's id is returned.
+    const now: number = this._clock();
+    return this._invalidateCurrents(scope, currents, now, now).onSuccess(() => succeed(current.envelope.id));
   }
 
   /** Evict (physically delete) a single record file by id, patching the index. */
@@ -852,12 +1191,50 @@ export class FileTreeMemoryStore implements IMemoryStore {
       .map((entry) => entry.record);
   }
 
-  /** Find a record in `scope` whose `contentHash` equals `hash`, if any. */
-  private _findByContentHash(scope: MemoryScopeKey, hash: string): IMemoryRecord<unknown> | undefined {
+  /**
+   * Find a record in `scope` whose `contentHash` equals `hash`, if any,
+   * optionally excluding a specific id. `excludeId` lets the content-scoped
+   * dedup skip the same-id record so it does not shadow the LWW update path.
+   */
+  private _findByContentHash(
+    scope: MemoryScopeKey,
+    hash: string,
+    excludeId?: string
+  ): IMemoryRecord<unknown> | undefined {
     const match: IIndexedMemoryRecord | undefined = this._index
       .entries()
-      .find((entry) => entry.scope === scope && entry.record.envelope.contentHash === hash);
+      .find(
+        (entry) =>
+          entry.scope === scope &&
+          entry.record.envelope.contentHash === hash &&
+          entry.record.envelope.id !== excludeId
+      );
     return match?.record;
+  }
+
+  /**
+   * True when `incoming`'s caller-authored mutable metadata (`tags` / `provenance`)
+   * canonically equals `existing`'s. `body` and `links` are covered by the content
+   * hash; `embeddingRef` is store-derived (not caller metadata) and is deliberately
+   * excluded so a same-content re-put is not treated as changed merely because the
+   * store already stamped an embedding. Used to keep an identical re-put a no-op
+   * without swallowing a genuine metadata revision.
+   *
+   * Canonicalization never fails for a validated record (`tags`/`provenance` are
+   * always plain JSON); a failure is defaulted to a non-matching sentinel so the
+   * write flows to `applyUpdate` (which re-validates) rather than silently
+   * no-op-ing on an un-canonicalizable value.
+   */
+  private _isMutableMetadataUnchanged(
+    existing: IMemoryRecord<unknown>,
+    incoming: IMemoryRecord<unknown>
+  ): boolean {
+    const key = (record: IMemoryRecord<unknown>): string =>
+      this._hasher
+        .canonicalize({ tags: record.envelope.tags, provenance: record.envelope.provenance })
+        .orDefault('');
+    const existingKey: string = key(existing);
+    return existingKey !== '' && existingKey === key(incoming);
   }
 
   private _contentHash(kind: Kind, body: string, links: IMemoryEnvelope['links']): Result<string> {
@@ -902,7 +1279,15 @@ export class FileTreeMemoryStore implements IMemoryStore {
     });
   }
 
-  /** Enforce `envelope.id === filename stem` and the codec round-trip on load. */
+  /**
+   * Enforce `envelope.id === filename stem`, the codec round-trip, AND that the
+   * envelope's own `entityId` agrees with the id decoded from the subtree scope.
+   * The round-trip only validates (scope, stem) consistency; the codec derives
+   * `entityId` from the scope path and never reads the envelope's `entityId`
+   * field, so a tampered/corrupt file whose frontmatter declares a foreign
+   * `entityId` would otherwise load undetected — and `entityId` is trusted
+   * verbatim downstream (e.g. merge-into re-addressing). Cross-check it here.
+   */
   private _verifyLoaded(
     scope: MemoryScopeKey,
     file: FileTree.IFileTreeFileItem,
@@ -914,9 +1299,18 @@ export class FileTreeMemoryStore implements IMemoryStore {
       );
     }
     return this._codecFor(record.envelope.kind)
-      .onSuccess((codec) => codec.verifyRoundTrip(scope, file.baseName))
+      .onSuccess((codec) =>
+        codec.verifyRoundTrip(scope, file.baseName).onSuccess(() => codec.decode(scope, file.baseName))
+      )
       .withErrorFormat((msg) => `memory file '${file.absolutePath}': ${msg}`)
-      .onSuccess(() => succeed(record));
+      .onSuccess((decodedEntityId) => {
+        if (decodedEntityId !== record.envelope.entityId) {
+          return fail(
+            `memory file '${file.absolutePath}': envelope entityId '${record.envelope.entityId}' does not match scope-derived entityId '${decodedEntityId}'`
+          );
+        }
+        return succeed(record);
+      });
   }
 
   /**

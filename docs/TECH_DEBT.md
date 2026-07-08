@@ -116,6 +116,29 @@ opportunistically when the right surface area is touched.
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `ts-agent-memory` L2 `createMemoryTools` duplicates the store's codec wiring instead of delegating.**
+  `createMemoryTools({ codecs?, defaultCodec? })` (`libraries/ts-agent-memory/src/packlets/tools/memoryTools.ts`) accepts the per-kind identity codecs a second time, in addition to `FileTreeMemoryStore.create({ codecs })`. `memory_write` needs them because `IMemoryStore.put` (`fileTreeMemoryStore.ts:496-502`) validates `envelope.id === codec-derived idStem` and does not derive/stamp the id itself — so a caller building a new `IMemoryRecord` must compute the same `idStem` up front, which requires the same codec the store was constructed with. The testbed scenario passes the same `codecs` map to both constructors, illustrating the drift risk: a host that re-wires the store's codecs but forgets the mirrored `createMemoryTools` config gets a confusing "envelope id does not match codec-derived stem" failure at `put()` time. Scope isolation is NOT compromised (codec `scope` is derived deterministically from `kind`, not from agent input; a mismatch loudly rejects the write rather than writing cross-scope), so this is a DX/robustness smell, not a security gap.
+
+  **Trigger**: when the temporal write path lands (it touches the same `IMemoryStore` write surface) or the next time `createMemoryTools` is extended.
+
+  **Scope sketch**: add an additive method to `IMemoryStore` — e.g. `resolveWriteAddress(kind, entityId): Result<IIdentityCodecResult>` delegating to the store's already-configured `codecs`/`defaultCodec` — and have `memory_write` call it, dropping the `codecs?`/`defaultCodec?` params from `ICreateMemoryToolsParams`. Purely additive on the active `ts-agent-memory` surface; removes the duplicate config and the drift failure mode.
+
+  **Reference**: `agent-memory-l2-tools` stream; code-reviewer pass on the L2 diff (2026-07-07).
+
+- **[P3] ai-assist model-alias layer does NOT cover capability-detection or the typed `*ModelNames` unions — both stay manual on a provider line rotation.**
+  The `@<provider>:<role>` alias layer (`ai-assist-model-aliases` stream) fixes model *selection/default* churn: a line rotation is one edit to a descriptor's `aliases` map plus a testbed run. It deliberately does **not** touch two adjacent axes, which still need a manual bump (design §3):
+
+  1. **The capability-detection `idPattern` rules** (`libraries/ts-extras/src/packlets/ai-assist/registry.ts`, the `DEFAULT_MODEL_CAPABILITY_CONFIG.perProvider` block). These classify the concrete ids a provider's `listModels` endpoint returns (never aliases). When a new line ships (e.g. `gemini-4.x`), the rules need a matching `idPattern` sibling — without it, new ids fall to the base capability set and are mis-classified (e.g. a thinking-capable model detected as non-thinking). Tier 2 added `/^gemini-3/ → ['chat','tools','vision','thinking']`; the next line needs the same hand-edit.
+  2. **The typed `*ModelNames` unions** (`model.ts` — `GeminiThinkingModelNames`, `GeminiFlashImageModelNames`, the parallel `OpenAiThinkingModelNames`, etc.) used by the layered-options `models?` filter arrays. They enumerate concrete ids for compile-time ergonomics and must track real ids on a deprecation. Tier 2 bumped the Gemini unions to the 3.x ids by hand.
+
+  **Trigger**: any future provider line rotation (Google/OpenAI/etc.), or when a `listModels` mis-classification or a stale `models?` filter id surfaces.
+
+  **Scope sketch**: per rotation, add/adjust the provider's `idPattern` rule(s) and bump the corresponding `*ModelNames` union(s) alongside the one-line `aliases` map edit. A follow-on could additively allow aliases inside the `models?` arrays (so the unions stop enumerating concrete ids), but that is a separate design — out of the alias stream's scope.
+
+  **Not a P2**: no shipped-behavior regression; the alias layer's value is precisely bounded and the doc (`LIBRARY_CAPABILITIES.md`, packlet README) states the boundary explicitly. This entry exists so the two manual axes are not forgotten on the next rotation.
+
+  **Reference**: `ai-assist-model-aliases` design §3 + Tier 2 manual-axis bumps (`.ai/tasks/active/ai-assist-model-aliases/state.md`).
+
 - **[P3] Port `samples/ai-image-gen-sample` scenarios into `samples/testbed`.**
   The new general-purpose `samples/testbed` sample-browser (commissioned via `local-ai-exploration` cluster, 2026-05-22) is the canonical home for fgv-capability scenarios going forward. The existing `samples/ai-image-gen-sample` predates the testbed and has its own webpack pipeline + scenario shapes; its content (image generation against multiple providers, prompt-assist round-2 demo, etc.) should be ported into the testbed once the testbed shell is established.
 

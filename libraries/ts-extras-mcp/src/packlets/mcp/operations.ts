@@ -26,23 +26,66 @@
  * @packageDocumentation
  */
 
-import { type Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
+import { Converters as UtilsConverters, type Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
 import { Converters, type JsonObject } from '@fgv/ts-json-base';
 
-import { type IMcpSession, type IMcpToolCallResult, type IMcpToolDescriptor } from './model';
+import {
+  type IMcpSession,
+  type IMcpToolAnnotations,
+  type IMcpToolCallResult,
+  type IMcpToolDescriptor
+} from './model';
 import { type ISdkContentBlock, type ISdkToolDescriptor } from './sdk';
 import { McpSession } from './session';
+
+/**
+ * Validates/normalizes a raw (untrusted) MCP `Tool.annotations` blob into an
+ * {@link IMcpToolAnnotations}, keeping only the five known fields that convert cleanly.
+ *
+ * @remarks
+ * Each known field is converted independently with its own Converter, so a present-but-malformed
+ * field is dropped (never failing the whole blob) and unknown keys are ignored. Returns
+ * `undefined` when the blob is absent, not a JSON object, or normalizes to no usable known
+ * fields — so a tool with no (usable) annotations leaves {@link IMcpToolDescriptor.annotations}
+ * absent. The raw server value is never propagated verbatim (per the MCP untrusted-server
+ * warning).
+ */
+function _normalizeAnnotations(raw: unknown): IMcpToolAnnotations | undefined {
+  const objResult = Converters.jsonObject.convert(raw);
+  if (objResult.isFailure()) {
+    return undefined;
+  }
+  const obj = objResult.value;
+  const title = UtilsConverters.string.convert(obj.title).orDefault();
+  const readOnlyHint = UtilsConverters.boolean.convert(obj.readOnlyHint).orDefault();
+  const destructiveHint = UtilsConverters.boolean.convert(obj.destructiveHint).orDefault();
+  const idempotentHint = UtilsConverters.boolean.convert(obj.idempotentHint).orDefault();
+  const openWorldHint = UtilsConverters.boolean.convert(obj.openWorldHint).orDefault();
+
+  const normalized: IMcpToolAnnotations = {
+    ...(title !== undefined ? { title } : {}),
+    ...(readOnlyHint !== undefined ? { readOnlyHint } : {}),
+    ...(destructiveHint !== undefined ? { destructiveHint } : {}),
+    ...(idempotentHint !== undefined ? { idempotentHint } : {}),
+    ...(openWorldHint !== undefined ? { openWorldHint } : {})
+  };
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
 
 /**
  * Projects a single SDK tool descriptor into a public {@link IMcpToolDescriptor}. The
  * `inputSchema` field is validated as a `JsonValue`; an absent/non-JSON schema becomes `null`
  * (which {@link adaptMcpTools} then reports as un-adaptable rather than offering it to the model).
+ * The raw `annotations` blob is validated/normalized (never propagated raw) per the MCP
+ * untrusted-server warning.
  */
 function _toDescriptor(tool: ISdkToolDescriptor): IMcpToolDescriptor {
+  const annotations = _normalizeAnnotations(tool.annotations);
   return {
     name: tool.name,
     description: tool.description,
-    inputSchema: Converters.jsonValue.convert(tool.inputSchema).orDefault(null)
+    inputSchema: Converters.jsonValue.convert(tool.inputSchema).orDefault(null),
+    ...(annotations !== undefined ? { annotations } : {})
   };
 }
 

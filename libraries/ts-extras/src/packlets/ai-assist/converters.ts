@@ -33,6 +33,7 @@ import {
   type IAiAssistProviderConfig,
   type IAiAssistSettings,
   type IAiClientToolConfig,
+  type IAiToolAnnotations,
   type IAiToolEnablement,
   type IAiWebSearchToolConfig,
   type ModelSpec,
@@ -114,8 +115,21 @@ const parametersSchemaValidator: Validator<JsonSchema.ISchemaValidator<unknown>>
 );
 
 /**
+ * Converter for {@link AiAssist.IAiToolAnnotations} — the five optional host-advisory hints.
+ * @public
+ */
+export const aiToolAnnotations: Converter<IAiToolAnnotations> = Converters.strictObject<IAiToolAnnotations>({
+  title: Converters.string.optional(),
+  readOnlyHint: Converters.boolean.optional(),
+  destructiveHint: Converters.boolean.optional(),
+  idempotentHint: Converters.boolean.optional(),
+  openWorldHint: Converters.boolean.optional()
+});
+
+/**
  * Converter for {@link AiAssist.IAiClientToolConfig}. Validates the wrapper shape: `type`,
- * `name`, `description`, and the presence of a usable `parametersSchema`.
+ * `name`, `description`, the presence of a usable `parametersSchema`, and optional
+ * host-advisory `annotations`.
  * Does not inspect the inner JSON Schema structure — `JsonSchema.object(...)` already
  * guarantees the schema is valid.
  * @public
@@ -126,7 +140,8 @@ export const aiClientToolConfig: Converter<IAiClientToolConfig> = Converters.obj
     description: 'name must be a non-empty string'
   }),
   description: Converters.string,
-  parametersSchema: parametersSchemaValidator
+  parametersSchema: parametersSchemaValidator,
+  annotations: aiToolAnnotations.optional()
 });
 
 /**
@@ -163,7 +178,9 @@ export const modelSpec: Converter<ModelSpec> = Converters.generic<ModelSpec>(
       Converters.string,
       Converters.recordOf(self, { keyConverter: modelSpecKey })
     ])
-      .withFormattedError(() => 'expected model spec (string or object with keys: base, tools, image)')
+      .withFormattedError(
+        () => 'expected model spec (string or object with keys: base, advanced, frontier, image, embedding)'
+      )
       .convert(from);
   }
 );

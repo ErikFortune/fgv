@@ -151,10 +151,13 @@ export async function callProxiedCompletionStream(
     providerId: descriptor.id,
     apiKey,
     messages: normalizeOutboundMessages(splitResult.value),
-    /* c8 ignore next 1 - defensive: temperature always uses default 0.7 in proxy streaming tests */
-    temperature: temperature ?? 0.7,
     stream: true
   };
+  // Temperature is forwarded only when explicitly provided, matching the direct path — the proxy
+  // omits it from the upstream request so the provider default applies.
+  if (temperature !== undefined) {
+    body.temperature = temperature;
+  }
   if (system !== undefined) {
     body.system = system;
   }

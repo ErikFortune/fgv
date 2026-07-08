@@ -230,6 +230,20 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     expect(body.temperature).toBe(0.3);
   });
 
+  test('omits temperature from the proxy body when the caller does not provide one', async () => {
+    mockFetchResponse({ content: 'ok' });
+
+    await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest()
+    });
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    // No default temperature is forwarded — the provider default applies at the proxy's upstream call.
+    expect(body.temperature).toBeUndefined();
+  });
+
   test('surfaces fetch network errors', async () => {
     mockFetchError(new Error('ECONNREFUSED'));
 

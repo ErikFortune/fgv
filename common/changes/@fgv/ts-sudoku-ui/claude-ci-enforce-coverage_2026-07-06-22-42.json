@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "De-flake wall-clock timing assertions in tests (no runtime change)",
+      "type": "none",
+      "packageName": "@fgv/ts-sudoku-ui"
+    }
+  ],
+  "packageName": "@fgv/ts-sudoku-ui",
+  "email": "noreply@anthropic.com"
+}

@@ -2517,6 +2517,9 @@ importers:
 
   ../../samples/testbed:
     dependencies:
+      '@fgv/ts-agent-memory':
+        specifier: workspace:*
+        version: link:../../libraries/ts-agent-memory
       '@fgv/ts-app-shell':
         specifier: workspace:*
         version: link:../../libraries/ts-app-shell

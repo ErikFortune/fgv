@@ -557,3 +557,78 @@ describe('toGeminiParameterSchema', () => {
     expect(toGeminiParameterSchema(null)).toBeNull();
   });
 });
+
+// ============================================================================
+// Host-advisory-only guarantee: annotations NEVER reach any provider wire schema
+// ============================================================================
+
+describe('client-tool annotations are host-advisory-only (never serialized to the model)', () => {
+  // A client tool carrying every annotation field. The wire serializers whitelist
+  // {name, description, parameters}, so none of these must appear on any provider format.
+  const annotatedTool: IAiClientToolConfig = {
+    type: 'client_tool',
+    name: 'recall_memory',
+    description: 'Recall stored user context',
+    parametersSchema: memorySchema,
+    annotations: {
+      title: 'Recall Memory',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
+    }
+  };
+
+  test('OpenAI/xAI Responses wire tool omits annotations entirely', () => {
+    expect(toResponsesApiTools([annotatedTool])).toEqual([
+      {
+        type: 'function',
+        name: 'recall_memory',
+        description: 'Recall stored user context',
+        parameters: memoryWireSchema
+      }
+    ]);
+  });
+
+  test('Anthropic wire tool omits annotations entirely', () => {
+    expect(toAnthropicTools([annotatedTool])).toEqual([
+      {
+        name: 'recall_memory',
+        description: 'Recall stored user context',
+        input_schema: memoryWireSchema
+      }
+    ]);
+  });
+
+  test('Gemini wire tool omits annotations entirely', () => {
+    expect(toGeminiTools([annotatedTool])).toEqual([
+      {
+        function_declarations: [
+          {
+            name: 'recall_memory',
+            description: 'Recall stored user context',
+            parameters: memoryGeminiParams
+          }
+        ]
+      }
+    ]);
+  });
+
+  test('no provider wire schema mentions any annotation key', () => {
+    const serialized = JSON.stringify([
+      toResponsesApiTools([annotatedTool]),
+      toAnthropicTools([annotatedTool]),
+      toGeminiTools([annotatedTool])
+    ]);
+    for (const key of [
+      'annotations',
+      'readOnlyHint',
+      'destructiveHint',
+      'idempotentHint',
+      'openWorldHint',
+      'Recall Memory'
+    ]) {
+      expect(serialized).not.toContain(key);
+    }
+  });
+});

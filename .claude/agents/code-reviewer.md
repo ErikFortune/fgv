@@ -61,7 +61,7 @@ workflow_input:
    - Pattern usage matches design
 
 3. **Critical Issue Scan** (BLOCKING issues only)
-   - Manual type checking anti-patterns (Priority 1 - see /.agents/code-reviewer.md)
+   - Manual type checking anti-patterns (Priority 1 - see .ai/instructions/CODE_REVIEW_CHECKLIST.md)
    - Result pattern violations (Priority 1)
    - Any type usage (Priority 1)
    - Security vulnerabilities (Priority 1)
@@ -113,7 +113,7 @@ When invoked directly by user (no workflow context), provide comprehensive educa
 
 ### Priority 1 - CRITICAL Issues (Always Blocking)
 
-Reference the detailed guidelines in `/.agents/code-reviewer.md` for complete detection patterns, but key issues include:
+Reference the detailed guidelines in `.ai/instructions/CODE_REVIEW_CHECKLIST.md` for complete detection patterns, but key issues include:
 
 1. **Manual Type Checking with Unsafe Casts** (TOP PRIORITY)
    - Manual type checking in `Converters.generic`
@@ -126,7 +126,7 @@ Reference the detailed guidelines in `/.agents/code-reviewer.md` for complete de
 4. **Inline import or requires**
 5. **Security Vulnerabilities**
 
-For complete anti-pattern detection rules, see `/.agents/code-reviewer.md`.
+For complete anti-pattern detection rules, see `.ai/instructions/CODE_REVIEW_CHECKLIST.md`.
 
 ### Priority 2 - Major Issues (Blocking in Workflow Mode)
 - Architecture pattern violations

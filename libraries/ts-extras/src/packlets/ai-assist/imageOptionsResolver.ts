@@ -31,10 +31,8 @@ import type {
   IAiImageGenerationOptions,
   IModelFamilyConfig,
   INamedModelFamilyConfig,
-  IDallEModelOptions,
   IGptImageModelOptions,
   IGrokImagineModelOptions,
-  IImagen4ModelOptions,
   IGeminiFlashImageModelOptions,
   IOtherModelOptions
 } from './model';
@@ -51,7 +49,6 @@ function providerLineageForFormat(format: string): 'openai' | 'xai' | 'google' |
     case 'xai-images':
     case 'xai-images-edits':
       return 'xai';
-    case 'gemini-imagen':
     case 'gemini-image-out':
       return 'google';
     default:
@@ -63,20 +60,12 @@ function providerLineageForFormat(format: string): 'openai' | 'xai' | 'google' |
 // Type guards
 // ============================================================================
 
-function isDallEModelOptions(block: IModelFamilyConfig): block is IDallEModelOptions {
-  return block.provider === 'openai' && block.family === 'dall-e';
-}
-
 function isGptImageModelOptions(block: IModelFamilyConfig): block is IGptImageModelOptions {
   return block.provider === 'openai' && block.family === 'gpt-image';
 }
 
 function isGrokImagineModelOptions(block: IModelFamilyConfig): block is IGrokImagineModelOptions {
   return block.provider === 'xai' && block.family === 'grok-imagine';
-}
-
-function isImagen4ModelOptions(block: IModelFamilyConfig): block is IImagen4ModelOptions {
-  return block.provider === 'google' && block.family === 'imagen-4';
 }
 
 function isGeminiFlashImageModelOptions(block: IModelFamilyConfig): block is IGeminiFlashImageModelOptions {
@@ -105,8 +94,6 @@ export interface IResolvedImageOptions {
   readonly quality?: string;
   /** Seed for reproducibility. */
   readonly seed?: number;
-  // DallE-specific
-  readonly style?: string;
   // GptImage-specific
   readonly outputFormat?: string;
   readonly outputCompression?: number;
@@ -115,14 +102,6 @@ export interface IResolvedImageOptions {
   // xAI-specific
   readonly aspectRatio?: string;
   readonly resolution?: string;
-  // Imagen-specific
-  readonly imagenAspectRatio?: string;
-  readonly imageSize?: string;
-  readonly addWatermark?: boolean;
-  readonly enhancePrompt?: boolean;
-  readonly imagenOutputMimeType?: string;
-  readonly imagenOutputCompressionQuality?: number;
-  readonly personGeneration?: string;
   // Gemini Flash-specific
   readonly geminiAspectRatio?: string;
   // Other-block passthroughs (merged at model-specific tier)
@@ -221,14 +200,6 @@ function isFamilyGenericBlock(block: IModelFamilyConfig): boolean {
 }
 
 function applyBlock(resolved: IResolvedImageOptions, block: IModelFamilyConfig): IResolvedImageOptions {
-  if (isDallEModelOptions(block)) {
-    return {
-      ...resolved,
-      ...(block.config.size !== undefined ? { size: block.config.size } : {}),
-      ...(block.config.quality !== undefined ? { quality: block.config.quality } : {}),
-      ...(block.config.style !== undefined ? { style: block.config.style } : {})
-    };
-  }
   if (isGptImageModelOptions(block)) {
     return {
       ...resolved,
@@ -247,24 +218,6 @@ function applyBlock(resolved: IResolvedImageOptions, block: IModelFamilyConfig):
       ...resolved,
       ...(block.config.aspectRatio !== undefined ? { aspectRatio: block.config.aspectRatio } : {}),
       ...(block.config.resolution !== undefined ? { resolution: block.config.resolution } : {})
-    };
-  }
-  if (isImagen4ModelOptions(block)) {
-    return {
-      ...resolved,
-      ...(block.config.aspectRatio !== undefined ? { imagenAspectRatio: block.config.aspectRatio } : {}),
-      ...(block.config.imageSize !== undefined ? { imageSize: block.config.imageSize } : {}),
-      ...(block.config.addWatermark !== undefined ? { addWatermark: block.config.addWatermark } : {}),
-      ...(block.config.enhancePrompt !== undefined ? { enhancePrompt: block.config.enhancePrompt } : {}),
-      ...(block.config.outputMimeType !== undefined
-        ? { imagenOutputMimeType: block.config.outputMimeType }
-        : {}),
-      ...(block.config.outputCompressionQuality !== undefined
-        ? { imagenOutputCompressionQuality: block.config.outputCompressionQuality }
-        : {}),
-      ...(block.config.personGeneration !== undefined
-        ? { personGeneration: block.config.personGeneration }
-        : {})
     };
   }
   if (isGeminiFlashImageModelOptions(block)) {

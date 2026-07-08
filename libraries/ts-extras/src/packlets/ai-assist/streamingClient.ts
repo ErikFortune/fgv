@@ -31,7 +31,7 @@ import { fail, Result } from '@fgv/ts-utils';
 
 import { splitChatRequest } from './chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from './endpoint';
-import { type IAiStreamEvent, resolveModel } from './model';
+import { type IAiStreamEvent, type ModelSpecKey, isResponsesOnlyModel, resolveProviderModel } from './model';
 import { callAnthropicStream } from './streamingAdapters/anthropic';
 import { type IProviderCompletionStreamParams, type IStreamApiConfig } from './streamingAdapters/common';
 import { callGeminiStream } from './streamingAdapters/gemini';
@@ -67,7 +67,8 @@ export type { IProviderCompletionStreamParams } from './streamingAdapters/common
 export {
   executeClientToolTurn,
   type IExecuteClientToolTurnParams,
-  type IExecuteClientToolTurnResult
+  type IExecuteClientToolTurnResult,
+  type IToolExecutionDecision
 } from './streamingAdapters/clientToolContinuationBuilder';
 
 /**
@@ -98,6 +99,7 @@ export async function callProviderCompletionStream(
     messages,
     temperature,
     modelOverride,
+    tier,
     logger,
     tools,
     signal,
@@ -124,18 +126,15 @@ export async function callProviderCompletionStream(
 
   const hasTools = tools !== undefined && tools.length > 0;
   const discriminator = providerDiscriminatorForId(descriptor.id);
-  const hasThinkingConfig =
-    discriminator !== undefined &&
-    (thinking?.effort !== undefined ||
-      thinking?.providers?.some((b) => b.provider === 'other' || b.provider === discriminator) === true);
-  const modelContext = hasThinkingConfig ? 'thinking' : hasTools ? 'tools' : undefined;
+  // The quality tier is the only completion-model selector; thinking and tools
+  // are orthogonal request params/capabilities and never pick a model.
+  const modelContext: ModelSpecKey | undefined = tier;
 
-  const model = resolveModel(modelOverride ?? descriptor.defaultModel, modelContext);
-  if (model.length === 0) {
-    return fail(
-      `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
-    );
+  const modelResult = resolveProviderModel(descriptor, modelOverride, modelContext);
+  if (modelResult.isFailure()) {
+    return fail(modelResult.message);
   }
+  const model = modelResult.value;
 
   let resolvedThinking: IResolvedThinkingConfig | undefined;
   if (thinking !== undefined) {
@@ -153,8 +152,6 @@ export async function callProviderCompletionStream(
     }
   }
 
-  const effectiveTemperature = temperature ?? 0.7;
-
   const config: IStreamApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
@@ -163,49 +160,25 @@ export async function callProviderCompletionStream(
 
   switch (descriptor.apiFormat) {
     case 'openai':
-      if (hasTools) {
+      // Responses-API-only models (e.g. gpt-5.5-pro) 400 on /chat/completions, so they route
+      // to the Responses stream even with no tools requested — same path the tools case uses.
+      if (hasTools || isResponsesOnlyModel(descriptor, config.model)) {
         return callOpenAiResponsesStream(
           config,
           prompt,
           tools,
           head,
-          effectiveTemperature,
+          temperature,
           logger,
           signal,
           resolvedThinking
         );
       }
-      return callOpenAiChatStream(
-        config,
-        prompt,
-        head,
-        effectiveTemperature,
-        logger,
-        signal,
-        resolvedThinking
-      );
+      return callOpenAiChatStream(config, prompt, head, temperature, logger, signal, resolvedThinking);
     case 'anthropic':
-      return callAnthropicStream(
-        config,
-        prompt,
-        head,
-        effectiveTemperature,
-        tools,
-        logger,
-        signal,
-        resolvedThinking
-      );
+      return callAnthropicStream(config, prompt, head, temperature, tools, logger, signal, resolvedThinking);
     case 'gemini':
-      return callGeminiStream(
-        config,
-        prompt,
-        head,
-        effectiveTemperature,
-        tools,
-        logger,
-        signal,
-        resolvedThinking
-      );
+      return callGeminiStream(config, prompt, head, temperature, tools, logger, signal, resolvedThinking);
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;

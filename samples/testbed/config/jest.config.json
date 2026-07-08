@@ -13,7 +13,8 @@
     "/node_modules/",
     "<rootDir>/lib/web/index.js",
     "<rootDir>/lib/generated/",
-    "<rootDir>/lib/scenarios/[a-zA-Z]+ClientTools/"
+    "<rootDir>/lib/scenarios/[a-zA-Z]+ClientTools/",
+    "<rootDir>/lib/scenarios/memoryToolsGate/"
   ],
   "collectCoverage": true,
   "coverageReporters": ["text", "lcov", "html"],

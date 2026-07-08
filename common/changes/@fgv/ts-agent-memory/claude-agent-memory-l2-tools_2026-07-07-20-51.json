@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "L2 agent-tool surface: createMemoryTools exposes memory ops as ai-assist client tools (scope-isolated via pre-scoped store, per-tool subset, mnemonic handle, behavior annotations, mediated-write gate)",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

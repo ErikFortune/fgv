@@ -165,6 +165,20 @@ describe('FileTreeMemoryStore', () => {
       const root = mutableRoot([{ path: 'elsewhere/doc.md', contents: knowledgeFile('doc', 'body') }]);
       expect(createStore({ root })).toFailWith(/does not match expected scope/i);
     });
+
+    test('fails loudly when a seeded file envelope entityId disagrees with its subtree scope', () => {
+      // The id matches the filename stem and the scope round-trips, but the
+      // envelope's own entityId is foreign — a tamper/corruption the codec
+      // round-trip alone (which derives entityId from the scope path, never
+      // reading the envelope field) would not catch. entityId is trusted
+      // verbatim downstream, so the load must reject it.
+      const root = mutableRoot([
+        { path: 'knowledge/doc-a.md', contents: knowledgeFile('doc-a', 'body', { entityId: 'doc-999' }) }
+      ]);
+      expect(createStore({ root })).toFailWith(
+        /entityId 'doc-999' does not match scope-derived entityId 'doc-a'/i
+      );
+    });
   });
 
   describe('factory defaults', () => {
@@ -296,6 +310,56 @@ describe('FileTreeMemoryStore', () => {
       );
       // doc-b was never written.
       expect(await store.get(knowledgeKind, 'doc-b' as EntityId)).toSucceedWith(undefined);
+    });
+
+    test('a same-id re-put with unchanged body but revised tags applies the update (content dedup must not swallow it)', async () => {
+      // Content-scoped dedup collapses identical content across DIFFERENT ids,
+      // but a same-id re-put whose body/links are unchanged while tags change is
+      // a real LWW update: tags are outside the content hash yet inside the
+      // policy's mutableFields, so the metadata revision must reach applyUpdate.
+      const store = createStore().orThrow();
+      let firstSeq: number = -1;
+      expect(await store.put(makeRecord({ id: 'doc', body: 'same', tags: ['orig'] }))).toSucceedAndSatisfy(
+        (first: IMemoryRecord<unknown>) => {
+          firstSeq = first.envelope.seq;
+          expect(first.envelope.tags).toEqual(['orig']);
+        }
+      );
+      clockValue = 2000;
+      expect(
+        await store.put(makeRecord({ id: 'doc', body: 'same', tags: ['orig', 'added'] }))
+      ).toSucceedAndSatisfy((second: IMemoryRecord<unknown>) => {
+        expect(second.envelope.tags).toEqual(['orig', 'added']);
+        expect(second.envelope.seq).toBe(firstSeq + 1);
+        expect(second.envelope.updated).toBe(2000);
+      });
+      // The persisted record reflects the metadata update.
+      expect(await store.get(knowledgeKind, 'doc' as EntityId)).toSucceedAndSatisfy(
+        (r: IMemoryRecord<unknown> | undefined) => {
+          expect(r?.envelope.tags).toEqual(['orig', 'added']);
+        }
+      );
+    });
+
+    test('a same-id re-put with unchanged body AND unchanged metadata stays a no-op', async () => {
+      // The idempotence guard: identical content AND identical mutable metadata
+      // must not bump seq/updated (regression guard alongside the fix above).
+      const store = createStore().orThrow();
+      let firstSeq: number = -1;
+      let firstUpdated: number = -1;
+      expect(await store.put(makeRecord({ id: 'doc', body: 'same', tags: ['a'] }))).toSucceedAndSatisfy(
+        (first: IMemoryRecord<unknown>) => {
+          firstSeq = first.envelope.seq;
+          firstUpdated = first.envelope.updated;
+        }
+      );
+      clockValue = 2000;
+      expect(await store.put(makeRecord({ id: 'doc', body: 'same', tags: ['a'] }))).toSucceedAndSatisfy(
+        (second: IMemoryRecord<unknown>) => {
+          expect(second.envelope.seq).toBe(firstSeq);
+          expect(second.envelope.updated).toBe(firstUpdated);
+        }
+      );
     });
   });
 
@@ -546,8 +610,11 @@ describe('FileTreeMemoryStore', () => {
     });
   });
 
-  describe('versioned codec (loud degradation)', () => {
+  describe('versioned codec misconfiguration', () => {
     const versionedKind: Kind = 'versioned' as Kind;
+    // A codec that reports isVersioned:true but does NOT implement the temporal
+    // codec interface (no encodeVersion/decodeVersion) — a misconfiguration the
+    // store must reject loudly rather than mis-handle.
     const versionedCodec: IIdentityCodec = {
       encode: (entityId: EntityId): Result<IIdentityCodecResult> =>
         succeed({ scope: 'versioned' as MemoryScopeKey, idStem: entityId as string, isVersioned: true }),
@@ -566,21 +633,21 @@ describe('FileTreeMemoryStore', () => {
       }).orThrow();
     }
 
-    test('put fails loudly on a versioned layout', async () => {
+    test('put fails loudly when a versioned codec omits the temporal interface', async () => {
       expect(await versionedStore().put(makeRecord({ id: 'v', kind: 'versioned', body: 'x' }))).toFailWith(
-        /versioned\/temporal layout not yet supported/i
+        /does not implement the temporal codec interface/i
       );
     });
 
-    test('get fails loudly on a versioned layout', async () => {
+    test('get fails loudly when a versioned codec omits the temporal interface', async () => {
       expect(await versionedStore().get(versionedKind, 'v' as EntityId)).toFailWith(
-        /versioned\/temporal layout not yet supported/i
+        /does not implement the temporal codec interface/i
       );
     });
 
-    test('delete fails loudly on a versioned layout', async () => {
+    test('delete fails loudly when a versioned codec omits the temporal interface', async () => {
       expect(await versionedStore().delete(versionedKind, 'v' as EntityId)).toFailWith(
-        /versioned\/temporal layout not yet supported/i
+        /does not implement the temporal codec interface/i
       );
     });
   });
@@ -715,6 +782,30 @@ describe('FileTreeMemoryStore', () => {
         await store.put(makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'same' }))
       ).toSucceedAndSatisfy((r) => {
         expect(r.envelope.seq).toBe(firstSeq);
+      });
+    });
+
+    test('entity-scoped dedup: a same-id re-put with unchanged body but revised tags applies the update', async () => {
+      // The metadata-unchanged gate on the same-id no-op is shared across BOTH
+      // dedup scopes; this asserts it on the entity (experience) family too, so a
+      // future split of the two branches cannot silently regress this side.
+      const store = memoryStore();
+      let firstSeq: number = -1;
+      expect(
+        await store.put(
+          makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'same', tags: ['a'] })
+        )
+      ).toSucceedAndSatisfy((r) => {
+        firstSeq = r.envelope.seq;
+        expect(r.envelope.tags).toEqual(['a']);
+      });
+      expect(
+        await store.put(
+          makeRecord({ id: 'turn-5', entityId: 'conv-1:5', kind: 'mtm', body: 'same', tags: ['a', 'b'] })
+        )
+      ).toSucceedAndSatisfy((r) => {
+        expect(r.envelope.tags).toEqual(['a', 'b']);
+        expect(r.envelope.seq).toBe(firstSeq + 1);
       });
     });
 

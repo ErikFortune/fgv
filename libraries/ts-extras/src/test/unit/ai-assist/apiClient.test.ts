@@ -271,6 +271,98 @@ describe('callProviderCompletion', () => {
   });
 
   // ==========================================================================
+  // Quality-tier composition (B1): the tier is the ONLY completion-model
+  // selector; thinking and tools are orthogonal request params/capabilities
+  // and never pick a model.
+  // ==========================================================================
+
+  describe('quality-tier composition', () => {
+    const tieredDescriptor = makeDescriptor({
+      id: 'openai',
+      apiFormat: 'openai',
+      baseUrl: 'https://api.openai.com/v1',
+      defaultModel: { base: 'm-base', advanced: 'm-adv', frontier: 'm-front' }
+    });
+
+    async function bodyForCompletion(
+      params: Partial<AiAssist.IProviderCompletionParams>,
+      descriptor: IAiProviderDescriptor = tieredDescriptor
+    ): Promise<Record<string, unknown>> {
+      mockFetchResponse(openAiResponse('ok'));
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        ...params
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      return JSON.parse(fetchCall[1].body) as Record<string, unknown>;
+    }
+
+    test('no tier selects the base model', async () => {
+      expect((await bodyForCompletion({})).model).toBe('m-base');
+    });
+
+    test('tier "advanced" selects the advanced model', async () => {
+      expect((await bodyForCompletion({ tier: 'advanced' })).model).toBe('m-adv');
+    });
+
+    test('tier "frontier" selects the frontier model', async () => {
+      expect((await bodyForCompletion({ tier: 'frontier' })).model).toBe('m-front');
+    });
+
+    test('tier "frontier" cascades to advanced when no frontier key is defined', async () => {
+      const descriptor = makeDescriptor({
+        id: 'openai',
+        apiFormat: 'openai',
+        baseUrl: 'https://api.openai.com/v1',
+        defaultModel: { base: 'm-base', advanced: 'm-adv' }
+      });
+      expect((await bodyForCompletion({ tier: 'frontier' }, descriptor)).model).toBe('m-adv');
+    });
+
+    test('a base-only descriptor + tier request cascades to base', async () => {
+      const descriptor = makeDescriptor({
+        id: 'openai',
+        apiFormat: 'openai',
+        baseUrl: 'https://api.openai.com/v1',
+        defaultModel: { base: 'm-base' }
+      });
+      expect((await bodyForCompletion({ tier: 'frontier' }, descriptor)).model).toBe('m-base');
+    });
+
+    test('thinking without a tier resolves the base model and still rides as a wire param', async () => {
+      const body = await bodyForCompletion({ thinking: { effort: 'low' } });
+      // Composition: thinking does NOT upgrade the tier — model stays base...
+      expect(body.model).toBe('m-base');
+      // ...but the thinking config is still read and still sent to the API.
+      expect(body.reasoning_effort).toBe('low');
+    });
+
+    test('thinking composes on top of an explicit tier (model = tier, thinking rides)', async () => {
+      const body = await bodyForCompletion({ tier: 'advanced', thinking: { effort: 'low' } });
+      expect(body.model).toBe('m-adv');
+      expect(body.reasoning_effort).toBe('low');
+    });
+
+    test('tools without a tier resolves the base model', async () => {
+      // Tools route to the Responses API, so mock that wire shape directly
+      // rather than via the chat-format helper.
+      mockFetchResponse(responsesApiResponse('ok'));
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: tieredDescriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools: [{ type: 'web_search' }]
+      });
+      expect(result).toSucceed();
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('m-base');
+    });
+  });
+
+  // ==========================================================================
   // AbortSignal threading — one assertion per format proves wire-through.
   // ==========================================================================
 
@@ -378,6 +470,20 @@ describe('callProviderCompletion', () => {
       ]);
     });
 
+    test('omits temperature when the caller does not provide one', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest()
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      // No default temperature is injected — gpt-5.5 rejects a non-default temperature.
+      expect(body.temperature).toBeUndefined();
+    });
+
     test('includes additional messages', async () => {
       mockFetchResponse(openAiResponse('ok'));
 
@@ -470,6 +576,22 @@ describe('callProviderCompletion', () => {
       expect(body.system).toBe('You are a helpful assistant');
       expect(body.messages[0]).toEqual({ role: 'user', content: 'Generate a recipe' });
       expect(body.max_tokens).toBe(4096);
+      // No default temperature is injected — Claude-5 rejects any temperature value.
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('includes temperature only when explicitly provided', async () => {
+      mockFetchResponse(anthropicResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        temperature: 0.4
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.temperature).toBe(0.4);
     });
 
     test('filters system role from additional messages', async () => {
@@ -601,7 +723,22 @@ describe('callProviderCompletion', () => {
       const body = JSON.parse(fetchCall[1].body);
       expect(body.systemInstruction).toEqual({ parts: [{ text: 'You are a helpful assistant' }] });
       expect(body.contents[0]).toEqual({ role: 'user', parts: [{ text: 'Generate a recipe' }] });
-      expect(body.generationConfig.temperature).toBe(0.7);
+      // No default temperature is injected — the key is omitted so Gemini's default applies.
+      expect(body.generationConfig.temperature).toBeUndefined();
+    });
+
+    test('includes temperature in generationConfig only when explicitly provided', async () => {
+      mockFetchResponse(geminiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        temperature: 0.2
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.generationConfig.temperature).toBe(0.2);
     });
 
     test('maps assistant role to model and filters system', async () => {
@@ -688,9 +825,35 @@ describe('callProviderCompletion', () => {
       expect(body.input).toBeDefined();
     });
 
-    test('selects tools model from ModelSpec when tools provided', async () => {
+    test('omits temperature by default and includes it only when explicitly provided (Responses API)', async () => {
+      mockFetchResponse(responsesApiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools
+      });
+      const omitted = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(omitted.temperature).toBeUndefined();
+
+      mockFetchResponse(responsesApiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools,
+        temperature: 0.6
+      });
+      const explicit = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+      expect(explicit.temperature).toBe(0.6);
+    });
+
+    test('tools no longer select a model — resolves base under composition', async () => {
+      // Under composition the tier is the only selector; a request with tools
+      // (and no tier) resolves the base model. A tiered descriptor's advanced
+      // key is never reached by a tools request.
       const splitDescriptor = makeDescriptor({
-        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning' }
+        defaultModel: { base: 'grok-fast', advanced: 'grok-reasoning' }
       });
       mockFetchResponse(responsesApiResponse('ok'));
 
@@ -702,12 +865,12 @@ describe('callProviderCompletion', () => {
       });
 
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.model).toBe('grok-reasoning');
+      expect(body.model).toBe('grok-fast');
     });
 
-    test('prefers thinking model from ModelSpec when both thinking and tools are provided', async () => {
+    test('thinking no longer selects a model — tools+thinking resolves base under composition', async () => {
       const splitDescriptor = makeDescriptor({
-        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning', thinking: 'grok-4.3' }
+        defaultModel: { base: 'grok-fast', advanced: 'grok-reasoning' }
       });
       mockFetchResponse(responsesApiResponse('ok'));
 
@@ -720,12 +883,12 @@ describe('callProviderCompletion', () => {
       });
 
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.model).toBe('grok-4.3');
+      expect(body.model).toBe('grok-fast');
     });
 
     test('selects base model from ModelSpec when no tools', async () => {
       const splitDescriptor = makeDescriptor({
-        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning' }
+        defaultModel: { base: 'grok-fast', advanced: 'grok-reasoning' }
       });
       mockFetchResponse(openAiResponse('no tools'));
 
@@ -739,53 +902,34 @@ describe('callProviderCompletion', () => {
       expect(body.model).toBe('grok-fast');
     });
 
-    test('does not select thinking model when thinking config is empty object', async () => {
-      const splitDescriptor = makeDescriptor({
-        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning', thinking: 'grok-4.3' }
-      });
-      mockFetchResponse(responsesApiResponse('ok'));
+    test('Gemini descriptor: base+thinking (no tier) resolves flash — the intended pro→flash change', async () => {
+      // The one intended behavior change in B1: with the `thinking` defaultModel
+      // key removed, a thinking completion with no tier resolves the base model
+      // (flash) instead of the old pro-for-all-thinking. Drive the real registry
+      // descriptor through the full completion chokepoint.
+      const gemini = AiAssist.getProviderDescriptor('google-gemini').orThrow();
+      mockFetchResponse(geminiResponse('ok'));
 
       await AiAssist.callProviderCompletion({
-        descriptor: splitDescriptor,
+        descriptor: gemini,
         apiKey: 'test-key',
         ...testPrompt.toRequest(),
-        tools,
-        thinking: {}
+        thinking: { effort: 'low' }
       });
 
-      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.model).toBe('grok-reasoning');
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      // Gemini puts the model id in the request URL, not the JSON body.
+      expect(fetchCall[0]).toContain('gemini-3.5-flash');
     });
 
-    test('does not select thinking model when providers block targets a different provider', async () => {
-      const splitDescriptor = makeDescriptor({
-        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning', thinking: 'grok-4.3' }
-      });
+    test('xAI descriptor: a tools+thinking completion resolves grok-4.3 via base', async () => {
+      // The real xAI descriptor's dead tools/thinking keys were stripped in B1;
+      // a tools+thinking completion resolves base = grok-4.3 (behavior-neutral).
+      const xai = AiAssist.getProviderDescriptor('xai-grok').orThrow();
       mockFetchResponse(responsesApiResponse('ok'));
 
       await AiAssist.callProviderCompletion({
-        descriptor: splitDescriptor,
-        apiKey: 'test-key',
-        ...testPrompt.toRequest(),
-        tools,
-        thinking: { providers: [{ provider: 'openai', config: { effort: 'medium' } }] }
-      });
-
-      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.model).toBe('grok-reasoning');
-    });
-
-    test('does not select thinking model for unknown provider even when thinking is provided', async () => {
-      const ollamaDescriptor = makeDescriptor({
-        id: 'ollama',
-        baseUrl: 'http://localhost:11434/v1',
-        defaultModel: { base: 'llama3', tools: 'llama3-tools', thinking: 'llama3-think' },
-        corsRestricted: false
-      });
-      mockFetchResponse(responsesApiResponse('ok'));
-
-      await AiAssist.callProviderCompletion({
-        descriptor: ollamaDescriptor,
+        descriptor: xai,
         apiKey: 'test-key',
         ...testPrompt.toRequest(),
         tools,
@@ -793,7 +937,7 @@ describe('callProviderCompletion', () => {
       });
 
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.model).toBe('llama3-tools');
+      expect(body.model).toBe('grok-4.3');
     });
 
     test('extracts text from Responses API output', async () => {
@@ -867,6 +1011,125 @@ describe('callProviderCompletion', () => {
 
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
       expect(fetchCall[0]).toBe('https://api.x.ai/v1/chat/completions');
+    });
+  });
+
+  // ==========================================================================
+  // OpenAI Responses-API-only model routing (no tools) — restores frontier
+  // ==========================================================================
+
+  describe('openai Responses-only model routing (no tools)', () => {
+    // A synthetic openai-format descriptor that marks a model prefix as
+    // Responses-API-only and wires it to the frontier tier via an alias.
+    const descriptor = makeDescriptor({
+      id: 'openai',
+      apiFormat: 'openai',
+      baseUrl: 'https://api.openai.com/v1',
+      defaultModel: { base: 'gpt-5.4-mini', advanced: 'gpt-5.5', frontier: '@openai:pro' },
+      aliases: { '@openai:pro': 'gpt-5.5-pro' },
+      responsesOnlyModelPrefixes: ['gpt-5.5-pro']
+    });
+
+    test('routes a modelOverride of a Responses-only model to /responses even with no tools', async () => {
+      mockFetchResponse(responsesApiResponse('pro answer'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        modelOverride: 'gpt-5.5-pro'
+      });
+
+      expect(result).toSucceedWith({ content: 'pro answer', truncated: false });
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      const body = JSON.parse(fetchCall[1].body);
+      expect(body.model).toBe('gpt-5.5-pro');
+      // No tools were requested, so the tools field must be omitted entirely.
+      expect(body.tools).toBeUndefined();
+      expect('tools' in body).toBe(false);
+      // No default temperature is force-sent on the Responses-only route.
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('frontier tier resolves @openai:pro → gpt-5.5-pro and routes to /responses', async () => {
+      mockFetchResponse(responsesApiResponse('frontier answer'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tier: 'frontier'
+      });
+
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      const body = JSON.parse(fetchCall[1].body);
+      expect(body.model).toBe('gpt-5.5-pro');
+      expect('tools' in body).toBe(false);
+    });
+
+    test('base tier still routes to /chat/completions', async () => {
+      mockFetchResponse(openAiResponse('base answer'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest()
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/chat/completions');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.4-mini');
+    });
+
+    test('advanced tier still routes to /chat/completions', async () => {
+      mockFetchResponse(openAiResponse('advanced answer'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tier: 'advanced'
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/chat/completions');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.5');
+    });
+
+    test('a Responses-only model WITH tools still sends the tools field', async () => {
+      mockFetchResponse(responsesApiResponse('pro + search'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        modelOverride: 'gpt-5.5-pro',
+        tools: [{ type: 'web_search' }]
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      expect(JSON.parse(fetchCall[1].body).tools).toEqual([{ type: 'web_search' }]);
+    });
+
+    test('real OpenAI registry descriptor: frontier resolves gpt-5.5-pro via /responses', async () => {
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      expect(openai.responsesOnlyModelPrefixes).toEqual(['gpt-5.5-pro']);
+      mockFetchResponse(responsesApiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor: openai,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tier: 'frontier'
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.5-pro');
     });
   });
 

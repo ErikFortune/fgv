@@ -12,11 +12,18 @@
 import type { IScenario } from '../shell';
 import { anthropicClientToolsScenario } from './anthropicClientTools';
 import { crossProviderEmbeddingSearchScenario } from './crossProviderEmbeddingSearch';
+import { gateDenyClientToolsScenario } from './gateDenyClientTools';
 import { geminiClientToolsScenario } from './geminiClientTools';
 import { localClassifierSafetyScenario } from './localClassifierSafety';
 import { localEmbeddingSearchScenario } from './localEmbeddingSearch';
 import { localSummarizationScenario } from './localSummarization';
 import { mcpProbeScenario } from './mcpProbe';
+import { memoryToolsGateScenario } from './memoryToolsGate';
+import {
+  anthropicModelTiersScenario,
+  geminiModelTiersScenario,
+  openaiModelTiersScenario
+} from './modelTiers';
 import { openaiClientToolsScenario } from './openaiClientTools';
 import { xaiClientToolsScenario } from './xaiClientTools';
 
@@ -29,9 +36,14 @@ export const scenarios: readonly IScenario[] = [
   openaiClientToolsScenario,
   geminiClientToolsScenario,
   xaiClientToolsScenario,
+  gateDenyClientToolsScenario,
   localClassifierSafetyScenario,
   localEmbeddingSearchScenario,
   localSummarizationScenario,
   mcpProbeScenario,
-  crossProviderEmbeddingSearchScenario
+  memoryToolsGateScenario,
+  crossProviderEmbeddingSearchScenario,
+  openaiModelTiersScenario,
+  anthropicModelTiersScenario,
+  geminiModelTiersScenario
 ];

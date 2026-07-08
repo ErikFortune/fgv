@@ -45,7 +45,8 @@
     "@fgv/ts-prompt-assist": "workspace:*",
     "@fgv/ts-extras-transformers": "workspace:*",
     "@fgv/ts-web-extras-transformers": "workspace:*",
-    "@fgv/ts-extras-mcp": "workspace:*"
+    "@fgv/ts-extras-mcp": "workspace:*",
+    "@fgv/ts-agent-memory": "workspace:*"
   },
   "devDependencies": {
     "@babel/core": "~7.29.0",

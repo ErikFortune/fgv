@@ -54,7 +54,7 @@ function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IA
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.openai.com/v1',
-    defaultModel: { base: 'gpt-4o', image: 'dall-e-3' },
+    defaultModel: { base: 'gpt-4o', image: 'gpt-image-1' },
     supportedTools: [],
     corsRestricted: false,
     acceptsImageInput: true,
@@ -254,7 +254,7 @@ describe('callProviderListModels', () => {
 
   describe('openai apiFormat (config-derived capabilities)', () => {
     test('returns models with capabilities from default config', async () => {
-      mockFetchResponse(openAiListBody(['dall-e-3', 'gpt-4o', 'gpt-3.5-turbo']));
+      mockFetchResponse(openAiListBody(['gpt-image-1', 'gpt-4o', 'gpt-3.5-turbo']));
 
       const result = await AiAssist.callProviderListModels({
         descriptor: makeImageDescriptor(), // openai
@@ -263,7 +263,7 @@ describe('callProviderListModels', () => {
 
       expect(result).toSucceedAndSatisfy((models) => {
         const byId = new Map(models.map((m) => [m.id, m]));
-        expect(byId.get('dall-e-3')!.capabilities.has('image-generation')).toBe(true);
+        expect(byId.get('gpt-image-1')!.capabilities.has('image-generation')).toBe(true);
         expect(byId.get('gpt-4o')!.capabilities.has('chat')).toBe(true);
         expect(byId.get('gpt-4o')!.capabilities.has('vision')).toBe(true);
         expect(byId.get('gpt-3.5-turbo')!.capabilities.has('chat')).toBe(true);
@@ -272,7 +272,7 @@ describe('callProviderListModels', () => {
     });
 
     test('filters by requested capability', async () => {
-      mockFetchResponse(openAiListBody(['dall-e-3', 'gpt-image-1', 'gpt-4o', 'text-embedding-3-large']));
+      mockFetchResponse(openAiListBody(['gpt-image-1.5', 'gpt-image-1', 'gpt-4o', 'text-embedding-3-large']));
 
       const result = await AiAssist.callProviderListModels({
         descriptor: makeImageDescriptor(),
@@ -281,7 +281,7 @@ describe('callProviderListModels', () => {
       });
 
       expect(result).toSucceedAndSatisfy((models) => {
-        expect(models.map((m) => m.id).sort()).toEqual(['dall-e-3', 'gpt-image-1']);
+        expect(models.map((m) => m.id).sort()).toEqual(['gpt-image-1', 'gpt-image-1.5']);
       });
     });
 
@@ -347,6 +347,34 @@ describe('callProviderListModels', () => {
         const byId = new Map(models.map((m) => [m.id, m]));
         expect(byId.get('claude-sonnet-4-5-20250929')!.displayName).toBe('Claude Sonnet 4.5');
         expect(byId.get('claude-opus-4-7-20260101')!.displayName).toBeUndefined();
+      });
+    });
+
+    test('classifies claude-sonnet-5 as thinking-capable via the broadened idPattern (B3)', async () => {
+      // Guards the required Q5 fix: /^claude-sonnet-4/ was broadened to /^claude-sonnet-/ so the
+      // sonnet-5 base default accumulates the thinking capability. Without the broadening,
+      // claude-sonnet-5 would hit only /^claude-/ (chat/tools/vision, no thinking).
+      mockFetchResponse(anthropicListBody([{ id: 'claude-sonnet-5' }, { id: 'claude-opus-4-8' }]));
+
+      const result = await AiAssist.callProviderListModels({
+        descriptor: makeDescriptor({
+          id: 'anthropic',
+          apiFormat: 'anthropic',
+          baseUrl: 'https://api.anthropic.com/v1'
+        }),
+        apiKey: 'test-key'
+      });
+
+      expect(result).toSucceedAndSatisfy((models) => {
+        const byId = new Map(models.map((m) => [m.id, m]));
+        const sonnet = byId.get('claude-sonnet-5')!;
+        expect(sonnet.capabilities.has('chat')).toBe(true);
+        expect(sonnet.capabilities.has('tools')).toBe(true);
+        expect(sonnet.capabilities.has('vision')).toBe(true);
+        expect(sonnet.capabilities.has('thinking')).toBe(true);
+        // The parallel opus broadening keeps claude-opus-4-8 thinking-capable too.
+        const opus = byId.get('claude-opus-4-8')!;
+        expect(opus.capabilities.has('thinking')).toBe(true);
       });
     });
 
@@ -441,6 +469,51 @@ describe('callProviderListModels', () => {
         expect(m.capabilities.has('chat')).toBe(true);
         expect(m.capabilities.has('tools')).toBe(true);
         expect(m.capabilities.has('vision')).toBe(true);
+      });
+    });
+
+    test('classifies a gemini-3.x model as thinking-capable via the config idPattern', async () => {
+      mockFetchResponse(geminiListBody([{ name: 'models/gemini-3.5-flash', methods: ['generateContent'] }]));
+
+      const result = await AiAssist.callProviderListModels({
+        descriptor: makeDescriptor({
+          apiFormat: 'gemini',
+          baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+          id: 'google-gemini'
+        }),
+        apiKey: 'test-key'
+      });
+
+      expect(result).toSucceedAndSatisfy((models) => {
+        const m = models[0];
+        // The /^gemini-3/ rule must classify 3.x ids as the full thinking-capable set,
+        // not silently fall through to the base chat/tools/vision rule.
+        expect(m.capabilities.has('chat')).toBe(true);
+        expect(m.capabilities.has('tools')).toBe(true);
+        expect(m.capabilities.has('vision')).toBe(true);
+        expect(m.capabilities.has('thinking')).toBe(true);
+      });
+    });
+
+    test('does not grant thinking to a gemini-2.x (non-2.5) id via the new /^gemini-3/ rule', async () => {
+      mockFetchResponse(geminiListBody([{ name: 'models/gemini-2.0-flash', methods: ['generateContent'] }]));
+
+      const result = await AiAssist.callProviderListModels({
+        descriptor: makeDescriptor({
+          apiFormat: 'gemini',
+          baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+          id: 'google-gemini'
+        }),
+        apiKey: 'test-key'
+      });
+
+      expect(result).toSucceedAndSatisfy((models) => {
+        const m = models[0];
+        // gemini-2.0-flash hits only the base /^gemini-/ rule: chat/tools/vision, no thinking.
+        // Guards the /^gemini-3/ and /^gemini-2\.5/ boundaries against over-firing.
+        expect(m.capabilities.has('chat')).toBe(true);
+        expect(m.capabilities.has('vision')).toBe(true);
+        expect(m.capabilities.has('thinking')).toBe(false);
       });
     });
 
@@ -638,9 +711,9 @@ describe('callProxiedListModels', () => {
     mockFetchResponse({
       models: [
         {
-          id: 'dall-e-3',
+          id: 'gpt-image-1.5',
           capabilities: ['image-generation'],
-          displayName: 'DALL·E 3'
+          displayName: 'GPT Image 1.5'
         },
         { id: 'gpt-4o', capabilities: ['chat', 'tools', 'vision'] }
       ]
@@ -653,10 +726,10 @@ describe('callProxiedListModels', () => {
 
     expect(result).toSucceedAndSatisfy((models) => {
       expect(models).toHaveLength(2);
-      expect(models[0].id).toBe('dall-e-3');
+      expect(models[0].id).toBe('gpt-image-1.5');
       expect(models[0].capabilities).toBeInstanceOf(Set);
       expect(models[0].capabilities.has('image-generation')).toBe(true);
-      expect(models[0].displayName).toBe('DALL·E 3');
+      expect(models[0].displayName).toBe('GPT Image 1.5');
       expect(models[1].displayName).toBeUndefined();
     });
 

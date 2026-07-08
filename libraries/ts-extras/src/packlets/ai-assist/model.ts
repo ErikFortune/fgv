@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { type Result } from '@fgv/ts-utils';
+import { fail, type Result, succeed } from '@fgv/ts-utils';
 import { type JsonObject, type JsonSchema } from '@fgv/ts-json-base';
 
 // ============================================================================
@@ -249,6 +249,35 @@ export interface IAiToolEnablement {
 // ============================================================================
 
 /**
+ * Behavior annotations for a client-defined tool.
+ *
+ * @remarks
+ * These are **host-advisory-only hints** describing a tool's side-effect profile.
+ * They are consumed by the host's tool loop (e.g. a before-execute gate) and are
+ * **never serialized to the model** — the provider wire tool-schemas whitelist
+ * `{name, description, parameters}` and ignore this field.
+ *
+ * Field names mirror MCP's `ToolAnnotations` (`@modelcontextprotocol/sdk`) 1:1 so
+ * an MCP tool's annotations pass through unchanged. Per the MCP spec, all fields
+ * are hints — a host should never make tool-use decisions based on annotations
+ * received from an untrusted server without its own validation.
+ *
+ * @public
+ */
+export interface IAiToolAnnotations {
+  /** Optional human-readable display title for the tool. */
+  readonly title?: string;
+  /** Hint: the tool does not modify its environment (read-only). */
+  readonly readOnlyHint?: boolean;
+  /** Hint: the tool may perform destructive updates (only meaningful when not read-only). */
+  readonly destructiveHint?: boolean;
+  /** Hint: repeated calls with the same arguments have no additional effect. */
+  readonly idempotentHint?: boolean;
+  /** Hint: the tool interacts with an open world of external entities. */
+  readonly openWorldHint?: boolean;
+}
+
+/**
  * Configuration for a client-defined (harness-supplied) tool.
  *
  * @remarks
@@ -273,6 +302,12 @@ export interface IAiClientToolConfig<TParams = unknown> {
    * `.toJson()` and validates model-returned args via `.validate(rawArgs)`.
    */
   readonly parametersSchema: JsonSchema.ISchemaValidator<TParams>;
+  /**
+   * Optional host-advisory behavior annotations (read-only / destructive /
+   * idempotent / open-world hints + display title). Consumed by the host's
+   * tool loop; never serialized to the model. See {@link IAiToolAnnotations}.
+   */
+  readonly annotations?: IAiToolAnnotations;
 }
 
 /**
@@ -458,7 +493,7 @@ export interface IAiClientToolTurnResult {
  * Known context keys for model specification maps.
  * @public
  */
-export type ModelSpecKey = 'base' | 'tools' | 'image' | 'thinking' | 'embedding';
+export type ModelSpecKey = 'base' | 'advanced' | 'frontier' | 'image' | 'embedding';
 
 /**
  * All valid {@link ModelSpecKey} values.
@@ -466,9 +501,9 @@ export type ModelSpecKey = 'base' | 'tools' | 'image' | 'thinking' | 'embedding'
  */
 export const allModelSpecKeys: ReadonlyArray<ModelSpecKey> = [
   'base',
-  'tools',
+  'advanced',
+  'frontier',
   'image',
-  'thinking',
   'embedding'
 ];
 
@@ -485,18 +520,18 @@ export const MODEL_SPEC_BASE_KEY: ModelSpecKey = 'base';
  * @remarks
  * A bare string is equivalent to `{ base: string }`. This keeps the simple
  * case simple while allowing context-aware model selection (e.g. different
- * models for tool-augmented vs. base completions).
+ * models for different quality tiers).
  *
  * @example
  * ```typescript
  * // Simple — same model for all contexts:
  * const simple: ModelSpec = 'grok-4.3';
  *
- * // Context-aware — different model for tools and thinking:
- * const split: ModelSpec = { base: 'grok-4.3', tools: 'grok-4.3', thinking: 'grok-4.3' };
+ * // Context-aware — different model per quality tier:
+ * const split: ModelSpec = { base: 'gpt-5.4-mini', advanced: 'gpt-5.5', frontier: 'gpt-5.5-pro' };
  *
- * // Future nested — per-tool model selection:
- * const nested: ModelSpec = { base: 'grok-fast', tools: { base: 'grok-r', image: 'grok-v' } };
+ * // Nested — a tier branch is itself a spec:
+ * const nested: ModelSpec = { base: 'grok-fast', advanced: { base: 'grok-r', image: 'grok-v' } };
  * ```
  * @public
  */
@@ -510,17 +545,38 @@ export interface IModelSpecMap {
 export type ModelSpec = string | IModelSpecMap;
 
 /**
+ * Ordered fallback candidates for each quality-tier context key.
+ *
+ * @remarks
+ * A `frontier` request cascades `frontier → advanced → base`; an `advanced`
+ * request cascades `advanced → base`. Any context not listed here (the
+ * `image`/`embedding` modality keys, or an arbitrary caller-supplied string)
+ * resolves flat — just the context itself, then the shared `base` fallback
+ * below — matching the pre-tier behavior. `base` maps to `['base']` so a
+ * `base` request never over-reaches into a tier branch.
+ */
+const TIER_FALLBACK: { readonly [k: string]: ReadonlyArray<ModelSpecKey> } = {
+  base: ['base'],
+  advanced: ['advanced', 'base'],
+  frontier: ['frontier', 'advanced', 'base']
+};
+
+/**
  * Resolves a {@link ModelSpec} to a concrete model string given an optional context key.
  *
  * @remarks
  * Resolution rules:
  * 1. If the spec is a string, return it directly (context is irrelevant).
- * 2. If the spec is an object and the context key exists, recurse into that branch.
+ * 2. If the spec is an object, walk the ordered candidate keys for the context:
+ *    a quality-tier context (`advanced`/`frontier`) cascades through the
+ *    tier-fallback table (`frontier → advanced → base`, `advanced → base`);
+ *    every other context resolves flat (`[context]`); `undefined` resolves to
+ *    the shared `base` fallback. The first present key wins.
  * 3. Otherwise, fall back to the {@link MODEL_SPEC_BASE_KEY | 'base'} key.
  * 4. If neither context nor `'base'` exists, use the first available value.
  *
  * @param spec - The model specification to resolve
- * @param context - Optional context key (e.g. `'tools'`)
+ * @param context - Optional context key (e.g. `'advanced'`)
  * @returns The resolved model string
  * @public
  */
@@ -529,9 +585,14 @@ export function resolveModel(spec: ModelSpec, context?: string): string {
     return spec;
   }
 
-  // Try the requested context key first
-  if (context !== undefined && context in spec) {
-    return resolveModel(spec[context]);
+  // Ordered candidate keys for this context: a tier key cascades via
+  // TIER_FALLBACK; any other key resolves flat as [context]; undefined drops
+  // straight to the shared 'base' fallback below.
+  const order: ReadonlyArray<string> = context === undefined ? [] : TIER_FALLBACK[context] ?? [context];
+  for (const key of order) {
+    if (key in spec) {
+      return resolveModel(spec[key]);
+    }
   }
 
   // Fall back to 'base'
@@ -546,6 +607,139 @@ export function resolveModel(spec: ModelSpec, context?: string): string {
     return '';
   }
   return resolveModel(first);
+}
+
+// ============================================================================
+// Model Alias Layer
+// ============================================================================
+
+/**
+ * Canonical fgv alias → concrete provider model map.
+ *
+ * @remarks
+ * Keys are full fgv aliases (`@<providerId>:<role>`, e.g. `@google-gemini:flash`);
+ * values are the current concrete provider model id (or a provider-native alias,
+ * which is resolved with one further indirection hop). Additive; absence of an
+ * `aliases` field on a descriptor means "this provider defines no aliases" and
+ * every model string passes through verbatim.
+ * @public
+ */
+export interface IModelAliasMap {
+  readonly [alias: string]: string;
+}
+
+/**
+ * Marker prefix for an fgv model alias.
+ *
+ * @remarks
+ * A model string is an fgv alias **iff** it begins with this sigil. Everything
+ * else is a raw provider model id and passes through {@link resolveModelAlias}
+ * untouched — this is what keeps the alias layer back-compatible (no current
+ * `defaultModel`, `modelOverride`, or self-hosted `model:tag` id starts with `@`).
+ * @public
+ */
+export const MODEL_ALIAS_SIGIL: '@' = '@';
+
+function resolveModelAliasInner(
+  descriptor: IAiProviderDescriptor,
+  model: string,
+  visited: Set<string>
+): Result<string> {
+  // No sigil → raw provider id; return verbatim (back-compat passthrough).
+  if (!model.startsWith(MODEL_ALIAS_SIGIL)) {
+    return succeed(model);
+  }
+  // Cycle guard: an `@`→`@` loop would otherwise recurse forever.
+  if (visited.has(model)) {
+    return fail(`provider "${descriptor.id}": cyclic model alias "${model}"`);
+  }
+  visited.add(model);
+  const target = descriptor.aliases?.[model];
+  if (target === undefined) {
+    return fail(`provider "${descriptor.id}": unknown model alias "${model}"`);
+  }
+  // Follow the target. A concrete (non-sigil) target terminates the recursion on
+  // the next call; an aliased target (the canonical case: fgv alias → provider-
+  // native alias) is followed in turn, with the visited-set guarding against an
+  // `@`→`@` cycle.
+  return resolveModelAliasInner(descriptor, target, visited);
+}
+
+/**
+ * Resolves a single (possibly-aliased) model string against a provider descriptor.
+ *
+ * @remarks
+ * Resolution rules:
+ * 1. No leading {@link MODEL_ALIAS_SIGIL} → raw provider id, returned verbatim.
+ * 2. Leading sigil + registered in `descriptor.aliases` → the registered target,
+ *    which is itself resolved — so a chain of `@` aliases is followed until a
+ *    non-`@` (concrete provider) id is reached. The canonical case is a single
+ *    hop (an fgv alias targeting a provider-native alias), but longer chains
+ *    resolve too.
+ * 3. Leading sigil + unregistered → fails loudly, naming the provider and alias.
+ *
+ * An `@`→`@` cycle is guarded by a visited-set and fails rather than exhausting
+ * the stack.
+ *
+ * @param descriptor - The provider descriptor whose `aliases` map is consulted.
+ * @param model - The (possibly-aliased) model string to resolve.
+ * @returns `Result` with the concrete provider model id, or a failure.
+ * @public
+ */
+export function resolveModelAlias(descriptor: IAiProviderDescriptor, model: string): Result<string> {
+  return resolveModelAliasInner(descriptor, model, new Set<string>());
+}
+
+/**
+ * The full provider model-resolution chokepoint: the {@link ModelSpecKey} walk
+ * (via {@link resolveModel}) THEN {@link resolveModelAlias}.
+ *
+ * @remarks
+ * Replaces the bare `resolveModel(modelOverride ?? descriptor.defaultModel, context)`
+ * call plus the duplicated empty-result check at each call-time chokepoint. The
+ * `ModelSpec` branch is selected first; the resulting string — which may itself
+ * be an fgv alias — is then resolved to a concrete id.
+ *
+ * @param descriptor - The provider descriptor (supplies `defaultModel` and `aliases`).
+ * @param modelOverride - An optional caller-supplied `ModelSpec` that takes precedence
+ * over `descriptor.defaultModel`. May itself contain or be an alias.
+ * @param context - Optional {@link ModelSpecKey} selecting the spec branch.
+ * @returns `Result` with the concrete provider model id, or a failure.
+ * @public
+ */
+export function resolveProviderModel(
+  descriptor: IAiProviderDescriptor,
+  modelOverride: ModelSpec | undefined,
+  context?: ModelSpecKey
+): Result<string> {
+  const resolved = resolveModel(modelOverride ?? descriptor.defaultModel, context);
+  if (resolved.length === 0) {
+    return fail(
+      `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
+    );
+  }
+  return resolveModelAlias(descriptor, resolved);
+}
+
+/**
+ * Determines whether a concrete (already-resolved) model id must be invoked via
+ * the OpenAI Responses API rather than chat completions.
+ *
+ * @remarks
+ * Matches `modelId` against the descriptor's
+ * {@link IAiProviderDescriptor.responsesOnlyModelPrefixes} by prefix. A provider
+ * that declares no list (the common case) always returns `false`. Consulted by
+ * both the completion (`callProviderCompletion`) and streaming
+ * (`callProviderCompletionStream`) OpenAI dispatch branches so a Responses-only
+ * model (e.g. `gpt-5.5-pro`) routes correctly even with no tools requested.
+ *
+ * @param descriptor - The provider descriptor supplying the prefix list.
+ * @param modelId - The resolved concrete model id to test.
+ * @returns `true` when `modelId` starts with any declared Responses-only prefix.
+ * @public
+ */
+export function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId: string): boolean {
+  return descriptor.responsesOnlyModelPrefixes?.some((p) => modelId.startsWith(p)) ?? false;
 }
 
 // ============================================================================
@@ -582,19 +776,13 @@ export type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
  * - `'xai-images'` — xAI Images API. Text-only JSON generation request.
  * - `'xai-images-edits'` — xAI Images API for Grok Imagine models. Uses JSON
  *   body with `{ type: "image_url" }` objects (not multipart).
- * - `'gemini-imagen'` — Google Imagen `:predict` endpoint. Text-only.
  * - `'gemini-image-out'` — Google Gemini chat-style `:generateContent`
- *   endpoint that returns image parts (Gemini 2.5 Flash Image / "Nano
+ *   endpoint that returns image parts (Gemini Flash Image / "Nano
  *   Banana"). Accepts reference images.
  *
  * @public
  */
-export type AiImageApiFormat =
-  | 'openai-images'
-  | 'gemini-imagen'
-  | 'xai-images'
-  | 'xai-images-edits'
-  | 'gemini-image-out';
+export type AiImageApiFormat = 'openai-images' | 'xai-images' | 'xai-images-edits' | 'gemini-image-out';
 
 /**
  * API format categories for embedding provider routing.
@@ -747,6 +935,19 @@ export interface IAiProviderDescriptor {
   readonly baseUrl: string;
   /** Default model specification — string or context-aware map. */
   readonly defaultModel: ModelSpec;
+  /**
+   * Canonical fgv alias → concrete model map for this provider. Absent means the
+   * provider defines no aliases and every model string passes through verbatim.
+   *
+   * @remarks
+   * Keys are full fgv aliases (`@<providerId>:<role>`); values are the current
+   * concrete model id (or a provider-native alias). Consulted by
+   * {@link resolveModelAlias} / {@link resolveProviderModel} at each call-time
+   * resolution chokepoint, downstream of the {@link ModelSpecKey} walk. Additive
+   * and optional — composes with the existing per-descriptor `imageGeneration` /
+   * `embedding` capability arrays.
+   */
+  readonly aliases?: IModelAliasMap;
   /** Which server-side tools this provider supports (empty = none). */
   readonly supportedTools: ReadonlyArray<AiServerToolType>;
   /** Whether this provider's API enforces CORS restrictions that prevent direct browser calls. */
@@ -786,15 +987,13 @@ export interface IAiProviderDescriptor {
    * catch-all and matches every model id.
    *
    * Multiple entries support providers that host more than one image-API
-   * surface under one baseUrl. Google Gemini is the canonical case: the
-   * `imagen-*` family is predict-only via `:predict`, while
-   * `gemini-2.5-flash-image` uses chat-style `:generateContent` and accepts
-   * reference images. Listing both lets callers pick the right model and the
-   * dispatcher routes accordingly.
+   * surface under one baseUrl. The dispatcher selects the longest-matching
+   * prefix, so a provider can list a specific-prefix surface alongside an
+   * empty-prefix catch-all and the right model routes to the right API.
    *
    * Image-model selection reuses the existing `image` {@link ModelSpecKey}.
    * Providers that declare `imageGeneration` should declare a model in
-   * `defaultModel.image`, e.g. `{ base: 'gpt-4o', image: 'dall-e-3' }`.
+   * `defaultModel.image`, e.g. `{ base: '@openai:mini', image: '@openai:image' }`.
    */
   readonly imageGeneration?: ReadonlyArray<IAiImageModelCapability>;
   /**
@@ -809,11 +1008,27 @@ export interface IAiProviderDescriptor {
    *
    * Embedding-model selection uses the `embedding` {@link ModelSpecKey}.
    * Providers that declare `embedding` should declare a model in
-   * `defaultModel.embedding`, e.g. `{ base: 'gpt-4o', embedding: 'text-embedding-3-small' }`.
+   * `defaultModel.embedding`, e.g. `{ base: '@openai:mini', embedding: '@openai:embedding' }`.
    * Self-hosted providers (`ollama`, `openai-compat`) leave it unset — the
    * caller supplies the embedding model via `modelOverride`.
    */
   readonly embedding?: ReadonlyArray<IAiEmbeddingModelCapability>;
+  /**
+   * Concrete model ids (prefix-matched) that must be invoked via the OpenAI
+   * Responses API rather than chat completions — e.g. `gpt-5.5-pro`. Non-OpenAI
+   * `apiFormat`s ignore this.
+   *
+   * @remarks
+   * Some current-generation OpenAI models (the `-pro` tier) are Responses-API-only
+   * and 400 on `/chat/completions`. The completion and streaming dispatch consult
+   * this list (via the sibling predicate {@link AiAssist.isResponsesOnlyModel})
+   * and route a matching model to the Responses path
+   * even when no tools are requested. Mirrors the prefix-matching shape of the
+   * `imageGeneration` / `embedding` capability arrays; adding a new Responses-only
+   * line is a one-entry descriptor edit. Empty or undefined means no model is
+   * Responses-only.
+   */
+  readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
 }
 
 /**
@@ -848,9 +1063,9 @@ export interface IAiImageModelCapability {
   readonly maxCount?: number;
   /**
    * How to encode the output format on the wire:
-   * - 'response-format': send response_format: 'b64_json' (dall-e-2, dall-e-3)
+   * - 'response-format': send response_format: 'b64_json' (openai-images catch-all)
    * - 'output-format': send output_format (gpt-image-1)
-   * - 'none': send neither (Imagen, Gemini Flash)
+   * - 'none': send neither (Gemini Flash)
    */
   readonly outputParamStyle?: 'response-format' | 'output-format' | 'none';
   /** Default MIME type for response images. */
@@ -987,61 +1202,28 @@ export interface IAiEmbeddingResult {
 // Image Generation — Layered Options Types
 // ============================================================================
 
-/** Pixel dimension sizes accepted by dall-e-2. @public */
-export type DallE2Size = '256x256' | '512x512' | '1024x1024';
-
-/** Pixel dimension sizes accepted by dall-e-3. @public */
-export type DallE3Size = '1024x1024' | '1792x1024' | '1024x1792';
-
 /** Pixel dimension sizes accepted by gpt-image-1. @public */
 export type GptImageSize = '1024x1024' | '1536x1024' | '1024x1536' | 'auto';
 
 /** All accepted image size strings across all providers. @public */
-export type AiImageSize = DallE2Size | DallE3Size | GptImageSize;
-
-/** Quality values for dall-e-3. @public */
-export type DallE3Quality = 'standard' | 'hd';
+export type AiImageSize = GptImageSize;
 
 /** Quality values for gpt-image-1. @public */
 export type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
 
 /** All accepted quality strings across all providers. @public */
-export type AiImageQuality = DallE3Quality | GptImageQuality;
-
-/** Model names in the DALL-E family. @public */
-export type DallEModelNames = 'dall-e-2' | 'dall-e-3';
+export type AiImageQuality = GptImageQuality;
 
 /** Model names in the GPT Image family. @public */
-export type GptImageModelNames = 'gpt-image-1';
+export type GptImageModelNames = 'gpt-image-1' | 'gpt-image-1.5';
 
 /** Model names in the xAI Grok Imagine family. @public */
 export type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality';
 
-/** Model names in the Imagen 4 family. @public */
-export type Imagen4ModelNames =
-  | 'imagen-4.0-generate-001'
-  | 'imagen-4.0-ultra-generate-001'
-  | 'imagen-4.0-fast-generate-001';
-
 /** Model names in the Gemini Flash Image family. @public */
-export type GeminiFlashImageModelNames = 'gemini-2.5-flash-image';
+export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image-preview';
 
 // ---- Family-level config shapes ----
-
-/**
- * Provider-specific config for DALL-E models (dall-e-2, dall-e-3).
- * @remarks
- * style is only valid for dall-e-3; the runtime validator rejects it for dall-e-2.
- * @public
- */
-export interface IDallEImageGenerationConfig {
-  /** Image dimensions (dall-e-2: 256x256|512x512|1024x1024; dall-e-3: 1024x1024|1792x1024|1024x1792). */
-  readonly size?: DallE2Size | DallE3Size;
-  /** dall-e-3 only. Quality tier. */
-  readonly quality?: DallE3Quality;
-  /** dall-e-3 only. Visual style. */
-  readonly style?: 'vivid' | 'natural';
-}
 
 /**
  * Provider-specific config for gpt-image-1.
@@ -1074,27 +1256,6 @@ export interface IGrokImagineImageGenerationConfig {
 }
 
 /**
- * Provider-specific config for Google Imagen 4 models.
- * @public
- */
-export interface IImagen4GenerationConfig {
-  /** Aspect ratio string. */
-  readonly aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
-  /** Output resolution. */
-  readonly imageSize?: '1K' | '2K';
-  /** Whether to add SynthID watermark. Must be false to use seed. */
-  readonly addWatermark?: boolean;
-  /** LLM-based prompt rewriting. */
-  readonly enhancePrompt?: boolean;
-  /** Output MIME type. */
-  readonly outputMimeType?: 'image/jpeg' | 'image/png';
-  /** JPEG compression quality. */
-  readonly outputCompressionQuality?: number;
-  /** Person generation policy. */
-  readonly personGeneration?: 'allow_all' | 'allow_adult' | 'dont_allow';
-}
-
-/**
  * Provider-specific config for Gemini Flash Image.
  * @public
  */
@@ -1112,21 +1273,6 @@ export interface IGeminiFlashImageGenerationConfig {
  */
 export interface INamedModelFamilyConfig {
   readonly models?: readonly string[];
-}
-
-/**
- * Options block scoped to DALL-E family models.
- * @public
- */
-export interface IDallEModelOptions extends INamedModelFamilyConfig {
-  /** Discriminator: openai provider lineage. */
-  readonly provider: 'openai';
-  /** Family identifier. */
-  readonly family: 'dall-e';
-  /** Optional model names this block applies to. Omit = applies to all DALL-E models. */
-  readonly models?: DallEModelNames[];
-  /** Family-specific config. */
-  readonly config: IDallEImageGenerationConfig;
 }
 
 /**
@@ -1149,17 +1295,6 @@ export interface IGrokImagineModelOptions extends INamedModelFamilyConfig {
   readonly family: 'grok-imagine';
   readonly models?: GrokImagineModelNames[];
   readonly config: IGrokImagineImageGenerationConfig;
-}
-
-/**
- * Options block scoped to Google Imagen 4 models.
- * @public
- */
-export interface IImagen4ModelOptions extends INamedModelFamilyConfig {
-  readonly provider: 'google';
-  readonly family: 'imagen-4';
-  readonly models?: Imagen4ModelNames[];
-  readonly config: IImagen4GenerationConfig;
 }
 
 /**
@@ -1194,10 +1329,8 @@ export interface IOtherModelOptions {
  * @public
  */
 export type IModelFamilyConfig =
-  | IDallEModelOptions
   | IGptImageModelOptions
   | IGrokImagineModelOptions
-  | IImagen4ModelOptions
   | IGeminiFlashImageModelOptions
   | IOtherModelOptions;
 
@@ -1230,14 +1363,13 @@ export type IModelFamilyConfig =
 export interface IAiImageGenerationOptions {
   /**
    * Image dimensions for OpenAI models (mapped to `size` field).
-   * For xAI aspect ratio or Imagen aspect ratio, use the corresponding `models` family block.
+   * For xAI or Gemini Flash aspect ratio, use the corresponding `models` family block.
    */
   readonly size?: AiImageSize;
   /** Number of images. Default 1. Some models enforce a maximum. */
   readonly count?: number;
   /**
    * Quality tier. Accepted values differ per model:
-   * - dall-e-3: 'standard' | 'hd'
    * - gpt-image-1: 'low' | 'medium' | 'high' | 'auto'
    * Other models ignore this field.
    */
@@ -1375,13 +1507,20 @@ export interface IAiImageGenerationResponse {
 
 /**
  * Model IDs for Anthropic thinking-capable models.
+ *
+ * @remarks
+ * Only thinking-capable lines are listed. The non-tier `@anthropic:haiku` / `@anthropic:fable`
+ * aliases (reachable via `modelOverride` only) are deliberately omitted — they are not
+ * documented as thinking-capable, so naming them in a thinking-model filter would be misleading.
  * @public
  */
 export type AnthropicThinkingModelNames =
   | 'claude-sonnet-4-5'
   | 'claude-sonnet-4-6'
+  | 'claude-sonnet-5'
   | 'claude-opus-4-6'
-  | 'claude-opus-4-7';
+  | 'claude-opus-4-7'
+  | 'claude-opus-4-8';
 
 /**
  * Model IDs for OpenAI thinking-capable models.
@@ -1395,14 +1534,19 @@ export type OpenAiThinkingModelNames =
   | 'gpt-5'
   | 'gpt-5.1'
   | 'gpt-5.2'
+  | 'gpt-5.4-mini'
   | 'gpt-5.5'
+  | 'gpt-5.5-pro'
   | 'gpt-5-pro';
 
 /**
  * Model IDs for Google Gemini thinking-capable models.
  * @public
  */
-export type GeminiThinkingModelNames = 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.5-flash-lite';
+export type GeminiThinkingModelNames =
+  | 'gemini-3.1-pro-preview'
+  | 'gemini-3.5-flash'
+  | 'gemini-3.1-flash-lite';
 
 /**
  * Model IDs for xAI thinking-capable models.

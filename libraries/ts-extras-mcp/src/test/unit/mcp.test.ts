@@ -470,4 +470,132 @@ describe('adaptMcpTools', () => {
       expect(await execute({ q: 'hello' })).toFailWith(/denied/);
     });
   });
+
+  // ==========================================================================
+  // C2 — MCP Tool.annotations passthrough (normalized, never raw)
+  // ==========================================================================
+
+  describe('annotations passthrough (C2)', () => {
+    const goodSchema2: JsonValue = { type: 'object', properties: { q: { type: 'string' } }, required: ['q'] };
+
+    test('all five hints round-trip onto descriptor.annotations and config.annotations', async () => {
+      const annotations = {
+        title: 'Recall Memory',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false
+      };
+      const fake = makeFakeClient({
+        listTools: jest.fn(async () => ({
+          tools: [{ name: 'recall', description: 'r', inputSchema: goodSchema2, annotations }]
+        }))
+      });
+      const session = await connectWith(fake);
+
+      expect(await listMcpTools(session)).toSucceedAndSatisfy((tools: ReadonlyArray<IMcpToolDescriptor>) => {
+        expect(tools[0].annotations).toEqual(annotations);
+      });
+
+      const session2 = await connectWith(
+        makeFakeClient({
+          listTools: jest.fn(async () => ({
+            tools: [{ name: 'recall', description: 'r', inputSchema: goodSchema2, annotations }]
+          }))
+        })
+      );
+      expect(await adaptMcpTools(session2)).toSucceedAndSatisfy((result: IAdaptMcpToolsResult) => {
+        expect(result.tools[0].config.annotations).toEqual(annotations);
+      });
+    });
+
+    test('a tool with no annotations leaves the field absent', async () => {
+      const fake = makeFakeClient({
+        listTools: jest.fn(async () => ({ tools: [{ name: 'plain', inputSchema: goodSchema2 }] }))
+      });
+      const session = await connectWith(fake);
+      expect(await listMcpTools(session)).toSucceedAndSatisfy((tools: ReadonlyArray<IMcpToolDescriptor>) => {
+        expect(tools[0]).not.toHaveProperty('annotations');
+      });
+
+      const session2 = await connectWith(
+        makeFakeClient({
+          listTools: jest.fn(async () => ({ tools: [{ name: 'plain', inputSchema: goodSchema2 }] }))
+        })
+      );
+      expect(await adaptMcpTools(session2)).toSucceedAndSatisfy((result: IAdaptMcpToolsResult) => {
+        expect(result.tools[0].config).not.toHaveProperty('annotations');
+      });
+    });
+
+    test('a malformed annotations blob is normalized (known fields kept, junk dropped), never raw-propagated', async () => {
+      // readOnlyHint is the wrong type (dropped); bogusField is unknown (dropped); title is valid (kept).
+      const rawAnnotations = {
+        title: 'Keep Me',
+        readOnlyHint: 'yes-please',
+        destructiveHint: true,
+        bogusField: { nested: 42 }
+      };
+      const fake = makeFakeClient({
+        listTools: jest.fn(async () => ({
+          tools: [{ name: 'messy', inputSchema: goodSchema2, annotations: rawAnnotations }]
+        }))
+      });
+      const session = await connectWith(fake);
+      expect(await listMcpTools(session)).toSucceedAndSatisfy((tools: ReadonlyArray<IMcpToolDescriptor>) => {
+        // Only the well-typed known fields survive; the malformed readOnlyHint and unknown
+        // bogusField are dropped; the raw blob is never propagated.
+        expect(tools[0].annotations).toEqual({ title: 'Keep Me', destructiveHint: true });
+        expect(tools[0].annotations).not.toHaveProperty('readOnlyHint');
+        expect(tools[0].annotations).not.toHaveProperty('bogusField');
+      });
+    });
+
+    test('an all-junk annotations blob normalizes to an absent field (not an empty object)', async () => {
+      const fake = makeFakeClient({
+        listTools: jest.fn(async () => ({
+          tools: [
+            { name: 'junk', inputSchema: goodSchema2, annotations: { unknownOnly: 1, readOnlyHint: 3 } }
+          ]
+        }))
+      });
+      const session = await connectWith(fake);
+      expect(await listMcpTools(session)).toSucceedAndSatisfy((tools: ReadonlyArray<IMcpToolDescriptor>) => {
+        expect(tools[0]).not.toHaveProperty('annotations');
+      });
+    });
+
+    test('a non-object annotations value is dropped', async () => {
+      const fake = makeFakeClient({
+        listTools: jest.fn(async () => ({
+          tools: [{ name: 'weird', inputSchema: goodSchema2, annotations: 'not-an-object' }]
+        }))
+      });
+      const session = await connectWith(fake);
+      expect(await listMcpTools(session)).toSucceedAndSatisfy((tools: ReadonlyArray<IMcpToolDescriptor>) => {
+        expect(tools[0]).not.toHaveProperty('annotations');
+      });
+    });
+
+    test('the skipped-tool path is unaffected by annotations', async () => {
+      // A tool with annotations but an unsupported inputSchema is still skipped; annotations do
+      // not rescue it or leak onto the skip record.
+      const forbidden: JsonValue = {
+        type: 'object',
+        properties: { name: { type: 'string', pattern: '^a' } }
+      };
+      const fake = makeFakeClient({
+        listTools: jest.fn(async () => ({
+          tools: [{ name: 'blocked', inputSchema: forbidden, annotations: { destructiveHint: true } }]
+        }))
+      });
+      const session = await connectWith(fake);
+      expect(await adaptMcpTools(session)).toSucceedAndSatisfy((result: IAdaptMcpToolsResult) => {
+        expect(result.tools).toHaveLength(0);
+        expect(result.skipped).toHaveLength(1);
+        expect(result.skipped[0].name).toBe('blocked');
+        expect(result.skipped[0]).not.toHaveProperty('annotations');
+      });
+    });
+  });
 });

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Route OpenAI Responses-API-only models (gpt-5.5-pro) through the Responses API on the completion and streaming paths via the responsesOnlyModelPrefixes descriptor field; restore the invokable frontier tier",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
