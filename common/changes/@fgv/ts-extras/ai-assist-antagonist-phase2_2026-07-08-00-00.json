@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add antagonist torture tests for the ai-assist provider-shape, model-routing, convert/validate-symmetry, and param-rejection near-miss classes (test-only, no production behavior change)",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
