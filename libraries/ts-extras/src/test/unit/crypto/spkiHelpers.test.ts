@@ -146,6 +146,18 @@ describe('exportPublicKeyAsMultibaseSpki / importPublicKeyFromMultibaseSpki', ()
       expect(CryptoUtils.isValidMultibaseSpkiPublicKey(encoded)).toBe(true);
       expect(CryptoUtils.Converters.multibaseSpkiPublicKey.convert(encoded)).toSucceedWith(encoded);
     });
+
+    test('accepts a plain (unbranded) string, not only the branded type', async () => {
+      const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+      const branded = (await CryptoUtils.exportPublicKeyAsMultibaseSpki(pair.publicKey, provider)).orThrow();
+      // A plain string variable — e.g. a value read from storage or the wire —
+      // imports directly, without first branding it through the guard/converter.
+      const raw: string = branded;
+      const result = await CryptoUtils.importPublicKeyFromMultibaseSpki(raw, 'ed25519', provider);
+      expect(result).toSucceedAndSatisfy((key) => {
+        expect(key.type).toBe('public');
+      });
+    });
   });
 });
 
@@ -226,7 +238,6 @@ describe('multibase delegation equivalence (behavior-preserving refactor)', () =
 
 describe('isValidMultibaseSpkiPublicKey', () => {
   test('accepts well-formed multibase base64url-no-pad values', () => {
-    expect(CryptoUtils.isValidMultibaseSpkiPublicKey('m')).toBe(true); // 'm' + empty body
     expect(CryptoUtils.isValidMultibaseSpkiPublicKey('mSGVsbG8')).toBe(true);
     expect(CryptoUtils.isValidMultibaseSpkiPublicKey('mAAAA')).toBe(true);
     expect(CryptoUtils.isValidMultibaseSpkiPublicKey('mabc-_ABC')).toBe(true);
@@ -249,6 +260,25 @@ describe('isValidMultibaseSpkiPublicKey', () => {
     expect(CryptoUtils.isValidMultibaseSpkiPublicKey('m!@#$%')).toBe(false);
     expect(CryptoUtils.isValidMultibaseSpkiPublicKey('mA')).toBe(false); // body length % 4 === 1
   });
+
+  test('rejects the degenerate empty body ("m" alone)', () => {
+    // A real key never encodes to an empty body; the shape guard requires a
+    // non-empty base64url body, matching MultibaseSpkiPublicKeyRegExp.
+    expect(CryptoUtils.isValidMultibaseSpkiPublicKey('m')).toBe(false);
+  });
+});
+
+describe('MultibaseSpkiPublicKeyRegExp', () => {
+  test('is the shape underlying the guard (matches iff the guard accepts, minus the base64 length rule)', () => {
+    // The exported pattern is the multibase-m + non-empty base64url-no-pad shape.
+    expect(CryptoUtils.MultibaseSpkiPublicKeyRegExp.test('mSGVsbG8')).toBe(true);
+    expect(CryptoUtils.MultibaseSpkiPublicKeyRegExp.test('mabc-_ABC')).toBe(true);
+    // Rejects: empty body, wrong/missing prefix, and non-base64url characters.
+    expect(CryptoUtils.MultibaseSpkiPublicKeyRegExp.test('m')).toBe(false);
+    expect(CryptoUtils.MultibaseSpkiPublicKeyRegExp.test('zSGVsbG8')).toBe(false);
+    expect(CryptoUtils.MultibaseSpkiPublicKeyRegExp.test('SGVsbG8')).toBe(false);
+    expect(CryptoUtils.MultibaseSpkiPublicKeyRegExp.test('m!@#$%')).toBe(false);
+  });
 });
 
 describe('Converters.multibaseSpkiPublicKey', () => {
@@ -256,9 +286,13 @@ describe('Converters.multibaseSpkiPublicKey', () => {
     expect(CryptoUtils.Converters.multibaseSpkiPublicKey.convert('mSGVsbG8')).toSucceedWith(
       'mSGVsbG8' as MultibaseSpkiPublicKey
     );
-    expect(CryptoUtils.Converters.multibaseSpkiPublicKey.convert('m')).toSucceedWith(
-      'm' as MultibaseSpkiPublicKey
+    expect(CryptoUtils.Converters.multibaseSpkiPublicKey.convert('mabc-_ABC')).toSucceedWith(
+      'mabc-_ABC' as MultibaseSpkiPublicKey
     );
+  });
+
+  test('fails on the degenerate empty body ("m" alone)', () => {
+    expect(CryptoUtils.Converters.multibaseSpkiPublicKey.convert('m')).toFail();
   });
 
   test('fails on a non-string input', () => {

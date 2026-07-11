@@ -459,6 +459,7 @@ declare namespace CryptoUtils {
         exportPublicKeyAsMultibaseSpki,
         importPublicKeyFromMultibaseSpki,
         isValidMultibaseSpkiPublicKey,
+        MultibaseSpkiPublicKeyRegExp,
         multibaseBase64UrlDecode,
         multibaseBase64UrlEncode,
         HpkeProvider,
@@ -1593,9 +1594,10 @@ interface IModelSpecMap {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function importPublicKeyFromMultibaseSpki(encoded: MultibaseSpkiPublicKey, algorithm: KeyPairAlgorithm, provider: ICryptoProvider): Promise<Result<CryptoKey>>;
+function importPublicKeyFromMultibaseSpki(encoded: string, algorithm: KeyPairAlgorithm, provider: ICryptoProvider): Promise<Result<CryptoKey>>;
 
 // @public
 interface IMustacheTemplateOptions {
@@ -1790,6 +1792,8 @@ const isoDateTime: Converter<DateTime, unknown>;
 // @public
 function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId: string): boolean;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2152,6 +2156,13 @@ type MultibaseSpkiPublicKey = Brand<string, 'MultibaseSpkiPublicKey'>;
 //
 // @public
 const multibaseSpkiPublicKey: Converter<MultibaseSpkiPublicKey>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const MultibaseSpkiPublicKeyRegExp: RegExp;
 
 declare namespace Mustache {
     export {
