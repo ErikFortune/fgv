@@ -71,6 +71,7 @@ export {
   exportPublicKeyAsMultibaseSpki,
   importPublicKeyFromMultibaseSpki,
   isValidMultibaseSpkiPublicKey,
+  MultibaseSpkiPublicKeyRegExp,
   multibaseBase64UrlDecode,
   multibaseBase64UrlEncode
 } from './spkiHelpers';

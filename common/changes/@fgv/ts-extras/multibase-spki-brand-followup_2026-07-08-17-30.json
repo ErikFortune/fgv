@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "crypto-utils: export the MultibaseSpkiPublicKeyRegExp shape pattern next to the existing MultibaseSpkiPublicKey brand/guard/converter (single source of truth for consumers that need the pattern directly), and widen importPublicKeyFromMultibaseSpki to accept a plain string so callers holding an unbranded value can import it without first branding. The isValidMultibaseSpkiPublicKey guard now requires a non-empty base64url body (rejects the degenerate 'm'), aligning it with the exported pattern; no real exported key is affected.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
