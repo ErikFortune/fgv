@@ -907,9 +907,16 @@ export class KeyStore implements IEncryptionProvider {
    * Requires a {@link CryptoUtils.KeyStore.IPrivateKeyStorage} backend
    * supplied at construction.
    *
+   * Extractability of the generated private key defaults to the storage
+   * backend's {@link CryptoUtils.KeyStore.IPrivateKeyStorage.supportsNonExtractable}.
+   * `options.extractable` overrides that default for this key only; requesting
+   * `extractable: false` against a backend that cannot store non-extractable
+   * keys fails loudly rather than silently generating an extractable key.
+   *
    * @param name - Unique name for the entry
-   * @param options - Algorithm, optional description, replace flag
-   * @returns Success with the new entry, Failure if locked, no provider, or storage write failed
+   * @param options - Algorithm, optional description, replace flag, extractable override
+   * @returns Success with the new entry, Failure if locked, no provider, storage write failed,
+   * or the requested extractability cannot be honored by the backend
    * @public
    */
   public async addKeyPair(name: string, options: IAddKeyPairOptions): Promise<Result<IAddKeyPairResult>> {
@@ -930,8 +937,17 @@ export class KeyStore implements IEncryptionProvider {
 
     // Generate the keypair before touching storage. extractable=true on backends
     // that round-trip via JWK; extractable=false on backends that hold CryptoKey
-    // refs directly.
-    const extractable = !this._privateKeyStorage.supportsNonExtractable;
+    // refs directly. `options.extractable` overrides the backend-derived default
+    // for this key only; a caller-requested non-extractable key against a
+    // backend that cannot store one fails loudly rather than silently
+    // upgrading to extractable.
+    const backendExtractable = !this._privateKeyStorage.supportsNonExtractable;
+    if (options.extractable === false && backendExtractable) {
+      return fail(
+        `Cannot create non-extractable keypair for '${name}': storage backend does not support non-extractable keys`
+      );
+    }
+    const extractable = options.extractable ?? backendExtractable;
     const keyPairResult = await this._cryptoProvider.generateKeyPair(options.algorithm, extractable);
     /* c8 ignore next 3 - crypto provider errors covered in nodeCryptoProvider tests; cannot be triggered here without mocking */
     if (keyPairResult.isFailure()) {
