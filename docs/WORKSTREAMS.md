@@ -202,53 +202,59 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ---
 
-### `ai-assist-tool-annotations` 🟢
+### `ai-assist-tool-annotations` ✅
 
-**Status:** 🟢 ready to commission — precursor to `agent-memory-l2-tools` (L2's write tools consume it). Fully spiked 2026-07-07 (ai-assist tool surface + MCP adapter). Consumer: PersonAIlity (mediated agent writes).
-**Branch base:** `release` HEAD.
+**Status:** ✅ shipped to `release` via PR #524. Precursor to `agent-memory-l2-tools` (L2's write tools consume it). Consumer: PersonAIlity (mediated agent writes).
 **Package surface:** `@fgv/ts-extras/ai-assist` (`model.ts`, `clientToolContinuationBuilder.ts`, `index.ts`) + `@fgv/ts-extras-mcp` (`sdk.ts`, `operations.ts`, `model.ts`, `adapter.ts`).
-**Brief:** `.ai/tasks/active/ai-assist-tool-annotations/brief.md`.
+**Brief:** `.ai/tasks/completed/2026-07/ai-assist-tool-annotations/brief.md`.
 
 **Mission.** Add client-tool **behavior annotations** + a **before-execute gate hook** to the ai-assist client-tool surface. Three components: (1) `IAiToolAnnotations` + `IAiClientToolConfig.annotations?` (MCP-native names; host-advisory-only — no provider wire slot, so serialization is unaffected); (2) thread MCP `Tool.annotations` → the field through `adaptMcpTools` (validated, per the untrusted-server warning — currently dropped at 3 layers); (3) `onBeforeToolExecute?` gate on `executeClientToolTurn` (deny → synthesized denial tool-result, turn continues — reuses the tested failure→continuation path). Additive on both active surfaces. **Full design (incl. deny-semantics, locked) is in the brief** — built up front because it's well-understood, low-medium effort, and ships *with* the write tools it protects (avoiding the shovel-ready-then-forgotten carrying cost).
 
 ---
 
-### `agent-memory-temporal` 🟡
+### `agent-memory-temporal` ✅
 
-**Status:** 🟡 drafted, **consumer-validated** (PersonAIlity 2026-07-07, PR #521), not commissioned — gated on their epistemics/contradiction-handling work (after L2). Keystone of the three (L3 hard-depends on it).
-**Branch base:** `release` HEAD; reference `.ai/tasks/completed/2026-06/ts-agent-memory/` (README/exploration/design).
+**Status:** ✅ shipped to `release` via PR #526. Keystone of the three (L3 hard-depends on it). Consumer: PersonAIlity.
 **Package surface:** `@fgv/ts-agent-memory` (types/envelope, identityCodec, store/fileTreeMemoryStore, writePolicy, retrieve).
-**Brief:** `.ai/tasks/active/agent-memory-temporal/brief.md`.
+**Brief:** `.ai/tasks/completed/2026-07/agent-memory-temporal/brief.md`.
 
 **Mission.** Build the temporal versioned write path + temporal retrievers. All seams ship in v1 but are stubbed to fail loudly (three `if (addr.isVersioned) return fail(...)` fail-stops; every retriever `supportsTemporalQuery:false`; no `temporal-versioned` policy). Adds a versioned codec, the invalidate-don't-delete policy, versioned store branches, and `AsOfRetriever`/`CurrentValidRetriever`/`HistoryRetriever`. **OQ-11 → subtree-per-entity (consumer-backed).** Consumer-pinned: merge-patch `put()` on a temporal-versioned kind = new version + `invalid_at` on prior (composes with versioning); flat/`isVersioned:false` guarantee for Knowledge/LTM/MTM preserved (zero impact until a kind opts in). Converters already round-trip `temporal?`/`valid_at`/`invalid_at` — no serialization work.
 
 ---
 
-### `agent-memory-l2-tools` 🟡
+### `agent-memory-l2-tools` ✅
 
-**Status:** 🟡 drafted, **consumer-validated** (PersonAIlity 2026-07-07, PR #521), not commissioned — **nearest-term consumer**; recommended first or in parallel with temporal. **Depends on `ai-assist-tool-annotations`** (annotations field + gate hook); independent of temporal/L3.
-**Branch base:** `release` HEAD; reference the ts-agent-memory completion bundle + `@fgv/ts-extras-mcp` `adapter.ts` (the `IAiClientTool` construction idiom).
+**Status:** ✅ shipped to `release` via PR #525. Depended on `ai-assist-tool-annotations` (shipped, #524); independent of temporal/L3. Consumer: PersonAIlity (agent-writable memory tools).
 **Package surface:** new `@fgv/ts-agent-memory/tools` packlet; consumes `@fgv/ts-extras` ai-assist `IAiClientTool` + `@fgv/ts-json-base` `JsonSchema`.
-**Brief:** `.ai/tasks/active/agent-memory-l2-tools/brief.md`.
+**Brief:** `.ai/tasks/completed/2026-07/agent-memory-l2-tools/brief.md`.
 
 **Mission.** Expose memory ops as an `IAiClientTool` suite via `createMemoryTools({ store, retriever, registry, tools?, kinds? })`, `JsonSchema.object` schemas (MCP dual-path via `JsonSchema.fromJson`). **Consumer-locked:** scope isolation is constructor-fixed via a **pre-scoped store** — no tool arg carries `scope` (adoption make-or-break); **per-tool `tools?` subset** (default = read-only `search`+`context`; writes opt in) replaces the coarse `readOnly?`; `memory_search` results carry a host-suppliable **mnemonic handle** (`handleFor?`). Still open: tool-boundary safety (admit-reject surfacing, behavior hints); tool count beyond the five.
 
 ---
 
-### `agent-memory-l3-ingest` 🟡
+### `agent-memory-l3-ingest` ✅
 
-**Status:** 🟡 drafted, **consumer-validated** (PersonAIlity 2026-07-07, PR #521), not commissioned — furthest-out for them. **🔴 hard-blocked on `agent-memory-temporal`** for the `contradicts`→invalidate interlock; ship interlock-deferred only if commissioned earlier. Largest of the three.
-**Branch base:** `release` HEAD (with temporal shipped for the full interlock); reference the ts-agent-memory completion bundle (design §9-§10).
+**Status:** ✅ shipped to `release` via PR #527. Shipped after temporal (#526) for the full `contradicts`→temporal interlock. Largest of the three. Consumer: PersonAIlity.
 **Package surface:** new `@fgv/ts-agent-memory/ingest` packlet; reads `retrieve`+`vector`, writes via `store`.
-**Brief:** `.ai/tasks/active/agent-memory-l3-ingest/brief.md`.
+**Brief:** `.ai/tasks/completed/2026-07/agent-memory-l3-ingest/brief.md`.
 
 **Mission.** The fgv-side ingest orchestrator — host brings classify/extract/relate judgment; fgv owns the typed validation boundary, dedup (exact + new similarity layer), write-time edge/cycle safety, provenance stamping, and the `contradicts`→temporal interlock. Green-field packlet composing shipped seams. **Consumer-locked:** OQ-10 → **staged host interfaces** (consumer plugs its own classifiers/extractors); OQ-13 → `IEntityResolver` **optional** (deterministic-key hosts skip it); **single-item incremental ingest first-class** (per-turn streaming, not batch-only); provenance fields land **additive/optional** (no migration of persisted `mtm`/`ltm`).
-
-**Recommended sequencing across the three:** **L2 first or in parallel with temporal** (consumer preference — L2 is independent and changes what agents can do soonest), then temporal, then L3. L3 always last — largest, hard-blocked on temporal, reads vector/retrieve.
 
 ---
 
 ## Completed workstreams
+
+### `agent-memory-antagonist` ✅
+
+**Status:** ✅ shipped to `release` via PR #528. Adversarial "antagonist" stream (phase 1): hole-driven torture tests over the seven near-miss invariant classes in `@fgv/ts-agent-memory` (write-path union/replace, bi-temporal boundaries, crash-mid-write self-healing, corrupt on-disk data, host-boundary hostility, cycle-guard graphs, enum/convert-validate parity). **Found and fixed two real store bugs** the happy-path suite + single review missed: content-hash dedup swallowing a same-id metadata-only update (all three write paths), and a tampered `envelope.entityId` loading undetected.
+**Package surface:** `@fgv/ts-agent-memory` (tests; two `store/fileTreeMemoryStore.ts` fixes).
+**Brief:** `.ai/tasks/completed/2026-07/agent-memory-antagonist/brief.md`.
+
+### `ai-assist-antagonist` ✅
+
+**Status:** ✅ shipped to `release` via PR #529. Antagonist phase 2 over the `@fgv/ts-extras/ai-assist` provider surface (finishReason decline-vs-benign, model routing, convert/validate symmetry, thinking↔temperature param-rejection, streaming drift/SSE, client-tool continuation projection, Gemini tool mutual-exclusion). Classes 1–6 held; class 7 surfaced a real gap — **fixed**: `executeClientToolTurn` now fails fast when a Gemini turn combines `web_search` grounding with client tools (Gemini's API 400s on that combination).
+**Package surface:** `@fgv/ts-extras/ai-assist` (tests; one `clientToolContinuationBuilder.ts` guard).
+**Brief:** `.ai/tasks/completed/2026-07/ai-assist-antagonist/brief.md`.
 
 ### `ai-assist-model-tiers` ✅
 

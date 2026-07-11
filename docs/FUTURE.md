@@ -34,7 +34,7 @@ Description with the user's framing expanded with the design space.
 > paths. Routing-decision fork resolved in favor of the declarative model-prefix marker (over
 > frontier-tier-specific routing) because it also fixes a direct `modelOverride: 'gpt-5.5-pro'`,
 > not just the tier. Live-verified via the `openaiModelTiersScenario` canary against `gpt-5.5-pro`.
-> Artifacts: `.ai/tasks/active/ai-assist-openai-frontier-responses/brief.md`.
+> Artifacts: `.ai/tasks/completed/2026-07/ai-assist-openai-frontier-responses/brief.md` (shipped, PR #522).
 
 ## Horizontal composition B+1 — dependency-ordered render-merge-reinject (topo-sort)
 
@@ -328,4 +328,5 @@ packlet builds directly on them rather than re-deriving the codec. Also
 
 **Reference**: PersonAIlity V2 identity/signing track (`signing` packlet, Phase 0);
 crypto-utils base64url + branded multibase SPKI hardening stream
-(`.ai/tasks/active/crypto-utils-base64url-hardening/`).
+(`.ai/tasks/completed/2026-07/crypto-utils-base64url-hardening/`, shipped via PR #519;
+the canonical `MultibaseSpkiPublicKeyRegExp` export + `string`-widened import followed in PR #530).
