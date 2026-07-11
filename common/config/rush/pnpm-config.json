@@ -156,6 +156,23 @@
   ],
 
   /**
+   * The `globalOnlyBuiltDependencies` setting specifies which dependencies are permitted to run
+   * build scripts (`preinstall`, `install`, and `postinstall`). PNPM 10+ disables build scripts by
+   * default; this list explicitly re-permits the packages that genuinely need to build native
+   * bindings or run install scripts (the set PNPM blocked when we moved from PNPM 9, which ran all
+   * build scripts by default). Written to `onlyBuiltDependencies` in the generated pnpm-workspace.yaml.
+   *
+   * PNPM documentation: https://pnpm.io/settings#onlybuiltdependencies
+   */
+  "globalOnlyBuiltDependencies": [
+    "argon2",
+    "core-js",
+    "onnxruntime-node",
+    "protobufjs",
+    "sharp"
+  ],
+
+  /**
    * The `globalAllowedDeprecatedVersions` setting suppresses installation warnings for package
    * versions that the NPM registry reports as being deprecated.  This is useful if the
    * deprecated package is an indirect dependency of an external package that has not released a fix.
