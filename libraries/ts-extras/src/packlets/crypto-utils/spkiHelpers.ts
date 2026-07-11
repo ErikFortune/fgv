@@ -97,16 +97,41 @@ export function base64UrlNoPadDecode(encoded: string): Result<Uint8Array> {
 }
 
 /**
- * Type guard for {@link CryptoUtils.MultibaseSpkiPublicKey}: a string that starts
- * with the multibase `'m'` prefix and whose body matches the base64url-no-pad shape.
- * Shares the exact body-shape rule used by {@link CryptoUtils.base64UrlNoPadDecode}.
+ * The structural *shape* of a {@link CryptoUtils.MultibaseSpkiPublicKey}: the
+ * multibase `'m'` prefix followed by a non-empty base64url-no-pad body
+ * (`A-Z`, `a-z`, `0-9`, `-`, `_`).
+ *
+ * This is a shape prefilter, not full validation: it does not decode the DER
+ * SPKI or verify the key material or algorithm (that happens in
+ * {@link CryptoUtils.importPublicKeyFromMultibaseSpki}). The authoritative guard
+ * is {@link CryptoUtils.isValidMultibaseSpkiPublicKey}, which enforces this
+ * pattern **and** additionally rejects a body whose length is an impossible
+ * base64 remainder. Exposed for callers that need the pattern directly (e.g. a
+ * JSON-schema `pattern` field); prefer the guard/converter for validation.
+ *
+ * @public
+ */
+export const MultibaseSpkiPublicKeyRegExp: RegExp = /^m[A-Za-z0-9_-]+$/;
+
+/**
+ * Type guard for {@link CryptoUtils.MultibaseSpkiPublicKey}: a string matching
+ * {@link CryptoUtils.MultibaseSpkiPublicKeyRegExp} (multibase `'m'` prefix + a
+ * non-empty base64url-no-pad body) whose body also satisfies the base64url-no-pad
+ * length rule shared with {@link CryptoUtils.base64UrlNoPadDecode}. This is a
+ * structural *shape* check, not full validation — it does not decode the DER SPKI
+ * or verify the key material/algorithm (a malformed-but-well-shaped string fails
+ * later, with clear context, in {@link CryptoUtils.importPublicKeyFromMultibaseSpki}).
  *
  * @param value - The value to test.
  * @returns `true` if `value` is a well-formed multibase SPKI public key string.
  * @public
  */
 export function isValidMultibaseSpkiPublicKey(value: unknown): value is MultibaseSpkiPublicKey {
-  return typeof value === 'string' && value.startsWith('m') && isBase64UrlNoPadBody(value.slice(1));
+  return (
+    typeof value === 'string' &&
+    MultibaseSpkiPublicKeyRegExp.test(value) &&
+    isBase64UrlNoPadBody(value.slice(1))
+  );
 }
 
 /**
@@ -183,6 +208,10 @@ export async function exportPublicKeyAsMultibaseSpki(
  * the provider to import the key with the algorithm parameters from
  * {@link CryptoUtils.keyPairAlgorithmParams}.
  *
+ * Accepts a plain `string` (not only a branded {@link CryptoUtils.MultibaseSpkiPublicKey}),
+ * so callers holding an unbranded value read from storage or the wire can import
+ * it directly; a malformed value fails with error context rather than throwing.
+ *
  * @param encoded - A multibase SPKI string produced by {@link CryptoUtils.exportPublicKeyAsMultibaseSpki}.
  * @param algorithm - The {@link CryptoUtils.KeyPairAlgorithm} the key was generated for.
  * @param provider - The {@link CryptoUtils.ICryptoProvider} to use for the import operation.
@@ -190,7 +219,7 @@ export async function exportPublicKeyAsMultibaseSpki(
  * @public
  */
 export async function importPublicKeyFromMultibaseSpki(
-  encoded: MultibaseSpkiPublicKey,
+  encoded: string,
   algorithm: KeyPairAlgorithm,
   provider: ICryptoProvider
 ): Promise<Result<CryptoKey>> {

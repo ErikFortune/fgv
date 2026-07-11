@@ -459,6 +459,7 @@ declare namespace CryptoUtils {
         exportPublicKeyAsMultibaseSpki,
         importPublicKeyFromMultibaseSpki,
         isValidMultibaseSpkiPublicKey,
+        MultibaseSpkiPublicKeyRegExp,
         multibaseBase64UrlDecode,
         multibaseBase64UrlEncode,
         HpkeProvider,
@@ -760,6 +761,7 @@ class HpkeProvider {
 interface IAddKeyPairOptions {
     readonly algorithm: KeyPairAlgorithm;
     readonly description?: string;
+    readonly extractable?: boolean;
     readonly replace?: boolean;
 }
 
@@ -1593,9 +1595,10 @@ interface IModelSpecMap {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function importPublicKeyFromMultibaseSpki(encoded: MultibaseSpkiPublicKey, algorithm: KeyPairAlgorithm, provider: ICryptoProvider): Promise<Result<CryptoKey>>;
+function importPublicKeyFromMultibaseSpki(encoded: string, algorithm: KeyPairAlgorithm, provider: ICryptoProvider): Promise<Result<CryptoKey>>;
 
 // @public
 interface IMustacheTemplateOptions {
@@ -1792,6 +1795,8 @@ function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId: string
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function isValidMultibaseSpkiPublicKey(value: unknown): value is MultibaseSpkiPublicKey;
@@ -1980,6 +1985,7 @@ declare namespace KeyStore {
 // @public
 class KeyStore_2 implements IEncryptionProvider {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     addKeyPair(name: string, options: IAddKeyPairOptions): Promise<Result<IAddKeyPairResult>>;
     addSecret(name: string, options?: IAddSecretOptions): Promise<Result<IAddSecretResult>>;
     addSecretFromPassword(name: string, password: string, options?: IAddSecretFromPasswordOptions): Promise<Result<IAddSecretFromPasswordResult>>;
@@ -2152,6 +2158,13 @@ type MultibaseSpkiPublicKey = Brand<string, 'MultibaseSpkiPublicKey'>;
 //
 // @public
 const multibaseSpkiPublicKey: Converter<MultibaseSpkiPublicKey>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const MultibaseSpkiPublicKeyRegExp: RegExp;
 
 declare namespace Mustache {
     export {
@@ -2485,8 +2498,8 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/crypto-utils/keystore/keyStore.ts:1463:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/crypto-utils/keystore/keyStore.ts:1502:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1479:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1518:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 
