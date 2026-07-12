@@ -20,6 +20,7 @@
 
 import '@fgv/ts-utils-jest';
 
+import * as crypto from 'crypto';
 import * as CryptoUtils from '../../../packlets/crypto-utils';
 import type { KeyPairAlgorithm, MultibaseSpkiPublicKey } from '../../../packlets/crypto-utils';
 
@@ -316,5 +317,50 @@ describe('Converters.multibaseSpkiPublicKey', () => {
     expect(CryptoUtils.Converters.multibaseSpkiPublicKey.convert('mA')).toFailWith(
       /malformed base64url body/i
     );
+  });
+});
+
+describe('spkiToRawX25519', () => {
+  test('strips the DER prefix, matching the raw-exported public key', async () => {
+    const pair = (await provider.generateKeyPair('x25519', true)).orThrow();
+    const spki = (await provider.exportPublicKeySpki(pair.publicKey)).orThrow();
+    const raw = CryptoUtils.spkiToRawX25519(spki);
+    expect(raw).toSucceed();
+
+    const subtle = (crypto as { webcrypto: { subtle: SubtleCrypto } }).webcrypto.subtle;
+    const expectedRaw = new Uint8Array(await subtle.exportKey('raw', pair.publicKey));
+    expect(raw.orThrow()).toEqual(expectedRaw);
+  });
+
+  test('fails on a wrong-length blob', () => {
+    expect(CryptoUtils.spkiToRawX25519(new Uint8Array(43))).toFailWith(/expected 44 bytes, got 43/i);
+    expect(CryptoUtils.spkiToRawX25519(new Uint8Array(45))).toFailWith(/expected 44 bytes, got 45/i);
+  });
+
+  test('fails on a valid-length blob with the wrong prefix', () => {
+    const wrongPrefix = new Uint8Array(44);
+    wrongPrefix.fill(0xff);
+    expect(CryptoUtils.spkiToRawX25519(wrongPrefix)).toFailWith(
+      /does not match the expected X25519 SPKI prefix/i
+    );
+  });
+
+  test('integrates with HpkeProvider.openBase: SPKI-exported key feeds openBase directly', async () => {
+    const subtle = (crypto as { webcrypto: { subtle: SubtleCrypto } }).webcrypto.subtle;
+    const pair = (await subtle.generateKey({ name: 'X25519' }, false, ['deriveBits'])) as CryptoKeyPair;
+    const spkiPublicKey = new Uint8Array(await subtle.exportKey('spki', pair.publicKey));
+    const rawPublicKey = CryptoUtils.spkiToRawX25519(spkiPublicKey).orThrow();
+
+    const hpke = CryptoUtils.HpkeProvider.create(subtle).orThrow();
+    const info = new TextEncoder().encode('ctx');
+    const aad = new Uint8Array(0);
+    const plaintext = new TextEncoder().encode('spki round-trip');
+
+    const sealed = (await hpke.sealBase(pair.publicKey, info, aad, plaintext)).orThrow();
+    expect(
+      await hpke.openBase(pair.privateKey, info, aad, sealed.enc, sealed.ciphertext, rawPublicKey)
+    ).toSucceedAndSatisfy((pt) => {
+      expect(pt).toEqual(plaintext);
+    });
   });
 });
