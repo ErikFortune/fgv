@@ -162,6 +162,7 @@ export interface ICreateMemoryToolsParams {
     readonly defaultCodec?: IIdentityCodec;
     readonly handleFor?: (record: IMemoryRecord<unknown>) => string;
     readonly kinds?: ReadonlyArray<Kind>;
+    readonly projectItem?: (record: IMemoryRecord<unknown>, detail: MemoryDetailTier) => IMemoryToolResultItem;
     readonly registry: IBodyConverterRegistry;
     readonly retriever: IMemoryRetriever;
     readonly store: IMemoryStore;
@@ -384,9 +385,11 @@ export interface IMemoryQuery {
     readonly filter?: (record: IMemoryRecord<unknown>) => boolean;
     readonly hops?: number;
     readonly kind?: Kind;
+    readonly kinds?: ReadonlyArray<Kind>;
     readonly limit?: number;
     readonly linkedFrom?: MemoryId;
     readonly linkedTo?: MemoryId;
+    readonly offset?: number;
     readonly scope?: MemoryScopeKey;
     readonly semantic?: string;
     readonly tag?: Tag;
@@ -586,7 +589,7 @@ export class KnowledgeLwwPolicy implements IWritePolicy {
 }
 
 // @public
-export function limitRecords(records: ReadonlyArray<IMemoryRecord<unknown>>, limit?: number): ReadonlyArray<IMemoryRecord<unknown>>;
+export function limitRecords(records: ReadonlyArray<IMemoryRecord<unknown>>, limit?: number, offset?: number): ReadonlyArray<IMemoryRecord<unknown>>;
 
 // @public
 export const LINK_TRAVERSAL_NO_SEED_MESSAGE: string;
@@ -620,6 +623,9 @@ export class MemoryCapCullPolicy implements IWritePolicy {
     readonly dedupScope: DedupScope;
     readonly mutableFields: ReadonlyArray<string>;
 }
+
+// @public
+export type MemoryDetailTier = 'gist' | 'full';
 
 // @public
 export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array>>;

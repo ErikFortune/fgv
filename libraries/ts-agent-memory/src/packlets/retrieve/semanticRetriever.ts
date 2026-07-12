@@ -128,7 +128,7 @@ export class SemanticRetriever implements IMemoryRetriever {
         records.push(entry.record);
       }
     }
-    return succeed(limitRecords(records, query.limit));
+    return succeed(limitRecords(records, query.limit, query.offset));
   }
 
   /**
