@@ -330,6 +330,66 @@ prioritized; the fleshed design lets it start cold.
 `design.md` (moderate-detail platform design). Floated package name
 `@fgv/ts-agent-memory`.
 
+## `@fgv/ts-agent-memory` — deferred consumer asks (2026-07 batch)
+
+The first consumer forwarded a batch of six retrieval/tool-surface asks against the
+v1 substrate. **Four firm asks were built** (result projection + detail tier;
+`IMemoryQuery.offset` pagination; kind-set query axis; and the orderable numeric
+`rank` axis — commissioned as its own stream). The items below are the ones held
+back from that batch — one conditional ask captured build-ready, and two the
+consumer explicitly **recorded rather than requested** so the shape is visible if it
+ever becomes a real ask.
+
+### Input-side `resolveHandle` (inverse of `handleFor`) — conditional, build-ready
+
+`createMemoryTools`' `handleFor` hook maps a record → an agent-visible mnemonic on
+the **output** side (`tools/memoryTools.ts`). There is no symmetric **input**-side
+resolver, so an agent that received a mnemonic handle cannot feed it back as a
+`memory_context` seed (`contextSchema.from` is a raw `MemoryId`). The ask: an
+optional `ICreateMemoryToolsParams.resolveHandle?: (handle: string) => Result<{ kind: Kind; entityId: EntityId }>`
+that `buildContextTool` (and optionally `memory_read`/`memory_delete`) consult when
+`from` is a handle; absent → today's raw-id / `(kind, entityId)` behavior. Returns
+`Result` so a bad handle fails loudly (consistent with the substrate's
+loud-degradation contract), and a `from` that fails `resolveHandle` surfaces the
+failure rather than falling through to a raw-id parse.
+
+**Why deferred, not built:** the consumer explicitly filed this **conditional, not
+firm** — it matters only if they adopt the substrate's `memory_context` / `memory_read`
+tool bodies directly. Under their current plan they keep their own tool surface and
+their wrapper owns the mnemonic↔address map, so it is not on their critical path.
+Building it now is additive but would ship input-side handle resolution that no real
+consumer exercises. It is trivially addable (one optional guarded callback + threading
+in `buildContextTool`) the moment they adopt the tool bodies — captured build-ready so
+that round-trip is a same-day change. Completes the `handleFor` symmetry.
+
+**Dependencies / trigger:** the consumer (or any consumer) adopts the substrate's
+built-in `memory_context` / `memory_read` tool bodies instead of a host-owned wrapper.
+Size S.
+
+### Chunk / fragment-granular retrieval + in-result locator — recorded, not requested
+
+The v1 semantic recall is **record-granular** (`embeddingRef` per envelope;
+`SemanticRetriever` ranks whole records). A consumer whose knowledge documents need
+**sub-document fragment** search with a `[start, end)` locator keeps that on their own
+side (behind a host `IKnowledgeSearchProvider` doing keyword fragment search), so it is
+non-blocking and **not an ask today**. It would become a real fgv design change —
+chunk-granular vector entries + in-result offsets — only if we ever want one shared
+semantic retriever to serve **both** record-level memory and sub-document knowledge at
+fragment granularity. Recorded so the shape is visible; no action requested.
+
+### Scope-qualified edge targets — dormant, recorded
+
+`IEdge.target` is a bare `MemoryId` with no scope qualifier (`types/envelope.ts`).
+Under the current per-agent-store design (memory and knowledge alike), no two records
+share an id stem across a scope boundary, so bare targets are correct. This would only
+matter if a future **hub-level shared entity table** or **cross-hub federation** scheme
+introduced stem collisions across scopes. Dormant; recorded so the constraint is
+visible if that day comes. No action requested.
+
+**Reference:** consumer orchestrator's forwarded 2026-07 agent-memory batch; the four
+firm asks from the same batch shipped via the `agent-memory-query-tool-batch` and
+`agent-memory-rank-axis` streams.
+
 ## RFC 9421 HTTP-message-signature packlet (prospective `@fgv/ts-extras`)
 
 A strict, Ed25519-only [RFC 9421](https://www.rfc-editor.org/rfc/rfc9421) HTTP
