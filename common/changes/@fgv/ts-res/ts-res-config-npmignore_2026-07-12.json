@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Fix packaging: the config packlet's built output (lib/packlets/config and dist/packlets/config, including index.browser) was omitted from the published tarball. An unanchored `config/` in .npmignore matched the packlet dir at any depth; pnpm 11's native packer applies that strictly (npm's older delegated packer did not), silently dropping the packlet and breaking browser-target consumers ('Could not resolve ./packlets/config/index.browser'). Anchor the pattern to the package root (/config/) so it excludes only the top-level build-config dir.",
+      "type": "patch",
+      "packageName": "@fgv/ts-res"
+    }
+  ],
+  "packageName": "@fgv/ts-res",
+  "email": "noreply@anthropic.com"
+}
