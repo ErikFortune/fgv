@@ -231,3 +231,36 @@ export async function importPublicKeyFromMultibaseSpki(
     (e) => `importPublicKeyFromMultibaseSpki: ${e}`
   );
 }
+
+// DER prefix for an X25519 SubjectPublicKeyInfo: SEQUENCE { SEQUENCE { OID id-X25519 }, BIT STRING }.
+// SEQUENCE(42) / SEQUENCE(5) / OID 1.3.101.110 (id-X25519) / BIT STRING(33, 0 unused bits).
+const _X25519_SPKI_PREFIX: ReadonlyArray<number> = [
+  0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x6e, 0x03, 0x21, 0x00
+];
+const _X25519_SPKI_LENGTH: number = _X25519_SPKI_PREFIX.length + 32;
+
+/**
+ * Strips the fixed DER prefix from an X25519 SubjectPublicKeyInfo blob, returning the raw
+ * 32-byte public key.
+ *
+ * An X25519 SPKI is always exactly 44 bytes: a fixed 12-byte prefix (SEQUENCE / AlgorithmIdentifier
+ * with OID 1.3.101.110 / BIT STRING) followed by the 32-byte raw key. Use this to convert a
+ * SPKI-held recipient public key into the raw form accepted by {@link HpkeProvider.openBase}'s
+ * `recipientPublicKey` parameter.
+ *
+ * @param spki - The DER-encoded X25519 SubjectPublicKeyInfo bytes.
+ * @returns `Success` with the raw 32-byte public key, or `Failure` if `spki` is not a
+ *   well-formed 44-byte X25519 SPKI blob.
+ * @public
+ */
+export function spkiToRawX25519(spki: Uint8Array): Result<Uint8Array> {
+  if (spki.length !== _X25519_SPKI_LENGTH) {
+    return fail(`spkiToRawX25519: expected ${_X25519_SPKI_LENGTH} bytes, got ${spki.length}`);
+  }
+  for (let i = 0; i < _X25519_SPKI_PREFIX.length; i++) {
+    if (spki[i] !== _X25519_SPKI_PREFIX[i]) {
+      return fail(`spkiToRawX25519: byte ${i} does not match the expected X25519 SPKI prefix`);
+    }
+  }
+  return succeed(spki.slice(_X25519_SPKI_PREFIX.length));
+}

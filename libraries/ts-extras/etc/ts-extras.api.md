@@ -462,6 +462,7 @@ declare namespace CryptoUtils {
         MultibaseSpkiPublicKeyRegExp,
         multibaseBase64UrlDecode,
         multibaseBase64UrlEncode,
+        spkiToRawX25519,
         HpkeProvider,
         IHpkeSealResult,
         isEncryptedFile,
@@ -753,7 +754,7 @@ class HpkeProvider {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "HpkeProvider"
     static encodeEnvelope(result: IHpkeSealResult): Uint8Array;
     hkdf(secret: Uint8Array, salt: Uint8Array, info: Uint8Array, length: number): Promise<Result<Uint8Array>>;
-    openBase(recipientPrivateKey: CryptoKey, info: Uint8Array, aad: Uint8Array, enc: Uint8Array, ciphertext: Uint8Array): Promise<Result<Uint8Array>>;
+    openBase(recipientPrivateKey: CryptoKey, info: Uint8Array, aad: Uint8Array, enc: Uint8Array, ciphertext: Uint8Array, recipientPublicKey?: Uint8Array): Promise<Result<Uint8Array>>;
     sealBase(recipientPublicKey: CryptoKey, info: Uint8Array, aad: Uint8Array, plaintext: Uint8Array): Promise<Result<IHpkeSealResult>>;
 }
 
@@ -2381,6 +2382,11 @@ type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
 //
 // @public
 const SMART_JSON_PROMPT_HINT: string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "HpkeProvider"
+//
+// @public
+function spkiToRawX25519(spki: Uint8Array): Result<Uint8Array>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //

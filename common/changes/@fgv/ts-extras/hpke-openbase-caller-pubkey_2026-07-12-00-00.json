@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add an optional recipientPublicKey parameter to HpkeProvider.openBase, and a new spkiToRawX25519 helper, so callers can supply the recipient's raw X25519 public key and avoid requiring the recipient private key to be extractable.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
