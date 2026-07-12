@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-web-extras-argon2",
-  "version": "5.1.0-39",
+  "version": "5.1.0-40",
   "description": "Argon2id key derivation via hash-wasm (Node + browser compatible)",
   "main": "lib/index.js",
   "types": "dist/ts-web-extras-argon2.d.ts",
