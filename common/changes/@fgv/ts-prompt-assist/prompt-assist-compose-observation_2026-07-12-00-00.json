@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "observe: add a composer-emitted 'compose' observation record. HorizontalComposer.compose gains an optional observation seam (IHorizontalComposeParams.observation, obtained from the new PromptLibrary.observationSeam getter) — when supplied it times the merge, builds an IPromptComposeObservation nesting each contributor's resolve trace, and dispatches it through the library's observer fan-out sharing the library's seq authority. Adds the 'compose' PromptObservationPhase, IPromptComposeObservation / IPromptComposeContributorObservation / IPromptObservationSeam / IPromptObservationCommon; PromptObservationStore.query handles the new phase (qualifiers never match a compose record; safeguard filters see compose findings). Additive and source-compatible; when the seam is omitted compose behaves exactly as before with zero overhead.",
+      "type": "minor",
+      "packageName": "@fgv/ts-prompt-assist"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist",
+  "email": "noreply@anthropic.com"
+}

@@ -4,10 +4,10 @@
  */
 
 import { Result } from '@fgv/ts-utils';
-import { PromptId, ScopeKey } from '../types';
+import { PromptId, ScopeKey, SlotName } from '../types';
 import { IQualifierContext } from '../types';
 import { PromptSubstitutions } from '../types';
-import { IPromptResolveTrace, ISafeguardFinding, SafeguardDisposition } from '../types';
+import { IPromptResolveTrace, ISafeguardFinding, ISlotProvenanceEntry, SafeguardDisposition } from '../types';
 
 /**
  * The output-contract kind surfaced on a successful resolve observation — a
@@ -25,53 +25,80 @@ export type PromptObservationOutputKind = 'free-text' | 'json';
  * resolve of an output call). `'json-output'` / `'free-text-output'` records
  * come from {@link PromptLibrary.resolveJsonOutput} /
  * {@link PromptLibrary.resolveFreeTextOutput} respectively and describe the
- * LLM output round-trip, cross-linked to their resolve record.
+ * LLM output round-trip, cross-linked to their resolve record. `'compose'`
+ * records come from {@link HorizontalComposer.compose} (when the composer is
+ * wired to a {@link IPromptObservationSeam}) and describe a multi-contributor
+ * horizontal composition, nesting each contributor's resolve trace.
  *
  * @public
  */
-export type PromptObservationPhase = 'resolve' | 'json-output' | 'free-text-output';
+export type PromptObservationPhase = 'resolve' | 'json-output' | 'free-text-output' | 'compose';
 
 /**
- * Fields common to every {@link IPromptObservationRecord}.
+ * Fields common to every {@link IPromptObservationRecord}, including the
+ * `'compose'` record — which has no single resolve request and therefore
+ * carries none of the request-shaped fields (`qualifierContext` /
+ * `substitutions`) that {@link IPromptObservationBase} adds.
  *
  * @remarks
  * `seq` and `timestamp` are assigned by `PromptLibrary` (a single per-instance
  * authority) before the record is fanned out to observers, so the same record
  * carries the same `seq` across every store it lands in — which is what makes
  * {@link IPromptOutputObservation.linkedResolveSeq | linkedResolveSeq}
- * correlation work consistently across multiple observers.
+ * correlation work consistently across multiple observers. A `'compose'` record
+ * shares this same `seq` space (it is minted through the same authority via the
+ * {@link IPromptObservationSeam}), so a compose record and the contributor
+ * `'resolve'` records it nests order consistently on `seq`.
  *
  * @public
  */
-export interface IPromptObservationBase {
+export interface IPromptObservationCommon {
   /**
    * Monotonic 1-based sequence number assigned by `PromptLibrary`, stable
    * across a store's ring eviction. The ordering / paging key.
    */
   readonly seq: number;
   /**
-   * Dedupe key: CRC32 over RFC 8785 canonical JSON of
-   * `\{ promptId, chain, qualifierContext, substitutions \}` (via
-   * `Hash.Crc32Normalizer`). Side-by-side with `seq` — a consumer picks which
-   * to key a map / dedupe set on. Two resolves of the same request share a
-   * `contentHash` (by design — that is the dedupe signal).
+   * Dedupe key: CRC32 over RFC 8785 canonical JSON of the record's identity
+   * tuple (via `Hash.Crc32Normalizer`). For request-shaped records the tuple is
+   * `\{ promptId, chain, qualifierContext, substitutions \}`; for a `'compose'`
+   * record it is `\{ composedPromptId, contributors \}` (each contributor's
+   * `provenance` + `promptId`). Side-by-side with `seq` — a consumer picks which
+   * to key a map / dedupe set on. Two identical operations share a `contentHash`
+   * (by design — that is the dedupe signal).
    */
   readonly contentHash: string;
   /** Milliseconds since epoch when `PromptLibrary` produced the record. */
   readonly timestamp: number;
   /**
    * Wall-clock milliseconds from the start of the observed call until this
-   * record was built — i.e. the resolve (or output round-trip) computation
-   * itself. It does NOT include the time spent dispatching this record to
-   * observers, so for awaited observers the end-to-end `resolve()` /
-   * `resolveJsonOutput()` / `resolveFreeTextOutput()` latency is slightly
-   * larger than `durationMs`.
+   * record was built — i.e. the resolve (or output round-trip, or compose merge)
+   * computation itself. It does NOT include the time spent dispatching this
+   * record to observers, so for awaited observers the end-to-end call latency is
+   * slightly larger than `durationMs`.
    */
   readonly durationMs: number;
-  /** The prompt id from the request. */
+  /**
+   * The prompt id. For request-shaped records this is the request's prompt id;
+   * for a `'compose'` record it is the composed descriptor's id.
+   */
   readonly promptId: PromptId;
-  /** The request's scope chain (most-specific → most-general), as supplied. */
+  /**
+   * The request's scope chain (most-specific → most-general), as supplied. A
+   * `'compose'` record has no single resolve request and so carries an empty
+   * chain — the contributor chains live on each nested contributor trace.
+   */
   readonly chain: ReadonlyArray<ScopeKey>;
+}
+
+/**
+ * Fields common to the request-shaped observation records
+ * ({@link IPromptResolveObservation} and {@link IPromptOutputObservation}) —
+ * i.e. every record produced by a call carrying a single resolve request.
+ *
+ * @public
+ */
+export interface IPromptObservationBase extends IPromptObservationCommon {
   /**
    * The caller's qualifier context, verbatim. Privacy / redaction is a
    * storage-layer concern — see {@link PromptObservationStore}.
@@ -143,10 +170,114 @@ export interface IPromptOutputObservation extends IPromptObservationBase {
 }
 
 /**
+ * One nested contributor within an {@link IPromptComposeObservation}: the
+ * composer-layer `provenance` a contributor was tagged with, plus the id and
+ * full resolve `trace` of its independently-resolved prompt.
+ *
+ * @remarks
+ * The `trace` is the direct analogue of
+ * {@link IResourceBindingTraceEntry.innerTrace | resourceBindingResolutions[].innerTrace}
+ * — nesting each contributor's full {@link IPromptResolveTrace} is what ties the
+ * composed output back to the N independent contributor resolves an audit trail
+ * would otherwise see disconnected from the composition.
+ *
+ * @public
+ */
+export interface IPromptComposeContributorObservation {
+  /** Composer-layer provenance the contributor was tagged with. */
+  readonly provenance: number;
+  /** Id of the contributor's independently-resolved prompt. */
+  readonly promptId: PromptId;
+  /** The contributor's full resolve trace (the `innerTrace` analogue). */
+  readonly trace: IPromptResolveTrace;
+}
+
+/**
+ * One observation per {@link HorizontalComposer.compose} call, emitted only when
+ * the composer is wired to a {@link IPromptObservationSeam}. Covers both success
+ * and failure, mirroring {@link IPromptResolveObservation}.
+ *
+ * @remarks
+ * A compose operation has no single resolve request, so it carries only the
+ * {@link IPromptObservationCommon} fields — `promptId` is the composed
+ * descriptor's id and `chain` is empty. The per-contributor resolve traces
+ * (each contributor's own `chain` / `qualifierContext` / winning scope) live on
+ * {@link IPromptComposeObservation.contributors | contributors}.
+ *
+ * The composed body is deliberately NOT duplicated here — it is derived from the
+ * merged slot values and is reconstructable from the contributor traces +
+ * `provenanceTrace`, mirroring how {@link IPromptOutputObservation} avoids
+ * re-storing the resolved body.
+ *
+ * @public
+ */
+export interface IPromptComposeObservation extends IPromptObservationCommon {
+  /** Discriminator. */
+  readonly phase: 'compose';
+  /** Whether the composition succeeded. */
+  readonly outcome: 'success' | 'failure';
+  /**
+   * The contributors to this composition, in declared order, each nesting its
+   * full resolve trace. Present on success and failure alike (contributors are
+   * inputs to the compose, available regardless of outcome).
+   */
+  readonly contributors: ReadonlyArray<IPromptComposeContributorObservation>;
+  /**
+   * Present on success: per-composed-logical-slot contribution provenance,
+   * keyed by logical slot name — the same
+   * {@link IComposedPrompt.provenanceTrace} shape, reused rather than a parallel
+   * summary, so "where did this composed slot come from" is answerable directly.
+   */
+  readonly provenanceTrace?: ReadonlyMap<SlotName, ReadonlyArray<ISlotProvenanceEntry>>;
+  /** Present on success: the composed prompt's warn / info safeguard findings. */
+  readonly safeguardFindings?: ReadonlyArray<ISafeguardFinding>;
+  /** Present on failure: the compose failure `Result`'s message. */
+  readonly error?: string;
+}
+
+/**
  * Discriminated union over observation record shapes.
  * @public
  */
-export type IPromptObservationRecord = IPromptResolveObservation | IPromptOutputObservation;
+export type IPromptObservationRecord =
+  | IPromptResolveObservation
+  | IPromptOutputObservation
+  | IPromptComposeObservation;
+
+/**
+ * The narrow observation seam a {@link PromptLibrary} hands out (via
+ * {@link PromptLibrary.observationSeam}) so a {@link HorizontalComposer} can emit
+ * a `'compose'` observation that shares the library's `seq` authority, clock,
+ * and observer fan-out — without the composer taking a dependency on the whole
+ * library or minting its own sequence numbers (which would collide with the
+ * store cursor's `lastSeq`).
+ *
+ * @remarks
+ * The library owns all three because they must be shared: `seq` is a single
+ * per-instance authority so a compose record orders consistently against the
+ * contributor `'resolve'` records; `now` is the library's injected clock so
+ * every record timestamps against the same source; `observe` is the library's
+ * swallow-and-log fan-out so a composer-emitted record reaches every wired
+ * observer under the same "observer errors never affect the caller" contract.
+ *
+ * @public
+ */
+export interface IPromptObservationSeam {
+  /**
+   * Mints the next monotonic 1-based `seq` from the library's single
+   * per-instance authority.
+   */
+  nextSeq(): number;
+  /** Reads the library's injected clock (milliseconds since epoch). */
+  now(): number;
+  /**
+   * Fans a record out to every wired observer under the library's
+   * swallow-and-log contract (observer errors never propagate). Resolves once
+   * awaited observers have completed.
+   * @param record - The observation record to dispatch.
+   */
+  observe(record: IPromptObservationRecord): Promise<void>;
+}
 
 /**
  * Single-method async observer hook. `PromptLibrary` fires `observe` once per

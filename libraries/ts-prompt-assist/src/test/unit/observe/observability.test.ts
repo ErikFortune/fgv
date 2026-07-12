@@ -181,7 +181,7 @@ describe('PromptLibrary observability wiring', () => {
       expect(records.map((r) => r.phase)).toEqual(['resolve', 'free-text-output']);
       const [resolveRecord, outputRecord] = records;
       expect(outputRecord.phase).toBe('free-text-output');
-      if (outputRecord.phase !== 'resolve') {
+      if (outputRecord.phase === 'free-text-output' || outputRecord.phase === 'json-output') {
         expect(outputRecord.linkedResolveSeq).toBe(resolveRecord.seq);
         expect(outputRecord.rawOutput).toBe('raw output');
         expect(outputRecord.outcome).toBe('success');
@@ -200,7 +200,7 @@ describe('PromptLibrary observability wiring', () => {
       const records = store.query();
       expect(records.map((r) => r.phase)).toEqual(['resolve', 'json-output']);
       const outputRecord = records[1];
-      if (outputRecord.phase !== 'resolve') {
+      if (outputRecord.phase === 'free-text-output' || outputRecord.phase === 'json-output') {
         expect(outputRecord.linkedResolveSeq).toBe(records[0].seq);
         expect(outputRecord.outcome).toBe('success');
       }
@@ -322,7 +322,10 @@ describe('PromptLibrary observability wiring', () => {
       });
       expect(result).toSucceedAndSatisfy((r) => expect(r.body).toBe('about cats'));
       const [record] = store.query();
-      expect(record.substitutions).toEqual({ topic: 'cats' });
+      expect(record.phase).toBe('resolve');
+      if (record.phase === 'resolve') {
+        expect(record.substitutions).toEqual({ topic: 'cats' });
+      }
       expect(record.contentHash).not.toBe('');
     });
   });

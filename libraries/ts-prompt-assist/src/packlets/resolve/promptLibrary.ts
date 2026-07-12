@@ -37,6 +37,7 @@ import { IPromptRegistry } from '../registry';
 import {
   IPromptObservationBase,
   IPromptObservationRecord,
+  IPromptObservationSeam,
   IPromptObserver,
   IPromptOutputObservation,
   IPromptResolveObservation
@@ -310,6 +311,14 @@ export class PromptLibrary<
    */
   private readonly _observationNow: () => number;
   /**
+   * The narrow observation seam handed to a {@link HorizontalComposer} via
+   * {@link PromptLibrary.observationSeam}. Built once in the constructor; binds
+   * the `seq` authority, clock, and `_observe` fan-out so a composer can emit a
+   * `'compose'` record into this library's `seq` space without depending on the
+   * library itself.
+   */
+  private readonly _observationSeam: IPromptObservationSeam;
+  /**
    * Set of RFC 8785 canonical-JSON keys for descriptors that have
    * already passed the loader-side compatibility check (see
    * `assertOutputValidationsCompatible` in the `output` packlet).
@@ -367,6 +376,34 @@ export class PromptLibrary<
     this._observers = params.observers;
     this._nextObservationSeq = 0;
     this._observationNow = () => Date.now();
+    this._observationSeam = {
+      nextSeq: () => {
+        this._nextObservationSeq += 1;
+        return this._nextObservationSeq;
+      },
+      now: () => this._observationNow(),
+      observe: (record) => this._observe(record)
+    };
+  }
+
+  /**
+   * A narrow observation seam — `\{ nextSeq, now, observe \}` — bound to this
+   * library's `seq` authority, injected clock, and observer fan-out. Hand it to
+   * {@link HorizontalComposer} via {@link IHorizontalComposeParams.observation}
+   * so a horizontal composition emits a `'compose'` observation that shares this
+   * library's `seq` space (ordering consistently against the contributor
+   * `'resolve'` records) and reaches every wired observer under the same
+   * swallow-and-log contract — without the composer depending on the whole
+   * library or minting its own sequence numbers.
+   *
+   * @remarks
+   * When no observers are wired, `observe` is a no-op fan-out; `nextSeq` still
+   * advances the shared counter (harmless). The composer only reaches for the
+   * seam when {@link IHorizontalComposeParams.observation} is set, so an
+   * unwired composition pays nothing.
+   */
+  public get observationSeam(): IPromptObservationSeam {
+    return this._observationSeam;
   }
 
   /**
