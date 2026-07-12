@@ -3,18 +3,24 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Hash, Normalizer, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { sanitizeJsonObject } from '@fgv/ts-json-base';
 import {
   IBindingTraceEntry,
   IComposedPrompt,
   IContributorSpec,
-  IHorizontalComposeParams,
   ILogicalSlotConfig,
   IResolvedPromptSlot,
   ISlotProvenanceEntry,
   SlotDirective,
   SlotName
 } from '../types';
+import {
+  IPromptComposeContributorObservation,
+  IPromptComposeObservation,
+  IPromptObservationSeam
+} from '../observe';
+import { IHorizontalComposeParams } from './types';
 import { applySafeguards } from '../safeguards';
 import { MustacheTemplateCache } from '../resolve';
 
@@ -142,11 +148,36 @@ export class HorizontalComposer {
    * merged slot values (with the composed descriptor), renders the composed
    * body template, and returns the {@link IComposedPrompt}.
    *
+   * @remarks
+   * When {@link IHorizontalComposeParams.observation} is supplied, the merge is
+   * timed and a `'compose'` observation record — nesting each contributor's
+   * resolve trace and sharing the library's `seq` space — is built and awaited
+   * through the library's observer fan-out before this returns. When it is
+   * absent, this is the pre-existing fast path: no timing, no record, no
+   * dispatch.
+   *
    * @returns The composed prompt on success; a failure if a merged value
    * violates a hard policy (length cap, disallowed directive, or a screener
    * reject) or rendering fails.
    */
   public async compose(): Promise<Result<IComposedPrompt>> {
+    const observation = this._params.observation;
+    if (observation === undefined) {
+      return this._composeInternal();
+    }
+    const startedAt = observation.now();
+    const result = await this._composeInternal();
+    const durationMs = observation.now() - startedAt;
+    await observation.observe(this._buildComposeObservation(observation, result, durationMs));
+    return result;
+  }
+
+  /**
+   * The directive-aware merge → safeguard boundary → Mustache render pipeline.
+   * Split from {@link HorizontalComposer.compose} so the observation wrapper can
+   * time it without the timing/record machinery leaking into the merge logic.
+   */
+  private async _composeInternal(): Promise<Result<IComposedPrompt>> {
     const mergedSlots = new Map<SlotName, IResolvedPromptSlot>();
     const provenanceTrace = new Map<SlotName, ReadonlyArray<ISlotProvenanceEntry>>();
     const safeguardMap = new Map<SlotName, IBindingTraceEntry>();
@@ -301,5 +332,68 @@ export class HorizontalComposer {
       .getOrParse(this._params.composedDescriptor.id, this._params.composedBody)
       .onSuccess((template) => template.validateAndRender(context))
       .withErrorFormat((msg) => `prompt '${this._params.composedDescriptor.id}': ${msg}`);
+  }
+
+  /**
+   * Builds the `'compose'` observation record from the compose `Result`,
+   * minting a fresh library-global `seq` + `timestamp` through the seam. Nests
+   * each contributor's full resolve trace (the `innerTrace` analogue) on both
+   * success and failure; the merged provenance + safeguard findings surface on
+   * success only. The composed body is deliberately not duplicated (see
+   * {@link IPromptComposeObservation}).
+   */
+  private _buildComposeObservation(
+    seam: IPromptObservationSeam,
+    result: Result<IComposedPrompt>,
+    durationMs: number
+  ): IPromptComposeObservation {
+    const seq = seam.nextSeq();
+    const timestamp = seam.now();
+    const contributors: ReadonlyArray<IPromptComposeContributorObservation> = this._params.contributors.map(
+      (c) => ({
+        provenance: c.provenance,
+        promptId: c.resolved.id,
+        trace: c.resolved.trace
+      })
+    );
+    const common = {
+      seq,
+      contentHash: this._composeContentHash(),
+      timestamp,
+      durationMs,
+      promptId: this._params.composedDescriptor.id,
+      chain: [],
+      contributors
+    };
+    if (result.isSuccess()) {
+      return {
+        ...common,
+        phase: 'compose',
+        outcome: 'success',
+        provenanceTrace: result.value.provenanceTrace,
+        safeguardFindings: result.value.safeguardFindings
+      };
+    }
+    return { ...common, phase: 'compose', outcome: 'failure', error: result.message };
+  }
+
+  /**
+   * CRC32 over the RFC 8785 canonical JSON of the compose identity tuple
+   * (`\{ composedPromptId, contributors: [\{ provenance, promptId \}] \}`).
+   * Best-effort — a canonicalize / hash failure degrades to an empty string
+   * rather than breaking the compose, mirroring the resolve-path content hash.
+   */
+  private _composeContentHash(): string {
+    const identity = {
+      composedPromptId: this._params.composedDescriptor.id,
+      contributors: this._params.contributors.map((c) => ({
+        provenance: c.provenance,
+        promptId: c.resolved.id
+      }))
+    };
+    return sanitizeJsonObject(identity)
+      .onSuccess((sanitized) => new Normalizer().canonicalize(sanitized))
+      .onSuccess((canonical) => captureResult(() => Hash.Crc32Normalizer.crc32Hash([canonical])))
+      .orDefault('');
   }
 }
