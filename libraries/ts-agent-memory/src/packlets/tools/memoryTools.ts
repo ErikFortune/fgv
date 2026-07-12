@@ -205,7 +205,10 @@ type WriteArgs = JsonSchema.Static<typeof writeSchema>;
 // eslint-disable-next-line @rushstack/typedef-var
 const readSchema = JsonSchema.object({
   kind: JsonSchema.string({ description: 'The record kind.' }),
-  entityId: JsonSchema.string({ description: 'The domain entity id to read.' })
+  entityId: JsonSchema.string({ description: 'The domain entity id to read.' }),
+  detail: JsonSchema.optional(
+    JsonSchema.enumOf(['gist', 'full'] as const, { description: "'gist' | 'full' (default)." })
+  )
 });
 
 // eslint-disable-next-line @rushstack/typedef-var
@@ -225,7 +228,9 @@ const searchSchema = JsonSchema.object({
   offset: JsonSchema.optional(
     JsonSchema.integer({ description: 'Number of results to skip after ordering, before limit. Default 0.' })
   ),
-  detail: JsonSchema.optional(JsonSchema.string({ description: "'gist' (default) | 'full'." }))
+  detail: JsonSchema.optional(
+    JsonSchema.enumOf(['gist', 'full'] as const, { description: "'gist' (default) | 'full'." })
+  )
 });
 
 // eslint-disable-next-line @rushstack/typedef-var
@@ -235,7 +240,9 @@ const contextSchema = JsonSchema.object({
   tag: JsonSchema.optional(JsonSchema.string({ description: 'Restrict reached records carrying this tag.' })),
   hops: JsonSchema.optional(JsonSchema.integer({ description: 'BFS hop count (default 1).' })),
   limit: JsonSchema.optional(JsonSchema.integer({ description: 'Maximum number of results to return.' })),
-  detail: JsonSchema.optional(JsonSchema.string({ description: "'gist' (default) | 'full'." }))
+  detail: JsonSchema.optional(
+    JsonSchema.enumOf(['gist', 'full'] as const, { description: "'gist' (default) | 'full'." })
+  )
 });
 
 // ---------------------------------------------------------------------------
@@ -479,14 +486,19 @@ function buildReadTool(ctx: IToolContext): AiAssist.IAiClientTool {
         .withErrorFormat((msg) => `memory_read: invalid arguments: ${msg}`)
         .onSuccess((typed) =>
           assertKindEnabled(ctx, typed.kind).onSuccess((kind) =>
-            Convert.entityId.convert(typed.entityId).onSuccess((entityId) => succeed({ kind, entityId }))
+            Convert.entityId.convert(typed.entityId).onSuccess((entityId) => {
+              // `memory_read` is the explicit drill-in path, so its detail default is
+              // INVERTED vs search/context: `'full'` unless the caller opts down to `'gist'`.
+              const detail: MemoryDetailTier = typed.detail === 'gist' ? 'gist' : 'full';
+              return succeed({ kind, entityId, detail });
+            })
           )
         )
-        .thenOnSuccess(async ({ kind, entityId }) =>
+        .thenOnSuccess(async ({ kind, entityId, detail }) =>
           (await ctx.store.get(kind, entityId)).onSuccess((record) =>
             record === undefined
               ? succeed({ found: false })
-              : succeed({ found: true, item: projectItem(ctx, record, 'gist') })
+              : succeed({ found: true, item: projectItem(ctx, record, detail) })
           )
         )
   };

@@ -818,10 +818,18 @@ describe('result projection (projectItem host projector + detail tier)', () => {
       expect(props).toContain('detail');
     });
 
-    test('memory_search accepts detail and offset', () => {
+    test('memory_read declares an optional detail property', () => {
+      const props = schemaProperties(toolByName(allTools(), 'memory_read'));
+      expect(props).toContain('detail');
+    });
+
+    test('memory_search accepts detail and offset, and rejects an out-of-enum detail', () => {
       const schema = toolByName(allTools(), 'memory_search').config.parametersSchema;
       expect(schema.convert({ detail: 'full', offset: 2 })).toSucceed();
+      expect(schema.convert({ detail: 'gist' })).toSucceed();
       expect(schema.convert({ offset: 'nope' })).toFail();
+      // detail is now an enum ('gist' | 'full') at the wire-schema level.
+      expect(schema.convert({ detail: 'verbose' })).toFail();
     });
   });
 
@@ -862,9 +870,16 @@ describe('result projection (projectItem host projector + detail tier)', () => {
       });
     });
 
-    test('an unrecognized detail string resolves safely to gist (bounded)', async () => {
+    test('an out-of-enum detail is rejected at the schema boundary', async () => {
+      // detail is a JsonSchema.enumOf(['gist','full']); the tool re-validates args
+      // on execute, so an out-of-enum value fails loudly rather than reaching the projector.
       const tool = searchToolWith({ projectItem: boundingProjector });
-      expect(await tool.execute({ tag: 'topic', detail: 'verbose' })).toSucceedAndSatisfy((value) => {
+      expect(await tool.execute({ tag: 'topic', detail: 'verbose' })).toFailWith(/invalid arguments/i);
+    });
+
+    test('an explicit detail=gist stays bounded (the non-full branch)', async () => {
+      const tool = searchToolWith({ projectItem: boundingProjector });
+      expect(await tool.execute({ tag: 'topic', detail: 'gist' })).toSucceedAndSatisfy((value) => {
         expect((value as ISearchOut).results[0].body).toBe('<<gist>>');
       });
     });
@@ -933,6 +948,60 @@ describe('result projection (projectItem host projector + detail tier)', () => {
         expect(out.count).toBe(1);
         expect(out.results.map((r) => r.handle)).toEqual(['doc-2']);
       });
+    });
+  });
+
+  describe('memory_read detail (explicit drill-in defaults to FULL)', () => {
+    interface IReadOut {
+      readonly found: boolean;
+      readonly item: IMemoryToolResultItem;
+    }
+
+    async function readToolWith(
+      projector?: (record: IMemoryRecord<unknown>, detail: 'gist' | 'full') => IMemoryToolResultItem
+    ): Promise<AiAssist.IAiClientTool> {
+      const tools = createMemoryTools({
+        store: makeStore(),
+        retriever: makeRetriever([]),
+        registry: registryWith([{ kind: knowledgeKind }]),
+        codecs,
+        tools: ['memory_write', 'memory_read'],
+        ...(projector !== undefined ? { projectItem: projector } : {})
+      });
+      await toolByName(tools, 'memory_write').execute({
+        kind: 'knowledge',
+        entityId: 'doc-1',
+        body: 'FULLBODY'
+      });
+      return toolByName(tools, 'memory_read');
+    }
+
+    test('defaults to the FULL body (drill-in) with a bounding projector', async () => {
+      const tool = await readToolWith(boundingProjector);
+      expect(await tool.execute({ kind: 'knowledge', entityId: 'doc-1' })).toSucceedAndSatisfy((value) => {
+        expect((value as IReadOut).item.body).toBe('FULLBODY');
+      });
+    });
+
+    test('opts down to gist only when detail=gist is requested', async () => {
+      const tool = await readToolWith(boundingProjector);
+      expect(
+        await tool.execute({ kind: 'knowledge', entityId: 'doc-1', detail: 'gist' })
+      ).toSucceedAndSatisfy((value) => {
+        expect((value as IReadOut).item.body).toBe('<<gist>>');
+      });
+    });
+
+    test('is byte-identical for a no-projector consumer (full body regardless of detail)', async () => {
+      const tool = await readToolWith(undefined);
+      for (const args of [
+        { kind: 'knowledge', entityId: 'doc-1' },
+        { kind: 'knowledge', entityId: 'doc-1', detail: 'gist' }
+      ]) {
+        expect(await tool.execute(args)).toSucceedAndSatisfy((value) => {
+          expect((value as IReadOut).item.body).toBe('FULLBODY');
+        });
+      }
     });
   });
 });
