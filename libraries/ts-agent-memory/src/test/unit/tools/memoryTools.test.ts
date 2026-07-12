@@ -769,3 +769,170 @@ describe('createMemoryTools', () => {
     });
   });
 });
+
+describe('result projection (projectItem host projector + detail tier)', () => {
+  interface ISearchOut {
+    readonly count: number;
+    readonly results: ReadonlyArray<IMemoryToolResultItem>;
+  }
+
+  /**
+   * A host projector that bounds the `'gist'` body to a sentinel and passes the
+   * full body through only for `'full'` — the shape a real host uses to keep the
+   * default (gist) path bounded.
+   */
+  const boundingProjector = (
+    record: IMemoryRecord<unknown>,
+    detail: 'gist' | 'full'
+  ): IMemoryToolResultItem => ({
+    handle: `h:${record.envelope.id}`,
+    kind: record.envelope.kind,
+    entityId: record.envelope.entityId,
+    tags: record.envelope.tags,
+    body: detail === 'full' ? record.body : '<<gist>>'
+  });
+
+  function searchToolWith(
+    overrides: Partial<Parameters<typeof createMemoryTools>[0]>
+  ): AiAssist.IAiClientTool {
+    return toolByName(
+      createMemoryTools({
+        store: makeStore(),
+        retriever: makeRetriever([{ id: 'doc-1', tags: ['topic'] }]),
+        registry: registryWith([{ kind: knowledgeKind }]),
+        ...overrides
+      }),
+      'memory_search'
+    );
+  }
+
+  describe('schema surface', () => {
+    test('memory_search declares optional detail + offset properties', () => {
+      const props = schemaProperties(toolByName(allTools(), 'memory_search'));
+      expect(props).toContain('detail');
+      expect(props).toContain('offset');
+    });
+
+    test('memory_context declares an optional detail property', () => {
+      const props = schemaProperties(toolByName(allTools(), 'memory_context'));
+      expect(props).toContain('detail');
+    });
+
+    test('memory_search accepts detail and offset', () => {
+      const schema = toolByName(allTools(), 'memory_search').config.parametersSchema;
+      expect(schema.convert({ detail: 'full', offset: 2 })).toSucceed();
+      expect(schema.convert({ offset: 'nope' })).toFail();
+    });
+  });
+
+  describe('absent projector = byte-identical default projection', () => {
+    test('returns the full body and the default handle (raw id) when no projector is supplied', async () => {
+      const tool = searchToolWith({});
+      expect(await tool.execute({ tag: 'topic' })).toSucceedAndSatisfy((value) => {
+        const out = value as ISearchOut;
+        expect(out.results[0].handle).toBe('doc-1');
+        expect(out.results[0].body).toBe('body-doc-1');
+      });
+    });
+
+    test('the detail tier is inert without a projector (gist and full both yield the full body)', async () => {
+      const tool = searchToolWith({});
+      for (const detail of ['gist', 'full'] as const) {
+        expect(await tool.execute({ tag: 'topic', detail })).toSucceedAndSatisfy((value) => {
+          expect((value as ISearchOut).results[0].body).toBe('body-doc-1');
+        });
+      }
+    });
+  });
+
+  describe('host projector + detail tier', () => {
+    test('defaults to the bounded gist projection when detail is absent', async () => {
+      const tool = searchToolWith({ projectItem: boundingProjector });
+      expect(await tool.execute({ tag: 'topic' })).toSucceedAndSatisfy((value) => {
+        const out = value as ISearchOut;
+        expect(out.results[0].handle).toBe('h:doc-1');
+        expect(out.results[0].body).toBe('<<gist>>');
+      });
+    });
+
+    test('opts into the full body only when detail=full is requested', async () => {
+      const tool = searchToolWith({ projectItem: boundingProjector });
+      expect(await tool.execute({ tag: 'topic', detail: 'full' })).toSucceedAndSatisfy((value) => {
+        expect((value as ISearchOut).results[0].body).toBe('body-doc-1');
+      });
+    });
+
+    test('an unrecognized detail string resolves safely to gist (bounded)', async () => {
+      const tool = searchToolWith({ projectItem: boundingProjector });
+      expect(await tool.execute({ tag: 'topic', detail: 'verbose' })).toSucceedAndSatisfy((value) => {
+        expect((value as ISearchOut).results[0].body).toBe('<<gist>>');
+      });
+    });
+
+    test('memory_context routes its results through the host projector', async () => {
+      const tool = toolByName(
+        createMemoryTools({
+          store: makeStore(),
+          retriever: makeLinkRetriever([{ id: 'a', links: ['b'] }, { id: 'b' }]),
+          registry: registryWith([{ kind: knowledgeKind }]),
+          projectItem: boundingProjector
+        }),
+        'memory_context'
+      );
+      expect(await tool.execute({ from: 'a', detail: 'full' })).toSucceedAndSatisfy((value) => {
+        const out = value as { results: ReadonlyArray<IMemoryToolResultItem> };
+        expect(out.results.map((r) => r.handle)).toEqual(['h:b']);
+        expect(out.results[0].body).toBe('body-b');
+      });
+    });
+
+    test('a throwing host projector degrades to the default full-body projection (does not crash search)', async () => {
+      const tool = searchToolWith({
+        projectItem: () => {
+          throw new Error('host projector blew up');
+        }
+      });
+      expect(await tool.execute({ tag: 'topic' })).toSucceedAndSatisfy((value) => {
+        const out = value as ISearchOut;
+        // Degraded to the built-in default: raw-id handle + full body.
+        expect(out.results[0].handle).toBe('doc-1');
+        expect(out.results[0].body).toBe('body-doc-1');
+      });
+    });
+
+    test('a throwing projector still honors the handleFor hook in the fallback path', async () => {
+      const tool = searchToolWith({
+        handleFor: (r) => `@${r.envelope.id}`,
+        projectItem: () => {
+          throw new Error('nope');
+        }
+      });
+      expect(await tool.execute({ tag: 'topic' })).toSucceedAndSatisfy((value) => {
+        expect((value as ISearchOut).results[0].handle).toBe('@doc-1');
+      });
+    });
+  });
+
+  describe('offset threading (memory_search)', () => {
+    test('threads offset into the query to page the ordered result window', async () => {
+      const tool = toolByName(
+        createMemoryTools({
+          store: makeStore(),
+          retriever: makeRetriever([
+            { id: 'doc-1', tags: ['topic'], updated: 30 },
+            { id: 'doc-2', tags: ['topic'], updated: 20 },
+            { id: 'doc-3', tags: ['topic'], updated: 10 }
+          ]),
+          registry: registryWith([{ kind: knowledgeKind }])
+        }),
+        'memory_search'
+      );
+      // Recency-ordered [doc-1, doc-2, doc-3]; offset 1 + limit 1 → [doc-2].
+      expect(await tool.execute({ tag: 'topic', offset: 1, limit: 1 })).toSucceedAndSatisfy((value) => {
+        const out = value as ISearchOut;
+        expect(out.count).toBe(1);
+        expect(out.results.map((r) => r.handle)).toEqual(['doc-2']);
+      });
+    });
+  });
+});

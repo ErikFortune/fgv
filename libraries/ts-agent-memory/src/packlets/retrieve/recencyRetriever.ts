@@ -47,7 +47,7 @@ export class RecencyRetriever implements IMemoryRetriever {
         const ordered: IMemoryRecord<unknown>[] = selectByQuery(this._index.entries(), query).sort(
           recencyCompare
         );
-        return succeed(limitRecords(ordered, query.limit));
+        return succeed(limitRecords(ordered, query.limit, query.offset));
       })
     );
   }

@@ -135,6 +135,29 @@ describe('retrieve helpers', () => {
       expect(limitRecords(records, 0)).toEqual([]);
       expect(limitRecords(records, -1)).toEqual([]);
     });
+
+    test('an absent offset is a no-op (byte-identical to today) — same reference returned', () => {
+      expect(limitRecords(records, undefined, undefined)).toBe(records);
+      expect(limitRecords(records, 2, undefined)).toHaveLength(2);
+      // A non-positive offset is guarded like a non-positive limit — no skip.
+      expect(limitRecords(records, undefined, 0)).toBe(records);
+      expect(ids(limitRecords(records, undefined, -5))).toEqual(['a', 'b', 'c']);
+    });
+
+    test('offset skips after ordering; { offset, limit } is a stable page window', () => {
+      expect(ids(limitRecords(records, undefined, 1))).toEqual(['b', 'c']);
+      expect(ids(limitRecords(records, 1, 1))).toEqual(['b']);
+      expect(ids(limitRecords(records, 2, 1))).toEqual(['b', 'c']);
+    });
+
+    test('an offset past the end yields an empty page (never a throw)', () => {
+      expect(limitRecords(records, undefined, 3)).toEqual([]);
+      expect(limitRecords(records, 5, 99)).toEqual([]);
+    });
+
+    test('a non-positive limit still wins over an offset window', () => {
+      expect(limitRecords(records, 0, 1)).toEqual([]);
+    });
   });
 });
 
@@ -218,6 +241,104 @@ describe('RecencyRetriever', () => {
   test('degrades loudly on a link-traversal request', async () => {
     const r = RecencyRetriever.create(buildIndex([{ id: 'a' }])).orThrow();
     expect(await r.retrieve({ linkedTo: 'a' as MemoryId })).toFailWith(/link traversal requires/i);
+  });
+});
+
+describe('query axes: kinds (kind-set) and offset', () => {
+  function multiKindRetriever(): RecencyRetriever {
+    return RecencyRetriever.create(
+      buildIndex([
+        { id: 'k1', kind: 'knowledge', updated: 40 },
+        { id: 'n1', kind: 'note', updated: 30 },
+        { id: 'e1', kind: 'event', updated: 20 },
+        { id: 'k2', kind: 'knowledge', updated: 10 }
+      ])
+    ).orThrow();
+  }
+
+  describe('kinds', () => {
+    test("an absent kinds axis imposes no kind constraint (today's behavior)", async () => {
+      expect(await multiKindRetriever().retrieve({})).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect([...ids(records)].sort()).toEqual(['e1', 'k1', 'k2', 'n1']);
+        }
+      );
+    });
+
+    test('restricts to records in ANY of the listed kinds', async () => {
+      expect(
+        await multiKindRetriever().retrieve({
+          kinds: ['knowledge', 'event'] as unknown as ReadonlyArray<Kind>
+        })
+      ).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect([...ids(records)].sort()).toEqual(['e1', 'k1', 'k2']);
+      });
+    });
+
+    test('an explicit empty kinds array matches NOTHING (not match-all)', async () => {
+      expect(await multiKindRetriever().retrieve({ kinds: [] })).toSucceedWith([]);
+    });
+
+    test('kind and kinds compose as AND (kind must be a member of kinds)', async () => {
+      // kind=knowledge AND kinds includes knowledge → knowledge records only.
+      expect(
+        await multiKindRetriever().retrieve({
+          kind: knowledge,
+          kinds: ['knowledge', 'note'] as unknown as ReadonlyArray<Kind>
+        })
+      ).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect([...ids(records)].sort()).toEqual(['k1', 'k2']);
+      });
+      // kind=knowledge but kinds excludes knowledge → nothing can satisfy both.
+      expect(
+        await multiKindRetriever().retrieve({
+          kind: knowledge,
+          kinds: ['note', 'event'] as unknown as ReadonlyArray<Kind>
+        })
+      ).toSucceedWith([]);
+    });
+  });
+
+  describe('offset', () => {
+    function ordered(): RecencyRetriever {
+      return RecencyRetriever.create(
+        buildIndex([
+          { id: 'a', updated: 10 },
+          { id: 'b', updated: 40 },
+          { id: 'c', updated: 30 },
+          { id: 'd', updated: 20 }
+        ])
+      ).orThrow();
+    }
+
+    test('skips after ordering, forming a stable { offset, limit } page window', async () => {
+      // Recency order is [b, c, d, a].
+      expect(await ordered().retrieve({ offset: 1, limit: 2 })).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(ids(records)).toEqual(['c', 'd']);
+        }
+      );
+    });
+
+    test('an absent offset is unchanged from today', async () => {
+      expect(await ordered().retrieve({ limit: 2 })).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(ids(records)).toEqual(['b', 'c']);
+        }
+      );
+    });
+
+    test('an offset past the end yields an empty page', async () => {
+      expect(await ordered().retrieve({ offset: 99 })).toSucceedWith([]);
+    });
+
+    test('a negative offset does not slip into slice (treated as no skip)', async () => {
+      expect(await ordered().retrieve({ offset: -3, limit: 2 })).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(ids(records)).toEqual(['b', 'c']);
+        }
+      );
+    });
   });
 });
 
@@ -658,5 +779,40 @@ describe('HybridRetriever', () => {
         expect(records[0].envelope.id).toBe('b');
       }
     );
+  });
+
+  test('applies the { offset, limit } window after merge', async () => {
+    const { index } = build();
+    const recency = RecencyRetriever.create(index).orThrow();
+    const hybrid = HybridRetriever.create([recency], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
+    // Merged recency order is [b(30), c(20), a(10)]; offset 1 + limit 1 → [c].
+    expect(await hybrid.retrieve({ offset: 1, limit: 1 })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(ids(records)).toEqual(['c']);
+      }
+    );
+  });
+
+  test('strips offset from child queries (offset is a post-merge concern)', async () => {
+    const child = new RecordingRetriever({
+      supportsSemanticRecall: false,
+      supportsTemporalQuery: false,
+      supportsLinkTraversal: false
+    });
+    const hybrid = HybridRetriever.create([child], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
+    expect(await hybrid.retrieve({ offset: 2, limit: 3 })).toSucceed();
+    expect(child.lastQuery?.offset).toBeUndefined();
+    expect(child.lastQuery?.limit).toBeUndefined();
+  });
+
+  test('passes the kinds axis through to children (a shared pre-filter axis)', async () => {
+    const child = new RecordingRetriever({
+      supportsSemanticRecall: false,
+      supportsTemporalQuery: false,
+      supportsLinkTraversal: false
+    });
+    const hybrid = HybridRetriever.create([child], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
+    expect(await hybrid.retrieve({ kinds: ['knowledge'] as unknown as ReadonlyArray<Kind> })).toSucceed();
+    expect(child.lastQuery?.kinds).toEqual(['knowledge']);
   });
 });

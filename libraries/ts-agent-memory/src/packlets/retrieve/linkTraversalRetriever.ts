@@ -117,7 +117,7 @@ export class LinkTraversalRetriever implements IMemoryRetriever {
       .filter((entry) => indexedRecordMatchesQuery(entry, query))
       .map((entry) => entry.record)
       .sort(recencyCompare);
-    return succeed(limitRecords(ordered, query.limit));
+    return succeed(limitRecords(ordered, query.limit, query.offset));
   }
 
   /**

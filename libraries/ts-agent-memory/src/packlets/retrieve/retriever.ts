@@ -34,8 +34,20 @@ export interface IMemoryQuery {
   readonly scope?: MemoryScopeKey;
   /** Restrict to records carrying this tag (exact match). */
   readonly tag?: Tag;
-  /** Restrict to records of this kind. */
+  /**
+   * Restrict to records of this kind — the single-kind shorthand for
+   * {@link IMemoryQuery.kinds | kinds}. When both are set they compose as AND
+   * (the record's kind must satisfy both), so `kind` must itself be a member of
+   * `kinds` for anything to match.
+   */
   readonly kind?: Kind;
+  /**
+   * Restrict to records in ANY of these kinds — the general (multi-kind) form of
+   * {@link IMemoryQuery.kind | kind}. Absent → no kind-set constraint (today's
+   * behavior). An explicit empty array `[]` matches NOTHING (mirroring the
+   * non-positive-`limit` "explicit empty" convention), never "match all".
+   */
+  readonly kinds?: ReadonlyArray<Kind>;
   /** Restrict to records linked FROM this id (outbound). */
   readonly linkedFrom?: MemoryId;
   /** Restrict to records linked TO this id (inbound / backlinks). */
@@ -58,6 +70,13 @@ export interface IMemoryQuery {
   readonly asOf?: number;
   /** Maximum records to return. Applied after all other filters. */
   readonly limit?: number;
+  /**
+   * Records to skip after ordering, before `limit` — so `{ offset, limit }` is a
+   * stable page window over the ordered result set. Default 0. A non-positive or
+   * absent offset is today's behavior (no skip); an offset past the end yields an
+   * empty page, never a throw.
+   */
+  readonly offset?: number;
   /** Arbitrary predicate applied after the scope / kind / tag pre-filter. */
   readonly filter?: (record: IMemoryRecord<unknown>) => boolean;
 }
@@ -165,6 +184,9 @@ export function indexedRecordMatchesQuery(entry: IIndexedMemoryRecord, query: IM
   if (query.kind !== undefined && entry.record.envelope.kind !== query.kind) {
     return false;
   }
+  if (query.kinds !== undefined && !query.kinds.includes(entry.record.envelope.kind)) {
+    return false;
+  }
   if (query.tag !== undefined && !entry.record.envelope.tags.includes(query.tag)) {
     return false;
   }
@@ -187,21 +209,32 @@ export function selectByQuery(
 }
 
 /**
- * Truncate to `query.limit` records (a no-op when `limit` is absent). Applied
- * last, after ordering, so it always takes the top-N of the ordered result. A
- * non-positive `limit` is public query input and means "no records" — it returns
- * an empty array rather than letting a negative value slip into `slice`.
+ * Apply the `{ offset, limit }` page window to an ordered record set. Applied
+ * last, after ordering, so it always takes a stable window of the ordered
+ * result. `offset` is applied first (records to skip), then `limit` (top-N of
+ * the remainder).
+ *
+ * @remarks
+ * Both bounds are public query input and are guarded against non-positive
+ * values slipping into `slice`:
+ * - `offset` absent or non-positive → no skip (today's behavior). An offset past
+ *   the end yields an empty page rather than a throw.
+ * - `limit` absent → no truncation; a non-positive `limit` means "no records"
+ *   and returns an empty array.
  * @public
  */
 export function limitRecords(
   records: ReadonlyArray<IMemoryRecord<unknown>>,
-  limit?: number
+  limit?: number,
+  offset?: number
 ): ReadonlyArray<IMemoryRecord<unknown>> {
+  const skip: number = offset !== undefined && offset > 0 ? offset : 0;
+  const windowed: ReadonlyArray<IMemoryRecord<unknown>> = skip > 0 ? records.slice(skip) : records;
   if (limit === undefined) {
-    return records;
+    return windowed;
   }
   if (limit <= 0) {
     return [];
   }
-  return records.length > limit ? records.slice(0, limit) : records;
+  return windowed.length > limit ? windowed.slice(0, limit) : windowed;
 }

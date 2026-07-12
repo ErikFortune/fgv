@@ -145,7 +145,7 @@ export class HybridRetriever implements IMemoryRetriever {
       );
       return mapResults(perRetriever)
         .onSuccess((resultSets) => this._mergeStrategy.merge(resultSets))
-        .onSuccess((merged) => succeed(limitRecords(merged, query.limit)));
+        .onSuccess((merged) => succeed(limitRecords(merged, query.limit, query.offset)));
     });
   }
 
@@ -164,6 +164,10 @@ export class HybridRetriever implements IMemoryRetriever {
   private _projectQuery(query: IMemoryQuery, retriever: IMemoryRetriever): IMemoryQuery {
     const projected: { -readonly [K in keyof IMemoryQuery]: IMemoryQuery[K] } = { ...query };
     delete projected.limit;
+    // Offset, like limit, is a post-merge concern: a child that pre-skipped its
+    // own ordered set would drop candidates the merge needs to score correctly.
+    // The hybrid applies the `{ offset, limit }` window once, after merge.
+    delete projected.offset;
     if (!retriever.capabilities.supportsSemanticRecall) {
       delete projected.semantic;
       delete projected.topK;

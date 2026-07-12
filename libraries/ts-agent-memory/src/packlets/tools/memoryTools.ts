@@ -135,7 +135,32 @@ export interface ICreateMemoryToolsParams {
    * {@link MemoryId} is used.
    */
   readonly handleFor?: (record: IMemoryRecord<unknown>) => string;
+  /**
+   * Optional host projector mapping a record (and the requested detail tier) to
+   * its agent-visible {@link IMemoryToolResultItem}. When supplied, every
+   * `memory_search` / `memory_context` / `memory_read` result item is produced by
+   * this callback — the host owns how much of the body a `'gist'` vs `'full'`
+   * result carries, so it can bound the default (`'gist'`) path.
+   *
+   * When absent, the built-in default projection is used (full body plus the
+   * {@link ICreateMemoryToolsParams.handleFor | handleFor} handle), which ignores
+   * the detail tier — behavior is byte-identical to a build with no projector.
+   *
+   * The callback is guarded exactly like `handleFor`: a throw degrades to the
+   * default full-body projection for that item rather than failing the whole
+   * search.
+   */
+  readonly projectItem?: (record: IMemoryRecord<unknown>, detail: MemoryDetailTier) => IMemoryToolResultItem;
 }
+
+/**
+ * The detail tier a `memory_search` / `memory_context` result is projected at.
+ * `'gist'` is the default (bounded) path; `'full'` is opt-in. Only meaningful
+ * when a host {@link ICreateMemoryToolsParams.projectItem | projectItem} is
+ * supplied — the built-in default projection returns the full body regardless.
+ * @public
+ */
+export type MemoryDetailTier = 'gist' | 'full';
 
 /** The resolved factory context threaded into each tool's `execute`. */
 interface IToolContext {
@@ -146,6 +171,7 @@ interface IToolContext {
   readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
   readonly defaultCodec?: IIdentityCodec;
   readonly handleFor?: (record: IMemoryRecord<unknown>) => string;
+  readonly projectItem?: (record: IMemoryRecord<unknown>, detail: MemoryDetailTier) => IMemoryToolResultItem;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,7 +221,11 @@ const searchSchema = JsonSchema.object({
   semantic: JsonSchema.optional(
     JsonSchema.string({ description: 'Semantic query text (requires a semantic-capable retriever).' })
   ),
-  limit: JsonSchema.optional(JsonSchema.integer({ description: 'Maximum number of results to return.' }))
+  limit: JsonSchema.optional(JsonSchema.integer({ description: 'Maximum number of results to return.' })),
+  offset: JsonSchema.optional(
+    JsonSchema.integer({ description: 'Number of results to skip after ordering, before limit. Default 0.' })
+  ),
+  detail: JsonSchema.optional(JsonSchema.string({ description: "'gist' (default) | 'full'." }))
 });
 
 // eslint-disable-next-line @rushstack/typedef-var
@@ -204,7 +234,8 @@ const contextSchema = JsonSchema.object({
   kind: JsonSchema.optional(JsonSchema.string({ description: 'Restrict reached records to this kind.' })),
   tag: JsonSchema.optional(JsonSchema.string({ description: 'Restrict reached records carrying this tag.' })),
   hops: JsonSchema.optional(JsonSchema.integer({ description: 'BFS hop count (default 1).' })),
-  limit: JsonSchema.optional(JsonSchema.integer({ description: 'Maximum number of results to return.' }))
+  limit: JsonSchema.optional(JsonSchema.integer({ description: 'Maximum number of results to return.' })),
+  detail: JsonSchema.optional(JsonSchema.string({ description: "'gist' (default) | 'full'." }))
 });
 
 // ---------------------------------------------------------------------------
@@ -254,8 +285,17 @@ function resolveOptionalKind(ctx: IToolContext, kindStr?: string): Result<Kind |
   return assertKindEnabled(ctx, kindStr);
 }
 
-/** Project a record into an agent-visible result item, applying the host handle hook when present. */
-function projectItem(ctx: IToolContext, record: IMemoryRecord<unknown>): IMemoryToolResultItem {
+/**
+ * Resolve the requested detail tier from the optional tool `detail` string.
+ * `'full'` is the only opt-in value; every other input (absent, or an
+ * unrecognized string) resolves safely to the bounded default `'gist'`.
+ */
+function resolveDetail(detail?: string): MemoryDetailTier {
+  return detail === 'full' ? 'full' : 'gist';
+}
+
+/** The built-in default projection: full body plus the guarded host handle. Ignores the detail tier. */
+function defaultProjectItem(ctx: IToolContext, record: IMemoryRecord<unknown>): IMemoryToolResultItem {
   // `handleFor` is a host callback; guard it so a throw degrades to the raw id rather than
   // escaping the Result chain (and crashing the whole search/context call).
   const handle =
@@ -269,6 +309,27 @@ function projectItem(ctx: IToolContext, record: IMemoryRecord<unknown>): IMemory
     tags: record.envelope.tags,
     body: record.body
   };
+}
+
+/**
+ * Project a record into an agent-visible result item at the requested detail
+ * tier. When a host {@link ICreateMemoryToolsParams.projectItem | projectItem}
+ * is supplied it owns the projection; otherwise the built-in
+ * {@link defaultProjectItem} (full body) is used. The host callback is guarded
+ * like `handleFor` — a throw degrades to the default full-body projection for
+ * that item rather than failing the whole search/context call.
+ */
+function projectItem(
+  ctx: IToolContext,
+  record: IMemoryRecord<unknown>,
+  detail: MemoryDetailTier
+): IMemoryToolResultItem {
+  if (ctx.projectItem === undefined) {
+    return defaultProjectItem(ctx, record);
+  }
+  // Guard the host projector like `handleFor`: a throw degrades to the built-in
+  // full-body projection (itself throw-safe) rather than escaping the chain.
+  return captureResult(() => ctx.projectItem!(record, detail)).orDefault(defaultProjectItem(ctx, record));
 }
 
 /** Resolve the identity codec used by `memory_write` to derive the storage id. */
@@ -425,7 +486,7 @@ function buildReadTool(ctx: IToolContext): AiAssist.IAiClientTool {
           (await ctx.store.get(kind, entityId)).onSuccess((record) =>
             record === undefined
               ? succeed({ found: false })
-              : succeed({ found: true, item: projectItem(ctx, record) })
+              : succeed({ found: true, item: projectItem(ctx, record, 'gist') })
           )
         )
   };
@@ -450,14 +511,16 @@ function buildSearchTool(ctx: IToolContext): AiAssist.IAiClientTool {
           )
         )
         .thenOnSuccess(async ({ typed, kind, tag }) => {
+          const detail: MemoryDetailTier = resolveDetail(typed.detail);
           const query: IMemoryQuery = {
             ...(kind !== undefined ? { kind } : {}),
             ...(tag !== undefined ? { tag } : {}),
             ...(typed.semantic !== undefined ? { semantic: typed.semantic } : {}),
-            ...(typed.limit !== undefined ? { limit: typed.limit } : {})
+            ...(typed.limit !== undefined ? { limit: typed.limit } : {}),
+            ...(typed.offset !== undefined ? { offset: typed.offset } : {})
           };
           return (await ctx.retriever.retrieve(query)).onSuccess((records) =>
-            succeed({ count: records.length, results: records.map((r) => projectItem(ctx, r)) })
+            succeed({ count: records.length, results: records.map((r) => projectItem(ctx, r, detail)) })
           );
         })
   };
@@ -487,6 +550,7 @@ function buildContextTool(ctx: IToolContext): AiAssist.IAiClientTool {
             )
         )
         .thenOnSuccess(async ({ typed, from, kind, tag }) => {
+          const detail: MemoryDetailTier = resolveDetail(typed.detail);
           const query: IMemoryQuery = {
             linkedFrom: from,
             ...(kind !== undefined ? { kind } : {}),
@@ -495,7 +559,11 @@ function buildContextTool(ctx: IToolContext): AiAssist.IAiClientTool {
             ...(typed.limit !== undefined ? { limit: typed.limit } : {})
           };
           return (await ctx.retriever.retrieve(query)).onSuccess((records) =>
-            succeed({ seed: from, count: records.length, results: records.map((r) => projectItem(ctx, r)) })
+            succeed({
+              seed: from,
+              count: records.length,
+              results: records.map((r) => projectItem(ctx, r, detail))
+            })
           );
         })
   };
@@ -572,7 +640,8 @@ export function createMemoryTools(params: ICreateMemoryToolsParams): ReadonlyArr
     kinds: params.kinds,
     codecs: params.codecs,
     defaultCodec: params.defaultCodec,
-    handleFor: params.handleFor
+    handleFor: params.handleFor,
+    projectItem: params.projectItem
   };
   const selected: ReadonlySet<MemoryToolName> = new Set<MemoryToolName>(params.tools ?? DEFAULT_MEMORY_TOOLS);
   return TOOL_BUILDERS.filter((builder) => selected.has(builder.name)).map((builder) => builder.build(ctx));
