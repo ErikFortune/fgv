@@ -48,6 +48,18 @@ B+1 preserves them via **topological-sort rendering**: extract each slot value's
 
 **Reference**: `.ai/tasks/completed/2026-06/prompt-assist-horizontal-composition/` (design.md §"Phase B+1", + the §"phase-1 must not preclude" guards); 2026-06 horizontal-composition design discussion.
 
+## Horizontal composition — rewrite / model-synthesis merge strategy + sub-slot provenance
+
+`HorizontalComposer`'s `LogicalSlotStrategy` today is the two-value mechanical set (`'concatenate' | 'overwrite'`), with `constraint`-directive contributions always concatenated-first-and-never-dropped underneath whatever strategy the non-constraints apply. A third class of merge was requested: a **rewrite / model-synthesis** strategy — instead of joining or picking, an out-of-band synthesizer (typically an LLM) *rewrites* the several contributions for a logical slot into one coherent passage. The composer would carry the strategy as a **seam** (the synthesizer is consumer-injected — the library must not take an ai-assist dependency), invoke it over the ordered, directive-filtered contribution list, and record the result.
+
+This pulls in the **sub-slot provenance** half of the ask: today `IComposedPrompt.provenanceTrace` maps each logical slot to an ordered `ISlotProvenanceEntry[]` (which contributor, which strategy, was-it-a-constraint) — provenance at **whole-contribution** granularity. A synthesis merge destroys the 1:1 contribution→span correspondence (the output is a rewrite, not a concatenation), so honest provenance for it needs **sub-slot** attribution — spans/segments of the synthesized text traced back to contributing sources, or an explicit "synthesized, sources: […]" marker when span-level attribution isn't recoverable. The additive-vs-breaking line: adding a `'synthesize'` strategy value + an injected synthesizer seam is additive; enriching `ISlotProvenanceEntry` to carry sub-slot spans should stay additive (new optional fields), but the trace-consumer contract wants design care so a future span model doesn't force a break.
+
+**Why deferred**: the requesting consumer authors only `concatenate`/`overwrite` slots today — no synthesis merge in use, and the constraint-first-never-dropped safety semantics already cover the load-bearing case (a synthesizer must still be handed the constraints as non-negotiable, which is its own design question). Trigger-gated on the consumer actually wiring a synthesizer.
+
+**Dependencies**: the trigger is the **first logical slot the consumer wants synthesized** rather than concatenated/overwritten (they'll flag it). Design must settle: the injected-synthesizer seam shape (sync vs async `Result`-returning; how constraints are presented as non-negotiable), and the sub-slot provenance model (span-level vs marker-level). Size M–L (its own stream); composes with — but is independent of — the B+1 topo-sort entry above.
+
+**Reference**: `.ai/tasks/completed/2026-06/prompt-assist-horizontal-composition/` (design.md — the `LogicalSlotStrategy` set + `provenanceTrace` / `ISlotProvenanceEntry` shape are the extension points); 2026-06 horizontal-composition design discussion; consumer orchestrator's forwarded deferred-asks batch (2026-07).
+
 ## Generic editor UX for `@fgv/ts-prompt-assist`
 
 The `ts-prompt-assist` library is shape-agnostic about the consumer's domain (open `surface`, `slot.kind`, `slot.source`; consumer-supplied scope hierarchy encoded into opaque `ScopeKey` strings). Editor UX for authoring prompt descriptors and scope-level binding records is **complex** — qualifier-conditioned candidate editing, slot-binding override visualization, resource-binding navigation, the `IPromptResolveTrace` "where did this value come from" view, validation against registered Converters / serializers / output validators.
@@ -200,6 +212,20 @@ Erik's framing (2026-06-05): "consider using ts-res instead of hardcoding custom
 **Why deferred:** priority uncertain. The default's narrow semantics are documented (`IPromptObservationQuery.qualifiers` TSDoc explicitly cites the divergence and the injection point). Commission when a consumer surfaces a real need for similarity-aware observability queries, OR proactively if the broader posture warrants it.
 
 **Reference:** PR #460 review thread on `promptObservationStore.ts:195`; the `_resolveCandidates` path in `promptLibrary.ts` is the reference for what a ts-res-equivalent resolver needs to do.
+
+### Composer-emitted composed-observation record (nesting contributor records)
+
+Observation fan-out today fires only at `PromptLibrary`'s three public boundaries (`resolve` / `resolveJsonOutput` / `resolveFreeTextOutput`). `HorizontalComposer.compose()` — which takes several already-resolved contributor prompts and merges them into one `IComposedPrompt` — emits **no** observation. So an audit trail sees the N individual contributor `resolve` records but nothing tying them to the composed output, and no record of the merge itself (per-logical-slot strategy, provenance ordering, safeguard findings from `applySafeguards` over the merged slot map).
+
+The ask: have the composer emit a **composed-observation record that nests the contributor records**, the direct horizontal analogue of how a nested resource-binding resolve rolls up under `trace.resourceBindingResolutions[].innerTrace` on the vertical path. The record carries the merge outcome (merged slots, `provenanceTrace`, `safeguardFindings`) with each contributor's own observation nested inside.
+
+**Design point (load-bearing, discovered when scoping):** observation `seq` is minted from a **per-`PromptLibrary`-instance counter**, and that same counter is what the store's cursor (`lastSeq`) pages against. `HorizontalComposer` is a **separate class** that does not hold the library's counter. A composer-emitted record must therefore **share the library's seq source** (inject the library's seq minter / observation-dispatch seam into the composer, rather than giving the composer its own counter) — otherwise composer `seq`s collide with library `seq`s and corrupt cursor paging. This is the central wrinkle any implementation must resolve first; it's why the entry is build-ready but not build-started.
+
+**Why deferred**: explicitly marked non-blocking by the requesting consumer. The contributor-side records already land (each contributor `resolve()` fans out normally); only the *composed* roll-up is missing, and no consumer audit flow depends on it yet. Additive when built — new observation `phase` (e.g. `'compose'`) + the shared-seq seam; no change to existing record shapes.
+
+**Dependencies**: consumer surfaces an audit/debug flow that needs the composed→contributor linkage (e.g. "where did this composed system prompt's tone slot come from, across all contributors"). Size S–M once the seq-coordination seam is designed. Composes with the observability substrate already shipped (`IPromptObserver`, `PromptObservationStore`, the `linkedResolveSeq` cross-link convention — a composed record would cross-link its contributors the same way output records cross-link their resolve record).
+
+**Reference**: `.ai/tasks/completed/2026-06/ts-prompt-assist-observability/` (the `_observe` fan-out + per-instance seq counter) and `.ai/tasks/completed/2026-06/prompt-assist-horizontal-composition/` (the `compose()` path + `IComposedPrompt` shape); `resourceBindingResolutions[].innerTrace` in `promptLibrary.ts` is the vertical-path nesting precedent to mirror; consumer orchestrator's forwarded deferred-asks batch (2026-07).
 
 ---
 
