@@ -679,6 +679,34 @@ describe('SemanticRetriever', () => {
     );
   });
 
+  test('resolves a hit to the correctly-scoped record when two records share an id stem across scopes', async () => {
+    // Two records with the identical stem `turn-3` under different scopes — the
+    // exact same-stem-across-scopes collision the scope-qualified hit fixes. The
+    // retriever must re-resolve each hit through its full `(scope, id)` key, not a
+    // bare id (which would ambiguously match either record).
+    const index = buildIndex([
+      { id: 'turn-3', scope: 'conv-a', tags: ['from-a'] },
+      { id: 'turn-3', scope: 'conv-b', tags: ['from-b'] }
+    ]);
+    const r = SemanticRetriever.create({
+      index,
+      backend: {
+        // The vector backend scored the conv-b record; the retriever must return
+        // exactly that record, never the same-stem conv-a record.
+        vectorIndex: new FakeVectorIndex([{ target: et('turn-3', 'conv-b'), score: 0.9 }]),
+        embedQuery: okEmbed
+      }
+    }).orThrow();
+    expect(await r.retrieve({ semantic: 'q' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(records).toHaveLength(1);
+        expect(records[0].envelope.id).toBe('turn-3');
+        // The tag proves it is the conv-b record, not the same-stem conv-a one.
+        expect(records[0].envelope.tags).toEqual(['from-b']);
+      }
+    );
+  });
+
   test('forwards topK to the vector index and applies the post-filter limit', async () => {
     const index = buildIndex([{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
     const vectorIndex = new FakeVectorIndex([

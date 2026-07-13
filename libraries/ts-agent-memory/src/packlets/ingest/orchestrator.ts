@@ -511,7 +511,10 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
       // Skip below-threshold hits and the candidate's OWN scope-qualified address
       // (a re-ingest of the same entity must not dedup against its prior version).
       // Both the scope AND the id must match to be "self" — a same-stem record in
-      // another scope is a legitimate distinct neighbor.
+      // another scope is a legitimate distinct neighbor. This field-equality is
+      // exactly equivalent to comparing `edgeTargetKey(hit.target)` against the
+      // candidate's own key (edgeTargetKey is pure and injective on `(scope, id)`),
+      // so this one site reads the components directly rather than re-keying.
       const isSelf: boolean = hit.target.scope === addr.scope && hit.target.id === addr.idStem;
       if (hit.score < this._similarityThreshold || isSelf) {
         continue;
