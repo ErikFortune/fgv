@@ -7,6 +7,7 @@ import '@fgv/ts-utils-jest';
 import { Result, fail, succeed } from '@fgv/ts-utils';
 import {
   HybridRetriever,
+  IEdgeTarget,
   IIndexedMemoryRecord,
   IMemoryQuery,
   IMemoryRecord,
@@ -31,6 +32,11 @@ import {
   rankCompare,
   recencyCompare
 } from '../../../index';
+
+/** A scope-qualified link-traversal seed for the retriever tests. */
+function et(id: string, scope: string = 'knowledge'): IEdgeTarget {
+  return { scope: scope as MemoryScopeKey, id: id as MemoryId };
+}
 
 interface IRecordSpec {
   readonly id: string;
@@ -107,10 +113,10 @@ describe('retrieve helpers', () => {
     });
 
     test('fails loudly when a link-traversal axis is requested but unsupported', () => {
-      expect(guardRetrieverCapabilities({ linkedTo: 'x' as MemoryId }, noCaps)).toFailWith(
+      expect(guardRetrieverCapabilities({ linkedTo: et('x') }, noCaps)).toFailWith(
         /link traversal requires a backlink index; none configured/i
       );
-      expect(guardRetrieverCapabilities({ linkedFrom: 'x' as MemoryId }, noCaps)).toFailWith(
+      expect(guardRetrieverCapabilities({ linkedFrom: et('x') }, noCaps)).toFailWith(
         /link traversal requires/i
       );
       expect(guardRetrieverCapabilities({ hops: 2 }, noCaps)).toFailWith(/link traversal requires/i);
@@ -118,7 +124,7 @@ describe('retrieve helpers', () => {
 
     test('passes a link-traversal axis when the capability is supported', () => {
       expect(
-        guardRetrieverCapabilities({ linkedTo: 'x' as MemoryId }, { ...noCaps, supportsLinkTraversal: true })
+        guardRetrieverCapabilities({ linkedTo: et('x') }, { ...noCaps, supportsLinkTraversal: true })
       ).toSucceed();
     });
   });
@@ -245,7 +251,7 @@ describe('RecencyRetriever', () => {
 
   test('degrades loudly on a link-traversal request', async () => {
     const r = RecencyRetriever.create(buildIndex([{ id: 'a' }])).orThrow();
-    expect(await r.retrieve({ linkedTo: 'a' as MemoryId })).toFailWith(/link traversal requires/i);
+    expect(await r.retrieve({ linkedTo: et('a') })).toFailWith(/link traversal requires/i);
   });
 });
 
@@ -873,9 +879,9 @@ describe('HybridRetriever', () => {
     ).orThrow();
     expect(hybrid.capabilities.supportsLinkTraversal).toBe(true);
     // Union supports link traversal, so the hybrid does NOT loud-fail.
-    expect(await hybrid.retrieve({ linkedTo: 'a' as MemoryId, hops: 2 })).toSucceed();
+    expect(await hybrid.retrieve({ linkedTo: et('a'), hops: 2 })).toSucceed();
     // The link-capable child keeps the axes; the plain child has them stripped.
-    expect(linkChild.lastQuery?.linkedTo).toBe('a');
+    expect(linkChild.lastQuery?.linkedTo).toEqual(et('a'));
     expect(linkChild.lastQuery?.hops).toBe(2);
     expect(plainChild.lastQuery?.linkedTo).toBeUndefined();
     expect(plainChild.lastQuery?.hops).toBeUndefined();

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { IEdge, IMemoryEnvelope, IMemoryRecord, Kind, MemoryId, Tag } from '../types';
+import { IEdge, IEdgeTarget, IMemoryEnvelope, IMemoryRecord, Kind, MemoryId, Tag } from '../types';
 
 /**
  * A single unit of raw source material handed to the ingest pipeline. The host
@@ -129,8 +129,8 @@ export type IngestDisposition = 'written' | 'deduped' | 'merged';
  * @public
  */
 export interface ICandidateEdge {
-  /** The reference id (codec `idStem`) of the candidate the edge originates from. */
-  readonly source: MemoryId;
+  /** The scope-qualified reference (codec `(scope, idStem)`) of the candidate the edge originates from. */
+  readonly source: IEdgeTarget;
   /** The attributed edge (type / target / optional confidence / provenance). */
   readonly edge: IEdge;
 }

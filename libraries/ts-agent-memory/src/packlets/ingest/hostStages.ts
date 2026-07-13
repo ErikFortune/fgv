@@ -4,7 +4,7 @@
  */
 
 import { Result } from '@fgv/ts-utils';
-import { MemoryId } from '../types';
+import { IEdgeTarget } from '../types';
 import {
   ICandidateEdge,
   ICandidateRecord,
@@ -90,8 +90,8 @@ export interface IRelationContext {
 export interface IRelationCandidate {
   /** The candidate about to be written. */
   readonly candidate: ICandidateRecord;
-  /** Its resolved reference id (codec `idStem` — the stable entity reference). */
-  readonly id: MemoryId;
+  /** Its resolved scope-qualified reference (codec `(scope, idStem)` — the stable entity address). */
+  readonly id: IEdgeTarget;
 }
 
 /**

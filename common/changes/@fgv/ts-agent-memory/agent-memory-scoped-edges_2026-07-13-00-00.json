@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING: scope-qualified edge targets. IEdge.target is now IEdgeTarget ({ scope, id }) instead of a bare MemoryId, so edges/backlinks/link-traversal/ingest-validation are unambiguous across scopes that reuse a filename stem (e.g. the MTM codec's turn-<n> stems). Adds IEdgeTarget + edgeTargetKey + edgeTargetConverter; IMemoryIndex.backlinks, IMemoryQuery.linkedFrom/linkedTo, ICandidateEdge.source, IRelationCandidate.id, and ICycleGuardEdge source/target all become scope-qualified. The memory_write link input and memory_context from seed adopt a nested { id, scope? } shape (write defaults an omitted scope to the writing record's own scope; context requires it). No back-compat shim; the frontmatter edge format now serializes target as a nested object.",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

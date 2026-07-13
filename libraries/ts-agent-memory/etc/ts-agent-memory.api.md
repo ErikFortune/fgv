@@ -97,6 +97,12 @@ export function defaultMemoryScopeEncoding(scope: MemoryScopeKey): Result<string
 export const edgeConverter: Converter<IEdge>;
 
 // @public
+export const edgeTargetConverter: Converter<IEdgeTarget>;
+
+// @public
+export function edgeTargetKey(target: IEdgeTarget): string;
+
+// @public
 export type EntityId = Brand<string, 'EntityId'>;
 
 // @public
@@ -147,7 +153,7 @@ export interface IBodyConverterRegistry {
 // @public
 export interface ICandidateEdge {
     readonly edge: IEdge;
-    readonly source: MemoryId;
+    readonly source: IEdgeTarget;
 }
 
 // @public
@@ -172,9 +178,9 @@ export interface ICreateMemoryToolsParams {
 // @public
 export interface ICycleGuardEdge {
     // (undocumented)
-    readonly source: MemoryId;
+    readonly source: IEdgeTarget;
     // (undocumented)
-    readonly target: MemoryId;
+    readonly target: IEdgeTarget;
     // (undocumented)
     readonly type: LinkType;
 }
@@ -184,9 +190,15 @@ export interface IEdge {
     readonly confidence?: number;
     readonly invalid_at?: number | null;
     readonly provenance?: IProvenance;
-    readonly target: MemoryId;
+    readonly target: IEdgeTarget;
     readonly type: LinkType;
     readonly valid_at?: number;
+}
+
+// @public
+export interface IEdgeTarget {
+    readonly id: MemoryId;
+    readonly scope: MemoryScopeKey;
 }
 
 // @public
@@ -311,7 +323,7 @@ export interface IMemoryFileParts {
 
 // @public
 export interface IMemoryIndex {
-    backlinks(target: MemoryId): ReadonlyArray<MemoryId>;
+    backlinks(target: IEdgeTarget): ReadonlyArray<IEdgeTarget>;
     byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>>;
     byRank(): ReadonlyArray<IMemoryRecord<unknown>>;
     byRecency(): ReadonlyArray<IMemoryRecord<unknown>>;
@@ -390,8 +402,8 @@ export interface IMemoryQuery {
     readonly kind?: Kind;
     readonly kinds?: ReadonlyArray<Kind>;
     readonly limit?: number;
-    readonly linkedFrom?: MemoryId;
-    readonly linkedTo?: MemoryId;
+    readonly linkedFrom?: IEdgeTarget;
+    readonly linkedTo?: IEdgeTarget;
     readonly offset?: number;
     readonly orderBy?: 'recency' | 'rank';
     readonly scope?: MemoryScopeKey;
@@ -492,7 +504,7 @@ export interface IProvenance {
 // @public
 export interface IRelationCandidate {
     readonly candidate: ICandidateRecord;
-    readonly id: MemoryId;
+    readonly id: IEdgeTarget;
 }
 
 // @public
@@ -639,7 +651,7 @@ export type MemoryId = Brand<string, 'MemoryId'>;
 
 // @public
 export class MemoryIndex implements IMemoryIndex {
-    backlinks(target: MemoryId): ReadonlyArray<MemoryId>;
+    backlinks(target: IEdgeTarget): ReadonlyArray<IEdgeTarget>;
     byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>>;
     byRank(): ReadonlyArray<IMemoryRecord<unknown>>;
     byRecency(): ReadonlyArray<IMemoryRecord<unknown>>;

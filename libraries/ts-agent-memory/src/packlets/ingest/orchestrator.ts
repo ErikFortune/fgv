@@ -8,6 +8,7 @@ import {
   Convert,
   EntityId,
   IEdge,
+  IEdgeTarget,
   IIdentityCodec,
   IIdentityCodecResult,
   IMemoryEnvelope,
@@ -18,6 +19,7 @@ import {
   MemoryId,
   MemoryScopeKey,
   Tag,
+  edgeTargetKey,
   isTemporalRecord,
   isVersionCurrent
 } from '../types';
@@ -156,6 +158,12 @@ interface ISimilarityWiring {
   readonly embed: MemoryEmbedder;
 }
 
+/** A snapshot record paired with its resolved scope-qualified `(scope, id)` address. */
+interface IScopedRecord {
+  readonly address: IEdgeTarget;
+  readonly record: IMemoryRecord<unknown>;
+}
+
 /** Internal per-candidate plan threaded through the pipeline. */
 interface ICandidatePlan {
   readonly candidate: ICandidateRecord;
@@ -165,6 +173,12 @@ interface ICandidatePlan {
   readonly writeEntityId: EntityId;
   /** The reference id used in stage-5 edges (the write target's `idStem`). */
   readonly refId: MemoryId;
+  /**
+   * The scope-qualified reference used in stage-5 edges: the write target's
+   * `(scope, idStem)`. Stage-5 sources / dedup all key on this scoped address so
+   * two candidates that share a stem across scopes never collide.
+   */
+  readonly refTarget: IEdgeTarget;
   /** The resolution verdict; carries the target id on its target-bearing arms. */
   readonly verdict: ResolutionVerdict;
   /**
@@ -269,6 +283,14 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     }
     const snapshot: ReadonlyArray<IMemoryRecord<unknown>> = snapshotResult.value;
     const byId: ReadonlyMap<MemoryId, IMemoryRecord<unknown>> = MemoryIngestOrchestrator._indexById(snapshot);
+    // Resolve every snapshot record's scope-qualified address ONCE. The scoped
+    // view drives the edge path (validation + cycle guard); the bare `byId` above
+    // still serves the verdict/similarity target lookups (those stay bare).
+    const scopedResult: Result<ReadonlyArray<IScopedRecord>> = this._scopeRecords(snapshot);
+    if (scopedResult.isFailure()) {
+      return fail(`ingest '${item.id}': ${scopedResult.message}`);
+    }
+    const scoped: ReadonlyArray<IScopedRecord> = scopedResult.value;
 
     // Stage 3b + 4: validate each body and resolve a verdict/plan.
     const plans: ICandidatePlan[] = [];
@@ -285,8 +307,7 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     const edgesResult: Result<ReadonlyArray<ICandidateEdge>> = await this._relate(
       item,
       writablePlans,
-      snapshot,
-      byId
+      scoped
     );
     if (edgesResult.isFailure()) {
       return fail(edgesResult.message);
@@ -357,6 +378,7 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
           writeAddress: addr,
           writeEntityId: candidate.envelope.entityId,
           refId,
+          refTarget: { scope: addr.scope, id: refId },
           verdict
         })
       );
@@ -378,20 +400,24 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
       // Re-address the write to the target's entity, carrying the target record so
       // stage 6 can UNION its existing tags/links (never overwrite them).
       const targetEntityId: EntityId = target.envelope.entityId;
-      return this._resolveAddress(targetEntityId, target.envelope.kind)
-        .withErrorFormat((msg) => `ingest '${item.id}': ${msg}`)
-        .onSuccess((targetAddr) =>
-          Convert.memoryId.convert(targetAddr.idStem).onSuccess((refId) =>
-            succeed({
-              candidate,
-              writeAddress: targetAddr,
-              writeEntityId: targetEntityId,
-              refId,
-              verdict,
-              mergeTarget: target
-            })
-          )
-        );
+      // The merge target is a snapshot record, and `_scopeRecords` already proved
+      // every snapshot record's address resolves before planning runs — so this
+      // re-resolve (needed for the full codec result: scope + idStem + isVersioned)
+      // cannot fail. No error-context wrap is warranted; a failure here would be a
+      // logic contradiction, not a user-facing condition.
+      return this._resolveAddress(targetEntityId, target.envelope.kind).onSuccess((targetAddr) =>
+        Convert.memoryId.convert(targetAddr.idStem).onSuccess((refId) =>
+          succeed({
+            candidate,
+            writeAddress: targetAddr,
+            writeEntityId: targetEntityId,
+            refId,
+            refTarget: { scope: targetAddr.scope, id: refId },
+            verdict,
+            mergeTarget: target
+          })
+        )
+      );
     }
     // duplicate-of | supersede: write under the candidate's own address.
     return Convert.memoryId.convert(addr.idStem).onSuccess((refId) =>
@@ -400,6 +426,7 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
         writeAddress: addr,
         writeEntityId: candidate.envelope.entityId,
         refId,
+        refTarget: { scope: addr.scope, id: refId },
         verdict
       })
     );
@@ -546,12 +573,11 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
   private async _relate(
     item: IIngestItem,
     writablePlans: ReadonlyArray<ICandidatePlan>,
-    snapshot: ReadonlyArray<IMemoryRecord<unknown>>,
-    byId: ReadonlyMap<MemoryId, IMemoryRecord<unknown>>
+    scoped: ReadonlyArray<IScopedRecord>
   ): Promise<Result<ReadonlyArray<ICandidateEdge>>> {
     const relationCandidates: IRelationCandidate[] = writablePlans.map((plan) => ({
       candidate: plan.candidate,
-      id: plan.refId
+      id: plan.refTarget
     }));
     const proposed: Result<ReadonlyArray<ICandidateEdge>> = await this._capture(
       () => this._relationExtractor.relate({ item, candidates: relationCandidates }),
@@ -560,14 +586,21 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     if (proposed.isFailure()) {
       return proposed;
     }
-    const refIds: ReadonlySet<string> = new Set<string>(writablePlans.map((plan) => plan.refId));
-    const validation: Result<true> = this._validateEdges(item, proposed.value, refIds, byId);
+    // refIds and the existing-record view both key on the canonical scoped
+    // address, so a stem reused across scopes never aliases.
+    const refIds: ReadonlySet<string> = new Set<string>(
+      writablePlans.map((plan) => edgeTargetKey(plan.refTarget))
+    );
+    const byKey: ReadonlyMap<string, IMemoryRecord<unknown>> = new Map<string, IMemoryRecord<unknown>>(
+      scoped.map((s) => [edgeTargetKey(s.address), s.record])
+    );
+    const validation: Result<true> = this._validateEdges(item, proposed.value, refIds, byKey);
     if (validation.isFailure()) {
       return fail(validation.message);
     }
     if (this._cycleGuard === 'reject') {
       const guard: Result<true> = assertNoCycles(
-        MemoryIngestOrchestrator._existingEdges(snapshot),
+        MemoryIngestOrchestrator._existingEdges(scoped),
         proposed.value.map((e) => ({ source: e.source, target: e.edge.target, type: e.edge.type }))
       );
       if (guard.isFailure()) {
@@ -579,22 +612,30 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
 
   /**
    * Validate stage-5 edges: each `source` must be a candidate being written; each
-   * `target` must resolve to a sibling candidate or an existing store record.
+   * `target` must resolve to a sibling candidate or an existing store record. All
+   * matching is on the canonical scope-qualified address.
    */
   private _validateEdges(
     item: IIngestItem,
     edges: ReadonlyArray<ICandidateEdge>,
     refIds: ReadonlySet<string>,
-    byId: ReadonlyMap<MemoryId, IMemoryRecord<unknown>>
+    byKey: ReadonlyMap<string, IMemoryRecord<unknown>>
   ): Result<true> {
     return mapResults(
       edges.map((edge) => {
-        if (!refIds.has(edge.source)) {
-          return fail(`ingest '${item.id}': edge source '${edge.source}' is not a candidate being written`);
-        }
-        if (!refIds.has(edge.edge.target) && byId.get(edge.edge.target) === undefined) {
+        if (!refIds.has(edgeTargetKey(edge.source))) {
           return fail(
-            `ingest '${item.id}': edge target '${edge.edge.target}' resolves to neither a sibling candidate nor an existing record`
+            `ingest '${item.id}': edge source '${MemoryIngestOrchestrator._formatTarget(
+              edge.source
+            )}' is not a candidate being written`
+          );
+        }
+        const targetKey: string = edgeTargetKey(edge.edge.target);
+        if (!refIds.has(targetKey) && byKey.get(targetKey) === undefined) {
+          return fail(
+            `ingest '${item.id}': edge target '${MemoryIngestOrchestrator._formatTarget(
+              edge.edge.target
+            )}' resolves to neither a sibling candidate nor an existing record`
           );
         }
         return succeed(true);
@@ -608,7 +649,8 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     plan: ICandidatePlan,
     allEdges: ReadonlyArray<ICandidateEdge>
   ): Promise<Result<IIngestedRecordResult>> {
-    const myEdges: ReadonlyArray<ICandidateEdge> = allEdges.filter((e) => e.source === plan.refId);
+    const refKey: string = edgeTargetKey(plan.refTarget);
+    const myEdges: ReadonlyArray<ICandidateEdge> = allEdges.filter((e) => edgeTargetKey(e.source) === refKey);
     if (plan.verdict.verdict === 'duplicate-of') {
       // No write: the existing target satisfied the candidate. The target id is a
       // typed field of the narrowed `duplicate-of` verdict — no cast, no guard.
@@ -751,17 +793,44 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     return byId;
   }
 
-  /** Every existing outbound edge in the snapshot, as cycle-guard edges. */
-  private static _existingEdges(
-    records: ReadonlyArray<IMemoryRecord<unknown>>
-  ): ReadonlyArray<ICycleGuardEdge> {
+  /**
+   * Every existing outbound edge in the snapshot, as cycle-guard edges. The
+   * source is the record's own scope-qualified address (already resolved by
+   * {@link MemoryIngestOrchestrator._scopeRecords}); the target is the edge's
+   * own scoped target. Both ends are scoped so the guard never conflates a stem
+   * shared across scopes into one graph node.
+   */
+  private static _existingEdges(scoped: ReadonlyArray<IScopedRecord>): ReadonlyArray<ICycleGuardEdge> {
     const edges: ICycleGuardEdge[] = [];
-    for (const record of records) {
-      for (const edge of record.envelope.links) {
-        edges.push({ source: record.envelope.id, target: edge.target, type: edge.type });
+    for (const s of scoped) {
+      for (const edge of s.record.envelope.links) {
+        edges.push({ source: s.address, target: edge.target, type: edge.type });
       }
     }
     return edges;
+  }
+
+  /**
+   * Resolve every snapshot record's scope-qualified `(scope, id)` address via its
+   * registered codec. Fails loudly if a record's kind has no resolvable codec —
+   * the edge path cannot place an un-scopeable record in the graph, and a missing
+   * codec for a stored kind is a real misconfiguration, not something to paper over.
+   */
+  private _scopeRecords(
+    records: ReadonlyArray<IMemoryRecord<unknown>>
+  ): Result<ReadonlyArray<IScopedRecord>> {
+    return mapResults(
+      records.map((record) =>
+        this._resolveAddress(record.envelope.entityId, record.envelope.kind)
+          .withErrorFormat((msg) => `cannot resolve scope for stored record '${record.envelope.id}': ${msg}`)
+          .onSuccess((addr) => succeed({ address: { scope: addr.scope, id: record.envelope.id }, record }))
+      )
+    );
+  }
+
+  /** Human-readable `scope/id` rendering of a scoped target for edge-validation diagnostics. */
+  private static _formatTarget(target: IEdgeTarget): string {
+    return `${target.scope}/${target.id}`;
   }
 
   /** A provisional record for embedding a candidate (placeholder txn-time fields). */

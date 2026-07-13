@@ -6,6 +6,7 @@
 import '@fgv/ts-utils-jest';
 import {
   EntityId,
+  IEdgeTarget,
   IMemoryEnvelope,
   IMemoryRecord,
   IProvenance,
@@ -13,6 +14,7 @@ import {
   KnowledgeLwwPolicy,
   MemoryCapCullPolicy,
   MemoryId,
+  MemoryScopeKey,
   Tag
 } from '../../../packlets/types';
 
@@ -275,13 +277,20 @@ describe('MemoryCapCullPolicy', () => {
         {
           id: 'turn-0' as MemoryId,
           kind: 'summarized-turn' as Kind,
-          links: [{ type: 'derived-from' as never, target: 'doc-1' as MemoryId }]
+          links: [
+            {
+              type: 'derived-from' as never,
+              target: { scope: 'knowledge' as MemoryScopeKey, id: 'doc-1' as MemoryId } as IEdgeTarget
+            }
+          ]
         },
         { summary: 'old' }
       );
       expect(narrow.applyUpdate(existing, { body: { summary: 'x' }, links: [] })).toSucceedAndSatisfy(
         (updated) => {
-          expect(updated.envelope.links).toEqual([{ type: 'derived-from', target: 'doc-1' }]);
+          expect(updated.envelope.links).toEqual([
+            { type: 'derived-from', target: { scope: 'knowledge', id: 'doc-1' } }
+          ]);
           expect(updated.body).toEqual({ summary: 'x' });
         }
       );

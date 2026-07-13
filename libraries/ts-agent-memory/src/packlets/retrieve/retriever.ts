@@ -4,7 +4,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { IMemoryRecord, Kind, MemoryId, MemoryScopeKey, Tag } from '../types';
+import { IEdgeTarget, IMemoryRecord, Kind, MemoryScopeKey, Tag } from '../types';
 import { IIndexedMemoryRecord } from '../index';
 
 /**
@@ -48,10 +48,10 @@ export interface IMemoryQuery {
    * non-positive-`limit` "explicit empty" convention), never "match all".
    */
   readonly kinds?: ReadonlyArray<Kind>;
-  /** Restrict to records linked FROM this id (outbound). */
-  readonly linkedFrom?: MemoryId;
-  /** Restrict to records linked TO this id (inbound / backlinks). */
-  readonly linkedTo?: MemoryId;
+  /** Restrict to records linked FROM this scope-qualified seed (outbound). */
+  readonly linkedFrom?: IEdgeTarget;
+  /** Restrict to records linked TO this scope-qualified seed (inbound / backlinks). */
+  readonly linkedTo?: IEdgeTarget;
   /** BFS hop count for link traversal. Default: 1. */
   readonly hops?: number;
   /**

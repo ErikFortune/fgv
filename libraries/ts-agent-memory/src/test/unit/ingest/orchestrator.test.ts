@@ -17,6 +17,7 @@ import {
   IBodyConverterRegistry,
   ICandidateEdge,
   ICandidateRecord,
+  IEdgeTarget,
   IEntityResolutionCandidate,
   IEntityResolver,
   IFactExtractor,
@@ -40,6 +41,7 @@ import {
   LinkType,
   LtmIdentityCodec,
   MemoryEmbedder,
+  MtmIdentityCodec,
   MemoryId,
   MemoryIngestOrchestrator,
   MemoryScopeKey,
@@ -168,12 +170,36 @@ function candidate(
   };
 }
 
+/**
+ * A scope-qualified target, authored as `scope#id` or a bare id defaulting to the
+ * knowledge scope (where the note/num fixtures live). `kt` is the assertion-side
+ * spelling of the same helper.
+ */
+function scopedTarget(spec: string): IEdgeTarget {
+  const hash: number = spec.indexOf('#');
+  const scope: string = hash >= 0 ? spec.slice(0, hash) : 'knowledge';
+  const id: string = hash >= 0 ? spec.slice(hash + 1) : spec;
+  return { scope: scope as MemoryScopeKey, id: id as MemoryId };
+}
+function kt(id: string, scope: string = 'knowledge'): IEdgeTarget {
+  return { scope: scope as MemoryScopeKey, id: id as MemoryId };
+}
+
+/** The scope-qualified reference of a candidate about to be written, by its entityId. */
+function srcOf(ctx: IRelationContext, entityId: string): IEdgeTarget {
+  const found = ctx.candidates.find((rc) => rc.candidate.envelope.entityId === (entityId as EntityId));
+  if (found === undefined) {
+    throw new Error(`test relater: no candidate with entityId '${entityId}'`);
+  }
+  return found.id;
+}
+
 function candEdge(source: string, type: string, target: string, confidence?: number): ICandidateEdge {
   return {
-    source: source as MemoryId,
+    source: scopedTarget(source),
     edge: {
       type: type as LinkType,
-      target: target as MemoryId,
+      target: scopedTarget(target),
       ...(confidence !== undefined ? { confidence } : {})
     }
   };
@@ -380,6 +406,28 @@ describe('MemoryIngestOrchestrator', () => {
         extractor: extractor(() => succeed([candidate(orphanKind, 'o-1', 'body')]))
       });
       expect(await orch.ingestItem({ id: 'o-1', content: 'x' })).toFailWith(/no identity codec/);
+    });
+
+    test('fails loudly when a pre-existing snapshot record cannot be scoped (no codec for its kind)', async () => {
+      // The store can persist a note (it has the note codec), but the orchestrator
+      // below is wired WITHOUT a note codec — so when it snapshots the store to run
+      // the edge path, it cannot resolve the seeded note's scope and fails loudly
+      // (never silently drops it from the cycle graph). This is the branch the
+      // scope-qualified edge change added.
+      const store = buildStore();
+      await putNote(store, 'legacy', 'anchor');
+      const orch = MemoryIngestOrchestrator.create({
+        store,
+        registry: registry(),
+        // Deliberately omit the note codec (and any default) that the seeded record needs.
+        codecs: new Map<Kind, IIdentityCodec>([[numKind, new KnowledgeIdentityCodec()]]),
+        classifier: classifier(() => succeed({ kind: numKind })),
+        extractor: extractor(() => succeed([candidate(numKind, 'n-1', 7)])),
+        relationExtractor: noEdges
+      }).orThrow();
+      expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
+        /cannot resolve scope for stored record 'legacy'.*no identity codec registered for kind 'note'/i
+      );
     });
   });
 
@@ -716,7 +764,7 @@ describe('MemoryIngestOrchestrator — stage 5 relate + cycle guard', () => {
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
       expect(r.records[0].edges).toHaveLength(1);
       expect(r.records[0].record?.envelope.links).toEqual([
-        { type: 'mentions', target: 'doc-a', confidence: 0.7 }
+        { type: 'mentions', target: kt('doc-a'), confidence: 0.7 }
       ]);
     });
   });
@@ -731,7 +779,7 @@ describe('MemoryIngestOrchestrator — stage 5 relate + cycle guard', () => {
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
       expect(r.records).toHaveLength(2);
-      expect(r.records[0].record?.envelope.links).toEqual([{ type: 'rel', target: 'doc-c' }]);
+      expect(r.records[0].record?.envelope.links).toEqual([{ type: 'rel', target: kt('doc-c') }]);
       expect(r.records[1].edges).toEqual([]);
     });
   });
@@ -743,7 +791,7 @@ describe('MemoryIngestOrchestrator — stage 5 relate + cycle guard', () => {
       relationExtractor: relater(() => succeed([candEdge('ghost', 'rel', 'doc-b')]))
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
-      /edge source 'ghost' is not a candidate being written/
+      /edge source 'knowledge\/ghost' is not a candidate being written/
     );
   });
 
@@ -754,7 +802,7 @@ describe('MemoryIngestOrchestrator — stage 5 relate + cycle guard', () => {
       relationExtractor: relater(() => succeed([candEdge('doc-b', 'rel', 'ghost')]))
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
-      /edge target 'ghost' resolves to neither/
+      /edge target 'knowledge\/ghost' resolves to neither/
     );
   });
 
@@ -783,8 +831,8 @@ describe('MemoryIngestOrchestrator — stage 5 relate + cycle guard', () => {
       )
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
-      expect(r.records[0].record?.envelope.links).toEqual([{ type: 'rel', target: 'doc-c' }]);
-      expect(r.records[1].record?.envelope.links).toEqual([{ type: 'rel', target: 'doc-b' }]);
+      expect(r.records[0].record?.envelope.links).toEqual([{ type: 'rel', target: kt('doc-c') }]);
+      expect(r.records[1].record?.envelope.links).toEqual([{ type: 'rel', target: kt('doc-b') }]);
     });
   });
 
@@ -798,7 +846,111 @@ describe('MemoryIngestOrchestrator — stage 5 relate + cycle guard', () => {
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
       expect(r.records[0].interlock).toBeUndefined();
-      expect(r.records[0].record?.envelope.links).toEqual([{ type: 'contradicts', target: 'doc-a' }]);
+      expect(r.records[0].record?.envelope.links).toEqual([{ type: 'contradicts', target: kt('doc-a') }]);
+    });
+  });
+
+  describe('_validateEdges cross-scope target disambiguation', () => {
+    // Two EXISTING records share the idStem 'turn-3' across two conversations
+    // (the MTM codec mints per-scope stems). A stage-5 edge target must resolve
+    // to the CORRECT (scope, id) — with bare-id keying both would alias and a
+    // wrong-scope target would silently validate. Guards the ingest-validation seam.
+    const mtmKind: Kind = 'mtm' as Kind;
+
+    function mtmRegistry(): IBodyConverterRegistry {
+      const reg = registry();
+      reg.register(mtmKind, Converters.string);
+      return reg;
+    }
+
+    const mtmCodecs: ReadonlyMap<Kind, IIdentityCodec> = new Map<Kind, IIdentityCodec>([
+      [mtmKind, new MtmIdentityCodec()]
+    ]);
+
+    async function seedTurn(store: FileTreeMemoryStore, entityId: string, body: string): Promise<void> {
+      const addr = new MtmIdentityCodec().encode(entityId as EntityId).orThrow();
+      const rec: IMemoryRecord<unknown> = {
+        envelope: {
+          id: addr.idStem as MemoryId,
+          entityId: entityId as EntityId,
+          kind: mtmKind,
+          tags: [],
+          links: [],
+          created: 0,
+          updated: 0,
+          seq: 0,
+          contentHash: '',
+          provenance: { source: 'agent' }
+        },
+        body
+      };
+      (await store.put(rec)).orThrow();
+    }
+
+    function buildMtmOrchestrator(
+      store: FileTreeMemoryStore,
+      relationExtractor: IRelationExtractor
+    ): MemoryIngestOrchestrator {
+      return MemoryIngestOrchestrator.create({
+        store,
+        registry: mtmRegistry(),
+        codecs: mtmCodecs,
+        classifier: classifier(() => succeed({ kind: mtmKind })),
+        // The candidate is a fresh turn-5 under conv-a (distinct stem from the seeds).
+        extractor: extractor(() => succeed([candidate(mtmKind, 'conv-a:5', 'a new turn')])),
+        relationExtractor
+      }).orThrow();
+    }
+
+    async function seededStore(): Promise<FileTreeMemoryStore> {
+      const store = FileTreeMemoryStore.create({
+        root: mutableRoot(),
+        registry: mtmRegistry(),
+        codecs: mtmCodecs,
+        clock
+      }).orThrow();
+      await seedTurn(store, 'conv-a:3', 'anchor in conversation a');
+      await seedTurn(store, 'conv-b:3', 'anchor in conversation b');
+      return store;
+    }
+
+    test('accepts a same-stem edge target that resolves to the correct scope', async () => {
+      const store = await seededStore();
+      const orch = buildMtmOrchestrator(
+        store,
+        relater((ctx) =>
+          succeed([
+            {
+              source: srcOf(ctx, 'conv-a:5'),
+              edge: { type: 'rel' as LinkType, target: kt('turn-3', 'conversations/conv-a') }
+            }
+          ])
+        )
+      );
+      expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
+        expect(r.records[0].record?.envelope.links).toEqual([
+          { type: 'rel', target: kt('turn-3', 'conversations/conv-a') }
+        ]);
+      });
+    });
+
+    test('rejects a same-stem edge target whose scope has no matching record', async () => {
+      const store = await seededStore();
+      const orch = buildMtmOrchestrator(
+        store,
+        relater((ctx) =>
+          succeed([
+            {
+              source: srcOf(ctx, 'conv-a:5'),
+              // turn-3 exists under conv-a and conv-b, but NOT conv-z.
+              edge: { type: 'rel' as LinkType, target: kt('turn-3', 'conversations/conv-z') }
+            }
+          ])
+        )
+      );
+      expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
+        /edge target 'conversations\/conv-z\/turn-3' resolves to neither a sibling candidate nor an existing record/
+      );
     });
   });
 });
@@ -821,13 +973,22 @@ describe('MemoryIngestOrchestrator — contradicts→temporal interlock', () => 
       store,
       classifier: classifyFact,
       extractor: extractor(() => succeed([candidate(factKind, 'fact-1', 'the sky is grey')])),
-      relationExtractor: relater(() => succeed([candEdge('fact-1', 'contradicts', v1Id)]))
+      relationExtractor: relater((ctx) =>
+        succeed([
+          {
+            source: srcOf(ctx, 'fact-1'),
+            edge: { type: CONTRADICTS_LINK_TYPE, target: kt(v1Id, 'facts/entities/fact-1') }
+          }
+        ])
+      )
     });
     expect(await secondOrch.ingestItem({ id: 'fact-1', content: 'the sky is grey' })).toSucceedAndSatisfy(
       (r: IIngestItemResult) => {
         expect(r.records[0].interlock).toBe('temporal-versioned');
         expect(r.records[0].disposition).toBe('written');
-        expect(r.records[0].record?.envelope.links).toEqual([{ type: CONTRADICTS_LINK_TYPE, target: v1Id }]);
+        expect(r.records[0].record?.envelope.links).toEqual([
+          { type: CONTRADICTS_LINK_TYPE, target: kt(v1Id, 'facts/entities/fact-1') }
+        ]);
       }
     );
 
@@ -854,7 +1015,14 @@ describe('MemoryIngestOrchestrator — contradicts→temporal interlock', () => 
       store,
       classifier: classifyFact,
       extractor: extractor(() => succeed([candidate(factKind, 'fact-1', 'grey')])),
-      relationExtractor: relater(() => succeed([candEdge('fact-1', 'contradicts', v1Id)]))
+      relationExtractor: relater((ctx) =>
+        succeed([
+          {
+            source: srcOf(ctx, 'fact-1'),
+            edge: { type: CONTRADICTS_LINK_TYPE, target: kt(v1Id, 'facts/entities/fact-1') }
+          }
+        ])
+      )
     });
     (await o2.ingestItem({ id: 'fact-1', content: 'grey' })).orThrow();
 
@@ -1012,7 +1180,7 @@ describe('MemoryIngestOrchestrator — review-punch-list fixes', () => {
       )
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
-      expect(r.records[0].record?.envelope.links).toEqual([{ type: 'rel', target: 'doc-a' }]);
+      expect(r.records[0].record?.envelope.links).toEqual([{ type: 'rel', target: kt('doc-a') }]);
     });
   });
 
@@ -1034,7 +1202,7 @@ describe('MemoryIngestOrchestrator — review-punch-list fixes', () => {
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceed();
     expect(await store.get(noteKind, 'doc-a' as EntityId)).toSucceedAndSatisfy(
       (rec: IMemoryRecord<unknown> | undefined) => {
-        expect(rec?.envelope.links).toEqual([{ type: 'rel', target: 'doc-x' }]);
+        expect(rec?.envelope.links).toEqual([{ type: 'rel', target: kt('doc-x') }]);
       }
     );
   });
@@ -1072,7 +1240,7 @@ describe('MemoryIngestOrchestrator — merge-into safety (second review)', () =>
     const store = buildStore({ vectorIndex, embed });
     await putFull(store, noteKind, 'doc-a', 'apple pie', {
       tags: ['old-tag'],
-      links: [{ type: 'existing' as LinkType, target: 'doc-z' as MemoryId }]
+      links: [{ type: 'existing' as LinkType, target: kt('doc-z') }]
     });
     await putFull(store, noteKind, 'doc-x', 'target of stage-5');
     const orch = buildOrchestrator({
@@ -1084,7 +1252,7 @@ describe('MemoryIngestOrchestrator — merge-into safety (second review)', () =>
         succeed([
           candidate(noteKind, 'doc-b', 'apple tart', {
             tags: ['new-tag'],
-            links: [{ type: 'candlink' as LinkType, target: 'doc-z' as MemoryId }]
+            links: [{ type: 'candlink' as LinkType, target: kt('doc-z') }]
           })
         ])
       ),
@@ -1099,9 +1267,9 @@ describe('MemoryIngestOrchestrator — merge-into safety (second review)', () =>
         expect([...(rec?.envelope.tags ?? [])].sort()).toEqual(['new-tag', 'old-tag']);
         // Original link + candidate link + stage-5 edge, each exactly once.
         expect(rec?.envelope.links).toEqual([
-          { type: 'existing', target: 'doc-z' },
-          { type: 'candlink', target: 'doc-z' },
-          { type: 'stage5', target: 'doc-x' }
+          { type: 'existing', target: kt('doc-z') },
+          { type: 'candlink', target: kt('doc-z') },
+          { type: 'stage5', target: kt('doc-x') }
         ]);
       }
     );
