@@ -282,20 +282,23 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
       return fail(`ingest '${item.id}': failed to snapshot store: ${snapshotResult.message}`);
     }
     const snapshot: ReadonlyArray<IMemoryRecord<unknown>> = snapshotResult.value;
-    const byId: ReadonlyMap<MemoryId, IMemoryRecord<unknown>> = MemoryIngestOrchestrator._indexById(snapshot);
-    // Resolve every snapshot record's scope-qualified address ONCE. The scoped
-    // view drives the edge path (validation + cycle guard); the bare `byId` above
-    // still serves the verdict/similarity target lookups (those stay bare).
+    // Resolve every snapshot record's scope-qualified address ONCE, then index it
+    // by the canonical scoped key. The single `byKey` view drives BOTH the edge
+    // path (validation + cycle guard) AND the verdict/similarity target lookups —
+    // so a filename stem reused across scopes never aliases on any path.
     const scopedResult: Result<ReadonlyArray<IScopedRecord>> = this._scopeRecords(snapshot);
     if (scopedResult.isFailure()) {
       return fail(`ingest '${item.id}': ${scopedResult.message}`);
     }
     const scoped: ReadonlyArray<IScopedRecord> = scopedResult.value;
+    const byKey: ReadonlyMap<string, IMemoryRecord<unknown>> = new Map<string, IMemoryRecord<unknown>>(
+      scoped.map((s) => [edgeTargetKey(s.address), s.record])
+    );
 
     // Stage 3b + 4: validate each body and resolve a verdict/plan.
     const plans: ICandidatePlan[] = [];
     for (const candidate of candidates) {
-      const planResult: Result<ICandidatePlan> = await this._planCandidate(item, candidate, snapshot, byId);
+      const planResult: Result<ICandidatePlan> = await this._planCandidate(item, candidate, snapshot, byKey);
       if (planResult.isFailure()) {
         return fail(planResult.message);
       }
@@ -307,7 +310,8 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     const edgesResult: Result<ReadonlyArray<ICandidateEdge>> = await this._relate(
       item,
       writablePlans,
-      scoped
+      scoped,
+      byKey
     );
     if (edgesResult.isFailure()) {
       return fail(edgesResult.message);
@@ -331,7 +335,7 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     item: IIngestItem,
     candidate: ICandidateRecord,
     snapshot: ReadonlyArray<IMemoryRecord<unknown>>,
-    byId: ReadonlyMap<MemoryId, IMemoryRecord<unknown>>
+    byKey: ReadonlyMap<string, IMemoryRecord<unknown>>
   ): Promise<Result<ICandidatePlan>> {
     const kind: Kind = candidate.envelope.kind;
     // Stage 3b: the typed validation boundary — no unchecked host body reaches the store.
@@ -350,8 +354,8 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     }
     const addr: IIdentityCodecResult = addrResult.value;
 
-    return (await this._resolveVerdict(candidate, kind, body, addr, snapshot, byId)).onSuccess((verdict) =>
-      this._planFromVerdict(item, candidate, addr, verdict, byId)
+    return (await this._resolveVerdict(candidate, kind, body, addr, snapshot, byKey)).onSuccess((verdict) =>
+      this._planFromVerdict(item, candidate, addr, verdict, byKey)
     );
   }
 
@@ -369,7 +373,7 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     candidate: ICandidateRecord,
     addr: IIdentityCodecResult,
     verdict: ResolutionVerdict,
-    byId: ReadonlyMap<MemoryId, IMemoryRecord<unknown>>
+    byKey: ReadonlyMap<string, IMemoryRecord<unknown>>
   ): Result<ICandidatePlan> {
     if (verdict.verdict === 'new') {
       return Convert.memoryId.convert(addr.idStem).onSuccess((refId) =>
@@ -384,16 +388,21 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
       );
     }
     // duplicate-of | supersede | merge-into: the target must exist and share the
-    // candidate's kind.
-    const target: IMemoryRecord<unknown> | undefined = byId.get(verdict.target);
+    // candidate's kind. Lookup is on the canonical scoped key, so a stem reused
+    // across scopes binds only the record the verdict actually named.
+    const target: IMemoryRecord<unknown> | undefined = byKey.get(edgeTargetKey(verdict.target));
     if (target === undefined) {
       return fail(
-        `ingest '${item.id}': ${verdict.verdict} target '${verdict.target}' does not exist in the store`
+        `ingest '${item.id}': ${verdict.verdict} target '${MemoryIngestOrchestrator._formatTarget(
+          verdict.target
+        )}' does not exist in the store`
       );
     }
     if (target.envelope.kind !== candidate.envelope.kind) {
       return fail(
-        `ingest '${item.id}': ${verdict.verdict} target '${verdict.target}' is kind '${target.envelope.kind}' but the candidate is kind '${candidate.envelope.kind}'`
+        `ingest '${item.id}': ${verdict.verdict} target '${MemoryIngestOrchestrator._formatTarget(
+          verdict.target
+        )}' is kind '${target.envelope.kind}' but the candidate is kind '${candidate.envelope.kind}'`
       );
     }
     if (verdict.verdict === 'merge-into') {
@@ -445,18 +454,20 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     body: string,
     addr: IIdentityCodecResult,
     snapshot: ReadonlyArray<IMemoryRecord<unknown>>,
-    byId: ReadonlyMap<MemoryId, IMemoryRecord<unknown>>
+    byKey: ReadonlyMap<string, IMemoryRecord<unknown>>
   ): Promise<Result<ResolutionVerdict>> {
     return this._findExactMatch(kind, body, addr.scope, snapshot).thenOnSuccess(async (matchId) => {
       if (matchId !== undefined) {
-        return succeed({ verdict: 'duplicate-of', target: matchId });
+        // The exact-match cohort is filtered to `addr.scope`, so the match lives
+        // under that scope — its scope-qualified target is `(addr.scope, matchId)`.
+        return succeed({ verdict: 'duplicate-of', target: { scope: addr.scope, id: matchId } });
       }
       const layer2: ISimilarityWiring | undefined = this._similarity;
       if (layer2 === undefined) {
         // No layer-2: exact-only fall-back (the deterministic-identity host path).
         return succeed({ verdict: 'new' });
       }
-      return this._resolveViaSimilarity(candidate, addr, body, layer2, byId);
+      return this._resolveViaSimilarity(candidate, addr, body, layer2, byKey);
     });
   }
 
@@ -466,10 +477,10 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     addr: IIdentityCodecResult,
     body: string,
     wiring: ISimilarityWiring,
-    byId: ReadonlyMap<MemoryId, IMemoryRecord<unknown>>
+    byKey: ReadonlyMap<string, IMemoryRecord<unknown>>
   ): Promise<Result<ResolutionVerdict>> {
     return MemoryIngestOrchestrator._provisionalRecord(candidate, addr.idStem, body).thenOnSuccess(
-      (provisional) => this._resolveViaSimilarityEmbedded(candidate, addr, wiring, byId, provisional)
+      (provisional) => this._resolveViaSimilarityEmbedded(candidate, addr, wiring, byKey, provisional)
     );
   }
 
@@ -478,7 +489,7 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     candidate: ICandidateRecord,
     addr: IIdentityCodecResult,
     wiring: ISimilarityWiring,
-    byId: ReadonlyMap<MemoryId, IMemoryRecord<unknown>>,
+    byKey: ReadonlyMap<string, IMemoryRecord<unknown>>,
     provisional: IMemoryRecord<unknown>
   ): Promise<Result<ResolutionVerdict>> {
     const embedded: Result<Float32Array> = await this._capture(
@@ -497,12 +508,17 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     }
     const similar: IEntityResolutionCandidate[] = [];
     for (const hit of queried.value) {
-      if (hit.score < this._similarityThreshold || hit.id === addr.idStem) {
+      // Skip below-threshold hits and the candidate's OWN scope-qualified address
+      // (a re-ingest of the same entity must not dedup against its prior version).
+      // Both the scope AND the id must match to be "self" — a same-stem record in
+      // another scope is a legitimate distinct neighbor.
+      const isSelf: boolean = hit.target.scope === addr.scope && hit.target.id === addr.idStem;
+      if (hit.score < this._similarityThreshold || isSelf) {
         continue;
       }
-      const record: IMemoryRecord<unknown> | undefined = byId.get(hit.id);
+      const record: IMemoryRecord<unknown> | undefined = byKey.get(edgeTargetKey(hit.target));
       if (record !== undefined) {
-        similar.push({ id: hit.id, record, score: hit.score });
+        similar.push({ target: hit.target, record, score: hit.score });
       }
     }
     if (similar.length === 0) {
@@ -573,7 +589,8 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
   private async _relate(
     item: IIngestItem,
     writablePlans: ReadonlyArray<ICandidatePlan>,
-    scoped: ReadonlyArray<IScopedRecord>
+    scoped: ReadonlyArray<IScopedRecord>,
+    byKey: ReadonlyMap<string, IMemoryRecord<unknown>>
   ): Promise<Result<ReadonlyArray<ICandidateEdge>>> {
     const relationCandidates: IRelationCandidate[] = writablePlans.map((plan) => ({
       candidate: plan.candidate,
@@ -586,13 +603,11 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     if (proposed.isFailure()) {
       return proposed;
     }
-    // refIds and the existing-record view both key on the canonical scoped
-    // address, so a stem reused across scopes never aliases.
+    // refIds and the existing-record view (`byKey`, shared with the verdict path)
+    // both key on the canonical scoped address, so a stem reused across scopes
+    // never aliases.
     const refIds: ReadonlySet<string> = new Set<string>(
       writablePlans.map((plan) => edgeTargetKey(plan.refTarget))
-    );
-    const byKey: ReadonlyMap<string, IMemoryRecord<unknown>> = new Map<string, IMemoryRecord<unknown>>(
-      scoped.map((s) => [edgeTargetKey(s.address), s.record])
     );
     const validation: Result<true> = this._validateEdges(item, proposed.value, refIds, byKey);
     if (validation.isFailure()) {
@@ -658,7 +673,7 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
         candidate: plan.candidate,
         resolution: plan.verdict,
         disposition: 'deduped',
-        id: plan.verdict.target,
+        id: plan.verdict.target.id,
         edges: myEdges
       });
     }
@@ -780,17 +795,6 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
       this._logger.warn(message);
       return fail(message);
     }
-  }
-
-  /** Index a record snapshot by id (last write wins on an id collision across scopes). */
-  private static _indexById(
-    records: ReadonlyArray<IMemoryRecord<unknown>>
-  ): ReadonlyMap<MemoryId, IMemoryRecord<unknown>> {
-    const byId: Map<MemoryId, IMemoryRecord<unknown>> = new Map<MemoryId, IMemoryRecord<unknown>>();
-    for (const record of records) {
-      byId.set(record.envelope.id, record);
-    }
-    return byId;
   }
 
   /**

@@ -440,7 +440,7 @@ describe('MemoryIngestOrchestrator', () => {
       });
       expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
         expect(r.records[0].disposition).toBe('deduped');
-        expect(r.records[0].resolution).toEqual({ verdict: 'duplicate-of', target: 'doc-a' });
+        expect(r.records[0].resolution).toEqual({ verdict: 'duplicate-of', target: kt('doc-a') });
         expect(r.records[0].id).toBe('doc-a');
       });
       // doc-b was never written.
@@ -543,7 +543,9 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
       store,
       vectorIndex,
       embed,
-      entityResolver: resolver((__c, similar) => succeed({ verdict: 'duplicate-of', target: similar[0].id })),
+      entityResolver: resolver((__c, similar) =>
+        succeed({ verdict: 'duplicate-of', target: similar[0].target })
+      ),
       extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
@@ -561,12 +563,14 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
       store,
       vectorIndex,
       embed,
-      entityResolver: resolver((__c, similar) => succeed({ verdict: 'supersede', target: similar[0].id })),
+      entityResolver: resolver((__c, similar) =>
+        succeed({ verdict: 'supersede', target: similar[0].target })
+      ),
       extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
       expect(r.records[0].disposition).toBe('written');
-      expect(r.records[0].resolution).toEqual({ verdict: 'supersede', target: 'doc-a' });
+      expect(r.records[0].resolution).toEqual({ verdict: 'supersede', target: kt('doc-a') });
       expect(r.records[0].id).toBe('doc-b');
     });
     expect(await store.get(noteKind, 'doc-b' as EntityId)).toSucceedAndSatisfy(
@@ -582,7 +586,9 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
       store,
       vectorIndex,
       embed,
-      entityResolver: resolver((__c, similar) => succeed({ verdict: 'merge-into', target: similar[0].id })),
+      entityResolver: resolver((__c, similar) =>
+        succeed({ verdict: 'merge-into', target: similar[0].target })
+      ),
       extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
@@ -604,11 +610,11 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
       store,
       vectorIndex,
       embed,
-      entityResolver: resolver(() => succeed({ verdict: 'merge-into', target: 'ghost' as MemoryId })),
+      entityResolver: resolver(() => succeed({ verdict: 'merge-into', target: kt('ghost') })),
       extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
-      /merge-into target 'ghost' does not exist/
+      /merge-into target 'knowledge\/ghost' does not exist/
     );
   });
 
@@ -649,10 +655,10 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
 
   test('a surfaced hit with no backing record is skipped', async () => {
     const ghostIndex: IVectorIndex = {
-      add: (id) => Promise.resolve(succeed(id as string)),
-      remove: (id) => Promise.resolve(succeed(id)),
+      add: (t) => Promise.resolve(succeed(t.id as string)),
+      remove: (t) => Promise.resolve(succeed(t)),
       query: (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> =>
-        Promise.resolve(succeed([{ id: 'ghost' as MemoryId, score: 0.99 }]))
+        Promise.resolve(succeed([{ target: kt('ghost'), score: 0.99 }]))
     };
     const orch = buildOrchestrator({
       store: buildStore(),
@@ -680,8 +686,8 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
 
   test('a similarity-query failure surfaces loudly', async () => {
     const failingIndex: IVectorIndex = {
-      add: (id) => Promise.resolve(succeed(id as string)),
-      remove: (id) => Promise.resolve(succeed(id)),
+      add: (t) => Promise.resolve(succeed(t.id as string)),
+      remove: (t) => Promise.resolve(succeed(t)),
       query: (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> => Promise.resolve(fail('query kaput'))
     };
     const orch = buildOrchestrator({
@@ -1193,7 +1199,9 @@ describe('MemoryIngestOrchestrator — review-punch-list fixes', () => {
       store,
       vectorIndex,
       embed,
-      entityResolver: resolver((__c, similar) => succeed({ verdict: 'merge-into', target: similar[0].id })),
+      entityResolver: resolver((__c, similar) =>
+        succeed({ verdict: 'merge-into', target: similar[0].target })
+      ),
       extractor: extractor(() =>
         succeed([candidate(noteKind, 'doc-b', 'apple tart'), candidate(noteKind, 'doc-c', 'apple tart')])
       ),
@@ -1247,7 +1255,9 @@ describe('MemoryIngestOrchestrator — merge-into safety (second review)', () =>
       store,
       vectorIndex,
       embed,
-      entityResolver: resolver((__c, similar) => succeed({ verdict: 'merge-into', target: similar[0].id })),
+      entityResolver: resolver((__c, similar) =>
+        succeed({ verdict: 'merge-into', target: similar[0].target })
+      ),
       extractor: extractor(() =>
         succeed([
           candidate(noteKind, 'doc-b', 'apple tart', {
@@ -1284,11 +1294,13 @@ describe('MemoryIngestOrchestrator — merge-into safety (second review)', () =>
       store,
       vectorIndex,
       embed,
-      entityResolver: resolver((__c, similar) => succeed({ verdict: 'merge-into', target: similar[0].id })),
+      entityResolver: resolver((__c, similar) =>
+        succeed({ verdict: 'merge-into', target: similar[0].target })
+      ),
       extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
-      /merge-into target 'conv-1' is kind 'ltm' but the candidate is kind 'note'/
+      /merge-into target 'conversations\/conv-1' is kind 'ltm' but the candidate is kind 'note'/
     );
   });
 
@@ -1300,11 +1312,11 @@ describe('MemoryIngestOrchestrator — merge-into safety (second review)', () =>
       store,
       vectorIndex,
       embed,
-      entityResolver: resolver(() => succeed({ verdict: 'supersede', target: 'ghost' as MemoryId })),
+      entityResolver: resolver(() => succeed({ verdict: 'supersede', target: kt('ghost') })),
       extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
-      /supersede target 'ghost' does not exist/
+      /supersede target 'knowledge\/ghost' does not exist/
     );
   });
 
@@ -1316,11 +1328,11 @@ describe('MemoryIngestOrchestrator — merge-into safety (second review)', () =>
       store,
       vectorIndex,
       embed,
-      entityResolver: resolver(() => succeed({ verdict: 'duplicate-of', target: 'ghost' as MemoryId })),
+      entityResolver: resolver(() => succeed({ verdict: 'duplicate-of', target: kt('ghost') })),
       extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
-      /duplicate-of target 'ghost' does not exist/
+      /duplicate-of target 'knowledge\/ghost' does not exist/
     );
   });
 });

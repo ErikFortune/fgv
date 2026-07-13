@@ -10,6 +10,7 @@ import {
   BodyConverterRegistry,
   FileTreeMemoryStore,
   IBodyConverterRegistry,
+  IEdgeTarget,
   IIdentityCodec,
   IIndexedMemoryRecord,
   IMemoryRecord,
@@ -95,13 +96,13 @@ class SpyVectorIndex implements IVectorIndex {
   public failRemove: boolean = false;
   private readonly _inner: InMemoryCosineIndex = InMemoryCosineIndex.create().orThrow();
 
-  public async add(id: MemoryId, vector: Float32Array): Promise<Result<string>> {
-    this.calls.push(`add:${id}`);
-    return this.failAdd ? fail('add boom') : this._inner.add(id, vector);
+  public async add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>> {
+    this.calls.push(`add:${target.id}`);
+    return this.failAdd ? fail('add boom') : this._inner.add(target, vector);
   }
-  public async remove(id: MemoryId): Promise<Result<MemoryId>> {
-    this.calls.push(`remove:${id}`);
-    return this.failRemove ? fail('remove boom') : this._inner.remove(id);
+  public async remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>> {
+    this.calls.push(`remove:${target.id}`);
+    return this.failRemove ? fail('remove boom') : this._inner.remove(target);
   }
   public query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
     return this._inner.query(vector, topK);
@@ -132,21 +133,22 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       const store = knowledgeStore(index, recordEmbed);
       expect(await store.put(makeRecord('doc-a', 'cat cat'))).toSucceedAndSatisfy(
         (record: IMemoryRecord<unknown>) => {
-          // InMemoryCosineIndex keys entries by id, so the ref IS the id.
-          expect(record.envelope.embeddingRef).toBe('doc-a');
+          // InMemoryCosineIndex keys entries by the scope-qualified target, so the
+          // ref IS that canonical key (scope + NUL + id).
+          expect(record.envelope.embeddingRef).toBe('knowledge\0doc-a');
         }
       );
       expect(index.size).toBe(1);
       // The persisted file carries the embeddingRef (round-trips through disk).
       expect(await store.getById('knowledge' as MemoryScopeKey, 'doc-a' as MemoryId)).toSucceedAndSatisfy(
         (record: IMemoryRecord<unknown> | undefined) => {
-          expect(record?.envelope.embeddingRef).toBe('doc-a');
+          expect(record?.envelope.embeddingRef).toBe('knowledge\0doc-a');
         }
       );
       // The vector is queryable.
       expect(await index.query(featureVector('cat'), 1)).toSucceedAndSatisfy(
         (hits: ReadonlyArray<IVectorQueryHit>) => {
-          expect(hits[0].id).toBe('doc-a');
+          expect(hits[0].target.id).toBe('doc-a');
         }
       );
     });
@@ -213,7 +215,7 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       expect(index.size).toBe(2);
       expect(await index.query(featureVector('cat'), 5)).toSucceedAndSatisfy(
         (hits: ReadonlyArray<IVectorQueryHit>) => {
-          expect(hits.map((h) => h.id)).not.toContain('turn-0');
+          expect(hits.map((h) => h.target.id)).not.toContain('turn-0');
         }
       );
     });

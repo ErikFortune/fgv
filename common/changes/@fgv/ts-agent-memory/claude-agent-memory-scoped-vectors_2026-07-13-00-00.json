@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING: scope-qualified vector/similarity + entity-resolution path (completes the scoped-edge-targets migration). IVectorIndex.add/remove now take an IEdgeTarget instead of a bare MemoryId; IVectorQueryHit carries target: IEdgeTarget (was id: MemoryId); InMemoryCosineIndex keys its vector map by edgeTargetKey(target). IEntityResolutionCandidate.id becomes target: IEdgeTarget and ResolutionVerdict's duplicate-of/supersede/merge-into arms carry target: IEdgeTarget -- a breaking change to the IEntityResolver host contract (candidates presented and verdicts returned), consistent with the no-shim posture on this pre-1.0 library. IMemoryRecordSource.list() now yields IScopedMemoryRecord ({ target, record }) so a whole-vault rebuild re-indexes on the scope-qualified key. The store threads the write/delete/cap-cull-evict scope through the embed-on-write and vector-removal paths. Fixes the latent same-stem-across-scopes embedding collision (e.g. the MTM codec's turn-<n> stems). The orchestrator's bare byId snapshot index was removed; verdict/similarity lookups now route through the same scope-qualified byKey view as the edge path.",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

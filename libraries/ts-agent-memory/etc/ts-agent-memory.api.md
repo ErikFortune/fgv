@@ -203,9 +203,9 @@ export interface IEdgeTarget {
 
 // @public
 export interface IEntityResolutionCandidate {
-    readonly id: MemoryId;
     readonly record: IMemoryRecord<unknown>;
     readonly score: number;
+    readonly target: IEdgeTarget;
 }
 
 // @public
@@ -420,7 +420,7 @@ export interface IMemoryRecord<TBody = unknown> {
 
 // @public
 export interface IMemoryRecordSource {
-    list(): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+    list(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
 }
 
 // @public
@@ -483,11 +483,11 @@ export type IngestDisposition = 'written' | 'deduped' | 'merged';
 
 // @public
 export class InMemoryCosineIndex implements IVectorIndex {
-    add(id: MemoryId, vector: Float32Array): Promise<Result<string>>;
+    add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
     static create(): Result<InMemoryCosineIndex>;
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
     rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder): Promise<Result<number>>;
-    remove(id: MemoryId): Promise<Result<MemoryId>>;
+    remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
     get size(): number;
 }
 
@@ -516,6 +516,12 @@ export interface IRelationContext {
 // @public
 export interface IRelationExtractor {
     relate(context: IRelationContext): Promise<Result<ReadonlyArray<ICandidateEdge>>>;
+}
+
+// @public
+export interface IScopedMemoryRecord {
+    readonly record: IMemoryRecord<unknown>;
+    readonly target: IEdgeTarget;
 }
 
 // @public
@@ -562,15 +568,15 @@ export interface ITemporalVersionAddress {
 
 // @public
 export interface IVectorIndex {
-    add(id: MemoryId, vector: Float32Array): Promise<Result<string>>;
+    add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
-    remove(id: MemoryId): Promise<Result<MemoryId>>;
+    remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
 }
 
 // @public
 export interface IVectorQueryHit {
-    readonly id: MemoryId;
     readonly score: number;
+    readonly target: IEdgeTarget;
 }
 
 // @public
@@ -745,13 +751,13 @@ export type ResolutionVerdict = {
     readonly verdict: 'new';
 } | {
     readonly verdict: 'duplicate-of';
-    readonly target: MemoryId;
+    readonly target: IEdgeTarget;
 } | {
     readonly verdict: 'supersede';
-    readonly target: MemoryId;
+    readonly target: IEdgeTarget;
 } | {
     readonly verdict: 'merge-into';
-    readonly target: MemoryId;
+    readonly target: IEdgeTarget;
 };
 
 // @public
