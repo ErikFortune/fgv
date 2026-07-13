@@ -29,8 +29,14 @@ export interface IProvenance {
   readonly model?: string;
   /** Optional confidence in `[0, 1]`. */
   readonly confidence?: number;
-  /** Back-link to the source experience record. Enables the cross-kind provenance spine. */
-  readonly derivedFrom?: MemoryId;
+  /**
+   * Scope-qualified back-link to the source record. Enables the cross-kind
+   * provenance spine. A scope-qualified {@link IEdgeTarget} (not a bare
+   * {@link MemoryId}) because per-scope codecs (e.g. the MTM codec's `turn-<n>`
+   * stems) legally reuse a stem across scopes, so a bare id would be ambiguous —
+   * the same reason {@link IEdge.target} is scope-qualified.
+   */
+  readonly derivedFrom?: IEdgeTarget;
   /** Opaque extension payload — consumer-owned, never interpreted by the store. */
   readonly [key: string]: unknown;
 }

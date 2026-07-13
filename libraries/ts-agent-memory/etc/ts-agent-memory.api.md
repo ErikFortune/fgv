@@ -113,11 +113,13 @@ export const envelopeYamlConverter: Converter<IMemoryEnvelope>;
 
 // @public
 export class FileTreeMemoryStore implements IMemoryStore {
+    asRecordSource(): IMemoryRecordSource;
     static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore>;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+    listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
     put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
 }
 
@@ -270,7 +272,7 @@ export interface IIngestItem {
     readonly content: unknown;
     readonly id: string;
     readonly metadata?: Record<string, unknown>;
-    readonly sourceId?: MemoryId;
+    readonly sourceId?: IEdgeTarget;
 }
 
 // @public
@@ -438,10 +440,12 @@ export interface IMemoryRetrieverCapabilities {
 
 // @public
 export interface IMemoryStore {
+    asRecordSource(): IMemoryRecordSource;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+    listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
     put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
 }
 
@@ -496,7 +500,7 @@ export interface IProvenance {
     readonly [key: string]: unknown;
     readonly by?: string;
     readonly confidence?: number;
-    readonly derivedFrom?: MemoryId;
+    readonly derivedFrom?: IEdgeTarget;
     readonly model?: string;
     readonly source: ProvenanceSource;
 }

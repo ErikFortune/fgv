@@ -556,6 +556,8 @@ describe('createMemoryTools', () => {
         get: async () => fail('disk fault'),
         getById: async () => fail('unused'),
         list: async () => succeed([]),
+        listScoped: async () => succeed([]),
+        asRecordSource: () => ({ list: async () => succeed([]) }),
         put: async (record) => succeed(record),
         delete: async () => fail('unused')
       };

@@ -54,6 +54,33 @@ describe('provenanceConverter', () => {
     expect(provenanceConverter.convert({ source: 'host-ingest' })).toSucceedWith({ source: 'host-ingest' });
   });
 
+  test('validates a scope-qualified derivedFrom (nested { scope, id })', () => {
+    expect(
+      provenanceConverter.convert({
+        source: 'host-ingest',
+        derivedFrom: { scope: 'conversations/conv-a', id: 'turn-3' }
+      })
+    ).toSucceedAndSatisfy((p) => {
+      expect(p.derivedFrom).toEqual({ scope: 'conversations/conv-a', id: 'turn-3' });
+    });
+  });
+
+  test('rejects a bare-string derivedFrom (the pre-scoped format)', () => {
+    expect(provenanceConverter.convert({ source: 'host-ingest', derivedFrom: 'turn-3' })).toFail();
+  });
+
+  test('rejects a derivedFrom missing scope', () => {
+    expect(provenanceConverter.convert({ source: 'host-ingest', derivedFrom: { id: 'turn-3' } })).toFailWith(
+      /scope/i
+    );
+  });
+
+  test('rejects a derivedFrom missing id', () => {
+    expect(
+      provenanceConverter.convert({ source: 'host-ingest', derivedFrom: { scope: 'conversations/conv-a' } })
+    ).toFailWith(/id/i);
+  });
+
   test('fails when source is missing', () => {
     expect(provenanceConverter.convert({ by: 'erik' })).toFail();
   });
@@ -315,6 +342,57 @@ describe('parseMemoryFile / serializeMemoryFile', () => {
       ]);
       // Serializing the reparsed record reproduces byte-identical output.
       expect(serializeMemoryFile(record.envelope, record.body as string)).toSucceedWith(file);
+    });
+  });
+
+  test('round-trips a scope-qualified provenance.derivedFrom through the frontmatter intact', () => {
+    const envelope = envelopeConverter
+      .convert({
+        ...validEnvelopeObject,
+        provenance: {
+          source: 'host-ingest',
+          derivedFrom: { scope: 'conversations/conv-a', id: 'turn-3' }
+        }
+      })
+      .orThrow();
+    const file = serializeMemoryFile(envelope, 'body').orThrow();
+    // On-wire the back-reference is a nested object, NOT a bare scalar.
+    expect(file).toMatch(/scope: conversations\/conv-a/);
+    expect(parseMemoryFile(file, registry)).toSucceedAndSatisfy((record) => {
+      expect(record.envelope.provenance.derivedFrom).toEqual({
+        scope: 'conversations/conv-a',
+        id: 'turn-3'
+      });
+      expect(serializeMemoryFile(record.envelope, record.body as string)).toSucceedWith(file);
+    });
+  });
+
+  test('two records whose derivedFrom share a stem across scopes round-trip as distinct scoped refs', () => {
+    // Same idStem ('turn-3'), different scopes — exactly the ambiguity a bare
+    // MemoryId could not disambiguate. Each must round-trip to ITS OWN scope.
+    const makeFile = (scope: string): string => {
+      const envelope = envelopeConverter
+        .convert({
+          ...validEnvelopeObject,
+          provenance: { source: 'host-ingest', derivedFrom: { scope, id: 'turn-3' } }
+        })
+        .orThrow();
+      return serializeMemoryFile(envelope, 'body').orThrow();
+    };
+    const fileA = makeFile('conversations/conv-a');
+    const fileB = makeFile('conversations/conv-b');
+    expect(fileA).not.toBe(fileB);
+    expect(parseMemoryFile(fileA, registry)).toSucceedAndSatisfy((record) => {
+      expect(record.envelope.provenance.derivedFrom).toEqual({
+        scope: 'conversations/conv-a',
+        id: 'turn-3'
+      });
+    });
+    expect(parseMemoryFile(fileB, registry)).toSucceedAndSatisfy((record) => {
+      expect(record.envelope.provenance.derivedFrom).toEqual({
+        scope: 'conversations/conv-b',
+        id: 'turn-3'
+      });
     });
   });
 

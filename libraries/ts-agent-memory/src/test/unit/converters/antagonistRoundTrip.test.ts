@@ -63,7 +63,7 @@ describe('antagonist — full on-disk round-trip preserves every optional field'
         by: 'erik',
         model: 'gpt-5',
         confidence: 0.87,
-        derivedFrom: 'turn-3' as never,
+        derivedFrom: { scope: 'conversations/c1', id: 'turn-3' } as never,
         // Opaque extension keys (per IProvenance's `[key: string]: unknown` arm).
         sentiment: { score: 0.5 },
         epistemic: 'belief'

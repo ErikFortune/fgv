@@ -28,12 +28,15 @@ export interface IIngestItem {
    */
   readonly content: unknown;
   /**
-   * Optional back-link to the memory record this item was derived from (e.g. the
-   * MTM turn an extracted fact came from). When present, fgv stamps it as
-   * {@link IProvenance.derivedFrom | provenance.derivedFrom} on every record
-   * ingested from this item (stage 6) — the cross-kind provenance spine.
+   * Optional scope-qualified back-link to the memory record this item was derived
+   * from (e.g. the MTM turn an extracted fact came from). When present, fgv stamps
+   * it as {@link IProvenance.derivedFrom | provenance.derivedFrom} on every record
+   * ingested from this item (stage 6) — the cross-kind provenance spine. A
+   * scope-qualified {@link IEdgeTarget} (not a bare {@link MemoryId}) because
+   * per-scope codecs legally reuse a stem across scopes, so a bare id would be
+   * ambiguous.
    */
-  readonly sourceId?: MemoryId;
+  readonly sourceId?: IEdgeTarget;
   /** Optional opaque metadata carried alongside the item; never interpreted by fgv. */
   readonly metadata?: Record<string, unknown>;
 }

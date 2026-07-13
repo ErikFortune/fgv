@@ -37,8 +37,22 @@ const stringOrNull: Converter<string | null> = Converters.oneOf<string | null>([
 ]);
 
 /**
+ * Converter for a scope-qualified {@link IEdgeTarget}. Both `scope` and `id`
+ * are required — the whole point of the scoped target is that a bare id is
+ * ambiguous across scopes.
+ * @public
+ */
+export const edgeTargetConverter: Converter<IEdgeTarget> = Converters.object<IEdgeTarget>({
+  scope: Convert.scopeKey,
+  id: Convert.memoryId
+});
+
+/**
  * Converter for the known {@link IProvenance} fields. The full
  * {@link provenanceConverter} layers extension-key preservation on top.
+ * `derivedFrom` is serialized as the nested `{ scope, id }` object (mirroring
+ * {@link edgeConverter | edge}'s scope-qualified `target`) so the provenance
+ * back-reference is unambiguous across scopes.
  */
 const knownProvenanceConverter: Converter<IProvenance> = Converters.object<IProvenance>(
   {
@@ -46,7 +60,7 @@ const knownProvenanceConverter: Converter<IProvenance> = Converters.object<IProv
     by: Converters.string.optional(),
     model: Converters.string.optional(),
     confidence: Converters.number.optional(),
-    derivedFrom: Convert.memoryId.optional()
+    derivedFrom: edgeTargetConverter.optional()
   },
   { optionalFields: ['by', 'model', 'confidence', 'derivedFrom'] }
 );
@@ -68,17 +82,6 @@ export const provenanceConverter: Converter<IProvenance> = Converters.generic<IP
       return succeed(merged);
     })
 );
-
-/**
- * Converter for a scope-qualified {@link IEdgeTarget}. Both `scope` and `id`
- * are required — the whole point of the scoped target is that a bare id is
- * ambiguous across scopes.
- * @public
- */
-export const edgeTargetConverter: Converter<IEdgeTarget> = Converters.object<IEdgeTarget>({
-  scope: Convert.scopeKey,
-  id: Convert.memoryId
-});
 
 /**
  * Converter for an attributed {@link IEdge}.

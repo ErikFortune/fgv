@@ -37,7 +37,7 @@ import {
   MemoryObservationOutcome,
   MemoryObservationPhase
 } from '../observe';
-import { IVectorIndex, MemoryEmbedder } from '../vector';
+import { IMemoryRecordSource, IScopedMemoryRecord, IVectorIndex, MemoryEmbedder } from '../vector';
 import { defaultMemoryScopeEncoding } from './scopeEncoding';
 
 /** The on-disk extension for a memory record file. */
@@ -85,6 +85,26 @@ export interface IMemoryStore {
    * List records, filtered in-memory over the derived index.
    */
   list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+
+  /**
+   * List EVERY record in the vault, each paired with its scope-qualified
+   * `(scope, id)` address — the projection {@link IMemoryRecordSource} requires.
+   * Unlike {@link IMemoryStore.list | list}, it takes no filter (whole-vault) and
+   * returns {@link IScopedMemoryRecord}s so a re-index keys each entry on the same
+   * scoped target the incremental embed-on-write path uses. Two records that share
+   * a filename stem across scopes appear as distinct entries.
+   */
+  listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
+
+  /**
+   * Adapt this store to the {@link IMemoryRecordSource} seam so it can drive
+   * {@link IVectorIndex} rebuilds (e.g. `InMemoryCosineIndex.rebuild`). The
+   * returned source's `list()` delegates to {@link IMemoryStore.listScoped}. The
+   * store cannot implement {@link IMemoryRecordSource} directly because its
+   * `list(filter?)` returns bare records (the ergonomic query surface) while the
+   * seam's `list()` returns scope-qualified records.
+   */
+  asRecordSource(): IMemoryRecordSource;
 
   /**
    * Write a record. Validates the body, computes a content hash, deduplicates
@@ -378,6 +398,25 @@ export class FileTreeMemoryStore implements IMemoryStore {
       return succeed(matches);
     }
     return succeed(FileTreeMemoryStore._projectAsOf(matches, filter.asOf));
+  }
+
+  /** {@inheritDoc IMemoryStore.listScoped} */
+  public async listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> {
+    // The derived index already carries each record's scope
+    // ({@link IIndexedMemoryRecord.scope}), so the scoped projection is a direct
+    // map — the record's `(scope, id)` is exactly the address the vector index
+    // keys on. No filter/temporal projection: the seam re-embeds the whole vault.
+    return succeed(
+      this._index.entries().map((entry) => ({
+        target: { scope: entry.scope, id: entry.record.envelope.id },
+        record: entry.record
+      }))
+    );
+  }
+
+  /** {@inheritDoc IMemoryStore.asRecordSource} */
+  public asRecordSource(): IMemoryRecordSource {
+    return { list: (): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> => this.listScoped() };
   }
 
   /**
