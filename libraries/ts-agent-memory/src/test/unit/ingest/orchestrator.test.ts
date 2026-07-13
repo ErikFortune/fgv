@@ -29,8 +29,10 @@ import {
   IMemoryClassifier,
   IMemoryEnvelope,
   IMemoryRecord,
+  IMemoryRecordSource,
   IMemoryStore,
   IProvenance,
+  IScopedMemoryRecord,
   IRelationContext,
   IRelationExtractor,
   IVectorIndex,
@@ -306,7 +308,10 @@ describe('MemoryIngestOrchestrator', () => {
     test('classifies, extracts, and writes one record end-to-end with host-ingest provenance + derivedFrom', async () => {
       const store = buildStore();
       const orch = buildOrchestrator({ store });
-      const sourceId: MemoryId = 'turn-3' as MemoryId;
+      const sourceId: IEdgeTarget = {
+        scope: 'conversations/c1' as MemoryScopeKey,
+        id: 'turn-3' as MemoryId
+      };
       const result = await orch.ingestItem({ id: 'doc-1', content: 'the sky is blue', sourceId });
       expect(result).toSucceedAndSatisfy((r: IIngestItemResult) => {
         expect(r.item.id).toBe('doc-1');
@@ -316,7 +321,7 @@ describe('MemoryIngestOrchestrator', () => {
         expect(rec.resolution.verdict).toBe('new');
         expect(rec.id).toBe('doc-1');
         expect(rec.record?.envelope.provenance.source).toBe(HOST_INGEST_PROVENANCE_SOURCE);
-        expect(rec.record?.envelope.provenance.derivedFrom).toBe('turn-3');
+        expect(rec.record?.envelope.provenance.derivedFrom).toEqual(sourceId);
         expect(rec.record?.body).toBe('the sky is blue');
         expect(rec.interlock).toBeUndefined();
       });
@@ -512,6 +517,14 @@ function mockStore(overrides: Partial<IMemoryStore>): IMemoryStore {
     list:
       overrides.list ??
       ((): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>> => Promise.resolve(succeed([]))),
+    listScoped:
+      overrides.listScoped ??
+      ((): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> => Promise.resolve(succeed([]))),
+    asRecordSource:
+      overrides.asRecordSource ??
+      ((): IMemoryRecordSource => ({
+        list: (): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> => Promise.resolve(succeed([]))
+      })),
     put: overrides.put ?? ((r): Promise<Result<IMemoryRecord<unknown>>> => Promise.resolve(succeed(r))),
     delete: overrides.delete ?? ((): Promise<Result<MemoryId>> => Promise.resolve(fail('n/a')))
   };
