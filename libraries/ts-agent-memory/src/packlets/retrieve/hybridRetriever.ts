@@ -11,6 +11,7 @@ import {
   IMemoryRetrieverCapabilities,
   guardRetrieverCapabilities,
   limitRecords,
+  rankCompare,
   recencyCompare
 } from './retriever';
 
@@ -145,7 +146,15 @@ export class HybridRetriever implements IMemoryRetriever {
       );
       return mapResults(perRetriever)
         .onSuccess((resultSets) => this._mergeStrategy.merge(resultSets))
-        .onSuccess((merged) => succeed(limitRecords(merged, query.limit, query.offset)));
+        .onSuccess((merged) => {
+          // `orderBy: 'rank'` re-orders the merged set by rank (descending, absent
+          // last) before the page window, so a rank-ordered hybrid query yields a
+          // rank-ordered page. Absent / `'recency'` preserves the merge strategy's
+          // own ordering (byte-identical to the pre-`orderBy` behavior).
+          const ordered: ReadonlyArray<IMemoryRecord<unknown>> =
+            query.orderBy === 'rank' ? [...merged].sort(rankCompare) : merged;
+          return succeed(limitRecords(ordered, query.limit, query.offset));
+        });
     });
   }
 

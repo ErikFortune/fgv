@@ -105,11 +105,12 @@ export const envelopeConverter: Converter<IMemoryEnvelope> = Converters.object<I
     updated: Converters.number,
     seq: Converters.number,
     contentHash: Converters.string,
+    rank: Converters.number.optional(),
     provenance: provenanceConverter,
     temporal: temporalConverter.optional(),
     embeddingRef: stringOrNull.optional()
   },
-  { optionalFields: ['temporal', 'embeddingRef'] }
+  { optionalFields: ['rank', 'temporal', 'embeddingRef'] }
 );
 
 /**

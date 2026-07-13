@@ -26,7 +26,10 @@ import {
   TagRetriever,
   envelopeConverter,
   guardRetrieverCapabilities,
-  limitRecords
+  limitRecords,
+  orderingCompare,
+  rankCompare,
+  recencyCompare
 } from '../../../index';
 
 interface IRecordSpec {
@@ -36,6 +39,7 @@ interface IRecordSpec {
   readonly tags?: ReadonlyArray<string>;
   readonly updated?: number;
   readonly seq?: number;
+  readonly rank?: number;
 }
 
 function makeEntry(spec: IRecordSpec): IIndexedMemoryRecord {
@@ -51,6 +55,7 @@ function makeEntry(spec: IRecordSpec): IIndexedMemoryRecord {
         updated: spec.updated ?? 0,
         seq: spec.seq ?? 0,
         contentHash: 'h',
+        ...(spec.rank !== undefined ? { rank: spec.rank } : {}),
         provenance: { source: 'agent' }
       })
       .orThrow(),
@@ -241,6 +246,167 @@ describe('RecencyRetriever', () => {
   test('degrades loudly on a link-traversal request', async () => {
     const r = RecencyRetriever.create(buildIndex([{ id: 'a' }])).orThrow();
     expect(await r.retrieve({ linkedTo: 'a' as MemoryId })).toFailWith(/link traversal requires/i);
+  });
+});
+
+describe('orderBy: rank axis', () => {
+  const a1 = makeEntry({ id: 'a', rank: 1, updated: 100, seq: 1 }).record;
+  const b3 = makeEntry({ id: 'b', rank: 3, updated: 100, seq: 2 }).record;
+  const c2 = makeEntry({ id: 'c', rank: 2, updated: 100, seq: 3 }).record;
+  const unranked = makeEntry({ id: 'z', updated: 999, seq: 4 }).record;
+
+  describe('rankCompare', () => {
+    test('orders by rank descending', () => {
+      expect(
+        [a1, b3, c2]
+          .slice()
+          .sort(rankCompare)
+          .map((r) => r.envelope.id)
+      ).toEqual(['b', 'c', 'a']);
+    });
+
+    test('places an absent-rank record last regardless of recency', () => {
+      // `unranked` has the newest `updated`, but an absent rank sorts after every ranked record.
+      expect(
+        [unranked, a1, b3]
+          .slice()
+          .sort(rankCompare)
+          .map((r) => r.envelope.id)
+      ).toEqual(['b', 'a', 'z']);
+      // Symmetric: absent on the left side of the compare too.
+      expect(
+        [a1, unranked]
+          .slice()
+          .sort(rankCompare)
+          .map((r) => r.envelope.id)
+      ).toEqual(['a', 'z']);
+    });
+
+    test('breaks an equal-rank tie by recency', () => {
+      const b3b = makeEntry({ id: 'b2', rank: 3, updated: 50, seq: 9 }).record;
+      // Equal rank 3 → newer `updated` (b3 at 100) first.
+      expect(
+        [b3b, b3]
+          .slice()
+          .sort(rankCompare)
+          .map((r) => r.envelope.id)
+      ).toEqual(['b', 'b2']);
+    });
+  });
+
+  describe('orderingCompare', () => {
+    test("returns recencyCompare for absent orderBy and 'recency'", () => {
+      expect(orderingCompare()).toBe(recencyCompare);
+      expect(orderingCompare('recency')).toBe(recencyCompare);
+    });
+
+    test("returns rankCompare for 'rank'", () => {
+      expect(orderingCompare('rank')).toBe(rankCompare);
+    });
+  });
+
+  describe.each([
+    ['RecencyRetriever', (index: MemoryIndex): IMemoryRetriever => RecencyRetriever.create(index).orThrow()],
+    ['TagRetriever', (index: MemoryIndex): IMemoryRetriever => TagRetriever.create(index).orThrow()],
+    [
+      'StructuredFilterRetriever',
+      (index: MemoryIndex): IMemoryRetriever => StructuredFilterRetriever.create(index).orThrow()
+    ]
+  ])('%s honors orderBy', (name, make) => {
+    // Tag / structured-filter need their axis present to return anything.
+    const axis: IMemoryQuery =
+      name === 'TagRetriever'
+        ? { tag: 'x' as Tag }
+        : name === 'StructuredFilterRetriever'
+        ? { filter: () => true }
+        : {};
+
+    function orderedIndex(): MemoryIndex {
+      return buildIndex([
+        { id: 'a', rank: 1, tags: ['x'], updated: 100, seq: 1 },
+        { id: 'b', rank: 3, tags: ['x'], updated: 100, seq: 2 },
+        { id: 'c', rank: 2, tags: ['x'], updated: 100, seq: 3 },
+        { id: 'z', tags: ['x'], updated: 999, seq: 4 }
+      ]);
+    }
+
+    test("orderBy 'rank' orders by rank descending, absent last", async () => {
+      const r = make(orderedIndex());
+      expect(await r.retrieve({ ...axis, orderBy: 'rank' })).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(ids(records)).toEqual(['b', 'c', 'a', 'z']);
+        }
+      );
+    });
+
+    test('orderBy absent is unchanged recency order', async () => {
+      const r = make(orderedIndex());
+      expect(await r.retrieve({ ...axis })).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          // `z` has the newest `updated`; the rest tie on `updated` and break by
+          // seq descending (c=3, b=2, a=1) — recency order regardless of rank.
+          expect(ids(records)).toEqual(['z', 'c', 'b', 'a']);
+        }
+      );
+    });
+
+    test('rank ordering composes with { limit, offset } for a bounded top-M page', async () => {
+      const r = make(orderedIndex());
+      expect(await r.retrieve({ ...axis, orderBy: 'rank', limit: 1, offset: 1 })).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(ids(records)).toEqual(['c']);
+        }
+      );
+    });
+  });
+
+  test("HybridRetriever re-orders the merged set by rank for orderBy 'rank'", async () => {
+    const index = buildIndex([
+      { id: 'a', rank: 1, tags: ['x'], updated: 100, seq: 1 },
+      { id: 'b', rank: 3, tags: ['x'], updated: 100, seq: 2 },
+      { id: 'c', rank: 2, tags: ['x'], updated: 100, seq: 3 }
+    ]);
+    const hybrid = HybridRetriever.create(
+      [RecencyRetriever.create(index).orThrow(), TagRetriever.create(index).orThrow()],
+      ScoreUnionMergeStrategy.create().orThrow()
+    ).orThrow();
+    expect(await hybrid.retrieve({ tag: 'x' as Tag, orderBy: 'rank' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        // All three score 2 (surfaced by both children); orderBy rank re-sorts the merge.
+        expect(ids(records)).toEqual(['b', 'c', 'a']);
+      }
+    );
+  });
+
+  test("SemanticRetriever preserves vector-similarity order regardless of orderBy 'rank'", async () => {
+    const index = buildIndex([
+      { id: 'a', rank: 9, updated: 1 },
+      { id: 'b', rank: 1, updated: 1 }
+    ]);
+    const vectorIndex: IVectorIndex = {
+      add: (id: MemoryId) => Promise.resolve(succeed(`ref-${id}`)),
+      remove: (id: MemoryId) => Promise.resolve(succeed(id)),
+      query: () =>
+        Promise.resolve(
+          succeed([
+            { id: 'b' as MemoryId, score: 0.9 },
+            { id: 'a' as MemoryId, score: 0.5 }
+          ])
+        )
+    };
+    const r = SemanticRetriever.create({
+      index,
+      backend: {
+        vectorIndex,
+        embedQuery: () => Promise.resolve(succeed(Float32Array.from([0.1])))
+      }
+    }).orThrow();
+    // Even though `a` has the higher rank, semantic keeps the similarity order (b before a).
+    expect(await r.retrieve({ semantic: 'q', orderBy: 'rank' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(ids(records)).toEqual(['b', 'a']);
+      }
+    );
   });
 });
 

@@ -20,6 +20,7 @@ import {
   KnowledgeLwwPolicy,
   MemoryId,
   MemoryScopeKey,
+  RankProjector,
   Tag,
   isTemporalIdentityCodec,
   isTemporalRecord,
@@ -116,6 +117,19 @@ export interface IFileTreeMemoryStoreCreateParams {
   readonly writePolicies?: ReadonlyMap<Kind, IWritePolicy>;
   /** Per-kind identity codecs. */
   readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
+  /**
+   * Optional per-kind host projector map. When a kind has an entry, the store
+   * runs the projector on the fully-resolved (post-merge) record on every put
+   * AND every update — in the same pass that recomputes `contentHash` — and
+   * stamps the numeric result into {@link IMemoryEnvelope.rank}, which the index's
+   * rank view and `orderBy: 'rank'` retrieval sort by (descending, absent last).
+   * Absent for a kind → that kind's records carry no `rank`. Purely additive and
+   * zero-overhead when unwired: an absent map leaves every write byte-identical.
+   * The projector is a host callback — a throw is logged at `warn` and the record
+   * is stamped with no `rank`, never failing the write (mirrors the store's other
+   * guard-host-callbacks conventions).
+   */
+  readonly rankProjectors?: ReadonlyMap<Kind, RankProjector>;
   /** Default codec for kinds without an explicit entry. */
   readonly defaultCodec?: IIdentityCodec;
   /** Scope encoding. Defaults to {@link defaultMemoryScopeEncoding}. */
@@ -182,6 +196,7 @@ interface IInternalParams {
   readonly registry: IRegistry;
   readonly writePolicies: ReadonlyMap<Kind, IWritePolicy>;
   readonly codecs: ReadonlyMap<Kind, IIdentityCodec>;
+  readonly rankProjectors: ReadonlyMap<Kind, RankProjector>;
   readonly defaultCodec?: IIdentityCodec;
   readonly defaultPolicy: IWritePolicy;
   readonly scopeEncoding: (scope: MemoryScopeKey) => Result<string>;
@@ -212,6 +227,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
   private readonly _registry: IRegistry;
   private readonly _writePolicies: ReadonlyMap<Kind, IWritePolicy>;
   private readonly _codecs: ReadonlyMap<Kind, IIdentityCodec>;
+  private readonly _rankProjectors: ReadonlyMap<Kind, RankProjector>;
   private readonly _defaultCodec: IIdentityCodec | undefined;
   private readonly _defaultPolicy: IWritePolicy;
   private readonly _scopeEncoding: (scope: MemoryScopeKey) => Result<string>;
@@ -258,6 +274,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     this._registry = params.registry;
     this._writePolicies = params.writePolicies;
     this._codecs = params.codecs;
+    this._rankProjectors = params.rankProjectors;
     this._defaultCodec = params.defaultCodec;
     this._defaultPolicy = params.defaultPolicy;
     this._scopeEncoding = params.scopeEncoding;
@@ -286,6 +303,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
           registry: params.registry,
           writePolicies: params.writePolicies ?? new Map<Kind, IWritePolicy>(),
           codecs: params.codecs ?? new Map<Kind, IIdentityCodec>(),
+          rankProjectors: params.rankProjectors ?? new Map<Kind, RankProjector>(),
           defaultCodec: params.defaultCodec,
           defaultPolicy,
           scopeEncoding: params.scopeEncoding ?? defaultMemoryScopeEncoding,
@@ -669,6 +687,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       return fail(`memory put: rejected by policy: ${decision.reason}`);
     }
     return this._buildRecord(record, body, existing, policy, hash)
+      .onSuccess((built) => succeed(this._stampRank(built)))
       .thenOnSuccess((built) => this._embedOnWrite(built))
       .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, idStem))
       .thenOnSuccess(async (persisted) => {
@@ -982,6 +1001,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
           .withErrorFormat((msg) => `memory put '${entityId}': ${msg}`)
           .thenOnSuccess((versionStem) =>
             this._buildVersionedRecord(record, body, current, policy, hash, versionStem, validAt, now, seq)
+              .onSuccess((built) => succeed(this._stampRank(built)))
               .thenOnSuccess((built) => this._embedOnWrite(built))
               .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, versionStem))
               .onSuccess((persisted) =>
@@ -1239,6 +1259,35 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   private _contentHash(kind: Kind, body: string, links: IMemoryEnvelope['links']): Result<string> {
     return this._hasher.computeHash({ kind, body, links });
+  }
+
+  /**
+   * Stamp the store-computed {@link IMemoryEnvelope.rank} onto a fully-built,
+   * fully-stamped record by running the kind's registered {@link RankProjector}.
+   * Runs on the SAME resolved (post-merge) record whose `contentHash` was just
+   * computed, so `rank` is always consistent with the current body — no separate
+   * write path and no consumer write-discipline rule. A no-op pass-through
+   * (byte-identical record) when the kind has no projector — the additive,
+   * zero-overhead-when-unwired default. The projector is a host callback: a throw
+   * is logged at `warn` and the record is returned with no `rank`, so a ranking
+   * bug never loses an authoritative write.
+   */
+  private _stampRank(record: IMemoryRecord<string>): IMemoryRecord<string> {
+    const projector: RankProjector | undefined = this._rankProjectors.get(record.envelope.kind);
+    if (projector === undefined) {
+      return record;
+    }
+    try {
+      const rank: number = projector(record);
+      return { envelope: { ...record.envelope, rank }, body: record.body };
+    } catch (err) {
+      this._warnSwallowed(
+        `memory put '${record.envelope.id}': rank projector threw (swallowed; rank left absent): ${String(
+          err
+        )}`
+      );
+      return record;
+    }
   }
 
   private _codecFor(kind: Kind): Result<IIdentityCodec> {

@@ -157,6 +157,34 @@ describe('envelopeConverter', () => {
     expect(envelopeConverter.convert({ ...validEnvelopeObject, embeddingRef: 42 })).toFail();
   });
 
+  test('rank is absent when not present', () => {
+    expect(envelopeConverter.convert(validEnvelopeObject)).toSucceedAndSatisfy((envelope) => {
+      expect(envelope.rank).toBeUndefined();
+    });
+  });
+
+  test('validates and preserves a numeric rank', () => {
+    expect(envelopeConverter.convert({ ...validEnvelopeObject, rank: 42 })).toSucceedAndSatisfy(
+      (envelope) => {
+        expect(envelope.rank).toBe(42);
+      }
+    );
+  });
+
+  test('serialize/parse round-trips rank through frontmatter', () => {
+    const registry = BodyConverterRegistry.create().orThrow();
+    registry.register('knowledge' as Kind, Converters.string);
+    const envelope = envelopeConverter.convert({ ...validEnvelopeObject, rank: 7 }).orThrow();
+    const file = serializeMemoryFile(envelope, 'body').orThrow();
+    expect(parseMemoryFile(file, registry)).toSucceedAndSatisfy((record) => {
+      expect(record.envelope.rank).toBe(7);
+    });
+  });
+
+  test('fails when rank is not a number', () => {
+    expect(envelopeConverter.convert({ ...validEnvelopeObject, rank: 'high' })).toFail();
+  });
+
   test('fails when a required field is missing', () => {
     const missing: Record<string, unknown> = { ...validEnvelopeObject };
     delete missing.contentHash;

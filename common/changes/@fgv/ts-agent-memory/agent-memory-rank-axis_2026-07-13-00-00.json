@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add an additive, store-maintained numeric ranking axis to @fgv/ts-agent-memory: an optional per-kind host `rankProjectors` map runs on every put AND update (both the non-versioned and temporal write paths) and stamps a numeric `IMemoryEnvelope.rank`, which round-trips through frontmatter; a new `IMemoryIndex.byRank()` view, a `rankCompare` comparator, and an `IMemoryQuery.orderBy: 'recency' | 'rank'` axis serve a bounded top-M rank-ordered page (via the existing limit/offset) with no full-vault scan. Absent-rank records sort last; a throwing projector degrades to rank-absent (warn) without failing the write. Purely additive and byte-identical when the new options are absent.",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

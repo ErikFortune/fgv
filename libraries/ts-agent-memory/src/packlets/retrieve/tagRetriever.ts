@@ -13,7 +13,7 @@ import {
   NON_SEMANTIC_CAPABILITIES,
   guardRetrieverCapabilities,
   limitRecords,
-  recencyCompare,
+  orderingCompare,
   selectByQuery
 } from './retriever';
 
@@ -49,7 +49,7 @@ export class TagRetriever implements IMemoryRetriever {
           return succeed([]);
         }
         const ordered: IMemoryRecord<unknown>[] = selectByQuery(this._index.entries(), query).sort(
-          recencyCompare
+          orderingCompare(query.orderBy)
         );
         return succeed(limitRecords(ordered, query.limit, query.offset));
       })
