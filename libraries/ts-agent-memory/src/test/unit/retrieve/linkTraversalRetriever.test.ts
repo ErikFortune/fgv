@@ -172,6 +172,28 @@ describe('LinkTraversalRetriever', () => {
         expect(ids(records)).toEqual(['a', 'b']);
       });
     });
+
+    test('reaches ONLY the same-scope inbound source when a TARGET stem is reused across scopes', async () => {
+      // 'shared' exists in scope a and scope b; src-a@a links {a, shared} and
+      // src-b@b links {b, shared}. Seeding linkedTo {a, shared} must reach ONLY
+      // src-a — backlinks disambiguate on the target's (scope, id), not a bare id.
+      const index = buildIndex([
+        { id: 'src-a', scope: 'a', links: ['shared'], tags: ['src-a'] },
+        { id: 'src-b', scope: 'b', links: ['shared'], tags: ['src-b'] },
+        { id: 'shared', scope: 'a' },
+        { id: 'shared', scope: 'b' }
+      ]);
+      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      expect(await retriever.retrieve({ linkedTo: seed('shared', 'a') })).toSucceedAndSatisfy((records) => {
+        expect(records).toHaveLength(1);
+        expect(records[0].envelope.tags).toEqual(['src-a']);
+      });
+      // Symmetric: seeding the b-scope target reaches only src-b.
+      expect(await retriever.retrieve({ linkedTo: seed('shared', 'b') })).toSucceedAndSatisfy((records) => {
+        expect(records).toHaveLength(1);
+        expect(records[0].envelope.tags).toEqual(['src-b']);
+      });
+    });
   });
 
   describe('cycle safety', () => {

@@ -250,18 +250,19 @@ const searchSchema = JsonSchema.object({
 });
 
 /**
- * The scope-qualified seed a `memory_context` traversal starts from. Same nested
- * `{ id, scope? }` shape as a link target, but — unlike a write edge — there is no
- * writing record to default the scope from, so `scope` MUST be supplied to
+ * The scope-qualified seed a `memory_context` traversal starts from. Nested
+ * `{ id, scope }` shape like a link target, but — unlike a write edge — there is
+ * no writing record to default the scope from, so `scope` is REQUIRED to
  * disambiguate the seed across scopes (a bare stem like `turn-3` is otherwise
- * ambiguous). The traversal fails loudly if it is omitted.
+ * ambiguous). It is schema-required (not just runtime-required) so the wire
+ * schema an LLM reads never advertises an optionality the tool does not honor.
  */
 // eslint-disable-next-line @rushstack/typedef-var
 const contextSeedSchema = JsonSchema.object({
   id: JsonSchema.string({ description: 'The MemoryId of the seed record to traverse links from.' }),
-  scope: JsonSchema.optional(
-    JsonSchema.string({ description: 'The scope of the seed record. Required — omitting it fails the call.' })
-  )
+  scope: JsonSchema.string({
+    description: 'The scope of the seed record (required — a bare seed id is ambiguous across scopes).'
+  })
 });
 
 // eslint-disable-next-line @rushstack/typedef-var
@@ -641,21 +642,15 @@ function buildDeleteTool(ctx: IToolContext): AiAssist.IAiClientTool {
 
 /**
  * Resolve a `memory_context` seed argument into a scope-qualified
- * {@link IEdgeTarget}. `scope` is structurally optional (the seed shares the edge
- * target shape) but semantically required here — unlike a write edge there is no
- * writing record to default it from, and a bare stem is ambiguous across scopes —
- * so an omitted scope fails loudly rather than guessing.
+ * {@link IEdgeTarget}. Both `id` and `scope` are present here — the tool's
+ * `parametersSchema` ({@link contextSeedSchema}) makes `scope` schema-required —
+ * so this only brands the two fields; a malformed value fails via the branded
+ * converters (e.g. a path-unsafe seed id).
  */
-function resolveContextSeed(from: { readonly id: string; readonly scope?: string }): Result<IEdgeTarget> {
-  if (from.scope === undefined) {
-    return fail(
-      "memory_context: 'from.scope' is required — a bare seed id is ambiguous across scopes and cannot be defaulted"
-    );
-  }
-  const scopeStr: string = from.scope;
+function resolveContextSeed(from: { readonly id: string; readonly scope: string }): Result<IEdgeTarget> {
   return Convert.memoryId
     .convert(from.id)
-    .onSuccess((id) => Convert.scopeKey.convert(scopeStr).onSuccess((scope) => succeed({ scope, id })));
+    .onSuccess((id) => Convert.scopeKey.convert(from.scope).onSuccess((scope) => succeed({ scope, id })));
 }
 
 /** Validate an optional `tag` string (`undefined` passes through). */

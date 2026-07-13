@@ -41,6 +41,7 @@ import {
   LinkType,
   LtmIdentityCodec,
   MemoryEmbedder,
+  MtmIdentityCodec,
   MemoryId,
   MemoryIngestOrchestrator,
   MemoryScopeKey,
@@ -846,6 +847,110 @@ describe('MemoryIngestOrchestrator — stage 5 relate + cycle guard', () => {
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
       expect(r.records[0].interlock).toBeUndefined();
       expect(r.records[0].record?.envelope.links).toEqual([{ type: 'contradicts', target: kt('doc-a') }]);
+    });
+  });
+
+  describe('_validateEdges cross-scope target disambiguation', () => {
+    // Two EXISTING records share the idStem 'turn-3' across two conversations
+    // (the MTM codec mints per-scope stems). A stage-5 edge target must resolve
+    // to the CORRECT (scope, id) — with bare-id keying both would alias and a
+    // wrong-scope target would silently validate. Guards the ingest-validation seam.
+    const mtmKind: Kind = 'mtm' as Kind;
+
+    function mtmRegistry(): IBodyConverterRegistry {
+      const reg = registry();
+      reg.register(mtmKind, Converters.string);
+      return reg;
+    }
+
+    const mtmCodecs: ReadonlyMap<Kind, IIdentityCodec> = new Map<Kind, IIdentityCodec>([
+      [mtmKind, new MtmIdentityCodec()]
+    ]);
+
+    async function seedTurn(store: FileTreeMemoryStore, entityId: string, body: string): Promise<void> {
+      const addr = new MtmIdentityCodec().encode(entityId as EntityId).orThrow();
+      const rec: IMemoryRecord<unknown> = {
+        envelope: {
+          id: addr.idStem as MemoryId,
+          entityId: entityId as EntityId,
+          kind: mtmKind,
+          tags: [],
+          links: [],
+          created: 0,
+          updated: 0,
+          seq: 0,
+          contentHash: '',
+          provenance: { source: 'agent' }
+        },
+        body
+      };
+      (await store.put(rec)).orThrow();
+    }
+
+    function buildMtmOrchestrator(
+      store: FileTreeMemoryStore,
+      relationExtractor: IRelationExtractor
+    ): MemoryIngestOrchestrator {
+      return MemoryIngestOrchestrator.create({
+        store,
+        registry: mtmRegistry(),
+        codecs: mtmCodecs,
+        classifier: classifier(() => succeed({ kind: mtmKind })),
+        // The candidate is a fresh turn-5 under conv-a (distinct stem from the seeds).
+        extractor: extractor(() => succeed([candidate(mtmKind, 'conv-a:5', 'a new turn')])),
+        relationExtractor
+      }).orThrow();
+    }
+
+    async function seededStore(): Promise<FileTreeMemoryStore> {
+      const store = FileTreeMemoryStore.create({
+        root: mutableRoot(),
+        registry: mtmRegistry(),
+        codecs: mtmCodecs,
+        clock
+      }).orThrow();
+      await seedTurn(store, 'conv-a:3', 'anchor in conversation a');
+      await seedTurn(store, 'conv-b:3', 'anchor in conversation b');
+      return store;
+    }
+
+    test('accepts a same-stem edge target that resolves to the correct scope', async () => {
+      const store = await seededStore();
+      const orch = buildMtmOrchestrator(
+        store,
+        relater((ctx) =>
+          succeed([
+            {
+              source: srcOf(ctx, 'conv-a:5'),
+              edge: { type: 'rel' as LinkType, target: kt('turn-3', 'conversations/conv-a') }
+            }
+          ])
+        )
+      );
+      expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
+        expect(r.records[0].record?.envelope.links).toEqual([
+          { type: 'rel', target: kt('turn-3', 'conversations/conv-a') }
+        ]);
+      });
+    });
+
+    test('rejects a same-stem edge target whose scope has no matching record', async () => {
+      const store = await seededStore();
+      const orch = buildMtmOrchestrator(
+        store,
+        relater((ctx) =>
+          succeed([
+            {
+              source: srcOf(ctx, 'conv-a:5'),
+              // turn-3 exists under conv-a and conv-b, but NOT conv-z.
+              edge: { type: 'rel' as LinkType, target: kt('turn-3', 'conversations/conv-z') }
+            }
+          ])
+        )
+      );
+      expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
+        /edge target 'conversations\/conv-z\/turn-3' resolves to neither a sibling candidate nor an existing record/
+      );
     });
   });
 });

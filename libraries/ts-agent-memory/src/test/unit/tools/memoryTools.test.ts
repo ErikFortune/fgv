@@ -328,14 +328,25 @@ describe('createMemoryTools', () => {
       expect(schema.convert({ limit: 'three' })).toFail();
     });
 
-    test('memory_context requires a from seed (nested { id, scope? })', () => {
+    test('memory_context requires a from seed with a REQUIRED scope (nested { id, scope })', () => {
       const schema = toolByName(allTools(), 'memory_context').config.parametersSchema;
       expect(schema.convert({ from: { id: 'doc-1', scope: 'knowledge' } })).toSucceed();
-      // scope is structurally optional on the seed shape (parity with an edge target).
-      expect(schema.convert({ from: { id: 'doc-1' } })).toSucceed();
+      // scope is schema-REQUIRED (unlike a write link target) — the wire schema must
+      // not advertise an optionality the tool does not honor. Omitting it fails.
+      expect(schema.convert({ from: { id: 'doc-1' } })).toFail();
       expect(schema.convert({ hops: 2 })).toFail();
       // A bare-string seed (the pre-scoped format) is rejected at the schema.
       expect(schema.convert({ from: 'doc-1' })).toFail();
+    });
+
+    test('the memory_context wire schema marks from.scope as required', () => {
+      // Guards the schema-accuracy contract at the wire level: an LLM reading the
+      // tool's `parameters` sees scope in the seed's `required` array.
+      const schema = toolByName(allTools(), 'memory_context').config.parametersSchema;
+      const wire = schema.toJson() as unknown as {
+        properties: { from: { required?: ReadonlyArray<string> } };
+      };
+      expect(wire.properties.from.required).toContain('scope');
     });
   });
 
@@ -793,9 +804,11 @@ describe('createMemoryTools', () => {
       expect(await tool.execute({ from: { id: 'a/b', scope: 'knowledge' } })).toFail();
     });
 
-    test('fails loudly when the seed omits its scope (no source to default from)', async () => {
+    test('fails at the schema when the seed omits its required scope', async () => {
+      // scope is schema-required, so an omitted scope is rejected as an invalid
+      // argument (the wire schema and the runtime contract agree — no lie).
       const tool = toolByName(allTools(), 'memory_context');
-      expect(await tool.execute({ from: { id: 'a' } })).toFailWith(/'from\.scope' is required/i);
+      expect(await tool.execute({ from: { id: 'a' } })).toFailWith(/invalid arguments/i);
     });
 
     test('a scoped seed reaches ONLY the correctly-scoped graph', async () => {
