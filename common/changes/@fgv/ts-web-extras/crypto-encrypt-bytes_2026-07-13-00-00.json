@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "Implement raw-byte AES-256-GCM encryptBytes/decryptBytes (caller-supplied nonce + optional AAD) on BrowserCryptoProvider; byte-identical to NodeCryptoProvider",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras"
+}

@@ -93,6 +93,35 @@ export interface IEncryptionResult {
 }
 
 /**
+ * Result of a raw-byte AES-256-GCM encryption via
+ * {@link CryptoUtils.ICryptoProvider.encryptBytes | encryptBytes}. The
+ * authentication tag is returned separately from the ciphertext, mirroring the
+ * separated-tag convention of {@link CryptoUtils.IEncryptionResult}. The exact
+ * byte layout is:
+ * - `ciphertext`: the AES-GCM ciphertext, byte-for-byte the same length as the
+ *   input plaintext (GCM is a stream cipher — no padding). Empty plaintext
+ *   yields an empty `ciphertext`.
+ * - `authTag`: the 16-byte (128-bit) GCM authentication tag, computed over the
+ *   ciphertext, the nonce, and any `aad`.
+ *
+ * The caller persists both fields alongside the (caller-owned) nonce and feeds
+ * them back to {@link CryptoUtils.ICryptoProvider.decryptBytes | decryptBytes}.
+ * @public
+ */
+export interface IEncryptBytesResult {
+  /**
+   * The AES-256-GCM ciphertext. Same length as the input plaintext (no tag
+   * appended — the tag is carried separately in the `authTag` field).
+   */
+  readonly ciphertext: Uint8Array;
+
+  /**
+   * The 16-byte (128-bit) GCM authentication tag.
+   */
+  readonly authTag: Uint8Array;
+}
+
+/**
  * Asymmetric keypair algorithms supported by the crypto provider.
  * - `'ecdsa-p256'`: ECDSA over the P-256 curve, for signing.
  * - `'rsa-oaep-2048'`: RSA-OAEP, 2048-bit modulus with SHA-256, for encryption.
@@ -398,6 +427,81 @@ export interface ICryptoProvider {
     iv: Uint8Array,
     authTag: Uint8Array
   ): Promise<Result<string>>;
+
+  /**
+   * Encrypts raw bytes using AES-256-GCM with a **caller-supplied nonce** and
+   * optional additional authenticated data (AAD).
+   *
+   * This is the raw-byte sibling of {@link CryptoUtils.ICryptoProvider.encrypt | encrypt}.
+   * Unlike `encrypt`, it takes and returns `Uint8Array` (no UTF-8 coding), the
+   * caller owns the nonce (rather than the provider generating one), and it
+   * binds optional `aad` into the GCM authentication. Use it when you need to
+   * bind context (e.g. an actor id, key version, or row kind) into the
+   * authentication so a wrapped secret cannot be replayed across
+   * users/versions/kinds, or when you manage nonces yourself.
+   *
+   * @remarks
+   * **⚠️ NONCE UNIQUENESS IS THE CALLER'S RESPONSIBILITY AND IS CRITICAL.**
+   * Because the caller supplies the nonce, this primitive cannot guarantee
+   * uniqueness. Reusing a `(key, nonce)` pair for two different messages is
+   * **catastrophic** for AES-GCM: it breaks confidentiality (the XOR of the two
+   * plaintexts leaks) AND authentication (the GCM authentication key can be
+   * recovered, letting an attacker forge tags for arbitrary messages under that
+   * key). The caller MUST use a unique nonce for every message encrypted under a
+   * given key — draw it from {@link CryptoUtils.ICryptoProvider.generateRandomBytes | generateRandomBytes(12)}
+   * (12 random bytes has negligible collision probability well within a single
+   * key's message budget) or from a strictly-increasing counter. Never hardcode
+   * a nonce and never reuse one.
+   *
+   * @param key - 32-byte AES-256 key. Wrong lengths fail with error context.
+   * @param nonce - 12-byte (96-bit) GCM nonce. MUST be unique per message under
+   * `key` (see the nonce-uniqueness warning above). Wrong lengths fail with
+   * error context.
+   * @param plaintext - The bytes to encrypt. Empty plaintext is permitted and
+   * round-trips (GCM produces a valid tag over zero-length plaintext).
+   * @param aad - Optional additional authenticated data bound into the GCM tag
+   * but NOT encrypted. If provided at encrypt time, the identical bytes must be
+   * supplied to `decryptBytes` or decryption fails authentication. Absent means
+   * no AAD.
+   * @returns `Success` with the {@link CryptoUtils.IEncryptBytesResult | ciphertext and 16-byte auth tag},
+   * or `Failure` with error context.
+   */
+  encryptBytes(
+    key: Uint8Array,
+    nonce: Uint8Array,
+    plaintext: Uint8Array,
+    aad?: Uint8Array
+  ): Promise<Result<IEncryptBytesResult>>;
+
+  /**
+   * Decrypts raw bytes produced by
+   * {@link CryptoUtils.ICryptoProvider.encryptBytes | encryptBytes} using
+   * AES-256-GCM. The inverse of `encryptBytes`: the `ciphertext` and `authTag`
+   * from an `encryptBytes` result, together with the same `key`, `nonce`, and
+   * `aad`, recover the original plaintext.
+   *
+   * Fails (never throws) on any authentication failure: a tampered ciphertext
+   * or tag, the wrong key or nonce, or an `aad` that differs from the one used
+   * at encrypt time. AES-GCM authentication is fail-closed — a mismatched `aad`
+   * fails exactly as a tampered ciphertext does.
+   *
+   * @param key - 32-byte AES-256 key (the same key used to encrypt).
+   * @param nonce - 12-byte (96-bit) GCM nonce (the same nonce used to encrypt).
+   * @param ciphertext - The ciphertext from the `encryptBytes` result.
+   * @param authTag - The 16-byte (128-bit) GCM authentication tag from the
+   * `encryptBytes` result.
+   * @param aad - The identical additional authenticated data supplied at encrypt
+   * time (or absent if none was supplied). A mismatch fails authentication.
+   * @returns `Success` with the decrypted plaintext bytes, or `Failure` with
+   * error context (including all authentication failures).
+   */
+  decryptBytes(
+    key: Uint8Array,
+    nonce: Uint8Array,
+    ciphertext: Uint8Array,
+    authTag: Uint8Array,
+    aad?: Uint8Array
+  ): Promise<Result<Uint8Array>>;
 
   /**
    * Generates a random 32-byte key suitable for AES-256.
