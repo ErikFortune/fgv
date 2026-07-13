@@ -8,6 +8,7 @@ import { Converters } from '@fgv/ts-utils';
 import {
   BodyConverterRegistry,
   edgeConverter,
+  edgeTargetConverter,
   envelopeConverter,
   envelopeYamlConverter,
   joinFrontmatter,
@@ -24,7 +25,7 @@ const validEnvelopeObject: Record<string, unknown> = {
   entityId: 'intro-to-rust',
   kind: 'knowledge',
   tags: ['rust', 'systems'],
-  links: [{ type: 'related', target: 'ownership' }],
+  links: [{ type: 'related', target: { scope: 'knowledge', id: 'ownership' } }],
   created: 1000,
   updated: 2000,
   seq: 5,
@@ -62,12 +63,34 @@ describe('provenanceConverter', () => {
   });
 });
 
+describe('edgeTargetConverter', () => {
+  test('validates a scope-qualified target', () => {
+    expect(edgeTargetConverter.convert({ scope: 'conversations/conv-a', id: 'turn-3' })).toSucceedAndSatisfy(
+      (t) => {
+        expect(t).toEqual({ scope: 'conversations/conv-a', id: 'turn-3' });
+      }
+    );
+  });
+
+  test('rejects a target missing scope', () => {
+    expect(edgeTargetConverter.convert({ id: 'turn-3' })).toFailWith(/scope/i);
+  });
+
+  test('rejects a target missing id', () => {
+    expect(edgeTargetConverter.convert({ scope: 'conversations/conv-a' })).toFailWith(/id/i);
+  });
+
+  test('rejects a bare-string target (the pre-scoped format)', () => {
+    expect(edgeTargetConverter.convert('turn-3')).toFail();
+  });
+});
+
 describe('edgeConverter', () => {
   test('validates a full attributed edge', () => {
     expect(
       edgeConverter.convert({
         type: 'mtm-ref',
-        target: 'turn-3',
+        target: { scope: 'conversations/conv-a', id: 'turn-3' },
         confidence: 0.8,
         provenance: { source: 'agent' },
         valid_at: 100,
@@ -75,7 +98,7 @@ describe('edgeConverter', () => {
       })
     ).toSucceedAndSatisfy((edge) => {
       expect(edge.type).toBe('mtm-ref');
-      expect(edge.target).toBe('turn-3');
+      expect(edge.target).toEqual({ scope: 'conversations/conv-a', id: 'turn-3' });
       expect(edge.confidence).toBe(0.8);
       expect(edge.provenance).toEqual({ source: 'agent' });
       expect(edge.valid_at).toBe(100);
@@ -84,27 +107,35 @@ describe('edgeConverter', () => {
   });
 
   test('validates a minimal edge', () => {
-    expect(edgeConverter.convert({ type: 'related', target: 'ownership' })).toSucceedAndSatisfy((edge) => {
+    expect(
+      edgeConverter.convert({ type: 'related', target: { scope: 'knowledge', id: 'ownership' } })
+    ).toSucceedAndSatisfy((edge) => {
       expect(edge.type).toBe('related');
-      expect(edge.target).toBe('ownership');
+      expect(edge.target).toEqual({ scope: 'knowledge', id: 'ownership' });
       expect(edge.confidence).toBeUndefined();
     });
   });
 
   test('accepts a null invalid_at (still valid)', () => {
-    expect(edgeConverter.convert({ type: 'related', target: 'x', invalid_at: null })).toSucceedAndSatisfy(
-      (edge) => {
-        expect(edge.invalid_at).toBeNull();
-      }
-    );
+    expect(
+      edgeConverter.convert({ type: 'related', target: { scope: 'knowledge', id: 'x' }, invalid_at: null })
+    ).toSucceedAndSatisfy((edge) => {
+      expect(edge.invalid_at).toBeNull();
+    });
   });
 
   test('fails when invalid_at is neither a number nor null', () => {
-    expect(edgeConverter.convert({ type: 'related', target: 'x', invalid_at: 'soon' })).toFail();
+    expect(
+      edgeConverter.convert({ type: 'related', target: { scope: 'knowledge', id: 'x' }, invalid_at: 'soon' })
+    ).toFail();
   });
 
   test('fails when target is missing', () => {
     expect(edgeConverter.convert({ type: 'related' })).toFail();
+  });
+
+  test('fails when target is a bare string (rejects the pre-scoped format)', () => {
+    expect(edgeConverter.convert({ type: 'related', target: 'ownership' })).toFail();
   });
 });
 
@@ -264,6 +295,26 @@ describe('parseMemoryFile / serializeMemoryFile', () => {
     expect(parseMemoryFile(file, registry)).toSucceedAndSatisfy((record) => {
       expect(record.envelope.id).toBe('intro-to-rust');
       expect(record.body).toBe('The knowledge body.');
+    });
+  });
+
+  test('round-trips a scope-qualified edge target through the frontmatter intact', () => {
+    const envelope = envelopeConverter
+      .convert({
+        ...validEnvelopeObject,
+        links: [{ type: 'mtm-ref', target: { scope: 'conversations/conv-a', id: 'turn-3' } }]
+      })
+      .orThrow();
+    const file = serializeMemoryFile(envelope, 'body').orThrow();
+    // On-wire the target is a nested object, NOT a bare scalar.
+    expect(file).toMatch(/scope: conversations\/conv-a/);
+    expect(file).toMatch(/id: turn-3/);
+    expect(parseMemoryFile(file, registry)).toSucceedAndSatisfy((record) => {
+      expect(record.envelope.links).toEqual([
+        { type: 'mtm-ref', target: { scope: 'conversations/conv-a', id: 'turn-3' } }
+      ]);
+      // Serializing the reparsed record reproduces byte-identical output.
+      expect(serializeMemoryFile(record.envelope, record.body as string)).toSucceedWith(file);
     });
   });
 

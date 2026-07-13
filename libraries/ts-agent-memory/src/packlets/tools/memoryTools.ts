@@ -6,7 +6,7 @@
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { JsonSchema } from '@fgv/ts-json-base';
 import { AiAssist } from '@fgv/ts-extras';
-import { Convert, EntityId, IIdentityCodec, IMemoryRecord, Kind, MemoryId, Tag } from '../types';
+import { Convert, EntityId, IEdgeTarget, IIdentityCodec, IMemoryRecord, Kind, MemoryId, Tag } from '../types';
 import { IBodyConverterRegistry, envelopeConverter } from '../converters';
 import { IMemoryStore } from '../store';
 import { IMemoryQuery, IMemoryRetriever } from '../retrieve';
@@ -181,11 +181,27 @@ interface IToolContext {
 // gate is enforced structurally and asserted in the tests.
 // ---------------------------------------------------------------------------
 
+/**
+ * The scope-qualified target of a link edge authored by the agent on a write.
+ * `scope` is optional: when omitted it defaults to the writing record's OWN
+ * resolved scope (the common same-conversation case); supply it explicitly to
+ * point an edge at a record in a different scope.
+ */
+// eslint-disable-next-line @rushstack/typedef-var
+const linkTargetSchema = JsonSchema.object({
+  id: JsonSchema.string({ description: 'The MemoryId of the record this edge points at.' }),
+  scope: JsonSchema.optional(
+    JsonSchema.string({
+      description: "The target record's scope. Defaults to the writing record's own scope when omitted."
+    })
+  )
+});
+
 /** A single attributed link edge as authored by the agent on a write. */
 // eslint-disable-next-line @rushstack/typedef-var
 const linkEdgeSchema = JsonSchema.object({
   type: JsonSchema.string({ description: 'The relation type of the link.' }),
-  target: JsonSchema.string({ description: 'The MemoryId this edge points at.' }),
+  target: linkTargetSchema,
   confidence: JsonSchema.optional(JsonSchema.number({ description: 'Optional confidence in [0, 1].' }))
 });
 
@@ -233,9 +249,24 @@ const searchSchema = JsonSchema.object({
   )
 });
 
+/**
+ * The scope-qualified seed a `memory_context` traversal starts from. Same nested
+ * `{ id, scope? }` shape as a link target, but — unlike a write edge — there is no
+ * writing record to default the scope from, so `scope` MUST be supplied to
+ * disambiguate the seed across scopes (a bare stem like `turn-3` is otherwise
+ * ambiguous). The traversal fails loudly if it is omitted.
+ */
+// eslint-disable-next-line @rushstack/typedef-var
+const contextSeedSchema = JsonSchema.object({
+  id: JsonSchema.string({ description: 'The MemoryId of the seed record to traverse links from.' }),
+  scope: JsonSchema.optional(
+    JsonSchema.string({ description: 'The scope of the seed record. Required — omitting it fails the call.' })
+  )
+});
+
 // eslint-disable-next-line @rushstack/typedef-var
 const contextSchema = JsonSchema.object({
-  from: JsonSchema.string({ description: 'The seed MemoryId to traverse links from.' }),
+  from: contextSeedSchema,
   kind: JsonSchema.optional(JsonSchema.string({ description: 'Restrict reached records to this kind.' })),
   tag: JsonSchema.optional(JsonSchema.string({ description: 'Restrict reached records carrying this tag.' })),
   hops: JsonSchema.optional(JsonSchema.integer({ description: 'BFS hop count (default 1).' })),
@@ -353,13 +384,16 @@ function buildWriteRecord(
   typed: WriteArgs,
   kind: Kind,
   entityId: EntityId,
-  idStem: string
+  idStem: string,
+  sourceScope: string
 ): Result<IMemoryRecord<unknown>> {
   // Plain shapes handed to `envelopeConverter`, which validates each field
-  // (type → LinkType, target → MemoryId) and produces the branded IEdge[].
+  // (type → LinkType, target → { scope, id }) and produces the branded IEdge[].
+  // An edge target with no explicit `scope` defaults to the writing record's own
+  // resolved scope — the same-conversation case authors just an id.
   const links: ReadonlyArray<Record<string, unknown>> = (typed.links ?? []).map((link) => ({
     type: link.type,
-    target: link.target,
+    target: { scope: link.target.scope ?? sourceScope, id: link.target.id },
     ...(link.confidence !== undefined ? { confidence: link.confidence } : {})
   }));
   return envelopeConverter
@@ -391,7 +425,7 @@ function prepareWrite(
           if (addr.isVersioned) {
             return fail(`memory_write: versioned/temporal kind '${kind}' is not supported`);
           }
-          return buildWriteRecord(typed, kind, entityId, addr.idStem).onSuccess((record) =>
+          return buildWriteRecord(typed, kind, entityId, addr.idStem, addr.scope).onSuccess((record) =>
             succeed({ kind, entityId, record })
           );
         })
@@ -553,13 +587,11 @@ function buildContextTool(ctx: IToolContext): AiAssist.IAiClientTool {
         .convert(args)
         .withErrorFormat((msg) => `memory_context: invalid arguments: ${msg}`)
         .onSuccess((typed) =>
-          Convert.memoryId
-            .convert(typed.from)
-            .onSuccess((from) =>
-              resolveOptionalKind(ctx, typed.kind).onSuccess((kind) =>
-                resolveOptionalTag(typed.tag).onSuccess((tag) => succeed({ typed, from, kind, tag }))
-              )
+          resolveContextSeed(typed.from).onSuccess((from) =>
+            resolveOptionalKind(ctx, typed.kind).onSuccess((kind) =>
+              resolveOptionalTag(typed.tag).onSuccess((tag) => succeed({ typed, from, kind, tag }))
             )
+          )
         )
         .thenOnSuccess(async ({ typed, from, kind, tag }) => {
           const detail: MemoryDetailTier = resolveDetail(typed.detail);
@@ -605,6 +637,25 @@ function buildDeleteTool(ctx: IToolContext): AiAssist.IAiClientTool {
           )
         )
   };
+}
+
+/**
+ * Resolve a `memory_context` seed argument into a scope-qualified
+ * {@link IEdgeTarget}. `scope` is structurally optional (the seed shares the edge
+ * target shape) but semantically required here — unlike a write edge there is no
+ * writing record to default it from, and a bare stem is ambiguous across scopes —
+ * so an omitted scope fails loudly rather than guessing.
+ */
+function resolveContextSeed(from: { readonly id: string; readonly scope?: string }): Result<IEdgeTarget> {
+  if (from.scope === undefined) {
+    return fail(
+      "memory_context: 'from.scope' is required — a bare seed id is ambiguous across scopes and cannot be defaulted"
+    );
+  }
+  const scopeStr: string = from.scope;
+  return Convert.memoryId
+    .convert(from.id)
+    .onSuccess((id) => Convert.scopeKey.convert(scopeStr).onSuccess((scope) => succeed({ scope, id })));
 }
 
 /** Validate an optional `tag` string (`undefined` passes through). */

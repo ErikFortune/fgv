@@ -5,7 +5,15 @@
 
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { Yaml } from '@fgv/ts-extras';
-import { Convert, IEdge, IMemoryEnvelope, IMemoryRecord, IProvenance, ITemporalBlock } from '../types';
+import {
+  Convert,
+  IEdge,
+  IEdgeTarget,
+  IMemoryEnvelope,
+  IMemoryRecord,
+  IProvenance,
+  ITemporalBlock
+} from '../types';
 import { IBodyConverterRegistry } from './bodyConverterRegistry';
 
 /** Matches exactly the JSON `null` literal. */
@@ -62,13 +70,24 @@ export const provenanceConverter: Converter<IProvenance> = Converters.generic<IP
 );
 
 /**
+ * Converter for a scope-qualified {@link IEdgeTarget}. Both `scope` and `id`
+ * are required — the whole point of the scoped target is that a bare id is
+ * ambiguous across scopes.
+ * @public
+ */
+export const edgeTargetConverter: Converter<IEdgeTarget> = Converters.object<IEdgeTarget>({
+  scope: Convert.scopeKey,
+  id: Convert.memoryId
+});
+
+/**
  * Converter for an attributed {@link IEdge}.
  * @public
  */
 export const edgeConverter: Converter<IEdge> = Converters.object<IEdge>(
   {
     type: Convert.linkType,
-    target: Convert.memoryId,
+    target: edgeTargetConverter,
     confidence: Converters.number.optional(),
     provenance: provenanceConverter.optional(),
     valid_at: Converters.number.optional(),

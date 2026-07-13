@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { EntityId, Kind, LinkType, MemoryId, Tag } from './ids';
+import { EntityId, Kind, LinkType, MemoryId, MemoryScopeKey, Tag } from './ids';
 
 /**
  * Origin of a provenance attribution. Open vocabulary: the three named
@@ -36,17 +36,48 @@ export interface IProvenance {
 }
 
 /**
+ * The physical address of a linked-to record: the `(scope, id)` pair that
+ * uniquely identifies it. Both components are required because a bare
+ * {@link MemoryId} is NOT unique across scopes — per-scope codecs (e.g. the
+ * medium-term codec's `turn-<n>` stems) legally mint the same stem under
+ * different scopes, so an edge that carried only the id would be ambiguous.
+ * `(scope, id)` matches the store's `getById(scope, id)` addressing and the
+ * index's composite primary key.
+ * @public
+ */
+export interface IEdgeTarget {
+  /** The scope the target record lives under. */
+  readonly scope: MemoryScopeKey;
+  /** The target record's stable file-stem id (unique WITHIN {@link IEdgeTarget.scope}). */
+  readonly id: MemoryId;
+}
+
+/**
+ * The canonical composite-key string for an {@link IEdgeTarget}: scope + id,
+ * NUL-separated. NUL is excluded from both components (scope segments are
+ * filename-safe; {@link MemoryId} is portable-filename-safe), so it is a
+ * collision-proof separator. This is the ONE canonicalization every consumer
+ * that keys on a scoped target uses — the backlink index, the cycle guard, and
+ * the ingest edge-validation path all route through it so their notions of
+ * "same target" cannot drift.
+ * @public
+ */
+export function edgeTargetKey(target: IEdgeTarget): string {
+  return `${target.scope}\0${target.id}`;
+}
+
+/**
  * An attributed link between two records. Carries the relation type, the
- * target id, and optional confidence / provenance / world-truth validity.
- * Replaces bare string references (e.g. PersonAIlity's `IMtmRef` becomes an
- * `IEdge` with `type: LinkType('mtm-ref')`).
+ * scope-qualified {@link IEdgeTarget | target}, and optional confidence /
+ * provenance / world-truth validity. Replaces bare string references (e.g.
+ * PersonAIlity's `IMtmRef` becomes an `IEdge` with `type: LinkType('mtm-ref')`).
  * @public
  */
 export interface IEdge {
   /** Open-vocabulary relation type. */
   readonly type: LinkType;
-  /** The linked-to record. */
-  readonly target: MemoryId;
+  /** The scope-qualified address of the linked-to record. */
+  readonly target: IEdgeTarget;
   /** Optional confidence in `[0, 1]`. */
   readonly confidence?: number;
   /** Optional structured provenance for the link itself. */

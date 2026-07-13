@@ -35,6 +35,19 @@ opportunistically when the right surface area is touched.
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P3] `@fgv/ts-agent-memory` `IProvenance.derivedFrom` carries the same latent bare-id ambiguity that scope-qualified edges just fixed.**
+  The scoped-edge-targets change (`IEdge.target: MemoryId → IEdgeTarget`) made every attributed edge unambiguous across scopes, and threaded the same `(scope, id)` fix through backlinks, link traversal, the ingest cycle guard, and the ingest edge-validation path. `IProvenance.derivedFrom` (`libraries/ts-agent-memory/src/packlets/types/envelope.ts`) remains a bare `MemoryId` and shares the identical root cause: per-scope codecs (e.g. the MTM codec's `turn-<n>` stems) legally reuse a stem across scopes, so a bare `derivedFrom` id is ambiguous. It is **not dereferenced anywhere today** — the ingest pipeline only stamps it from `IIngestItem.sourceId` and never resolves it back to a record — so there is no live correctness bug, only a latent one that would surface the moment a consumer tries to walk the provenance spine by id.
+
+  Also left bare in the same stream (a separate, larger follow-on): the vector/similarity path — `IVectorIndex` / `InMemoryCosineIndex._vectors`, `IEntityResolutionCandidate.id`, and `ResolutionVerdict`'s `target: MemoryId` arms + their `_indexById`/`byId` bare lookups in the orchestrator. Those share the root cause but were deliberately scoped out (the ingest verdict/similarity path still keys on a bare `byId` snapshot index).
+
+  **Trigger**: when a consumer needs to dereference `derivedFrom` (or the vector/verdict path) back to a specific record, or when the vector-path scoping is picked up as its own stream.
+
+  **Scope sketch**: promote `derivedFrom` to `IEdgeTarget` (or a `{ scope, id }` pair) and fix the ingest stamping site; for the vector path, scope `IVectorIndex` keys and the verdict target arms together (they interlock through `_indexById`).
+
+  **Not a P2**: `derivedFrom` is never dereferenced today, so there is no functional gap — purely latent.
+
+  **Reference**: the `agent-memory-scoped-edges` stream (scope-qualified `IEdge.target`). The design explicitly deferred both `derivedFrom` and the vector/verdict path as out-of-scope.
+
 - **[P2] `ts-prompt-assist` (and adjacent `ts-res` qualifier surface) needs an API documentation pass once the v0.1 surface settles.**
   PR #380 review surfaced that the recently-extended `ts-prompt-assist` surface — `PromptLibrary` + `IPromptLibraryCreateParams` + `IPromptResolveRequest` + the related fixture / resource-binding / resolve-output types — carries minimal TSDoc on individual methods, parameters, and return shapes. The v0.1 surface has been moving fast (Phase B sub-phases + post-merge cleanups + surface-tidy + round-1 ergonomics absorption), so documenting heavily during churn was the right call; with v0.1 effectively settled now, the next concern is consumer-facing TSDoc quality on the public surface.
 

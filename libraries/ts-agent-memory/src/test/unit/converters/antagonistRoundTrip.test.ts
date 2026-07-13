@@ -46,7 +46,7 @@ describe('antagonist — full on-disk round-trip preserves every optional field'
       links: [
         {
           type: 'rel' as never,
-          target: 'doc-2' as never,
+          target: { scope: 'knowledge', id: 'doc-2' } as never,
           confidence: 0.42,
           provenance: { source: 'agent', by: 'curator', extra: { nested: true } },
           valid_at: 111,
@@ -89,7 +89,7 @@ describe('antagonist — full on-disk round-trip preserves every optional field'
       entityId: 'doc-2' as IMemoryEnvelope['entityId'],
       kind,
       tags: [],
-      links: [{ type: 'rel' as never, target: 'doc-3' as never }],
+      links: [{ type: 'rel' as never, target: { scope: 'knowledge', id: 'doc-3' } as never }],
       created: 0,
       updated: 0,
       seq: 0,

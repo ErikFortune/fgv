@@ -5,6 +5,7 @@
 
 import '@fgv/ts-utils-jest';
 import {
+  IEdgeTarget,
   IIndexedMemoryRecord,
   IMemoryRecord,
   Kind,
@@ -15,6 +16,23 @@ import {
   envelopeConverter,
   rankCompare
 } from '../../../index';
+
+/**
+ * The scope every link target in this fixture lives under. Links are authored as
+ * bare id strings and resolved to `{ scope: LINK_TARGET_SCOPE, id }`, so the
+ * cross-scope source tests can share one target while their sources differ.
+ */
+const LINK_TARGET_SCOPE: string = 'knowledge';
+
+/** A scope-qualified backlink-target query for the fixed link-target scope. */
+function bt(id: string): IEdgeTarget {
+  return { scope: LINK_TARGET_SCOPE as MemoryScopeKey, id: id as MemoryId };
+}
+
+/** Extract the bare ids from a set of scope-qualified targets (backlink results). */
+function targetIds(targets: ReadonlyArray<IEdgeTarget>): string[] {
+  return targets.map((t) => t.id as string);
+}
 
 interface IRecordSpec {
   readonly id: string;
@@ -35,7 +53,10 @@ function makeEntry(spec: IRecordSpec): IIndexedMemoryRecord {
         entityId: spec.id,
         kind: spec.kind ?? 'knowledge',
         tags: spec.tags ?? [],
-        links: (spec.links ?? []).map((target) => ({ type: 'rel', target })),
+        links: (spec.links ?? []).map((target) => ({
+          type: 'rel',
+          target: { scope: LINK_TARGET_SCOPE, id: target }
+        })),
         created: 0,
         updated: spec.updated ?? 0,
         seq: spec.seq ?? 0,
@@ -66,7 +87,7 @@ describe('MemoryIndex', () => {
       expect(index.byKind('knowledge' as Kind)).toHaveLength(0);
       expect(index.byTag('any' as Tag)).toHaveLength(0);
       expect(index.byRecency()).toHaveLength(0);
-      expect(index.backlinks('none' as MemoryId)).toHaveLength(0);
+      expect(index.backlinks(bt('none'))).toHaveLength(0);
     });
   });
 
@@ -81,7 +102,7 @@ describe('MemoryIndex', () => {
       expect([...ids(index.byKind('knowledge' as Kind))].sort()).toEqual(['a', 'b']);
       expect([...ids(index.byTag('x' as Tag))].sort()).toEqual(['a', 'b']);
       expect(ids(index.byTag('y' as Tag))).toEqual(['b']);
-      expect(index.backlinks('b' as MemoryId)).toEqual(['a']);
+      expect(targetIds(index.backlinks(bt('b')))).toEqual(['a']);
     });
 
     test('clears prior state', () => {
@@ -97,7 +118,7 @@ describe('MemoryIndex', () => {
       const entry = makeEntry({ id: 'a', tags: ['x'], links: ['b'] });
       expect(index.patch('put', entry)).toSucceedWith(entry);
       expect(ids(index.byKind('knowledge' as Kind))).toEqual(['a']);
-      expect(index.backlinks('b' as MemoryId)).toEqual(['a']);
+      expect(targetIds(index.backlinks(bt('b')))).toEqual(['a']);
     });
 
     test('put on an existing key replaces stale associations', () => {
@@ -108,8 +129,8 @@ describe('MemoryIndex', () => {
       expect(ids(index.byTag('new' as Tag))).toEqual(['a']);
       expect(index.byKind('knowledge' as Kind)).toHaveLength(0);
       expect(ids(index.byKind('note' as Kind))).toEqual(['a']);
-      expect(index.backlinks('b' as MemoryId)).toHaveLength(0);
-      expect(index.backlinks('c' as MemoryId)).toEqual(['a']);
+      expect(index.backlinks(bt('b'))).toHaveLength(0);
+      expect(targetIds(index.backlinks(bt('c')))).toEqual(['a']);
     });
 
     test('delete removes the entry and its associations', () => {
@@ -118,7 +139,7 @@ describe('MemoryIndex', () => {
       expect(index.patch('delete', entry)).toSucceedWith(entry);
       expect(index.entries()).toHaveLength(0);
       expect(index.byTag('x' as Tag)).toHaveLength(0);
-      expect(index.backlinks('b' as MemoryId)).toHaveLength(0);
+      expect(index.backlinks(bt('b'))).toHaveLength(0);
     });
 
     test('delete of an absent key is a no-op that still succeeds', () => {
@@ -214,14 +235,14 @@ describe('MemoryIndex', () => {
       index
         .rebuild([makeEntry({ id: 'a', links: ['target'] }), makeEntry({ id: 'b', links: ['target'] })])
         .orThrow();
-      expect([...index.backlinks('target' as MemoryId)].sort()).toEqual(['a', 'b']);
+      expect(targetIds(index.backlinks(bt('target'))).sort()).toEqual(['a', 'b']);
     });
 
     test('drops the target set once the last source is removed', () => {
       const a = makeEntry({ id: 'a', links: ['target'] });
       index.patch('put', a).orThrow();
       index.patch('delete', a).orThrow();
-      expect(index.backlinks('target' as MemoryId)).toHaveLength(0);
+      expect(index.backlinks(bt('target'))).toHaveLength(0);
     });
 
     test('tracks same-id sources across scopes independently', () => {
@@ -231,9 +252,9 @@ describe('MemoryIndex', () => {
       const a2 = makeEntry({ id: 'a', scope: 'conversations/c2', links: ['target'] });
       index.patch('put', a1).orThrow();
       index.patch('put', a2).orThrow();
-      expect(index.backlinks('target' as MemoryId)).toEqual(['a', 'a']);
+      expect(targetIds(index.backlinks(bt('target')))).toEqual(['a', 'a']);
       index.patch('delete', a1).orThrow();
-      expect(index.backlinks('target' as MemoryId)).toEqual(['a']);
+      expect(targetIds(index.backlinks(bt('target')))).toEqual(['a']);
     });
   });
 
@@ -242,10 +263,10 @@ describe('MemoryIndex', () => {
       const entry = makeEntry({ id: 'a', tags: ['dup', 'dup'], links: ['t', 't'] });
       index.patch('put', entry).orThrow();
       expect(ids(index.byTag('dup' as Tag))).toEqual(['a']);
-      expect(index.backlinks('t' as MemoryId)).toEqual(['a']);
+      expect(targetIds(index.backlinks(bt('t')))).toEqual(['a']);
       index.patch('delete', entry).orThrow();
       expect(index.byTag('dup' as Tag)).toHaveLength(0);
-      expect(index.backlinks('t' as MemoryId)).toHaveLength(0);
+      expect(index.backlinks(bt('t'))).toHaveLength(0);
     });
   });
 });
