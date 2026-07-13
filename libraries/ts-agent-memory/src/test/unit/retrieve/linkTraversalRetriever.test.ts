@@ -25,6 +25,7 @@ interface IEntrySpec {
   readonly updated?: number;
   readonly seq?: number;
   readonly links?: ReadonlyArray<string>;
+  readonly rank?: number;
 }
 
 function makeEntry(spec: IEntrySpec): IIndexedMemoryRecord {
@@ -40,6 +41,7 @@ function makeEntry(spec: IEntrySpec): IIndexedMemoryRecord {
         updated: spec.updated ?? 0,
         seq: spec.seq ?? 0,
         contentHash: 'h',
+        ...(spec.rank !== undefined ? { rank: spec.rank } : {}),
         provenance: { source: 'agent' }
       })
       .orThrow(),
@@ -99,6 +101,46 @@ describe('LinkTraversalRetriever', () => {
           expect(ids(records).sort()).toEqual(['b', 'c']);
         }
       );
+    });
+  });
+
+  describe('orderBy axis', () => {
+    function seedIndex(): MemoryIndex {
+      // Seed 'a' links to three ranked neighbors. `rank` and `updated` are
+      // deliberately INVERTED so the rank order (n3,n2,n1) is the exact reverse of
+      // the recency order (n1,n2,n3) — proving orderBy actually re-sorts.
+      return buildIndex([
+        { id: 'a', links: ['n1', 'n3', 'n2'] },
+        { id: 'n1', rank: 1, updated: 300, seq: 1 },
+        { id: 'n3', rank: 3, updated: 100, seq: 3 },
+        { id: 'n2', rank: 2, updated: 200, seq: 2 }
+      ]);
+    }
+
+    test("orderBy 'rank' orders reached records by rank descending", async () => {
+      const retriever = LinkTraversalRetriever.create(seedIndex()).orThrow();
+      expect(await retriever.retrieve({ linkedFrom: 'a' as MemoryId, orderBy: 'rank' })).toSucceedAndSatisfy(
+        (records) => {
+          expect(ids(records)).toEqual(['n3', 'n2', 'n1']);
+        }
+      );
+    });
+
+    test('orderBy absent is unchanged recency order', async () => {
+      const retriever = LinkTraversalRetriever.create(seedIndex()).orThrow();
+      expect(await retriever.retrieve({ linkedFrom: 'a' as MemoryId })).toSucceedAndSatisfy((records) => {
+        // Recency: most-recently-updated first → n1(300), n2(200), n3(100).
+        expect(ids(records)).toEqual(['n1', 'n2', 'n3']);
+      });
+    });
+
+    test("orderBy 'rank' composes with { limit, offset }", async () => {
+      const retriever = LinkTraversalRetriever.create(seedIndex()).orThrow();
+      expect(
+        await retriever.retrieve({ linkedFrom: 'a' as MemoryId, orderBy: 'rank', limit: 1, offset: 1 })
+      ).toSucceedAndSatisfy((records) => {
+        expect(ids(records)).toEqual(['n2']);
+      });
     });
   });
 

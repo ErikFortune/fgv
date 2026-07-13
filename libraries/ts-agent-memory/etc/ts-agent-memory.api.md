@@ -214,6 +214,7 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly embed?: MemoryEmbedder;
     readonly logger?: Logging.ILogger;
     readonly observers?: ReadonlyArray<IMemoryObserver>;
+    readonly rankProjectors?: ReadonlyMap<Kind, RankProjector>;
     readonly registry: IBodyConverterRegistry;
     readonly root: FileTree.IMutableFileTreeDirectoryItem;
     readonly scopeEncoding?: (scope: MemoryScopeKey) => Result<string>;
@@ -295,6 +296,7 @@ export interface IMemoryEnvelope {
     readonly kind: Kind;
     readonly links: ReadonlyArray<IEdge>;
     readonly provenance: IProvenance;
+    readonly rank?: number;
     readonly seq: number;
     readonly tags: ReadonlyArray<Tag>;
     readonly temporal?: ITemporalBlock;
@@ -311,6 +313,7 @@ export interface IMemoryFileParts {
 export interface IMemoryIndex {
     backlinks(target: MemoryId): ReadonlyArray<MemoryId>;
     byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>>;
+    byRank(): ReadonlyArray<IMemoryRecord<unknown>>;
     byRecency(): ReadonlyArray<IMemoryRecord<unknown>>;
     byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>>;
     entries(): ReadonlyArray<IIndexedMemoryRecord>;
@@ -390,6 +393,7 @@ export interface IMemoryQuery {
     readonly linkedFrom?: MemoryId;
     readonly linkedTo?: MemoryId;
     readonly offset?: number;
+    readonly orderBy?: 'recency' | 'rank';
     readonly scope?: MemoryScopeKey;
     readonly semantic?: string;
     readonly tag?: Tag;
@@ -637,6 +641,7 @@ export type MemoryId = Brand<string, 'MemoryId'>;
 export class MemoryIndex implements IMemoryIndex {
     backlinks(target: MemoryId): ReadonlyArray<MemoryId>;
     byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>>;
+    byRank(): ReadonlyArray<IMemoryRecord<unknown>>;
     byRecency(): ReadonlyArray<IMemoryRecord<unknown>>;
     byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>>;
     static create(): Result<MemoryIndex>;
@@ -693,6 +698,9 @@ export class MtmIdentityCodec implements IIdentityCodec {
 export const NON_SEMANTIC_CAPABILITIES: IMemoryRetrieverCapabilities;
 
 // @public
+export function orderingCompare(orderBy?: IMemoryQuery['orderBy']): (a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>) => number;
+
+// @public
 export function parseMemoryFile(raw: string, registry: IBodyConverterRegistry): Result<IMemoryRecord<unknown>>;
 
 // @public
@@ -703,6 +711,12 @@ export type ProvenanceSource = 'agent' | 'host-ingest' | 'human' | (string & {})
 
 // @public
 export type QueryEmbedder = (text: string) => Promise<Result<Float32Array>>;
+
+// @public
+export function rankCompare(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number;
+
+// @public
+export type RankProjector = (record: IMemoryRecord<unknown>) => number;
 
 // @public
 export function recencyCompare(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number;

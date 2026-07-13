@@ -13,7 +13,7 @@ import {
   NON_SEMANTIC_CAPABILITIES,
   guardRetrieverCapabilities,
   limitRecords,
-  recencyCompare,
+  orderingCompare,
   selectByQuery
 } from './retriever';
 
@@ -45,7 +45,7 @@ export class RecencyRetriever implements IMemoryRetriever {
     return Promise.resolve(
       guardRetrieverCapabilities(query, this.capabilities).onSuccess(() => {
         const ordered: IMemoryRecord<unknown>[] = selectByQuery(this._index.entries(), query).sort(
-          recencyCompare
+          orderingCompare(query.orderBy)
         );
         return succeed(limitRecords(ordered, query.limit, query.offset));
       })

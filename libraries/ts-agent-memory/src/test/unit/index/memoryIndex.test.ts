@@ -12,7 +12,8 @@ import {
   MemoryIndex,
   MemoryScopeKey,
   Tag,
-  envelopeConverter
+  envelopeConverter,
+  rankCompare
 } from '../../../index';
 
 interface IRecordSpec {
@@ -23,6 +24,7 @@ interface IRecordSpec {
   readonly links?: ReadonlyArray<string>;
   readonly updated?: number;
   readonly seq?: number;
+  readonly rank?: number;
 }
 
 function makeEntry(spec: IRecordSpec): IIndexedMemoryRecord {
@@ -38,6 +40,7 @@ function makeEntry(spec: IRecordSpec): IIndexedMemoryRecord {
         updated: spec.updated ?? 0,
         seq: spec.seq ?? 0,
         contentHash: 'h',
+        ...(spec.rank !== undefined ? { rank: spec.rank } : {}),
         provenance: { source: 'agent' }
       })
       .orThrow(),
@@ -142,6 +145,67 @@ describe('MemoryIndex', () => {
         ])
         .orThrow();
       expect(ids(index.byRecency())).toEqual(['newest', 'tie-hi', 'tie-lo', 'old']);
+    });
+  });
+
+  describe('byRank', () => {
+    test('orders by rank descending, absent-rank records last, recency tiebreak', () => {
+      index
+        .rebuild([
+          makeEntry({ id: 'mid', rank: 5, updated: 100, seq: 1 }),
+          makeEntry({ id: 'top', rank: 9, updated: 100, seq: 2 }),
+          makeEntry({ id: 'tie-lo', rank: 3, updated: 200, seq: 4 }),
+          makeEntry({ id: 'tie-hi', rank: 3, updated: 200, seq: 9 }),
+          makeEntry({ id: 'unranked-old', updated: 100, seq: 5 }),
+          makeEntry({ id: 'unranked-new', updated: 400, seq: 6 })
+        ])
+        .orThrow();
+      // ranked (desc): top(9), mid(5), tie-hi(3,seq9), tie-lo(3,seq4);
+      // then unranked by recency: unranked-new(updated400), unranked-old(updated100).
+      expect(ids(index.byRank())).toEqual(['top', 'mid', 'tie-hi', 'tie-lo', 'unranked-new', 'unranked-old']);
+    });
+
+    test('is empty on an empty index', () => {
+      expect(index.byRank()).toHaveLength(0);
+    });
+
+    test('sorts a ranked record ahead of an earlier-listed absent-rank record', () => {
+      // Input lists the absent-rank record first so the sort compares (ranked, absent),
+      // exercising the ranked-before-absent direction of the comparator.
+      index
+        .rebuild([
+          makeEntry({ id: 'unranked', updated: 100, seq: 1 }),
+          makeEntry({ id: 'ranked', rank: 5, updated: 100, seq: 2 })
+        ])
+        .orThrow();
+      expect(ids(index.byRank())).toEqual(['ranked', 'unranked']);
+    });
+
+    test('orders two absent-rank records by recency alone', () => {
+      index
+        .rebuild([makeEntry({ id: 'a', updated: 100, seq: 1 }), makeEntry({ id: 'b', updated: 300, seq: 2 })])
+        .orThrow();
+      expect(ids(index.byRank())).toEqual(['b', 'a']);
+    });
+
+    test("index byRank agrees pairwise with the retrieve packlet's rankCompare", () => {
+      // Guard against the two hand-duplicated comparators (index `_compareByRank`
+      // and retrieve `rankCompare`) drifting: a future tie-break edit to one that
+      // diverges from the other is caught here on a shared mixed fixture.
+      const fixture = [
+        makeEntry({ id: 'r-top', rank: 9, updated: 100, seq: 1 }),
+        makeEntry({ id: 'r-mid', rank: 5, updated: 400, seq: 2 }),
+        makeEntry({ id: 'r-tie-a', rank: 3, updated: 200, seq: 3 }),
+        makeEntry({ id: 'r-tie-b', rank: 3, updated: 200, seq: 8 }),
+        makeEntry({ id: 'absent-old', updated: 100, seq: 4 }),
+        makeEntry({ id: 'absent-new', updated: 500, seq: 5 })
+      ];
+      index.rebuild(fixture).orThrow();
+      const viaIndex = ids(index.byRank());
+      const viaRankCompare = ids(fixture.map((e) => e.record).sort(rankCompare));
+      expect(viaIndex).toEqual(viaRankCompare);
+      // And the shared expected ordering is what both must produce.
+      expect(viaIndex).toEqual(['r-top', 'r-mid', 'r-tie-b', 'r-tie-a', 'absent-new', 'absent-old']);
     });
   });
 

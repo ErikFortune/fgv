@@ -72,6 +72,15 @@ export interface IMemoryIndex {
   byRecency(): ReadonlyArray<IMemoryRecord<unknown>>;
 
   /**
+   * All records ordered by store-computed {@link IMemoryEnvelope.rank} descending,
+   * with recency (most-recently-updated, then `seq`) as a tiebreak. Records with
+   * an absent `rank` sort LAST (after every ranked record), then by recency among
+   * themselves. Serves a bounded top-M ({@link IMemoryEnvelope.rank}-ordered) page
+   * from the in-memory index with no full-vault (filesystem) scan.
+   */
+  byRank(): ReadonlyArray<IMemoryRecord<unknown>>;
+
+  /**
    * The ids of records whose `links` point AT `target` (inbound edges).
    * The seed map for B2 link-traversal.
    */
@@ -166,6 +175,11 @@ export class MemoryIndex implements IMemoryIndex {
     return this._recencyOrdered(this._byKey.keys());
   }
 
+  /** {@inheritDoc IMemoryIndex.byRank} */
+  public byRank(): ReadonlyArray<IMemoryRecord<unknown>> {
+    return this._rankOrdered(this._byKey.keys());
+  }
+
   /** {@inheritDoc IMemoryIndex.backlinks} */
   public backlinks(target: MemoryId): ReadonlyArray<MemoryId> {
     const sources: Map<string, MemoryId> | undefined = this._backlinks.get(target);
@@ -189,6 +203,49 @@ export class MemoryIndex implements IMemoryIndex {
       const byUpdated: number = b.envelope.updated - a.envelope.updated;
       return byUpdated !== 0 ? byUpdated : b.envelope.seq - a.envelope.seq;
     });
+  }
+
+  /**
+   * Resolve a set of composite keys to their records, ordered by
+   * {@link IMemoryEnvelope.rank} descending with recency (`updated`, then `seq`)
+   * as the tiebreak. Records with an absent `rank` sort LAST, then by recency
+   * among themselves. Computed on call (mirrors {@link MemoryIndex._recencyOrdered}) —
+   * no incremental rank-ordered view is maintained, matching the recency view's
+   * approach; the sort is over the in-memory index, never a filesystem walk.
+   */
+  private _rankOrdered(keys: Iterable<string>): ReadonlyArray<IMemoryRecord<unknown>> {
+    const records: IMemoryRecord<unknown>[] = [];
+    for (const key of keys) {
+      const entry: IIndexedMemoryRecord | undefined = this._byKey.get(key);
+      if (entry !== undefined) {
+        records.push(entry.record);
+      }
+    }
+    return records.sort(MemoryIndex._compareByRank);
+  }
+
+  /**
+   * Rank-descending comparator with an absent-`rank`-last rule and a recency
+   * (`updated`, then `seq`) tiebreak. Duplicated from the retrieve packlet's
+   * `rankCompare` deliberately: the index must not depend on `retrieve` (that
+   * package depends on the index), mirroring how `_recencyOrdered` inlines the
+   * recency ordering rather than importing `recencyCompare`.
+   */
+  private static _compareByRank(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number {
+    const ra: number | undefined = a.envelope.rank;
+    const rb: number | undefined = b.envelope.rank;
+    // Absent rank sorts last; two absent ranks fall through to the recency tiebreak.
+    if (ra === undefined && rb !== undefined) {
+      return 1;
+    }
+    if (rb === undefined && ra !== undefined) {
+      return -1;
+    }
+    if (ra !== undefined && rb !== undefined && ra !== rb) {
+      return rb - ra;
+    }
+    const byUpdated: number = b.envelope.updated - a.envelope.updated;
+    return byUpdated !== 0 ? byUpdated : b.envelope.seq - a.envelope.seq;
   }
 
   /** Insert an entry and register all its derived associations. */

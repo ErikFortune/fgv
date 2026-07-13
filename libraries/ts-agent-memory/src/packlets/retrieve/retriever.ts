@@ -68,6 +68,23 @@ export interface IMemoryQuery {
    * `Result.fail` — never a silent empty.
    */
   readonly asOf?: number;
+  /**
+   * Ordering for the result set. `'recency'` (the default when absent — today's
+   * exact behavior) orders most-recently-updated first; `'rank'` orders by the
+   * store-computed {@link IMemoryEnvelope.rank} descending (records with an absent
+   * `rank` last), with recency as the tiebreak. Combined with `{ limit, offset }`
+   * this yields a bounded top-M rank-ordered page with no full-vault scan.
+   *
+   * @remarks
+   * `orderBy` governs the ordered non-semantic retrievers (recency / tag /
+   * structured-filter / link-traversal) and the {@link HybridRetriever}'s
+   * post-merge ordering. The {@link SemanticRetriever} is the sole exception: it
+   * preserves its native vector-similarity order regardless of `orderBy` —
+   * re-sorting semantic hits by `rank` would discard the similarity ranking that
+   * is the whole point of that path; a consumer that wants rank ordering uses a
+   * non-semantic query.
+   */
+  readonly orderBy?: 'recency' | 'rank';
   /** Maximum records to return. Applied after all other filters. */
   readonly limit?: number;
   /**
@@ -169,6 +186,40 @@ export function guardRetrieverCapabilities(
 export function recencyCompare(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number {
   const byUpdated: number = b.envelope.updated - a.envelope.updated;
   return byUpdated !== 0 ? byUpdated : b.envelope.seq - a.envelope.seq;
+}
+
+/**
+ * Rank comparator: store-computed {@link IMemoryEnvelope.rank} descending, with
+ * {@link recencyCompare} as the tiebreak. Records with an absent `rank` sort LAST
+ * (after every ranked record), then by recency among themselves. Mirrors the
+ * index's rank-view ordering.
+ * @public
+ */
+export function rankCompare(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number {
+  const ra: number | undefined = a.envelope.rank;
+  const rb: number | undefined = b.envelope.rank;
+  if (ra === undefined && rb !== undefined) {
+    return 1;
+  }
+  if (rb === undefined && ra !== undefined) {
+    return -1;
+  }
+  if (ra !== undefined && rb !== undefined && ra !== rb) {
+    return rb - ra;
+  }
+  return recencyCompare(a, b);
+}
+
+/**
+ * Select the record comparator for a query's {@link IMemoryQuery.orderBy | orderBy}
+ * axis: {@link rankCompare} for `'rank'`, {@link recencyCompare} otherwise (the
+ * default, byte-identical to the pre-`orderBy` behavior).
+ * @public
+ */
+export function orderingCompare(
+  orderBy?: IMemoryQuery['orderBy']
+): (a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>) => number {
+  return orderBy === 'rank' ? rankCompare : recencyCompare;
 }
 
 /**

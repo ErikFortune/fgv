@@ -108,6 +108,15 @@ export interface IMemoryEnvelope {
    * an exact match is a no-op upsert that returns the existing record.
    */
   readonly contentHash: string;
+  /**
+   * Store-computed host-defined ordering value, produced by the kind's
+   * {@link RankProjector} on every put/update and stamped into the envelope in
+   * the same pass that recomputes {@link IMemoryEnvelope.contentHash | contentHash}.
+   * Absent when the kind has no registered projector (or the projector threw on
+   * this record). Ordered retrieval (`orderBy: 'rank'`) and the index's rank view
+   * sort by this value descending, placing records with an absent `rank` last.
+   */
+  readonly rank?: number;
   /** Structured provenance (never a flat enum). */
   readonly provenance: IProvenance;
 
@@ -136,3 +145,15 @@ export interface IMemoryRecord<TBody = unknown> {
   /** The per-kind, Converter-validated body. */
   readonly body: TBody;
 }
+
+/**
+ * A per-kind host projection from a fully-resolved (post-merge) memory record
+ * to a numeric ordering value. Registered per kind at store construction (see
+ * `rankProjectors`); the store runs it on every put/update over the same
+ * resolved record whose `contentHash` it computes, stamping the result into
+ * {@link IMemoryEnvelope.rank}. The store never interprets the body — the host
+ * owns what the number means. A projector that throws is treated as "no rank
+ * for this record" (logged at `warn`), never failing the write.
+ * @public
+ */
+export type RankProjector = (record: IMemoryRecord<unknown>) => number;
