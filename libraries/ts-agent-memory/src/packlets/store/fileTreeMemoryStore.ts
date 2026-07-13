@@ -10,6 +10,7 @@ import {
   DEFAULT_DEDUP_SCOPE,
   DedupScope,
   EntityId,
+  IEdgeTarget,
   IIdentityCodec,
   IMemoryEnvelope,
   IMemoryRecord,
@@ -688,7 +689,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     }
     return this._buildRecord(record, body, existing, policy, hash)
       .onSuccess((built) => succeed(this._stampRank(built)))
-      .thenOnSuccess((built) => this._embedOnWrite(built))
+      .thenOnSuccess((built) => this._embedOnWrite(built, scope))
       .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, idStem))
       .thenOnSuccess(async (persisted) => {
         // Everything after the authoritative `_persist` commit is best-effort and
@@ -698,7 +699,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
         //     it), and only the successfully-evicted ids flow onward;
         //   - vector pruning of the evicted cohort is likewise best-effort.
         const evicted: ReadonlyArray<MemoryId> = this._applyEvictions(decision, scope);
-        await this._removeEvictedVectors(evicted);
+        await this._removeEvictedVectors(evicted, scope);
         return succeed({ record: persisted, evicted });
       });
   }
@@ -715,12 +716,16 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * Always succeeds (`Result` is the chain's shape, never a vector-induced
    * failure).
    */
-  private async _embedOnWrite(built: IMemoryRecord<string>): Promise<Result<IMemoryRecord<string>>> {
+  private async _embedOnWrite(
+    built: IMemoryRecord<string>,
+    scope: MemoryScopeKey
+  ): Promise<Result<IMemoryRecord<string>>> {
     if (this._vectorIndex === undefined || this._embed === undefined) {
       return succeed(built);
     }
     const vectorIndex: IVectorIndex = this._vectorIndex;
     const embed: MemoryEmbedder = this._embed;
+    const target: IEdgeTarget = { scope, id: built.envelope.id };
     const embedded: Result<Float32Array> = await this._tryVectorOp(
       () => embed(built),
       `embedding '${built.envelope.id}'`
@@ -729,7 +734,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       return succeed(built);
     }
     const added: Result<string> = await this._tryVectorOp(
-      () => vectorIndex.add(built.envelope.id, embedded.value),
+      () => vectorIndex.add(target, embedded.value),
       `vector add for '${built.envelope.id}'`
     );
     if (added.isFailure()) {
@@ -763,10 +768,18 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return evicted;
   }
 
-  /** Best-effort vector removal for each evicted record (never fails the put). */
-  private async _removeEvictedVectors(evicted: ReadonlyArray<MemoryId>): Promise<void> {
+  /**
+   * Best-effort vector removal for each evicted record (never fails the put).
+   * Every evicted record is in the same `scope` as the incoming write (the
+   * cull-oldest cohort is the incoming record's `(scope, kind)` cohort), so that
+   * scope qualifies each removal target.
+   */
+  private async _removeEvictedVectors(
+    evicted: ReadonlyArray<MemoryId>,
+    scope: MemoryScopeKey
+  ): Promise<void> {
     for (const id of evicted) {
-      await this._removeVectorBestEffort(id);
+      await this._removeVectorBestEffort({ scope, id });
     }
   }
 
@@ -796,12 +809,12 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * behaves byte-identically. Failures are logged, never surfaced — a committed
    * delete/eviction must not fail because a derived index could not be pruned.
    */
-  private async _removeVectorBestEffort(id: MemoryId): Promise<void> {
+  private async _removeVectorBestEffort(target: IEdgeTarget): Promise<void> {
     if (this._vectorIndex === undefined || this._embed === undefined) {
       return;
     }
     const vectorIndex: IVectorIndex = this._vectorIndex;
-    await this._tryVectorOp(() => vectorIndex.remove(id), `vector removal for '${id}'`);
+    await this._tryVectorOp(() => vectorIndex.remove(target), `vector removal for '${target.id}'`);
   }
 
   /**
@@ -907,7 +920,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       return this._deleteFile(scope, idStem)
         .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
         .thenOnSuccess(async () => {
-          await this._removeVectorBestEffort(existing.envelope.id);
+          await this._removeVectorBestEffort({ scope, id: existing.envelope.id });
           return succeed(existing.envelope.id);
         });
     });
@@ -1002,7 +1015,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
           .thenOnSuccess((versionStem) =>
             this._buildVersionedRecord(record, body, current, policy, hash, versionStem, validAt, now, seq)
               .onSuccess((built) => succeed(this._stampRank(built)))
-              .thenOnSuccess((built) => this._embedOnWrite(built))
+              .thenOnSuccess((built) => this._embedOnWrite(built, scope))
               .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, versionStem))
               .onSuccess((persisted) =>
                 this._invalidateCurrents(scope, priorCurrents, validAt, now).onSuccess(() =>

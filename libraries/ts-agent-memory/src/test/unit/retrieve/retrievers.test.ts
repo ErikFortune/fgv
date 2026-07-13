@@ -390,13 +390,13 @@ describe('orderBy: rank axis', () => {
       { id: 'b', rank: 1, updated: 1 }
     ]);
     const vectorIndex: IVectorIndex = {
-      add: (id: MemoryId) => Promise.resolve(succeed(`ref-${id}`)),
-      remove: (id: MemoryId) => Promise.resolve(succeed(id)),
+      add: (t: IEdgeTarget) => Promise.resolve(succeed(`ref-${t.id}`)),
+      remove: (t: IEdgeTarget) => Promise.resolve(succeed(t)),
       query: () =>
         Promise.resolve(
           succeed([
-            { id: 'b' as MemoryId, score: 0.9 },
-            { id: 'a' as MemoryId, score: 0.5 }
+            { target: et('b'), score: 0.9 },
+            { target: et('a'), score: 0.5 }
           ])
         )
     };
@@ -586,11 +586,11 @@ class FakeVectorIndex implements IVectorIndex {
     this._hits = hits;
     this._failQuery = failQuery;
   }
-  public add(id: MemoryId): Promise<Result<string>> {
-    return Promise.resolve(succeed(`ref-${id}`));
+  public add(t: IEdgeTarget): Promise<Result<string>> {
+    return Promise.resolve(succeed(`ref-${t.id}`));
   }
-  public remove(id: MemoryId): Promise<Result<MemoryId>> {
-    return Promise.resolve(succeed(id));
+  public remove(t: IEdgeTarget): Promise<Result<IEdgeTarget>> {
+    return Promise.resolve(succeed(t));
   }
   public query(__vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
     this.lastTopK = topK;
@@ -642,8 +642,8 @@ describe('SemanticRetriever', () => {
       index,
       backend: {
         vectorIndex: new FakeVectorIndex([
-          { id: 'b' as MemoryId, score: 0.9 },
-          { id: 'a' as MemoryId, score: 0.5 }
+          { target: et('b'), score: 0.9 },
+          { target: et('a'), score: 0.5 }
         ]),
         embedQuery: okEmbed
       }
@@ -665,9 +665,9 @@ describe('SemanticRetriever', () => {
       index,
       backend: {
         vectorIndex: new FakeVectorIndex([
-          { id: 'gone' as MemoryId, score: 0.99 },
-          { id: 'b' as MemoryId, score: 0.8 },
-          { id: 'a' as MemoryId, score: 0.7 }
+          { target: et('gone'), score: 0.99 },
+          { target: et('b'), score: 0.8 },
+          { target: et('a'), score: 0.7 }
         ]),
         embedQuery: okEmbed
       }
@@ -679,12 +679,40 @@ describe('SemanticRetriever', () => {
     );
   });
 
+  test('resolves a hit to the correctly-scoped record when two records share an id stem across scopes', async () => {
+    // Two records with the identical stem `turn-3` under different scopes — the
+    // exact same-stem-across-scopes collision the scope-qualified hit fixes. The
+    // retriever must re-resolve each hit through its full `(scope, id)` key, not a
+    // bare id (which would ambiguously match either record).
+    const index = buildIndex([
+      { id: 'turn-3', scope: 'conv-a', tags: ['from-a'] },
+      { id: 'turn-3', scope: 'conv-b', tags: ['from-b'] }
+    ]);
+    const r = SemanticRetriever.create({
+      index,
+      backend: {
+        // The vector backend scored the conv-b record; the retriever must return
+        // exactly that record, never the same-stem conv-a record.
+        vectorIndex: new FakeVectorIndex([{ target: et('turn-3', 'conv-b'), score: 0.9 }]),
+        embedQuery: okEmbed
+      }
+    }).orThrow();
+    expect(await r.retrieve({ semantic: 'q' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(records).toHaveLength(1);
+        expect(records[0].envelope.id).toBe('turn-3');
+        // The tag proves it is the conv-b record, not the same-stem conv-a one.
+        expect(records[0].envelope.tags).toEqual(['from-b']);
+      }
+    );
+  });
+
   test('forwards topK to the vector index and applies the post-filter limit', async () => {
     const index = buildIndex([{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
     const vectorIndex = new FakeVectorIndex([
-      { id: 'a' as MemoryId, score: 0.9 },
-      { id: 'b' as MemoryId, score: 0.8 },
-      { id: 'c' as MemoryId, score: 0.7 }
+      { target: et('a'), score: 0.9 },
+      { target: et('b'), score: 0.8 },
+      { target: et('c'), score: 0.7 }
     ]);
     const r = SemanticRetriever.create({ index, backend: { vectorIndex, embedQuery: okEmbed } }).orThrow();
     expect(await r.retrieve({ semantic: 'q', topK: 2, limit: 2 })).toSucceedAndSatisfy(
@@ -697,7 +725,7 @@ describe('SemanticRetriever', () => {
   });
 
   test('defaults topK to 10 when the query omits it', async () => {
-    const vectorIndex = new FakeVectorIndex([{ id: 'a' as MemoryId, score: 0.9 }]);
+    const vectorIndex = new FakeVectorIndex([{ target: et('a'), score: 0.9 }]);
     const r = SemanticRetriever.create({
       index: buildIndex([{ id: 'a' }]),
       backend: { vectorIndex, embedQuery: okEmbed }
@@ -739,8 +767,8 @@ describe('SemanticRetriever', () => {
   test('normalizes a rejecting vector backend into a Failure', async () => {
     // A vector index whose `query` rejects (throws) rather than returning a fail.
     const rejectingIndex: IVectorIndex = {
-      add: (id: MemoryId) => Promise.resolve(succeed(`ref-${id}`)),
-      remove: (id: MemoryId) => Promise.resolve(succeed(id)),
+      add: (t: IEdgeTarget) => Promise.resolve(succeed(`ref-${t.id}`)),
+      remove: (t: IEdgeTarget) => Promise.resolve(succeed(t)),
       query: () => Promise.reject(new Error('socket hangup'))
     };
     const r = SemanticRetriever.create({
@@ -844,7 +872,7 @@ describe('HybridRetriever', () => {
     const semantic = SemanticRetriever.create({
       index,
       backend: {
-        vectorIndex: new FakeVectorIndex([{ id: 'b' as MemoryId, score: 0.9 }]),
+        vectorIndex: new FakeVectorIndex([{ target: et('b'), score: 0.9 }]),
         embedQuery: () => Promise.resolve(succeed(Float32Array.from([1])))
       }
     }).orThrow();
@@ -924,8 +952,8 @@ describe('HybridRetriever', () => {
       index,
       backend: {
         vectorIndex: new FakeVectorIndex([
-          { id: 'd' as MemoryId, score: 0.9 },
-          { id: 'a' as MemoryId, score: 0.8 }
+          { target: et('d'), score: 0.9 },
+          { target: et('a'), score: 0.8 }
         ]),
         embedQuery: () => Promise.resolve(succeed(Float32Array.from([1])))
       }

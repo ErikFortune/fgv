@@ -88,8 +88,14 @@ export interface ICandidateRecord {
  * @public
  */
 export interface IEntityResolutionCandidate {
-  /** The existing record's id. */
-  readonly id: MemoryId;
+  /**
+   * The existing record's scope-qualified `(scope, id)` address. Scope-qualified
+   * (not a bare {@link MemoryId}) because per-scope codecs legally mint the same
+   * stem under different scopes — the {@link ResolutionVerdict} target the resolver
+   * returns must round-trip this exact address so the write binds the intended
+   * record.
+   */
+  readonly target: IEdgeTarget;
   /** The existing record. */
   readonly record: IMemoryRecord<unknown>;
   /** The backend similarity score (higher = more similar). */
@@ -99,14 +105,16 @@ export interface IEntityResolutionCandidate {
 /**
  * The four dedup verdicts a {@link IEntityResolver} (or fgv's exact-match layer)
  * returns for a candidate. See the design note §3 for the verdict → write
- * disposition mapping.
+ * disposition mapping. Each target-bearing arm carries a scope-qualified
+ * {@link IEdgeTarget} (not a bare {@link MemoryId}) so the verdict resolves to a
+ * single record even when a filename stem is reused across scopes.
  * @public
  */
 export type ResolutionVerdict =
   | { readonly verdict: 'new' }
-  | { readonly verdict: 'duplicate-of'; readonly target: MemoryId }
-  | { readonly verdict: 'supersede'; readonly target: MemoryId }
-  | { readonly verdict: 'merge-into'; readonly target: MemoryId };
+  | { readonly verdict: 'duplicate-of'; readonly target: IEdgeTarget }
+  | { readonly verdict: 'supersede'; readonly target: IEdgeTarget }
+  | { readonly verdict: 'merge-into'; readonly target: IEdgeTarget };
 
 /**
  * How a candidate was ultimately written (or not) after resolution.
