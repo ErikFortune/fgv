@@ -12,7 +12,8 @@ import {
   MemoryIndex,
   MemoryScopeKey,
   Tag,
-  envelopeConverter
+  envelopeConverter,
+  rankCompare
 } from '../../../index';
 
 interface IRecordSpec {
@@ -185,6 +186,26 @@ describe('MemoryIndex', () => {
         .rebuild([makeEntry({ id: 'a', updated: 100, seq: 1 }), makeEntry({ id: 'b', updated: 300, seq: 2 })])
         .orThrow();
       expect(ids(index.byRank())).toEqual(['b', 'a']);
+    });
+
+    test("index byRank agrees pairwise with the retrieve packlet's rankCompare", () => {
+      // Guard against the two hand-duplicated comparators (index `_compareByRank`
+      // and retrieve `rankCompare`) drifting: a future tie-break edit to one that
+      // diverges from the other is caught here on a shared mixed fixture.
+      const fixture = [
+        makeEntry({ id: 'r-top', rank: 9, updated: 100, seq: 1 }),
+        makeEntry({ id: 'r-mid', rank: 5, updated: 400, seq: 2 }),
+        makeEntry({ id: 'r-tie-a', rank: 3, updated: 200, seq: 3 }),
+        makeEntry({ id: 'r-tie-b', rank: 3, updated: 200, seq: 8 }),
+        makeEntry({ id: 'absent-old', updated: 100, seq: 4 }),
+        makeEntry({ id: 'absent-new', updated: 500, seq: 5 })
+      ];
+      index.rebuild(fixture).orThrow();
+      const viaIndex = ids(index.byRank());
+      const viaRankCompare = ids(fixture.map((e) => e.record).sort(rankCompare));
+      expect(viaIndex).toEqual(viaRankCompare);
+      // And the shared expected ordering is what both must produce.
+      expect(viaIndex).toEqual(['r-top', 'r-mid', 'r-tie-b', 'r-tie-a', 'absent-new', 'absent-old']);
     });
   });
 

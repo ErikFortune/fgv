@@ -1269,8 +1269,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * write path and no consumer write-discipline rule. A no-op pass-through
    * (byte-identical record) when the kind has no projector — the additive,
    * zero-overhead-when-unwired default. The projector is a host callback: a throw
-   * is logged at `warn` and the record is returned with no `rank`, so a ranking
-   * bug never loses an authoritative write.
+   * is logged at `warn` and the record is stamped with NO `rank` (the field is
+   * explicitly cleared, so a throw on an update drops a now-stale prior rank rather
+   * than preserving it), so a ranking bug never loses an authoritative write.
    */
   private _stampRank(record: IMemoryRecord<string>): IMemoryRecord<string> {
     const projector: RankProjector | undefined = this._rankProjectors.get(record.envelope.kind);
@@ -1282,11 +1283,14 @@ export class FileTreeMemoryStore implements IMemoryStore {
       return { envelope: { ...record.envelope, rank }, body: record.body };
     } catch (err) {
       this._warnSwallowed(
-        `memory put '${record.envelope.id}': rank projector threw (swallowed; rank left absent): ${String(
-          err
-        )}`
+        `memory put '${record.envelope.id}': rank projector threw (swallowed; rank cleared): ${String(err)}`
       );
-      return record;
+      // Explicitly CLEAR `rank` (not `return record`): on an update the merged
+      // envelope carries the prior version's `rank` (the write-policy merge does
+      // not touch `rank`), so returning it verbatim would keep a stale value
+      // inconsistent with the revised body. Clearing honors the staleness
+      // contract — an uncomputable rank means the record sorts last as "unranked".
+      return { envelope: { ...record.envelope, rank: undefined }, body: record.body };
     }
   }
 

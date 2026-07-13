@@ -184,6 +184,63 @@ describe('FileTreeMemoryStore rank axis', () => {
       );
       expect(logger.logged.some((m) => /rank projector threw/i.test(m))).toBe(true);
     });
+
+    test('an UPDATE whose projector throws CLEARS the prior rank (flat path staleness contract)', async () => {
+      let shouldThrow: boolean = false;
+      const flakyProjector: RankProjector = (record) => {
+        if (shouldThrow) {
+          throw new Error('projector boom');
+        }
+        return (record.body as string).length;
+      };
+      const store = createStore({
+        rankProjectors: new Map<Kind, RankProjector>([[knowledgeKind, flakyProjector]])
+      }).orThrow();
+      // First write succeeds → rank stamped to a nonzero value.
+      expect(await store.put(makeRecord({ id: 'doc-a', body: 'abcd' }))).toSucceedAndSatisfy(
+        (rec: IMemoryRecord<unknown>) => {
+          expect(rec.envelope.rank).toBe(4);
+        }
+      );
+      // Update with a body revision while the projector now throws → the prior
+      // rank (4) must NOT survive; the record is stamped rank-absent.
+      shouldThrow = true;
+      clockValue = 2000;
+      expect(await store.put(makeRecord({ id: 'doc-a', body: 'abcdefgh' }))).toSucceedAndSatisfy(
+        (rec: IMemoryRecord<unknown>) => {
+          expect(rec.envelope.rank).toBeUndefined();
+          expect(rec.envelope.updated).toBe(2000);
+        }
+      );
+    });
+
+    test('an UPDATE whose projector throws CLEARS the prior rank (versioned path staleness contract)', async () => {
+      let shouldThrow: boolean = false;
+      const flakyProjector: RankProjector = (record) => {
+        if (shouldThrow) {
+          throw new Error('projector boom');
+        }
+        return (record.body as string).length;
+      };
+      const store = createStore({
+        rankProjectors: new Map<Kind, RankProjector>([[factKind, flakyProjector]]),
+        writePolicies: temporalPolicies
+      }).orThrow();
+      expect(await store.put(makeRecord({ id: 'fact-1', kind: factKind, body: 'aa' }))).toSucceedAndSatisfy(
+        (rec: IMemoryRecord<unknown>) => {
+          expect(rec.envelope.rank).toBe(2);
+        }
+      );
+      shouldThrow = true;
+      clockValue = 2000;
+      // The new version merges over the current version (which carried rank 2);
+      // the throwing projector must clear it so the new version is rank-absent.
+      expect(
+        await store.put(makeRecord({ id: 'fact-1', kind: factKind, body: 'aaaaa' }))
+      ).toSucceedAndSatisfy((rec: IMemoryRecord<unknown>) => {
+        expect(rec.envelope.rank).toBeUndefined();
+      });
+    });
   });
 
   describe('put stamps rank (versioned / temporal path)', () => {

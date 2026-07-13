@@ -77,11 +77,12 @@ export interface IMemoryQuery {
    *
    * @remarks
    * `orderBy` governs the ordered non-semantic retrievers (recency / tag /
-   * structured-filter) and the {@link HybridRetriever}'s post-merge ordering. The
-   * {@link SemanticRetriever} preserves its native vector-similarity order
-   * regardless of `orderBy` — re-sorting semantic hits by `rank` would discard the
-   * similarity ranking that is the whole point of that path; a consumer that wants
-   * rank ordering uses a non-semantic query.
+   * structured-filter / link-traversal) and the {@link HybridRetriever}'s
+   * post-merge ordering. The {@link SemanticRetriever} is the sole exception: it
+   * preserves its native vector-similarity order regardless of `orderBy` —
+   * re-sorting semantic hits by `rank` would discard the similarity ranking that
+   * is the whole point of that path; a consumer that wants rank ordering uses a
+   * non-semantic query.
    */
   readonly orderBy?: 'recency' | 'rank';
   /** Maximum records to return. Applied after all other filters. */

@@ -13,7 +13,7 @@ import {
   guardRetrieverCapabilities,
   indexedRecordMatchesQuery,
   limitRecords,
-  recencyCompare
+  orderingCompare
 } from './retriever';
 
 /** The capabilities a link-traversal retriever exposes (link traversal only). */
@@ -116,7 +116,7 @@ export class LinkTraversalRetriever implements IMemoryRetriever {
     const ordered: IMemoryRecord<unknown>[] = entries
       .filter((entry) => indexedRecordMatchesQuery(entry, query))
       .map((entry) => entry.record)
-      .sort(recencyCompare);
+      .sort(orderingCompare(query.orderBy));
     return succeed(limitRecords(ordered, query.limit, query.offset));
   }
 
