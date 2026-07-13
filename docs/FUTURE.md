@@ -377,18 +377,29 @@ chunk-granular vector entries + in-result offsets — only if we ever want one s
 semantic retriever to serve **both** record-level memory and sub-document knowledge at
 fragment granularity. Recorded so the shape is visible; no action requested.
 
-### Scope-qualified edge targets — dormant, recorded
+### Scope-qualified edge targets — SHIPPED (2026-07-13)
 
-`IEdge.target` is a bare `MemoryId` with no scope qualifier (`types/envelope.ts`).
-Under the current per-agent-store design (memory and knowledge alike), no two records
-share an id stem across a scope boundary, so bare targets are correct. This would only
-matter if a future **hub-level shared entity table** or **cross-hub federation** scheme
-introduced stem collisions across scopes. Dormant; recorded so the constraint is
-visible if that day comes. No action requested.
+> **SHIPPED** — `IEdge.target: MemoryId → IEdgeTarget` (`{ scope, id }`), via the
+> `agent-memory-scoped-edges` stream (PR #542) plus the `agent-memory-scoped-vectors`
+> follow-on (PR #543). The original "dormant, recorded" framing rested on a premise that
+> turned out to be **wrong**: it assumed no two records share an id stem across a scope
+> boundary. In fact the bundled `MtmIdentityCodec` mints per-scope stems (`turn-<n>`), so
+> two conversations' `turn-3` records collide on a bare `MemoryId` — an edge, backlink,
+> traversal seed, cycle-guard node, ingest-validation target, or vector-index key of
+> `turn-3` was ambiguous across conversations. The consumer surfaced this as a live footgun
+> in the *default* codec; the maintainer adjudicated the deep fix (scope-qualified targets,
+> making per-scope stems legal by construction) over the two lighter options (globally-unique
+> bundled stems; a registration guard). #542 scope-qualified the link graph (edges, backlinks,
+> traversal, cycle guard, ingest edge-validation, edge serialization, the `memory_write` /
+> `memory_context` tool schemas) behind a single collision-proof `edgeTargetKey` helper; #543
+> completed the migration across the vector/similarity + entity-resolution path (breaking the
+> pre-1.0 `IEntityResolver` host contract, no shim). Residual latent item: `IProvenance.derivedFrom`
+> stays a bare `MemoryId` (never dereferenced today) — tracked in `TECH_DEBT.md`.
 
-**Reference:** consumer orchestrator's forwarded 2026-07 agent-memory batch; the four
-firm asks from the same batch shipped via the `agent-memory-query-tool-batch` and
-`agent-memory-rank-axis` streams.
+**Reference:** consumer orchestrator's forwarded 2026-07 agent-memory batch (the id-stem
+uniqueness vs. bare-MemoryId-links friction report); PRs #542, #543; the four firm asks from
+the same batch shipped via the `agent-memory-query-tool-batch` and `agent-memory-rank-axis`
+streams.
 
 ## RFC 9421 HTTP-message-signature packlet (prospective `@fgv/ts-extras`)
 

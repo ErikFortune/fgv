@@ -17,6 +17,7 @@ The active/production split is therefore **per-surface, not per-library**. A lib
 | `ts-http-storage` | All | New library |
 | `ts-web-extras` | All | New library |
 | `ts-prompt-assist` | All | New library (v0.1; design + initial implementation in flight via the `ts-prompt-assist` workstream) |
+| `ts-agent-memory` | All | New library (v1 shipped, one close consumer coordinating adoption; treated as still pre-1.0/malleable — breaking changes land freely with no shim, e.g. the 2026-07 rank-axis, scope-qualified-edge, and vector-scoping streams) |
 
 Anything not listed above — including production libraries like `ts-utils`, `ts-res`, `ts-bcp47`, `ts-json`, `ts-json-base`, `ts-random`, `ts-utils-jest`, `ts-res-ui-components` — carries stability obligations. See [Compatibility Rules](#compatibility-rules).
 
