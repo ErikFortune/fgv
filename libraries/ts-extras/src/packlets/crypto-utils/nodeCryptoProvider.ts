@@ -34,6 +34,7 @@ import * as Constants from './constants';
 import { keyPairAlgorithmParams } from './keyPairAlgorithmParams';
 import {
   ICryptoProvider,
+  IEncryptBytesResult,
   IEncryptionResult,
   IWrapBytesOptions,
   IWrappedBytes,
@@ -114,6 +115,89 @@ export class NodeCryptoProvider implements ICryptoProvider {
 
       return decrypted.toString('utf8');
     }).withErrorFormat((e) => `Decryption failed: ${e}`);
+  }
+
+  /**
+   * Encrypts raw bytes using AES-256-GCM with a caller-supplied nonce and
+   * optional AAD. See {@link CryptoUtils.ICryptoProvider.encryptBytes | ICryptoProvider.encryptBytes}
+   * — in particular the caller's responsibility to use a unique `nonce` per
+   * message under a given `key`.
+   * @param key - 32-byte AES-256 key.
+   * @param nonce - 12-byte GCM nonce (must be unique per message under `key`).
+   * @param plaintext - The bytes to encrypt (empty permitted).
+   * @param aad - Optional additional authenticated data bound into the tag.
+   * @returns `Success` with the ciphertext and 16-byte auth tag, or `Failure` with an error.
+   */
+  public async encryptBytes(
+    key: Uint8Array,
+    nonce: Uint8Array,
+    plaintext: Uint8Array,
+    aad?: Uint8Array
+  ): Promise<Result<IEncryptBytesResult>> {
+    if (key.length !== Constants.AES_256_KEY_SIZE) {
+      return fail(`encryptBytes: key must be ${Constants.AES_256_KEY_SIZE} bytes, got ${key.length}`);
+    }
+    if (nonce.length !== Constants.GCM_IV_SIZE) {
+      return fail(`encryptBytes: nonce must be ${Constants.GCM_IV_SIZE} bytes, got ${nonce.length}`);
+    }
+
+    return captureResult(() => {
+      const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(key), Buffer.from(nonce), {
+        authTagLength: Constants.GCM_AUTH_TAG_SIZE
+      });
+      if (aad !== undefined) {
+        cipher.setAAD(Buffer.from(aad));
+      }
+      const encrypted = Buffer.concat([cipher.update(Buffer.from(plaintext)), cipher.final()]);
+      const authTag = cipher.getAuthTag();
+      return {
+        ciphertext: new Uint8Array(encrypted),
+        authTag: new Uint8Array(authTag)
+      };
+    });
+  }
+
+  /**
+   * Decrypts raw bytes produced by {@link NodeCryptoProvider.encryptBytes} using
+   * AES-256-GCM. See {@link CryptoUtils.ICryptoProvider.decryptBytes | ICryptoProvider.decryptBytes}.
+   * Fails (never throws) on any authentication failure, including a mismatched `aad`.
+   * @param key - 32-byte AES-256 key.
+   * @param nonce - 12-byte GCM nonce (the same one used to encrypt).
+   * @param ciphertext - The ciphertext from the `encryptBytes` result.
+   * @param authTag - The 16-byte GCM auth tag from the `encryptBytes` result.
+   * @param aad - The identical AAD supplied at encrypt time (or absent).
+   * @returns `Success` with the decrypted plaintext bytes, or `Failure` with an error.
+   */
+  public async decryptBytes(
+    key: Uint8Array,
+    nonce: Uint8Array,
+    ciphertext: Uint8Array,
+    authTag: Uint8Array,
+    aad?: Uint8Array
+  ): Promise<Result<Uint8Array>> {
+    if (key.length !== Constants.AES_256_KEY_SIZE) {
+      return fail(`decryptBytes: key must be ${Constants.AES_256_KEY_SIZE} bytes, got ${key.length}`);
+    }
+    if (nonce.length !== Constants.GCM_IV_SIZE) {
+      return fail(`decryptBytes: nonce must be ${Constants.GCM_IV_SIZE} bytes, got ${nonce.length}`);
+    }
+    if (authTag.length !== Constants.GCM_AUTH_TAG_SIZE) {
+      return fail(
+        `decryptBytes: auth tag must be ${Constants.GCM_AUTH_TAG_SIZE} bytes, got ${authTag.length}`
+      );
+    }
+
+    return captureResult(() => {
+      const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(key), Buffer.from(nonce), {
+        authTagLength: Constants.GCM_AUTH_TAG_SIZE
+      });
+      if (aad !== undefined) {
+        decipher.setAAD(Buffer.from(aad));
+      }
+      decipher.setAuthTag(Buffer.from(authTag));
+      const decrypted = Buffer.concat([decipher.update(Buffer.from(ciphertext)), decipher.final()]);
+      return new Uint8Array(decrypted);
+    }).withErrorFormat((e) => `decryptBytes failed: ${e}`);
   }
 
   /**

@@ -471,6 +471,7 @@ declare namespace CryptoUtils {
         EncryptedFileFormat,
         INamedSecret,
         IEncryptionResult,
+        IEncryptBytesResult,
         KeyPairAlgorithm,
         IWrapBytesOptions,
         IWrappedBytes,
@@ -1195,8 +1196,14 @@ interface ICreateZipOptions {
 // @public
 interface ICryptoProvider {
     decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    decryptBytes(key: Uint8Array, nonce: Uint8Array, ciphertext: Uint8Array, authTag: Uint8Array, aad?: Uint8Array): Promise<Result<Uint8Array>>;
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
     encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    encryptBytes(key: Uint8Array, nonce: Uint8Array, plaintext: Uint8Array, aad?: Uint8Array): Promise<Result<IEncryptBytesResult>>;
     exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
     exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
     fromBase64(base64: string): Result<Uint8Array>;
@@ -1238,6 +1245,16 @@ interface IDirectEncryptionProviderParams {
     readonly boundSecretName?: string;
     readonly cryptoProvider: ICryptoProvider;
     readonly key: Uint8Array;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IEncryptBytesResult {
+    readonly authTag: Uint8Array;
+    readonly ciphertext: Uint8Array;
 }
 
 // @public
@@ -2211,8 +2228,13 @@ const namedSecret: Converter<INamedSecret>;
 // @public
 class NodeCryptoProvider implements ICryptoProvider {
     decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "NodeCryptoProvider"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    decryptBytes(key: Uint8Array, nonce: Uint8Array, ciphertext: Uint8Array, authTag: Uint8Array, aad?: Uint8Array): Promise<Result<Uint8Array>>;
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
     encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    encryptBytes(key: Uint8Array, nonce: Uint8Array, plaintext: Uint8Array, aad?: Uint8Array): Promise<Result<IEncryptBytesResult>>;
     exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
     exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
     fromBase64(base64: string): Result<Uint8Array>;
