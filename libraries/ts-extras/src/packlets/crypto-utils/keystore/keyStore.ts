@@ -19,9 +19,10 @@
 // SOFTWARE.
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
+import { captureAsyncResult, captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 import * as Constants from '../constants';
 import { createEncryptedFile } from '../encryptedFile';
+import { IKeyPairAlgorithmParams, keyPairAlgorithmParams } from '../keyPairAlgorithmParams';
 import {
   ICryptoProvider,
   IEncryptedFile,
@@ -32,6 +33,7 @@ import {
   IArgon2idParams,
   IKeyDerivationParams,
   ARGON2ID_OWASP_MIN,
+  KeyPairAlgorithm,
   SecretProvider
 } from '../model';
 import {
@@ -44,6 +46,7 @@ import {
   IAddSecretFromPasswordResult,
   IAddSecretOptions,
   IAddSecretResult,
+  IGetKeyPairOptions,
   IImportKeyOptions,
   IImportSecretOptions,
   IKeyStoreAsymmetricEntry,
@@ -69,6 +72,12 @@ import { keystoreFile, keystoreVaultContents } from './converters';
 function getCurrentTimestamp(): string {
   return new Date().toISOString();
 }
+
+// WebCrypto key usages that only ever apply to a public key. Filtering these
+// out of the keypair usages yields the usages valid for the private half, which
+// `crypto.subtle.importKey` requires when re-importing a private JWK. Mirrors
+// the same list in `EncryptedFilePrivateKeyStorage`.
+const PUBLIC_ONLY_USAGES: ReadonlyArray<KeyUsage> = ['verify', 'encrypt', 'wrapKey'];
 
 // ============================================================================
 // KeyStore Class
@@ -102,6 +111,20 @@ function getCurrentTimestamp(): string {
  * // Use as secret provider for encrypted file loading
  * const encryptionConfig = keystore2.getEncryptionConfig().orThrow();
  * ```
+ *
+ * @remarks
+ * SECURITY — private-key escrow. By default an asymmetric keypair's private
+ * key lives only in the per-device {@link CryptoUtils.KeyStore.IPrivateKeyStorage}
+ * backend; the vault carries only the public JWK, so a vault recovered on a new
+ * device reconstitutes with no private keys (a lost device is a lost identity).
+ * `addKeyPair(name, { escrow: true })` opts into carrying an encrypted private-key
+ * copy inside the vault ciphertext, so the vault file plus the master password can
+ * recover the identity on a fresh device via `getKeyPair(name, { rehydrate: true })`.
+ *
+ * When escrow is used, **the master password becomes the sole gate** protecting a
+ * private signing/decryption key that was previously unrecoverable from the vault.
+ * Configure escrow-bearing stores with a strong KDF — an Argon2id-derived master
+ * key or a high-iteration PBKDF2 count — and treat the vault file accordingly.
  *
  * @public
  */
@@ -947,8 +970,17 @@ export class KeyStore implements IEncryptionProvider {
         `Cannot create non-extractable keypair for '${name}': storage backend does not support non-extractable keys`
       );
     }
-    const extractable = options.extractable ?? backendExtractable;
-    const keyPairResult = await this._cryptoProvider.generateKeyPair(options.algorithm, extractable);
+    // Extractability of the LIVE stored key. Escrow is orthogonal — it never
+    // changes this; the escrow copy is captured separately from a transient
+    // extractable key.
+    const liveExtractable = options.extractable ?? backendExtractable;
+
+    // For escrow we must be able to export the private key to JWK, which only
+    // works on an extractable key, so the transient keypair is generated
+    // extractable regardless of `liveExtractable`. Without escrow it is
+    // generated directly at the live setting.
+    const generateExtractable = options.escrow === true ? true : liveExtractable;
+    const keyPairResult = await this._cryptoProvider.generateKeyPair(options.algorithm, generateExtractable);
     /* c8 ignore next 3 - crypto provider errors covered in nodeCryptoProvider tests; cannot be triggered here without mocking */
     if (keyPairResult.isFailure()) {
       return fail(`Failed to generate keypair for '${name}': ${keyPairResult.message}`);
@@ -961,6 +993,37 @@ export class KeyStore implements IEncryptionProvider {
       return fail(`Failed to export public key for '${name}': ${jwkResult.message}`);
     }
 
+    // Escrow (opt-in). The bare private key exists only as three local
+    // artifacts, none of which is returned or logged: (1) the transient
+    // extractable `privateKey` above; (2) the exported `escrowedPrivateKeyJwk`,
+    // which is carried in the vault entry (same custody class as the public
+    // JWK); (3) a freshly re-imported non-extractable key handed to `store()`
+    // when the live copy must be non-extractable. When the live copy is
+    // extractable the transient key IS the live copy and is stored directly.
+    let escrowedPrivateKeyJwk: JsonWebKey | undefined;
+    let keyToStore: CryptoKey = privateKey;
+    if (options.escrow === true) {
+      const escrowResult = await this._exportPrivateKeyJwk(privateKey, name);
+      /* c8 ignore next 3 - export('jwk') of a freshly-generated extractable private key does not fail with a healthy provider (analogous to the exportPublicKeyJwk ignore above) */
+      if (escrowResult.isFailure()) {
+        return fail(escrowResult.message);
+      }
+      escrowedPrivateKeyJwk = escrowResult.value;
+
+      if (!liveExtractable) {
+        const reimportResult = await this._importEscrowedPrivateKey(
+          escrowedPrivateKeyJwk,
+          options.algorithm,
+          false
+        );
+        /* c8 ignore next 3 - re-importing a JWK we just exported from a valid key cannot fail; the import-failure path itself is covered via getKeyPair rehydration of a malformed escrow JWK */
+        if (reimportResult.isFailure()) {
+          return fail(`Failed to prepare non-extractable key for '${name}': ${reimportResult.message}`);
+        }
+        keyToStore = reimportResult.value;
+      }
+    }
+
     const idResult = this._generateId();
     /* c8 ignore next 3 - random-bytes failure is hard to trigger with a healthy provider */
     if (idResult.isFailure()) {
@@ -969,7 +1032,7 @@ export class KeyStore implements IEncryptionProvider {
     const id = idResult.value;
 
     // Storage-first: write the private key before committing the vault entry.
-    const storeResult = await this._privateKeyStorage.store(id, privateKey);
+    const storeResult = await this._privateKeyStorage.store(id, keyToStore);
     if (storeResult.isFailure()) {
       return fail(`Failed to persist private key for '${name}': ${storeResult.message}`);
     }
@@ -980,6 +1043,7 @@ export class KeyStore implements IEncryptionProvider {
       id,
       algorithm: options.algorithm,
       publicKeyJwk: jwkResult.value,
+      escrowedPrivateKeyJwk,
       description: options.description,
       createdAt: getCurrentTimestamp()
     };
@@ -997,12 +1061,26 @@ export class KeyStore implements IEncryptionProvider {
    * the keystore never caches private `CryptoKey` references between calls.
    * The public key is re-imported from the vault's JWK so callers always
    * receive a `CryptoKey` rather than the JWK form.
+   *
+   * With `options.rehydrate: true`, if the storage backend holds no blob for
+   * the entry's `id` and the entry carries an `escrowedPrivateKeyJwk` (see
+   * `addKeyPair(name, { escrow: true })`), the escrowed JWK is imported and
+   * stored under the entry's `id` before being returned — recovering the
+   * private key on a fresh device from the vault plus master password. This is
+   * fill-a-gap only: an existing storage blob is never overwritten.
+   *
    * @param name - Name of the entry
+   * @param options - Optional {@link CryptoUtils.KeyStore.IGetKeyPairOptions}
+   * (currently the `rehydrate` escrow-recovery flag).
    * @returns Success with `{ publicKey, privateKey }`, Failure if not found,
-   * locked, wrong type, no provider, or storage load failed.
+   * locked, wrong type, no provider, or storage load (and any escrow
+   * rehydration) failed.
    * @public
    */
-  public async getKeyPair(name: string): Promise<Result<{ publicKey: CryptoKey; privateKey: CryptoKey }>> {
+  public async getKeyPair(
+    name: string,
+    options?: IGetKeyPairOptions
+  ): Promise<Result<{ publicKey: CryptoKey; privateKey: CryptoKey }>> {
     if (!this._secrets) {
       return fail('Key store is locked');
     }
@@ -1017,9 +1095,9 @@ export class KeyStore implements IEncryptionProvider {
       return fail('No private key storage configured');
     }
 
-    const privateResult = await this._privateKeyStorage.load(entry.id);
+    const privateResult = await this._loadOrRehydratePrivateKey(name, entry, options);
     if (privateResult.isFailure()) {
-      return fail(`Failed to load private key for '${name}': ${privateResult.message}`);
+      return fail(privateResult.message);
     }
 
     const publicResult = await this._cryptoProvider.importPublicKeyJwk(entry.publicKeyJwk, entry.algorithm);
@@ -1315,6 +1393,7 @@ export class KeyStore implements IEncryptionProvider {
           id: entry.id,
           algorithm: entry.algorithm,
           publicKeyJwk: entry.publicKeyJwk,
+          escrowedPrivateKeyJwk: entry.escrowedPrivateKeyJwk,
           description: entry.description,
           createdAt: entry.createdAt
         };
@@ -1432,6 +1511,7 @@ export class KeyStore implements IEncryptionProvider {
           id: jsonEntry.id,
           algorithm: jsonEntry.algorithm,
           publicKeyJwk: jsonEntry.publicKeyJwk,
+          escrowedPrivateKeyJwk: jsonEntry.escrowedPrivateKeyJwk,
           description: jsonEntry.description,
           createdAt: jsonEntry.createdAt
         };
@@ -1489,6 +1569,98 @@ export class KeyStore implements IEncryptionProvider {
     }
     entry.key.fill(0);
     return undefined;
+  }
+
+  /**
+   * Exports the transient extractable private `CryptoKey` to a JWK for escrow,
+   * via WebCrypto's `exportKey('jwk', ...)` (cross-runtime through
+   * `globalThis.crypto.subtle`). The result is carried in the vault entry — the
+   * same custody class as the public JWK — and is never returned from a public
+   * method nor logged.
+   */
+  private async _exportPrivateKeyJwk(privateKey: CryptoKey, name: string): Promise<Result<JsonWebKey>> {
+    return captureAsyncResult(() => globalThis.crypto.subtle.exportKey('jwk', privateKey)).withErrorFormat(
+      (msg) => `Failed to export private key for escrow of '${name}': ${msg}`
+    );
+  }
+
+  /**
+   * Re-imports an escrowed private-key JWK as a `CryptoKey` for `algorithm`
+   * with the requested extractability. The WebCrypto JWK-import descriptor is
+   * shared between the public and private halves for every supported algorithm,
+   * so `IKeyPairAlgorithmParams.importPublicKey` is reused; the private/public
+   * distinction is carried by the requested usages (see
+   * {@link KeyStore._privateKeyUsagesFor}). Cross-runtime through
+   * `globalThis.crypto.subtle`.
+   */
+  private async _importEscrowedPrivateKey(
+    jwk: JsonWebKey,
+    algorithm: KeyPairAlgorithm,
+    extractable: boolean
+  ): Promise<Result<CryptoKey>> {
+    const params = keyPairAlgorithmParams[algorithm];
+    const usages = KeyStore._privateKeyUsagesFor(jwk, params);
+    return captureAsyncResult(() =>
+      globalThis.crypto.subtle.importKey('jwk', jwk, params.importPublicKey, extractable, usages)
+    ).withErrorFormat((msg) => `Failed to import escrowed private key: ${msg}`);
+  }
+
+  /**
+   * Loads the private key for `entry` from storage, or — when
+   * `options.rehydrate` is set, storage holds no blob, and the entry carries an
+   * escrowed JWK — imports the escrowed key, persists it under the entry's `id`
+   * (fill-a-gap; never overwrites an existing blob), and returns it.
+   */
+  private async _loadOrRehydratePrivateKey(
+    name: string,
+    entry: IKeyStoreAsymmetricEntry,
+    options: IGetKeyPairOptions | undefined
+  ): Promise<Result<CryptoKey>> {
+    // Non-undefined by getKeyPair's precondition check.
+    const storage = this._privateKeyStorage!;
+    const loadResult = await storage.load(entry.id);
+    if (loadResult.isSuccess()) {
+      return succeed(loadResult.value);
+    }
+    if (options?.rehydrate !== true || entry.escrowedPrivateKeyJwk === undefined) {
+      return fail(`Failed to load private key for '${name}': ${loadResult.message}`);
+    }
+
+    // Fill-a-gap recovery: import the escrowed key non-extractable where the
+    // backend supports it (extractable otherwise, since a JWK-round-tripping
+    // backend cannot store a non-extractable key), then persist it.
+    const backendExtractable = !storage.supportsNonExtractable;
+    const importResult = await this._importEscrowedPrivateKey(
+      entry.escrowedPrivateKeyJwk,
+      entry.algorithm,
+      backendExtractable
+    );
+    if (importResult.isFailure()) {
+      return fail(`Failed to rehydrate private key for '${name}' from escrow: ${importResult.message}`);
+    }
+
+    const storeResult = await storage.store(entry.id, importResult.value);
+    if (storeResult.isFailure()) {
+      return fail(`Failed to persist rehydrated private key for '${name}': ${storeResult.message}`);
+    }
+    return succeed(importResult.value);
+  }
+
+  /**
+   * Computes the key usages to request when importing an escrowed private JWK.
+   * Mirrors `EncryptedFilePrivateKeyStorage`: intersect the algorithm's private
+   * usages (its keypair usages minus the public-only ones) with the JWK's
+   * recorded `key_ops` so we request exactly the operations the stored key
+   * supports; fall back to the algorithm's private usages when `key_ops` is
+   * absent.
+   */
+  private static _privateKeyUsagesFor(jwk: JsonWebKey, params: IKeyPairAlgorithmParams): KeyUsage[] {
+    const privateUsages = params.keyPairUsages.filter((usage) => !PUBLIC_ONLY_USAGES.includes(usage));
+    const keyOps = jwk.key_ops;
+    if (keyOps === undefined) {
+      return [...privateUsages];
+    }
+    return privateUsages.filter((usage) => keyOps.includes(usage));
   }
 
   /**
