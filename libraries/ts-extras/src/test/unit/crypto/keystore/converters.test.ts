@@ -24,14 +24,17 @@ import * as CryptoUtils from '../../../../packlets/crypto-utils';
 
 describe('Key Store Converters', () => {
   describe('keystoreFormat', () => {
-    test('accepts valid format', () => {
+    test('accepts valid formats (v1 and v2)', () => {
       expect(CryptoUtils.KeyStore.Converters.keystoreFormat.convert('keystore-v1')).toSucceedWith(
         'keystore-v1'
+      );
+      expect(CryptoUtils.KeyStore.Converters.keystoreFormat.convert('keystore-v2')).toSucceedWith(
+        'keystore-v2'
       );
     });
 
     test('rejects invalid format', () => {
-      expect(CryptoUtils.KeyStore.Converters.keystoreFormat.convert('keystore-v2')).toFail();
+      expect(CryptoUtils.KeyStore.Converters.keystoreFormat.convert('keystore-v3')).toFail();
     });
 
     test('rejects non-string', () => {

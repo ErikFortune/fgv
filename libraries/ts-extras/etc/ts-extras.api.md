@@ -275,6 +275,9 @@ const allKeyPairAlgorithms: ReadonlyArray<KeyPairAlgorithm>;
 const allKeyStoreAsymmetricSecretTypes: ReadonlyArray<KeyStoreAsymmetricSecretType>;
 
 // @public
+const allKeyStoreFormats: ReadonlyArray<KeyStoreFormat>;
+
+// @public
 const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType>;
 
 // @public
@@ -763,6 +766,8 @@ class HpkeProvider {
 interface IAddKeyPairOptions {
     readonly algorithm: KeyPairAlgorithm;
     readonly description?: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly escrow?: boolean;
     readonly extractable?: boolean;
     readonly replace?: boolean;
 }
@@ -1404,6 +1409,13 @@ interface IGenerateJsonCompletionResult<T> {
     readonly value: T;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IGetKeyPairOptions {
+    readonly rehydrate?: boolean;
+}
+
 // @public
 interface IGptImageGenerationConfig {
     readonly background?: 'transparent' | 'opaque' | 'auto';
@@ -1497,6 +1509,8 @@ interface IKeyStoreAsymmetricEntry {
     readonly createdAt: string;
     readonly description?: string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly escrowedPrivateKeyJwk?: JsonWebKey;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly id: string;
     readonly name: string;
     readonly publicKeyJwk: JsonWebKey;
@@ -1510,6 +1524,7 @@ interface IKeyStoreAsymmetricEntryJson {
     readonly algorithm: KeyPairAlgorithm;
     readonly createdAt: string;
     readonly description?: string;
+    readonly escrowedPrivateKeyJwk?: JsonWebKey;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly id: string;
     readonly name: string;
@@ -1963,6 +1978,7 @@ declare namespace KeyStore {
         allKeyPairAlgorithms,
         KeyPairAlgorithm,
         KeyStoreFormat,
+        allKeyStoreFormats,
         KEYSTORE_FORMAT,
         DEFAULT_KEYSTORE_ITERATIONS,
         MIN_SALT_LENGTH,
@@ -1994,12 +2010,15 @@ declare namespace KeyStore {
         IAddSecretFromPasswordResult,
         IAddSecretFromPasswordArgon2idOptions,
         IAddKeyPairOptions,
+        IGetKeyPairOptions,
         IAddKeyPairResult,
         IRemoveSecretResult,
         IPrivateKeyStorage
     }
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 class KeyStore_2 implements IEncryptionProvider {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2018,7 +2037,8 @@ class KeyStore_2 implements IEncryptionProvider {
     getApiKey(name: string): Result<string>;
     getEncryptionConfig(): Result<Pick<IEncryptionConfig, 'secretProvider' | 'cryptoProvider'>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getKeyPair(name: string): Promise<Result<{
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getKeyPair(name: string, options?: IGetKeyPairOptions): Promise<Result<{
         publicKey: CryptoKey;
         privateKey: CryptoKey;
     }>>;
@@ -2077,7 +2097,7 @@ const keystoreAsymmetricSecretType: Converter<KeyStoreAsymmetricSecretType>;
 const keystoreFile: Converter<IKeyStoreFile>;
 
 // @public
-type KeyStoreFormat = 'keystore-v1';
+type KeyStoreFormat = 'keystore-v1' | 'keystore-v2';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2526,8 +2546,9 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/crypto-utils/keystore/keyStore.ts:1479:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/crypto-utils/keystore/keyStore.ts:1518:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1558:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1595:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
+// src/packlets/crypto-utils/keystore/keyStore.ts:1689:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

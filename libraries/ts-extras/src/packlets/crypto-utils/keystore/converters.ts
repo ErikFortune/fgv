@@ -22,6 +22,7 @@ import { Converter, Converters, succeed, Validation, Validator, Validators } fro
 import { base64String, encryptionAlgorithm, pbkdf2KeyDerivationParams } from '../converters';
 import {
   allKeyPairAlgorithms,
+  allKeyStoreFormats,
   allKeyStoreSecretTypes,
   allKeyStoreSymmetricSecretTypes,
   IKeyStoreAsymmetricEntryJson,
@@ -29,7 +30,6 @@ import {
   IKeyStoreFile,
   IKeyStoreSymmetricEntryJson,
   IKeyStoreVaultContents,
-  KEYSTORE_FORMAT,
   KeyPairAlgorithm,
   KeyStoreAsymmetricSecretType,
   KeyStoreFormat,
@@ -46,9 +46,8 @@ import {
  * Converter for {@link CryptoUtils.KeyStore.KeyStoreFormat | key store format} version.
  * @public
  */
-export const keystoreFormat: Converter<KeyStoreFormat> = Converters.enumeratedValue<KeyStoreFormat>([
-  KEYSTORE_FORMAT
-]);
+export const keystoreFormat: Converter<KeyStoreFormat> =
+  Converters.enumeratedValue<KeyStoreFormat>(allKeyStoreFormats);
 
 // ============================================================================
 // Secret Type Converters
@@ -171,6 +170,7 @@ export const keystoreAsymmetricEntryJson: Converter<IKeyStoreAsymmetricEntryJson
     id: Converters.string,
     algorithm: keyPairAlgorithm,
     publicKeyJwk: jsonWebKeyShape,
+    escrowedPrivateKeyJwk: jsonWebKeyShape.optional(),
     description: Converters.string.optional(),
     createdAt: Converters.string
   });
