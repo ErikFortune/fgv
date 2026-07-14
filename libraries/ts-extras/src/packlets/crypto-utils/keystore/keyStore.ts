@@ -398,6 +398,12 @@ export class KeyStore implements IEncryptionProvider {
    * Gets a secret by name. Returns the {@link CryptoUtils.KeyStore.IKeyStoreEntry | discriminated union}
    * — callers must check `entry.type` before accessing `key`/`id` since asymmetric
    * entries carry no raw key material.
+   *
+   * SECURITY: for an escrow-enabled asymmetric-keypair entry the returned object
+   * carries `escrowedPrivateKeyJwk` in cleartext (same custody class as
+   * `publicKeyJwk`, gated by the same unlock) — do not log or serialize a
+   * `getSecret()` result casually.
+   *
    * @param name - Name of the secret
    * @returns Success with secret entry, Failure if not found or locked
    * @public
@@ -1003,25 +1009,25 @@ export class KeyStore implements IEncryptionProvider {
     let escrowedPrivateKeyJwk: JsonWebKey | undefined;
     let keyToStore: CryptoKey = privateKey;
     if (options.escrow === true) {
-      const escrowResult = await this._exportPrivateKeyJwk(privateKey, name);
-      /* c8 ignore next 3 - export('jwk') of a freshly-generated extractable private key does not fail with a healthy provider (analogous to the exportPublicKeyJwk ignore above) */
-      if (escrowResult.isFailure()) {
-        return fail(escrowResult.message);
-      }
-      escrowedPrivateKeyJwk = escrowResult.value;
-
-      if (!liveExtractable) {
-        const reimportResult = await this._importEscrowedPrivateKey(
-          escrowedPrivateKeyJwk,
-          options.algorithm,
-          false
-        );
-        /* c8 ignore next 3 - re-importing a JWK we just exported from a valid key cannot fail; the import-failure path itself is covered via getKeyPair rehydration of a malformed escrow JWK */
-        if (reimportResult.isFailure()) {
-          return fail(`Failed to prepare non-extractable key for '${name}': ${reimportResult.message}`);
+      // Chain the export → (conditional) non-extractable re-import so the
+      // failure dispatch lives in ts-utils rather than in local branch nodes.
+      // When the live copy is extractable the transient key IS the live copy;
+      // otherwise a freshly re-imported non-extractable key is stored instead.
+      const escrowPrepResult = await (
+        await this._exportPrivateKeyJwk(privateKey, name)
+      ).thenOnSuccess(async (jwk): Promise<Result<{ jwk: JsonWebKey; keyToStore: CryptoKey }>> => {
+        if (liveExtractable) {
+          return succeed({ jwk, keyToStore: privateKey });
         }
-        keyToStore = reimportResult.value;
+        return (await this._importEscrowedPrivateKey(jwk, options.algorithm, false))
+          .withErrorFormat((msg) => `Failed to prepare non-extractable key for '${name}': ${msg}`)
+          .onSuccess((reimported) => succeed({ jwk, keyToStore: reimported }));
+      });
+      /* c8 ignore next 3 - escrowPrepResult only fails if exporting or re-importing a freshly-generated valid key fails, which a healthy provider cannot do (same untestable class as the keyPairResult/jwkResult/idResult guards); the import-failure path itself is covered via getKeyPair rehydration of a malformed escrow JWK */
+      if (escrowPrepResult.isFailure()) {
+        return fail(escrowPrepResult.message);
       }
+      ({ jwk: escrowedPrivateKeyJwk, keyToStore } = escrowPrepResult.value);
     }
 
     const idResult = this._generateId();
@@ -1095,18 +1101,11 @@ export class KeyStore implements IEncryptionProvider {
       return fail('No private key storage configured');
     }
 
-    const privateResult = await this._loadOrRehydratePrivateKey(name, entry, options);
-    if (privateResult.isFailure()) {
-      return fail(privateResult.message);
-    }
-
-    const publicResult = await this._cryptoProvider.importPublicKeyJwk(entry.publicKeyJwk, entry.algorithm);
-    /* c8 ignore next 3 - vault JWKs that previously exported cleanly are extremely unlikely to fail re-import */
-    if (publicResult.isFailure()) {
-      return fail(`Failed to re-import public key for '${name}': ${publicResult.message}`);
-    }
-
-    return succeed({ publicKey: publicResult.value, privateKey: privateResult.value });
+    return (await this._loadOrRehydratePrivateKey(name, entry, options)).thenOnSuccess(async (privateKey) =>
+      (await this._cryptoProvider.importPublicKeyJwk(entry.publicKeyJwk, entry.algorithm))
+        .withErrorFormat((msg) => `Failed to re-import public key for '${name}': ${msg}`)
+        .onSuccess((publicKey) => succeed({ publicKey, privateKey }))
+    );
   }
 
   /**
