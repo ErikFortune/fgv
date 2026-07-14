@@ -38,15 +38,27 @@ export { allKeyPairAlgorithms, KeyPairAlgorithm } from '../model';
 
 /**
  * Format version for key store files.
+ *
+ * - `'keystore-v1'`: the original format (no private-key escrow).
+ * - `'keystore-v2'`: adds the optional `escrowedPrivateKeyJwk` field on
+ *   asymmetric-keypair entries. A strict superset of v1 — the field is
+ *   optional, so a v2 reader opens a v1 vault with no special-casing, and a
+ *   v1 vault opened and re-saved is silently upgraded to v2.
  * @public
  */
-export type KeyStoreFormat = 'keystore-v1';
+export type KeyStoreFormat = 'keystore-v1' | 'keystore-v2';
 
 /**
- * Current format version constant.
+ * All recognized key store format versions (readable by the current library).
  * @public
  */
-export const KEYSTORE_FORMAT: KeyStoreFormat = 'keystore-v1';
+export const allKeyStoreFormats: ReadonlyArray<KeyStoreFormat> = ['keystore-v1', 'keystore-v2'];
+
+/**
+ * Current format version constant. New vaults are written as `'keystore-v2'`.
+ * @public
+ */
+export const KEYSTORE_FORMAT: KeyStoreFormat = 'keystore-v2';
 
 /**
  * Default PBKDF2 iterations for key store encryption.
@@ -183,6 +195,22 @@ export interface IKeyStoreAsymmetricEntry {
   readonly publicKeyJwk: JsonWebKey;
 
   /**
+   * Optional escrowed copy of the private key, as a JSON Web Key. Present only
+   * when the entry was created with `addKeyPair(name, { escrow: true })`.
+   *
+   * This is an opt-in cross-device recovery affordance: the private key is
+   * carried inside the vault's AES-GCM ciphertext (same custody class as
+   * `publicKeyJwk`), so a recovered vault plus the master password can
+   * reconstitute the signing/decryption identity on a fresh device via
+   * `getKeyPair(name, { rehydrate: true })`.
+   *
+   * SECURITY: when present, the master password becomes the sole gate
+   * protecting this private key. Use a strong KDF for escrow-bearing stores.
+   * See the {@link CryptoUtils.KeyStore.KeyStore} class docs.
+   */
+  readonly escrowedPrivateKeyJwk?: JsonWebKey;
+
+  /**
    * Optional description for this entry.
    */
   readonly description?: string;
@@ -286,6 +314,13 @@ export interface IKeyStoreAsymmetricEntryJson {
    * The public key as a JSON Web Key.
    */
   readonly publicKeyJwk: JsonWebKey;
+
+  /**
+   * Optional escrowed copy of the private key, as a JSON Web Key. Present only
+   * on `'keystore-v2'` vaults whose entry was created with escrow enabled. A
+   * v1 vault omits the field; a v2 reader treats its absence as "no escrow".
+   */
+  readonly escrowedPrivateKeyJwk?: JsonWebKey;
 
   /**
    * Optional description.
@@ -572,6 +607,49 @@ export interface IAddKeyPairOptions {
    * downgrading.
    */
   readonly extractable?: boolean;
+
+  /**
+   * Opt in to private-key escrow. When `true`, an encrypted copy of the
+   * private key (as a JWK) is carried inside the vault entry
+   * (`escrowedPrivateKeyJwk`), enabling cross-device recovery from the vault
+   * file plus the master password alone via
+   * `getKeyPair(name, { rehydrate: true })`.
+   *
+   * Orthogonal to `extractable`: the escrow copy is always captured (the
+   * transient keypair is generated extractable so it can be exported to JWK),
+   * while the LIVE stored key's extractability still follows the normal rule
+   * (`extractable` override, else the backend default). So escrow does not
+   * change how extractable the day-to-day key is — only whether a recovery
+   * copy is retained in the vault.
+   *
+   * @defaultValue false — no escrow copy is written (today's behavior).
+   *
+   * SECURITY: escrow makes the master password the sole gate protecting a
+   * private key that would otherwise be unrecoverable from the vault. Use a
+   * strong KDF (Argon2id-derived or high-iteration PBKDF2) for escrow-bearing
+   * stores. See the {@link CryptoUtils.KeyStore.KeyStore} class docs.
+   */
+  readonly escrow?: boolean;
+}
+
+/**
+ * Options for retrieving an asymmetric keypair via {@link CryptoUtils.KeyStore.KeyStore.getKeyPair}.
+ * @public
+ */
+export interface IGetKeyPairOptions {
+  /**
+   * Opt in to escrow rehydration. When `true` AND no private-key blob exists
+   * under the entry's storage `id` AND the entry carries an
+   * `escrowedPrivateKeyJwk`, the escrowed JWK is imported (non-extractable
+   * where the backend supports it) and stored under the entry's `id` before
+   * being returned — filling a gap on a fresh device from the recovered vault.
+   *
+   * Fill-a-gap only: an existing storage blob is never overwritten. When a
+   * blob is present it is loaded as usual and the escrow copy is ignored.
+   *
+   * @defaultValue false — today's behavior: load from storage or fail.
+   */
+  readonly rehydrate?: boolean;
 }
 
 /**
@@ -634,5 +712,5 @@ export function isKeyStoreFile(json: unknown): boolean {
     return false;
   }
   const obj = json as Record<string, unknown>;
-  return obj.format === KEYSTORE_FORMAT;
+  return typeof obj.format === 'string' && (allKeyStoreFormats as ReadonlyArray<string>).includes(obj.format);
 }

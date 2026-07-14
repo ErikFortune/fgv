@@ -48,6 +48,18 @@ B+1 preserves them via **topological-sort rendering**: extract each slot value's
 
 **Reference**: `.ai/tasks/completed/2026-06/prompt-assist-horizontal-composition/` (design.md §"Phase B+1", + the §"phase-1 must not preclude" guards); 2026-06 horizontal-composition design discussion.
 
+## Horizontal composition — rewrite / model-synthesis merge strategy + sub-slot provenance
+
+`HorizontalComposer`'s `LogicalSlotStrategy` today is the two-value mechanical set (`'concatenate' | 'overwrite'`), with `constraint`-directive contributions always concatenated-first-and-never-dropped underneath whatever strategy the non-constraints apply. A third class of merge was requested: a **rewrite / model-synthesis** strategy — instead of joining or picking, an out-of-band synthesizer (typically an LLM) *rewrites* the several contributions for a logical slot into one coherent passage. The composer would carry the strategy as a **seam** (the synthesizer is consumer-injected — the library must not take an ai-assist dependency), invoke it over the ordered, directive-filtered contribution list, and record the result.
+
+This pulls in the **sub-slot provenance** half of the ask: today `IComposedPrompt.provenanceTrace` maps each logical slot to an ordered `ISlotProvenanceEntry[]` (which contributor, which strategy, was-it-a-constraint) — provenance at **whole-contribution** granularity. A synthesis merge destroys the 1:1 contribution→span correspondence (the output is a rewrite, not a concatenation), so honest provenance for it needs **sub-slot** attribution — spans/segments of the synthesized text traced back to contributing sources, or an explicit "synthesized, sources: […]" marker when span-level attribution isn't recoverable. The additive-vs-breaking line: adding a `'synthesize'` strategy value + an injected synthesizer seam is additive; enriching `ISlotProvenanceEntry` to carry sub-slot spans should stay additive (new optional fields), but the trace-consumer contract wants design care so a future span model doesn't force a break.
+
+**Why deferred**: the requesting consumer authors only `concatenate`/`overwrite` slots today — no synthesis merge in use, and the constraint-first-never-dropped safety semantics already cover the load-bearing case (a synthesizer must still be handed the constraints as non-negotiable, which is its own design question). Trigger-gated on the consumer actually wiring a synthesizer.
+
+**Dependencies**: the trigger is the **first logical slot the consumer wants synthesized** rather than concatenated/overwritten (they'll flag it). Design must settle: the injected-synthesizer seam shape (sync vs async `Result`-returning; how constraints are presented as non-negotiable), and the sub-slot provenance model (span-level vs marker-level). Size M–L (its own stream); composes with — but is independent of — the B+1 topo-sort entry above.
+
+**Reference**: `.ai/tasks/completed/2026-06/prompt-assist-horizontal-composition/` (design.md — the `LogicalSlotStrategy` set + `provenanceTrace` / `ISlotProvenanceEntry` shape are the extension points); 2026-06 horizontal-composition design discussion; consumer orchestrator's forwarded deferred-asks batch (2026-07).
+
 ## Generic editor UX for `@fgv/ts-prompt-assist`
 
 The `ts-prompt-assist` library is shape-agnostic about the consumer's domain (open `surface`, `slot.kind`, `slot.source`; consumer-supplied scope hierarchy encoded into opaque `ScopeKey` strings). Editor UX for authoring prompt descriptors and scope-level binding records is **complex** — qualifier-conditioned candidate editing, slot-binding override visualization, resource-binding navigation, the `IPromptResolveTrace` "where did this value come from" view, validation against registered Converters / serializers / output validators.
@@ -201,6 +213,20 @@ Erik's framing (2026-06-05): "consider using ts-res instead of hardcoding custom
 
 **Reference:** PR #460 review thread on `promptObservationStore.ts:195`; the `_resolveCandidates` path in `promptLibrary.ts` is the reference for what a ts-res-equivalent resolver needs to do.
 
+### Composer-emitted composed-observation record (nesting contributor records)
+
+Observation fan-out today fires only at `PromptLibrary`'s three public boundaries (`resolve` / `resolveJsonOutput` / `resolveFreeTextOutput`). `HorizontalComposer.compose()` — which takes several already-resolved contributor prompts and merges them into one `IComposedPrompt` — emits **no** observation. So an audit trail sees the N individual contributor `resolve` records but nothing tying them to the composed output, and no record of the merge itself (per-logical-slot strategy, provenance ordering, safeguard findings from `applySafeguards` over the merged slot map).
+
+The ask: have the composer emit a **composed-observation record that nests the contributor records**, the direct horizontal analogue of how a nested resource-binding resolve rolls up under `trace.resourceBindingResolutions[].innerTrace` on the vertical path. The record carries the merge outcome (merged slots, `provenanceTrace`, `safeguardFindings`) with each contributor's own observation nested inside.
+
+**Design point (load-bearing, discovered when scoping):** observation `seq` is minted from a **per-`PromptLibrary`-instance counter**, and that same counter is what the store's cursor (`lastSeq`) pages against. `HorizontalComposer` is a **separate class** that does not hold the library's counter. A composer-emitted record must therefore **share the library's seq source** (inject the library's seq minter / observation-dispatch seam into the composer, rather than giving the composer its own counter) — otherwise composer `seq`s collide with library `seq`s and corrupt cursor paging. This is the central wrinkle any implementation must resolve first; it's why the entry is build-ready but not build-started.
+
+**Why deferred**: explicitly marked non-blocking by the requesting consumer. The contributor-side records already land (each contributor `resolve()` fans out normally); only the *composed* roll-up is missing, and no consumer audit flow depends on it yet. Additive when built — new observation `phase` (e.g. `'compose'`) + the shared-seq seam; no change to existing record shapes.
+
+**Dependencies**: consumer surfaces an audit/debug flow that needs the composed→contributor linkage (e.g. "where did this composed system prompt's tone slot come from, across all contributors"). Size S–M once the seq-coordination seam is designed. Composes with the observability substrate already shipped (`IPromptObserver`, `PromptObservationStore`, the `linkedResolveSeq` cross-link convention — a composed record would cross-link its contributors the same way output records cross-link their resolve record).
+
+**Reference**: `.ai/tasks/completed/2026-06/ts-prompt-assist-observability/` (the `_observe` fan-out + per-instance seq counter) and `.ai/tasks/completed/2026-06/prompt-assist-horizontal-composition/` (the `compose()` path + `IComposedPrompt` shape); `resourceBindingResolutions[].innerTrace` in `promptLibrary.ts` is the vertical-path nesting precedent to mirror; consumer orchestrator's forwarded deferred-asks batch (2026-07).
+
 ---
 
 ## Browser-bundle canary for tree-shaking / node-barrel correctness
@@ -303,6 +329,77 @@ prioritized; the fleshed design lets it start cold.
 (design-space note + §9 refinement + §10 unified-substrate / L3 contract) and
 `design.md` (moderate-detail platform design). Floated package name
 `@fgv/ts-agent-memory`.
+
+## `@fgv/ts-agent-memory` — deferred consumer asks (2026-07 batch)
+
+The first consumer forwarded a batch of six retrieval/tool-surface asks against the
+v1 substrate. **Four firm asks were built** (result projection + detail tier;
+`IMemoryQuery.offset` pagination; kind-set query axis; and the orderable numeric
+`rank` axis — commissioned as its own stream). The items below are the ones held
+back from that batch — one conditional ask captured build-ready, and two the
+consumer explicitly **recorded rather than requested** so the shape is visible if it
+ever becomes a real ask.
+
+### Input-side `resolveHandle` (inverse of `handleFor`) — conditional, build-ready
+
+`createMemoryTools`' `handleFor` hook maps a record → an agent-visible mnemonic on
+the **output** side (`tools/memoryTools.ts`). There is no symmetric **input**-side
+resolver, so an agent that received a mnemonic handle cannot feed it back as a
+`memory_context` seed (`contextSchema.from` is a raw `MemoryId`). The ask: an
+optional `ICreateMemoryToolsParams.resolveHandle?: (handle: string) => Result<{ kind: Kind; entityId: EntityId }>`
+that `buildContextTool` (and optionally `memory_read`/`memory_delete`) consult when
+`from` is a handle; absent → today's raw-id / `(kind, entityId)` behavior. Returns
+`Result` so a bad handle fails loudly (consistent with the substrate's
+loud-degradation contract), and a `from` that fails `resolveHandle` surfaces the
+failure rather than falling through to a raw-id parse.
+
+**Why deferred, not built:** the consumer explicitly filed this **conditional, not
+firm** — it matters only if they adopt the substrate's `memory_context` / `memory_read`
+tool bodies directly. Under their current plan they keep their own tool surface and
+their wrapper owns the mnemonic↔address map, so it is not on their critical path.
+Building it now is additive but would ship input-side handle resolution that no real
+consumer exercises. It is trivially addable (one optional guarded callback + threading
+in `buildContextTool`) the moment they adopt the tool bodies — captured build-ready so
+that round-trip is a same-day change. Completes the `handleFor` symmetry.
+
+**Dependencies / trigger:** the consumer (or any consumer) adopts the substrate's
+built-in `memory_context` / `memory_read` tool bodies instead of a host-owned wrapper.
+Size S.
+
+### Chunk / fragment-granular retrieval + in-result locator — recorded, not requested
+
+The v1 semantic recall is **record-granular** (`embeddingRef` per envelope;
+`SemanticRetriever` ranks whole records). A consumer whose knowledge documents need
+**sub-document fragment** search with a `[start, end)` locator keeps that on their own
+side (behind a host `IKnowledgeSearchProvider` doing keyword fragment search), so it is
+non-blocking and **not an ask today**. It would become a real fgv design change —
+chunk-granular vector entries + in-result offsets — only if we ever want one shared
+semantic retriever to serve **both** record-level memory and sub-document knowledge at
+fragment granularity. Recorded so the shape is visible; no action requested.
+
+### Scope-qualified edge targets — SHIPPED (2026-07-13)
+
+> **SHIPPED** — `IEdge.target: MemoryId → IEdgeTarget` (`{ scope, id }`), via the
+> `agent-memory-scoped-edges` stream (PR #542) plus the `agent-memory-scoped-vectors`
+> follow-on (PR #543). The original "dormant, recorded" framing rested on a premise that
+> turned out to be **wrong**: it assumed no two records share an id stem across a scope
+> boundary. In fact the bundled `MtmIdentityCodec` mints per-scope stems (`turn-<n>`), so
+> two conversations' `turn-3` records collide on a bare `MemoryId` — an edge, backlink,
+> traversal seed, cycle-guard node, ingest-validation target, or vector-index key of
+> `turn-3` was ambiguous across conversations. The consumer surfaced this as a live footgun
+> in the *default* codec; the maintainer adjudicated the deep fix (scope-qualified targets,
+> making per-scope stems legal by construction) over the two lighter options (globally-unique
+> bundled stems; a registration guard). #542 scope-qualified the link graph (edges, backlinks,
+> traversal, cycle guard, ingest edge-validation, edge serialization, the `memory_write` /
+> `memory_context` tool schemas) behind a single collision-proof `edgeTargetKey` helper; #543
+> completed the migration across the vector/similarity + entity-resolution path (breaking the
+> pre-1.0 `IEntityResolver` host contract, no shim). Residual latent item: `IProvenance.derivedFrom`
+> stays a bare `MemoryId` (never dereferenced today) — tracked in `TECH_DEBT.md`.
+
+**Reference:** consumer orchestrator's forwarded 2026-07 agent-memory batch (the id-stem
+uniqueness vs. bare-MemoryId-links friction report); PRs #542, #543; the four firm asks from
+the same batch shipped via the `agent-memory-query-tool-batch` and `agent-memory-rank-axis`
+streams.
 
 ## RFC 9421 HTTP-message-signature packlet (prospective `@fgv/ts-extras`)
 

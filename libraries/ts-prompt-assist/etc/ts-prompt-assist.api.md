@@ -220,6 +220,7 @@ export interface IHorizontalComposeParams {
     readonly composedDescriptor: IPromptDescriptor;
     readonly contributors: ReadonlyArray<IContributorSpec>;
     readonly logicalSlots: ReadonlyArray<ILogicalSlotConfig>;
+    readonly observation?: IPromptObservationSeam;
     readonly safetyPolicy?: IPromptSafetyPolicy;
 }
 
@@ -288,6 +289,23 @@ export interface IPromptCandidateRecord<TQualifierNames extends string = string>
     readonly body: string;
     readonly conditions: ResourceJson.Json.ConditionSetDecl<TQualifierNames>;
     readonly isPartial?: boolean;
+}
+
+// @public
+export interface IPromptComposeContributorObservation {
+    readonly promptId: PromptId;
+    readonly provenance: number;
+    readonly trace: IPromptResolveTrace;
+}
+
+// @public
+export interface IPromptComposeObservation extends IPromptObservationCommon {
+    readonly contributors: ReadonlyArray<IPromptComposeContributorObservation>;
+    readonly error?: string;
+    readonly outcome: 'success' | 'failure';
+    readonly phase: 'compose';
+    readonly provenanceTrace?: ReadonlyMap<SlotName, ReadonlyArray<ISlotProvenanceEntry>>;
+    readonly safeguardFindings?: ReadonlyArray<ISafeguardFinding>;
 }
 
 // @public
@@ -369,14 +387,18 @@ export type IPromptLibraryQualifiersInput<TQualifierNames extends string = strin
 })>;
 
 // @public
-export interface IPromptObservationBase {
+export interface IPromptObservationBase extends IPromptObservationCommon {
+    readonly qualifierContext: IQualifierContext;
+    readonly substitutions?: PromptSubstitutions;
+}
+
+// @public
+export interface IPromptObservationCommon {
     readonly chain: ReadonlyArray<ScopeKey>;
     readonly contentHash: string;
     readonly durationMs: number;
     readonly promptId: PromptId;
-    readonly qualifierContext: IQualifierContext;
     readonly seq: number;
-    readonly substitutions?: PromptSubstitutions;
     readonly timestamp: number;
 }
 
@@ -398,7 +420,14 @@ export interface IPromptObservationQuery {
 }
 
 // @public
-export type IPromptObservationRecord = IPromptResolveObservation | IPromptOutputObservation;
+export type IPromptObservationRecord = IPromptResolveObservation | IPromptOutputObservation | IPromptComposeObservation;
+
+// @public
+export interface IPromptObservationSeam {
+    nextSeq(): number;
+    now(): number;
+    observe(record: IPromptObservationRecord): Promise<void>;
+}
 
 // @public
 export interface IPromptObservationStoreCreateParams {
@@ -757,6 +786,7 @@ export class PromptLibrary<TResponse extends IPromptResponseBase = IPromptRespon
     invalidateDescriptor(id: PromptId): void;
     readonly logger: Logging.ILogger;
     get materializedCount(): number;
+    get observationSeam(): IPromptObservationSeam;
     resolve(req: IPromptResolveRequest<TQualifierNames>): Promise<Result<IResolvedPrompt>>;
     resolveFreeTextOutput(req: IPromptResolveRequest<TQualifierNames>, rawOutput: string): Promise<Result<string>>;
     resolveJsonOutput<K extends TResponse['kind']>(req: IPromptResolveRequest<TQualifierNames>, rawOutput: string, expectedKind: K): Promise<Result<Extract<TResponse, {
@@ -769,7 +799,7 @@ export class PromptLibrary<TResponse extends IPromptResponseBase = IPromptRespon
 export type PromptObservationOutputKind = 'free-text' | 'json';
 
 // @public
-export type PromptObservationPhase = 'resolve' | 'json-output' | 'free-text-output';
+export type PromptObservationPhase = 'resolve' | 'json-output' | 'free-text-output' | 'compose';
 
 // @public
 export class PromptObservationStore implements IPromptObserver {

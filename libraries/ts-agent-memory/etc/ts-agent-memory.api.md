@@ -97,6 +97,12 @@ export function defaultMemoryScopeEncoding(scope: MemoryScopeKey): Result<string
 export const edgeConverter: Converter<IEdge>;
 
 // @public
+export const edgeTargetConverter: Converter<IEdgeTarget>;
+
+// @public
+export function edgeTargetKey(target: IEdgeTarget): string;
+
+// @public
 export type EntityId = Brand<string, 'EntityId'>;
 
 // @public
@@ -107,11 +113,13 @@ export const envelopeYamlConverter: Converter<IMemoryEnvelope>;
 
 // @public
 export class FileTreeMemoryStore implements IMemoryStore {
+    asRecordSource(): IMemoryRecordSource;
     static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore>;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+    listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
     put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
 }
 
@@ -147,7 +155,7 @@ export interface IBodyConverterRegistry {
 // @public
 export interface ICandidateEdge {
     readonly edge: IEdge;
-    readonly source: MemoryId;
+    readonly source: IEdgeTarget;
 }
 
 // @public
@@ -162,6 +170,7 @@ export interface ICreateMemoryToolsParams {
     readonly defaultCodec?: IIdentityCodec;
     readonly handleFor?: (record: IMemoryRecord<unknown>) => string;
     readonly kinds?: ReadonlyArray<Kind>;
+    readonly projectItem?: (record: IMemoryRecord<unknown>, detail: MemoryDetailTier) => IMemoryToolResultItem;
     readonly registry: IBodyConverterRegistry;
     readonly retriever: IMemoryRetriever;
     readonly store: IMemoryStore;
@@ -171,9 +180,9 @@ export interface ICreateMemoryToolsParams {
 // @public
 export interface ICycleGuardEdge {
     // (undocumented)
-    readonly source: MemoryId;
+    readonly source: IEdgeTarget;
     // (undocumented)
-    readonly target: MemoryId;
+    readonly target: IEdgeTarget;
     // (undocumented)
     readonly type: LinkType;
 }
@@ -183,16 +192,22 @@ export interface IEdge {
     readonly confidence?: number;
     readonly invalid_at?: number | null;
     readonly provenance?: IProvenance;
-    readonly target: MemoryId;
+    readonly target: IEdgeTarget;
     readonly type: LinkType;
     readonly valid_at?: number;
 }
 
 // @public
-export interface IEntityResolutionCandidate {
+export interface IEdgeTarget {
     readonly id: MemoryId;
+    readonly scope: MemoryScopeKey;
+}
+
+// @public
+export interface IEntityResolutionCandidate {
     readonly record: IMemoryRecord<unknown>;
     readonly score: number;
+    readonly target: IEdgeTarget;
 }
 
 // @public
@@ -213,6 +228,7 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly embed?: MemoryEmbedder;
     readonly logger?: Logging.ILogger;
     readonly observers?: ReadonlyArray<IMemoryObserver>;
+    readonly rankProjectors?: ReadonlyMap<Kind, RankProjector>;
     readonly registry: IBodyConverterRegistry;
     readonly root: FileTree.IMutableFileTreeDirectoryItem;
     readonly scopeEncoding?: (scope: MemoryScopeKey) => Result<string>;
@@ -256,7 +272,7 @@ export interface IIngestItem {
     readonly content: unknown;
     readonly id: string;
     readonly metadata?: Record<string, unknown>;
-    readonly sourceId?: MemoryId;
+    readonly sourceId?: IEdgeTarget;
 }
 
 // @public
@@ -294,6 +310,7 @@ export interface IMemoryEnvelope {
     readonly kind: Kind;
     readonly links: ReadonlyArray<IEdge>;
     readonly provenance: IProvenance;
+    readonly rank?: number;
     readonly seq: number;
     readonly tags: ReadonlyArray<Tag>;
     readonly temporal?: ITemporalBlock;
@@ -308,8 +325,9 @@ export interface IMemoryFileParts {
 
 // @public
 export interface IMemoryIndex {
-    backlinks(target: MemoryId): ReadonlyArray<MemoryId>;
+    backlinks(target: IEdgeTarget): ReadonlyArray<IEdgeTarget>;
     byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>>;
+    byRank(): ReadonlyArray<IMemoryRecord<unknown>>;
     byRecency(): ReadonlyArray<IMemoryRecord<unknown>>;
     byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>>;
     entries(): ReadonlyArray<IIndexedMemoryRecord>;
@@ -384,9 +402,12 @@ export interface IMemoryQuery {
     readonly filter?: (record: IMemoryRecord<unknown>) => boolean;
     readonly hops?: number;
     readonly kind?: Kind;
+    readonly kinds?: ReadonlyArray<Kind>;
     readonly limit?: number;
-    readonly linkedFrom?: MemoryId;
-    readonly linkedTo?: MemoryId;
+    readonly linkedFrom?: IEdgeTarget;
+    readonly linkedTo?: IEdgeTarget;
+    readonly offset?: number;
+    readonly orderBy?: 'recency' | 'rank';
     readonly scope?: MemoryScopeKey;
     readonly semantic?: string;
     readonly tag?: Tag;
@@ -401,7 +422,7 @@ export interface IMemoryRecord<TBody = unknown> {
 
 // @public
 export interface IMemoryRecordSource {
-    list(): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+    list(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
 }
 
 // @public
@@ -419,10 +440,12 @@ export interface IMemoryRetrieverCapabilities {
 
 // @public
 export interface IMemoryStore {
+    asRecordSource(): IMemoryRecordSource;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+    listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
     put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
 }
 
@@ -464,11 +487,11 @@ export type IngestDisposition = 'written' | 'deduped' | 'merged';
 
 // @public
 export class InMemoryCosineIndex implements IVectorIndex {
-    add(id: MemoryId, vector: Float32Array): Promise<Result<string>>;
+    add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
     static create(): Result<InMemoryCosineIndex>;
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
     rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder): Promise<Result<number>>;
-    remove(id: MemoryId): Promise<Result<MemoryId>>;
+    remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
     get size(): number;
 }
 
@@ -477,7 +500,7 @@ export interface IProvenance {
     readonly [key: string]: unknown;
     readonly by?: string;
     readonly confidence?: number;
-    readonly derivedFrom?: MemoryId;
+    readonly derivedFrom?: IEdgeTarget;
     readonly model?: string;
     readonly source: ProvenanceSource;
 }
@@ -485,7 +508,7 @@ export interface IProvenance {
 // @public
 export interface IRelationCandidate {
     readonly candidate: ICandidateRecord;
-    readonly id: MemoryId;
+    readonly id: IEdgeTarget;
 }
 
 // @public
@@ -497,6 +520,12 @@ export interface IRelationContext {
 // @public
 export interface IRelationExtractor {
     relate(context: IRelationContext): Promise<Result<ReadonlyArray<ICandidateEdge>>>;
+}
+
+// @public
+export interface IScopedMemoryRecord {
+    readonly record: IMemoryRecord<unknown>;
+    readonly target: IEdgeTarget;
 }
 
 // @public
@@ -543,15 +572,15 @@ export interface ITemporalVersionAddress {
 
 // @public
 export interface IVectorIndex {
-    add(id: MemoryId, vector: Float32Array): Promise<Result<string>>;
+    add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
-    remove(id: MemoryId): Promise<Result<MemoryId>>;
+    remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
 }
 
 // @public
 export interface IVectorQueryHit {
-    readonly id: MemoryId;
     readonly score: number;
+    readonly target: IEdgeTarget;
 }
 
 // @public
@@ -586,7 +615,7 @@ export class KnowledgeLwwPolicy implements IWritePolicy {
 }
 
 // @public
-export function limitRecords(records: ReadonlyArray<IMemoryRecord<unknown>>, limit?: number): ReadonlyArray<IMemoryRecord<unknown>>;
+export function limitRecords(records: ReadonlyArray<IMemoryRecord<unknown>>, limit?: number, offset?: number): ReadonlyArray<IMemoryRecord<unknown>>;
 
 // @public
 export const LINK_TRAVERSAL_NO_SEED_MESSAGE: string;
@@ -622,6 +651,9 @@ export class MemoryCapCullPolicy implements IWritePolicy {
 }
 
 // @public
+export type MemoryDetailTier = 'gist' | 'full';
+
+// @public
 export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array>>;
 
 // @public
@@ -629,8 +661,9 @@ export type MemoryId = Brand<string, 'MemoryId'>;
 
 // @public
 export class MemoryIndex implements IMemoryIndex {
-    backlinks(target: MemoryId): ReadonlyArray<MemoryId>;
+    backlinks(target: IEdgeTarget): ReadonlyArray<IEdgeTarget>;
     byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>>;
+    byRank(): ReadonlyArray<IMemoryRecord<unknown>>;
     byRecency(): ReadonlyArray<IMemoryRecord<unknown>>;
     byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>>;
     static create(): Result<MemoryIndex>;
@@ -687,6 +720,9 @@ export class MtmIdentityCodec implements IIdentityCodec {
 export const NON_SEMANTIC_CAPABILITIES: IMemoryRetrieverCapabilities;
 
 // @public
+export function orderingCompare(orderBy?: IMemoryQuery['orderBy']): (a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>) => number;
+
+// @public
 export function parseMemoryFile(raw: string, registry: IBodyConverterRegistry): Result<IMemoryRecord<unknown>>;
 
 // @public
@@ -697,6 +733,12 @@ export type ProvenanceSource = 'agent' | 'host-ingest' | 'human' | (string & {})
 
 // @public
 export type QueryEmbedder = (text: string) => Promise<Result<Float32Array>>;
+
+// @public
+export function rankCompare(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number;
+
+// @public
+export type RankProjector = (record: IMemoryRecord<unknown>) => number;
 
 // @public
 export function recencyCompare(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number;
@@ -713,13 +755,13 @@ export type ResolutionVerdict = {
     readonly verdict: 'new';
 } | {
     readonly verdict: 'duplicate-of';
-    readonly target: MemoryId;
+    readonly target: IEdgeTarget;
 } | {
     readonly verdict: 'supersede';
-    readonly target: MemoryId;
+    readonly target: IEdgeTarget;
 } | {
     readonly verdict: 'merge-into';
-    readonly target: MemoryId;
+    readonly target: IEdgeTarget;
 };
 
 // @public

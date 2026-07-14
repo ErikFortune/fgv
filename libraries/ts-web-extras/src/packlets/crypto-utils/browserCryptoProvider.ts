@@ -562,6 +562,126 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
   }
 
   /**
+   * Encrypts raw bytes using AES-256-GCM with a caller-supplied nonce and
+   * optional AAD. See {@link CryptoUtils.ICryptoProvider.encryptBytes | ICryptoProvider.encryptBytes}
+   * — in particular the caller's responsibility to use a unique `nonce` per
+   * message under a given `key`.
+   *
+   * Byte-identical to {@link CryptoUtils.NodeCryptoProvider.encryptBytes} for
+   * identical `(key, nonce, plaintext, aad)`: Web Crypto appends the 16-byte tag
+   * to the ciphertext, and this method splits it off so the returned
+   * `ciphertext`/`authTag` match Node's separated-tag layout exactly.
+   * @param key - 32-byte AES-256 key.
+   * @param nonce - 12-byte GCM nonce (must be unique per message under `key`).
+   * @param plaintext - The bytes to encrypt (empty permitted).
+   * @param aad - Optional additional authenticated data bound into the tag.
+   * @returns `Success` with the ciphertext and 16-byte auth tag, or `Failure` with an error.
+   */
+  public async encryptBytes(
+    key: Uint8Array,
+    nonce: Uint8Array,
+    plaintext: Uint8Array,
+    aad?: Uint8Array
+  ): Promise<Result<CryptoUtils.IEncryptBytesResult>> {
+    if (key.length !== CryptoUtils.Constants.AES_256_KEY_SIZE) {
+      return Failure.with(
+        `encryptBytes: key must be ${CryptoUtils.Constants.AES_256_KEY_SIZE} bytes, got ${key.length}`
+      );
+    }
+    if (nonce.length !== CryptoUtils.Constants.GCM_IV_SIZE) {
+      return Failure.with(
+        `encryptBytes: nonce must be ${CryptoUtils.Constants.GCM_IV_SIZE} bytes, got ${nonce.length}`
+      );
+    }
+    const result = await captureAsyncResult(async () => {
+      const cryptoKey = await this._crypto.subtle.importKey(
+        'raw',
+        toBufferView(key),
+        { name: 'AES-GCM' },
+        false,
+        ['encrypt']
+      );
+      const algorithm: AesGcmParams = {
+        name: 'AES-GCM',
+        iv: toBufferView(nonce),
+        tagLength: CryptoUtils.Constants.GCM_AUTH_TAG_SIZE * 8 // bits
+      };
+      if (aad !== undefined) {
+        algorithm.additionalData = toBufferView(aad);
+      }
+      const encryptedWithTag = new Uint8Array(
+        await this._crypto.subtle.encrypt(algorithm, cryptoKey, toBufferView(plaintext))
+      );
+      const tagStart = encryptedWithTag.length - CryptoUtils.Constants.GCM_AUTH_TAG_SIZE;
+      return {
+        ciphertext: encryptedWithTag.slice(0, tagStart),
+        authTag: encryptedWithTag.slice(tagStart)
+      };
+    });
+    return result.withErrorFormat((e) => `encryptBytes failed: ${e}`);
+  }
+
+  /**
+   * Decrypts raw bytes produced by {@link BrowserCryptoProvider.encryptBytes}
+   * using AES-256-GCM. See
+   * {@link CryptoUtils.ICryptoProvider.decryptBytes | ICryptoProvider.decryptBytes}.
+   * Fails (never throws) on any authentication failure, including a mismatched `aad`.
+   * @param key - 32-byte AES-256 key.
+   * @param nonce - 12-byte GCM nonce (the same one used to encrypt).
+   * @param ciphertext - The ciphertext from the `encryptBytes` result.
+   * @param authTag - The 16-byte GCM auth tag from the `encryptBytes` result.
+   * @param aad - The identical AAD supplied at encrypt time (or absent).
+   * @returns `Success` with the decrypted plaintext bytes, or `Failure` with an error.
+   */
+  public async decryptBytes(
+    key: Uint8Array,
+    nonce: Uint8Array,
+    ciphertext: Uint8Array,
+    authTag: Uint8Array,
+    aad?: Uint8Array
+  ): Promise<Result<Uint8Array>> {
+    if (key.length !== CryptoUtils.Constants.AES_256_KEY_SIZE) {
+      return Failure.with(
+        `decryptBytes: key must be ${CryptoUtils.Constants.AES_256_KEY_SIZE} bytes, got ${key.length}`
+      );
+    }
+    if (nonce.length !== CryptoUtils.Constants.GCM_IV_SIZE) {
+      return Failure.with(
+        `decryptBytes: nonce must be ${CryptoUtils.Constants.GCM_IV_SIZE} bytes, got ${nonce.length}`
+      );
+    }
+    if (authTag.length !== CryptoUtils.Constants.GCM_AUTH_TAG_SIZE) {
+      return Failure.with(
+        `decryptBytes: auth tag must be ${CryptoUtils.Constants.GCM_AUTH_TAG_SIZE} bytes, got ${authTag.length}`
+      );
+    }
+    const result = await captureAsyncResult(async () => {
+      const cryptoKey = await this._crypto.subtle.importKey(
+        'raw',
+        toBufferView(key),
+        { name: 'AES-GCM' },
+        false,
+        ['decrypt']
+      );
+      // Web Crypto expects ciphertext + auth tag concatenated.
+      const encryptedWithTag = new Uint8Array(ciphertext.length + authTag.length);
+      encryptedWithTag.set(ciphertext);
+      encryptedWithTag.set(authTag, ciphertext.length);
+      const algorithm: AesGcmParams = {
+        name: 'AES-GCM',
+        iv: toBufferView(nonce),
+        tagLength: CryptoUtils.Constants.GCM_AUTH_TAG_SIZE * 8 // bits
+      };
+      if (aad !== undefined) {
+        algorithm.additionalData = toBufferView(aad);
+      }
+      const decrypted = await this._crypto.subtle.decrypt(algorithm, cryptoKey, encryptedWithTag);
+      return new Uint8Array(decrypted);
+    });
+    return result.withErrorFormat((e) => `decryptBytes failed: ${e}`);
+  }
+
+  /**
    * Wraps `plaintext` for the holder of `recipientPublicKey` using
    * ECIES (ECDH P-256 + HKDF-SHA256 + AES-GCM-256). See
    * {@link CryptoUtils.ICryptoProvider.wrapBytes | ICryptoProvider.wrapBytes}.

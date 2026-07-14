@@ -6,7 +6,6 @@
 import { SlotName } from './ids';
 import { SlotDirective } from './enums';
 import { IPromptDescriptor } from './descriptor';
-import { IPromptSafetyPolicy } from './safety';
 import { IResolvedPrompt, IResolvedPromptSlot, ISafeguardFinding } from './trace';
 
 /**
@@ -83,44 +82,6 @@ export interface ILogicalSlotConfig {
   readonly strategy: LogicalSlotStrategy;
   /** Separator for the `'concatenate'` strategy (and the constraint block). Default `'\n\n'`. */
   readonly separator?: string;
-}
-
-/**
- * Parameters for {@link HorizontalComposer.create}.
- *
- * @public
- */
-export interface IHorizontalComposeParams {
-  /** Independently-resolved contributors, each tagged with a composer-layer provenance. */
-  readonly contributors: ReadonlyArray<IContributorSpec>;
-  /**
-   * The logical-slot declarations. Declared order is a tiebreaker for
-   * topo-equal slots, **not** the semantic processing order — independent
-   * logical slots may be processed in any order. (Phase B+1 replaces the
-   * declared-order walk with a dependency topo-sort; treating declared order
-   * as the binding processing order would make that a breaking change.)
-   */
-  readonly logicalSlots: ReadonlyArray<ILogicalSlotConfig>;
-  /**
-   * Descriptor for the composed prompt. Mandatory so {@link HorizontalComposer}
-   * can run `applySafeguards` against a first-class composed descriptor (the
-   * composed slots' `maxLength` / `allowedDirectives` / safeguard overrides)
-   * before returning a body — this is the safety closure the consumer-side
-   * external-composer path cannot achieve. Its `slots` are the logical-slot
-   * declarations (keyed by `logicalSlotName`).
-   */
-  readonly composedDescriptor: IPromptDescriptor;
-  /**
-   * Mustache body template for the composed prompt, referencing logical slots
-   * by name (`{{logicalSlotName}}`). {@link IPromptDescriptor} carries slot
-   * declarations but not a body (a body lives on candidate records, not the
-   * descriptor), so the composed body template is supplied here. Rendered with
-   * the merged slot map via the same `MustacheTemplateCache` (`escape: 'none'`)
-   * the resolver uses.
-   */
-  readonly composedBody: string;
-  /** Optional safety policy applied (with the composed descriptor) to the merged slot values. */
-  readonly safetyPolicy?: IPromptSafetyPolicy;
 }
 
 /**

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { IEdge, IMemoryEnvelope, IMemoryRecord, Kind, MemoryId, Tag } from '../types';
+import { IEdge, IEdgeTarget, IMemoryEnvelope, IMemoryRecord, Kind, MemoryId, Tag } from '../types';
 
 /**
  * A single unit of raw source material handed to the ingest pipeline. The host
@@ -28,12 +28,15 @@ export interface IIngestItem {
    */
   readonly content: unknown;
   /**
-   * Optional back-link to the memory record this item was derived from (e.g. the
-   * MTM turn an extracted fact came from). When present, fgv stamps it as
-   * {@link IProvenance.derivedFrom | provenance.derivedFrom} on every record
-   * ingested from this item (stage 6) — the cross-kind provenance spine.
+   * Optional scope-qualified back-link to the memory record this item was derived
+   * from (e.g. the MTM turn an extracted fact came from). When present, fgv stamps
+   * it as {@link IProvenance.derivedFrom | provenance.derivedFrom} on every record
+   * ingested from this item (stage 6) — the cross-kind provenance spine. A
+   * scope-qualified {@link IEdgeTarget} (not a bare {@link MemoryId}) because
+   * per-scope codecs legally reuse a stem across scopes, so a bare id would be
+   * ambiguous.
    */
-  readonly sourceId?: MemoryId;
+  readonly sourceId?: IEdgeTarget;
   /** Optional opaque metadata carried alongside the item; never interpreted by fgv. */
   readonly metadata?: Record<string, unknown>;
 }
@@ -88,8 +91,14 @@ export interface ICandidateRecord {
  * @public
  */
 export interface IEntityResolutionCandidate {
-  /** The existing record's id. */
-  readonly id: MemoryId;
+  /**
+   * The existing record's scope-qualified `(scope, id)` address. Scope-qualified
+   * (not a bare {@link MemoryId}) because per-scope codecs legally mint the same
+   * stem under different scopes — the {@link ResolutionVerdict} target the resolver
+   * returns must round-trip this exact address so the write binds the intended
+   * record.
+   */
+  readonly target: IEdgeTarget;
   /** The existing record. */
   readonly record: IMemoryRecord<unknown>;
   /** The backend similarity score (higher = more similar). */
@@ -99,14 +108,16 @@ export interface IEntityResolutionCandidate {
 /**
  * The four dedup verdicts a {@link IEntityResolver} (or fgv's exact-match layer)
  * returns for a candidate. See the design note §3 for the verdict → write
- * disposition mapping.
+ * disposition mapping. Each target-bearing arm carries a scope-qualified
+ * {@link IEdgeTarget} (not a bare {@link MemoryId}) so the verdict resolves to a
+ * single record even when a filename stem is reused across scopes.
  * @public
  */
 export type ResolutionVerdict =
   | { readonly verdict: 'new' }
-  | { readonly verdict: 'duplicate-of'; readonly target: MemoryId }
-  | { readonly verdict: 'supersede'; readonly target: MemoryId }
-  | { readonly verdict: 'merge-into'; readonly target: MemoryId };
+  | { readonly verdict: 'duplicate-of'; readonly target: IEdgeTarget }
+  | { readonly verdict: 'supersede'; readonly target: IEdgeTarget }
+  | { readonly verdict: 'merge-into'; readonly target: IEdgeTarget };
 
 /**
  * How a candidate was ultimately written (or not) after resolution.
@@ -129,8 +140,8 @@ export type IngestDisposition = 'written' | 'deduped' | 'merged';
  * @public
  */
 export interface ICandidateEdge {
-  /** The reference id (codec `idStem`) of the candidate the edge originates from. */
-  readonly source: MemoryId;
+  /** The scope-qualified reference (codec `(scope, idStem)`) of the candidate the edge originates from. */
+  readonly source: IEdgeTarget;
   /** The attributed edge (type / target / optional confidence / provenance). */
   readonly edge: IEdge;
 }

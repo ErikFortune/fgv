@@ -4,12 +4,29 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { ICycleGuardEdge, LinkType, MemoryId, assertNoCycles, buildCycleKey } from '../../../index';
+import {
+  ICycleGuardEdge,
+  IEdgeTarget,
+  LinkType,
+  MemoryId,
+  MemoryScopeKey,
+  assertNoCycles,
+  buildCycleKey
+} from '../../../index';
 
 const rel: LinkType = 'rel' as LinkType;
+const DEFAULT_SCOPE: string = 'exp';
+
+/** A scope-qualified node, `scope#id` or a bare id defaulting to {@link DEFAULT_SCOPE}. */
+function node(spec: string): IEdgeTarget {
+  const hash: number = spec.indexOf('#');
+  const scope: string = hash >= 0 ? spec.slice(0, hash) : DEFAULT_SCOPE;
+  const id: string = hash >= 0 ? spec.slice(hash + 1) : spec;
+  return { scope: scope as MemoryScopeKey, id: id as MemoryId };
+}
 
 function edge(source: string, target: string, type: LinkType = rel): ICycleGuardEdge {
-  return { source: source as MemoryId, target: target as MemoryId, type };
+  return { source: node(source), target: node(target), type };
 }
 
 describe('buildCycleKey', () => {
@@ -64,5 +81,30 @@ describe('assertNoCycles', () => {
     // from `a`, whose DFS pushes `c` twice before it is visited — exercising the
     // visited-node skip in the traversal.
     expect(assertNoCycles([edge('a', 'c'), edge('a', 'b'), edge('b', 'c')], [edge('z', 'a')])).toSucceed();
+  });
+
+  describe('scope-qualified nodes', () => {
+    test('does NOT conflate a stem shared across scopes into one node', () => {
+      // ca#x -> cb#y and cb#x -> ca#z reuse the stem `x` across scopes ca/cb.
+      // If the guard keyed on bare id, the two `x` nodes would merge and a false
+      // cycle could appear; with scoped keys they are distinct and the graph is acyclic.
+      expect(assertNoCycles([], [edge('ca#x', 'cb#y'), edge('cb#x', 'ca#z')])).toSucceed();
+    });
+
+    test('still rejects a genuine within-scope cycle across the same stems', () => {
+      expect(assertNoCycles([], [edge('ca#x', 'ca#y'), edge('ca#y', 'ca#x')])).toFailWith(
+        /would create a cycle/
+      );
+    });
+
+    test('a self-loop is detected on the full scoped identity', () => {
+      expect(assertNoCycles([], [edge('ca#x', 'ca#x')])).toFailWith(/self-loop/);
+      // Same stem, different scope is NOT a self-loop.
+      expect(assertNoCycles([], [edge('ca#x', 'cb#x')])).toSucceed();
+    });
+
+    test('names the scope in the diagnostic', () => {
+      expect(assertNoCycles([], [edge('ca#x', 'ca#x')])).toFailWith(/ca\/x/);
+    });
   });
 });

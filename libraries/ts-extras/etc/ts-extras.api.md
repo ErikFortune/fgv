@@ -275,6 +275,9 @@ const allKeyPairAlgorithms: ReadonlyArray<KeyPairAlgorithm>;
 const allKeyStoreAsymmetricSecretTypes: ReadonlyArray<KeyStoreAsymmetricSecretType>;
 
 // @public
+const allKeyStoreFormats: ReadonlyArray<KeyStoreFormat>;
+
+// @public
 const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType>;
 
 // @public
@@ -462,6 +465,7 @@ declare namespace CryptoUtils {
         MultibaseSpkiPublicKeyRegExp,
         multibaseBase64UrlDecode,
         multibaseBase64UrlEncode,
+        spkiToRawX25519,
         HpkeProvider,
         IHpkeSealResult,
         isEncryptedFile,
@@ -470,6 +474,7 @@ declare namespace CryptoUtils {
         EncryptedFileFormat,
         INamedSecret,
         IEncryptionResult,
+        IEncryptBytesResult,
         KeyPairAlgorithm,
         IWrapBytesOptions,
         IWrappedBytes,
@@ -753,7 +758,7 @@ class HpkeProvider {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "HpkeProvider"
     static encodeEnvelope(result: IHpkeSealResult): Uint8Array;
     hkdf(secret: Uint8Array, salt: Uint8Array, info: Uint8Array, length: number): Promise<Result<Uint8Array>>;
-    openBase(recipientPrivateKey: CryptoKey, info: Uint8Array, aad: Uint8Array, enc: Uint8Array, ciphertext: Uint8Array): Promise<Result<Uint8Array>>;
+    openBase(recipientPrivateKey: CryptoKey, info: Uint8Array, aad: Uint8Array, enc: Uint8Array, ciphertext: Uint8Array, recipientPublicKey?: Uint8Array): Promise<Result<Uint8Array>>;
     sealBase(recipientPublicKey: CryptoKey, info: Uint8Array, aad: Uint8Array, plaintext: Uint8Array): Promise<Result<IHpkeSealResult>>;
 }
 
@@ -761,6 +766,8 @@ class HpkeProvider {
 interface IAddKeyPairOptions {
     readonly algorithm: KeyPairAlgorithm;
     readonly description?: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly escrow?: boolean;
     readonly extractable?: boolean;
     readonly replace?: boolean;
 }
@@ -1194,8 +1201,14 @@ interface ICreateZipOptions {
 // @public
 interface ICryptoProvider {
     decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    decryptBytes(key: Uint8Array, nonce: Uint8Array, ciphertext: Uint8Array, authTag: Uint8Array, aad?: Uint8Array): Promise<Result<Uint8Array>>;
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
     encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    encryptBytes(key: Uint8Array, nonce: Uint8Array, plaintext: Uint8Array, aad?: Uint8Array): Promise<Result<IEncryptBytesResult>>;
     exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
     exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
     fromBase64(base64: string): Result<Uint8Array>;
@@ -1237,6 +1250,16 @@ interface IDirectEncryptionProviderParams {
     readonly boundSecretName?: string;
     readonly cryptoProvider: ICryptoProvider;
     readonly key: Uint8Array;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IEncryptBytesResult {
+    readonly authTag: Uint8Array;
+    readonly ciphertext: Uint8Array;
 }
 
 // @public
@@ -1386,6 +1409,13 @@ interface IGenerateJsonCompletionResult<T> {
     readonly value: T;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IGetKeyPairOptions {
+    readonly rehydrate?: boolean;
+}
+
 // @public
 interface IGptImageGenerationConfig {
     readonly background?: 'transparent' | 'opaque' | 'auto';
@@ -1479,6 +1509,8 @@ interface IKeyStoreAsymmetricEntry {
     readonly createdAt: string;
     readonly description?: string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly escrowedPrivateKeyJwk?: JsonWebKey;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly id: string;
     readonly name: string;
     readonly publicKeyJwk: JsonWebKey;
@@ -1492,6 +1524,7 @@ interface IKeyStoreAsymmetricEntryJson {
     readonly algorithm: KeyPairAlgorithm;
     readonly createdAt: string;
     readonly description?: string;
+    readonly escrowedPrivateKeyJwk?: JsonWebKey;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly id: string;
     readonly name: string;
@@ -1945,6 +1978,7 @@ declare namespace KeyStore {
         allKeyPairAlgorithms,
         KeyPairAlgorithm,
         KeyStoreFormat,
+        allKeyStoreFormats,
         KEYSTORE_FORMAT,
         DEFAULT_KEYSTORE_ITERATIONS,
         MIN_SALT_LENGTH,
@@ -1976,12 +2010,15 @@ declare namespace KeyStore {
         IAddSecretFromPasswordResult,
         IAddSecretFromPasswordArgon2idOptions,
         IAddKeyPairOptions,
+        IGetKeyPairOptions,
         IAddKeyPairResult,
         IRemoveSecretResult,
         IPrivateKeyStorage
     }
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 class KeyStore_2 implements IEncryptionProvider {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2000,7 +2037,8 @@ class KeyStore_2 implements IEncryptionProvider {
     getApiKey(name: string): Result<string>;
     getEncryptionConfig(): Result<Pick<IEncryptionConfig, 'secretProvider' | 'cryptoProvider'>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getKeyPair(name: string): Promise<Result<{
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getKeyPair(name: string, options?: IGetKeyPairOptions): Promise<Result<{
         publicKey: CryptoKey;
         privateKey: CryptoKey;
     }>>;
@@ -2059,7 +2097,7 @@ const keystoreAsymmetricSecretType: Converter<KeyStoreAsymmetricSecretType>;
 const keystoreFile: Converter<IKeyStoreFile>;
 
 // @public
-type KeyStoreFormat = 'keystore-v1';
+type KeyStoreFormat = 'keystore-v1' | 'keystore-v2';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2210,8 +2248,13 @@ const namedSecret: Converter<INamedSecret>;
 // @public
 class NodeCryptoProvider implements ICryptoProvider {
     decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "NodeCryptoProvider"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    decryptBytes(key: Uint8Array, nonce: Uint8Array, ciphertext: Uint8Array, authTag: Uint8Array, aad?: Uint8Array): Promise<Result<Uint8Array>>;
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
     encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    encryptBytes(key: Uint8Array, nonce: Uint8Array, plaintext: Uint8Array, aad?: Uint8Array): Promise<Result<IEncryptBytesResult>>;
     exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
     exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
     fromBase64(base64: string): Result<Uint8Array>;
@@ -2382,6 +2425,11 @@ type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
 // @public
 const SMART_JSON_PROMPT_HINT: string;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "HpkeProvider"
+//
+// @public
+function spkiToRawX25519(spki: Uint8Array): Result<Uint8Array>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //
 // @public
@@ -2498,8 +2546,9 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/crypto-utils/keystore/keyStore.ts:1479:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/crypto-utils/keystore/keyStore.ts:1518:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1558:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1595:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
+// src/packlets/crypto-utils/keystore/keyStore.ts:1689:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

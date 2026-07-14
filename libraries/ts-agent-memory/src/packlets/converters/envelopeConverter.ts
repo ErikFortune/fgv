@@ -5,7 +5,15 @@
 
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { Yaml } from '@fgv/ts-extras';
-import { Convert, IEdge, IMemoryEnvelope, IMemoryRecord, IProvenance, ITemporalBlock } from '../types';
+import {
+  Convert,
+  IEdge,
+  IEdgeTarget,
+  IMemoryEnvelope,
+  IMemoryRecord,
+  IProvenance,
+  ITemporalBlock
+} from '../types';
 import { IBodyConverterRegistry } from './bodyConverterRegistry';
 
 /** Matches exactly the JSON `null` literal. */
@@ -29,8 +37,22 @@ const stringOrNull: Converter<string | null> = Converters.oneOf<string | null>([
 ]);
 
 /**
+ * Converter for a scope-qualified {@link IEdgeTarget}. Both `scope` and `id`
+ * are required — the whole point of the scoped target is that a bare id is
+ * ambiguous across scopes.
+ * @public
+ */
+export const edgeTargetConverter: Converter<IEdgeTarget> = Converters.object<IEdgeTarget>({
+  scope: Convert.scopeKey,
+  id: Convert.memoryId
+});
+
+/**
  * Converter for the known {@link IProvenance} fields. The full
  * {@link provenanceConverter} layers extension-key preservation on top.
+ * `derivedFrom` is serialized as the nested `{ scope, id }` object (mirroring
+ * {@link edgeConverter | edge}'s scope-qualified `target`) so the provenance
+ * back-reference is unambiguous across scopes.
  */
 const knownProvenanceConverter: Converter<IProvenance> = Converters.object<IProvenance>(
   {
@@ -38,7 +60,7 @@ const knownProvenanceConverter: Converter<IProvenance> = Converters.object<IProv
     by: Converters.string.optional(),
     model: Converters.string.optional(),
     confidence: Converters.number.optional(),
-    derivedFrom: Convert.memoryId.optional()
+    derivedFrom: edgeTargetConverter.optional()
   },
   { optionalFields: ['by', 'model', 'confidence', 'derivedFrom'] }
 );
@@ -68,7 +90,7 @@ export const provenanceConverter: Converter<IProvenance> = Converters.generic<IP
 export const edgeConverter: Converter<IEdge> = Converters.object<IEdge>(
   {
     type: Convert.linkType,
-    target: Convert.memoryId,
+    target: edgeTargetConverter,
     confidence: Converters.number.optional(),
     provenance: provenanceConverter.optional(),
     valid_at: Converters.number.optional(),
@@ -105,11 +127,12 @@ export const envelopeConverter: Converter<IMemoryEnvelope> = Converters.object<I
     updated: Converters.number,
     seq: Converters.number,
     contentHash: Converters.string,
+    rank: Converters.number.optional(),
     provenance: provenanceConverter,
     temporal: temporalConverter.optional(),
     embeddingRef: stringOrNull.optional()
   },
-  { optionalFields: ['temporal', 'embeddingRef'] }
+  { optionalFields: ['rank', 'temporal', 'embeddingRef'] }
 );
 
 /**

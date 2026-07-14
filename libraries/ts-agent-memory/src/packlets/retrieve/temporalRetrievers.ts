@@ -90,7 +90,7 @@ export class CurrentValidRetriever implements IMemoryRetriever {
           }
         }
         selected.sort(recencyCompare);
-        return succeed(limitRecords(selected, query.limit));
+        return succeed(limitRecords(selected, query.limit, query.offset));
       })
     );
   }
@@ -137,7 +137,7 @@ export class AsOfRetriever implements IMemoryRetriever {
           }
         }
         selected.sort(recencyCompare);
-        return succeed(limitRecords(selected, query.limit));
+        return succeed(limitRecords(selected, query.limit, query.offset));
       })
     );
   }
@@ -182,7 +182,7 @@ export class HistoryRetriever implements IMemoryRetriever {
           history.push(...versions);
         }
         history.sort(HistoryRetriever._byValidAtAscending);
-        return succeed(limitRecords(history, query.limit));
+        return succeed(limitRecords(history, query.limit, query.offset));
       })
     );
   }

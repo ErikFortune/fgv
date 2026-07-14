@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING: complete the scope-qualified-addressing migration. (1) IProvenance.derivedFrom promoted from bare MemoryId to IEdgeTarget ({ scope, id }) — the last bare-id back-reference in the provenance spine; IIngestItem.sourceId promoted likewise (a breaking change on the host ingest contract — the host now supplies a scope-qualified sourceId, no shim), the ingest stamping site threads it through unchanged, and the envelope frontmatter converter serializes derivedFrom as the nested { scope, id } object (round-tripped by edgeTargetConverter, mirroring edgeConverter.target). (2) IMemoryStore gains listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> (whole-vault, scope-qualified projection over the derived index) plus asRecordSource(): IMemoryRecordSource (thin adapter delegating to listScoped) so a real FileTreeMemoryStore now satisfies IMemoryRecordSource and can drive InMemoryCosineIndex.rebuild on the scoped (scope, id) key. list(filter?) is unchanged (still returns bare records).",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

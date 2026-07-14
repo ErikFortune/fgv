@@ -10,6 +10,7 @@ import {
   BodyConverterRegistry,
   FileTreeMemoryStore,
   IBodyConverterRegistry,
+  IEdgeTarget,
   IIdentityCodec,
   IIndexedMemoryRecord,
   IMemoryRecord,
@@ -26,11 +27,14 @@ import {
   MtmIdentityCodec,
   IWritePolicy,
   SemanticRetriever,
+  TemporalIdentityCodec,
+  TemporalVersionedPolicy,
   envelopeConverter
 } from '../../../index';
 
 const knowledgeKind: Kind = 'knowledge' as Kind;
 const mtmKind: Kind = 'mtm' as Kind;
+const factKind: Kind = 'fact' as Kind;
 
 function mutableRoot(): FileTree.IMutableFileTreeDirectoryItem {
   const tree = FileTree.inMemory([], { mutable: true }).orThrow();
@@ -95,13 +99,13 @@ class SpyVectorIndex implements IVectorIndex {
   public failRemove: boolean = false;
   private readonly _inner: InMemoryCosineIndex = InMemoryCosineIndex.create().orThrow();
 
-  public async add(id: MemoryId, vector: Float32Array): Promise<Result<string>> {
-    this.calls.push(`add:${id}`);
-    return this.failAdd ? fail('add boom') : this._inner.add(id, vector);
+  public async add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>> {
+    this.calls.push(`add:${target.id}`);
+    return this.failAdd ? fail('add boom') : this._inner.add(target, vector);
   }
-  public async remove(id: MemoryId): Promise<Result<MemoryId>> {
-    this.calls.push(`remove:${id}`);
-    return this.failRemove ? fail('remove boom') : this._inner.remove(id);
+  public async remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>> {
+    this.calls.push(`remove:${target.id}`);
+    return this.failRemove ? fail('remove boom') : this._inner.remove(target);
   }
   public query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
     return this._inner.query(vector, topK);
@@ -132,21 +136,22 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       const store = knowledgeStore(index, recordEmbed);
       expect(await store.put(makeRecord('doc-a', 'cat cat'))).toSucceedAndSatisfy(
         (record: IMemoryRecord<unknown>) => {
-          // InMemoryCosineIndex keys entries by id, so the ref IS the id.
-          expect(record.envelope.embeddingRef).toBe('doc-a');
+          // InMemoryCosineIndex keys entries by the scope-qualified target, so the
+          // ref IS that canonical key (scope + NUL + id).
+          expect(record.envelope.embeddingRef).toBe('knowledge\0doc-a');
         }
       );
       expect(index.size).toBe(1);
       // The persisted file carries the embeddingRef (round-trips through disk).
       expect(await store.getById('knowledge' as MemoryScopeKey, 'doc-a' as MemoryId)).toSucceedAndSatisfy(
         (record: IMemoryRecord<unknown> | undefined) => {
-          expect(record?.envelope.embeddingRef).toBe('doc-a');
+          expect(record?.envelope.embeddingRef).toBe('knowledge\0doc-a');
         }
       );
       // The vector is queryable.
       expect(await index.query(featureVector('cat'), 1)).toSucceedAndSatisfy(
         (hits: ReadonlyArray<IVectorQueryHit>) => {
-          expect(hits[0].id).toBe('doc-a');
+          expect(hits[0].target.id).toBe('doc-a');
         }
       );
     });
@@ -213,7 +218,7 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       expect(index.size).toBe(2);
       expect(await index.query(featureVector('cat'), 5)).toSucceedAndSatisfy(
         (hits: ReadonlyArray<IVectorQueryHit>) => {
-          expect(hits.map((h) => h.id)).not.toContain('turn-0');
+          expect(hits.map((h) => h.target.id)).not.toContain('turn-0');
         }
       );
     });
@@ -339,6 +344,73 @@ describe('FileTreeMemoryStore embed-on-write', () => {
           // 'cats' is the closest; 'dogs'/'fishes' are orthogonal (cosine 0) so
           // only the cat record ranks above them — it is first.
           expect(records[0].envelope.id).toBe('cats');
+        }
+      );
+    });
+  });
+
+  describe('versioned (temporal) embed-on-write', () => {
+    // Wires the vector lifecycle against a TemporalIdentityCodec-backed kind so the
+    // versioned put path (`_putVersioned -> _embedOnWrite(built, scope)`) is
+    // exercised with a real vector index. The flat-path tests already cover the
+    // SHARED `_embedOnWrite` line, so this asserts specifically that the VERSIONED
+    // call site threads the correct entity scope (not the version stem or some
+    // other variable) into the vector target — a scope swap at that call site would
+    // fail these assertions, whereas line coverage alone would not catch it.
+    function temporalStore(
+      vectorIndex: IVectorIndex,
+      embed: (r: IMemoryRecord<unknown>) => Promise<Result<Float32Array>>
+    ): FileTreeMemoryStore {
+      const reg: IBodyConverterRegistry = BodyConverterRegistry.create().orThrow();
+      reg.register(factKind, Converters.string);
+      return FileTreeMemoryStore.create({
+        root: mutableRoot(),
+        registry: reg,
+        codecs: new Map<Kind, IIdentityCodec>([[factKind, TemporalIdentityCodec.create('facts').orThrow()]]),
+        writePolicies: new Map<Kind, IWritePolicy>([[factKind, TemporalVersionedPolicy.create().orThrow()]]),
+        vectorIndex,
+        embed
+      }).orThrow();
+    }
+
+    test('stamps the entity-scope-qualified target as embeddingRef for each version', async () => {
+      const spy = new SpyVectorIndex();
+      const store = temporalStore(spy, recordEmbed);
+      // Two versions of the SAME temporal entity `greeting` (distinct bodies so the
+      // second mints a new version rather than deduping). The entity subtree scope
+      // is `facts/entities/greeting`; the version stem is `greeting-v<store-seq>`
+      // (the store's monotonic seq, which starts at 1 for the first write).
+      expect(await store.put(makeRecord('greeting', 'cat', 'fact'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          // embeddingRef IS edgeTargetKey(target) = `<entity-scope>\0<version-stem>`.
+          // A wrong scope at the versioned call site would corrupt the prefix here.
+          expect(record.envelope.embeddingRef).toBe('facts/entities/greeting\0greeting-v1');
+        }
+      );
+      expect(await store.put(makeRecord('greeting', 'dog', 'fact'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBe('facts/entities/greeting\0greeting-v2');
+        }
+      );
+      // Both versions were added under the entity scope, keyed by their version stems.
+      expect(spy.calls).toEqual(['add:greeting-v1', 'add:greeting-v2']);
+    });
+
+    test('keeps two temporal entities under distinct scopes — no cross-entity vector collision', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const store = temporalStore(index, recordEmbed);
+      (await store.put(makeRecord('greeting', 'cat', 'fact'))).orThrow();
+      (await store.put(makeRecord('farewell', 'fish', 'fact'))).orThrow();
+      // Two distinct entity subtrees → two distinct vector entries.
+      expect(index.size).toBe(2);
+      // A query surfaces both, each carrying its own entity-scope-qualified target.
+      expect(await index.query(featureVector('cat'), 5)).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          const targets = hits.map((h) => `${h.target.scope}\0${h.target.id}`).sort();
+          expect(targets).toEqual([
+            'facts/entities/farewell\0farewell-v2',
+            'facts/entities/greeting\0greeting-v1'
+          ]);
         }
       );
     });

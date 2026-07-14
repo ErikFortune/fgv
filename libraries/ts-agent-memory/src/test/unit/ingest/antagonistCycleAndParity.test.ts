@@ -21,6 +21,7 @@ import {
   IBodyConverterRegistry,
   ICandidateEdge,
   ICandidateRecord,
+  IEdgeTarget,
   IEntityResolutionCandidate,
   IEntityResolver,
   IFactExtractor,
@@ -38,11 +39,17 @@ import {
   KnowledgeIdentityCodec,
   MemoryId,
   MemoryIngestOrchestrator,
+  MemoryScopeKey,
   ResolutionVerdict,
   Tag
 } from '../../../index';
 
 const noteKind: Kind = 'note' as Kind;
+
+/** A scope-qualified target for the note fixtures (all under the knowledge scope). */
+function kt(id: string): IEdgeTarget {
+  return { scope: 'knowledge' as MemoryScopeKey, id: id as MemoryId };
+}
 
 function mutableRoot(): FileTree.IMutableFileTreeDirectoryItem {
   const tree = FileTree.inMemory([], { mutable: true }).orThrow();
@@ -131,7 +138,7 @@ function candidate(
 }
 
 function candEdge(source: string, type: string, target: string): ICandidateEdge {
-  return { source: source as MemoryId, edge: { type: type as never, target: target as MemoryId } };
+  return { source: kt(source), edge: { type: type as never, target: kt(target) } };
 }
 
 function buildOrchestrator(params: {
@@ -159,7 +166,7 @@ describe('antagonist — cycle guard through EXISTING store edges (integration)'
   test('a proposed edge that closes a cycle through a pre-existing on-disk edge is rejected', async () => {
     const store = buildStore();
     // Existing on-disk edge: doc-a -> doc-b (persisted before this ingest runs).
-    await putFull(store, 'doc-a', 'anchor-a', [{ type: 'rel' as never, target: 'doc-b' as MemoryId }]);
+    await putFull(store, 'doc-a', 'anchor-a', [{ type: 'rel' as never, target: kt('doc-b') }]);
     await putFull(store, 'doc-b', 'anchor-b');
 
     // This ingest re-writes doc-b (a 'new'-verdict same-id update, since no
@@ -183,9 +190,9 @@ describe('antagonist — cycle guard through EXISTING store edges (integration)'
     const store = buildStore();
     // Existing chain: a -> b -> c -> d (four pre-existing on-disk edges spanning
     // three hops), persisted before this ingest.
-    await putFull(store, 'chain-a', 'a', [{ type: 'rel' as never, target: 'chain-b' as MemoryId }]);
-    await putFull(store, 'chain-b', 'b', [{ type: 'rel' as never, target: 'chain-c' as MemoryId }]);
-    await putFull(store, 'chain-c', 'c', [{ type: 'rel' as never, target: 'chain-d' as MemoryId }]);
+    await putFull(store, 'chain-a', 'a', [{ type: 'rel' as never, target: kt('chain-b') }]);
+    await putFull(store, 'chain-b', 'b', [{ type: 'rel' as never, target: kt('chain-c') }]);
+    await putFull(store, 'chain-c', 'c', [{ type: 'rel' as never, target: kt('chain-d') }]);
     await putFull(store, 'chain-d', 'd');
 
     // Proposed: chain-d -> chain-a, closing the whole loop through the existing chain.
@@ -199,7 +206,7 @@ describe('antagonist — cycle guard through EXISTING store edges (integration)'
 
   test('cycleGuard "off" admits a cycle that closes through an existing edge', async () => {
     const store = buildStore();
-    await putFull(store, 'doc-a', 'anchor-a', [{ type: 'rel' as never, target: 'doc-b' as MemoryId }]);
+    await putFull(store, 'doc-a', 'anchor-a', [{ type: 'rel' as never, target: kt('doc-b') }]);
     await putFull(store, 'doc-b', 'anchor-b');
     const orch = MemoryIngestOrchestrator.create({
       store,
@@ -211,7 +218,7 @@ describe('antagonist — cycle guard through EXISTING store edges (integration)'
       cycleGuard: 'off'
     }).orThrow();
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
-      expect(r.records[0].record?.envelope.links).toEqual([{ type: 'rel', target: 'doc-a' }]);
+      expect(r.records[0].record?.envelope.links).toEqual([{ type: 'rel', target: kt('doc-a') }]);
     });
   });
 });
@@ -236,7 +243,7 @@ describe('antagonist — resolver target need not be a surfaced `similar` candid
         Promise.resolve(succeed(Float32Array.from([1, 0, 0])));
       // Only doc-a is embedded/indexed; doc-q is never surfaced by similarity —
       // it can only be reached by the resolver's own out-of-band choice.
-      (await vectorIndex.add('doc-a' as MemoryId, Float32Array.from([1, 0, 0]))).orThrow();
+      (await vectorIndex.add(kt('doc-a'), Float32Array.from([1, 0, 0]))).orThrow();
 
       const orch = MemoryIngestOrchestrator.create({
         store,
@@ -247,7 +254,7 @@ describe('antagonist — resolver target need not be a surfaced `similar` candid
         relationExtractor: relater(() => succeed([])),
         vectorIndex,
         embed,
-        entityResolver: resolver(() => succeed({ verdict, target: 'doc-q' as MemoryId } as ResolutionVerdict))
+        entityResolver: resolver(() => succeed({ verdict, target: kt('doc-q') } as ResolutionVerdict))
       }).orThrow();
 
       const result = await orch.ingestItem({ id: 'i', content: 'x' });
@@ -259,7 +266,7 @@ describe('antagonist — resolver target need not be a surfaced `similar` candid
       } else if (verdict === 'supersede') {
         expect(result).toSucceedAndSatisfy((r: IIngestItemResult) => {
           expect(r.records[0].disposition).toBe('written');
-          expect(r.records[0].resolution).toEqual({ verdict: 'supersede', target: 'doc-q' });
+          expect(r.records[0].resolution).toEqual({ verdict: 'supersede', target: kt('doc-q') });
         });
       } else {
         expect(result).toSucceedAndSatisfy((r: IIngestItemResult) => {
@@ -297,11 +304,11 @@ describe('antagonist — enum-branch parity: uniform structural rejection across
         relationExtractor: relater(() => succeed([])),
         vectorIndex,
         embed,
-        entityResolver: resolver(() => succeed({ verdict, target: 'ghost' as MemoryId } as ResolutionVerdict))
+        entityResolver: resolver(() => succeed({ verdict, target: kt('ghost') } as ResolutionVerdict))
       }).orThrow();
-      (await vectorIndex.add('doc-a' as MemoryId, Float32Array.from([1, 0, 0]))).orThrow();
+      (await vectorIndex.add(kt('doc-a'), Float32Array.from([1, 0, 0]))).orThrow();
       expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
-        `ingest 'i': ${verdict} target 'ghost' does not exist in the store`
+        `ingest 'i': ${verdict} target 'knowledge/ghost' does not exist in the store`
       );
     }
   );
@@ -349,13 +356,11 @@ describe('antagonist — enum-branch parity: uniform structural rejection across
         relationExtractor: relater(() => succeed([])),
         vectorIndex,
         embed,
-        entityResolver: resolver(() =>
-          succeed({ verdict, target: 'foreign-1' as MemoryId } as ResolutionVerdict)
-        )
+        entityResolver: resolver(() => succeed({ verdict, target: kt('foreign-1') } as ResolutionVerdict))
       }).orThrow();
-      (await vectorIndex.add('foreign-1' as MemoryId, Float32Array.from([1, 0, 0]))).orThrow();
+      (await vectorIndex.add(kt('foreign-1'), Float32Array.from([1, 0, 0]))).orThrow();
       expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
-        `ingest 'i': ${verdict} target 'foreign-1' is kind 'other' but the candidate is kind 'note'`
+        `ingest 'i': ${verdict} target 'knowledge/foreign-1' is kind 'other' but the candidate is kind 'note'`
       );
     }
   );

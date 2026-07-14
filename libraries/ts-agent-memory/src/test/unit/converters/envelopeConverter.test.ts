@@ -8,6 +8,7 @@ import { Converters } from '@fgv/ts-utils';
 import {
   BodyConverterRegistry,
   edgeConverter,
+  edgeTargetConverter,
   envelopeConverter,
   envelopeYamlConverter,
   joinFrontmatter,
@@ -24,7 +25,7 @@ const validEnvelopeObject: Record<string, unknown> = {
   entityId: 'intro-to-rust',
   kind: 'knowledge',
   tags: ['rust', 'systems'],
-  links: [{ type: 'related', target: 'ownership' }],
+  links: [{ type: 'related', target: { scope: 'knowledge', id: 'ownership' } }],
   created: 1000,
   updated: 2000,
   seq: 5,
@@ -53,6 +54,33 @@ describe('provenanceConverter', () => {
     expect(provenanceConverter.convert({ source: 'host-ingest' })).toSucceedWith({ source: 'host-ingest' });
   });
 
+  test('validates a scope-qualified derivedFrom (nested { scope, id })', () => {
+    expect(
+      provenanceConverter.convert({
+        source: 'host-ingest',
+        derivedFrom: { scope: 'conversations/conv-a', id: 'turn-3' }
+      })
+    ).toSucceedAndSatisfy((p) => {
+      expect(p.derivedFrom).toEqual({ scope: 'conversations/conv-a', id: 'turn-3' });
+    });
+  });
+
+  test('rejects a bare-string derivedFrom (the pre-scoped format)', () => {
+    expect(provenanceConverter.convert({ source: 'host-ingest', derivedFrom: 'turn-3' })).toFail();
+  });
+
+  test('rejects a derivedFrom missing scope', () => {
+    expect(provenanceConverter.convert({ source: 'host-ingest', derivedFrom: { id: 'turn-3' } })).toFailWith(
+      /scope/i
+    );
+  });
+
+  test('rejects a derivedFrom missing id', () => {
+    expect(
+      provenanceConverter.convert({ source: 'host-ingest', derivedFrom: { scope: 'conversations/conv-a' } })
+    ).toFailWith(/id/i);
+  });
+
   test('fails when source is missing', () => {
     expect(provenanceConverter.convert({ by: 'erik' })).toFail();
   });
@@ -62,12 +90,34 @@ describe('provenanceConverter', () => {
   });
 });
 
+describe('edgeTargetConverter', () => {
+  test('validates a scope-qualified target', () => {
+    expect(edgeTargetConverter.convert({ scope: 'conversations/conv-a', id: 'turn-3' })).toSucceedAndSatisfy(
+      (t) => {
+        expect(t).toEqual({ scope: 'conversations/conv-a', id: 'turn-3' });
+      }
+    );
+  });
+
+  test('rejects a target missing scope', () => {
+    expect(edgeTargetConverter.convert({ id: 'turn-3' })).toFailWith(/scope/i);
+  });
+
+  test('rejects a target missing id', () => {
+    expect(edgeTargetConverter.convert({ scope: 'conversations/conv-a' })).toFailWith(/id/i);
+  });
+
+  test('rejects a bare-string target (the pre-scoped format)', () => {
+    expect(edgeTargetConverter.convert('turn-3')).toFail();
+  });
+});
+
 describe('edgeConverter', () => {
   test('validates a full attributed edge', () => {
     expect(
       edgeConverter.convert({
         type: 'mtm-ref',
-        target: 'turn-3',
+        target: { scope: 'conversations/conv-a', id: 'turn-3' },
         confidence: 0.8,
         provenance: { source: 'agent' },
         valid_at: 100,
@@ -75,7 +125,7 @@ describe('edgeConverter', () => {
       })
     ).toSucceedAndSatisfy((edge) => {
       expect(edge.type).toBe('mtm-ref');
-      expect(edge.target).toBe('turn-3');
+      expect(edge.target).toEqual({ scope: 'conversations/conv-a', id: 'turn-3' });
       expect(edge.confidence).toBe(0.8);
       expect(edge.provenance).toEqual({ source: 'agent' });
       expect(edge.valid_at).toBe(100);
@@ -84,27 +134,35 @@ describe('edgeConverter', () => {
   });
 
   test('validates a minimal edge', () => {
-    expect(edgeConverter.convert({ type: 'related', target: 'ownership' })).toSucceedAndSatisfy((edge) => {
+    expect(
+      edgeConverter.convert({ type: 'related', target: { scope: 'knowledge', id: 'ownership' } })
+    ).toSucceedAndSatisfy((edge) => {
       expect(edge.type).toBe('related');
-      expect(edge.target).toBe('ownership');
+      expect(edge.target).toEqual({ scope: 'knowledge', id: 'ownership' });
       expect(edge.confidence).toBeUndefined();
     });
   });
 
   test('accepts a null invalid_at (still valid)', () => {
-    expect(edgeConverter.convert({ type: 'related', target: 'x', invalid_at: null })).toSucceedAndSatisfy(
-      (edge) => {
-        expect(edge.invalid_at).toBeNull();
-      }
-    );
+    expect(
+      edgeConverter.convert({ type: 'related', target: { scope: 'knowledge', id: 'x' }, invalid_at: null })
+    ).toSucceedAndSatisfy((edge) => {
+      expect(edge.invalid_at).toBeNull();
+    });
   });
 
   test('fails when invalid_at is neither a number nor null', () => {
-    expect(edgeConverter.convert({ type: 'related', target: 'x', invalid_at: 'soon' })).toFail();
+    expect(
+      edgeConverter.convert({ type: 'related', target: { scope: 'knowledge', id: 'x' }, invalid_at: 'soon' })
+    ).toFail();
   });
 
   test('fails when target is missing', () => {
     expect(edgeConverter.convert({ type: 'related' })).toFail();
+  });
+
+  test('fails when target is a bare string (rejects the pre-scoped format)', () => {
+    expect(edgeConverter.convert({ type: 'related', target: 'ownership' })).toFail();
   });
 });
 
@@ -155,6 +213,34 @@ describe('envelopeConverter', () => {
 
   test('fails when embeddingRef is neither a string nor null', () => {
     expect(envelopeConverter.convert({ ...validEnvelopeObject, embeddingRef: 42 })).toFail();
+  });
+
+  test('rank is absent when not present', () => {
+    expect(envelopeConverter.convert(validEnvelopeObject)).toSucceedAndSatisfy((envelope) => {
+      expect(envelope.rank).toBeUndefined();
+    });
+  });
+
+  test('validates and preserves a numeric rank', () => {
+    expect(envelopeConverter.convert({ ...validEnvelopeObject, rank: 42 })).toSucceedAndSatisfy(
+      (envelope) => {
+        expect(envelope.rank).toBe(42);
+      }
+    );
+  });
+
+  test('serialize/parse round-trips rank through frontmatter', () => {
+    const registry = BodyConverterRegistry.create().orThrow();
+    registry.register('knowledge' as Kind, Converters.string);
+    const envelope = envelopeConverter.convert({ ...validEnvelopeObject, rank: 7 }).orThrow();
+    const file = serializeMemoryFile(envelope, 'body').orThrow();
+    expect(parseMemoryFile(file, registry)).toSucceedAndSatisfy((record) => {
+      expect(record.envelope.rank).toBe(7);
+    });
+  });
+
+  test('fails when rank is not a number', () => {
+    expect(envelopeConverter.convert({ ...validEnvelopeObject, rank: 'high' })).toFail();
   });
 
   test('fails when a required field is missing', () => {
@@ -236,6 +322,77 @@ describe('parseMemoryFile / serializeMemoryFile', () => {
     expect(parseMemoryFile(file, registry)).toSucceedAndSatisfy((record) => {
       expect(record.envelope.id).toBe('intro-to-rust');
       expect(record.body).toBe('The knowledge body.');
+    });
+  });
+
+  test('round-trips a scope-qualified edge target through the frontmatter intact', () => {
+    const envelope = envelopeConverter
+      .convert({
+        ...validEnvelopeObject,
+        links: [{ type: 'mtm-ref', target: { scope: 'conversations/conv-a', id: 'turn-3' } }]
+      })
+      .orThrow();
+    const file = serializeMemoryFile(envelope, 'body').orThrow();
+    // On-wire the target is a nested object, NOT a bare scalar.
+    expect(file).toMatch(/scope: conversations\/conv-a/);
+    expect(file).toMatch(/id: turn-3/);
+    expect(parseMemoryFile(file, registry)).toSucceedAndSatisfy((record) => {
+      expect(record.envelope.links).toEqual([
+        { type: 'mtm-ref', target: { scope: 'conversations/conv-a', id: 'turn-3' } }
+      ]);
+      // Serializing the reparsed record reproduces byte-identical output.
+      expect(serializeMemoryFile(record.envelope, record.body as string)).toSucceedWith(file);
+    });
+  });
+
+  test('round-trips a scope-qualified provenance.derivedFrom through the frontmatter intact', () => {
+    const envelope = envelopeConverter
+      .convert({
+        ...validEnvelopeObject,
+        provenance: {
+          source: 'host-ingest',
+          derivedFrom: { scope: 'conversations/conv-a', id: 'turn-3' }
+        }
+      })
+      .orThrow();
+    const file = serializeMemoryFile(envelope, 'body').orThrow();
+    // On-wire the back-reference is a nested object, NOT a bare scalar.
+    expect(file).toMatch(/scope: conversations\/conv-a/);
+    expect(parseMemoryFile(file, registry)).toSucceedAndSatisfy((record) => {
+      expect(record.envelope.provenance.derivedFrom).toEqual({
+        scope: 'conversations/conv-a',
+        id: 'turn-3'
+      });
+      expect(serializeMemoryFile(record.envelope, record.body as string)).toSucceedWith(file);
+    });
+  });
+
+  test('two records whose derivedFrom share a stem across scopes round-trip as distinct scoped refs', () => {
+    // Same idStem ('turn-3'), different scopes — exactly the ambiguity a bare
+    // MemoryId could not disambiguate. Each must round-trip to ITS OWN scope.
+    const makeFile = (scope: string): string => {
+      const envelope = envelopeConverter
+        .convert({
+          ...validEnvelopeObject,
+          provenance: { source: 'host-ingest', derivedFrom: { scope, id: 'turn-3' } }
+        })
+        .orThrow();
+      return serializeMemoryFile(envelope, 'body').orThrow();
+    };
+    const fileA = makeFile('conversations/conv-a');
+    const fileB = makeFile('conversations/conv-b');
+    expect(fileA).not.toBe(fileB);
+    expect(parseMemoryFile(fileA, registry)).toSucceedAndSatisfy((record) => {
+      expect(record.envelope.provenance.derivedFrom).toEqual({
+        scope: 'conversations/conv-a',
+        id: 'turn-3'
+      });
+    });
+    expect(parseMemoryFile(fileB, registry)).toSucceedAndSatisfy((record) => {
+      expect(record.envelope.provenance.derivedFrom).toEqual({
+        scope: 'conversations/conv-b',
+        id: 'turn-3'
+      });
     });
   });
 

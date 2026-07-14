@@ -4,8 +4,20 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { IMemoryRecord, MemoryId } from '../types';
-import { IMemoryRecordSource, IVectorIndex, IVectorQueryHit, MemoryEmbedder } from './vectorIndex';
+import { IEdgeTarget, edgeTargetKey } from '../types';
+import {
+  IMemoryRecordSource,
+  IScopedMemoryRecord,
+  IVectorIndex,
+  IVectorQueryHit,
+  MemoryEmbedder
+} from './vectorIndex';
+
+/** One stored embedding: the scope-qualified address plus its vector. */
+interface IStoredVector {
+  readonly target: IEdgeTarget;
+  readonly vector: Float32Array;
+}
 
 /**
  * The brute-force, in-memory cosine {@link IVectorIndex}. Stores one
@@ -31,12 +43,17 @@ import { IMemoryRecordSource, IVectorIndex, IVectorQueryHit, MemoryEmbedder } fr
  * @public
  */
 export class InMemoryCosineIndex implements IVectorIndex {
-  private readonly _vectors: Map<MemoryId, Float32Array>;
+  /**
+   * Stored embeddings keyed by the canonical {@link edgeTargetKey} of the
+   * record's scope-qualified address, so two records that share a filename stem
+   * across scopes occupy distinct entries and never overwrite each other.
+   */
+  private readonly _vectors: Map<string, IStoredVector>;
   /** The dimension of every stored vector; `undefined` until the first `add`. */
   private _dimension: number | undefined;
 
   private constructor() {
-    this._vectors = new Map<MemoryId, Float32Array>();
+    this._vectors = new Map<string, IStoredVector>();
     this._dimension = undefined;
   }
 
@@ -51,30 +68,32 @@ export class InMemoryCosineIndex implements IVectorIndex {
   }
 
   /** {@inheritDoc IVectorIndex.add} */
-  public add(id: MemoryId, vector: Float32Array): Promise<Result<string>> {
+  public add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>> {
+    const key: string = edgeTargetKey(target);
     if (vector.length === 0) {
-      return Promise.resolve(fail(`vector index: cannot add '${id}': empty vector`));
+      return Promise.resolve(fail(`vector index: cannot add '${key}': empty vector`));
     }
     if (this._dimension === undefined) {
       this._dimension = vector.length;
     } else if (vector.length !== this._dimension) {
       return Promise.resolve(
         fail(
-          `vector index: cannot add '${id}': dimension ${vector.length} does not match index dimension ${this._dimension}`
+          `vector index: cannot add '${key}': dimension ${vector.length} does not match index dimension ${this._dimension}`
         )
       );
     }
     // Defensive copy: the caller may reuse or mutate the buffer after `add`, and
     // the index must keep serving the embedding it was given.
-    this._vectors.set(id, Float32Array.from(vector));
-    // The in-memory index keys entries by id, so the id IS the entry reference.
-    return Promise.resolve(succeed(id as string));
+    this._vectors.set(key, { target, vector: Float32Array.from(vector) });
+    // The in-memory index keys entries by the canonical scoped-target string, so
+    // that key IS the entry reference.
+    return Promise.resolve(succeed(key));
   }
 
   /** {@inheritDoc IVectorIndex.remove} */
-  public remove(id: MemoryId): Promise<Result<MemoryId>> {
-    this._vectors.delete(id);
-    return Promise.resolve(succeed(id));
+  public remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>> {
+    this._vectors.delete(edgeTargetKey(target));
+    return Promise.resolve(succeed(target));
   }
 
   /** {@inheritDoc IVectorIndex.query} */
@@ -91,8 +110,11 @@ export class InMemoryCosineIndex implements IVectorIndex {
     }
     const queryMagnitude: number = InMemoryCosineIndex._magnitude(vector);
     const hits: IVectorQueryHit[] = [];
-    for (const [id, stored] of this._vectors) {
-      hits.push({ id, score: InMemoryCosineIndex._cosine(vector, queryMagnitude, stored) });
+    for (const stored of this._vectors.values()) {
+      hits.push({
+        target: stored.target,
+        score: InMemoryCosineIndex._cosine(vector, queryMagnitude, stored.vector)
+      });
     }
     // Descending by score; a `seq`-free tiebreak is unnecessary here because the
     // caller (SemanticRetriever) re-resolves hits against the record index.
@@ -110,8 +132,7 @@ export class InMemoryCosineIndex implements IVectorIndex {
    * rather than left in a partially-rebuilt state — a caller that retries a query
    * after a failed rebuild sees a clean empty index, never a half-populated one.
    *
-   * @param source - The record source to re-embed (an {@link IMemoryStore}
-   * satisfies this structurally).
+   * @param source - The scope-qualified record source to re-embed.
    * @param embed - The embedder applied to each record.
    */
   public async rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder): Promise<Result<number>> {
@@ -119,17 +140,19 @@ export class InMemoryCosineIndex implements IVectorIndex {
     // even when the listing itself fails (no stale vectors survive a failed
     // rebuild).
     this._reset();
-    const listed: Result<ReadonlyArray<IMemoryRecord<unknown>>> = await source.list();
+    const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await source.list();
     if (listed.isFailure()) {
       return fail(`vector index rebuild: failed to list records: ${listed.message}`);
     }
-    for (const record of listed.value) {
-      const embedded: Result<Float32Array> = await embed(record);
+    for (const scoped of listed.value) {
+      const embedded: Result<Float32Array> = await embed(scoped.record);
       if (embedded.isFailure()) {
         this._reset();
-        return fail(`vector index rebuild: embedding '${record.envelope.id}' failed: ${embedded.message}`);
+        return fail(
+          `vector index rebuild: embedding '${edgeTargetKey(scoped.target)}' failed: ${embedded.message}`
+        );
       }
-      const added: Result<string> = await this.add(record.envelope.id, embedded.value);
+      const added: Result<string> = await this.add(scoped.target, embedded.value);
       if (added.isFailure()) {
         this._reset();
         return fail(`vector index rebuild: ${added.message}`);

@@ -46,7 +46,7 @@ describe('antagonist — full on-disk round-trip preserves every optional field'
       links: [
         {
           type: 'rel' as never,
-          target: 'doc-2' as never,
+          target: { scope: 'knowledge', id: 'doc-2' } as never,
           confidence: 0.42,
           provenance: { source: 'agent', by: 'curator', extra: { nested: true } },
           valid_at: 111,
@@ -63,7 +63,7 @@ describe('antagonist — full on-disk round-trip preserves every optional field'
         by: 'erik',
         model: 'gpt-5',
         confidence: 0.87,
-        derivedFrom: 'turn-3' as never,
+        derivedFrom: { scope: 'conversations/c1', id: 'turn-3' } as never,
         // Opaque extension keys (per IProvenance's `[key: string]: unknown` arm).
         sentiment: { score: 0.5 },
         epistemic: 'belief'
@@ -89,7 +89,7 @@ describe('antagonist — full on-disk round-trip preserves every optional field'
       entityId: 'doc-2' as IMemoryEnvelope['entityId'],
       kind,
       tags: [],
-      links: [{ type: 'rel' as never, target: 'doc-3' as never }],
+      links: [{ type: 'rel' as never, target: { scope: 'knowledge', id: 'doc-3' } as never }],
       created: 0,
       updated: 0,
       seq: 0,

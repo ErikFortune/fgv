@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { EntityId, Kind, LinkType, MemoryId, Tag } from './ids';
+import { EntityId, Kind, LinkType, MemoryId, MemoryScopeKey, Tag } from './ids';
 
 /**
  * Origin of a provenance attribution. Open vocabulary: the three named
@@ -29,24 +29,61 @@ export interface IProvenance {
   readonly model?: string;
   /** Optional confidence in `[0, 1]`. */
   readonly confidence?: number;
-  /** Back-link to the source experience record. Enables the cross-kind provenance spine. */
-  readonly derivedFrom?: MemoryId;
+  /**
+   * Scope-qualified back-link to the source record. Enables the cross-kind
+   * provenance spine. A scope-qualified {@link IEdgeTarget} (not a bare
+   * {@link MemoryId}) because per-scope codecs (e.g. the MTM codec's `turn-<n>`
+   * stems) legally reuse a stem across scopes, so a bare id would be ambiguous —
+   * the same reason {@link IEdge.target} is scope-qualified.
+   */
+  readonly derivedFrom?: IEdgeTarget;
   /** Opaque extension payload — consumer-owned, never interpreted by the store. */
   readonly [key: string]: unknown;
 }
 
 /**
+ * The physical address of a linked-to record: the `(scope, id)` pair that
+ * uniquely identifies it. Both components are required because a bare
+ * {@link MemoryId} is NOT unique across scopes — per-scope codecs (e.g. the
+ * medium-term codec's `turn-<n>` stems) legally mint the same stem under
+ * different scopes, so an edge that carried only the id would be ambiguous.
+ * `(scope, id)` matches the store's `getById(scope, id)` addressing and the
+ * index's composite primary key.
+ * @public
+ */
+export interface IEdgeTarget {
+  /** The scope the target record lives under. */
+  readonly scope: MemoryScopeKey;
+  /** The target record's stable file-stem id (unique WITHIN {@link IEdgeTarget.scope}). */
+  readonly id: MemoryId;
+}
+
+/**
+ * The canonical composite-key string for an {@link IEdgeTarget}: scope + id,
+ * NUL-separated. NUL is excluded from both components (scope segments are
+ * filename-safe; {@link MemoryId} is portable-filename-safe), so it is a
+ * collision-proof separator. This is the ONE canonicalization every consumer
+ * that keys on a scoped target uses — the backlink index, the cycle guard, and
+ * the ingest edge-validation path all route through it so their notions of
+ * "same target" cannot drift.
+ * @public
+ */
+export function edgeTargetKey(target: IEdgeTarget): string {
+  return `${target.scope}\0${target.id}`;
+}
+
+/**
  * An attributed link between two records. Carries the relation type, the
- * target id, and optional confidence / provenance / world-truth validity.
- * Replaces bare string references (e.g. PersonAIlity's `IMtmRef` becomes an
- * `IEdge` with `type: LinkType('mtm-ref')`).
+ * scope-qualified {@link IEdgeTarget | target}, and optional confidence /
+ * provenance / world-truth validity. Replaces bare string references (e.g.
+ * PersonAIlity's `IMtmRef` becomes an `IEdge` with `type: LinkType('mtm-ref')`).
  * @public
  */
 export interface IEdge {
   /** Open-vocabulary relation type. */
   readonly type: LinkType;
-  /** The linked-to record. */
-  readonly target: MemoryId;
+  /** The scope-qualified address of the linked-to record. */
+  readonly target: IEdgeTarget;
   /** Optional confidence in `[0, 1]`. */
   readonly confidence?: number;
   /** Optional structured provenance for the link itself. */
@@ -108,6 +145,15 @@ export interface IMemoryEnvelope {
    * an exact match is a no-op upsert that returns the existing record.
    */
   readonly contentHash: string;
+  /**
+   * Store-computed host-defined ordering value, produced by the kind's
+   * {@link RankProjector} on every put/update and stamped into the envelope in
+   * the same pass that recomputes {@link IMemoryEnvelope.contentHash | contentHash}.
+   * Absent when the kind has no registered projector (or the projector threw on
+   * this record). Ordered retrieval (`orderBy: 'rank'`) and the index's rank view
+   * sort by this value descending, placing records with an absent `rank` last.
+   */
+  readonly rank?: number;
   /** Structured provenance (never a flat enum). */
   readonly provenance: IProvenance;
 
@@ -136,3 +182,15 @@ export interface IMemoryRecord<TBody = unknown> {
   /** The per-kind, Converter-validated body. */
   readonly body: TBody;
 }
+
+/**
+ * A per-kind host projection from a fully-resolved (post-merge) memory record
+ * to a numeric ordering value. Registered per kind at store construction (see
+ * `rankProjectors`); the store runs it on every put/update over the same
+ * resolved record whose `contentHash` it computes, stamping the result into
+ * {@link IMemoryEnvelope.rank}. The store never interprets the body — the host
+ * owns what the number means. A projector that throws is treated as "no rank
+ * for this record" (logged at `warn`), never failing the write.
+ * @public
+ */
+export type RankProjector = (record: IMemoryRecord<unknown>) => number;

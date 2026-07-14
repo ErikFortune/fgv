@@ -10,6 +10,7 @@ import {
   DEFAULT_DEDUP_SCOPE,
   DedupScope,
   EntityId,
+  IEdgeTarget,
   IIdentityCodec,
   IMemoryEnvelope,
   IMemoryRecord,
@@ -20,6 +21,7 @@ import {
   KnowledgeLwwPolicy,
   MemoryId,
   MemoryScopeKey,
+  RankProjector,
   Tag,
   isTemporalIdentityCodec,
   isTemporalRecord,
@@ -35,7 +37,7 @@ import {
   MemoryObservationOutcome,
   MemoryObservationPhase
 } from '../observe';
-import { IVectorIndex, MemoryEmbedder } from '../vector';
+import { IMemoryRecordSource, IScopedMemoryRecord, IVectorIndex, MemoryEmbedder } from '../vector';
 import { defaultMemoryScopeEncoding } from './scopeEncoding';
 
 /** The on-disk extension for a memory record file. */
@@ -85,6 +87,26 @@ export interface IMemoryStore {
   list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
 
   /**
+   * List EVERY record in the vault, each paired with its scope-qualified
+   * `(scope, id)` address — the projection {@link IMemoryRecordSource} requires.
+   * Unlike {@link IMemoryStore.list | list}, it takes no filter (whole-vault) and
+   * returns {@link IScopedMemoryRecord}s so a re-index keys each entry on the same
+   * scoped target the incremental embed-on-write path uses. Two records that share
+   * a filename stem across scopes appear as distinct entries.
+   */
+  listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
+
+  /**
+   * Adapt this store to the {@link IMemoryRecordSource} seam so it can drive
+   * {@link IVectorIndex} rebuilds (e.g. `InMemoryCosineIndex.rebuild`). The
+   * returned source's `list()` delegates to {@link IMemoryStore.listScoped}. The
+   * store cannot implement {@link IMemoryRecordSource} directly because its
+   * `list(filter?)` returns bare records (the ergonomic query surface) while the
+   * seam's `list()` returns scope-qualified records.
+   */
+  asRecordSource(): IMemoryRecordSource;
+
+  /**
    * Write a record. Validates the body, computes a content hash, deduplicates
    * (scope-wide, before policy), applies the kind's {@link IWritePolicy}, stamps
    * transaction-time metadata (`created` / `updated` / `seq` / `contentHash`),
@@ -116,6 +138,19 @@ export interface IFileTreeMemoryStoreCreateParams {
   readonly writePolicies?: ReadonlyMap<Kind, IWritePolicy>;
   /** Per-kind identity codecs. */
   readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
+  /**
+   * Optional per-kind host projector map. When a kind has an entry, the store
+   * runs the projector on the fully-resolved (post-merge) record on every put
+   * AND every update — in the same pass that recomputes `contentHash` — and
+   * stamps the numeric result into {@link IMemoryEnvelope.rank}, which the index's
+   * rank view and `orderBy: 'rank'` retrieval sort by (descending, absent last).
+   * Absent for a kind → that kind's records carry no `rank`. Purely additive and
+   * zero-overhead when unwired: an absent map leaves every write byte-identical.
+   * The projector is a host callback — a throw is logged at `warn` and the record
+   * is stamped with no `rank`, never failing the write (mirrors the store's other
+   * guard-host-callbacks conventions).
+   */
+  readonly rankProjectors?: ReadonlyMap<Kind, RankProjector>;
   /** Default codec for kinds without an explicit entry. */
   readonly defaultCodec?: IIdentityCodec;
   /** Scope encoding. Defaults to {@link defaultMemoryScopeEncoding}. */
@@ -182,6 +217,7 @@ interface IInternalParams {
   readonly registry: IRegistry;
   readonly writePolicies: ReadonlyMap<Kind, IWritePolicy>;
   readonly codecs: ReadonlyMap<Kind, IIdentityCodec>;
+  readonly rankProjectors: ReadonlyMap<Kind, RankProjector>;
   readonly defaultCodec?: IIdentityCodec;
   readonly defaultPolicy: IWritePolicy;
   readonly scopeEncoding: (scope: MemoryScopeKey) => Result<string>;
@@ -212,6 +248,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
   private readonly _registry: IRegistry;
   private readonly _writePolicies: ReadonlyMap<Kind, IWritePolicy>;
   private readonly _codecs: ReadonlyMap<Kind, IIdentityCodec>;
+  private readonly _rankProjectors: ReadonlyMap<Kind, RankProjector>;
   private readonly _defaultCodec: IIdentityCodec | undefined;
   private readonly _defaultPolicy: IWritePolicy;
   private readonly _scopeEncoding: (scope: MemoryScopeKey) => Result<string>;
@@ -258,6 +295,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     this._registry = params.registry;
     this._writePolicies = params.writePolicies;
     this._codecs = params.codecs;
+    this._rankProjectors = params.rankProjectors;
     this._defaultCodec = params.defaultCodec;
     this._defaultPolicy = params.defaultPolicy;
     this._scopeEncoding = params.scopeEncoding;
@@ -286,6 +324,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
           registry: params.registry,
           writePolicies: params.writePolicies ?? new Map<Kind, IWritePolicy>(),
           codecs: params.codecs ?? new Map<Kind, IIdentityCodec>(),
+          rankProjectors: params.rankProjectors ?? new Map<Kind, RankProjector>(),
           defaultCodec: params.defaultCodec,
           defaultPolicy,
           scopeEncoding: params.scopeEncoding ?? defaultMemoryScopeEncoding,
@@ -359,6 +398,25 @@ export class FileTreeMemoryStore implements IMemoryStore {
       return succeed(matches);
     }
     return succeed(FileTreeMemoryStore._projectAsOf(matches, filter.asOf));
+  }
+
+  /** {@inheritDoc IMemoryStore.listScoped} */
+  public async listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> {
+    // The derived index already carries each record's scope
+    // ({@link IIndexedMemoryRecord.scope}), so the scoped projection is a direct
+    // map — the record's `(scope, id)` is exactly the address the vector index
+    // keys on. No filter/temporal projection: the seam re-embeds the whole vault.
+    return succeed(
+      this._index.entries().map((entry) => ({
+        target: { scope: entry.scope, id: entry.record.envelope.id },
+        record: entry.record
+      }))
+    );
+  }
+
+  /** {@inheritDoc IMemoryStore.asRecordSource} */
+  public asRecordSource(): IMemoryRecordSource {
+    return { list: (): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> => this.listScoped() };
   }
 
   /**
@@ -669,7 +727,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
       return fail(`memory put: rejected by policy: ${decision.reason}`);
     }
     return this._buildRecord(record, body, existing, policy, hash)
-      .thenOnSuccess((built) => this._embedOnWrite(built))
+      .onSuccess((built) => succeed(this._stampRank(built)))
+      .thenOnSuccess((built) => this._embedOnWrite(built, scope))
       .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, idStem))
       .thenOnSuccess(async (persisted) => {
         // Everything after the authoritative `_persist` commit is best-effort and
@@ -679,7 +738,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
         //     it), and only the successfully-evicted ids flow onward;
         //   - vector pruning of the evicted cohort is likewise best-effort.
         const evicted: ReadonlyArray<MemoryId> = this._applyEvictions(decision, scope);
-        await this._removeEvictedVectors(evicted);
+        await this._removeEvictedVectors(evicted, scope);
         return succeed({ record: persisted, evicted });
       });
   }
@@ -696,12 +755,16 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * Always succeeds (`Result` is the chain's shape, never a vector-induced
    * failure).
    */
-  private async _embedOnWrite(built: IMemoryRecord<string>): Promise<Result<IMemoryRecord<string>>> {
+  private async _embedOnWrite(
+    built: IMemoryRecord<string>,
+    scope: MemoryScopeKey
+  ): Promise<Result<IMemoryRecord<string>>> {
     if (this._vectorIndex === undefined || this._embed === undefined) {
       return succeed(built);
     }
     const vectorIndex: IVectorIndex = this._vectorIndex;
     const embed: MemoryEmbedder = this._embed;
+    const target: IEdgeTarget = { scope, id: built.envelope.id };
     const embedded: Result<Float32Array> = await this._tryVectorOp(
       () => embed(built),
       `embedding '${built.envelope.id}'`
@@ -710,7 +773,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       return succeed(built);
     }
     const added: Result<string> = await this._tryVectorOp(
-      () => vectorIndex.add(built.envelope.id, embedded.value),
+      () => vectorIndex.add(target, embedded.value),
       `vector add for '${built.envelope.id}'`
     );
     if (added.isFailure()) {
@@ -744,10 +807,18 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return evicted;
   }
 
-  /** Best-effort vector removal for each evicted record (never fails the put). */
-  private async _removeEvictedVectors(evicted: ReadonlyArray<MemoryId>): Promise<void> {
+  /**
+   * Best-effort vector removal for each evicted record (never fails the put).
+   * Every evicted record is in the same `scope` as the incoming write (the
+   * cull-oldest cohort is the incoming record's `(scope, kind)` cohort), so that
+   * scope qualifies each removal target.
+   */
+  private async _removeEvictedVectors(
+    evicted: ReadonlyArray<MemoryId>,
+    scope: MemoryScopeKey
+  ): Promise<void> {
     for (const id of evicted) {
-      await this._removeVectorBestEffort(id);
+      await this._removeVectorBestEffort({ scope, id });
     }
   }
 
@@ -777,12 +848,12 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * behaves byte-identically. Failures are logged, never surfaced — a committed
    * delete/eviction must not fail because a derived index could not be pruned.
    */
-  private async _removeVectorBestEffort(id: MemoryId): Promise<void> {
+  private async _removeVectorBestEffort(target: IEdgeTarget): Promise<void> {
     if (this._vectorIndex === undefined || this._embed === undefined) {
       return;
     }
     const vectorIndex: IVectorIndex = this._vectorIndex;
-    await this._tryVectorOp(() => vectorIndex.remove(id), `vector removal for '${id}'`);
+    await this._tryVectorOp(() => vectorIndex.remove(target), `vector removal for '${target.id}'`);
   }
 
   /**
@@ -888,7 +959,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       return this._deleteFile(scope, idStem)
         .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
         .thenOnSuccess(async () => {
-          await this._removeVectorBestEffort(existing.envelope.id);
+          await this._removeVectorBestEffort({ scope, id: existing.envelope.id });
           return succeed(existing.envelope.id);
         });
     });
@@ -982,7 +1053,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
           .withErrorFormat((msg) => `memory put '${entityId}': ${msg}`)
           .thenOnSuccess((versionStem) =>
             this._buildVersionedRecord(record, body, current, policy, hash, versionStem, validAt, now, seq)
-              .thenOnSuccess((built) => this._embedOnWrite(built))
+              .onSuccess((built) => succeed(this._stampRank(built)))
+              .thenOnSuccess((built) => this._embedOnWrite(built, scope))
               .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, versionStem))
               .onSuccess((persisted) =>
                 this._invalidateCurrents(scope, priorCurrents, validAt, now).onSuccess(() =>
@@ -1239,6 +1311,39 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   private _contentHash(kind: Kind, body: string, links: IMemoryEnvelope['links']): Result<string> {
     return this._hasher.computeHash({ kind, body, links });
+  }
+
+  /**
+   * Stamp the store-computed {@link IMemoryEnvelope.rank} onto a fully-built,
+   * fully-stamped record by running the kind's registered {@link RankProjector}.
+   * Runs on the SAME resolved (post-merge) record whose `contentHash` was just
+   * computed, so `rank` is always consistent with the current body — no separate
+   * write path and no consumer write-discipline rule. A no-op pass-through
+   * (byte-identical record) when the kind has no projector — the additive,
+   * zero-overhead-when-unwired default. The projector is a host callback: a throw
+   * is logged at `warn` and the record is stamped with NO `rank` (the field is
+   * explicitly cleared, so a throw on an update drops a now-stale prior rank rather
+   * than preserving it), so a ranking bug never loses an authoritative write.
+   */
+  private _stampRank(record: IMemoryRecord<string>): IMemoryRecord<string> {
+    const projector: RankProjector | undefined = this._rankProjectors.get(record.envelope.kind);
+    if (projector === undefined) {
+      return record;
+    }
+    try {
+      const rank: number = projector(record);
+      return { envelope: { ...record.envelope, rank }, body: record.body };
+    } catch (err) {
+      this._warnSwallowed(
+        `memory put '${record.envelope.id}': rank projector threw (swallowed; rank cleared): ${String(err)}`
+      );
+      // Explicitly CLEAR `rank` (not `return record`): on an update the merged
+      // envelope carries the prior version's `rank` (the write-policy merge does
+      // not touch `rank`), so returning it verbatim would keep a stale value
+      // inconsistent with the revised body. Clearing honors the staleness
+      // contract — an uncomputable rank means the record sorts last as "unranked".
+      return { envelope: { ...record.envelope, rank: undefined }, body: record.body };
+    }
   }
 
   private _codecFor(kind: Kind): Result<IIdentityCodec> {

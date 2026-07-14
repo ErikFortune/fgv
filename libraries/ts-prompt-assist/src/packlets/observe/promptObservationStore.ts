@@ -249,6 +249,12 @@ export class PromptObservationStore implements IPromptObserver {
     record: IPromptObservationRecord,
     qualifiers: IPromptObservationQuery['qualifiers'] & object
   ): boolean {
+    // A `'compose'` record has no single resolve request and therefore no
+    // `qualifierContext` to match against — a `qualifiers` criterion never
+    // matches it (the contributor qualifier contexts live on the nested traces).
+    if (record.phase === 'compose') {
+      return false;
+    }
     return this._qualifierResolver.matches(record.qualifierContext, qualifiers);
   }
 
@@ -267,11 +273,16 @@ export class PromptObservationStore implements IPromptObserver {
   }
 
   /**
-   * Safeguard findings live on success resolve records only.
+   * Safeguard findings live on success `'resolve'` records and success
+   * `'compose'` records (both surface their `safeguardFindings` at the top
+   * level; output records and failure records carry none).
    * @internal
    */
   private _safeguardFindings(record: IPromptObservationRecord): ReadonlyArray<ISafeguardFinding> {
-    if (record.phase === 'resolve' && record.safeguardFindings !== undefined) {
+    if (
+      (record.phase === 'resolve' || record.phase === 'compose') &&
+      record.safeguardFindings !== undefined
+    ) {
       return record.safeguardFindings;
     }
     return [];

@@ -6,7 +6,7 @@
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { JsonSchema } from '@fgv/ts-json-base';
 import { AiAssist } from '@fgv/ts-extras';
-import { Convert, EntityId, IIdentityCodec, IMemoryRecord, Kind, MemoryId, Tag } from '../types';
+import { Convert, EntityId, IEdgeTarget, IIdentityCodec, IMemoryRecord, Kind, MemoryId, Tag } from '../types';
 import { IBodyConverterRegistry, envelopeConverter } from '../converters';
 import { IMemoryStore } from '../store';
 import { IMemoryQuery, IMemoryRetriever } from '../retrieve';
@@ -135,7 +135,32 @@ export interface ICreateMemoryToolsParams {
    * {@link MemoryId} is used.
    */
   readonly handleFor?: (record: IMemoryRecord<unknown>) => string;
+  /**
+   * Optional host projector mapping a record (and the requested detail tier) to
+   * its agent-visible {@link IMemoryToolResultItem}. When supplied, every
+   * `memory_search` / `memory_context` / `memory_read` result item is produced by
+   * this callback — the host owns how much of the body a `'gist'` vs `'full'`
+   * result carries, so it can bound the default (`'gist'`) path.
+   *
+   * When absent, the built-in default projection is used (full body plus the
+   * {@link ICreateMemoryToolsParams.handleFor | handleFor} handle), which ignores
+   * the detail tier — behavior is byte-identical to a build with no projector.
+   *
+   * The callback is guarded exactly like `handleFor`: a throw degrades to the
+   * default full-body projection for that item rather than failing the whole
+   * search.
+   */
+  readonly projectItem?: (record: IMemoryRecord<unknown>, detail: MemoryDetailTier) => IMemoryToolResultItem;
 }
+
+/**
+ * The detail tier a `memory_search` / `memory_context` result is projected at.
+ * `'gist'` is the default (bounded) path; `'full'` is opt-in. Only meaningful
+ * when a host {@link ICreateMemoryToolsParams.projectItem | projectItem} is
+ * supplied — the built-in default projection returns the full body regardless.
+ * @public
+ */
+export type MemoryDetailTier = 'gist' | 'full';
 
 /** The resolved factory context threaded into each tool's `execute`. */
 interface IToolContext {
@@ -146,6 +171,7 @@ interface IToolContext {
   readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
   readonly defaultCodec?: IIdentityCodec;
   readonly handleFor?: (record: IMemoryRecord<unknown>) => string;
+  readonly projectItem?: (record: IMemoryRecord<unknown>, detail: MemoryDetailTier) => IMemoryToolResultItem;
 }
 
 // ---------------------------------------------------------------------------
@@ -155,11 +181,27 @@ interface IToolContext {
 // gate is enforced structurally and asserted in the tests.
 // ---------------------------------------------------------------------------
 
+/**
+ * The scope-qualified target of a link edge authored by the agent on a write.
+ * `scope` is optional: when omitted it defaults to the writing record's OWN
+ * resolved scope (the common same-conversation case); supply it explicitly to
+ * point an edge at a record in a different scope.
+ */
+// eslint-disable-next-line @rushstack/typedef-var
+const linkTargetSchema = JsonSchema.object({
+  id: JsonSchema.string({ description: 'The MemoryId of the record this edge points at.' }),
+  scope: JsonSchema.optional(
+    JsonSchema.string({
+      description: "The target record's scope. Defaults to the writing record's own scope when omitted."
+    })
+  )
+});
+
 /** A single attributed link edge as authored by the agent on a write. */
 // eslint-disable-next-line @rushstack/typedef-var
 const linkEdgeSchema = JsonSchema.object({
   type: JsonSchema.string({ description: 'The relation type of the link.' }),
-  target: JsonSchema.string({ description: 'The MemoryId this edge points at.' }),
+  target: linkTargetSchema,
   confidence: JsonSchema.optional(JsonSchema.number({ description: 'Optional confidence in [0, 1].' }))
 });
 
@@ -179,7 +221,10 @@ type WriteArgs = JsonSchema.Static<typeof writeSchema>;
 // eslint-disable-next-line @rushstack/typedef-var
 const readSchema = JsonSchema.object({
   kind: JsonSchema.string({ description: 'The record kind.' }),
-  entityId: JsonSchema.string({ description: 'The domain entity id to read.' })
+  entityId: JsonSchema.string({ description: 'The domain entity id to read.' }),
+  detail: JsonSchema.optional(
+    JsonSchema.enumOf(['gist', 'full'] as const, { description: "'gist' | 'full' (default)." })
+  )
 });
 
 // eslint-disable-next-line @rushstack/typedef-var
@@ -195,16 +240,41 @@ const searchSchema = JsonSchema.object({
   semantic: JsonSchema.optional(
     JsonSchema.string({ description: 'Semantic query text (requires a semantic-capable retriever).' })
   ),
-  limit: JsonSchema.optional(JsonSchema.integer({ description: 'Maximum number of results to return.' }))
+  limit: JsonSchema.optional(JsonSchema.integer({ description: 'Maximum number of results to return.' })),
+  offset: JsonSchema.optional(
+    JsonSchema.integer({ description: 'Number of results to skip after ordering, before limit. Default 0.' })
+  ),
+  detail: JsonSchema.optional(
+    JsonSchema.enumOf(['gist', 'full'] as const, { description: "'gist' (default) | 'full'." })
+  )
+});
+
+/**
+ * The scope-qualified seed a `memory_context` traversal starts from. Nested
+ * `{ id, scope }` shape like a link target, but — unlike a write edge — there is
+ * no writing record to default the scope from, so `scope` is REQUIRED to
+ * disambiguate the seed across scopes (a bare stem like `turn-3` is otherwise
+ * ambiguous). It is schema-required (not just runtime-required) so the wire
+ * schema an LLM reads never advertises an optionality the tool does not honor.
+ */
+// eslint-disable-next-line @rushstack/typedef-var
+const contextSeedSchema = JsonSchema.object({
+  id: JsonSchema.string({ description: 'The MemoryId of the seed record to traverse links from.' }),
+  scope: JsonSchema.string({
+    description: 'The scope of the seed record (required — a bare seed id is ambiguous across scopes).'
+  })
 });
 
 // eslint-disable-next-line @rushstack/typedef-var
 const contextSchema = JsonSchema.object({
-  from: JsonSchema.string({ description: 'The seed MemoryId to traverse links from.' }),
+  from: contextSeedSchema,
   kind: JsonSchema.optional(JsonSchema.string({ description: 'Restrict reached records to this kind.' })),
   tag: JsonSchema.optional(JsonSchema.string({ description: 'Restrict reached records carrying this tag.' })),
   hops: JsonSchema.optional(JsonSchema.integer({ description: 'BFS hop count (default 1).' })),
-  limit: JsonSchema.optional(JsonSchema.integer({ description: 'Maximum number of results to return.' }))
+  limit: JsonSchema.optional(JsonSchema.integer({ description: 'Maximum number of results to return.' })),
+  detail: JsonSchema.optional(
+    JsonSchema.enumOf(['gist', 'full'] as const, { description: "'gist' (default) | 'full'." })
+  )
 });
 
 // ---------------------------------------------------------------------------
@@ -254,8 +324,17 @@ function resolveOptionalKind(ctx: IToolContext, kindStr?: string): Result<Kind |
   return assertKindEnabled(ctx, kindStr);
 }
 
-/** Project a record into an agent-visible result item, applying the host handle hook when present. */
-function projectItem(ctx: IToolContext, record: IMemoryRecord<unknown>): IMemoryToolResultItem {
+/**
+ * Resolve the requested detail tier from the optional tool `detail` string.
+ * `'full'` is the only opt-in value; every other input (absent, or an
+ * unrecognized string) resolves safely to the bounded default `'gist'`.
+ */
+function resolveDetail(detail?: string): MemoryDetailTier {
+  return detail === 'full' ? 'full' : 'gist';
+}
+
+/** The built-in default projection: full body plus the guarded host handle. Ignores the detail tier. */
+function defaultProjectItem(ctx: IToolContext, record: IMemoryRecord<unknown>): IMemoryToolResultItem {
   // `handleFor` is a host callback; guard it so a throw degrades to the raw id rather than
   // escaping the Result chain (and crashing the whole search/context call).
   const handle =
@@ -269,6 +348,27 @@ function projectItem(ctx: IToolContext, record: IMemoryRecord<unknown>): IMemory
     tags: record.envelope.tags,
     body: record.body
   };
+}
+
+/**
+ * Project a record into an agent-visible result item at the requested detail
+ * tier. When a host {@link ICreateMemoryToolsParams.projectItem | projectItem}
+ * is supplied it owns the projection; otherwise the built-in
+ * {@link defaultProjectItem} (full body) is used. The host callback is guarded
+ * like `handleFor` — a throw degrades to the default full-body projection for
+ * that item rather than failing the whole search/context call.
+ */
+function projectItem(
+  ctx: IToolContext,
+  record: IMemoryRecord<unknown>,
+  detail: MemoryDetailTier
+): IMemoryToolResultItem {
+  if (ctx.projectItem === undefined) {
+    return defaultProjectItem(ctx, record);
+  }
+  // Guard the host projector like `handleFor`: a throw degrades to the built-in
+  // full-body projection (itself throw-safe) rather than escaping the chain.
+  return captureResult(() => ctx.projectItem!(record, detail)).orDefault(defaultProjectItem(ctx, record));
 }
 
 /** Resolve the identity codec used by `memory_write` to derive the storage id. */
@@ -285,13 +385,16 @@ function buildWriteRecord(
   typed: WriteArgs,
   kind: Kind,
   entityId: EntityId,
-  idStem: string
+  idStem: string,
+  sourceScope: string
 ): Result<IMemoryRecord<unknown>> {
   // Plain shapes handed to `envelopeConverter`, which validates each field
-  // (type → LinkType, target → MemoryId) and produces the branded IEdge[].
+  // (type → LinkType, target → { scope, id }) and produces the branded IEdge[].
+  // An edge target with no explicit `scope` defaults to the writing record's own
+  // resolved scope — the same-conversation case authors just an id.
   const links: ReadonlyArray<Record<string, unknown>> = (typed.links ?? []).map((link) => ({
     type: link.type,
-    target: link.target,
+    target: { scope: link.target.scope ?? sourceScope, id: link.target.id },
     ...(link.confidence !== undefined ? { confidence: link.confidence } : {})
   }));
   return envelopeConverter
@@ -323,7 +426,7 @@ function prepareWrite(
           if (addr.isVersioned) {
             return fail(`memory_write: versioned/temporal kind '${kind}' is not supported`);
           }
-          return buildWriteRecord(typed, kind, entityId, addr.idStem).onSuccess((record) =>
+          return buildWriteRecord(typed, kind, entityId, addr.idStem, addr.scope).onSuccess((record) =>
             succeed({ kind, entityId, record })
           );
         })
@@ -418,14 +521,19 @@ function buildReadTool(ctx: IToolContext): AiAssist.IAiClientTool {
         .withErrorFormat((msg) => `memory_read: invalid arguments: ${msg}`)
         .onSuccess((typed) =>
           assertKindEnabled(ctx, typed.kind).onSuccess((kind) =>
-            Convert.entityId.convert(typed.entityId).onSuccess((entityId) => succeed({ kind, entityId }))
+            Convert.entityId.convert(typed.entityId).onSuccess((entityId) => {
+              // `memory_read` is the explicit drill-in path, so its detail default is
+              // INVERTED vs search/context: `'full'` unless the caller opts down to `'gist'`.
+              const detail: MemoryDetailTier = typed.detail === 'gist' ? 'gist' : 'full';
+              return succeed({ kind, entityId, detail });
+            })
           )
         )
-        .thenOnSuccess(async ({ kind, entityId }) =>
+        .thenOnSuccess(async ({ kind, entityId, detail }) =>
           (await ctx.store.get(kind, entityId)).onSuccess((record) =>
             record === undefined
               ? succeed({ found: false })
-              : succeed({ found: true, item: projectItem(ctx, record) })
+              : succeed({ found: true, item: projectItem(ctx, record, detail) })
           )
         )
   };
@@ -450,14 +558,16 @@ function buildSearchTool(ctx: IToolContext): AiAssist.IAiClientTool {
           )
         )
         .thenOnSuccess(async ({ typed, kind, tag }) => {
+          const detail: MemoryDetailTier = resolveDetail(typed.detail);
           const query: IMemoryQuery = {
             ...(kind !== undefined ? { kind } : {}),
             ...(tag !== undefined ? { tag } : {}),
             ...(typed.semantic !== undefined ? { semantic: typed.semantic } : {}),
-            ...(typed.limit !== undefined ? { limit: typed.limit } : {})
+            ...(typed.limit !== undefined ? { limit: typed.limit } : {}),
+            ...(typed.offset !== undefined ? { offset: typed.offset } : {})
           };
           return (await ctx.retriever.retrieve(query)).onSuccess((records) =>
-            succeed({ count: records.length, results: records.map((r) => projectItem(ctx, r)) })
+            succeed({ count: records.length, results: records.map((r) => projectItem(ctx, r, detail)) })
           );
         })
   };
@@ -478,15 +588,14 @@ function buildContextTool(ctx: IToolContext): AiAssist.IAiClientTool {
         .convert(args)
         .withErrorFormat((msg) => `memory_context: invalid arguments: ${msg}`)
         .onSuccess((typed) =>
-          Convert.memoryId
-            .convert(typed.from)
-            .onSuccess((from) =>
-              resolveOptionalKind(ctx, typed.kind).onSuccess((kind) =>
-                resolveOptionalTag(typed.tag).onSuccess((tag) => succeed({ typed, from, kind, tag }))
-              )
+          resolveContextSeed(typed.from).onSuccess((from) =>
+            resolveOptionalKind(ctx, typed.kind).onSuccess((kind) =>
+              resolveOptionalTag(typed.tag).onSuccess((tag) => succeed({ typed, from, kind, tag }))
             )
+          )
         )
         .thenOnSuccess(async ({ typed, from, kind, tag }) => {
+          const detail: MemoryDetailTier = resolveDetail(typed.detail);
           const query: IMemoryQuery = {
             linkedFrom: from,
             ...(kind !== undefined ? { kind } : {}),
@@ -495,7 +604,11 @@ function buildContextTool(ctx: IToolContext): AiAssist.IAiClientTool {
             ...(typed.limit !== undefined ? { limit: typed.limit } : {})
           };
           return (await ctx.retriever.retrieve(query)).onSuccess((records) =>
-            succeed({ seed: from, count: records.length, results: records.map((r) => projectItem(ctx, r)) })
+            succeed({
+              seed: from,
+              count: records.length,
+              results: records.map((r) => projectItem(ctx, r, detail))
+            })
           );
         })
   };
@@ -525,6 +638,19 @@ function buildDeleteTool(ctx: IToolContext): AiAssist.IAiClientTool {
           )
         )
   };
+}
+
+/**
+ * Resolve a `memory_context` seed argument into a scope-qualified
+ * {@link IEdgeTarget}. Both `id` and `scope` are present here — the tool's
+ * `parametersSchema` ({@link contextSeedSchema}) makes `scope` schema-required —
+ * so this only brands the two fields; a malformed value fails via the branded
+ * converters (e.g. a path-unsafe seed id).
+ */
+function resolveContextSeed(from: { readonly id: string; readonly scope: string }): Result<IEdgeTarget> {
+  return Convert.memoryId
+    .convert(from.id)
+    .onSuccess((id) => Convert.scopeKey.convert(from.scope).onSuccess((scope) => succeed({ scope, id })));
 }
 
 /** Validate an optional `tag` string (`undefined` passes through). */
@@ -572,7 +698,8 @@ export function createMemoryTools(params: ICreateMemoryToolsParams): ReadonlyArr
     kinds: params.kinds,
     codecs: params.codecs,
     defaultCodec: params.defaultCodec,
-    handleFor: params.handleFor
+    handleFor: params.handleFor,
+    projectItem: params.projectItem
   };
   const selected: ReadonlySet<MemoryToolName> = new Set<MemoryToolName>(params.tools ?? DEFAULT_MEMORY_TOOLS);
   return TOOL_BUILDERS.filter((builder) => selected.has(builder.name)).map((builder) => builder.build(ctx));

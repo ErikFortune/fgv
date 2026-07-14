@@ -7,6 +7,7 @@ import '@fgv/ts-utils-jest';
 import { Result, fail, succeed } from '@fgv/ts-utils';
 import {
   HybridRetriever,
+  IEdgeTarget,
   IIndexedMemoryRecord,
   IMemoryQuery,
   IMemoryRecord,
@@ -26,8 +27,16 @@ import {
   TagRetriever,
   envelopeConverter,
   guardRetrieverCapabilities,
-  limitRecords
+  limitRecords,
+  orderingCompare,
+  rankCompare,
+  recencyCompare
 } from '../../../index';
+
+/** A scope-qualified link-traversal seed for the retriever tests. */
+function et(id: string, scope: string = 'knowledge'): IEdgeTarget {
+  return { scope: scope as MemoryScopeKey, id: id as MemoryId };
+}
 
 interface IRecordSpec {
   readonly id: string;
@@ -36,6 +45,7 @@ interface IRecordSpec {
   readonly tags?: ReadonlyArray<string>;
   readonly updated?: number;
   readonly seq?: number;
+  readonly rank?: number;
 }
 
 function makeEntry(spec: IRecordSpec): IIndexedMemoryRecord {
@@ -51,6 +61,7 @@ function makeEntry(spec: IRecordSpec): IIndexedMemoryRecord {
         updated: spec.updated ?? 0,
         seq: spec.seq ?? 0,
         contentHash: 'h',
+        ...(spec.rank !== undefined ? { rank: spec.rank } : {}),
         provenance: { source: 'agent' }
       })
       .orThrow(),
@@ -102,10 +113,10 @@ describe('retrieve helpers', () => {
     });
 
     test('fails loudly when a link-traversal axis is requested but unsupported', () => {
-      expect(guardRetrieverCapabilities({ linkedTo: 'x' as MemoryId }, noCaps)).toFailWith(
+      expect(guardRetrieverCapabilities({ linkedTo: et('x') }, noCaps)).toFailWith(
         /link traversal requires a backlink index; none configured/i
       );
-      expect(guardRetrieverCapabilities({ linkedFrom: 'x' as MemoryId }, noCaps)).toFailWith(
+      expect(guardRetrieverCapabilities({ linkedFrom: et('x') }, noCaps)).toFailWith(
         /link traversal requires/i
       );
       expect(guardRetrieverCapabilities({ hops: 2 }, noCaps)).toFailWith(/link traversal requires/i);
@@ -113,7 +124,7 @@ describe('retrieve helpers', () => {
 
     test('passes a link-traversal axis when the capability is supported', () => {
       expect(
-        guardRetrieverCapabilities({ linkedTo: 'x' as MemoryId }, { ...noCaps, supportsLinkTraversal: true })
+        guardRetrieverCapabilities({ linkedTo: et('x') }, { ...noCaps, supportsLinkTraversal: true })
       ).toSucceed();
     });
   });
@@ -134,6 +145,29 @@ describe('retrieve helpers', () => {
     test('returns an empty array for a zero or negative limit', () => {
       expect(limitRecords(records, 0)).toEqual([]);
       expect(limitRecords(records, -1)).toEqual([]);
+    });
+
+    test('an absent offset is a no-op (byte-identical to today) — same reference returned', () => {
+      expect(limitRecords(records, undefined, undefined)).toBe(records);
+      expect(limitRecords(records, 2, undefined)).toHaveLength(2);
+      // A non-positive offset is guarded like a non-positive limit — no skip.
+      expect(limitRecords(records, undefined, 0)).toBe(records);
+      expect(ids(limitRecords(records, undefined, -5))).toEqual(['a', 'b', 'c']);
+    });
+
+    test('offset skips after ordering; { offset, limit } is a stable page window', () => {
+      expect(ids(limitRecords(records, undefined, 1))).toEqual(['b', 'c']);
+      expect(ids(limitRecords(records, 1, 1))).toEqual(['b']);
+      expect(ids(limitRecords(records, 2, 1))).toEqual(['b', 'c']);
+    });
+
+    test('an offset past the end yields an empty page (never a throw)', () => {
+      expect(limitRecords(records, undefined, 3)).toEqual([]);
+      expect(limitRecords(records, 5, 99)).toEqual([]);
+    });
+
+    test('a non-positive limit still wins over an offset window', () => {
+      expect(limitRecords(records, 0, 1)).toEqual([]);
     });
   });
 });
@@ -217,7 +251,266 @@ describe('RecencyRetriever', () => {
 
   test('degrades loudly on a link-traversal request', async () => {
     const r = RecencyRetriever.create(buildIndex([{ id: 'a' }])).orThrow();
-    expect(await r.retrieve({ linkedTo: 'a' as MemoryId })).toFailWith(/link traversal requires/i);
+    expect(await r.retrieve({ linkedTo: et('a') })).toFailWith(/link traversal requires/i);
+  });
+});
+
+describe('orderBy: rank axis', () => {
+  const a1 = makeEntry({ id: 'a', rank: 1, updated: 100, seq: 1 }).record;
+  const b3 = makeEntry({ id: 'b', rank: 3, updated: 100, seq: 2 }).record;
+  const c2 = makeEntry({ id: 'c', rank: 2, updated: 100, seq: 3 }).record;
+  const unranked = makeEntry({ id: 'z', updated: 999, seq: 4 }).record;
+
+  describe('rankCompare', () => {
+    test('orders by rank descending', () => {
+      expect(
+        [a1, b3, c2]
+          .slice()
+          .sort(rankCompare)
+          .map((r) => r.envelope.id)
+      ).toEqual(['b', 'c', 'a']);
+    });
+
+    test('places an absent-rank record last regardless of recency', () => {
+      // `unranked` has the newest `updated`, but an absent rank sorts after every ranked record.
+      expect(
+        [unranked, a1, b3]
+          .slice()
+          .sort(rankCompare)
+          .map((r) => r.envelope.id)
+      ).toEqual(['b', 'a', 'z']);
+      // Symmetric: absent on the left side of the compare too.
+      expect(
+        [a1, unranked]
+          .slice()
+          .sort(rankCompare)
+          .map((r) => r.envelope.id)
+      ).toEqual(['a', 'z']);
+    });
+
+    test('breaks an equal-rank tie by recency', () => {
+      const b3b = makeEntry({ id: 'b2', rank: 3, updated: 50, seq: 9 }).record;
+      // Equal rank 3 → newer `updated` (b3 at 100) first.
+      expect(
+        [b3b, b3]
+          .slice()
+          .sort(rankCompare)
+          .map((r) => r.envelope.id)
+      ).toEqual(['b', 'b2']);
+    });
+  });
+
+  describe('orderingCompare', () => {
+    test("returns recencyCompare for absent orderBy and 'recency'", () => {
+      expect(orderingCompare()).toBe(recencyCompare);
+      expect(orderingCompare('recency')).toBe(recencyCompare);
+    });
+
+    test("returns rankCompare for 'rank'", () => {
+      expect(orderingCompare('rank')).toBe(rankCompare);
+    });
+  });
+
+  describe.each([
+    ['RecencyRetriever', (index: MemoryIndex): IMemoryRetriever => RecencyRetriever.create(index).orThrow()],
+    ['TagRetriever', (index: MemoryIndex): IMemoryRetriever => TagRetriever.create(index).orThrow()],
+    [
+      'StructuredFilterRetriever',
+      (index: MemoryIndex): IMemoryRetriever => StructuredFilterRetriever.create(index).orThrow()
+    ]
+  ])('%s honors orderBy', (name, make) => {
+    // Tag / structured-filter need their axis present to return anything.
+    const axis: IMemoryQuery =
+      name === 'TagRetriever'
+        ? { tag: 'x' as Tag }
+        : name === 'StructuredFilterRetriever'
+        ? { filter: () => true }
+        : {};
+
+    function orderedIndex(): MemoryIndex {
+      return buildIndex([
+        { id: 'a', rank: 1, tags: ['x'], updated: 100, seq: 1 },
+        { id: 'b', rank: 3, tags: ['x'], updated: 100, seq: 2 },
+        { id: 'c', rank: 2, tags: ['x'], updated: 100, seq: 3 },
+        { id: 'z', tags: ['x'], updated: 999, seq: 4 }
+      ]);
+    }
+
+    test("orderBy 'rank' orders by rank descending, absent last", async () => {
+      const r = make(orderedIndex());
+      expect(await r.retrieve({ ...axis, orderBy: 'rank' })).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(ids(records)).toEqual(['b', 'c', 'a', 'z']);
+        }
+      );
+    });
+
+    test('orderBy absent is unchanged recency order', async () => {
+      const r = make(orderedIndex());
+      expect(await r.retrieve({ ...axis })).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          // `z` has the newest `updated`; the rest tie on `updated` and break by
+          // seq descending (c=3, b=2, a=1) — recency order regardless of rank.
+          expect(ids(records)).toEqual(['z', 'c', 'b', 'a']);
+        }
+      );
+    });
+
+    test('rank ordering composes with { limit, offset } for a bounded top-M page', async () => {
+      const r = make(orderedIndex());
+      expect(await r.retrieve({ ...axis, orderBy: 'rank', limit: 1, offset: 1 })).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(ids(records)).toEqual(['c']);
+        }
+      );
+    });
+  });
+
+  test("HybridRetriever re-orders the merged set by rank for orderBy 'rank'", async () => {
+    const index = buildIndex([
+      { id: 'a', rank: 1, tags: ['x'], updated: 100, seq: 1 },
+      { id: 'b', rank: 3, tags: ['x'], updated: 100, seq: 2 },
+      { id: 'c', rank: 2, tags: ['x'], updated: 100, seq: 3 }
+    ]);
+    const hybrid = HybridRetriever.create(
+      [RecencyRetriever.create(index).orThrow(), TagRetriever.create(index).orThrow()],
+      ScoreUnionMergeStrategy.create().orThrow()
+    ).orThrow();
+    expect(await hybrid.retrieve({ tag: 'x' as Tag, orderBy: 'rank' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        // All three score 2 (surfaced by both children); orderBy rank re-sorts the merge.
+        expect(ids(records)).toEqual(['b', 'c', 'a']);
+      }
+    );
+  });
+
+  test("SemanticRetriever preserves vector-similarity order regardless of orderBy 'rank'", async () => {
+    const index = buildIndex([
+      { id: 'a', rank: 9, updated: 1 },
+      { id: 'b', rank: 1, updated: 1 }
+    ]);
+    const vectorIndex: IVectorIndex = {
+      add: (t: IEdgeTarget) => Promise.resolve(succeed(`ref-${t.id}`)),
+      remove: (t: IEdgeTarget) => Promise.resolve(succeed(t)),
+      query: () =>
+        Promise.resolve(
+          succeed([
+            { target: et('b'), score: 0.9 },
+            { target: et('a'), score: 0.5 }
+          ])
+        )
+    };
+    const r = SemanticRetriever.create({
+      index,
+      backend: {
+        vectorIndex,
+        embedQuery: () => Promise.resolve(succeed(Float32Array.from([0.1])))
+      }
+    }).orThrow();
+    // Even though `a` has the higher rank, semantic keeps the similarity order (b before a).
+    expect(await r.retrieve({ semantic: 'q', orderBy: 'rank' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(ids(records)).toEqual(['b', 'a']);
+      }
+    );
+  });
+});
+
+describe('query axes: kinds (kind-set) and offset', () => {
+  function multiKindRetriever(): RecencyRetriever {
+    return RecencyRetriever.create(
+      buildIndex([
+        { id: 'k1', kind: 'knowledge', updated: 40 },
+        { id: 'n1', kind: 'note', updated: 30 },
+        { id: 'e1', kind: 'event', updated: 20 },
+        { id: 'k2', kind: 'knowledge', updated: 10 }
+      ])
+    ).orThrow();
+  }
+
+  describe('kinds', () => {
+    test("an absent kinds axis imposes no kind constraint (today's behavior)", async () => {
+      expect(await multiKindRetriever().retrieve({})).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect([...ids(records)].sort()).toEqual(['e1', 'k1', 'k2', 'n1']);
+        }
+      );
+    });
+
+    test('restricts to records in ANY of the listed kinds', async () => {
+      expect(
+        await multiKindRetriever().retrieve({
+          kinds: ['knowledge', 'event'] as unknown as ReadonlyArray<Kind>
+        })
+      ).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect([...ids(records)].sort()).toEqual(['e1', 'k1', 'k2']);
+      });
+    });
+
+    test('an explicit empty kinds array matches NOTHING (not match-all)', async () => {
+      expect(await multiKindRetriever().retrieve({ kinds: [] })).toSucceedWith([]);
+    });
+
+    test('kind and kinds compose as AND (kind must be a member of kinds)', async () => {
+      // kind=knowledge AND kinds includes knowledge → knowledge records only.
+      expect(
+        await multiKindRetriever().retrieve({
+          kind: knowledge,
+          kinds: ['knowledge', 'note'] as unknown as ReadonlyArray<Kind>
+        })
+      ).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect([...ids(records)].sort()).toEqual(['k1', 'k2']);
+      });
+      // kind=knowledge but kinds excludes knowledge → nothing can satisfy both.
+      expect(
+        await multiKindRetriever().retrieve({
+          kind: knowledge,
+          kinds: ['note', 'event'] as unknown as ReadonlyArray<Kind>
+        })
+      ).toSucceedWith([]);
+    });
+  });
+
+  describe('offset', () => {
+    function ordered(): RecencyRetriever {
+      return RecencyRetriever.create(
+        buildIndex([
+          { id: 'a', updated: 10 },
+          { id: 'b', updated: 40 },
+          { id: 'c', updated: 30 },
+          { id: 'd', updated: 20 }
+        ])
+      ).orThrow();
+    }
+
+    test('skips after ordering, forming a stable { offset, limit } page window', async () => {
+      // Recency order is [b, c, d, a].
+      expect(await ordered().retrieve({ offset: 1, limit: 2 })).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(ids(records)).toEqual(['c', 'd']);
+        }
+      );
+    });
+
+    test('an absent offset is unchanged from today', async () => {
+      expect(await ordered().retrieve({ limit: 2 })).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(ids(records)).toEqual(['b', 'c']);
+        }
+      );
+    });
+
+    test('an offset past the end yields an empty page', async () => {
+      expect(await ordered().retrieve({ offset: 99 })).toSucceedWith([]);
+    });
+
+    test('a negative offset does not slip into slice (treated as no skip)', async () => {
+      expect(await ordered().retrieve({ offset: -3, limit: 2 })).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(ids(records)).toEqual(['b', 'c']);
+        }
+      );
+    });
   });
 });
 
@@ -293,11 +586,11 @@ class FakeVectorIndex implements IVectorIndex {
     this._hits = hits;
     this._failQuery = failQuery;
   }
-  public add(id: MemoryId): Promise<Result<string>> {
-    return Promise.resolve(succeed(`ref-${id}`));
+  public add(t: IEdgeTarget): Promise<Result<string>> {
+    return Promise.resolve(succeed(`ref-${t.id}`));
   }
-  public remove(id: MemoryId): Promise<Result<MemoryId>> {
-    return Promise.resolve(succeed(id));
+  public remove(t: IEdgeTarget): Promise<Result<IEdgeTarget>> {
+    return Promise.resolve(succeed(t));
   }
   public query(__vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
     this.lastTopK = topK;
@@ -349,8 +642,8 @@ describe('SemanticRetriever', () => {
       index,
       backend: {
         vectorIndex: new FakeVectorIndex([
-          { id: 'b' as MemoryId, score: 0.9 },
-          { id: 'a' as MemoryId, score: 0.5 }
+          { target: et('b'), score: 0.9 },
+          { target: et('a'), score: 0.5 }
         ]),
         embedQuery: okEmbed
       }
@@ -372,9 +665,9 @@ describe('SemanticRetriever', () => {
       index,
       backend: {
         vectorIndex: new FakeVectorIndex([
-          { id: 'gone' as MemoryId, score: 0.99 },
-          { id: 'b' as MemoryId, score: 0.8 },
-          { id: 'a' as MemoryId, score: 0.7 }
+          { target: et('gone'), score: 0.99 },
+          { target: et('b'), score: 0.8 },
+          { target: et('a'), score: 0.7 }
         ]),
         embedQuery: okEmbed
       }
@@ -386,12 +679,40 @@ describe('SemanticRetriever', () => {
     );
   });
 
+  test('resolves a hit to the correctly-scoped record when two records share an id stem across scopes', async () => {
+    // Two records with the identical stem `turn-3` under different scopes — the
+    // exact same-stem-across-scopes collision the scope-qualified hit fixes. The
+    // retriever must re-resolve each hit through its full `(scope, id)` key, not a
+    // bare id (which would ambiguously match either record).
+    const index = buildIndex([
+      { id: 'turn-3', scope: 'conv-a', tags: ['from-a'] },
+      { id: 'turn-3', scope: 'conv-b', tags: ['from-b'] }
+    ]);
+    const r = SemanticRetriever.create({
+      index,
+      backend: {
+        // The vector backend scored the conv-b record; the retriever must return
+        // exactly that record, never the same-stem conv-a record.
+        vectorIndex: new FakeVectorIndex([{ target: et('turn-3', 'conv-b'), score: 0.9 }]),
+        embedQuery: okEmbed
+      }
+    }).orThrow();
+    expect(await r.retrieve({ semantic: 'q' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(records).toHaveLength(1);
+        expect(records[0].envelope.id).toBe('turn-3');
+        // The tag proves it is the conv-b record, not the same-stem conv-a one.
+        expect(records[0].envelope.tags).toEqual(['from-b']);
+      }
+    );
+  });
+
   test('forwards topK to the vector index and applies the post-filter limit', async () => {
     const index = buildIndex([{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
     const vectorIndex = new FakeVectorIndex([
-      { id: 'a' as MemoryId, score: 0.9 },
-      { id: 'b' as MemoryId, score: 0.8 },
-      { id: 'c' as MemoryId, score: 0.7 }
+      { target: et('a'), score: 0.9 },
+      { target: et('b'), score: 0.8 },
+      { target: et('c'), score: 0.7 }
     ]);
     const r = SemanticRetriever.create({ index, backend: { vectorIndex, embedQuery: okEmbed } }).orThrow();
     expect(await r.retrieve({ semantic: 'q', topK: 2, limit: 2 })).toSucceedAndSatisfy(
@@ -404,7 +725,7 @@ describe('SemanticRetriever', () => {
   });
 
   test('defaults topK to 10 when the query omits it', async () => {
-    const vectorIndex = new FakeVectorIndex([{ id: 'a' as MemoryId, score: 0.9 }]);
+    const vectorIndex = new FakeVectorIndex([{ target: et('a'), score: 0.9 }]);
     const r = SemanticRetriever.create({
       index: buildIndex([{ id: 'a' }]),
       backend: { vectorIndex, embedQuery: okEmbed }
@@ -446,8 +767,8 @@ describe('SemanticRetriever', () => {
   test('normalizes a rejecting vector backend into a Failure', async () => {
     // A vector index whose `query` rejects (throws) rather than returning a fail.
     const rejectingIndex: IVectorIndex = {
-      add: (id: MemoryId) => Promise.resolve(succeed(`ref-${id}`)),
-      remove: (id: MemoryId) => Promise.resolve(succeed(id)),
+      add: (t: IEdgeTarget) => Promise.resolve(succeed(`ref-${t.id}`)),
+      remove: (t: IEdgeTarget) => Promise.resolve(succeed(t)),
       query: () => Promise.reject(new Error('socket hangup'))
     };
     const r = SemanticRetriever.create({
@@ -551,7 +872,7 @@ describe('HybridRetriever', () => {
     const semantic = SemanticRetriever.create({
       index,
       backend: {
-        vectorIndex: new FakeVectorIndex([{ id: 'b' as MemoryId, score: 0.9 }]),
+        vectorIndex: new FakeVectorIndex([{ target: et('b'), score: 0.9 }]),
         embedQuery: () => Promise.resolve(succeed(Float32Array.from([1])))
       }
     }).orThrow();
@@ -586,9 +907,9 @@ describe('HybridRetriever', () => {
     ).orThrow();
     expect(hybrid.capabilities.supportsLinkTraversal).toBe(true);
     // Union supports link traversal, so the hybrid does NOT loud-fail.
-    expect(await hybrid.retrieve({ linkedTo: 'a' as MemoryId, hops: 2 })).toSucceed();
+    expect(await hybrid.retrieve({ linkedTo: et('a'), hops: 2 })).toSucceed();
     // The link-capable child keeps the axes; the plain child has them stripped.
-    expect(linkChild.lastQuery?.linkedTo).toBe('a');
+    expect(linkChild.lastQuery?.linkedTo).toEqual(et('a'));
     expect(linkChild.lastQuery?.hops).toBe(2);
     expect(plainChild.lastQuery?.linkedTo).toBeUndefined();
     expect(plainChild.lastQuery?.hops).toBeUndefined();
@@ -631,8 +952,8 @@ describe('HybridRetriever', () => {
       index,
       backend: {
         vectorIndex: new FakeVectorIndex([
-          { id: 'd' as MemoryId, score: 0.9 },
-          { id: 'a' as MemoryId, score: 0.8 }
+          { target: et('d'), score: 0.9 },
+          { target: et('a'), score: 0.8 }
         ]),
         embedQuery: () => Promise.resolve(succeed(Float32Array.from([1])))
       }
@@ -658,5 +979,40 @@ describe('HybridRetriever', () => {
         expect(records[0].envelope.id).toBe('b');
       }
     );
+  });
+
+  test('applies the { offset, limit } window after merge', async () => {
+    const { index } = build();
+    const recency = RecencyRetriever.create(index).orThrow();
+    const hybrid = HybridRetriever.create([recency], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
+    // Merged recency order is [b(30), c(20), a(10)]; offset 1 + limit 1 → [c].
+    expect(await hybrid.retrieve({ offset: 1, limit: 1 })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(ids(records)).toEqual(['c']);
+      }
+    );
+  });
+
+  test('strips offset from child queries (offset is a post-merge concern)', async () => {
+    const child = new RecordingRetriever({
+      supportsSemanticRecall: false,
+      supportsTemporalQuery: false,
+      supportsLinkTraversal: false
+    });
+    const hybrid = HybridRetriever.create([child], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
+    expect(await hybrid.retrieve({ offset: 2, limit: 3 })).toSucceed();
+    expect(child.lastQuery?.offset).toBeUndefined();
+    expect(child.lastQuery?.limit).toBeUndefined();
+  });
+
+  test('passes the kinds axis through to children (a shared pre-filter axis)', async () => {
+    const child = new RecordingRetriever({
+      supportsSemanticRecall: false,
+      supportsTemporalQuery: false,
+      supportsLinkTraversal: false
+    });
+    const hybrid = HybridRetriever.create([child], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
+    expect(await hybrid.retrieve({ kinds: ['knowledge'] as unknown as ReadonlyArray<Kind> })).toSucceed();
+    expect(child.lastQuery?.kinds).toEqual(['knowledge']);
   });
 });

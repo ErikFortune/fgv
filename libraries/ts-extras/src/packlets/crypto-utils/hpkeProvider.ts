@@ -206,23 +206,34 @@ async function _kemEncap(
 
 // RFC 9180 §4.1 DHKEM Decap — deserializes enc, DH with recipient privkey,
 // derives same shared_secret via ExtractAndExpand.
-// Requires recipientPrivateKey to be extractable (JWK export needed for pkRm).
+// The DH step (deriveBits) works on a non-extractable recipientPrivateKey. Recovering the
+// recipient's own public key bytes (pkRm) for kem_context normally requires a JWK export, which
+// in turn requires recipientPrivateKey to be extractable — UNLESS the caller supplies pkRm
+// directly (raw 32-byte X25519 public key), in which case no JWK export happens and
+// recipientPrivateKey may be non-extractable.
 async function _kemDecap(
   subtle: SubtleCrypto,
   enc: Uint8Array,
-  recipientPrivateKey: CryptoKey
+  recipientPrivateKey: CryptoKey,
+  recipientPublicKey?: Uint8Array
 ): Promise<Uint8Array<ArrayBuffer>> {
   const pkE = await subtle.importKey('raw', _toBufferView(enc), { name: 'X25519' }, true, []);
   const dh = new Uint8Array(
     await subtle.deriveBits({ name: 'X25519', public: pkE }, recipientPrivateKey, 256)
   );
-  // Recover recipient's own public key from JWK x field (base64url-encoded raw X25519 public key).
-  const jwk = (await subtle.exportKey('jwk', recipientPrivateKey)) as JsonWebKey;
-  /* c8 ignore next 3 - defensive: X25519 JWK always has an x field; unreachable via public API */
-  if (!jwk.x) {
-    throw new Error('HPKE Decap: failed to extract public key bytes from recipient private key JWK');
+  let pkRm: Uint8Array;
+  if (recipientPublicKey !== undefined) {
+    // Caller-supplied; length already validated in openBase.
+    pkRm = recipientPublicKey;
+  } else {
+    // Recover recipient's own public key from JWK x field (base64url-encoded raw X25519 public key).
+    const jwk = (await subtle.exportKey('jwk', recipientPrivateKey)) as JsonWebKey;
+    /* c8 ignore next 3 - defensive: X25519 JWK always has an x field; unreachable via public API */
+    if (!jwk.x) {
+      throw new Error('HPKE Decap: failed to extract public key bytes from recipient private key JWK');
+    }
+    pkRm = _base64UrlDecode(jwk.x);
   }
-  const pkRm = _base64UrlDecode(jwk.x);
   const kemContext = _concat(enc, pkRm);
   const eaePrk = await _labeledExtract(subtle, _KEM_SUITE_ID, new Uint8Array(0), 'eae_prk', dh);
   return _labeledExpand(subtle, _KEM_SUITE_ID, eaePrk, 'shared_secret', kemContext, _N_SECRET);
@@ -370,12 +381,20 @@ export class HpkeProvider {
    *
    * @param recipientPrivateKey - Recipient's X25519 private `CryptoKey`
    *   (`algorithm.name === 'X25519'`, `type === 'private'`, `usages` includes `'deriveBits'`).
-   *   **Must be extractable** (`extractable: true`) — the recipient's public key bytes
-   *   are recovered from the JWK `x` field during Decap.
+   *   **Must be extractable** (`extractable: true`) only when `recipientPublicKey` is not
+   *   supplied — the recipient's public key bytes are then recovered from the JWK `x` field
+   *   during Decap. When `recipientPublicKey` is supplied, `recipientPrivateKey` may be
+   *   non-extractable.
    * @param info - Context-binding bytes. Must exactly match `info` from `sealBase`.
    * @param aad - Must exactly match `aad` from `sealBase`.
    * @param enc - The encapsulated key from `sealBase` — exactly 32 bytes.
    * @param ciphertext - The ciphertext from `sealBase` — `plaintext.length + 16` bytes.
+   * @param recipientPublicKey - Optional raw 32-byte X25519 public key matching
+   *   `recipientPrivateKey` (`pkRm` in RFC 9180 §4.1). Public material — supplying it lets
+   *   Decap build `kem_context` without exporting `recipientPrivateKey` to JWK, so
+   *   `recipientPrivateKey` no longer needs to be extractable. A mismatched value only breaks
+   *   the caller's own decryption (AEAD authentication fails) — it cannot be used to attack
+   *   another party's ciphertext.
    * @returns `Success` with decrypted plaintext bytes, or `Failure` with error context.
    */
   public async openBase(
@@ -383,7 +402,8 @@ export class HpkeProvider {
     info: Uint8Array,
     aad: Uint8Array,
     enc: Uint8Array,
-    ciphertext: Uint8Array
+    ciphertext: Uint8Array,
+    recipientPublicKey?: Uint8Array
   ): Promise<Result<Uint8Array>> {
     if (enc.length !== _N_PK) {
       return fail(`HPKE openBase: enc must be ${_N_PK} bytes, got ${enc.length}`);
@@ -393,8 +413,13 @@ export class HpkeProvider {
         `HPKE openBase: ciphertext too short (minimum ${_N_T} bytes for auth tag, got ${ciphertext.length})`
       );
     }
+    if (recipientPublicKey !== undefined && recipientPublicKey.length !== _N_PK) {
+      return fail(
+        `HPKE openBase: recipientPublicKey must be ${_N_PK} bytes, got ${recipientPublicKey.length}`
+      );
+    }
     const result = await captureAsyncResult(async () => {
-      const sharedSecret = await _kemDecap(this._subtle, enc, recipientPrivateKey);
+      const sharedSecret = await _kemDecap(this._subtle, enc, recipientPrivateKey, recipientPublicKey);
       const { key, baseNonce } = await _keyScheduleBase(this._subtle, sharedSecret, info);
       const aesKey = await this._subtle.importKey('raw', key, { name: 'AES-GCM' }, false, ['decrypt']);
       const pt = await this._subtle.decrypt(

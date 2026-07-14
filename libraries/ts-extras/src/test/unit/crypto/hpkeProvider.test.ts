@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 import * as crypto from 'crypto';
-import { HpkeProvider, IHpkeSealResult } from '../../../packlets/crypto-utils';
+import { HpkeProvider, IHpkeSealResult, spkiToRawX25519 } from '../../../packlets/crypto-utils';
 import {
   HKDF_RFC5869_CASE1,
   RECIPIENT_PRIV_JWK,
@@ -249,6 +249,95 @@ describe('HpkeProvider', () => {
       expect(await hpke.hkdf(secret, new Uint8Array(0), new TextEncoder().encode('ctx'), 8161)).toFailWith(
         /exceeds maximum 8160 bytes/i
       );
+    });
+  });
+
+  describe('openBase with caller-supplied recipientPublicKey', () => {
+    let hpke: HpkeProvider;
+
+    beforeEach(() => {
+      hpke = HpkeProvider.create(subtle).orThrow();
+    });
+
+    test('round-trips with a non-extractable recipient private key', async () => {
+      const pair = (await subtle.generateKey({ name: 'X25519' }, false, ['deriveBits'])) as CryptoKeyPair;
+      expect(pair.privateKey.extractable).toBe(false);
+      const rawPublicKey = new Uint8Array(await subtle.exportKey('raw', pair.publicKey));
+
+      const info = new TextEncoder().encode('test-app/v1\x00non-extractable');
+      const aad = new TextEncoder().encode('aad-data');
+      const plaintext = new TextEncoder().encode('Hello, non-extractable World!');
+
+      const sealed = (await hpke.sealBase(pair.publicKey, info, aad, plaintext)).orThrow();
+      expect(
+        await hpke.openBase(pair.privateKey, info, aad, sealed.enc, sealed.ciphertext, rawPublicKey)
+      ).toSucceedAndSatisfy((pt) => {
+        expect(pt).toEqual(plaintext);
+      });
+    });
+
+    test('round-trips without recipientPublicKey (back-compat, extractable key)', async () => {
+      const recipientPub = await importRecipientPub();
+      const recipientPriv = await importRecipientPriv();
+      const info = new TextEncoder().encode('test-app/v1\x00back-compat');
+      const aad = new Uint8Array(0);
+      const plaintext = new TextEncoder().encode('back-compat message');
+
+      const sealed = (await hpke.sealBase(recipientPub, info, aad, plaintext)).orThrow();
+      expect(
+        await hpke.openBase(recipientPriv, info, aad, sealed.enc, sealed.ciphertext)
+      ).toSucceedAndSatisfy((pt) => {
+        expect(pt).toEqual(plaintext);
+      });
+    });
+
+    test('fails closed when recipientPublicKey is wrong (valid length, wrong key)', async () => {
+      const pair = (await subtle.generateKey({ name: 'X25519' }, false, ['deriveBits'])) as CryptoKeyPair;
+      const otherPair = (await subtle.generateKey({ name: 'X25519' }, true, ['deriveBits'])) as CryptoKeyPair;
+      const wrongPublicKey = new Uint8Array(await subtle.exportKey('raw', otherPair.publicKey));
+
+      const info = new TextEncoder().encode('ctx');
+      const aad = new Uint8Array(0);
+      const plaintext = new TextEncoder().encode('secret');
+
+      const sealed = (await hpke.sealBase(pair.publicKey, info, aad, plaintext)).orThrow();
+      expect(
+        await hpke.openBase(pair.privateKey, info, aad, sealed.enc, sealed.ciphertext, wrongPublicKey)
+      ).toFail();
+    });
+
+    test('returns Failure when recipientPublicKey has the wrong length', async () => {
+      const recipientPriv = await importRecipientPriv();
+      const enc = new Uint8Array(32);
+      const ciphertext = new Uint8Array(32);
+      const badLengthKey = new Uint8Array(31);
+      expect(
+        await hpke.openBase(
+          recipientPriv,
+          new Uint8Array(0),
+          new Uint8Array(0),
+          enc,
+          ciphertext,
+          badLengthKey
+        )
+      ).toFailWith(/recipientPublicKey must be 32 bytes/i);
+    });
+
+    test('integrates with spkiToRawX25519: SPKI-exported key feeds openBase directly', async () => {
+      const pair = (await subtle.generateKey({ name: 'X25519' }, false, ['deriveBits'])) as CryptoKeyPair;
+      const publicSpki = new Uint8Array(await subtle.exportKey('spki', pair.publicKey));
+      const rawPublicKey = spkiToRawX25519(publicSpki).orThrow();
+
+      const info = new TextEncoder().encode('ctx');
+      const aad = new Uint8Array(0);
+      const plaintext = new TextEncoder().encode('spki-fed secret');
+
+      const sealed = (await hpke.sealBase(pair.publicKey, info, aad, plaintext)).orThrow();
+      expect(
+        await hpke.openBase(pair.privateKey, info, aad, sealed.enc, sealed.ciphertext, rawPublicKey)
+      ).toSucceedAndSatisfy((pt) => {
+        expect(pt).toEqual(plaintext);
+      });
     });
   });
 

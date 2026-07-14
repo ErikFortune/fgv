@@ -11,6 +11,7 @@ import {
   IMemoryRetrieverCapabilities,
   guardRetrieverCapabilities,
   limitRecords,
+  rankCompare,
   recencyCompare
 } from './retriever';
 
@@ -145,7 +146,15 @@ export class HybridRetriever implements IMemoryRetriever {
       );
       return mapResults(perRetriever)
         .onSuccess((resultSets) => this._mergeStrategy.merge(resultSets))
-        .onSuccess((merged) => succeed(limitRecords(merged, query.limit)));
+        .onSuccess((merged) => {
+          // `orderBy: 'rank'` re-orders the merged set by rank (descending, absent
+          // last) before the page window, so a rank-ordered hybrid query yields a
+          // rank-ordered page. Absent / `'recency'` preserves the merge strategy's
+          // own ordering (byte-identical to the pre-`orderBy` behavior).
+          const ordered: ReadonlyArray<IMemoryRecord<unknown>> =
+            query.orderBy === 'rank' ? [...merged].sort(rankCompare) : merged;
+          return succeed(limitRecords(ordered, query.limit, query.offset));
+        });
     });
   }
 
@@ -164,6 +173,10 @@ export class HybridRetriever implements IMemoryRetriever {
   private _projectQuery(query: IMemoryQuery, retriever: IMemoryRetriever): IMemoryQuery {
     const projected: { -readonly [K in keyof IMemoryQuery]: IMemoryQuery[K] } = { ...query };
     delete projected.limit;
+    // Offset, like limit, is a post-merge concern: a child that pre-skipped its
+    // own ordered set would drop candidates the merge needs to score correctly.
+    // The hybrid applies the `{ offset, limit }` window once, after merge.
+    delete projected.offset;
     if (!retriever.capabilities.supportsSemanticRecall) {
       delete projected.semantic;
       delete projected.topK;

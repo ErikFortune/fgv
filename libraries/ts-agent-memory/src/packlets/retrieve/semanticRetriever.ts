@@ -4,7 +4,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { IMemoryRecord, MemoryId } from '../types';
+import { IMemoryRecord, edgeTargetKey } from '../types';
 import { IIndexedMemoryRecord, IMemoryIndex } from '../index';
 import { IVectorIndex, IVectorQueryHit } from '../vector';
 import {
@@ -118,17 +118,22 @@ export class SemanticRetriever implements IMemoryRetriever {
     if (hits.isFailure()) {
       return fail(hits.message);
     }
-    const byId: Map<MemoryId, IIndexedMemoryRecord> = new Map(
-      this._index.entries().map((entry) => [entry.record.envelope.id, entry])
+    // Key by the canonical scope-qualified target so a hit re-resolves to the
+    // exact record it scored against — a bare id would alias two records that
+    // share a filename stem across scopes.
+    const byKey: Map<string, IIndexedMemoryRecord> = new Map(
+      this._index
+        .entries()
+        .map((entry) => [edgeTargetKey({ scope: entry.scope, id: entry.record.envelope.id }), entry])
     );
     const records: IMemoryRecord<unknown>[] = [];
     for (const hit of hits.value) {
-      const entry: IIndexedMemoryRecord | undefined = byId.get(hit.id);
+      const entry: IIndexedMemoryRecord | undefined = byKey.get(edgeTargetKey(hit.target));
       if (entry !== undefined && indexedRecordMatchesQuery(entry, query)) {
         records.push(entry.record);
       }
     }
-    return succeed(limitRecords(records, query.limit));
+    return succeed(limitRecords(records, query.limit, query.offset));
   }
 
   /**

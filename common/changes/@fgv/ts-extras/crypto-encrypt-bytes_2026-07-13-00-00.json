@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add raw-byte AES-256-GCM encryptBytes/decryptBytes (caller-supplied nonce + optional AAD) to ICryptoProvider and NodeCryptoProvider",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

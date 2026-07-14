@@ -4,7 +4,7 @@
  */
 
 import { Result, succeed } from '@fgv/ts-utils';
-import { IMemoryRecord, Kind, MemoryId, MemoryScopeKey, Tag } from '../types';
+import { IEdgeTarget, IMemoryRecord, Kind, MemoryId, MemoryScopeKey, Tag, edgeTargetKey } from '../types';
 
 /**
  * The mutation a {@link IMemoryIndex.patch | patch} applies: a record was
@@ -72,10 +72,21 @@ export interface IMemoryIndex {
   byRecency(): ReadonlyArray<IMemoryRecord<unknown>>;
 
   /**
-   * The ids of records whose `links` point AT `target` (inbound edges).
-   * The seed map for B2 link-traversal.
+   * All records ordered by store-computed {@link IMemoryEnvelope.rank} descending,
+   * with recency (most-recently-updated, then `seq`) as a tiebreak. Records with
+   * an absent `rank` sort LAST (after every ranked record), then by recency among
+   * themselves. Serves a bounded top-M ({@link IMemoryEnvelope.rank}-ordered) page
+   * from the in-memory index with no full-vault (filesystem) scan.
    */
-  backlinks(target: MemoryId): ReadonlyArray<MemoryId>;
+  byRank(): ReadonlyArray<IMemoryRecord<unknown>>;
+
+  /**
+   * The scope-qualified sources of records whose `links` point AT `target`
+   * (inbound edges), keyed on the target's `(scope, id)` address. The seed map
+   * for B2 link-traversal; results are {@link IEdgeTarget}s so a caller can feed
+   * them straight back in as further traversal seeds.
+   */
+  backlinks(target: IEdgeTarget): ReadonlyArray<IEdgeTarget>;
 }
 
 /**
@@ -93,18 +104,21 @@ export class MemoryIndex implements IMemoryIndex {
   /** tag → set of composite keys. */
   private readonly _byTag: Map<Tag, Set<string>>;
   /**
-   * link target id → (source composite key → source id). Keyed by the source's
-   * `(scope, id)` composite — NOT its bare id — so two distinct source records
-   * that share an id across scopes (e.g. `turn-0` in different conversations)
-   * are tracked independently and removing one never drops the other's edge.
+   * canonical target key (`edgeTargetKey`) → (source composite key → source
+   * {@link IEdgeTarget}). The OUTER map is keyed on the scope-qualified target's
+   * canonical `(scope, id)` string — NOT the target's bare id — so an edge to
+   * `turn-3` in one conversation is tracked separately from `turn-3` in another.
+   * The INNER map is keyed by the source's `(scope, id)` composite so two distinct
+   * source records that share an id across scopes are tracked independently and
+   * removing one never drops the other's edge.
    */
-  private readonly _backlinks: Map<MemoryId, Map<string, MemoryId>>;
+  private readonly _backlinks: Map<string, Map<string, IEdgeTarget>>;
 
   private constructor() {
     this._byKey = new Map<string, IIndexedMemoryRecord>();
     this._byKind = new Map<Kind, Set<string>>();
     this._byTag = new Map<Tag, Set<string>>();
-    this._backlinks = new Map<MemoryId, Map<string, MemoryId>>();
+    this._backlinks = new Map<string, Map<string, IEdgeTarget>>();
   }
 
   /** Family-convention factory. */
@@ -119,7 +133,7 @@ export class MemoryIndex implements IMemoryIndex {
    * is a collision-proof separator across every scope/id pair the codecs produce.
    */
   private static _keyOf(scope: MemoryScopeKey, id: MemoryId): string {
-    return `${scope}\0${id}`;
+    return edgeTargetKey({ scope, id });
   }
 
   /** {@inheritDoc IMemoryIndex.rebuild} */
@@ -166,9 +180,14 @@ export class MemoryIndex implements IMemoryIndex {
     return this._recencyOrdered(this._byKey.keys());
   }
 
+  /** {@inheritDoc IMemoryIndex.byRank} */
+  public byRank(): ReadonlyArray<IMemoryRecord<unknown>> {
+    return this._rankOrdered(this._byKey.keys());
+  }
+
   /** {@inheritDoc IMemoryIndex.backlinks} */
-  public backlinks(target: MemoryId): ReadonlyArray<MemoryId> {
-    const sources: Map<string, MemoryId> | undefined = this._backlinks.get(target);
+  public backlinks(target: IEdgeTarget): ReadonlyArray<IEdgeTarget> {
+    const sources: Map<string, IEdgeTarget> | undefined = this._backlinks.get(edgeTargetKey(target));
     return sources === undefined ? [] : Array.from(sources.values());
   }
 
@@ -191,6 +210,49 @@ export class MemoryIndex implements IMemoryIndex {
     });
   }
 
+  /**
+   * Resolve a set of composite keys to their records, ordered by
+   * {@link IMemoryEnvelope.rank} descending with recency (`updated`, then `seq`)
+   * as the tiebreak. Records with an absent `rank` sort LAST, then by recency
+   * among themselves. Computed on call (mirrors {@link MemoryIndex._recencyOrdered}) —
+   * no incremental rank-ordered view is maintained, matching the recency view's
+   * approach; the sort is over the in-memory index, never a filesystem walk.
+   */
+  private _rankOrdered(keys: Iterable<string>): ReadonlyArray<IMemoryRecord<unknown>> {
+    const records: IMemoryRecord<unknown>[] = [];
+    for (const key of keys) {
+      const entry: IIndexedMemoryRecord | undefined = this._byKey.get(key);
+      if (entry !== undefined) {
+        records.push(entry.record);
+      }
+    }
+    return records.sort(MemoryIndex._compareByRank);
+  }
+
+  /**
+   * Rank-descending comparator with an absent-`rank`-last rule and a recency
+   * (`updated`, then `seq`) tiebreak. Duplicated from the retrieve packlet's
+   * `rankCompare` deliberately: the index must not depend on `retrieve` (that
+   * package depends on the index), mirroring how `_recencyOrdered` inlines the
+   * recency ordering rather than importing `recencyCompare`.
+   */
+  private static _compareByRank(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number {
+    const ra: number | undefined = a.envelope.rank;
+    const rb: number | undefined = b.envelope.rank;
+    // Absent rank sorts last; two absent ranks fall through to the recency tiebreak.
+    if (ra === undefined && rb !== undefined) {
+      return 1;
+    }
+    if (rb === undefined && ra !== undefined) {
+      return -1;
+    }
+    if (ra !== undefined && rb !== undefined && ra !== rb) {
+      return rb - ra;
+    }
+    const byUpdated: number = b.envelope.updated - a.envelope.updated;
+    return byUpdated !== 0 ? byUpdated : b.envelope.seq - a.envelope.seq;
+  }
+
   /** Insert an entry and register all its derived associations. */
   private _add(entry: IIndexedMemoryRecord): void {
     const key: string = MemoryIndex._keyOf(entry.scope, entry.record.envelope.id);
@@ -201,7 +263,7 @@ export class MemoryIndex implements IMemoryIndex {
       this._addToSetMap(this._byTag, tag, key);
     }
     for (const edge of envelope.links) {
-      this._addBacklink(edge.target, key, envelope.id);
+      this._addBacklink(edge.target, key, { scope: entry.scope, id: envelope.id });
     }
   }
 
@@ -222,25 +284,27 @@ export class MemoryIndex implements IMemoryIndex {
     }
   }
 
-  /** Register `sourceId` (keyed by its composite `sourceKey`) as linking at `target`. */
-  private _addBacklink(target: MemoryId, sourceKey: string, sourceId: MemoryId): void {
-    const existing: Map<string, MemoryId> | undefined = this._backlinks.get(target);
+  /** Register `source` (keyed by its composite `sourceKey`) as linking at `target`. */
+  private _addBacklink(target: IEdgeTarget, sourceKey: string, source: IEdgeTarget): void {
+    const targetKey: string = edgeTargetKey(target);
+    const existing: Map<string, IEdgeTarget> | undefined = this._backlinks.get(targetKey);
     if (existing === undefined) {
-      this._backlinks.set(target, new Map<string, MemoryId>([[sourceKey, sourceId]]));
+      this._backlinks.set(targetKey, new Map<string, IEdgeTarget>([[sourceKey, source]]));
     } else {
-      existing.set(sourceKey, sourceId);
+      existing.set(sourceKey, source);
     }
   }
 
   /** Drop the backlink from `sourceKey` to `target`, removing the target map when empty. */
-  private _removeBacklink(target: MemoryId, sourceKey: string): void {
-    const existing: Map<string, MemoryId> | undefined = this._backlinks.get(target);
+  private _removeBacklink(target: IEdgeTarget, sourceKey: string): void {
+    const targetKey: string = edgeTargetKey(target);
+    const existing: Map<string, IEdgeTarget> | undefined = this._backlinks.get(targetKey);
     if (existing === undefined) {
       return;
     }
     existing.delete(sourceKey);
     if (existing.size === 0) {
-      this._backlinks.delete(target);
+      this._backlinks.delete(targetKey);
     }
   }
 

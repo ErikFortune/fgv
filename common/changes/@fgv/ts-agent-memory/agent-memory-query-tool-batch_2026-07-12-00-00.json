@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add additive query/tool options to @fgv/ts-agent-memory: consumer-owned result projection with a gist/full detail tier on the search/context tools, offset pagination on IMemoryQuery, and a kinds-set query axis. All three are source-compatible and byte-identical for existing consumers when the new options are absent.",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

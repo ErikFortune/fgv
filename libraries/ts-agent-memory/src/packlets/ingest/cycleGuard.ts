@@ -4,17 +4,22 @@
  */
 
 import { Hash, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
-import { LinkType, MemoryId } from '../types';
+import { IEdgeTarget, LinkType, edgeTargetKey } from '../types';
 
 /**
- * A directed edge in the link graph the cycle guard reasons over: `source` links
- * to `target` under relation `type`.
+ * A directed edge in the link graph the cycle guard reasons over: scope-qualified
+ * `source` links to scope-qualified `target` under relation `type`.
  * @public
  */
 export interface ICycleGuardEdge {
-  readonly source: MemoryId;
-  readonly target: MemoryId;
+  readonly source: IEdgeTarget;
+  readonly target: IEdgeTarget;
   readonly type: LinkType;
+}
+
+/** Human-readable `scope/id` rendering of a scoped node, for cycle-guard diagnostics. */
+function formatNode(node: IEdgeTarget): string {
+  return `${node.scope}/${node.id}`;
 }
 
 /**
@@ -69,17 +74,23 @@ export function assertNoCycles(
       }
       for (const keyed of proposedKeyed) {
         const edge: ICycleGuardEdge = keyed.edge;
+        const sourceKey: string = edgeTargetKey(edge.source);
+        const targetKey: string = edgeTargetKey(edge.target);
         // A self-loop is the degenerate one-node cycle.
-        if (edge.source === edge.target) {
+        if (sourceKey === targetKey) {
           return fail(
-            `ingest cycle guard: edge '${edge.source}' -${edge.type}-> '${edge.target}' is a self-loop`
+            `ingest cycle guard: edge '${formatNode(edge.source)}' -${edge.type}-> '${formatNode(
+              edge.target
+            )}' is a self-loop`
           );
         }
         // Reachability: does `target` already reach `source`? If so, adding
         // `source -> target` closes a directed cycle.
-        if (reaches(adjacency, edge.target, edge.source)) {
+        if (reaches(adjacency, targetKey, sourceKey)) {
           return fail(
-            `ingest cycle guard: edge '${edge.source}' -${edge.type}-> '${edge.target}' would create a cycle`
+            `ingest cycle guard: edge '${formatNode(edge.source)}' -${edge.type}-> '${formatNode(
+              edge.target
+            )}' would create a cycle`
           );
         }
         addEdge(adjacency, seenKeys, keyed);
@@ -106,8 +117,8 @@ function addEdge(adjacency: Map<string, Set<string>>, seenKeys: Set<string>, key
     return;
   }
   seenKeys.add(keyed.key);
-  const source: string = keyed.edge.source;
-  const target: string = keyed.edge.target;
+  const source: string = edgeTargetKey(keyed.edge.source);
+  const target: string = edgeTargetKey(keyed.edge.target);
   const targets: Set<string> | undefined = adjacency.get(source);
   if (targets === undefined) {
     adjacency.set(source, new Set<string>([target]));

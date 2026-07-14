@@ -11,9 +11,11 @@ import {
   AdmissionDecision,
   BodyConverterRegistry,
   DEFAULT_MEMORY_TOOLS,
+  EntityId,
   FileTreeMemoryStore,
   HybridRetriever,
   IBodyConverterRegistry,
+  IEdgeTarget,
   IIdentityCodec,
   IIndexedMemoryRecord,
   IMemoryRecord,
@@ -111,7 +113,10 @@ function makeEntry(spec: IEntrySpec): IIndexedMemoryRecord {
         entityId: spec.entityId ?? spec.id,
         kind: spec.kind ?? 'knowledge',
         tags: spec.tags ?? [],
-        links: (spec.links ?? []).map((target) => ({ type: 'rel', target })),
+        links: (spec.links ?? []).map((target) => ({
+          type: 'rel',
+          target: { scope: spec.scope ?? 'knowledge', id: target }
+        })),
         created: 0,
         updated: spec.updated ?? 0,
         seq: 0,
@@ -285,10 +290,27 @@ describe('createMemoryTools', () => {
           entityId: 'doc-1',
           body: 'hello',
           tags: ['a'],
-          links: [{ type: 'rel', target: 'doc-2', confidence: 0.5 }]
+          links: [{ type: 'rel', target: { id: 'doc-2' }, confidence: 0.5 }]
+        })
+      ).toSucceed();
+      expect(
+        schema.convert({
+          kind: 'knowledge',
+          entityId: 'doc-1',
+          body: 'hello',
+          links: [{ type: 'rel', target: { scope: 'conversations/other', id: 'turn-1' } }]
         })
       ).toSucceed();
       expect(schema.convert({ kind: 'knowledge', entityId: 'doc-1' })).toFail();
+      // A bare-string target (the pre-scoped format) is rejected at the schema.
+      expect(
+        schema.convert({
+          kind: 'knowledge',
+          entityId: 'doc-1',
+          body: 'x',
+          links: [{ type: 'rel', target: 'doc-2' }]
+        })
+      ).toFail();
     });
 
     test('memory_read / memory_delete require kind and entityId', () => {
@@ -306,10 +328,25 @@ describe('createMemoryTools', () => {
       expect(schema.convert({ limit: 'three' })).toFail();
     });
 
-    test('memory_context requires a from seed', () => {
+    test('memory_context requires a from seed with a REQUIRED scope (nested { id, scope })', () => {
       const schema = toolByName(allTools(), 'memory_context').config.parametersSchema;
-      expect(schema.convert({ from: 'doc-1' })).toSucceed();
+      expect(schema.convert({ from: { id: 'doc-1', scope: 'knowledge' } })).toSucceed();
+      // scope is schema-REQUIRED (unlike a write link target) — the wire schema must
+      // not advertise an optionality the tool does not honor. Omitting it fails.
+      expect(schema.convert({ from: { id: 'doc-1' } })).toFail();
       expect(schema.convert({ hops: 2 })).toFail();
+      // A bare-string seed (the pre-scoped format) is rejected at the schema.
+      expect(schema.convert({ from: 'doc-1' })).toFail();
+    });
+
+    test('the memory_context wire schema marks from.scope as required', () => {
+      // Guards the schema-accuracy contract at the wire level: an LLM reading the
+      // tool's `parameters` sees scope in the seed's `required` array.
+      const schema = toolByName(allTools(), 'memory_context').config.parametersSchema;
+      const wire = schema.toJson() as unknown as {
+        properties: { from: { required?: ReadonlyArray<string> } };
+      };
+      expect(wire.properties.from.required).toContain('scope');
     });
   });
 
@@ -364,14 +401,43 @@ describe('createMemoryTools', () => {
           entityId: 'doc-1',
           body: 'linked',
           links: [
-            { type: 'rel', target: 'doc-2', confidence: 0.9 },
-            { type: 'rel', target: 'doc-3' }
+            // scope omitted → defaults to the writing record's own scope (knowledge)
+            { type: 'rel', target: { id: 'doc-2' }, confidence: 0.9 },
+            { type: 'rel', target: { id: 'doc-3' } }
           ]
         })
       ).toSucceedAndSatisfy((v) => expect((v as IMemoryWriteResult).outcome).toBe('written'));
+      // The persisted links carry the writing record's scope on each target.
+      expect(await store.get(knowledgeKind, 'doc-1' as EntityId)).toSucceedAndSatisfy((rec) => {
+        expect(rec?.envelope.links).toEqual([
+          { type: 'rel', target: { scope: 'knowledge', id: 'doc-2' }, confidence: 0.9 },
+          { type: 'rel', target: { scope: 'knowledge', id: 'doc-3' } }
+        ]);
+      });
+    });
+
+    test('an authored link with an EXPLICIT scope is honored verbatim (cross-scope edge)', async () => {
+      const store = makeStore();
+      const tools = createMemoryTools({
+        store,
+        retriever: makeRetriever([]),
+        registry: registryWith([{ kind: knowledgeKind }]),
+        codecs,
+        tools: ['memory_write']
+      });
       expect(
-        await toolByName(tools, 'memory_read').execute({ kind: 'knowledge', entityId: 'doc-1' })
-      ).toSucceedAndSatisfy(() => undefined);
+        await toolByName(tools, 'memory_write').execute({
+          kind: 'knowledge',
+          entityId: 'doc-1',
+          body: 'cross',
+          links: [{ type: 'mtm-ref', target: { scope: 'conversations/conv-a', id: 'turn-3' } }]
+        })
+      ).toSucceed();
+      expect(await store.get(knowledgeKind, 'doc-1' as EntityId)).toSucceedAndSatisfy((rec) => {
+        expect(rec?.envelope.links).toEqual([
+          { type: 'mtm-ref', target: { scope: 'conversations/conv-a', id: 'turn-3' } }
+        ]);
+      });
     });
 
     test('an identical re-put of the same entity is a dedup no-op (outcome: deduped)', async () => {
@@ -490,6 +556,8 @@ describe('createMemoryTools', () => {
         get: async () => fail('disk fault'),
         getById: async () => fail('unused'),
         list: async () => succeed([]),
+        listScoped: async () => succeed([]),
+        asRecordSource: () => ({ list: async () => succeed([]) }),
         put: async (record) => succeed(record),
         delete: async () => fail('unused')
       };
@@ -694,9 +762,13 @@ describe('createMemoryTools', () => {
         }),
         'memory_context'
       );
-      expect(await tool.execute({ from: 'a' })).toSucceedAndSatisfy((value) => {
-        const out = value as { seed: string; count: number; results: ReadonlyArray<IMemoryToolResultItem> };
-        expect(out.seed).toBe('a');
+      expect(await tool.execute({ from: { id: 'a', scope: 'knowledge' } })).toSucceedAndSatisfy((value) => {
+        const out = value as {
+          seed: IEdgeTarget;
+          count: number;
+          results: ReadonlyArray<IMemoryToolResultItem>;
+        };
+        expect(out.seed).toEqual({ scope: 'knowledge', id: 'a' });
         expect(out.results.map((r) => r.handle)).toEqual(['b', 'c']);
       });
     });
@@ -716,7 +788,13 @@ describe('createMemoryTools', () => {
         'memory_context'
       );
       expect(
-        await tool.execute({ from: 'a', hops: 2, tag: 'keep', kind: 'knowledge', limit: 5 })
+        await tool.execute({
+          from: { id: 'a', scope: 'knowledge' },
+          hops: 2,
+          tag: 'keep',
+          kind: 'knowledge',
+          limit: 5
+        })
       ).toSucceedAndSatisfy((value) => {
         const out = value as { results: ReadonlyArray<IMemoryToolResultItem> };
         expect(out.results.map((r) => r.handle).sort()).toEqual(['b', 'c']);
@@ -725,7 +803,40 @@ describe('createMemoryTools', () => {
 
     test('rejects an invalid seed id', async () => {
       const tool = toolByName(allTools(), 'memory_context');
-      expect(await tool.execute({ from: 'a/b' })).toFail();
+      expect(await tool.execute({ from: { id: 'a/b', scope: 'knowledge' } })).toFail();
+    });
+
+    test('fails at the schema when the seed omits its required scope', async () => {
+      // scope is schema-required, so an omitted scope is rejected as an invalid
+      // argument (the wire schema and the runtime contract agree — no lie).
+      const tool = toolByName(allTools(), 'memory_context');
+      expect(await tool.execute({ from: { id: 'a' } })).toFailWith(/invalid arguments/i);
+    });
+
+    test('a scoped seed reaches ONLY the correctly-scoped graph', async () => {
+      // Two conversations reuse the stem `turn-0`; each links a same-scope `turn-1`.
+      // Seeding conv-a must reach conv-a's turn-1 and NEVER conv-b's.
+      const retriever = makeLinkRetriever([
+        { id: 'turn-0', scope: 'conversations/conv-a', links: ['turn-1'] },
+        { id: 'turn-1', scope: 'conversations/conv-a', tags: ['in-a'] },
+        { id: 'turn-0', scope: 'conversations/conv-b', links: ['turn-1'] },
+        { id: 'turn-1', scope: 'conversations/conv-b', tags: ['in-b'] }
+      ]);
+      const tool = toolByName(
+        createMemoryTools({
+          store: makeStore(),
+          retriever,
+          registry: registryWith([{ kind: knowledgeKind }])
+        }),
+        'memory_context'
+      );
+      expect(
+        await tool.execute({ from: { id: 'turn-0', scope: 'conversations/conv-a' } })
+      ).toSucceedAndSatisfy((value) => {
+        const out = value as { results: ReadonlyArray<IMemoryToolResultItem> };
+        expect(out.results).toHaveLength(1);
+        expect(out.results[0].tags).toEqual(['in-a']);
+      });
     });
 
     test('rejects malformed arguments', async () => {
@@ -766,6 +877,244 @@ describe('createMemoryTools', () => {
     test('rejects malformed arguments', async () => {
       const tool = toolByName(allTools(), 'memory_delete');
       expect(await tool.execute({ kind: 'knowledge' })).toFailWith(/invalid arguments/i);
+    });
+  });
+});
+
+describe('result projection (projectItem host projector + detail tier)', () => {
+  interface ISearchOut {
+    readonly count: number;
+    readonly results: ReadonlyArray<IMemoryToolResultItem>;
+  }
+
+  /**
+   * A host projector that bounds the `'gist'` body to a sentinel and passes the
+   * full body through only for `'full'` — the shape a real host uses to keep the
+   * default (gist) path bounded.
+   */
+  const boundingProjector = (
+    record: IMemoryRecord<unknown>,
+    detail: 'gist' | 'full'
+  ): IMemoryToolResultItem => ({
+    handle: `h:${record.envelope.id}`,
+    kind: record.envelope.kind,
+    entityId: record.envelope.entityId,
+    tags: record.envelope.tags,
+    body: detail === 'full' ? record.body : '<<gist>>'
+  });
+
+  function searchToolWith(
+    overrides: Partial<Parameters<typeof createMemoryTools>[0]>
+  ): AiAssist.IAiClientTool {
+    return toolByName(
+      createMemoryTools({
+        store: makeStore(),
+        retriever: makeRetriever([{ id: 'doc-1', tags: ['topic'] }]),
+        registry: registryWith([{ kind: knowledgeKind }]),
+        ...overrides
+      }),
+      'memory_search'
+    );
+  }
+
+  describe('schema surface', () => {
+    test('memory_search declares optional detail + offset properties', () => {
+      const props = schemaProperties(toolByName(allTools(), 'memory_search'));
+      expect(props).toContain('detail');
+      expect(props).toContain('offset');
+    });
+
+    test('memory_context declares an optional detail property', () => {
+      const props = schemaProperties(toolByName(allTools(), 'memory_context'));
+      expect(props).toContain('detail');
+    });
+
+    test('memory_read declares an optional detail property', () => {
+      const props = schemaProperties(toolByName(allTools(), 'memory_read'));
+      expect(props).toContain('detail');
+    });
+
+    test('memory_search accepts detail and offset, and rejects an out-of-enum detail', () => {
+      const schema = toolByName(allTools(), 'memory_search').config.parametersSchema;
+      expect(schema.convert({ detail: 'full', offset: 2 })).toSucceed();
+      expect(schema.convert({ detail: 'gist' })).toSucceed();
+      expect(schema.convert({ offset: 'nope' })).toFail();
+      // detail is now an enum ('gist' | 'full') at the wire-schema level.
+      expect(schema.convert({ detail: 'verbose' })).toFail();
+    });
+  });
+
+  describe('absent projector = byte-identical default projection', () => {
+    test('returns the full body and the default handle (raw id) when no projector is supplied', async () => {
+      const tool = searchToolWith({});
+      expect(await tool.execute({ tag: 'topic' })).toSucceedAndSatisfy((value) => {
+        const out = value as ISearchOut;
+        expect(out.results[0].handle).toBe('doc-1');
+        expect(out.results[0].body).toBe('body-doc-1');
+      });
+    });
+
+    test('the detail tier is inert without a projector (gist and full both yield the full body)', async () => {
+      const tool = searchToolWith({});
+      for (const detail of ['gist', 'full'] as const) {
+        expect(await tool.execute({ tag: 'topic', detail })).toSucceedAndSatisfy((value) => {
+          expect((value as ISearchOut).results[0].body).toBe('body-doc-1');
+        });
+      }
+    });
+  });
+
+  describe('host projector + detail tier', () => {
+    test('defaults to the bounded gist projection when detail is absent', async () => {
+      const tool = searchToolWith({ projectItem: boundingProjector });
+      expect(await tool.execute({ tag: 'topic' })).toSucceedAndSatisfy((value) => {
+        const out = value as ISearchOut;
+        expect(out.results[0].handle).toBe('h:doc-1');
+        expect(out.results[0].body).toBe('<<gist>>');
+      });
+    });
+
+    test('opts into the full body only when detail=full is requested', async () => {
+      const tool = searchToolWith({ projectItem: boundingProjector });
+      expect(await tool.execute({ tag: 'topic', detail: 'full' })).toSucceedAndSatisfy((value) => {
+        expect((value as ISearchOut).results[0].body).toBe('body-doc-1');
+      });
+    });
+
+    test('an out-of-enum detail is rejected at the schema boundary', async () => {
+      // detail is a JsonSchema.enumOf(['gist','full']); the tool re-validates args
+      // on execute, so an out-of-enum value fails loudly rather than reaching the projector.
+      const tool = searchToolWith({ projectItem: boundingProjector });
+      expect(await tool.execute({ tag: 'topic', detail: 'verbose' })).toFailWith(/invalid arguments/i);
+    });
+
+    test('an explicit detail=gist stays bounded (the non-full branch)', async () => {
+      const tool = searchToolWith({ projectItem: boundingProjector });
+      expect(await tool.execute({ tag: 'topic', detail: 'gist' })).toSucceedAndSatisfy((value) => {
+        expect((value as ISearchOut).results[0].body).toBe('<<gist>>');
+      });
+    });
+
+    test('memory_context routes its results through the host projector', async () => {
+      const tool = toolByName(
+        createMemoryTools({
+          store: makeStore(),
+          retriever: makeLinkRetriever([{ id: 'a', links: ['b'] }, { id: 'b' }]),
+          registry: registryWith([{ kind: knowledgeKind }]),
+          projectItem: boundingProjector
+        }),
+        'memory_context'
+      );
+      expect(
+        await tool.execute({ from: { id: 'a', scope: 'knowledge' }, detail: 'full' })
+      ).toSucceedAndSatisfy((value) => {
+        const out = value as { results: ReadonlyArray<IMemoryToolResultItem> };
+        expect(out.results.map((r) => r.handle)).toEqual(['h:b']);
+        expect(out.results[0].body).toBe('body-b');
+      });
+    });
+
+    test('a throwing host projector degrades to the default full-body projection (does not crash search)', async () => {
+      const tool = searchToolWith({
+        projectItem: () => {
+          throw new Error('host projector blew up');
+        }
+      });
+      expect(await tool.execute({ tag: 'topic' })).toSucceedAndSatisfy((value) => {
+        const out = value as ISearchOut;
+        // Degraded to the built-in default: raw-id handle + full body.
+        expect(out.results[0].handle).toBe('doc-1');
+        expect(out.results[0].body).toBe('body-doc-1');
+      });
+    });
+
+    test('a throwing projector still honors the handleFor hook in the fallback path', async () => {
+      const tool = searchToolWith({
+        handleFor: (r) => `@${r.envelope.id}`,
+        projectItem: () => {
+          throw new Error('nope');
+        }
+      });
+      expect(await tool.execute({ tag: 'topic' })).toSucceedAndSatisfy((value) => {
+        expect((value as ISearchOut).results[0].handle).toBe('@doc-1');
+      });
+    });
+  });
+
+  describe('offset threading (memory_search)', () => {
+    test('threads offset into the query to page the ordered result window', async () => {
+      const tool = toolByName(
+        createMemoryTools({
+          store: makeStore(),
+          retriever: makeRetriever([
+            { id: 'doc-1', tags: ['topic'], updated: 30 },
+            { id: 'doc-2', tags: ['topic'], updated: 20 },
+            { id: 'doc-3', tags: ['topic'], updated: 10 }
+          ]),
+          registry: registryWith([{ kind: knowledgeKind }])
+        }),
+        'memory_search'
+      );
+      // Recency-ordered [doc-1, doc-2, doc-3]; offset 1 + limit 1 → [doc-2].
+      expect(await tool.execute({ tag: 'topic', offset: 1, limit: 1 })).toSucceedAndSatisfy((value) => {
+        const out = value as ISearchOut;
+        expect(out.count).toBe(1);
+        expect(out.results.map((r) => r.handle)).toEqual(['doc-2']);
+      });
+    });
+  });
+
+  describe('memory_read detail (explicit drill-in defaults to FULL)', () => {
+    interface IReadOut {
+      readonly found: boolean;
+      readonly item: IMemoryToolResultItem;
+    }
+
+    async function readToolWith(
+      projector?: (record: IMemoryRecord<unknown>, detail: 'gist' | 'full') => IMemoryToolResultItem
+    ): Promise<AiAssist.IAiClientTool> {
+      const tools = createMemoryTools({
+        store: makeStore(),
+        retriever: makeRetriever([]),
+        registry: registryWith([{ kind: knowledgeKind }]),
+        codecs,
+        tools: ['memory_write', 'memory_read'],
+        ...(projector !== undefined ? { projectItem: projector } : {})
+      });
+      await toolByName(tools, 'memory_write').execute({
+        kind: 'knowledge',
+        entityId: 'doc-1',
+        body: 'FULLBODY'
+      });
+      return toolByName(tools, 'memory_read');
+    }
+
+    test('defaults to the FULL body (drill-in) with a bounding projector', async () => {
+      const tool = await readToolWith(boundingProjector);
+      expect(await tool.execute({ kind: 'knowledge', entityId: 'doc-1' })).toSucceedAndSatisfy((value) => {
+        expect((value as IReadOut).item.body).toBe('FULLBODY');
+      });
+    });
+
+    test('opts down to gist only when detail=gist is requested', async () => {
+      const tool = await readToolWith(boundingProjector);
+      expect(
+        await tool.execute({ kind: 'knowledge', entityId: 'doc-1', detail: 'gist' })
+      ).toSucceedAndSatisfy((value) => {
+        expect((value as IReadOut).item.body).toBe('<<gist>>');
+      });
+    });
+
+    test('is byte-identical for a no-projector consumer (full body regardless of detail)', async () => {
+      const tool = await readToolWith(undefined);
+      for (const args of [
+        { kind: 'knowledge', entityId: 'doc-1' },
+        { kind: 'knowledge', entityId: 'doc-1', detail: 'gist' }
+      ]) {
+        expect(await tool.execute(args)).toSucceedAndSatisfy((value) => {
+          expect((value as IReadOut).item.body).toBe('FULLBODY');
+        });
+      }
     });
   });
 });
