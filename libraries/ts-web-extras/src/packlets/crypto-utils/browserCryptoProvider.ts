@@ -398,6 +398,21 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
   }
 
   /**
+   * Derives an asymmetric keypair deterministically from a fixed secret seed.
+   * @param algorithm - The seed-derivable algorithm (only `'ed25519'` today).
+   * @param seed - The 32-byte secret seed.
+   * @param extractable - Whether the returned private key may be exported.
+   * @returns `Success` with the derived `CryptoKeyPair`, or `Failure` with an error.
+   */
+  public importKeyPairFromSeed(
+    algorithm: CryptoUtils.SeedDerivableAlgorithm,
+    seed: Uint8Array,
+    extractable: boolean
+  ): Promise<Result<CryptoKeyPair>> {
+    return CryptoUtils.deriveKeyPairFromSeed(algorithm, seed, extractable);
+  }
+
+  /**
    * Exports a public `CryptoKey` as a JSON Web Key.
    * @remarks
    * Rejects non-public keys at runtime. WebCrypto's `exportKey('jwk', ...)`

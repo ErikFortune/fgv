@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add ICryptoProvider.importKeyPairFromSeed for deterministic Ed25519 keypair derivation from a 32-byte seed (RFC 8032/8410), implemented by NodeCryptoProvider; adds the SeedDerivableAlgorithm type and the shared deriveKeyPairFromSeed helper",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

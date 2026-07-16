@@ -143,6 +143,21 @@ export interface IEncryptBytesResult {
 export type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256' | 'ed25519' | 'x25519';
 
 /**
+ * The subset of {@link CryptoUtils.KeyPairAlgorithm} whose keypair can be
+ * derived *deterministically* from a fixed secret seed, for use with
+ * {@link CryptoUtils.ICryptoProvider.importKeyPairFromSeed | importKeyPairFromSeed}.
+ *
+ * Only `'ed25519'` is supported today: an Ed25519 private key *is* a 32-byte
+ * seed and its public key is a deterministic function of that seed (RFC 8032),
+ * so the same seed always yields the same keypair on every runtime. The type is
+ * a proper subset because algorithms like RSA or the NIST curves are not
+ * recoverable from a bare seed. It is intentionally left open to grow (e.g.
+ * `'x25519'`) without a breaking change.
+ * @public
+ */
+export type SeedDerivableAlgorithm = 'ed25519';
+
+/**
  * Caller-supplied HKDF parameters that domain-separate one
  * {@link CryptoUtils.ICryptoProvider.wrapBytes | wrapBytes} call from another.
  * Two wraps that share recipient but differ on `salt` or `info` derive distinct
@@ -574,6 +589,33 @@ export interface ICryptoProvider {
    * @returns Success with the generated `CryptoKeyPair`, or Failure with error context.
    */
   generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
+
+  /**
+   * Derives an asymmetric keypair *deterministically* from a fixed secret seed.
+   * The same `seed` always yields the same keypair on every runtime, so this is
+   * the primitive to use when a keypair must be reconstructable from stored seed
+   * material (key escrow, HD-style derivation, deterministic test vectors) rather
+   * than freshly sampled by {@link CryptoUtils.ICryptoProvider.generateKeyPair | generateKeyPair}.
+   *
+   * For `'ed25519'` the private key *is* its 32-byte seed and the public key is a
+   * deterministic function of that seed (RFC 8032), so the returned public key is
+   * recovered even when the caller requests a non-extractable private key. The
+   * transient extractable key used internally to recover the public half is never
+   * returned or logged when `extractable` is `false`.
+   * @param algorithm - The {@link CryptoUtils.SeedDerivableAlgorithm | seed-derivable algorithm}.
+   * Only `'ed25519'` is supported today; any other value fails loudly with context.
+   * @param seed - The secret seed. For `'ed25519'` it must be exactly 32 bytes;
+   * any other length fails loudly, before any WebCrypto call. The bytes are copied,
+   * not retained or mutated.
+   * @param extractable - Whether the returned private key may be exported. The
+   * returned public key is identical for a given seed regardless of this flag.
+   * @returns Success with the derived `CryptoKeyPair`, or Failure with error context.
+   */
+  importKeyPairFromSeed(
+    algorithm: SeedDerivableAlgorithm,
+    seed: Uint8Array,
+    extractable: boolean
+  ): Promise<Result<CryptoKeyPair>>;
 
   /**
    * Exports the public half of a keypair as a JSON Web Key.
