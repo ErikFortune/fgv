@@ -103,6 +103,16 @@ describe('BrowserCryptoProvider — importKeyPairFromSeed (Ed25519)', () => {
       expect(await browser.verify(pair.publicKey, signature, message)).toSucceedWith(true);
     });
 
+    test('escrow window: the transient extractable key never leaks when extractable=false', async () => {
+      const pair = (await browser.importKeyPairFromSeed('ed25519', seed, false)).orThrow();
+      expect(pair.privateKey.extractable).toBe(false);
+      // The transient extractable key used to recover the public half is never
+      // returned — exporting the returned private key must reject.
+      await expect(globalThis.crypto.subtle.exportKey('pkcs8', pair.privateKey)).rejects.toThrow();
+      // The public key stays extractable so the deterministic public half is recoverable.
+      expect(pair.publicKey.extractable).toBe(true);
+    });
+
     test('extractable=true returns an extractable private key', async () => {
       const pair = (await browser.importKeyPairFromSeed('ed25519', seed, true)).orThrow();
       expect(pair.privateKey.extractable).toBe(true);
