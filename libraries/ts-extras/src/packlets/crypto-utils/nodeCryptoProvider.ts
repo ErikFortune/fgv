@@ -38,8 +38,10 @@ import {
   IEncryptionResult,
   IWrapBytesOptions,
   IWrappedBytes,
-  KeyPairAlgorithm
+  KeyPairAlgorithm,
+  SeedDerivableAlgorithm
 } from './model';
+import { deriveKeyPairFromSeed } from './seedDerivedKeyPair';
 
 /**
  * Node.js implementation of {@link CryptoUtils.ICryptoProvider} using the built-in crypto module.
@@ -341,6 +343,21 @@ export class NodeCryptoProvider implements ICryptoProvider {
       throw new Error(`${algorithm} unexpectedly produced a single CryptoKey`);
     });
     return result.withErrorFormat((e) => `Failed to generate ${algorithm} keypair: ${e}`);
+  }
+
+  /**
+   * Derives an asymmetric keypair deterministically from a fixed secret seed.
+   * @param algorithm - The seed-derivable algorithm (only `'ed25519'` today).
+   * @param seed - The 32-byte secret seed.
+   * @param extractable - Whether the returned private key may be exported.
+   * @returns `Success` with the derived `CryptoKeyPair`, or `Failure` with an error.
+   */
+  public importKeyPairFromSeed(
+    algorithm: SeedDerivableAlgorithm,
+    seed: Uint8Array,
+    extractable: boolean
+  ): Promise<Result<CryptoKeyPair>> {
+    return deriveKeyPairFromSeed(algorithm, seed, extractable);
   }
 
   /**

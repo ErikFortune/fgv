@@ -449,6 +449,7 @@ declare namespace CryptoUtils {
         IDirectEncryptionProviderParams,
         IKeyPairAlgorithmParams,
         keyPairAlgorithmParams,
+        deriveKeyPairFromSeed,
         NodeCryptoProvider,
         nodeCryptoProvider,
         createEncryptedFile,
@@ -476,6 +477,7 @@ declare namespace CryptoUtils {
         IEncryptionResult,
         IEncryptBytesResult,
         KeyPairAlgorithm,
+        SeedDerivableAlgorithm,
         IWrapBytesOptions,
         IWrappedBytes,
         allKeyPairAlgorithms,
@@ -543,6 +545,12 @@ const DEFAULT_RANGEOF_FORMATS: RangeOfFormats;
 
 // @public
 const DEFAULT_SECRET_ITERATIONS: number;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function deriveKeyPairFromSeed(algorithm: SeedDerivableAlgorithm, seed: Uint8Array, extractable: boolean): Promise<Result<CryptoKeyPair>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptionProvider"
 //
@@ -1219,6 +1227,9 @@ interface ICryptoProvider {
     generateUuid(): Result<Uuid>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
     hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    importKeyPairFromSeed(algorithm: SeedDerivableAlgorithm, seed: Uint8Array, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
@@ -2264,6 +2275,7 @@ class NodeCryptoProvider implements ICryptoProvider {
     generateRandomBytes(length: number): Result<Uint8Array>;
     generateUuid(): Result<Uuid>;
     hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    importKeyPairFromSeed(algorithm: SeedDerivableAlgorithm, seed: Uint8Array, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     importPublicKeySpki(spkiBytes: Uint8Array, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
@@ -2419,6 +2431,12 @@ function resolveProviderModel(descriptor: IAiProviderDescriptor, modelOverride: 
 
 // @public
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type SeedDerivableAlgorithm = 'ed25519';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

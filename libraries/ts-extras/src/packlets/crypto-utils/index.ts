@@ -44,6 +44,9 @@ export { DirectEncryptionProvider, IDirectEncryptionProviderParams } from './dir
 // WebCrypto parameter table for asymmetric keypair algorithms
 export { IKeyPairAlgorithmParams, keyPairAlgorithmParams } from './keyPairAlgorithmParams';
 
+// Deterministic seed → keypair derivation shared by the Node/browser providers
+export { deriveKeyPairFromSeed } from './seedDerivedKeyPair';
+
 // Node.js crypto provider (Node.js environment only)
 export { NodeCryptoProvider, nodeCryptoProvider } from './nodeCryptoProvider';
 
