@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-extras-mcp",
-  "version": "5.1.0-41",
+  "version": "5.1.0-42",
   "description": "Result-integration boundary over @modelcontextprotocol/sdk: connect to MCP servers, discover tools, and adapt them into @fgv/ts-extras ai-assist client tools",
   "main": "lib/index.js",
   "types": "dist/ts-extras-mcp.d.ts",
