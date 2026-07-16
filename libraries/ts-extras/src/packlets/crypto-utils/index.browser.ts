@@ -51,6 +51,10 @@ export { DirectEncryptionProvider, IDirectEncryptionProviderParams } from './dir
 // WebCrypto parameter table for asymmetric keypair algorithms
 export { IKeyPairAlgorithmParams, keyPairAlgorithmParams } from './keyPairAlgorithmParams';
 
+// Deterministic seed → keypair derivation shared by the Node/browser providers
+// (globalThis.crypto.subtle only — no node:crypto, safe in the browser entry point)
+export { deriveKeyPairFromSeed } from './seedDerivedKeyPair';
+
 // Note: NodeCryptoProvider is NOT exported in browser version
 // Use BrowserCryptoProvider from @fgv/ts-web-extras instead
 

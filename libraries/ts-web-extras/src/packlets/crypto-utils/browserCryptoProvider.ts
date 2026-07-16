@@ -397,6 +397,30 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
     return result.withErrorFormat((e) => `Failed to generate ${algorithm} keypair: ${e}`);
   }
 
+  /* c8 ignore stop */
+
+  /**
+   * Derives an asymmetric keypair deterministically from a fixed secret seed.
+   *
+   * Unlike the surrounding browser-only methods, this is a pure delegation to
+   * `CryptoUtils.deriveKeyPairFromSeed` which touches only
+   * `globalThis.crypto.subtle` (no DOM-only surface), so it is exercised and
+   * measured in plain Node/Jest — hence it sits outside the `c8 ignore` region.
+   * @param algorithm - The seed-derivable algorithm (only `'ed25519'` today).
+   * @param seed - The 32-byte secret seed.
+   * @param extractable - Whether the returned private key may be exported.
+   * @returns `Success` with the derived `CryptoKeyPair`, or `Failure` with an error.
+   */
+  public importKeyPairFromSeed(
+    algorithm: CryptoUtils.SeedDerivableAlgorithm,
+    seed: Uint8Array,
+    extractable: boolean
+  ): Promise<Result<CryptoKeyPair>> {
+    return CryptoUtils.deriveKeyPairFromSeed(algorithm, seed, extractable);
+  }
+
+  /* c8 ignore start - browser-only methods continue */
+
   /**
    * Exports a public `CryptoKey` as a JSON Web Key.
    * @remarks

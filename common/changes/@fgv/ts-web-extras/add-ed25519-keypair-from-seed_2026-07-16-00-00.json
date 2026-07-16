@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "Implement ICryptoProvider.importKeyPairFromSeed on BrowserCryptoProvider for deterministic Ed25519 keypair derivation from a 32-byte seed, byte-for-byte identical to NodeCryptoProvider",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras"
+}
