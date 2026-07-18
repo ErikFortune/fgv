@@ -427,3 +427,53 @@ packlet builds directly on them rather than re-deriving the codec. Also
 crypto-utils base64url + branded multibase SPKI hardening stream
 (`.ai/tasks/completed/2026-07/crypto-utils-base64url-hardening/`, shipped via PR #519;
 the canonical `MultibaseSpkiPublicKeyRegExp` export + `string`-widened import followed in PR #530).
+
+## `@fgv/ts-extras` crypto — golden-vector test-provenance gaps (2026-07 batch)
+
+Three LOW-priority, non-blocking asks surfaced by a consumer's checked-in crypto
+golden-vector corpus (byte-level fixtures pinning ceremony/signing output so a future
+native/mobile port validates against the same vectors). None is a security exposure;
+each has a documented workaround in the fixtures. What each closes is **test provenance**
+— anchoring a vector to a published-spec KAT or a deterministic checked-in round-trip
+rather than to captured-from-implementation bytes. **Slated to land as one small batched
+`@fgv/ts-extras` crypto PR right after the `agent-memory-lenient-open` stream.**
+
+### Ask A — `IArgon2idProvider.argon2id`: optional `secret` + `associatedData` params
+The RFC 9106 §5.3 official Argon2id KAT binds a secret key (K) and associated data (X)
+alongside password and salt; the seam `argon2id(password, salt, params)` exposes neither,
+so the spec KAT can't run through it (the consumer's Argon2id vector is captured-from-impl
+instead of spec-anchored). Add optional `secret?` / `associatedData?` byte params, both
+defaulting empty so existing callers are unaffected. **Feasibility (checked):** the Node
+`argon2` (kelektiv) `hash()` options support both `secret` and `associatedData` — Node is
+buildable. The browser `hash-wasm` `argon2id` supports `secret`; its `associatedData`
+support must be verified at implementation time. Since neither is used in production
+(test-provenance only), the essential deliverable — the RFC 9106 KAT running through the
+seam — works via the Node provider regardless; cross-provider AD parity is gated on the
+hash-wasm capability check (if hash-wasm lacks AD, scope the AD path to Node or document
+the limitation rather than fake parity).
+
+### Ask B — HPKE: an X25519 private-key import seam (fixed recipient key)
+The consumer's HPKE context vector pins the info/AAD construction but has no checked-in
+sealed-blob → plaintext round-trip, because that needs a **fixed** recipient X25519 private
+key to check in, and the provider exposes no X25519 private-key import (`SeedDerivableAlgorithm`
+is `ed25519`-only). Add a seam to import a fixed X25519 private key (raw bytes or JWK) into
+the HPKE provider so a known recipient keypair can be checked in and a deterministic round-trip
+vector added. **Composes directly with two shipped items:** the HPKE `openBase` caller-supplied
+recipient-public-key work (PR #536) and the seed-deterministic Ed25519 primitive
+(`importKeyPairFromSeed`, PR #549) — this is the X25519 analogue of the latter's seed→private
+import, so it likely falls out of extending `SeedDerivableAlgorithm`/the import seam to `x25519`.
+
+### Footnote — a hex codec primitive (`hexEncode` / `hexDecode`) in crypto-utils
+The fixtures encode bytes as lowercase hex (no `0x`); crypto-utils ships base64url / multibase /
+standard-base64 helpers but no hex, so the vector loader hand-rolls a `bytesHex` Converter. Minor
+on its own — noted because it's the **third** "reached for an fgv primitive that wasn't there" in
+this corpus. Add `hexEncode`/`hexDecode` (or a branded hex-string Converter) alongside the existing
+base64url helpers and the consumer drops the local one. Cheap; bundle into the same batch.
+
+**Why deferred**: all three are LOW-priority test-provenance, non-blocking (the corpus shipped
+complete with documented per-gap workarounds). Batched to land immediately after the HIGH
+`agent-memory-lenient-open` fix.
+
+**Reference**: consumer's `golden-vectors-state.md` § Findings (V2 mobile-enablers track);
+prior ts-extras crypto asks — HPKE Decap non-extractable recipient key (PR #536),
+`encryptBytes`/`decryptBytes` (PR #547), seed-deterministic Ed25519 (PR #549).
