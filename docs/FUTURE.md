@@ -477,3 +477,88 @@ complete with documented per-gap workarounds). Batched to land immediately after
 **Reference**: consumer's `golden-vectors-state.md` § Findings (V2 mobile-enablers track);
 prior ts-extras crypto asks — HPKE Decap non-extractable recipient key (PR #536),
 `encryptBytes`/`decryptBytes` (PR #547), seed-deterministic Ed25519 (PR #549).
+
+## `CryptoUtils.KeyStore` credential-store shape asks (2026-07 batch)
+
+Four asks from a consumer building a tool/MCP/OAuth **credential store** over
+`CryptoUtils.KeyStore` (`@fgv/ts-extras`). **No crypto gap** — the byte-level crypto
+batch (encryptBytes/AAD, HPKE non-extractable decap, vault escrow) closed everything.
+These are **shape-level only over existing primitives**, and **none is build-blocking**
+(serializing a credential bundle to JSON and storing it via `importApiKey` is a working
+interim). The interface disposition is fgv's call per prior-ask convention; a grounded
+recommendation is recorded per ask below.
+
+**Why two of these want runway now:** D1's `type` discriminator and D2's
+`metadata`/`updatedAt` are both **vault-format-visible fields**. Retrofitting either after
+the consumer's credential-store persistence format settles means migrating existing vault
+entries. So D1/D2 are wanted *before* that format freezes — hence captured ahead of the
+consumer's "broaden tools + MCP" stream rather than parked. **Batchable as one small
+additive `KeyStore` PR**; the escrow-field work (`keystore-v2`, PR-series that added the
+optional `escrowedPrivateKeyJwk` superset field) is the precedent for how an additive,
+optional, format-forward field lands here.
+
+**Grounding (this repo, `libraries/ts-extras/src/packlets/crypto-utils/keystore/model.ts`):**
+the symmetric type union is `'encryption-key' | 'api-key'`
+(`KeyStoreSymmetricSecretType`); `IKeyStoreSymmetricEntry` carries `name` / `type` /
+`key: Uint8Array` / `description?` / `createdAt` and **nothing else**. Critically, the
+vault has **no plaintext index** — `IKeyStoreVaultContents.secrets` (the whole
+`Record<string, IKeyStoreEntryJson>`) is AES-GCM-encrypted wholesale into
+`IKeyStoreFile.encryptedData`, decrypted once on unlock, and held as in-memory decrypted
+state. So `listSecrets*` already iterate in-memory entries — the "decrypt every entry to
+list" framing is really "there is nowhere to put mutable metadata except inside the secret
+material" (see D2).
+
+### D1 — opaque byte-secret entry type — P2 (must-have before format settles)
+**Problem:** the symmetric type set is closed to `'encryption-key' | 'api-key'`. A JSON
+credential bundle (OAuth token set, MCP auth record) stored via `importApiKey` is typed as
+an `'api-key'` it isn't — `listSecretsByType` becomes a lie, and any fgv tooling that treats
+`'api-key'` as "a string you hand to a provider" mis-handles it.
+**Proposed disposition (recommend the bytes-shaped variant):** add an `'opaque'` member to
+`KeyStoreSymmetricSecretType` + `allKeyStoreSymmetricSecretTypes`, with
+`importSecretBytes(name, bytes, { type: 'opaque', … })` + `getSecretBytes(name)` (the
+existing symmetric-entry path already stores `key: Uint8Array` — `'opaque'` is a new
+discriminator value plus a raw-bytes accessor that skips the `'api-key'` UTF-8 decode).
+**Prefer this over a first-class `'json'` type**: the vault layer already speaks
+`Uint8Array`, the consumer explicitly offered to own the JSON+Converter layer, and a `'json'`
+type would bake a serialization opinion into the vault format for marginal benefit — against
+the repo's thin-primitive / consumer-owns-the-shape convention. `listSecretsByType` stops
+lying because the bundle is typed `'opaque'`.
+**Named consumer:** the credential store (tool/MCP/OAuth credentials).
+
+### D2 — mutable per-entry metadata + `updatedAt` — P2 (should-have, rides with D1)
+**Problem:** entries carry only `description?` + `createdAt`, so lifecycle bookkeeping
+(`expiresAt`, `rotatedAt`, scope labels, `lastRefreshed`) has nowhere to live except inside
+the secret material — meaning "list credentials with status" must materialize+parse each
+secret's bytes, and updating a timestamp means re-importing the whole secret (replacing `key`).
+**Proposed disposition:** add optional `metadata?: JsonValue` to `IKeyStoreSymmetricEntry`
+(+ its `…Json` form), a `setSecretMetadata(name, value)` mutator that updates metadata
+without replacing key material, and an `updatedAt?: string` stamp maintained on any mutation.
+**Metadata lives inside the ciphertext** (same custody as every other field — the vault has
+no plaintext tier, and inventing one to hold "non-secret" metadata would leak names/labels
+in plaintext, a security regression). "Non-secret by contract" is a consumer-side contract,
+not a storage split. Additive + format-forward exactly like the v2 escrow field.
+**Impl note:** whether this needs a `keystore-v3` bump or rides the existing optional-superset
+pattern is an implementation-time call — the wrinkle is that an older *writer* re-saving a
+metadata-bearing vault would silently strip the field; moot under lockstep single-writer, but
+a format tag would make "metadata-bearing" explicit. Decide at stream start.
+**Workaround if declined:** embed in the D1 JSON payload and eat the parse-to-list cost
+(acceptable at per-actor N) — hence should-have, not must-have.
+
+### D3 — atomic read-modify-write / CAS on a secret — P3 (PARKED, do not request work)
+For OAuth refresh races under concurrent tool calls. The v1 hub is single-process; an
+in-process per-slot mutex suffices, so this is a **forward-looking note only** — revisit when
+the v2 hub process model is known. Captured so it isn't rediscovered cold; **no work requested.**
+
+### D4 — prefix / namespace bulk removal — P3 (opportunistic ergonomics)
+`removeSecrets(prefix)` for session-overlay purge (`byok:<sessionId>:*`). Today's purge
+iterates `listSecrets` + filters, which works. Pure ergonomics — **fold in only if the D1/D2
+PR is already touching the removal path**; not worth a dedicated change.
+
+**Why deferred:** all four are shape-level and non-blocking (the JSON-bundle-via-`importApiKey`
+interim works today). D1/D2 batched to land ahead of the consumer's tools/MCP stream so the
+format-visible fields exist before that persistence format freezes; D3 parked; D4 opportunistic.
+
+**Reference:** consumer's `.ai/tasks/active/credential-store/spec.md` (credential-store track;
+that path is in the consumer repo); grounding in this repo at
+`libraries/ts-extras/src/packlets/crypto-utils/keystore/model.ts`; format-superset precedent =
+the `keystore-v2` optional `escrowedPrivateKeyJwk` escrow field.
