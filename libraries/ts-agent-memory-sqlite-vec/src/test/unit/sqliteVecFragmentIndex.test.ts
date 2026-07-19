@@ -163,6 +163,17 @@ describe('SqliteVecFragmentIndex', () => {
         /cannot add 'knowledge\0doc-b'/i
       );
     });
+
+    test('fails loudly (never silently corrupts) when the table name collides with a non-vec0 table', async () => {
+      // A plain table already occupies the default name. `CREATE VIRTUAL TABLE IF NOT
+      // EXISTS` no-ops against it, so preparing the vector INSERT against the missing
+      // columns must fail loudly rather than corrupt state.
+      db.exec('CREATE TABLE memory_fragments (foo TEXT)');
+      const index = (await SqliteVecFragmentIndex.create({ database: db })).orThrow();
+      expect(await index.addFragments(target('knowledge', 'doc-a'), [frag(0, 5, 1, 0)])).toFailWith(
+        /cannot add 'knowledge\0doc-a'/i
+      );
+    });
   });
 
   describe('query', () => {

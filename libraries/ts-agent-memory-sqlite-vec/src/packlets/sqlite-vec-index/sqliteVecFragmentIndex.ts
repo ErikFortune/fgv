@@ -157,8 +157,13 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
             // Nothing stored yet and nothing to store: no table, no work.
             return 0;
           }
-          this._createTable(dimension as number);
-          this._dimension = dimension;
+          // `fragments` is non-empty here (the empty case returned above), so the
+          // validation loop proved every fragment shares `fragments[0]`'s length —
+          // which IS the dimension to establish. Read it straight from the first
+          // fragment: no cast, no invariant-dependent narrowing.
+          const established: number = fragments[0].vector.length;
+          this._createTable(established);
+          this._dimension = established;
           this._stmts = this._prepare();
         }
         this._stmts.replace(key, fragments);
