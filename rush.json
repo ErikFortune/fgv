@@ -431,6 +431,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-agent-memory-sqlite-vec",
+      "projectFolder": "libraries/ts-agent-memory-sqlite-vec",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-prompt-assist",
       "projectFolder": "libraries/ts-prompt-assist",
       "shouldPublish": true,
