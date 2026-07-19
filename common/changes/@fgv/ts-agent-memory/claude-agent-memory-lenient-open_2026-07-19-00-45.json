@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add optional onRecordError: 'skip' | 'fail' to FileTreeMemoryStore.create (default 'fail', byte-identical to the historical load path); 'skip' mode quarantines unreadable records instead of failing the whole open, surfacing each on the new FileTreeMemoryStore.skippedRecords getter and warn-logging it, so a required-field migration on one kind no longer makes every other record in the vault unreadable.",
+      "type": "none",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}
