@@ -125,10 +125,38 @@ describe('BrowserCryptoProvider — importKeyPairFromSeed (Ed25519)', () => {
     });
 
     test('rejects an unsupported seed-derivable algorithm', async () => {
-      const badAlgorithm = 'x25519' as unknown as CryptoUtils.SeedDerivableAlgorithm;
+      const badAlgorithm = 'ed448' as unknown as CryptoUtils.SeedDerivableAlgorithm;
       expect(await browser.importKeyPairFromSeed(badAlgorithm, seed, true)).toFailWith(
         /unsupported seed-derivable algorithm/i
       );
+    });
+  });
+
+  describe('X25519 from seed (RFC 7748) — cross-provider parity', () => {
+    // RFC 7748 §6.1 Alice private scalar + its derived X25519 public key.
+    const x25519Seed = hexToBytes('77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a');
+    const RFC7748_ALICE_PUBLIC_HEX: string =
+      '8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a';
+
+    async function rawPublic(provider: CryptoUtils.ICryptoProvider, extractable: boolean): Promise<string> {
+      const pair = (await provider.importKeyPairFromSeed('x25519', x25519Seed, extractable)).orThrow();
+      const raw = new Uint8Array(await globalThis.crypto.subtle.exportKey('raw', pair.publicKey));
+      return bytesToHex(raw);
+    }
+
+    test("the browser provider derives Alice's public key from her private scalar", async () => {
+      expect(await rawPublic(browser, true)).toBe(RFC7748_ALICE_PUBLIC_HEX);
+    });
+
+    test('Node and browser derive the byte-identical X25519 public key from the same seed', async () => {
+      expect(await rawPublic(browser, false)).toBe(await rawPublic(node, false));
+    });
+
+    test('the derived private key carries X25519 deriveBits usage', async () => {
+      const pair = (await browser.importKeyPairFromSeed('x25519', x25519Seed, false)).orThrow();
+      expect(pair.privateKey.algorithm.name).toBe('X25519');
+      expect(pair.privateKey.usages).toContain('deriveBits');
+      expect(pair.privateKey.extractable).toBe(false);
     });
   });
 });

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Test-only: cover X25519 seed-derived keypair import on BrowserCryptoProvider (cross-provider parity with Node against the RFC 7748 vector) now that importKeyPairFromSeed supports 'x25519'; update the stale assertion that x25519 is unsupported.",
+      "type": "none",
+      "packageName": "@fgv/ts-web-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras",
+  "email": "noreply@anthropic.com"
+}

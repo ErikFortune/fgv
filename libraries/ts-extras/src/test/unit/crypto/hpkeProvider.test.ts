@@ -21,7 +21,12 @@
 import '@fgv/ts-utils-jest';
 
 import * as crypto from 'crypto';
-import { HpkeProvider, IHpkeSealResult, spkiToRawX25519 } from '../../../packlets/crypto-utils';
+import {
+  HpkeProvider,
+  IHpkeSealResult,
+  nodeCryptoProvider,
+  spkiToRawX25519
+} from '../../../packlets/crypto-utils';
 import {
   HKDF_RFC5869_CASE1,
   RECIPIENT_PRIV_JWK,
@@ -376,6 +381,62 @@ describe('HpkeProvider', () => {
         expect(decoded.enc.length).toBe(32);
         expect(decoded.ciphertext.length).toBe(16);
       });
+    });
+  });
+
+  // The seam that makes a fully reproducible HPKE vector possible: derive the
+  // recipient keypair from a fixed, checked-in x25519 seed via importKeyPairFromSeed,
+  // so the same recipient identity can be regenerated on any runtime (a native/mobile
+  // port validates against the same vector) without checking in a raw private CryptoKey.
+  describe('deterministic recipient from a checked-in x25519 seed', () => {
+    // RFC 7748 §6.1 Alice private scalar + its derived X25519 public key.
+    const RECIPIENT_SEED_HEX: string = '77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a';
+    const RECIPIENT_PUBLIC_HEX: string = '8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a';
+
+    function hexToBytes(hex: string): Uint8Array {
+      const bytes = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < bytes.length; i++) {
+        bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+      }
+      return bytes;
+    }
+    function bytesToHex(bytes: Uint8Array): string {
+      return Array.from(bytes)
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+
+    let hpke: HpkeProvider;
+    beforeAll(() => {
+      hpke = HpkeProvider.create(subtle).orThrow();
+    });
+
+    test('the recipient derived from the fixed seed matches the checked-in public key', async () => {
+      const pair = (
+        await nodeCryptoProvider.importKeyPairFromSeed('x25519', hexToBytes(RECIPIENT_SEED_HEX), false)
+      ).orThrow();
+      const rawPub = new Uint8Array(await subtle.exportKey('raw', pair.publicKey));
+      expect(bytesToHex(rawPub)).toBe(RECIPIENT_PUBLIC_HEX);
+    });
+
+    test('seal to the derived public and open with the derived (non-extractable) private round-trips', async () => {
+      // extractable=false is the secure default for a checked-in recipient. HPKE
+      // Decap then needs the recipient public key supplied explicitly (the PR #536
+      // affordance) — which seed derivation conveniently hands us, so the two
+      // features compose: a fixed seed yields a non-extractable private plus the
+      // public bytes openBase requires.
+      const pair = (
+        await nodeCryptoProvider.importKeyPairFromSeed('x25519', hexToBytes(RECIPIENT_SEED_HEX), false)
+      ).orThrow();
+      const rawPub = new Uint8Array(await subtle.exportKey('raw', pair.publicKey));
+      const info = new TextEncoder().encode('fgv-hpke-x25519-seed-vector');
+      const aad = new TextEncoder().encode('vector-aad');
+      const plaintext = new TextEncoder().encode('deterministic recipient round-trip');
+
+      const sealed = (await hpke.sealBase(pair.publicKey, info, aad, plaintext)).orThrow();
+      expect(
+        await hpke.openBase(pair.privateKey, info, aad, sealed.enc, sealed.ciphertext, rawPub)
+      ).toSucceedAndSatisfy((pt) => expect(pt).toEqual(plaintext));
     });
   });
 });
