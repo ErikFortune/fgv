@@ -11,7 +11,7 @@ export { CryptoUtils }
 
 // @public
 export class NodeArgon2Provider implements CryptoUtils.IArgon2idProvider {
-    argon2id(password: Uint8Array | string, salt: Uint8Array, params: CryptoUtils.IArgon2idParams): Promise<Result<Uint8Array>>;
+    argon2id(password: Uint8Array | string, salt: Uint8Array, params: CryptoUtils.IArgon2idParams, options?: CryptoUtils.IArgon2idKeyingOptions): Promise<Result<Uint8Array>>;
     static create(): Result<NodeArgon2Provider>;
 }
 

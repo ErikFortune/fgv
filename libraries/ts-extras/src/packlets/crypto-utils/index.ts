@@ -65,6 +65,8 @@ export {
   base64UrlNoPadDecode,
   base64UrlNoPadEncode,
   exportPublicKeyAsMultibaseSpki,
+  hexDecode,
+  hexEncode,
   importPublicKeyFromMultibaseSpki,
   isValidMultibaseSpkiPublicKey,
   MultibaseSpkiPublicKeyRegExp,
