@@ -83,6 +83,12 @@ const cliImpl: ICliScenarioImpl = {
       }
       // A [1, D] pooled Tensor: row 0 of tolist() is the sentence vector.
       const nested = tensor.value.tolist() as number[][];
+      // Defensive: a valid pooled Tensor always yields a non-empty nested array, but
+      // keep `embed` fully Result-based rather than letting an unexpected shape throw
+      // (mirrors the guard in localEmbeddingSearch/embedAdapter.ts).
+      if (nested.length === 0 || nested[0] === undefined) {
+        return fail('embedding produced an empty tensor (no row 0)');
+      }
       return succeed(Float32Array.from(nested[0]));
     };
 
