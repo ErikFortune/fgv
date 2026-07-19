@@ -159,9 +159,9 @@ describe('Crypto.seedDerivedKeyPair (Ed25519 from seed)', () => {
     });
 
     test('rejects an unsupported seed-derivable algorithm', async () => {
-      const badAlgorithm = 'x25519' as unknown as SeedDerivableAlgorithm;
+      const badAlgorithm = 'ed448' as unknown as SeedDerivableAlgorithm;
       expect(await provider.importKeyPairFromSeed(badAlgorithm, seed, true)).toFailWith(
-        /unsupported seed-derivable algorithm 'x25519'/i
+        /unsupported seed-derivable algorithm 'ed448'/i
       );
     });
   });
@@ -172,6 +172,68 @@ describe('Crypto.seedDerivedKeyPair (Ed25519 from seed)', () => {
       const viaHelper = (await provider.exportPublicKeySpki(helperPair.publicKey)).orThrow();
       const viaProvider = await deriveSpki(seed, true);
       expect(viaHelper).toEqual(viaProvider);
+    });
+  });
+});
+
+// RFC 7748 §6.1 X25519 Diffie-Hellman example: Alice's private scalar and the
+// public key that WebCrypto derives from it (clamping applied internally). Used
+// as the deterministic known-answer vector for x25519 seed derivation.
+const RFC7748_ALICE_PRIVATE_HEX: string = '77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a';
+const RFC7748_ALICE_PUBLIC_HEX: string = '8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a';
+
+describe('Crypto.seedDerivedKeyPair (X25519 from seed)', () => {
+  const provider = CryptoUtils.nodeCryptoProvider;
+  const seed = hexToBytes(RFC7748_ALICE_PRIVATE_HEX);
+
+  async function derivePublicRaw(fromSeed: Uint8Array, extractable: boolean): Promise<string> {
+    const pair = (await provider.importKeyPairFromSeed('x25519', fromSeed, extractable)).orThrow();
+    const raw = new Uint8Array(await crypto.webcrypto.subtle.exportKey('raw', pair.publicKey));
+    return bytesToHex(raw);
+  }
+
+  describe('RFC 7748 known-answer vector', () => {
+    test("derives Alice's public key from her private scalar", async () => {
+      expect(await derivePublicRaw(seed, true)).toBe(RFC7748_ALICE_PUBLIC_HEX);
+    });
+
+    test('the derived keypair carries X25519 deriveBits usage on the private key', async () => {
+      const pair = (await provider.importKeyPairFromSeed('x25519', seed, true)).orThrow();
+      expect(pair.privateKey.algorithm.name).toBe('X25519');
+      expect(pair.privateKey.usages).toContain('deriveBits');
+      // X25519 public keys carry no usages.
+      expect(pair.publicKey.usages).toEqual([]);
+    });
+  });
+
+  describe('determinism', () => {
+    test('the same seed yields the byte-identical public key on repeated derivation', async () => {
+      expect(await derivePublicRaw(seed, true)).toBe(await derivePublicRaw(seed, false));
+    });
+
+    test('a different seed yields a different public key', async () => {
+      const other = await derivePublicRaw(new Uint8Array(32).fill(0x07), true);
+      expect(other).not.toBe(RFC7748_ALICE_PUBLIC_HEX);
+    });
+  });
+
+  describe('extractable matrix', () => {
+    test('extractable=false returns a non-extractable private key; public stays recoverable', async () => {
+      const pair = (await provider.importKeyPairFromSeed('x25519', seed, false)).orThrow();
+      expect(pair.privateKey.extractable).toBe(false);
+      // The transient extractable key must not leak the seed through the returned private key.
+      await expect(crypto.webcrypto.subtle.exportKey('pkcs8', pair.privateKey)).rejects.toThrow();
+      // The public half is always extractable and matches the vector.
+      const raw = new Uint8Array(await crypto.webcrypto.subtle.exportKey('raw', pair.publicKey));
+      expect(bytesToHex(raw)).toBe(RFC7748_ALICE_PUBLIC_HEX);
+    });
+  });
+
+  describe('validation', () => {
+    test.each([31, 33, 0, 64])('rejects a seed of %d bytes', async (len) => {
+      expect(await provider.importKeyPairFromSeed('x25519', new Uint8Array(len), true)).toFailWith(
+        /x25519 seed must be exactly 32 bytes/i
+      );
     });
   });
 });

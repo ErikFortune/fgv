@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Extend ICryptoProvider.importKeyPairFromSeed to support 'x25519' (SeedDerivableAlgorithm now 'ed25519' | 'x25519'), deriving a deterministic X25519 key-agreement keypair (private 'deriveBits', public no-usage) from a fixed 32-byte seed. This lets a checked-in recipient keypair back a reproducible HpkeProvider seal/open round-trip vector; with a non-extractable private key it composes with openBase's supplied recipient-public-key path.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
