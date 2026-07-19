@@ -13,6 +13,7 @@ Array [
   "mcp-probe",
   "memory-tools-gate",
   "cross-provider-embedding-search",
+  "sqlite-vec-memory-persistence",
   "openai-model-tiers",
   "anthropic-model-tiers",
   "google-gemini-model-tiers",
