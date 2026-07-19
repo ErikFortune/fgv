@@ -336,6 +336,55 @@ describe('SqliteVecFragmentIndex', () => {
     });
   });
 
+  describe('safe-integer mode and corrupt persisted data', () => {
+    const toBlob = (...v: number[]): Uint8Array => new Uint8Array(Float32Array.from(v).buffer);
+
+    async function seededWithRow(): Promise<SqliteVecFragmentIndex> {
+      // A valid add creates the table and establishes dim 2; corrupt rows are then
+      // inserted directly to model externally-edited / safe-integer-mode data.
+      const index = await makeIndex();
+      (await index.addFragments(target('knowledge', 'doc-a'), [frag(0, 5, 1, 0)])).orThrow();
+      return index;
+    }
+
+    function insertRaw(key: string, start: bigint, end: bigint, ...vec: number[]): void {
+      db.prepare(
+        'INSERT INTO memory_fragments(target_key, embedding, start_off, end_off) VALUES (?, ?, ?, ?)'
+      ).run(key, toBlob(...vec), start, end);
+    }
+
+    test('coerces bigint offsets (better-sqlite3 safe-integer mode) to number locators', async () => {
+      const index = await seededWithRow();
+      // Under safe-integer mode every integer column comes back as a bigint.
+      db.defaultSafeIntegers(true);
+      expect(await index.query(Float32Array.from([1, 0]), 1)).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          const locator = hits[0].locator;
+          expect(locator).toEqual(loc(0, 5));
+          expect(typeof locator?.start).toBe('number');
+          expect(typeof locator?.end).toBe('number');
+        }
+      );
+    });
+
+    test('fails loudly when a stored offset is outside the safe-integer range', async () => {
+      const index = await seededWithRow();
+      // Safe-integer mode returns the huge offset as a bigint (no read-time throw),
+      // so the _toOffset guard is what must fire.
+      db.defaultSafeIntegers(true);
+      insertRaw('knowledge\0doc-b', BigInt(2) ** BigInt(60), BigInt(0), 0, 1);
+      expect(await index.query(Float32Array.from([0, 1]), 5)).toFailWith(
+        /locator offset .* is not a safe integer/i
+      );
+    });
+
+    test('fails loudly when a stored key is missing the NUL separator', async () => {
+      const index = await seededWithRow();
+      insertRaw('nonulkey', BigInt(0), BigInt(5), 0, 1);
+      expect(await index.query(Float32Array.from([0, 1]), 5)).toFailWith(/missing scope\/id separator/i);
+    });
+  });
+
   describe('custom table name', () => {
     test('two fragment indexes on distinct tables in one database are independent', async () => {
       const a = (await SqliteVecFragmentIndex.create({ database: db, tableName: 'frag_a' })).orThrow();

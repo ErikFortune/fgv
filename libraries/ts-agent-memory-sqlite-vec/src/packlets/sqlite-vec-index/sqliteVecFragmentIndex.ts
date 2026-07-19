@@ -23,11 +23,17 @@ const DEFAULT_TABLE_NAME: string = 'memory_fragments';
 /** A simple SQL identifier — the only shape allowed for the table name (it is interpolated into DDL). */
 const IDENTIFIER_RE: RegExp = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
-/** One KNN row as returned by the fragment `vec0` MATCH query. */
+/**
+ * One KNN row as returned by the fragment `vec0` MATCH query. The offset columns are
+ * typed `number | bigint` because `better-sqlite3` returns integer columns as
+ * `bigint` when a consumer enables its safe-integer mode (`defaultSafeIntegers`);
+ * {@link SqliteVecFragmentIndex._toOffset} coerces them to a plain `number` (and
+ * fails loudly on an out-of-safe-range value) before they reach the public locator.
+ */
 interface IKnnRow {
   readonly target_key: string;
-  readonly start_off: number;
-  readonly end_off: number;
+  readonly start_off: number | bigint;
+  readonly end_off: number | bigint;
   readonly distance: number;
 }
 
@@ -82,7 +88,9 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     if (this._stmts === undefined) {
       return 0;
     }
-    return (this._stmts.recordCount.get() as { c: number }).c;
+    // `Number(...)` narrows the count in case the consumer enabled better-sqlite3
+    // safe-integer mode (which returns `count(*)` as a `bigint`).
+    return Number((this._stmts.recordCount.get() as { c: number | bigint }).c);
   }
 
   /** The total number of fragments currently held across all records. Zero before the first add. */
@@ -90,7 +98,7 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     if (this._stmts === undefined) {
       return 0;
     }
-    return (this._stmts.fragmentCount.get() as { c: number }).c;
+    return Number((this._stmts.fragmentCount.get() as { c: number | bigint }).c);
   }
 
   /**
@@ -210,7 +218,7 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
         // and apply the cap + topK cut here — exactly as the in-memory index does.
         // Uncapped, KNN's own `k = topK` is already the answer.
         const fetchK: number =
-          maxPerRecord === undefined ? topK : (stmts.fragmentCount.get() as { c: number }).c;
+          maxPerRecord === undefined ? topK : Number((stmts.fragmentCount.get() as { c: number | bigint }).c);
         if (fetchK <= 0) {
           return [];
         }
@@ -233,10 +241,14 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
             }
             perRecord.set(row.target_key, used + 1);
           }
+          const key: string = row.target_key;
           hits.push({
-            target: SqliteVecFragmentIndex._parseKey(row.target_key),
+            target: SqliteVecFragmentIndex._parseKey(key),
             score: 1 - row.distance,
-            locator: { start: row.start_off, end: row.end_off }
+            locator: {
+              start: SqliteVecFragmentIndex._toOffset(row.start_off, key),
+              end: SqliteVecFragmentIndex._toOffset(row.end_off, key)
+            }
           });
         }
         return hits;
@@ -313,14 +325,38 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
 
   /**
    * Reverse `edgeTargetKey` — the canonical key is `scope\0id` with NUL excluded
-   * from both components, so the first NUL splits it unambiguously.
+   * from both components, so the first NUL splits it unambiguously. A key with no
+   * NUL cannot have been written by `edgeTargetKey`; rather than fabricate a wrong
+   * `(scope, id)` from corrupt / externally-edited table data, throw so the query
+   * surfaces it as a loud `Failure`.
    */
   private static _parseKey(key: string): IEdgeTarget {
     const nul: number = key.indexOf('\0');
+    if (nul < 0) {
+      throw new Error(`malformed target key '${key}': missing scope/id separator (corrupt persisted data)`);
+    }
     return {
       scope: key.slice(0, nul) as unknown as MemoryScopeKey,
       id: key.slice(nul + 1) as unknown as MemoryId
     };
+  }
+
+  /**
+   * Coerce a persisted locator offset to a plain `number`. `better-sqlite3` returns
+   * integer columns as `bigint` under safe-integer mode, so an offset can arrive as
+   * either; both narrow to `number` here. A value outside the safe-integer range
+   * (only reachable via corrupt / externally-edited data — the index only ever
+   * writes in-document offsets) throws rather than silently losing precision, so the
+   * query surfaces it as a loud `Failure`.
+   */
+  private static _toOffset(value: number | bigint, key: string): number {
+    const n: number = Number(value);
+    if (!Number.isSafeInteger(n)) {
+      throw new Error(
+        `fragment '${key}': locator offset ${String(value)} is not a safe integer (corrupt persisted data)`
+      );
+    }
+    return n;
   }
 }
 
