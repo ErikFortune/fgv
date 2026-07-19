@@ -29,7 +29,7 @@ interface IKnnRow {
 }
 
 /**
- * A persistent, `sqlite-vec`-backed {@link IVectorIndex} for `@fgv/ts-agent-memory`.
+ * A persistent, `sqlite-vec`-backed `IVectorIndex` for `@fgv/ts-agent-memory`.
  *
  * @remarks
  * This is the **durable** counterpart to the in-memory `InMemoryCosineIndex`:
@@ -40,7 +40,7 @@ interface IKnnRow {
  * still flow through the store's incremental embed-on-write path; there is no core
  * store change.
  *
- * The index is keyed by the canonical {@link edgeTargetKey} of each record's
+ * The index is keyed by the canonical `edgeTargetKey` of each record's
  * scope-qualified `(scope, id)` address (a `TEXT PRIMARY KEY` on the `vec0` table),
  * so two records that share a filename stem across scopes never collide. The
  * dimension is established by the first `add` (the `vec0` column is fixed-width) and
@@ -234,7 +234,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
   }
 
   /**
-   * Reverse {@link edgeTargetKey} — the canonical key is `scope\0id` with NUL
+   * Reverse `edgeTargetKey` — the canonical key is `scope\0id` with NUL
    * excluded from both components, so the first NUL splits it unambiguously.
    */
   private static _parseKey(key: string): IEdgeTarget {

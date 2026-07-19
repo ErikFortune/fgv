@@ -16,9 +16,6 @@ export interface ISqliteVecVectorIndexCreateParams {
     readonly tableName?: string;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IVectorIndex"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "edgeTargetKey"
-//
 // @public
 export class SqliteVecVectorIndex implements IVectorIndex {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IVectorIndex"
@@ -36,10 +33,6 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
     get size(): number;
 }
-
-// Warnings were encountered during analysis:
-//
-// src/packlets/sqlite-vec-index/sqliteVecVectorIndex.ts:247:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "edgeTargetKey"
 
 // (No @packageDocumentation comment for this package)
 
