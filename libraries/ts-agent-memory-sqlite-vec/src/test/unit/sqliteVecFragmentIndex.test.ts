@@ -144,6 +144,19 @@ describe('SqliteVecFragmentIndex', () => {
       );
     });
 
+    test('rejects a non-safe-integer locator offset up front (never persists an unreadable locator)', async () => {
+      const index = await makeIndex();
+      // A non-integer offset: reject before the write, with a clear message.
+      expect(await index.addFragments(target('knowledge', 'doc-a'), [frag(0.5, 5, 1, 0)])).toFailWith(
+        /locator \[0\.5, 5\) offsets must be safe integers/i
+      );
+      // A too-large (non-safe) integer offset is likewise rejected.
+      expect(
+        await index.addFragments(target('knowledge', 'doc-b'), [frag(0, Number.MAX_SAFE_INTEGER + 1, 1, 0)])
+      ).toFailWith(/offsets must be safe integers/i);
+      expect(index.recordCount).toBe(0);
+    });
+
     test('a failed multi-fragment add on a fresh index does not establish a dimension (all-or-nothing)', async () => {
       const index = await makeIndex();
       // dim 2 then dim 3 in the same batch: fails, and must NOT commit dim 2.

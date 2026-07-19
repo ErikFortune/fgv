@@ -38,8 +38,8 @@ interface IKnnRow {
 }
 
 /**
- * A persistent, `sqlite-vec`-backed {@link IFragmentVectorIndex} for
- * `@fgv/ts-agent-memory` — the fragment-granular sibling of
+ * A persistent, `sqlite-vec`-backed `IFragmentVectorIndex` (from
+ * `@fgv/ts-agent-memory`) — the fragment-granular sibling of
  * {@link SqliteVecVectorIndex}, and the **durable** counterpart to the in-memory
  * `InMemoryFragmentCosineIndex`.
  *
@@ -145,6 +145,17 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     for (const fragment of fragments) {
       if (fragment.vector.length === 0) {
         return Promise.resolve(fail(`fragment index: cannot add '${key}': empty fragment vector`));
+      }
+      // Locator offsets are persisted as SQLite integers (bound via BigInt). Reject a
+      // non-safe-integer offset up front with a clear message, rather than letting
+      // `BigInt(nonInteger)` throw cryptically inside the write transaction OR storing
+      // a value the read-side `_toOffset` guard would later reject on every query.
+      if (!Number.isSafeInteger(fragment.locator.start) || !Number.isSafeInteger(fragment.locator.end)) {
+        return Promise.resolve(
+          fail(
+            `fragment index: cannot add '${key}': locator [${fragment.locator.start}, ${fragment.locator.end}) offsets must be safe integers`
+          )
+        );
       }
       if (dimension === undefined) {
         dimension = fragment.vector.length;

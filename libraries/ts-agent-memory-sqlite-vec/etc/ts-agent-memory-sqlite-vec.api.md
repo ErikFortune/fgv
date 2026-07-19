@@ -24,8 +24,6 @@ export interface ISqliteVecVectorIndexCreateParams {
     readonly tableName?: string;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
-//
 // @public
 export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
