@@ -19,6 +19,7 @@
 // SOFTWARE.
 
 import { Converter, Converters, succeed, Validation, Validator, Validators } from '@fgv/ts-utils';
+import { Converters as JsonConverters } from '@fgv/ts-json-base';
 import { base64String, encryptionAlgorithm, pbkdf2KeyDerivationParams } from '../converters';
 import {
   allKeyPairAlgorithms,
@@ -63,7 +64,7 @@ export const keystoreSecretType: Converter<KeyStoreSecretType> =
 
 /**
  * Converter for {@link CryptoUtils.KeyStore.KeyStoreSymmetricSecretType | symmetric secret type} discriminator.
- * Accepts only `'encryption-key'` and `'api-key'`.
+ * Accepts `'encryption-key'`, `'api-key'`, and `'opaque'`.
  * @public
  */
 export const keystoreSymmetricSecretType: Converter<KeyStoreSymmetricSecretType> =
@@ -138,12 +139,15 @@ export const keystoreSymmetricEntryJson: Converter<IKeyStoreSymmetricEntryJson> 
       type: keystoreSymmetricSecretType,
       key: base64String,
       description: Converters.string,
-      createdAt: Converters.string
+      metadata: JsonConverters.jsonValue,
+      createdAt: Converters.string,
+      updatedAt: Converters.string
     },
     {
       // `type` is optional at the input layer for legacy-vault compatibility;
-      // the .map() below normalizes by injecting the default.
-      optionalFields: ['type', 'description']
+      // the .map() below normalizes by injecting the default. `metadata` and
+      // `updatedAt` are keystore-v3 additions, optional so v1/v2 entries parse.
+      optionalFields: ['type', 'description', 'metadata', 'updatedAt']
     }
   ).map((entry) =>
     succeed<IKeyStoreSymmetricEntryJson>({

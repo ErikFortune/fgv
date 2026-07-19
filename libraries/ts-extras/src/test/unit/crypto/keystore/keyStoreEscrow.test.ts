@@ -161,7 +161,7 @@ describe('KeyStore private-key escrow', () => {
       const publicJwk = added.orThrow().entry.publicKeyJwk;
       expect(added.orThrow().entry.escrowedPrivateKeyJwk).toBeDefined();
       const file = (await deviceA.save(testPassword)).orThrow();
-      expect(file.format).toBe('keystore-v2');
+      expect(file.format).toBe('keystore-v3');
 
       // Device B: fresh empty backend + the recovered vault file.
       const deviceBStorage = new InMemoryPrivateKeyStorage();
@@ -268,11 +268,11 @@ describe('KeyStore private-key escrow', () => {
       );
     });
 
-    test('re-saving a v1 vault silently upgrades the file to keystore-v2', async () => {
+    test('re-saving a v1 vault silently upgrades the file to keystore-v3', async () => {
       const v1 = await makeV1File();
       const keystore = await openDeviceKeystore(v1, new InMemoryPrivateKeyStorage());
       const resaved = (await keystore.save(testPassword)).orThrow();
-      expect(resaved.format).toBe('keystore-v2');
+      expect(resaved.format).toBe('keystore-v3');
     });
 
     test('isKeyStoreFile recognizes both v1 and v2 files', async () => {

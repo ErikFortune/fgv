@@ -48,6 +48,7 @@ import {
   IAddSecretResult,
   IGetKeyPairOptions,
   IImportKeyOptions,
+  IImportSecretBytesOptions,
   IImportSecretOptions,
   IKeyStoreAsymmetricEntry,
   IKeyStoreCreateParams,
@@ -918,6 +919,120 @@ export class KeyStore implements IEncryptionProvider {
     return succeed(decoder.decode(entry.key));
   }
 
+  /**
+   * Imports arbitrary raw bytes into the vault with type `'opaque'`.
+   *
+   * Unlike {@link KeyStore.importSecret} (which enforces a 32-byte AES-256 key)
+   * and {@link KeyStore.importApiKey} (which UTF-8 encodes a string), this
+   * accepts a byte buffer of any length and stores it verbatim — including
+   * embedded NUL bytes. Use it for byte blobs that are neither a fixed-size key
+   * nor a UTF-8 string (e.g. a serialized credential bundle), so they are not
+   * mistyped as `'api-key'`.
+   *
+   * @param name - Unique name for the secret
+   * @param bytes - The raw bytes to store
+   * @param options - Optional description, initial metadata, whether to replace existing
+   * @returns Success with entry, Failure if locked, empty, or exists and !replace
+   * @public
+   */
+  public async importSecretBytes(
+    name: string,
+    bytes: Uint8Array,
+    options?: IImportSecretBytesOptions
+  ): Promise<Result<IAddSecretResult>> {
+    if (!this._secrets) {
+      return fail('Key store is locked');
+    }
+    if (!name || name.length === 0) {
+      return fail('Secret name cannot be empty');
+    }
+
+    const existing = this._secrets.get(name);
+    if (existing && !options?.replace) {
+      return fail(`Secret '${name}' already exists - use replace=true to overwrite`);
+    }
+
+    const entry: IKeyStoreSymmetricEntry = {
+      name,
+      type: 'opaque',
+      key: new Uint8Array(bytes), // Copy to prevent external modification
+      description: options?.description,
+      metadata: options?.metadata,
+      createdAt: getCurrentTimestamp()
+    };
+
+    const warning = existing ? await this._releaseEntryResources(existing) : undefined;
+    this._secrets.set(name, entry);
+    this._dirty = true;
+
+    return succeed({ entry, replaced: existing !== undefined, warning });
+  }
+
+  /**
+   * Retrieves the raw stored bytes for a symmetric entry, returned verbatim
+   * (never UTF-8 decoded). Intended for `'opaque'` entries but works for any
+   * symmetric type; asymmetric-keypair entries carry no raw key material and
+   * are rejected.
+   *
+   * @param name - Name of the secret
+   * @returns Success with a copy of the stored bytes, Failure if not found,
+   * locked, or the entry is asymmetric
+   * @public
+   */
+  public getSecretBytes(name: string): Result<Uint8Array> {
+    if (!this._secrets) {
+      return fail('Key store is locked');
+    }
+    const entry = this._secrets.get(name);
+    if (!entry) {
+      return fail(`Secret '${name}' not found`);
+    }
+    if (entry.type === 'asymmetric-keypair') {
+      return fail(`Secret '${name}' is an asymmetric keypair, not raw byte material (type: ${entry.type})`);
+    }
+    // Copy so callers cannot mutate the in-memory vault buffer.
+    return succeed(new Uint8Array(entry.key));
+  }
+
+  /**
+   * Replaces the mutable metadata on a symmetric entry and stamps `updatedAt`
+   * with the current timestamp. Does NOT touch the secret `key` bytes — the
+   * material reads back identically afterward.
+   *
+   * Metadata is non-secret by contract but physically lives inside the vault
+   * ciphertext (see {@link CryptoUtils.KeyStore.IKeyStoreSymmetricEntry.metadata}).
+   *
+   * @param name - Name of the secret to update
+   * @param value - New metadata value (replaces any prior metadata)
+   * @returns Success with the updated entry, Failure if not found, locked, or
+   * the entry is asymmetric
+   * @public
+   */
+  public setSecretMetadata(name: string, value: JsonValue): Result<IKeyStoreSymmetricEntry> {
+    if (!this._secrets) {
+      return fail('Key store is locked');
+    }
+    const entry = this._secrets.get(name);
+    if (!entry) {
+      return fail(`Secret '${name}' not found`);
+    }
+    if (entry.type === 'asymmetric-keypair') {
+      return fail(
+        `Secret '${name}' is an asymmetric keypair; metadata is only supported on symmetric entries (type: ${entry.type})`
+      );
+    }
+
+    const updated: IKeyStoreSymmetricEntry = {
+      ...entry,
+      metadata: value,
+      updatedAt: getCurrentTimestamp()
+    };
+    this._secrets.set(name, updated);
+    this._dirty = true;
+
+    return succeed(updated);
+  }
+
   // ============================================================================
   // Asymmetric Keypair Management
   // ============================================================================
@@ -1402,7 +1517,9 @@ export class KeyStore implements IEncryptionProvider {
           type: entry.type,
           key: this._cryptoProvider.toBase64(entry.key),
           description: entry.description,
-          createdAt: entry.createdAt
+          metadata: entry.metadata,
+          createdAt: entry.createdAt,
+          updatedAt: entry.updatedAt
         };
       }
     }
@@ -1526,7 +1643,9 @@ export class KeyStore implements IEncryptionProvider {
           type: jsonEntry.type,
           key: keyBytesResult.value,
           description: jsonEntry.description,
-          createdAt: jsonEntry.createdAt
+          metadata: jsonEntry.metadata,
+          createdAt: jsonEntry.createdAt,
+          updatedAt: jsonEntry.updatedAt
         };
         secrets.set(name, entry);
       }
