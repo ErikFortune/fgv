@@ -990,7 +990,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     }
     if (result.isFailure()) {
       this._warnSwallowed(
-        `memory: ${label} failed (best-effort; vector index left for rebuild): ${result.message}`
+        `memory: ${label} failed (best-effort; derived index left for rebuild): ${result.message}`
       );
     }
     return result;

@@ -128,6 +128,28 @@ describe('InMemoryFragmentCosineIndex', () => {
       );
     });
 
+    test('a failed multi-fragment add on a fresh index does not establish a dimension (all-or-nothing)', async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      // Batch: first fragment (dim 2) would set the dimension, second (dim 3) fails
+      // the check. The failed add must leave the index wholly dimensionless — not
+      // half-committed to dim 2 — so a later legitimate dim-3 add still succeeds.
+      expect(
+        await index.addFragments(target('knowledge', 'doc-1'), [frag(0, 5, [1, 0]), frag(5, 10, [1, 0, 0])])
+      ).toFailWith(/fragment dimension 3 does not match index dimension 2/i);
+      expect(index.recordCount).toBe(0);
+      expect(index.fragmentCount).toBe(0);
+      // The dimension was never committed: a fresh dim-3 record indexes cleanly.
+      expect(await index.addFragments(target('knowledge', 'doc-2'), [frag(0, 5, [1, 0, 0])])).toSucceedWith(
+        1
+      );
+      expect(await index.query(Float32Array.from([1, 0, 0]), 1)).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          expect(hits[0].target.id).toBe('doc-2');
+          expect(hits[0].score).toBeCloseTo(1);
+        }
+      );
+    });
+
     test('stores a defensive copy — mutating the caller buffer after add does not corrupt the index', async () => {
       const index = InMemoryFragmentCosineIndex.create().orThrow();
       const buffer = Float32Array.from([1, 0]);

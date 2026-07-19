@@ -97,19 +97,23 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
     fragments: ReadonlyArray<IEmbeddedFragment>
   ): Promise<Result<number>> {
     const key: string = edgeTargetKey(target);
-    // Validate every fragment before mutating, so a bad fragment never leaves the
-    // record half-replaced (whole-record-replace must be all-or-nothing).
+    // Validate every fragment before mutating any state, so a bad fragment never
+    // leaves the record half-replaced OR the index dimension half-established
+    // (whole-record-replace must be all-or-nothing). The effective dimension is the
+    // established one, or — on a still-dimensionless index — the first fragment's
+    // length; it is only committed to `this._dimension` once the whole batch passes.
     const stored: IStoredFragment[] = [];
+    let dimension: number | undefined = this._dimension;
     for (const fragment of fragments) {
       if (fragment.vector.length === 0) {
         return Promise.resolve(fail(`fragment index: cannot add '${key}': empty fragment vector`));
       }
-      if (this._dimension === undefined) {
-        this._dimension = fragment.vector.length;
-      } else if (fragment.vector.length !== this._dimension) {
+      if (dimension === undefined) {
+        dimension = fragment.vector.length;
+      } else if (fragment.vector.length !== dimension) {
         return Promise.resolve(
           fail(
-            `fragment index: cannot add '${key}': fragment dimension ${fragment.vector.length} does not match index dimension ${this._dimension}`
+            `fragment index: cannot add '${key}': fragment dimension ${fragment.vector.length} does not match index dimension ${dimension}`
           )
         );
       }
@@ -117,10 +121,12 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
       stored.push({ locator: fragment.locator, vector: Float32Array.from(fragment.vector) });
     }
     // Whole-record replace: an empty `fragments` array drops the record entirely
-    // rather than leaving an empty shell behind.
+    // rather than leaving an empty shell behind. Commit the (possibly newly-derived)
+    // dimension only alongside a successful, non-empty store.
     if (stored.length === 0) {
       this._records.delete(key);
     } else {
+      this._dimension = dimension;
       this._records.set(key, { target, fragments: stored });
     }
     return Promise.resolve(succeed(stored.length));
@@ -167,16 +173,17 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
 
     const hits: IVectorQueryHit[] = [];
     // Apply the per-record cap during selection (before the topK cut) so a single
-    // long document cannot monopolize the result. `undefined` means uncapped.
-    const perRecord: Map<string, number> | undefined =
-      maxPerRecord === undefined ? undefined : new Map<string, number>();
+    // long document cannot monopolize the result. `undefined` maxPerRecord means
+    // uncapped; the counter map is always allocated (tiny) so the guard narrows
+    // `maxPerRecord` directly without a non-null assertion.
+    const perRecord: Map<string, number> = new Map<string, number>();
     for (const candidate of scored) {
       if (hits.length >= topK) {
         break;
       }
-      if (perRecord !== undefined) {
+      if (maxPerRecord !== undefined) {
         const used: number = perRecord.get(candidate.key) ?? 0;
-        if (used >= maxPerRecord!) {
+        if (used >= maxPerRecord) {
           continue;
         }
         perRecord.set(candidate.key, used + 1);
