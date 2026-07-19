@@ -18,6 +18,7 @@ import { localClassifierSafetyScenario } from './localClassifierSafety';
 import { localEmbeddingSearchScenario } from './localEmbeddingSearch';
 import { localSummarizationScenario } from './localSummarization';
 import { mcpProbeScenario } from './mcpProbe';
+import { sqliteVecMemoryPersistenceScenario } from './sqliteVecMemoryPersistence';
 import { memoryToolsGateScenario } from './memoryToolsGate';
 import {
   anthropicModelTiersScenario,
@@ -43,6 +44,7 @@ export const scenarios: readonly IScenario[] = [
   mcpProbeScenario,
   memoryToolsGateScenario,
   crossProviderEmbeddingSearchScenario,
+  sqliteVecMemoryPersistenceScenario,
   openaiModelTiersScenario,
   anthropicModelTiersScenario,
   geminiModelTiersScenario

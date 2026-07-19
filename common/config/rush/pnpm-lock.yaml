@@ -2656,6 +2656,9 @@ importers:
       '@fgv/heft-dual-rig':
         specifier: workspace:*
         version: link:../../rigs/heft-dual-rig
+      '@fgv/ts-agent-memory-sqlite-vec':
+        specifier: workspace:*
+        version: link:../../libraries/ts-agent-memory-sqlite-vec
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../../libraries/ts-utils-jest
@@ -2677,6 +2680,9 @@ importers:
       '@testing-library/react':
         specifier: ^16
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@types/better-sqlite3':
+        specifier: ^7.6.11
+        version: 7.6.13
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -2704,6 +2710,9 @@ importers:
       babel-loader:
         specifier: ~10.1.0
         version: 10.1.1(@babel/core@7.29.7)(webpack@5.105.4)
+      better-sqlite3:
+        specifier: ^12.0.0
+        version: 12.11.1
       css-loader:
         specifier: ~7.1.2
         version: 7.1.4(webpack@5.105.4)
@@ -2749,6 +2758,9 @@ importers:
       rimraf:
         specifier: ^6.1.2
         version: 6.1.3
+      sqlite-vec:
+        specifier: ^0.1.9
+        version: 0.1.9
       style-loader:
         specifier: ~4.0.0
         version: 4.0.0(webpack@5.105.4)
