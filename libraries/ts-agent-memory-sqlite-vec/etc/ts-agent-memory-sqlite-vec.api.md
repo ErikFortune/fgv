@@ -6,14 +6,41 @@
 
 import type BetterSqlite3 from 'better-sqlite3';
 import { IEdgeTarget } from '@fgv/ts-agent-memory';
+import { IEmbeddedFragment } from '@fgv/ts-agent-memory';
+import { IFragmentVectorIndex } from '@fgv/ts-agent-memory';
 import { IVectorIndex } from '@fgv/ts-agent-memory';
 import { IVectorQueryHit } from '@fgv/ts-agent-memory';
 import { Result } from '@fgv/ts-utils';
 
 // @public
+export interface ISqliteVecFragmentIndexCreateParams {
+    readonly database: BetterSqlite3.Database;
+    readonly tableName?: string;
+}
+
+// @public
 export interface ISqliteVecVectorIndexCreateParams {
     readonly database: BetterSqlite3.Database;
     readonly tableName?: string;
+}
+
+// @public
+export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
+    //
+    // (undocumented)
+    addFragments(target: IEdgeTarget, fragments: ReadonlyArray<IEmbeddedFragment>): Promise<Result<number>>;
+    static create(params: ISqliteVecFragmentIndexCreateParams): Promise<Result<SqliteVecFragmentIndex>>;
+    get fragmentCount(): number;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
+    //
+    // (undocumented)
+    query(vector: Float32Array, topK: number, maxPerRecord?: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    get recordCount(): number;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
+    //
+    // (undocumented)
+    remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
 }
 
 // @public

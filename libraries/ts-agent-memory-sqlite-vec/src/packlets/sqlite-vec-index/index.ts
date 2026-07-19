@@ -5,3 +5,4 @@
 
 export * from './model';
 export * from './sqliteVecVectorIndex';
+export * from './sqliteVecFragmentIndex';
