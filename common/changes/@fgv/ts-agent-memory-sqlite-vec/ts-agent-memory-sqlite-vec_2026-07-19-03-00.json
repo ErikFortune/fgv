@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add @fgv/ts-agent-memory-sqlite-vec: a persistent, sqlite-vec-backed IVectorIndex reference implementation for @fgv/ts-agent-memory. Embeddings live in a SQLite file (better-sqlite3 + sqlite-vec vec0), so a reopened vault answers queries with no re-embedding — the durable counterpart to InMemoryCosineIndex, with no core store change. Result-integration boundary; better-sqlite3 / sqlite-vec are peer dependencies.",
+      "type": "none",
+      "packageName": "@fgv/ts-agent-memory-sqlite-vec"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory-sqlite-vec",
+  "email": "noreply@anthropic.com"
+}

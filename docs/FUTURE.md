@@ -411,7 +411,24 @@ recorded so a future firm ask is a same-shape build, not a redesign. Size M (new
 interface + retriever + store fragment-embed-on-write path). Trigger: shared semantic
 knowledge is scheduled.
 
-### Persistent / ANN `IVectorIndex` (N-Ask8) — direction question, low-risk either way
+### Persistent / ANN `IVectorIndex` (N-Ask8) — ANSWERED → reference impl SHIPPED
+
+> **RESOLVED (2026-07-19).** Erik's ratification: fgv ships a **reference** persistent
+> `IVectorIndex` — but not by pulling a storage backend into `ts-agent-memory` core.
+> `@fgv/ts-agent-memory-sqlite-vec` (`SqliteVecVectorIndex`) landed as a separate
+> Result-integration-boundary package over `better-sqlite3` + `sqlite-vec`: embeddings
+> persist in a SQLite `vec0` file, so a reopened vault answers queries with **no
+> re-embedding**, keyed on `edgeTargetKey` with cosine scoring byte-identical to
+> `InMemoryCosineIndex`. **Zero core change** — confirmed the store already writes the
+> vector index incrementally and only re-embeds on the consumer-opt-in
+> `rebuild(asRecordSource())`, so a persistent index is a drop-in swap. The
+> incremental-embed-on-open hook noted below was therefore **not needed**. ANN/large-N,
+> chunk-granular entries (N-Ask5), and a browser sibling are explicitly out of scope on
+> the package (see its README). Personaility consumes it directly; the seam was already
+> correct, so no migration.
+
+The original direction question and analysis, retained for context:
+
 
 `InMemoryCosineIndex` is the only shipped `IVectorIndex` — brute-force, in-memory, rebuilt
 from the store (`IMemoryRecordSource.list()` → re-embed all) on every open. Fine for v1
