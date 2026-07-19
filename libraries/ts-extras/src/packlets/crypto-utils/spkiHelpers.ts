@@ -97,6 +97,52 @@ export function base64UrlNoPadDecode(encoded: string): Result<Uint8Array> {
 }
 
 /**
+ * Encodes a `Uint8Array` as a lowercase hexadecimal string with no `0x` prefix.
+ *
+ * Each byte becomes exactly two lowercase hex characters (zero-padded), so an
+ * `n`-byte input yields a `2n`-character string. An empty input yields the empty
+ * string. This is the inverse of {@link CryptoUtils.hexDecode}.
+ *
+ * @param data - The binary data to encode.
+ * @returns The lowercase, unprefixed hex string.
+ * @public
+ */
+export function hexEncode(data: Uint8Array): string {
+  let hex = '';
+  for (let i = 0; i < data.length; i++) {
+    hex += data[i].toString(16).padStart(2, '0');
+  }
+  return hex;
+}
+
+/**
+ * Decodes a hexadecimal string (no `0x` prefix) back to a `Uint8Array`.
+ *
+ * Liberal in what it accepts: both lowercase and uppercase hex digits are
+ * allowed (whereas {@link CryptoUtils.hexEncode} always emits lowercase). The
+ * input must have even length and contain only hex digits (`0-9`, `a-f`, `A-F`);
+ * an empty string decodes to an empty `Uint8Array`. Odd length or any non-hex
+ * character fails with error context.
+ *
+ * @param encoded - The hex string to decode.
+ * @returns `Success` with the decoded bytes, or `Failure` with error context.
+ * @public
+ */
+export function hexDecode(encoded: string): Result<Uint8Array> {
+  if (encoded.length % 2 !== 0) {
+    return fail(`hexDecode: odd-length hex string (length ${encoded.length})`);
+  }
+  if (!/^[0-9a-fA-F]*$/.test(encoded)) {
+    return fail(`hexDecode: string contains non-hex characters`);
+  }
+  const bytes = new Uint8Array(encoded.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(encoded.slice(i * 2, i * 2 + 2), 16);
+  }
+  return succeed(bytes);
+}
+
+/**
  * The structural *shape* of a {@link CryptoUtils.MultibaseSpkiPublicKey}: the
  * multibase `'m'` prefix followed by a non-empty base64url-no-pad body
  * (`A-Z`, `a-z`, `0-9`, `-`, `_`).

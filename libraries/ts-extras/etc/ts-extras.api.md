@@ -461,6 +461,8 @@ declare namespace CryptoUtils {
         base64UrlNoPadDecode,
         base64UrlNoPadEncode,
         exportPublicKeyAsMultibaseSpki,
+        hexDecode,
+        hexEncode,
         importPublicKeyFromMultibaseSpki,
         isValidMultibaseSpkiPublicKey,
         MultibaseSpkiPublicKeyRegExp,
@@ -488,6 +490,7 @@ declare namespace CryptoUtils {
         IArgon2idParams,
         ARGON2ID_OWASP_MIN,
         ARGON2ID_PASSPHRASE,
+        IArgon2idKeyingOptions,
         IArgon2idProvider,
         IEncryptedFile,
         ICryptoProvider,
@@ -756,6 +759,16 @@ declare namespace Hash {
     }
 }
 export { Hash }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function hexDecode(encoded: string): Result<Uint8Array>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function hexEncode(data: Uint8Array): string;
 
 // @public
 class HpkeProvider {
@@ -1149,6 +1162,15 @@ interface IArgon2idKeyDerivationParams {
     readonly salt: string;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IArgon2idKeyingOptions {
+    readonly associatedData?: Uint8Array;
+    readonly secret?: Uint8Array;
+}
+
 // @public
 interface IArgon2idParams {
     readonly iterations: number;
@@ -1159,7 +1181,9 @@ interface IArgon2idParams {
 
 // @public
 interface IArgon2idProvider {
-    argon2id(password: Uint8Array | string, salt: Uint8Array, params: IArgon2idParams): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    argon2id(password: Uint8Array | string, salt: Uint8Array, params: IArgon2idParams, options?: IArgon2idKeyingOptions): Promise<Result<Uint8Array>>;
 }
 
 // @public

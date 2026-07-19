@@ -332,6 +332,34 @@ export const ARGON2ID_PASSPHRASE: IArgon2idParams = {
 } as const;
 
 /**
+ * Optional keyed-hashing inputs for {@link CryptoUtils.IArgon2idProvider.argon2id | argon2id}
+ * (RFC 9106 §3.1). These are distinct from the cost parameters in
+ * {@link CryptoUtils.IArgon2idParams} — they change the derived output but are
+ * not tuning knobs. Both fields are optional; omitting a field (or passing an
+ * empty `Uint8Array`) is a no-op that leaves the output byte-identical to a call
+ * with no options at all.
+ * @public
+ */
+export interface IArgon2idKeyingOptions {
+  /**
+   * Optional secret key K (RFC 9106 keyed hashing, sometimes called a "pepper").
+   * When present and non-empty it is mixed into the hash so that the derived
+   * output cannot be reproduced without also knowing K. Empty or omitted means
+   * no secret. Honored by both the Node and browser backends.
+   */
+  readonly secret?: Uint8Array;
+
+  /**
+   * Optional associated data X (RFC 9106 §3.1). When present and non-empty it is
+   * mixed into the hash. **Node-only:** the WASM (`hash-wasm`) browser backend
+   * has no associated-data input, so `BrowserArgon2Provider` fails loudly rather
+   * than silently dropping it (which would produce wrong bytes). Empty or omitted
+   * means no associated data and is accepted by both backends.
+   */
+  readonly associatedData?: Uint8Array;
+}
+
+/**
  * Argon2id key derivation provider (RFC 9106).
  *
  * Implementations are in separate packages to avoid WASM bundle costs for
@@ -345,18 +373,28 @@ export interface IArgon2idProvider {
   /**
    * Derives key material from a password using Argon2id (RFC 9106 §3.1).
    *
-   * Returns the raw derived bytes as a `Uint8Array`. Both Node and browser
-   * implementations produce bit-identical output for identical inputs.
+   * Returns the raw derived bytes as a `Uint8Array`. For the same inputs that
+   * both backends support, the Node and browser implementations produce
+   * byte-identical output. The optional `associatedData` in
+   * {@link CryptoUtils.IArgon2idKeyingOptions} is the one exception: it is
+   * Node-only (the browser WASM backend has no associated-data input), so a call
+   * that supplies non-empty `associatedData` is not portable to the browser
+   * backend. Every input the browser backend *does* support (including the
+   * optional `secret`) is byte-identical across the two.
    *
    * @param password - Password or passphrase. Accepts string (UTF-8) or raw bytes.
    * @param salt - Salt bytes. Must be random and unique per credential (\>= 16 bytes recommended).
    * @param params - Argon2id parameters. Use `ARGON2ID_OWASP_MIN` as a starting point.
+   * @param options - Optional {@link CryptoUtils.IArgon2idKeyingOptions | keyed-hashing inputs}
+   * (secret K and/or associated data X). Omitting them (the default) leaves the
+   * output byte-identical to prior behavior.
    * @returns Success with derived bytes, Failure with error context.
    */
   argon2id(
     password: Uint8Array | string,
     salt: Uint8Array,
-    params: IArgon2idParams
+    params: IArgon2idParams,
+    options?: IArgon2idKeyingOptions
   ): Promise<Result<Uint8Array>>;
 }
 

@@ -364,3 +364,45 @@ describe('spkiToRawX25519', () => {
     });
   });
 });
+
+describe('hexEncode / hexDecode', () => {
+  test('encode produces lowercase, unprefixed, two-chars-per-byte output', () => {
+    expect(CryptoUtils.hexEncode(new Uint8Array([0x00, 0xff, 0x10]))).toBe('00ff10');
+    expect(CryptoUtils.hexEncode(new Uint8Array([0x0a, 0x0b, 0xde, 0xad]))).toBe('0a0bdead');
+  });
+
+  test('encode of an empty array is the empty string', () => {
+    expect(CryptoUtils.hexEncode(new Uint8Array(0))).toBe('');
+  });
+
+  test('encode zero-pads single-digit bytes', () => {
+    expect(CryptoUtils.hexEncode(new Uint8Array([0x01, 0x02, 0x0f]))).toBe('01020f');
+  });
+
+  test('decode round-trips encode for arbitrary bytes', () => {
+    const data = new Uint8Array([0, 1, 2, 3, 16, 127, 128, 253, 254, 255]);
+    expect(CryptoUtils.hexDecode(CryptoUtils.hexEncode(data))).toSucceedWith(data);
+  });
+
+  test('decode round-trips the empty string to an empty array', () => {
+    expect(CryptoUtils.hexDecode('')).toSucceedWith(new Uint8Array(0));
+  });
+
+  test('decode accepts a known lowercase vector', () => {
+    expect(CryptoUtils.hexDecode('00ff10')).toSucceedWith(new Uint8Array([0x00, 0xff, 0x10]));
+  });
+
+  test('decode accepts uppercase hex (liberal input)', () => {
+    expect(CryptoUtils.hexDecode('00FF10')).toSucceedWith(new Uint8Array([0x00, 0xff, 0x10]));
+    expect(CryptoUtils.hexDecode('DeAdBeEf')).toSucceedWith(new Uint8Array([0xde, 0xad, 0xbe, 0xef]));
+  });
+
+  test('decode fails on odd-length input', () => {
+    expect(CryptoUtils.hexDecode('abc')).toFailWith(/odd-length hex string/i);
+  });
+
+  test('decode fails on non-hex characters', () => {
+    expect(CryptoUtils.hexDecode('zz')).toFailWith(/non-hex characters/i);
+    expect(CryptoUtils.hexDecode('00gg')).toFailWith(/non-hex characters/i);
+  });
+});

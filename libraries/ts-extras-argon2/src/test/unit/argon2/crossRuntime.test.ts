@@ -109,4 +109,29 @@ describe('cross-runtime equivalence: NodeArgon2Provider vs BrowserArgon2Provider
     const browserBytes = (await browser.argon2id(password, salt, params)).orThrow();
     expect(nodeBytes).toEqual(browserBytes);
   });
+
+  // A secret (RFC 9106 keyed hashing) is supported by both backends and must
+  // stay byte-identical across them. Small params keep this fast.
+  test('secret-only keyed hashing is byte-identical across runtimes', async () => {
+    const params: CryptoUtils.IArgon2idParams = {
+      memoryKiB: 8,
+      iterations: 1,
+      parallelism: 1,
+      outputBytes: 32
+    };
+    const secret = new Uint8Array(8).fill(0x03);
+    const nodeBytes = (await node.argon2id(RFC_PASSWORD, RFC_SALT, params, { secret })).orThrow();
+    const browserBytes = (await browser.argon2id(RFC_PASSWORD, RFC_SALT, params, { secret })).orThrow();
+    expect(nodeBytes).toEqual(browserBytes);
+  });
+
+  // Associated data is Node-only: Node honors it, the WASM browser backend
+  // rejects it loudly rather than silently dropping it (which would diverge).
+  test('associatedData is Node-only: Node succeeds, browser rejects', async () => {
+    const associatedData = new Uint8Array(12).fill(0x04);
+    expect(await node.argon2id(RFC_PASSWORD, RFC_SALT, RFC_PARAMS, { associatedData })).toSucceed();
+    expect(await browser.argon2id(RFC_PASSWORD, RFC_SALT, RFC_PARAMS, { associatedData })).toFailWith(
+      /associatedData is not supported.*node-only/i
+    );
+  });
 });

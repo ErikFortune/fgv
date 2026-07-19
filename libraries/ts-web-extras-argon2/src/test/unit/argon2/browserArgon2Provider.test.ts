@@ -90,6 +90,42 @@ describe('BrowserArgon2Provider', () => {
     });
   });
 
+  describe('keyed hashing (secret / associatedData)', () => {
+    const SECRET = new Uint8Array(8).fill(0x03);
+    const AD = new Uint8Array(12).fill(0x04);
+
+    test('honors a secret — output differs from the no-secret derivation', async () => {
+      const withoutSecret = (await provider.argon2id(RFC_PASSWORD, RFC_SALT, RFC_PARAMS)).orThrow();
+      expect(
+        await provider.argon2id(RFC_PASSWORD, RFC_SALT, RFC_PARAMS, { secret: SECRET })
+      ).toSucceedAndSatisfy((withSecret) => {
+        expect(withSecret).not.toEqual(withoutSecret);
+      });
+    });
+
+    test('empty secret is a no-op (byte-identical to omitting options)', async () => {
+      const baseline = (await provider.argon2id(RFC_PASSWORD, RFC_SALT, RFC_PARAMS)).orThrow();
+      expect(
+        await provider.argon2id(RFC_PASSWORD, RFC_SALT, RFC_PARAMS, { secret: new Uint8Array(0) })
+      ).toSucceedWith(baseline);
+    });
+
+    test('rejects non-empty associatedData as a Node-only feature', async () => {
+      expect(await provider.argon2id(RFC_PASSWORD, RFC_SALT, RFC_PARAMS, { associatedData: AD })).toFailWith(
+        /associatedData is not supported.*node-only/i
+      );
+    });
+
+    test('empty associatedData is accepted (no-op, byte-identical to omitting options)', async () => {
+      const baseline = (await provider.argon2id(RFC_PASSWORD, RFC_SALT, RFC_PARAMS)).orThrow();
+      expect(
+        await provider.argon2id(RFC_PASSWORD, RFC_SALT, RFC_PARAMS, {
+          associatedData: new Uint8Array(0)
+        })
+      ).toSucceedWith(baseline);
+    });
+  });
+
   describe('parameter validation', () => {
     test('fails when memoryKiB < 8', async () => {
       expect(await provider.argon2id(RFC_PASSWORD, RFC_SALT, { ...RFC_PARAMS, memoryKiB: 7 })).toFailWith(
