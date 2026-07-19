@@ -14,6 +14,7 @@ Array [
   "memory-tools-gate",
   "cross-provider-embedding-search",
   "sqlite-vec-memory-persistence",
+  "sqlite-vec-fragment-persistence",
   "openai-model-tiers",
   "anthropic-model-tiers",
   "google-gemini-model-tiers",
