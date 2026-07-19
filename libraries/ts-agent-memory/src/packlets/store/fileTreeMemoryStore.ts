@@ -37,7 +37,15 @@ import {
   MemoryObservationOutcome,
   MemoryObservationPhase
 } from '../observe';
-import { IMemoryRecordSource, IScopedMemoryRecord, IVectorIndex, MemoryEmbedder } from '../vector';
+import {
+  FragmentEmbedder,
+  IEmbeddedFragment,
+  IFragmentVectorIndex,
+  IMemoryRecordSource,
+  IScopedMemoryRecord,
+  IVectorIndex,
+  MemoryEmbedder
+} from '../vector';
 import { defaultMemoryScopeEncoding } from './scopeEncoding';
 
 /** The on-disk extension for a memory record file. */
@@ -230,6 +238,31 @@ export interface IFileTreeMemoryStoreCreateParams {
    */
   readonly embed?: MemoryEmbedder;
   /**
+   * Optional fragment-granular vector index for sub-document semantic search.
+   * Wired together with
+   * {@link IFileTreeMemoryStoreCreateParams.fragmentEmbedder | fragmentEmbedder}:
+   * when both are present the store chunks + embeds each written record and
+   * maintains the fragment index on `put` / `delete` / cap-cull eviction — the
+   * "discovery" half of a search-then-read contract, queried through a
+   * {@link FragmentSemanticRetriever}. Independent of the record-granular
+   * {@link IFileTreeMemoryStoreCreateParams.vectorIndex | vectorIndex} pair: a
+   * store may wire record vectors, fragment vectors, both, or neither. Absent (or
+   * `fragmentEmbedder` absent) → no fragment work happens and the store behaves
+   * byte-identically (the additive, zero-overhead-when-unwired default).
+   */
+  readonly fragmentIndex?: IFragmentVectorIndex;
+  /**
+   * Optional fragment embedder applied to each record on write, wired together
+   * with {@link IFileTreeMemoryStoreCreateParams.fragmentIndex | fragmentIndex}.
+   * The consumer owns the chunking policy (window size, overlap) and the embedding
+   * call; the store stays chunking- and embedder-agnostic. Fragment index
+   * maintenance is **best-effort**, exactly like the record-vector path: a failed
+   * (or throwing) `fragmentEmbedder` / `addFragments` / `remove` is logged at
+   * `warn` and the record operation still succeeds — the fragment index is a
+   * derived view a later `rebuild` reconciles.
+   */
+  readonly fragmentEmbedder?: FragmentEmbedder;
+  /**
    * How the initial vault walk reacts to a record that fails to parse or
    * validate. Defaults to `'fail'` — one bad record fails the whole open, the
    * historical behavior, preserved byte-for-byte. Set `'skip'` to quarantine
@@ -270,6 +303,8 @@ interface IInternalParams {
   readonly logger: Logging.ILogger;
   readonly vectorIndex?: IVectorIndex;
   readonly embed?: MemoryEmbedder;
+  readonly fragmentIndex?: IFragmentVectorIndex;
+  readonly fragmentEmbedder?: FragmentEmbedder;
 }
 
 /**
@@ -302,6 +337,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
   private readonly _logger: Logging.ILogger;
   private readonly _vectorIndex: IVectorIndex | undefined;
   private readonly _embed: MemoryEmbedder | undefined;
+  private readonly _fragmentIndex: IFragmentVectorIndex | undefined;
+  private readonly _fragmentEmbedder: FragmentEmbedder | undefined;
   /**
    * Records the initial walk could not load. Populated during `create()` in
    * {@link MemoryRecordErrorMode | `'skip'` mode}; empty otherwise.
@@ -354,6 +391,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
     this._logger = params.logger;
     this._vectorIndex = params.vectorIndex;
     this._embed = params.embed;
+    this._fragmentIndex = params.fragmentIndex;
+    this._fragmentEmbedder = params.fragmentEmbedder;
     this._skippedRecords = [];
     this._seq = 0;
     this._observationSeq = 0;
@@ -394,7 +433,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
           observers: params.observers ?? [],
           logger: params.logger ?? new Logging.NoOpLogger(),
           vectorIndex: params.vectorIndex,
-          embed: params.embed
+          embed: params.embed,
+          fragmentIndex: params.fragmentIndex,
+          fragmentEmbedder: params.fragmentEmbedder
         });
         return store._initialIndex(params.onRecordError ?? 'fail').onSuccess(() => succeed(store));
       })
@@ -790,6 +831,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return this._buildRecord(record, body, existing, policy, hash)
       .onSuccess((built) => succeed(this._stampRank(built)))
       .thenOnSuccess((built) => this._embedOnWrite(built, scope))
+      .thenOnSuccess((built) => this._embedFragmentsOnWrite(built, scope))
       .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, idStem))
       .thenOnSuccess(async (persisted) => {
         // Everything after the authoritative `_persist` commit is best-effort and
@@ -844,6 +886,56 @@ export class FileTreeMemoryStore implements IMemoryStore {
   }
 
   /**
+   * Best-effort fragment-embed-on-write. When a fragment index AND a fragment
+   * embedder are wired, chunks + embeds the built record and replaces its
+   * fragments in the index (`addFragments` is whole-record-replace, so a re-authored
+   * document never leaves stale fragments behind — no explicit remove needed). A
+   * failure (returned `fail` OR a thrown/rejected hook) is logged and the record is
+   * returned unchanged — the put still persists, and the fragment index is a derived
+   * view a later `rebuild` reconciles. Unlike {@link FileTreeMemoryStore._embedOnWrite}
+   * it stamps nothing on the record (fragments have no per-record `embeddingRef`
+   * analog). A pass-through no-op when unwired (byte-identical record).
+   */
+  private async _embedFragmentsOnWrite(
+    built: IMemoryRecord<string>,
+    scope: MemoryScopeKey
+  ): Promise<Result<IMemoryRecord<string>>> {
+    if (this._fragmentIndex === undefined || this._fragmentEmbedder === undefined) {
+      return succeed(built);
+    }
+    const fragmentIndex: IFragmentVectorIndex = this._fragmentIndex;
+    const fragmentEmbedder: FragmentEmbedder = this._fragmentEmbedder;
+    const target: IEdgeTarget = { scope, id: built.envelope.id };
+    const embedded: Result<ReadonlyArray<IEmbeddedFragment>> = await this._tryVectorOp(
+      () => fragmentEmbedder(built),
+      `fragment embedding '${built.envelope.id}'`
+    );
+    if (embedded.isFailure()) {
+      return succeed(built);
+    }
+    await this._tryVectorOp(
+      () => fragmentIndex.addFragments(target, embedded.value),
+      `fragment add for '${built.envelope.id}'`
+    );
+    return succeed(built);
+  }
+
+  /**
+   * Best-effort fragment removal. A no-op unless the full fragment lifecycle is
+   * wired (both an index AND an embedder), so an unwired store does no fragment
+   * work and behaves byte-identically. Failures are logged, never surfaced — a
+   * committed delete/eviction must not fail because a derived fragment index could
+   * not be pruned.
+   */
+  private async _removeFragmentsBestEffort(target: IEdgeTarget): Promise<void> {
+    if (this._fragmentIndex === undefined || this._fragmentEmbedder === undefined) {
+      return;
+    }
+    const fragmentIndex: IFragmentVectorIndex = this._fragmentIndex;
+    await this._tryVectorOp(() => fragmentIndex.remove(target), `fragment removal for '${target.id}'`);
+  }
+
+  /**
    * Evict the records named by a `cull-oldest` decision, best-effort. Runs only
    * after the authoritative `_persist`, so a failed eviction is logged (never
    * fatal) and the cap self-corrects on the next admission. Returns the ids that
@@ -880,6 +972,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
   ): Promise<void> {
     for (const id of evicted) {
       await this._removeVectorBestEffort({ scope, id });
+      await this._removeFragmentsBestEffort({ scope, id });
     }
   }
 
@@ -1021,6 +1114,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
         .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
         .thenOnSuccess(async () => {
           await this._removeVectorBestEffort({ scope, id: existing.envelope.id });
+          await this._removeFragmentsBestEffort({ scope, id: existing.envelope.id });
           return succeed(existing.envelope.id);
         });
     });
@@ -1116,6 +1210,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
             this._buildVersionedRecord(record, body, current, policy, hash, versionStem, validAt, now, seq)
               .onSuccess((built) => succeed(this._stampRank(built)))
               .thenOnSuccess((built) => this._embedOnWrite(built, scope))
+              .thenOnSuccess((built) => this._embedFragmentsOnWrite(built, scope))
               .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, versionStem))
               .onSuccess((persisted) =>
                 this._invalidateCurrents(scope, priorCurrents, validAt, now).onSuccess(() =>
