@@ -336,9 +336,12 @@ The first consumer forwarded a batch of six retrieval/tool-surface asks against 
 v1 substrate. **Four firm asks were built** (result projection + detail tier;
 `IMemoryQuery.offset` pagination; kind-set query axis; and the orderable numeric
 `rank` axis — commissioned as its own stream). The items below are the ones held
-back from that batch — one conditional ask captured build-ready, and two the
-consumer explicitly **recorded rather than requested** so the shape is visible if it
-ever becomes a real ask.
+back — one conditional ask captured build-ready, and the semantic/vector asks the
+consumer **recorded/shaped rather than requested** so the shape is visible if they
+become firm. The two semantic-retrieval items (fragment-granular locator N-Ask5;
+persistent/ANN `IVectorIndex` N-Ask8) were **sharpened in the 2026-07 overnight batch** —
+N-Ask5 upgraded from "recorded, no shape" to a concrete additive interface proposal, and
+N-Ask8 filed as a v2 direction question needing Erik's ratification (both non-blocking).
 
 ### Input-side `resolveHandle` (inverse of `handleFor`) — conditional, build-ready
 
@@ -366,16 +369,87 @@ that round-trip is a same-day change. Completes the `handleFor` symmetry.
 built-in `memory_context` / `memory_read` tool bodies instead of a host-owned wrapper.
 Size S.
 
-### Chunk / fragment-granular retrieval + in-result locator — recorded, not requested
+### Chunk / fragment-granular semantic retrieval + in-result locator (N-Ask5) — shaped, file-firm-when-scheduled
 
-The v1 semantic recall is **record-granular** (`embeddingRef` per envelope;
-`SemanticRetriever` ranks whole records). A consumer whose knowledge documents need
-**sub-document fragment** search with a `[start, end)` locator keeps that on their own
-side (behind a host `IKnowledgeSearchProvider` doing keyword fragment search), so it is
-non-blocking and **not an ask today**. It would become a real fgv design change —
-chunk-granular vector entries + in-result offsets — only if we ever want one shared
-semantic retriever to serve **both** record-level memory and sub-document knowledge at
-fragment granularity. Recorded so the shape is visible; no action requested.
+The v1 semantic recall is **record-granular**: one `embeddingRef` per envelope, one
+vector per record (`IVectorIndex.add(target, vector)` is one-per-`target`, replace-on-repeat),
+and `IVectorQueryHit` is `{ target, score }` — no sub-record locator. A consumer whose
+knowledge documents need **sub-document fragment** search returning a `[start, end)`
+locator into the source body (the shape their `IKnowledgeSearchMatch` already carries)
+keeps that host-side today behind an `IKnowledgeSearchProvider` doing keyword fragment
+search — so it is **non-blocking and not a firm ask yet**. The consumer has now **shaped**
+it (2026-07 overnight batch) so fgv sees the concrete surface; it files firm only when
+shared semantic knowledge is scheduled. It becomes a real fgv design change (not a hook)
+the moment one shared semantic retriever must serve **both** record-level memory and
+sub-document knowledge at fragment granularity.
+
+**Concrete shape (grounded in `libraries/ts-agent-memory/src/packlets/vector/vectorIndex.ts`).**
+All additive on an active surface:
+- **`IFragmentLocator { readonly start: number; readonly end: number }`** — half-open
+  `[start, end)` byte/char offsets into the record body.
+- **`IVectorQueryHit.locator?: IFragmentLocator`** — additive optional; record-granular
+  hits omit it (today's behavior unchanged), fragment hits carry it. `{ target, locator, score }`
+  is the `{recordId, locator, score}` the consumer asked to surface.
+- **Multiple vectors per record.** Today `add(target, vector)` is one-per-target. Fragment
+  mode keys entries on `(target, locator)` and accumulates, so a record contributes N
+  fragment vectors. Cleanest as a sibling **`IFragmentVectorIndex extends IVectorIndex`**
+  adding `addFragments(target, ReadonlyArray<{ locator; vector }>)` (keeps the record-granular
+  seam unburdened) rather than overloading `add`. **`remove(target)` evicts *all* fragments**
+  for the record (whole-record eviction unchanged).
+- **Host-supplied chunking** via a **`FragmentEmbedder = (record) => Promise<Result<ReadonlyArray<{ locator: IFragmentLocator; vector: Float32Array }>>>`**
+  sibling to `MemoryEmbedder` — window/overlap policy lives inside the host's embedder,
+  the core stays chunking-agnostic (same posture as the embedder-agnostic v1).
+- **Retriever:** a `FragmentSemanticRetriever` sibling (or a capability flag on
+  `SemanticRetriever`) surfaces `{ target, locator, score }`; the record-granular
+  `SemanticRetriever` is untouched.
+- **Open question for firm-up:** whether `embeddingRef` stays an opaque "is-embedded"
+  marker (fragment count lives in the index) or becomes fragment-aware. Lean opaque —
+  the index owns fragment cardinality; the envelope only marks embedded-ness.
+
+**Why deferred:** non-blocking (host keyword-fragment search covers it now); the shape is
+recorded so a future firm ask is a same-shape build, not a redesign. Size M (new sibling
+interface + retriever + store fragment-embed-on-write path). Trigger: shared semantic
+knowledge is scheduled.
+
+### Persistent / ANN `IVectorIndex` (N-Ask8) — direction question, low-risk either way
+
+`InMemoryCosineIndex` is the only shipped `IVectorIndex` — brute-force, in-memory, rebuilt
+from the store (`IMemoryRecordSource.list()` → re-embed all) on every open. Fine for v1
+(small per-agent vaults). For v2 durability/scale — where re-embedding every vault on every
+open stops being cheap — a persistent (and/or ANN, for large-N) index is the gap. The
+consumer raises this as a **direction question, not a firm ask**, so the interface choice is
+eyes-open before either side builds.
+
+**The question is fgv's (Erik's) product call:** does fgv intend to ship a persistent
+`IVectorIndex` (and/or an ANN index), and on what storage (pgvector, sqlite-vec, …)? If yes,
+the consumer aligns now and avoids a migration; if no, the consumer owns persistence host-side
+behind the same interface.
+
+**Analysis / recommendation (for ratification, not a decision):**
+- The consumer's own correction is right: **there is no `IVectorStoreAdapter` symbol** (that
+  name was folklore on their side) — the real seam is **`IVectorIndex` + `IMemoryRecordSource`**,
+  confirmed in `vectorIndex.ts`.
+- **The seam is already correct.** `vectorIndex.ts`'s own docs say "a consumer can swap an
+  external ANN backend behind the same seam once N grows beyond the in-memory regime." So
+  persistence is an **implementation of the existing interface, not a new seam** — which is
+  exactly why this is low-risk either way and needs no interface churn today.
+- **Recommendation:** do **not** drag a storage backend (pgvector/sqlite-vec) into
+  `ts-agent-memory` core — it would pull heavy, runtime-specific deps into a currently
+  dependency-light package. If fgv ships a persistent index at all, make it a **separate
+  Result-integration-boundary package** (the `@fgv/ts-extras-ollama` / `-transformers`
+  precedent: thin `Result` wrapper, explicit not-in-scope list, no opinion in core). The
+  consumer can own persistence host-side **today** behind `IVectorIndex` with zero interface
+  change.
+- **The one forward-compat item worth aligning now** (additive, can still wait): the
+  **re-embed-on-open policy**. `rebuild(IMemoryRecordSource)` re-embeds the *whole* vault; a
+  persistent index wants to embed only **new/changed** records. Reserving an incremental-embed
+  hook (the store checks index membership — a `has(target)` / content-hash compare — before
+  calling the embedder) is the additive that keeps a future persistent index from being forced
+  to re-embed on open. Not needed until a persistent impl exists.
+
+**Priority:** not firm — a v2 concern surfaced early so the interface choice is eyes-open.
+Low-risk; the seam is right regardless of who implements persistence. **Needs Erik's
+yes/no + storage-direction ratification** when v2 durability is scheduled.
 
 ### Scope-qualified edge targets — SHIPPED (2026-07-13)
 
