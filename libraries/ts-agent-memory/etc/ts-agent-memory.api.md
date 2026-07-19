@@ -121,6 +121,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
     listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
     put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
+    get skippedRecords(): ReadonlyArray<ISkippedRecord>;
 }
 
 // @public
@@ -228,6 +229,7 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly embed?: MemoryEmbedder;
     readonly logger?: Logging.ILogger;
     readonly observers?: ReadonlyArray<IMemoryObserver>;
+    readonly onRecordError?: MemoryRecordErrorMode;
     readonly rankProjectors?: ReadonlyMap<Kind, RankProjector>;
     readonly registry: IBodyConverterRegistry;
     readonly root: FileTree.IMutableFileTreeDirectoryItem;
@@ -541,6 +543,13 @@ export interface ISemanticRetrieverCreateParams {
 }
 
 // @public
+export interface ISkippedRecord {
+    readonly error: string;
+    readonly path: string;
+    readonly scope: MemoryScopeKey;
+}
+
+// @public
 export function isTemporalIdentityCodec(codec: IIdentityCodec): codec is ITemporalIdentityCodec;
 
 // @public
@@ -697,6 +706,9 @@ export class MemoryObservationStore implements IMemoryObserver {
     query(criteria?: IMemoryObservationQuery): ReadonlyArray<IMemoryObservationRecord>;
     get size(): number;
 }
+
+// @public
+export type MemoryRecordErrorMode = 'skip' | 'fail';
 
 // @public
 export type MemoryScopeKey = Brand<string, 'MemoryScopeKey'>;
