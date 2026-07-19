@@ -5,3 +5,4 @@
 
 export * from './vectorIndex';
 export * from './inMemoryCosineIndex';
+export * from './inMemoryFragmentCosineIndex';

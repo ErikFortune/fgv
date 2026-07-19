@@ -125,6 +125,21 @@ export class FileTreeMemoryStore implements IMemoryStore {
 }
 
 // @public
+export const FRAGMENT_SEMANTIC_UNWIRED_MESSAGE: string;
+
+// @public
+export type FragmentEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<ReadonlyArray<IEmbeddedFragment>>>;
+
+// @public
+export class FragmentSemanticRetriever {
+    get capabilities(): IFragmentRetrieverCapabilities;
+    static create(params: {
+        readonly backend?: IFragmentSemanticBackend;
+    }): Result<FragmentSemanticRetriever>;
+    retrieve(query: IFragmentQuery): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+}
+
+// @public
 export function guardRetrieverCapabilities(query: IMemoryQuery, capabilities: IMemoryRetrieverCapabilities): Result<true>;
 
 // @public
@@ -205,6 +220,12 @@ export interface IEdgeTarget {
 }
 
 // @public
+export interface IEmbeddedFragment {
+    readonly locator: IFragmentLocator;
+    readonly vector: Float32Array;
+}
+
+// @public
 export interface IEntityResolutionCandidate {
     readonly record: IMemoryRecord<unknown>;
     readonly score: number;
@@ -227,6 +248,8 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
     readonly defaultCodec?: IIdentityCodec;
     readonly embed?: MemoryEmbedder;
+    readonly fragmentEmbedder?: FragmentEmbedder;
+    readonly fragmentIndex?: IFragmentVectorIndex;
     readonly logger?: Logging.ILogger;
     readonly observers?: ReadonlyArray<IMemoryObserver>;
     readonly onRecordError?: MemoryRecordErrorMode;
@@ -236,6 +259,37 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly scopeEncoding?: (scope: MemoryScopeKey) => Result<string>;
     readonly vectorIndex?: IVectorIndex;
     readonly writePolicies?: ReadonlyMap<Kind, IWritePolicy>;
+}
+
+// @public
+export interface IFragmentLocator {
+    readonly end: number;
+    readonly start: number;
+}
+
+// @public
+export interface IFragmentQuery {
+    readonly maxPerRecord?: number;
+    readonly semantic: string;
+    readonly topK?: number;
+}
+
+// @public
+export interface IFragmentRetrieverCapabilities {
+    readonly supportsFragmentRecall: boolean;
+}
+
+// @public
+export interface IFragmentSemanticBackend {
+    readonly embedQuery: QueryEmbedder;
+    readonly fragmentIndex: IFragmentVectorIndex;
+}
+
+// @public
+export interface IFragmentVectorIndex {
+    addFragments(target: IEdgeTarget, fragments: ReadonlyArray<IEmbeddedFragment>): Promise<Result<number>>;
+    query(vector: Float32Array, topK: number, maxPerRecord?: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
 }
 
 // @public
@@ -498,6 +552,17 @@ export class InMemoryCosineIndex implements IVectorIndex {
 }
 
 // @public
+export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
+    addFragments(target: IEdgeTarget, fragments: ReadonlyArray<IEmbeddedFragment>): Promise<Result<number>>;
+    static create(): Result<InMemoryFragmentCosineIndex>;
+    get fragmentCount(): number;
+    query(vector: Float32Array, topK: number, maxPerRecord?: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder): Promise<Result<number>>;
+    get recordCount(): number;
+    remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
+}
+
+// @public
 export interface IProvenance {
     readonly [key: string]: unknown;
     readonly by?: string;
@@ -588,6 +653,7 @@ export interface IVectorIndex {
 
 // @public
 export interface IVectorQueryHit {
+    readonly locator?: IFragmentLocator;
     readonly score: number;
     readonly target: IEdgeTarget;
 }

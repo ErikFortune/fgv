@@ -7,10 +7,26 @@ import { Result } from '@fgv/ts-utils';
 import { IEdgeTarget, IMemoryRecord } from '../types';
 
 /**
- * A single hit returned by {@link IVectorIndex.query}: the matched record's
- * scope-qualified {@link IEdgeTarget | address} and the backend's similarity
- * score (higher = more similar; the exact scale is backend-defined). Hits are
- * returned in descending score order.
+ * A half-open `[start, end)` span into a record's body — the in-record locator a
+ * {@link IFragmentVectorIndex} carries on each fragment hit. `start` is inclusive,
+ * `end` exclusive. The unit (character / byte / token offsets) is the consumer's
+ * choice: the index stores the two integers opaquely and never interprets them,
+ * so they line up with whatever locator the consumer's own read side uses.
+ * @public
+ */
+export interface IFragmentLocator {
+  /** Inclusive start offset into the record body. */
+  readonly start: number;
+  /** Exclusive end offset into the record body. */
+  readonly end: number;
+}
+
+/**
+ * A single hit returned by {@link IVectorIndex.query} (or
+ * {@link IFragmentVectorIndex.query}): the matched record's scope-qualified
+ * {@link IEdgeTarget | address} and the backend's similarity score (higher = more
+ * similar; the exact scale is backend-defined). Hits are returned in descending
+ * score order.
  *
  * @remarks
  * The address is a `(scope, id)` pair, NOT a bare {@link MemoryId} — per-scope
@@ -18,6 +34,10 @@ import { IEdgeTarget, IMemoryRecord } from '../types';
  * stem under different scopes, so a bare id could not disambiguate two records
  * that share a stem. The caller re-resolves the hit against the record index by
  * the same scoped address.
+ *
+ * `locator` is present only on hits from a {@link IFragmentVectorIndex} — it
+ * identifies WHICH fragment of the record matched. Record-granular
+ * {@link IVectorIndex} hits omit it.
  * @public
  */
 export interface IVectorQueryHit {
@@ -25,6 +45,8 @@ export interface IVectorQueryHit {
   readonly target: IEdgeTarget;
   /** Backend similarity score; higher is more similar. */
   readonly score: number;
+  /** The matched fragment's in-record span; present only for fragment-index hits. */
+  readonly locator?: IFragmentLocator;
 }
 
 /**
@@ -66,6 +88,65 @@ export interface IVectorIndex {
 }
 
 /**
+ * One embedded fragment of a record: its in-record {@link IFragmentLocator | span}
+ * and the vector for that span. Produced by a {@link FragmentEmbedder} and stored
+ * via {@link IFragmentVectorIndex.addFragments}.
+ * @public
+ */
+export interface IEmbeddedFragment {
+  /** The fragment's in-record span. */
+  readonly locator: IFragmentLocator;
+  /** The embedding vector for that span. */
+  readonly vector: Float32Array;
+}
+
+/**
+ * The fragment-granular sibling of {@link IVectorIndex}: instead of one vector per
+ * record it holds many vectors per record, each tagged with an in-record
+ * {@link IFragmentLocator}, and its `query` returns per-fragment hits carrying that
+ * locator. This is the seam behind sub-document semantic search — the "discovery"
+ * half of a search-then-read contract, where a hit's `(target, locator)` tells the
+ * consumer which record AND which span to read.
+ *
+ * @remarks
+ * Deliberately NOT `extends IVectorIndex`: an index keyed by `(target, locator)`
+ * has no well-defined single-vector `add(target, vector)`. It is a parallel
+ * contract with three operations — `addFragments`, `remove`, `query` — reusing
+ * {@link IVectorQueryHit} (whose `locator` is always populated here). Kept distinct
+ * from the record-granular index per the consumer contract: memory recall stays
+ * record-granular; sub-document knowledge uses a separate fragment index.
+ * @public
+ */
+export interface IFragmentVectorIndex {
+  /**
+   * Add (or replace) all fragments for the scope-qualified `target`. Whole-record
+   * semantics: every fragment previously held for `target` is dropped and replaced
+   * by `fragments`, so a re-authored document never leaves stale fragments behind.
+   * Returns the number of fragments now held for the record.
+   */
+  addFragments(target: IEdgeTarget, fragments: ReadonlyArray<IEmbeddedFragment>): Promise<Result<number>>;
+
+  /**
+   * Remove every fragment for the scope-qualified `target`. Returns the removed
+   * target. Idempotent — removing a target with no fragments still succeeds.
+   */
+  remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
+
+  /**
+   * Return the `topK` nearest fragments to `vector`, in descending score order,
+   * each hit carrying its record `target` and fragment `locator`. When
+   * `maxPerRecord` is supplied, no more than that many fragments of any single
+   * record appear in the result — the cap is applied during selection (before the
+   * `topK` cut) so one long document cannot crowd out others.
+   */
+  query(
+    vector: Float32Array,
+    topK: number,
+    maxPerRecord?: number
+  ): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+}
+
+/**
  * Embeds a complete record into a vector for the store's embed-on-write hook.
  * Async and `Result`-returning, since a real embedder does a network call (cloud
  * provider) or in-process model inference. The consumer wires this — the core
@@ -73,6 +154,18 @@ export interface IVectorIndex {
  * @public
  */
 export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array>>;
+
+/**
+ * The fragment-granular sibling of {@link MemoryEmbedder}: chunks a record's body
+ * and embeds each chunk, returning one {@link IEmbeddedFragment} per chunk. The
+ * chunking policy (window size, overlap) lives entirely in the consumer's embedder
+ * — the core stays chunking-agnostic, exactly as it stays embedder-agnostic for
+ * the record-granular path. Used by the store's fragment-embed-on-write hook.
+ * @public
+ */
+export type FragmentEmbedder = (
+  record: IMemoryRecord<unknown>
+) => Promise<Result<ReadonlyArray<IEmbeddedFragment>>>;
 
 /**
  * A record paired with its scope-qualified {@link IEdgeTarget | address}, as
