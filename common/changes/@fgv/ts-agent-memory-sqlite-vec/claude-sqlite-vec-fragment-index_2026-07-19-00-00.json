@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add SqliteVecFragmentIndex — a persistent, sqlite-vec-backed IFragmentVectorIndex, the durable counterpart to InMemoryFragmentCosineIndex (fragment-granular sibling of the existing SqliteVecVectorIndex). Holds many vectors per record, each tagged with an in-record [start,end) locator, in a vec0 virtual table keyed on target_key as a PARTITION KEY with the offsets in auxiliary columns. addFragments is whole-record-replace (atomic delete-then-insert), remove drops every fragment of a target, and query(vector, topK, maxPerRecord?) applies the per-record cap during selection before the topK cut — byte-identical semantics and cosine scoring (score = 1 - cosineDistance) to the in-memory index, with the same reopen dimension recovery so a persistent fragment index answers queries with no re-embedding on open. Adds ISqliteVecFragmentIndexCreateParams (bring-your-own better-sqlite3 Database; default table name 'memory_fragments'). Consumer-owned connection lifecycle; ANN/large-N remains out of scope.",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory-sqlite-vec"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory-sqlite-vec",
+  "email": "noreply@anthropic.com"
+}
