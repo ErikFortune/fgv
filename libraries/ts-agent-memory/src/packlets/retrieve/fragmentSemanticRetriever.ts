@@ -14,7 +14,7 @@ import { QueryEmbedder } from './semanticRetriever';
  * @public
  */
 export const FRAGMENT_SEMANTIC_UNWIRED_MESSAGE: string =
-  'fragment recall: no fragment index is wired; wire a IFragmentSemanticBackend to enable sub-document search';
+  'fragment recall: no fragment index is wired; wire an IFragmentSemanticBackend to enable sub-document search';
 
 /**
  * The fragment backend wired into a {@link FragmentSemanticRetriever}: the fragment
