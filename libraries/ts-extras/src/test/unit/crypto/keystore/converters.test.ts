@@ -31,10 +31,13 @@ describe('Key Store Converters', () => {
       expect(CryptoUtils.KeyStore.Converters.keystoreFormat.convert('keystore-v2')).toSucceedWith(
         'keystore-v2'
       );
+      expect(CryptoUtils.KeyStore.Converters.keystoreFormat.convert('keystore-v3')).toSucceedWith(
+        'keystore-v3'
+      );
     });
 
     test('rejects invalid format', () => {
-      expect(CryptoUtils.KeyStore.Converters.keystoreFormat.convert('keystore-v3')).toFail();
+      expect(CryptoUtils.KeyStore.Converters.keystoreFormat.convert('keystore-v4')).toFail();
     });
 
     test('rejects non-string', () => {

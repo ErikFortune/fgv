@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+import { JsonValue } from '@fgv/ts-json-base';
 import {
   EncryptionAlgorithm,
   ICryptoProvider,
@@ -44,21 +45,30 @@ export { allKeyPairAlgorithms, KeyPairAlgorithm } from '../model';
  *   asymmetric-keypair entries. A strict superset of v1 — the field is
  *   optional, so a v2 reader opens a v1 vault with no special-casing, and a
  *   v1 vault opened and re-saved is silently upgraded to v2.
+ * - `'keystore-v3'`: adds the `'opaque'` symmetric secret type and the optional
+ *   `metadata` / `updatedAt` fields on symmetric entries. A strict superset of
+ *   v1/v2 — the additions are optional (and `'opaque'` is simply a new enum
+ *   value), so a v3 reader opens a v1/v2 vault with no special-casing, and a
+ *   v1/v2 vault opened and re-saved is silently upgraded to v3.
  * @public
  */
-export type KeyStoreFormat = 'keystore-v1' | 'keystore-v2';
+export type KeyStoreFormat = 'keystore-v1' | 'keystore-v2' | 'keystore-v3';
 
 /**
  * All recognized key store format versions (readable by the current library).
  * @public
  */
-export const allKeyStoreFormats: ReadonlyArray<KeyStoreFormat> = ['keystore-v1', 'keystore-v2'];
+export const allKeyStoreFormats: ReadonlyArray<KeyStoreFormat> = [
+  'keystore-v1',
+  'keystore-v2',
+  'keystore-v3'
+];
 
 /**
- * Current format version constant. New vaults are written as `'keystore-v2'`.
+ * Current format version constant. New vaults are written as `'keystore-v3'`.
  * @public
  */
-export const KEYSTORE_FORMAT: KeyStoreFormat = 'keystore-v2';
+export const KEYSTORE_FORMAT: KeyStoreFormat = 'keystore-v3';
 
 /**
  * Default PBKDF2 iterations for key store encryption.
@@ -81,9 +91,13 @@ export const MIN_SALT_LENGTH: number = 16;
  * Discriminator for symmetric secret types stored in the vault.
  * - `'encryption-key'`: A 32-byte AES-256 encryption key.
  * - `'api-key'`: An arbitrary-length API key string (UTF-8 encoded).
+ * - `'opaque'`: Arbitrary raw bytes with no encoding contract — stored and
+ *   returned verbatim (never UTF-8 decoded). Use for byte blobs that are
+ *   neither a fixed-size AES key nor a UTF-8 string (e.g. a serialized
+ *   credential bundle), so they are not mistyped as `'api-key'`.
  * @public
  */
-export type KeyStoreSymmetricSecretType = 'encryption-key' | 'api-key';
+export type KeyStoreSymmetricSecretType = 'encryption-key' | 'api-key' | 'opaque';
 
 /**
  * All valid symmetric secret types.
@@ -91,7 +105,8 @@ export type KeyStoreSymmetricSecretType = 'encryption-key' | 'api-key';
  */
 export const allKeyStoreSymmetricSecretTypes: ReadonlyArray<KeyStoreSymmetricSecretType> = [
   'encryption-key',
-  'api-key'
+  'api-key',
+  'opaque'
 ];
 
 /**
@@ -147,6 +162,7 @@ export interface IKeyStoreSymmetricEntry {
    * The secret data.
    * - For `'encryption-key'`: 32-byte AES-256 key.
    * - For `'api-key'`: UTF-8 encoded API key string (arbitrary length).
+   * - For `'opaque'`: arbitrary raw bytes, stored and returned verbatim.
    */
   readonly key: Uint8Array;
 
@@ -156,9 +172,30 @@ export interface IKeyStoreSymmetricEntry {
   readonly description?: string;
 
   /**
+   * Optional mutable, non-secret-by-contract metadata for this entry. Set via
+   * {@link CryptoUtils.KeyStore.KeyStore.setSecretMetadata} without touching the
+   * secret `key` bytes.
+   *
+   * "Non-secret by contract" means the field is intended for lifecycle metadata
+   * (rotation timestamps, labels, provenance) rather than secret material.
+   * PHYSICALLY it lives inside the vault's AES-GCM ciphertext alongside the key
+   * bytes — the vault has no plaintext index — so it is protected at rest by the
+   * master password; the "non-secret" designation is a usage contract, not a
+   * weaker custody class.
+   */
+  readonly metadata?: JsonValue;
+
+  /**
    * When this secret was added (ISO 8601).
    */
   readonly createdAt: string;
+
+  /**
+   * When this entry was last mutated (ISO 8601). Stamped on any metadata
+   * mutation (see {@link CryptoUtils.KeyStore.KeyStore.setSecretMetadata}).
+   * Absent on entries that have never been mutated since creation.
+   */
+  readonly updatedAt?: string;
 }
 
 /**
@@ -277,9 +314,23 @@ export interface IKeyStoreSymmetricEntryJson {
   readonly description?: string;
 
   /**
+   * Optional mutable, non-secret-by-contract metadata for this entry. Present
+   * only on `'keystore-v3'` vaults whose entry carried metadata; a v1/v2 vault
+   * omits the field. Physically carried inside the vault ciphertext (the vault
+   * has no plaintext index).
+   */
+  readonly metadata?: JsonValue;
+
+  /**
    * When this secret was added (ISO 8601).
    */
   readonly createdAt: string;
+
+  /**
+   * When this entry was last mutated (ISO 8601). Present only on `'keystore-v3'`
+   * vaults whose entry has been mutated since creation.
+   */
+  readonly updatedAt?: string;
 }
 
 /**
@@ -518,6 +569,19 @@ export interface IImportKeyOptions extends IImportSecretOptions {
    * @defaultValue 'encryption-key'
    */
   readonly type?: KeyStoreSymmetricSecretType;
+}
+
+/**
+ * Options for importing raw opaque bytes via {@link KeyStore.importSecretBytes}.
+ * Extends {@link IImportSecretOptions} with optional initial metadata.
+ * @public
+ */
+export interface IImportSecretBytesOptions extends IImportSecretOptions {
+  /**
+   * Optional initial mutable metadata to store with the entry. Can also be set
+   * or replaced later via {@link KeyStore.setSecretMetadata}.
+   */
+  readonly metadata?: JsonValue;
 }
 
 /**
