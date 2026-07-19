@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Hash, Logging, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+import { Hash, Logging, Result, fail, mapResults, mapSuccess, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   AdmissionDecision,
@@ -60,6 +60,39 @@ export interface IMemoryStoreListFilter {
    * unchanged. Absent = no temporal projection (every version is returned).
    */
   readonly asOf?: number;
+}
+
+/**
+ * Policy for how {@link FileTreeMemoryStore.create}'s initial vault walk reacts
+ * to a record that fails to parse or validate.
+ *
+ * - `'fail'` (the default) — one unreadable record fails the whole open. The
+ *   walk collapses per-record results with `mapResults`, so any single failure
+ *   aborts `create()`. This is the historical behavior, preserved byte-for-byte.
+ * - `'skip'` — an unreadable record is quarantined (not indexed) rather than
+ *   failing the open. Every record that DOES parse loads normally; each skip is
+ *   logged at `warn` and surfaced structurally on
+ *   {@link FileTreeMemoryStore.skippedRecords}. The offending file is never
+ *   deleted or mutated, so a later open (after the body converter is fixed)
+ *   re-indexes it. A vault holds every kind in one store, so a required-field
+ *   migration on one kind must not make every other record unreadable.
+ * @public
+ */
+export type MemoryRecordErrorMode = 'skip' | 'fail';
+
+/**
+ * A record that {@link FileTreeMemoryStore.create} could not load and
+ * quarantined (only produced in {@link MemoryRecordErrorMode | `'skip'` mode}).
+ * The `path` identifies WHICH record was skipped so a host can repair it.
+ * @public
+ */
+export interface ISkippedRecord {
+  /** The record file's path within the vault (`<scope>/<filename>.md`). */
+  readonly path: string;
+  /** The scope the record lives under (its parent directory path). */
+  readonly scope: MemoryScopeKey;
+  /** The parse/validation failure message (includes the record path). */
+  readonly error: string;
 }
 
 /**
@@ -196,6 +229,16 @@ export interface IFileTreeMemoryStoreCreateParams {
    * `rebuild` reconciles, so a vector failure never fails an authoritative write.
    */
   readonly embed?: MemoryEmbedder;
+  /**
+   * How the initial vault walk reacts to a record that fails to parse or
+   * validate. Defaults to `'fail'` — one bad record fails the whole open, the
+   * historical behavior, preserved byte-for-byte. Set `'skip'` to quarantine
+   * unreadable records instead: valid records still load, each skip is logged
+   * at `warn` and surfaced on {@link FileTreeMemoryStore.skippedRecords}, and
+   * the offending file is left untouched for a later (post-fix) re-index. See
+   * {@link MemoryRecordErrorMode}.
+   */
+  readonly onRecordError?: MemoryRecordErrorMode;
 }
 
 /**
@@ -259,6 +302,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
   private readonly _logger: Logging.ILogger;
   private readonly _vectorIndex: IVectorIndex | undefined;
   private readonly _embed: MemoryEmbedder | undefined;
+  /**
+   * Records the initial walk could not load. Populated during `create()` in
+   * {@link MemoryRecordErrorMode | `'skip'` mode}; empty otherwise.
+   */
+  private readonly _skippedRecords: ISkippedRecord[];
 
   /** Monotonic write counter; incremented inside the write-lock on each put. */
   private _seq: number;
@@ -306,9 +354,22 @@ export class FileTreeMemoryStore implements IMemoryStore {
     this._logger = params.logger;
     this._vectorIndex = params.vectorIndex;
     this._embed = params.embed;
+    this._skippedRecords = [];
     this._seq = 0;
     this._observationSeq = 0;
     this._writeTail = Promise.resolve();
+  }
+
+  /**
+   * Records the initial vault walk could not parse or validate and quarantined
+   * (not indexed). Non-empty only when the store was opened with
+   * {@link MemoryRecordErrorMode | `onRecordError: 'skip'`} AND at least one
+   * record failed to load. Each entry identifies the offending file so a host
+   * can repair it; the file itself is never deleted or mutated, so a later open
+   * (after the body converter is fixed) re-indexes it.
+   */
+  public get skippedRecords(): ReadonlyArray<ISkippedRecord> {
+    return this._skippedRecords;
   }
 
   /**
@@ -335,7 +396,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
           vectorIndex: params.vectorIndex,
           embed: params.embed
         });
-        return store._initialIndex().onSuccess(() => succeed(store));
+        return store._initialIndex(params.onRecordError ?? 'fail').onSuccess(() => succeed(store));
       })
     );
   }
@@ -1526,9 +1587,13 @@ export class FileTreeMemoryStore implements IMemoryStore {
   /**
    * Walk the FileTree once and rebuild the index. Also resumes the `seq`
    * counter past the highest persisted `seq` so new writes stay monotonic.
+   *
+   * In `'skip'` mode each per-record failure is captured structurally on
+   * `this._skippedRecords` (path + scope + path-tagged error) at its failure
+   * site and logged at `warn`; the walk keeps every record that loaded.
    */
-  private _initialIndex(): Result<true> {
-    return this._collectEntries(this._root, []).onSuccess((entries) =>
+  private _initialIndex(onRecordError: MemoryRecordErrorMode): Result<true> {
+    return this._collectEntries(this._root, [], onRecordError).onSuccess((entries) =>
       this._index.rebuild(entries).onSuccess(() => {
         for (const entry of entries) {
           if (entry.record.envelope.seq > this._seq) {
@@ -1543,12 +1608,13 @@ export class FileTreeMemoryStore implements IMemoryStore {
   /** Recursively collect every `.md` record under `dir` (scope = path segments). */
   private _collectEntries(
     dir: FileTree.IFileTreeDirectoryItem,
-    scopeSegments: ReadonlyArray<string>
+    scopeSegments: ReadonlyArray<string>,
+    onRecordError: MemoryRecordErrorMode
   ): Result<ReadonlyArray<IIndexedMemoryRecord>> {
     return dir.getChildren().onSuccess((children) => {
       const results: Result<ReadonlyArray<IIndexedMemoryRecord>>[] = children.map((child) => {
         if (child.type === 'directory') {
-          return this._collectEntries(child, [...scopeSegments, child.name]);
+          return this._collectEntries(child, [...scopeSegments, child.name], onRecordError);
         }
         if (!child.name.endsWith(MEMORY_FILE_EXTENSION) || scopeSegments.length === 0) {
           // Skip non-record files and any record-shaped file sitting at the root
@@ -1556,17 +1622,48 @@ export class FileTreeMemoryStore implements IMemoryStore {
           return succeed<ReadonlyArray<IIndexedMemoryRecord>>([]);
         }
         const scope: MemoryScopeKey = scopeSegments.join('/') as MemoryScopeKey;
-        return child
-          .getRawContents()
-          .onSuccess((raw) => parseMemoryFile(raw, this._registry))
-          .onSuccess((parsedRecord) => this._verifyLoaded(scope, child, parsedRecord))
-          .onSuccess((verified) =>
-            succeed<ReadonlyArray<IIndexedMemoryRecord>>([{ scope, record: verified }])
-          );
+        return this._loadRecordFile(scope, child, onRecordError);
       });
+      // `'skip'` mode: keep every record that parsed, drop the ones that failed
+      // in a single pass (each failure is captured on `this._skippedRecords` and
+      // warn-logged at its site in `_loadRecordFile`). `.orDefault([])` covers
+      // the all-invalid-subtree edge where `mapSuccess` returns Failure because
+      // no element succeeded. `'fail'` mode: `mapResults` fails the whole open on
+      // any bad record — byte-identical to the historical load path.
+      if (onRecordError === 'skip') {
+        return succeed<ReadonlyArray<IIndexedMemoryRecord>>(mapSuccess(results).orDefault([]).flat());
+      }
       return mapResults(results).onSuccess((perChild) =>
         succeed<ReadonlyArray<IIndexedMemoryRecord>>(perChild.flat())
       );
     });
+  }
+
+  /**
+   * Load and verify one record file. On failure in `'skip'` mode, records the
+   * structured {@link ISkippedRecord} identity (path + scope + path-tagged
+   * error) and logs the skip at `warn`; the failure is still returned so the
+   * caller's `mapSuccess` drops it from the loaded set. In `'fail'` mode the
+   * failure passes through untouched so the historical error is byte-identical.
+   */
+  private _loadRecordFile(
+    scope: MemoryScopeKey,
+    child: FileTree.IFileTreeFileItem,
+    onRecordError: MemoryRecordErrorMode
+  ): Result<ReadonlyArray<IIndexedMemoryRecord>> {
+    return child
+      .getRawContents()
+      .onSuccess((raw) => parseMemoryFile(raw, this._registry))
+      .onSuccess((parsedRecord) => this._verifyLoaded(scope, child, parsedRecord))
+      .onSuccess((verified) => succeed<ReadonlyArray<IIndexedMemoryRecord>>([{ scope, record: verified }]))
+      .onFailure((message) => {
+        if (onRecordError === 'skip') {
+          const path: string = `${scope}/${child.name}`;
+          const error: string = `memory record '${path}': ${message}`;
+          this._skippedRecords.push({ path, scope, error });
+          this._warnSwallowed(error);
+        }
+        return fail(message);
+      });
   }
 }
