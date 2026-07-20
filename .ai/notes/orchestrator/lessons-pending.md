@@ -16,6 +16,8 @@ Active clusters at most recent sweep point:
 
 Last sweep: 2026-05-30 — Review-loop discipline triad (L31, L32, L33) codified. See sweep history at end of file.
 
+Newest pending (2026-07-20, `@fgv/ts-agent-memory` fragment-retrieval cycle / N-Ask5): **L38** (native-boundary packages are a layer-1 blind spot — expect a substantive Copilot loop) and **L40** (release-durable docs must cite PRs/on-release artifacts, not active-branch task files) — not yet swept. **L39** (cross-package `{@link}`) was **codified 2026-07-20** into CODE_REVIEW_CHECKLIST.md (2nd occurrence → graduated immediately; see sweep history).
+
 ---
 
 ## Pending lessons
@@ -442,6 +444,32 @@ The cost: an extra review round whose entire finding-set was about description f
 
 ---
 
+### L38. Layer-2 (Copilot) earns its keep on native-boundary packages — it catches runtime-mode edge cases layer-1 reads-against-intent misses
+
+**Observed:** On #562 (`SqliteVecFragmentIndex`, a Result-integration boundary over `better-sqlite3` + `sqlite-vec`) the internal `code-reviewer` (layer 1) approved with **no P1/P2** and independently re-derived the correctness-critical logic (offset math, transaction atomicity, cap-before-topK). Copilot (layer 2) then surfaced **three real persisted-data robustness gaps** across two rounds, all invisible to a reads-against-intent pass because they are `better-sqlite3`/`sqlite-vec` *runtime-mode* specifics, not repo-pattern violations: (a) a `bigint` leak — integer columns return as `bigint` under `defaultSafeIntegers` mode, so a stored locator offset could reach the `number`-typed public locator as `bigint` or lose precision; (b) `_parseKey` silently fabricating a wrong `(scope,id)` from a NUL-less corrupt key rather than failing loudly; (c) an unvalidated write-side offset that `BigInt(nonInteger)` throws on / that persists as a value the read guard later rejects on every query. All three became fail-loudly guards.
+
+**Rule:** For **Result-integration-boundary packages wrapping a native lib with subtle runtime modes** (safe-integer mode, typed/auxiliary columns, driver-specific coercions, WASM/native shape quirks), layer 1 systematically under-covers the runtime-edge class. Do **not** treat a clean layer-1 pass as license to expect a nitpick-only Copilot loop on these packages — budget for layer 2 to be *substantive* on rounds 1–2, and don't call diminishing returns until it actually goes nitpicky. This is the inverse of the well-prepared-pure-TS PR where layer 1 catches everything and Copilot only polishes.
+
+**Codification candidate:** `.ai/instructions/CODING_STANDARDS.md` § "Review-loop discipline" — a note under Layer 2 naming native-boundary packages as a known layer-1-blind-spot class where a substantive Copilot loop is *expected*, not a signal that layer 1 was skipped. (Reference: #562 R1 bigint-leak + corrupt-key; R2 write-side offset validation.)
+
+---
+
+### L39. (CODIFIED 2026-07-20 → CODE_REVIEW_CHECKLIST.md § Priority 3 "Documentation / TSDoc")
+
+Cross-package `{@link}` bakes an `ae-unresolved-link` warning into the checked-in api.md; only `{@link}` this package's own exports (code span for other-package symbols; `{@inheritDoc OtherPkg.method}` is the one tolerated cross-package ref). Recurred #558 → #562, so graduated straight to a checklist line rather than waiting for a batch sweep. See sweep history.
+
+---
+
+### L40. Durable docs must reference durable artifacts — never a transient task file on an unmerged branch
+
+**Observed:** The N-Ask5 `FUTURE.md` entry cited `.ai/tasks/active/n-ask5-firmup/open-questions.md` — a firm-up artifact that lived only on the `claude/n-ask5-open-questions` branch (relayed to a peer instance, never merged to `release`). By the time N-Ask5 shipped, that path was a dangling reference on `release`. Fixed by pointing the entry at the shipped PRs + the entry itself.
+
+**Rule:** When a release-durable doc (`FUTURE.md`, `LIBRARY_CAPABILITIES.md`, a convention) references a task artifact, that artifact must itself be on `release`, or the reference must point at a durable record — the **PR number** or the doc entry. Transient firm-up / analysis artifacts on feature branches must not be cited from release docs; cite the PR that consumed them instead.
+
+**Codification candidate:** `.ai/conventions/workflow/artifact-protocol.md` (or `doc-graduation.md`) — a one-line rule: "release-durable docs cite PRs or on-release artifacts, never active-branch task files." (Reference: N-Ask5 FUTURE.md dangling `n-ask5-firmup/open-questions.md`, fixed in #564.)
+
+---
+
 ## Sweep history
 
 ### 2026-05-30 — Review-loop discipline triad (L31, L32, L33) codified
@@ -482,3 +510,15 @@ L37 complements L31/L32/L33 (which govern layer-1's place in the broader review 
 ---
 
 When this file or accumulated peer notes get swept to release: append entry here with date, sweep PR link, and which items graduated to durable form (convention / skill / agent-prompt) vs aged out.
+
+---
+
+### 2026-07-20 — L39 codified (cross-package `{@link}` → api.md warning)
+
+**PR:** `claude/orchestrator-reflection-2026-07` (this cycle's reflection PR, #565).
+
+**Graduated:**
+
+- **L39. In TSDoc, only `{@link}` symbols this package itself exports.** A cross-package `{@link OtherPkgSymbol}` bakes an `ae-unresolved-link` warning verbatim into the checked-in `etc/*.api.md` (stale-api.md / CI-diff liability). Use a plain code span for other-package symbols; `{@inheritDoc OtherPkg.Symbol.method}` is the one sanctioned cross-package reference (load-bearing for doc inheritance on Result-integration-boundary packages; its `ae-unresolved-inheritdoc-reference` warning is tolerated + sibling-consistent). → codified into `.ai/instructions/CODE_REVIEW_CHECKLIST.md` § Priority 3, new "Documentation / TSDoc" subsection. Graduated immediately rather than batch-swept because it **recurred** (#558 → #562 R2) — the recurrence is the graduation trigger per the codification-triage convention. (Reference: #562 R2 `ae-unresolved-link` on `{@link IFragmentVectorIndex}`; prior #558 instance.)
+
+L38 (native-boundary layer-1 blind spot) and L40 (release-durable-doc artifact references) remain parked pending a future sweep.
