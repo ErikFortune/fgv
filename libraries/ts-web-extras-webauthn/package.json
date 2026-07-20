@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-web-extras-webauthn",
-  "version": "5.1.0-42",
+  "version": "5.1.0-43",
   "description": "Result-integration boundary over @simplewebauthn/browser",
   "main": "lib/index.js",
   "types": "dist/ts-web-extras-webauthn.d.ts",
