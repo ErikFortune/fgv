@@ -14,7 +14,7 @@ Active clusters at most recent sweep point:
 - 🟢 ts-prompt-assist cluster — Phase B + B-5 docs merged into integration; surface-tidy round in flight; cluster close pending consumer-port pressure-test (lessons L18–L21 below)
 - 🟡 `ai-assist-thinking-events` — sequencing after thinking-config phase B landed (now satisfied); ready to commission
 
-Last sweep: 2026-05-30 — Review-loop discipline triad (L31, L32, L33) codified. See sweep history at end of file.
+Last sweep: 2026-07-20 — L38 + L40 codified (cycle-close sweep, #566), following L39's immediate graduation the same day (#565). See sweep history at end of file.
 
 The N-Ask5 cycle's three lessons are all codified as of 2026-07-20: **L39** (cross-package `{@link}`) graduated immediately on recurrence via #565; **L38** (native-boundary layer-1 blind spot) and **L40** (release-durable docs cite PRs/on-release artifacts) graduated in the 2026-07-20 sweep (see sweep history). No pending lessons newer than L30.
 
@@ -444,24 +444,6 @@ The cost: an extra review round whose entire finding-set was about description f
 
 ---
 
-### L38. (CODIFIED 2026-07-20 → CODING_STANDARDS.md § "Review-loop discipline", new subsection "Native-boundary packages are a known layer-1 blind spot")
-
-Result-integration-boundary packages wrapping a native lib with subtle runtime modes (safe-integer mode, typed/auxiliary columns, driver coercions) are a layer-1 blind spot — expect a *substantive* Copilot loop even after a clean `code-reviewer` pass, and don't call diminishing returns until the finding profile actually goes nitpicky. (Reference: #562 — clean layer 1, then three real persisted-data robustness gaps from Copilot.) See sweep history.
-
----
-
-### L39. (CODIFIED 2026-07-20 → CODE_REVIEW_CHECKLIST.md § Priority 3 "Documentation / TSDoc")
-
-Cross-package `{@link}` bakes an `ae-unresolved-link` warning into the checked-in api.md; only `{@link}` this package's own exports (code span for other-package symbols; `{@inheritDoc OtherPkg.method}` is the one tolerated cross-package ref). Recurred #558 → #562, so graduated straight to a checklist line rather than waiting for a batch sweep. See sweep history.
-
----
-
-### L40. (CODIFIED 2026-07-20 → artifact-protocol.md, new "Durable-doc references" section + anti-pattern bullet)
-
-Release-durable docs cite PRs or on-release artifacts, never active-branch task files — a transient firm-up artifact on an unmerged branch is a dangling reference the moment the doc lands on `release`. (Reference: N-Ask5 `FUTURE.md` dangling `n-ask5-firmup/open-questions.md`, fixed in #564.) See sweep history.
-
----
-
 ## Sweep history
 
 ### 2026-05-30 — Review-loop discipline triad (L31, L32, L33) codified
@@ -519,7 +501,7 @@ L38 (native-boundary layer-1 blind spot) and L40 (release-durable-doc artifact r
 
 ### 2026-07-20 — L38 + L40 codified (cycle-close sweep)
 
-**PR:** `claude/fgv-orchestrator-v-orient-s1z0ax` (post-#565 orchestrator sweep; PR number recorded in the PR itself).
+**PR:** #566 (post-#565 orchestrator sweep).
 
 **Graduated:**
 
