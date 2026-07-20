@@ -56,15 +56,16 @@ N-Ask5 shipped, N-Ask8 retired. Nothing firm is outstanding.
    consumer ask (input-side handle → `(kind, entityId)`), build-ready, triggers only if the
    consumer adopts the substrate's `memory_context` / `memory_read` tool bodies.
 
-## Lessons parked (triage next codification batch)
+## Lessons (L39 codified this PR; L38 + L40 parked for next batch)
 
 - **L38** — native-boundary packages (wrapping a lib with runtime modes like better-sqlite3
   safe-integer mode) are a **layer-1 blind spot**; expect a *substantive* Copilot loop even
   after a clean `code-reviewer` pass. → CODING_STANDARDS review-loop discipline.
-- **L39** — **2nd occurrence** (also bit #558): cross-package `{@link}` bakes an
-  `ae-unresolved-link` warning into the checked-in api.md. Only `{@link}` this package's own
-  exports; use code spans for other-package symbols; `{@inheritDoc OtherPkg.method}` is the one
-  tolerated cross-package ref. Ripe to graduate to a CODE_REVIEW_CHECKLIST line.
+- **L39** — **CODIFIED 2026-07-20** (in this PR, #565) → `CODE_REVIEW_CHECKLIST.md` § Priority 3
+  "Documentation / TSDoc": cross-package `{@link}` bakes an `ae-unresolved-link` warning into the
+  checked-in api.md; only `{@link}` this package's own exports (code spans for other-package
+  symbols; `{@inheritDoc OtherPkg.method}` is the one tolerated cross-package ref). Graduated
+  immediately because it recurred (#558 → #562).
 - **L40** — release-durable docs must cite PRs / on-release artifacts, never active-branch task
   files (N-Ask5's `FUTURE.md` had a dangling `n-ask5-firmup/` reference). → artifact-protocol.
 

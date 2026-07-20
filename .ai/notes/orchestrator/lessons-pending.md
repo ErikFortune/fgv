@@ -16,7 +16,7 @@ Active clusters at most recent sweep point:
 
 Last sweep: 2026-05-30 — Review-loop discipline triad (L31, L32, L33) codified. See sweep history at end of file.
 
-Newest pending (2026-07-20, `@fgv/ts-agent-memory` fragment-retrieval cycle / N-Ask5): **L38** (native-boundary packages are a layer-1 blind spot — expect a substantive Copilot loop), **L39** (cross-package `{@link}` bakes an api.md warning — 2nd occurrence, ripe to codify), **L40** (release-durable docs must cite PRs/on-release artifacts, not active-branch task files). Not yet swept.
+Newest pending (2026-07-20, `@fgv/ts-agent-memory` fragment-retrieval cycle / N-Ask5): **L38** (native-boundary packages are a layer-1 blind spot — expect a substantive Copilot loop) and **L40** (release-durable docs must cite PRs/on-release artifacts, not active-branch task files) — not yet swept. **L39** (cross-package `{@link}`) was **codified 2026-07-20** into CODE_REVIEW_CHECKLIST.md (2nd occurrence → graduated immediately; see sweep history).
 
 ---
 
@@ -454,13 +454,9 @@ The cost: an extra review round whose entire finding-set was about description f
 
 ---
 
-### L39. In TSDoc, only `{@link}` symbols this package itself exports — cross-package `{@link}` bakes an `ae-unresolved-link` warning into the committed api.md
+### L39. (CODIFIED 2026-07-20 → CODE_REVIEW_CHECKLIST.md § Priority 3 "Documentation / TSDoc")
 
-**Observed (2nd occurrence — recurred from #558).** A class-docstring `{@link IFragmentVectorIndex}` in `SqliteVecFragmentIndex` (the type is exported from `@fgv/ts-agent-memory`, not this package) baked an `ae-unresolved-link` warning into `etc/ts-agent-memory-sqlite-vec.api.md`; Copilot flagged it (#562 R2). The same class was tripped once before at #558. The sibling `SqliteVecVectorIndex` avoids cross-package `{@link}` in prose but *does* use `{@inheritDoc IVectorIndex.method}`, which bakes `ae-unresolved-inheritdoc-reference` warnings — **tolerated** because inheritDoc is load-bearing for inheriting the interface's doc text and every boundary package relies on it.
-
-**Rule:** `{@link}` **only** this package's own exported symbols. For a symbol from another `@fgv/*` package, use a plain code span (`` `IFragmentVectorIndex` ``), never `{@link}`. The one sanctioned cross-package reference is `{@inheritDoc OtherPkg.Symbol.method}` on a method that implements another package's interface (accept its warning; it's needed and sibling-consistent). Because these warnings are baked verbatim into the checked-in api.md, a stray cross-package `{@link}` is a CI-diff liability, not just cosmetic.
-
-**Codification candidate:** `.ai/instructions/CODE_REVIEW_CHECKLIST.md` Priority 3 (or a short api-extractor convention). It has now recurred across two packages/streams — strong candidate to graduate to a checklist line so it stops re-learning itself. (Reference: #562 R2 `ae-unresolved-link`; prior #558 instance.)
+Cross-package `{@link}` bakes an `ae-unresolved-link` warning into the checked-in api.md; only `{@link}` this package's own exports (code span for other-package symbols; `{@inheritDoc OtherPkg.method}` is the one tolerated cross-package ref). Recurred #558 → #562, so graduated straight to a checklist line rather than waiting for a batch sweep. See sweep history.
 
 ---
 
@@ -514,3 +510,15 @@ L37 complements L31/L32/L33 (which govern layer-1's place in the broader review 
 ---
 
 When this file or accumulated peer notes get swept to release: append entry here with date, sweep PR link, and which items graduated to durable form (convention / skill / agent-prompt) vs aged out.
+
+---
+
+### 2026-07-20 — L39 codified (cross-package `{@link}` → api.md warning)
+
+**PR:** `claude/orchestrator-reflection-2026-07` (this cycle's reflection PR, #565).
+
+**Graduated:**
+
+- **L39. In TSDoc, only `{@link}` symbols this package itself exports.** A cross-package `{@link OtherPkgSymbol}` bakes an `ae-unresolved-link` warning verbatim into the checked-in `etc/*.api.md` (stale-api.md / CI-diff liability). Use a plain code span for other-package symbols; `{@inheritDoc OtherPkg.Symbol.method}` is the one sanctioned cross-package reference (load-bearing for doc inheritance on Result-integration-boundary packages; its `ae-unresolved-inheritdoc-reference` warning is tolerated + sibling-consistent). → codified into `.ai/instructions/CODE_REVIEW_CHECKLIST.md` § Priority 3, new "Documentation / TSDoc" subsection. Graduated immediately rather than batch-swept because it **recurred** (#558 → #562 R2) — the recurrence is the graduation trigger per the codification-triage convention. (Reference: #562 R2 `ae-unresolved-link` on `{@link IFragmentVectorIndex}`; prior #558 instance.)
+
+L38 (native-boundary layer-1 blind spot) and L40 (release-durable-doc artifact references) remain parked pending a future sweep.
