@@ -16,6 +16,8 @@ Active clusters at most recent sweep point:
 
 Last sweep: 2026-05-30 — Review-loop discipline triad (L31, L32, L33) codified. See sweep history at end of file.
 
+Newest pending (2026-07-20, `@fgv/ts-agent-memory` fragment-retrieval cycle / N-Ask5): **L38** (native-boundary packages are a layer-1 blind spot — expect a substantive Copilot loop), **L39** (cross-package `{@link}` bakes an api.md warning — 2nd occurrence, ripe to codify), **L40** (release-durable docs must cite PRs/on-release artifacts, not active-branch task files). Not yet swept.
+
 ---
 
 ## Pending lessons
@@ -439,6 +441,36 @@ The cost: an extra review round whose entire finding-set was about description f
 **Codification candidate:** Add to `.ai/instructions/CODE_REVIEW_CHECKLIST.md` Priority 2 (Major / Should Fix): "PR description accurately frames the change scope (type-only vs runtime-affecting; additive vs breaking). Bundled latent-bug fixes are disclosed in a dedicated section."
 
 **Reference:** PR #391 Round 2 Copilot findings (`isLooseResourceCandidateDecl` / `isLooseResourceDecl` typo'd-id soundness; meta-finding on runtime-change framing).
+
+---
+
+### L38. Layer-2 (Copilot) earns its keep on native-boundary packages — it catches runtime-mode edge cases layer-1 reads-against-intent misses
+
+**Observed:** On #562 (`SqliteVecFragmentIndex`, a Result-integration boundary over `better-sqlite3` + `sqlite-vec`) the internal `code-reviewer` (layer 1) approved with **no P1/P2** and independently re-derived the correctness-critical logic (offset math, transaction atomicity, cap-before-topK). Copilot (layer 2) then surfaced **three real persisted-data robustness gaps** across two rounds, all invisible to a reads-against-intent pass because they are `better-sqlite3`/`sqlite-vec` *runtime-mode* specifics, not repo-pattern violations: (a) a `bigint` leak — integer columns return as `bigint` under `defaultSafeIntegers` mode, so a stored locator offset could reach the `number`-typed public locator as `bigint` or lose precision; (b) `_parseKey` silently fabricating a wrong `(scope,id)` from a NUL-less corrupt key rather than failing loudly; (c) an unvalidated write-side offset that `BigInt(nonInteger)` throws on / that persists as a value the read guard later rejects on every query. All three became fail-loudly guards.
+
+**Rule:** For **Result-integration-boundary packages wrapping a native lib with subtle runtime modes** (safe-integer mode, typed/auxiliary columns, driver-specific coercions, WASM/native shape quirks), layer 1 systematically under-covers the runtime-edge class. Do **not** treat a clean layer-1 pass as license to expect a nitpick-only Copilot loop on these packages — budget for layer 2 to be *substantive* on rounds 1–2, and don't call diminishing returns until it actually goes nitpicky. This is the inverse of the well-prepared-pure-TS PR where layer 1 catches everything and Copilot only polishes.
+
+**Codification candidate:** `.ai/instructions/CODING_STANDARDS.md` § "Review-loop discipline" — a note under Layer 2 naming native-boundary packages as a known layer-1-blind-spot class where a substantive Copilot loop is *expected*, not a signal that layer 1 was skipped. (Reference: #562 R1 bigint-leak + corrupt-key; R2 write-side offset validation.)
+
+---
+
+### L39. In TSDoc, only `{@link}` symbols this package itself exports — cross-package `{@link}` bakes an `ae-unresolved-link` warning into the committed api.md
+
+**Observed (2nd occurrence — recurred from #558).** A class-docstring `{@link IFragmentVectorIndex}` in `SqliteVecFragmentIndex` (the type is exported from `@fgv/ts-agent-memory`, not this package) baked an `ae-unresolved-link` warning into `etc/ts-agent-memory-sqlite-vec.api.md`; Copilot flagged it (#562 R2). The same class was tripped once before at #558. The sibling `SqliteVecVectorIndex` avoids cross-package `{@link}` in prose but *does* use `{@inheritDoc IVectorIndex.method}`, which bakes `ae-unresolved-inheritdoc-reference` warnings — **tolerated** because inheritDoc is load-bearing for inheriting the interface's doc text and every boundary package relies on it.
+
+**Rule:** `{@link}` **only** this package's own exported symbols. For a symbol from another `@fgv/*` package, use a plain code span (`` `IFragmentVectorIndex` ``), never `{@link}`. The one sanctioned cross-package reference is `{@inheritDoc OtherPkg.Symbol.method}` on a method that implements another package's interface (accept its warning; it's needed and sibling-consistent). Because these warnings are baked verbatim into the checked-in api.md, a stray cross-package `{@link}` is a CI-diff liability, not just cosmetic.
+
+**Codification candidate:** `.ai/instructions/CODE_REVIEW_CHECKLIST.md` Priority 3 (or a short api-extractor convention). It has now recurred across two packages/streams — strong candidate to graduate to a checklist line so it stops re-learning itself. (Reference: #562 R2 `ae-unresolved-link`; prior #558 instance.)
+
+---
+
+### L40. Durable docs must reference durable artifacts — never a transient task file on an unmerged branch
+
+**Observed:** The N-Ask5 `FUTURE.md` entry cited `.ai/tasks/active/n-ask5-firmup/open-questions.md` — a firm-up artifact that lived only on the `claude/n-ask5-open-questions` branch (relayed to a peer instance, never merged to `release`). By the time N-Ask5 shipped, that path was a dangling reference on `release`. Fixed by pointing the entry at the shipped PRs + the entry itself.
+
+**Rule:** When a release-durable doc (`FUTURE.md`, `LIBRARY_CAPABILITIES.md`, a convention) references a task artifact, that artifact must itself be on `release`, or the reference must point at a durable record — the **PR number** or the doc entry. Transient firm-up / analysis artifacts on feature branches must not be cited from release docs; cite the PR that consumed them instead.
+
+**Codification candidate:** `.ai/conventions/workflow/artifact-protocol.md` (or `doc-graduation.md`) — a one-line rule: "release-durable docs cite PRs or on-release artifacts, never active-branch task files." (Reference: N-Ask5 FUTURE.md dangling `n-ask5-firmup/open-questions.md`, fixed in #564.)
 
 ---
 
