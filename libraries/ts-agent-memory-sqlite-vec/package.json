@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-agent-memory-sqlite-vec",
-  "version": "5.1.0",
+  "version": "5.1.0-43",
   "description": "Result-integration boundary providing a persistent, sqlite-vec-backed IVectorIndex for @fgv/ts-agent-memory (survives restarts — no re-embed on open)",
   "main": "lib/index.js",
   "types": "dist/ts-agent-memory-sqlite-vec.d.ts",
@@ -44,7 +44,7 @@
   "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-agent-memory-sqlite-vec#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ErikFortune/fgv.git"
+    "url": "git+https://github.com/ErikFortune/fgv.git"
   },
   "sideEffects": false,
   "dependencies": {},
