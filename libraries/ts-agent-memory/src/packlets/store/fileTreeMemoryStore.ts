@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Hash, Logging, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+import { Hash, Logging, Result, fail, mapResults, mapSuccess, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   AdmissionDecision,
@@ -37,7 +37,15 @@ import {
   MemoryObservationOutcome,
   MemoryObservationPhase
 } from '../observe';
-import { IMemoryRecordSource, IScopedMemoryRecord, IVectorIndex, MemoryEmbedder } from '../vector';
+import {
+  FragmentEmbedder,
+  IEmbeddedFragment,
+  IFragmentVectorIndex,
+  IMemoryRecordSource,
+  IScopedMemoryRecord,
+  IVectorIndex,
+  MemoryEmbedder
+} from '../vector';
 import { defaultMemoryScopeEncoding } from './scopeEncoding';
 
 /** The on-disk extension for a memory record file. */
@@ -60,6 +68,39 @@ export interface IMemoryStoreListFilter {
    * unchanged. Absent = no temporal projection (every version is returned).
    */
   readonly asOf?: number;
+}
+
+/**
+ * Policy for how {@link FileTreeMemoryStore.create}'s initial vault walk reacts
+ * to a record that fails to parse or validate.
+ *
+ * - `'fail'` (the default) — one unreadable record fails the whole open. The
+ *   walk collapses per-record results with `mapResults`, so any single failure
+ *   aborts `create()`. This is the historical behavior, preserved byte-for-byte.
+ * - `'skip'` — an unreadable record is quarantined (not indexed) rather than
+ *   failing the open. Every record that DOES parse loads normally; each skip is
+ *   logged at `warn` and surfaced structurally on
+ *   {@link FileTreeMemoryStore.skippedRecords}. The offending file is never
+ *   deleted or mutated, so a later open (after the body converter is fixed)
+ *   re-indexes it. A vault holds every kind in one store, so a required-field
+ *   migration on one kind must not make every other record unreadable.
+ * @public
+ */
+export type MemoryRecordErrorMode = 'skip' | 'fail';
+
+/**
+ * A record that {@link FileTreeMemoryStore.create} could not load and
+ * quarantined (only produced in {@link MemoryRecordErrorMode | `'skip'` mode}).
+ * The `path` identifies WHICH record was skipped so a host can repair it.
+ * @public
+ */
+export interface ISkippedRecord {
+  /** The record file's path within the vault (`<scope>/<filename>.md`). */
+  readonly path: string;
+  /** The scope the record lives under (its parent directory path). */
+  readonly scope: MemoryScopeKey;
+  /** The parse/validation failure message (includes the record path). */
+  readonly error: string;
 }
 
 /**
@@ -196,6 +237,41 @@ export interface IFileTreeMemoryStoreCreateParams {
    * `rebuild` reconciles, so a vector failure never fails an authoritative write.
    */
   readonly embed?: MemoryEmbedder;
+  /**
+   * Optional fragment-granular vector index for sub-document semantic search.
+   * Wired together with
+   * {@link IFileTreeMemoryStoreCreateParams.fragmentEmbedder | fragmentEmbedder}:
+   * when both are present the store chunks + embeds each written record and
+   * maintains the fragment index on `put` / `delete` / cap-cull eviction — the
+   * "discovery" half of a search-then-read contract, queried through a
+   * {@link FragmentSemanticRetriever}. Independent of the record-granular
+   * {@link IFileTreeMemoryStoreCreateParams.vectorIndex | vectorIndex} pair: a
+   * store may wire record vectors, fragment vectors, both, or neither. Absent (or
+   * `fragmentEmbedder` absent) → no fragment work happens and the store behaves
+   * byte-identically (the additive, zero-overhead-when-unwired default).
+   */
+  readonly fragmentIndex?: IFragmentVectorIndex;
+  /**
+   * Optional fragment embedder applied to each record on write, wired together
+   * with {@link IFileTreeMemoryStoreCreateParams.fragmentIndex | fragmentIndex}.
+   * The consumer owns the chunking policy (window size, overlap) and the embedding
+   * call; the store stays chunking- and embedder-agnostic. Fragment index
+   * maintenance is **best-effort**, exactly like the record-vector path: a failed
+   * (or throwing) `fragmentEmbedder` / `addFragments` / `remove` is logged at
+   * `warn` and the record operation still succeeds — the fragment index is a
+   * derived view a later `rebuild` reconciles.
+   */
+  readonly fragmentEmbedder?: FragmentEmbedder;
+  /**
+   * How the initial vault walk reacts to a record that fails to parse or
+   * validate. Defaults to `'fail'` — one bad record fails the whole open, the
+   * historical behavior, preserved byte-for-byte. Set `'skip'` to quarantine
+   * unreadable records instead: valid records still load, each skip is logged
+   * at `warn` and surfaced on {@link FileTreeMemoryStore.skippedRecords}, and
+   * the offending file is left untouched for a later (post-fix) re-index. See
+   * {@link MemoryRecordErrorMode}.
+   */
+  readonly onRecordError?: MemoryRecordErrorMode;
 }
 
 /**
@@ -227,6 +303,8 @@ interface IInternalParams {
   readonly logger: Logging.ILogger;
   readonly vectorIndex?: IVectorIndex;
   readonly embed?: MemoryEmbedder;
+  readonly fragmentIndex?: IFragmentVectorIndex;
+  readonly fragmentEmbedder?: FragmentEmbedder;
 }
 
 /**
@@ -259,6 +337,13 @@ export class FileTreeMemoryStore implements IMemoryStore {
   private readonly _logger: Logging.ILogger;
   private readonly _vectorIndex: IVectorIndex | undefined;
   private readonly _embed: MemoryEmbedder | undefined;
+  private readonly _fragmentIndex: IFragmentVectorIndex | undefined;
+  private readonly _fragmentEmbedder: FragmentEmbedder | undefined;
+  /**
+   * Records the initial walk could not load. Populated during `create()` in
+   * {@link MemoryRecordErrorMode | `'skip'` mode}; empty otherwise.
+   */
+  private readonly _skippedRecords: ISkippedRecord[];
 
   /** Monotonic write counter; incremented inside the write-lock on each put. */
   private _seq: number;
@@ -306,9 +391,24 @@ export class FileTreeMemoryStore implements IMemoryStore {
     this._logger = params.logger;
     this._vectorIndex = params.vectorIndex;
     this._embed = params.embed;
+    this._fragmentIndex = params.fragmentIndex;
+    this._fragmentEmbedder = params.fragmentEmbedder;
+    this._skippedRecords = [];
     this._seq = 0;
     this._observationSeq = 0;
     this._writeTail = Promise.resolve();
+  }
+
+  /**
+   * Records the initial vault walk could not parse or validate and quarantined
+   * (not indexed). Non-empty only when the store was opened with
+   * {@link MemoryRecordErrorMode | `onRecordError: 'skip'`} AND at least one
+   * record failed to load. Each entry identifies the offending file so a host
+   * can repair it; the file itself is never deleted or mutated, so a later open
+   * (after the body converter is fixed) re-indexes it.
+   */
+  public get skippedRecords(): ReadonlyArray<ISkippedRecord> {
+    return this._skippedRecords;
   }
 
   /**
@@ -333,9 +433,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
           observers: params.observers ?? [],
           logger: params.logger ?? new Logging.NoOpLogger(),
           vectorIndex: params.vectorIndex,
-          embed: params.embed
+          embed: params.embed,
+          fragmentIndex: params.fragmentIndex,
+          fragmentEmbedder: params.fragmentEmbedder
         });
-        return store._initialIndex().onSuccess(() => succeed(store));
+        return store._initialIndex(params.onRecordError ?? 'fail').onSuccess(() => succeed(store));
       })
     );
   }
@@ -729,6 +831,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return this._buildRecord(record, body, existing, policy, hash)
       .onSuccess((built) => succeed(this._stampRank(built)))
       .thenOnSuccess((built) => this._embedOnWrite(built, scope))
+      .thenOnSuccess((built) => this._embedFragmentsOnWrite(built, scope))
       .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, idStem))
       .thenOnSuccess(async (persisted) => {
         // Everything after the authoritative `_persist` commit is best-effort and
@@ -783,6 +886,56 @@ export class FileTreeMemoryStore implements IMemoryStore {
   }
 
   /**
+   * Best-effort fragment-embed-on-write. When a fragment index AND a fragment
+   * embedder are wired, chunks + embeds the built record and replaces its
+   * fragments in the index (`addFragments` is whole-record-replace, so a re-authored
+   * document never leaves stale fragments behind — no explicit remove needed). A
+   * failure (returned `fail` OR a thrown/rejected hook) is logged and the record is
+   * returned unchanged — the put still persists, and the fragment index is a derived
+   * view a later `rebuild` reconciles. Unlike {@link FileTreeMemoryStore._embedOnWrite}
+   * it stamps nothing on the record (fragments have no per-record `embeddingRef`
+   * analog). A pass-through no-op when unwired (byte-identical record).
+   */
+  private async _embedFragmentsOnWrite(
+    built: IMemoryRecord<string>,
+    scope: MemoryScopeKey
+  ): Promise<Result<IMemoryRecord<string>>> {
+    if (this._fragmentIndex === undefined || this._fragmentEmbedder === undefined) {
+      return succeed(built);
+    }
+    const fragmentIndex: IFragmentVectorIndex = this._fragmentIndex;
+    const fragmentEmbedder: FragmentEmbedder = this._fragmentEmbedder;
+    const target: IEdgeTarget = { scope, id: built.envelope.id };
+    const embedded: Result<ReadonlyArray<IEmbeddedFragment>> = await this._tryVectorOp(
+      () => fragmentEmbedder(built),
+      `fragment embedding '${built.envelope.id}'`
+    );
+    if (embedded.isFailure()) {
+      return succeed(built);
+    }
+    await this._tryVectorOp(
+      () => fragmentIndex.addFragments(target, embedded.value),
+      `fragment add for '${built.envelope.id}'`
+    );
+    return succeed(built);
+  }
+
+  /**
+   * Best-effort fragment removal. A no-op unless the full fragment lifecycle is
+   * wired (both an index AND an embedder), so an unwired store does no fragment
+   * work and behaves byte-identically. Failures are logged, never surfaced — a
+   * committed delete/eviction must not fail because a derived fragment index could
+   * not be pruned.
+   */
+  private async _removeFragmentsBestEffort(target: IEdgeTarget): Promise<void> {
+    if (this._fragmentIndex === undefined || this._fragmentEmbedder === undefined) {
+      return;
+    }
+    const fragmentIndex: IFragmentVectorIndex = this._fragmentIndex;
+    await this._tryVectorOp(() => fragmentIndex.remove(target), `fragment removal for '${target.id}'`);
+  }
+
+  /**
    * Evict the records named by a `cull-oldest` decision, best-effort. Runs only
    * after the authoritative `_persist`, so a failed eviction is logged (never
    * fatal) and the cap self-corrects on the next admission. Returns the ids that
@@ -819,6 +972,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
   ): Promise<void> {
     for (const id of evicted) {
       await this._removeVectorBestEffort({ scope, id });
+      await this._removeFragmentsBestEffort({ scope, id });
     }
   }
 
@@ -836,7 +990,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     }
     if (result.isFailure()) {
       this._warnSwallowed(
-        `memory: ${label} failed (best-effort; vector index left for rebuild): ${result.message}`
+        `memory: ${label} failed (best-effort; derived index left for rebuild): ${result.message}`
       );
     }
     return result;
@@ -960,6 +1114,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
         .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
         .thenOnSuccess(async () => {
           await this._removeVectorBestEffort({ scope, id: existing.envelope.id });
+          await this._removeFragmentsBestEffort({ scope, id: existing.envelope.id });
           return succeed(existing.envelope.id);
         });
     });
@@ -1055,6 +1210,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
             this._buildVersionedRecord(record, body, current, policy, hash, versionStem, validAt, now, seq)
               .onSuccess((built) => succeed(this._stampRank(built)))
               .thenOnSuccess((built) => this._embedOnWrite(built, scope))
+              .thenOnSuccess((built) => this._embedFragmentsOnWrite(built, scope))
               .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, versionStem))
               .onSuccess((persisted) =>
                 this._invalidateCurrents(scope, priorCurrents, validAt, now).onSuccess(() =>
@@ -1526,9 +1682,13 @@ export class FileTreeMemoryStore implements IMemoryStore {
   /**
    * Walk the FileTree once and rebuild the index. Also resumes the `seq`
    * counter past the highest persisted `seq` so new writes stay monotonic.
+   *
+   * In `'skip'` mode each per-record failure is captured structurally on
+   * `this._skippedRecords` (path + scope + path-tagged error) at its failure
+   * site and logged at `warn`; the walk keeps every record that loaded.
    */
-  private _initialIndex(): Result<true> {
-    return this._collectEntries(this._root, []).onSuccess((entries) =>
+  private _initialIndex(onRecordError: MemoryRecordErrorMode): Result<true> {
+    return this._collectEntries(this._root, [], onRecordError).onSuccess((entries) =>
       this._index.rebuild(entries).onSuccess(() => {
         for (const entry of entries) {
           if (entry.record.envelope.seq > this._seq) {
@@ -1543,12 +1703,13 @@ export class FileTreeMemoryStore implements IMemoryStore {
   /** Recursively collect every `.md` record under `dir` (scope = path segments). */
   private _collectEntries(
     dir: FileTree.IFileTreeDirectoryItem,
-    scopeSegments: ReadonlyArray<string>
+    scopeSegments: ReadonlyArray<string>,
+    onRecordError: MemoryRecordErrorMode
   ): Result<ReadonlyArray<IIndexedMemoryRecord>> {
     return dir.getChildren().onSuccess((children) => {
       const results: Result<ReadonlyArray<IIndexedMemoryRecord>>[] = children.map((child) => {
         if (child.type === 'directory') {
-          return this._collectEntries(child, [...scopeSegments, child.name]);
+          return this._collectEntries(child, [...scopeSegments, child.name], onRecordError);
         }
         if (!child.name.endsWith(MEMORY_FILE_EXTENSION) || scopeSegments.length === 0) {
           // Skip non-record files and any record-shaped file sitting at the root
@@ -1556,17 +1717,48 @@ export class FileTreeMemoryStore implements IMemoryStore {
           return succeed<ReadonlyArray<IIndexedMemoryRecord>>([]);
         }
         const scope: MemoryScopeKey = scopeSegments.join('/') as MemoryScopeKey;
-        return child
-          .getRawContents()
-          .onSuccess((raw) => parseMemoryFile(raw, this._registry))
-          .onSuccess((parsedRecord) => this._verifyLoaded(scope, child, parsedRecord))
-          .onSuccess((verified) =>
-            succeed<ReadonlyArray<IIndexedMemoryRecord>>([{ scope, record: verified }])
-          );
+        return this._loadRecordFile(scope, child, onRecordError);
       });
+      // `'skip'` mode: keep every record that parsed, drop the ones that failed
+      // in a single pass (each failure is captured on `this._skippedRecords` and
+      // warn-logged at its site in `_loadRecordFile`). `.orDefault([])` covers
+      // the all-invalid-subtree edge where `mapSuccess` returns Failure because
+      // no element succeeded. `'fail'` mode: `mapResults` fails the whole open on
+      // any bad record — byte-identical to the historical load path.
+      if (onRecordError === 'skip') {
+        return succeed<ReadonlyArray<IIndexedMemoryRecord>>(mapSuccess(results).orDefault([]).flat());
+      }
       return mapResults(results).onSuccess((perChild) =>
         succeed<ReadonlyArray<IIndexedMemoryRecord>>(perChild.flat())
       );
     });
+  }
+
+  /**
+   * Load and verify one record file. On failure in `'skip'` mode, records the
+   * structured {@link ISkippedRecord} identity (path + scope + path-tagged
+   * error) and logs the skip at `warn`; the failure is still returned so the
+   * caller's `mapSuccess` drops it from the loaded set. In `'fail'` mode the
+   * failure passes through untouched so the historical error is byte-identical.
+   */
+  private _loadRecordFile(
+    scope: MemoryScopeKey,
+    child: FileTree.IFileTreeFileItem,
+    onRecordError: MemoryRecordErrorMode
+  ): Result<ReadonlyArray<IIndexedMemoryRecord>> {
+    return child
+      .getRawContents()
+      .onSuccess((raw) => parseMemoryFile(raw, this._registry))
+      .onSuccess((parsedRecord) => this._verifyLoaded(scope, child, parsedRecord))
+      .onSuccess((verified) => succeed<ReadonlyArray<IIndexedMemoryRecord>>([{ scope, record: verified }]))
+      .onFailure((message) => {
+        if (onRecordError === 'skip') {
+          const path: string = `${scope}/${child.name}`;
+          const error: string = `memory record '${path}': ${message}`;
+          this._skippedRecords.push({ path, scope, error });
+          this._warnSwallowed(error);
+        }
+        return fail(message);
+      });
   }
 }

@@ -9,5 +9,6 @@ export * from './linkTraversalRetriever';
 export * from './tagRetriever';
 export * from './structuredFilterRetriever';
 export * from './semanticRetriever';
+export * from './fragmentSemanticRetriever';
 export * from './temporalRetrievers';
 export * from './hybridRetriever';

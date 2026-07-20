@@ -14,7 +14,9 @@
     "<rootDir>/lib/web/index.js",
     "<rootDir>/lib/generated/",
     "<rootDir>/lib/scenarios/[a-zA-Z]+ClientTools/",
-    "<rootDir>/lib/scenarios/memoryToolsGate/"
+    "<rootDir>/lib/scenarios/memoryToolsGate/",
+    "<rootDir>/lib/scenarios/sqliteVecMemoryPersistence/index.js",
+    "<rootDir>/lib/scenarios/sqliteVecFragmentPersistence/index.js"
   ],
   "collectCoverage": true,
   "coverageReporters": ["text", "lcov", "html"],

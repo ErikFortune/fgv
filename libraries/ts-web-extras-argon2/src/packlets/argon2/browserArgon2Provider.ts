@@ -50,20 +50,38 @@ export class BrowserArgon2Provider implements CryptoUtils.IArgon2idProvider {
    * For interoperability with server-side Node derivations, ensure both sides use the same
    * `parallelism` value (recommend `parallelism: 1` unless compatibility requires otherwise).
    *
+   * The optional secret K (RFC 9106 keyed hashing) is wired through to `hash-wasm`
+   * and produces output byte-identical to the Node backend. Associated data X, by
+   * contrast, is **not supported** by `hash-wasm` (its `argon2id` options have no
+   * associated-data field), so a call that supplies non-empty `associatedData`
+   * fails loudly rather than silently dropping it and producing wrong bytes —
+   * associated data is a Node-only feature. An empty/omitted `associatedData` is a
+   * no-op and is accepted.
+   *
    * @param password - The password or passphrase (string or raw bytes).
    * @param salt - The salt (must be at least 8 bytes; 16+ bytes recommended).
    * @param params - Argon2id parameters. All values are validated before derivation.
+   * @param options - Optional {@link @fgv/ts-extras#CryptoUtils.IArgon2idKeyingOptions | keyed-hashing inputs}.
+   * `secret` is honored; non-empty `associatedData` fails (Node-only).
    * @returns Success with the derived key bytes, or Failure with a descriptive message.
    * @public
    */
   public async argon2id(
     password: Uint8Array | string,
     salt: Uint8Array,
-    params: CryptoUtils.IArgon2idParams
+    params: CryptoUtils.IArgon2idParams,
+    options?: CryptoUtils.IArgon2idKeyingOptions
   ): Promise<Result<Uint8Array>> {
     const error = BrowserArgon2Provider._validateParams(params);
     if (error !== undefined) {
       return fail(error);
+    }
+
+    if (options?.associatedData && options.associatedData.length > 0) {
+      return fail(
+        'argon2id: associatedData is not supported by the hash-wasm (browser) backend — ' +
+          'associated data is Node-only (@fgv/ts-extras-argon2 NodeArgon2Provider)'
+      );
     }
 
     return captureAsyncResult(async () => {
@@ -74,7 +92,10 @@ export class BrowserArgon2Provider implements CryptoUtils.IArgon2idProvider {
         parallelism: params.parallelism,
         memorySize: params.memoryKiB,
         hashLength: params.outputBytes,
-        outputType: 'binary'
+        outputType: 'binary',
+        // Only pass secret when present and non-empty so empty options and prior
+        // callers produce byte-identical output.
+        ...(options?.secret && options.secret.length > 0 ? { secret: options.secret } : {})
       });
       return result;
     });

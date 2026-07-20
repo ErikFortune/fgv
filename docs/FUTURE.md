@@ -335,10 +335,16 @@ prioritized; the fleshed design lets it start cold.
 The first consumer forwarded a batch of six retrieval/tool-surface asks against the
 v1 substrate. **Four firm asks were built** (result projection + detail tier;
 `IMemoryQuery.offset` pagination; kind-set query axis; and the orderable numeric
-`rank` axis — commissioned as its own stream). The items below are the ones held
-back from that batch — one conditional ask captured build-ready, and two the
-consumer explicitly **recorded rather than requested** so the shape is visible if it
-ever becomes a real ask.
+`rank` axis — commissioned as its own stream). Of the items below, the two semantic/vector
+asks are now **closed out in the 2026-07 batch**, leaving one conditional ask captured
+build-ready:
+**N-Ask5** (fragment-granular locator) is **SHIPPED** — the full fragment-granular
+retrieval feature (the `IFragmentVectorIndex` seam + in-memory and persistent backends +
+`FragmentSemanticRetriever` + store fragment-embed-on-write lifecycle + a testbed demo)
+landed against the firmed seven-question contract (#561 / #562 / #563). **N-Ask8**
+(persistent `IVectorIndex`) is **retired as answered** — the shipped
+`@fgv/ts-agent-memory-sqlite-vec` is the persistent index it asked about. Both were
+non-blocking throughout, and with them the personaility→fgv ask queue is closed out.
 
 ### Input-side `resolveHandle` (inverse of `handleFor`) — conditional, build-ready
 
@@ -366,16 +372,167 @@ that round-trip is a same-day change. Completes the `handleFor` symmetry.
 built-in `memory_context` / `memory_read` tool bodies instead of a host-owned wrapper.
 Size S.
 
-### Chunk / fragment-granular retrieval + in-result locator — recorded, not requested
+### Chunk / fragment-granular semantic retrieval + in-result locator (N-Ask5) — SHIPPED (2026-07-20)
 
-The v1 semantic recall is **record-granular** (`embeddingRef` per envelope;
-`SemanticRetriever` ranks whole records). A consumer whose knowledge documents need
-**sub-document fragment** search with a `[start, end)` locator keeps that on their own
-side (behind a host `IKnowledgeSearchProvider` doing keyword fragment search), so it is
-non-blocking and **not an ask today**. It would become a real fgv design change —
-chunk-granular vector entries + in-result offsets — only if we ever want one shared
-semantic retriever to serve **both** record-level memory and sub-document knowledge at
-fragment granularity. Recorded so the shape is visible; no action requested.
+> **SHIPPED (2026-07-20).** Built against the firmed contract below across three PRs:
+> **#561** (`@fgv/ts-agent-memory`) added the `IFragmentLocator` / `IEmbeddedFragment` /
+> `IFragmentVectorIndex` types, the additive optional `IVectorQueryHit.locator`, the
+> `FragmentEmbedder` type, the brute-force `InMemoryFragmentCosineIndex`, the
+> `FragmentSemanticRetriever`, and the store's best-effort fragment-embed-on-write / remove
+> lifecycle (`fragmentIndex?` / `fragmentEmbedder?` create params). **#562**
+> (`@fgv/ts-agent-memory-sqlite-vec`) added the persistent `SqliteVecFragmentIndex`. **#563**
+> (`@fgv/testbed`) added the `sqlite-vec-fragment-persistence` live-durability demo.
+>
+> **Two deltas from the pre-build sketch below**, both deliberate simplifications found while
+> implementing against the real code:
+> - **`IFragmentVectorIndex` shipped as a *sibling* of `IVectorIndex`, NOT `extends IVectorIndex`.**
+>   An index keyed by `(target, locator)` has no well-defined single-vector `add(target, vector)`,
+>   so inheriting that method would have been misleading. It is a parallel three-method contract
+>   (`addFragments` / `remove` / `query(vector, topK, maxPerRecord?)`) reusing `IVectorQueryHit`.
+> - **The persistent impl shipped as a separate `SqliteVecFragmentIndex` class, NOT by extending
+>   `SqliteVecVectorIndex`'s PK to `(target_key, locator)` (Q7's sketch).** It uses a `vec0` table
+>   keyed on `target_key` as a **`PARTITION KEY`** (many rows per record) with the `[start, end)`
+>   offsets in auxiliary columns — cleaner than overloading the record index's single-PK table.
+> - `maxPerRecord` (Q1) is applied **during selection, before the topK cut**, in both backends.
+
+> **FIRMED (2026-07-19).** The personaility orchestrator answered all seven open questions
+> (relayed by the consumer orchestrator; the firm-up analysis was a transient task artifact,
+> superseded by this entry and the shipped PRs); the consumer position
+> **converged with fgv's leans on all seven — zero divergence**. (Historical: at firm-up time
+> N-Ask5 was a settled contract not yet scheduled — it would fire as a firm build only when
+> personaility scheduled shared/knowledge semantic search; it has since been **built**, see the
+> SHIPPED block above.) The embedding work personaility shipped then was record-granular (memory
+> recall) and needed no N-Ask5.
+>
+> **Resolved answers — consumer-owned:**
+> - **Q1 hit granularity → per-fragment hits** `{ recordId, locator, score }`, `topK` over
+>   fragments (maps 1:1 onto the consumer's `IKnowledgeSearchMatch` — one locator per match).
+>   Consumer **wants the `maxPerRecord` cap** so a single long document can't dominate results.
+> - **Q2 coexistence → separate indexes.** Memory stays record-granular (`IVectorIndex` +
+>   `SemanticRetriever`); knowledge fragments use a distinct fragment index. No single record
+>   carries both a whole-record and fragment vectors. Whole-doc knowledge recall, if ever
+>   wanted, is just the record index; **v1 knowledge-semantic is fragment-only**.
+> - **Q3 locator unit → `[start, end)` character offsets** (inclusive start, exclusive end)
+>   into the body string, matching the consumer's `IKnowledgeFragmentLocator`. fgv keeps the
+>   locator **opaque** and round-trips the integers — zero conflict; the unit is the consumer's.
+> - **Q4 update model → whole-record re-embed for v1** (remove-all-fragments-then-re-add;
+>   knowledge docs are re-authored wholesale). Per-fragment incremental update deferred.
+>
+> **fgv-owned — consumer concurs with all three leans:** Q5 `embeddingRef` stays opaque;
+> Q6 fragment mode inferred from the wired `FragmentEmbedder` + `IFragmentVectorIndex` types
+> (no config flag); Q7 `SqliteVecVectorIndex` extends its PK to `(target_key, locator)` for
+> multiple rows per record when N-Ask5 lands (`InMemoryCosineIndex` gets the same). Q7 also
+> confirms N-Ask8's answer — see that entry (now retired).
+
+The v1 semantic recall is **record-granular**: one `embeddingRef` per envelope, one
+vector per record (`IVectorIndex.add(target, vector)` is one-per-`target`, replace-on-repeat),
+and `IVectorQueryHit` is `{ target, score }` — no sub-record locator. A consumer whose
+knowledge documents need **sub-document fragment** search returning a `[start, end)`
+locator into the source body (the shape their `IKnowledgeSearchMatch` already carries)
+keeps that host-side today behind an `IKnowledgeSearchProvider` doing keyword fragment
+search — so it is **non-blocking and not a firm ask yet**. The consumer has now **shaped**
+it (2026-07 overnight batch) so fgv sees the concrete surface; it files firm only when
+shared semantic knowledge is scheduled. It becomes a real fgv design change (not a hook)
+the moment one shared semantic retriever must serve **both** record-level memory and
+sub-document knowledge at fragment granularity.
+
+**Concrete shape (grounded in `libraries/ts-agent-memory/src/packlets/vector/vectorIndex.ts`).**
+All additive on an active surface:
+- **`IFragmentLocator { readonly start: number; readonly end: number }`** — half-open
+  `[start, end)` **character** offsets into the record body (consumer-confirmed unit, Q3);
+  fgv stores them opaquely and never interprets them.
+- **`IVectorQueryHit.locator?: IFragmentLocator`** — additive optional; record-granular
+  hits omit it (today's behavior unchanged), fragment hits carry it. `{ target, locator, score }`
+  is the `{recordId, locator, score}` the consumer asked to surface.
+- **Multiple vectors per record.** Today `add(target, vector)` is one-per-target. Fragment
+  mode keys entries on `(target, locator)` and accumulates, so a record contributes N
+  fragment vectors. Cleanest as a sibling **`IFragmentVectorIndex extends IVectorIndex`**
+  adding `addFragments(target, ReadonlyArray<{ locator; vector }>)` (keeps the record-granular
+  seam unburdened) rather than overloading `add`. **`remove(target)` evicts *all* fragments**
+  for the record (whole-record eviction unchanged).
+- **Host-supplied chunking** via a **`FragmentEmbedder = (record) => Promise<Result<ReadonlyArray<{ locator: IFragmentLocator; vector: Float32Array }>>>`**
+  sibling to `MemoryEmbedder` — window/overlap policy lives inside the host's embedder,
+  the core stays chunking-agnostic (same posture as the embedder-agnostic v1).
+- **Retriever:** a `FragmentSemanticRetriever` sibling (or a capability flag on
+  `SemanticRetriever`) surfaces `{ target, locator, score }`; the record-granular
+  `SemanticRetriever` is untouched.
+- **`embeddingRef` stays opaque** (Q5, resolved): the index owns fragment cardinality; the
+  envelope only marks embedded-ness. `maxPerRecord` result cap included per Q1.
+
+All seven firm-up questions were resolved (see the FIRMED block above) before any code was
+written — the shape was a settled consumer contract, not a draft. The sketch above is
+retained as the historical design record; **what actually shipped is described in the SHIPPED
+block at the top of this entry** (two deliberate deltas: sibling-not-`extends`, and a separate
+`SqliteVecFragmentIndex` rather than a PK extension).
+
+**Status:** SHIPPED 2026-07-20 (#561 / #562 / #563). personaility consumes it when it schedules
+shared/knowledge semantic search; the record-granular memory path is unchanged and needs none
+of it.
+
+### Persistent / ANN `IVectorIndex` (N-Ask8) — RETIRED (answered; reference impl SHIPPED)
+
+> **RETIRED (2026-07-19).** The personaility orchestrator retired N-Ask8 as answered: the
+> shipped `@fgv/ts-agent-memory-sqlite-vec` `SqliteVecVectorIndex` (#558) **is** the persistent
+> index the direction question asked about, behind the same `IVectorIndex` seam with no
+> migration. personaility v1 stays on the in-memory index + rebuild-on-open; the sqlite-vec
+> index is the drop-in persistent impl for when v2 durability/scale wants it. This was the last
+> outstanding personaility→fgv ask — the consumer's ask queue is closed out.
+>
+> **RESOLVED (2026-07-19).** Erik's ratification: fgv ships a **reference** persistent
+> `IVectorIndex` — but not by pulling a storage backend into `ts-agent-memory` core.
+> `@fgv/ts-agent-memory-sqlite-vec` (`SqliteVecVectorIndex`) landed as a separate
+> Result-integration-boundary package over `better-sqlite3` + `sqlite-vec`: embeddings
+> persist in a SQLite `vec0` file, so a reopened vault answers queries with **no
+> re-embedding**, keyed on `edgeTargetKey` with cosine scoring byte-identical to
+> `InMemoryCosineIndex`. **Zero core change** — confirmed the store already writes the
+> vector index incrementally and only re-embeds on the consumer-opt-in
+> `rebuild(asRecordSource())`, so a persistent index is a drop-in swap. The
+> incremental-embed-on-open hook noted below was therefore **not needed**. ANN/large-N and
+> a browser sibling are explicitly out of scope on the package (see its README).
+> (Chunk-granular entries were out of scope *as of #558*; N-Ask5 later shipped the
+> persistent `SqliteVecFragmentIndex` in this same package — see the N-Ask5 entry above.)
+> Personaility consumes it directly; the seam was already correct, so no migration.
+
+The original direction question and analysis, retained for context:
+
+
+`InMemoryCosineIndex` is the only shipped `IVectorIndex` — brute-force, in-memory, rebuilt
+from the store (`IMemoryRecordSource.list()` → re-embed all) on every open. Fine for v1
+(small per-agent vaults). For v2 durability/scale — where re-embedding every vault on every
+open stops being cheap — a persistent (and/or ANN, for large-N) index is the gap. The
+consumer raises this as a **direction question, not a firm ask**, so the interface choice is
+eyes-open before either side builds.
+
+**The question is fgv's (Erik's) product call:** does fgv intend to ship a persistent
+`IVectorIndex` (and/or an ANN index), and on what storage (pgvector, sqlite-vec, …)? If yes,
+the consumer aligns now and avoids a migration; if no, the consumer owns persistence host-side
+behind the same interface.
+
+**Analysis / recommendation (for ratification, not a decision):**
+- The consumer's own correction is right: **there is no `IVectorStoreAdapter` symbol** (that
+  name was folklore on their side) — the real seam is **`IVectorIndex` + `IMemoryRecordSource`**,
+  confirmed in `vectorIndex.ts`.
+- **The seam is already correct.** `vectorIndex.ts`'s own docs say "a consumer can swap an
+  external ANN backend behind the same seam once N grows beyond the in-memory regime." So
+  persistence is an **implementation of the existing interface, not a new seam** — which is
+  exactly why this is low-risk either way and needs no interface churn today.
+- **Recommendation:** do **not** drag a storage backend (pgvector/sqlite-vec) into
+  `ts-agent-memory` core — it would pull heavy, runtime-specific deps into a currently
+  dependency-light package. If fgv ships a persistent index at all, make it a **separate
+  Result-integration-boundary package** (the `@fgv/ts-extras-ollama` / `-transformers`
+  precedent: thin `Result` wrapper, explicit not-in-scope list, no opinion in core). The
+  consumer can own persistence host-side **today** behind `IVectorIndex` with zero interface
+  change.
+- **The one forward-compat item worth aligning now** (additive, can still wait): the
+  **re-embed-on-open policy**. `rebuild(IMemoryRecordSource)` re-embeds the *whole* vault; a
+  persistent index wants to embed only **new/changed** records. Reserving an incremental-embed
+  hook (the store checks index membership — a `has(target)` / content-hash compare — before
+  calling the embedder) is the additive that keeps a future persistent index from being forced
+  to re-embed on open. Not needed until a persistent impl exists.
+
+**Priority:** not firm — a v2 concern surfaced early so the interface choice is eyes-open.
+Low-risk; the seam is right regardless of who implements persistence. **Needs Erik's
+yes/no + storage-direction ratification** when v2 durability is scheduled.
 
 ### Scope-qualified edge targets — SHIPPED (2026-07-13)
 
@@ -427,3 +584,138 @@ packlet builds directly on them rather than re-deriving the codec. Also
 crypto-utils base64url + branded multibase SPKI hardening stream
 (`.ai/tasks/completed/2026-07/crypto-utils-base64url-hardening/`, shipped via PR #519;
 the canonical `MultibaseSpkiPublicKeyRegExp` export + `string`-widened import followed in PR #530).
+
+## `@fgv/ts-extras` crypto — golden-vector test-provenance gaps (2026-07 batch)
+
+Three LOW-priority, non-blocking asks surfaced by a consumer's checked-in crypto
+golden-vector corpus (byte-level fixtures pinning ceremony/signing output so a future
+native/mobile port validates against the same vectors). None is a security exposure;
+each has a documented workaround in the fixtures. What each closes is **test provenance**
+— anchoring a vector to a published-spec KAT or a deterministic checked-in round-trip
+rather than to captured-from-implementation bytes. **Slated to land as one small batched
+`@fgv/ts-extras` crypto PR right after the `agent-memory-lenient-open` stream.**
+
+### Ask A — `IArgon2idProvider.argon2id`: optional `secret` + `associatedData` params
+The RFC 9106 §5.3 official Argon2id KAT binds a secret key (K) and associated data (X)
+alongside password and salt; the seam `argon2id(password, salt, params)` exposes neither,
+so the spec KAT can't run through it (the consumer's Argon2id vector is captured-from-impl
+instead of spec-anchored). Add optional `secret?` / `associatedData?` byte params, both
+defaulting empty so existing callers are unaffected. **Feasibility (checked):** the Node
+`argon2` (kelektiv) `hash()` options support both `secret` and `associatedData` — Node is
+buildable. The browser `hash-wasm` `argon2id` supports `secret`; its `associatedData`
+support must be verified at implementation time. Since neither is used in production
+(test-provenance only), the essential deliverable — the RFC 9106 KAT running through the
+seam — works via the Node provider regardless; cross-provider AD parity is gated on the
+hash-wasm capability check (if hash-wasm lacks AD, scope the AD path to Node or document
+the limitation rather than fake parity).
+
+### Ask B — HPKE: an X25519 private-key import seam (fixed recipient key)
+The consumer's HPKE context vector pins the info/AAD construction but has no checked-in
+sealed-blob → plaintext round-trip, because that needs a **fixed** recipient X25519 private
+key to check in, and the provider exposes no X25519 private-key import (`SeedDerivableAlgorithm`
+is `ed25519`-only). Add a seam to import a fixed X25519 private key (raw bytes or JWK) into
+the HPKE provider so a known recipient keypair can be checked in and a deterministic round-trip
+vector added. **Composes directly with two shipped items:** the HPKE `openBase` caller-supplied
+recipient-public-key work (PR #536) and the seed-deterministic Ed25519 primitive
+(`importKeyPairFromSeed`, PR #549) — this is the X25519 analogue of the latter's seed→private
+import, so it likely falls out of extending `SeedDerivableAlgorithm`/the import seam to `x25519`.
+
+### Footnote — a hex codec primitive (`hexEncode` / `hexDecode`) in crypto-utils
+The fixtures encode bytes as lowercase hex (no `0x`); crypto-utils ships base64url / multibase /
+standard-base64 helpers but no hex, so the vector loader hand-rolls a `bytesHex` Converter. Minor
+on its own — noted because it's the **third** "reached for an fgv primitive that wasn't there" in
+this corpus. Add `hexEncode`/`hexDecode` (or a branded hex-string Converter) alongside the existing
+base64url helpers and the consumer drops the local one. Cheap; bundle into the same batch.
+
+**Why deferred**: all three are LOW-priority test-provenance, non-blocking (the corpus shipped
+complete with documented per-gap workarounds). Batched to land immediately after the HIGH
+`agent-memory-lenient-open` fix.
+
+**Reference**: consumer's `golden-vectors-state.md` § Findings (V2 mobile-enablers track);
+prior ts-extras crypto asks — HPKE Decap non-extractable recipient key (PR #536),
+`encryptBytes`/`decryptBytes` (PR #547), seed-deterministic Ed25519 (PR #549).
+
+## `CryptoUtils.KeyStore` credential-store shape asks (2026-07 batch)
+
+Four asks from a consumer building a tool/MCP/OAuth **credential store** over
+`CryptoUtils.KeyStore` (`@fgv/ts-extras`). **No crypto gap** — the byte-level crypto
+batch (encryptBytes/AAD, HPKE non-extractable decap, vault escrow) closed everything.
+These are **shape-level only over existing primitives**, and **none is build-blocking**
+(serializing a credential bundle to JSON and storing it via `importApiKey` is a working
+interim). The interface disposition is fgv's call per prior-ask convention; a grounded
+recommendation is recorded per ask below.
+
+**Why two of these want runway now:** D1's `type` discriminator and D2's
+`metadata`/`updatedAt` are both **vault-format-visible fields**. Retrofitting either after
+the consumer's credential-store persistence format settles means migrating existing vault
+entries. So D1/D2 are wanted *before* that format freezes — hence captured ahead of the
+consumer's "broaden tools + MCP" stream rather than parked. **Batchable as one small
+additive `KeyStore` PR**; the escrow-field work (`keystore-v2`, PR-series that added the
+optional `escrowedPrivateKeyJwk` superset field) is the precedent for how an additive,
+optional, format-forward field lands here.
+
+**Grounding (this repo, `libraries/ts-extras/src/packlets/crypto-utils/keystore/model.ts`):**
+the symmetric type union is `'encryption-key' | 'api-key'`
+(`KeyStoreSymmetricSecretType`); `IKeyStoreSymmetricEntry` carries `name` / `type` /
+`key: Uint8Array` / `description?` / `createdAt` and **nothing else**. Critically, the
+vault has **no plaintext index** — `IKeyStoreVaultContents.secrets` (the whole
+`Record<string, IKeyStoreEntryJson>`) is AES-GCM-encrypted wholesale into
+`IKeyStoreFile.encryptedData`, decrypted once on unlock, and held as in-memory decrypted
+state. So `listSecrets*` already iterate in-memory entries — the "decrypt every entry to
+list" framing is really "there is nowhere to put mutable metadata except inside the secret
+material" (see D2).
+
+### D1 — opaque byte-secret entry type — P2 (must-have before format settles)
+**Problem:** the symmetric type set is closed to `'encryption-key' | 'api-key'`. A JSON
+credential bundle (OAuth token set, MCP auth record) stored via `importApiKey` is typed as
+an `'api-key'` it isn't — `listSecretsByType` becomes a lie, and any fgv tooling that treats
+`'api-key'` as "a string you hand to a provider" mis-handles it.
+**Proposed disposition (recommend the bytes-shaped variant):** add an `'opaque'` member to
+`KeyStoreSymmetricSecretType` + `allKeyStoreSymmetricSecretTypes`, with
+`importSecretBytes(name, bytes, { type: 'opaque', … })` + `getSecretBytes(name)` (the
+existing symmetric-entry path already stores `key: Uint8Array` — `'opaque'` is a new
+discriminator value plus a raw-bytes accessor that skips the `'api-key'` UTF-8 decode).
+**Prefer this over a first-class `'json'` type**: the vault layer already speaks
+`Uint8Array`, the consumer explicitly offered to own the JSON+Converter layer, and a `'json'`
+type would bake a serialization opinion into the vault format for marginal benefit — against
+the repo's thin-primitive / consumer-owns-the-shape convention. `listSecretsByType` stops
+lying because the bundle is typed `'opaque'`.
+**Named consumer:** the credential store (tool/MCP/OAuth credentials).
+
+### D2 — mutable per-entry metadata + `updatedAt` — P2 (should-have, rides with D1)
+**Problem:** entries carry only `description?` + `createdAt`, so lifecycle bookkeeping
+(`expiresAt`, `rotatedAt`, scope labels, `lastRefreshed`) has nowhere to live except inside
+the secret material — meaning "list credentials with status" must materialize+parse each
+secret's bytes, and updating a timestamp means re-importing the whole secret (replacing `key`).
+**Proposed disposition:** add optional `metadata?: JsonValue` to `IKeyStoreSymmetricEntry`
+(+ its `…Json` form), a `setSecretMetadata(name, value)` mutator that updates metadata
+without replacing key material, and an `updatedAt?: string` stamp maintained on any mutation.
+**Metadata lives inside the ciphertext** (same custody as every other field — the vault has
+no plaintext tier, and inventing one to hold "non-secret" metadata would leak names/labels
+in plaintext, a security regression). "Non-secret by contract" is a consumer-side contract,
+not a storage split. Additive + format-forward exactly like the v2 escrow field.
+**Impl note:** whether this needs a `keystore-v3` bump or rides the existing optional-superset
+pattern is an implementation-time call — the wrinkle is that an older *writer* re-saving a
+metadata-bearing vault would silently strip the field; moot under lockstep single-writer, but
+a format tag would make "metadata-bearing" explicit. Decide at stream start.
+**Workaround if declined:** embed in the D1 JSON payload and eat the parse-to-list cost
+(acceptable at per-actor N) — hence should-have, not must-have.
+
+### D3 — atomic read-modify-write / CAS on a secret — P3 (PARKED, do not request work)
+For OAuth refresh races under concurrent tool calls. The v1 hub is single-process; an
+in-process per-slot mutex suffices, so this is a **forward-looking note only** — revisit when
+the v2 hub process model is known. Captured so it isn't rediscovered cold; **no work requested.**
+
+### D4 — prefix / namespace bulk removal — P3 (opportunistic ergonomics)
+`removeSecrets(prefix)` for session-overlay purge (`byok:<sessionId>:*`). Today's purge
+iterates `listSecrets` + filters, which works. Pure ergonomics — **fold in only if the D1/D2
+PR is already touching the removal path**; not worth a dedicated change.
+
+**Why deferred:** all four are shape-level and non-blocking (the JSON-bundle-via-`importApiKey`
+interim works today). D1/D2 batched to land ahead of the consumer's tools/MCP stream so the
+format-visible fields exist before that persistence format freezes; D3 parked; D4 opportunistic.
+
+**Reference:** consumer's `.ai/tasks/active/credential-store/spec.md` (credential-store track;
+that path is in the consumer repo); grounding in this repo at
+`libraries/ts-extras/src/packlets/crypto-utils/keystore/model.ts`; format-superset precedent =
+the `keystore-v2` optional `escrowedPrivateKeyJwk` escrow field.

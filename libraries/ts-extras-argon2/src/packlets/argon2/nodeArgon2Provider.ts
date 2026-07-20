@@ -45,13 +45,18 @@ export class NodeArgon2Provider implements CryptoUtils.IArgon2idProvider {
    * @param password - The password or passphrase (string or raw bytes).
    * @param salt - The salt (must be at least 8 bytes; 16+ bytes recommended).
    * @param params - Argon2id parameters. All values are validated before derivation.
+   * @param options - Optional {@link @fgv/ts-extras#CryptoUtils.IArgon2idKeyingOptions | keyed-hashing inputs}
+   * (RFC 9106 secret K and/or associated data X). Both are wired through to the
+   * underlying `argon2` binding when present and non-empty; omitting them (or
+   * passing empty arrays) leaves the output byte-identical to prior behavior.
    * @returns Success with the derived key bytes, or Failure with a descriptive message.
    * @public
    */
   public async argon2id(
     password: Uint8Array | string,
     salt: Uint8Array,
-    params: CryptoUtils.IArgon2idParams
+    params: CryptoUtils.IArgon2idParams,
+    options?: CryptoUtils.IArgon2idKeyingOptions
   ): Promise<Result<Uint8Array>> {
     const error = NodeArgon2Provider._validateParams(params);
     if (error !== undefined) {
@@ -66,7 +71,13 @@ export class NodeArgon2Provider implements CryptoUtils.IArgon2idProvider {
         timeCost: params.iterations,
         parallelism: params.parallelism,
         hashLength: params.outputBytes,
-        raw: true
+        raw: true,
+        // Only pass secret/associatedData when present and non-empty so that
+        // existing callers (and empty options) produce byte-identical output.
+        ...(options?.secret && options.secret.length > 0 ? { secret: Buffer.from(options.secret) } : {}),
+        ...(options?.associatedData && options.associatedData.length > 0
+          ? { associatedData: Buffer.from(options.associatedData) }
+          : {})
       });
       return Uint8Array.from(result);
     });

@@ -24,12 +24,59 @@ rushx build:web
 # launch the dev server
 rushx dev
 
-# run the CLI
+# list the available CLI scenarios (bare invocation)
 rushx cli
 
 # rebuild the generated data tree from data/
 rushx build:data
 ```
+
+## Running scenarios
+
+A scenario can expose a **web** surface (a React component in the browser app), a **CLI**
+surface (a `run` function), or both. Run them two ways:
+
+### CLI
+
+The CLI shim is `bin/testbed.js` (also wired as `rushx cli`). Build first (`rushx build`),
+then:
+
+```bash
+# list every scenario with its id and which surfaces it has
+node bin/testbed.js
+node bin/testbed.js --help          # usage banner
+
+# run a single scenario by id
+node bin/testbed.js --scenario sqlite-vec-fragment-persistence
+node bin/testbed.js --scenario sqlite-vec-memory-persistence
+```
+
+`rushx cli` runs the same shim (`rushx cli` to list; `rushx cli -- --scenario <id>` to pass
+flags through). Structured output goes to stdout; scenario diagnostics go to stderr.
+
+### Web
+
+```bash
+rushx dev            # webpack dev server — pick scenarios from the sidebar
+rushx build:web      # production bundle into dist-web/
+```
+
+Only scenarios with a web surface appear in the sidebar.
+
+### Two things to know
+
+- **Some scenarios are CLI-only.** Any scenario that uses a Node-native dependency —
+  `better-sqlite3` (the `sqlite-vec-*` scenarios) or the local ONNX runtime (the `local-*`
+  scenarios) — loads it via a `webpackIgnore` dynamic import so it never enters the browser
+  bundle. Those scenarios therefore have **no web surface** and run only under
+  `--scenario <id>`.
+- **Live-model scenarios need network.** Scenarios that embed/classify/summarize with a local
+  `@huggingface/transformers` model (`Xenova/*`) download the model from `huggingface.co` on
+  first run and cache it. In a network-restricted environment that fetch is blocked and the
+  scenario fails at model load (`Forbidden access to huggingface.co`); run them where
+  `huggingface.co` is reachable. The **unit tests** stub the model with a deterministic
+  embedder, so `rushx test` covers the real logic (including the actual file-backed
+  `sqlite-vec` round-trip) fully offline.
 
 ## Adding a scenario
 
@@ -60,10 +107,14 @@ bin/
 
 ## Scenarios
 
-| id | Title | Surfaces |
-|----|-------|---------|
-| `local-classifier-safety` | Local Classifier Safety | web, cli |
-| `local-embedding-search` | Local Embedding Search | web, cli |
+The scenario registry grows over time, so rather than duplicate it here (and let it drift),
+list the current set — with ids and which surfaces each exposes — straight from the CLI:
+
+```bash
+node bin/testbed.js        # or: rushx cli
+```
+
+The registry itself is [`src/scenarios/index.ts`](./src/scenarios/index.ts).
 
 ## Cluster context
 

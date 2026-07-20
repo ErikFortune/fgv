@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add fragment-granular (sub-document) semantic retrieval (N-Ask5). New vector types IFragmentLocator ([start,end) half-open, opaque offsets), IEmbeddedFragment, and the IFragmentVectorIndex seam (a sibling of IVectorIndex, not a subtype: addFragments whole-record-replace, remove, and query(vector, topK, maxPerRecord?) returning per-fragment IVectorQueryHit hits carrying the matched locator); IVectorQueryHit gains an additive optional locator populated only by the fragment index. InMemoryFragmentCosineIndex is the brute-force in-memory implementation (dimension-established-on-first-add, defensive copies, cosine scoring, maxPerRecord cap applied during selection before the topK cut, rebuild from an IMemoryRecordSource via a FragmentEmbedder). FragmentSemanticRetriever is the discovery-half retriever (returns per-fragment hits rather than records, so it is deliberately not an IMemoryRetriever; degrades loudly when no backend is wired). FileTreeMemoryStore gains additive fragmentIndex?/fragmentEmbedder? create params wiring best-effort fragment-embed-on-write plus fragment removal on delete and cap-cull eviction, symmetric with and independent of the record-vector embed-on-write path (a store may wire record vectors, fragment vectors, both, or neither; unwired is byte-identical).",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

@@ -147,15 +147,22 @@ export type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256' | 'e
  * derived *deterministically* from a fixed secret seed, for use with
  * {@link CryptoUtils.ICryptoProvider.importKeyPairFromSeed | importKeyPairFromSeed}.
  *
- * Only `'ed25519'` is supported today: an Ed25519 private key *is* a 32-byte
- * seed and its public key is a deterministic function of that seed (RFC 8032),
- * so the same seed always yields the same keypair on every runtime. The type is
- * a proper subset because algorithms like RSA or the NIST curves are not
- * recoverable from a bare seed. It is intentionally left open to grow (e.g.
- * `'x25519'`) without a breaking change.
+ * Two algorithms are supported, both of whose 32-byte private scalar *is* the
+ * seed and whose public key is a deterministic function of it, so the same seed
+ * always yields the same keypair on every runtime:
+ * - `'ed25519'` — signing keypair (RFC 8032). Private usage `'sign'`, public
+ *   usage `'verify'`.
+ * - `'x25519'` — Diffie-Hellman key-agreement keypair (RFC 7748), the recipient
+ *   keypair consumed by {@link CryptoUtils.HpkeProvider}. Private usage
+ *   `'deriveBits'`, public key imported with no usages. Deriving a fixed X25519
+ *   recipient keypair from a checked-in seed is what makes a deterministic HPKE
+ *   seal/open round-trip vector possible.
+ *
+ * The type is a proper subset of {@link CryptoUtils.KeyPairAlgorithm} because
+ * algorithms like RSA or the NIST curves are not recoverable from a bare seed.
  * @public
  */
-export type SeedDerivableAlgorithm = 'ed25519';
+export type SeedDerivableAlgorithm = 'ed25519' | 'x25519';
 
 /**
  * Caller-supplied HKDF parameters that domain-separate one
@@ -332,6 +339,34 @@ export const ARGON2ID_PASSPHRASE: IArgon2idParams = {
 } as const;
 
 /**
+ * Optional keyed-hashing inputs for {@link CryptoUtils.IArgon2idProvider.argon2id | argon2id}
+ * (RFC 9106 §3.1). These are distinct from the cost parameters in
+ * {@link CryptoUtils.IArgon2idParams} — they change the derived output but are
+ * not tuning knobs. Both fields are optional; omitting a field (or passing an
+ * empty `Uint8Array`) is a no-op that leaves the output byte-identical to a call
+ * with no options at all.
+ * @public
+ */
+export interface IArgon2idKeyingOptions {
+  /**
+   * Optional secret key K (RFC 9106 keyed hashing, sometimes called a "pepper").
+   * When present and non-empty it is mixed into the hash so that the derived
+   * output cannot be reproduced without also knowing K. Empty or omitted means
+   * no secret. Honored by both the Node and browser backends.
+   */
+  readonly secret?: Uint8Array;
+
+  /**
+   * Optional associated data X (RFC 9106 §3.1). When present and non-empty it is
+   * mixed into the hash. **Node-only:** the WASM (`hash-wasm`) browser backend
+   * has no associated-data input, so `BrowserArgon2Provider` fails loudly rather
+   * than silently dropping it (which would produce wrong bytes). Empty or omitted
+   * means no associated data and is accepted by both backends.
+   */
+  readonly associatedData?: Uint8Array;
+}
+
+/**
  * Argon2id key derivation provider (RFC 9106).
  *
  * Implementations are in separate packages to avoid WASM bundle costs for
@@ -345,18 +380,28 @@ export interface IArgon2idProvider {
   /**
    * Derives key material from a password using Argon2id (RFC 9106 §3.1).
    *
-   * Returns the raw derived bytes as a `Uint8Array`. Both Node and browser
-   * implementations produce bit-identical output for identical inputs.
+   * Returns the raw derived bytes as a `Uint8Array`. For the same inputs that
+   * both backends support, the Node and browser implementations produce
+   * byte-identical output. The optional `associatedData` in
+   * {@link CryptoUtils.IArgon2idKeyingOptions} is the one exception: it is
+   * Node-only (the browser WASM backend has no associated-data input), so a call
+   * that supplies non-empty `associatedData` is not portable to the browser
+   * backend. Every input the browser backend *does* support (including the
+   * optional `secret`) is byte-identical across the two.
    *
    * @param password - Password or passphrase. Accepts string (UTF-8) or raw bytes.
    * @param salt - Salt bytes. Must be random and unique per credential (\>= 16 bytes recommended).
    * @param params - Argon2id parameters. Use `ARGON2ID_OWASP_MIN` as a starting point.
+   * @param options - Optional {@link CryptoUtils.IArgon2idKeyingOptions | keyed-hashing inputs}
+   * (secret K and/or associated data X). Omitting them (the default) leaves the
+   * output byte-identical to prior behavior.
    * @returns Success with derived bytes, Failure with error context.
    */
   argon2id(
     password: Uint8Array | string,
     salt: Uint8Array,
-    params: IArgon2idParams
+    params: IArgon2idParams,
+    options?: IArgon2idKeyingOptions
   ): Promise<Result<Uint8Array>>;
 }
 
@@ -597,16 +642,19 @@ export interface ICryptoProvider {
    * material (key escrow, HD-style derivation, deterministic test vectors) rather
    * than freshly sampled by {@link CryptoUtils.ICryptoProvider.generateKeyPair | generateKeyPair}.
    *
-   * For `'ed25519'` the private key *is* its 32-byte seed and the public key is a
-   * deterministic function of that seed (RFC 8032), so the returned public key is
-   * recovered even when the caller requests a non-extractable private key. The
-   * transient extractable key used internally to recover the public half is never
-   * returned or logged when `extractable` is `false`.
-   * @param algorithm - The {@link CryptoUtils.SeedDerivableAlgorithm | seed-derivable algorithm}.
-   * Only `'ed25519'` is supported today; any other value fails loudly with context.
-   * @param seed - The secret seed. For `'ed25519'` it must be exactly 32 bytes;
-   * any other length fails loudly, before any WebCrypto call. The bytes are copied,
-   * not retained or mutated.
+   * For both `'ed25519'` and `'x25519'` the private key *is* its 32-byte seed and
+   * the public key is a deterministic function of that seed (RFC 8032 / RFC 7748),
+   * so the returned public key is recovered even when the caller requests a
+   * non-extractable private key. The transient extractable key used internally to
+   * recover the public half is never returned or logged when `extractable` is
+   * `false`. The returned keys carry the algorithm's usages: `'ed25519'` →
+   * private `'sign'` / public `'verify'`; `'x25519'` → private `'deriveBits'` /
+   * public no-usage (ready to hand to {@link CryptoUtils.HpkeProvider}).
+   * @param algorithm - The {@link CryptoUtils.SeedDerivableAlgorithm | seed-derivable algorithm}
+   * (`'ed25519'` or `'x25519'`); any other value fails loudly with context.
+   * @param seed - The secret seed. It must be exactly 32 bytes for both supported
+   * algorithms; any other length fails loudly, before any WebCrypto call. The
+   * bytes are copied, not retained or mutated.
    * @param extractable - Whether the returned private key may be exported. The
    * returned public key is identical for a given seed regardless of this flag.
    * @returns Success with the derived `CryptoKeyPair`, or Failure with error context.

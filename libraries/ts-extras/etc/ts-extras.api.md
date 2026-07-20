@@ -461,6 +461,8 @@ declare namespace CryptoUtils {
         base64UrlNoPadDecode,
         base64UrlNoPadEncode,
         exportPublicKeyAsMultibaseSpki,
+        hexDecode,
+        hexEncode,
         importPublicKeyFromMultibaseSpki,
         isValidMultibaseSpkiPublicKey,
         MultibaseSpkiPublicKeyRegExp,
@@ -488,6 +490,7 @@ declare namespace CryptoUtils {
         IArgon2idParams,
         ARGON2ID_OWASP_MIN,
         ARGON2ID_PASSPHRASE,
+        IArgon2idKeyingOptions,
         IArgon2idProvider,
         IEncryptedFile,
         ICryptoProvider,
@@ -547,6 +550,8 @@ const DEFAULT_RANGEOF_FORMATS: RangeOfFormats;
 const DEFAULT_SECRET_ITERATIONS: number;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ISeedAlgorithmParams"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -756,6 +761,16 @@ declare namespace Hash {
     }
 }
 export { Hash }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function hexDecode(encoded: string): Result<Uint8Array>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function hexEncode(data: Uint8Array): string;
 
 // @public
 class HpkeProvider {
@@ -1149,6 +1164,15 @@ interface IArgon2idKeyDerivationParams {
     readonly salt: string;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IArgon2idKeyingOptions {
+    readonly associatedData?: Uint8Array;
+    readonly secret?: Uint8Array;
+}
+
 // @public
 interface IArgon2idParams {
     readonly iterations: number;
@@ -1159,7 +1183,9 @@ interface IArgon2idParams {
 
 // @public
 interface IArgon2idProvider {
-    argon2id(password: Uint8Array | string, salt: Uint8Array, params: IArgon2idParams): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    argon2id(password: Uint8Array | string, salt: Uint8Array, params: IArgon2idParams, options?: IArgon2idKeyingOptions): Promise<Result<Uint8Array>>;
 }
 
 // @public
@@ -1227,6 +1253,7 @@ interface ICryptoProvider {
     generateUuid(): Result<Uuid>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
     hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     importKeyPairFromSeed(algorithm: SeedDerivableAlgorithm, seed: Uint8Array, extractable: boolean): Promise<Result<CryptoKeyPair>>;
@@ -1485,6 +1512,15 @@ interface IImportKeyOptions extends IImportSecretOptions {
     readonly type?: KeyStoreSymmetricSecretType;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IImportSecretOptions"
+//
+// @public
+interface IImportSecretBytesOptions extends IImportSecretOptions {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
+    readonly metadata?: JsonValue;
+}
+
 // @public
 interface IImportSecretOptions extends IAddSecretOptions {
     readonly replace?: boolean;
@@ -1592,8 +1628,12 @@ interface IKeyStoreSymmetricEntry {
     readonly createdAt: string;
     readonly description?: string;
     readonly key: Uint8Array;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly metadata?: JsonValue;
     readonly name: string;
     readonly type: KeyStoreSymmetricSecretType;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly updatedAt?: string;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1603,8 +1643,10 @@ interface IKeyStoreSymmetricEntryJson {
     readonly createdAt: string;
     readonly description?: string;
     readonly key: string;
+    readonly metadata?: JsonValue;
     readonly name: string;
     readonly type: KeyStoreSymmetricSecretType;
+    readonly updatedAt?: string;
 }
 
 // @public
@@ -2016,6 +2058,7 @@ declare namespace KeyStore {
         IAddSecretOptions,
         IImportSecretOptions,
         IImportKeyOptions,
+        IImportSecretBytesOptions,
         IAddSecretFromPasswordOptions,
         DEFAULT_SECRET_ITERATIONS,
         IAddSecretFromPasswordResult,
@@ -2057,11 +2100,15 @@ class KeyStore_2 implements IEncryptionProvider {
     getPublicKeyJwk(name: string): Result<JsonWebKey>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getSecret(name: string): Result<IKeyStoreEntry>;
+    getSecretBytes(name: string): Result<Uint8Array>;
     getSecretProvider(): Result<SecretProvider>;
     hasSecret(name: string): Result<boolean>;
     importApiKey(name: string, apiKey: string, options?: IImportSecretOptions): Promise<Result<IAddSecretResult>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
     importSecret(name: string, key: Uint8Array, options?: IImportKeyOptions): Promise<Result<IAddSecretResult>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
+    importSecretBytes(name: string, bytes: Uint8Array, options?: IImportSecretBytesOptions): Promise<Result<IAddSecretResult>>;
     initialize(password: string): Promise<Result<KeyStore_2>>;
     get isDirty(): boolean;
     get isNew(): boolean;
@@ -2075,6 +2122,8 @@ class KeyStore_2 implements IEncryptionProvider {
     renameSecret(oldName: string, newName: string): Result<IKeyStoreEntry>;
     save(password: string): Promise<Result<IKeyStoreFile>>;
     saveWithKey(derivedKey: Uint8Array): Promise<Result<IKeyStoreFile>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    setSecretMetadata(name: string, value: JsonValue): Result<IKeyStoreSymmetricEntry>;
     get state(): KeyStoreLockState;
     unlock(password: string): Promise<Result<KeyStore_2>>;
     unlockWithKey(derivedKey: Uint8Array): Promise<Result<KeyStore_2>>;
@@ -2108,7 +2157,7 @@ const keystoreAsymmetricSecretType: Converter<KeyStoreAsymmetricSecretType>;
 const keystoreFile: Converter<IKeyStoreFile>;
 
 // @public
-type KeyStoreFormat = 'keystore-v1' | 'keystore-v2';
+type KeyStoreFormat = 'keystore-v1' | 'keystore-v2' | 'keystore-v3';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2140,7 +2189,7 @@ const keystoreSecretType: Converter<KeyStoreSecretType>;
 const keystoreSymmetricEntryJson: Converter<IKeyStoreSymmetricEntryJson>;
 
 // @public
-type KeyStoreSymmetricSecretType = 'encryption-key' | 'api-key';
+type KeyStoreSymmetricSecretType = 'encryption-key' | 'api-key' | 'opaque';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2434,9 +2483,11 @@ type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type SeedDerivableAlgorithm = 'ed25519';
+type SeedDerivableAlgorithm = 'ed25519' | 'x25519';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2564,9 +2615,9 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/crypto-utils/keystore/keyStore.ts:1558:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/crypto-utils/keystore/keyStore.ts:1595:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
-// src/packlets/crypto-utils/keystore/keyStore.ts:1689:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1677:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1714:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
+// src/packlets/crypto-utils/keystore/keyStore.ts:1808:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 
