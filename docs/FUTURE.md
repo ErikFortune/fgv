@@ -335,14 +335,16 @@ prioritized; the fleshed design lets it start cold.
 The first consumer forwarded a batch of six retrieval/tool-surface asks against the
 v1 substrate. **Four firm asks were built** (result projection + detail tier;
 `IMemoryQuery.offset` pagination; kind-set query axis; and the orderable numeric
-`rank` axis — commissioned as its own stream). The items below are the ones held
-back — one conditional ask captured build-ready, plus the two semantic/vector asks, both
-now **closed out in the 2026-07 batch** (this was the last outstanding personaility→fgv ask):
-**N-Ask5** (fragment-granular locator) is **consumer-answered** — all seven firm-up questions
-resolved with zero divergence from fgv's leans; it's a settled contract that builds when the
-consumer schedules knowledge-semantic search. **N-Ask8** (persistent `IVectorIndex`) is
-**retired as answered** — the shipped `@fgv/ts-agent-memory-sqlite-vec` is the persistent
-index it asked about. Both were non-blocking throughout.
+`rank` axis — commissioned as its own stream). Of the items below, the two semantic/vector
+asks are now **closed out in the 2026-07 batch**, leaving one conditional ask captured
+build-ready:
+**N-Ask5** (fragment-granular locator) is **SHIPPED** — the full fragment-granular
+retrieval feature (the `IFragmentVectorIndex` seam + in-memory and persistent backends +
+`FragmentSemanticRetriever` + store fragment-embed-on-write lifecycle + a testbed demo)
+landed against the firmed seven-question contract (#561 / #562 / #563). **N-Ask8**
+(persistent `IVectorIndex`) is **retired as answered** — the shipped
+`@fgv/ts-agent-memory-sqlite-vec` is the persistent index it asked about. Both were
+non-blocking throughout, and with them the personaility→fgv ask queue is closed out.
 
 ### Input-side `resolveHandle` (inverse of `handleFor`) — conditional, build-ready
 
@@ -370,14 +372,37 @@ that round-trip is a same-day change. Completes the `handleFor` symmetry.
 built-in `memory_context` / `memory_read` tool bodies instead of a host-owned wrapper.
 Size S.
 
-### Chunk / fragment-granular semantic retrieval + in-result locator (N-Ask5) — CONSUMER-ANSWERED (firmed contract), build-when-scheduled
+### Chunk / fragment-granular semantic retrieval + in-result locator (N-Ask5) — SHIPPED (2026-07-20)
+
+> **SHIPPED (2026-07-20).** Built against the firmed contract below across three PRs:
+> **#561** (`@fgv/ts-agent-memory`) added the `IFragmentLocator` / `IEmbeddedFragment` /
+> `IFragmentVectorIndex` types, the additive optional `IVectorQueryHit.locator`, the
+> `FragmentEmbedder` type, the brute-force `InMemoryFragmentCosineIndex`, the
+> `FragmentSemanticRetriever`, and the store's best-effort fragment-embed-on-write / remove
+> lifecycle (`fragmentIndex?` / `fragmentEmbedder?` create params). **#562**
+> (`@fgv/ts-agent-memory-sqlite-vec`) added the persistent `SqliteVecFragmentIndex`. **#563**
+> (`@fgv/testbed`) added the `sqlite-vec-fragment-persistence` live-durability demo.
+>
+> **Two deltas from the pre-build sketch below**, both deliberate simplifications found while
+> implementing against the real code:
+> - **`IFragmentVectorIndex` shipped as a *sibling* of `IVectorIndex`, NOT `extends IVectorIndex`.**
+>   An index keyed by `(target, locator)` has no well-defined single-vector `add(target, vector)`,
+>   so inheriting that method would have been misleading. It is a parallel three-method contract
+>   (`addFragments` / `remove` / `query(vector, topK, maxPerRecord?)`) reusing `IVectorQueryHit`.
+> - **The persistent impl shipped as a separate `SqliteVecFragmentIndex` class, NOT by extending
+>   `SqliteVecVectorIndex`'s PK to `(target_key, locator)` (Q7's sketch).** It uses a `vec0` table
+>   keyed on `target_key` as a **`PARTITION KEY`** (many rows per record) with the `[start, end)`
+>   offsets in auxiliary columns — cleaner than overloading the record index's single-PK table.
+> - `maxPerRecord` (Q1) is applied **during selection, before the topK cut**, in both backends.
 
 > **FIRMED (2026-07-19).** The personaility orchestrator answered all seven open questions
-> (relayed via `.ai/tasks/active/n-ask5-firmup/open-questions.md`); the consumer position
-> **converged with fgv's leans on all seven — zero divergence**. N-Ask5 is now a settled
-> consumer contract fgv can build against, but it is **still not scheduled**: it fires as a
-> firm build only when personaility schedules shared/knowledge semantic search. The embedding
-> work personaility ships now is record-granular (memory recall) and needs no N-Ask5.
+> (relayed by the consumer orchestrator; the firm-up analysis was a transient task artifact,
+> superseded by this entry and the shipped PRs); the consumer position
+> **converged with fgv's leans on all seven — zero divergence**. (Historical: at firm-up time
+> N-Ask5 was a settled contract not yet scheduled — it would fire as a firm build only when
+> personaility scheduled shared/knowledge semantic search; it has since been **built**, see the
+> SHIPPED block above.) The embedding work personaility shipped then was record-granular (memory
+> recall) and needed no N-Ask5.
 >
 > **Resolved answers — consumer-owned:**
 > - **Q1 hit granularity → per-fragment hits** `{ recordId, locator, score }`, `topK` over
@@ -434,13 +459,15 @@ All additive on an active surface:
 - **`embeddingRef` stays opaque** (Q5, resolved): the index owns fragment cardinality; the
   envelope only marks embedded-ness. `maxPerRecord` result cap included per Q1.
 
-All seven firm-up questions are resolved (see the FIRMED block above) — the shape is a
-settled consumer contract, not a draft.
+All seven firm-up questions were resolved (see the FIRMED block above) before any code was
+written — the shape was a settled consumer contract, not a draft. The sketch above is
+retained as the historical design record; **what actually shipped is described in the SHIPPED
+block at the top of this entry** (two deliberate deltas: sibling-not-`extends`, and a separate
+`SqliteVecFragmentIndex` rather than a PK extension).
 
-**Why still deferred:** non-blocking (host keyword-fragment search covers it now) and
-**not yet scheduled** by the consumer. Size M (new sibling interface + retriever + store
-fragment-embed-on-write path). Trigger: personaility schedules shared/knowledge semantic
-search — at which point this builds against the firmed contract above, no further firm-up.
+**Status:** SHIPPED 2026-07-20 (#561 / #562 / #563). personaility consumes it when it schedules
+shared/knowledge semantic search; the record-granular memory path is unchanged and needs none
+of it.
 
 ### Persistent / ANN `IVectorIndex` (N-Ask8) — RETIRED (answered; reference impl SHIPPED)
 
@@ -460,10 +487,11 @@ search — at which point this builds against the firmed contract above, no furt
 > `InMemoryCosineIndex`. **Zero core change** — confirmed the store already writes the
 > vector index incrementally and only re-embeds on the consumer-opt-in
 > `rebuild(asRecordSource())`, so a persistent index is a drop-in swap. The
-> incremental-embed-on-open hook noted below was therefore **not needed**. ANN/large-N,
-> chunk-granular entries (N-Ask5), and a browser sibling are explicitly out of scope on
-> the package (see its README). Personaility consumes it directly; the seam was already
-> correct, so no migration.
+> incremental-embed-on-open hook noted below was therefore **not needed**. ANN/large-N and
+> a browser sibling are explicitly out of scope on the package (see its README).
+> (Chunk-granular entries were out of scope *as of #558*; N-Ask5 later shipped the
+> persistent `SqliteVecFragmentIndex` in this same package — see the N-Ask5 entry above.)
+> Personaility consumes it directly; the seam was already correct, so no migration.
 
 The original direction question and analysis, retained for context:
 

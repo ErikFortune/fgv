@@ -85,7 +85,8 @@ const cliImpl: ICliScenarioImpl = {
       const nested = tensor.value.tolist() as number[][];
       // Defensive: a valid pooled Tensor always yields a non-empty nested array, but
       // keep `embed` fully Result-based rather than letting an unexpected shape throw
-      // (mirrors the guard in localEmbeddingSearch/embedAdapter.ts).
+      // (same defensive intent as the guard in localEmbeddingSearch/embedAdapter.ts,
+      // which additionally rejects a zero-length row and adds text context).
       if (nested.length === 0 || nested[0] === undefined) {
         return fail('embedding produced an empty tensor (no row 0)');
       }
