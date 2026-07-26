@@ -323,7 +323,7 @@ describe('google-gemini Tier 2 alias migration', () => {
   test('defaultModel resolves through the aliases to the concrete 3.x ids', () => {
     expect(AiAssist.resolveProviderModel(gemini, undefined, 'base')).toSucceedWith('gemini-3.5-flash');
     expect(AiAssist.resolveProviderModel(gemini, undefined, 'image')).toSucceedWith(
-      'gemini-3.1-flash-image-preview'
+      'gemini-3.1-flash-image'
     );
     expect(AiAssist.resolveProviderModel(gemini, undefined, 'embedding')).toSucceedWith(
       'gemini-embedding-001'
@@ -348,7 +348,7 @@ describe('google-gemini Tier 2 alias migration', () => {
       'gemini-3.1-flash-lite'
     );
     expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:flash-image')).toSucceedWith(
-      'gemini-3.1-flash-image-preview'
+      'gemini-3.1-flash-image'
     );
     expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:embedding')).toSucceedWith(
       'gemini-embedding-001'

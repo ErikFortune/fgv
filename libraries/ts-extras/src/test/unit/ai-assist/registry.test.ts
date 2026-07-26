@@ -45,33 +45,33 @@ describe('AiAssist.registry', () => {
   describe('openai model tiers (B2)', () => {
     const desc = AiAssist.getProviderDescriptor('openai').orThrow();
 
-    test('base tier resolves to gpt-5.4-mini', () => {
+    test('base tier resolves to gpt-5.6-luna', () => {
       // undefined context falls to base; explicit 'base' resolves identically.
-      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('gpt-5.4-mini');
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gpt-5.4-mini');
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('gpt-5.6-luna');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gpt-5.6-luna');
     });
 
-    test('advanced tier resolves to gpt-5.5', () => {
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('gpt-5.5');
+    test('advanced tier resolves to gpt-5.6-terra', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('gpt-5.6-terra');
     });
 
-    test('frontier resolves to gpt-5.5-pro via @openai:pro (Responses-routed)', () => {
-      // The OpenAI map now carries a frontier key → @openai:pro → gpt-5.5-pro. gpt-5.5-pro is
-      // a Responses-API-only model; the completion/streaming dispatch routes it to the Responses
-      // path via the descriptor's `responsesOnlyModelPrefixes` marker, so frontier is invokable
-      // again (no longer cascaded to advanced). Real registry descriptor.
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('gpt-5.5-pro');
+    test('frontier resolves to gpt-5.6-sol via @openai:pro', () => {
+      // The OpenAI map carries a frontier key → @openai:pro → gpt-5.6-sol. Unlike its
+      // predecessor gpt-5.5-pro, the 5.6 family works on chat completions, so no
+      // `responsesOnlyModelPrefixes` routing is needed for the frontier tier.
+      // Real registry descriptor.
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('gpt-5.6-sol');
     });
 
-    test('the @openai:pro alias is also reachable via modelOverride (Responses-only)', () => {
+    test('the @openai:pro alias is also reachable via modelOverride', () => {
       // The alias backs the frontier tier and is independently reachable via modelOverride; a
-      // direct gpt-5.5-pro override routes to Responses through `responsesOnlyModelPrefixes` too.
-      expect(AiAssist.resolveProviderModel(desc, '@openai:pro', undefined)).toSucceedWith('gpt-5.5-pro');
+      // direct gpt-5.5-pro override still routes to Responses through `responsesOnlyModelPrefixes`.
+      expect(AiAssist.resolveProviderModel(desc, '@openai:pro', undefined)).toSucceedWith('gpt-5.6-sol');
     });
 
-    test('image default resolves @openai:image → gpt-image-1.5 and routes via the gpt-image- capability', () => {
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gpt-image-1.5');
-      expect(AiAssist.resolveImageCapability(desc, 'gpt-image-1.5')).toMatchObject({
+    test('image default resolves @openai:image → gpt-image-2 and routes via the gpt-image- capability', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gpt-image-2');
+      expect(AiAssist.resolveImageCapability(desc, 'gpt-image-2')).toMatchObject({
         modelPrefix: 'gpt-image-',
         format: 'openai-images'
       });
@@ -97,15 +97,15 @@ describe('AiAssist.registry', () => {
       expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('claude-sonnet-5');
     });
 
-    test('advanced tier resolves to claude-opus-4-8', () => {
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('claude-opus-4-8');
+    test('advanced tier resolves to claude-opus-5', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('claude-opus-5');
     });
 
     test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
       // The Anthropic map deliberately omits a frontier key, so a frontier request must
       // cascade frontier → advanced → opus. This is the real registry descriptor (not a
       // synthetic one), so it is the live proof of the cascade against shipped defaults.
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('claude-opus-4-8');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('claude-opus-5');
     });
 
     test('the non-tier @anthropic:haiku alias resolves via modelOverride only', () => {
@@ -155,7 +155,7 @@ describe('AiAssist.registry', () => {
     test('image tier is unchanged by the advanced-key addition', () => {
       expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@google-gemini:flash-image');
       expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith(
-        'gemini-3.1-flash-image-preview'
+        'gemini-3.1-flash-image'
       );
     });
 
@@ -212,7 +212,7 @@ describe('AiAssist.registry', () => {
         });
         // The default image model is now an alias that resolves to the surviving gpt-image id.
         expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@openai:image');
-        expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gpt-image-1.5');
+        expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gpt-image-2');
       });
     });
 
@@ -228,7 +228,7 @@ describe('AiAssist.registry', () => {
         // The default image model is now an alias that resolves to the surviving flash-image id.
         expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@google-gemini:flash-image');
         expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith(
-          'gemini-3.1-flash-image-preview'
+          'gemini-3.1-flash-image'
         );
       });
     });

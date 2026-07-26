@@ -24,8 +24,8 @@ fgv-stable token (`flash`, `pro`, `flash-image`, `embedding`, …) that outlives
 ```typescript
 // Registered today (each provider descriptor's `aliases` map):
 '@google-gemini:flash'  ->  'gemini-3.5-flash'   // fgv alias → concrete id
-'@openai:flagship'      ->  'gpt-5.5'
-'@anthropic:opus'       ->  'claude-opus-4-8'
+'@openai:flagship'      ->  'gpt-5.6-terra'
+'@anthropic:opus'       ->  'claude-opus-5'
 
 // When an RHS is itself a provider-native undated alias rather than a dated snapshot, resolution
 // follows one further `@fgv-alias → provider-native-alias` hop (cycle-guarded).
@@ -94,11 +94,11 @@ A tier request walks an **ordered fallback list** and takes the first key presen
 | `advanced` | `advanced → base` | a descriptor with no `advanced` key cascades to `base` |
 | `base` | `base` | always present |
 
-This is why a provider only needs to declare the tiers it actually differentiates. All three completion
-providers currently omit `frontier`, so a `frontier` request cascades to their `advanced` model
-(gpt-5.5 / opus / pro). (OpenAI's frontier model `gpt-5.5-pro` is Responses-API-only — uninvokable via
-chat completions — so it is intentionally not wired as a completion tier; the `@openai:pro` alias remains
-reachable via `modelOverride`. See `docs/FUTURE.md` "OpenAI frontier via Responses routing".)
+This is why a provider only needs to declare the tiers it actually differentiates. OpenAI wires all
+three tiers (`frontier` → `gpt-5.6-sol`, which works on chat completions); Anthropic and Gemini omit
+`frontier`, so a `frontier` request cascades to their `advanced` model (opus / pro). (The previous
+frontier target `gpt-5.5-pro` is Responses-API-only; it remains reachable via `modelOverride` and is
+routed to the Responses API via `responsesOnlyModelPrefixes`.)
 `image`/`embedding` are unaffected — they keep their flat `modality → base` behavior.
 
 ### Composition — thinking and tools are orthogonal, not selectors
@@ -123,9 +123,9 @@ there is no 2-D selection and no competition between the axes.
 
 | slot | OpenAI | Anthropic | Gemini |
 |---|---|---|---|
-| `base` | `@openai:mini` → `gpt-5.4-mini` | `@anthropic:sonnet` → `claude-sonnet-5` | `@google-gemini:flash` → `gemini-3.5-flash` |
-| `advanced` | `@openai:flagship` → `gpt-5.5` | `@anthropic:opus` → `claude-opus-4-8` | `@google-gemini:pro` → `gemini-3.1-pro-preview` |
-| `frontier` | *(unset → advanced/gpt-5.5)* | *(unset → advanced/opus)* | *(unset → advanced/pro)* |
+| `base` | `@openai:mini` → `gpt-5.6-luna` | `@anthropic:sonnet` → `claude-sonnet-5` | `@google-gemini:flash` → `gemini-3.5-flash` |
+| `advanced` | `@openai:flagship` → `gpt-5.6-terra` | `@anthropic:opus` → `claude-opus-5` | `@google-gemini:pro` → `gemini-3.1-pro-preview` |
+| `frontier` | `@openai:pro` → `gpt-5.6-sol` | *(unset → advanced/opus)* | *(unset → advanced/pro)* |
 
 ### Maintenance loop — one map edit + a testbed run
 
@@ -159,7 +159,7 @@ It fixes **selection/default churn** only. Two axes remain manual on a provider 
 |---|---|---|
 | `@google-gemini:flash` | `gemini-3.5-flash` | `base` |
 | `@google-gemini:pro` | `gemini-3.1-pro-preview` | `advanced` (also the `frontier` cascade target) |
-| `@google-gemini:flash-image` | `gemini-3.1-flash-image-preview` | `image` |
+| `@google-gemini:flash-image` | `gemini-3.1-flash-image` | `image` |
 | `@google-gemini:embedding` | `gemini-embedding-001` | `embedding` |
 | `@google-gemini:flash-lite` | `gemini-3.1-flash-lite` | non-tier role (`modelOverride` only) |
 
