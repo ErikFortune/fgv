@@ -146,6 +146,23 @@ Deferred from the `ts-extras-mcp` slice-1 stream (2026-06-06). Each is additive 
 
 ---
 
+## Web-runnable CLI scenarios in `samples/testbed`
+
+Today only 2 of the testbed's 16 scenarios have `web` implementations (`local-classifier-safety`, `local-embedding-search`); everything else renders the shell's "This scenario has no web interface — run it from the CLI" panel. Most of those CLI-only scenarios are not intrinsically Node-bound — the provider client-tools, model-tiers, and embedding scenarios are HTTP calls that ai-assist already supports from the browser (directly, or via the proxied variants where CORS bites). A generic web runner — a shell-provided panel that executes a scenario's existing `run` logic in-browser and streams its logger + result text into the UI — would make the whole verification runbook drivable from the web app without writing a bespoke React component per scenario.
+
+Design space:
+- **Opt-in flag, not autodetection**: a scenario declares browser-compatibility (e.g. `webRunnable: true` or a shared `run` hoisted out of `cli`); genuinely Node-only scenarios (better-sqlite3 persistence, stdio MCP probe, Node-ONNX paths) stay CLI-only and keep the current panel.
+- **Secrets are the real prerequisite**: the shell's `IScenarioContext` currently stubs `keyStore: undefined` and `resolveSecret` (B-1 stub — "no web scenario calls it yet"). The web-side KeyStore story already exists as a primitive (`FileApiTreeAccessors.createFromLocalStorage`, per the local-ai-exploration recon) and is proven in `samples/ai-image-gen-sample`; wiring it into the testbed shell unblocks both this entry and the image-scenario port (see the P2 TECH_DEBT entry — shared prerequisite, do the wiring once).
+- **Output surface**: CLI scenarios return `Result<string>` reports; the runner needs only a monospace output panel + the existing StatusBar logger wiring.
+
+**Why deferred**: new shell capability, not a fix; the manual runbook is serviceable from the CLI today. Should follow (or ride with) the `ai-image-gen-sample` port so the secret wiring lands once.
+
+**Dependencies**: web-side KeyStore/secret wiring in the testbed shell (shared with the image-port TECH_DEBT entry); scenario-contract addition (`webRunnable` or equivalent) — additive.
+
+**Reference**: Erik 2026-07-26 ("I thought [we had a task] to make the CLI scenarios runnable in the UI… We should probably revive those"). This task was discussed but never persisted to the backlog — recovered from session context during the model-rotation verification runbook; filed now so it survives.
+
+---
+
 ## Live-wire-shape verification testbed scenarios per provider
 
 **Status: shipped 2026-06-05 via the `per-provider-testbed-scenarios` cluster** (parent PR #453 + sub-stream PRs #454, #457, #458). Three new scenarios (`openaiClientTools`, `geminiClientTools`, `xaiClientTools`) in `samples/testbed/` parallel the existing `anthropicClientTools` scenario; all four PASS on live API as of cluster close. Empirical loop ran four times during the cluster; each round surfaced a real wire-shape bug that 100%-coverage unit tests missed and that the live runs caught. See `.ai/tasks/completed/2026-06/per-provider-testbed-scenarios/README.md` for the full arc.
