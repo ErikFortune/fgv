@@ -65,16 +65,16 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     baseUrl: 'https://api.anthropic.com/v1',
     defaultModel: {
       base: '@anthropic:sonnet', // claude-sonnet-5 (was 'claude-sonnet-4-5-20250929')
-      advanced: '@anthropic:opus' // claude-opus-4-8
+      advanced: '@anthropic:opus' // claude-opus-5
       // no frontier key → a frontier request cascades advanced → opus (see resolveModel)
     },
     aliases: {
       '@anthropic:sonnet': 'claude-sonnet-5', // base tier
-      '@anthropic:opus': 'claude-opus-4-8', // advanced tier
+      '@anthropic:opus': 'claude-opus-5', // advanced tier (was claude-opus-4-8; opus-5 is the drop-in successor at the same price)
       '@anthropic:haiku': 'claude-haiku-4-5-20251001', // NON-tier alias; modelOverride only
       '@anthropic:fable': 'claude-fable-5' // NON-tier alias; modelOverride only
       // NOTE: no thinking/image/embedding keys — Anthropic completions are all text; base
-      // (sonnet-5) and advanced (opus-4-8) are both thinking-capable, so a thinking-context
+      // (sonnet-5) and advanced (opus-5) are both thinking-capable, so a thinking-context
       // call flat-falls to base safely.
     },
     supportedTools: ['web_search'],
@@ -105,7 +105,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       '@google-gemini:flash': 'gemini-3.5-flash', // base (was gemini-2.5-flash, shutdown 2026-10-16)
       '@google-gemini:pro': 'gemini-3.1-pro-preview', // advanced-tier role (wired to the 'advanced' defaultModel key); also the frontier cascade target (was gemini-2.5-pro, 2026-10-16)
       '@google-gemini:flash-lite': 'gemini-3.1-flash-lite', // cheaper thinking-capable line; available via modelOverride only (was gemini-2.5-flash-lite, 2026-10-16)
-      '@google-gemini:flash-image': 'gemini-3.1-flash-image-preview', // image (was gemini-2.5-flash-image, 2026-10-02)
+      '@google-gemini:flash-image': 'gemini-3.1-flash-image', // image (GA id; was gemini-3.1-flash-image-preview, retired 2026-06-25)
       '@google-gemini:embedding': 'gemini-embedding-001' // NOT deprecated — aliased for uniformity only
     },
     supportedTools: ['web_search'],
@@ -187,21 +187,22 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     apiFormat: 'openai',
     baseUrl: 'https://api.openai.com/v1',
     defaultModel: {
-      base: '@openai:mini', // gpt-5.4-mini (was 'gpt-4o' — EOL-behind)
-      advanced: '@openai:flagship', // gpt-5.5
-      // gpt-5.5-pro is a Responses-API-only model (400s on chat completions). The completion
-      // and streaming dispatch route Responses-only models to the Responses API via the
-      // `responsesOnlyModelPrefixes` marker below, so `frontier` is invokable again.
-      frontier: '@openai:pro', // gpt-5.5-pro (Responses-API-only; routed via responsesOnlyModelPrefixes)
-      image: '@openai:image', // gpt-image-1.5 (was 'dall-e-3' — EOL 2026-05-12)
+      base: '@openai:mini', // gpt-5.6-luna (was gpt-5.4-mini; before that 'gpt-4o' — EOL-behind)
+      advanced: '@openai:flagship', // gpt-5.6-terra
+      // The gpt-5.6 family works on BOTH Chat Completions and the Responses API, so the
+      // frontier tier no longer needs Responses-only routing. gpt-5.5-pro (the previous
+      // frontier target) remains Responses-API-only and reachable via modelOverride; the
+      // `responsesOnlyModelPrefixes` marker below still routes it correctly.
+      frontier: '@openai:pro', // gpt-5.6-sol
+      image: '@openai:image', // gpt-image-2 (was gpt-image-1.5; before that 'dall-e-3' — EOL 2026-05-12)
       embedding: '@openai:embedding' // text-embedding-3-small (unchanged, aliased for uniformity)
     },
     aliases: {
-      '@openai:mini': 'gpt-5.4-mini', // base tier
-      '@openai:flagship': 'gpt-5.5', // advanced tier
-      '@openai:pro': 'gpt-5.5-pro', // frontier tier; Responses-API-only (routed via responsesOnlyModelPrefixes)
+      '@openai:mini': 'gpt-5.6-luna', // base tier (was gpt-5.4-mini)
+      '@openai:flagship': 'gpt-5.6-terra', // advanced tier (was gpt-5.5)
+      '@openai:pro': 'gpt-5.6-sol', // frontier tier (was gpt-5.5-pro, which was Responses-API-only; 5.6 works on chat completions)
       '@openai:nano': 'gpt-5.4-nano', // NON-tier alias; modelOverride only
-      '@openai:image': 'gpt-image-1.5', // image (matches the gpt-image- capability prefix)
+      '@openai:image': 'gpt-image-2', // image (matches the gpt-image- capability prefix; was gpt-image-1.5)
       '@openai:embedding': 'text-embedding-3-small' // NOT deprecated — aliased for uniformity
       // NOTE: gpt-5.1 deliberately absent — retired March 2026.
     },
@@ -456,11 +457,14 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
     anthropic: [
       // Broadened from /^claude-opus-4/ and /^claude-sonnet-4/ so the sonnet-5+ / opus-5+ lines
       // are detected as thinking-capable. Detection accumulates across matching rules, so this is
-      // purely additive: every existing opus-4 / sonnet-4 id still matches. The sonnet broadening
-      // is required (claude-sonnet-5 otherwise hits only /^claude-/ and loses thinking); the opus
-      // broadening is future-proofing (claude-opus-4-8 already matches /^claude-opus-4/).
+      // purely additive: every existing opus-4 / sonnet-4 id still matches. Both broadenings are
+      // now load-bearing: claude-sonnet-5 and claude-opus-5 (the advanced-tier target) would
+      // otherwise hit only /^claude-/ and lose thinking. The fable rule keeps the
+      // AnthropicThinkingModelNames union honest — claude-fable-5 (modelOverride-only) would
+      // otherwise fall to the /^claude-/ catch-all and be detected without thinking.
       { idPattern: /^claude-opus-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^claude-sonnet-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      { idPattern: /^claude-fable-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^claude-/, capabilities: ['chat', 'tools', 'vision'] }
     ],
     groq: [{ idPattern: /./, capabilities: ['chat'] }],

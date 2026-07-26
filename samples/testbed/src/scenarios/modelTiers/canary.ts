@@ -40,8 +40,8 @@
  *    canary pending the orchestrator's keyed run).
  *
  * The verdict deliberately distinguishes a **resolver bug or stale id** (a real failure) from
- * **access-gating** (resolver correct, the key simply lacks access — e.g. `gpt-image-1.5`
- * org-verification or `gpt-5.5-pro` frontier gating). An access-gated tier is surfaced as
+ * **access-gating** (resolver correct, the key simply lacks access — e.g. gpt-image
+ * org-verification or frontier-model gating). An access-gated tier is surfaced as
  * `BLOCKED`, not a failure of the resolver work.
  *
  * @packageDocumentation
@@ -152,7 +152,7 @@ export interface ITierCanarySpec {
   readonly descriptor: AiAssist.IAiProviderDescriptor;
   /** The completion tiers to resolve + fire, in report order. */
   readonly tiers: ReadonlyArray<CanaryTier>;
-  /** When true, also resolve + log the `image` tier (OpenAI's `@openai:image → gpt-image-1.5`). */
+  /** When true, also resolve + log the `image` tier (e.g. OpenAI's `@openai:image → gpt-image-2`). */
   readonly imageTier?: boolean;
 }
 
@@ -347,9 +347,11 @@ export async function runTierCanary(
     );
   }
 
-  // Optional image-tier resolution (OpenAI only) — offline resolve + log, no live image call
-  // (image generation is a separate call path; its live gate is the orchestrator's, and
-  // `gpt-image-1.5` is an org-verification access risk called out in the design's Q8).
+  // Optional image-tier resolution — offline resolve + log only, no live image call.
+  // Image generation is a separate call path (callProviderImageGeneration) that this canary
+  // deliberately does not exercise: a live image request can fail for reasons unrelated to id
+  // rotation — some image models are access-gated (e.g. org verification on the gpt-image
+  // line) — so live image verification is a separate, explicit gate outside this scenario.
   let imageResolution: IImageResolution | undefined;
   if (spec.imageTier) {
     const alias = AiAssist.resolveModel(spec.descriptor.defaultModel, 'image');

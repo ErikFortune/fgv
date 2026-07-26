@@ -528,7 +528,7 @@ export const MODEL_SPEC_BASE_KEY: ModelSpecKey = 'base';
  * const simple: ModelSpec = 'grok-4.3';
  *
  * // Context-aware — different model per quality tier:
- * const split: ModelSpec = { base: 'gpt-5.4-mini', advanced: 'gpt-5.5', frontier: 'gpt-5.5-pro' };
+ * const split: ModelSpec = { base: 'gpt-5.6-luna', advanced: 'gpt-5.6-terra', frontier: 'gpt-5.6-sol' };
  *
  * // Nested — a tier branch is itself a spec:
  * const nested: ModelSpec = { base: 'grok-fast', advanced: { base: 'grok-r', image: 'grok-v' } };
@@ -1215,13 +1215,13 @@ export type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
 export type AiImageQuality = GptImageQuality;
 
 /** Model names in the GPT Image family. @public */
-export type GptImageModelNames = 'gpt-image-1' | 'gpt-image-1.5';
+export type GptImageModelNames = 'gpt-image-1' | 'gpt-image-1.5' | 'gpt-image-2';
 
 /** Model names in the xAI Grok Imagine family. @public */
 export type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality';
 
 /** Model names in the Gemini Flash Image family. @public */
-export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image-preview';
+export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image';
 
 // ---- Family-level config shapes ----
 
@@ -1509,9 +1509,10 @@ export interface IAiImageGenerationResponse {
  * Model IDs for Anthropic thinking-capable models.
  *
  * @remarks
- * Only thinking-capable lines are listed. The non-tier `@anthropic:haiku` / `@anthropic:fable`
- * aliases (reachable via `modelOverride` only) are deliberately omitted — they are not
- * documented as thinking-capable, so naming them in a thinking-model filter would be misleading.
+ * Only thinking-capable lines are listed. The non-tier `@anthropic:haiku` alias (reachable via
+ * `modelOverride` only) is deliberately omitted — it is not documented as thinking-capable, so
+ * naming it in a thinking-model filter would be misleading. `claude-fable-5` (the `@anthropic:fable`
+ * non-tier alias) is thinking-capable and reachable via `modelOverride`, so it is listed.
  * @public
  */
 export type AnthropicThinkingModelNames =
@@ -1520,7 +1521,9 @@ export type AnthropicThinkingModelNames =
   | 'claude-sonnet-5'
   | 'claude-opus-4-6'
   | 'claude-opus-4-7'
-  | 'claude-opus-4-8';
+  | 'claude-opus-4-8'
+  | 'claude-opus-5'
+  | 'claude-fable-5';
 
 /**
  * Model IDs for OpenAI thinking-capable models.
@@ -1537,6 +1540,9 @@ export type OpenAiThinkingModelNames =
   | 'gpt-5.4-mini'
   | 'gpt-5.5'
   | 'gpt-5.5-pro'
+  | 'gpt-5.6-sol'
+  | 'gpt-5.6-terra'
+  | 'gpt-5.6-luna'
   | 'gpt-5-pro';
 
 /**

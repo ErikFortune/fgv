@@ -86,7 +86,7 @@ describe('resolveImageOptions', () => {
 
     test('returns n=1 with no options at all', () => {
       const cap = makeCap({ format: 'gemini-image-out' });
-      const result = resolveImageOptions('gemini-3.1-flash-image-preview', cap, undefined);
+      const result = resolveImageOptions('gemini-3.1-flash-image', cap, undefined);
       expect(result.n).toBe(1);
       expect(result.size).toBeUndefined();
     });
@@ -289,7 +289,7 @@ describe('resolveImageOptions', () => {
     const cap = makeCap({ format: 'gemini-image-out' });
 
     test('applies aspectRatio from gemini-flash-image block', () => {
-      const result = resolveImageOptions('gemini-3.1-flash-image-preview', cap, {
+      const result = resolveImageOptions('gemini-3.1-flash-image', cap, {
         models: [
           {
             provider: 'google',
@@ -302,12 +302,12 @@ describe('resolveImageOptions', () => {
     });
 
     test('applies model-specific gemini-flash-image block', () => {
-      const result = resolveImageOptions('gemini-3.1-flash-image-preview', cap, {
+      const result = resolveImageOptions('gemini-3.1-flash-image', cap, {
         models: [
           {
             provider: 'google',
             family: 'gemini-flash-image',
-            models: ['gemini-3.1-flash-image-preview'],
+            models: ['gemini-3.1-flash-image'],
             config: { aspectRatio: '4:3' }
           }
         ]
@@ -316,23 +316,23 @@ describe('resolveImageOptions', () => {
     });
 
     test('skips gemini-flash-image block when models array does not match current model', () => {
-      // Resolve a different model ID; the block targets gemini-3.1-flash-image-preview specifically
+      // Resolve a different model ID; the block targets gemini-3.1-flash-image specifically
       const result = resolveImageOptions('gemini-pro-image', cap, {
         models: [
           {
             provider: 'google',
             family: 'gemini-flash-image',
-            models: ['gemini-3.1-flash-image-preview'],
+            models: ['gemini-3.1-flash-image'],
             config: { aspectRatio: '16:9' }
           }
         ]
       });
-      // gemini-pro-image is not in ['gemini-3.1-flash-image-preview'], so block is skipped
+      // gemini-pro-image is not in ['gemini-3.1-flash-image'], so block is skipped
       expect(result.geminiAspectRatio).toBeUndefined();
     });
 
     test('config fields omitted when not set in gemini-flash-image block', () => {
-      const result = resolveImageOptions('gemini-3.1-flash-image-preview', cap, {
+      const result = resolveImageOptions('gemini-3.1-flash-image', cap, {
         models: [{ provider: 'google', family: 'gemini-flash-image', config: {} }]
       });
       expect(result.geminiAspectRatio).toBeUndefined();
@@ -501,7 +501,7 @@ describe('validateResolvedOptions', () => {
     test('fails when count exceeds maxCount', () => {
       const cap = makeCap({ maxCount: 1 });
       const resolved = { n: 2 };
-      expect(validateResolvedOptions('gemini-3.1-flash-image-preview', cap, resolved)).toFailWith(
+      expect(validateResolvedOptions('gemini-3.1-flash-image', cap, resolved)).toFailWith(
         /count 2 exceeds maximum of 1/i
       );
     });

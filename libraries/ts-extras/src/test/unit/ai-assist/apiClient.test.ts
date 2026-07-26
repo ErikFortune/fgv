@@ -1115,16 +1115,35 @@ describe('callProviderCompletion', () => {
       expect(JSON.parse(fetchCall[1].body).tools).toEqual([{ type: 'web_search' }]);
     });
 
-    test('real OpenAI registry descriptor: frontier resolves gpt-5.5-pro via /responses', async () => {
+    test('real OpenAI registry descriptor: frontier resolves gpt-5.6-sol via /chat/completions', async () => {
+      // gpt-5.6-sol (unlike its predecessor gpt-5.5-pro) works on chat completions, so the
+      // frontier tier no longer routes through the Responses-only path.
       const openai = AiAssist.getProviderDescriptor('openai').orThrow();
       expect(openai.responsesOnlyModelPrefixes).toEqual(['gpt-5.5-pro']);
-      mockFetchResponse(responsesApiResponse('ok'));
+      mockFetchResponse(openAiResponse('ok'));
 
       await AiAssist.callProviderCompletion({
         descriptor: openai,
         apiKey: 'test-key',
         ...testPrompt.toRequest(),
         tier: 'frontier'
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/chat/completions');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.6-sol');
+    });
+
+    test('real OpenAI registry descriptor: a gpt-5.5-pro modelOverride still routes via /responses', async () => {
+      // The previous frontier target remains Responses-API-only and reachable via modelOverride.
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      mockFetchResponse(responsesApiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor: openai,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        modelOverride: 'gpt-5.5-pro'
       });
 
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
