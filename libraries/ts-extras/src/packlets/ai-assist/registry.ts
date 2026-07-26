@@ -459,9 +459,12 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
       // are detected as thinking-capable. Detection accumulates across matching rules, so this is
       // purely additive: every existing opus-4 / sonnet-4 id still matches. Both broadenings are
       // now load-bearing: claude-sonnet-5 and claude-opus-5 (the advanced-tier target) would
-      // otherwise hit only /^claude-/ and lose thinking.
+      // otherwise hit only /^claude-/ and lose thinking. The fable rule keeps the
+      // AnthropicThinkingModelNames union honest — claude-fable-5 (modelOverride-only) would
+      // otherwise fall to the /^claude-/ catch-all and be detected without thinking.
       { idPattern: /^claude-opus-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^claude-sonnet-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      { idPattern: /^claude-fable-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^claude-/, capabilities: ['chat', 'tools', 'vision'] }
     ],
     groq: [{ idPattern: /./, capabilities: ['chat'] }],

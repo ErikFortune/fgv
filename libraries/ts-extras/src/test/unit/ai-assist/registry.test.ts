@@ -506,4 +506,22 @@ describe('DEFAULT_MODEL_CAPABILITY_CONFIG', () => {
     }
     expect(caps.has('embedding')).toBe(true);
   });
+
+  // The rotated / newly-listed ids must be detected as thinking-capable — these rules back the
+  // *ThinkingModelNames unions, and a prefix miss silently drops thinking from live-discovered ids.
+  test.each([
+    ['anthropic', 'claude-opus-5'],
+    ['anthropic', 'claude-sonnet-5'],
+    ['anthropic', 'claude-fable-5'],
+    ['openai', 'gpt-5.6-terra']
+  ] as const)('%s tags %s with the thinking capability', (provider, modelId) => {
+    const rules = config.perProvider?.[provider] ?? [];
+    const caps = new Set<string>();
+    for (const rule of rules) {
+      if (rule.idPattern.test(modelId)) {
+        rule.capabilities.forEach((c) => caps.add(c));
+      }
+    }
+    expect(caps.has('thinking')).toBe(true);
+  });
 });

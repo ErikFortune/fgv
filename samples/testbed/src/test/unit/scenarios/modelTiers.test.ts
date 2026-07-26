@@ -415,6 +415,7 @@ describe('model-tier scenarios', () => {
         expect(report).toMatch(
           /@google-gemini:pro -> gemini-3\.1-pro-preview \(cascaded from a lower tier\)/
         );
+        expect(report).toMatch(/\[PASS\] image\s+@google-gemini:flash-image -> gemini-3\.1-flash-image\b/);
         expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
       });
     } finally {
