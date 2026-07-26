@@ -169,20 +169,28 @@ export function useProviderApiKey(
   context: IScenarioContext,
   provider: AiAssist.AiProviderId
 ): IProviderApiKeyState {
-  const [state, setState] = useState<IProviderApiKeyState>({ apiKey: '', status: 'loading' });
+  // Internal state is tagged with the provider it was resolved for. `provider` (the
+  // hook's argument) can change one render before the effect below has a chance to
+  // reset `state` to 'loading' for the new provider — without the tag, that one-frame
+  // window would expose the OLD provider's resolved key/status paired with the NEW
+  // provider's id (e.g. a stale OpenAI key momentarily reachable under a
+  // just-selected Gemini secretName). The read-time guard below closes that window.
+  const [state, setState] = useState<IProviderApiKeyState & { readonly forProvider: AiAssist.AiProviderId }>(
+    { apiKey: '', status: 'loading', forProvider: provider }
+  );
 
   useEffect(() => {
     let cancelled = false;
-    setState({ apiKey: '', status: 'loading' });
+    setState({ apiKey: '', status: 'loading', forProvider: provider });
     (async () => {
       const result = await resolveProviderApiKey(context, provider);
       if (cancelled) {
         return;
       }
       if (result.isSuccess()) {
-        setState({ apiKey: result.value, status: 'ready' });
+        setState({ apiKey: result.value, status: 'ready', forProvider: provider });
       } else {
-        setState({ apiKey: '', status: 'missing', error: result.message });
+        setState({ apiKey: '', status: 'missing', error: result.message, forProvider: provider });
       }
     })().catch(() => undefined);
     return () => {
@@ -193,5 +201,8 @@ export function useProviderApiKey(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider, context.resolveSecret]);
 
-  return state;
+  if (state.forProvider !== provider) {
+    return { apiKey: '', status: 'loading' };
+  }
+  return { apiKey: state.apiKey, status: state.status, error: state.error };
 }

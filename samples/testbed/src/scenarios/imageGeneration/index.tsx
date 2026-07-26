@@ -58,6 +58,7 @@ function ImageGenerationComponent({
 }: {
   readonly context: IScenarioContext;
 }): React.ReactElement {
+  /* c8 ignore next 3 - defensive: IMAGE_PROVIDERS always has at least one entry from the real ai-assist registry; the fallback guards only a hypothetical empty registry */
   const [provider, setProvider] = useState<AiAssist.AiProviderId>(
     IMAGE_PROVIDERS[0] ?? ('openai' as AiAssist.AiProviderId)
   );
@@ -77,11 +78,21 @@ function ImageGenerationComponent({
 
   const { apiKey, status: apiKeyStatus, error: apiKeyError } = useProviderApiKey(context, provider);
 
+  // `provider` only ever takes a value from IMAGE_PROVIDERS (initial state + the
+  // dropdown's own options), and `modelsByProvider` is seeded from IMAGE_PROVIDERS via
+  // `initialModelsByProvider()`, so `.get(provider)` is always defined in practice; same
+  // for `AiAssist.getProviderDescriptor(provider)` below, and for `currentModel` being
+  // non-empty (every image-capable provider's registry entry resolves a real `image`-tier
+  // default). The `??`/ternary fallbacks guard against those invariants breaking, not a
+  // reachable UI path.
+  /* c8 ignore next 1 */
   const currentModel = modelsByProvider.get(provider) ?? defaultModelFor(provider);
   const imageCapability = useMemo(() => {
     const descriptor = AiAssist.getProviderDescriptor(provider).orDefault();
+    /* c8 ignore next 1 */
     return descriptor ? AiAssist.resolveImageCapability(descriptor, currentModel) : undefined;
   }, [provider, currentModel]);
+  /* c8 ignore next 1 - defensive: imageCapability is only undefined via the equally-unreachable descriptor-undefined branch above */
   const modelAcceptsRefs = imageCapability?.acceptsImageReferenceInput === true;
 
   const keyStore = useMemo(
@@ -96,6 +107,7 @@ function ImageGenerationComponent({
         {
           provider,
           secretName: provider,
+          /* c8 ignore next 1 */
           ...(currentModel.length > 0 ? { model: currentModel } : {})
         }
       ],
@@ -143,6 +155,10 @@ function ImageGenerationComponent({
   };
 
   const handleAbort = (): void => {
+    // The Cancel button (the only caller) renders only while isWorking is true, which
+    // is exactly when handleGenerate has just set abortControllerRef.current — the
+    // undefined branch is defensive, not a reachable UI path.
+    /* c8 ignore next 1 */
     abortControllerRef.current?.abort();
   };
 

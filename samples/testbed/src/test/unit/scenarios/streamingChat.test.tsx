@@ -10,15 +10,18 @@
 import '@fgv/ts-utils-jest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
-import { fail, succeed } from '@fgv/ts-utils';
+import { fail, succeed, type Result } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
+import { PromptStoreFixture } from '@fgv/ts-prompt-assist';
 
+import * as streamingChatPromptLibraryModule from '../../../scenarios/streamingChat/promptLibrary';
 import {
   chatToneConverter,
   chatTones,
   createPromptLibrary,
   resolveChatSystemPrompt
 } from '../../../scenarios/streamingChat/promptLibrary';
+import type { ChatPromptLibrary } from '../../../scenarios/streamingChat/promptLibrary';
 import { ChatSettingsPanel } from '../../../scenarios/streamingChat/SettingsPanel';
 import { ChatPanel } from '../../../scenarios/streamingChat/ChatPanel';
 import type { IChatTurn } from '../../../scenarios/streamingChat/ChatPanel';
@@ -34,9 +37,19 @@ import type { IScenarioContext } from '../../../shell';
 // ---------------------------------------------------------------------------
 
 describe('streamingChat promptLibrary', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   test('createPromptLibrary builds a library successfully', async () => {
     const result = await createPromptLibrary();
     expect(result).toSucceed();
+  });
+
+  test('createPromptLibrary propagates a PromptStoreFixture.build failure', async () => {
+    jest.spyOn(PromptStoreFixture, 'build').mockResolvedValue(fail('fixture build exploded'));
+    const result = await createPromptLibrary();
+    expect(result).toFailWith(/fixture build exploded/);
   });
 
   test('resolveChatSystemPrompt resolves the neutral (base) body by default', async () => {
@@ -161,6 +174,41 @@ describe('streamingChat ChatSettingsPanel', () => {
     });
     expect(onModelChange).toHaveBeenCalledWith('claude-sonnet-5');
   });
+
+  test('shows the streaming-CORS-restricted badge for a provider whose descriptor declares it', () => {
+    // xai-grok is the only chat-capable provider with streamingCorsRestricted: true in
+    // the registry — see libraries/ts-extras/src/packlets/ai-assist/registry.ts.
+    render(<ChatSettingsPanel {...baseProps()} provider="xai-grok" />);
+    expect(screen.getByText('Streaming CORS-restricted — calls will fail without a proxy')).not.toBeNull();
+  });
+
+  test('falls back to the raw provider id when there is no registry descriptor (ready)', () => {
+    const unknownProvider = 'not-a-real-provider' as AiAssist.AiProviderId;
+    render(
+      <ChatSettingsPanel
+        {...baseProps()}
+        providers={[unknownProvider]}
+        provider={unknownProvider}
+        apiKeyStatus="ready"
+      />
+    );
+    expect(screen.getByText(unknownProvider)).not.toBeNull();
+    expect(screen.getByTestId('streaming-chat-key-ready').textContent).toContain(unknownProvider);
+    expect(screen.queryByText('Streaming CORS-restricted — calls will fail without a proxy')).toBeNull();
+  });
+
+  test('falls back to the raw provider id in the "missing key" affordance too', () => {
+    const unknownProvider = 'not-a-real-provider' as AiAssist.AiProviderId;
+    render(
+      <ChatSettingsPanel
+        {...baseProps()}
+        providers={[unknownProvider]}
+        provider={unknownProvider}
+        apiKeyStatus="missing"
+      />
+    );
+    expect(screen.getByTestId('streaming-chat-key-missing').textContent).toContain(unknownProvider);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -209,6 +257,12 @@ describe('streamingChat ChatPanel', () => {
     const turns: IChatTurn[] = [{ role: 'assistant', content: '', isStreaming: true }];
     render(<ChatPanel {...baseProps({ turns })} />);
     expect(screen.getByText('…')).not.toBeNull();
+  });
+
+  test('shows a streaming cursor once partial content has arrived', () => {
+    const turns: IChatTurn[] = [{ role: 'assistant', content: 'partial', isStreaming: true }];
+    const { container } = render(<ChatPanel {...baseProps({ turns })} />);
+    expect(container.querySelector('.animate-pulse')).not.toBeNull();
   });
 
   test('shows active tool events', () => {
@@ -275,6 +329,23 @@ describe('streamingChat ChatPanel', () => {
     expect(screen.getByTestId('streaming-chat-disabled-hint').textContent).toBe('no key');
   });
 
+  test('submitting the form directly (bypassing the disabled button) still honors the canSubmit guard', () => {
+    // The send button is disabled while `canSubmit` is false, so a real click never
+    // reaches `submitMessage` — dispatch the form's `submit` event directly (e.g. an
+    // Enter keypress takes this path even with the button disabled).
+    const onSend = jest.fn(async () => undefined);
+    const { container } = render(<ChatPanel {...baseProps({ canSubmit: false, onSend })} />);
+    fireEvent.submit(container.querySelector('form')!);
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
+  test('submitting the form directly while isWorking honors the guard', () => {
+    const onSend = jest.fn(async () => undefined);
+    const { container } = render(<ChatPanel {...baseProps({ isWorking: true, onSend })} />);
+    fireEvent.submit(container.querySelector('form')!);
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
   test('shows the abort button while working, and clicking it calls onAbort', () => {
     const onAbort = jest.fn();
     render(<ChatPanel {...baseProps({ isWorking: true, onAbort })} />);
@@ -304,6 +375,11 @@ describe('streamingChat ChatPanel', () => {
     } else {
       expect(screen.queryByTestId('streaming-chat-web-search-checkbox')).toBeNull();
     }
+  });
+
+  test('hides the web-search checkbox for a provider with no registry descriptor', () => {
+    render(<ChatPanel {...baseProps({ provider: 'not-a-real-provider' as AiAssist.AiProviderId })} />);
+    expect(screen.queryByTestId('streaming-chat-web-search-checkbox')).toBeNull();
   });
 });
 
@@ -339,13 +415,60 @@ describe('streamingChat integration', () => {
     expect(screen.getByTestId('streaming-chat-disabled-hint').textContent).toMatch(/API key/);
   });
 
-  test('shows the prompt-library-initializing reason once the key resolves but before the library loads', async () => {
+  test('shows the prompt-library-error disabled reason when createPromptLibrary fails', async () => {
+    jest
+      .spyOn(streamingChatPromptLibraryModule, 'createPromptLibrary')
+      .mockResolvedValue(fail('vault unreachable'));
     const context = makeContext(async () => succeed('sk-test'));
     const Component = streamingChatScenario.web!.component;
     render(<Component context={context} />);
     await waitFor(() => expect(screen.getByTestId('streaming-chat-key-ready')).not.toBeNull());
+    await waitFor(() =>
+      expect(screen.getByTestId('streaming-chat-disabled-hint').textContent).toMatch(
+        /Prompt library failed to load: vault unreachable/
+      )
+    );
+  });
+
+  test('shows the prompt-library-initializing reason once the key resolves but before the library loads', async () => {
+    // Build the real library BEFORE mocking createPromptLibrary — the mock replaces
+    // the same module-object property this real call goes through.
+    const realResult = await createPromptLibrary();
+    let resolveLibrary: (result: Result<ChatPromptLibrary>) => void = () => undefined;
+    const pending = new Promise<Result<ChatPromptLibrary>>((resolve) => {
+      resolveLibrary = resolve;
+    });
+    jest.spyOn(streamingChatPromptLibraryModule, 'createPromptLibrary').mockReturnValue(pending);
+
+    const context = makeContext(async () => succeed('sk-test'));
+    const Component = streamingChatScenario.web!.component;
+    render(<Component context={context} />);
+    await waitFor(() => expect(screen.getByTestId('streaming-chat-key-ready')).not.toBeNull());
+    expect(screen.getByTestId('streaming-chat-disabled-hint').textContent).toBe(
+      'Prompt library is still initializing…'
+    );
+
+    resolveLibrary(realResult);
     // Eventually the prompt library resolves and the composer becomes enabled.
     await waitFor(() => expect(screen.queryByTestId('streaming-chat-disabled-hint')).toBeNull());
+  });
+
+  test('the createPromptLibrary effect ignores a resolution that arrives after unmount', async () => {
+    const realResult = await createPromptLibrary();
+    let resolveLibrary: (result: Result<ChatPromptLibrary>) => void = () => undefined;
+    const pending = new Promise<Result<ChatPromptLibrary>>((resolve) => {
+      resolveLibrary = resolve;
+    });
+    jest.spyOn(streamingChatPromptLibraryModule, 'createPromptLibrary').mockReturnValue(pending);
+
+    const context = makeContext(async () => succeed('sk-test'));
+    const Component = streamingChatScenario.web!.component;
+    const { unmount } = render(<Component context={context} />);
+    unmount();
+
+    resolveLibrary(realResult);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    // Test passes if no "can't update unmounted component" warning fires.
   });
 
   test('sends a message and streams text deltas into the transcript', async () => {
@@ -441,5 +564,98 @@ describe('streamingChat integration', () => {
     fireEvent.click(screen.getByTestId('streaming-chat-send-btn'));
 
     await waitFor(() => expect(lastSystem).toMatch(/formal register/));
+  });
+
+  test('overriding the model input updates the resolved model for the current provider', async () => {
+    const context = makeContext(async () => succeed('sk-test'));
+    const Component = streamingChatScenario.web!.component;
+    render(<Component context={context} />);
+    await waitFor(() => expect(screen.queryByTestId('streaming-chat-disabled-hint')).toBeNull());
+
+    const modelInput = screen.getByTestId('streaming-chat-model-input') as HTMLInputElement;
+    fireEvent.change(modelInput, { target: { value: 'custom-model-override' } });
+    expect(modelInput.value).toBe('custom-model-override');
+  });
+
+  test('shows an inline error and rolls back the placeholder turns when resolveChatSystemPrompt fails', async () => {
+    jest
+      .spyOn(streamingChatPromptLibraryModule, 'resolveChatSystemPrompt')
+      .mockResolvedValue(fail('tone resolution exploded'));
+    const context = makeContext(async () => succeed('sk-test'));
+    const Component = streamingChatScenario.web!.component;
+    render(<Component context={context} />);
+    await waitFor(() => expect(screen.queryByTestId('streaming-chat-disabled-hint')).toBeNull());
+
+    fireEvent.change(screen.getByTestId('streaming-chat-input'), { target: { value: 'hi there' } });
+    fireEvent.click(screen.getByTestId('streaming-chat-send-btn'));
+
+    await waitFor(() => expect(screen.getByTestId('streaming-chat-error')).not.toBeNull());
+    expect(screen.getByTestId('streaming-chat-error').textContent).toContain('tone resolution exploded');
+    // The optimistic user+assistant placeholder turns are rolled back on failure.
+    expect(screen.queryByTestId('streaming-chat-turn-0')).toBeNull();
+  });
+
+  test('shows tool-use events while a server-side tool call is in progress', async () => {
+    const context = makeContext(async () => succeed('sk-test'));
+    async function* events(): AsyncGenerator<AiAssist.IAiStreamEvent> {
+      yield { type: 'tool-event', phase: 'started', toolType: 'web_search' };
+      yield { type: 'text-delta', delta: 'partial' };
+      yield { type: 'tool-event', phase: 'completed', toolType: 'web_search' };
+      yield { type: 'done', fullText: 'partial', truncated: false };
+    }
+    jest.spyOn(AiAssist, 'callProviderCompletionStream').mockResolvedValue(succeed(events()));
+
+    const Component = streamingChatScenario.web!.component;
+    render(<Component context={context} />);
+    await waitFor(() => expect(screen.queryByTestId('streaming-chat-disabled-hint')).toBeNull());
+
+    fireEvent.change(screen.getByTestId('streaming-chat-input'), { target: { value: 'search please' } });
+    fireEvent.click(screen.getByTestId('streaming-chat-send-btn'));
+
+    await waitFor(() => expect(screen.getByText('partial')).not.toBeNull());
+    // Tool events clear once the stream completes.
+    expect(screen.queryByTestId('streaming-chat-tool-events')).toBeNull();
+  });
+
+  test('clicking Cancel while streaming aborts the request signal', async () => {
+    const context = makeContext(async () => succeed('sk-test'));
+    let capturedSignal: AbortSignal | undefined;
+    let resolveNext: (result: IteratorResult<AiAssist.IAiStreamEvent>) => void = () => undefined;
+    const pendingNext = new Promise<IteratorResult<AiAssist.IAiStreamEvent>>((resolve) => {
+      resolveNext = resolve;
+    });
+    const events: AsyncIterable<AiAssist.IAiStreamEvent> = {
+      [Symbol.asyncIterator]() {
+        let askedOnce = false;
+        return {
+          next: async (): Promise<IteratorResult<AiAssist.IAiStreamEvent>> => {
+            if (!askedOnce) {
+              askedOnce = true;
+              return pendingNext;
+            }
+            return { done: true, value: undefined };
+          }
+        };
+      }
+    };
+    jest
+      .spyOn(AiAssist, 'callProviderCompletionStream')
+      .mockImplementation(async (params: AiAssist.IProviderCompletionStreamParams) => {
+        capturedSignal = params.signal;
+        return succeed(events);
+      });
+
+    const Component = streamingChatScenario.web!.component;
+    render(<Component context={context} />);
+    await waitFor(() => expect(screen.queryByTestId('streaming-chat-disabled-hint')).toBeNull());
+
+    fireEvent.change(screen.getByTestId('streaming-chat-input'), { target: { value: 'hi there' } });
+    fireEvent.click(screen.getByTestId('streaming-chat-send-btn'));
+
+    await waitFor(() => expect(screen.getByTestId('streaming-chat-abort-btn')).not.toBeNull());
+    fireEvent.click(screen.getByTestId('streaming-chat-abort-btn'));
+    expect(capturedSignal?.aborted).toBe(true);
+
+    resolveNext({ done: true, value: undefined });
   });
 });

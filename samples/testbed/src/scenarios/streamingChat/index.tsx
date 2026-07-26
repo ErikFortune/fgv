@@ -57,6 +57,7 @@ function initialModelsByProvider(): ReadonlyMap<AiAssist.AiProviderId, string> {
 // ---------------------------------------------------------------------------
 
 function StreamingChatComponent({ context }: { readonly context: IScenarioContext }): React.ReactElement {
+  /* c8 ignore next 3 - defensive: CHAT_PROVIDERS always has at least one entry from the real ai-assist registry; the fallback guards only a hypothetical empty registry */
   const [provider, setProvider] = useState<AiAssist.AiProviderId>(
     CHAT_PROVIDERS[0] ?? ('openai' as AiAssist.AiProviderId)
   );
@@ -91,6 +92,13 @@ function StreamingChatComponent({ context }: { readonly context: IScenarioContex
     };
   }, []);
 
+  // `provider` only ever takes a value from CHAT_PROVIDERS (initial state + the
+  // dropdown's own options), and `modelsByProvider` is seeded from CHAT_PROVIDERS via
+  // `initialModelsByProvider()`, so `.get(provider)` is always defined in practice, and
+  // `currentModel` is never empty (every keyed provider's registry entry resolves a
+  // real `base`-tier default). The fallbacks below guard against those invariants
+  // breaking, not a reachable UI path.
+  /* c8 ignore next 1 */
   const currentModel = modelsByProvider.get(provider) ?? defaultModelFor(provider);
 
   const keyStore = useMemo(
@@ -105,6 +113,7 @@ function StreamingChatComponent({ context }: { readonly context: IScenarioContex
         {
           provider,
           secretName: provider,
+          /* c8 ignore next 1 */
           ...(currentModel.length > 0 ? { model: currentModel } : {})
         }
       ],
@@ -138,6 +147,10 @@ function StreamingChatComponent({ context }: { readonly context: IScenarioContex
     const assistantTurn: IChatTurn = { role: 'assistant', content: '', isStreaming: true };
     setChatTurns((prev) => [...prev, userTurn, assistantTurn]);
 
+    // Defense in depth: ChatPanel's own `canSubmit` (built from `promptLibrary !== null`
+    // below) already gates the send button and the Enter-key path, so this branch has
+    // no reachable UI trigger — it guards a future caller that bypasses that gate.
+    /* c8 ignore next 5 */
     if (promptLibrary === null) {
       setChatError(promptLibraryError ?? 'Prompt library is still initializing.');
       setChatTurns((prev) => prev.slice(0, -2));
@@ -211,6 +224,11 @@ function StreamingChatComponent({ context }: { readonly context: IScenarioContex
     setChatTurns((prev) => {
       const next = [...prev];
       const last = next[next.length - 1];
+      // Defensive: the turns array always ends with the assistant placeholder pushed
+      // above just before this stream started (Clear is disabled while isWorking, so
+      // nothing else can mutate `chatTurns` mid-stream) — this guards a shape invariant
+      // that always holds today, not a reachable UI path.
+      /* c8 ignore next 3 */
       if (!last || last.role !== 'assistant') {
         return next;
       }
@@ -236,6 +254,10 @@ function StreamingChatComponent({ context }: { readonly context: IScenarioContex
   };
 
   const handleAbort = (): void => {
+    // The Cancel button (the only caller) renders only while isWorking is true, which
+    // is exactly when handleSendChat has just set abortControllerRef.current — the
+    // undefined branch is defensive, not a reachable UI path.
+    /* c8 ignore next 1 */
     abortControllerRef.current?.abort();
   };
 

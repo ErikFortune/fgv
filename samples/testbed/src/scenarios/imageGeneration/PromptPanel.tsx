@@ -103,6 +103,11 @@ export function PromptPanel(props: IPromptPanelProps): React.ReactElement {
   const isGrokImagine = imageFormat === 'xai-images' || imageFormat === 'xai-images-edits';
   const supportsSize = imageFormat === 'openai-images';
   const supportsAspectRatio = isGeminiFlashImage || isGrokImagine;
+  // `acceptedSizes` is typed `ReadonlyArray<string>` on IAiImageModelCapability (it's
+  // shared across every image format, not just OpenAI's), so narrowing it to the
+  // `openai-images`-only GptImageSize union is a cast, not a validation. Safe here
+  // because the values originate from this repo's own registry.ts (trusted, not user
+  // input) and this branch only renders when `supportsSize` (format === 'openai-images').
   const availableSizes: ReadonlyArray<AiAssist.GptImageSize> =
     (imageCapability?.acceptedSizes as ReadonlyArray<AiAssist.GptImageSize> | undefined) ??
     DEFAULT_OPENAI_SIZES;
@@ -196,6 +201,7 @@ export function PromptPanel(props: IPromptPanelProps): React.ReactElement {
                   // Surfaced to the user via alert; console gives the developer a stack
                   // trace during local development.
                   console.error('Failed to add reference images.', error);
+                  /* c8 ignore next 3 - defensive: every rejection this chain can produce originates from fileToAttachment's own `throw new Error(...)` calls, so the non-Error fallback is unreachable without a synthetic non-Error rejection */
                   window.alert(
                     error instanceof Error ? error.message : 'Failed to add one or more reference images.'
                   );
