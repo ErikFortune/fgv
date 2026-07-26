@@ -347,9 +347,11 @@ export async function runTierCanary(
     );
   }
 
-  // Optional image-tier resolution — offline resolve + log, no live image call
-  // (image generation is a separate call path; its live gate is the orchestrator's, and
-  // the gpt-image line is an org-verification access risk called out in the design's Q8).
+  // Optional image-tier resolution — offline resolve + log only, no live image call.
+  // Image generation is a separate call path (callProviderImageGeneration) that this canary
+  // deliberately does not exercise: a live image request can fail for reasons unrelated to id
+  // rotation — some image models are access-gated (e.g. org verification on the gpt-image
+  // line) — so live image verification is a separate, explicit gate outside this scenario.
   let imageResolution: IImageResolution | undefined;
   if (spec.imageTier) {
     const alias = AiAssist.resolveModel(spec.descriptor.defaultModel, 'image');
