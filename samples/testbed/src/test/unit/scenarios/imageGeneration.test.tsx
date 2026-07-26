@@ -365,6 +365,49 @@ describe('imageGeneration PromptPanel', () => {
   test('shows the maxCount hint when the capability declares one', () => {
     render(<PromptPanel {...baseProps()} />);
     expect(screen.getByText(/up to 10 image\(s\)/)).not.toBeNull();
+    expect((screen.getByTestId('image-gen-count-input') as HTMLInputElement).max).toBe('10');
+  });
+
+  test('falls back to the default max count when imageCapability has no maxCount', () => {
+    render(
+      <PromptPanel
+        {...baseProps({
+          imageCapability: { modelPrefix: '', format: 'xai-images', acceptsImageReferenceInput: false }
+        })}
+      />
+    );
+    expect(screen.getByText(/up to 4 image\(s\)/)).not.toBeNull();
+    expect((screen.getByTestId('image-gen-count-input') as HTMLInputElement).max).toBe('4');
+  });
+
+  test('the count input clamps to the selected model maxCount on change', () => {
+    render(<PromptPanel {...baseProps()} />);
+    const input = screen.getByTestId('image-gen-count-input') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '99' } });
+    expect(input.value).toBe('10');
+  });
+
+  test('submitting sends a count clamped to the selected model maxCount', () => {
+    const onGenerate = jest.fn(async () => undefined);
+    render(<PromptPanel {...baseProps({ onGenerate })} />);
+    fireEvent.change(screen.getByTestId('image-gen-prompt-input'), { target: { value: 'a cat' } });
+    fireEvent.change(screen.getByTestId('image-gen-count-input'), { target: { value: '99' } });
+    fireEvent.click(screen.getByTestId('image-gen-submit-btn'));
+    expect(onGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ options: expect.objectContaining({ count: 10 }) })
+    );
+  });
+
+  test('switching to a model with a lower maxCount re-clamps an already-entered count', async () => {
+    const { rerender } = render(<PromptPanel {...baseProps()} />);
+    const input = screen.getByTestId('image-gen-count-input') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '8' } });
+    expect(input.value).toBe('8');
+
+    // GEMINI_CAPABILITY declares maxCount: 1 — lower than the 8 just entered under the
+    // OpenAI capability, so the re-clamp effect should bring the value back into range.
+    rerender(<PromptPanel {...baseProps({ imageCapability: GEMINI_CAPABILITY })} />);
+    await waitFor(() => expect(input.value).toBe('1'));
   });
 
   test('does not show reference-image affordances when acceptsImageReferenceInput is false', () => {

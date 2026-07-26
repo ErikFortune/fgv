@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import React from 'react';
 import { AiAssist } from '@fgv/ts-extras';
 import { captureAsyncResult, fail, mapResults, succeed } from '@fgv/ts-utils';
@@ -42,6 +42,14 @@ const DEFAULT_OPENAI_SIZES: ReadonlyArray<AiAssist.GptImageSize> = [
 
 /** Common aspect ratios offered for the Gemini Flash Image / xAI Grok Imagine formats. */
 const ASPECT_RATIOS: readonly string[] = ['1:1', '3:4', '4:3', '9:16', '16:9'];
+
+/**
+ * Fallback count cap used when `imageCapability` (or its `maxCount`) is unavailable — e.g.
+ * an unrecognized model id. Matches the previous hardcoded `max={4}` so behavior is
+ * unchanged in that case; every known capability declares its own `maxCount` and takes
+ * priority (OpenAI gpt-image allows up to 10, Gemini Flash Image allows 1, etc.).
+ */
+const DEFAULT_MAX_COUNT: number = 4;
 
 const ACCEPTED_REF_MIME_TYPE_LIST = ['image/png', 'image/jpeg', 'image/webp'] as const;
 const ACCEPTED_REF_MIME_TYPES: string = ACCEPTED_REF_MIME_TYPE_LIST.join(',');
@@ -106,6 +114,19 @@ export function PromptPanel(props: IPromptPanelProps): React.ReactElement {
 
   const imageFormat = imageCapability?.format;
   const acceptsRefs = imageCapability?.acceptsImageReferenceInput === true;
+  // The enforced cap for the `count` field: the selected model's own maxCount when known,
+  // else the conservative DEFAULT_MAX_COUNT. Providers differ widely here (OpenAI gpt-image
+  // allows up to 10, Gemini Flash Image allows only 1), so this must track the selected
+  // model rather than a single hardcoded constant.
+  const maxCount = imageCapability?.maxCount ?? DEFAULT_MAX_COUNT;
+
+  // Re-clamp an already-entered count when the selected model's cap drops below it (e.g.
+  // switching from a provider/model that allows 10 down to one that allows 1) — otherwise
+  // a stale in-range value from the previous model could exceed the new model's cap and
+  // fail server-side on submit.
+  useEffect(() => {
+    setCount((prev) => Math.min(prev, maxCount));
+  }, [maxCount]);
 
   // Aspect-ratio-driven formats configure via the layered `options.models` block for
   // their family rather than a top-level field (only OpenAI's `size` is top-level).
@@ -128,7 +149,10 @@ export function PromptPanel(props: IPromptPanelProps): React.ReactElement {
       return;
     }
     const options: AiAssist.IAiImageGenerationOptions = {
-      count,
+      // Belt-and-suspenders: state is kept clamped by the onChange handler and the
+      // re-clamp effect above, but clamp again at submit time so a stale value can never
+      // reach the provider even under an unusual same-render prop+submit race.
+      count: Math.min(count, maxCount),
       ...(supportsSize ? { size } : {}),
       ...(isGeminiFlashImage
         ? { models: [{ provider: 'google', family: 'gemini-flash-image', config: { aspectRatio } }] }
@@ -253,16 +277,15 @@ export function PromptPanel(props: IPromptPanelProps): React.ReactElement {
             <input
               type="number"
               min={1}
-              max={4}
+              max={maxCount}
               data-testid="image-gen-count-input"
               className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
               value={count}
-              onChange={(e) => setCount(Math.max(1, Number(e.target.value) || 1))}
+              onChange={(e) => setCount(Math.min(maxCount, Math.max(1, Number(e.target.value) || 1)))}
               disabled={isWorking}
             />
             <span className="mt-1 block text-xs text-muted">
-              {imageCapability?.maxCount !== undefined &&
-                `This model accepts up to ${imageCapability.maxCount} image(s) per request.`}
+              {`This model accepts up to ${maxCount} image(s) per request.`}
             </span>
           </label>
 
