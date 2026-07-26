@@ -10,6 +10,8 @@
 import { useState } from 'react';
 import React from 'react';
 import { AiAssist } from '@fgv/ts-extras';
+import { captureAsyncResult, fail, mapResults, succeed } from '@fgv/ts-utils';
+import type { Logging, Result } from '@fgv/ts-utils';
 
 export interface IPromptPanelProps {
   /**
@@ -26,6 +28,8 @@ export interface IPromptPanelProps {
   >;
   readonly onGenerate: (params: AiAssist.IAiImageGenerationParams) => Promise<void>;
   readonly onAbort: () => void;
+  /** Shell logger — used to record reference-image read/validation failures. */
+  readonly logger: Logging.LogReporter<unknown>;
 }
 
 /** Default `gpt-image-*` size options (used when the capability doesn't list `acceptedSizes`). */
@@ -43,39 +47,44 @@ const ACCEPTED_REF_MIME_TYPE_LIST = ['image/png', 'image/jpeg', 'image/webp'] as
 const ACCEPTED_REF_MIME_TYPES: string = ACCEPTED_REF_MIME_TYPE_LIST.join(',');
 const ACCEPTED_REF_MIME_TYPE_SET: ReadonlySet<string> = new Set(ACCEPTED_REF_MIME_TYPE_LIST);
 
-async function fileToAttachment(file: File): Promise<AiAssist.IAiImageAttachment> {
+async function fileToAttachment(file: File): Promise<Result<AiAssist.IAiImageAttachment>> {
   // Some browsers/OSes report JPEGs as `image/jpg`; normalize to the canonical
   // `image/jpeg` before validation so they aren't rejected.
   const fileType = file.type === 'image/jpg' ? 'image/jpeg' : file.type;
   // `<input accept>` is only a hint, so validate explicitly (drag-drop / "All files" can bypass it).
   if (!ACCEPTED_REF_MIME_TYPE_SET.has(fileType)) {
-    throw new Error(`unsupported file type: ${file.type || 'unknown'}`);
+    return fail(`unsupported file type: ${file.type || 'unknown'}`);
   }
-  const dataUrl: string = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error ?? new Error('failed to read file'));
-    reader.readAsDataURL(file);
+  const dataUrlResult = await captureAsyncResult(
+    () =>
+      new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error ?? new Error('failed to read file'));
+        reader.readAsDataURL(file);
+      })
+  );
+  return dataUrlResult.onSuccess((dataUrl) => {
+    // FileReader.readAsDataURL is spec-defined to produce `data:<mime>;base64,<data>`,
+    // but validate the structure explicitly so a malformed prefix fails loudly
+    // instead of producing a silently miscomputed mime/base64.
+    const PREFIX = 'data:';
+    const MARKER = ';base64,';
+    if (!dataUrl.startsWith(PREFIX)) {
+      return fail('failed to read file: invalid data URL format');
+    }
+    const markerIdx = dataUrl.indexOf(MARKER);
+    if (markerIdx === -1) {
+      return fail('failed to read file: expected base64 data URL');
+    }
+    const base64 = dataUrl.slice(markerIdx + MARKER.length);
+    if (!base64) {
+      return fail('failed to read file: empty base64 payload');
+    }
+    const headerMime = dataUrl.slice(PREFIX.length, markerIdx);
+    const mimeType = (headerMime === 'image/jpg' ? 'image/jpeg' : headerMime) || fileType;
+    return succeed({ mimeType, base64 });
   });
-  // FileReader.readAsDataURL is spec-defined to produce `data:<mime>;base64,<data>`,
-  // but validate the structure explicitly so a malformed prefix fails loudly
-  // instead of producing a silently miscomputed mime/base64.
-  const PREFIX = 'data:';
-  const MARKER = ';base64,';
-  if (!dataUrl.startsWith(PREFIX)) {
-    throw new Error('failed to read file: invalid data URL format');
-  }
-  const markerIdx = dataUrl.indexOf(MARKER);
-  if (markerIdx === -1) {
-    throw new Error('failed to read file: expected base64 data URL');
-  }
-  const base64 = dataUrl.slice(markerIdx + MARKER.length);
-  if (!base64) {
-    throw new Error('failed to read file: empty base64 payload');
-  }
-  const headerMime = dataUrl.slice(PREFIX.length, markerIdx);
-  const mimeType = (headerMime === 'image/jpg' ? 'image/jpeg' : headerMime) || fileType;
-  return { mimeType, base64 };
 }
 
 export function PromptPanel(props: IPromptPanelProps): React.ReactElement {
@@ -86,7 +95,8 @@ export function PromptPanel(props: IPromptPanelProps): React.ReactElement {
     referenceImages,
     onReferenceImagesChange,
     onGenerate,
-    onAbort
+    onAbort,
+    logger
   } = props;
 
   const [prompt, setPrompt] = useState('A friendly robot painting a watercolor landscape');
@@ -138,9 +148,15 @@ export function PromptPanel(props: IPromptPanelProps): React.ReactElement {
     if (!files || files.length === 0) {
       return;
     }
-    const added = await Promise.all(Array.from(files).map(fileToAttachment));
+    const results = await Promise.all(Array.from(files).map(fileToAttachment));
+    const combined = mapResults(results);
+    if (combined.isFailure()) {
+      logger.error(`Failed to add reference images: ${combined.message}`);
+      window.alert(combined.message);
+      return;
+    }
     // Functional update guards against state changing while file reads are in flight.
-    onReferenceImagesChange((prev) => [...prev, ...added]);
+    onReferenceImagesChange((prev) => [...prev, ...combined.value]);
   };
 
   const handleRemoveRef = (index: number): void => {
@@ -197,15 +213,10 @@ export function PromptPanel(props: IPromptPanelProps): React.ReactElement {
               data-testid="image-gen-ref-file-input"
               className="mt-2 block w-full text-sm text-secondary"
               onChange={(e) => {
-                handleAddRefs(e.target.files).catch((error: unknown) => {
-                  // Surfaced to the user via alert; console gives the developer a stack
-                  // trace during local development.
-                  console.error('Failed to add reference images.', error);
-                  /* c8 ignore next 3 - defensive: every rejection this chain can produce originates from fileToAttachment's own `throw new Error(...)` calls, so the non-Error fallback is unreachable without a synthetic non-Error rejection */
-                  window.alert(
-                    error instanceof Error ? error.message : 'Failed to add one or more reference images.'
-                  );
-                });
+                // handleAddRefs is Result-driven end to end (fileToAttachment returns
+                // Result, failures are logged + alerted inside handleAddRefs) — this
+                // catch only guards against an unexpected throw outside that chain.
+                handleAddRefs(e.target.files).catch(() => undefined);
                 e.target.value = '';
               }}
             />

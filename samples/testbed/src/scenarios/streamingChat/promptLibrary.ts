@@ -20,8 +20,10 @@ import type { Converter, Result } from '@fgv/ts-utils';
 // hits once per module, not per call site).
 // ---------------------------------------------------------------------------
 
-export const SCOPE: ScopeKey = Convert.scopeKey.convert('global').orThrow();
-export const CHAT_SYSTEM_PROMPT: PromptId = Convert.promptId.convert('chat-system-prompt').orThrow();
+export const SCOPE: ScopeKey = Convert.scopeKey.convert('global').shouldNotFail('SCOPE');
+export const CHAT_SYSTEM_PROMPT: PromptId = Convert.promptId
+  .convert('chat-system-prompt')
+  .shouldNotFail('CHAT_SYSTEM_PROMPT');
 
 // ---------------------------------------------------------------------------
 // Single source of truth for the qualifier-axis NAMES this scenario uses.

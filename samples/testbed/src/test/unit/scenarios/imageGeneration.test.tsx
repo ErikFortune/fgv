@@ -233,6 +233,12 @@ describe('imageGeneration PromptPanel', () => {
       onReferenceImagesChange: jest.fn(),
       onGenerate: jest.fn(async () => undefined),
       onAbort: jest.fn(),
+      logger: {
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        detail: jest.fn()
+      } as unknown as React.ComponentProps<typeof PromptPanel>['logger'],
       ...overrides
     };
   }
@@ -418,14 +424,16 @@ describe('imageGeneration PromptPanel', () => {
     expect(result[0]?.mimeType).toBe('image/png');
   });
 
-  test('rejects an unsupported reference-image file type with an alert', async () => {
+  test('rejects an unsupported reference-image file type with an alert and logs it', async () => {
     const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => undefined);
-    render(<PromptPanel {...baseProps()} />);
+    const props = baseProps();
+    render(<PromptPanel {...props} />);
     const file = new File(['fake-bytes'], 'ref.gif', { type: 'image/gif' });
     fireEvent.change(screen.getByTestId('image-gen-ref-file-input'), { target: { files: [file] } });
 
     await waitFor(() => expect(alertSpy).toHaveBeenCalled());
     expect(alertSpy.mock.calls[0]?.[0]).toMatch(/unsupported file type/);
+    expect(props.logger.error).toHaveBeenCalledWith(expect.stringMatching(/unsupported file type/));
     alertSpy.mockRestore();
   });
 

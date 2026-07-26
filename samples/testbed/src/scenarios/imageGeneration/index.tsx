@@ -188,6 +188,7 @@ function ImageGenerationComponent({
         onReferenceImagesChange={setReferenceImages}
         onGenerate={handleGenerate}
         onAbort={handleAbort}
+        logger={context.logger}
       />
       {imageError !== undefined && (
         <div
