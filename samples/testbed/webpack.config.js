@@ -15,12 +15,11 @@ module.exports = (env, argv) => {
     },
     resolve: {
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
-      symlinks: true,
-      fallback: {
-        crypto: false,
-        fs: false,
-        path: false
-      }
+      symlinks: true
+      // No `resolve.fallback` stubs for Node core modules (fs/path/crypto/os/...): a stub
+      // silently masks a Node-only import leaking into the browser bundle. Node-only code
+      // must be loaded via `webpackIgnore` dynamic imports inside CLI-only scenario paths
+      // (see e.g. scenarios/mcpProbe); a resolve error here means a scenario broke that rule.
     },
     module: {
       rules: [

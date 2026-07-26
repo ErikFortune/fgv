@@ -14,15 +14,12 @@
  * re-embedding and returns the identical per-fragment ranking, proving the persistence
  * guarantee for the fragment index (the durable counterpart to `InMemoryFragmentCosineIndex`).
  *
- * CLI-only: `better-sqlite3` is a Node-native module, so it is loaded (with the embedder and
- * the index package) via `webpackIgnore` dynamic imports that never enter the browser bundle.
- * The persistence logic lives in the fully-testable `fragmentPersistenceDemo` module; this
- * file is the thin live-model wrapper.
+ * CLI-only: `better-sqlite3` is a Node-native module, so it is loaded (with the embedder,
+ * the index package, and the `node:fs`/`node:os`/`node:path` core modules) via `webpackIgnore`
+ * dynamic imports that never enter the browser bundle. The persistence logic lives in the
+ * fully-testable `fragmentPersistenceDemo` module; this file is the thin live-model wrapper.
  */
 
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
 import { Result, fail, succeed } from '@fgv/ts-utils';
 import type { IScenario, IScenarioContext, ICliScenarioImpl } from '../../shell';
 import {
@@ -62,11 +59,14 @@ const cliImpl: ICliScenarioImpl = {
     context.logger.info(`Loading model ${MODEL_ID} for the sqlite-vec fragment persistence demo…`);
 
     // Load Node-only facades lazily; the `webpackIgnore` comments keep native deps
-    // (ONNX runtime, better-sqlite3) out of any browser bundle.
+    // (ONNX runtime, better-sqlite3) and Node core modules out of any browser bundle.
     const transformers = await import(/* webpackIgnore: true */ '@fgv/ts-extras-transformers');
     const sqliteVec = await import(/* webpackIgnore: true */ '@fgv/ts-agent-memory-sqlite-vec');
     const betterSqlite = await import(/* webpackIgnore: true */ 'better-sqlite3');
     const Database = betterSqlite.default;
+    const fs = await import(/* webpackIgnore: true */ 'node:fs');
+    const os = await import(/* webpackIgnore: true */ 'node:os');
+    const path = await import(/* webpackIgnore: true */ 'node:path');
 
     const pipeline = await transformers.loadPipeline('feature-extraction', MODEL_ID);
     if (pipeline.isFailure()) {
