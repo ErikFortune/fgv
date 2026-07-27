@@ -298,7 +298,7 @@ const allProviderIds: ReadonlyArray<AiProviderId>;
 function anthropicEffortToBudgetTokens(effort: NonNullable<IAnthropicThinkingConfig['effort']>): number;
 
 // @public
-type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8';
+type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8' | 'claude-opus-5' | 'claude-fable-5';
 
 // @public
 const ARGON2ID_OWASP_MIN: IArgon2idParams;
@@ -726,7 +726,7 @@ const GCM_AUTH_TAG_SIZE: number;
 const GCM_IV_SIZE: number;
 
 // @public
-type GeminiFlashImageModelNames = 'gemini-3.1-flash-image-preview';
+type GeminiFlashImageModelNames = 'gemini-3.1-flash-image';
 
 // @public
 type GeminiThinkingModelNames = 'gemini-3.1-pro-preview' | 'gemini-3.5-flash' | 'gemini-3.1-flash-lite';
@@ -744,7 +744,7 @@ function getProviderDescriptor(id: string): Result<IAiProviderDescriptor>;
 function getProviderDescriptors(): ReadonlyArray<IAiProviderDescriptor>;
 
 // @public
-type GptImageModelNames = 'gpt-image-1' | 'gpt-image-1.5';
+type GptImageModelNames = 'gpt-image-1' | 'gpt-image-1.5' | 'gpt-image-2';
 
 // @public
 type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
@@ -2347,7 +2347,7 @@ class NodeCryptoProvider implements ICryptoProvider {
 const nodeCryptoProvider: NodeCryptoProvider;
 
 // @public
-type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'o3-deep-research' | 'o4-mini-deep-research' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.4-mini' | 'gpt-5.5' | 'gpt-5.5-pro' | 'gpt-5-pro';
+type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'o3-deep-research' | 'o4-mini-deep-research' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.4-mini' | 'gpt-5.5' | 'gpt-5.5-pro' | 'gpt-5.6-sol' | 'gpt-5.6-terra' | 'gpt-5.6-luna' | 'gpt-5-pro';
 
 // @beta
 function parseCsvString(body: string, options?: CsvOptions): Result<unknown>;

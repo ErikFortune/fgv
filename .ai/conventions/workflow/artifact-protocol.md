@@ -140,10 +140,30 @@ to `followups.md`. The orchestrator drains the inbox into the
 consolidated `followups.md` periodically. See
 `convention.workflow.inbox-and-drain` for the full pattern.
 
+## Durable-doc references
+
+Release-durable docs (`docs/FUTURE.md`, `LIBRARY_CAPABILITIES.md`,
+conventions, completed-task `README.md`s) **cite PRs or on-release
+artifacts — never active-branch task files**. A transient firm-up or
+analysis artifact that lives only on a feature branch (e.g.
+`.ai/tasks/active/<id>/open-questions.md` on an unmerged branch) is a
+dangling reference the moment the durable doc lands on `release`
+without it. If the artifact itself won't graduate, cite the **PR that
+consumed it** (PR numbers are GitHub-durable) or restate the needed
+content in the durable doc's own entry.
+
+(Observed: N-Ask5's `FUTURE.md` entry cited
+`.ai/tasks/active/n-ask5-firmup/open-questions.md`, which lived only
+on a never-merged relay branch; fixed in #564 by pointing the entry
+at the shipped PRs.)
+
 ## Anti-patterns
 
 - **Migration as follow-up after merge.** Splits the coherent unit;
   risks losing context.
+- **Durable doc cites an active-branch task file.** The reference
+  dangles once the doc is on `release`. Cite the consuming PR or an
+  on-release artifact instead (see "Durable-doc references").
 - **`state.md` written only at exit.** Defeats the resume protocol.
 - **`result.md` written before phase completion.** Mid-flight
   result.md content masks not-yet-shipped work as shipped.

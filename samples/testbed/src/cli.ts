@@ -78,7 +78,6 @@ function buildCliContext(streams: ITestbedCliStreams): IScenarioContext {
       resolveSecret({
         spec,
         keyStore: undefined,
-        /* c8 ignore next 1 - getEnvVar is not called by the B-1 resolveSecret stub; real env-var lookup lands when the stub is replaced */
         getEnvVar: (name) => process.env[name]
       }),
     dataTree

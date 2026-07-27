@@ -7,6 +7,8 @@ Array [
   "gemini-client-tools",
   "xai-client-tools",
   "gate-deny-client-tools",
+  "image-generation",
+  "streaming-chat",
   "local-classifier-safety",
   "local-embedding-search",
   "local-summarization",

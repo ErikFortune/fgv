@@ -23,6 +23,20 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## `ts-prompt-assist` — cache parsed store records in the resolve path
+
+`PromptLibrary.resolve` re-reads and **re-parses YAML from the store on every call**. The resolve path (`resolve/promptLibrary.ts:622`) calls `walkScopeChain(this._store, …)` unconditionally first, and `FileTreePromptStore` has no record cache — `store.get` → `_readPromptFile` → `yamlConverter.convert(text)` (`store/fileTreePromptStore.ts:160/239/254`) parses on every read. Per resolve this is **O(scope-chain depth) for the requested prompt only** — the `<id>.yaml` in each scope of *that resolve's* chain (`chainWalker.ts:44`) + the per-scope `_bindings.yaml` (`:67`) + recursively the inner-prompt files for any `kind: 'resource'` slots. It is NOT a re-parse of the whole library.
+
+What's already cached (the expensive work): the ts-res **materialization** (`_materialized`, keyed by descriptor-canonical, `:888/916`) and Mustache templates (`_mustacheCache`); `describe()` uses `_descriptorCache` (`:493`), but `resolve` does not. So only the YAML file read + parse of the requested prompt's chain is redundant on a repeat resolve of a hot prompt.
+
+**The fix:** add a parsed-store-record cache in the resolve path (or have `resolve` reuse a record/descriptor cache instead of hitting `walkScopeChain` raw). This is **invalidation-free today** because `FileTreePromptStore` is **read-only at v0.1** — records are immutable for the library's lifetime. The cache key must match the resolve lookup granularity (scope + id, plus the scope `_bindings.yaml`), not just id.
+
+**Why deferred**: not a problem at current scale — the per-resolve parse is a handful of small files and the heavy ts-res setup is already cached. Surfaced as an investigation finding, not a live bottleneck.
+
+**Dependencies**: the per-resolve YAML parse showing up as a real cost in a profiled workload. **Coupling note:** when a write API lands (`put`/`delete`/`watch` — itself a separate FUTURE item, the store is read-only at v0.1), this record cache needs invalidation wired to writes; design the cache so that hook is additive.
+
+**Reference**: 2026-06 investigation — an agent asserted "re-parses all prompt YAML files on every call"; verified the kernel (no record cache → per-resolve re-parse) but corrected the scope (requested prompt's chain files, not the whole library). Originally filed as PR #493; landed via #566 after #493 conflicted.
+
 ## OpenAI frontier via Responses routing
 
 > **SHIPPED** — the `ai-assist-openai-frontier-responses` stream. `callProviderCompletion`
@@ -129,6 +143,23 @@ Deferred from the `ts-extras-mcp` slice-1 stream (2026-06-06). Each is additive 
 
 **Reference**: `.ai/tasks/active/ts-extras-mcp/brief.md` + `design.md`.
 
+
+---
+
+## Web-runnable CLI scenarios in `samples/testbed`
+
+Today only 2 of the testbed's 16 scenarios have `web` implementations (`local-classifier-safety`, `local-embedding-search`); everything else renders the shell's "This scenario has no web interface — run it from the CLI" panel. Most of those CLI-only scenarios are not intrinsically Node-bound — the provider client-tools, model-tiers, and embedding scenarios are HTTP calls that ai-assist already supports from the browser (directly, or via the proxied variants where CORS bites). A generic web runner — a shell-provided panel that executes a scenario's existing `run` logic in-browser and streams its logger + result text into the UI — would make the whole verification runbook drivable from the web app without writing a bespoke React component per scenario.
+
+Design space:
+- **Opt-in flag, not autodetection**: a scenario declares browser-compatibility (e.g. `webRunnable: true` or a shared `run` hoisted out of `cli`); genuinely Node-only scenarios (better-sqlite3 persistence, stdio MCP probe, Node-ONNX paths) stay CLI-only and keep the current panel.
+- **Secrets are the real prerequisite**: the shell's `IScenarioContext` currently stubs `keyStore: undefined` and `resolveSecret` (B-1 stub — "no web scenario calls it yet"). The web-side KeyStore story already exists as a primitive (`FileApiTreeAccessors.createFromLocalStorage`, per the local-ai-exploration recon) and is proven in `samples/ai-image-gen-sample`; wiring it into the testbed shell unblocks both this entry and the image-scenario port (see the P2 TECH_DEBT entry — shared prerequisite, do the wiring once).
+- **Output surface**: CLI scenarios return `Result<string>` reports; the runner needs only a monospace output panel + the existing StatusBar logger wiring.
+
+**Why deferred**: new shell capability, not a fix; the manual runbook is serviceable from the CLI today. Should follow (or ride with) the `ai-image-gen-sample` port so the secret wiring lands once.
+
+**Dependencies**: web-side KeyStore/secret wiring in the testbed shell (shared with the image-port TECH_DEBT entry); scenario-contract addition (`webRunnable` or equivalent) — additive.
+
+**Reference**: Erik 2026-07-26 ("I thought [we had a task] to make the CLI scenarios runnable in the UI… We should probably revive those"). This task was discussed but never persisted to the backlog — recovered from session context during the model-rotation verification runbook; filed now so it survives.
 
 ---
 

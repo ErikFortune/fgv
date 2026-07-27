@@ -172,6 +172,18 @@ Note these for improvement but don't block on them.
 - [ ] **Consistent naming with rest of codebase**
 - [ ] **Appropriate comments (not excessive, not missing)**
 
+### Documentation / TSDoc
+
+- [ ] **Only `{@link}` symbols this package itself exports.** A `{@link OtherPkgSymbol}` to a type/function exported by *another* `@fgv/*` package bakes an `ae-unresolved-link` warning verbatim into the checked-in `etc/*.api.md` — a stale-api.md / CI-diff liability, not just cosmetic. Use a plain code span (`` `IFragmentVectorIndex` ``) for cross-package symbols instead.
+  ```typescript
+  // ❌ REJECT — cross-package {@link} bakes an ae-unresolved-link warning into api.md
+  /** A persistent {@link IFragmentVectorIndex} for @fgv/ts-agent-memory. */
+
+  // ✅ PREFER — code span for a symbol another package owns
+  /** A persistent `IFragmentVectorIndex` (from `@fgv/ts-agent-memory`). */
+  ```
+  The one sanctioned cross-package reference is `{@inheritDoc OtherPkg.Symbol.method}` on a method that *implements* another package's interface — it is load-bearing for inheriting the interface's doc text and every Result-integration-boundary package relies on it (accept its `ae-unresolved-inheritdoc-reference` warning; it is sibling-consistent). Recurred across #558 and #562 before being codified.
+
 ### Testing Considerations
 
 - [ ] **New code has corresponding tests**

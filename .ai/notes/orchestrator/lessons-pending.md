@@ -14,7 +14,9 @@ Active clusters at most recent sweep point:
 - 🟢 ts-prompt-assist cluster — Phase B + B-5 docs merged into integration; surface-tidy round in flight; cluster close pending consumer-port pressure-test (lessons L18–L21 below)
 - 🟡 `ai-assist-thinking-events` — sequencing after thinking-config phase B landed (now satisfied); ready to commission
 
-Last sweep: 2026-05-30 — Review-loop discipline triad (L31, L32, L33) codified. See sweep history at end of file.
+Last sweep: 2026-07-20 — L38 + L40 codified (cycle-close sweep, #566), following L39's immediate graduation the same day (#565). See sweep history at end of file.
+
+The N-Ask5 cycle's three lessons are all codified as of 2026-07-20: **L39** (cross-package `{@link}`) graduated immediately on recurrence via #565; **L38** (native-boundary layer-1 blind spot) and **L40** (release-durable docs cite PRs/on-release artifacts) graduated in the 2026-07-20 sweep (see sweep history). No pending lessons newer than L30.
 
 ---
 
@@ -482,3 +484,28 @@ L37 complements L31/L32/L33 (which govern layer-1's place in the broader review 
 ---
 
 When this file or accumulated peer notes get swept to release: append entry here with date, sweep PR link, and which items graduated to durable form (convention / skill / agent-prompt) vs aged out.
+
+---
+
+### 2026-07-20 — L39 codified (cross-package `{@link}` → api.md warning)
+
+**PR:** `claude/orchestrator-reflection-2026-07` (this cycle's reflection PR, #565).
+
+**Graduated:**
+
+- **L39. In TSDoc, only `{@link}` symbols this package itself exports.** A cross-package `{@link OtherPkgSymbol}` bakes an `ae-unresolved-link` warning verbatim into the checked-in `etc/*.api.md` (stale-api.md / CI-diff liability). Use a plain code span for other-package symbols; `{@inheritDoc OtherPkg.Symbol.method}` is the one sanctioned cross-package reference (load-bearing for doc inheritance on Result-integration-boundary packages; its `ae-unresolved-inheritdoc-reference` warning is tolerated + sibling-consistent). → codified into `.ai/instructions/CODE_REVIEW_CHECKLIST.md` § Priority 3, new "Documentation / TSDoc" subsection. Graduated immediately rather than batch-swept because it **recurred** (#558 → #562 R2) — the recurrence is the graduation trigger per the codification-triage convention. (Reference: #562 R2 `ae-unresolved-link` on `{@link IFragmentVectorIndex}`; prior #558 instance.)
+
+L38 (native-boundary layer-1 blind spot) and L40 (release-durable-doc artifact references) remain parked pending a future sweep.
+
+---
+
+### 2026-07-20 — L38 + L40 codified (cycle-close sweep)
+
+**PR:** #566 (post-#565 orchestrator sweep).
+
+**Graduated:**
+
+- **L38. Native-boundary packages are a layer-1 blind spot — expect a substantive Copilot loop.** → codified in `.ai/instructions/CODING_STANDARDS.md` § "Review-loop discipline", new subsection "Native-boundary packages are a known layer-1 blind spot — expect a substantive layer-2 loop": on Result-integration-boundary packages wrapping a native lib with runtime modes, a clean layer-1 pass does not predict a nitpick-only Copilot loop; budget for substantive rounds 1–2 and judge diminishing returns by finding profile, not by the clean layer-1 pass. Swept one cycle after capture rather than aging in the inbox — the handoff had already named it load-bearing for the next native-boundary package. (Reference: #562 R1 bigint-leak + corrupt-key; R2 write-side offset validation.)
+- **L40. Release-durable docs cite PRs or on-release artifacts, never active-branch task files.** → codified in `.ai/conventions/workflow/artifact-protocol.md`, new "Durable-doc references" section + a matching anti-pattern bullet: transient firm-up/analysis artifacts on feature branches must not be cited from release-durable docs; cite the consuming PR or restate the content. (Reference: N-Ask5 `FUTURE.md` dangling `n-ask5-firmup/open-questions.md`, fixed in #564.)
+
+With this sweep the N-Ask5 cycle's lesson set (L38/L39/L40) is fully codified; the pending inbox has no entries newer than L30.

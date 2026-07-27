@@ -32,8 +32,9 @@ import { FileTree } from '@fgv/ts-json-base';
 
 import { dataFiles } from '../generated/dataFileTree';
 import { scenarios as defaultScenarios } from '../scenarios';
-import { resolveSecret } from '../shell';
+import { resolveSecret, useSessionSecretsStore } from '../shell';
 import type { IScenario, IScenarioContext } from '../shell';
+import { SecretsModal } from './SecretsModal';
 
 // ---------------------------------------------------------------------------
 // Module-level singletons (stable across the session)
@@ -227,21 +228,30 @@ export function TestbedShell(props: ITestbedShellProps = {}): React.ReactElement
   const allScenarios = props.scenarios ?? defaultScenarios;
   const { messages, clearMessages } = useMessages();
   const [activeScenarioId, setActiveScenarioId] = useState<string>(allScenarios[0]?.id ?? '');
+  const [isSecretsModalOpen, setIsSecretsModalOpen] = useState(false);
 
   // Build a logger wired to the MessagesContext so scenario logs appear in the StatusBar.
   const logger = useLogReporter();
 
+  // Session-memory secrets store: values live only in this tab's React state (Phase A —
+  // see the testbed-web-scenarios brief). `secrets` is included in the `resolveSecret`
+  // useMemo below so its identity changes whenever a value is saved via the modal,
+  // letting scenario effects that depend on `context.resolveSecret` re-resolve.
+  const { secrets, setSecret } = useSessionSecretsStore();
+
   // Build a stable IScenarioContext. The logger reference is stable across re-renders
-  // because useLogReporter memoizes on addMessage. keyStore is undefined (B-1 stub).
+  // because useLogReporter memoizes on addMessage. keyStore stays undefined — the
+  // persistent, encrypted KeyStore is out of scope for this phase; resolveSecret (backed
+  // by the session secrets store, then env-var fallback) is the seam scenarios use.
   const scenarioContext = useMemo<IScenarioContext>(
     () => ({
       logger,
       keyStore: undefined,
-      /* c8 ignore next 2 - resolveSecret is a B-1 stub; no web scenario calls it yet */
-      resolveSecret: (spec) => resolveSecret({ spec, keyStore: undefined, getEnvVar: () => undefined }),
+      resolveSecret: (spec) =>
+        resolveSecret({ spec, keyStore: undefined, sessionSecrets: secrets, getEnvVar: () => undefined }),
       dataTree: DATA_TREE
     }),
-    [logger]
+    [logger, secrets]
   );
 
   const urlSyncConfig = useMemo(() => makeUrlSyncConfig(allScenarios), [allScenarios]);
@@ -267,6 +277,14 @@ export function TestbedShell(props: ITestbedShellProps = {}): React.ReactElement
         data-testid="testbed-top-bar"
       >
         <h1 className="text-base font-semibold tracking-tight text-white">fgv testbed</h1>
+        <button
+          type="button"
+          data-testid="testbed-secrets-btn"
+          onClick={() => setIsSecretsModalOpen(true)}
+          className="rounded p-1.5 text-sm text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-focus-ring transition-colors"
+        >
+          Secrets
+        </button>
         <ThemeToggle />
       </header>
       <div className="testbed-body">
@@ -325,6 +343,13 @@ export function TestbedShell(props: ITestbedShellProps = {}): React.ReactElement
       >
         <StatusBar messages={messages} onClear={clearMessages} />
       </footer>
+      <SecretsModal
+        isOpen={isSecretsModalOpen}
+        onClose={() => setIsSecretsModalOpen(false)}
+        scenarios={allScenarios}
+        secrets={secrets}
+        onSetSecret={setSecret}
+      />
     </div>
   );
 }

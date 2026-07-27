@@ -53,16 +53,16 @@ function pong(): Result<AiAssist.IAiCompletionResponse> {
 // ---------------------------------------------------------------------------
 
 describe('resolveTierResolutions', () => {
-  test('resolves OpenAI base/advanced/frontier directly (frontier → gpt-5.5-pro, no cascade)', () => {
-    // gpt-5.5-pro is Responses-API-only, but the completion path now routes Responses-only models
-    // to the Responses API via `responsesOnlyModelPrefixes`, so the OpenAI defaultModel carries a
-    // real frontier key again: a frontier request resolves @openai:pro → gpt-5.5-pro directly.
+  test('resolves OpenAI base/advanced/frontier directly (frontier → gpt-5.6-sol, no cascade)', () => {
+    // The gpt-5.6 family works on chat completions, so the frontier tier no longer needs the
+    // Responses-only routing its predecessor gpt-5.5-pro required: a frontier request resolves
+    // @openai:pro → gpt-5.6-sol directly.
     expect(resolveTierResolutions(openai, ['base', 'advanced', 'frontier'])).toSucceedAndSatisfy(
       (resolutions) => {
         expect(resolutions).toEqual([
-          { tier: 'base', alias: '@openai:mini', concrete: 'gpt-5.4-mini', cascaded: false },
-          { tier: 'advanced', alias: '@openai:flagship', concrete: 'gpt-5.5', cascaded: false },
-          { tier: 'frontier', alias: '@openai:pro', concrete: 'gpt-5.5-pro', cascaded: false }
+          { tier: 'base', alias: '@openai:mini', concrete: 'gpt-5.6-luna', cascaded: false },
+          { tier: 'advanced', alias: '@openai:flagship', concrete: 'gpt-5.6-terra', cascaded: false },
+          { tier: 'frontier', alias: '@openai:pro', concrete: 'gpt-5.6-sol', cascaded: false }
         ]);
       }
     );
@@ -71,9 +71,9 @@ describe('resolveTierResolutions', () => {
   test('marks a frontier request as cascaded when the descriptor omits a frontier key (Anthropic)', () => {
     expect(resolveTierResolutions(anthropic, ['advanced', 'frontier'])).toSucceedAndSatisfy((resolutions) => {
       expect(resolutions).toEqual([
-        { tier: 'advanced', alias: '@anthropic:opus', concrete: 'claude-opus-4-8', cascaded: false },
+        { tier: 'advanced', alias: '@anthropic:opus', concrete: 'claude-opus-5', cascaded: false },
         // frontier has no key → resolves to the advanced (opus) alias, flagged cascaded.
-        { tier: 'frontier', alias: '@anthropic:opus', concrete: 'claude-opus-4-8', cascaded: true }
+        { tier: 'frontier', alias: '@anthropic:opus', concrete: 'claude-opus-5', cascaded: true }
       ]);
     });
   });
@@ -191,7 +191,7 @@ describe('runTierCanary (offline — STOP-FLAG)', () => {
       expect(report).toMatch(/=== anthropic model-tier canary ===/);
       expect(report).toMatch(/\[PASS\] base\s+@anthropic:sonnet -> claude-sonnet-5/);
       expect(report).toMatch(
-        /\[PASS\] frontier\s+@anthropic:opus -> claude-opus-4-8 \(cascaded from a lower tier\)/
+        /\[PASS\] frontier\s+@anthropic:opus -> claude-opus-5 \(cascaded from a lower tier\)/
       );
       expect(report).toMatch(/\[PENDING\] base/);
       expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
@@ -199,7 +199,7 @@ describe('runTierCanary (offline — STOP-FLAG)', () => {
     // The alias -> concrete log lines match the shipped maintenance-loop format.
     expect(logger.logged).toContain("resolved @anthropic:sonnet -> claude-sonnet-5 (tier 'base')");
     expect(logger.logged).toContain(
-      "resolved @anthropic:opus -> claude-opus-4-8 (tier 'frontier' request cascaded)"
+      "resolved @anthropic:opus -> claude-opus-5 (tier 'frontier' request cascaded)"
     );
   });
 
@@ -211,9 +211,9 @@ describe('runTierCanary (offline — STOP-FLAG)', () => {
       logger
     );
     expect(result).toSucceedAndSatisfy((report: string) => {
-      expect(report).toMatch(/\[PASS\] image\s+@openai:image -> gpt-image-1\.5/);
+      expect(report).toMatch(/\[PASS\] image\s+@openai:image -> gpt-image-2/);
     });
-    expect(logger.logged).toContain('resolved @openai:image -> gpt-image-1.5 (image)');
+    expect(logger.logged).toContain('resolved @openai:image -> gpt-image-2 (image)');
   });
 
   test('fails when a resolver bug is present (prefixed with the provider id)', async () => {
@@ -257,9 +257,9 @@ describe('runTierCanary (live — injected completion)', () => {
     );
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/LIVE-VERIFIED/);
-      expect(report).toMatch(/\[PASS\] base\s+gpt-5\.4-mini/);
-      // frontier resolves to gpt-5.5-pro (restored frontier key; routed via the Responses API).
-      expect(report).toMatch(/\[PASS\] frontier\s+gpt-5\.5-pro/);
+      expect(report).toMatch(/\[PASS\] base\s+gpt-5\.6-luna/);
+      // frontier resolves to gpt-5.6-sol (direct frontier key; chat-completions-callable).
+      expect(report).toMatch(/\[PASS\] frontier\s+gpt-5\.6-sol/);
     });
   });
 
@@ -275,7 +275,7 @@ describe('runTierCanary (live — injected completion)', () => {
     );
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/LIVE BLOCKED/);
-      expect(report).toMatch(/\[BLOCKED\(access\)\] frontier\s+gpt-5\.5-pro\s+\(AI API returned 403/);
+      expect(report).toMatch(/\[BLOCKED\(access\)\] frontier\s+gpt-5\.6-sol\s+\(AI API returned 403/);
     });
   });
 
@@ -298,7 +298,7 @@ describe('runTierCanary (live — injected completion)', () => {
 
   test('a non-chat-completions id is a real failure tagged FAIL(endpoint) (not a stale id)', async () => {
     // Exercises the wrong-endpoint → FAILED verdict wiring (the classifier itself is unit-tested
-    // above). The frontier tier now resolves to gpt-5.5-pro (routed via the Responses API in the
+    // above). The frontier tier now resolves to gpt-5.6-sol (chat-completions-callable in the
     // real client); this offline test drives the FAIL(endpoint) verdict wiring via an injected
     // wrong-endpoint failure, independent of the real routing.
     const deps: ITierCanaryDeps = {
@@ -316,7 +316,7 @@ describe('runTierCanary (live — injected completion)', () => {
       new Logging.InMemoryLogger()
     );
     expect(result).toFailWith(/FAILED — a tier is not chat-completions-callable/);
-    expect(result).toFailWith(/\[FAIL\(endpoint\)\] frontier\s+gpt-5\.5-pro/);
+    expect(result).toFailWith(/\[FAIL\(endpoint\)\] frontier\s+gpt-5\.6-sol/);
   });
 
   test('a 404 on a tier is a real failure (id-wrong — stale alias value)', async () => {
@@ -415,6 +415,7 @@ describe('model-tier scenarios', () => {
         expect(report).toMatch(
           /@google-gemini:pro -> gemini-3\.1-pro-preview \(cascaded from a lower tier\)/
         );
+        expect(report).toMatch(/\[PASS\] image\s+@google-gemini:flash-image -> gemini-3\.1-flash-image\b/);
         expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
       });
     } finally {

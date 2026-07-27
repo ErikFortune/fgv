@@ -360,6 +360,59 @@ describe('mergeThinkingConfig', () => {
         expect(r.xaiEffort).toBe('high');
       });
     });
+
+    test('model-specific Anthropic block applies to the rotated advanced-tier target claude-opus-5', () => {
+      const config: IThinkingConfig = {
+        providers: [
+          {
+            provider: 'anthropic',
+            models: ['claude-opus-5'],
+            config: { effort: 'high' }
+          }
+        ]
+      };
+      const result = mergeThinkingConfig(config, 'claude-opus-5', 'anthropic');
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.anthropicEffort).toBe('high');
+      });
+    });
+
+    test('a claude-opus-4-8 models entry does NOT match resolved claude-opus-5 (prefix guard)', () => {
+      // Prefix matching requires equality or `<entry>-` prefix, so opus-4 entries never
+      // capture the opus-5 line — the union additions are load-bearing, not cosmetic.
+      const config: IThinkingConfig = {
+        effort: 'low',
+        providers: [
+          {
+            provider: 'anthropic',
+            models: ['claude-opus-4-8'],
+            config: { effort: 'max' }
+          }
+        ]
+      };
+      const result = mergeThinkingConfig(config, 'claude-opus-5', 'anthropic');
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.anthropicEffort).toBe('low'); // generic; the opus-4-8 block is skipped
+      });
+    });
+
+    test('model-specific OpenAI blocks apply to the rotated gpt-5.6 tier targets', () => {
+      const config: IThinkingConfig = {
+        providers: [
+          {
+            provider: 'openai',
+            models: ['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna'],
+            config: { effort: 'xhigh' }
+          }
+        ]
+      };
+      for (const model of ['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']) {
+        const result = mergeThinkingConfig(config, model, 'openai');
+        expect(result).toSucceedAndSatisfy((r) => {
+          expect(r.openAiEffort).toBe('xhigh');
+        });
+      }
+    });
   });
 
   // ============================================================================

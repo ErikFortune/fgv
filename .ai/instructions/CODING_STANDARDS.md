@@ -667,3 +667,11 @@ Concrete patterns from observed loops:
 - **Round 5+ on a PR that has been mostly nitpicks since round 3** → stop and surface to the orchestrator with the diagnosis ("rounds 3–5 produced only doc and naming items; treating as diminishing returns at round N").
 
 The orchestrator handles edge cases: PRs that legitimately need 5+ rounds (large surface, novel patterns), PRs that should have stopped at 2 (one substantive round + one cleanup), PRs that hit the 10-round cap (those almost always indicate layer 1 was skipped or the PR is too large for the loop and should be decomposed). Implementing agents should call the stop and surface the reasoning; the orchestrator decides whether to push back or accept.
+
+### Native-boundary packages are a known layer-1 blind spot — expect a substantive layer-2 loop
+
+For **Result-integration-boundary packages wrapping a native library with subtle runtime modes** (safe-integer mode, typed/auxiliary columns, driver-specific coercions, WASM/native shape quirks — e.g. `better-sqlite3`, `sqlite-vec`), layer 1 systematically under-covers the runtime-edge class of finding. The internal reviewer reads against intent and repo patterns; it does not know that an integer column returns `bigint` under `defaultSafeIntegers`, or that a driver coerces a non-integer write into a value the read path later rejects.
+
+Observed on #562 (`SqliteVecFragmentIndex`): layer 1 approved clean with no P1/P2 and independently re-derived the correctness-critical logic, yet Copilot then surfaced three real persisted-data robustness gaps across two rounds (a `bigint` leak into a `number`-typed public field; a corrupt-key parse that silently fabricated a wrong result instead of failing loudly; an unvalidated write-side offset that either threw or persisted an unreadable value). All three were runtime-mode specifics, invisible to a reads-against-intent pass.
+
+**Rule:** on a native-boundary package, do **not** treat a clean layer-1 pass as license to expect a nitpick-only Copilot loop. Budget for layer 2 to be *substantive* on rounds 1–2, and don't call diminishing returns until the finding profile actually goes nitpicky. This is the inverse of the well-prepared pure-TS PR where layer 1 catches everything and Copilot only polishes — and a substantive Copilot round here is not evidence that layer 1 was skipped.

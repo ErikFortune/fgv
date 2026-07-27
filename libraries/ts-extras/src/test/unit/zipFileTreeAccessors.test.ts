@@ -371,7 +371,7 @@ describe('ZipFileTreeAccessors', () => {
   describe('fromFile method', () => {
     it('should create ZipFileTreeAccessors from File object', async () => {
       const zipBuffer = createTestZip();
-      const file = new File([zipBuffer.buffer.slice(0) as ArrayBuffer], 'test.zip', {
+      const file = new File([Uint8Array.from(zipBuffer)], 'test.zip', {
         type: 'application/zip'
       });
 
@@ -1219,7 +1219,7 @@ describe('ZipFileTreeAccessors', () => {
 
     it('should handle file factory method with contentType', async () => {
       const zipBuffer = createTestZip();
-      const file = new File([zipBuffer.buffer.slice(0) as ArrayBuffer], 'test.zip', {
+      const file = new File([Uint8Array.from(zipBuffer)], 'test.zip', {
         type: 'application/zip'
       });
 
