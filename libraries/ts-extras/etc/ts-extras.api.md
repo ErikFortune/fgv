@@ -1368,7 +1368,6 @@ interface IExecuteClientToolTurnParams extends IChatRequest {
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly maxTokens?: number;
     readonly model?: string;
     readonly onBeforeToolExecute?: (tool: IAiClientTool, args: unknown) => Promise<Result<IToolExecutionDecision>>;
@@ -1772,7 +1771,6 @@ interface IProviderCompletionParams extends IChatRequest {
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly maxTokens?: number;
     readonly modelOverride?: ModelSpec;
     readonly signal?: AbortSignal;
@@ -1790,7 +1788,6 @@ interface IProviderCompletionStreamParams extends IChatRequest {
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly maxTokens?: number;
     readonly modelOverride?: ModelSpec;
     readonly signal?: AbortSignal;

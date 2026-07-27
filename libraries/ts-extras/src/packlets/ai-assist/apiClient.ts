@@ -136,7 +136,7 @@ export interface IProviderCompletionParams extends IChatRequest {
    * Responses `max_output_tokens`, Gemini `generationConfig.maxOutputTokens`, and the
    * xAI/Groq/Mistral/Ollama/`openai-compat` chat-completions path `max_tokens`. When unset,
    * every provider except Anthropic omits the field and applies its own default; Anthropic's
-   * Messages API requires the field, so it falls back to {@link AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS}.
+   * Messages API requires the field, so it falls back to `DEFAULT_ANTHROPIC_MAX_TOKENS`.
    */
   readonly maxTokens?: number;
 }

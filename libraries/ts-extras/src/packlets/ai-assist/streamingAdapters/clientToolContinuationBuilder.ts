@@ -516,7 +516,7 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
    * route OpenAI through the Responses API), Gemini `generationConfig.maxOutputTokens`. When
    * unset, every provider except Anthropic omits the field and applies its own default;
    * Anthropic's Messages API requires the field, so it falls back to
-   * {@link AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS}.
+   * `DEFAULT_ANTHROPIC_MAX_TOKENS`.
    */
   readonly maxTokens?: number;
 }
