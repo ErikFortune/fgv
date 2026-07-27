@@ -172,12 +172,10 @@ const cliImpl: ICliScenarioImpl = {
       messages: [{ role: 'user', content: USER_QUESTION }]
     };
 
-    // Use the version-pinned `claude-sonnet-4-6` alias — points to the current
-    // 4.6 dated snapshot without coupling to a specific date. Predictable
-    // (major.minor fixed; explicit migrations when bumping) and avoids the
-    // snapshot-deprecation trap of hardcoded dated identifiers. Per the latest
-    // Anthropic SDK, this alias is accepted directly (no '-latest' suffix).
-    const model = 'claude-sonnet-4-6';
+    // Use the fgv `@anthropic:sonnet` alias (base tier) so the scenario follows registry
+    // rotations automatically — the alias layer supersedes raw version pins; the registry
+    // owns which concrete sonnet id is current.
+    const model = '@anthropic:sonnet';
 
     // Construct the resolved thinking config directly (IResolvedThinkingConfig is the output
     // of mergeThinkingConfig; we bypass the full IThinkingConfig pipeline here for simplicity).

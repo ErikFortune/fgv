@@ -171,7 +171,7 @@ const cliImpl: ICliScenarioImpl = {
         apiKey: 'mock-key',
         ...request,
         clientTools: [deleteTool],
-        model: 'claude-sonnet-4-6',
+        model: '@anthropic:sonnet',
         onBeforeToolExecute: gate
       });
       if (turn.isFailure()) {
@@ -219,7 +219,7 @@ const cliImpl: ICliScenarioImpl = {
         apiKey: 'mock-key',
         ...request,
         clientTools: [recallTool],
-        model: 'claude-sonnet-4-6',
+        model: '@anthropic:sonnet',
         onBeforeToolExecute: gate
       });
       if (turn.isFailure()) {

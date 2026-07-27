@@ -171,12 +171,10 @@ const cliImpl: ICliScenarioImpl = {
       messages: [{ role: 'user', content: USER_QUESTION }]
     };
 
-    // Use the version-pinned `gpt-5.1` alias — a reasoning-capable model that the Responses
-    // API accepts directly. Pinning major.minor avoids the dated-snapshot deprecation trap
-    // while staying off the moving `*-latest` target. Reasoning (`reasoning.effort`) requires
-    // a reasoning-capable model; `gpt-4o` (the registry default) is not one, so the scenario
-    // pins `gpt-5.1` explicitly.
-    const model = 'gpt-5.1';
+    // Use the fgv `@openai:mini` alias (base tier — reasoning-capable per the registry's
+    // capability rules) so the scenario follows registry rotations automatically — the
+    // alias layer supersedes the raw version pin this scenario carried pre-rotation.
+    const model = '@openai:mini';
 
     // Construct the resolved thinking config directly. openAiEffort: 'low' maps to
     // `reasoning: { effort: 'low' }` on the Responses-API wire.
