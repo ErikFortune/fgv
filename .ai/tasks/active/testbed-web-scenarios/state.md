@@ -1,6 +1,74 @@
 # State — `testbed-web-scenarios`
 
-## Phase B.1 — KeyStore import in the web shell (this section, added post-PR-open)
+## Phase B.2 — memory-tools-gate + local-summarization web enablement (this section, added post-PR-open)
+
+### Status
+Implementation + tests complete, 100% coverage, `rushx build`/`lint`/`test`/`build:web` all
+green in `samples/testbed`. Overnight instruction from Erik (relayed by the orchestrator):
+web-enable the two remaining non-Node-native CLI-only scenarios from the Phase B verdict
+table (`memory-tools-gate`, `local-summarization`).
+
+### What shipped
+
+- **`memory-tools-gate`** — opted in via `cli.webRunnable: true` (the Phase B pattern, not a
+  dedicated `web` component). Verification found the scenario's import graph
+  (`@fgv/ts-agent-memory`'s `FileTreeMemoryStore` over an in-memory `FileTree`,
+  `MemoryIndex`, `StructuredFilterRetriever`, `HybridRetriever`, `ScoreUnionMergeStrategy`,
+  `createMemoryTools`, `BodyConverterRegistry`, `KnowledgeIdentityCodec`) is genuinely
+  browser-clean — no Node-core imports anywhere in `@fgv/ts-agent-memory`'s `src/packlets/`,
+  and `FileTree.inMemory` is already exercised in the web bundle (`web/App.tsx`'s
+  `DATA_TREE`). The one real blocker was the mocked-stream helper's use of the Node-only
+  `global` identifier (`global.fetch = ...`) — same class of issue as Phase B's
+  `gate-deny-client-tools` fix. Fixed by swapping `global` → `globalThis` throughout
+  (`installMockFetch`), matching the existing precedent exactly. `build:web` confirmed
+  clean with the scenario opted in.
+- **`local-summarization`** — ported to the dual-target `web` + `cli` shape (not
+  `webRunnable`), matching `localClassifierSafety`/`localEmbeddingSearch`'s established
+  B-3/B-4a pattern rather than the Phase B generic-runner pattern: this scenario already had
+  a facade split (Node vs. browser transformers), so the existing dual-target precedent fit
+  with less new surface than inventing a `webRunnable` CLI-panel wrapper around a
+  `webpackIgnore` dynamic import.
+  - New `summarizeAdapter.ts`: facade-agnostic `summarizeTranscript(summarizer, transcript,
+    summarizeFn, options?)`, mirroring `embedAdapter.ts`'s injection shape (`SummarizeFn`
+    type + type-only facade imports). Reduces the upstream `SummarizationOutput` to
+    `{ summary, ratio }` (compaction percentage vs. the original transcript length).
+  - `index.tsx` (renamed from `index.ts`): web component (`LocalSummarizationComponent`)
+    loads the pipeline on mount via the browser facade (`@fgv/ts-web-extras-transformers`),
+    mirrors the classifier/embedding loading-state UX (`initialize()` pre-warms a
+    module-level cache; the component reuses it or falls back to a fresh `loadPipeline`
+    call). Displays the fixed sample transcript (no user-editable input, matching the
+    original CLI scenario's fixed-fixture shape) + a "Summarize" button + the resulting
+    summary/ratio. CLI path unchanged in behavior (still loads the Node facade via a
+    `webpackIgnore` dynamic import), refactored to share `summarizeTranscript`.
+  - One `c8 ignore` (approved-pattern precedent): `handleSummarize`'s
+    `summarizer === null` guard is unreachable via the UI (the Summarize button's
+    `disabled` condition already excludes it) — same shape and justification as
+    `KeyStoreSection.tsx`'s existing `!file` guard directive from Phase B.1.
+  - Test file rewritten to the `localEmbeddingSearch.test.ts` template (both facades
+    mocked, web component tests via `@testing-library/react`, `initialize()` tests, CLI
+    `run()` tests unchanged in substance, scenario-shape tests updated for the dual
+    `web`+`cli` impl).
+- **Addendum (Copilot round 3, relayed by the orchestrator, folded into this commit):**
+  - `web/KeyStoreSection.tsx`: the file-picker and password inputs had no accessible name.
+    Added `aria-label="KeyStore file"` / `aria-label="KeyStore password"` (mirrors
+    `App.tsx`'s existing `aria-label` usage rather than adding new visible `<label>`
+    elements, since neither input currently has one).
+  - `shell/secretResolver.ts`: the missing-secret diagnostic's env-var clause was always
+    singular ("the X environment variable"), which read wrong once `fallbackEnvVarNames`
+    could carry more than one entry. Now branches: `the X environment variable` (one var)
+    vs. `the X/Y environment variables` (two or more). Added singular/plural regression
+    tests to `secretResolver.test.ts`.
+
+### Browser-cleanliness verdict table update
+
+The Phase B section's verdict table (below) has been updated in place:
+`memory-tools-gate` moves from **Not opted in** to **Opted in** (`webRunnable: true`,
+`global` → `globalThis` fix); `local-summarization` moves from **Not opted in** to **Ported
+to dual-target** (`web` + `cli`, matching the B-3/B-4a pattern rather than `webRunnable`).
+
+---
+
+## Phase B.1 — KeyStore import in the web shell
 
 ### Status
 Implementation + tests complete, 100% coverage, `rushx build`/`lint`/`test`/`build:web` all
@@ -199,8 +267,8 @@ below. PR open against `release`; Copilot loop in progress.
 | `sqlite-vec-memory-persistence` | **Not opted in** | Excluded per brief (`better-sqlite3` native binding). |
 | `sqlite-vec-fragment-persistence` | **Not opted in** | Excluded per brief (same). |
 | `mcp-probe` | **Not opted in** | Excluded per brief (`@fgv/ts-extras-mcp` stdio transport spawns subprocesses). |
-| `local-summarization` | **Not opted in** | Excluded per brief (Node transformers facade, `webpackIgnore` dynamic import). |
-| `memory-tools-gate` | **Not opted in** | Not on the required list; not verified this phase (also has the `global.fetch` pattern and a `@fgv/ts-agent-memory` import graph not audited for browser-cleanliness) — left CLI-only per "if in doubt, leave it out." |
+| `local-summarization` | **Ported to dual-target** (Phase B.2) | `web` + `cli` (B-3/B-4a pattern, not `webRunnable`); `summarizeAdapter.ts` facade injection; browser facade `@fgv/ts-web-extras-transformers`. |
+| `memory-tools-gate` | **Opted in** (Phase B.2) | `@fgv/ts-agent-memory` import graph audited — browser-clean; `global.fetch` → `globalThis.fetch` fix (same class as `gate-deny-client-tools`). |
 
 ### Layer-1 `code-reviewer` summary
 
@@ -262,9 +330,8 @@ All fixes verified: `rushx build` / `lint` / `test` (100% branches/lines/functio
 
 ### Open questions / follow-ups
 
-- `memory-tools-gate`'s browser-cleanliness was not verified this phase (see table above).
-  A future pass could audit its `@fgv/ts-agent-memory` import graph and fix its
-  `global.fetch` reference if it's worth opting in.
+- `memory-tools-gate`'s browser-cleanliness was verified and it was opted in in Phase B.2
+  (see the verdict table above and the Phase B.2 section at the top of this file).
 - The `cross-provider-embedding-search` browser run only ever exercises the default
   OpenAI path (no per-scenario config UI to select `EMBED_PROVIDER=gemini` etc. from the
   browser) — acceptable per the brief's "no bespoke per-scenario UI" constraint, but a

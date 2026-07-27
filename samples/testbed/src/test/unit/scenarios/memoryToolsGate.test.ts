@@ -46,10 +46,11 @@ describe('memoryToolsGateScenario', () => {
     }
   });
 
-  test('is a CLI-only ai scenario', () => {
+  test('is a web-runnable ai scenario with no dedicated web component', () => {
     expect(memoryToolsGateScenario.id).toBe('memory-tools-gate');
     expect(memoryToolsGateScenario.category).toBe('ai');
     expect(memoryToolsGateScenario.cli).toBeDefined();
+    expect(memoryToolsGateScenario.cli?.webRunnable).toBe(true);
     expect(memoryToolsGateScenario.web).toBeUndefined();
   });
 

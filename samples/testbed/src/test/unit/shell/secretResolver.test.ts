@@ -15,6 +15,9 @@ describe('resolveSecret', () => {
     expect(result).toFailWith(/provider:openai/);
     expect(result).toFailWith(/OPENAI_API_KEY/);
     expect(result).toFailWith(/OpenAI completions/);
+    // Singular: a spec with a single env var reads "the X environment variable" (no plural "s").
+    expect(result).toFailWith(/the OPENAI_API_KEY environment variable \(CLI\)/);
+    expect(result).not.toFailWith(/environment variables/);
   });
 
   test('resolves from the session secrets store when present', async () => {
@@ -146,6 +149,8 @@ describe('resolveSecret', () => {
       });
       expect(result).toFailWith(/GEMINI_API_KEY/);
       expect(result).toFailWith(/GOOGLE_API_KEY/);
+      // Plural: a spec with more than one env var reads "the X/Y environment variables".
+      expect(result).toFailWith(/the GEMINI_API_KEY\/GOOGLE_API_KEY environment variables \(CLI\)/);
     });
 
     test('queries the KeyStore only once even though two env vars are configured', async () => {

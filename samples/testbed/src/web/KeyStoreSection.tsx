@@ -148,6 +148,7 @@ export function KeyStoreSection({
               content is fully validated by the keystore converters on open anyway. */}
           <input
             type="file"
+            aria-label="KeyStore file"
             data-testid="testbed-keystore-file-input"
             onChange={handleFileChange}
             disabled={isUnlocking}
@@ -155,6 +156,7 @@ export function KeyStoreSection({
           />
           <input
             type="password"
+            aria-label="KeyStore password"
             autoComplete="off"
             data-testid="testbed-keystore-password-input"
             value={password}

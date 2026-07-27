@@ -64,8 +64,12 @@ export async function resolveSecret(params: IResolveSecretParams): Promise<Resul
   }
 
   const envVarList = envVarNames.map((name) => `'${name}'`).join('/');
+  const envVarPhrase =
+    envVarNames.length === 1
+      ? `the ${envVarNames[0]} environment variable`
+      : `the ${envVarNames.join('/')} environment variables`;
   return fail(
     `Secret '${spec.id}' is not set (env fallback ${envVarList}) — ${spec.description}. ` +
-      `Set it via the Secrets panel (web) or the ${envVarNames.join('/')} environment variable (CLI).`
+      `Set it via the Secrets panel (web) or ${envVarPhrase} (CLI).`
   );
 }

@@ -23,7 +23,7 @@
  *
  * Demonstrates {@link createMemoryTools} wired through `AiAssist.executeClientToolTurn` WITHOUT a
  * live model. The provider stream is **mocked** (a canned Anthropic tool_use SSE stream substituted
- * for `global.fetch`), so the scenario is deterministic and requires no API key.
+ * for `globalThis.fetch`), so the scenario is deterministic and requires no API key.
  *
  * The agent "calls" `memory_write` on a real (in-memory) `FileTreeMemoryStore`; a host
  * `onBeforeToolExecute` gate keeps writes curation-mediated:
@@ -37,8 +37,12 @@
  * Scope isolation is structural: the tools close over a pre-scoped store and no tool argument
  * names a scope — the agent cannot steer at another actor's memory.
  *
- * CLI-only and self-contained (mocked stream, no live API), matching the `gateDenyClientTools`
- * convention.
+ * Self-contained (mocked stream, no live API) and browser-clean: `@fgv/ts-agent-memory`'s reachable
+ * surface (`FileTreeMemoryStore` over an in-memory `FileTree`, `MemoryIndex`, `StructuredFilterRetriever`,
+ * `HybridRetriever`, `ScoreUnionMergeStrategy`, `createMemoryTools`, `BodyConverterRegistry`,
+ * `KnowledgeIdentityCodec`) has no Node-core dependency, and the mocked stream now substitutes
+ * `globalThis.fetch` rather than the Node-only `global` identifier — so this scenario is web-runnable
+ * (Phase B) as well as CLI, matching the `gateDenyClientTools` convention on the CLI side.
  *
  * @packageDocumentation
  */
@@ -86,9 +90,9 @@ function anthropicToolUseSse(toolId: string, toolName: string, argsJson: string)
   ];
 }
 
-/** Installs a mocked `global.fetch` returning the given SSE chunks; returns a restore fn. */
+/** Installs a mocked `globalThis.fetch` returning the given SSE chunks; returns a restore fn. */
 function installMockFetch(chunks: ReadonlyArray<string>): () => void {
-  const original = global.fetch;
+  const original = globalThis.fetch;
   const encoder = new TextEncoder();
   let i = 0;
   const body = new ReadableStream<Uint8Array>({
@@ -107,9 +111,9 @@ function installMockFetch(chunks: ReadonlyArray<string>): () => void {
     text: async (): Promise<string> => '',
     headers: new Map([['content-type', 'text/event-stream']])
   };
-  global.fetch = (async () => response) as unknown as typeof global.fetch;
+  globalThis.fetch = (async () => response) as unknown as typeof globalThis.fetch;
   return () => {
-    global.fetch = original;
+    globalThis.fetch = original;
   };
 }
 
@@ -174,6 +178,7 @@ const WRITE_ARGS: string = JSON.stringify({
 });
 
 const cliImpl: ICliScenarioImpl = {
+  webRunnable: true,
   async run(context: IScenarioContext): Promise<Result<string>> {
     const descriptorResult = AiAssist.getProviderDescriptor('anthropic');
     if (descriptorResult.isFailure()) {
@@ -301,7 +306,7 @@ export const memoryToolsGateScenario: IScenario = {
   description:
     'Self-contained (mocked stream, no live API) demonstration of @fgv/ts-agent-memory createMemoryTools ' +
     'wired through executeClientToolTurn: a host onBeforeToolExecute gate denies a memory_write pending ' +
-    'confirmation (store untouched), then proceeds it (record durably persisted).',
+    'confirmation (store untouched), then proceeds it (record durably persisted). Web-runnable.',
   category: 'ai',
   tags: ['agent-memory', 'client-tools', 'tool-use', 'gate', 'memory', 'mocked'],
   cli: cliImpl
