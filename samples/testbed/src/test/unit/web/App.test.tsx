@@ -440,3 +440,88 @@ describe('ScenarioHost — initialize lifecycle', () => {
     expect(screen.queryByTestId('testbed-scenario-error')).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Secrets modal wiring
+// ---------------------------------------------------------------------------
+
+describe('TestbedShell secrets wiring', () => {
+  beforeEach(() => {
+    window.history.replaceState(null, '', '#');
+  });
+  afterEach(cleanup);
+
+  const SECRET_SPEC = { id: 'openai-api-key', envVarName: 'OPENAI_API_KEY', description: 'OpenAI key' };
+
+  /** A scenario whose component surfaces the live `context.resolveSecret` result for the spec. */
+  function ResolveSecretProbeComponent({
+    context
+  }: {
+    context: IScenarioContext;
+  }): React.ReactElement {
+    const [resolved, setResolved] = React.useState<string>('pending');
+    React.useEffect(() => {
+      context
+        .resolveSecret(SECRET_SPEC)
+        .then((result) => setResolved(result.isSuccess() ? result.value : `failed: ${result.message}`))
+        .catch(() => undefined);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [context.resolveSecret]);
+    return <div data-testid="resolve-secret-readout">{resolved}</div>;
+  }
+
+  function makeResolveSecretScenario(): IScenario {
+    return {
+      id: 'resolve-secret-probe',
+      title: 'Resolve Secret Probe',
+      description: 'desc',
+      category: 'ai',
+      tags: ['test'],
+      requiredSecrets: [SECRET_SPEC],
+      web: { component: ResolveSecretProbeComponent }
+    };
+  }
+
+  test('the secrets button is present in the top bar and opens the modal', async () => {
+    renderInProviders(<TestbedShell scenarios={[makeResolveSecretScenario()]} />);
+    expect(screen.queryByTestId('testbed-secrets-modal')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('testbed-secrets-btn'));
+    expect(screen.getByTestId('testbed-secrets-modal')).not.toBeNull();
+    expect(screen.getByTestId('testbed-secret-field-openai-api-key')).not.toBeNull();
+    await waitFor(() => expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/^failed:/));
+  });
+
+  test('closing the modal hides it again', async () => {
+    renderInProviders(<TestbedShell scenarios={[makeResolveSecretScenario()]} />);
+    fireEvent.click(screen.getByTestId('testbed-secrets-btn'));
+    expect(screen.getByTestId('testbed-secrets-modal')).not.toBeNull();
+
+    fireEvent.click(screen.getByLabelText('Close'));
+    expect(screen.queryByTestId('testbed-secrets-modal')).toBeNull();
+    await waitFor(() => expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/^failed:/));
+  });
+
+  test('a scenario missing its secret sees resolveSecret fail with a message naming the id', async () => {
+    renderInProviders(<TestbedShell scenarios={[makeResolveSecretScenario()]} />);
+    await waitFor(() =>
+      expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/failed:.*openai-api-key/)
+    );
+  });
+
+  test('typing a value into the Secrets modal makes it visible to a scenario via resolveSecret', async () => {
+    renderInProviders(<TestbedShell scenarios={[makeResolveSecretScenario()]} />);
+    await waitFor(() =>
+      expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/^failed:/)
+    );
+
+    fireEvent.click(screen.getByTestId('testbed-secrets-btn'));
+    fireEvent.change(screen.getByTestId('testbed-secret-input-openai-api-key'), {
+      target: { value: 'sk-test-value' }
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('resolve-secret-readout').textContent).toBe('sk-test-value')
+    );
+  });
+});

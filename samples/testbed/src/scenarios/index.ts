@@ -14,6 +14,7 @@ import { anthropicClientToolsScenario } from './anthropicClientTools';
 import { crossProviderEmbeddingSearchScenario } from './crossProviderEmbeddingSearch';
 import { gateDenyClientToolsScenario } from './gateDenyClientTools';
 import { geminiClientToolsScenario } from './geminiClientTools';
+import { imageGenerationScenario } from './imageGeneration';
 import { localClassifierSafetyScenario } from './localClassifierSafety';
 import { localEmbeddingSearchScenario } from './localEmbeddingSearch';
 import { localSummarizationScenario } from './localSummarization';
@@ -27,6 +28,7 @@ import {
   openaiModelTiersScenario
 } from './modelTiers';
 import { openaiClientToolsScenario } from './openaiClientTools';
+import { streamingChatScenario } from './streamingChat';
 import { xaiClientToolsScenario } from './xaiClientTools';
 
 /**
@@ -39,6 +41,8 @@ export const scenarios: readonly IScenario[] = [
   geminiClientToolsScenario,
   xaiClientToolsScenario,
   gateDenyClientToolsScenario,
+  imageGenerationScenario,
+  streamingChatScenario,
   localClassifierSafetyScenario,
   localEmbeddingSearchScenario,
   localSummarizationScenario,

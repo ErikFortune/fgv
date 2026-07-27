@@ -107,3 +107,6 @@ export interface IScenario extends IScenarioBase {
 }
 
 export { resolveSecret } from './secretResolver';
+export type { IResolveSecretParams } from './secretResolver';
+export { dedupeRequiredSecrets, useSessionSecretsStore } from './sessionSecretsStore';
+export type { ISessionSecretsStore } from './sessionSecretsStore';
