@@ -30,6 +30,13 @@ const SCENARIO_NO_SECRETS: IScenario = {
   tags: []
 };
 
+/** The KeyStore-related props, factored out since every test below needs them. */
+const KEYSTORE_PROPS = {
+  keyStore: undefined,
+  onKeyStoreUnlocked: () => undefined,
+  onKeyStoreLocked: () => undefined
+};
+
 describe('SecretsModal', () => {
   afterEach(cleanup);
 
@@ -41,6 +48,7 @@ describe('SecretsModal', () => {
         scenarios={[SCENARIO_WITH_SECRETS]}
         secrets={new Map()}
         onSetSecret={() => undefined}
+        {...KEYSTORE_PROPS}
       />
     );
     expect(screen.queryByTestId('testbed-secrets-modal')).toBeNull();
@@ -54,6 +62,7 @@ describe('SecretsModal', () => {
         scenarios={[SCENARIO_NO_SECRETS]}
         secrets={new Map()}
         onSetSecret={() => undefined}
+        {...KEYSTORE_PROPS}
       />
     );
     expect(screen.getByTestId('testbed-secrets-empty')).not.toBeNull();
@@ -67,6 +76,7 @@ describe('SecretsModal', () => {
         scenarios={[SCENARIO_WITH_SECRETS]}
         secrets={new Map()}
         onSetSecret={() => undefined}
+        {...KEYSTORE_PROPS}
       />
     );
     expect(screen.getByTestId('testbed-secret-field-openai-api-key')).not.toBeNull();
@@ -81,6 +91,7 @@ describe('SecretsModal', () => {
         scenarios={[SCENARIO_WITH_SECRETS]}
         secrets={new Map([['openai-api-key', 'sk-test']])}
         onSetSecret={() => undefined}
+        {...KEYSTORE_PROPS}
       />
     );
     const input = screen.getByTestId('testbed-secret-input-openai-api-key') as HTMLInputElement;
@@ -96,6 +107,7 @@ describe('SecretsModal', () => {
         scenarios={[SCENARIO_WITH_SECRETS]}
         secrets={new Map()}
         onSetSecret={onSetSecret}
+        {...KEYSTORE_PROPS}
       />
     );
     const input = screen.getByTestId('testbed-secret-input-openai-api-key');
@@ -112,6 +124,7 @@ describe('SecretsModal', () => {
         scenarios={[SCENARIO_WITH_SECRETS]}
         secrets={new Map()}
         onSetSecret={() => undefined}
+        {...KEYSTORE_PROPS}
       />
     );
     fireEvent.click(screen.getByLabelText('Close'));

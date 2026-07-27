@@ -1,6 +1,76 @@
 # State — `testbed-web-scenarios`
 
-## Phase B — generic web runner (this section)
+## Phase B.1 — KeyStore import in the web shell (this section, added post-PR-open)
+
+### Status
+Implementation + tests complete, 100% coverage, `rushx build`/`lint`/`test`/`build:web` all
+green. Layer-1 `code-reviewer` pass run on the diff (second pass on this branch, covering
+this feature on top of the already-reviewed generic-runner-panel commit).
+
+### What shipped
+
+- **`web/openKeyStore.ts`** (new): `openKeyStoreFromFile(file, password)` — reads the file
+  (`captureAsyncResult(() => file.text())`), parses + validates it as a keystore vault in one
+  step (`Converters.stringifiedJson<IKeyStoreFile>(CryptoUtils.KeyStore.Converters.keystoreFile)`
+  — no manual `JSON.parse` + cast), opens it with a fresh `BrowserCryptoProvider` (from
+  `@fgv/ts-web-extras`), and unlocks it with the supplied password
+  (`.thenOnSuccess(async (ks) => ks.unlock(password))`). Every failure mode (unreadable file,
+  malformed JSON, wrong vault format, incorrect password) surfaces as a friendly `Result`
+  failure — nothing throws. `CryptoUtils.KeyStore.KeyStore`/`Converters`/`IKeyStoreFile` come
+  from `@fgv/ts-extras`'s `CryptoUtils` namespace, whose barrel also exports the Node-only
+  `NodeCryptoProvider` (imports `node:crypto`) — verified via `rushx build:web` (clean) and a
+  direct grep of the built `dist-web/bundle.js` for `node:crypto` (zero matches) that
+  tree-shaking excludes it from the browser bundle, matching the precedent already
+  established by `shell/secretResolver.ts`'s pre-existing `CryptoUtils.KeyStore.KeyStore` type
+  usage.
+- **`web/KeyStoreSection.tsx`** (new): the Secrets modal's "Open KeyStore" UI — file input +
+  password input + Unlock button when locked; "KeyStore unlocked (N secrets)" status (via
+  `listSecrets()`) + Lock button when a `keyStore` is supplied. The password field is cleared
+  after every unlock attempt, success or failure. Two `c8 ignore` directives: the
+  `!file || password.length === 0` early-return in `handleUnlock` (unreachable via the UI —
+  the Unlock button's `disabled` attribute already excludes that state — kept for TypeScript
+  type-narrowing before the `File`-typed call to `openKeyStoreFromFile`), and the `?.` in
+  `keyStore?.lock(true)` inside `handleLock` (defensive — `handleLock` is only ever wired to
+  the Lock button, which only renders when `keyStore` is truthy).
+- **`web/SecretsModal.tsx`**: additive `keyStore` / `onKeyStoreUnlocked` / `onKeyStoreLocked`
+  props; renders `<KeyStoreSection>` above the existing per-secret paste fields.
+- **`web/App.tsx`**: `TestbedShell` now holds
+  `const [keyStore, setKeyStore] = useState<CryptoUtils.KeyStore.KeyStore | undefined>(undefined)`,
+  wired into both `IScenarioContext.keyStore` (previously hardcoded `undefined`) and the
+  `resolveSecret({ spec, keyStore, sessionSecrets, getEnvVar })` call. `keyStore` joins
+  `secrets` in the `scenarioContext` `useMemo` deps array, so `resolveSecret`'s closure
+  identity changes — and dependent scenario effects re-resolve — on either a session-secret
+  save or a KeyStore open/lock (same reactivity pattern, one more trigger). No id remapping:
+  secret ids stay the library-convention ids already used by `ISecretSpec.id`
+  (`openai-api-key`, `anthropic-api-key`, etc.), so a KeyStore built with those same ids
+  Just Works with `resolveSecret`'s existing KeyStore-first order — unchanged.
+- **`config/jest.setup.js`**: two additive jsdom polyfills, both guarded so they only kick in
+  when the real implementation is missing (never clobber): (1) swaps `global.crypto` for
+  Node's `webcrypto` when `crypto.subtle` is absent — mirrors `@fgv/ts-web-extras`'s own jest
+  setup verbatim, needed because this jsdom version's built-in `crypto` lacks the Web Crypto
+  `subtle` API `BrowserCryptoProvider` requires; (2) polyfills `Blob.prototype.text` via
+  `FileReader` (which jsdom does implement) since this jsdom version's `File`/`Blob` has no
+  `.text()` — real browsers do. Both let the KeyStore tests exercise the real production code
+  path (`file.text()`, real WebCrypto-backed `BrowserCryptoProvider`) rather than mocking
+  around the gap.
+- **Tests**: `openKeyStore.test.ts` (5 tests — success, wrong password, non-JSON file,
+  well-formed-but-wrong-shape JSON, unreadable file), `KeyStoreSection.test.tsx` (9 tests —
+  render states, Unlock disabled/enabled transitions, success, wrong-password error + clears
+  the stale error on file reselect, secret-count pluralization, Lock), plus a new "TestbedShell
+  KeyStore wiring" describe block in `App.test.tsx` (2 tests — full unlock flow through
+  `TestbedShell` proving a scenario's `resolveSecret` sees the KeyStore-resolved value and the
+  readout refreshes on unlock, and that Lock clears `context.keyStore` and the readout reverts
+  to failed). All keystore fixtures are built via the **real** `KeyStore.create()` /
+  `initialize()` / `importApiKey()` / `save()` calls — no mocking of the `KeyStore` class
+  itself, per the "use the real classes, not mocks of them" directive.
+
+### Layer-1 `code-reviewer` summary (this feature)
+
+<!-- filled in after the review-agent pass returns -->
+
+---
+
+## Phase B — generic web runner
 
 ### Status
 Implementation + tests complete, 100% coverage, `rushx build`/`lint`/`test`/`build:web` all
