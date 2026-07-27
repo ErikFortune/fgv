@@ -20,5 +20,6 @@ Array [
   "openai-model-tiers",
   "anthropic-model-tiers",
   "google-gemini-model-tiers",
+  "xai-grok-model-tiers",
 ]
 `;

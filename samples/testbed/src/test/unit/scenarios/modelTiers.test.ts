@@ -36,13 +36,15 @@ import {
   anthropicModelTiersScenario,
   geminiModelTiersScenario,
   openaiModelTiersScenario,
-  resolveTierApiKey
+  resolveTierApiKey,
+  xaiModelTiersScenario
 } from '../../../scenarios/modelTiers';
 import type { ISecretSpec, IScenario, IScenarioContext } from '../../../shell';
 
 const openai = AiAssist.getProviderDescriptor('openai').orThrow();
 const anthropic = AiAssist.getProviderDescriptor('anthropic').orThrow();
 const gemini = AiAssist.getProviderDescriptor('google-gemini').orThrow();
+const xai = AiAssist.getProviderDescriptor('xai-grok').orThrow();
 
 /** A completion result with visible text — the live-pass shape. */
 function pong(): Result<AiAssist.IAiCompletionResponse> {
@@ -100,6 +102,19 @@ describe('resolveTierResolutions', () => {
           concrete: 'gemini-3.1-pro-preview',
           cascaded: true
         });
+      }
+    );
+  });
+
+  test('resolves xAI base/advanced directly and marks a frontier request as cascaded to flagship', () => {
+    expect(resolveTierResolutions(xai, ['base', 'advanced', 'frontier'])).toSucceedAndSatisfy(
+      (resolutions) => {
+        expect(resolutions).toEqual([
+          { tier: 'base', alias: '@xai-grok:standard', concrete: 'grok-4.3', cascaded: false },
+          { tier: 'advanced', alias: '@xai-grok:flagship', concrete: 'grok-4.5', cascaded: false },
+          // frontier has no key → resolves to the advanced (flagship) alias, flagged cascaded.
+          { tier: 'frontier', alias: '@xai-grok:flagship', concrete: 'grok-4.5', cascaded: true }
+        ]);
       }
     );
   });
@@ -412,7 +427,8 @@ describe('model-tier scenarios', () => {
   const scenariosById: ReadonlyArray<[string, IScenario]> = [
     ['openai-model-tiers', openaiModelTiersScenario],
     ['anthropic-model-tiers', anthropicModelTiersScenario],
-    ['google-gemini-model-tiers', geminiModelTiersScenario]
+    ['google-gemini-model-tiers', geminiModelTiersScenario],
+    ['xai-grok-model-tiers', xaiModelTiersScenario]
   ];
 
   test.each(scenariosById)('%s is a web-runnable ai scenario', (id, scenario) => {
@@ -437,6 +453,24 @@ describe('model-tier scenarios', () => {
       expect(report).toMatch(/=== google-gemini model-tier canary ===/);
       expect(report).toMatch(/@google-gemini:pro -> gemini-3\.1-pro-preview \(cascaded from a lower tier\)/);
       expect(report).toMatch(/\[PASS\] image\s+@google-gemini:flash-image -> gemini-3\.1-flash-image\b/);
+      expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
+    });
+  });
+
+  test('xai cli.run without a key proves the new alias map end-to-end (STOP-FLAG)', async () => {
+    const context = {
+      logger: new Logging.LogReporter<unknown>({ logger: new Logging.InMemoryLogger() }),
+      resolveSecret: jest.fn(async (spec: ISecretSpec) => fail(`${spec.id} not set`))
+    } as unknown as IScenarioContext;
+    if (!xaiModelTiersScenario.cli) {
+      throw new Error('expected a CLI implementation');
+    }
+    const result = await xaiModelTiersScenario.cli.run(context);
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/=== xai-grok model-tier canary ===/);
+      expect(report).toMatch(/@xai-grok:standard -> grok-4\.3\b/);
+      expect(report).toMatch(/@xai-grok:flagship -> grok-4\.5 \(cascaded from a lower tier\)/);
+      expect(report).toMatch(/\[PASS\] image\s+@xai-grok:imagine -> grok-imagine-image-quality\b/);
       expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
     });
   });

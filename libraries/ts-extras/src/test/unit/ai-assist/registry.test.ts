@@ -154,9 +154,7 @@ describe('AiAssist.registry', () => {
 
     test('image tier is unchanged by the advanced-key addition', () => {
       expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@google-gemini:flash-image');
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith(
-        'gemini-3.1-flash-image'
-      );
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gemini-3.1-flash-image');
     });
 
     test('embedding tier is unchanged by the advanced-key addition', () => {
@@ -173,6 +171,58 @@ describe('AiAssist.registry', () => {
     });
   });
 
+  describe('xai-grok model tiers (alias-registry adoption)', () => {
+    const desc = AiAssist.getProviderDescriptor('xai-grok').orThrow();
+
+    test('base tier resolves to grok-4.3 via @xai-grok:standard', () => {
+      // undefined context falls to base; explicit 'base' resolves identically.
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('grok-4.3');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('grok-4.3');
+    });
+
+    test('advanced tier resolves to grok-4.5 via @xai-grok:flagship', () => {
+      expect(AiAssist.resolveModel(desc.defaultModel, 'advanced')).toBe('@xai-grok:flagship');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('grok-4.5');
+    });
+
+    test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
+      // The xAI map deliberately omits a frontier key, so a frontier request must cascade
+      // frontier → advanced → grok-4.5. This is the real registry descriptor, so it is the
+      // live proof of the cascade against the shipped xAI defaults.
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('grok-4.5');
+    });
+
+    test('image tier resolves to grok-imagine-image-quality and routes via the grok-imagine- capability', () => {
+      expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@xai-grok:imagine');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith(
+        'grok-imagine-image-quality'
+      );
+      expect(AiAssist.resolveImageCapability(desc, 'grok-imagine-image-quality')).toMatchObject({
+        modelPrefix: 'grok-imagine-',
+        format: 'xai-images-edits'
+      });
+    });
+
+    test('grok-4.5 is detected as thinking-capable by the default capability config', () => {
+      // Without its own idPattern rule grok-4.5 would hit only /^grok-4/ and lose thinking.
+      const rules = AiAssist.DEFAULT_MODEL_CAPABILITY_CONFIG.perProvider?.['xai-grok'] ?? [];
+      const detected = new Set(
+        rules.filter((r) => r.idPattern.test('grok-4.5')).flatMap((r) => [...r.capabilities])
+      );
+      expect(detected.has('thinking')).toBe(true);
+      expect(detected.has('chat')).toBe(true);
+      expect(detected.has('tools')).toBe(true);
+      // vision accumulates from the /^grok-4/ rule, same as grok-4.3.
+      expect(detected.has('vision')).toBe(true);
+    });
+
+    test('a raw modelOverride passes through verbatim (no alias resolution)', () => {
+      expect(AiAssist.resolveProviderModel(desc, 'grok-custom-tuned:v1', 'advanced')).toSucceedWith(
+        'grok-custom-tuned:v1'
+      );
+    });
+  });
+
   describe('getProviderDescriptor', () => {
     test('returns descriptor for known provider', () => {
       expect(AiAssist.getProviderDescriptor('xai-grok')).toSucceedAndSatisfy((desc) => {
@@ -182,8 +232,9 @@ describe('AiAssist.registry', () => {
         expect(desc.apiFormat).toBe('openai');
         expect(desc.baseUrl).toBeTruthy();
         expect(desc.defaultModel).toEqual({
-          base: 'grok-4.3',
-          image: 'grok-imagine-image-quality'
+          base: '@xai-grok:standard',
+          advanced: '@xai-grok:flagship',
+          image: '@xai-grok:imagine'
         });
         expect(desc.supportedTools).toContain('web_search');
         expect(desc.imageGeneration).toHaveLength(2);

@@ -271,8 +271,15 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     apiFormat: 'openai',
     baseUrl: 'https://api.x.ai/v1',
     defaultModel: {
-      base: 'grok-4.3',
-      image: 'grok-imagine-image-quality'
+      base: '@xai-grok:standard', // grok-4.3 (was the raw id; the cheap line + retirement-wave redirect target)
+      advanced: '@xai-grok:flagship', // grok-4.5 (flagship since 2026-07-08; $2/$6 sits in the advanced band)
+      image: '@xai-grok:imagine' // grok-imagine-image-quality (was the raw id)
+      // no frontier key → a frontier request cascades advanced → grok-4.5 (see resolveModel)
+    },
+    aliases: {
+      '@xai-grok:standard': 'grok-4.3', // base tier; NOT deprecated — superseded as flagship by grok-4.5
+      '@xai-grok:flagship': 'grok-4.5', // advanced tier; configurable reasoning effort (default high)
+      '@xai-grok:imagine': 'grok-imagine-image-quality' // image tier; current (redirect target for the retired -pro)
     },
     supportedTools: ['web_search'],
     corsRestricted: true,
@@ -443,6 +450,10 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
     ],
     'xai-grok': [
       { idPattern: /-image/, capabilities: ['image-generation'] },
+      // grok-4.5 needs its own rule: it would otherwise hit only /^grok-4/ and lose
+      // thinking, yet it has configurable reasoning effort. Detection accumulates across
+      // matching rules, so /^grok-4/ still contributes vision (same as grok-4.3).
+      { idPattern: /^grok-4\.5/, capabilities: ['chat', 'tools', 'thinking'] },
       { idPattern: /^grok-4\.3/, capabilities: ['chat', 'tools', 'thinking'] },
       { idPattern: /^grok-4$/, capabilities: ['chat', 'tools', 'thinking'] },
       { idPattern: /^grok-4/, capabilities: ['chat', 'tools', 'vision'] },

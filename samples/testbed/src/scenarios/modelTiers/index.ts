@@ -22,7 +22,8 @@
 
 /**
  * Per-provider model-tier canary scenarios (`openai-model-tiers`, `anthropic-model-tiers`,
- * `google-gemini-model-tiers`). Each resolves its provider's `base` / `advanced` / `frontier` tiers,
+ * `google-gemini-model-tiers`, `xai-grok-model-tiers`). Each resolves its provider's
+ * `base` / `advanced` / `frontier` tiers,
  * logs the `alias -> concrete` hop (matching the shipped `@google-gemini:flash -> …` line), and —
  * when the provider API key is present — fires a minimal live completion per tier to prove the id
  * answers. Without a key the run is the STOP-FLAG state: resolver verified, live canary pending the
@@ -227,6 +228,32 @@ export const geminiModelTiersScenario: IScenario = makeTierScenario({
       envVarName: 'GEMINI_API_KEY',
       fallbackEnvVarNames: ['GOOGLE_API_KEY'],
       description: 'Gemini API key for the live tier canary (GEMINI_API_KEY or GOOGLE_API_KEY)'
+    }
+  ]
+});
+
+/**
+ * xAI model-tier canary — exercises `base` / `advanced` and a `frontier` request that cascades to
+ * the `advanced` (grok-4.5) id, plus the `image` tier resolution (`@xai-grok:imagine` →
+ * `grok-imagine-image-quality`). Added with the xAI alias-registry adoption — the first live proof
+ * that `@xai-grok:flagship` → `grok-4.5` answers. Requires `XAI_API_KEY` for the live half.
+ * @public
+ */
+export const xaiModelTiersScenario: IScenario = makeTierScenario({
+  providerId: 'xai-grok',
+  title: 'xAI Model Tiers',
+  description:
+    'Resolves and (with XAI_API_KEY) live-canaries the xAI base/advanced tiers (grok-4.3 / ' +
+    'grok-4.5) plus a frontier request that cascades to the advanced (grok-4.5) id, and resolves ' +
+    'the image tier (grok-imagine-image-quality). Logs each alias -> concrete id. Web-runnable.',
+  tags: ['xai', 'grok'],
+  tiers: ['base', 'advanced', 'frontier'],
+  imageTier: true,
+  requiredSecrets: [
+    {
+      id: AiAssist.providerApiKeySecretName('xai-grok'),
+      envVarName: 'XAI_API_KEY',
+      description: 'xAI API key for the live tier canary'
     }
   ]
 });
