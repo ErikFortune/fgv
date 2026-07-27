@@ -196,3 +196,28 @@ describe('KeyStoreSection', () => {
     }
   });
 });
+
+describe('KeyStoreSection under React.StrictMode', () => {
+  afterEach(cleanup);
+
+  // Regression: StrictMode's dev-mode mount→unmount→remount runs the effect cleanup once
+  // against the same ref, so a cleanup-only mounted-ref effect leaves the ref false forever
+  // and every unlock resolution is silently swallowed (infinite "Unlocking…", no error).
+  test('unlock completes (onUnlocked fires) when rendered inside StrictMode', async () => {
+    const file = await buildFixtureKeystoreFile();
+    const onUnlocked = jest.fn();
+    render(
+      <React.StrictMode>
+        <KeyStoreSection keyStore={undefined} onUnlocked={onUnlocked} onLocked={() => undefined} />
+      </React.StrictMode>
+    );
+
+    fireEvent.change(screen.getByTestId('testbed-keystore-file-input'), { target: { files: [file] } });
+    fireEvent.change(screen.getByTestId('testbed-keystore-password-input'), {
+      target: { value: PASSWORD }
+    });
+    fireEvent.click(screen.getByTestId('testbed-keystore-unlock-btn'));
+
+    await waitFor(() => expect(onUnlocked).toHaveBeenCalledTimes(1));
+  });
+});

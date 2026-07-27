@@ -132,12 +132,16 @@ export function ScenarioRunnerPanel({ scenario, context }: IScenarioRunnerPanelP
   const [elapsedMs, setElapsedMs] = useState(0);
   const mountedRef = useRef(true);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    // Reset on setup, not just initialization: under React.StrictMode's dev-mode
+    // mount→unmount→remount cycle the cleanup runs once against the SAME ref, so a
+    // cleanup-only effect would leave the ref false for the component's whole life
+    // (silently swallowing every run completion).
+    mountedRef.current = true;
+    return () => {
       mountedRef.current = false;
-    },
-    []
-  );
+    };
+  }, []);
 
   // Tick the elapsed-time display while a run is in flight.
   useEffect(() => {

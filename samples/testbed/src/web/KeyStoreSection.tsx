@@ -68,12 +68,16 @@ export function KeyStoreSection({
   // Guards the async unlock resolution against updating state after unmount — e.g. the Secrets
   // modal closing (Modal returns null) mid-unlock. Mirrors ScenarioHost's `active`-flag cleanup.
   const isMountedRef = useRef(true);
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    // Reset on setup, not just initialization: under React.StrictMode's dev-mode
+    // mount→unmount→remount cycle the cleanup runs once against the SAME ref, so a
+    // cleanup-only effect would leave the ref false for the component's whole life
+    // (silently swallowing every unlock resolution).
+    isMountedRef.current = true;
+    return () => {
       isMountedRef.current = false;
-    },
-    []
-  );
+    };
+  }, []);
 
   // Shared by the Unlock button's `disabled` condition and `handleUnlock`'s guard, so the two
   // never drift apart.

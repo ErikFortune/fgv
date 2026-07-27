@@ -193,3 +193,23 @@ describe('ScenarioRunnerPanel', () => {
     // Test passes if no "can't update unmounted component" React warning fires.
   });
 });
+
+describe('ScenarioRunnerPanel under React.StrictMode', () => {
+  afterEach(cleanup);
+
+  // Regression: same StrictMode cleanup-only mounted-ref hazard as KeyStoreSection — a run
+  // completion must still reach state when the app renders inside <React.StrictMode>.
+  test('a run completes to the success report when rendered inside StrictMode', async () => {
+    const scenario = makeScenario(async () => succeed('strict-mode report'));
+    const context = makeContext(async () => fail<string>('unused'));
+    render(
+      <React.StrictMode>
+        <ScenarioRunnerPanel scenario={scenario} context={context} />
+      </React.StrictMode>
+    );
+
+    fireEvent.click(screen.getByTestId('testbed-runner-run-btn'));
+    await waitFor(() => screen.getByTestId('testbed-runner-success'));
+    expect(screen.getByTestId('testbed-runner-success').textContent).toContain('strict-mode report');
+  });
+});
