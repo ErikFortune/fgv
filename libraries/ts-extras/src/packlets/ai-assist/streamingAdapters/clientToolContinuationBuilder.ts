@@ -510,6 +510,15 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
     tool: IAiClientTool,
     args: unknown
   ) => Promise<Result<IToolExecutionDecision>>;
+  /**
+   * Optional cap on generated output tokens, mapped to each provider's native field:
+   * Anthropic `max_tokens`, OpenAI/xAI Responses `max_output_tokens` (client-tool turns always
+   * route OpenAI through the Responses API), Gemini `generationConfig.maxOutputTokens`. When
+   * unset, every provider except Anthropic omits the field and applies its own default;
+   * Anthropic's Messages API requires the field, so it falls back to
+   * {@link AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS}.
+   */
+  readonly maxTokens?: number;
 }
 
 /**
@@ -590,7 +599,8 @@ export function executeClientToolTurn(
     resolvedThinking,
     model,
     endpoint,
-    onBeforeToolExecute
+    onBeforeToolExecute,
+    maxTokens
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -667,7 +677,8 @@ export function executeClientToolTurn(
           resolvedThinking,
           anthropicBuffer,
           continuationMessages,
-          isAdaptiveThinkingModel(descriptor, config.model)
+          isAdaptiveThinkingModel(descriptor, config.model),
+          maxTokens
         );
       case 'openai':
         return callOpenAiResponsesStream(
@@ -681,7 +692,8 @@ export function executeClientToolTurn(
           signal,
           resolvedThinking,
           openAiCallMap,
-          continuationMessages
+          continuationMessages,
+          maxTokens
         );
       case 'gemini':
         return callGeminiStream(
@@ -694,7 +706,8 @@ export function executeClientToolTurn(
           signal,
           resolvedThinking,
           geminiCalls,
-          continuationMessages
+          continuationMessages,
+          maxTokens
         );
       /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
       default: {

@@ -35,7 +35,13 @@ import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/
 import { type JsonObject } from '@fgv/ts-json-base';
 
 import { buildAnthropicMessages } from '../chatRequestBuilders';
-import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
+import {
+  AiPrompt,
+  DEFAULT_ANTHROPIC_MAX_TOKENS,
+  type AiToolConfig,
+  type IAiStreamEvent,
+  type IChatMessage
+} from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toAnthropicTools } from '../toolFormats';
 import { anthropicEffortToBudgetTokens, type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
@@ -492,7 +498,8 @@ export async function callAnthropicStream(
   resolvedThinking?: IResolvedThinkingConfig,
   accumulationBuffer?: Map<number, IAccumulatedBlock>,
   continuationMessages?: ReadonlyArray<JsonObject>,
-  useAdaptiveThinking: boolean = false
+  useAdaptiveThinking: boolean = false,
+  maxTokens?: number
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, {
@@ -503,7 +510,9 @@ export async function callAnthropicStream(
     model: config.model,
     system: prompt.system,
     messages,
-    max_tokens: 4096,
+    // Anthropic's Messages API requires max_tokens on every request — see
+    // AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS for why only this provider defaults it.
+    max_tokens: maxTokens ?? DEFAULT_ANTHROPIC_MAX_TOKENS,
     stream: true
   };
   // Temperature is sent only when explicitly provided (Claude-5 rejects any temperature). When

@@ -57,7 +57,22 @@ function stripBom(text: string): string {
   return text.replace(BOM, '');
 }
 
-function findBalancedJsonSubstring(text: string): string | undefined {
+/**
+ * Outcome of a {@link findBalancedJsonSubstring} scan.
+ *
+ * - `'found'`: a balanced JSON-shaped substring was located; `value` is it.
+ * - `'unclosed'`: an object or array opened but the matching close never
+ *   arrived before the end of input — the classic truncated-response shape;
+ *   `depth` is the unresolved nesting depth at end of input.
+ * - `'none'`: no `{` or `[` was ever seen outside a quoted string.
+ * @internal
+ */
+type BalancedJsonScanResult =
+  | { readonly kind: 'found'; readonly value: string }
+  | { readonly kind: 'unclosed'; readonly depth: number }
+  | { readonly kind: 'none' };
+
+function findBalancedJsonSubstring(text: string): BalancedJsonScanResult {
   // Walk the text once tracking string state. The first '{' or '[' that is
   // *outside* a quoted string is the candidate start; from there, count
   // matching close characters while ignoring delimiters that appear inside
@@ -98,11 +113,11 @@ function findBalancedJsonSubstring(text: string): string | undefined {
     } else if (ch === close) {
       depth--;
       if (depth === 0) {
-        return text.slice(start, i + 1);
+        return { kind: 'found', value: text.slice(start, i + 1) };
       }
     }
   }
-  return undefined;
+  return start >= 0 ? { kind: 'unclosed', depth } : { kind: 'none' };
 }
 
 /**
@@ -114,6 +129,13 @@ function findBalancedJsonSubstring(text: string): string | undefined {
  * - Trailing prose after the matched closing `}` or `]`.
  *
  * Out of scope: repairing malformed JSON, handling smart quotes, etc.
+ *
+ * When an object or array opens but never closes before the end of input —
+ * the shape a response truncated by a token cap leaves behind — the failure
+ * names that specifically (distinct from the generic "no JSON-shaped
+ * substring found" for input that never looked like JSON at all) and points
+ * at `IAiCompletionResponse.truncated` and the `maxTokens` request option as
+ * the likely cause and fix.
  *
  * @param text - Raw model output.
  * @returns A `Result<string>` containing the JSON-shaped substring, or a
@@ -143,9 +165,15 @@ export const extractJsonText: JsonTextExtractor = (text: string): Result<string>
     return succeed(candidate);
   }
 
-  const balanced = findBalancedJsonSubstring(candidate);
-  if (balanced !== undefined) {
-    return succeed(balanced);
+  const scan = findBalancedJsonSubstring(candidate);
+  if (scan.kind === 'found') {
+    return succeed(scan.value);
+  }
+  if (scan.kind === 'unclosed') {
+    return fail(
+      `extractJsonText: JSON structure opened but never closed (depth ${scan.depth} at end of input) — ` +
+        'response may have been truncated (check IAiCompletionResponse.truncated / raise maxTokens).'
+    );
   }
 
   return fail('extractJsonText: no JSON-shaped substring found.');

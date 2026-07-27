@@ -42,6 +42,7 @@ declare namespace AiAssist {
         IAiClientToolTurnResult,
         IAiToolEnablement,
         IAiCompletionResponse,
+        DEFAULT_ANTHROPIC_MAX_TOKENS,
         IChatMessage,
         IChatRequest,
         AiApiFormat,
@@ -103,6 +104,7 @@ declare namespace AiAssist {
         resolveProviderModel,
         isResponsesOnlyModel,
         isAdaptiveThinkingModel,
+        usesMaxCompletionTokensField,
         toDataUrl,
         AiThinkingMode,
         IThinkingConfig,
@@ -533,6 +535,9 @@ const DEFAULT_AI_ASSIST: IAiAssistSettings;
 
 // @public
 const DEFAULT_ALGORITHM: "AES-256-GCM";
+
+// @public
+const DEFAULT_ANTHROPIC_MAX_TOKENS: number;
 
 // @public
 const DEFAULT_KEYSTORE_ITERATIONS: number;
@@ -1363,6 +1368,8 @@ interface IExecuteClientToolTurnParams extends IChatRequest {
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly maxTokens?: number;
     readonly model?: string;
     readonly onBeforeToolExecute?: (tool: IAiClientTool, args: unknown) => Promise<Result<IToolExecutionDecision>>;
     readonly resolvedThinking?: IResolvedThinkingConfig;
@@ -1765,6 +1772,8 @@ interface IProviderCompletionParams extends IChatRequest {
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly maxTokens?: number;
     readonly modelOverride?: ModelSpec;
     readonly signal?: AbortSignal;
     readonly temperature?: number;
@@ -1781,6 +1790,8 @@ interface IProviderCompletionStreamParams extends IChatRequest {
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly maxTokens?: number;
     readonly modelOverride?: ModelSpec;
     readonly signal?: AbortSignal;
     readonly temperature?: number;
@@ -2539,6 +2550,11 @@ function tryDecryptFile<TPayload extends JsonValue = JsonValue, TMetadata = Json
 
 // @public
 const uint8ArrayFromBase64: Converter<Uint8Array>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolean;
 
 // @public
 function validateResolvedOptions(modelId: string, capability: IAiImageModelCapability, resolved: IResolvedImageOptions): Result<IResolvedImageOptions>;

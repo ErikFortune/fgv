@@ -157,7 +157,9 @@ export async function callOpenAiChatStream(
   temperature: number | undefined,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
-  resolvedThinking?: IResolvedThinkingConfig
+  resolvedThinking?: IResolvedThinkingConfig,
+  maxTokens?: number,
+  useMaxCompletionTokensField: boolean = false
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/chat/completions`;
   const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
@@ -176,6 +178,11 @@ export async function callOpenAiChatStream(
   // effort gate is needed: temperature is present here only when the effort is undefined/'none'.
   if (temperature !== undefined) {
     body.temperature = temperature;
+  }
+  // Omitted when the caller doesn't set maxTokens. See AiAssist.usesMaxCompletionTokensField for
+  // the field-name split between genuine OpenAI and the other openai-format providers.
+  if (maxTokens !== undefined) {
+    body[useMaxCompletionTokensField ? 'max_completion_tokens' : 'max_tokens'] = maxTokens;
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);

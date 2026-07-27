@@ -36,6 +36,7 @@ import {
   type AiModelCapability,
   allModelCapabilities,
   type AiServerToolConfig,
+  DEFAULT_ANTHROPIC_MAX_TOKENS,
   type IAiCompletionResponse,
   type IAiGeneratedImage,
   type IAiImageAttachment,
@@ -53,7 +54,8 @@ import {
   type ModelSpecKey,
   isAdaptiveThinkingModel,
   isResponsesOnlyModel,
-  resolveProviderModel
+  resolveProviderModel,
+  usesMaxCompletionTokensField
 } from './model';
 import {
   anthropicEffortToBudgetTokens,
@@ -128,6 +130,15 @@ export interface IProviderCompletionParams extends IChatRequest {
    * the effective merged effort is non-`'none'`; Gemini always accepts both.
    */
   readonly thinking?: IThinkingConfig;
+  /**
+   * Optional cap on generated output tokens, mapped to each provider's native field:
+   * Anthropic `max_tokens`, OpenAI Chat Completions `max_completion_tokens`, OpenAI/xAI
+   * Responses `max_output_tokens`, Gemini `generationConfig.maxOutputTokens`, and the
+   * xAI/Groq/Mistral/Ollama/`openai-compat` chat-completions path `max_tokens`. When unset,
+   * every provider except Anthropic omits the field and applies its own default; Anthropic's
+   * Messages API requires the field, so it falls back to {@link AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS}.
+   */
+  readonly maxTokens?: number;
 }
 
 // ============================================================================
@@ -411,13 +422,16 @@ async function callOpenAiCompletion(
   temperature?: number,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
-  resolvedThinking?: IResolvedThinkingConfig
+  resolvedThinking?: IResolvedThinkingConfig,
+  maxTokens?: number,
+  useMaxCompletionTokensField: boolean = false
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/chat/completions`;
   const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
     head
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
+  const maxTokensField = useMaxCompletionTokensField ? 'max_completion_tokens' : 'max_tokens';
   const body: Record<string, unknown> = {
     model: config.model,
     messages,
@@ -426,7 +440,10 @@ async function callOpenAiCompletion(
     // completion path already rejects temperature + non-'none' thinking upstream
     // (checkTemperatureConflict), so no effort gate is needed here.
     ...(temperature !== undefined ? { temperature } : {}),
-    ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning_effort: effort } : {})
+    ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning_effort: effort } : {}),
+    // Omitted when the caller doesn't set maxTokens — every non-Anthropic provider applies its
+    // own default. See AiAssist.usesMaxCompletionTokensField for the field-name split.
+    ...(maxTokens !== undefined ? { [maxTokensField]: maxTokens } : {})
   };
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
@@ -486,7 +503,8 @@ async function callOpenAiResponsesCompletion(
   temperature?: number,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
-  resolvedThinking?: IResolvedThinkingConfig
+  resolvedThinking?: IResolvedThinkingConfig,
+  maxTokens?: number
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/responses`;
   const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
@@ -503,6 +521,10 @@ async function callOpenAiResponsesCompletion(
     ...(temperature !== undefined ? { temperature } : {}),
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {})
   };
+  // Shared by OpenAI and xAI — both route through the Responses API with the same field name.
+  if (maxTokens !== undefined) {
+    body.max_output_tokens = maxTokens;
+  }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
   }
@@ -565,7 +587,8 @@ async function callAnthropicCompletion(
   tools?: ReadonlyArray<AiServerToolConfig>,
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
-  useAdaptiveThinking: boolean = false
+  useAdaptiveThinking: boolean = false,
+  maxTokens?: number
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, { head });
@@ -573,7 +596,9 @@ async function callAnthropicCompletion(
     model: config.model,
     system: prompt.system,
     messages,
-    max_tokens: 4096,
+    // Anthropic's Messages API requires max_tokens on every request — see
+    // AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS for why only this provider defaults it.
+    max_tokens: maxTokens ?? DEFAULT_ANTHROPIC_MAX_TOKENS,
     // Temperature is sent only when explicitly provided (Claude-5 rejects any temperature). The
     // completion path rejects temperature + thinking upstream (checkTemperatureConflict), so no
     // effort gate is needed here.
@@ -648,7 +673,8 @@ async function callGeminiCompletion(
   logger?: Logging.ILogger,
   tools?: ReadonlyArray<AiServerToolConfig>,
   signal?: AbortSignal,
-  resolvedThinking?: IResolvedThinkingConfig
+  resolvedThinking?: IResolvedThinkingConfig,
+  maxTokens?: number
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
   const contents = buildGeminiContents(prompt, { head });
@@ -657,6 +683,9 @@ async function callGeminiCompletion(
   const generationConfig: Record<string, unknown> = {};
   if (temperature !== undefined) {
     generationConfig.temperature = temperature;
+  }
+  if (maxTokens !== undefined) {
+    generationConfig.maxOutputTokens = maxTokens;
   }
   if (resolvedThinking?.geminiThinkingBudget !== undefined) {
     generationConfig.thinkingConfig = { thinkingBudget: resolvedThinking.geminiThinkingBudget };
@@ -724,7 +753,8 @@ export async function callProviderCompletion(
     tools,
     signal,
     endpoint,
-    thinking
+    thinking,
+    maxTokens
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -797,10 +827,21 @@ export async function callProviderCompletion(
           temperature,
           logger,
           signal,
-          resolvedThinking
+          resolvedThinking,
+          maxTokens
         );
       }
-      return callOpenAiCompletion(config, prompt, head, temperature, logger, signal, resolvedThinking);
+      return callOpenAiCompletion(
+        config,
+        prompt,
+        head,
+        temperature,
+        logger,
+        signal,
+        resolvedThinking,
+        maxTokens,
+        usesMaxCompletionTokensField(descriptor)
+      );
     case 'anthropic':
       return callAnthropicCompletion(
         config,
@@ -811,10 +852,21 @@ export async function callProviderCompletion(
         tools,
         signal,
         resolvedThinking,
-        isAdaptiveThinkingModel(descriptor, config.model)
+        isAdaptiveThinkingModel(descriptor, config.model),
+        maxTokens
       );
     case 'gemini':
-      return callGeminiCompletion(config, prompt, head, temperature, logger, tools, signal, resolvedThinking);
+      return callGeminiCompletion(
+        config,
+        prompt,
+        head,
+        temperature,
+        logger,
+        tools,
+        signal,
+        resolvedThinking,
+        maxTokens
+      );
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;
@@ -1769,7 +1821,8 @@ export async function callProxiedCompletion(
     logger,
     tools,
     signal,
-    thinking
+    thinking,
+    maxTokens
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -1801,6 +1854,11 @@ export async function callProxiedCompletion(
   }
   if (thinking !== undefined) {
     body.thinking = thinking;
+  }
+  // Forwarded only when explicitly provided; the proxy is responsible for mapping it to the
+  // correct upstream provider field (see AiAssist.usesMaxCompletionTokensField).
+  if (maxTokens !== undefined) {
+    body.maxTokens = maxTokens;
   }
 
   /* c8 ignore next 1 - optional logger */

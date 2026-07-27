@@ -160,8 +160,32 @@ describe('extractJsonText', () => {
     expect(extractJsonText('I cannot help with that.')).toFailWith(/no JSON-shaped substring/i);
   });
 
-  test('fails when an opening brace is never closed', () => {
-    expect(extractJsonText('{"unclosed":')).toFailWith(/no JSON-shaped substring/i);
+  test('fails with a truncation-aware message when an opening brace is never closed', () => {
+    expect(extractJsonText('{"unclosed":')).toFailWith(
+      /JSON structure opened but never closed \(depth 1 at end of input\).*truncated.*maxTokens/i
+    );
+  });
+
+  test('fails with a truncation-aware message when an opening bracket is never closed', () => {
+    expect(extractJsonText('[1,2,3')).toFailWith(
+      /JSON structure opened but never closed \(depth 1 at end of input\)/i
+    );
+  });
+
+  test('reports the unresolved nesting depth for a truncated nested structure', () => {
+    expect(extractJsonText('{"outer":{"inner":1')).toFailWith(
+      /JSON structure opened but never closed \(depth 2 at end of input\)/i
+    );
+  });
+
+  test('keeps the generic message for input with no JSON structure at all (no false-positive truncation diagnosis)', () => {
+    expect(extractJsonText('I cannot help with that.')).toFailWith(/no JSON-shaped substring found/i);
+    expect(extractJsonText('I cannot help with that.')).not.toFailWith(/truncated/i);
+  });
+
+  test('leaves balanced JSON input unaffected by the truncation diagnosis', () => {
+    expect(extractJsonText('{"a":{"b":1}}')).toSucceedWith('{"a":{"b":1}}');
+    expect(extractJsonText('[1,[2,3],4]')).toSucceedWith('[1,[2,3],4]');
   });
 
   test('rejects non-string input', () => {

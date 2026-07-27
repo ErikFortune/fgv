@@ -133,7 +133,8 @@ export async function callProxiedCompletionStream(
     logger,
     tools,
     signal,
-    thinking
+    thinking,
+    maxTokens
   } = params;
 
   // Enforce the same unified-request invariants the direct entry points apply
@@ -169,6 +170,11 @@ export async function callProxiedCompletionStream(
   }
   if (thinking !== undefined) {
     body.thinking = thinking;
+  }
+  // Forwarded only when explicitly provided; the proxy is responsible for mapping it to the
+  // correct upstream provider field (see AiAssist.usesMaxCompletionTokensField).
+  if (maxTokens !== undefined) {
+    body.maxTokens = maxTokens;
   }
 
   /* c8 ignore next 1 - optional logger */
