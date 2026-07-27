@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { Modal } from '@fgv/ts-app-shell';
-import { CryptoUtils } from '@fgv/ts-extras';
+import type { CryptoUtils } from '@fgv/ts-extras';
 
 import { dedupeRequiredSecrets } from '../shell';
 import type { IScenario, ISecretSpec } from '../shell';

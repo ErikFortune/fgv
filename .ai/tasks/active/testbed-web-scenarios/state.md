@@ -106,6 +106,31 @@ All fixes verified: `rushx build` / `lint` / `test` (100% branches/lines/functio
 / `build:web` all green after applying every fix, with the anchored regression tests for P2-1
 passing.
 
+### Copilot round 2 (PR #570) — fixed
+
+Four comments (relayed by the orchestrator — no direct GitHub access in this session):
+
+- **MEDIUM (fixed):** `KeyStoreSection.tsx`'s unlock handler's `.then`/`.catch` unconditionally
+  called `setIsUnlocking`/`setPassword`/`setError` after the async `openKeyStoreFromFile`
+  resolved — if the Secrets modal closed mid-unlock (`Modal` returns `null` when closed,
+  unmounting `KeyStoreSection`), the resolution would update state on an unmounted component
+  (React warning). Added an `isMountedRef` guard (`useRef(true)` + a `useEffect` cleanup
+  setting it `false`), mirroring `ScenarioHost`'s `active`-flag pattern, checked at the top of
+  both the `.then` and `.catch` callbacks. Added a dedicated test
+  (`KeyStoreSection.test.tsx`, "unmounting mid-unlock…") that spies on the
+  `openKeyStore` module to get a deferred promise, unmounts before resolving it, and asserts
+  both that `onUnlocked` never fires and that no "not wrapped in act" / "unmounted component"
+  warning reaches `console.error`.
+- **LOW × 3 (fixed):** `import { CryptoUtils } from '@fgv/ts-extras'` was type-position-only
+  in `SecretsModal.tsx`, `App.tsx`, and `KeyStoreSection.tsx` (used only as
+  `CryptoUtils.KeyStore.KeyStore` in type annotations, never as a runtime value in those three
+  files) — changed all three to `import type { CryptoUtils } from '@fgv/ts-extras'` so no
+  runtime binding is pulled into the bundle. `openKeyStore.ts` genuinely calls
+  `CryptoUtils.KeyStore.KeyStore.open(...)` / `CryptoUtils.KeyStore.Converters.keystoreFile` at
+  runtime — left as a value import there.
+
+All fixes verified: `rushx build` / `lint` / `test` (100%, 450 tests) / `build:web` all green.
+
 ---
 
 ## Phase B — generic web runner

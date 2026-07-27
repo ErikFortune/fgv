@@ -30,7 +30,7 @@ import {
   type IUrlSyncConfig
 } from '@fgv/ts-app-shell';
 import { FileTree } from '@fgv/ts-json-base';
-import { CryptoUtils } from '@fgv/ts-extras';
+import type { CryptoUtils } from '@fgv/ts-extras';
 
 import { dataFiles } from '../generated/dataFileTree';
 import { scenarios as defaultScenarios } from '../scenarios';

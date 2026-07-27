@@ -8,8 +8,8 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useState } from 'react';
-import { CryptoUtils } from '@fgv/ts-extras';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type { CryptoUtils } from '@fgv/ts-extras';
 
 import { openKeyStoreFromFile } from './openKeyStore';
 
@@ -65,6 +65,16 @@ export function KeyStoreSection({
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
+  // Guards the async unlock resolution against updating state after unmount — e.g. the Secrets
+  // modal closing (Modal returns null) mid-unlock. Mirrors ScenarioHost's `active`-flag cleanup.
+  const isMountedRef = useRef(true);
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+    },
+    []
+  );
+
   // Shared by the Unlock button's `disabled` condition and `handleUnlock`'s guard, so the two
   // never drift apart.
   const canUnlock = file !== undefined && password.length > 0;
@@ -83,6 +93,9 @@ export function KeyStoreSection({
     setError(undefined);
     openKeyStoreFromFile(file, password)
       .then((result) => {
+        if (!isMountedRef.current) {
+          return;
+        }
         setIsUnlocking(false);
         // Cleared after every attempt, success or failure — never held longer than needed.
         setPassword('');
@@ -92,8 +105,11 @@ export function KeyStoreSection({
           setError(result.message);
         }
       })
-      /* c8 ignore next 5 - openKeyStoreFromFile returns Promise<Result>; it never rejects in practice (failures become Result.fail). Guard is defensive, mirrors ScenarioRunnerPanel's run() catch. */
+      /* c8 ignore next 7 - openKeyStoreFromFile returns Promise<Result>; it never rejects in practice (failures become Result.fail). Guard is defensive, mirrors ScenarioRunnerPanel's run() catch. */
       .catch((err: unknown) => {
+        if (!isMountedRef.current) {
+          return;
+        }
         setIsUnlocking(false);
         setPassword('');
         setError(String(err));

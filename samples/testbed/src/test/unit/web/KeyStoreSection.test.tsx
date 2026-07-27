@@ -1,10 +1,12 @@
 import '@fgv/ts-utils-jest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { type Result, succeed } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
 import { CryptoUtils as WebCryptoUtils } from '@fgv/ts-web-extras';
 
 import { KeyStoreSection } from '../../../web/KeyStoreSection';
+import * as OpenKeyStoreModule from '../../../web/openKeyStore';
 
 const PASSWORD = 'correct horse battery staple';
 
@@ -146,5 +148,51 @@ describe('KeyStoreSection', () => {
     fireEvent.click(screen.getByTestId('testbed-keystore-lock-btn'));
     expect(onLocked).toHaveBeenCalledTimes(1);
     expect(keyStore.isUnlocked).toBe(false);
+  });
+
+  test('unmounting mid-unlock does not update state after unmount (no act warning)', async () => {
+    // Deferred so the test controls exactly when the unlock resolves, letting it unmount the
+    // component (e.g. the Secrets modal closing mid-unlock) BEFORE resolution — the scenario
+    // the isMountedRef guard exists for. Spies on the module (rather than mocking file/password
+    // content) since openKeyStoreFromFile isn't dependency-injected into the component.
+    let resolveUnlock: (result: Result<CryptoUtils.KeyStore.KeyStore>) => void = () => undefined;
+    const deferred = new Promise<Result<CryptoUtils.KeyStore.KeyStore>>((resolve) => {
+      resolveUnlock = resolve;
+    });
+    const openSpy = jest.spyOn(OpenKeyStoreModule, 'openKeyStoreFromFile').mockReturnValue(deferred);
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      const file = new File(['irrelevant — openKeyStoreFromFile is mocked'], 'keystore.json', {
+        type: 'application/json'
+      });
+      const onUnlocked = jest.fn();
+      const { unmount } = render(
+        <KeyStoreSection keyStore={undefined} onUnlocked={onUnlocked} onLocked={() => undefined} />
+      );
+
+      fireEvent.change(screen.getByTestId('testbed-keystore-file-input'), { target: { files: [file] } });
+      fireEvent.change(screen.getByTestId('testbed-keystore-password-input'), {
+        target: { value: PASSWORD }
+      });
+      fireEvent.click(screen.getByTestId('testbed-keystore-unlock-btn'));
+
+      // Unmount while the unlock is still in flight (mirrors closing the Secrets modal mid-unlock).
+      unmount();
+
+      // Resolve AFTER unmount — the isMountedRef guard must prevent the resulting setState calls.
+      const keyStore = await buildUnlockedFixtureKeyStore();
+      resolveUnlock(succeed(keyStore));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(onUnlocked).not.toHaveBeenCalled();
+      // No React "state update on an unmounted component" warning reached console.error.
+      for (const call of consoleErrorSpy.mock.calls) {
+        expect(String(call[0])).not.toMatch(/not wrapped in act|unmounted component/i);
+      }
+    } finally {
+      openSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
+    }
   });
 });
