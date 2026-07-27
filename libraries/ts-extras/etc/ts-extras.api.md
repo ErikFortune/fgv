@@ -1027,7 +1027,6 @@ interface IAiModelInfo {
 // @public
 interface IAiProviderDescriptor {
     readonly acceptsImageInput: boolean;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly adaptiveThinkingModelPrefixes?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModelAlias"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveProviderModel"

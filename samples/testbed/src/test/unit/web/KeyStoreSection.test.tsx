@@ -1,7 +1,7 @@
 import '@fgv/ts-utils-jest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { type Result, succeed } from '@fgv/ts-utils';
+import { fail, type Result, succeed } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
 import { CryptoUtils as WebCryptoUtils } from '@fgv/ts-web-extras';
 
@@ -148,6 +148,24 @@ describe('KeyStoreSection', () => {
     fireEvent.click(screen.getByTestId('testbed-keystore-lock-btn'));
     expect(onLocked).toHaveBeenCalledTimes(1);
     expect(keyStore.isUnlocked).toBe(false);
+  });
+
+  test('a failed lock() surfaces the failure message and does not call onLocked or clear state', async () => {
+    const keyStore = await buildUnlockedFixtureKeyStore();
+    // lock(true) can't fail under real conditions (force bypasses the only failure path — the
+    // dirty-changes guard), so force the failure via a spy to exercise the handling explicitly.
+    const lockSpy = jest.spyOn(keyStore, 'lock').mockReturnValue(fail('simulated lock failure'));
+    const onLocked = jest.fn();
+    render(<KeyStoreSection keyStore={keyStore} onUnlocked={() => undefined} onLocked={onLocked} />);
+
+    fireEvent.click(screen.getByTestId('testbed-keystore-lock-btn'));
+
+    expect(lockSpy).toHaveBeenCalledWith(true);
+    expect(onLocked).not.toHaveBeenCalled();
+    expect(screen.getByTestId('testbed-keystore-error').textContent).toBe('simulated lock failure');
+    // Still showing the unlocked view — the parent's keyStore prop is unchanged since onLocked
+    // was never called.
+    expect(screen.getByTestId('testbed-keystore-unlocked')).not.toBeNull();
   });
 
   test('unmounting mid-unlock does not update state after unmount (no act warning)', async () => {

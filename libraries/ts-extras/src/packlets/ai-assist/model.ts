@@ -1081,7 +1081,7 @@ export interface IAiProviderDescriptor {
    * etc.) keep the legacy shape. The completion (`callProviderCompletion`), streaming
    * (`callProviderCompletionStream`), and client-tool (`executeClientToolTurn`) Anthropic
    * dispatch sites consult this list (via the sibling predicate
-   * {@link AiAssist.isAdaptiveThinkingModel}) to pick the correct wire shape for the resolved
+   * `isAdaptiveThinkingModel`) to pick the correct wire shape for the resolved
    * model. Mirrors the prefix-matching shape of `responsesOnlyModelPrefixes`, but with
    * exact-or-dash-bounded matching (an entry matches a resolved model that equals it or starts
    * with it followed by `-`) rather than a plain prefix, since Anthropic model families share

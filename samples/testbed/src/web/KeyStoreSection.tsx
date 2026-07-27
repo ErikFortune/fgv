@@ -123,12 +123,19 @@ export function KeyStoreSection({
   const handleLock = useCallback(
     (ks: CryptoUtils.KeyStore.KeyStore) => {
       // force=true: this KeyStore is opened read-only by the modal (never `addSecret`/etc.), so
-      // there are never unsaved changes to protect against — force just skips that irrelevant guard.
-      ks.lock(true);
-      setFile(undefined);
-      setPassword('');
-      setError(undefined);
-      onLocked();
+      // there are never unsaved changes to protect against — force just skips that irrelevant
+      // guard. `lock()` still returns a Result (it's the same API surface as an unforced lock),
+      // so handle it explicitly rather than discarding it: only clear state and notify the
+      // parent on success; surface the failure message otherwise, leaving the KeyStore unlocked.
+      const result = ks.lock(true);
+      if (result.isSuccess()) {
+        setFile(undefined);
+        setPassword('');
+        setError(undefined);
+        onLocked();
+      } else {
+        setError(result.message);
+      }
     },
     [onLocked]
   );
@@ -174,12 +181,12 @@ export function KeyStoreSection({
           >
             {isUnlocking ? 'Unlocking…' : 'Unlock'}
           </button>
-          {error !== undefined && (
-            <p data-testid="testbed-keystore-error" className="text-xs text-status-error-text">
-              {error}
-            </p>
-          )}
         </div>
+      )}
+      {error !== undefined && (
+        <p data-testid="testbed-keystore-error" className="text-xs text-status-error-text">
+          {error}
+        </p>
       )}
     </div>
   );
