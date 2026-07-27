@@ -235,8 +235,9 @@ export const geminiModelTiersScenario: IScenario = makeTierScenario({
 /**
  * xAI model-tier canary — exercises `base` / `advanced` and a `frontier` request that cascades to
  * the `advanced` (grok-4.5) id, plus the `image` tier resolution (`@xai-grok:imagine` →
- * `grok-imagine-image-quality`). Added with the xAI alias-registry adoption — the first live proof
- * that `@xai-grok:flagship` → `grok-4.5` answers. Requires `XAI_API_KEY` for the live half.
+ * `grok-imagine-image-quality`). Added with the xAI alias-registry adoption to provide the first
+ * live proof that `@xai-grok:flagship` → `grok-4.5` answers — once run with `XAI_API_KEY`; the
+ * keyless run is the STOP-FLAG resolver-only state. Requires `XAI_API_KEY` for the live half.
  * @public
  */
 export const xaiModelTiersScenario: IScenario = makeTierScenario({
