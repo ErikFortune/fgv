@@ -233,7 +233,8 @@ export async function callGeminiStream(
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
   functionCalls?: IAccumulatedGeminiFunctionCall[],
-  continuationMessages?: ReadonlyArray<JsonObject>
+  continuationMessages?: ReadonlyArray<JsonObject>,
+  maxTokens?: number
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/models/${config.model}:streamGenerateContent?alt=sse`;
   const contents = buildGeminiContents(prompt, {
@@ -244,6 +245,9 @@ export async function callGeminiStream(
   const generationConfig: Record<string, unknown> = {};
   if (temperature !== undefined) {
     generationConfig.temperature = temperature;
+  }
+  if (maxTokens !== undefined) {
+    generationConfig.maxOutputTokens = maxTokens;
   }
   if (resolvedThinking?.geminiThinkingBudget !== undefined) {
     generationConfig.thinkingConfig = { thinkingBudget: resolvedThinking.geminiThinkingBudget };

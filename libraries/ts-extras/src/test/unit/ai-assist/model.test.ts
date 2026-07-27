@@ -304,3 +304,20 @@ describe('isAdaptiveThinkingModel', () => {
     expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'gpt-5.6-terra')).toBe(false);
   });
 });
+
+describe('usesMaxCompletionTokensField', () => {
+  test('returns true only for the real openai descriptor', () => {
+    const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
+    expect(AiAssist.usesMaxCompletionTokensField(descriptor)).toBe(true);
+  });
+
+  test('returns false for every other registered provider id', () => {
+    for (const providerId of AiAssist.getProviderDescriptors().map((d) => d.id)) {
+      if (providerId === 'openai') {
+        continue;
+      }
+      const descriptor = AiAssist.getProviderDescriptor(providerId).orThrow();
+      expect(AiAssist.usesMaxCompletionTokensField(descriptor)).toBe(false);
+    }
+  });
+});

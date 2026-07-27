@@ -86,6 +86,15 @@ export interface IProviderCompletionStreamParams extends IChatRequest {
    * Optional thinking/reasoning mode configuration.
    */
   readonly thinking?: IThinkingConfig;
+  /**
+   * Optional cap on generated output tokens, mapped to each provider's native field:
+   * Anthropic `max_tokens`, OpenAI Chat Completions `max_completion_tokens`, OpenAI/xAI
+   * Responses `max_output_tokens`, Gemini `generationConfig.maxOutputTokens`, and the
+   * xAI/Groq/Mistral/Ollama/`openai-compat` chat-completions path `max_tokens`. When unset,
+   * every provider except Anthropic omits the field and applies its own default; Anthropic's
+   * Messages API requires the field, so it falls back to `DEFAULT_ANTHROPIC_MAX_TOKENS`.
+   */
+  readonly maxTokens?: number;
 }
 
 /**

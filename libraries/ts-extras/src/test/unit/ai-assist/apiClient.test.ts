@@ -575,7 +575,7 @@ describe('callProviderCompletion', () => {
       const body = JSON.parse(fetchCall[1].body);
       expect(body.system).toBe('You are a helpful assistant');
       expect(body.messages[0]).toEqual({ role: 'user', content: 'Generate a recipe' });
-      expect(body.max_tokens).toBe(4096);
+      expect(body.max_tokens).toBe(AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS);
       // No default temperature is injected — Claude-5 rejects any temperature value.
       expect(body.temperature).toBeUndefined();
     });

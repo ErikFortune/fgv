@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add a caller-configurable maxTokens option to ai-assist completion, streaming, and client-tool-turn requests, replacing Anthropic's hardcoded max_tokens: 4096 literal with the named, exported DEFAULT_ANTHROPIC_MAX_TOKENS constant; extractJsonText now distinguishes a truncated (opened-but-never-closed) JSON structure from genuinely non-JSON input.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

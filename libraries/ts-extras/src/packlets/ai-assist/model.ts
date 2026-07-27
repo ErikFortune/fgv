@@ -781,6 +781,31 @@ export function isAdaptiveThinkingModel(descriptor: IAiProviderDescriptor, model
   );
 }
 
+/**
+ * Determines whether a provider's OpenAI-compatible Chat Completions request
+ * should use the modern `max_completion_tokens` field instead of the legacy
+ * `max_tokens` field for capping output length.
+ *
+ * @remarks
+ * OpenAI's Chat Completions API deprecated `max_tokens` in favor of
+ * `max_completion_tokens`. Every other provider routed through the shared
+ * OpenAI-compatible chat-completions adapter (xAI Grok, Groq, Mistral, Ollama,
+ * self-hosted `openai-compat` servers) still expects the legacy `max_tokens`
+ * field, so this returns `true` only for the `'openai'` provider id. Consulted
+ * by both the completion (`callProviderCompletion`) and streaming
+ * (`callProviderCompletionStream`) chat-completions dispatch branches. Not
+ * consulted on the Responses API path — `max_output_tokens` applies uniformly
+ * there for both OpenAI and xAI (see `isResponsesOnlyModel`) —
+ * nor by any non-`'openai'`-format provider (Anthropic, Gemini).
+ *
+ * @param descriptor - The provider descriptor.
+ * @returns `true` only for the `'openai'` provider id.
+ * @public
+ */
+export function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolean {
+  return descriptor.id === 'openai';
+}
+
 // ============================================================================
 // Provider Descriptor
 // ============================================================================
@@ -856,6 +881,28 @@ export interface IAiCompletionResponse {
   /** Whether the response was truncated due to token limits */
   readonly truncated: boolean;
 }
+
+/**
+ * Default `max_tokens` sent to the Anthropic Messages API when the caller does
+ * not supply an explicit `maxTokens` override.
+ *
+ * @remarks
+ * Anthropic's Messages API requires `max_tokens` on every request — there is
+ * no provider-side default the way there is for OpenAI Chat/Responses,
+ * Gemini, or xAI, all of which accept a request with no cap and apply their
+ * own default. Anthropic is therefore the only provider that needs — or
+ * gets — a library-supplied fallback; every other provider omits the field
+ * entirely when the caller doesn't set `maxTokens` (see
+ * `IProviderCompletionParams.maxTokens`).
+ *
+ * Callers whose structured/JSON output scales with input size and hits this
+ * ceiling see a silent truncation that often surfaces downstream as a
+ * confusing `extractJsonText` parse failure rather than an obvious "too
+ * short" error — pass `maxTokens` explicitly to raise the cap for those
+ * requests.
+ * @public
+ */
+export const DEFAULT_ANTHROPIC_MAX_TOKENS: number = 4096;
 
 // ============================================================================
 // Streaming Events

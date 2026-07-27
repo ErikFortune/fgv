@@ -36,7 +36,8 @@ import {
   type ModelSpecKey,
   isAdaptiveThinkingModel,
   isResponsesOnlyModel,
-  resolveProviderModel
+  resolveProviderModel,
+  usesMaxCompletionTokensField
 } from './model';
 import { callAnthropicStream } from './streamingAdapters/anthropic';
 import { type IProviderCompletionStreamParams, type IStreamApiConfig } from './streamingAdapters/common';
@@ -110,7 +111,8 @@ export async function callProviderCompletionStream(
     tools,
     signal,
     endpoint,
-    thinking
+    thinking,
+    maxTokens
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -177,10 +179,23 @@ export async function callProviderCompletionStream(
           temperature,
           logger,
           signal,
-          resolvedThinking
+          resolvedThinking,
+          undefined,
+          undefined,
+          maxTokens
         );
       }
-      return callOpenAiChatStream(config, prompt, head, temperature, logger, signal, resolvedThinking);
+      return callOpenAiChatStream(
+        config,
+        prompt,
+        head,
+        temperature,
+        logger,
+        signal,
+        resolvedThinking,
+        maxTokens,
+        usesMaxCompletionTokensField(descriptor)
+      );
     case 'anthropic':
       return callAnthropicStream(
         config,
@@ -193,10 +208,23 @@ export async function callProviderCompletionStream(
         resolvedThinking,
         undefined,
         undefined,
-        isAdaptiveThinkingModel(descriptor, config.model)
+        isAdaptiveThinkingModel(descriptor, config.model),
+        maxTokens
       );
     case 'gemini':
-      return callGeminiStream(config, prompt, head, temperature, tools, logger, signal, resolvedThinking);
+      return callGeminiStream(
+        config,
+        prompt,
+        head,
+        temperature,
+        tools,
+        logger,
+        signal,
+        resolvedThinking,
+        undefined,
+        undefined,
+        maxTokens
+      );
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;

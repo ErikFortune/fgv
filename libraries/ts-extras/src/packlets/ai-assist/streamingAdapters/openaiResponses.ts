@@ -462,7 +462,8 @@ export async function callOpenAiResponsesStream(
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
   functionCallMap?: Map<string, IAccumulatedFunctionCall>,
-  continuationMessages?: ReadonlyArray<JsonObject>
+  continuationMessages?: ReadonlyArray<JsonObject>,
+  maxTokens?: number
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/responses`;
   const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
@@ -489,6 +490,10 @@ export async function callOpenAiResponsesStream(
     if (temperature !== undefined) {
       body.temperature = temperature;
     }
+  }
+  // Shared by OpenAI and xAI — both route through the Responses API with the same field name.
+  if (maxTokens !== undefined) {
+    body.max_output_tokens = maxTokens;
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
