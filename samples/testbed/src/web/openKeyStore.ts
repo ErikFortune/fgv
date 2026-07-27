@@ -39,8 +39,9 @@ export async function openKeyStoreFromFile(
 ): Promise<Result<CryptoUtils.KeyStore.KeyStore>> {
   return captureAsyncResult(() => file.text())
     .withErrorFormat((msg) => `Failed to read keystore file: ${msg}`)
-    .onSuccess((text) => keystoreFileConverter.convert(text))
-    .withErrorFormat((msg) => `Invalid keystore file: ${msg}`)
+    .onSuccess((text) =>
+      keystoreFileConverter.convert(text).withErrorFormat((msg) => `Invalid keystore file: ${msg}`)
+    )
     .onSuccess((keystoreFile) =>
       CryptoUtils.KeyStore.KeyStore.open({
         cryptoProvider: new WebCryptoUtils.BrowserCryptoProvider(),

@@ -38,14 +38,17 @@ describe('openKeyStoreFromFile', () => {
 
   test('fails with a friendly message for a non-JSON file', async () => {
     const file = new File(['not json at all'], 'keystore.json', { type: 'application/json' });
-    expect(await openKeyStoreFromFile(file, PASSWORD)).toFailWith(/invalid keystore file/i);
+    // Anchored: guards against the file-read step's error-format wrapper leaking into (and
+    // masking) this step's message — a flat, un-nested `.withErrorFormat` chain would prefix
+    // this with "Failed to read keystore file: " even though the file WAS read successfully.
+    expect(await openKeyStoreFromFile(file, PASSWORD)).toFailWith(/^Invalid keystore file:/i);
   });
 
   test('fails with a friendly message for well-formed JSON that is not a keystore file', async () => {
     const file = new File([JSON.stringify({ hello: 'world' })], 'keystore.json', {
       type: 'application/json'
     });
-    expect(await openKeyStoreFromFile(file, PASSWORD)).toFailWith(/invalid keystore file/i);
+    expect(await openKeyStoreFromFile(file, PASSWORD)).toFailWith(/^Invalid keystore file:/i);
   });
 
   test('fails with a friendly message when the file cannot be read', async () => {
@@ -54,8 +57,10 @@ describe('openKeyStoreFromFile', () => {
         throw new Error('boom: disk error');
       }
     } as unknown as File;
+    // Anchored: a regression that re-wraps this in "Invalid keystore file: ..." (the next
+    // step's error-format label) would fail this assertion.
     expect(await openKeyStoreFromFile(unreadable, PASSWORD)).toFailWith(
-      /failed to read keystore file.*boom: disk error/i
+      /^Failed to read keystore file:.*boom: disk error/i
     );
   });
 });

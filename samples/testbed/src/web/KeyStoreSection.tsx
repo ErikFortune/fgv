@@ -65,14 +65,18 @@ export function KeyStoreSection({
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
+  // Shared by the Unlock button's `disabled` condition and `handleUnlock`'s guard, so the two
+  // never drift apart.
+  const canUnlock = file !== undefined && password.length > 0;
+
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setFile(event.target.files?.[0]);
     setError(undefined);
   }, []);
 
   const handleUnlock = useCallback(() => {
-    /* c8 ignore next 3 - defensive: the Unlock button's disabled condition already excludes the missing-file/missing-password case; kept for type-narrowing and robustness against a non-UI invocation. */
-    if (!file || password.length === 0) {
+    /* c8 ignore next 3 - defensive: the Unlock button's disabled condition already excludes !canUnlock; kept for type-narrowing (file: File | undefined) and robustness against a non-UI invocation. */
+    if (!file || !canUnlock) {
       return;
     }
     setIsUnlocking(true);
@@ -94,24 +98,26 @@ export function KeyStoreSection({
         setPassword('');
         setError(String(err));
       });
-  }, [file, password, onUnlocked]);
+  }, [file, password, canUnlock, onUnlocked]);
 
-  const handleLock = useCallback(() => {
-    // force=true: this KeyStore is opened read-only by the modal (never `addSecret`/etc.), so
-    // there are never unsaved changes to protect against — force just skips that irrelevant guard.
-    /* c8 ignore next 1 - defensive: handleLock is only ever wired to the Lock button rendered by UnlockedStatus, which only renders when `keyStore` is truthy. */
-    keyStore?.lock(true);
-    setFile(undefined);
-    setPassword('');
-    setError(undefined);
-    onLocked();
-  }, [keyStore, onLocked]);
+  const handleLock = useCallback(
+    (ks: CryptoUtils.KeyStore.KeyStore) => {
+      // force=true: this KeyStore is opened read-only by the modal (never `addSecret`/etc.), so
+      // there are never unsaved changes to protect against — force just skips that irrelevant guard.
+      ks.lock(true);
+      setFile(undefined);
+      setPassword('');
+      setError(undefined);
+      onLocked();
+    },
+    [onLocked]
+  );
 
   return (
     <div data-testid="testbed-keystore-section" className="space-y-2">
       <h3 className="text-sm font-semibold text-primary">KeyStore</h3>
       {keyStore ? (
-        <UnlockedStatus keyStore={keyStore} onLock={handleLock} />
+        <UnlockedStatus keyStore={keyStore} onLock={() => handleLock(keyStore)} />
       ) : (
         <div className="space-y-2">
           <p className="text-xs text-secondary">
@@ -140,7 +146,7 @@ export function KeyStoreSection({
             type="button"
             data-testid="testbed-keystore-unlock-btn"
             onClick={handleUnlock}
-            disabled={isUnlocking || !file || password.length === 0}
+            disabled={isUnlocking || !canUnlock}
             className="rounded-md bg-brand-primary px-4 py-2 text-sm font-medium text-white hover:bg-brand-secondary disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isUnlocking ? 'Unlocking…' : 'Unlock'}
