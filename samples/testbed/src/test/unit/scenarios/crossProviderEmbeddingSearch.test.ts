@@ -52,7 +52,7 @@ import type {
   IEmbeddingSearchOutcome
 } from '../../../scenarios/crossProviderEmbeddingSearch/search';
 import { crossProviderEmbeddingSearchScenario } from '../../../scenarios/crossProviderEmbeddingSearch';
-import type { IScenarioContext } from '../../../shell';
+import type { ISecretSpec, IScenarioContext } from '../../../shell';
 
 // ===========================================================================
 // fetch mock helpers (mirrors libraries/ts-extras embeddingClient.test.ts)
@@ -650,19 +650,30 @@ describe('crossProviderEmbeddingSearchScenario', () => {
     jest.clearAllMocks();
   });
 
-  function makeContext(): IScenarioContext {
+  /**
+   * `resolveSecret` defaults to always failing (the "nothing configured in the session
+   * secrets store / KeyStore" case), so `cli.run`'s CLI-env-var fallback (`process.env`,
+   * unaffected here) drives the existing env-var-keyed tests below unchanged. Pass an
+   * override to exercise the resolved-via-context.resolveSecret path directly.
+   */
+  function makeContext(
+    resolveSecret: IScenarioContext['resolveSecret'] = jest.fn(async (spec: ISecretSpec) =>
+      fail<string>(`${spec.envVarName} not set`)
+    )
+  ): IScenarioContext {
     return {
       logger: new Logging.LogReporter<unknown>({ logger: new Logging.InMemoryLogger() }),
       keyStore: undefined,
-      resolveSecret: jest.fn(),
+      resolveSecret,
       dataTree: {} as IScenarioContext['dataTree']
     };
   }
 
-  test('is a CLI-only ai scenario with the expected id and tags', () => {
+  test('is a web-runnable ai scenario with the expected id and tags', () => {
     expect(crossProviderEmbeddingSearchScenario.id).toBe('cross-provider-embedding-search');
     expect(crossProviderEmbeddingSearchScenario.category).toBe('ai');
     expect(crossProviderEmbeddingSearchScenario.cli).toBeDefined();
+    expect(crossProviderEmbeddingSearchScenario.cli?.webRunnable).toBe(true);
     expect(crossProviderEmbeddingSearchScenario.web).toBeUndefined();
     expect(crossProviderEmbeddingSearchScenario.tags).toContain('embeddings');
     expect(crossProviderEmbeddingSearchScenario.tags).toContain('cross-provider');
@@ -671,6 +682,61 @@ describe('crossProviderEmbeddingSearchScenario', () => {
       'GEMINI_API_KEY',
       'MISTRAL_API_KEY'
     ]);
+  });
+
+  test('cli.run resolves the OpenAI key via context.resolveSecret (web path)', async () => {
+    const saved = { openai: process.env.OPENAI_API_KEY, provider: process.env.EMBED_PROVIDER };
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.EMBED_PROVIDER;
+    global.fetch = jest.fn();
+    mockTwoFetches(openAiBody([QUERY_VEC]), openAiBody(DOC_VECS));
+    try {
+      const resolveSecret: IScenarioContext['resolveSecret'] = jest.fn(async (spec: ISecretSpec) =>
+        spec.id === 'provider:openai'
+          ? succeed('sk-from-session-store')
+          : fail<string>(`${spec.envVarName} not set`)
+      );
+      expect(
+        await crossProviderEmbeddingSearchScenario.cli!.run(makeContext(resolveSecret))
+      ).toSucceedAndSatisfy((summary: string) => {
+        expect(summary).toMatch(/cross-provider-embedding-search \(openai\): PASS/);
+      });
+      expect(headersOf(0).Authorization).toBe('Bearer sk-from-session-store');
+    } finally {
+      if (saved.openai !== undefined) {
+        process.env.OPENAI_API_KEY = saved.openai;
+      }
+      if (saved.provider !== undefined) {
+        process.env.EMBED_PROVIDER = saved.provider;
+      }
+    }
+  });
+
+  test('cli.run falls back to the default (openai, no knobs) when process.env is unavailable', async () => {
+    // Simulates the browser: `globalThis.process` absent, so readNodeEnv() resolves to `{}` and
+    // the EMBED_PROVIDER/EMBED_MODEL/EMBED_DIMENSIONS/EMBED_ENDPOINT knobs fall back to defaults.
+    // `readNodeEnv()` runs synchronously at the top of `buildEmbeddingEnv`, before `cli.run`'s
+    // first await suspends — so `process` is restored immediately after kicking the run off
+    // (not after awaiting it), which both matches that ordering and avoids a
+    // require-atomic-updates false positive on a post-await global write. The setup between
+    // delete and restore is wrapped in try/finally so a thrown setup error can't leave
+    // `globalThis.process` deleted for later tests in this file.
+    const originalProcess = globalThis.process;
+    let runPromise: Promise<Result<string>>;
+    try {
+      delete (globalThis as unknown as { process?: NodeJS.Process }).process;
+      global.fetch = jest.fn();
+      mockTwoFetches(openAiBody([QUERY_VEC]), openAiBody(DOC_VECS));
+      const resolveSecret: IScenarioContext['resolveSecret'] = jest.fn(async (spec: ISecretSpec) =>
+        spec.id === 'provider:openai' ? succeed('sk-web') : fail<string>(`${spec.envVarName} not set`)
+      );
+      runPromise = crossProviderEmbeddingSearchScenario.cli!.run(makeContext(resolveSecret));
+    } finally {
+      globalThis.process = originalProcess;
+    }
+    expect(await runPromise).toSucceedAndSatisfy((summary: string) => {
+      expect(summary).toMatch(/cross-provider-embedding-search \(openai\): PASS/);
+    });
   });
 
   test('cli.run fails with the live-gate-PENDING diagnostic when no key is in the environment', async () => {

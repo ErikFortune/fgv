@@ -31,7 +31,13 @@ import { fail, Result } from '@fgv/ts-utils';
 
 import { splitChatRequest } from './chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from './endpoint';
-import { type IAiStreamEvent, type ModelSpecKey, isResponsesOnlyModel, resolveProviderModel } from './model';
+import {
+  type IAiStreamEvent,
+  type ModelSpecKey,
+  isAdaptiveThinkingModel,
+  isResponsesOnlyModel,
+  resolveProviderModel
+} from './model';
 import { callAnthropicStream } from './streamingAdapters/anthropic';
 import { type IProviderCompletionStreamParams, type IStreamApiConfig } from './streamingAdapters/common';
 import { callGeminiStream } from './streamingAdapters/gemini';
@@ -176,7 +182,19 @@ export async function callProviderCompletionStream(
       }
       return callOpenAiChatStream(config, prompt, head, temperature, logger, signal, resolvedThinking);
     case 'anthropic':
-      return callAnthropicStream(config, prompt, head, temperature, tools, logger, signal, resolvedThinking);
+      return callAnthropicStream(
+        config,
+        prompt,
+        head,
+        temperature,
+        tools,
+        logger,
+        signal,
+        resolvedThinking,
+        undefined,
+        undefined,
+        isAdaptiveThinkingModel(descriptor, config.model)
+      );
     case 'gemini':
       return callGeminiStream(config, prompt, head, temperature, tools, logger, signal, resolvedThinking);
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */

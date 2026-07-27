@@ -29,10 +29,16 @@ export type ScenarioCategory = 'ai' | 'i18n' | 'crypto' | 'prompts' | 'resources
  * @public
  */
 export interface ISecretSpec {
-  /** KeyStore-compatible id (e.g. `'openai-api-key'`). */
+  /** KeyStore-compatible id (e.g. `'provider:openai'` — see `AiAssist.providerApiKeySecretName`). */
   readonly id: string;
-  /** Fallback env var (e.g. `'OPENAI_API_KEY'`). */
+  /** Fallback env var (e.g. `'OPENAI_API_KEY'`), tried first among the env-var fallbacks. */
   readonly envVarName: string;
+  /**
+   * Additional env var names tried, in order, after `envVarName`, before the secret is
+   * considered unresolved. Used when a provider accepts more than one env var for the same
+   * key (e.g. Gemini's `GEMINI_API_KEY` / `GOOGLE_API_KEY`).
+   */
+  readonly fallbackEnvVarNames?: readonly string[];
   /** Human-readable description surfaced in the missing-secret diagnostic. */
   readonly description: string;
 }
@@ -94,6 +100,17 @@ export interface IWebScenarioImpl {
  */
 export interface ICliScenarioImpl {
   readonly run: (context: IScenarioContext) => Promise<Result<string>>;
+  /**
+   * Opt-in flag: when `true` and the scenario declares no `web` impl, the shell renders a
+   * shell-generic runner panel (secret status, Run button, in-flight state, `Result<string>`
+   * report) that invokes `run` directly in the browser, instead of the "CLI-only" message.
+   *
+   * Opting in requires the CLI implementation's module graph to be browser-clean (no static
+   * Node-core/Node-native imports — `rushx build:web` is the proof) and to resolve secrets via
+   * `IScenarioContext.resolveSecret` rather than reading `process.env` directly (browsers have
+   * no `process`). Defaults to `false`/absent — CLI-only behavior is unchanged.
+   */
+  readonly webRunnable?: boolean;
 }
 
 /**

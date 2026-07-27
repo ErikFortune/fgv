@@ -35,9 +35,10 @@ import {
 import {
   anthropicModelTiersScenario,
   geminiModelTiersScenario,
-  openaiModelTiersScenario
+  openaiModelTiersScenario,
+  resolveTierApiKey
 } from '../../../scenarios/modelTiers';
-import type { IScenario, IScenarioContext } from '../../../shell';
+import type { ISecretSpec, IScenario, IScenarioContext } from '../../../shell';
 
 const openai = AiAssist.getProviderDescriptor('openai').orThrow();
 const anthropic = AiAssist.getProviderDescriptor('anthropic').orThrow();
@@ -373,6 +374,37 @@ describe('formatTierCanaryReport', () => {
 });
 
 // ---------------------------------------------------------------------------
+// resolveTierApiKey
+// ---------------------------------------------------------------------------
+
+describe('resolveTierApiKey', () => {
+  const specA: ISecretSpec = { id: 'a-key', envVarName: 'A_KEY', description: 'a' };
+  const specB: ISecretSpec = { id: 'b-key', envVarName: 'B_KEY', description: 'b' };
+
+  test('returns the first spec that resolves, trying specs in order', async () => {
+    const context = {
+      resolveSecret: jest.fn(async (spec: ISecretSpec) =>
+        spec.id === 'b-key' ? succeed('resolved-b') : fail(`${spec.id} not set`)
+      )
+    } as unknown as IScenarioContext;
+    await expect(resolveTierApiKey(context, [specA, specB])).resolves.toBe('resolved-b');
+  });
+
+  test('returns undefined when no spec resolves', async () => {
+    const context = {
+      resolveSecret: jest.fn(async (spec: ISecretSpec) => fail(`${spec.id} not set`))
+    } as unknown as IScenarioContext;
+    await expect(resolveTierApiKey(context, [specA, specB])).resolves.toBeUndefined();
+  });
+
+  test('returns undefined for an empty spec list', async () => {
+    const context = { resolveSecret: jest.fn() } as unknown as IScenarioContext;
+    await expect(resolveTierApiKey(context, [])).resolves.toBeUndefined();
+    expect(context.resolveSecret).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Scenario metadata + keyless cli.run (STOP-FLAG)
 // ---------------------------------------------------------------------------
 
@@ -383,46 +415,29 @@ describe('model-tier scenarios', () => {
     ['google-gemini-model-tiers', geminiModelTiersScenario]
   ];
 
-  test.each(scenariosById)('%s is a CLI-only ai scenario', (id, scenario) => {
+  test.each(scenariosById)('%s is a web-runnable ai scenario', (id, scenario) => {
     expect(scenario.id).toBe(id);
     expect(scenario.category).toBe('ai');
     expect(scenario.tags).toContain('model-tiers');
     expect(scenario.cli).toBeDefined();
+    expect(scenario.cli?.webRunnable).toBe(true);
     expect(scenario.web).toBeUndefined();
   });
 
-  test('cli.run without an API key returns the STOP-FLAG resolver-only proof', async () => {
-    const saved = {
-      openai: process.env.OPENAI_API_KEY,
-      anthropic: process.env.ANTHROPIC_API_KEY,
-      gemini: process.env.GEMINI_API_KEY,
-      google: process.env.GOOGLE_API_KEY
-    };
-    delete process.env.OPENAI_API_KEY;
-    delete process.env.ANTHROPIC_API_KEY;
-    delete process.env.GEMINI_API_KEY;
-    delete process.env.GOOGLE_API_KEY;
-    try {
-      const context = {
-        logger: new Logging.LogReporter<unknown>({ logger: new Logging.InMemoryLogger() })
-      } as unknown as IScenarioContext;
-      if (!geminiModelTiersScenario.cli) {
-        throw new Error('expected a CLI implementation');
-      }
-      const result = await geminiModelTiersScenario.cli.run(context);
-      expect(result).toSucceedAndSatisfy((report: string) => {
-        expect(report).toMatch(/=== google-gemini model-tier canary ===/);
-        expect(report).toMatch(
-          /@google-gemini:pro -> gemini-3\.1-pro-preview \(cascaded from a lower tier\)/
-        );
-        expect(report).toMatch(/\[PASS\] image\s+@google-gemini:flash-image -> gemini-3\.1-flash-image\b/);
-        expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
-      });
-    } finally {
-      if (saved.openai !== undefined) process.env.OPENAI_API_KEY = saved.openai;
-      if (saved.anthropic !== undefined) process.env.ANTHROPIC_API_KEY = saved.anthropic;
-      if (saved.gemini !== undefined) process.env.GEMINI_API_KEY = saved.gemini;
-      if (saved.google !== undefined) process.env.GOOGLE_API_KEY = saved.google;
+  test('cli.run without a resolvable API key returns the STOP-FLAG resolver-only proof', async () => {
+    const context = {
+      logger: new Logging.LogReporter<unknown>({ logger: new Logging.InMemoryLogger() }),
+      resolveSecret: jest.fn(async (spec: ISecretSpec) => fail(`${spec.id} not set`))
+    } as unknown as IScenarioContext;
+    if (!geminiModelTiersScenario.cli) {
+      throw new Error('expected a CLI implementation');
     }
+    const result = await geminiModelTiersScenario.cli.run(context);
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/=== google-gemini model-tier canary ===/);
+      expect(report).toMatch(/@google-gemini:pro -> gemini-3\.1-pro-preview \(cascaded from a lower tier\)/);
+      expect(report).toMatch(/\[PASS\] image\s+@google-gemini:flash-image -> gemini-3\.1-flash-image\b/);
+      expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
+    });
   });
 });

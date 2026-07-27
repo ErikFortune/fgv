@@ -81,7 +81,11 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
-    thinkingMode: 'optional'
+    thinkingMode: 'optional',
+    // Claude 5 family requires the adaptive thinking wire shape (thinking.type: 'adaptive' +
+    // output_config.effort) and 400s on the legacy thinking.type: 'enabled' + budget_tokens
+    // shape; see AiAssist.isAdaptiveThinkingModel.
+    adaptiveThinkingModelPrefixes: ['claude-sonnet-5', 'claude-opus-5', 'claude-fable-5']
   },
   {
     id: 'google-gemini',

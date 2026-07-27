@@ -21,16 +21,18 @@ describe('dedupeRequiredSecrets', () => {
 
   test('collects requiredSecrets across scenarios', () => {
     const specs = dedupeRequiredSecrets([
-      makeScenario('a', [{ id: 'openai-api-key', envVarName: 'OPENAI_API_KEY', description: 'openai' }]),
-      makeScenario('b', [{ id: 'anthropic-api-key', envVarName: 'ANTHROPIC_API_KEY', description: 'anthropic' }])
+      makeScenario('a', [{ id: 'provider:openai', envVarName: 'OPENAI_API_KEY', description: 'openai' }]),
+      makeScenario('b', [
+        { id: 'provider:anthropic', envVarName: 'ANTHROPIC_API_KEY', description: 'anthropic' }
+      ])
     ]);
-    expect(specs.map((s) => s.id)).toEqual(['openai-api-key', 'anthropic-api-key']);
+    expect(specs.map((s) => s.id)).toEqual(['provider:openai', 'provider:anthropic']);
   });
 
   test('dedupes by id, keeping the first occurrence', () => {
     const specs = dedupeRequiredSecrets([
-      makeScenario('a', [{ id: 'openai-api-key', envVarName: 'OPENAI_API_KEY', description: 'first' }]),
-      makeScenario('b', [{ id: 'openai-api-key', envVarName: 'OPENAI_API_KEY', description: 'second' }])
+      makeScenario('a', [{ id: 'provider:openai', envVarName: 'OPENAI_API_KEY', description: 'first' }]),
+      makeScenario('b', [{ id: 'provider:openai', envVarName: 'OPENAI_API_KEY', description: 'second' }])
     ]);
     expect(specs).toHaveLength(1);
     expect(specs[0]?.description).toBe('first');
@@ -46,16 +48,16 @@ describe('useSessionSecretsStore', () => {
   test('setSecret stores a value retrievable from the map', () => {
     const { result } = renderHook(() => useSessionSecretsStore());
     act(() => {
-      result.current.setSecret('openai-api-key', 'sk-test');
+      result.current.setSecret('provider:openai', 'sk-test');
     });
-    expect(result.current.secrets.get('openai-api-key')).toBe('sk-test');
+    expect(result.current.secrets.get('provider:openai')).toBe('sk-test');
   });
 
   test('setSecret produces a new Map identity on every update', () => {
     const { result } = renderHook(() => useSessionSecretsStore());
     const before = result.current.secrets;
     act(() => {
-      result.current.setSecret('openai-api-key', 'sk-test');
+      result.current.setSecret('provider:openai', 'sk-test');
     });
     expect(result.current.secrets).not.toBe(before);
   });
@@ -63,11 +65,11 @@ describe('useSessionSecretsStore', () => {
   test('setSecret can overwrite an existing value', () => {
     const { result } = renderHook(() => useSessionSecretsStore());
     act(() => {
-      result.current.setSecret('openai-api-key', 'sk-first');
+      result.current.setSecret('provider:openai', 'sk-first');
     });
     act(() => {
-      result.current.setSecret('openai-api-key', 'sk-second');
+      result.current.setSecret('provider:openai', 'sk-second');
     });
-    expect(result.current.secrets.get('openai-api-key')).toBe('sk-second');
+    expect(result.current.secrets.get('provider:openai')).toBe('sk-second');
   });
 });

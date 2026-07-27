@@ -58,6 +58,7 @@ declare namespace AiAssist {
         IAiAssistSettings,
         DEFAULT_AI_ASSIST,
         IAiAssistKeyStore,
+        providerApiKeySecretName,
         IAiImageAttachment,
         IAiImageData,
         AiImageSize,
@@ -101,6 +102,7 @@ declare namespace AiAssist {
         resolveModelAlias,
         resolveProviderModel,
         isResponsesOnlyModel,
+        isAdaptiveThinkingModel,
         toDataUrl,
         AiThinkingMode,
         IThinkingConfig,
@@ -1025,6 +1027,7 @@ interface IAiModelInfo {
 // @public
 interface IAiProviderDescriptor {
     readonly acceptsImageInput: boolean;
+    readonly adaptiveThinkingModelPrefixes?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModelAlias"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveProviderModel"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
@@ -1862,6 +1865,11 @@ interface IResolvedThinkingConfig {
     readonly xaiEffort?: IXAiThinkingConfig['effort'];
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function isAdaptiveThinkingModel(descriptor: IAiProviderDescriptor, modelId: string): boolean;
+
 // @public
 function isEncryptedFile(json: unknown): boolean;
 
@@ -2359,6 +2367,9 @@ function parseRecordJarLines(lines: string[], options?: JarRecordParserOptions):
 //
 // @public
 const pbkdf2KeyDerivationParams: Converter<IPbkdf2KeyDerivationParams>;
+
+// @public
+function providerApiKeySecretName(providerId: AiProviderId): string;
 
 // @public
 class RangeOf<T> implements RangeOfProperties<T> {

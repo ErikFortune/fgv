@@ -51,6 +51,7 @@ import {
   type IThinkingConfig,
   type ModelSpec,
   type ModelSpecKey,
+  isAdaptiveThinkingModel,
   isResponsesOnlyModel,
   resolveProviderModel
 } from './model';
@@ -563,7 +564,8 @@ async function callAnthropicCompletion(
   logger?: Logging.ILogger,
   tools?: ReadonlyArray<AiServerToolConfig>,
   signal?: AbortSignal,
-  resolvedThinking?: IResolvedThinkingConfig
+  resolvedThinking?: IResolvedThinkingConfig,
+  useAdaptiveThinking: boolean = false
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, { head });
@@ -580,7 +582,14 @@ async function callAnthropicCompletion(
 
   const effort = resolvedThinking?.anthropicEffort;
   if (effort !== undefined) {
-    body.thinking = { type: 'enabled', budget_tokens: anthropicEffortToBudgetTokens(effort) };
+    if (useAdaptiveThinking) {
+      // Claude 5 family: adaptive thinking — no budget_tokens; effort moves to the
+      // top-level output_config block. See AiAssist.isAdaptiveThinkingModel.
+      body.thinking = { type: 'adaptive' };
+      body.output_config = { effort };
+    } else {
+      body.thinking = { type: 'enabled', budget_tokens: anthropicEffortToBudgetTokens(effort) };
+    }
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
@@ -801,7 +810,8 @@ export async function callProviderCompletion(
         logger,
         tools,
         signal,
-        resolvedThinking
+        resolvedThinking,
+        isAdaptiveThinkingModel(descriptor, config.model)
       );
     case 'gemini':
       return callGeminiCompletion(config, prompt, head, temperature, logger, tools, signal, resolvedThinking);

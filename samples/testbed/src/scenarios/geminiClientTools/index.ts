@@ -46,9 +46,10 @@
  *   own event stream), and grounding is not requested at all in this scenario.
  * - "Server + client tool coexistence" — Gemini's API forbids the combination.
  *
- * The scenario is CLI-only — it requires a live `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) in the
- * environment. If neither is set, the scenario fails immediately with a clear diagnostic
- * rather than silently skipping.
+ * The scenario requires a live Gemini API key (CLI: `GEMINI_API_KEY` or `GOOGLE_API_KEY`; web:
+ * the Secrets panel) and is web-runnable via the shell's generic runner panel (Phase B). If no
+ * key is set, the scenario fails immediately with a clear diagnostic rather than silently
+ * skipping.
  *
  * @packageDocumentation
  */
@@ -59,6 +60,7 @@ import { JsonSchema } from '@fgv/ts-json-base';
 import { AiAssist } from '@fgv/ts-extras';
 
 import type { IScenario, ICliScenarioImpl, IScenarioContext } from '../../shell';
+import { resolveProviderApiKey } from '../aiProviderSecrets';
 
 // ---------------------------------------------------------------------------
 // Memory store (in-scenario harness state)
@@ -143,16 +145,16 @@ const SYSTEM_PROMPT: string =
 // ---------------------------------------------------------------------------
 
 const cliImpl: ICliScenarioImpl = {
+  webRunnable: true,
   async run(context: IScenarioContext): Promise<Result<string>> {
-    // Check for API key first. Gemini accepts either GEMINI_API_KEY (newer convention) or
-    // GOOGLE_API_KEY (legacy); honor both.
-    const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
-    if (!apiKey) {
-      return fail(
-        'Neither GEMINI_API_KEY nor GOOGLE_API_KEY environment variable is set. ' +
-          'Set one to run this scenario: export GEMINI_API_KEY=<your-key>'
-      );
+    // Resolve the API key via the shared secret pipeline (KeyStore -> session secrets store ->
+    // env var), trying GEMINI_API_KEY then GOOGLE_API_KEY, so this scenario works identically
+    // on the CLI and the web runner panel.
+    const apiKeyResult = await resolveProviderApiKey(context, 'google-gemini');
+    if (apiKeyResult.isFailure()) {
+      return fail(apiKeyResult.message);
     }
+    const apiKey = apiKeyResult.value;
 
     context.logger.info('Gemini scenario: client tools + thinking (no grounding — provider constraint)');
     context.logger.info(`User question: ${USER_QUESTION}`);
@@ -406,8 +408,9 @@ const cliImpl: ICliScenarioImpl = {
  * forbids combining grounding with function calling (HTTP 400). The "Server tool events
  * emitted" and "Server + client tool coexistence" gates are therefore N/A for Gemini.
  *
- * Requires `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) in the environment. CLI-only (live API key
- * cannot be embedded in the web bundle).
+ * Requires a Gemini API key (CLI: `GEMINI_API_KEY` or `GOOGLE_API_KEY`; web: the Secrets
+ * panel). Web-runnable — the shell's generic runner panel invokes `cli.run` directly in the
+ * browser via a direct (CORS-permitting) Gemini API call.
  *
  * @public
  */
@@ -417,15 +420,16 @@ export const geminiClientToolsScenario: IScenario = {
   description:
     'Live-wire verification of a client tool on Google Gemini with thinking enabled. ' +
     "Grounding is omitted because Gemini's API forbids combining it with function calling. " +
-    'Requires GEMINI_API_KEY (or GOOGLE_API_KEY). Server-tool and coexistence gates are ' +
-    'N/A for Gemini.',
+    'Requires a Gemini API key (GEMINI_API_KEY or GOOGLE_API_KEY). Server-tool and ' +
+    'coexistence gates are N/A for Gemini.',
   category: 'ai',
   tags: ['gemini', 'client-tools', 'thinking', 'tool-use', 'live-api'],
   requiredSecrets: [
     {
-      id: 'gemini-api-key',
+      id: AiAssist.providerApiKeySecretName('google-gemini'),
       envVarName: 'GEMINI_API_KEY',
-      description: 'Gemini API key for live round-trip verification (GOOGLE_API_KEY also accepted)'
+      fallbackEnvVarNames: ['GOOGLE_API_KEY'],
+      description: 'Gemini API key for live round-trip verification (GEMINI_API_KEY or GOOGLE_API_KEY)'
     }
   ],
   cli: cliImpl

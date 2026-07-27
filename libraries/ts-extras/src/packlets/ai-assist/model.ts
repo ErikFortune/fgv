@@ -742,6 +742,45 @@ export function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId:
   return descriptor.responsesOnlyModelPrefixes?.some((p) => modelId.startsWith(p)) ?? false;
 }
 
+/**
+ * Returns true when `modelId` equals `prefix` or starts with `prefix` followed by a `-`
+ * (versioned/dated-snapshot ids, e.g. `'claude-sonnet-5'` matches `'claude-sonnet-5-20260115'`
+ * but not `'claude-sonnet-50'`). @internal
+ */
+function isExactOrDashBoundedPrefix(modelId: string, prefix: string): boolean {
+  return modelId === prefix || modelId.startsWith(`${prefix}-`);
+}
+
+/**
+ * Determines whether a concrete (already-resolved) Anthropic model id uses the adaptive
+ * thinking wire shape (`thinking: { type: 'adaptive' }` + top-level `output_config.effort`)
+ * rather than the legacy manual-budget shape (`thinking: { type: 'enabled', budget_tokens }`).
+ *
+ * @remarks
+ * Matches `modelId` against the descriptor's
+ * {@link IAiProviderDescriptor.adaptiveThinkingModelPrefixes} using the same
+ * exact-or-dash-bounded matcher semantics as the model-specific blocks in
+ * `mergeThinkingConfig` (an entry matches when it equals the resolved model or when the
+ * resolved model starts with the entry followed by a `-`) — a plain prefix match would risk a
+ * false positive against an unrelated model sharing the same leading characters. A provider
+ * that declares no list (the common case — this is Anthropic-specific) always returns `false`.
+ * Consulted by the completion (`callProviderCompletion`), streaming
+ * (`callProviderCompletionStream`), and client-tool (`executeClientToolTurn`) Anthropic
+ * dispatch sites so every Anthropic wire-request path picks the correct thinking shape for the
+ * resolved model.
+ *
+ * @param descriptor - The provider descriptor supplying the prefix list.
+ * @param modelId - The resolved concrete model id to test.
+ * @returns `true` when `modelId` exactly matches or is dash-bounded-prefixed by any declared
+ * adaptive-thinking prefix.
+ * @public
+ */
+export function isAdaptiveThinkingModel(descriptor: IAiProviderDescriptor, modelId: string): boolean {
+  return (
+    descriptor.adaptiveThinkingModelPrefixes?.some((p) => isExactOrDashBoundedPrefix(modelId, p)) ?? false
+  );
+}
+
 // ============================================================================
 // Provider Descriptor
 // ============================================================================
@@ -1029,6 +1068,27 @@ export interface IAiProviderDescriptor {
    * Responses-only.
    */
   readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * Concrete Anthropic model ids (exact-or-dash-bounded-prefix-matched) that require the
+   * adaptive thinking wire shape (`thinking: { type: 'adaptive' }` + top-level
+   * `output_config: { effort }`) rather than the legacy manual-budget shape
+   * (`thinking: { type: 'enabled', budget_tokens }`). Non-Anthropic `apiFormat`s ignore this.
+   *
+   * @remarks
+   * The Claude 5 family (`claude-sonnet-5`, `claude-opus-5`, `claude-fable-5`, including their
+   * dated snapshots) rejects `thinking.type: 'enabled'` with an HTTP 400 and requires the
+   * adaptive shape; older models (`claude-sonnet-4-6`, `claude-opus-4-8`, `claude-haiku-4-5`,
+   * etc.) keep the legacy shape. The completion (`callProviderCompletion`), streaming
+   * (`callProviderCompletionStream`), and client-tool (`executeClientToolTurn`) Anthropic
+   * dispatch sites consult this list (via the sibling predicate
+   * `isAdaptiveThinkingModel`) to pick the correct wire shape for the resolved
+   * model. Mirrors the prefix-matching shape of `responsesOnlyModelPrefixes`, but with
+   * exact-or-dash-bounded matching (an entry matches a resolved model that equals it or starts
+   * with it followed by `-`) rather than a plain prefix, since Anthropic model families share
+   * numeric leading characters (`claude-sonnet-5` vs. a hypothetical `claude-sonnet-50`).
+   * Empty or undefined means no model uses the adaptive shape.
+   */
+  readonly adaptiveThinkingModelPrefixes?: ReadonlyArray<string>;
 }
 
 /**
@@ -1790,4 +1850,18 @@ export interface IAiAssistKeyStore {
   hasSecret(name: string): Result<boolean>;
   /** Get an API key by secret name */
   getApiKey(name: string): Result<string>;
+}
+
+/**
+ * Returns the canonical `CryptoUtils.KeyStore.KeyStore` secret name for a provider's API key,
+ * of the form `provider:<providerId>`. Apps that store provider API keys in a `KeyStore`
+ * should use this name (rather than inventing their own) so that a single keystore vault
+ * works consistently across every fgv app.
+ *
+ * @param providerId - The provider whose API key secret name is requested.
+ * @returns The canonical keystore secret name, e.g. `'provider:openai'`.
+ * @public
+ */
+export function providerApiKeySecretName(providerId: AiProviderId): string {
+  return `provider:${providerId}`;
 }

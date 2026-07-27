@@ -16,7 +16,11 @@ import { AiAssist } from '@fgv/ts-extras';
 import { SettingsPanel } from '../../../scenarios/imageGeneration/SettingsPanel';
 import { PromptPanel } from '../../../scenarios/imageGeneration/PromptPanel';
 import { ImageResults } from '../../../scenarios/imageGeneration/ImageResults';
-import { defaultModelFor, IMAGE_PROVIDERS, imageGenerationScenario } from '../../../scenarios/imageGeneration';
+import {
+  defaultModelFor,
+  IMAGE_PROVIDERS,
+  imageGenerationScenario
+} from '../../../scenarios/imageGeneration';
 import type { IScenarioContext } from '../../../shell';
 
 // ---------------------------------------------------------------------------
@@ -39,13 +43,12 @@ describe('imageGenerationScenario metadata', () => {
     }
   });
 
-  test('requiredSecrets is derived from IMAGE_PROVIDERS (reuses existing CLI secret ids)', () => {
+  test('requiredSecrets is derived from IMAGE_PROVIDERS (reuses canonical provider secret ids)', () => {
     const ids = (imageGenerationScenario.requiredSecrets ?? []).map((s) => s.id);
-    expect(ids).toContain('openai-api-key');
-    expect(ids).toContain('gemini-api-key');
-    expect(ids).toContain('google-api-key');
+    expect(ids).toContain('provider:openai');
+    expect(ids).toContain('provider:google-gemini');
     // Anthropic does not support image generation — must not be declared here.
-    expect(ids).not.toContain('anthropic-api-key');
+    expect(ids).not.toContain('provider:anthropic');
   });
 
   test('defaultModelFor returns the empty string for an unknown provider id', () => {
@@ -488,28 +491,28 @@ describe('imageGeneration PromptPanel', () => {
    * checks, which no real browser would otherwise trigger.
    */
   function mockFileReaderResult(dataUrl: string): jest.SpyInstance {
-    return jest.spyOn(FileReader.prototype, 'readAsDataURL').mockImplementation(function (
-      this: FileReader
-    ): void {
-      queueMicrotask(() => {
-        Object.defineProperty(this, 'result', { value: dataUrl, configurable: true });
-        (this.onload as unknown as (ev: unknown) => void)?.(new Event('load'));
+    return jest
+      .spyOn(FileReader.prototype, 'readAsDataURL')
+      .mockImplementation(function (this: FileReader): void {
+        queueMicrotask(() => {
+          Object.defineProperty(this, 'result', { value: dataUrl, configurable: true });
+          (this.onload as unknown as (ev: unknown) => void)?.(new Event('load'));
+        });
       });
-    });
   }
 
   /** Same idea as {@link mockFileReaderResult}, but drives the `onerror` path instead. */
   function mockFileReaderError(error?: DOMException): jest.SpyInstance {
-    return jest.spyOn(FileReader.prototype, 'readAsDataURL').mockImplementation(function (
-      this: FileReader
-    ): void {
-      queueMicrotask(() => {
-        if (error) {
-          Object.defineProperty(this, 'error', { value: error, configurable: true });
-        }
-        (this.onerror as unknown as (ev: unknown) => void)?.(new Event('error'));
+    return jest
+      .spyOn(FileReader.prototype, 'readAsDataURL')
+      .mockImplementation(function (this: FileReader): void {
+        queueMicrotask(() => {
+          if (error) {
+            Object.defineProperty(this, 'error', { value: error, configurable: true });
+          }
+          (this.onerror as unknown as (ev: unknown) => void)?.(new Event('error'));
+        });
       });
-    });
   }
 
   test('rejects when FileReader itself reports an error (reader.error is null)', async () => {
@@ -602,7 +605,7 @@ describe('imageGeneration PromptPanel', () => {
     alertSpy.mockRestore();
   });
 
-  test('falls back to the file\'s own type when the data URL header mime is empty', async () => {
+  test("falls back to the file's own type when the data URL header mime is empty", async () => {
     const readerSpy = mockFileReaderResult('data:;base64,QUFB');
     const onReferenceImagesChange = jest.fn();
     render(<PromptPanel {...baseProps({ onReferenceImagesChange })} />);
@@ -702,9 +705,9 @@ describe('imageGeneration integration', () => {
 
   test('enables generation and renders results once a key resolves and generation succeeds', async () => {
     const context = makeContext(async () => succeed('sk-test'));
-    const generateSpy = jest.spyOn(AiAssist, 'callProviderImageGeneration').mockResolvedValue(
-      succeed({ images: [{ mimeType: 'image/png', base64: 'AAA' }] })
-    );
+    const generateSpy = jest
+      .spyOn(AiAssist, 'callProviderImageGeneration')
+      .mockResolvedValue(succeed({ images: [{ mimeType: 'image/png', base64: 'AAA' }] }));
     const Component = imageGenerationScenario.web!.component;
     render(<Component context={context} />);
 
@@ -727,7 +730,9 @@ describe('imageGeneration integration', () => {
 
   test('shows an inline error when generation fails', async () => {
     const context = makeContext(async () => succeed('sk-test'));
-    jest.spyOn(AiAssist, 'callProviderImageGeneration').mockResolvedValue(fail('provider rejected the request'));
+    jest
+      .spyOn(AiAssist, 'callProviderImageGeneration')
+      .mockResolvedValue(fail('provider rejected the request'));
     const Component = imageGenerationScenario.web!.component;
     render(<Component context={context} />);
 
@@ -740,9 +745,11 @@ describe('imageGeneration integration', () => {
 
   test('fetching models populates the model list on success', async () => {
     const context = makeContext(async () => succeed('sk-test'));
-    jest.spyOn(AiAssist, 'callProviderListModels').mockResolvedValue(
-      succeed([{ id: 'gpt-image-3', displayName: 'GPT Image 3', capabilities: new Set() }])
-    );
+    jest
+      .spyOn(AiAssist, 'callProviderListModels')
+      .mockResolvedValue(
+        succeed([{ id: 'gpt-image-3', displayName: 'GPT Image 3', capabilities: new Set() }])
+      );
     const Component = imageGenerationScenario.web!.component;
     render(<Component context={context} />);
 

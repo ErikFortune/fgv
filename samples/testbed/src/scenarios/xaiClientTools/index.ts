@@ -49,9 +49,9 @@
  *   surfaced as `tool-event`s.
  * - **Server + client tool coexistence:** both tool types are present in the same request.
  *
- * The scenario is CLI-only — it requires a live `XAI_API_KEY` in the environment. If the key
- * is absent, the scenario fails immediately with a clear diagnostic rather than silently
- * skipping.
+ * The scenario requires a live xAI API key (CLI: `XAI_API_KEY`; web: the Secrets panel) and
+ * is web-runnable via the shell's generic runner panel (Phase B). If the key is absent, the
+ * scenario fails immediately with a clear diagnostic rather than silently skipping.
  *
  * @packageDocumentation
  */
@@ -62,6 +62,7 @@ import { JsonSchema } from '@fgv/ts-json-base';
 import { AiAssist } from '@fgv/ts-extras';
 
 import type { IScenario, ICliScenarioImpl, IScenarioContext } from '../../shell';
+import { resolveProviderApiKey } from '../aiProviderSecrets';
 
 // ---------------------------------------------------------------------------
 // Memory store (in-scenario harness state)
@@ -145,15 +146,15 @@ const SYSTEM_PROMPT: string =
 // ---------------------------------------------------------------------------
 
 const cliImpl: ICliScenarioImpl = {
+  webRunnable: true,
   async run(context: IScenarioContext): Promise<Result<string>> {
-    // Check for API key first.
-    const apiKey = process.env.XAI_API_KEY;
-    if (!apiKey) {
-      return fail(
-        'XAI_API_KEY environment variable is not set. ' +
-          'Set it to run this scenario: export XAI_API_KEY=<your-key>'
-      );
+    // Resolve the API key via the shared secret pipeline (KeyStore -> session secrets store ->
+    // env var), so this scenario works identically on the CLI and the web runner panel.
+    const apiKeyResult = await resolveProviderApiKey(context, 'xai-grok');
+    if (apiKeyResult.isFailure()) {
+      return fail(apiKeyResult.message);
     }
+    const apiKey = apiKeyResult.value;
 
     context.logger.info('xAI scenario: client tools + server tools + reasoning');
     context.logger.info(`User question: ${USER_QUESTION}`);
@@ -393,8 +394,9 @@ const cliImpl: ICliScenarioImpl = {
  * - The continuation (reconstructed turn + function-call output) survives a live round-trip.
  * - Server + client tool coexistence works end-to-end.
  *
- * Requires `XAI_API_KEY` in the environment. CLI-only (live API key cannot be embedded in
- * the web bundle).
+ * Requires an xAI API key (env var `XAI_API_KEY` on the CLI, the Secrets panel on the web).
+ * Web-runnable — the shell's generic runner panel invokes `cli.run` directly in the browser
+ * via a direct (CORS-permitting) xAI API call.
  *
  * @public
  */
@@ -404,13 +406,13 @@ export const xaiClientToolsScenario: IScenario = {
   description:
     'Live-wire verification of client + server tools on xAI Grok (OpenAI Responses API path). ' +
     'Exercises a memory tool (client) + web_search (server) coexisting with reasoning ' +
-    'enabled. Requires XAI_API_KEY. A successful live round-trip confirms the Responses-API ' +
+    'enabled. Requires an xAI API key. A successful live round-trip confirms the Responses-API ' +
     'request/continuation wire shapes match xAI’s live contract.',
   category: 'ai',
   tags: ['xai', 'grok', 'client-tools', 'reasoning', 'tool-use', 'live-api'],
   requiredSecrets: [
     {
-      id: 'xai-api-key',
+      id: AiAssist.providerApiKeySecretName('xai-grok'),
       envVarName: 'XAI_API_KEY',
       description: 'xAI API key for live round-trip verification'
     }

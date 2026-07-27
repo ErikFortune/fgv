@@ -13,6 +13,8 @@ import '@fgv/ts-utils-jest';
 import React from 'react';
 import { render, screen, within, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { fail, succeed, type Result } from '@fgv/ts-utils';
+import { CryptoUtils } from '@fgv/ts-extras';
+import { CryptoUtils as WebCryptoUtils } from '@fgv/ts-web-extras';
 
 import { App, TestbedShell, ThemeToggle } from '../../../web/App';
 import { MessagesProvider, ResponsiveProvider, ThemeProvider } from '@fgv/ts-app-shell';
@@ -292,6 +294,51 @@ describe('ScenarioHost — no web impl', () => {
 });
 
 // ---------------------------------------------------------------------------
+// ScenarioHost: webRunnable branch (Phase B)
+// ---------------------------------------------------------------------------
+
+describe('ScenarioHost — webRunnable', () => {
+  beforeEach(() => {
+    window.history.replaceState(null, '', '#');
+  });
+  afterEach(cleanup);
+
+  test('renders the ScenarioRunnerPanel for a scenario with cli.webRunnable and no web impl', () => {
+    const webRunnableScenario: IScenario = {
+      id: 'web-runnable-only',
+      title: 'Web Runnable Only',
+      description: 'desc',
+      category: 'general',
+      tags: ['test'],
+      cli: {
+        run: async () => succeed('ok'),
+        webRunnable: true
+      }
+    };
+    renderInProviders(<TestbedShell scenarios={[webRunnableScenario]} />);
+    expect(screen.getByTestId('testbed-scenario-runner')).not.toBeNull();
+    expect(screen.queryByTestId('testbed-scenario-no-web')).toBeNull();
+  });
+
+  test('still shows the no-web message when cli.webRunnable is false', () => {
+    const notWebRunnableScenario: IScenario = {
+      id: 'not-web-runnable',
+      title: 'Not Web Runnable',
+      description: 'desc',
+      category: 'general',
+      tags: ['test'],
+      cli: {
+        run: async () => succeed('ok'),
+        webRunnable: false
+      }
+    };
+    renderInProviders(<TestbedShell scenarios={[notWebRunnableScenario]} />);
+    expect(screen.getByTestId('testbed-scenario-no-web')).not.toBeNull();
+    expect(screen.queryByTestId('testbed-scenario-runner')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // ScenarioHost: web impl without initialize
 // ---------------------------------------------------------------------------
 
@@ -451,14 +498,10 @@ describe('TestbedShell secrets wiring', () => {
   });
   afterEach(cleanup);
 
-  const SECRET_SPEC = { id: 'openai-api-key', envVarName: 'OPENAI_API_KEY', description: 'OpenAI key' };
+  const SECRET_SPEC = { id: 'provider:openai', envVarName: 'OPENAI_API_KEY', description: 'OpenAI key' };
 
   /** A scenario whose component surfaces the live `context.resolveSecret` result for the spec. */
-  function ResolveSecretProbeComponent({
-    context
-  }: {
-    context: IScenarioContext;
-  }): React.ReactElement {
+  function ResolveSecretProbeComponent({ context }: { context: IScenarioContext }): React.ReactElement {
     const [resolved, setResolved] = React.useState<string>('pending');
     React.useEffect(() => {
       context
@@ -488,7 +531,7 @@ describe('TestbedShell secrets wiring', () => {
 
     fireEvent.click(screen.getByTestId('testbed-secrets-btn'));
     expect(screen.getByTestId('testbed-secrets-modal')).not.toBeNull();
-    expect(screen.getByTestId('testbed-secret-field-openai-api-key')).not.toBeNull();
+    expect(screen.getByTestId('testbed-secret-field-provider:openai')).not.toBeNull();
     await waitFor(() => expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/^failed:/));
   });
 
@@ -505,23 +548,109 @@ describe('TestbedShell secrets wiring', () => {
   test('a scenario missing its secret sees resolveSecret fail with a message naming the id', async () => {
     renderInProviders(<TestbedShell scenarios={[makeResolveSecretScenario()]} />);
     await waitFor(() =>
-      expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/failed:.*openai-api-key/)
+      expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/failed:.*provider:openai/)
     );
   });
 
   test('typing a value into the Secrets modal makes it visible to a scenario via resolveSecret', async () => {
     renderInProviders(<TestbedShell scenarios={[makeResolveSecretScenario()]} />);
-    await waitFor(() =>
-      expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/^failed:/)
-    );
+    await waitFor(() => expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/^failed:/));
 
     fireEvent.click(screen.getByTestId('testbed-secrets-btn'));
-    fireEvent.change(screen.getByTestId('testbed-secret-input-openai-api-key'), {
+    fireEvent.change(screen.getByTestId('testbed-secret-input-provider:openai'), {
       target: { value: 'sk-test-value' }
     });
 
     await waitFor(() =>
       expect(screen.getByTestId('resolve-secret-readout').textContent).toBe('sk-test-value')
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// KeyStore import wiring (Phase B)
+// ---------------------------------------------------------------------------
+
+describe('TestbedShell KeyStore wiring', () => {
+  beforeEach(() => {
+    window.history.replaceState(null, '', '#');
+  });
+  afterEach(cleanup);
+
+  const KEYSTORE_PASSWORD = 'correct horse battery staple';
+  const SECRET_SPEC = { id: 'provider:openai', envVarName: 'OPENAI_API_KEY', description: 'OpenAI key' };
+
+  /** A scenario whose component surfaces the live `context.resolveSecret` result for the spec. */
+  function ResolveSecretProbeComponent({ context }: { context: IScenarioContext }): React.ReactElement {
+    const [resolved, setResolved] = React.useState<string>('pending');
+    React.useEffect(() => {
+      context
+        .resolveSecret(SECRET_SPEC)
+        .then((result) => setResolved(result.isSuccess() ? result.value : `failed: ${result.message}`))
+        .catch(() => undefined);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [context.resolveSecret]);
+    return <div data-testid="resolve-secret-readout">{resolved}</div>;
+  }
+
+  function makeResolveSecretScenario(): IScenario {
+    return {
+      id: 'resolve-secret-probe',
+      title: 'Resolve Secret Probe',
+      description: 'desc',
+      category: 'ai',
+      tags: ['test'],
+      requiredSecrets: [SECRET_SPEC],
+      web: { component: ResolveSecretProbeComponent }
+    };
+  }
+
+  /** Builds a real, saved keystore file (via the actual `KeyStore` class) with one secret. */
+  async function buildFixtureKeystoreFile(): Promise<File> {
+    const cryptoProvider = new WebCryptoUtils.BrowserCryptoProvider();
+    const keyStore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider }).orThrow();
+    await keyStore.initialize(KEYSTORE_PASSWORD);
+    await keyStore.importApiKey('provider:openai', 'sk-from-keystore');
+    const saved = (await keyStore.save(KEYSTORE_PASSWORD)).orThrow();
+    return new File([JSON.stringify(saved)], 'keystore.json', { type: 'application/json' });
+  }
+
+  test('unlocking a KeyStore makes its secret visible to a scenario via resolveSecret, and the readout refreshes', async () => {
+    const file = await buildFixtureKeystoreFile();
+    renderInProviders(<TestbedShell scenarios={[makeResolveSecretScenario()]} />);
+    await waitFor(() => expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/^failed:/));
+
+    fireEvent.click(screen.getByTestId('testbed-secrets-btn'));
+    fireEvent.change(screen.getByTestId('testbed-keystore-file-input'), { target: { files: [file] } });
+    fireEvent.change(screen.getByTestId('testbed-keystore-password-input'), {
+      target: { value: KEYSTORE_PASSWORD }
+    });
+    fireEvent.click(screen.getByTestId('testbed-keystore-unlock-btn'));
+
+    await waitFor(() => expect(screen.getByTestId('testbed-keystore-unlocked')).not.toBeNull());
+    // The scenario's resolveSecret closure re-resolves on the keyStore identity change (same
+    // re-resolve-on-identity-change pattern as the session-secrets-store test above).
+    await waitFor(() =>
+      expect(screen.getByTestId('resolve-secret-readout').textContent).toBe('sk-from-keystore')
+    );
+  });
+
+  test('locking the KeyStore clears context.keyStore and the readout reverts to failed', async () => {
+    const file = await buildFixtureKeystoreFile();
+    renderInProviders(<TestbedShell scenarios={[makeResolveSecretScenario()]} />);
+
+    fireEvent.click(screen.getByTestId('testbed-secrets-btn'));
+    fireEvent.change(screen.getByTestId('testbed-keystore-file-input'), { target: { files: [file] } });
+    fireEvent.change(screen.getByTestId('testbed-keystore-password-input'), {
+      target: { value: KEYSTORE_PASSWORD }
+    });
+    fireEvent.click(screen.getByTestId('testbed-keystore-unlock-btn'));
+    await waitFor(() =>
+      expect(screen.getByTestId('resolve-secret-readout').textContent).toBe('sk-from-keystore')
+    );
+
+    fireEvent.click(screen.getByTestId('testbed-keystore-lock-btn'));
+    expect(screen.queryByTestId('testbed-keystore-unlocked')).toBeNull();
+    await waitFor(() => expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/^failed:/));
   });
 });

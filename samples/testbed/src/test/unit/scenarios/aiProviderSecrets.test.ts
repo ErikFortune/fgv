@@ -15,7 +15,12 @@ import type { IScenarioContext, ISecretSpec } from '../../../shell';
 // Minimal context stub — only `resolveSecret` and `logger` are exercised by this module.
 function makeContext(resolveSecret: IScenarioContext['resolveSecret']): IScenarioContext {
   return {
-    logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), detail: jest.fn() } as unknown as IScenarioContext['logger'],
+    logger: {
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      detail: jest.fn()
+    } as unknown as IScenarioContext['logger'],
     keyStore: undefined,
     resolveSecret,
     dataTree: {} as unknown as IScenarioContext['dataTree']
@@ -27,19 +32,21 @@ describe('requiredSecretsForProviders', () => {
     expect(requiredSecretsForProviders(['ollama'])).toEqual([]);
   });
 
-  test('returns the primary spec for a single-secret provider', () => {
+  test('returns the canonical spec for a single-secret provider', () => {
     const specs = requiredSecretsForProviders(['openai']);
-    expect(specs.map((s) => s.id)).toEqual(['openai-api-key']);
+    expect(specs.map((s) => s.id)).toEqual(['provider:openai']);
   });
 
-  test('returns primary + fallback for gemini', () => {
+  test('returns a single spec for gemini (env fallback handled within the spec)', () => {
     const specs = requiredSecretsForProviders(['google-gemini']);
-    expect(specs.map((s) => s.id)).toEqual(['gemini-api-key', 'google-api-key']);
+    expect(specs.map((s) => s.id)).toEqual(['provider:google-gemini']);
+    expect(specs[0].envVarName).toBe('GEMINI_API_KEY');
+    expect(specs[0].fallbackEnvVarNames).toEqual(['GOOGLE_API_KEY']);
   });
 
   test('dedupes across multiple providers', () => {
     const specs = requiredSecretsForProviders(['openai', 'openai', 'xai-grok']);
-    expect(specs.map((s) => s.id)).toEqual(['openai-api-key', 'xai-api-key']);
+    expect(specs.map((s) => s.id)).toEqual(['provider:openai', 'provider:xai-grok']);
   });
 
   test('every entry in PROVIDER_SECRET_SPECS is reachable', () => {
@@ -55,32 +62,30 @@ describe('resolveProviderApiKey', () => {
     expect(result).toSucceedWith('');
   });
 
-  test('resolves via the primary spec when it succeeds', async () => {
+  test('resolves via context.resolveSecret using the provider’s canonical spec', async () => {
     const context = makeContext(async (spec: ISecretSpec) =>
-      spec.id === 'openai-api-key' ? succeed('sk-primary') : fail('unexpected spec')
+      spec.id === 'provider:openai' ? succeed('sk-primary') : fail('unexpected spec')
     );
     const result = await resolveProviderApiKey(context, 'openai');
     expect(result).toSucceedWith('sk-primary');
   });
 
-  test('falls back to the fallback spec when the primary fails (gemini)', async () => {
+  test('passes the gemini spec with its GEMINI_API_KEY/GOOGLE_API_KEY env fallback chain', async () => {
     const context = makeContext(async (spec: ISecretSpec) =>
-      spec.id === 'google-api-key' ? succeed('sk-fallback') : fail('primary missing')
+      spec.id === 'provider:google-gemini' &&
+      spec.envVarName === 'GEMINI_API_KEY' &&
+      spec.fallbackEnvVarNames?.includes('GOOGLE_API_KEY')
+        ? succeed('sk-gemini')
+        : fail('unexpected spec')
     );
     const result = await resolveProviderApiKey(context, 'google-gemini');
-    expect(result).toSucceedWith('sk-fallback');
+    expect(result).toSucceedWith('sk-gemini');
   });
 
-  test('fails with both messages when neither primary nor fallback resolve (gemini)', async () => {
+  test('propagates a failure from context.resolveSecret', async () => {
     const context = makeContext(async () => fail('not set'));
-    const result = await resolveProviderApiKey(context, 'google-gemini');
-    expect(result).toFailWith(/not set[\s\S]*not set/);
-  });
-
-  test('fails with the primary message when a provider has no fallback (openai)', async () => {
-    const context = makeContext(async () => fail('primary missing'));
     const result = await resolveProviderApiKey(context, 'openai');
-    expect(result).toFailWith(/primary missing/);
+    expect(result).toFailWith(/not set/);
   });
 });
 
@@ -132,8 +137,8 @@ describe('useProviderApiKey', () => {
   });
 
   test('re-resolves when the provider changes', async () => {
-    const resolveSecret = jest.fn(async (spec: ISecretSpec): Promise<Result<string>> =>
-      succeed(`sk-${spec.id}`)
+    const resolveSecret = jest.fn(
+      async (spec: ISecretSpec): Promise<Result<string>> => succeed(`sk-${spec.id}`)
     );
     const context = makeContext(resolveSecret);
     const { result, rerender } = renderHook(
@@ -141,10 +146,10 @@ describe('useProviderApiKey', () => {
       { initialProps: { provider: 'openai' } }
     );
     await waitFor(() => expect(result.current.status).toBe('ready'));
-    expect(result.current.apiKey).toBe('sk-openai-api-key');
+    expect(result.current.apiKey).toBe('sk-provider:openai');
 
     rerender({ provider: 'anthropic' });
-    await waitFor(() => expect(result.current.apiKey).toBe('sk-anthropic-api-key'));
+    await waitFor(() => expect(result.current.apiKey).toBe('sk-provider:anthropic'));
   });
 
   test('re-resolves when the resolveSecret closure identity changes (session store updated)', async () => {

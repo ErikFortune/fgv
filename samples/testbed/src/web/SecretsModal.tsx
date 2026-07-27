@@ -8,9 +8,11 @@
 
 import React from 'react';
 import { Modal } from '@fgv/ts-app-shell';
+import type { CryptoUtils } from '@fgv/ts-extras';
 
 import { dedupeRequiredSecrets } from '../shell';
 import type { IScenario, ISecretSpec } from '../shell';
+import { KeyStoreSection } from './KeyStoreSection';
 
 /**
  * Props for {@link SecretsModal}.
@@ -24,6 +26,10 @@ export interface ISecretsModalProps {
   /** Current session-memory secret values, keyed by {@link ISecretSpec.id}. */
   readonly secrets: ReadonlyMap<string, string>;
   readonly onSetSecret: (id: string, value: string) => void;
+  /** The currently unlocked KeyStore, or `undefined` if none is open. */
+  readonly keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
+  readonly onKeyStoreUnlocked: (keyStore: CryptoUtils.KeyStore.KeyStore) => void;
+  readonly onKeyStoreLocked: () => void;
 }
 
 /** Renders a single secret field: label, description, env-var fallback note, and input. */
@@ -37,6 +43,7 @@ function SecretField({
   readonly onChange: (value: string) => void;
 }): React.ReactElement {
   const inputId = `testbed-secret-input-${spec.id}`;
+  const envVarNames = [spec.envVarName, ...(spec.fallbackEnvVarNames ?? [])].join('/');
   return (
     <div className="space-y-1" data-testid={`testbed-secret-field-${spec.id}`}>
       <label htmlFor={inputId} className="block text-sm font-medium text-primary">
@@ -49,7 +56,7 @@ function SecretField({
         autoComplete="off"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={`Falls back to ${spec.envVarName} (CLI only — not read in the browser)`}
+        placeholder={`Falls back to ${envVarNames} (CLI only — not read in the browser)`}
         className="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-primary placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
       />
       <p className="text-xs text-secondary">{spec.description}</p>
@@ -64,16 +71,18 @@ function SecretField({
  * @public
  */
 export function SecretsModal(props: ISecretsModalProps): React.ReactElement {
-  const { isOpen, onClose, scenarios, secrets, onSetSecret } = props;
+  const { isOpen, onClose, scenarios, secrets, onSetSecret, keyStore, onKeyStoreUnlocked, onKeyStoreLocked } =
+    props;
   const specs = dedupeRequiredSecrets(scenarios);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Secrets">
       <div data-testid="testbed-secrets-modal" className="space-y-4">
         <p className="text-sm text-secondary">
-          API keys entered here live in memory for this browser session only — they are never persisted
-          or sent anywhere except directly to the provider you select in a scenario.
+          API keys entered here live in memory for this browser session only — they are never persisted or
+          sent anywhere except directly to the provider you select in a scenario.
         </p>
+        <KeyStoreSection keyStore={keyStore} onUnlocked={onKeyStoreUnlocked} onLocked={onKeyStoreLocked} />
         {specs.length === 0 ? (
           <p data-testid="testbed-secrets-empty" className="text-sm text-muted">
             No registered scenario declares a required secret yet.
