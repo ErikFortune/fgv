@@ -491,7 +491,8 @@ export async function callAnthropicStream(
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
   accumulationBuffer?: Map<number, IAccumulatedBlock>,
-  continuationMessages?: ReadonlyArray<JsonObject>
+  continuationMessages?: ReadonlyArray<JsonObject>,
+  useAdaptiveThinking: boolean = false
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, {
@@ -514,10 +515,17 @@ export async function callAnthropicStream(
     }
   }
   if (resolvedThinking?.anthropicEffort !== undefined) {
-    body.thinking = {
-      type: 'enabled',
-      budget_tokens: anthropicEffortToBudgetTokens(resolvedThinking.anthropicEffort)
-    };
+    if (useAdaptiveThinking) {
+      // Claude 5 family: adaptive thinking — no budget_tokens; effort moves to the
+      // top-level output_config block. See AiAssist.isAdaptiveThinkingModel.
+      body.thinking = { type: 'adaptive' };
+      body.output_config = { effort: resolvedThinking.anthropicEffort };
+    } else {
+      body.thinking = {
+        type: 'enabled',
+        budget_tokens: anthropicEffortToBudgetTokens(resolvedThinking.anthropicEffort)
+      };
+    }
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);

@@ -80,6 +80,7 @@ export {
   resolveModelAlias,
   resolveProviderModel,
   isResponsesOnlyModel,
+  isAdaptiveThinkingModel,
   toDataUrl,
   type AiThinkingMode,
   type IThinkingConfig,

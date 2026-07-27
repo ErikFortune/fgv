@@ -268,3 +268,39 @@ describe('providerApiKeySecretName', () => {
     }
   });
 });
+
+describe('isAdaptiveThinkingModel', () => {
+  const descriptor = AiAssist.getProviderDescriptor('anthropic').orThrow();
+
+  test('the real anthropic descriptor marks every Claude 5 family member as adaptive', () => {
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-sonnet-5')).toBe(true);
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-opus-5')).toBe(true);
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-fable-5')).toBe(true);
+  });
+
+  test('the real anthropic descriptor keeps legacy 4.x models on the legacy shape', () => {
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-sonnet-4-6')).toBe(false);
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-opus-4-8')).toBe(false);
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-haiku-4-5-20251001')).toBe(false);
+  });
+
+  test('a dated Claude 5 snapshot id (dash-bounded) matches', () => {
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-sonnet-5-20260115')).toBe(true);
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-opus-5-20260204')).toBe(true);
+  });
+
+  test('a model id that merely shares the numeric prefix, with no dash boundary, does not match', () => {
+    // Wrong impl this guards: a naive `.startsWith(prefix)` (instead of exact-or-dash-bounded)
+    // would false-match e.g. a hypothetical 'claude-sonnet-50' against the 'claude-sonnet-5' entry.
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-sonnet-50')).toBe(false);
+  });
+
+  test('returns false for a descriptor with no adaptiveThinkingModelPrefixes declared', () => {
+    const noAdaptive = { ...descriptor, adaptiveThinkingModelPrefixes: undefined };
+    expect(AiAssist.isAdaptiveThinkingModel(noAdaptive, 'claude-sonnet-5')).toBe(false);
+  });
+
+  test('returns false for an unrelated model id', () => {
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'gpt-5.6-terra')).toBe(false);
+  });
+});

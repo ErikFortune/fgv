@@ -1536,6 +1536,57 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       expect(body.temperature).toBeUndefined();
     });
 
+    describe('Claude 5 adaptive thinking wire shape', () => {
+      const adaptiveDescriptor = makeDescriptor({
+        id: 'anthropic',
+        apiFormat: 'anthropic',
+        baseUrl: 'https://api.anthropic.com/v1',
+        defaultModel: 'claude-sonnet-5',
+        corsRestricted: false,
+        adaptiveThinkingModelPrefixes: ['claude-sonnet-5', 'claude-opus-5', 'claude-fable-5']
+      });
+
+      test('a Claude 5 id sends thinking.type: adaptive + output_config.effort, no budget_tokens', async () => {
+        mockFetchResponse(anthropicResponse('ok'));
+        await AiAssist.callProviderCompletion({
+          descriptor: adaptiveDescriptor,
+          apiKey: 'sk',
+          ...testPrompt.toRequest(),
+          thinking: { effort: 'high' }
+        });
+        const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+        expect(body.thinking).toEqual({ type: 'adaptive' });
+        expect(body.output_config).toEqual({ effort: 'high' });
+        expect(body.thinking.budget_tokens).toBeUndefined();
+      });
+
+      test('a dated Claude 5 snapshot id (dash-bounded prefix match) also sends the adaptive shape', async () => {
+        mockFetchResponse(anthropicResponse('ok'));
+        await AiAssist.callProviderCompletion({
+          descriptor: { ...adaptiveDescriptor, defaultModel: 'claude-opus-5-20260115' },
+          apiKey: 'sk',
+          ...testPrompt.toRequest(),
+          thinking: { effort: 'medium' }
+        });
+        const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+        expect(body.thinking).toEqual({ type: 'adaptive' });
+        expect(body.output_config).toEqual({ effort: 'medium' });
+      });
+
+      test('a legacy 4.x id on the same descriptor keeps the byte-identical legacy shape', async () => {
+        mockFetchResponse(anthropicResponse('ok'));
+        await AiAssist.callProviderCompletion({
+          descriptor: { ...adaptiveDescriptor, defaultModel: 'claude-haiku-4-5-20251001' },
+          apiKey: 'sk',
+          ...testPrompt.toRequest(),
+          thinking: { effort: 'low' }
+        });
+        const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+        expect(body.thinking).toEqual({ type: 'enabled', budget_tokens: 2048 });
+        expect(body.output_config).toBeUndefined();
+      });
+    });
+
     test('merges other-block params into Anthropic body', async () => {
       mockFetchResponse(anthropicResponse('ok'));
       await AiAssist.callProviderCompletion({

@@ -48,6 +48,7 @@ import {
   type IAiStreamEvent,
   type IChatRequest,
   type IAiProviderDescriptor,
+  isAdaptiveThinkingModel,
   resolveProviderModel
 } from '../model';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
@@ -665,7 +666,8 @@ export function executeClientToolTurn(
           signal,
           resolvedThinking,
           anthropicBuffer,
-          continuationMessages
+          continuationMessages,
+          isAdaptiveThinkingModel(descriptor, config.model)
         );
       case 'openai':
         return callOpenAiResponsesStream(
