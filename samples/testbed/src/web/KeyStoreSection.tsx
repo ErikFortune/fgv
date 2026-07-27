@@ -140,9 +140,10 @@ export function KeyStoreSection({
             Open an existing password-protected KeyStore file instead of pasting individual keys below. Secret
             ids must match the library convention (e.g. <code>openai-api-key</code>) for lookups to work.
           </p>
+          {/* No `accept` filter: keystore files carry no canonical extension, and the
+              content is fully validated by the keystore converters on open anyway. */}
           <input
             type="file"
-            accept=".json,application/json"
             data-testid="testbed-keystore-file-input"
             onChange={handleFileChange}
             disabled={isUnlocking}
