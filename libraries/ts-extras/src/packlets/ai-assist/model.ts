@@ -795,7 +795,7 @@ export function isAdaptiveThinkingModel(descriptor: IAiProviderDescriptor, model
  * by both the completion (`callProviderCompletion`) and streaming
  * (`callProviderCompletionStream`) chat-completions dispatch branches. Not
  * consulted on the Responses API path — `max_output_tokens` applies uniformly
- * there for both OpenAI and xAI (see {@link AiAssist.isResponsesOnlyModel}) —
+ * there for both OpenAI and xAI (see `isResponsesOnlyModel`) —
  * nor by any non-`'openai'`-format provider (Anthropic, Gemini).
  *
  * @param descriptor - The provider descriptor.

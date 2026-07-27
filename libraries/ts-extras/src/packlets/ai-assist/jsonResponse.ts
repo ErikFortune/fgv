@@ -63,7 +63,9 @@ function stripBom(text: string): string {
  * - `'found'`: a balanced JSON-shaped substring was located; `value` is it.
  * - `'unclosed'`: an object or array opened but the matching close never
  *   arrived before the end of input — the classic truncated-response shape;
- *   `depth` is the unresolved nesting depth at end of input.
+ *   `depth` is the unresolved depth at end of input, counting only the
+ *   opening delimiter's type (the scan tracks the candidate's own `{`/`}`
+ *   or `[`/`]` pair, not total mixed-delimiter nesting).
  * - `'none'`: no `{` or `[` was ever seen outside a quoted string.
  * @internal
  */

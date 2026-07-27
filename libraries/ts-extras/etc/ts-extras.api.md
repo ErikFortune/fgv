@@ -2548,8 +2548,6 @@ function tryDecryptFile<TPayload extends JsonValue = JsonValue, TMetadata = Json
 // @public
 const uint8ArrayFromBase64: Converter<Uint8Array>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
 function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolean;
 
