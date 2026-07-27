@@ -41,10 +41,10 @@ import {
 } from '../../../scenarios/modelTiers';
 import type { ISecretSpec, IScenario, IScenarioContext } from '../../../shell';
 
-const openai = AiAssist.getProviderDescriptor('openai').orThrow();
-const anthropic = AiAssist.getProviderDescriptor('anthropic').orThrow();
-const gemini = AiAssist.getProviderDescriptor('google-gemini').orThrow();
-const xai = AiAssist.getProviderDescriptor('xai-grok').orThrow();
+const openai = AiAssist.getProviderDescriptor('openai').shouldNotFail('openai descriptor');
+const anthropic = AiAssist.getProviderDescriptor('anthropic').shouldNotFail('anthropic descriptor');
+const gemini = AiAssist.getProviderDescriptor('google-gemini').shouldNotFail('google-gemini descriptor');
+const xai = AiAssist.getProviderDescriptor('xai-grok').shouldNotFail('xai-grok descriptor');
 
 /** A completion result with visible text — the live-pass shape. */
 function pong(): Result<AiAssist.IAiCompletionResponse> {

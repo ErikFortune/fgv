@@ -43,7 +43,7 @@ describe('AiAssist.registry', () => {
   });
 
   describe('openai model tiers (B2)', () => {
-    const desc = AiAssist.getProviderDescriptor('openai').orThrow();
+    const desc = AiAssist.getProviderDescriptor('openai').shouldNotFail('openai descriptor');
 
     test('base tier resolves to gpt-5.6-luna', () => {
       // undefined context falls to base; explicit 'base' resolves identically.
@@ -89,7 +89,7 @@ describe('AiAssist.registry', () => {
   });
 
   describe('anthropic model tiers (B3)', () => {
-    const desc = AiAssist.getProviderDescriptor('anthropic').orThrow();
+    const desc = AiAssist.getProviderDescriptor('anthropic').shouldNotFail('anthropic descriptor');
 
     test('base tier resolves to claude-sonnet-5', () => {
       // undefined context falls to base; explicit 'base' resolves identically.
@@ -128,7 +128,7 @@ describe('AiAssist.registry', () => {
   });
 
   describe('google-gemini model tiers (B4)', () => {
-    const desc = AiAssist.getProviderDescriptor('google-gemini').orThrow();
+    const desc = AiAssist.getProviderDescriptor('google-gemini').shouldNotFail('google-gemini descriptor');
 
     test('base tier resolves to gemini-3.5-flash', () => {
       // undefined context falls to base; explicit 'base' resolves identically.
@@ -172,7 +172,7 @@ describe('AiAssist.registry', () => {
   });
 
   describe('xai-grok model tiers (alias-registry adoption)', () => {
-    const desc = AiAssist.getProviderDescriptor('xai-grok').orThrow();
+    const desc = AiAssist.getProviderDescriptor('xai-grok').shouldNotFail('xai-grok descriptor');
 
     test('base tier resolves to grok-4.3 via @xai-grok:standard', () => {
       // undefined context falls to base; explicit 'base' resolves identically.
