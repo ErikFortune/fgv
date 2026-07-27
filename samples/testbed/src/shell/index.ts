@@ -94,6 +94,17 @@ export interface IWebScenarioImpl {
  */
 export interface ICliScenarioImpl {
   readonly run: (context: IScenarioContext) => Promise<Result<string>>;
+  /**
+   * Opt-in flag: when `true` and the scenario declares no `web` impl, the shell renders a
+   * shell-generic runner panel (secret status, Run button, in-flight state, `Result<string>`
+   * report) that invokes `run` directly in the browser, instead of the "CLI-only" message.
+   *
+   * Opting in requires the CLI implementation's module graph to be browser-clean (no static
+   * Node-core/Node-native imports — `rushx build:web` is the proof) and to resolve secrets via
+   * `IScenarioContext.resolveSecret` rather than reading `process.env` directly (browsers have
+   * no `process`). Defaults to `false`/absent — CLI-only behavior is unchanged.
+   */
+  readonly webRunnable?: boolean;
 }
 
 /**

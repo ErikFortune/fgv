@@ -29,8 +29,9 @@
  * orchestrator's keyed gate.
  *
  * The canary logic lives in the sibling `canary` module; these wrappers only build the spec and
- * (when a key is present) the live-completion seam. CLI-only — a live API key cannot be embedded in
- * the web bundle.
+ * (when a key resolves) the live-completion seam. Web-runnable (Phase B) via the shell's generic
+ * runner panel — the API key is resolved through `context.resolveSecret` (KeyStore → session
+ * secrets store → env var), which works identically on the CLI and in the browser.
  *
  * @packageDocumentation
  */
@@ -39,17 +40,36 @@ import { fail } from '@fgv/ts-utils';
 import type { Result } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
 
-import type { IScenario, ICliScenarioImpl, IScenarioContext } from '../../shell';
+import type { ISecretSpec, IScenario, ICliScenarioImpl, IScenarioContext } from '../../shell';
 import { type CanaryTier, type ITierCanaryDeps, type ITierCanarySpec, runTierCanary } from './canary';
 
 /** Minimal prompt used for the per-tier live completion — kept tiny to minimise token cost. */
 const CANARY_PROMPT: string = 'Reply with the single word: pong.';
 
 /**
- * Builds the live-completion seam for a provider: reads the API key from the environment (first
- * non-empty of `apiKeyEnvVars` wins) and, when present, returns a `complete` callback that fires a
- * minimal completion at the requested tier via the real `callProviderCompletion`; returns
- * `undefined` (→ the keyless STOP-FLAG resolver-only path) when no key is set.
+ * Resolves the provider's API key via `context.resolveSecret`, trying each of the scenario's
+ * `requiredSecrets` in order (first success wins). Uses the shared KeyStore/session-store/
+ * env-var resolution chain, so the scenario works identically on the CLI and the web runner
+ * panel (Phase B) — unlike a direct `process.env` read, which browsers have no equivalent of.
+ */
+export async function resolveTierApiKey(
+  context: IScenarioContext,
+  specs: ReadonlyArray<ISecretSpec>
+): Promise<string | undefined> {
+  for (const spec of specs) {
+    const result = await context.resolveSecret(spec);
+    if (result.isSuccess()) {
+      return result.value;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Builds the live-completion seam for a provider: given an already-resolved `apiKey` (or
+ * `undefined`), returns a `complete` callback that fires a minimal completion at the requested
+ * tier via the real `callProviderCompletion`; returns `undefined` (→ the keyless STOP-FLAG
+ * resolver-only path) when no key was resolved.
  *
  * This whole function is the keyed live seam and is coverage-ignored: it needs a real API key, and
  * the canary logic (resolution / classification / report / verdict) plus the keyless (empty-deps)
@@ -58,16 +78,8 @@ const CANARY_PROMPT: string = 'Reply with the single word: pong.';
 /* c8 ignore start - live completion seam: needs a real API key. */
 function buildLiveComplete(
   descriptor: AiAssist.IAiProviderDescriptor,
-  apiKeyEnvVars: ReadonlyArray<string>
+  apiKey: string | undefined
 ): ITierCanaryDeps['complete'] {
-  let apiKey: string | undefined;
-  for (const name of apiKeyEnvVars) {
-    const value = process.env[name];
-    if (value !== undefined && value.trim().length > 0) {
-      apiKey = value;
-      break;
-    }
-  }
   if (apiKey === undefined) {
     return undefined;
   }
@@ -89,16 +101,15 @@ interface ITierScenarioParams {
   readonly title: string;
   readonly description: string;
   readonly tags: ReadonlyArray<string>;
-  /** API-key env vars, tried in order (first non-empty wins). */
-  readonly apiKeyEnvVars: ReadonlyArray<string>;
   readonly tiers: ReadonlyArray<CanaryTier>;
   readonly imageTier?: boolean;
-  readonly requiredSecrets: IScenario['requiredSecrets'];
+  readonly requiredSecrets: readonly ISecretSpec[];
 }
 
-/** Builds a CLI-only tier-canary scenario from the provider params. */
+/** Builds a web-runnable tier-canary scenario from the provider params. */
 function makeTierScenario(params: ITierScenarioParams): IScenario {
   const cliImpl: ICliScenarioImpl = {
+    webRunnable: true,
     async run(context: IScenarioContext): Promise<Result<string>> {
       // Resolve the descriptor inside run() (returning a Result failure gracefully), matching the
       // sibling client-tool scenarios in this directory.
@@ -118,9 +129,10 @@ function makeTierScenario(params: ITierScenarioParams): IScenario {
         imageTier: params.imageTier
       };
 
-      // Live seam: `buildLiveComplete` returns `undefined` when no API key is set, which yields
-      // the keyless STOP-FLAG resolver-only proof; a present key wires the orchestrator's gate.
-      const deps: ITierCanaryDeps = { complete: buildLiveComplete(descriptor, params.apiKeyEnvVars) };
+      // Live seam: `buildLiveComplete` returns `undefined` when no API key resolves, which
+      // yields the keyless STOP-FLAG resolver-only proof; a resolved key wires the live gate.
+      const apiKey = await resolveTierApiKey(context, params.requiredSecrets);
+      const deps: ITierCanaryDeps = { complete: buildLiveComplete(descriptor, apiKey) };
 
       return runTierCanary(spec, deps, context.logger);
     }
@@ -154,9 +166,8 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
     'Resolves and (with OPENAI_API_KEY) live-canaries the OpenAI base/advanced/frontier tiers ' +
     '(gpt-5.6-luna / gpt-5.6-terra / gpt-5.6-sol) plus the image tier (gpt-image-2). Logs each ' +
     'alias -> concrete id. gpt-image-2 (image) may be access-gated — reported BLOCKED, not failed. ' +
-    'CLI-only.',
+    'Web-runnable.',
   tags: ['openai'],
-  apiKeyEnvVars: ['OPENAI_API_KEY'],
   tiers: ['base', 'advanced', 'frontier'],
   imageTier: true,
   requiredSecrets: [
@@ -180,9 +191,8 @@ export const anthropicModelTiersScenario: IScenario = makeTierScenario({
   description:
     'Resolves and (with ANTHROPIC_API_KEY) live-canaries the Anthropic base/advanced tiers plus a ' +
     'frontier request that cascades to the advanced (opus) id — the cascade proof. Logs each ' +
-    'alias -> concrete id. CLI-only.',
+    'alias -> concrete id. Web-runnable.',
   tags: ['anthropic'],
-  apiKeyEnvVars: ['ANTHROPIC_API_KEY'],
   tiers: ['base', 'advanced', 'frontier'],
   requiredSecrets: [
     {
@@ -207,9 +217,8 @@ export const geminiModelTiersScenario: IScenario = makeTierScenario({
   description:
     'Resolves and (with GEMINI_API_KEY/GOOGLE_API_KEY) live-canaries the Gemini base/advanced tiers ' +
     'plus a frontier request that cascades to the advanced (pro) id, and resolves the image tier ' +
-    '(gemini-3.1-flash-image). Logs each alias -> concrete id. CLI-only.',
+    '(gemini-3.1-flash-image). Logs each alias -> concrete id. Web-runnable.',
   tags: ['gemini', 'google'],
-  apiKeyEnvVars: ['GEMINI_API_KEY', 'GOOGLE_API_KEY'],
   tiers: ['base', 'advanced', 'frontier'],
   imageTier: true,
   requiredSecrets: [

@@ -34,6 +34,7 @@ import { dataFiles } from '../generated/dataFileTree';
 import { scenarios as defaultScenarios } from '../scenarios';
 import { resolveSecret, useSessionSecretsStore } from '../shell';
 import type { IScenario, IScenarioContext } from '../shell';
+import { ScenarioRunnerPanel } from './ScenarioRunnerPanel';
 import { SecretsModal } from './SecretsModal';
 
 // ---------------------------------------------------------------------------
@@ -124,6 +125,7 @@ type ScenarioLifecycle =
   | { readonly kind: 'loading' }
   | { readonly kind: 'error'; readonly message: string }
   | { readonly kind: 'ready' }
+  | { readonly kind: 'runner' }
   | { readonly kind: 'no-web' };
 
 /**
@@ -137,9 +139,12 @@ function ScenarioHost({
   readonly scenario: IScenario;
   readonly context: IScenarioContext;
 }): React.ReactElement {
-  const [lifecycle, setLifecycle] = React.useState<ScenarioLifecycle>(() =>
-    scenario.web ? (scenario.web.initialize ? { kind: 'loading' } : { kind: 'ready' }) : { kind: 'no-web' }
-  );
+  const [lifecycle, setLifecycle] = React.useState<ScenarioLifecycle>(() => {
+    if (scenario.web) {
+      return scenario.web.initialize ? { kind: 'loading' } : { kind: 'ready' };
+    }
+    return scenario.cli?.webRunnable === true ? { kind: 'runner' } : { kind: 'no-web' };
+  });
 
   // Run initialize() once on mount (scenario.web.initialize is stable).
   React.useEffect(() => {
@@ -194,6 +199,10 @@ function ScenarioHost({
         </p>
       </div>
     );
+  }
+
+  if (lifecycle.kind === 'runner') {
+    return <ScenarioRunnerPanel scenario={scenario} context={context} />;
   }
 
   if (lifecycle.kind === 'no-web') {

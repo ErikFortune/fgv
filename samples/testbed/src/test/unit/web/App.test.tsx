@@ -292,6 +292,51 @@ describe('ScenarioHost — no web impl', () => {
 });
 
 // ---------------------------------------------------------------------------
+// ScenarioHost: webRunnable branch (Phase B)
+// ---------------------------------------------------------------------------
+
+describe('ScenarioHost — webRunnable', () => {
+  beforeEach(() => {
+    window.history.replaceState(null, '', '#');
+  });
+  afterEach(cleanup);
+
+  test('renders the ScenarioRunnerPanel for a scenario with cli.webRunnable and no web impl', () => {
+    const webRunnableScenario: IScenario = {
+      id: 'web-runnable-only',
+      title: 'Web Runnable Only',
+      description: 'desc',
+      category: 'general',
+      tags: ['test'],
+      cli: {
+        run: async () => succeed('ok'),
+        webRunnable: true
+      }
+    };
+    renderInProviders(<TestbedShell scenarios={[webRunnableScenario]} />);
+    expect(screen.getByTestId('testbed-scenario-runner')).not.toBeNull();
+    expect(screen.queryByTestId('testbed-scenario-no-web')).toBeNull();
+  });
+
+  test('still shows the no-web message when cli.webRunnable is false', () => {
+    const notWebRunnableScenario: IScenario = {
+      id: 'not-web-runnable',
+      title: 'Not Web Runnable',
+      description: 'desc',
+      category: 'general',
+      tags: ['test'],
+      cli: {
+        run: async () => succeed('ok'),
+        webRunnable: false
+      }
+    };
+    renderInProviders(<TestbedShell scenarios={[notWebRunnableScenario]} />);
+    expect(screen.getByTestId('testbed-scenario-no-web')).not.toBeNull();
+    expect(screen.queryByTestId('testbed-scenario-runner')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // ScenarioHost: web impl without initialize
 // ---------------------------------------------------------------------------
 
@@ -454,11 +499,7 @@ describe('TestbedShell secrets wiring', () => {
   const SECRET_SPEC = { id: 'openai-api-key', envVarName: 'OPENAI_API_KEY', description: 'OpenAI key' };
 
   /** A scenario whose component surfaces the live `context.resolveSecret` result for the spec. */
-  function ResolveSecretProbeComponent({
-    context
-  }: {
-    context: IScenarioContext;
-  }): React.ReactElement {
+  function ResolveSecretProbeComponent({ context }: { context: IScenarioContext }): React.ReactElement {
     const [resolved, setResolved] = React.useState<string>('pending');
     React.useEffect(() => {
       context
@@ -511,9 +552,7 @@ describe('TestbedShell secrets wiring', () => {
 
   test('typing a value into the Secrets modal makes it visible to a scenario via resolveSecret', async () => {
     renderInProviders(<TestbedShell scenarios={[makeResolveSecretScenario()]} />);
-    await waitFor(() =>
-      expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/^failed:/)
-    );
+    await waitFor(() => expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/^failed:/));
 
     fireEvent.click(screen.getByTestId('testbed-secrets-btn'));
     fireEvent.change(screen.getByTestId('testbed-secret-input-openai-api-key'), {

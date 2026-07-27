@@ -31,9 +31,9 @@
  * - A **web_search** server tool coexisting in the same request, verifying server + client
  *   tool coexistence per Phase C design §2.5.
  *
- * The scenario is CLI-only — it requires a live `ANTHROPIC_API_KEY` in the environment.
- * If the key is absent, the scenario fails immediately with a clear diagnostic rather than
- * silently skipping.
+ * The scenario requires a live Anthropic API key (CLI: `ANTHROPIC_API_KEY`; web: the Secrets
+ * panel) and is web-runnable via the shell's generic runner panel (Phase B). If the key is
+ * absent, the scenario fails immediately with a clear diagnostic rather than silently skipping.
  *
  * ## What this verifies (B4-derived gates)
  *
@@ -55,6 +55,7 @@ import { JsonSchema } from '@fgv/ts-json-base';
 import { AiAssist } from '@fgv/ts-extras';
 
 import type { IScenario, ICliScenarioImpl, IScenarioContext } from '../../shell';
+import { resolveProviderApiKey } from '../aiProviderSecrets';
 
 // ---------------------------------------------------------------------------
 // Memory store (in-scenario harness state)
@@ -145,15 +146,15 @@ const SYSTEM_PROMPT: string =
 // ---------------------------------------------------------------------------
 
 const cliImpl: ICliScenarioImpl = {
+  webRunnable: true,
   async run(context: IScenarioContext): Promise<Result<string>> {
-    // Check for API key first.
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return fail(
-        'ANTHROPIC_API_KEY environment variable is not set. ' +
-          'Set it to run this scenario: export ANTHROPIC_API_KEY=<your-key>'
-      );
+    // Resolve the API key via the shared secret pipeline (KeyStore -> session secrets store ->
+    // env var), so this scenario works identically on the CLI and the web runner panel.
+    const apiKeyResult = await resolveProviderApiKey(context, 'anthropic');
+    if (apiKeyResult.isFailure()) {
+      return fail(apiKeyResult.message);
     }
+    const apiKey = apiKeyResult.value;
 
     context.logger.info('B-6 scenario: Anthropic client tools + server tools + thinking');
     context.logger.info(`User question: ${USER_QUESTION}`);
@@ -359,8 +360,9 @@ const cliImpl: ICliScenarioImpl = {
  * - Thinking-block signature accumulation and continuation building survive a live round-trip.
  * - Server + client tool coexistence works end-to-end.
  *
- * Requires `ANTHROPIC_API_KEY` in the environment. CLI-only (live API key cannot be
- * embedded in the web bundle).
+ * Requires an Anthropic API key (env var `ANTHROPIC_API_KEY` on the CLI, the Secrets panel
+ * on the web). Web-runnable — the shell's generic runner panel invokes `cli.run` directly in
+ * the browser via a direct (CORS-permitting) Anthropic API call.
  *
  * @public
  */
@@ -370,7 +372,7 @@ export const anthropicClientToolsScenario: IScenario = {
   description:
     'Empirical verification of the ai-assist-client-tools Phase C implementation. ' +
     'Exercises memory tool (client) + web_search (server) coexisting on Anthropic with ' +
-    'extended thinking enabled. Requires ANTHROPIC_API_KEY. ' +
+    'extended thinking enabled. Requires an Anthropic API key. ' +
     'A successful live round-trip confirms thinking-block signature preservation (E5 gate).',
   category: 'ai',
   tags: ['anthropic', 'client-tools', 'thinking', 'tool-use', 'live-api'],

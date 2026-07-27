@@ -22,8 +22,8 @@
  * Client-tool before-execute gate (deny path) scenario — `onBeforeToolExecute`.
  *
  * Demonstrates the C3 gate hook end-to-end WITHOUT a live model. The provider stream is
- * **mocked** (a canned Anthropic tool_use SSE stream substituted for `global.fetch`), so the
- * scenario is deterministic and requires no API key. It proves the LOCKED deny-semantics:
+ * **mocked** (a canned Anthropic tool_use SSE stream substituted for `globalThis.fetch`), so
+ * the scenario is deterministic and requires no API key. It proves the LOCKED deny-semantics:
  *
  * - The model "calls" a `delete_all_memories` tool (a destructive tool, annotated
  *   `destructiveHint: true`).
@@ -36,8 +36,9 @@
  * A second run with a `recall_memory` tool (annotated `readOnlyHint: true`) proves the same
  * gate proceeds a read-only call — the annotations→gate composition.
  *
- * This scenario is CLI-only and self-contained (mocked stream, no live API), matching the
- * `*ClientTools/` coverage-exclusion convention used by the sibling live client-tool scenarios.
+ * This scenario is self-contained (mocked stream, no live API, no secrets) and web-runnable
+ * via the shell's generic runner panel (Phase B) — matching the `*ClientTools/`
+ * coverage-exclusion convention used by the sibling live client-tool scenarios.
  *
  * @packageDocumentation
  */
@@ -70,9 +71,9 @@ function anthropicToolUseSse(toolId: string, toolName: string, argsJson: string)
   ];
 }
 
-/** Installs a mocked `global.fetch` returning the given SSE chunks; returns a restore fn. */
+/** Installs a mocked `globalThis.fetch` returning the given SSE chunks; returns a restore fn. */
 function installMockFetch(chunks: ReadonlyArray<string>): () => void {
-  const original = global.fetch;
+  const original = globalThis.fetch;
   const encoder = new TextEncoder();
   let i = 0;
   const body = new ReadableStream<Uint8Array>({
@@ -91,9 +92,10 @@ function installMockFetch(chunks: ReadonlyArray<string>): () => void {
     text: async (): Promise<string> => '',
     headers: new Map([['content-type', 'text/event-stream']])
   };
-  global.fetch = (async () => response) as unknown as typeof global.fetch;
+  // `globalThis` (not Node's `global`) so the mock works identically in the web runner panel.
+  globalThis.fetch = (async () => response) as unknown as typeof globalThis.fetch;
   return () => {
-    global.fetch = original;
+    globalThis.fetch = original;
   };
 }
 
@@ -144,6 +146,7 @@ const gate: (
 // ---------------------------------------------------------------------------
 
 const cliImpl: ICliScenarioImpl = {
+  webRunnable: true,
   async run(context: IScenarioContext): Promise<Result<string>> {
     const descriptorResult = AiAssist.getProviderDescriptor('anthropic');
     if (descriptorResult.isFailure()) {
