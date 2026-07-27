@@ -445,12 +445,12 @@ already covered elsewhere) — will categorize properly in the coverage-closure 
 
 ## Open questions / follow-ups for the orchestrator
 
-- Whether to retire `samples/ai-image-gen-sample` is explicitly Erik's call after
-  validating parity (brief decision 4) — not touched.
-- The sample's own type drift (see surprise #1) might warrant a separate small fix
-  stream so `rushx build` (if ever added to its scripts) wouldn't immediately fail;
-  raising as a FYI, not filing it myself since it's outside this stream's declared
-  surface.
+- ~~Whether to retire `samples/ai-image-gen-sample` is explicitly Erik's call after
+  validating parity (brief decision 4) — not touched.~~ **RESOLVED 2026-07-27: Erik
+  validated parity and called retirement — the sample is deleted (project removed from
+  `rush.json`, TECH_DEBT P3 port entry closed). The testbed is the canonical sample app.**
+- ~~The sample's own type drift (see surprise #1) might warrant a separate small fix
+  stream~~ — mooted by retirement.
 - Phase B (generic web runner) is next, per the brief's sequencing note. The
   `resolveSecret`/session-secrets-store shape should be consumable unchanged by a
   runner panel since scenarios only ever go through `context.resolveSecret`.

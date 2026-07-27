@@ -5,8 +5,9 @@
  * via `PromptLibrary.resolve` before each send.
  *
  * As with `../imageGeneration`, the sample's per-scenario API-key `<input>` is replaced
- * by the shell's session secrets store (`useProviderApiKey`); `samples/ai-image-gen-sample`
- * itself is untouched.
+ * by the shell's session secrets store (`useProviderApiKey`). `samples/ai-image-gen-sample`
+ * was retired (2026-07) once Erik validated parity here — this scenario is now the
+ * canonical home for the streaming-chat + tone demo.
  *
  * Web-only: a live API key cannot be embedded in the CLI's non-interactive run, and the
  * sample this ports has no CLI surface either.
@@ -102,8 +103,7 @@ function StreamingChatComponent({ context }: { readonly context: IScenarioContex
   const currentModel = modelsByProvider.get(provider) ?? defaultModelFor(provider);
 
   const keyStore = useMemo(
-    () =>
-      new SingleSecretKeyStore(apiKeyStatus === 'ready' ? new Map([[provider, apiKey]]) : new Map()),
+    () => new SingleSecretKeyStore(apiKeyStatus === 'ready' ? new Map([[provider, apiKey]]) : new Map()),
     [provider, apiKeyStatus, apiKey]
   );
 
@@ -131,10 +131,10 @@ function StreamingChatComponent({ context }: { readonly context: IScenarioContex
     apiKeyStatus !== 'ready'
       ? 'Configure an API key (Secrets, top bar) to enable chat.'
       : promptLibraryError !== undefined
-        ? `Prompt library failed to load: ${promptLibraryError}`
-        : promptLibrary === null
-          ? 'Prompt library is still initializing…'
-          : '';
+      ? `Prompt library failed to load: ${promptLibraryError}`
+      : promptLibrary === null
+      ? 'Prompt library is still initializing…'
+      : '';
 
   const handleSendChat = async (
     text: string,

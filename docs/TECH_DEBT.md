@@ -150,17 +150,6 @@ opportunistically when the right surface area is touched.
 
   **Reference**: `ai-assist-model-aliases` design §3 + Tier 2 manual-axis bumps (`.ai/tasks/active/ai-assist-model-aliases/state.md`).
 
-- **[P2] Port `samples/ai-image-gen-sample` scenarios into `samples/testbed`.** *(elevated P3 → P2, 2026-07-26)*
-  The general-purpose `samples/testbed` sample-browser (commissioned via `local-ai-exploration` cluster, 2026-05-22) is the canonical home for fgv-capability scenarios going forward. The existing `samples/ai-image-gen-sample` predates the testbed and has its own webpack pipeline + scenario shapes; its content (image generation against multiple providers, prompt-assist round-2 demo, etc.) should be ported into the testbed.
-
-  **Trigger (fired)**: the original trigger — "testbed has at least 2-3 native scenarios proving the shell + scenario contract are stable" — is long met (16 registered scenarios as of 2026-07). The elevation trigger: the 2026-07 `ai-assist-model-rotation` verification runbook forced a two-app validation flow (image validation in `ai-image-gen-sample` on :3003, everything else in the testbed on :3004), and the split was surprising in practice — the testbed was expected to carry the image scenarios (Erik, 2026-07-26).
-
-  **Scope sketch**: port each `ai-image-gen-sample` scenario as a testbed `IScenario` web impl. Pull data from the existing sample's fixture pattern into the testbed's `data/` pipeline. Decide whether to retire `samples/ai-image-gen-sample` entirely (lean: retire — one canonical sample app, not two) or keep it as a "minimal sample skeleton" reference for consumers who want a single-purpose app shape. Absorb the known docs-drift in the sample's README (prose still names pre-rotation model ids) — moot if the sample is retired. Note the web-side secret story is a shared prerequisite with the "web-runnable CLI scenarios" FUTURE entry — the image scenarios need API keys in the browser, which the testbed shell currently stubs (`keyStore: undefined`, B-1); `ai-image-gen-sample` already solves this per the chocolate-lab localStorage-KeyStore pattern, so the port should carry that wiring into the shell where both efforts can share it.
-
-  **Not a P1**: existing sample works as-is; consumer-visible behavior unchanged either way.
-
-  **Reference**: `local-ai-exploration` cluster brief at `.ai/tasks/completed/2026-05/local-ai-exploration/brief.md`; Erik 2026-05-22 ("we should probably add tech debt to port the ai image scenarios over as well"); Erik 2026-07-26 (revival — "we had a task to move the image scenarios to the testbed at one point… We should probably revive those").
-
 - **[P3] New pure-library packages must declare `"sideEffects": false` in `package.json`.**
   Every `libraries/` package whose `src/index.ts` exports only functions and types (no module-level side effects) carries `"sideEffects": false` so bundlers can tree-shake it. This was caught in PR review on `crypto-batch-2-webauthn`: `@fgv/ts-extras-webauthn` was missing the field; `@fgv/ts-web-extras-webauthn` had it. Fixed in-stream, but the gap reveals a scaffolding-checklist hole — the standard "new package" template doesn't enforce it.
 

@@ -8,8 +8,8 @@
  * shell's session secrets store: `useProviderApiKey` (in `../aiProviderSecrets.ts`)
  * resolves the current provider's key via `context.resolveSecret`, and the panel shows a
  * "missing key — open Secrets" affordance rather than accepting typed input directly.
- * `samples/ai-image-gen-sample` itself is untouched — see the `testbed-web-scenarios`
- * brief for why it is not retired in this phase.
+ * `samples/ai-image-gen-sample` was retired (2026-07) once Erik validated parity here —
+ * this scenario is now the canonical home for the image-generation demo.
  *
  * Web-only: a live API key cannot be embedded in the CLI's non-interactive run, and the
  * sample this ports has no CLI surface either.
@@ -53,11 +53,7 @@ function initialModelsByProvider(): ReadonlyMap<AiAssist.AiProviderId, string> {
 // Web component
 // ---------------------------------------------------------------------------
 
-function ImageGenerationComponent({
-  context
-}: {
-  readonly context: IScenarioContext;
-}): React.ReactElement {
+function ImageGenerationComponent({ context }: { readonly context: IScenarioContext }): React.ReactElement {
   /* c8 ignore next 3 - defensive: IMAGE_PROVIDERS always has at least one entry from the real ai-assist registry; the fallback guards only a hypothetical empty registry */
   const [provider, setProvider] = useState<AiAssist.AiProviderId>(
     IMAGE_PROVIDERS[0] ?? ('openai' as AiAssist.AiProviderId)
@@ -67,9 +63,9 @@ function ImageGenerationComponent({
   const [availableByProvider, setAvailableByProvider] = useState<
     ReadonlyMap<AiAssist.AiProviderId, ReadonlyArray<AiAssist.IAiModelInfo>>
   >(new Map());
-  const [listErrorByProvider, setListErrorByProvider] = useState<
-    ReadonlyMap<AiAssist.AiProviderId, string>
-  >(new Map());
+  const [listErrorByProvider, setListErrorByProvider] = useState<ReadonlyMap<AiAssist.AiProviderId, string>>(
+    new Map()
+  );
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [lastResult, setLastResult] = useState<AiAssist.IAiImageGenerationResponse | undefined>(undefined);
   const [imageError, setImageError] = useState<string | undefined>(undefined);
@@ -96,8 +92,7 @@ function ImageGenerationComponent({
   const modelAcceptsRefs = imageCapability?.acceptsImageReferenceInput === true;
 
   const keyStore = useMemo(
-    () =>
-      new SingleSecretKeyStore(apiKeyStatus === 'ready' ? new Map([[provider, apiKey]]) : new Map()),
+    () => new SingleSecretKeyStore(apiKeyStatus === 'ready' ? new Map([[provider, apiKey]]) : new Map()),
     [provider, apiKeyStatus, apiKey]
   );
 
@@ -204,10 +199,7 @@ function ImageGenerationComponent({
           onUseAsReference={
             modelAcceptsRefs
               ? (image) =>
-                  setReferenceImages((prev) => [
-                    ...prev,
-                    { mimeType: image.mimeType, base64: image.base64 }
-                  ])
+                  setReferenceImages((prev) => [...prev, { mimeType: image.mimeType, base64: image.base64 }])
               : undefined
           }
         />
