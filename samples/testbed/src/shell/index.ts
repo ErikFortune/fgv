@@ -29,10 +29,16 @@ export type ScenarioCategory = 'ai' | 'i18n' | 'crypto' | 'prompts' | 'resources
  * @public
  */
 export interface ISecretSpec {
-  /** KeyStore-compatible id (e.g. `'openai-api-key'`). */
+  /** KeyStore-compatible id (e.g. `'provider:openai'` — see `AiAssist.providerApiKeySecretName`). */
   readonly id: string;
-  /** Fallback env var (e.g. `'OPENAI_API_KEY'`). */
+  /** Fallback env var (e.g. `'OPENAI_API_KEY'`), tried first among the env-var fallbacks. */
   readonly envVarName: string;
+  /**
+   * Additional env var names tried, in order, after `envVarName`, before the secret is
+   * considered unresolved. Used when a provider accepts more than one env var for the same
+   * key (e.g. Gemini's `GEMINI_API_KEY` / `GOOGLE_API_KEY`).
+   */
+  readonly fallbackEnvVarNames?: readonly string[];
   /** Human-readable description surfaced in the missing-secret diagnostic. */
   readonly description: string;
 }

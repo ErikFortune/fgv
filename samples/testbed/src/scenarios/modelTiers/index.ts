@@ -172,7 +172,7 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
   imageTier: true,
   requiredSecrets: [
     {
-      id: 'openai-api-key',
+      id: AiAssist.providerApiKeySecretName('openai'),
       envVarName: 'OPENAI_API_KEY',
       description: 'OpenAI API key for the live tier canary'
     }
@@ -196,7 +196,7 @@ export const anthropicModelTiersScenario: IScenario = makeTierScenario({
   tiers: ['base', 'advanced', 'frontier'],
   requiredSecrets: [
     {
-      id: 'anthropic-api-key',
+      id: AiAssist.providerApiKeySecretName('anthropic'),
       envVarName: 'ANTHROPIC_API_KEY',
       description: 'Anthropic API key for the live tier canary'
     }
@@ -223,14 +223,10 @@ export const geminiModelTiersScenario: IScenario = makeTierScenario({
   imageTier: true,
   requiredSecrets: [
     {
-      id: 'gemini-api-key',
+      id: AiAssist.providerApiKeySecretName('google-gemini'),
       envVarName: 'GEMINI_API_KEY',
-      description: 'Gemini API key for the live tier canary'
-    },
-    {
-      id: 'google-api-key',
-      envVarName: 'GOOGLE_API_KEY',
-      description: 'Google API key for the live tier canary (alternative to GEMINI_API_KEY)'
+      fallbackEnvVarNames: ['GOOGLE_API_KEY'],
+      description: 'Gemini API key for the live tier canary (GEMINI_API_KEY or GOOGLE_API_KEY)'
     }
   ]
 });

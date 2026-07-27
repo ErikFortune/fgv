@@ -253,3 +253,18 @@ describe('modelSpec converter', () => {
     expect(AiAssist.modelSpec.convert({ base: 'ok', advanced: 123 })).toFailWith(/expected model spec/i);
   });
 });
+
+describe('providerApiKeySecretName', () => {
+  test('returns the canonical provider:<id> secret name', () => {
+    expect(AiAssist.providerApiKeySecretName('openai')).toBe('provider:openai');
+    expect(AiAssist.providerApiKeySecretName('anthropic')).toBe('provider:anthropic');
+    expect(AiAssist.providerApiKeySecretName('google-gemini')).toBe('provider:google-gemini');
+    expect(AiAssist.providerApiKeySecretName('xai-grok')).toBe('provider:xai-grok');
+  });
+
+  test('is stable across every registered provider id', () => {
+    for (const providerId of AiAssist.getProviderDescriptors().map((d) => d.id)) {
+      expect(AiAssist.providerApiKeySecretName(providerId)).toBe(`provider:${providerId}`);
+    }
+  });
+});

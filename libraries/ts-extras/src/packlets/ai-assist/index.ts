@@ -36,6 +36,7 @@ export {
   type IAiAssistSettings,
   DEFAULT_AI_ASSIST,
   type IAiAssistKeyStore,
+  providerApiKeySecretName,
   type IAiImageAttachment,
   type IAiImageData,
   type AiImageSize,

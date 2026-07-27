@@ -58,6 +58,7 @@ declare namespace AiAssist {
         IAiAssistSettings,
         DEFAULT_AI_ASSIST,
         IAiAssistKeyStore,
+        providerApiKeySecretName,
         IAiImageAttachment,
         IAiImageData,
         AiImageSize,
@@ -2359,6 +2360,9 @@ function parseRecordJarLines(lines: string[], options?: JarRecordParserOptions):
 //
 // @public
 const pbkdf2KeyDerivationParams: Converter<IPbkdf2KeyDerivationParams>;
+
+// @public
+function providerApiKeySecretName(providerId: AiProviderId): string;
 
 // @public
 class RangeOf<T> implements RangeOfProperties<T> {

@@ -8,13 +8,13 @@ const PASSWORD = 'correct horse battery staple';
 
 /**
  * Builds a real, saved keystore file (via the actual `KeyStore` class, not a mock) carrying
- * one API-key secret, matching the library-convention id `openai-api-key` per `ISecretSpec`.
+ * one API-key secret, matching the library-convention id `provider:openai` per `ISecretSpec`.
  */
 async function buildFixtureKeystoreFile(): Promise<File> {
   const cryptoProvider = new WebCryptoUtils.BrowserCryptoProvider();
   const keyStore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider }).orThrow();
   await keyStore.initialize(PASSWORD);
-  await keyStore.importApiKey('openai-api-key', 'sk-fixture-value');
+  await keyStore.importApiKey('provider:openai', 'sk-fixture-value');
   const saved = (await keyStore.save(PASSWORD)).orThrow();
   return new File([JSON.stringify(saved)], 'keystore.json', { type: 'application/json' });
 }
@@ -24,8 +24,8 @@ describe('openKeyStoreFromFile', () => {
     const file = await buildFixtureKeystoreFile();
     expect(await openKeyStoreFromFile(file, PASSWORD)).toSucceedAndSatisfy((keyStore) => {
       expect(keyStore.isUnlocked).toBe(true);
-      expect(keyStore.getApiKey('openai-api-key')).toSucceedWith('sk-fixture-value');
-      expect(keyStore.listSecrets()).toSucceedWith(['openai-api-key']);
+      expect(keyStore.getApiKey('provider:openai')).toSucceedWith('sk-fixture-value');
+      expect(keyStore.listSecrets()).toSucceedWith(['provider:openai']);
     });
   });
 

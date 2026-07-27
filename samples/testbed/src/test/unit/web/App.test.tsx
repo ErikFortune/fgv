@@ -498,7 +498,7 @@ describe('TestbedShell secrets wiring', () => {
   });
   afterEach(cleanup);
 
-  const SECRET_SPEC = { id: 'openai-api-key', envVarName: 'OPENAI_API_KEY', description: 'OpenAI key' };
+  const SECRET_SPEC = { id: 'provider:openai', envVarName: 'OPENAI_API_KEY', description: 'OpenAI key' };
 
   /** A scenario whose component surfaces the live `context.resolveSecret` result for the spec. */
   function ResolveSecretProbeComponent({ context }: { context: IScenarioContext }): React.ReactElement {
@@ -531,7 +531,7 @@ describe('TestbedShell secrets wiring', () => {
 
     fireEvent.click(screen.getByTestId('testbed-secrets-btn'));
     expect(screen.getByTestId('testbed-secrets-modal')).not.toBeNull();
-    expect(screen.getByTestId('testbed-secret-field-openai-api-key')).not.toBeNull();
+    expect(screen.getByTestId('testbed-secret-field-provider:openai')).not.toBeNull();
     await waitFor(() => expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/^failed:/));
   });
 
@@ -548,7 +548,7 @@ describe('TestbedShell secrets wiring', () => {
   test('a scenario missing its secret sees resolveSecret fail with a message naming the id', async () => {
     renderInProviders(<TestbedShell scenarios={[makeResolveSecretScenario()]} />);
     await waitFor(() =>
-      expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/failed:.*openai-api-key/)
+      expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/failed:.*provider:openai/)
     );
   });
 
@@ -557,7 +557,7 @@ describe('TestbedShell secrets wiring', () => {
     await waitFor(() => expect(screen.getByTestId('resolve-secret-readout').textContent).toMatch(/^failed:/));
 
     fireEvent.click(screen.getByTestId('testbed-secrets-btn'));
-    fireEvent.change(screen.getByTestId('testbed-secret-input-openai-api-key'), {
+    fireEvent.change(screen.getByTestId('testbed-secret-input-provider:openai'), {
       target: { value: 'sk-test-value' }
     });
 
@@ -578,7 +578,7 @@ describe('TestbedShell KeyStore wiring', () => {
   afterEach(cleanup);
 
   const KEYSTORE_PASSWORD = 'correct horse battery staple';
-  const SECRET_SPEC = { id: 'openai-api-key', envVarName: 'OPENAI_API_KEY', description: 'OpenAI key' };
+  const SECRET_SPEC = { id: 'provider:openai', envVarName: 'OPENAI_API_KEY', description: 'OpenAI key' };
 
   /** A scenario whose component surfaces the live `context.resolveSecret` result for the spec. */
   function ResolveSecretProbeComponent({ context }: { context: IScenarioContext }): React.ReactElement {
@@ -610,7 +610,7 @@ describe('TestbedShell KeyStore wiring', () => {
     const cryptoProvider = new WebCryptoUtils.BrowserCryptoProvider();
     const keyStore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider }).orThrow();
     await keyStore.initialize(KEYSTORE_PASSWORD);
-    await keyStore.importApiKey('openai-api-key', 'sk-from-keystore');
+    await keyStore.importApiKey('provider:openai', 'sk-from-keystore');
     const saved = (await keyStore.save(KEYSTORE_PASSWORD)).orThrow();
     return new File([JSON.stringify(saved)], 'keystore.json', { type: 'application/json' });
   }

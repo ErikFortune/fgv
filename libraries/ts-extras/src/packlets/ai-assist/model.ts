@@ -1791,3 +1791,17 @@ export interface IAiAssistKeyStore {
   /** Get an API key by secret name */
   getApiKey(name: string): Result<string>;
 }
+
+/**
+ * Returns the canonical `CryptoUtils.KeyStore.KeyStore` secret name for a provider's API key,
+ * of the form `provider:<providerId>`. Apps that store provider API keys in a `KeyStore`
+ * should use this name (rather than inventing their own) so that a single keystore vault
+ * works consistently across every fgv app.
+ *
+ * @param providerId - The provider whose API key secret name is requested.
+ * @returns The canonical keystore secret name, e.g. `'provider:openai'`.
+ * @public
+ */
+export function providerApiKeySecretName(providerId: AiProviderId): string {
+  return `provider:${providerId}`;
+}

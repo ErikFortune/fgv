@@ -378,7 +378,7 @@ export const anthropicClientToolsScenario: IScenario = {
   tags: ['anthropic', 'client-tools', 'thinking', 'tool-use', 'live-api'],
   requiredSecrets: [
     {
-      id: 'anthropic-api-key',
+      id: AiAssist.providerApiKeySecretName('anthropic'),
       envVarName: 'ANTHROPIC_API_KEY',
       description: 'Anthropic API key for live round-trip verification'
     }

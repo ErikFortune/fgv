@@ -412,7 +412,7 @@ export const xaiClientToolsScenario: IScenario = {
   tags: ['xai', 'grok', 'client-tools', 'reasoning', 'tool-use', 'live-api'],
   requiredSecrets: [
     {
-      id: 'xai-api-key',
+      id: AiAssist.providerApiKeySecretName('xai-grok'),
       envVarName: 'XAI_API_KEY',
       description: 'xAI API key for live round-trip verification'
     }

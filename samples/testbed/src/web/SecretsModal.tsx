@@ -43,6 +43,7 @@ function SecretField({
   readonly onChange: (value: string) => void;
 }): React.ReactElement {
   const inputId = `testbed-secret-input-${spec.id}`;
+  const envVarNames = [spec.envVarName, ...(spec.fallbackEnvVarNames ?? [])].join('/');
   return (
     <div className="space-y-1" data-testid={`testbed-secret-field-${spec.id}`}>
       <label htmlFor={inputId} className="block text-sm font-medium text-primary">
@@ -55,7 +56,7 @@ function SecretField({
         autoComplete="off"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={`Falls back to ${spec.envVarName} (CLI only — not read in the browser)`}
+        placeholder={`Falls back to ${envVarNames} (CLI only — not read in the browser)`}
         className="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-primary placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
       />
       <p className="text-xs text-secondary">{spec.description}</p>

@@ -419,7 +419,7 @@ export const openaiClientToolsScenario: IScenario = {
   tags: ['openai', 'client-tools', 'reasoning', 'tool-use', 'live-api'],
   requiredSecrets: [
     {
-      id: 'openai-api-key',
+      id: AiAssist.providerApiKeySecretName('openai'),
       envVarName: 'OPENAI_API_KEY',
       description: 'OpenAI API key for live round-trip verification'
     }

@@ -54,25 +54,25 @@
 
 import { fail, succeed } from '@fgv/ts-utils';
 import type { Result } from '@fgv/ts-utils';
+import { AiAssist } from '@fgv/ts-extras';
 
 import type { IScenario, ICliScenarioImpl, IScenarioContext, ISecretSpec } from '../../shell';
 import { formatEmbeddingReport, parseEmbeddingScenarioConfig, runEmbeddingSearch } from './search';
 
 /** The `requiredSecrets` specs, reused for both the scenario declaration and key resolution. */
 const OPENAI_API_KEY_SPEC: ISecretSpec = {
-  id: 'openai-api-key',
+  id: AiAssist.providerApiKeySecretName('openai'),
   envVarName: 'OPENAI_API_KEY',
   description: 'OpenAI API key (default provider) for live embedding verification'
 };
 const GEMINI_API_KEY_SPEC: ISecretSpec = {
-  id: 'gemini-api-key',
+  id: AiAssist.providerApiKeySecretName('google-gemini'),
   envVarName: 'GEMINI_API_KEY',
-  description:
-    'Gemini API key (EMBED_PROVIDER=gemini) for the batchEmbedContents wire path; ' +
-    'GOOGLE_API_KEY is also accepted'
+  fallbackEnvVarNames: ['GOOGLE_API_KEY'],
+  description: 'Gemini API key (EMBED_PROVIDER=gemini) for the batchEmbedContents wire path'
 };
 const MISTRAL_API_KEY_SPEC: ISecretSpec = {
-  id: 'mistral-api-key',
+  id: AiAssist.providerApiKeySecretName('mistral'),
   envVarName: 'MISTRAL_API_KEY',
   description: 'Mistral API key (EMBED_PROVIDER=mistral; mistral-embed is OpenAI-shaped)'
 };

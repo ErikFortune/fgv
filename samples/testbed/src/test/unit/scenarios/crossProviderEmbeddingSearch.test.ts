@@ -692,7 +692,7 @@ describe('crossProviderEmbeddingSearchScenario', () => {
     mockTwoFetches(openAiBody([QUERY_VEC]), openAiBody(DOC_VECS));
     try {
       const resolveSecret: IScenarioContext['resolveSecret'] = jest.fn(async (spec: ISecretSpec) =>
-        spec.id === 'openai-api-key'
+        spec.id === 'provider:openai'
           ? succeed('sk-from-session-store')
           : fail<string>(`${spec.envVarName} not set`)
       );
@@ -728,7 +728,7 @@ describe('crossProviderEmbeddingSearchScenario', () => {
       global.fetch = jest.fn();
       mockTwoFetches(openAiBody([QUERY_VEC]), openAiBody(DOC_VECS));
       const resolveSecret: IScenarioContext['resolveSecret'] = jest.fn(async (spec: ISecretSpec) =>
-        spec.id === 'openai-api-key' ? succeed('sk-web') : fail<string>(`${spec.envVarName} not set`)
+        spec.id === 'provider:openai' ? succeed('sk-web') : fail<string>(`${spec.envVarName} not set`)
       );
       runPromise = crossProviderEmbeddingSearchScenario.cli!.run(makeContext(resolveSecret));
     } finally {

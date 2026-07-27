@@ -17,7 +17,7 @@ import type { IScenario, ISecretSpec } from './index';
 /**
  * Collects the union of `requiredSecrets` across every registered scenario, deduped by
  * {@link ISecretSpec.id} (provider keys are shared across scenarios, e.g. every scenario
- * touching OpenAI declares the same `openai-api-key` id). First occurrence wins; ids are
+ * touching OpenAI declares the same `provider:openai` id). First occurrence wins; ids are
  * expected to carry the same `envVarName`/`description` everywhere they're declared.
  * @public
  */

@@ -55,13 +55,17 @@ export async function resolveSecret(params: IResolveSecretParams): Promise<Resul
     return succeed(sessionValue);
   }
 
-  const envValue = getEnvVar(spec.envVarName);
-  if (envValue !== undefined && envValue.length > 0) {
-    return succeed(envValue);
+  const envVarNames = [spec.envVarName, ...(spec.fallbackEnvVarNames ?? [])];
+  for (const envVarName of envVarNames) {
+    const envValue = getEnvVar(envVarName);
+    if (envValue !== undefined && envValue.length > 0) {
+      return succeed(envValue);
+    }
   }
 
+  const envVarList = envVarNames.map((name) => `'${name}'`).join('/');
   return fail(
-    `Secret '${spec.id}' is not set (env fallback '${spec.envVarName}') — ${spec.description}. ` +
-      `Set it via the Secrets panel (web) or the ${spec.envVarName} environment variable (CLI).`
+    `Secret '${spec.id}' is not set (env fallback ${envVarList}) — ${spec.description}. ` +
+      `Set it via the Secrets panel (web) or the ${envVarNames.join('/')} environment variable (CLI).`
   );
 }

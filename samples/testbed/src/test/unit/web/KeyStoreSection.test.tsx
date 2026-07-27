@@ -15,7 +15,7 @@ async function buildFixtureKeystoreFile(): Promise<File> {
   const cryptoProvider = new WebCryptoUtils.BrowserCryptoProvider();
   const keyStore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider }).orThrow();
   await keyStore.initialize(PASSWORD);
-  await keyStore.importApiKey('openai-api-key', 'sk-fixture-value');
+  await keyStore.importApiKey('provider:openai', 'sk-fixture-value');
   const saved = (await keyStore.save(PASSWORD)).orThrow();
   return new File([JSON.stringify(saved)], 'keystore.json', { type: 'application/json' });
 }
@@ -25,7 +25,7 @@ async function buildUnlockedFixtureKeyStore(): Promise<CryptoUtils.KeyStore.KeyS
   const cryptoProvider = new WebCryptoUtils.BrowserCryptoProvider();
   const keyStore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider }).orThrow();
   await keyStore.initialize(PASSWORD);
-  await keyStore.importApiKey('openai-api-key', 'sk-fixture-value');
+  await keyStore.importApiKey('provider:openai', 'sk-fixture-value');
   return keyStore;
 }
 

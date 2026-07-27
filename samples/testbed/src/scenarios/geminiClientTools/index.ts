@@ -148,7 +148,7 @@ const cliImpl: ICliScenarioImpl = {
   webRunnable: true,
   async run(context: IScenarioContext): Promise<Result<string>> {
     // Resolve the API key via the shared secret pipeline (KeyStore -> session secrets store ->
-    // env var), trying gemini-api-key then google-api-key, so this scenario works identically
+    // env var), trying GEMINI_API_KEY then GOOGLE_API_KEY, so this scenario works identically
     // on the CLI and the web runner panel.
     const apiKeyResult = await resolveProviderApiKey(context, 'google-gemini');
     if (apiKeyResult.isFailure()) {
@@ -426,9 +426,10 @@ export const geminiClientToolsScenario: IScenario = {
   tags: ['gemini', 'client-tools', 'thinking', 'tool-use', 'live-api'],
   requiredSecrets: [
     {
-      id: 'gemini-api-key',
+      id: AiAssist.providerApiKeySecretName('google-gemini'),
       envVarName: 'GEMINI_API_KEY',
-      description: 'Gemini API key for live round-trip verification (GOOGLE_API_KEY also accepted)'
+      fallbackEnvVarNames: ['GOOGLE_API_KEY'],
+      description: 'Gemini API key for live round-trip verification (GEMINI_API_KEY or GOOGLE_API_KEY)'
     }
   ],
   cli: cliImpl

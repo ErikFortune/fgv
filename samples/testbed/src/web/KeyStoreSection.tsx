@@ -142,7 +142,7 @@ export function KeyStoreSection({
         <div className="space-y-2">
           <p className="text-xs text-secondary">
             Open an existing password-protected KeyStore file instead of pasting individual keys below. Secret
-            ids must match the library convention (e.g. <code>openai-api-key</code>) for lookups to work.
+            ids must match the library convention (e.g. <code>provider:openai</code>) for lookups to work.
           </p>
           {/* No `accept` filter: keystore files carry no canonical extension, and the
               content is fully validated by the keystore converters on open anyway. */}
