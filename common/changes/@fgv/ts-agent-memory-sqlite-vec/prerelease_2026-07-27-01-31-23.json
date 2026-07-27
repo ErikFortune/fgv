@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "change logs",
+      "type": "none",
+      "packageName": "@fgv/ts-agent-memory-sqlite-vec"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory-sqlite-vec",
+  "email": "ErikFortune@outlook.com"
+}
