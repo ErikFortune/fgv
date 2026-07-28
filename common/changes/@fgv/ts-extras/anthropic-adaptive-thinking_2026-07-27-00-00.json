@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Fix: the Anthropic adapter now sends the adaptive thinking wire shape (thinking.type: 'adaptive' + top-level output_config.effort) for Claude 5 family models (claude-sonnet-5, claude-opus-5, claude-fable-5), which reject the legacy thinking.type: 'enabled' + budget_tokens shape with an HTTP 400. Adds the additive IAiProviderDescriptor.adaptiveThinkingModelPrefixes field and AiAssist.isAdaptiveThinkingModel predicate; legacy models are unaffected.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

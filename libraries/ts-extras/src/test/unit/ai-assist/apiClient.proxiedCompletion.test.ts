@@ -244,6 +244,35 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     expect(body.temperature).toBeUndefined();
   });
 
+  test('forwards maxTokens in the proxy body only when explicitly provided', async () => {
+    mockFetchResponse({ content: 'ok' });
+
+    await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest(),
+      maxTokens: 5000
+    });
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.maxTokens).toBe(5000);
+  });
+
+  test('omits maxTokens from the proxy body when the caller does not provide one', async () => {
+    mockFetchResponse({ content: 'ok' });
+
+    await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest()
+    });
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    // The proxy maps maxTokens to the correct upstream field; not forwarding it when unset
+    // matches the direct path (see AiAssist.usesMaxCompletionTokensField).
+    expect(body.maxTokens).toBeUndefined();
+  });
+
   test('surfaces fetch network errors', async () => {
     mockFetchError(new Error('ECONNREFUSED'));
 

@@ -17,8 +17,14 @@ const SCENARIO_WITH_SECRETS: IScenario = {
   category: 'ai',
   tags: [],
   requiredSecrets: [
-    { id: 'openai-api-key', envVarName: 'OPENAI_API_KEY', description: 'OpenAI key' },
-    { id: 'anthropic-api-key', envVarName: 'ANTHROPIC_API_KEY', description: 'Anthropic key' }
+    { id: 'provider:openai', envVarName: 'OPENAI_API_KEY', description: 'OpenAI key' },
+    { id: 'provider:anthropic', envVarName: 'ANTHROPIC_API_KEY', description: 'Anthropic key' },
+    {
+      id: 'provider:google-gemini',
+      envVarName: 'GEMINI_API_KEY',
+      fallbackEnvVarNames: ['GOOGLE_API_KEY'],
+      description: 'Gemini key'
+    }
   ]
 };
 
@@ -28,6 +34,13 @@ const SCENARIO_NO_SECRETS: IScenario = {
   description: 'desc',
   category: 'general',
   tags: []
+};
+
+/** The KeyStore-related props, factored out since every test below needs them. */
+const KEYSTORE_PROPS = {
+  keyStore: undefined,
+  onKeyStoreUnlocked: () => undefined,
+  onKeyStoreLocked: () => undefined
 };
 
 describe('SecretsModal', () => {
@@ -41,6 +54,7 @@ describe('SecretsModal', () => {
         scenarios={[SCENARIO_WITH_SECRETS]}
         secrets={new Map()}
         onSetSecret={() => undefined}
+        {...KEYSTORE_PROPS}
       />
     );
     expect(screen.queryByTestId('testbed-secrets-modal')).toBeNull();
@@ -54,6 +68,7 @@ describe('SecretsModal', () => {
         scenarios={[SCENARIO_NO_SECRETS]}
         secrets={new Map()}
         onSetSecret={() => undefined}
+        {...KEYSTORE_PROPS}
       />
     );
     expect(screen.getByTestId('testbed-secrets-empty')).not.toBeNull();
@@ -67,10 +82,29 @@ describe('SecretsModal', () => {
         scenarios={[SCENARIO_WITH_SECRETS]}
         secrets={new Map()}
         onSetSecret={() => undefined}
+        {...KEYSTORE_PROPS}
       />
     );
-    expect(screen.getByTestId('testbed-secret-field-openai-api-key')).not.toBeNull();
-    expect(screen.getByTestId('testbed-secret-field-anthropic-api-key')).not.toBeNull();
+    expect(screen.getByTestId('testbed-secret-field-provider:openai')).not.toBeNull();
+    expect(screen.getByTestId('testbed-secret-field-provider:anthropic')).not.toBeNull();
+    expect(screen.getByTestId('testbed-secret-field-provider:google-gemini')).not.toBeNull();
+  });
+
+  test('a spec with fallbackEnvVarNames lists every env var in the placeholder', () => {
+    renderInProviders(
+      <SecretsModal
+        isOpen={true}
+        onClose={() => undefined}
+        scenarios={[SCENARIO_WITH_SECRETS]}
+        secrets={new Map()}
+        onSetSecret={() => undefined}
+        {...KEYSTORE_PROPS}
+      />
+    );
+    const input = screen.getByTestId('testbed-secret-input-provider:google-gemini') as HTMLInputElement;
+    expect(input.placeholder).toBe(
+      'Falls back to GEMINI_API_KEY/GOOGLE_API_KEY (CLI only — not read in the browser)'
+    );
   });
 
   test('reflects the current secret value in the input', () => {
@@ -79,11 +113,12 @@ describe('SecretsModal', () => {
         isOpen={true}
         onClose={() => undefined}
         scenarios={[SCENARIO_WITH_SECRETS]}
-        secrets={new Map([['openai-api-key', 'sk-test']])}
+        secrets={new Map([['provider:openai', 'sk-test']])}
         onSetSecret={() => undefined}
+        {...KEYSTORE_PROPS}
       />
     );
-    const input = screen.getByTestId('testbed-secret-input-openai-api-key') as HTMLInputElement;
+    const input = screen.getByTestId('testbed-secret-input-provider:openai') as HTMLInputElement;
     expect(input.value).toBe('sk-test');
   });
 
@@ -96,11 +131,12 @@ describe('SecretsModal', () => {
         scenarios={[SCENARIO_WITH_SECRETS]}
         secrets={new Map()}
         onSetSecret={onSetSecret}
+        {...KEYSTORE_PROPS}
       />
     );
-    const input = screen.getByTestId('testbed-secret-input-openai-api-key');
+    const input = screen.getByTestId('testbed-secret-input-provider:openai');
     fireEvent.change(input, { target: { value: 'sk-new' } });
-    expect(onSetSecret).toHaveBeenCalledWith('openai-api-key', 'sk-new');
+    expect(onSetSecret).toHaveBeenCalledWith('provider:openai', 'sk-new');
   });
 
   test('clicking the modal close button calls onClose', () => {
@@ -112,6 +148,7 @@ describe('SecretsModal', () => {
         scenarios={[SCENARIO_WITH_SECRETS]}
         secrets={new Map()}
         onSetSecret={() => undefined}
+        {...KEYSTORE_PROPS}
       />
     );
     fireEvent.click(screen.getByLabelText('Close'));

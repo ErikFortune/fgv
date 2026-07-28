@@ -42,6 +42,7 @@ declare namespace AiAssist {
         IAiClientToolTurnResult,
         IAiToolEnablement,
         IAiCompletionResponse,
+        DEFAULT_ANTHROPIC_MAX_TOKENS,
         IChatMessage,
         IChatRequest,
         AiApiFormat,
@@ -58,6 +59,7 @@ declare namespace AiAssist {
         IAiAssistSettings,
         DEFAULT_AI_ASSIST,
         IAiAssistKeyStore,
+        providerApiKeySecretName,
         IAiImageAttachment,
         IAiImageData,
         AiImageSize,
@@ -101,6 +103,8 @@ declare namespace AiAssist {
         resolveModelAlias,
         resolveProviderModel,
         isResponsesOnlyModel,
+        isAdaptiveThinkingModel,
+        usesMaxCompletionTokensField,
         toDataUrl,
         AiThinkingMode,
         IThinkingConfig,
@@ -531,6 +535,9 @@ const DEFAULT_AI_ASSIST: IAiAssistSettings;
 
 // @public
 const DEFAULT_ALGORITHM: "AES-256-GCM";
+
+// @public
+const DEFAULT_ANTHROPIC_MAX_TOKENS: number;
 
 // @public
 const DEFAULT_KEYSTORE_ITERATIONS: number;
@@ -1025,6 +1032,7 @@ interface IAiModelInfo {
 // @public
 interface IAiProviderDescriptor {
     readonly acceptsImageInput: boolean;
+    readonly adaptiveThinkingModelPrefixes?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModelAlias"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveProviderModel"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
@@ -1360,6 +1368,7 @@ interface IExecuteClientToolTurnParams extends IChatRequest {
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
+    readonly maxTokens?: number;
     readonly model?: string;
     readonly onBeforeToolExecute?: (tool: IAiClientTool, args: unknown) => Promise<Result<IToolExecutionDecision>>;
     readonly resolvedThinking?: IResolvedThinkingConfig;
@@ -1762,6 +1771,7 @@ interface IProviderCompletionParams extends IChatRequest {
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
+    readonly maxTokens?: number;
     readonly modelOverride?: ModelSpec;
     readonly signal?: AbortSignal;
     readonly temperature?: number;
@@ -1778,6 +1788,7 @@ interface IProviderCompletionStreamParams extends IChatRequest {
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
+    readonly maxTokens?: number;
     readonly modelOverride?: ModelSpec;
     readonly signal?: AbortSignal;
     readonly temperature?: number;
@@ -1861,6 +1872,11 @@ interface IResolvedThinkingConfig {
     readonly otherParams?: JsonObject;
     readonly xaiEffort?: IXAiThinkingConfig['effort'];
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function isAdaptiveThinkingModel(descriptor: IAiProviderDescriptor, modelId: string): boolean;
 
 // @public
 function isEncryptedFile(json: unknown): boolean;
@@ -2361,6 +2377,9 @@ function parseRecordJarLines(lines: string[], options?: JarRecordParserOptions):
 const pbkdf2KeyDerivationParams: Converter<IPbkdf2KeyDerivationParams>;
 
 // @public
+function providerApiKeySecretName(providerId: AiProviderId): string;
+
+// @public
 class RangeOf<T> implements RangeOfProperties<T> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(min?: T, max?: T);
@@ -2530,10 +2549,13 @@ function tryDecryptFile<TPayload extends JsonValue = JsonValue, TMetadata = Json
 const uint8ArrayFromBase64: Converter<Uint8Array>;
 
 // @public
+function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolean;
+
+// @public
 function validateResolvedOptions(modelId: string, capability: IAiImageModelCapability, resolved: IResolvedImageOptions): Result<IResolvedImageOptions>;
 
 // @public
-type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4';
+type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4' | 'grok-4.5';
 
 declare namespace Yaml {
     export {

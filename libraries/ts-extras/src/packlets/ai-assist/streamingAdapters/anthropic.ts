@@ -35,7 +35,13 @@ import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/
 import { type JsonObject } from '@fgv/ts-json-base';
 
 import { buildAnthropicMessages } from '../chatRequestBuilders';
-import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
+import {
+  AiPrompt,
+  DEFAULT_ANTHROPIC_MAX_TOKENS,
+  type AiToolConfig,
+  type IAiStreamEvent,
+  type IChatMessage
+} from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toAnthropicTools } from '../toolFormats';
 import { anthropicEffortToBudgetTokens, type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
@@ -491,7 +497,9 @@ export async function callAnthropicStream(
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
   accumulationBuffer?: Map<number, IAccumulatedBlock>,
-  continuationMessages?: ReadonlyArray<JsonObject>
+  continuationMessages?: ReadonlyArray<JsonObject>,
+  useAdaptiveThinking: boolean = false,
+  maxTokens?: number
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, {
@@ -502,7 +510,9 @@ export async function callAnthropicStream(
     model: config.model,
     system: prompt.system,
     messages,
-    max_tokens: 4096,
+    // Anthropic's Messages API requires max_tokens on every request — see
+    // AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS for why only this provider defaults it.
+    max_tokens: maxTokens ?? DEFAULT_ANTHROPIC_MAX_TOKENS,
     stream: true
   };
   // Temperature is sent only when explicitly provided (Claude-5 rejects any temperature). When
@@ -514,10 +524,17 @@ export async function callAnthropicStream(
     }
   }
   if (resolvedThinking?.anthropicEffort !== undefined) {
-    body.thinking = {
-      type: 'enabled',
-      budget_tokens: anthropicEffortToBudgetTokens(resolvedThinking.anthropicEffort)
-    };
+    if (useAdaptiveThinking) {
+      // Claude 5 family: adaptive thinking — no budget_tokens; effort moves to the
+      // top-level output_config block. See AiAssist.isAdaptiveThinkingModel.
+      body.thinking = { type: 'adaptive' };
+      body.output_config = { effort: resolvedThinking.anthropicEffort };
+    } else {
+      body.thinking = {
+        type: 'enabled',
+        budget_tokens: anthropicEffortToBudgetTokens(resolvedThinking.anthropicEffort)
+      };
+    }
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);

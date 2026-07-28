@@ -31,7 +31,14 @@ import { fail, Result } from '@fgv/ts-utils';
 
 import { splitChatRequest } from './chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from './endpoint';
-import { type IAiStreamEvent, type ModelSpecKey, isResponsesOnlyModel, resolveProviderModel } from './model';
+import {
+  type IAiStreamEvent,
+  type ModelSpecKey,
+  isAdaptiveThinkingModel,
+  isResponsesOnlyModel,
+  resolveProviderModel,
+  usesMaxCompletionTokensField
+} from './model';
 import { callAnthropicStream } from './streamingAdapters/anthropic';
 import { type IProviderCompletionStreamParams, type IStreamApiConfig } from './streamingAdapters/common';
 import { callGeminiStream } from './streamingAdapters/gemini';
@@ -104,7 +111,8 @@ export async function callProviderCompletionStream(
     tools,
     signal,
     endpoint,
-    thinking
+    thinking,
+    maxTokens
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -171,14 +179,52 @@ export async function callProviderCompletionStream(
           temperature,
           logger,
           signal,
-          resolvedThinking
+          resolvedThinking,
+          undefined,
+          undefined,
+          maxTokens
         );
       }
-      return callOpenAiChatStream(config, prompt, head, temperature, logger, signal, resolvedThinking);
+      return callOpenAiChatStream(
+        config,
+        prompt,
+        head,
+        temperature,
+        logger,
+        signal,
+        resolvedThinking,
+        maxTokens,
+        usesMaxCompletionTokensField(descriptor)
+      );
     case 'anthropic':
-      return callAnthropicStream(config, prompt, head, temperature, tools, logger, signal, resolvedThinking);
+      return callAnthropicStream(
+        config,
+        prompt,
+        head,
+        temperature,
+        tools,
+        logger,
+        signal,
+        resolvedThinking,
+        undefined,
+        undefined,
+        isAdaptiveThinkingModel(descriptor, config.model),
+        maxTokens
+      );
     case 'gemini':
-      return callGeminiStream(config, prompt, head, temperature, tools, logger, signal, resolvedThinking);
+      return callGeminiStream(
+        config,
+        prompt,
+        head,
+        temperature,
+        tools,
+        logger,
+        signal,
+        resolvedThinking,
+        undefined,
+        undefined,
+        maxTokens
+      );
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;

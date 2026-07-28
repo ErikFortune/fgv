@@ -10,8 +10,9 @@
  *
  * The `IScenarioContext` is built by the shell: the logger is wired to the
  * `@fgv/ts-app-shell` messages surface via `useLogReporter` so scenario logs land in
- * the StatusBar. The KeyStore and dataTree are stable per-session values derived from
- * module-level singletons.
+ * the StatusBar. `dataTree` is a stable per-session value derived from a module-level
+ * singleton; `keyStore` (Phase B) is React state set by the Secrets modal's "Open KeyStore"
+ * flow — `undefined` until a vault is unlocked, cleared back to `undefined` on Lock.
  *
  * @packageDocumentation
  */
@@ -29,11 +30,13 @@ import {
   type IUrlSyncConfig
 } from '@fgv/ts-app-shell';
 import { FileTree } from '@fgv/ts-json-base';
+import type { CryptoUtils } from '@fgv/ts-extras';
 
 import { dataFiles } from '../generated/dataFileTree';
 import { scenarios as defaultScenarios } from '../scenarios';
 import { resolveSecret, useSessionSecretsStore } from '../shell';
 import type { IScenario, IScenarioContext } from '../shell';
+import { ScenarioRunnerPanel } from './ScenarioRunnerPanel';
 import { SecretsModal } from './SecretsModal';
 
 // ---------------------------------------------------------------------------
@@ -124,6 +127,7 @@ type ScenarioLifecycle =
   | { readonly kind: 'loading' }
   | { readonly kind: 'error'; readonly message: string }
   | { readonly kind: 'ready' }
+  | { readonly kind: 'runner' }
   | { readonly kind: 'no-web' };
 
 /**
@@ -137,9 +141,12 @@ function ScenarioHost({
   readonly scenario: IScenario;
   readonly context: IScenarioContext;
 }): React.ReactElement {
-  const [lifecycle, setLifecycle] = React.useState<ScenarioLifecycle>(() =>
-    scenario.web ? (scenario.web.initialize ? { kind: 'loading' } : { kind: 'ready' }) : { kind: 'no-web' }
-  );
+  const [lifecycle, setLifecycle] = React.useState<ScenarioLifecycle>(() => {
+    if (scenario.web) {
+      return scenario.web.initialize ? { kind: 'loading' } : { kind: 'ready' };
+    }
+    return scenario.cli?.webRunnable === true ? { kind: 'runner' } : { kind: 'no-web' };
+  });
 
   // Run initialize() once on mount (scenario.web.initialize is stable).
   React.useEffect(() => {
@@ -196,6 +203,10 @@ function ScenarioHost({
     );
   }
 
+  if (lifecycle.kind === 'runner') {
+    return <ScenarioRunnerPanel scenario={scenario} context={context} />;
+  }
+
   if (lifecycle.kind === 'no-web') {
     return (
       <div
@@ -239,19 +250,27 @@ export function TestbedShell(props: ITestbedShellProps = {}): React.ReactElement
   // letting scenario effects that depend on `context.resolveSecret` re-resolve.
   const { secrets, setSecret } = useSessionSecretsStore();
 
+  // The KeyStore import flow (Phase B) — an unlocked vault opened via the Secrets modal's
+  // "Open KeyStore" section. Session-only: never persisted, cleared to undefined on Lock.
+  const [keyStore, setKeyStore] = useState<CryptoUtils.KeyStore.KeyStore | undefined>(undefined);
+  const handleKeyStoreLocked = useCallback(() => {
+    setKeyStore(undefined);
+  }, []);
+
   // Build a stable IScenarioContext. The logger reference is stable across re-renders
-  // because useLogReporter memoizes on addMessage. keyStore stays undefined — the
-  // persistent, encrypted KeyStore is out of scope for this phase; resolveSecret (backed
-  // by the session secrets store, then env-var fallback) is the seam scenarios use.
+  // because useLogReporter memoizes on addMessage. `keyStore` and `secrets` are both in the
+  // deps array so `resolveSecret`'s closure identity changes whenever either changes,
+  // letting scenario effects that depend on `context.resolveSecret` re-resolve (same
+  // pattern for both resolution tiers).
   const scenarioContext = useMemo<IScenarioContext>(
     () => ({
       logger,
-      keyStore: undefined,
+      keyStore,
       resolveSecret: (spec) =>
-        resolveSecret({ spec, keyStore: undefined, sessionSecrets: secrets, getEnvVar: () => undefined }),
+        resolveSecret({ spec, keyStore, sessionSecrets: secrets, getEnvVar: () => undefined }),
       dataTree: DATA_TREE
     }),
-    [logger, secrets]
+    [logger, secrets, keyStore]
   );
 
   const urlSyncConfig = useMemo(() => makeUrlSyncConfig(allScenarios), [allScenarios]);
@@ -349,6 +368,9 @@ export function TestbedShell(props: ITestbedShellProps = {}): React.ReactElement
         scenarios={allScenarios}
         secrets={secrets}
         onSetSecret={setSecret}
+        keyStore={keyStore}
+        onKeyStoreUnlocked={setKeyStore}
+        onKeyStoreLocked={handleKeyStoreLocked}
       />
     </div>
   );

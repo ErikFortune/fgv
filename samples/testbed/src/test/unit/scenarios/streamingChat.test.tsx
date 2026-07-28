@@ -25,11 +25,7 @@ import type { ChatPromptLibrary } from '../../../scenarios/streamingChat/promptL
 import { ChatSettingsPanel } from '../../../scenarios/streamingChat/SettingsPanel';
 import { ChatPanel } from '../../../scenarios/streamingChat/ChatPanel';
 import type { IChatTurn } from '../../../scenarios/streamingChat/ChatPanel';
-import {
-  CHAT_PROVIDERS,
-  defaultModelFor,
-  streamingChatScenario
-} from '../../../scenarios/streamingChat';
+import { CHAT_PROVIDERS, defaultModelFor, streamingChatScenario } from '../../../scenarios/streamingChat';
 import type { IScenarioContext } from '../../../shell';
 
 // ---------------------------------------------------------------------------
@@ -104,11 +100,10 @@ describe('streamingChatScenario metadata', () => {
     const ids = (streamingChatScenario.requiredSecrets ?? []).map((s) => s.id);
     expect(ids).toEqual(
       expect.arrayContaining([
-        'openai-api-key',
-        'anthropic-api-key',
-        'gemini-api-key',
-        'google-api-key',
-        'xai-api-key'
+        'provider:openai',
+        'provider:anthropic',
+        'provider:google-gemini',
+        'provider:xai-grok'
       ])
     );
   });

@@ -8,5 +8,31 @@ if (typeof TextEncoder === 'undefined') {
   global.TextDecoder = TextDecoder;
 }
 
+// jsdom's built-in `crypto` lacks `subtle` (Web Crypto API), which
+// `BrowserCryptoProvider` (@fgv/ts-web-extras) requires. Swap in Node's own
+// webcrypto implementation, matching @fgv/ts-web-extras's own jest setup.
+if (typeof globalThis.crypto?.subtle === 'undefined') {
+  const { webcrypto } = require('crypto');
+  Object.defineProperty(global, 'crypto', {
+    value: webcrypto,
+    writable: true,
+    configurable: true
+  });
+}
+
+// jsdom's `Blob`/`File` implementation (this jsdom version) has no `.text()` — real
+// browsers do. Polyfill it via `FileReader`, which jsdom does implement, so
+// KeyStore-import tests can exercise the real `File.text()` call path used in production.
+if (typeof Blob !== 'undefined' && typeof Blob.prototype.text !== 'function') {
+  Blob.prototype.text = function polyfilledBlobText() {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(this);
+    });
+  };
+}
+
 // jest-dom matchers (toBeInTheDocument, etc.)
 require('@testing-library/jest-dom');

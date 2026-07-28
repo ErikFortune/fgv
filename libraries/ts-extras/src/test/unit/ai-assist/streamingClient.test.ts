@@ -596,6 +596,44 @@ describe('callProviderCompletionStream', () => {
       expect(body.temperature).toBeUndefined();
     });
 
+    test('omits both max_tokens and max_completion_tokens when maxTokens is not provided (xAI)', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.max_tokens).toBeUndefined();
+      expect(body.max_completion_tokens).toBeUndefined();
+    });
+
+    test('sends maxTokens as max_tokens (not max_completion_tokens) for the xAI provider id', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        maxTokens: 8000
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.max_tokens).toBe(8000);
+      expect(body.max_completion_tokens).toBeUndefined();
+    });
+
+    test('sends maxTokens as max_completion_tokens (not max_tokens) for the openai provider id', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'openai' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        maxTokens: 8000
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.max_completion_tokens).toBe(8000);
+      expect(body.max_tokens).toBeUndefined();
+    });
+
     test('merges other-block params into OpenAI chat stream body', async () => {
       mockSseResponse(openAiChatSse(['ok']));
       await AiAssist.callProviderCompletionStream({
@@ -662,6 +700,46 @@ describe('callProviderCompletionStream', () => {
       });
       const explicit = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
       expect(explicit.temperature).toBe(0.45);
+    });
+
+    test('omits max_output_tokens when maxTokens is not provided (Responses API stream)', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.max_output_tokens).toBeUndefined();
+    });
+
+    test('sends maxTokens as max_output_tokens for xAI routed through the Responses API stream', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools,
+        maxTokens: 9000
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.max_output_tokens).toBe(9000);
+    });
+
+    test('sends maxTokens as max_output_tokens for the openai provider id routed through the Responses API stream', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'openai' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools,
+        maxTokens: 9000
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.max_output_tokens).toBe(9000);
+      expect(body.max_completion_tokens).toBeUndefined();
+      expect(body.max_tokens).toBeUndefined();
     });
 
     test('marks truncated for incomplete status', async () => {
@@ -923,6 +1001,27 @@ describe('callProviderCompletionStream', () => {
       expect(explicit.temperature).toBe(0.35);
     });
 
+    test('defaults max_tokens to DEFAULT_ANTHROPIC_MAX_TOKENS and overrides it with maxTokens', async () => {
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      const defaulted = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(defaulted.max_tokens).toBe(AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS);
+
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        maxTokens: 16000
+      });
+      const overridden = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+      expect(overridden.max_tokens).toBe(16000);
+    });
+
     test('surfaces server_tool_use as tool-event', async () => {
       mockSseResponse(anthropicSse({ searchToolUse: true, textDeltas: ['done'] }));
       const result = await AiAssist.callProviderCompletionStream({
@@ -1028,6 +1127,43 @@ describe('callProviderCompletionStream', () => {
       expect(body.temperature).toBeUndefined();
     });
 
+    describe('Claude 5 adaptive thinking wire shape', () => {
+      const adaptiveDescriptor = makeDescriptor({
+        id: 'anthropic',
+        apiFormat: 'anthropic',
+        baseUrl: 'https://api.anthropic.com/v1',
+        defaultModel: 'claude-sonnet-5',
+        adaptiveThinkingModelPrefixes: ['claude-sonnet-5', 'claude-opus-5', 'claude-fable-5']
+      });
+
+      test('a Claude 5 id sends thinking.type: adaptive + output_config.effort, no budget_tokens', async () => {
+        mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+        await AiAssist.callProviderCompletionStream({
+          descriptor: adaptiveDescriptor,
+          apiKey: 'sk',
+          ...TEST_PROMPT.toRequest(),
+          thinking: { effort: 'high' }
+        });
+        const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+        expect(body.thinking).toEqual({ type: 'adaptive' });
+        expect(body.output_config).toEqual({ effort: 'high' });
+        expect(body.thinking.budget_tokens).toBeUndefined();
+      });
+
+      test('a legacy 4.x id on the same descriptor keeps the byte-identical legacy shape', async () => {
+        mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+        await AiAssist.callProviderCompletionStream({
+          descriptor: { ...adaptiveDescriptor, defaultModel: 'claude-haiku-4-5-20251001' },
+          apiKey: 'sk',
+          ...TEST_PROMPT.toRequest(),
+          thinking: { effort: 'low' }
+        });
+        const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+        expect(body.thinking).toEqual({ type: 'enabled', budget_tokens: 2048 });
+        expect(body.output_config).toBeUndefined();
+      });
+    });
+
     test('merges other-block params into Anthropic body', async () => {
       mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
       await AiAssist.callProviderCompletionStream({
@@ -1131,6 +1267,29 @@ describe('callProviderCompletionStream', () => {
       });
       const explicit = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
       expect(explicit.generationConfig.temperature).toBe(0.15);
+    });
+
+    test('omits generationConfig.maxOutputTokens when maxTokens is not provided', async () => {
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.generationConfig.maxOutputTokens).toBeUndefined();
+    });
+
+    test('includes generationConfig.maxOutputTokens only when maxTokens is explicitly provided', async () => {
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        maxTokens: 12000
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.generationConfig.maxOutputTokens).toBe(12000);
     });
 
     test('emits error when stream ends without finishReason', async () => {
@@ -1304,6 +1463,27 @@ describe('callProxiedCompletionStream', () => {
     });
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
     expect(body.temperature).toBe(0.25);
+  });
+
+  test('forwards maxTokens to the proxy body only when explicitly provided', async () => {
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest()
+    });
+    const omitted = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(omitted.maxTokens).toBeUndefined();
+
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      maxTokens: 5000
+    });
+    const explicit = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+    expect(explicit.maxTokens).toBe(5000);
   });
 
   test('forwards ordered messages with attachments, system, modelOverride, and tools', async () => {

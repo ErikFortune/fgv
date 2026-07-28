@@ -303,10 +303,11 @@ describe('alias layer resolution for built-in descriptors', () => {
     expect(AiAssist.resolveProviderModel(ollama, 'llama3.2:3b')).toSucceedWith('llama3.2:3b');
   });
 
-  test('only google-gemini, openai, and anthropic define an aliases map (Tier 2)', () => {
-    // Gemini was migrated first; OpenAI adopted the alias layer in B2; Anthropic in B3.
-    // Other providers still resolve raw ids and carry no aliases map.
-    const withAliases = new Set(['google-gemini', 'openai', 'anthropic']);
+  test('only google-gemini, openai, anthropic, and xai-grok define an aliases map (Tier 2)', () => {
+    // Gemini was migrated first; OpenAI adopted the alias layer in B2; Anthropic in B3;
+    // xAI adopted last (2026-07, alongside the grok-4.5 advanced tier). Other providers
+    // still resolve raw ids and carry no aliases map.
+    const withAliases = new Set(['google-gemini', 'openai', 'anthropic', 'xai-grok']);
     for (const descriptor of descriptors) {
       if (withAliases.has(descriptor.id)) {
         expect(descriptor.aliases).toBeDefined();
@@ -322,9 +323,7 @@ describe('google-gemini Tier 2 alias migration', () => {
 
   test('defaultModel resolves through the aliases to the concrete 3.x ids', () => {
     expect(AiAssist.resolveProviderModel(gemini, undefined, 'base')).toSucceedWith('gemini-3.5-flash');
-    expect(AiAssist.resolveProviderModel(gemini, undefined, 'image')).toSucceedWith(
-      'gemini-3.1-flash-image'
-    );
+    expect(AiAssist.resolveProviderModel(gemini, undefined, 'image')).toSucceedWith('gemini-3.1-flash-image');
     expect(AiAssist.resolveProviderModel(gemini, undefined, 'embedding')).toSucceedWith(
       'gemini-embedding-001'
     );

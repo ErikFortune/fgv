@@ -742,6 +742,70 @@ export function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId:
   return descriptor.responsesOnlyModelPrefixes?.some((p) => modelId.startsWith(p)) ?? false;
 }
 
+/**
+ * Returns true when `modelId` equals `prefix` or starts with `prefix` followed by a `-`
+ * (versioned/dated-snapshot ids, e.g. `'claude-sonnet-5'` matches `'claude-sonnet-5-20260115'`
+ * but not `'claude-sonnet-50'`). @internal
+ */
+function isExactOrDashBoundedPrefix(modelId: string, prefix: string): boolean {
+  return modelId === prefix || modelId.startsWith(`${prefix}-`);
+}
+
+/**
+ * Determines whether a concrete (already-resolved) Anthropic model id uses the adaptive
+ * thinking wire shape (`thinking: { type: 'adaptive' }` + top-level `output_config.effort`)
+ * rather than the legacy manual-budget shape (`thinking: { type: 'enabled', budget_tokens }`).
+ *
+ * @remarks
+ * Matches `modelId` against the descriptor's
+ * {@link IAiProviderDescriptor.adaptiveThinkingModelPrefixes} using the same
+ * exact-or-dash-bounded matcher semantics as the model-specific blocks in
+ * `mergeThinkingConfig` (an entry matches when it equals the resolved model or when the
+ * resolved model starts with the entry followed by a `-`) — a plain prefix match would risk a
+ * false positive against an unrelated model sharing the same leading characters. A provider
+ * that declares no list (the common case — this is Anthropic-specific) always returns `false`.
+ * Consulted by the completion (`callProviderCompletion`), streaming
+ * (`callProviderCompletionStream`), and client-tool (`executeClientToolTurn`) Anthropic
+ * dispatch sites so every Anthropic wire-request path picks the correct thinking shape for the
+ * resolved model.
+ *
+ * @param descriptor - The provider descriptor supplying the prefix list.
+ * @param modelId - The resolved concrete model id to test.
+ * @returns `true` when `modelId` exactly matches or is dash-bounded-prefixed by any declared
+ * adaptive-thinking prefix.
+ * @public
+ */
+export function isAdaptiveThinkingModel(descriptor: IAiProviderDescriptor, modelId: string): boolean {
+  return (
+    descriptor.adaptiveThinkingModelPrefixes?.some((p) => isExactOrDashBoundedPrefix(modelId, p)) ?? false
+  );
+}
+
+/**
+ * Determines whether a provider's OpenAI-compatible Chat Completions request
+ * should use the modern `max_completion_tokens` field instead of the legacy
+ * `max_tokens` field for capping output length.
+ *
+ * @remarks
+ * OpenAI's Chat Completions API deprecated `max_tokens` in favor of
+ * `max_completion_tokens`. Every other provider routed through the shared
+ * OpenAI-compatible chat-completions adapter (xAI Grok, Groq, Mistral, Ollama,
+ * self-hosted `openai-compat` servers) still expects the legacy `max_tokens`
+ * field, so this returns `true` only for the `'openai'` provider id. Consulted
+ * by both the completion (`callProviderCompletion`) and streaming
+ * (`callProviderCompletionStream`) chat-completions dispatch branches. Not
+ * consulted on the Responses API path — `max_output_tokens` applies uniformly
+ * there for both OpenAI and xAI (see `isResponsesOnlyModel`) —
+ * nor by any non-`'openai'`-format provider (Anthropic, Gemini).
+ *
+ * @param descriptor - The provider descriptor.
+ * @returns `true` only for the `'openai'` provider id.
+ * @public
+ */
+export function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolean {
+  return descriptor.id === 'openai';
+}
+
 // ============================================================================
 // Provider Descriptor
 // ============================================================================
@@ -817,6 +881,28 @@ export interface IAiCompletionResponse {
   /** Whether the response was truncated due to token limits */
   readonly truncated: boolean;
 }
+
+/**
+ * Default `max_tokens` sent to the Anthropic Messages API when the caller does
+ * not supply an explicit `maxTokens` override.
+ *
+ * @remarks
+ * Anthropic's Messages API requires `max_tokens` on every request — there is
+ * no provider-side default the way there is for OpenAI Chat/Responses,
+ * Gemini, or xAI, all of which accept a request with no cap and apply their
+ * own default. Anthropic is therefore the only provider that needs — or
+ * gets — a library-supplied fallback; every other provider omits the field
+ * entirely when the caller doesn't set `maxTokens` (see
+ * `IProviderCompletionParams.maxTokens`).
+ *
+ * Callers whose structured/JSON output scales with input size and hits this
+ * ceiling see a silent truncation that often surfaces downstream as a
+ * confusing `extractJsonText` parse failure rather than an obvious "too
+ * short" error — pass `maxTokens` explicitly to raise the cap for those
+ * requests.
+ * @public
+ */
+export const DEFAULT_ANTHROPIC_MAX_TOKENS: number = 4096;
 
 // ============================================================================
 // Streaming Events
@@ -1029,6 +1115,27 @@ export interface IAiProviderDescriptor {
    * Responses-only.
    */
   readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * Concrete Anthropic model ids (exact-or-dash-bounded-prefix-matched) that require the
+   * adaptive thinking wire shape (`thinking: { type: 'adaptive' }` + top-level
+   * `output_config: { effort }`) rather than the legacy manual-budget shape
+   * (`thinking: { type: 'enabled', budget_tokens }`). Non-Anthropic `apiFormat`s ignore this.
+   *
+   * @remarks
+   * The Claude 5 family (`claude-sonnet-5`, `claude-opus-5`, `claude-fable-5`, including their
+   * dated snapshots) rejects `thinking.type: 'enabled'` with an HTTP 400 and requires the
+   * adaptive shape; older models (`claude-sonnet-4-6`, `claude-opus-4-8`, `claude-haiku-4-5`,
+   * etc.) keep the legacy shape. The completion (`callProviderCompletion`), streaming
+   * (`callProviderCompletionStream`), and client-tool (`executeClientToolTurn`) Anthropic
+   * dispatch sites consult this list (via the sibling predicate
+   * `isAdaptiveThinkingModel`) to pick the correct wire shape for the resolved
+   * model. Mirrors the prefix-matching shape of `responsesOnlyModelPrefixes`, but with
+   * exact-or-dash-bounded matching (an entry matches a resolved model that equals it or starts
+   * with it followed by `-`) rather than a plain prefix, since Anthropic model families share
+   * numeric leading characters (`claude-sonnet-5` vs. a hypothetical `claude-sonnet-50`).
+   * Empty or undefined means no model uses the adaptive shape.
+   */
+  readonly adaptiveThinkingModelPrefixes?: ReadonlyArray<string>;
 }
 
 /**
@@ -1558,7 +1665,7 @@ export type GeminiThinkingModelNames =
  * Model IDs for xAI thinking-capable models.
  * @public
  */
-export type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4';
+export type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4' | 'grok-4.5';
 
 /**
  * Anthropic-specific thinking configuration.
@@ -1790,4 +1897,18 @@ export interface IAiAssistKeyStore {
   hasSecret(name: string): Result<boolean>;
   /** Get an API key by secret name */
   getApiKey(name: string): Result<string>;
+}
+
+/**
+ * Returns the canonical `CryptoUtils.KeyStore.KeyStore` secret name for a provider's API key,
+ * of the form `provider:<providerId>`. Apps that store provider API keys in a `KeyStore`
+ * should use this name (rather than inventing their own) so that a single keystore vault
+ * works consistently across every fgv app.
+ *
+ * @param providerId - The provider whose API key secret name is requested.
+ * @returns The canonical keystore secret name, e.g. `'provider:openai'`.
+ * @public
+ */
+export function providerApiKeySecretName(providerId: AiProviderId): string {
+  return `provider:${providerId}`;
 }
