@@ -2555,7 +2555,7 @@ function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolea
 function validateResolvedOptions(modelId: string, capability: IAiImageModelCapability, resolved: IResolvedImageOptions): Result<IResolvedImageOptions>;
 
 // @public
-type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4';
+type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4' | 'grok-4.5';
 
 declare namespace Yaml {
     export {

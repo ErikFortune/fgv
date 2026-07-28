@@ -25,7 +25,8 @@ import { memoryToolsGateScenario } from './memoryToolsGate';
 import {
   anthropicModelTiersScenario,
   geminiModelTiersScenario,
-  openaiModelTiersScenario
+  openaiModelTiersScenario,
+  xaiModelTiersScenario
 } from './modelTiers';
 import { openaiClientToolsScenario } from './openaiClientTools';
 import { streamingChatScenario } from './streamingChat';
@@ -53,5 +54,6 @@ export const scenarios: readonly IScenario[] = [
   sqliteVecFragmentPersistenceScenario,
   openaiModelTiersScenario,
   anthropicModelTiersScenario,
-  geminiModelTiersScenario
+  geminiModelTiersScenario,
+  xaiModelTiersScenario
 ];

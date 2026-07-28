@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Adopt the fgv model-alias registry for xAI: the xai-grok descriptor now carries an aliases map (@xai-grok:standard -> grok-4.3, @xai-grok:flagship -> grok-4.5, @xai-grok:imagine -> grok-imagine-image-quality) with a new advanced tier targeting grok-4.5; grok-4.5 is detected as thinking-capable by the default capability config and added to XAiThinkingModelNames.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

@@ -36,17 +36,38 @@ import {
   anthropicModelTiersScenario,
   geminiModelTiersScenario,
   openaiModelTiersScenario,
-  resolveTierApiKey
+  resolveTierApiKey,
+  xaiModelTiersScenario
 } from '../../../scenarios/modelTiers';
 import type { ISecretSpec, IScenario, IScenarioContext } from '../../../shell';
 
-const openai = AiAssist.getProviderDescriptor('openai').orThrow();
-const anthropic = AiAssist.getProviderDescriptor('anthropic').orThrow();
-const gemini = AiAssist.getProviderDescriptor('google-gemini').orThrow();
+const openai = AiAssist.getProviderDescriptor('openai').shouldNotFail('openai descriptor');
+const anthropic = AiAssist.getProviderDescriptor('anthropic').shouldNotFail('anthropic descriptor');
+const gemini = AiAssist.getProviderDescriptor('google-gemini').shouldNotFail('google-gemini descriptor');
+const xai = AiAssist.getProviderDescriptor('xai-grok').shouldNotFail('xai-grok descriptor');
 
 /** A completion result with visible text — the live-pass shape. */
 function pong(): Result<AiAssist.IAiCompletionResponse> {
   return succeed({ content: 'pong', truncated: false });
+}
+
+/**
+ * Builds a fully-shaped `IScenarioContext` (no `as unknown as` cast — the compiler enforces
+ * the interface) with an injectable `resolveSecret`; the default fails every spec, which is
+ * the keyless STOP-FLAG shape. `dataTree` is stubbed narrowly: the tier scenarios never read
+ * it. Mirrors the `makeContext` helper in `crossProviderEmbeddingSearch.test.ts`.
+ */
+function makeContext(
+  resolveSecret: IScenarioContext['resolveSecret'] = jest.fn(async (spec: ISecretSpec) =>
+    fail<string>(`${spec.id} not set`)
+  )
+): IScenarioContext {
+  return {
+    logger: new Logging.LogReporter<unknown>({ logger: new Logging.InMemoryLogger() }),
+    keyStore: undefined,
+    resolveSecret,
+    dataTree: {} as IScenarioContext['dataTree']
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -100,6 +121,19 @@ describe('resolveTierResolutions', () => {
           concrete: 'gemini-3.1-pro-preview',
           cascaded: true
         });
+      }
+    );
+  });
+
+  test('resolves xAI base/advanced directly and marks a frontier request as cascaded to flagship', () => {
+    expect(resolveTierResolutions(xai, ['base', 'advanced', 'frontier'])).toSucceedAndSatisfy(
+      (resolutions) => {
+        expect(resolutions).toEqual([
+          { tier: 'base', alias: '@xai-grok:standard', concrete: 'grok-4.3', cascaded: false },
+          { tier: 'advanced', alias: '@xai-grok:flagship', concrete: 'grok-4.5', cascaded: false },
+          // frontier has no key → resolves to the advanced (flagship) alias, flagged cascaded.
+          { tier: 'frontier', alias: '@xai-grok:flagship', concrete: 'grok-4.5', cascaded: true }
+        ]);
       }
     );
   });
@@ -382,25 +416,22 @@ describe('resolveTierApiKey', () => {
   const specB: ISecretSpec = { id: 'b-key', envVarName: 'B_KEY', description: 'b' };
 
   test('returns the first spec that resolves, trying specs in order', async () => {
-    const context = {
-      resolveSecret: jest.fn(async (spec: ISecretSpec) =>
-        spec.id === 'b-key' ? succeed('resolved-b') : fail(`${spec.id} not set`)
+    const context = makeContext(
+      jest.fn(async (spec: ISecretSpec) =>
+        spec.id === 'b-key' ? succeed('resolved-b') : fail<string>(`${spec.id} not set`)
       )
-    } as unknown as IScenarioContext;
+    );
     await expect(resolveTierApiKey(context, [specA, specB])).resolves.toBe('resolved-b');
   });
 
   test('returns undefined when no spec resolves', async () => {
-    const context = {
-      resolveSecret: jest.fn(async (spec: ISecretSpec) => fail(`${spec.id} not set`))
-    } as unknown as IScenarioContext;
-    await expect(resolveTierApiKey(context, [specA, specB])).resolves.toBeUndefined();
+    await expect(resolveTierApiKey(makeContext(), [specA, specB])).resolves.toBeUndefined();
   });
 
   test('returns undefined for an empty spec list', async () => {
-    const context = { resolveSecret: jest.fn() } as unknown as IScenarioContext;
-    await expect(resolveTierApiKey(context, [])).resolves.toBeUndefined();
-    expect(context.resolveSecret).not.toHaveBeenCalled();
+    const resolveSecret = jest.fn(async (spec: ISecretSpec) => fail<string>(`${spec.id} not set`));
+    await expect(resolveTierApiKey(makeContext(resolveSecret), [])).resolves.toBeUndefined();
+    expect(resolveSecret).not.toHaveBeenCalled();
   });
 });
 
@@ -412,7 +443,8 @@ describe('model-tier scenarios', () => {
   const scenariosById: ReadonlyArray<[string, IScenario]> = [
     ['openai-model-tiers', openaiModelTiersScenario],
     ['anthropic-model-tiers', anthropicModelTiersScenario],
-    ['google-gemini-model-tiers', geminiModelTiersScenario]
+    ['google-gemini-model-tiers', geminiModelTiersScenario],
+    ['xai-grok-model-tiers', xaiModelTiersScenario]
   ];
 
   test.each(scenariosById)('%s is a web-runnable ai scenario', (id, scenario) => {
@@ -425,18 +457,28 @@ describe('model-tier scenarios', () => {
   });
 
   test('cli.run without a resolvable API key returns the STOP-FLAG resolver-only proof', async () => {
-    const context = {
-      logger: new Logging.LogReporter<unknown>({ logger: new Logging.InMemoryLogger() }),
-      resolveSecret: jest.fn(async (spec: ISecretSpec) => fail(`${spec.id} not set`))
-    } as unknown as IScenarioContext;
     if (!geminiModelTiersScenario.cli) {
       throw new Error('expected a CLI implementation');
     }
-    const result = await geminiModelTiersScenario.cli.run(context);
+    const result = await geminiModelTiersScenario.cli.run(makeContext());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/=== google-gemini model-tier canary ===/);
       expect(report).toMatch(/@google-gemini:pro -> gemini-3\.1-pro-preview \(cascaded from a lower tier\)/);
       expect(report).toMatch(/\[PASS\] image\s+@google-gemini:flash-image -> gemini-3\.1-flash-image\b/);
+      expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
+    });
+  });
+
+  test('xai cli.run without a key proves the new alias map end-to-end (STOP-FLAG)', async () => {
+    if (!xaiModelTiersScenario.cli) {
+      throw new Error('expected a CLI implementation');
+    }
+    const result = await xaiModelTiersScenario.cli.run(makeContext());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/=== xai-grok model-tier canary ===/);
+      expect(report).toMatch(/@xai-grok:standard -> grok-4\.3\b/);
+      expect(report).toMatch(/@xai-grok:flagship -> grok-4\.5 \(cascaded from a lower tier\)/);
+      expect(report).toMatch(/\[PASS\] image\s+@xai-grok:imagine -> grok-imagine-image-quality\b/);
       expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
     });
   });

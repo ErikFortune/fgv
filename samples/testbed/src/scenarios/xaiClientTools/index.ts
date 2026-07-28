@@ -172,11 +172,11 @@ const cliImpl: ICliScenarioImpl = {
       messages: [{ role: 'user', content: USER_QUESTION }]
     };
 
-    // Use the version-pinned `grok-4.3` alias — a reasoning-capable model that the Responses
-    // API accepts directly. Pinning major.minor avoids the dated-snapshot deprecation trap
-    // while staying off the moving `*-latest` target. (The adapter omits the Responses-API
-    // `reasoning.effort` field only for the bare `grok-4` id; `grok-4.3` receives it.)
-    const model = 'grok-4.3';
+    // Use the fgv `@xai-grok:standard` alias (→ grok-4.3, the reasoning-capable base line)
+    // so the registry owns the concrete id and a future rotation is a registry-only edit.
+    // (The adapter omits the Responses-API `reasoning.effort` field only for the bare
+    // `grok-4` id; the resolved grok-4.3 receives it.)
+    const model = '@xai-grok:standard';
 
     // Construct the resolved thinking config directly. xaiEffort: 'low' maps to
     // `reasoning: { effort: 'low' }` on the Responses-API wire.

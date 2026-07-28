@@ -1665,7 +1665,7 @@ export type GeminiThinkingModelNames =
  * Model IDs for xAI thinking-capable models.
  * @public
  */
-export type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4';
+export type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4' | 'grok-4.5';
 
 /**
  * Anthropic-specific thinking configuration.
