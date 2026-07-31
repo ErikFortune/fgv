@@ -82,10 +82,31 @@ is still stale** — it lists only the `types` and `converters` packlets while t
 also ships `store`, `index`, `retrieve`, `vector`, `observe`, `ingest`, and `tools`.
 Bringing it current is a separate doc chore, not this stream's scope.
 
+## Code-reviewer disposition (layer 1)
+
+Recommendation: *requires minor changes*. **No P1s.** The reviewer independently confirmed
+the no-behavior-change constraint and re-derived every merge behavior against the
+implementation.
+
+Both P2s were the same class — **a doc claiming a stronger guarantee than the committed
+tests establish**. Since this stream's whole deliverable is documenting a guarantee
+*accurately*, both were resolved by **adding the missing tests**, not by softening the prose.
+
+| # | Finding | Resolution |
+|---|---|---|
+| P2-1 | README says the provenance guarantees are "pinned by tests" for **both** `KnowledgeLwwPolicy` and `TemporalVersionedPolicy`, but only the former was covered. | Added a mirror `provenance merge contract (README-pinned)` describe to `temporalPolicy.test.ts` pinning the sub-key clear and the whole-block rejection. The README claim is now true for both named policies. |
+| P2-2 | The store-layer end-to-end claim and the `envelopeConverter`-rejects-`null` claim were asserted as fact but only manually verified. | Added `provenance merge contract through put (README-pinned)` to `fileTreeMemoryStore.test.ts`: one test drives put→put→reopen (omitted key preserved, `null` key cleared, cleared key does not resurface from persisted frontmatter), one pins the converter rejection site. |
+| P3 | `writePolicy.ts` said the store stamps `updated`/`seq`; the README bullet said `updated`/`seq`/`contentHash`. Both true, inconsistent enumeration. | Aligned the TSDoc to the three-field form (`contentHash` is in fact stamped in `_buildRecord`). |
+
+Every claim the README makes is now backed by a committed test.
+
 ## Gates
 
 - `rushx build` — pass (no `etc/*.api.md` movement; TSDoc `@remarks` on members does not
   shift the API report)
-- `rushx lint` — pass (`rushx fixlint` run before the final commit; no changes produced)
+- `rushx lint` — pass (`rushx fixlint` run before the final commit)
 - `rushx test` — pass, **100% statements / branches / functions / lines**
-- `code-reviewer` — run on the staged diff; see the PR description for the disposition
+- `code-reviewer` — run on the diff; no P1s, both P2s and the P3 resolved (table above)
+- No-behavior-change re-verified after the P3 TSDoc edit: comment-stripped `writePolicy.ts`
+  is still byte-identical to `origin/release`'s. Test diffs across all three files are
+  additive only (217 added, 0 removed).

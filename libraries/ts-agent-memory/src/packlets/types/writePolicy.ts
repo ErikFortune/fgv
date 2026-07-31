@@ -154,7 +154,7 @@ const MERGE_PATCH_OPTIONS: Partial<IJsonEditorOptions> = {
  * view, runs the merge over that view, then rebuilds a coherent record. The
  * identity and transaction-time envelope fields (`id`, `entityId`, `kind`,
  * `created`, `updated`, `seq`, `contentHash`) are NOT mutable and are
- * preserved verbatim; the store stamps `updated` / `seq` on write.
+ * preserved verbatim; the store stamps `updated` / `seq` / `contentHash` on write.
  *
  * Because the surface is pinned rather than caller-supplied, the RFC-7386
  * guarantees documented on {@link IWritePolicy.applyUpdate} apply to every field
