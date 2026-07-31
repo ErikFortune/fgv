@@ -300,3 +300,102 @@ first-class primitive with an explicit threat model, not forced into the thin-wr
   implementation.
 
 Nothing in this batch blocks you, and nothing blocks our pending publish.
+
+---
+
+# RESOLVED — consumer answers received 2026-07-31
+
+All four open questions answered; the batch is settled and commissioned. Recorded here so
+the durable record is the agreement, not the intermediate draft.
+
+## Their corrections to us, accepted
+
+**Our "neither field is a discriminant" phrasing was too strong, and we're fixing it.** True
+of each field *alone*; false of the pair — under the at-least-one invariant, neither-present
+necessarily means a record hit and either-present necessarily means a fragment hit, so the
+disjunction *does* discriminate.
+
+They asked us **not** to document the disjunction as supported (it couples callers to an
+invariant enforced at a different boundary, so it fails silently if that invariant is ever
+relaxed), but to say **"no *single* field discriminates"** rather than a flat denial. Their
+reasoning, which we're adopting verbatim as the standard: *"A reader who works out the
+disjunction and finds the docs denying it trusts the docs less, not more."* Docs must not be
+*conveniently* wrong.
+
+## Q1 — self-describing hits: **not needed**
+
+"We query the index we chose." No new discriminant field. Docstring wording per above;
+fragment-ness is determined by which index produced the hit.
+
+## Q2 — strict decoding: **bytes + docstring is enough**, with a structural reason we hadn't stated
+
+Their argument is better than ours: strict decoding is only meaningful **where a byte layer
+exists**. A localStorage tree storing strings natively never had invalid UTF-8 to detect,
+because nothing decoded. So `getRawContentsStrict` on the *core* interface would be a method
+that cannot mean anything on some implementations — the capability shape puts it where it
+belongs. This is independent confirmation that the capability-interface design is right.
+
+**One concrete ask adopted:** put the *recipe* in the docstring —
+`new TextDecoder('utf-8', { fatal: true }).decode(bytes)` — not merely a pointer at the bytes
+pair. Their failure mode was never "couldn't find the method"; it was that **nothing told them
+a detour was required**.
+
+## Q3 — DNS rebinding: **documented limit accepted, but the API must keep pinning additive**
+
+Not a preference — a **condition**. Today the hub is single-tenant self-hosted: whoever
+submits a URL operates the machine, so SSRF buys access to a host they already control. The
+moment it is hosted multi-tenant, **the rebinding attacker and the basic-SSRF attacker are the
+same person** — whoever submits a URL controls its DNS. A first-hop-only guard then stops the
+accidental case and not the deliberate one, which is the population it exists for.
+
+Binding consequences for the design:
+
+1. Stated limit now — no pinning built on their account.
+2. **Keep pinning addable without a breaking change**: the guard must be an **option or a
+   swappable resolver on the params**, not baked into the call.
+3. Doc placement: *"does not stop DNS rebinding"* sits in the **same paragraph** as *"blocks
+   private-IP targets"* — not in a separate caveats section.
+
+## Q4 — injection point early, as an **instrumentation** seam (not experimentation)
+
+Our own analysis killed the experimentation rationale and they accepted it: behind the current
+return types any injected index still materialises every body, so it cannot be used to
+experiment with the ceiling they care about.
+
+Its real value is **measurement**: wrapping the shipped `MemoryIndex` in a counting/timing
+decorator yields resident bytes by kind, open cost against vault size, and where the curve
+actually bends. Their words: *"We've been asserting 'won't scale past thousands' without
+measuring it once, which is a weak input to a design cycle whose output is a breaking change
+to a shipped interface."* Ship it early so the redesign runs on numbers.
+
+**This reframes the sequencing:** the injection point is no longer a nice-to-have ahead of the
+redesign — it is the redesign's **input**.
+
+## Ask 4 — the trap is concrete, not hypothetical
+
+Undiscriminated `backlinks()` widens `LinkTraversalRetriever`'s BFS, and **traversal feeds
+recall** — so every ingested document would pull its own derived claims into contexts that
+asked only for semantically linked memory. It **scales with success**: better extraction →
+more derived records per document → more noise per traversal. They want the type-discriminated
+index and accept the break on `backlinks()`.
+
+And our orphan-query point was why they flagged it as not-asking-yet: a record whose only
+inbound arrow is provenance is arguably still an orphan, and that ambiguity is what stopped
+them stating the query. Discriminating dissolves it.
+
+## Ask 2 — `httpTreeAccessors` has a real consumer
+
+Not URL ingestion (that's the fetch primitive's job; a read-only tree over a fixed `baseUrl`
+is the wrong shape for untrusted URLs). It's a **hosted built-in corpus for agent creation** —
+a fixed-baseUrl read-only tree, where bytes are the natural form. So the adapter we flagged as
+the one they'd missed is in fact the one with a named use case.
+
+## Commissioned
+
+| Work | Status |
+|---|---|
+| `agent-memory-fragment-id` (ask 1) | 🔵 in flight |
+| `agent-memory-index-injection-seam` (ask 3, part 1) | 🔵 in flight |
+| Backlink type-discrimination + partial-read redesign (asks 3+4) | ⏸️ design-first, gated on the injection seam's measurements |
+| FileTree bytes capability (ask 2) | 🟢 ready to commission |
+| Fetch primitive (ask 5) | 🟢 ready, threat-model first |
