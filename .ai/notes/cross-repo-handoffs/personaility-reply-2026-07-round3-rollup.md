@@ -399,3 +399,64 @@ the one they'd missed is in fact the one with a named use case.
 | Backlink type-discrimination + partial-read redesign (asks 3+4) | ⏸️ design-first, gated on the injection seam's measurements |
 | FileTree bytes capability (ask 2) | 🟢 ready to commission |
 | Fetch primitive (ask 5) | 🟢 ready, threat-model first |
+
+---
+
+# CORRECTION — we were wrong about `httpTreeAccessors` (2026-07-31, later)
+
+Surfaced by the implementing agent on the bytes stream (PR #586) and verified against
+`origin/release` before accepting it. **This corrects something we told you**, so it goes back
+rather than being quietly dropped.
+
+## What we said
+
+In "2. FileTree — a bytes path" we listed `httpTreeAccessors` as the adapter you'd missed and
+justified it this way:
+
+> The HTTP one is the most interesting for you: bytes are *more* natural there than text
+> (`response.arrayBuffer()`), and it's a plausible path for document ingestion.
+
+## What is actually true
+
+Two things make that wrong as written:
+
+1. **`HttpTreeAccessors` is not a lazy fetch-per-file tree.** It preloads the whole tree in
+   `fromHttp()` from a JSON REST API whose file response is
+   `{ path: string, contents: string, contentType?: string }` — `contents` is typed `string`.
+   It is a storage-service client, not a byte transport.
+2. **The entire `IFileTreeAccessors` read surface is synchronous** — `Result<T>`, not
+   `Promise<Result<T>>`. So `response.arrayBuffer()` can never be called from inside
+   `getFileBytes` on this class, regardless of what the wire format is. Making it byte-native
+   on the wire is a wire-format change plus an async-surface change, not an adapter tweak.
+
+## What this does and does not change
+
+**Does not change:** your hosted-built-in-corpus use case is still served. The adapter
+implements the byte read (via the inherited in-memory path), so a caller can ask a hosted
+corpus tree for bytes and get them.
+
+**Does change:** the *justification* we gave. Bytes are not "more natural" in this adapter as
+written — they are a decode of text that arrived as text. If your corpus contains genuinely
+binary artifacts (images, PDFs, anything non-UTF-8), this adapter is **not** currently a safe
+path for them, because the bytes it returns are a UTF-8 encode of an already-decoded string.
+Text corpora are fine.
+
+**Tell us if you need binary-safe hosted corpus content.** That is a real piece of work — a
+wire-format change on the HTTP storage protocol and an async seam on the read surface — and we
+would want it scoped deliberately rather than assumed to have shipped with this stream. We are
+not doing it speculatively.
+
+## Also: one name changed from what we wrote
+
+We said the guards would be `isBinaryCapableAccessors` and item-level equivalents. They
+shipped as **`isBinaryAccessors`** / `isMutableBinaryAccessors` / `isBinaryFileItem` /
+`isMutableBinaryFileItem`, matching the packlet's existing guard idiom (`isMutableAccessors`,
+`isPersistentAccessors`). The interfaces are as described: `IBinaryFileTreeAccessors`
+(`getFileBytes`), `IMutableBinaryFileTreeAccessors` (`saveFileBytes`),
+`IBinaryFileTreeFileItem` (`getRawBytes`), `IMutableBinaryFileTreeFileItem` (`setRawBytes`).
+
+**Byte read ships on all six adapters; byte *write* ships on Node fs only.** Five of the six
+extend the in-memory accessors and persist text, so a byte write through them would be lossy
+on non-UTF-8 or would silently never persist. Deferred deliberately: FSA byte write,
+localStorage base64 (would change an on-disk format deployments already hold), HTTP binary
+transport, and binary directory items.
