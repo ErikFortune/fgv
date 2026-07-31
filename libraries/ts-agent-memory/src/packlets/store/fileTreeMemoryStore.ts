@@ -205,17 +205,27 @@ export interface IFileTreeMemoryStoreCreateParams {
    * - `patch` — on every persisted write, delete, version invalidation, and
    *   cap-cull eviction.
    * - `entries` — behind {@link IMemoryStore.list | list} /
-   *   {@link IMemoryStore.listScoped | listScoped}, the keyed temporal reads, AND
-   *   the write path's content-hash dedup and write-policy admission cohort.
+   *   {@link IMemoryStore.listScoped | listScoped}, the keyed temporal reads, the
+   *   write path's content-hash dedup and write-policy admission cohort, AND the
+   *   temporal (versioned) write and delete paths, which resolve an entity's
+   *   version history entirely from the index.
    *
-   * That last item is the one to weigh before injecting anything other than a
+   * That last group is the one to weigh before injecting anything other than a
    * pass-through decorator: an index that filters, reorders, or otherwise reshapes
-   * `entries()` changes WRITE semantics (what dedups, what a cap-cull policy
-   * evicts), not just what reads return. A faithful delegating decorator — the
-   * intended use below — has no such effect. Note the store's keyed reads
-   * ({@link IMemoryStore.get | get} on a flat kind, and
-   * {@link IMemoryStore.getById | getById}) go to the FileTree, not the index; the
-   * FileTree remains the source of truth and the index stays a derived view.
+   * `entries()` changes WRITE semantics, not just what reads return. Concretely,
+   * on a versioned kind the store derives an entity's whole version history from
+   * `entries()` filtered by scope, and that derivation decides which version a
+   * `put` treats as current (so what it dedups against and what it merges its
+   * patch over), which prior versions it stamps `invalid_at` on, what the
+   * admission cohort is, and which versions a `delete` tombstones. An index that
+   * hides a version makes it invisible to all of those — the FileTree still holds
+   * it, but the store will not supersede, invalidate, or tombstone it. On flat
+   * kinds the same reshaping changes what dedups and what a cap-cull policy
+   * evicts. A faithful delegating decorator — the intended use below — has no such
+   * effect. Note the store's keyed reads ({@link IMemoryStore.get | get} on a flat
+   * kind, and {@link IMemoryStore.getById | getById}) go to the FileTree, not the
+   * index; the FileTree remains the source of truth and the index stays a derived
+   * view.
    *
    * @remarks
    * **This is an instrumentation seam, NOT a resident-memory fix.** The intended
