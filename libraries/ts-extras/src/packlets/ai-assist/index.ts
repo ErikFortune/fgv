@@ -164,10 +164,12 @@ export {
 export { resolveEffectiveTools } from './toolFormats';
 
 export {
+  classifyJsonParseFailure,
   extractJsonText,
   fencedStringifiedJson,
   type IFencedStringifiedJsonExtractorOptions,
   type IFencedStringifiedJsonOptions,
+  type JsonParseFailureReason,
   type JsonTextExtractor
 } from './jsonResponse';
 
