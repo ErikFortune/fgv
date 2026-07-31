@@ -509,6 +509,163 @@ describe('AiAssist.registry', () => {
     });
   });
 
+  describe('capability resolution — fgv model-alias guard', () => {
+    // Both capability resolvers prefix-match the model id, and every provider declares a
+    // `modelPrefix: ''` catch-all. Before the guard, an fgv alias (`@provider:role`) matched
+    // that catch-all and returned a *confidently wrong* capability — flipping the wire
+    // format on xAI and silently dropping `supportsDimensions` / `maxBatchSize` on OpenAI —
+    // rather than failing or returning `undefined`. These tests pin the alias form to the
+    // same capability the concrete id selects.
+
+    describe('an alias selects the same capability as the concrete id it names', () => {
+      test('openai image: @openai:image is gpt-image-, not the catch-all', () => {
+        const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
+        // Pre-guard this returned { modelPrefix: '', outputParamStyle: 'response-format' },
+        // which suppresses the reference-image affordance and picks the wrong output param.
+        expect(AiAssist.resolveImageCapability(descriptor, '@openai:image')).toMatchObject({
+          modelPrefix: 'gpt-image-',
+          format: 'openai-images',
+          acceptsImageReferenceInput: true,
+          outputParamStyle: 'output-format'
+        });
+      });
+
+      test('xai image: @xai-grok:imagine keeps the edits wire format', () => {
+        const descriptor = AiAssist.getProviderDescriptor('xai-grok').orThrow();
+        // Pre-guard this returned format 'xai-images' with acceptsImageReferenceInput false —
+        // a different wire format from the one the concrete id dispatches to.
+        expect(AiAssist.resolveImageCapability(descriptor, '@xai-grok:imagine')).toMatchObject({
+          modelPrefix: 'grok-imagine-',
+          format: 'xai-images-edits',
+          acceptsImageReferenceInput: true
+        });
+      });
+
+      test('openai embedding: @openai:embedding keeps dimensions + batch guard', () => {
+        const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
+        // Pre-guard this returned the catch-all, dropping supportsDimensions and the
+        // maxBatchSize guard that protects callers from an over-large batch.
+        expect(AiAssist.resolveEmbeddingCapability(descriptor, '@openai:embedding')).toMatchObject({
+          modelPrefix: 'text-embedding-3',
+          format: 'openai-embeddings',
+          supportsDimensions: true,
+          maxBatchSize: 2048
+        });
+      });
+
+      test('holds for every registered alias on every built-in provider', () => {
+        // The invariant sweep: whatever a provider's aliases map contains, the alias form and
+        // the concrete id it resolves to must select the identical capability object. This is
+        // the test that generalises the three cases above across the whole registry, so a
+        // future provider gaining a specific-prefix rule cannot silently reintroduce the gap.
+        for (const descriptor of AiAssist.getProviderDescriptors()) {
+          for (const alias of Object.keys(descriptor.aliases ?? {})) {
+            expect(AiAssist.resolveModelAlias(descriptor, alias)).toSucceedAndSatisfy((concrete) => {
+              expect(AiAssist.resolveImageCapability(descriptor, alias)).toEqual(
+                AiAssist.resolveImageCapability(descriptor, concrete)
+              );
+              expect(AiAssist.resolveEmbeddingCapability(descriptor, alias)).toEqual(
+                AiAssist.resolveEmbeddingCapability(descriptor, concrete)
+              );
+            });
+          }
+        }
+      });
+
+      test('a provider whose only rule is the catch-all is unaffected', () => {
+        // google-gemini declares a single catch-all for both modalities, so alias and concrete
+        // always agreed even pre-guard. Pinned so the guard is not credited with a behavior
+        // change it did not make.
+        const descriptor = AiAssist.getProviderDescriptor('google-gemini').orThrow();
+        expect(AiAssist.resolveImageCapability(descriptor, '@google-gemini:flash-image')).toMatchObject({
+          modelPrefix: '',
+          format: 'gemini-image-out'
+        });
+        expect(AiAssist.resolveEmbeddingCapability(descriptor, '@google-gemini:embedding')).toMatchObject({
+          modelPrefix: '',
+          format: 'gemini-embeddings'
+        });
+      });
+    });
+
+    describe('an unresolvable alias yields undefined rather than the catch-all', () => {
+      test('unregistered alias on a provider that declares an aliases map', () => {
+        const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
+        expect(AiAssist.resolveImageCapability(descriptor, '@openai:no-such-role')).toBeUndefined();
+        expect(AiAssist.resolveEmbeddingCapability(descriptor, '@openai:no-such-role')).toBeUndefined();
+      });
+
+      test('sigil-prefixed id on a provider that declares no aliases map at all', () => {
+        const descriptor: AiAssist.IAiProviderDescriptor = {
+          id: 'openai',
+          label: 'X',
+          buttonLabel: 'X',
+          needsSecret: true,
+          apiFormat: 'openai',
+          baseUrl: 'https://example.com',
+          defaultModel: 'gpt-image-1',
+          supportedTools: [],
+          corsRestricted: false,
+          streamingCorsRestricted: false,
+          acceptsImageInput: true,
+          thinkingMode: 'optional',
+          imageGeneration: [{ modelPrefix: '', format: 'openai-images' }],
+          embedding: [{ modelPrefix: '', format: 'openai-embeddings' }]
+        };
+        expect(AiAssist.resolveImageCapability(descriptor, '@openai:image')).toBeUndefined();
+        expect(AiAssist.resolveEmbeddingCapability(descriptor, '@openai:image')).toBeUndefined();
+      });
+
+      test('cyclic alias chain', () => {
+        const descriptor: AiAssist.IAiProviderDescriptor = {
+          id: 'openai',
+          label: 'X',
+          buttonLabel: 'X',
+          needsSecret: true,
+          apiFormat: 'openai',
+          baseUrl: 'https://example.com',
+          defaultModel: 'gpt-image-1',
+          supportedTools: [],
+          corsRestricted: false,
+          streamingCorsRestricted: false,
+          acceptsImageInput: true,
+          thinkingMode: 'optional',
+          aliases: { '@openai:a': '@openai:b', '@openai:b': '@openai:a' },
+          imageGeneration: [{ modelPrefix: '', format: 'openai-images' }],
+          embedding: [{ modelPrefix: '', format: 'openai-embeddings' }]
+        };
+        expect(AiAssist.resolveImageCapability(descriptor, '@openai:a')).toBeUndefined();
+        expect(AiAssist.resolveEmbeddingCapability(descriptor, '@openai:a')).toBeUndefined();
+      });
+    });
+
+    test('a concrete id containing an @ elsewhere is still matched verbatim', () => {
+      // Only a *leading* sigil marks an alias, so a raw provider id with an interior '@'
+      // must still prefix-match rather than being treated as an unresolvable alias.
+      const descriptor: AiAssist.IAiProviderDescriptor = {
+        id: 'openai-compat',
+        label: 'X',
+        buttonLabel: 'X',
+        needsSecret: false,
+        apiFormat: 'openai',
+        baseUrl: 'https://example.com',
+        defaultModel: '',
+        supportedTools: [],
+        corsRestricted: false,
+        streamingCorsRestricted: false,
+        acceptsImageInput: false,
+        thinkingMode: 'unsupported',
+        embedding: [
+          { modelPrefix: 'nomic-embed', format: 'openai-embeddings' },
+          { modelPrefix: '', format: 'openai-embeddings' }
+        ]
+      };
+      expect(AiAssist.resolveEmbeddingCapability(descriptor, 'nomic-embed@v1.5')).toMatchObject({
+        modelPrefix: 'nomic-embed'
+      });
+    });
+  });
+
   describe('allProviderIds', () => {
     test('contains all provider ids in same order as descriptors', () => {
       const descriptors = AiAssist.getProviderDescriptors();
