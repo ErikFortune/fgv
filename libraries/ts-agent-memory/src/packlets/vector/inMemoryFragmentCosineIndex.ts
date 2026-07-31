@@ -8,16 +8,31 @@ import { IEdgeTarget, edgeTargetKey } from '../types';
 import {
   FragmentEmbedder,
   IEmbeddedFragment,
-  IFragmentLocator,
   IFragmentVectorIndex,
   IMemoryRecordSource,
   IScopedMemoryRecord,
   IVectorQueryHit
 } from './vectorIndex';
 
-/** One stored fragment: its in-record locator plus the vector for that span. */
+/**
+ * The identity fields a fragment was added with, already in query-hit shape: a field
+ * the fragment did not carry is *absent*, never present-but-`undefined`, so a hit
+ * for a fragment added without a `fragmentId` is structurally identical to one
+ * produced before `fragmentId` existed.
+ */
+type FragmentIdentity = Pick<IVectorQueryHit, 'locator' | 'fragmentId'>;
+
+/** Project an incoming fragment's identity fields, dropping the ones it did not carry. */
+function fragmentIdentity(fragment: IEmbeddedFragment): FragmentIdentity {
+  return {
+    ...(fragment.locator !== undefined ? { locator: fragment.locator } : {}),
+    ...(fragment.fragmentId !== undefined ? { fragmentId: fragment.fragmentId } : {})
+  };
+}
+
+/** One stored fragment: the identity it was added with plus its vector. */
 interface IStoredFragment {
-  readonly locator: IFragmentLocator;
+  readonly identity: FragmentIdentity;
   readonly vector: Float32Array;
 }
 
@@ -36,9 +51,11 @@ interface IScoredFragment {
 /**
  * The brute-force, in-memory cosine {@link IFragmentVectorIndex} — the
  * fragment-granular sibling of {@link InMemoryCosineIndex}. Stores many
- * `Float32Array`s per record (one per in-record {@link IFragmentLocator | span})
- * and answers a query by computing cosine similarity against every stored
- * fragment, returning the top-k fragment hits by descending score.
+ * `Float32Array`s per record (one per {@link IEmbeddedFragment | fragment}) and
+ * answers a query by computing cosine similarity against every stored fragment,
+ * returning the top-k fragment hits by descending score. Each hit carries back
+ * whichever of {@link IFragmentLocator | locator} / `fragmentId` its fragment was
+ * added with; a fragment must carry at least one of the two.
  *
  * @remarks
  * Same regime and same non-goals as {@link InMemoryCosineIndex}: no external
@@ -108,6 +125,16 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
       if (fragment.vector.length === 0) {
         return Promise.resolve(fail(`fragment index: cannot add '${key}': empty fragment vector`));
       }
+      // A fragment carrying neither identity cannot be resolved back to anything by a
+      // consumer holding the hit — the same invariant `embeddedFragmentConverter`
+      // enforces at the untyped boundary, re-checked here at the index seam.
+      if (fragment.locator === undefined && fragment.fragmentId === undefined) {
+        return Promise.resolve(
+          fail(
+            `fragment index: cannot add '${key}': fragment requires at least one of 'locator' or 'fragmentId'`
+          )
+        );
+      }
       if (dimension === undefined) {
         dimension = fragment.vector.length;
       } else if (fragment.vector.length !== dimension) {
@@ -118,7 +145,7 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
         );
       }
       // Defensive copy: the caller may reuse or mutate the buffer after `addFragments`.
-      stored.push({ locator: fragment.locator, vector: Float32Array.from(fragment.vector) });
+      stored.push({ identity: fragmentIdentity(fragment), vector: Float32Array.from(fragment.vector) });
     }
     // Whole-record replace: an empty `fragments` array drops the record entirely
     // rather than leaving an empty shell behind. Commit the (possibly newly-derived)
@@ -163,7 +190,7 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
           hit: {
             target: record.target,
             score: InMemoryFragmentCosineIndex._cosine(vector, queryMagnitude, fragment.vector),
-            locator: fragment.locator
+            ...fragment.identity
           }
         });
       }
