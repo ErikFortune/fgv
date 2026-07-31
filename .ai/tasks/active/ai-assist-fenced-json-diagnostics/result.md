@@ -135,6 +135,20 @@ The reviewer independently confirmed the design call that
 `'unknown'` as an explicit floor, so wrapping it would mirror the `Result<void>`
 anti-pattern.
 
+## Layer-2 review (Copilot) — handed off, NOT dispositioned by this stream
+
+Copilot review round 1 was requested on PR #579 and the
+`copilot-pull-request-reviewer` check completed with conclusion `success` at
+19:27 UTC. **Its findings were not retrievable** — the shared GitHub token was
+over its API rate limit, so the review comments could not be enumerated by this
+stream.
+
+Round 1's findings are therefore **undispositioned as of this artifact**, and the
+**orchestrator owns the Copilot loop for #579** from here: pulling the round-1
+findings once the rate limit resets, resolving or dispositioning them, and
+recording the stop reason on the PR. Nothing else in this stream is waiting on
+that.
+
 ## Gates
 
 | Gate | Result |
