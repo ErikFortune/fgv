@@ -92,5 +92,33 @@ describe('TemporalVersionedPolicy', () => {
         expect(updated.envelope.embeddingRef).toBe('vec-1');
       });
     });
+
+    /**
+     * Mirrors the `provenance merge contract (README-pinned)` block in
+     * `writePolicy.test.ts`. The package README states that the provenance
+     * guarantees hold for BOTH pinned-surface policies, so both must be pinned
+     * here — otherwise the README claims more than the tests establish.
+     */
+    describe('provenance merge contract (README-pinned)', () => {
+      function provenanceRecord(): IMemoryRecord<unknown> {
+        return makeRecord({
+          provenance: { source: 'agent', confidence: 0.9, note: 'stale' } as IProvenance
+        });
+      }
+
+      test('an explicit null on a sub-key clears that key and preserves its siblings', () => {
+        expect(policy.applyUpdate(provenanceRecord(), { provenance: { note: null } })).toSucceedAndSatisfy(
+          (updated) => {
+            expect(updated.envelope.provenance).toEqual({ source: 'agent', confidence: 0.9 });
+          }
+        );
+      });
+
+      test('a whole-block null is rejected loudly rather than silently accepted', () => {
+        expect(policy.applyUpdate(provenanceRecord(), { provenance: null })).toFailWith(
+          /may not delete required field\(s\): provenance/i
+        );
+      });
+    });
   });
 });
