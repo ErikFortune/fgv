@@ -507,9 +507,15 @@ export interface IAiClientToolTurnResult {
  * check — but that is a statement about the tier axis, not a claim that every
  * provider supports thinking: several descriptors declare
  * `thinkingMode: 'unsupported'` (e.g. `copy-paste`, `groq`, `mistral`, `ollama`,
- * `openai-compat`). Thinking support is a per-provider/per-model property; consult
- * `IAiProviderDescriptor.thinkingMode`. What the tier axis guarantees is only that
- * choosing a tier never *changes* whether thinking is available.
+ * `openai-compat`).
+ *
+ * Thinking availability is declared **per provider**, on the descriptor's
+ * `thinkingMode`; the descriptor does not encode per-model thinking availability at
+ * all, so a provider that declares support may still have individual models its own
+ * API rejects thinking on. (`adaptiveThinkingModelPrefixes` is per-model but selects
+ * a wire *shape*, not availability.) What the tier axis guarantees is therefore
+ * narrow and exact: a tier selects a model within one provider and never changes the
+ * provider, so it never changes `thinkingMode`.
  *
  * Do not add a `'tools'` or `'thinking'` key here, and do not hand-roll a
  * `resolveModel` + `resolveModelAlias` walk to emulate one — call
