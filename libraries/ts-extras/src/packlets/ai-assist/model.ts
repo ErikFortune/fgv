@@ -503,8 +503,13 @@ export interface IAiClientToolTurnResult {
  * model the tier already selected — they never select a model. A tool-using or
  * thinking-enabled call passes a tier like any other call (omit → `base`, or
  * `'advanced'` / `'frontier'`) and sets the tools / thinking request params
- * independently. Every base model is thinking-capable, so thinking composes with
- * any tier with no capability check.
+ * independently. Thinking composes with any tier without a tier-level capability
+ * check — but that is a statement about the tier axis, not a claim that every
+ * provider supports thinking: several descriptors declare
+ * `thinkingMode: 'unsupported'` (e.g. `copy-paste`, `groq`, `mistral`, `ollama`,
+ * `openai-compat`). Thinking support is a per-provider/per-model property; consult
+ * `IAiProviderDescriptor.thinkingMode`. What the tier axis guarantees is only that
+ * choosing a tier never *changes* whether thinking is available.
  *
  * Do not add a `'tools'` or `'thinking'` key here, and do not hand-roll a
  * `resolveModel` + `resolveModelAlias` walk to emulate one — call
