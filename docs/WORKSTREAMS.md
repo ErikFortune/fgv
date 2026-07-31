@@ -242,6 +242,39 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ---
 
+### `ai-assist-alias-capability-guard` 🔵
+
+**Status:** 🔵 in flight (overnight 2026-07-28). Branches from `release` @ `b689c99ca`. Consumer: PersonAIlity (round-2 ask B + A).
+**Package surface:** `@fgv/ts-extras/ai-assist` (`registry.ts`, `model.ts` TSDoc only), `samples/testbed` (`scenarios/imageGeneration/`).
+**Out-of-scope:** `packlets/ai-assist/jsonResponse.ts` (owned by `ai-assist-fenced-json-diagnostics`), all of `@fgv/ts-agent-memory`, `docs/WORKSTREAMS.md` (orchestrator-owned).
+**Brief:** `.ai/tasks/active/ai-assist-alias-capability-guard/brief.md`.
+
+**Mission.** `resolveImageCapability` and `resolveEmbeddingCapability` prefix-match a raw model id with no alias resolution and no `MODEL_ALIAS_SIGIL` guard, so an fgv alias falls through to the catch-all `modelPrefix: ''` and returns a **confidently wrong capability** — verified by execution: the xAI image alias flips both wire format and `acceptsImageReferenceInput`; the OpenAI embedding alias drops `supportsDimensions` + `maxBatchSize`. Guard both resolvers, fix the in-repo instance in the testbed image-generation scenario, and add the `@remarks` note that `tools`/`thinking` are deliberately not model selectors (ask A — the absence of a `'tools'` key has now sent two consumers down an unnecessary hand-rolled walk).
+
+---
+
+### `ai-assist-fenced-json-diagnostics` 🔵
+
+**Status:** 🔵 in flight (overnight 2026-07-28). Branches from `release` @ `b689c99ca`. Consumer: PersonAIlity (round-2 P3).
+**Package surface:** `@fgv/ts-extras/ai-assist` (`jsonResponse.ts` + its tests).
+**Out-of-scope:** `registry.ts`, `model.ts`, `apiClient.ts`, `samples/testbed`, `docs/WORKSTREAMS.md`.
+**Brief:** `.ai/tasks/active/ai-assist-fenced-json-diagnostics/brief.md`.
+
+**Mission.** A property-name-position `JSON.parse` failure surfaces the bare engine message with no typed reason, offending token, or offset — so unquoted key / single-quoted key / unterminated name / elision are indistinguishable, and they want opposite handling (repair vs re-prompt vs fail). Add a typed failure reason in the shape of the `found`/`unclosed`/`none` scan result that #573 introduced. Note #573's truncation diagnosis fires in the *extractor*, before `JSON.parse`, and does not cover this case.
+
+---
+
+### `agent-memory-provenance-contract-doc` 🔵
+
+**Status:** 🔵 in flight (overnight 2026-07-28). Branches from `release` @ `b689c99ca`. Consumer: PersonAIlity (round-2 P0, doc-only outcome).
+**Package surface:** `@fgv/ts-agent-memory` (README + `writePolicy.ts` TSDoc).
+**Out-of-scope:** all of `@fgv/ts-extras`, any behavior change to the merge path, `docs/WORKSTREAMS.md`.
+**Brief:** `.ai/tasks/active/agent-memory-provenance-contract-doc/brief.md`.
+
+**Mission.** The provenance merge contract is already correct and pinned — the ask is answered *yes* on both halves. Document the guarantee where a consumer will find it so the next one doesn't have to ask: per-key merge over `provenance`, sub-key `null` clearing sanctioned, whole-block `null` rejected loudly. **No behavior change** — this stream fails if the merge semantics move.
+
+---
+
 ## Completed workstreams
 
 ### `agent-memory-antagonist` ✅

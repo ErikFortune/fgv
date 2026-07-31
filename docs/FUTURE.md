@@ -377,6 +377,42 @@ landed against the firmed seven-question contract (#561 / #562 / #563). **N-Ask8
 `@fgv/ts-agent-memory-sqlite-vec` is the persistent index it asked about. Both were
 non-blocking throughout, and with them the personaility→fgv ask queue is closed out.
 
+> **REOPENED (2026-07-28) — round 2.** A new batch of five asks arrived, all non-blocking.
+> Triage against `release` @ `b689c99ca` found that **two were already answered**: WebAuthn
+> R11/R12 shipped 2026-05-12 (#351) as the separate `@fgv/ts-extras-webauthn` /
+> `@fgv/ts-web-extras-webauthn` packages (the consumer searched inside `ts-extras` /
+> `ts-web-extras` and concluded absence), and the `@fgv/ts-agent-memory` provenance merge
+> contract is a deliberately pinned guarantee with sub-key `null` clearing sanctioned and
+> whole-block deletion rejected (verified by execution). One ask is a genuine bug, broader
+> than reported — see the capability-resolver entry below. Full triage with evidence:
+> [`.ai/notes/cross-repo-handoffs/personaility-asks-2026-07-round2.md`](../.ai/notes/cross-repo-handoffs/personaility-asks-2026-07-round2.md).
+
+### Alias-unsafe capability resolvers — `resolveImageCapability` / `resolveEmbeddingCapability`
+
+**Priority: the one real defect in the personaility round-2 batch.** Both functions
+prefix-match a raw model id with no alias resolution and no `MODEL_ALIAS_SIGIL` guard, so an
+fgv alias (`@openai:image`, `@xai-grok:imagine`, `@openai:embedding`) falls through to the
+catch-all `modelPrefix: ''` rule and returns a **confidently wrong capability** rather than
+failing. Verified by execution on `release`: the xAI image alias flips both the wire format
+(`xai-images` vs `xai-images-edits`) and `acceptsImageReferenceInput`; the OpenAI embedding
+alias silently drops `supportsDimensions` and the `maxBatchSize` guard.
+
+The library's own paths are safe (`callProviderImageGeneration` resolves the alias before
+resolving capability), so this is purely a hazard for consumers calling the exported helpers
+— which is what they exist for. `samples/testbed`'s `image-generation` scenario is an
+in-repo instance (`index.tsx:45` produces the alias form, `:89` consumes it).
+
+**Scope sketch**: make both resolvers alias-aware, or fail loudly on a sigil-prefixed id
+(the smaller change, and consistent with the registry-gated posture elsewhere — an
+unregistered `@alias` already fails rather than reaching the wire; silently matching `''` is
+the outlier). Then fix the testbed call site. Include a `@remarks` block on
+`resolveProviderModel` / `ModelSpecKey` noting that `tools` / `thinking` are deliberately
+not model selectors — the absence of a `'tools'` key reads as an oversight and has now sent
+two consumers down a hand-rolled-walk path they didn't need.
+
+**Not blocking**: the consumer is fixed and green on `-45`; no shipped `@fgv/*` code path
+is affected.
+
 ### Input-side `resolveHandle` (inverse of `handleFor`) — conditional, build-ready
 
 `createMemoryTools`' `handleFor` hook maps a record → an agent-visible mnemonic on
