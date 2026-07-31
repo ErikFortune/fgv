@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "zip-file-tree adopts the new FileTree binary (raw bytes) capability. ZipFileTreeAccessors and ZipFileItem now implement the read half (FileTree.IBinaryFileTreeAccessors / IBinaryFileTreeFileItem), exposing getFileBytes(path) and getRawBytes() so a ZIP entry's bytes can be read without the lenient UTF-8 decode that previously text-ified every entry on the way through the archive. Entries are held as raw bytes and decoded to text lazily on first text read, so binary payloads round-trip through the archive unchanged. New createZipFromFiles(files) accepts IZipFile entries whose contents are string | Uint8Array (strings encode as UTF-8, byte arrays are stored verbatim); the existing createZipFromTextFiles is unchanged in behaviour and now delegates to it. ZipFileItem's constructor additionally accepts raw bytes; its existing string form is preserved, so existing callers are unaffected.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

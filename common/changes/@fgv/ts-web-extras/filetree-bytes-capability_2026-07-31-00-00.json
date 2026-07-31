@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "HttpTreeAccessors, FileSystemAccessTreeAccessors, and LocalStorageTreeAccessors now declare the read half of the new FileTree binary (raw bytes) capability (FileTree.IBinaryFileTreeAccessors), inherited from InMemoryTreeAccessors — narrow with FileTree.isBinaryAccessors and call getFileBytes(path) to read a file's bytes without the lenient UTF-8 decode. Byte writes are deliberately not offered on any of the three: each persists text (JSON REST transport, File.text()/writable text sync, and a localStorage JSON document respectively), so a byte write could not survive a syncToDisk round-trip; FileTree.isMutableBinaryAccessors correctly reports false for all three.",
+      "type": "minor",
+      "packageName": "@fgv/ts-web-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras",
+  "email": "noreply@anthropic.com"
+}

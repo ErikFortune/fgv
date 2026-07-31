@@ -32,8 +32,8 @@ import { FileTree, JsonValue } from '@fgv/ts-json-base';
  * @remarks
  * ZIP entries are byte-native, so this item also implements the read half of the
  * optional binary capability (`FileTree.IBinaryFileTreeFileItem`) — use
- * {@link FileTree.isBinaryFileItem | isBinaryFileItem} to narrow and
- * `getRawBytes()` to read the entry's undecoded bytes.
+ * `FileTree.isBinaryFileItem` to narrow and `getRawBytes()` to read the entry's
+ * undecoded bytes.
  * @public
  */
 export class ZipFileItem<TCT extends string = string> implements FileTree.IBinaryFileTreeFileItem<TCT> {
@@ -79,7 +79,7 @@ export class ZipFileItem<TCT extends string = string> implements FileTree.IBinar
   private readonly _bytes: Uint8Array;
 
   /**
-   * Lazily-decoded text form of {@link ZipFileItem._bytes}.
+   * Text form of the entry, decoded lazily from the raw bytes on first text read.
    */
   private _contents: string | undefined;
 
@@ -101,11 +101,22 @@ export class ZipFileItem<TCT extends string = string> implements FileTree.IBinar
   /**
    * Constructor for ZipFileItem.
    * @param zipFilePath - The path of the file within the ZIP.
-   * @param bytes - The pre-loaded raw bytes of the ZIP entry.
+   * @param contents - The pre-loaded contents of the entry, either as raw bytes or as
+   * already-decoded text. Text is encoded as UTF-8 for the byte accessor and is also
+   * retained verbatim, so supplying text never round-trips through a decode.
    * @param accessors - The ZIP file tree accessors.
    */
-  public constructor(zipFilePath: string, bytes: Uint8Array, accessors: ZipFileTreeAccessors<TCT>) {
-    this._bytes = bytes;
+  public constructor(
+    zipFilePath: string,
+    contents: string | Uint8Array,
+    accessors: ZipFileTreeAccessors<TCT>
+  ) {
+    if (typeof contents === 'string') {
+      this._contents = contents;
+      this._bytes = new TextEncoder().encode(contents);
+    } else {
+      this._bytes = contents;
+    }
     this._accessors = accessors;
     this.absolutePath = '/' + zipFilePath;
     this.name = accessors.getBaseName(zipFilePath);
@@ -225,8 +236,8 @@ export class ZipDirectoryItem<TCT extends string = string> implements FileTree.I
  * @remarks
  * ZIP entries are byte-native, so these accessors also implement the read half of the
  * optional binary capability (`FileTree.IBinaryFileTreeAccessors`) — use
- * {@link FileTree.isBinaryAccessors | isBinaryAccessors} to narrow and `getFileBytes()`
- * to read an entry's undecoded bytes.
+ * `FileTree.isBinaryAccessors` to narrow and `getFileBytes()` to read an entry's
+ * undecoded bytes.
  * @public
  */
 export class ZipFileTreeAccessors<TCT extends string = string>

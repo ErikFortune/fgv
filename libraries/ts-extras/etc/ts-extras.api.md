@@ -455,8 +455,6 @@ function createEncryptedFileConverter<TMetadata = JsonValue>(metadataConverter?:
 // @public
 function createZipFromFiles(files: ReadonlyArray<IZipFile>, options?: ICreateZipOptions): Result<Uint8Array>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "createZipFromFiles"
-//
 // @public
 function createZipFromTextFiles(files: ReadonlyArray<IZipTextFile>, options?: ICreateZipOptions): Result<Uint8Array>;
 
@@ -2632,11 +2630,10 @@ class ZipDirectoryItem<TCT extends string = string> implements FileTree.IFileTre
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
 //
 // @public
 class ZipFileItem<TCT extends string = string> implements FileTree.IBinaryFileTreeFileItem<TCT> {
-    constructor(zipFilePath: string, bytes: Uint8Array, accessors: ZipFileTreeAccessors<TCT>);
+    constructor(zipFilePath: string, contents: string | Uint8Array, accessors: ZipFileTreeAccessors<TCT>);
     readonly absolutePath: string;
     readonly baseName: string;
     get contentType(): TCT | undefined;
@@ -2667,7 +2664,6 @@ declare namespace ZipFileTree {
 export { ZipFileTree }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
 //
 // @public
 class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IBinaryFileTreeAccessors<TCT> {
@@ -2693,7 +2689,6 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IBin
 // src/packlets/crypto-utils/keystore/keyStore.ts:1677:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/crypto-utils/keystore/keyStore.ts:1714:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
 // src/packlets/crypto-utils/keystore/keyStore.ts:1808:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/zip-file-tree/zipFileTreeAccessors.ts:84:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ZipFileItem"
 
 // (No @packageDocumentation comment for this package)
 

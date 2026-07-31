@@ -63,7 +63,7 @@ export interface ICreateZipOptions {
  * Creates a zip file from an array of text files.
  *
  * @remarks
- * Contents are encoded as UTF-8. Use {@link createZipFromFiles} to write entries whose
+ * Contents are encoded as UTF-8. Use `createZipFromFiles` to write entries whose
  * contents are raw bytes.
  * @public
  */

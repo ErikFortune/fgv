@@ -65,7 +65,7 @@ export interface ILocalStorageTreeParams<TCT extends string = string>
  * @remarks
  * Supports the read half of the optional binary capability
  * (`FileTree.IBinaryFileTreeAccessors`) — narrow with
- * {@link FileTree.isBinaryAccessors | isBinaryAccessors} and call `getFileBytes()` to
+ * `FileTree.isBinaryAccessors` and call `getFileBytes()` to
  * read a file's bytes without going through a lenient UTF-8 decode.
  *
  * Byte *writes* are deliberately not supported: the backing store is a JSON document in

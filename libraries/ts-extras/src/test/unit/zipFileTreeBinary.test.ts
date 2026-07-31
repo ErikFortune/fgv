@@ -26,6 +26,7 @@ import {
   createZipFromFiles,
   createZipFromTextFiles,
   IZipFile,
+  ZipFileItem,
   ZipFileTreeAccessors
 } from '../../packlets/zip-file-tree';
 
@@ -120,6 +121,16 @@ describe('ZIP binary capability', () => {
         expect(item.getRawContents()).toSucceedWith('hello');
         expect(item.getRawContents()).toSucceedWith('hello');
       }
+    });
+
+    it('still accepts already-decoded text in its constructor', () => {
+      // Back-compat: the constructor took `contents: string` before the binary
+      // capability landed, and existing callers must keep working.
+      const accessors = buildArchive([{ path: 'a.txt', contents: 'seed' }]);
+      const item = new ZipFileItem('a.txt', 'héllo', accessors);
+
+      expect(item.getRawContents()).toSucceedWith('héllo');
+      expect(item.getRawBytes()).toSucceedWith(new TextEncoder().encode('héllo'));
     });
   });
 });
