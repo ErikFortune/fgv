@@ -164,10 +164,12 @@ declare namespace AiAssist {
         modelSpecKey,
         modelSpec,
         resolveEffectiveTools,
+        classifyJsonParseFailure,
         extractJsonText,
         fencedStringifiedJson,
         IFencedStringifiedJsonExtractorOptions,
         IFencedStringifiedJsonOptions,
+        JsonParseFailureReason,
         JsonTextExtractor,
         generateJsonCompletion,
         SMART_JSON_PROMPT_HINT,
@@ -374,6 +376,15 @@ function callProxiedImageGeneration(proxyUrl: string, params: IProviderImageGene
 
 // @public
 function callProxiedListModels(proxyUrl: string, params: IProviderListModelsParams): Promise<Result<ReadonlyArray<IAiModelInfo>>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function classifyJsonParseFailure(text: string): JsonParseFailureReason;
 
 declare namespace Constants {
     export {
@@ -1994,6 +2005,29 @@ interface JarRecordParserOptions {
     // (undocumented)
     readonly fixedContinuationSize?: number;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type JsonParseFailureReason = {
+    readonly kind: 'unquoted-property-name';
+    readonly token: string;
+    readonly offset: number;
+} | {
+    readonly kind: 'single-quoted-property-name';
+    readonly token: string;
+    readonly offset: number;
+} | {
+    readonly kind: 'unterminated-property-name';
+    readonly token: string;
+    readonly offset: number;
+} | {
+    readonly kind: 'elided-member';
+    readonly token: string;
+    readonly offset: number;
+} | {
+    readonly kind: 'unknown';
+};
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
