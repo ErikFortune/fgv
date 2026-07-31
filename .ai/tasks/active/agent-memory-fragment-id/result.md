@@ -1,7 +1,8 @@
 # Result — `agent-memory-fragment-id`
 
-Branch `agent-memory-fragment-id` (from `origin/release`). Both packages green on
-`rushx build` / `rushx lint` / `rushx test` at **100% coverage**.
+Branch `agent-memory-fragment-id` (from `origin/release`) → **PR #585** against
+`release` (not merged). Both packages green on `rushx build` / `rushx lint` /
+`rushx test` at **100% coverage**.
 
 ## What shipped
 
