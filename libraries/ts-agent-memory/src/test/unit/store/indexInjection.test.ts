@@ -16,14 +16,19 @@ import {
   IIndexedMemoryRecord,
   IMemoryIndex,
   IMemoryRecord,
+  IWritePolicy,
   Kind,
   KnowledgeIdentityCodec,
+  MemoryCapCullPolicy,
   MemoryId,
   MemoryIndex,
   MemoryIndexPatchOp,
   MemoryScopeKey,
+  MtmIdentityCodec,
   RecencyRetriever,
   Tag,
+  TemporalIdentityCodec,
+  TemporalVersionedPolicy,
   envelopeConverter
 } from '../../../index';
 
@@ -184,6 +189,97 @@ class HidingMemoryIndex implements IMemoryIndex {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Temporal (versioned) and cap-cull fixtures.
+//
+// The `index` param's TSDoc claims that an injected index decides which version a
+// versioned `put` supersedes, which versions a `delete` tombstones, and what a
+// cap-cull policy evicts — because all three derive their working set from
+// `entries()` rather than from the FileTree. These fixtures exist so those claims
+// are evidenced by test rather than only reasoned about from the implementation.
+// ---------------------------------------------------------------------------
+
+const factKind: Kind = 'fact' as Kind;
+const factScope: MemoryScopeKey = 'facts/entities/fact-1' as MemoryScopeKey;
+const mtmKind: Kind = 'mtm' as Kind;
+
+let clockValue: number = 1000;
+const clock = (): number => clockValue;
+
+function factRecord(body: string): IMemoryRecord<unknown> {
+  return {
+    envelope: envelopeConverter
+      .convert({
+        id: 'fact-1',
+        entityId: 'fact-1',
+        kind: 'fact',
+        tags: [],
+        links: [],
+        created: 0,
+        updated: 0,
+        seq: 0,
+        contentHash: '',
+        provenance: { source: 'agent' }
+      })
+      .orThrow(),
+    body
+  };
+}
+
+function versionedStore(index?: IMemoryIndex): FileTreeMemoryStore {
+  const registry: IBodyConverterRegistry = BodyConverterRegistry.create().orThrow();
+  registry.register(factKind, Converters.string);
+  return FileTreeMemoryStore.create({
+    root: mutableRoot(),
+    registry,
+    codecs: new Map<Kind, IIdentityCodec>([[factKind, TemporalIdentityCodec.create('facts').orThrow()]]),
+    writePolicies: new Map<Kind, IWritePolicy>([[factKind, TemporalVersionedPolicy.create().orThrow()]]),
+    clock,
+    index
+  }).orThrow();
+}
+
+function turnRecord(turn: number, body: string): IMemoryRecord<unknown> {
+  return {
+    envelope: envelopeConverter
+      .convert({
+        id: `turn-${turn}`,
+        entityId: `conv-1:${turn}`,
+        kind: 'mtm',
+        tags: [],
+        links: [],
+        created: 0,
+        updated: 0,
+        seq: 0,
+        contentHash: '',
+        provenance: { source: 'agent' }
+      })
+      .orThrow(),
+    body
+  };
+}
+
+function cappedStore(index?: IMemoryIndex, maxRecords: number = 2): FileTreeMemoryStore {
+  const registry: IBodyConverterRegistry = BodyConverterRegistry.create().orThrow();
+  registry.register(mtmKind, Converters.string);
+  return FileTreeMemoryStore.create({
+    root: mutableRoot(),
+    registry,
+    codecs: new Map<Kind, IIdentityCodec>([[mtmKind, new MtmIdentityCodec()]]),
+    writePolicies: new Map<Kind, IWritePolicy>([
+      [
+        mtmKind,
+        MemoryCapCullPolicy.create({
+          maxRecords,
+          mutableFields: ['body', 'tags', 'links', 'provenance']
+        }).orThrow()
+      ]
+    ]),
+    clock,
+    index
+  }).orThrow();
+}
+
 describe('FileTreeMemoryStore index injection', () => {
   describe('default (index omitted)', () => {
     test('creates and serves reads from a default MemoryIndex', async () => {
@@ -340,6 +436,97 @@ describe('FileTreeMemoryStore index injection', () => {
       expect(await hiding.put(knowledgeRecord('doc-c', 'hidden beta'))).toSucceedAndSatisfy(
         (record: IMemoryRecord<unknown>) => {
           expect(record.envelope.id).toBe('doc-c');
+        }
+      );
+    });
+  });
+
+  describe('injected index — temporal and cap-cull write paths', () => {
+    beforeEach(() => {
+      clockValue = 1000;
+    });
+
+    test('the injected index decides which version a versioned put supersedes and a delete tombstones', async () => {
+      // Both the versioned put and the versioned delete resolve an entity's version
+      // history through `_versionsForEntity`, which is a scope filter over the
+      // index's `entries()`. A version the injected index hides is therefore
+      // invisible to both — it stays on disk, but the store will not supersede,
+      // invalidate, or tombstone it. That is the documented caveat, and the reason
+      // only a faithful delegating decorator is safe to inject.
+      const control = versionedStore();
+      (await control.put(factRecord('hidden blue'))).orThrow();
+      clockValue = 2000;
+      (await control.put(factRecord('grey'))).orThrow();
+
+      // Default index: v1 is visible, so the second put closes its world-truth
+      // interval at the new version's `valid_at`.
+      expect(await control.getById(factScope, 'fact-1-v1' as MemoryId)).toSucceedAndSatisfy(
+        (v1: IMemoryRecord<unknown> | undefined) => {
+          expect(v1?.envelope.temporal?.invalid_at).toBe(2000);
+        }
+      );
+
+      const hiding = versionedStore(HidingMemoryIndex.create().orThrow());
+      clockValue = 1000;
+      (await hiding.put(factRecord('hidden blue'))).orThrow();
+      clockValue = 2000;
+      (await hiding.put(factRecord('grey'))).orThrow();
+
+      // Hiding index: v1 is invisible to the version walk, so the second put sees no
+      // current version, is built as a FIRST version, and invalidates nothing. v1 is
+      // still on disk and still carries no `invalid_at` — two live currents.
+      expect(await hiding.getById(factScope, 'fact-1-v1' as MemoryId)).toSucceedAndSatisfy(
+        (v1: IMemoryRecord<unknown> | undefined) => {
+          expect(v1?.body).toBe('hidden blue');
+          expect(v1?.envelope.temporal?.invalid_at).toBeUndefined();
+        }
+      );
+
+      // The delete half of the same claim: a soft delete tombstones every version the
+      // index shows as current, so the hidden v1 survives it untouched.
+      clockValue = 3000;
+      expect(await hiding.delete(factKind, 'fact-1' as EntityId)).toSucceed();
+      expect(await hiding.getById(factScope, 'fact-1-v2' as MemoryId)).toSucceedAndSatisfy(
+        (v2: IMemoryRecord<unknown> | undefined) => {
+          expect(v2?.envelope.temporal?.invalid_at).toBe(3000);
+        }
+      );
+      expect(await hiding.getById(factScope, 'fact-1-v1' as MemoryId)).toSucceedAndSatisfy(
+        (v1: IMemoryRecord<unknown> | undefined) => {
+          expect(v1?.envelope.temporal?.invalid_at).toBeUndefined();
+        }
+      );
+    });
+
+    test('cap-cull patches the injected index, and a reshaped cohort changes what is evicted', async () => {
+      // `maxRecords: 2` over the shared conversations/conv-1 MTM scope. The third
+      // write's admission cohort is the two prior records, so it culls the oldest.
+      const recording = RecordingMemoryIndex.create().orThrow();
+      const recorded = cappedStore(recording);
+      for (let turn = 0; turn < 3; turn++) {
+        clockValue = 1000 + turn; // distinct `created`, so "oldest" is unambiguous
+        (await recorded.put(turnRecord(turn, turn === 0 ? 'hidden zero' : `turn ${turn}`))).orThrow();
+      }
+
+      // The eviction reaches the INJECTED index as a `delete` patch — the store keeps
+      // no private index it could have patched instead.
+      expect(recording.patchCalls.filter((c) => c.op === 'delete')).toEqual([
+        { op: 'delete', scope: 'conversations/conv-1', id: 'turn-0' }
+      ]);
+      expect(await recorded.get(mtmKind, 'conv-1:0' as EntityId)).toSucceedWith(undefined);
+
+      // Same writes, but an index that hides turn-0 shrinks the admission cohort to
+      // one, which is under the cap — so nothing is evicted and turn-0 survives.
+      // The cohort the policy sees is the index's projection, not the vault's.
+      const hidden = cappedStore(HidingMemoryIndex.create().orThrow());
+      for (let turn = 0; turn < 3; turn++) {
+        clockValue = 1000 + turn;
+        (await hidden.put(turnRecord(turn, turn === 0 ? 'hidden zero' : `turn ${turn}`))).orThrow();
+      }
+
+      expect(await hidden.get(mtmKind, 'conv-1:0' as EntityId)).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown> | undefined) => {
+          expect(record?.body).toBe('hidden zero');
         }
       );
     });
