@@ -123,10 +123,28 @@ So: sub-key `null` clearing is sanctioned and safe to build on; whole-block dele
 loudly rather than silently destroying provenance; and the per-key merge guarantee you
 depend on holds.
 
-**One precision worth carrying:** this guarantee is stated for `KnowledgeLwwPolicy`, whose
-`mutableFields` we pin. `MemoryCapCullPolicy` takes a **caller-supplied** `mutableFields`, so
-if you use it, the mutable surface is the one *you* declared. We are documenting this
-distinction in the package README so it stops being tribal knowledge.
+**Two precisions worth carrying** — both sharpened by the implementation work that followed
+this answer, and the second one is a trap:
+
+1. **The guarantee is broader than we first said.** It is not a `KnowledgeLwwPolicy` quirk:
+   `TemporalVersionedPolicy` behaves identically on all four rows, as does
+   `MemoryCapCullPolicy` *when `provenance` is declared mutable*. Only the error-message
+   prefix differs. This is the shipped-policy contract.
+
+2. **But "fails loudly" is conditional, and the exception is silent.** With a
+   `MemoryCapCullPolicy` whose caller-supplied `mutableFields` **omits** `provenance`, a
+   provenance patch key is **inert**: a sub-key `null` does not clear, and a whole-block
+   `null` is a **silent no-op — not an error**. So the loud-rejection guarantee holds only
+   where `provenance` is on the policy's mutable surface. If you use `MemoryCapCullPolicy`,
+   declare `provenance` in `mutableFields` or your provenance patches will be quietly
+   discarded.
+
+   (Whole-block deletion is in fact rejected at two layers where it applies — the policy
+   fails loudly, and the store layer cannot express it at all, since
+   `IMemoryEnvelope.provenance` is non-nullable and `envelopeConverter` rejects `null`.)
+
+Both points are now documented in the package README and **pinned by committed tests**
+rather than left as tribal knowledge.
 
 ---
 
