@@ -131,8 +131,10 @@ export interface FilePickerAcceptType {
     description?: string;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
+//
 // @public
-export class FileSystemAccessTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+export class FileSystemAccessTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT>, FileTree.IBinaryFileTreeAccessors<TCT> {
     protected constructor(files: FileTree.IInMemoryFile<TCT>[], rootDir: FileSystemDirectoryHandle_2, handles: Map<string, FileSystemFileHandle_2>, params: IFileSystemAccessTreeParams<TCT> | undefined, hasWritePermission: boolean);
     deleteFile(path: string): Result<boolean>;
     fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
@@ -263,8 +265,10 @@ function getOriginalFile(fileList: FileList, path: string): Result<File>;
 // @public
 const HpkeProvider: typeof CryptoUtils_2.HpkeProvider;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
+//
 // @public
-export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT>, FileTree.IBinaryFileTreeAccessors<TCT> {
     // (undocumented)
     deleteFile(path: string): Result<boolean>;
     fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
@@ -406,8 +410,10 @@ export interface IUrlConfigOptions {
     zipPath?: string;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
+//
 // @public
-export class LocalStorageTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+export class LocalStorageTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT>, FileTree.IBinaryFileTreeAccessors<TCT> {
     deleteFile(path: string): Result<boolean>;
     fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
     static fromStorage<TCT extends string = string>(params: ILocalStorageTreeParams<TCT>): Result<LocalStorageTreeAccessors<TCT>>;

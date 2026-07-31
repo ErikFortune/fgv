@@ -62,11 +62,22 @@ export interface ILocalStorageTreeParams<TCT extends string = string>
  *
  * Legacy format (v1): `{ "collection-id": { ...parsedJsonObject } }` is auto-migrated on load.
  *
+ * @remarks
+ * Supports the read half of the optional binary capability
+ * (`FileTree.IBinaryFileTreeAccessors`) — narrow with
+ * {@link FileTree.isBinaryAccessors | isBinaryAccessors} and call `getFileBytes()` to
+ * read a file's bytes without going through a lenient UTF-8 decode.
+ *
+ * Byte *writes* are deliberately not supported: the backing store is a JSON document in
+ * `localStorage`, so bytes that are not valid UTF-8 could not survive a `syncToDisk()`
+ * round-trip. Base64-encoding them would change the on-disk format that existing
+ * deployments already hold.
+ *
  * @public
  */
 export class LocalStorageTreeAccessors<TCT extends string = string>
   extends FileTree.InMemoryTreeAccessors<TCT>
-  implements FileTree.IPersistentFileTreeAccessors<TCT>
+  implements FileTree.IPersistentFileTreeAccessors<TCT>, FileTree.IBinaryFileTreeAccessors<TCT>
 {
   private readonly _storage: Storage;
   private readonly _pathToKeyMap: Map<string, string>;

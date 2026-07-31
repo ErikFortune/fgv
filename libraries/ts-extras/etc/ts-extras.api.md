@@ -453,6 +453,11 @@ function createEncryptedFile<TMetadata = JsonValue>(params: ICreateEncryptedFile
 function createEncryptedFileConverter<TMetadata = JsonValue>(metadataConverter?: Converter<TMetadata>): Converter<IEncryptedFile<TMetadata>>;
 
 // @public
+function createZipFromFiles(files: ReadonlyArray<IZipFile>, options?: ICreateZipOptions): Result<Uint8Array>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "createZipFromFiles"
+//
+// @public
 function createZipFromTextFiles(files: ReadonlyArray<IZipTextFile>, options?: ICreateZipOptions): Result<Uint8Array>;
 
 declare namespace CryptoUtils {
@@ -1985,6 +1990,14 @@ interface IYamlSerializeOptions {
 }
 
 // @public
+interface IZipFile {
+    // (undocumented)
+    readonly contents: string | Uint8Array;
+    // (undocumented)
+    readonly path: string;
+}
+
+// @public
 interface IZipTextFile {
     // (undocumented)
     readonly contents: string;
@@ -2619,10 +2632,11 @@ class ZipDirectoryItem<TCT extends string = string> implements FileTree.IFileTre
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
 //
 // @public
-class ZipFileItem<TCT extends string = string> implements FileTree.IFileTreeFileItem<TCT> {
-    constructor(zipFilePath: string, contents: string, accessors: ZipFileTreeAccessors<TCT>);
+class ZipFileItem<TCT extends string = string> implements FileTree.IBinaryFileTreeFileItem<TCT> {
+    constructor(zipFilePath: string, bytes: Uint8Array, accessors: ZipFileTreeAccessors<TCT>);
     readonly absolutePath: string;
     readonly baseName: string;
     get contentType(): TCT | undefined;
@@ -2630,6 +2644,7 @@ class ZipFileItem<TCT extends string = string> implements FileTree.IFileTreeFile
     getContents(): Result<JsonValue>;
     // (undocumented)
     getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
+    getRawBytes(): Result<Uint8Array>;
     getRawContents(): Result<string>;
     readonly name: string;
     setContentType(contentType: TCT | undefined): void;
@@ -2642,7 +2657,9 @@ declare namespace ZipFileTree {
         ZipFileItem,
         ZipDirectoryItem,
         createZipFromTextFiles,
+        createZipFromFiles,
         IZipTextFile,
+        IZipFile,
         ZipCompressionLevel,
         ICreateZipOptions
     }
@@ -2650,9 +2667,10 @@ declare namespace ZipFileTree {
 export { ZipFileTree }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
 //
 // @public
-class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFileTreeAccessors<TCT> {
+class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IBinaryFileTreeAccessors<TCT> {
     static defaultInferContentType<TCT extends string = string>(__filePath: string, __provided?: string): Result<TCT | undefined>;
     static fromBuffer<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Result<ZipFileTreeAccessors<TCT>>;
     static fromBuffer<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, params?: FileTree.IFileTreeInitParams<TCT>): Result<ZipFileTreeAccessors<TCT>>;
@@ -2662,6 +2680,7 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
     getBaseName(path: string, suffix?: string): string;
     getChildren(path: string): Result<ReadonlyArray<FileTree.FileTreeItem<TCT>>>;
     getExtension(path: string): string;
+    getFileBytes(path: string): Result<Uint8Array>;
     getFileContents(path: string): Result<string>;
     getFileContentType(path: string, provided?: string): Result<TCT | undefined>;
     getItem(path: string): Result<FileTree.FileTreeItem<TCT>>;
@@ -2674,6 +2693,7 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
 // src/packlets/crypto-utils/keystore/keyStore.ts:1677:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/crypto-utils/keystore/keyStore.ts:1714:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
 // src/packlets/crypto-utils/keystore/keyStore.ts:1808:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/zip-file-tree/zipFileTreeAccessors.ts:84:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ZipFileItem"
 
 // (No @packageDocumentation comment for this package)
 
