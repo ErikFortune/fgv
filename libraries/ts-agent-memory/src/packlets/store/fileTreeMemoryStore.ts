@@ -503,7 +503,13 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * supplied (the default that keeps an omitting caller byte-identical).
    */
   private static _resolveIndex(index: IMemoryIndex | undefined): Result<IMemoryIndex> {
-    return index !== undefined ? succeed(index) : MemoryIndex.create();
+    // Nullish rather than strictly-undefined, matching how every sibling optional
+    // param in `create()` handles absence (`params.codecs ?? new Map()`, and so on).
+    // A JS caller — or a TS caller arriving through an `unknown` escape hatch —
+    // passing `null` otherwise gets `null` installed as the store's index and fails
+    // later inside `entries()` with a message that names neither the param nor the
+    // cause.
+    return index ? succeed(index) : MemoryIndex.create();
   }
 
   /** {@inheritDoc IMemoryStore.get} */

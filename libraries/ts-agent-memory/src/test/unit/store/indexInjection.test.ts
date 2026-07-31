@@ -319,6 +319,22 @@ describe('FileTreeMemoryStore index injection', () => {
     });
   });
 
+  describe('absent index', () => {
+    test('a null index is treated as absent, matching every sibling optional param', async () => {
+      // `create()`'s other optional params all absorb absence with `??`, which takes
+      // null and undefined alike. A JS caller (or a TS caller through an `unknown`
+      // hatch) passing `null` here must get the default index too — installing
+      // `null` would instead fail later inside `entries()`, naming neither the param
+      // nor the cause.
+      const store = storeWith(null as unknown as IMemoryIndex);
+      (await store.put(knowledgeRecord('doc-a', 'alpha'))).orThrow();
+
+      expect(await store.list()).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(records.map((r) => r.envelope.id)).toEqual(['doc-a']);
+      });
+    });
+  });
+
   describe('injected index', () => {
     test('receives the create() rebuild of an existing vault', async () => {
       const root = mutableRoot();
