@@ -90,6 +90,27 @@ export interface IWritePolicy {
    * record. Called when admission is `accept` AND a record with the same
    * `entityId` already exists (an update, not a first write).
    *
+   * @remarks
+   * **RFC-7386 semantics are the contract here, not an artifact of the shipped
+   * policies' merge configuration.** Implementations are expected to honor them,
+   * and consumers may rely on them:
+   *
+   * - **Objects merge per key.** A supplied key overwrites; an omitted key is
+   *   PRESERVED, not dropped. Patching one key of a nested object (e.g. one
+   *   field of `provenance`) leaves its siblings intact.
+   * - **An explicit `null` on a sub-key clears exactly that sub-key.** This is
+   *   the sanctioned way to remove a single key from a nested object.
+   * - **Arrays replace wholesale** — `tags` / `links` are never element-merged.
+   * - **A whole-block `null` that would delete a REQUIRED field is rejected
+   *   loudly** (`Result.fail`), never silently accepted. `body` / `tags` /
+   *   `links` / `provenance` are required; `embeddingRef` is optional and a
+   *   `null` restores it to absent (NOT to `null`), so it stays hash-stable.
+   *
+   * Which fields these guarantees cover is **policy-dependent**: they apply to
+   * the fields the policy declares in {@link IWritePolicy.mutableFields}, and a
+   * field outside that list is inert — its patch key is dropped before the merge,
+   * so a `null` on it neither clears the value nor raises an error.
+   *
    * @param existing - The current persisted record.
    * @param patch - A partial JSON object in Merge Patch format. `null`
    * deletes the corresponding key; arrays replace wholesale; nested objects
@@ -134,12 +155,20 @@ const MERGE_PATCH_OPTIONS: Partial<IJsonEditorOptions> = {
  * identity and transaction-time envelope fields (`id`, `entityId`, `kind`,
  * `created`, `updated`, `seq`, `contentHash`) are NOT mutable and are
  * preserved verbatim; the store stamps `updated` / `seq` on write.
+ *
+ * Because the surface is pinned rather than caller-supplied, the RFC-7386
+ * guarantees documented on {@link IWritePolicy.applyUpdate} apply to every field
+ * listed above — in particular to `provenance`, whose keys merge individually, a
+ * `null` on any one of which clears that key alone, and a `null` on the whole
+ * block of which is rejected loudly (it is a required field). Consumers may
+ * depend on this; it is covered by tests.
  * @public
  */
 export class KnowledgeLwwPolicy implements IWritePolicy {
   /**
    * The knowledge mutable surface: the body plus the envelope metadata a
-   * consumer may revise without minting a new entity.
+   * consumer may revise without minting a new entity. Pinned, not
+   * caller-supplied — see the class remarks for what that guarantees.
    */
   public readonly mutableFields: ReadonlyArray<string> = [
     'body',
@@ -271,6 +300,15 @@ export interface IMemoryCapCullPolicyParams {
    * The fields a merge-patch update may touch (drawn from the record-level
    * mutable vocabulary: `body` / `tags` / `links` / `provenance` /
    * `embeddingRef`). Fields outside this list are immutable.
+   *
+   * @remarks
+   * This list — unlike {@link KnowledgeLwwPolicy}'s pinned surface — is
+   * caller-supplied, so it is what decides which fields get the RFC-7386
+   * guarantees documented on {@link IWritePolicy.applyUpdate}. Declare
+   * `provenance` here to get per-key provenance merging and `null` sub-key
+   * clearing; omit it and every provenance patch key is inert (dropped before
+   * the merge, so the existing value is preserved verbatim and even a
+   * whole-block `null` is a silent no-op rather than an error).
    */
   readonly mutableFields: ReadonlyArray<string>;
 }

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Document the RFC-7386 record-update merge contract (per-key merge, sub-key null clears, loud rejection of a required-field delete) in the README and at the IWritePolicy.applyUpdate API surface; pin the provenance behaviors with tests. Documentation and tests only — no behavior change.",
+      "type": "patch",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}
