@@ -38,8 +38,12 @@ function createStorage(seed: Record<string, string>): Storage {
     clear: () => map.clear(),
     getItem: (key: string) => map.get(key) ?? null,
     key: (index: number) => Array.from(map.keys())[index] ?? null,
-    removeItem: (key: string) => map.delete(key) as unknown as void,
-    setItem: (key: string, value: string) => map.set(key, value) as unknown as void
+    removeItem: (key: string): void => {
+      map.delete(key);
+    },
+    setItem: (key: string, value: string): void => {
+      map.set(key, value);
+    }
   } as Storage;
 }
 

@@ -330,11 +330,19 @@ export class InMemoryTreeAccessors<TCT extends string = string>
    * {@inheritDoc FileTree.IBinaryFileTreeAccessors.getFileBytes}
    */
   public getFileBytes(path: string): Result<Uint8Array> {
+    // Mirrors `getFileContents`' three-way shape over the file already in hand,
+    // rather than delegating to it — delegating would re-resolve the path a second
+    // time. Byte-seeded contents are returned verbatim (no decode/encode round
+    // trip, which is the whole point of the capability); the string and JSON cases
+    // encode the same text `getFileContents` would have produced.
     return this._getFile(path).onSuccess((file) => {
       if (file.contents instanceof Uint8Array) {
         return succeed(file.contents);
       }
-      return this.getFileContents(path).onSuccess((text) => succeed(new TextEncoder().encode(text)));
+      if (typeof file.contents === 'string') {
+        return succeed(new TextEncoder().encode(file.contents));
+      }
+      return captureResult(() => new TextEncoder().encode(JSON.stringify(file.contents)));
     });
   }
 
