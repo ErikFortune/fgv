@@ -8,10 +8,24 @@ import { IEdgeTarget, IMemoryRecord } from '../types';
 
 /**
  * A half-open `[start, end)` span into a record's body — the in-record locator a
- * {@link IFragmentVectorIndex} carries on each fragment hit. `start` is inclusive,
+ * {@link IFragmentVectorIndex} may carry on a fragment. `start` is inclusive,
  * `end` exclusive. The unit (character / byte / token offsets) is the consumer's
  * choice: the index stores the two integers opaquely and never interprets them,
  * so they line up with whatever locator the consumer's own read side uses.
+ *
+ * @remarks
+ * **The span is advisory.** It names the region of the body a fragment was
+ * *derived from*; it is NOT a slice guaranteed to reproduce the fragment's text.
+ * `body.slice(start, end)` round-trips only under a segmenter that merely chooses
+ * boundaries. Under a **rewriting** segmenter — one that turns a span into a
+ * curated block, an increasingly common ingestion shape when a model both selects
+ * and rewrites — the fragment text is not a substring of the body at all, and the
+ * fragmentation is not re-derivable from the body. Treat the span as a pointer for
+ * locating context, never as an extraction recipe.
+ *
+ * A fragment whose provenance cannot honestly be expressed as a body span should
+ * omit the locator entirely and carry an {@link IEmbeddedFragment.fragmentId}
+ * instead.
  * @public
  */
 export interface IFragmentLocator {
@@ -35,9 +49,27 @@ export interface IFragmentLocator {
  * that share a stem. The caller re-resolves the hit against the record index by
  * the same scoped address.
  *
- * `locator` is present only on hits from a {@link IFragmentVectorIndex} — it
- * identifies WHICH fragment of the record matched. Record-granular
- * {@link IVectorIndex} hits omit it.
+ * **No single field discriminates a fragment hit from a record-granular hit.** A
+ * record hit carries neither `locator` nor `fragmentId`; a fragment hit carries at
+ * least one of the two, but not necessarily any particular one — a fragment with a
+ * body span but no consumer-minted id, and a fragment with an id but no honest span,
+ * are both legal. Testing one field for presence therefore cannot tell you which
+ * kind of hit you hold.
+ *
+ * That "at least one" requirement is enforced on the upsert side by
+ * {@link embeddedFragmentConverter} — a different boundary from this type — and is
+ * deliberately NOT offered here as a discriminator either. A caller keyed off it
+ * would be coupled to an invariant this type does not own, and would fail silently
+ * if the invariant were ever relaxed.
+ *
+ * **The robust rule is that fragment-ness is determined by which index produced the
+ * hit**: {@link IFragmentVectorIndex.query} returns fragment hits and
+ * {@link IVectorIndex.query} returns record hits. The caller chose the index it
+ * queried, so it already knows which kind it is holding.
+ *
+ * Note in particular that an absent `locator` now carries **two** distinct meanings
+ * — a record-granular hit, or a fragment with no honest body span (see
+ * {@link IFragmentLocator}) — which is precisely why presence-branching is unsafe.
  * @public
  */
 export interface IVectorQueryHit {
@@ -45,8 +77,18 @@ export interface IVectorQueryHit {
   readonly target: IEdgeTarget;
   /** Backend similarity score; higher is more similar. */
   readonly score: number;
-  /** The matched fragment's in-record span; present only for fragment-index hits. */
+  /**
+   * The advisory in-record span the matched fragment was derived from, when the
+   * producing fragment carried one. Absent on record-granular hits AND on fragment
+   * hits with no honest span — see the remarks above; do not branch on its presence.
+   */
   readonly locator?: IFragmentLocator;
+  /**
+   * The opaque identity the producing fragment was stored with, carried back
+   * verbatim. Absent on record-granular hits AND on fragment hits stored without
+   * one — see the remarks above; do not branch on its presence.
+   */
+  readonly fragmentId?: string;
 }
 
 /**
@@ -88,32 +130,64 @@ export interface IVectorIndex {
 }
 
 /**
- * One embedded fragment of a record: its in-record {@link IFragmentLocator | span}
- * and the vector for that span. Produced by a {@link FragmentEmbedder} and stored
- * via {@link IFragmentVectorIndex.addFragments}.
+ * One embedded fragment of a record: the fragment's vector, plus at least one of the
+ * two ways to identify it — its advisory in-record {@link IFragmentLocator | span}
+ * and/or an opaque consumer-minted {@link IEmbeddedFragment.fragmentId | fragmentId}.
+ * Produced by a {@link FragmentEmbedder} and stored via
+ * {@link IFragmentVectorIndex.addFragments}.
+ *
+ * @remarks
+ * Both identity fields are optional **in the type**, but the "at least one"
+ * requirement is real — a fragment carrying neither is unidentifiable at the read
+ * side. It is enforced by {@link embeddedFragmentConverter} (and re-checked by the
+ * in-package index implementations) rather than by a conditional-required union
+ * (`{ locator; fragmentId? } | { locator?; fragmentId }`), which was considered and
+ * declined: the union costs at every construction site and buys nothing at the read
+ * site, where each field reads as `… | undefined` either way.
  * @public
  */
 export interface IEmbeddedFragment {
-  /** The fragment's in-record span. */
-  readonly locator: IFragmentLocator;
-  /** The embedding vector for that span. */
+  /**
+   * The region of the record body this fragment was derived from, when one can be
+   * stated honestly. Advisory — see {@link IFragmentLocator}; it is NOT a slice that
+   * reproduces the fragment text. Omit it for a fragment with no honest body span (a
+   * rewriting segmenter), in which case `fragmentId` must be supplied.
+   */
+  readonly locator?: IFragmentLocator;
+  /**
+   * An opaque, consumer-minted identity for this fragment, carried verbatim through
+   * the index and returned on the corresponding {@link IVectorQueryHit}. The index
+   * **never parses it, never filters on it, and never assigns meaning to it** — it is
+   * a bytestring, not part of the query path. It exists so a fragment stays
+   * identifiable when its text is not re-derivable from the record body.
+   *
+   * The guarantee is "we never parse it", NOT "we keep it stable". Because
+   * `addFragments` is whole-record-replace, an updated record re-emits its entire
+   * fragment set, so **any stability of a fragment id across re-embeds is the
+   * consumer's responsibility**, not the index's.
+   */
+  readonly fragmentId?: string;
+  /** The embedding vector for this fragment. */
   readonly vector: Float32Array;
 }
 
 /**
  * The fragment-granular sibling of {@link IVectorIndex}: instead of one vector per
- * record it holds many vectors per record, each tagged with an in-record
- * {@link IFragmentLocator}, and its `query` returns per-fragment hits carrying that
- * locator. This is the seam behind sub-document semantic search — the "discovery"
- * half of a search-then-read contract, where a hit's `(target, locator)` tells the
- * consumer which record AND which span to read.
+ * record it holds many vectors per record, each tagged with the identity its
+ * {@link IEmbeddedFragment} carried, and its `query` returns per-fragment hits
+ * carrying that identity back. This is the seam behind sub-document semantic search
+ * — the "discovery" half of a search-then-read contract, where a hit tells the
+ * consumer which record AND which fragment of it to read.
  *
  * @remarks
- * Deliberately NOT `extends IVectorIndex`: an index keyed by `(target, locator)`
- * has no well-defined single-vector `add(target, vector)`. It is a parallel
- * contract with three operations — `addFragments`, `remove`, `query` — reusing
- * {@link IVectorQueryHit} (whose `locator` is always populated here). Kept distinct
- * from the record-granular index per the consumer contract: memory recall stays
+ * Deliberately NOT `extends IVectorIndex`: an index holding many vectors per record
+ * has no well-defined single-vector `add(target, vector)`. It is a parallel contract
+ * with three operations — `addFragments`, `remove`, `query` — reusing
+ * {@link IVectorQueryHit}, on which both `locator` and `fragmentId` are optional. A
+ * fragment hit populates whichever of the two its stored fragment carried; see
+ * {@link IVectorQueryHit} for why that is not a discriminator and why fragment-ness
+ * is determined by the index queried, not by field presence. Kept distinct from the
+ * record-granular index per the consumer contract: memory recall stays
  * record-granular; sub-document knowledge uses a separate fragment index.
  * @public
  */
@@ -134,7 +208,8 @@ export interface IFragmentVectorIndex {
 
   /**
    * Return the `topK` nearest fragments to `vector`, in descending score order,
-   * each hit carrying its record `target` and fragment `locator`. When
+   * each hit carrying its record `target` plus whichever of `locator` /
+   * `fragmentId` the stored fragment was added with. When
    * `maxPerRecord` is supplied, no more than that many fragments of any single
    * record appear in the result — the cap is applied during selection (before the
    * `topK` cut) so one long document cannot crowd out others.

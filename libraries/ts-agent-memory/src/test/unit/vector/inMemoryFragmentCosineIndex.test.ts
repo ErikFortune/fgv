@@ -386,4 +386,92 @@ describe('InMemoryFragmentCosineIndex', () => {
       expect(index.recordCount).toBe(0);
     });
   });
+
+  describe('fragment identity', () => {
+    /** A fragment identified only by an opaque id — no honest body span. */
+    function idFrag(fragmentId: string, vector: number[]): IEmbeddedFragment {
+      return { fragmentId, vector: Float32Array.from(vector) };
+    }
+
+    test('rejects a fragment carrying neither a locator nor a fragmentId', async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      expect(
+        await index.addFragments(target('knowledge', 'doc-a'), [{ vector: Float32Array.from([1, 0]) }])
+      ).toFailWith(/at least one of 'locator' or 'fragmentId'/i);
+      expect(index.recordCount).toBe(0);
+    });
+
+    test('carries an opaque fragmentId through to the query hit verbatim', async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      const opaque = 'urn:frag:9f8e::{not-parsed}';
+      (await index.addFragments(target('knowledge', 'doc-a'), [idFrag(opaque, [1, 0])])).orThrow();
+      expect(await index.query(Float32Array.from([1, 0]), 1)).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          expect(hits[0].fragmentId).toBe(opaque);
+          expect(hits[0].locator).toBeUndefined();
+        }
+      );
+    });
+
+    test('carries both identities when a fragment supplies both', async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      (
+        await index.addFragments(target('knowledge', 'doc-a'), [
+          { ...frag(2, 8, [1, 0]), fragmentId: 'frag-1' }
+        ])
+      ).orThrow();
+      expect(await index.query(Float32Array.from([1, 0]), 1)).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          expect(hits[0].locator).toEqual(loc(2, 8));
+          expect(hits[0].fragmentId).toBe('frag-1');
+        }
+      );
+    });
+
+    test('a locator-only fragment produces a hit with no fragmentId key at all', async () => {
+      // Byte-identical to what the index produced before `fragmentId` existed: the key
+      // is absent, not present-and-undefined, so an existing caller's structural
+      // comparisons are unaffected by the addition.
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      (await index.addFragments(target('knowledge', 'doc-a'), [frag(0, 5, [1, 0])])).orThrow();
+      expect(await index.query(Float32Array.from([1, 0]), 1)).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          expect(Object.keys(hits[0]).sort()).toEqual(['locator', 'score', 'target']);
+          expect(hits[0]).toStrictEqual({
+            target: target('knowledge', 'doc-a'),
+            score: hits[0].score,
+            locator: loc(0, 5)
+          });
+        }
+      );
+    });
+
+    test('an id-only fragment produces a hit with no locator key at all', async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      (await index.addFragments(target('knowledge', 'doc-a'), [idFrag('frag-1', [1, 0])])).orThrow();
+      expect(await index.query(Float32Array.from([1, 0]), 1)).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          expect(Object.keys(hits[0]).sort()).toEqual(['fragmentId', 'score', 'target']);
+        }
+      );
+    });
+
+    test('mixes identity shapes within one record and within one query', async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      (
+        await index.addFragments(target('knowledge', 'doc-a'), [
+          frag(0, 5, [1, 0]),
+          idFrag('frag-rewritten', [0, 1])
+        ])
+      ).orThrow();
+      expect(await index.query(Float32Array.from([1, 0]), 2)).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          expect(hits[0].locator).toEqual(loc(0, 5));
+          expect(hits[0].fragmentId).toBeUndefined();
+          expect(hits[1].fragmentId).toBe('frag-rewritten');
+          expect(hits[1].locator).toBeUndefined();
+        }
+      );
+    });
+  });
 });
