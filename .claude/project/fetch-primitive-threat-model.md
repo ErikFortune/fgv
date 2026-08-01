@@ -283,6 +283,77 @@ Ranges to reject (v4): `0.0.0.0/8`, `10/8`, `100.64/10`, `127/8`,
 (v6): `::/128`, `::1/128`, `fc00::/7`, `fe80::/10`, `ff00::/8`, plus
 v4-mapped and NAT64 embeddings of the above.
 
+#### Corrections from implementation (S2a, PR #592)
+
+The table above was written against intent. Implementing it — and running a
+differential harness against the platform's own WHATWG URL parser over 4405
+inputs — found four gaps. Each is verified, not asserted; the `node -e` one-liners
+that demonstrate them are reproducible.
+
+**Three additional v4-in-v6 embeddings.** The table lists only the *mapped* form.
+Also required:
+
+| Bypass | Example | Note |
+|---|---|---|
+| **6to4** `2002::/16` | `2002:a9fe:a9fe::` | Embeds v4 in bits 16..47 — this **is** the metadata endpoint |
+| **IPv4-compatible** `::/96` | `::a9fe:a9fe` | Deprecated but still parsed; distinct from the mapped form |
+| **RFC 6145 translated** `::ffff:0:0:0/96` | | Third embedding shape |
+
+**The v6 reject list leaves most of IPv6 classified as public.** Only `2000::/3`
+is assigned global unicast, so a classifier using the reject list alone treats
+`fe00::1`, `1fff::1`, `4000::1` and `100::1` as public — verified: all four pass
+through `new URL()` unchanged and match no listed range. **The v6 fallback must be
+`reserved`, never `public`:** classify what is *known* global unicast and reject
+the rest, rather than rejecting a list and permitting the remainder. This inverts
+the table's polarity for v6 and is the more consequential of the four.
+
+**`0x` with an empty remainder is `0`.** `http://127.0x.1/` has hostname
+`127.0.0.1`. So does `http://0x7f.1/`; `http://127.0x/` is `127.0.0.0`. This was a
+live bypass in S2a's first draft, found by the differential harness rather than by
+review — no reads-against-intent pass would have produced it.
+
+**IDNA is an address-level concern, not only a hostname-allowlist one.** The row
+above files unicode homographs under allowlist matching, which understates it:
+`http://⑫7.0.0.1/`, `http://１２７.０.０.１/` and `http://127。0。0。1/` all have
+hostname `127.0.0.1` after WHATWG normalization. The digits and the separators
+both normalize.
+
+**The operational consequence of the last two:** classify `url.hostname` — the
+parser's normalized output — and **never** raw URL text. Every one of these forms
+is already canonical by the time `hostname` is read, and every one of them defeats
+text matching.
+
+#### Further corrections from implementation (S1, PR #594)
+
+S1 hit four places where the design was internally inconsistent or silent about
+ownership. Recorded because S2b and S3 inherit them.
+
+**`IFetchTransport.fetch` returned the wrong type** — corrected inline at § 6.1.
+§ 6.1 declared `Promise<Response>` while § 7's pin-interlock snippet does
+`return fail(...)`. Both could not be true.
+
+**Scheme enforcement had no stated owner.** Resolved as a split: the **core**
+refuses everything that is not `http:`/`https:` — at the caller's URL, at a
+request guard's replacement URL, and at the address guard's verdict URL — while
+choosing *between* `http:` and `https:`, and port allowlisting, stay with the
+address guard. The split is forced: if the core mandated `https:`, an
+`allowInsecureHttp` option on the address policy could not exist.
+
+**A guard's verdict URL is used verbatim, by necessity.** § 6.1 says guards may
+normalize but must not retarget. Enforcing that with origin-equality would reject
+exactly the normalizations § 3.6 *requires* — trailing-dot stripping, IDN to
+punycode. So "must not retarget" is a documented contract rather than an enforced
+invariant, with one exception: the verdict's **scheme** is re-checked. This is
+sound only because guards are trusted first-party code and a malicious in-process
+caller is out of scope per § 3.3. **If that ever stops being true, this is the
+line that breaks.**
+
+**Guard evaluation counts against the headers deadline.** `headersTimeoutMs` runs
+from the start of the attempt, so an address guard doing DNS spends that budget.
+The alternative — starting the clock after guards — would leave a hanging guard
+outside the only deadline bounding "time to a usable response." Documented on the
+option rather than changed.
+
 ### 3.7 Out of scope for the guard
 
 - **DNS rebinding.** Documented limit; seam present. See §7 and §13.
@@ -602,7 +673,11 @@ export interface IGuardVerdict {
  */
 export interface IFetchTransport {
   readonly name: string;
-  fetch(url: URL, init: RequestInit, hints: IFetchTransportHints): Promise<Response>;
+  // CORRECTED (S1, PR #594): was `Promise<Response>`, which contradicted § 7 —
+  // the pin interlock there does `return fail(...)`, and a bare Response cannot
+  // carry a failure. The interlock must be a Result, not a throw, and the repo
+  // standard is Result<T> for fallible operations.
+  fetch(url: URL, init: RequestInit, hints: IFetchTransportHints): Promise<Result<Response>>;
 }
 
 /** @public */
