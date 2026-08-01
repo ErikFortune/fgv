@@ -21,9 +21,9 @@
 import '@fgv/ts-utils-jest';
 
 import {
-  AddressClassification,
-  AddressFamily,
-  IEmbeddedIpv4,
+  type AddressClassification,
+  type AddressFamily,
+  type IEmbeddedIpv4,
   classifyAddress
 } from '../../../packlets/safer-fetch';
 

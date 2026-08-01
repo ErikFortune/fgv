@@ -20,7 +20,7 @@
 
 import '@fgv/ts-utils-jest';
 
-import { IAddressPolicy, allowAnyAddress, blockPrivateNetworks } from '../../../packlets/safer-fetch';
+import { type IAddressPolicy, allowAnyAddress, blockPrivateNetworks } from '../../../packlets/safer-fetch';
 
 describe('blockPrivateNetworks', () => {
   const policy: IAddressPolicy = blockPrivateNetworks();

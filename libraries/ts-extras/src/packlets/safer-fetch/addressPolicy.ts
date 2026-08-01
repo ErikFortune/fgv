@@ -18,8 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Result, fail, mapResults, succeed } from '@fgv/ts-utils';
-import { AddressClassification, IClassifiedAddress, classifyAddress } from './addressClassification';
+import { type Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+import {
+  type AddressClassification,
+  type IClassifiedAddress,
+  classifyAddress
+} from './addressClassification';
 
 /**
  * The evidence behind an allowed address-policy decision.
@@ -182,6 +186,11 @@ export function allowAnyAddress(): IAddressPolicy {
   const name: string = 'allowAnyAddress';
   return {
     name,
+    // The parameter is deliberately not declared. This policy does not read the
+    // addresses, and an unused `_addresses` would both restate that less
+    // clearly and cut against the repo's "don't rename unused variables to
+    // `_var`" rule. Parameter bivariance makes the zero-arg form a complete
+    // implementation of `IAddressPolicy`.
     checkAddresses: (): Result<IAddressCheckVerdict> => succeed({ policy: name, addresses: [] })
   };
 }

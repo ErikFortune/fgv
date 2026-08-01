@@ -25,7 +25,7 @@
 // disables for the same reason in `crypto-utils/keystore` and `ts-random`.
 /* eslint-disable no-bitwise */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { type Result, fail, succeed } from '@fgv/ts-utils';
 
 /**
  * The address family of a parsed IP address literal.
