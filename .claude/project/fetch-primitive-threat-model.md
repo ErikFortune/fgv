@@ -323,6 +323,37 @@ parser's normalized output — and **never** raw URL text. Every one of these fo
 is already canonical by the time `hostname` is read, and every one of them defeats
 text matching.
 
+#### Further corrections from implementation (S1, PR #594)
+
+S1 hit four places where the design was internally inconsistent or silent about
+ownership. Recorded because S2b and S3 inherit them.
+
+**`IFetchTransport.fetch` returned the wrong type** — corrected inline at § 6.1.
+§ 6.1 declared `Promise<Response>` while § 7's pin-interlock snippet does
+`return fail(...)`. Both could not be true.
+
+**Scheme enforcement had no stated owner.** Resolved as a split: the **core**
+refuses everything that is not `http:`/`https:` — at the caller's URL, at a
+request guard's replacement URL, and at the address guard's verdict URL — while
+choosing *between* `http:` and `https:`, and port allowlisting, stay with the
+address guard. The split is forced: if the core mandated `https:`, an
+`allowInsecureHttp` option on the address policy could not exist.
+
+**A guard's verdict URL is used verbatim, by necessity.** § 6.1 says guards may
+normalize but must not retarget. Enforcing that with origin-equality would reject
+exactly the normalizations § 3.6 *requires* — trailing-dot stripping, IDN to
+punycode. So "must not retarget" is a documented contract rather than an enforced
+invariant, with one exception: the verdict's **scheme** is re-checked. This is
+sound only because guards are trusted first-party code and a malicious in-process
+caller is out of scope per § 3.3. **If that ever stops being true, this is the
+line that breaks.**
+
+**Guard evaluation counts against the headers deadline.** `headersTimeoutMs` runs
+from the start of the attempt, so an address guard doing DNS spends that budget.
+The alternative — starting the clock after guards — would leave a hanging guard
+outside the only deadline bounding "time to a usable response." Documented on the
+option rather than changed.
+
 ### 3.7 Out of scope for the guard
 
 - **DNS rebinding.** Documented limit; seam present. See §7 and §13.
@@ -642,7 +673,11 @@ export interface IGuardVerdict {
  */
 export interface IFetchTransport {
   readonly name: string;
-  fetch(url: URL, init: RequestInit, hints: IFetchTransportHints): Promise<Response>;
+  // CORRECTED (S1, PR #594): was `Promise<Response>`, which contradicted § 7 —
+  // the pin interlock there does `return fail(...)`, and a bare Response cannot
+  // carry a failure. The interlock must be a Result, not a throw, and the repo
+  // standard is Result<T> for fallible operations.
+  fetch(url: URL, init: RequestInit, hints: IFetchTransportHints): Promise<Result<Response>>;
 }
 
 /** @public */
