@@ -34,7 +34,8 @@ is one I would defend; every gap is named rather than implied.
 - [14. Phasing](#14-phasing)
 - [15. Testing notes](#15-testing-notes)
 - [16. Open questions for Erik](#16-open-questions-for-erik)
-- [**Amendment A** — guard decomposition, hop chain, and resolve-at-init](#amendment-a--guard-decomposition-hop-chain-and-resolve-at-init)
+- [Appendix A — where the three findings were incomplete](#appendix-a--where-the-three-findings-were-incomplete)
+- [Appendix B — design-history record](#appendix-b--design-history-record)
 
 ---
 
@@ -223,7 +224,7 @@ otherwise assume.
 │    · failure taxonomy, retry policy            │
 └──────────┬─────────────────────────────────────┘
            │   ┌───────────────────────────────┐
-           ├──►│ IRequestGuard   ◄── RE-RUN    │  ← trust boundary crossed
+           ├──►│ IAddressGuard   ◄── RE-RUN    │  ← trust boundary crossed
            │   │  (Node: address classifier)   │     once per hop
            │   └───────────────────────────────┘
            ▼
@@ -235,10 +236,10 @@ otherwise assume.
                                         │
                                    3xx Location
                                         │
-                                        └──► back to IRequestGuard (next hop)
+                                        └──► back to IAddressGuard (next hop)
 ```
 
-The loop from `Location` back through `IRequestGuard` is the whole point of
+The loop from `Location` back through `IAddressGuard` is the whole point of
 §4. A guard that sits only on the first arrow is decorative.
 
 ### 3.5 In scope for the guard (Node)
@@ -379,7 +380,7 @@ reason, not the only one.
 - **No redirect interposition.** Per §4, `redirect: 'manual'` yields an
   opaque response with no readable `Location`.
 
-A browser-side function named `safeFetch` that accepted a `guard` option
+A browser-side function named `safeFetch` that accepted an `addressGuard` option
 and quietly did nothing with it would be the worst artifact this stream
 could produce: it would read at the call site as protection, and reviewers
 would stop looking.
@@ -406,11 +407,11 @@ Follows `crypto-utils` exactly (see §2, "one premise-adjacent finding").
 
 | Location | Contents | Runtime |
 |---|---|---|
-| `@fgv/ts-extras` packlet `safe-fetch`, module `core.ts` | Types, taxonomy, timeout, streaming cap, content gate, retry, `IRequestGuard` / `IFetchTransport` seams, `platformFetchTransport`. **No `node:` imports.** | any |
-| `@fgv/ts-extras` packlet `safe-fetch`, module `nodeGuard.ts` | `NodeAddressGuard` — `node:dns/promises`, address classification, allowlist. | Node only |
-| `@fgv/ts-extras/safe-fetch` → `index.ts` | core + `NodeAddressGuard` + `nodeSafeFetchJson` etc. | Node barrel |
-| `@fgv/ts-extras/safe-fetch` → `index.browser.ts` | core only, with an explicit `// Note: NodeAddressGuard is NOT exported in browser version` comment, mirroring `crypto-utils/index.browser.ts`. | browser barrel |
-| `@fgv/ts-web-extras` packlet `safe-fetch` | `browserSafeFetchJson` etc. — the core wired to `NO_SSRF_GUARD`, with the "what this does not protect against" TSDoc. | browser |
+| `@fgv/ts-extras` packlet `safe-fetch`, module `core.ts` | Types, taxonomy, timeout, streaming cap, content gate, retry, the four guard seams / `IFetchTransport`, `platformFetchTransport`. **No `node:` imports.** | any |
+| `@fgv/ts-extras` packlet `safe-fetch`, module `nodeGuard.ts` | `blockPrivateNetworks()` and friends — `node:dns/promises`, address classification, allowlist. | Node only |
+| `@fgv/ts-extras/safe-fetch` → `index.ts` | core + the Node address guards + `nodeSafeFetchJson` etc. | Node barrel |
+| `@fgv/ts-extras/safe-fetch` → `index.browser.ts` | core only, with an explicit `// Note: the Node address guards are NOT exported in browser version` comment, mirroring `crypto-utils/index.browser.ts`. | browser barrel |
+| `@fgv/ts-web-extras` packlet `safe-fetch` | `browserSafeFetchJson` etc. — the core wired to `allowAnyAddress()`, with the "what this does not protect against" TSDoc. | browser |
 
 New conditional export in `libraries/ts-extras/package.json`:
 
@@ -448,62 +449,134 @@ both READMEs verbatim.
 | Reject-all-redirects mode | ✅ | ✅ (`redirect: 'error'`) |
 | DNS-rebinding resistance | ❌ **documented limit** (§13) | ❌ |
 
-### 5.5 The guard is a required parameter, with no default
+### 5.5 The address guard is a required parameter, with no default
 
 The single most effective mechanism against "guarantee implied but not
-delivered" is refusing to let the guard be absent by accident.
+delivered" is refusing to let the address guard be absent by accident.
 
 ```typescript
-// Node — the guard is named at the call site
-const r = await safeFetchJson(url, {
-  guard: NodeAddressGuard.create({ allowHosts: ['api.example.com'] }).orThrow()
+// Node — the posture is named at the call site
+const r = await safeFetchJson(url, { addressGuard: blockPrivateNetworks() });
+
+// Node, local sidecar — the deviation is visible and greppable
+const r = await safeFetchJson(ollamaUrl, {
+  addressGuard: blockPrivateNetworks({ allowLoopback: true })
 });
 
-// Browser — the absence is named at the call site
-const r = await safeFetchJson(url, { guard: NO_SSRF_GUARD });
+// Browser — the absence of protection is named at the call site
+const r = await safeFetchJson(url, { addressGuard: allowAnyAddress() });
 ```
 
-`guard` has **no default value**. `NO_SSRF_GUARD` is an exported constant
-whose TSDoc enumerates precisely what it does not do. The result:
+`addressGuard` has **no default value**, so omitting it is a *compile*
+error — not a runtime failure, not a lint rule. For a security primitive,
+*impossible to construct wrong by accident* is a stronger property than any
+amount of documentation. `allowAnyAddress()` is exported with TSDoc
+enumerating precisely what it does not do. The result:
 
-- A reviewer greps `NO_SSRF_GUARD` and finds every unguarded call site in
-  a codebase, in one search.
+- A reviewer greps `addressGuard:` and enumerates every call site's posture
+  in one search, with no ambient default to overlook.
+- `allowAnyAddress()` and `allowLoopback: true` are each independently
+  greppable, so the two ways of weakening the guard are both visible.
 - A Node call site cannot silently inherit browser semantics by omission.
-- Choosing no protection is a deliberate, greppable act rather than the
-  result of not passing an optional field.
+- Choosing no protection is a deliberate, named act.
 
-The cost is one extra line per call site, and it is the right trade. See
-OQ-3 — this is a taste call worth confirming.
+The cost is one named factory per call site, and it is the right trade.
+
+The other three guards (§ 6.1) are the opposite: they default to silent
+passthrough and are omittable, because their absence is a smaller surface
+rather than an absent guarantee. All four are non-optional in the resolved
+runtime structure (§ 6.3).
 
 ---
 
 ## 6. API surface sketch
-
-> **⚠️ § 6.1's single `IRequestGuard` is SUPERSEDED by [Amendment A](#amendment-a--guard-decomposition-hop-chain-and-resolve-at-init)**
-> (agreed in review, 2026-08-01). It splits into four seams; the address guard takes the
-> full hop chain rather than a hop count, and guards resolve at init. Read A.1–A.4 before
-> relying on the sketch below.
 
 Illustrative, not final. The seams (§7) are the binding part; names and
 option spellings are revisable.
 
 ### 6.1 Seams
 
+Four guard seams, not one. They have different signatures, lifecycles, and
+blast radii, and collapsing them makes the SSRF-critical decision harder to
+audit.
+
+| Seam | Runs | Governs |
+|---|---|---|
+| **address guard** | per hop, before connect | scheme + resolved address. The SSRF boundary. |
+| **request guard** | per attempt | method, headers, body |
+| **response headers guard** | after headers, before body | status, content-type, content-length, `set-cookie` |
+| **response body guard** | after the size cap, on the buffered body | body shape/content |
+
+The **address guard** is named separately because it is the one whose failure
+is catastrophic. Keeping it small and separately nameable is what makes "did
+the SSRF check run, and run correctly?" answerable by reading one
+implementation rather than auditing a general-purpose request policy.
+
+The **response guard splits by phase** because § 9's size cap runs *during*
+the read. A single response guard wanting the body would either receive the
+stream — leaving the cap unenforced — or run post-buffer, too late to help
+against a hostile multi-gigabyte response. The headers half is also the more
+valuable half: it rejects before the body is paid for, and it catches a
+server returning an HTML error page with a `200`.
+
+The **request guard rejects; it does not sanitize.** Silently rewriting a
+caller's headers or body inside a fetch primitive means the caller no longer
+knows what was sent. Either reject, or return an explicit transformed request
+the caller can observe.
+
+There is deliberately **no separate redirect guard.** § 4's finding is that
+redirect handling and the address check are *one* mechanism; a second seam
+re-opens exactly that hazard by creating another place that decides whether a
+hop may proceed. Redirect **policy** (max hops, follow-or-not, credential
+stripping) is configuration; the per-hop **check** is the address guard.
+
 ```typescript
+/** One hop in a redirect chain. Entry 0 is the caller's original request. */
+export interface IRequestHop {
+  readonly url: URL;
+  /** The redirect status that produced the NEXT hop; absent on the current one. */
+  readonly status?: number;
+  /** The address actually connected to on this hop, when pinning was in effect. */
+  readonly connectedAddress?: string;
+}
+
 /**
- * Decides whether a request to `url` may proceed. Invoked once per
- * redirect hop, never only on the initial URL.
+ * Decides whether a connection may be made. Invoked once per redirect hop,
+ * never only on the initial URL.
  * @public
  */
-export interface IRequestGuard {
+export interface IAddressGuard {
   /** Stable identifier, surfaced in `blocked-by-guard` failures. */
   readonly name: string;
 
   /**
-   * @param url  - the URL about to be requested (hop 0 is the caller's).
-   * @param hop  - 0 for the initial request, 1+ for redirect targets.
+   * @param chain - every hop so far, oldest first. The URL under consideration
+   *                is the last entry; `chain.length === 1` is the initial
+   *                request. There is no separate "is this a redirect" flag —
+   *                hop 0 is not a special case.
    */
-  check(url: URL, hop: number): Promise<Result<IGuardVerdict>>;
+  check(chain: ReadonlyArray<IRequestHop>): Promise<Result<IGuardVerdict>>;
+}
+
+/** @public */
+export interface IRequestGuard {
+  readonly name: string;
+  /** Reject-only. To alter the request, return an explicit replacement. */
+  check(request: ISafeFetchRequest, chain: ReadonlyArray<IRequestHop>): Promise<Result<ISafeFetchRequest>>;
+}
+
+/** @public */
+export interface IResponseHeadersGuard {
+  readonly name: string;
+  /** Runs before any body bytes are read, so a rejection costs nothing. */
+  check(headers: ISafeFetchResponseHead, chain: ReadonlyArray<IRequestHop>): Promise<Result<true>>;
+}
+
+/** @public */
+export interface IResponseBodyGuard {
+  readonly name: string;
+  /** Runs on the buffered body, after the § 9 size cap has been enforced. */
+  check(body: Uint8Array, head: ISafeFetchResponseHead): Promise<Result<true>>;
 }
 
 /** @public */
@@ -514,16 +587,16 @@ export interface IGuardVerdict {
   /**
    * The address the guard validated and to which the connection SHOULD be
    * pinned. **Always `undefined` in v1** — reserved for the pinned-connect
-   * work that closes the DNS-rebinding hole (see the design's § "stated
-   * limits"). A transport that receives a defined value it cannot honor
-   * MUST fail rather than connect by hostname.
+   * work that closes the DNS-rebinding hole (§ 13). A transport that receives
+   * a defined value it cannot honor MUST fail rather than connect by hostname.
    */
   readonly pinnedAddress?: string;
 }
 
 /**
  * Performs the actual request. Injectable so the pinned-connect
- * implementation can be dropped in without a signature change.
+ * implementation can be dropped in without a signature change — and so the
+ * guard is testable without a live server (§ 15).
  * @public
  */
 export interface IFetchTransport {
@@ -542,23 +615,77 @@ export interface IFetchTransportHints {
  * @public
  */
 export const platformFetchTransport: IFetchTransport;
-
-/**
- * A guard that permits everything. The only correct choice in the
- * browser, where DNS resolution and redirect interposition do not exist.
- * Never use on Node with untrusted URLs.
- * @public
- */
-export const NO_SSRF_GUARD: IRequestGuard;
 ```
+
+#### Why the address guard sees the chain, not a hop count
+
+Three things are inexpressible from a counter plus the previous origin:
+
+1. **Credential re-attachment across a laundering hop.** `A` (authenticated)
+   → `B` → `A`. A check comparing only against the immediately previous hop
+   finds the final hop same-origin with `A` and re-attaches credentials —
+   even though `B` observed the redirect in between. Only the chain shows the
+   intervening origin. This is a real leak class and it reviews as correct.
+2. **Loop and oscillation detection.** `A→B→A→B` never fails a per-hop check
+   while consuming the entire hop budget.
+3. **Monotonic strictness.** "Once we have left the original origin, never
+   accept a private address" is a statement about history, not one hop.
+
+`status` is carried because `307`/`308` preserve method and body where
+`301`/`302` may not, which the request guard needs. `connectedAddress` is
+carried because the pin is per-hop, so the chain is where the rebinding
+defense's evidence lives.
+
+**The chain is guard-visible, not caller-visible by default.** § 8 notes that
+the failure taxonomy is an internal-network scanning oracle (L4); a full
+redirect chain with per-hop resolved addresses is a substantially richer one.
+Guards receive it; callers get it only on explicit opt-in, never echoed
+automatically into a returned failure.
+
+#### Named address guards
+
+The address guard is **required** and has **no default** — see § 6.2. That
+does not mean hand-writing one:
+
+| Factory | Posture |
+|---|---|
+| `blockPrivateNetworks()` | **Recommended.** Blocks loopback, link-local (`169.254.0.0/16` — the cloud metadata endpoint), RFC1918, CGNAT (`100.64.0.0/10`), multicast and reserved, plus every encoding bypass tabulated in § 3: IPv4-mapped IPv6, NAT64, decimal/octal literals, `0.0.0.0`. |
+| `blockPrivateNetworks({ allowLoopback: true })` | The local-sidecar case, including this repo's own Ollama path (§ 13, L6). |
+| `allowAnyAddress()` | Escape hatch for tests and trusted-input paths. Deliberately named to be uncomfortable in review. The only correct choice in the browser, where DNS resolution and redirect interposition do not exist. |
+
+An options bag rather than a name per combination
+(`blockPrivateNetworksExceptLoopback()`, …) because the combinations
+multiply, while `allowLoopback: true` greps as well as a distinct name and
+keeps one canonical entry point.
+
+`allowAnyAddress()` ships despite being a footgun: it is needed for tests and
+trusted paths, and omitting it guarantees consumers hand-roll something
+worse. Better that the no-guarantee case have a name that indicts itself at
+the call site than be reachable by accident.
 
 ### 6.2 Options
 
 ```typescript
 /** @public */
 export interface ISafeFetchOptions {
-  /** Required. No default. See the design's § "the guard is a required parameter". */
-  readonly guard: IRequestGuard;
+  /**
+   * **Required, with no default.** A passthrough default here would be exactly
+   * the failure this document's north star names — a primitive advertising a
+   * guarantee it does not have. Requiring it makes that a *compile* error
+   * rather than a runtime failure or a lint rule. Pick a named factory
+   * (§ 6.1); `allowAnyAddress()` is the explicit opt-out.
+   */
+  readonly addressGuard: IAddressGuard;
+
+  /**
+   * Policy guards. Optional here and **non-optional in the resolved runtime
+   * structure** — each defaults to silent passthrough, applied once at
+   * initialization (§ 6.4). Their absence is a smaller surface, not an absent
+   * guarantee, which is why they may default where `addressGuard` may not.
+   */
+  readonly requestGuard?: IRequestGuard;
+  readonly responseHeadersGuard?: IResponseHeadersGuard;
+  readonly responseBodyGuard?: IResponseBodyGuard;
 
   readonly method?: 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   readonly headers?: Readonly<Record<string, string>>;
@@ -598,7 +725,42 @@ export interface ISafeFetchOptions {
 }
 ```
 
-### 6.3 Entry points
+### 6.3 Guards resolve once, at initialization
+
+Guards are optional in the public params and **non-optional in the resolved
+runtime structure**. Defaults are applied once, at the boundary, and no code
+path downstream branches on a guard's absence.
+
+```typescript
+/** Resolved once at init; every field concrete from here down. */
+interface IResolvedGuards {
+  readonly address: IAddressGuard;                 // caller-supplied; no default
+  readonly request: IRequestGuard;                 // passthrough by default
+  readonly responseHeaders: IResponseHeadersGuard; // passthrough by default
+  readonly responseBody: IResponseBodyGuard;       // passthrough by default
+}
+```
+
+This is the idiom `FileTreeMemoryStore.create()` already uses
+(`params.codecs ?? new Map()`, `params.clock ?? Date.now`,
+`params.logger ?? new NoOpLogger()`): resolve at the boundary, store concrete,
+never branch again. It avoids spraying `if (!guard) { … }` through call paths
+where defaults become hard to find and easy to get subtly wrong.
+
+Corroborating evidence from this repo: PR #582's `_resolveIndex` was a defect
+*in* a resolve-at-init step — it tested `!== undefined` where its eight
+sibling params used `??`, so a `null` passed straight through and installed
+itself as the store's index. That argues *for* centralizing: there was exactly
+one place to get wrong, so there was exactly one place to find and fix. The
+same defect distributed across call sites would have been found partially.
+
+It also has a testing consequence worth noting in sizing (§ 14): each default
+is tested once as an implementation, rather than "guard omitted" being a case
+to cover at every call site.
+
+---
+
+### 6.4 Entry points
 
 Three named functions rather than one function with a mode discriminant —
 each returns its narrow type with no union for the caller to unwrap,
@@ -939,7 +1101,8 @@ Every default is a security posture. None is "whatever the platform does."
 
 | Option | Default | Justification |
 |---|---|---|
-| `guard` | **none — required** | §5.5. The one mechanism that reliably prevents an implied-but-absent guarantee. |
+| `addressGuard` | **none — required** | §5.5. The one mechanism that reliably prevents an implied-but-absent guarantee. Omission is a compile error. |
+| `requestGuard` / `responseHeadersGuard` / `responseBodyGuard` | passthrough | §6.3. Policy, not guarantee; resolved at init so no call path branches on absence. |
 | scheme | `https:` only | `http:` is AC4-exposed and is the scheme every SSRF payload reaches for. Opt in with `allowInsecureHttp`. |
 | ports | `{443}` (`{80,443}` with insecure HTTP) | Non-standard ports on an allowlisted host are overwhelmingly an internal service. |
 | `timeoutMs` | `30_000` | Comfortably above a slow-but-real API; far below "a hung request pins a socket for minutes." Streaming LLM calls should not use this primitive — that is `ai-assist`. |
@@ -1012,7 +1175,7 @@ descriptors depend on it.
 
 The two are reconciled by making it explicit rather than by weakening the
 default: a caller who wants loopback constructs a guard that says so
-(`NodeAddressGuard.create({ allowLoopback: true, allowInsecureHttp: true,
+(`blockPrivateNetworks({ allowLoopback: true, allowInsecureHttp: true,
 allowHosts: ['localhost'], allowPorts: [11434] })`). Blocking loopback by
 default and requiring an opt-in for the local-dev case is the right
 polarity; the wrong polarity ships a guard that permits
@@ -1038,12 +1201,12 @@ When one is, this ordering keeps each step independently reviewable.
 1. **Core, runtime-agnostic.** Types, `FetchFailureReason`, seams,
    `platformFetchTransport` (with the pin interlock), timeout composition,
    streaming cap, content-type gate, the three entry points.
-   `NO_SSRF_GUARD`. No redirects yet — `redirectPolicy: 'reject'` only.
+   `allowAnyAddress()`. No redirects yet — `redirectPolicy: 'reject'` only.
    Testable entirely against a mock transport.
 2. **Redirect walk.** `'validate-each-hop'`, method/body rewriting,
    credential stripping, hop cap. Ships together with a guard that has
    something to say, because half of this is not shippable (§4).
-3. **`NodeAddressGuard`.** Address parsing and classification (§3.6),
+3. **`blockPrivateNetworks()`.** Address parsing and classification (§3.6),
    host/port/scheme allowlists, DNS resolution, reject-if-any-address-
    disallowed. The classification table is the test matrix.
 4. **Retry.** Additive; the taxonomy already distinguishes retryable from
@@ -1057,6 +1220,45 @@ When one is, this ordering keeps each step independently reviewable.
 Deferred, additive, not in v1: streaming entry point for large downloads;
 inactivity timeout; pinned-connect transport; migration of the four
 `ai-assist` sites (OQ-4).
+
+---
+
+### 14.1 Implementation sizing
+
+**Estimate: 4–5 agent sessions**, against a baseline where a well-scoped
+additive stream in this repo (#582, #585, #586) is one session each. This is
+greenfield with adversarial semantics, so it is not one of those.
+
+| Piece | Est. | Notes |
+|---|---|---|
+| Runtime-agnostic core | ~1 | Timeout, streaming cap, content gate, taxonomy, guard orchestration |
+| `blockPrivateNetworks()` + adversarial tests | **1–2** | The dominant and least predictable cost |
+| Browser package + its stated non-guarantees | ~0.5 | Mostly docs; the code is the core minus the guard |
+| Packaging, `api.md`, change files, README | ~0.5 | Higher if OQ-1 lands on sibling packages rather than packlets |
+| Review loops | ~1 | Security-sensitive; expect layer 2 to be substantive, not nitpicky |
+
+**The dominant cost is the adversarial test matrix, not the production code.**
+Every row of § 3's bypass table — IPv4-mapped IPv6, NAT64, decimal and octal
+literals, `0.0.0.0`, CGNAT, multi-record hostnames — is a required test at this
+repo's 100% coverage bar, as is each `A → B → A` credential case from § 6.1.
+
+**The largest risk was retired by the design, not deferred.** The open question
+in early sizing was how to exercise a `302` to `169.254.169.254`, or a chunked
+response with a lying `Content-Length`, without standing up a live server.
+`IFetchTransport` (§ 6.1) is injectable, so the guard and the cap are testable
+in-process. Had the transport seam not been needed for pinned-connect, it would
+have been worth adding for testability alone.
+
+**What still moves the number**, all of them open questions rather than
+unknowns: OQ-1 (packlet vs. sibling packages) and OQ-7 (whether retry is in v1)
+are each worth roughly half a session; OQ-8 (whether the browser package earns
+its keep) slightly less. Taking the recommendations on all three lands at 4.
+
+Two things that do *not* move it: the four-seam split is roughly neutral, since
+resolve-at-init (§ 6.3) removes the guard-absent branch from every call path in
+exchange for the extra interfaces; and pinned-connect is explicitly **not** in
+this estimate — it is listed above as deferred and additive, gated on whether
+the documented DNS-rebinding limit (§ 13) stands.
 
 ---
 
@@ -1109,14 +1311,14 @@ inverts the repo's idiom (a failed fetch becomes a successful `Result`) and
 I recommend against. Leaning (a), with (b) as a genuinely attractive
 side-quest.
 
-> **⚠️ ANSWERED by [Amendment A](#amendment-a--guard-decomposition-hop-chain-and-resolve-at-init) § A.4** — required with no default, satisfied by named factories. Reduces to confirming the factory names.
-
-**OQ-3 — Required `guard` with no default?**
-Recommendation: **yes** (§5.5). It costs one line per call site and buys a
-one-grep audit of every unguarded call. The alternative — default to the
-Node guard on Node — is more ergonomic but reintroduces exactly the
-silent-omission failure this stream exists to prevent. Taste call with a
-real ergonomic cost; want your read.
+**OQ-3 — Confirm the address-guard factory names.**
+*Resolved in review:* `addressGuard` is required with no default, and the
+other three guards default to silent passthrough (§ 6.1–6.3). Requiring it
+costs one named factory per call site and buys a one-grep audit of every
+call site's posture, with no ambient default to overlook. What remains is
+purely naming: `blockPrivateNetworks()` /
+`blockPrivateNetworks({ allowLoopback: true })` / `allowAnyAddress()`. The
+third is deliberately uncomfortable; say if it should be blunter still.
 
 **OQ-4 — Does the primitive ship with zero in-repo consumers?**
 Recommendation: **yes for v1**; leave the four `ai-assist` sites alone
@@ -1129,14 +1331,14 @@ accept it (PersonAIlity is the validating consumer); or migrate just
 `apiClient.ts:270` (the `GET` list-models call, the least entangled of the
 four) as a proof-of-fit. I lean accept-it, but flagging the departure.
 
-> **⚠️ WITHDRAWN by [Amendment A](#amendment-a--guard-decomposition-hop-chain-and-resolve-at-init) § A.5** — with no ambient default, the question collapses to "does the short factory name block loopback." It should.
-
-**OQ-5 — Loopback posture, given this repo's own Ollama path.**
-Recommendation: loopback **blocked by default**, with an explicit
-`allowLoopback` guard option, per L6. Confirm — a "just allow localhost,
-it's convenient" default would make the guard permit
-`http://127.0.0.1:6379/`, and that decision is much cheaper to make now
-than to reverse after call sites exist.
+**OQ-5 — Loopback posture. *Withdrawn.***
+The question presupposed an ambient default. Under § 6.1–6.2 there is none:
+every caller names an address guard. What survives is only "does the short
+factory name block loopback," and it must — the safe reading has to be the
+one you get by typing less. This repo's Ollama path (`localhost:11434`) then
+carries `{ allowLoopback: true }` visibly at its call site, which is exactly
+where that decision should be legible to a reader. No decision needed unless
+you disagree with that polarity.
 
 **OQ-6 — `maxResponseBytes` default of 5 MiB.**
 Defensible per §12 but genuinely arbitrary. If a consumer use case is
@@ -1162,7 +1364,7 @@ ambiguity the split exists to remove.
 
 ---
 
-## Appendix — where the three findings were incomplete
+## Appendix A — where the three findings were incomplete
 
 Reported for the record; none turned out wrong.
 
@@ -1206,212 +1408,40 @@ default needs an explicit decision before implementation (L6, OQ-5).
 
 ---
 
-# Amendment A — guard decomposition, hop chain, and resolve-at-init
+## Appendix B — design-history record
 
-**Status:** agreed with Erik in review of this document, 2026-08-01. **Supersedes**
-the single `IRequestGuard` seam sketched in § 6.1 and the ambient-default framing of
-**OQ-3** and **OQ-5**. Everything else in the document stands.
+Decisions taken during review that changed the body of this document, kept so
+a later reader can see what was considered and rejected rather than only what
+survived.
 
-Appended rather than woven into the body, because the body was under review when
-these changes were agreed. A later editorial pass should fold A.1–A.4 into § 6 and
-§ 7 and rewrite § 16's OQ-3 and OQ-5.
+**Single guard → four seams (§ 6.1).** The first draft had one `IRequestGuard`
+validating the URL. Erik proposed splitting it, and the split holds: the four
+have different signatures, lifecycles, and blast radii, and the SSRF-critical
+decision is easier to audit when it is not co-mingled with general request
+policy. The response guard's phase split (headers vs. body) was not in the
+proposal — it is forced by § 9's cap running *during* the read.
 
----
+**A separate redirect guard was proposed and rejected.** It would have created
+a second place deciding whether a hop may proceed, which is precisely the
+hazard § 4 exists to close: two mechanisms where one is required, and a
+reviewer unable to tell from either site whether the other ran. Redirect
+policy became configuration; the per-hop check stayed in the address guard.
 
-## A.1 Four seams, not one
+**Optional `isRedirect` flag → full hop chain (§ 6.1).** The intermediate
+proposal was an optional parameter telling the address guard it was on a
+redirect. Rejected for two reasons: an optional flag reproduces, inside every
+guard implementation, the scattered-branch problem § 6.3 removes from the
+core; and a boolean is insufficient regardless — the `A → B → A` credential
+re-attachment case needs the whole chain, not the previous hop. Making hop 0
+the chain's first entry removes the special case entirely.
 
-§ 6.1's `IRequestGuard` conflates decisions with different signatures, lifecycles,
-and blast radii. It splits into four:
+**Optional/required guards → resolve-at-init (§ 6.3).** The intermediate
+framing was "address guard required, others optional," with absence handled
+where used. Erik's framing — all guards non-optional in the runtime structure,
+differing only in whether a default is applied at init — has the same effect
+with better locality. PR #582's `_resolveIndex` bug, found the same week, is
+the evidence: a defect *in* a resolve step is findable precisely because there
+is one of them.
 
-| Seam | Runs | Governs |
-|---|---|---|
-| **address guard** | per hop, before connect | scheme + resolved address. The SSRF boundary. |
-| **request guard** | per attempt | method, headers, body |
-| **response headers guard** | after headers, before body | status, content-type, content-length, `set-cookie` |
-| **response body guard** | after the size cap, on the buffered body | body shape/content |
-
-**Why the address guard is named separately.** It is the piece whose failure is
-catastrophic and whose correctness is load-bearing. Keeping it small and separately
-nameable is what makes "did the SSRF check run, and run correctly?" answerable by
-reading one implementation rather than auditing a general-purpose request policy.
-The old name implied it governed the whole request when it governed only where the
-bytes go.
-
-**Why the response guard is split by phase.** § 9's size cap runs *during* the read.
-A single response guard wanting the body would either receive the stream — leaving
-the cap unenforced — or run post-buffer, too late to help against a hostile
-multi-gigabyte response. The headers half is also the more valuable half: it rejects
-before the body is paid for, and it is what catches a server returning an HTML error
-page with a `200`.
-
-**Request guard rejects; it does not sanitize.** Silently rewriting a caller's
-headers or body inside a fetch primitive means the caller no longer knows what was
-sent. Either reject, or return an explicit transformed request the caller can
-observe. "Sanitize" is where this class of API goes wrong.
-
-**There is deliberately no separate redirect guard.** § 4's central finding is that
-redirect handling and the address check are *one* mechanism; a distinct redirect-guard
-seam re-opens exactly the hazard § 4 exists to close, by creating a second place that
-decides whether a hop may proceed. Redirect **policy** (max hops, follow-or-not,
-credential stripping) is configuration. The per-hop **check** is the address guard,
-invoked per hop with the context in A.2.
-
----
-
-## A.2 The address guard sees the hop chain, and hop 0 is not a special case
-
-§ 6.1's `check(url, hop: number)` replaces its scalar `hop` with the full chain, and
-the initial request is simply the chain's first entry. There is **no optional
-`isRedirect` flag** — an optional flag reproduces, inside every guard implementation,
-the same scattered-branch problem A.3 removes from the core.
-
-```typescript
-/** One hop in a redirect chain. Entry 0 is the caller's original request. */
-export interface IRequestHop {
-  readonly url: URL;
-  /** The redirect status that produced the NEXT hop; absent on the current one. */
-  readonly status?: number;
-  /** The address actually connected to on this hop, when pinning was in effect. */
-  readonly connectedAddress?: string;
-}
-
-export interface IAddressGuard {
-  readonly name: string;
-  /**
-   * @param chain - every hop so far, oldest first. The URL under consideration is
-   *                the last entry; `chain.length === 1` is the initial request.
-   */
-  check(chain: ReadonlyArray<IRequestHop>): Promise<Result<IGuardVerdict>>;
-}
-```
-
-**Why the chain rather than a count and a previous origin.** Three things are
-inexpressible without it:
-
-1. **Credential re-attachment across a laundering hop.** `A` (authenticated) → `B` →
-   `A`. A check comparing only against the immediately previous hop finds the final
-   hop same-origin with `A` and re-attaches credentials — even though `B` observed
-   the redirect in between. Only the chain shows an intervening origin. This is a
-   real leak class and it reviews as correct.
-2. **Loop and oscillation detection.** `A→B→A→B` never fails a per-hop check while
-   consuming the entire hop budget.
-3. **Monotonic strictness.** "Once we have left the original origin, never accept a
-   private address" is a statement about history, not about one hop.
-
-Carrying `status` matters because `307`/`308` preserve method and body where
-`301`/`302` may not — which the request guard needs. Carrying `connectedAddress`
-matters because the pin is per-hop, so the chain is where the rebinding defense's
-evidence lives.
-
-**The chain is guard-visible, not caller-visible by default.** § 8 already notes that
-the failure taxonomy is an internal-network scanning oracle (L4). A full redirect
-chain with per-hop resolved addresses is a substantially richer one. It is supplied
-to guards and available to the caller only on explicit opt-in — never echoed
-automatically into a returned failure.
-
----
-
-## A.3 Guards are resolved once at init and are non-optional internally
-
-All four seams are **optional in the public create params and non-optional in the
-resolved runtime structure.** Defaults are applied once, at initialization, and no
-code path downstream branches on a guard's absence.
-
-```typescript
-// public params — optional
-export interface ISafeFetchCreateParams {
-  readonly addressGuard: IAddressGuard;            // required — see A.4
-  readonly requestGuard?: IRequestGuard;
-  readonly responseHeadersGuard?: IResponseHeadersGuard;
-  readonly responseBodyGuard?: IResponseBodyGuard;
-}
-
-// resolved once, at create() — all non-optional from here down
-interface IResolvedGuards {
-  readonly address: IAddressGuard;
-  readonly request: IRequestGuard;                 // passthrough by default
-  readonly responseHeaders: IResponseHeadersGuard; // passthrough by default
-  readonly responseBody: IResponseBodyGuard;       // passthrough by default
-}
-```
-
-This is the idiom `FileTreeMemoryStore.create()` already uses
-(`params.codecs ?? new Map()`, `params.clock ?? Date.now`,
-`params.logger ?? new NoOpLogger()`): resolve at the boundary, store concrete, never
-branch again. It avoids spraying `if (!guard) { … }` through call paths where the
-defaults become hard to find and easy to get subtly wrong.
-
-**Corroborating evidence from this repo, same week.** PR #582's `_resolveIndex` was a
-defect *in* a resolve-at-init step — it tested `!== undefined` where its eight sibling
-params used `??`, so a `null` passed straight through and installed itself as the
-store's index. The bug is an argument *for* this pattern: there was exactly one place
-to get wrong, so there was exactly one place to find and fix. The same defect
-distributed across call sites would have been found partially.
-
----
-
-## A.4 The address guard is required; the others default to passthrough
-
-**Request, response-headers, and response-body guards default to silent passthrough**
-and are therefore omittable at the call site. They are policy: their absence is a
-smaller surface, not an absent guarantee.
-
-**The address guard has no default and must be named explicitly at init.** A
-passthrough default there would be precisely the failure this document's north star
-names — a primitive advertising a guarantee it does not have. Making the parameter
-required turns that into a **compile error**, not a runtime failure and not a lint
-rule. For a security primitive, *impossible to construct wrong by accident* is a
-stronger property than any amount of documentation.
-
-Requiring it does not mean hand-writing one. Ship named implementations:
-
-| Factory | Posture |
-|---|---|
-| `blockPrivateNetworks()` | **Recommended.** Blocks loopback, link-local (`169.254.0.0/16` — the cloud metadata endpoint), RFC1918, CGNAT (`100.64.0.0/10`), multicast and reserved, plus the encoding bypasses tabulated in § 3: IPv4-mapped IPv6, NAT64, decimal/octal literals, `0.0.0.0`. |
-| `blockPrivateNetworks({ allowLoopback: true })` | The local-sidecar case — see A.5. |
-| `allowAnyAddress()` | Escape hatch for tests and trusted-input paths. Deliberately named to be uncomfortable in review. |
-
-An options bag rather than a name per combination (`blockPrivateNetworksExceptLoopback()`,
-…) because the combinations multiply, while `allowLoopback: true` greps just as well
-as a distinct name and keeps one canonical entry point.
-
-`allowAnyAddress()` ships despite being a footgun: it is needed for tests and trusted
-paths, and omitting it guarantees consumers hand-roll something worse. Better that the
-no-guarantee case have a name that indicts itself at the call site than be reachable
-by accident.
-
-**This preserves OQ-3's audit property.** One grep over `addressGuard:` enumerates
-every call site's posture, and there is no ambient default to overlook.
-
----
-
-## A.5 OQ-5 collapses rather than being answered
-
-OQ-5 asked whether loopback should be blocked by default given this repo's own Ollama
-path (`http://localhost:11434/v1`). Under A.4 **there is no ambient default to argue
-about** — every caller names a guard.
-
-The residual question is only whether the *short* name blocks loopback, and it should:
-the safe reading has to be the one you get by typing less. The Ollama path then carries
-`{ allowLoopback: true }` visibly at its call site, which is exactly where that decision
-should be legible to a reader.
-
-**OQ-5 is therefore withdrawn.** OQ-3 is likewise answered by A.4 — required, no
-default, named implementations — and reduces to confirming the factory names.
-
----
-
-## A.6 Effect on implementation sizing
-
-Roughly neutral against the pre-amendment estimate of **4–5 agent sessions**.
-
-- **Adds:** three more seam interfaces, two or three named address guards and their
-  tests, and the hop-chain plumbing.
-- **Removes:** the guard-absent branch from every call path. Each default is tested
-  once as an implementation, rather than "guard omitted" being a case at every site.
-- **Already de-risked:** § 15's injectable `IFetchTransport` answers the largest open
-  question in the original sizing — how to exercise a `302` to `169.254.169.254`, or a
-  chunked response with a lying `Content-Length`, without a live server.
-
-The dominant cost remains the adversarial test matrix for `blockPrivateNetworks()`:
-every row of § 3's bypass table is a required test at this repo's 100% coverage bar.
+**OQ-5 dissolved rather than answered.** With no ambient default, the loopback
+question reduces to which posture the shorter factory name carries.
