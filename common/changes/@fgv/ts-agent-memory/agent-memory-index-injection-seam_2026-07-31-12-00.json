@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Expose the derived record index as an optional injection point on FileTreeMemoryStore.create(): the new additive `index?: IMemoryIndex` create param. Omitted, the store builds a fresh MemoryIndex exactly as before (byte-identical). Supplied, the store uses the caller's index for every index operation it performs and holds no second index - the create() rebuild of the initial vault walk, the patch on every write / delete / version invalidation / cap-cull eviction, and every entries() read behind list / listScoped, the keyed temporal reads, and the write path's content-hash dedup and write-policy admission cohort. The seam exists for INSTRUMENTATION (wrapping the shipped MemoryIndex in a counting/timing decorator to measure resident bytes by kind and open cost against vault size); the TSDoc states explicitly that it does NOT lower the store's resident-memory ceiling, because IMemoryIndex's read surface returns whole records by construction, so any conforming index still materializes every body - lowering the ceiling requires a separate, breaking partial-read redesign of IMemoryIndex itself. IMemoryIndex's method signatures and return types are unchanged.",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

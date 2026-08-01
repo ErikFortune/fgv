@@ -491,6 +491,35 @@ export interface IAiClientToolTurnResult {
 
 /**
  * Known context keys for model specification maps.
+ *
+ * @remarks
+ * Two axes live here and nothing else: the **quality tier** (`base` / `advanced`
+ * / `frontier`) selects the *completion* model, and `image` / `embedding` select
+ * the non-completion modalities.
+ *
+ * There is deliberately **no `tools` or `thinking` key**. Both existed before the
+ * quality-tier axis landed and were removed with it: server-side tools and
+ * reasoning effort are orthogonal *request* params that ride on top of whatever
+ * model the tier already selected — they never select a model. A tool-using or
+ * thinking-enabled call passes a tier like any other call (omit → `base`, or
+ * `'advanced'` / `'frontier'`) and sets the tools / thinking request params
+ * independently. Thinking composes with any tier without a tier-level capability
+ * check — but that is a statement about the tier axis, not a claim that every
+ * provider supports thinking: several descriptors declare
+ * `thinkingMode: 'unsupported'` (e.g. `copy-paste`, `groq`, `mistral`, `ollama`,
+ * `openai-compat`).
+ *
+ * Thinking availability is declared **per provider**, on the descriptor's
+ * `thinkingMode`; the descriptor does not encode per-model thinking availability at
+ * all, so a provider that declares support may still have individual models its own
+ * API rejects thinking on. (`adaptiveThinkingModelPrefixes` is per-model but selects
+ * a wire *shape*, not availability.) What the tier axis guarantees is therefore
+ * narrow and exact: a tier selects a model within one provider and never changes the
+ * provider, so it never changes `thinkingMode`.
+ *
+ * Do not add a `'tools'` or `'thinking'` key here, and do not hand-roll a
+ * `resolveModel` + `resolveModelAlias` walk to emulate one — call
+ * `resolveProviderModel` with the tier you want.
  * @public
  */
 export type ModelSpecKey = 'base' | 'advanced' | 'frontier' | 'image' | 'embedding';
@@ -699,6 +728,20 @@ export function resolveModelAlias(descriptor: IAiProviderDescriptor, model: stri
  * call plus the duplicated empty-result check at each call-time chokepoint. The
  * `ModelSpec` branch is selected first; the resulting string — which may itself
  * be an fgv alias — is then resolved to a concrete id.
+ *
+ * **This is the whole model-selection surface — do not hand-roll the walk.**
+ * Callers should pass the `ModelSpecKey` they want and use the concrete id
+ * this returns; a manual `resolveModel` + `resolveModelAlias` sequence is
+ * both redundant and easy to get wrong (it is how alias-form ids leak into
+ * capability lookups such as `resolveImageCapability`).
+ *
+ * **`context` carries the quality tier and the modality — never tools or
+ * thinking.** `ModelSpecKey` has no `tools` / `thinking` key: server-side
+ * tools and reasoning effort are orthogonal request params that ride on top of
+ * whatever model the tier selected, and never select a model. A tool-path caller
+ * passes a tier like any other caller — omit `context` for `base`, or pass
+ * `'advanced'` / `'frontier'` — and sets the tools / thinking request params
+ * separately.
  *
  * @param descriptor - The provider descriptor (supplies `defaultModel` and `aliases`).
  * @param modelOverride - An optional caller-supplied `ModelSpec` that takes precedence

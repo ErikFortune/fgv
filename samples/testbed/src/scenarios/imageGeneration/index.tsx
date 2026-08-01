@@ -1,7 +1,7 @@
 /**
  * `image-generation` scenario — a web port of `samples/ai-image-gen-sample`'s image
- * mode. Provider + model picker (pre-filled from the `image` tier via
- * `AiAssist.resolveModel`), prompt form, and generated-image gallery, using
+ * mode. Provider + model picker (pre-filled with the concrete `image`-tier model id via
+ * `AiAssist.resolveProviderModel`), prompt form, and generated-image gallery, using
  * `@fgv/ts-app-shell`'s `useAiAssist` hook exactly as the sample does.
  *
  * The sample's `InMemoryKeyStore` + per-scenario API-key `<input>` are replaced by the
@@ -36,13 +36,20 @@ const IMAGE_PROVIDERS: ReadonlyArray<AiAssist.AiProviderId> = AiAssist.getProvid
   .filter((d) => AiAssist.supportsImageGeneration(d))
   .map((d) => d.id);
 
-/** Resolves the `image`-tier default model id for a provider (empty string if unknown). */
+/**
+ * Resolves the **concrete** `image`-tier default model id for a provider (empty string if
+ * unknown).
+ *
+ * Uses `AiAssist.resolveProviderModel` — the call-time chokepoint — rather than the bare
+ * `AiAssist.resolveModel` spec walk, so the returned id is post-alias. The bare walk yields
+ * the fgv alias form (e.g. `'@openai:image'`), which is the wrong value for both consumers
+ * here: the Model `<input>` shows it to the user alongside a fetched list of concrete ids
+ * (`gpt-image-1`, `dall-e-3`), and it feeds `AiAssist.resolveImageCapability`.
+ */
 function defaultModelFor(provider: AiAssist.AiProviderId): string {
-  const descriptor = AiAssist.getProviderDescriptor(provider).orDefault();
-  if (!descriptor) {
-    return '';
-  }
-  return AiAssist.resolveModel(descriptor.defaultModel, 'image');
+  return AiAssist.getProviderDescriptor(provider)
+    .onSuccess((descriptor) => AiAssist.resolveProviderModel(descriptor, undefined, 'image'))
+    .orDefault('');
 }
 
 function initialModelsByProvider(): ReadonlyMap<AiAssist.AiProviderId, string> {

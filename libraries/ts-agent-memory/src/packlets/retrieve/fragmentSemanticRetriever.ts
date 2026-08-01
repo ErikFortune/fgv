@@ -60,16 +60,19 @@ export interface IFragmentRetrieverCapabilities {
  * The sub-document semantic-search retriever — the "discovery" half of a
  * search-then-read contract. It embeds a fragment query, queries the
  * {@link IFragmentVectorIndex}, and returns the raw per-fragment
- * {@link IVectorQueryHit | hits} (each carrying a record `target` AND the matched
- * `locator`), NOT resolved records: the consumer re-reads each record and slices it
- * by the locator on its own read side.
+ * {@link IVectorQueryHit | hits} (each carrying a record `target` AND whichever of
+ * `locator` / `fragmentId` the stored fragment was indexed with), NOT resolved
+ * records: the consumer re-reads each record and resolves the fragment on its own
+ * read side. Note the `locator` span is advisory — see {@link IFragmentLocator}; it
+ * is not a slice guaranteed to reproduce the fragment's text.
  *
  * @remarks
  * Deliberately NOT an {@link IMemoryRetriever}: memory recall is record-granular and
- * returns records; fragment discovery is span-granular and returns locators. Keeping
- * it a distinct surface matches the consumer contract (memory stays record-granular;
- * sub-document knowledge uses a separate fragment index) and avoids overloading the
- * record retriever's return type with a locator that only makes sense here.
+ * returns records; fragment discovery is fragment-granular and returns fragment
+ * identities. Keeping it a distinct surface matches the consumer contract (memory
+ * stays record-granular; sub-document knowledge uses a separate fragment index) and
+ * avoids overloading the record retriever's return type with identity fields that
+ * only make sense here.
  *
  * When no backend is wired, `supportsFragmentRecall` is `false` and any fragment
  * query degrades loudly ({@link FRAGMENT_SEMANTIC_UNWIRED_MESSAGE}) — it NEVER

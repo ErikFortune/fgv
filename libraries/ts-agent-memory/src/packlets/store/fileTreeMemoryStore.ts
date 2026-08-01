@@ -194,6 +194,59 @@ export interface IFileTreeMemoryStoreCreateParams {
   readonly rankProjectors?: ReadonlyMap<Kind, RankProjector>;
   /** Default codec for kinds without an explicit entry. */
   readonly defaultCodec?: IIdentityCodec;
+  /**
+   * Optional derived-index implementation. Defaults to a fresh {@link MemoryIndex} —
+   * omitting this parameter is byte-identical to the store's behavior before the
+   * parameter existed. When supplied, the store uses it for EVERY index operation
+   * it performs and never holds a second index, so an injected index is the store's
+   * only view of its own records:
+   *
+   * - `rebuild` — once, from the initial vault walk in `create()`.
+   * - `patch` — on every persisted write, delete, version invalidation, and
+   *   cap-cull eviction.
+   * - `entries` — behind {@link IMemoryStore.list | list} /
+   *   {@link IMemoryStore.listScoped | listScoped}, the keyed temporal reads, the
+   *   write path's content-hash dedup and write-policy admission cohort, AND the
+   *   temporal (versioned) write and delete paths, which resolve an entity's
+   *   version history entirely from the index.
+   *
+   * That last group is the one to weigh before injecting anything other than a
+   * pass-through decorator: an index that filters, reorders, or otherwise reshapes
+   * `entries()` changes WRITE semantics, not just what reads return. Concretely,
+   * on a versioned kind the store derives an entity's whole version history from
+   * `entries()` filtered by scope, and that derivation decides which version a
+   * `put` treats as current (so what it dedups against and what it merges its
+   * patch over), which prior versions it stamps `invalid_at` on, what the
+   * admission cohort is, and which versions a `delete` tombstones. An index that
+   * hides a version makes it invisible to all of those — the FileTree still holds
+   * it, but the store will not supersede, invalidate, or tombstone it. On flat
+   * kinds the same reshaping changes what dedups and what a cap-cull policy
+   * evicts. A faithful delegating decorator — the intended use below — has no such
+   * effect. Note the store's keyed reads ({@link IMemoryStore.get | get} on a flat
+   * kind, and {@link IMemoryStore.getById | getById}) go to the FileTree, not the
+   * index; the FileTree remains the source of truth and the index stays a derived
+   * view.
+   *
+   * @remarks
+   * **This is an instrumentation seam, NOT a resident-memory fix.** The intended
+   * use is wrapping the shipped {@link MemoryIndex} in a decorator that counts and
+   * times the calls the store makes — resident bytes by kind, open cost against
+   * vault size, where the curve actually bends — so a decision about a partial-read
+   * redesign can be driven by measurements instead of estimates.
+   *
+   * It does NOT lower the store's resident-memory ceiling, and injecting a
+   * "persisted" or "lazy" index will not change that. {@link IMemoryIndex}'s read
+   * surface returns whole records by construction: `entries()` yields
+   * {@link IIndexedMemoryRecord}s and `byKind` / `byTag` / `byRecency` / `byRank`
+   * yield `IMemoryRecord<unknown>` — `{ envelope, body }` pairs with the body
+   * materialized. Any implementation satisfying the current contract must therefore
+   * be able to produce every body on demand. An injected index changes WHERE records
+   * come from; it does not change WHETHER bodies are held. Lowering the ceiling
+   * requires a partial-read (id-or-envelope-only) redesign of `IMemoryIndex` itself,
+   * which is separate, breaking, design-first work and is deliberately not part of
+   * this seam.
+   */
+  readonly index?: IMemoryIndex;
   /** Scope encoding. Defaults to {@link defaultMemoryScopeEncoding}. */
   readonly scopeEncoding?: (scope: MemoryScopeKey) => Result<string>;
   /**
@@ -412,13 +465,15 @@ export class FileTreeMemoryStore implements IMemoryStore {
   }
 
   /**
-   * Family-convention factory. Builds the derived index and a default LWW
-   * policy, then performs an initial FileTree walk so an existing vault is
-   * indexed (and the `seq` counter resumes past the highest persisted `seq`).
+   * Family-convention factory. Resolves the derived index (the caller's
+   * {@link IFileTreeMemoryStoreCreateParams.index | index} when supplied, a fresh
+   * {@link MemoryIndex} otherwise) and a default LWW policy, then performs an
+   * initial FileTree walk so an existing vault is indexed (and the `seq` counter
+   * resumes past the highest persisted `seq`).
    */
   public static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore> {
     return KnowledgeLwwPolicy.create().onSuccess((defaultPolicy) =>
-      MemoryIndex.create().onSuccess((index) => {
+      FileTreeMemoryStore._resolveIndex(params.index).onSuccess((index) => {
         const store: FileTreeMemoryStore = new FileTreeMemoryStore({
           root: params.root,
           registry: params.registry,
@@ -440,6 +495,21 @@ export class FileTreeMemoryStore implements IMemoryStore {
         return store._initialIndex(params.onRecordError ?? 'fail').onSuccess(() => succeed(store));
       })
     );
+  }
+
+  /**
+   * Resolve the derived index for a `create()`: the caller's injected
+   * {@link IMemoryIndex} verbatim, or a fresh {@link MemoryIndex} when none was
+   * supplied (the default that keeps an omitting caller byte-identical).
+   */
+  private static _resolveIndex(index: IMemoryIndex | undefined): Result<IMemoryIndex> {
+    // Nullish rather than strictly-undefined, matching how every sibling optional
+    // param in `create()` handles absence (`params.codecs ?? new Map()`, and so on).
+    // A JS caller — or a TS caller arriving through an `unknown` escape hatch —
+    // passing `null` otherwise gets `null` installed as the store's index and fails
+    // later inside `entries()` with a message that names neither the param nor the
+    // cause.
+    return index ? succeed(index) : MemoryIndex.create();
   }
 
   /** {@inheritDoc IMemoryStore.get} */
