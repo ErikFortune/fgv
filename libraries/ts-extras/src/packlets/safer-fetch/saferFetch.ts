@@ -23,6 +23,7 @@ import {
   captureResult,
   failWithDetail,
   Logging,
+  succeed,
   succeedWithDetail,
   type Converter,
   type DetailedFailure,
@@ -250,17 +251,31 @@ async function _readCappedBody(
   const chunks: Uint8Array[] = [];
   let total: number = 0;
   for (;;) {
-    const race = await watch.race(reader.read());
+    // The read must be captured, not raced raw. `reader.read()` rejects whenever the connection
+    // drops mid-transfer — a server reset, a proxy killing an idle connection, a TLS teardown —
+    // which is ordinary AC2 behaviour, not an exotic one. Racing the bare promise would let that
+    // rejection escape as a throw out of an entry point documented to always return a Result,
+    // which is precisely the guarantee this primitive sells.
+    const race = await watch.race(_capture(() => reader.read().then(succeed)));
     if (race.stopped) {
       // Cancelling is what makes the deadline effective rather than decorative: without it the
       // transfer continues against a call that has already given up.
       await _cancelReader(reader);
       return _stopped<Uint8Array>(watch, race.cause);
     }
-    if (race.value.done) {
+    if (race.value.isFailure()) {
+      // No cancel: the stream has already errored, so there is nothing left to cancel. Reported
+      // as `network` — the same kind a transport-level failure gets, because it is the same
+      // class of event, observed a few frames later.
+      return _fail<Uint8Array>(
+        { kind: 'network', detail: race.value.message },
+        `response body read failed: ${race.value.message}`
+      );
+    }
+    if (race.value.value.done) {
       break;
     }
-    const chunk = race.value.value;
+    const chunk = race.value.value.value;
     total += chunk.byteLength;
     if (total > limit) {
       // Returning without cancelling would leave the body unconsumed and the connection held,

@@ -31,6 +31,7 @@ import {
   neverResponds,
   respondWith,
   stallingStreamOf,
+  erroringStreamOf,
   streamOf,
   utf8,
   type IMockTransport
@@ -593,6 +594,35 @@ describe('saferFetch entry points', () => {
         declared: 100
       });
       expect(stream.wasCancelled()).toBe(true);
+    });
+
+    // A body stream can end three ways: it closes, it stalls forever, or it errors. The first
+    // two are covered above and under 'timeouts and cancellation'; this is the third. A
+    // connection dropping mid-transfer is ordinary AC2 behaviour, and the entry points are
+    // documented to return a Result rather than throw — so an escaping rejection here would
+    // break the primitive's central guarantee at exactly the moment the network misbehaves.
+    test('reports a mid-read connection drop as a network failure rather than throwing', async () => {
+      const transport = respondWith(() => new Response(erroringStreamOf([utf8('abc')])));
+      await expect(saferFetchBytes(URL_UNDER_TEST, options(transport))).resolves.toFailWithDetail(
+        /response body read failed.*terminated/i,
+        {
+          kind: 'network',
+          detail: expect.stringContaining('terminated')
+        }
+      );
+    });
+
+    test('a mid-read drop on the text entry point is also a Result, not a throw', async () => {
+      const transport = respondWith(
+        () =>
+          new Response(erroringStreamOf([utf8('partial')]), {
+            headers: { 'content-type': 'text/plain' }
+          })
+      );
+      await expect(saferFetchText(URL_UNDER_TEST, options(transport))).resolves.toFailWithDetail(
+        /response body read failed/i,
+        { kind: 'network', detail: expect.stringContaining('terminated') }
+      );
     });
 
     // The load-bearing case: Content-Length is absent on chunked responses, so the cap has to

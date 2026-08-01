@@ -94,6 +94,28 @@ export function streamOf(chunks: ReadonlyArray<Uint8Array>): ReadableStream<Uint
 }
 
 /**
+ * A stream that emits the supplied chunks and then **errors**, modelling a connection that
+ * drops mid-transfer — a server reset, a proxy killing an idle connection, a TLS teardown.
+ * `reader.read()` rejects rather than resolving, which is the third way a body stream can end
+ * and the one neither {@link streamOf} (closes) nor a stalling stream (never settles) covers.
+ */
+export function erroringStreamOf(
+  chunks: ReadonlyArray<Uint8Array>,
+  error: Error = new TypeError('terminated')
+): ReadableStream<Uint8Array> {
+  let index: number = 0;
+  return new ReadableStream<Uint8Array>({
+    pull(controller: ReadableStreamDefaultController<Uint8Array>): void {
+      if (index < chunks.length) {
+        controller.enqueue(chunks[index++]);
+      } else {
+        controller.error(error);
+      }
+    }
+  });
+}
+
+/**
  * A response whose body is exactly the supplied bytes. Routed through a stream because the
  * platform's `BodyInit` will not take a `Uint8Array` over a possibly-shared buffer.
  */
