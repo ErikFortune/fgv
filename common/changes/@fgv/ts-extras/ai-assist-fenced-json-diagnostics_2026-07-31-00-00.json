@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add AiAssist.classifyJsonParseFailure and the JsonParseFailureReason discriminated union, so a caller whose LLM returned malformed JSON can branch on a typed failure class (unquoted / single-quoted / unterminated property name, elided member, or an honest 'unknown' catch-all) with the offending token and its offset into the original text, instead of regex-matching an engine-specific JSON.parse message. Classification is structural (never reads the engine error string, so verdicts are stable across Node versions) and deliberately conservative. Purely additive: extractJsonText and fencedStringifiedJson behaviour and messages — including the truncation-aware unclosed-structure diagnosis — are unchanged.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

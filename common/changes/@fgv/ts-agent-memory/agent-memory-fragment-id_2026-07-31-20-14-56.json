@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add opaque fragmentId to IEmbeddedFragment / IVectorQueryHit, make locator optional and advisory, and detect vec0 fragment-table schema mismatch with an actionable drop-and-re-index message",
+      "type": "none",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

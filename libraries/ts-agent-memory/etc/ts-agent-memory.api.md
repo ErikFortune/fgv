@@ -103,6 +103,9 @@ export const edgeTargetConverter: Converter<IEdgeTarget>;
 export function edgeTargetKey(target: IEdgeTarget): string;
 
 // @public
+export const embeddedFragmentConverter: Converter<IEmbeddedFragment>;
+
+// @public
 export type EntityId = Brand<string, 'EntityId'>;
 
 // @public
@@ -129,6 +132,9 @@ export const FRAGMENT_SEMANTIC_UNWIRED_MESSAGE: string;
 
 // @public
 export type FragmentEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<ReadonlyArray<IEmbeddedFragment>>>;
+
+// @public
+export const fragmentLocatorConverter: Converter<IFragmentLocator>;
 
 // @public
 export class FragmentSemanticRetriever {
@@ -221,7 +227,8 @@ export interface IEdgeTarget {
 
 // @public
 export interface IEmbeddedFragment {
-    readonly locator: IFragmentLocator;
+    readonly fragmentId?: string;
+    readonly locator?: IFragmentLocator;
     readonly vector: Float32Array;
 }
 
@@ -250,6 +257,7 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly embed?: MemoryEmbedder;
     readonly fragmentEmbedder?: FragmentEmbedder;
     readonly fragmentIndex?: IFragmentVectorIndex;
+    readonly index?: IMemoryIndex;
     readonly logger?: Logging.ILogger;
     readonly observers?: ReadonlyArray<IMemoryObserver>;
     readonly onRecordError?: MemoryRecordErrorMode;
@@ -653,6 +661,7 @@ export interface IVectorIndex {
 
 // @public
 export interface IVectorQueryHit {
+    readonly fragmentId?: string;
     readonly locator?: IFragmentLocator;
     readonly score: number;
     readonly target: IEdgeTarget;

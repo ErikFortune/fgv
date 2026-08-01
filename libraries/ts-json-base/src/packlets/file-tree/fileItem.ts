@@ -25,16 +25,25 @@ import { Converter, Validator } from '@fgv/ts-utils';
 import { JsonValue } from '../json';
 import {
   IFileTreeAccessors,
-  IMutableFileTreeFileItem,
+  IMutableBinaryFileTreeFileItem,
+  isBinaryAccessors,
   isMutableAccessors,
+  isMutableBinaryAccessors,
   SaveDetail
 } from './fileTreeAccessors';
 
 /**
  * Class representing a file in a file tree.
+ *
+ * @remarks
+ * Implements the optional binary capability
+ * ({@link FileTree.IMutableBinaryFileTreeFileItem}) by delegating to the underlying
+ * accessors. As with {@link FileTree.FileItem.setRawContents | setRawContents} and
+ * {@link FileTree.FileItem.getIsMutable | getIsMutable}, the byte methods report an
+ * accessor that lacks the capability as a `Failure` rather than by omitting the method.
  * @public
  */
-export class FileItem<TCT extends string = string> implements IMutableFileTreeFileItem<TCT> {
+export class FileItem<TCT extends string = string> implements IMutableBinaryFileTreeFileItem<TCT> {
   /**
    * {@inheritDoc FileTree.IFileTreeFileItem."type"}
    */
@@ -150,6 +159,26 @@ export class FileItem<TCT extends string = string> implements IMutableFileTreeFi
    */
   public getRawContents(): Result<string> {
     return this._hal.getFileContents(this.absolutePath);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IBinaryFileTreeFileItem.getRawBytes}
+   */
+  public getRawBytes(): Result<Uint8Array> {
+    if (isBinaryAccessors(this._hal)) {
+      return this._hal.getFileBytes(this.absolutePath);
+    }
+    return fail(`${this.absolutePath}: raw byte access not supported`);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableBinaryFileTreeFileItem.setRawBytes}
+   */
+  public setRawBytes(bytes: Uint8Array): Result<Uint8Array> {
+    if (isMutableBinaryAccessors(this._hal)) {
+      return this._hal.saveFileBytes(this.absolutePath, bytes);
+    }
+    return fail(`${this.absolutePath}: raw byte writes not supported`);
   }
 
   /**

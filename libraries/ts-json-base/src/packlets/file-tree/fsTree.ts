@@ -24,7 +24,7 @@ import {
   FileTreeItem,
   IFileTreeInitParams,
   IFilterSpec,
-  IMutableFileTreeAccessors,
+  IMutableBinaryFileTreeAccessors,
   SaveDetail
 } from './fileTreeAccessors';
 import path from 'path';
@@ -43,11 +43,17 @@ import { FileItem } from './fileItem';
 import { isPathMutable } from './filterSpec';
 
 /**
- * Implementation of {@link FileTree.IMutableFileTreeAccessors} that uses the
+ * Implementation of {@link FileTree.IMutableBinaryFileTreeAccessors} that uses the
  * file system to access and modify files and directories.
+ *
+ * @remarks
+ * The file system is byte-native, so this implementation supports the optional binary
+ * capability for both reads and writes.
  * @public
  */
-export class FsFileTreeAccessors<TCT extends string = string> implements IMutableFileTreeAccessors<TCT> {
+export class FsFileTreeAccessors<TCT extends string = string>
+  implements IMutableBinaryFileTreeAccessors<TCT>
+{
   /**
    * Optional path prefix to prepend to all paths.
    */
@@ -144,6 +150,17 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IMutabl
   }
 
   /**
+   * {@inheritDoc FileTree.IBinaryFileTreeAccessors.getFileBytes}
+   */
+  public getFileBytes(filePath: string): Result<Uint8Array> {
+    // `readFileSync` without an encoding returns a Buffer which, for small reads, is a
+    // view onto Node's shared allocation pool. Copy into a standalone Uint8Array so the
+    // returned bytes cannot be perturbed by unrelated reads and so callers get a plain
+    // Uint8Array rather than a Node-only Buffer.
+    return captureResult(() => new Uint8Array(fs.readFileSync(this.resolveAbsolutePath(filePath))));
+  }
+
+  /**
    * Gets the content type of a file in the file tree.
    * @param filePath - Absolute path of the file.
    * @param provided - Optional supplied content type.
@@ -228,6 +245,19 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IMutabl
       return captureResult(() => {
         fs.writeFileSync(absolutePath, contents, 'utf8');
         return contents;
+      });
+    });
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableBinaryFileTreeAccessors.saveFileBytes}
+   */
+  public saveFileBytes(path: string, bytes: Uint8Array): Result<Uint8Array> {
+    return this.fileIsMutable(path).asResult.onSuccess(() => {
+      const absolutePath = this.resolveAbsolutePath(path);
+      return captureResult(() => {
+        fs.writeFileSync(absolutePath, bytes);
+        return bytes;
       });
     });
   }

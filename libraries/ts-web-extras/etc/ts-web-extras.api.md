@@ -132,7 +132,7 @@ export interface FilePickerAcceptType {
 }
 
 // @public
-export class FileSystemAccessTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+export class FileSystemAccessTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT>, FileTree.IBinaryFileTreeAccessors<TCT> {
     protected constructor(files: FileTree.IInMemoryFile<TCT>[], rootDir: FileSystemDirectoryHandle_2, handles: Map<string, FileSystemFileHandle_2>, params: IFileSystemAccessTreeParams<TCT> | undefined, hasWritePermission: boolean);
     deleteFile(path: string): Result<boolean>;
     fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
@@ -264,7 +264,7 @@ function getOriginalFile(fileList: FileList, path: string): Result<File>;
 const HpkeProvider: typeof CryptoUtils_2.HpkeProvider;
 
 // @public
-export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT>, FileTree.IBinaryFileTreeAccessors<TCT> {
     // (undocumented)
     deleteFile(path: string): Result<boolean>;
     fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
@@ -407,7 +407,7 @@ export interface IUrlConfigOptions {
 }
 
 // @public
-export class LocalStorageTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+export class LocalStorageTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT>, FileTree.IBinaryFileTreeAccessors<TCT> {
     deleteFile(path: string): Result<boolean>;
     fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
     static fromStorage<TCT extends string = string>(params: ILocalStorageTreeParams<TCT>): Result<LocalStorageTreeAccessors<TCT>>;

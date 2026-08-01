@@ -28,9 +28,15 @@ import { FileTree, JsonValue } from '@fgv/ts-json-base';
  * Implementation of `FileTree.IFileTreeFileItem` for files in a ZIP archive.
  * ZIP files are read-only, so this item does not support mutation.
  * Use {@link FileTree.isMutableFileItem | isMutableFileItem} to check before attempting mutations.
+ *
+ * @remarks
+ * ZIP entries are byte-native, so this item also implements the read half of the
+ * optional binary capability (`FileTree.IBinaryFileTreeFileItem`) — use
+ * `FileTree.isBinaryFileItem` to narrow and `getRawBytes()` to read the entry's
+ * undecoded bytes.
  * @public
  */
-export class ZipFileItem<TCT extends string = string> implements FileTree.IFileTreeFileItem<TCT> {
+export class ZipFileItem<TCT extends string = string> implements FileTree.IBinaryFileTreeFileItem<TCT> {
   /**
    * Indicates that this `FileTree.FileTreeItem` is a file.
    */
@@ -68,9 +74,14 @@ export class ZipFileItem<TCT extends string = string> implements FileTree.IFileT
   }
 
   /**
-   * The pre-loaded contents of the file.
+   * The pre-loaded raw bytes of the ZIP entry.
    */
-  private readonly _contents: string;
+  private readonly _bytes: Uint8Array;
+
+  /**
+   * Text form of the entry, decoded lazily from the raw bytes on first text read.
+   */
+  private _contents: string | undefined;
 
   /**
    * The ZIP file tree accessors that created this item.
@@ -90,11 +101,22 @@ export class ZipFileItem<TCT extends string = string> implements FileTree.IFileT
   /**
    * Constructor for ZipFileItem.
    * @param zipFilePath - The path of the file within the ZIP.
-   * @param contents - The pre-loaded contents of the file.
+   * @param contents - The pre-loaded contents of the entry, either as raw bytes or as
+   * already-decoded text. Text is encoded as UTF-8 for the byte accessor and is also
+   * retained verbatim, so supplying text never round-trips through a decode.
    * @param accessors - The ZIP file tree accessors.
    */
-  public constructor(zipFilePath: string, contents: string, accessors: ZipFileTreeAccessors<TCT>) {
-    this._contents = contents;
+  public constructor(
+    zipFilePath: string,
+    contents: string | Uint8Array,
+    accessors: ZipFileTreeAccessors<TCT>
+  ) {
+    if (typeof contents === 'string') {
+      this._contents = contents;
+      this._bytes = new TextEncoder().encode(contents);
+    } else {
+      this._bytes = contents;
+    }
     this._accessors = accessors;
     this.absolutePath = '/' + zipFilePath;
     this.name = accessors.getBaseName(zipFilePath);
@@ -137,9 +159,28 @@ export class ZipFileItem<TCT extends string = string> implements FileTree.IFileT
 
   /**
    * Gets the raw contents of the file as a string.
+   *
+   * @remarks
+   * The entry's bytes are decoded as UTF-8 with the lenient WHATWG default, so
+   * malformed input is silently replaced with U+FFFD. Use `getRawBytes()` for the
+   * undecoded bytes — and `new TextDecoder('utf-8', { fatal: true }).decode(bytes)`
+   * for a decode that fails loudly instead.
    */
   public getRawContents(): Result<string> {
+    if (this._contents === undefined) {
+      this._contents = new TextDecoder().decode(this._bytes);
+    }
     return succeed(this._contents);
+  }
+
+  /**
+   * Gets the raw bytes of the ZIP entry, with no text decoding applied.
+   *
+   * @remarks
+   * The returned array is the item's internal buffer and must not be modified.
+   */
+  public getRawBytes(): Result<Uint8Array> {
+    return succeed(this._bytes);
   }
 }
 
@@ -191,9 +232,17 @@ export class ZipDirectoryItem<TCT extends string = string> implements FileTree.I
  * Read-only file tree accessors for ZIP archives.
  * ZIP archives are read-only by design — use {@link FileTree.isMutableAccessors | isMutableAccessors}
  * to check before attempting mutations.
+ *
+ * @remarks
+ * ZIP entries are byte-native, so these accessors also implement the read half of the
+ * optional binary capability (`FileTree.IBinaryFileTreeAccessors`) — use
+ * `FileTree.isBinaryAccessors` to narrow and `getFileBytes()` to read an entry's
+ * undecoded bytes.
  * @public
  */
-export class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFileTreeAccessors<TCT> {
+export class ZipFileTreeAccessors<TCT extends string = string>
+  implements FileTree.IBinaryFileTreeAccessors<TCT>
+{
   /**
    * The unzipped file data.
    */
@@ -372,10 +421,9 @@ export class ZipFileTreeAccessors<TCT extends string = string> implements FileTr
           }
         }
 
-        // Add the file item with its contents
+        // Add the file item with its raw bytes; text is decoded lazily on demand.
         const absolutePath = this.resolveAbsolutePath(relativePath);
-        const contents = new TextDecoder().decode(fileData);
-        const item = new ZipFileItem<TCT>(relativePath, contents, this);
+        const item = new ZipFileItem<TCT>(relativePath, fileData, this);
         this._itemCache.set(absolutePath, item);
       }
     }
@@ -448,13 +496,36 @@ export class ZipFileTreeAccessors<TCT extends string = string> implements FileTr
 
   /**
    * Gets the contents of a file in the file tree.
+   *
+   * @remarks
+   * The entry's bytes are decoded as UTF-8 with the lenient WHATWG default. Use
+   * `getFileBytes()` for the undecoded bytes.
    */
   public getFileContents(path: string): Result<string> {
+    return this._getFileItem(path).onSuccess((item) => item.getRawContents());
+  }
+
+  /**
+   * Gets the raw bytes of a ZIP entry, with no text decoding applied.
+   *
+   * @remarks
+   * The returned array is the archive's internal buffer and must not be modified.
+   */
+  public getFileBytes(path: string): Result<Uint8Array> {
+    return this._getFileItem(path).onSuccess((item) => item.getRawBytes());
+  }
+
+  /**
+   * Resolves a path to the ZIP file item it names.
+   * @param path - Path of the entry to look up.
+   * @returns `Success` with the item, or `Failure` if it is missing or is a directory.
+   */
+  private _getFileItem(path: string): Result<ZipFileItem<TCT>> {
     return this.getItem(path).onSuccess((item) => {
-      if (item.type !== 'file') {
+      if (!(item instanceof ZipFileItem)) {
         return fail(`Path is not a file: ${path}`);
       }
-      return item.getRawContents();
+      return succeed(item);
     });
   }
 

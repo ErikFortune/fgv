@@ -963,4 +963,79 @@ describe('FileTreeMemoryStore', () => {
       });
     });
   });
+
+  /**
+   * Pins the store-layer half of the provenance merge contract documented in the
+   * package README (§ "Record updates — the merge contract"). The policy-level
+   * behavior is pinned in `types/writePolicy.test.ts`; these tests pin the claims
+   * the README makes about reaching that behavior through `put` — namely that the
+   * patch is projected from the incoming record's provenance, so an omitted key is
+   * preserved while an explicit `null` clears, and that the cleared key stays gone
+   * across a reload rather than resurfacing from the persisted frontmatter.
+   */
+  describe('provenance merge contract through put (README-pinned)', () => {
+    /** A knowledge record carrying an explicit provenance block. */
+    function provenanceRecord(provenance: unknown, body: string): IMemoryRecord<unknown> {
+      return {
+        envelope: envelopeConverter
+          .convert({
+            id: 'doc-p',
+            entityId: 'doc-p',
+            kind: 'knowledge',
+            tags: [],
+            links: [],
+            created: 0,
+            updated: 0,
+            seq: 0,
+            contentHash: '',
+            provenance
+          })
+          .orThrow(),
+        body
+      };
+    }
+
+    test('an omitted key is preserved and an explicit null clears, surviving a reload', async () => {
+      const root = mutableRoot();
+      const store = createStore({ root }).orThrow();
+      (
+        await store.put(provenanceRecord({ source: 'agent', confidence: 0.9, note: 'stale' }, 'first body'))
+      ).orThrow();
+
+      // The second put omits `confidence` (must be preserved) and nulls `note`
+      // (must be cleared) — the per-key merge, driven through the store.
+      expect(
+        await store.put(provenanceRecord({ source: 'agent', note: null }, 'second body'))
+      ).toSucceedAndSatisfy((updated: IMemoryRecord<unknown>) => {
+        expect(updated.envelope.provenance).toEqual({ source: 'agent', confidence: 0.9 });
+      });
+
+      // A fresh store over the same root re-reads the persisted frontmatter: the
+      // cleared key must not resurface.
+      const reopened = createStore({ root }).orThrow();
+      expect(await reopened.get(knowledgeKind, 'doc-p' as EntityId)).toSucceedAndSatisfy((r) => {
+        expect(r?.envelope.provenance).toEqual({ source: 'agent', confidence: 0.9 });
+      });
+    });
+
+    test('a whole-block null provenance is not expressible — the converter rejects it', () => {
+      // The README says the whole-block delete fails at the converter rather than
+      // at the policy on the store path, because `IMemoryEnvelope.provenance` is
+      // non-nullable. Pin that rejection site.
+      expect(
+        envelopeConverter.convert({
+          id: 'doc-p',
+          entityId: 'doc-p',
+          kind: 'knowledge',
+          tags: [],
+          links: [],
+          created: 0,
+          updated: 0,
+          seq: 0,
+          contentHash: '',
+          provenance: null
+        })
+      ).toFailWith(/provenance/i);
+    });
+  });
 });

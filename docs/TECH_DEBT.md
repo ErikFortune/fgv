@@ -127,6 +127,17 @@ opportunistically when the right surface area is touched.
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `ai-assist` fence extraction mis-slices a fenced body that itself contains a triple backtick.**
+  `FENCED_BLOCK` in `libraries/ts-extras/src/packlets/ai-assist/jsonResponse.ts` is a single lazy-body regex (`([\s\S]*?)` between an opening fence and the first following ` ``` `). When a model emits a fenced JSON block whose *body* contains a literal triple backtick — most plausibly inside a string value, e.g. ` ```json\n{"snippet": "``` foo ```"}\n``` ` — the lazy body stops at the inner backticks and `extractJsonText` hands `JSON.parse` a truncated candidate. Long-standing and **not introduced by the `ai-assist-fenced-json-diagnostics` stream**: that stream only renumbered the regex's capture groups (opening fence became group 1, body group 2, so a body offset can be mapped back to the original text), verified behaviour-preserving over a 6804-input fuzz. The new `classifyJsonParseFailure` degrades safely here — it reports `'unknown'` rather than compounding the mis-slice with a confident wrong verdict.
+
+  **Trigger**: the next time fence extraction is touched, or the first time a consumer reports a fenced response with embedded backticks failing to parse. Not urgent — the failure is loud (a parse failure), not silent.
+
+  **Scope sketch**: harden the fence scan — prefer counting the opening run's backtick length and matching a closing run of at least that length at a line start (the CommonMark rule), instead of the current first-` ``` `-wins lazy match. Keep `extractJsonText`'s messages unchanged; `locateJsonCandidate` is already the single source of truth for the strip-wrappers step, so the change lands in one place and both the extractor and the classifier follow.
+
+  **Not a P4**: it produces a wrong parse candidate, not just a cosmetic wart — a consumer sees a confusing `JSON.parse` failure on output the model actually formed correctly.
+
+  **Reference**: `ai-assist-fenced-json-diagnostics` stream; code-reviewer pass on that diff (2026-07-31), P3 finding 3.
+
 - **[P3] `ts-agent-memory` L2 `createMemoryTools` duplicates the store's codec wiring instead of delegating.**
   `createMemoryTools({ codecs?, defaultCodec? })` (`libraries/ts-agent-memory/src/packlets/tools/memoryTools.ts`) accepts the per-kind identity codecs a second time, in addition to `FileTreeMemoryStore.create({ codecs })`. `memory_write` needs them because `IMemoryStore.put` (`fileTreeMemoryStore.ts:496-502`) validates `envelope.id === codec-derived idStem` and does not derive/stamp the id itself — so a caller building a new `IMemoryRecord` must compute the same `idStem` up front, which requires the same codec the store was constructed with. The testbed scenario passes the same `codecs` map to both constructors, illustrating the drift risk: a host that re-wires the store's codecs but forgets the mirrored `createMemoryTools` config gets a confusing "envelope id does not match codec-derived stem" failure at `put()` time. Scope isolation is NOT compromised (codec `scope` is derived deterministically from `kind`, not from agent input; a mismatch loudly rejects the write rather than writing cross-scope), so this is a DX/robustness smell, not a security gap.
 

@@ -164,10 +164,12 @@ declare namespace AiAssist {
         modelSpecKey,
         modelSpec,
         resolveEffectiveTools,
+        classifyJsonParseFailure,
         extractJsonText,
         fencedStringifiedJson,
         IFencedStringifiedJsonExtractorOptions,
         IFencedStringifiedJsonOptions,
+        JsonParseFailureReason,
         JsonTextExtractor,
         generateJsonCompletion,
         SMART_JSON_PROMPT_HINT,
@@ -375,6 +377,15 @@ function callProxiedImageGeneration(proxyUrl: string, params: IProviderImageGene
 // @public
 function callProxiedListModels(proxyUrl: string, params: IProviderListModelsParams): Promise<Result<ReadonlyArray<IAiModelInfo>>>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function classifyJsonParseFailure(text: string): JsonParseFailureReason;
+
 declare namespace Constants {
     export {
         ENCRYPTED_FILE_FORMAT,
@@ -440,6 +451,9 @@ function createEncryptedFile<TMetadata = JsonValue>(params: ICreateEncryptedFile
 //
 // @public
 function createEncryptedFileConverter<TMetadata = JsonValue>(metadataConverter?: Converter<TMetadata>): Converter<IEncryptedFile<TMetadata>>;
+
+// @public
+function createZipFromFiles(files: ReadonlyArray<IZipFile>, options?: ICreateZipOptions): Result<Uint8Array>;
 
 // @public
 function createZipFromTextFiles(files: ReadonlyArray<IZipTextFile>, options?: ICreateZipOptions): Result<Uint8Array>;
@@ -1974,6 +1988,14 @@ interface IYamlSerializeOptions {
 }
 
 // @public
+interface IZipFile {
+    // (undocumented)
+    readonly contents: string | Uint8Array;
+    // (undocumented)
+    readonly path: string;
+}
+
+// @public
 interface IZipTextFile {
     // (undocumented)
     readonly contents: string;
@@ -1994,6 +2016,29 @@ interface JarRecordParserOptions {
     // (undocumented)
     readonly fixedContinuationSize?: number;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type JsonParseFailureReason = {
+    readonly kind: 'unquoted-property-name';
+    readonly token: string;
+    readonly offset: number;
+} | {
+    readonly kind: 'single-quoted-property-name';
+    readonly token: string;
+    readonly offset: number;
+} | {
+    readonly kind: 'unterminated-property-name';
+    readonly token: string;
+    readonly offset: number;
+} | {
+    readonly kind: 'elided-member';
+    readonly token: string;
+    readonly offset: number;
+} | {
+    readonly kind: 'unknown';
+};
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2587,8 +2632,8 @@ class ZipDirectoryItem<TCT extends string = string> implements FileTree.IFileTre
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
 //
 // @public
-class ZipFileItem<TCT extends string = string> implements FileTree.IFileTreeFileItem<TCT> {
-    constructor(zipFilePath: string, contents: string, accessors: ZipFileTreeAccessors<TCT>);
+class ZipFileItem<TCT extends string = string> implements FileTree.IBinaryFileTreeFileItem<TCT> {
+    constructor(zipFilePath: string, contents: string | Uint8Array, accessors: ZipFileTreeAccessors<TCT>);
     readonly absolutePath: string;
     readonly baseName: string;
     get contentType(): TCT | undefined;
@@ -2596,6 +2641,7 @@ class ZipFileItem<TCT extends string = string> implements FileTree.IFileTreeFile
     getContents(): Result<JsonValue>;
     // (undocumented)
     getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
+    getRawBytes(): Result<Uint8Array>;
     getRawContents(): Result<string>;
     readonly name: string;
     setContentType(contentType: TCT | undefined): void;
@@ -2608,7 +2654,9 @@ declare namespace ZipFileTree {
         ZipFileItem,
         ZipDirectoryItem,
         createZipFromTextFiles,
+        createZipFromFiles,
         IZipTextFile,
+        IZipFile,
         ZipCompressionLevel,
         ICreateZipOptions
     }
@@ -2618,7 +2666,7 @@ export { ZipFileTree }
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
 //
 // @public
-class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFileTreeAccessors<TCT> {
+class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IBinaryFileTreeAccessors<TCT> {
     static defaultInferContentType<TCT extends string = string>(__filePath: string, __provided?: string): Result<TCT | undefined>;
     static fromBuffer<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Result<ZipFileTreeAccessors<TCT>>;
     static fromBuffer<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, params?: FileTree.IFileTreeInitParams<TCT>): Result<ZipFileTreeAccessors<TCT>>;
@@ -2628,6 +2676,7 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
     getBaseName(path: string, suffix?: string): string;
     getChildren(path: string): Result<ReadonlyArray<FileTree.FileTreeItem<TCT>>>;
     getExtension(path: string): string;
+    getFileBytes(path: string): Result<Uint8Array>;
     getFileContents(path: string): Result<string>;
     getFileContentType(path: string, provided?: string): Result<TCT | undefined>;
     getItem(path: string): Result<FileTree.FileTreeItem<TCT>>;

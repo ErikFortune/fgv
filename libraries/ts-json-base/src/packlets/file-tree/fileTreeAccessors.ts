@@ -171,10 +171,58 @@ export interface IFileTreeFileItem<TCT extends string = string> {
 
   /**
    * Gets the raw contents of the file as a string.
+   *
+   * @remarks
+   * The bytes are decoded as UTF-8 with the *lenient* WHATWG default, so malformed
+   * input is silently replaced with U+FFFD rather than reported. Accessors whose
+   * backing store is byte-native also implement
+   * {@link FileTree.IBinaryFileTreeFileItem | IBinaryFileTreeFileItem}; narrow with
+   * {@link FileTree.isBinaryFileItem | isBinaryFileItem} and call
+   * {@link FileTree.IBinaryFileTreeFileItem.getRawBytes | getRawBytes} to read the
+   * undecoded bytes — for a strict decode that fails loudly on malformed UTF-8:
+   *
+   * ```ts
+   * new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+   * ```
+   *
    * @returns `Success` with the raw contents if successful, or
    * `Failure` with an error message otherwise.
    */
   getRawContents(): Result<string>;
+}
+
+/**
+ * Extended file item interface for files whose contents can be read as raw bytes.
+ *
+ * @remarks
+ * This is an *optional capability* — it is deliberately not part of
+ * {@link FileTree.IFileTreeFileItem}. Use
+ * {@link FileTree.isBinaryFileItem | isBinaryFileItem} to narrow.
+ *
+ * **The file-item guard narrows the type; it does not promise the call succeeds.**
+ * {@link FileTree.FileItem} — the generic wrapper backing every adapter except zip —
+ * implements this interface unconditionally and delegates to its accessors, reporting
+ * an accessor that lacks the capability as a `Failure` rather than by omitting the
+ * method. So `isBinaryFileItem` is `true` for any `FileItem` regardless of what backs
+ * it. That mirrors the pre-existing `setRawContents` / `getIsMutable` shape on
+ * {@link FileTree.IMutableFileTreeFileItem} rather than introducing a new convention.
+ * For a capability check that *is* a success guarantee, narrow the **accessors** with
+ * {@link FileTree.isBinaryAccessors | isBinaryAccessors} instead; either way, handle
+ * the returned `Result`.
+ * @public
+ */
+export interface IBinaryFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
+  /**
+   * Gets the raw contents of the file as bytes, with no text decoding applied.
+   *
+   * @remarks
+   * The returned array must be treated as read-only — implementations are free to
+   * return their internal buffer rather than a copy.
+   *
+   * @returns `Success` with the raw bytes if successful, or `Failure` with an
+   * error message otherwise.
+   */
+  getRawBytes(): Result<Uint8Array>;
 }
 
 /**
@@ -199,6 +247,12 @@ export interface IMutableFileTreeFileItem<TCT extends string = string> extends I
 
   /**
    * Sets the raw contents of the file.
+   *
+   * @remarks
+   * The string is encoded as UTF-8. To write bytes that are not valid UTF-8, narrow
+   * with {@link FileTree.isMutableBinaryFileItem | isMutableBinaryFileItem} and use
+   * {@link FileTree.IMutableBinaryFileTreeFileItem.setRawBytes | setRawBytes} instead.
+   *
    * @param contents - The string contents to save.
    * @returns `Success` if the file was saved, or `Failure` with an error message.
    */
@@ -209,6 +263,40 @@ export interface IMutableFileTreeFileItem<TCT extends string = string> extends I
    * @returns `Success` with `true` if the file was deleted, or `Failure` with an error message.
    */
   delete(): Result<boolean>;
+}
+
+/**
+ * Extended file item interface for files whose contents can be both read and written
+ * as raw bytes.
+ *
+ * @remarks
+ * This is an *optional capability* — use
+ * {@link FileTree.isMutableBinaryFileItem | isMutableBinaryFileItem} to narrow.
+ *
+ * **At the accessors level**, only backing stores that persist bytes verbatim
+ * implement the mutable half; stores that persist text (in-memory, `localStorage`,
+ * HTTP JSON transport) implement only the read-only
+ * {@link FileTree.IBinaryFileTreeAccessors}, because a byte write could not
+ * round-trip.
+ *
+ * **At the file-item level that distinction is not visible to the guard.**
+ * {@link FileTree.FileItem} implements this interface unconditionally and delegates to
+ * its accessors, so `isMutableBinaryFileItem` is `true` for any `FileItem` — including
+ * one backed by a text-persisting store, whose `setRawBytes` then returns a `Failure`.
+ * Narrow the **accessors** with
+ * {@link FileTree.isMutableBinaryAccessors | isMutableBinaryAccessors} when you need
+ * the capability check to be a success guarantee.
+ * @public
+ */
+export interface IMutableBinaryFileTreeFileItem<TCT extends string = string>
+  extends IBinaryFileTreeFileItem<TCT>,
+    IMutableFileTreeFileItem<TCT> {
+  /**
+   * Sets the raw contents of the file from bytes, with no text encoding applied.
+   * @param bytes - The bytes to save.
+   * @returns `Success` with the bytes that were saved, or `Failure` with an error message.
+   */
+  setRawBytes(bytes: Uint8Array): Result<Uint8Array>;
 }
 
 // ============================================================================
@@ -375,6 +463,20 @@ export interface IFileTreeAccessors<TCT extends string = string> {
 
   /**
    * Gets the contents of a file in the file tree.
+   *
+   * @remarks
+   * The bytes are decoded as UTF-8 with the *lenient* WHATWG default, so malformed
+   * input is silently replaced with U+FFFD rather than reported. Accessors whose
+   * backing store is byte-native also implement
+   * {@link FileTree.IBinaryFileTreeAccessors | IBinaryFileTreeAccessors}; narrow with
+   * {@link FileTree.isBinaryAccessors | isBinaryAccessors} and call
+   * {@link FileTree.IBinaryFileTreeAccessors.getFileBytes | getFileBytes} to read the
+   * undecoded bytes — for a strict decode that fails loudly on malformed UTF-8:
+   *
+   * ```ts
+   * new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+   * ```
+   *
    * @param path - Absolute path of the file.
    * @returns The contents of the file.
    */
@@ -413,6 +515,12 @@ export interface IMutableFileTreeAccessors<TCT extends string = string> extends 
 
   /**
    * Saves the contents to a file at the given path.
+   *
+   * @remarks
+   * The string is encoded as UTF-8. To write bytes that are not valid UTF-8, narrow
+   * with {@link FileTree.isMutableBinaryAccessors | isMutableBinaryAccessors} and use
+   * {@link FileTree.IMutableBinaryFileTreeAccessors.saveFileBytes | saveFileBytes} instead.
+   *
    * @param path - The path of the file to save.
    * @param contents - The string contents to save.
    * @returns `Success` if the file was saved, or `Failure` with an error message.
@@ -440,6 +548,55 @@ export interface IMutableFileTreeAccessors<TCT extends string = string> extends 
    * @returns `Success` with `true` if the directory was deleted, or `Failure` with an error message.
    */
   deleteDirectory(path: string): Result<boolean>;
+}
+
+/**
+ * Extended accessors interface for trees whose file contents can be read as raw bytes.
+ *
+ * @remarks
+ * This is an *optional capability* — it is deliberately not part of
+ * {@link FileTree.IFileTreeAccessors}, so implementations with no byte-native backing
+ * store simply do not implement it and existing implementations are unaffected. Use
+ * {@link FileTree.isBinaryAccessors | isBinaryAccessors} to narrow.
+ * @public
+ */
+export interface IBinaryFileTreeAccessors<TCT extends string = string> extends IFileTreeAccessors<TCT> {
+  /**
+   * Gets the contents of a file in the file tree as bytes, with no text decoding applied.
+   *
+   * @remarks
+   * The returned array must be treated as read-only — implementations are free to
+   * return their internal buffer rather than a copy.
+   *
+   * @param path - Absolute path of the file.
+   * @returns `Success` with the raw bytes of the file, or `Failure` with an error message.
+   */
+  getFileBytes(path: string): Result<Uint8Array>;
+}
+
+/**
+ * Extended accessors interface for trees whose file contents can be both read and
+ * written as raw bytes.
+ *
+ * @remarks
+ * This is an *optional capability* — use
+ * {@link FileTree.isMutableBinaryAccessors | isMutableBinaryAccessors} to narrow. Only
+ * backing stores that persist bytes verbatim implement it; stores that persist text
+ * (in-memory, `localStorage`, HTTP JSON transport) implement the read-only
+ * {@link FileTree.IBinaryFileTreeAccessors} instead, because a byte write could not
+ * round-trip.
+ * @public
+ */
+export interface IMutableBinaryFileTreeAccessors<TCT extends string = string>
+  extends IBinaryFileTreeAccessors<TCT>,
+    IMutableFileTreeAccessors<TCT> {
+  /**
+   * Saves bytes to a file at the given path, with no text encoding applied.
+   * @param path - The path of the file to save.
+   * @param bytes - The bytes to save.
+   * @returns `Success` with the bytes that were saved, or `Failure` with an error message.
+   */
+  saveFileBytes(path: string, bytes: Uint8Array): Result<Uint8Array>;
 }
 
 /**
@@ -507,6 +664,77 @@ export function isPersistentAccessors<TCT extends string = string>(
     typeof persistent.isDirty === 'function' &&
     typeof persistent.getDirtyPaths === 'function'
   );
+}
+
+/**
+ * Type guard to check if accessors support reading raw bytes.
+ * @param accessors - The accessors to check.
+ * @returns `true` if the accessors implement {@link FileTree.IBinaryFileTreeAccessors}.
+ * @public
+ */
+export function isBinaryAccessors<TCT extends string = string>(
+  accessors: IFileTreeAccessors<TCT>
+): accessors is IBinaryFileTreeAccessors<TCT> {
+  const binary = accessors as IBinaryFileTreeAccessors<TCT>;
+  return typeof binary.getFileBytes === 'function';
+}
+
+/**
+ * Type guard to check if accessors support both reading and writing raw bytes.
+ * @param accessors - The accessors to check.
+ * @returns `true` if the accessors implement {@link FileTree.IMutableBinaryFileTreeAccessors}.
+ * @public
+ */
+export function isMutableBinaryAccessors<TCT extends string = string>(
+  accessors: IFileTreeAccessors<TCT>
+): accessors is IMutableBinaryFileTreeAccessors<TCT> {
+  const binary = accessors as IMutableBinaryFileTreeAccessors<TCT>;
+  return (
+    isBinaryAccessors(accessors) &&
+    isMutableAccessors(accessors) &&
+    typeof binary.saveFileBytes === 'function'
+  );
+}
+
+/**
+ * Type guard narrowing a file item to {@link FileTree.IBinaryFileTreeFileItem}.
+ *
+ * @remarks
+ * Narrows the type; does **not** promise `getRawBytes()` will succeed.
+ * {@link FileTree.FileItem} implements the interface unconditionally and delegates to
+ * its accessors, so this returns `true` for any `FileItem` and the call reports a
+ * non-byte-capable backing store as a `Failure`. Use
+ * {@link FileTree.isBinaryAccessors | isBinaryAccessors} for a capability check that
+ * is a success guarantee.
+ * @param item - The file item to check.
+ * @returns `true` if the item implements {@link FileTree.IBinaryFileTreeFileItem}.
+ * @public
+ */
+export function isBinaryFileItem<TCT extends string = string>(
+  item: AnyFileTreeFileItem<TCT> | FileTreeItem<TCT>
+): item is IBinaryFileTreeFileItem<TCT> {
+  const binary = item as IBinaryFileTreeFileItem<TCT>;
+  return binary.type === 'file' && typeof binary.getRawBytes === 'function';
+}
+
+/**
+ * Type guard narrowing a file item to {@link FileTree.IMutableBinaryFileTreeFileItem}.
+ *
+ * @remarks
+ * Narrows the type; does **not** promise `setRawBytes()` will succeed — see
+ * {@link FileTree.isBinaryFileItem | isBinaryFileItem}. Byte writes are supported only
+ * by byte-persisting stores, and that is knowable at the accessors level: use
+ * {@link FileTree.isMutableBinaryAccessors | isMutableBinaryAccessors} when the check
+ * needs to be a success guarantee.
+ * @param item - The file item to check.
+ * @returns `true` if the item implements {@link FileTree.IMutableBinaryFileTreeFileItem}.
+ * @public
+ */
+export function isMutableBinaryFileItem<TCT extends string = string>(
+  item: AnyFileTreeFileItem<TCT> | FileTreeItem<TCT>
+): item is IMutableBinaryFileTreeFileItem<TCT> {
+  const binary = item as IMutableBinaryFileTreeFileItem<TCT>;
+  return isBinaryFileItem(item) && isMutableFileItem(item) && typeof binary.setRawBytes === 'function';
 }
 
 /**

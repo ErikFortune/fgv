@@ -149,6 +149,68 @@ describe('KnowledgeLwwPolicy', () => {
       );
     });
   });
+
+  /**
+   * Pins the provenance merge contract documented in the package README
+   * (§ "Record updates — the merge contract"). `provenance` is on this policy's
+   * PINNED mutable surface, so these four behaviors are guarantees a consumer
+   * may depend on — not incidental consequences of the merge configuration. If
+   * one of these ever changes, the README claim is wrong and must move with it.
+   */
+  describe('provenance merge contract (README-pinned)', () => {
+    /** `provenance` with one key to clear, one to revise, and one to leave alone. */
+    function provenanceRecord(): IMemoryRecord<unknown> {
+      return makeRecord({
+        provenance: { source: 'agent', confidence: 0.9, note: 'stale' } as IProvenance
+      });
+    }
+
+    test('an explicit null on a sub-key clears that key and preserves its siblings', () => {
+      expect(policy.applyUpdate(provenanceRecord(), { provenance: { note: null } })).toSucceedAndSatisfy(
+        (updated) => {
+          expect(updated.envelope.provenance).toEqual({ source: 'agent', confidence: 0.9 });
+        }
+      );
+    });
+
+    test('a sub-key revision merges per key and preserves untouched siblings', () => {
+      expect(policy.applyUpdate(provenanceRecord(), { provenance: { confidence: 0.5 } })).toSucceedAndSatisfy(
+        (updated) => {
+          expect(updated.envelope.provenance).toEqual({
+            source: 'agent',
+            confidence: 0.5,
+            note: 'stale'
+          });
+        }
+      );
+    });
+
+    test('a whole-block null is rejected loudly rather than silently accepted', () => {
+      expect(policy.applyUpdate(provenanceRecord(), { provenance: null })).toFailWith(
+        /may not delete required field\(s\): provenance/i
+      );
+    });
+
+    test('a patch that does not mention provenance leaves it untouched', () => {
+      expect(policy.applyUpdate(provenanceRecord(), { tags: ['x'] })).toSucceedAndSatisfy((updated) => {
+        expect(updated.envelope.provenance).toEqual({
+          source: 'agent',
+          confidence: 0.9,
+          note: 'stale'
+        });
+      });
+    });
+
+    test('the existing record is not mutated in place', () => {
+      const existing = provenanceRecord();
+      expect(policy.applyUpdate(existing, { provenance: { note: null } })).toSucceed();
+      expect(existing.envelope.provenance).toEqual({
+        source: 'agent',
+        confidence: 0.9,
+        note: 'stale'
+      });
+    });
+  });
 });
 
 describe('MemoryCapCullPolicy', () => {
@@ -328,6 +390,56 @@ describe('MemoryCapCullPolicy', () => {
       });
       expect(narrow.applyUpdate(existing, { body: { summary: 'x' } })).toSucceedAndSatisfy((updated) => {
         expect(updated.envelope.embeddingRef).toBe('vec-keep');
+      });
+    });
+
+    /**
+     * Pins the policy-dependence caveat the README states alongside the
+     * provenance merge contract: unlike {@link KnowledgeLwwPolicy}'s pinned
+     * surface, this policy's surface is caller-supplied, so a consumer who does
+     * not declare `provenance` mutable gets NEITHER the sub-key clear NOR the
+     * loud whole-block rejection — every provenance patch key is simply inert.
+     */
+    describe('provenance guarantees are policy-dependent (README-pinned)', () => {
+      const bodyOnly = (): MemoryCapCullPolicy =>
+        MemoryCapCullPolicy.create({ maxRecords: 5, mutableFields: ['body'] }).orThrow();
+
+      function undeclaredProvenanceRecord(): IMemoryRecord<unknown> {
+        return makeRecord(
+          {
+            id: 'turn-0' as MemoryId,
+            kind: 'summarized-turn' as Kind,
+            provenance: { source: 'agent', note: 'stale' } as IProvenance
+          },
+          { summary: 'old' }
+        );
+      }
+
+      test('a sub-key null is inert when provenance is not declared mutable', () => {
+        expect(
+          bodyOnly().applyUpdate(undeclaredProvenanceRecord(), { provenance: { note: null } })
+        ).toSucceedAndSatisfy((updated) => {
+          expect(updated.envelope.provenance).toEqual({ source: 'agent', note: 'stale' });
+        });
+      });
+
+      test('a whole-block null is a silent no-op, not an error, when provenance is not declared mutable', () => {
+        expect(
+          bodyOnly().applyUpdate(undeclaredProvenanceRecord(), { provenance: null })
+        ).toSucceedAndSatisfy((updated) => {
+          expect(updated.envelope.provenance).toEqual({ source: 'agent', note: 'stale' });
+        });
+      });
+
+      test('declaring provenance mutable restores both guarantees', () => {
+        expect(
+          policy.applyUpdate(undeclaredProvenanceRecord(), { provenance: { note: null } })
+        ).toSucceedAndSatisfy((updated) => {
+          expect(updated.envelope.provenance).toEqual({ source: 'agent' });
+        });
+        expect(policy.applyUpdate(undeclaredProvenanceRecord(), { provenance: null })).toFailWith(
+          /may not delete required field\(s\): provenance/i
+        );
       });
     });
   });
