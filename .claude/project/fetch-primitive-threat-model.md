@@ -1,4 +1,4 @@
-# Safe Fetch Primitive — Threat Model and Design
+# Safer Fetch Primitive — Threat Model and Design
 
 Status: **design only — no implementation.** Written for review before any
 implementation stream is commissioned.
@@ -214,10 +214,10 @@ otherwise assume.
 ┌──────────────────────┐
 │   caller code        │  trusted
 └──────────┬───────────┘
-           │  safeFetchJson(url, { guard, … })
+           │  saferFetchJson(url, { guard, … })
            ▼
 ┌────────────────────────────────────────────────┐
-│  safe-fetch core   (runtime-agnostic)          │
+│  safer-fetch core   (runtime-agnostic)          │
 │    · scheme / URL shape                        │
 │    · overall deadline, headers deadline        │
 │    · streaming size cap                        │
@@ -381,7 +381,7 @@ reason, not the only one.
 - **No redirect interposition.** Per §4, `redirect: 'manual'` yields an
   opaque response with no readable `Location`.
 
-A browser-side function named `safeFetch` that accepted an `addressGuard` option
+A browser-side function named `saferFetch` that accepted an `addressGuard` option
 and quietly did nothing with it would be the worst artifact this stream
 could produce: it would read at the call site as protection, and reviewers
 would stop looking.
@@ -408,20 +408,20 @@ Follows `crypto-utils` exactly (see §2, "one premise-adjacent finding").
 
 | Location | Contents | Runtime |
 |---|---|---|
-| `@fgv/ts-extras` packlet `safe-fetch`, module `core.ts` | Types, taxonomy, timeout, streaming cap, content gate, retry, the four guard seams / `IFetchTransport`, `platformFetchTransport`. **No `node:` imports.** | any |
-| `@fgv/ts-extras` packlet `safe-fetch`, module `nodeGuard.ts` | `blockPrivateNetworks()` and friends — `node:dns/promises`, address classification, allowlist. | Node only |
-| `@fgv/ts-extras/safe-fetch` → `index.ts` | core + the Node address guards + `nodeSafeFetchJson` etc. | Node barrel |
-| `@fgv/ts-extras/safe-fetch` → `index.browser.ts` | core only, with an explicit `// Note: the Node address guards are NOT exported in browser version` comment, mirroring `crypto-utils/index.browser.ts`. | browser barrel |
-| `@fgv/ts-web-extras` packlet `safe-fetch` | `browserSafeFetchJson` etc. — the core wired to `allowAnyAddress()`, with the "what this does not protect against" TSDoc. | browser |
+| `@fgv/ts-extras` packlet `safer-fetch`, module `core.ts` | Types, taxonomy, timeout, streaming cap, content gate, retry, the four guard seams / `IFetchTransport`, `platformFetchTransport`. **No `node:` imports.** | any |
+| `@fgv/ts-extras` packlet `safer-fetch`, module `nodeGuard.ts` | `blockPrivateNetworks()` and friends — `node:dns/promises`, address classification, allowlist. | Node only |
+| `@fgv/ts-extras/safer-fetch` → `index.ts` | core + the Node address guards + `nodeSaferFetchJson` etc. | Node barrel |
+| `@fgv/ts-extras/safer-fetch` → `index.browser.ts` | core only, with an explicit `// Note: the Node address guards are NOT exported in browser version` comment, mirroring `crypto-utils/index.browser.ts`. | browser barrel |
+| `@fgv/ts-web-extras` packlet `safer-fetch` | `browserSaferFetchJson` etc. — the core wired to `allowAnyAddress()`, with the "what this does not protect against" TSDoc. | browser |
 
 New conditional export in `libraries/ts-extras/package.json`:
 
 ```jsonc
-"./safe-fetch": {
-  "node":    { "import": "./lib/packlets/safe-fetch/index.js",
-               "require": "./lib/packlets/safe-fetch/index.js" },
-  "default": { "import": "./lib/packlets/safe-fetch/index.browser.js",
-               "require": "./lib/packlets/safe-fetch/index.browser.js" }
+"./safer-fetch": {
+  "node":    { "import": "./lib/packlets/safer-fetch/index.js",
+               "require": "./lib/packlets/safer-fetch/index.js" },
+  "default": { "import": "./lib/packlets/safer-fetch/index.browser.js",
+               "require": "./lib/packlets/safer-fetch/index.browser.js" }
 }
 ```
 
@@ -435,7 +435,7 @@ little.
 This table is the artifact that keeps the primitive honest. It belongs in
 both READMEs verbatim.
 
-| Property | Node (`@fgv/ts-extras/safe-fetch`) | Browser (`@fgv/ts-web-extras`) |
+| Property | Node (`@fgv/ts-extras/safer-fetch`) | Browser (`@fgv/ts-web-extras`) |
 |---|---|---|
 | Overall + headers deadline | ✅ | ✅ |
 | Streaming size cap, enforced during read | ✅ | ✅ |
@@ -457,15 +457,15 @@ delivered" is refusing to let the address guard be absent by accident.
 
 ```typescript
 // Node — the posture is named at the call site
-const r = await safeFetchJson(url, { addressGuard: blockPrivateNetworks() });
+const r = await saferFetchJson(url, { addressGuard: blockPrivateNetworks() });
 
 // Node, local sidecar — the deviation is visible and greppable
-const r = await safeFetchJson(ollamaUrl, {
+const r = await saferFetchJson(ollamaUrl, {
   addressGuard: blockPrivateNetworks({ allowLoopback: true })
 });
 
 // Browser — the absence of protection is named at the call site
-const r = await safeFetchJson(url, { addressGuard: allowAnyAddress() });
+const r = await saferFetchJson(url, { addressGuard: allowAnyAddress() });
 ```
 
 `addressGuard` has **no default value**, so omitting it is a *compile*
@@ -563,21 +563,21 @@ export interface IAddressGuard {
 export interface IRequestGuard {
   readonly name: string;
   /** Reject-only. To alter the request, return an explicit replacement. */
-  check(request: ISafeFetchRequest, chain: ReadonlyArray<IRequestHop>): Promise<Result<ISafeFetchRequest>>;
+  check(request: ISaferFetchRequest, chain: ReadonlyArray<IRequestHop>): Promise<Result<ISaferFetchRequest>>;
 }
 
 /** @public */
 export interface IResponseHeadersGuard {
   readonly name: string;
   /** Runs before any body bytes are read, so a rejection costs nothing. */
-  check(headers: ISafeFetchResponseHead, chain: ReadonlyArray<IRequestHop>): Promise<Result<true>>;
+  check(headers: ISaferFetchResponseHead, chain: ReadonlyArray<IRequestHop>): Promise<Result<true>>;
 }
 
 /** @public */
 export interface IResponseBodyGuard {
   readonly name: string;
   /** Runs on the buffered body, after the § 9 size cap has been enforced. */
-  check(body: Uint8Array, head: ISafeFetchResponseHead): Promise<Result<true>>;
+  check(body: Uint8Array, head: ISaferFetchResponseHead): Promise<Result<true>>;
 }
 
 /** @public */
@@ -696,7 +696,7 @@ the call site than be reachable by accident.
 
 ```typescript
 /** @public */
-export interface ISafeFetchOptions {
+export interface ISaferFetchOptions {
   /**
    * **Required, with no default.** A passthrough default here would be exactly
    * the failure this document's north star names — a primitive advertising a
@@ -798,23 +798,23 @@ matching the repo's `callProviderEmbedding` / `callProviderImageGeneration`
 style. All three delegate to one internal implementation.
 
 ```typescript
-export function safeFetchJson<T = JsonValue>(
+export function saferFetchJson<T = JsonValue>(
   url: string | URL,
-  options: ISafeFetchOptions & { converter?: Converter<T> }
-): Promise<DetailedResult<ISafeFetchResponse<T>, FetchFailureReason>>;
+  options: ISaferFetchOptions & { converter?: Converter<T> }
+): Promise<DetailedResult<ISaferFetchResponse<T>, FetchFailureReason>>;
 
-export function safeFetchText(
+export function saferFetchText(
   url: string | URL,
-  options: ISafeFetchOptions
-): Promise<DetailedResult<ISafeFetchResponse<string>, FetchFailureReason>>;
+  options: ISaferFetchOptions
+): Promise<DetailedResult<ISaferFetchResponse<string>, FetchFailureReason>>;
 
-export function safeFetchBytes(
+export function saferFetchBytes(
   url: string | URL,
-  options: ISafeFetchOptions
-): Promise<DetailedResult<ISafeFetchResponse<Uint8Array>, FetchFailureReason>>;
+  options: ISaferFetchOptions
+): Promise<DetailedResult<ISaferFetchResponse<Uint8Array>, FetchFailureReason>>;
 
 /** @public */
-export interface ISafeFetchResponse<T> {
+export interface ISaferFetchResponse<T> {
   readonly value: T;
   readonly status: number;
   readonly headers: Readonly<Record<string, string>>;
@@ -828,7 +828,7 @@ export interface ISafeFetchResponse<T> {
 allowlisted `api.example.com` and got redirected to `cdn.example.com`
 (also allowlisted) usually wants to know.
 
-The optional `converter` on `safeFetchJson` lets a caller go from wire to
+The optional `converter` on `saferFetchJson` lets a caller go from wire to
 validated `T` in one step, per `CODING_STANDARDS` § Type-Safe Validation.
 Without it the value is `JsonValue` and the caller validates.
 
@@ -961,7 +961,7 @@ it here adds more to `ts-extras.api.md`. That is the same class of
 checked-in-api.md liability `CODE_REVIEW_CHECKLIST.md` § Documentation
 calls out for `ae-unresolved-link`.
 
-Alternative considered: `Result<ISafeFetchOutcome<T>>` where the outcome
+Alternative considered: `Result<ISaferFetchOutcome<T>>` where the outcome
 carries `{ ok: true, value } | { ok: false, reason }`. This avoids the
 release-tag warnings but produces double unwrapping at every call site and
 makes `Result`-chaining awkward — a failed fetch would be a *successful*
@@ -1044,8 +1044,8 @@ Four points the naive version misses:
    trips a connect timeout. The overall deadline is what stops it. See
    §10.
 
-`safeFetchBytes` concatenates once at the end (`total` is known, so one
-allocation). `safeFetchText` decodes with `TextDecoder` honoring the
+`saferFetchBytes` concatenates once at the end (`total` is known, so one
+allocation). `saferFetchText` decodes with `TextDecoder` honoring the
 charset parameter, failing as `{ kind: 'decode' }` on an unknown charset
 rather than silently mojibake-ing to UTF-8.
 
@@ -1351,7 +1351,7 @@ All eight open questions were answered in review, 2026-08-01. Recorded here as
 decisions; the reasoning that produced them is in Appendix B where it differs
 from what was originally recommended.
 
-**D-1 — Packlets, not sibling packages.** `safe-fetch` packlets inside
+**D-1 — Packlets, not sibling packages.** `safer-fetch` packlets inside
 `@fgv/ts-extras` and `@fgv/ts-web-extras`, mirroring `crypto-utils` and reusing
 the existing `index.ts` / `index.browser.ts` + conditional-`exports` machinery.
 Zero new dependencies. Package layout in § 5.3 stands as written.
