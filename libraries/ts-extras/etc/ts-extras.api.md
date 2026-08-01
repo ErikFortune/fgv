@@ -20,6 +20,42 @@ import { Uuid } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 
 // @public
+type AddressClassification =
+/** Globally routable unicast — the only classification a default guard permits. */
+'public'
+/** `0.0.0.0/8` and `::` — "this host on this network"; routes to localhost on Linux. */
+| 'unspecified'
+/** `127.0.0.0/8` and `::1`. */
+| 'loopback'
+/**
+* `169.254.0.0/16` and `fe80::/10`. The IPv4 range contains the cloud
+* instance-metadata endpoint (`169.254.169.254`) and is the single
+* highest-value SSRF target.
+*/
+| 'link-local'
+/** RFC 1918 — `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`. */
+| 'private'
+/** RFC 4193 IPv6 unique-local — `fc00::/7`. */
+| 'unique-local'
+/** RFC 6598 carrier-grade NAT — `100.64.0.0/10`. Frequently carrier or container internal. */
+| 'carrier-grade-nat'
+/** RFC 2544 benchmarking — `198.18.0.0/15`. */
+| 'benchmarking'
+/** Documentation ranges — `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`, `2001:db8::/32`. */
+| 'documentation'
+/** IETF protocol assignments — `192.0.0.0/24` and `2001::/23`. */
+| 'protocol-assignment'
+/** `224.0.0.0/4` and `ff00::/8`. */
+| 'multicast'
+/** `255.255.255.255/32`. */
+| 'broadcast'
+/** Every other special-purpose or future-use range (e.g. `240.0.0.0/4`, `fec0::/10`). */
+| 'reserved';
+
+// @public
+type AddressFamily = 'ipv4' | 'ipv6';
+
+// @public
 const AES_256_KEY_SIZE: number;
 
 // @public
@@ -304,6 +340,9 @@ const allModelSpecKeys: ReadonlyArray<ModelSpecKey>;
 function allowAnyAddress(): IAddressGuard;
 
 // @public
+function allowAnyAddressPolicy(): IAddressPolicy;
+
+// @public
 function allowContentTypes(types: ReadonlyArray<string>): Result<IResponseHeadersGuard>;
 
 // @public
@@ -338,6 +377,11 @@ function base64UrlNoPadDecode(encoded: string): Result<Uint8Array>;
 //
 // @public
 function base64UrlNoPadEncode(data: Uint8Array): string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IBlockPrivateNetworksOptions"
+//
+// @public
+function blockPrivateNetworks(options?: IBlockPrivateNetworksOptions): IAddressPolicy;
 
 // @public
 function callProviderCompletion(params: IProviderCompletionParams): Promise<Result<IAiCompletionResponse>>;
@@ -385,6 +429,11 @@ function callProxiedImageGeneration(proxyUrl: string, params: IProviderImageGene
 
 // @public
 function callProxiedListModels(proxyUrl: string, params: IProviderListModelsParams): Promise<Result<ReadonlyArray<IAiModelInfo>>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IClassifiedAddress"
+//
+// @public
+function classifyAddress(address: string): Result<IClassifiedAddress>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -953,9 +1002,26 @@ interface IAddKeyPairResult {
 }
 
 // @public
+interface IAddressCheckVerdict {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "allowAnyAddressPolicy"
+    readonly addresses: ReadonlyArray<IClassifiedAddress>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAddressPolicy"
+    readonly policy: string;
+}
+
+// @public
 interface IAddressGuard {
     // (undocumented)
     check(chain: ReadonlyArray<IRequestHop>): Promise<Result<IGuardVerdict>>;
+    readonly name: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAddressPolicy"
+//
+// @public
+interface IAddressPolicy {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAddressCheckVerdict"
+    checkAddresses(addresses: ReadonlyArray<string>): Result<IAddressCheckVerdict>;
     readonly name: string;
 }
 
@@ -1345,6 +1411,13 @@ interface IArgon2idProvider {
     argon2id(password: Uint8Array | string, salt: Uint8Array, params: IArgon2idParams, options?: IArgon2idKeyingOptions): Promise<Result<Uint8Array>>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "blockPrivateNetworks"
+//
+// @public
+interface IBlockPrivateNetworksOptions {
+    readonly allowLoopback?: boolean;
+}
+
 // @public
 interface IChatMessage {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1358,6 +1431,16 @@ interface IChatMessage {
 interface IChatRequest {
     readonly messages: ReadonlyArray<IChatMessage>;
     readonly system?: string;
+}
+
+// @public
+interface IClassifiedAddress {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "classifyAddress"
+    readonly address: string;
+    readonly canonical: string;
+    readonly classification: AddressClassification;
+    readonly embeddedIpv4?: IEmbeddedIpv4;
+    readonly family: AddressFamily;
 }
 
 // @public
@@ -1445,6 +1528,12 @@ interface IDirectEncryptionProviderParams {
     readonly boundSecretName?: string;
     readonly cryptoProvider: ICryptoProvider;
     readonly key: Uint8Array;
+}
+
+// @public
+interface IEmbeddedIpv4 {
+    readonly address: string;
+    readonly kind: Ipv4EmbeddingKind;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2001,6 +2090,17 @@ interface IProviderListModelsParams {
     readonly logger?: Logging.ILogger;
     readonly signal?: AbortSignal;
 }
+
+// @public
+type Ipv4EmbeddingKind =
+/** `::ffff:0:0/96` — the IPv4-mapped IPv6 form. */
+'ipv4-mapped'
+/** `::/96` — the deprecated (RFC 4291) IPv4-compatible form. */
+| 'ipv4-compatible'
+/** `64:ff9b::/96` — the RFC 6052 well-known NAT64 prefix. */
+| 'nat64'
+/** `2002::/16` — the RFC 3056 6to4 form, whose IPv4 lives in bits 16..47. */
+| '6to4';
 
 // @public
 interface IRemoveSecretResult {
@@ -2844,7 +2944,18 @@ declare namespace SaferFetch {
         saferFetchBytes,
         saferFetchJson,
         saferFetchText,
-        ISaferFetchJsonOptions
+        ISaferFetchJsonOptions,
+        allowAnyAddressPolicy,
+        blockPrivateNetworks,
+        IAddressCheckVerdict,
+        IAddressPolicy,
+        IBlockPrivateNetworksOptions,
+        classifyAddress,
+        AddressClassification,
+        AddressFamily,
+        IClassifiedAddress,
+        IEmbeddedIpv4,
+        Ipv4EmbeddingKind
     }
 }
 export { SaferFetch }
