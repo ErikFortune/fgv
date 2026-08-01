@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add the safer-fetch packlet's address-classification layer: classifyAddress plus the blockPrivateNetworks() and allowAnyAddress() IAddressPolicy factories. Pure and synchronous - no name resolution, transport or I/O. Covers the IPv4-mapped, IPv4-compatible, NAT64 and 6to4 IPv6 embeddings and the shortened/octal/hexadecimal/decimal IPv4 literal forms, and enforces a reject-if-any contract over a resolved address list",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
