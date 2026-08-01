@@ -8,6 +8,7 @@ import { Brand } from '@fgv/ts-utils';
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { DateTime } from 'luxon';
+import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { Hash as Hash_2 } from '@fgv/ts-utils';
 import { JsonObject } from '@fgv/ts-json-base';
@@ -298,6 +299,12 @@ const allModelCapabilities: ReadonlyArray<AiModelCapability>;
 const allModelSpecKeys: ReadonlyArray<ModelSpecKey>;
 
 // @public
+function allowAnyAddress(): IAddressGuard;
+
+// @public
+function allowContentTypes(types: ReadonlyArray<string>): Result<IResponseHeadersGuard>;
+
+// @public
 const allProviderIds: ReadonlyArray<AiProviderId>;
 
 // @public
@@ -554,7 +561,13 @@ const DEFAULT_ALGORITHM: "AES-256-GCM";
 const DEFAULT_ANTHROPIC_MAX_TOKENS: number;
 
 // @public
+const DEFAULT_HEADERS_TIMEOUT_MS: number;
+
+// @public
 const DEFAULT_KEYSTORE_ITERATIONS: number;
+
+// @public
+const DEFAULT_MAX_RESPONSE_BYTES: number;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IProviderListModelsParams"
 //
@@ -569,6 +582,9 @@ const DEFAULT_RANGEOF_FORMATS: RangeOfFormats;
 
 // @public
 const DEFAULT_SECRET_ITERATIONS: number;
+
+// @public
+const DEFAULT_TIMEOUT_MS: number;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -700,6 +716,114 @@ function fencedStringifiedJson(options?: IFencedStringifiedJsonExtractorOptions)
 // @public
 function fencedStringifiedJson<T>(options: IFencedStringifiedJsonOptions<T>): Converter<T>;
 
+// @public
+type FetchFailureReason =
+/** The supplied URL could not be parsed, or its scheme is not `http:` or `https:`. */
+    {
+    readonly kind: 'invalid-url';
+    readonly url: string;
+    readonly detail: string;
+}
+/**
+* A guard refused. `hop` is 0-based; hop 0 is the caller's URL, and `guard` names which
+* guard rejected — which is what makes "did the address check run, and was it the thing that
+* said no?" answerable from the failure alone. A content-type rejection is reported as
+* `'unsupported-content-type'` instead, because that case carries a more useful payload.
+*/
+| {
+    readonly kind: 'blocked-by-guard';
+    readonly url: string;
+    readonly hop: number;
+    readonly guard: string;
+    readonly detail: string;
+}
+/** A redirect status was received under a redirect policy that rejects redirects. */
+| {
+    readonly kind: 'redirect-rejected';
+    readonly url: string;
+    readonly status: number;
+}
+/**
+* The platform returned an opaque redirect, whose `Location` is not readable. This is
+* what a browser yields for `redirect: 'manual'`; the hop cannot be inspected at all.
+*/
+| {
+    readonly kind: 'redirect-opaque';
+}
+/** The redirect hop budget was exhausted. */
+| {
+    readonly kind: 'too-many-redirects';
+    readonly hops: number;
+    readonly limit: number;
+}
+/** One of the deadlines elapsed. Distinct from `'aborted'`, which is the caller's signal. */
+| {
+    readonly kind: 'timeout';
+    readonly phase: FetchTimeoutPhase;
+    readonly elapsedMs: number;
+    readonly limitMs: number;
+}
+/** The caller's `AbortSignal` fired. Distinct from `'timeout'`, which is our deadline. */
+| {
+    readonly kind: 'aborted';
+}
+/** The transport could not complete the request. */
+| {
+    readonly kind: 'network';
+    readonly detail: string;
+}
+/**
+* A non-2xx response. `bodyPreview` is opt-in and length-capped because error bodies
+* routinely echo request content, including credentials.
+*/
+| {
+    readonly kind: 'http-status';
+    readonly status: number;
+    readonly statusText: string;
+    readonly bodyPreview?: string;
+}
+/**
+* The response exceeded the byte cap. `declared` is what `Content-Length` claimed, present
+* only when the header was sent — and it counts *encoded* bytes where `bytesRead` counts
+* *decoded* bytes, so a `declared` far below `bytesRead` is evidence of a compression bomb
+* or a lying server rather than an arithmetic error.
+*/
+| {
+    readonly kind: 'too-large';
+    readonly bytesRead: number;
+    readonly limit: number;
+    readonly declared?: number;
+}
+/** A response-headers guard rejected the response's content type. */
+| {
+    readonly kind: 'unsupported-content-type';
+    readonly contentType?: string;
+    readonly accepted: ReadonlyArray<string>;
+}
+/** The response bytes could not be decoded to text with the indicated charset. */
+| {
+    readonly kind: 'decode';
+    readonly detail: string;
+}
+/** The decoded text could not be parsed, or failed the caller's converter. */
+| {
+    readonly kind: 'parse';
+    readonly detail: string;
+}
+/**
+* Anything else — including invalid options and a guard or transport that violated its
+* contract. Reports what it knows rather than guessing at a more specific kind.
+*/
+| {
+    readonly kind: 'unknown';
+    readonly detail: string;
+};
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type FetchTimeoutPhase = 'headers' | 'body' | 'overall';
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @beta
@@ -822,6 +946,13 @@ interface IAddKeyPairResult {
     readonly replaced: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly warning?: string;
+}
+
+// @public
+interface IAddressGuard {
+    // (undocumented)
+    check(chain: ReadonlyArray<IRequestHop>): Promise<Result<IGuardVerdict>>;
+    readonly name: string;
 }
 
 // @public
@@ -1416,6 +1547,19 @@ interface IFencedStringifiedJsonOptions<T> extends IFencedStringifiedJsonExtract
 }
 
 // @public
+interface IFetchTransport {
+    // (undocumented)
+    fetch(url: URL, init: RequestInit, hints: IFetchTransportHints): Promise<Result<Response>>;
+    // (undocumented)
+    readonly name: string;
+}
+
+// @public
+interface IFetchTransportHints {
+    readonly pinnedAddress?: string;
+}
+
+// @public
 interface IGeminiFlashImageGenerationConfig {
     readonly aspectRatio?: string;
 }
@@ -1517,6 +1661,13 @@ interface IGrokImagineModelOptions extends INamedModelFamilyConfig {
     readonly models?: GrokImagineModelNames[];
     // (undocumented)
     readonly provider: 'xai';
+}
+
+// @public
+interface IGuardVerdict {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly pinnedAddress?: string;
+    readonly url: URL;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "HpkeProvider"
@@ -1855,6 +2006,33 @@ interface IRemoveSecretResult {
 }
 
 // @public
+interface IRequestGuard {
+    // (undocumented)
+    check(request: ISaferFetchRequest, chain: ReadonlyArray<IRequestHop>): Promise<Result<ISaferFetchRequest>>;
+    // (undocumented)
+    readonly name: string;
+}
+
+// @public
+interface IRequestHop {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly connectedAddress?: string;
+    readonly status?: number;
+    readonly url: URL;
+}
+
+// @public
+interface IResolvedGuards {
+    readonly address: IAddressGuard;
+    // (undocumented)
+    readonly request: IRequestGuard;
+    // (undocumented)
+    readonly responseBody: IResponseBodyGuard;
+    // (undocumented)
+    readonly responseHeaders: IResponseHeadersGuard;
+}
+
+// @public
 interface IResolvedImageOptions {
     // (undocumented)
     readonly aspectRatio?: string;
@@ -1887,10 +2065,92 @@ interface IResolvedThinkingConfig {
     readonly xaiEffort?: IXAiThinkingConfig['effort'];
 }
 
+// @public
+interface IResponseBodyGuard {
+    // (undocumented)
+    check(body: Uint8Array, head: ISaferFetchResponseHead): Promise<Result<true>>;
+    // (undocumented)
+    readonly name: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IResponseHeadersGuard {
+    readonly acceptedContentTypes?: ReadonlyArray<string>;
+    // (undocumented)
+    check(head: ISaferFetchResponseHead, chain: ReadonlyArray<IRequestHop>): Promise<Result<true>>;
+    // (undocumented)
+    readonly name: string;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //
 // @public
 function isAdaptiveThinkingModel(descriptor: IAiProviderDescriptor, modelId: string): boolean;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ISaferFetchJsonOptions<T> extends ISaferFetchOptions {
+    readonly converter?: Converter<T> | Validator<T>;
+}
+
+// @public
+interface ISaferFetchOptions {
+    readonly addressGuard: IAddressGuard;
+    readonly body?: string | Uint8Array;
+    readonly headers?: Readonly<Record<string, string>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly headersTimeoutMs?: number;
+    readonly logger?: Logging.ILogger;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly maxResponseBytes?: number;
+    readonly method?: SaferFetchMethod;
+    readonly redirectPolicy?: SaferFetchRedirectPolicy;
+    readonly requestGuard?: IRequestGuard;
+    readonly responseBodyGuard?: IResponseBodyGuard;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly responseHeadersGuard?: IResponseHeadersGuard;
+    readonly signal?: AbortSignal;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly timeoutMs?: number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly transport?: IFetchTransport;
+}
+
+// @public
+interface ISaferFetchRequest {
+    // (undocumented)
+    readonly body?: string | Uint8Array;
+    readonly headers: Readonly<Record<string, string>>;
+    // (undocumented)
+    readonly method: SaferFetchMethod;
+    // (undocumented)
+    readonly url: URL;
+}
+
+// @public
+interface ISaferFetchResponse<T> {
+    readonly bytesRead: number;
+    readonly headers: Readonly<Record<string, string>>;
+    // (undocumented)
+    readonly status: number;
+    readonly urlChain: ReadonlyArray<string>;
+    // (undocumented)
+    readonly value: T;
+}
+
+// @public
+interface ISaferFetchResponseHead {
+    readonly contentLength?: number;
+    readonly contentType?: string;
+    readonly headers: Readonly<Record<string, string>>;
+    // (undocumented)
+    readonly status: number;
+    // (undocumented)
+    readonly statusText: string;
+}
 
 // @public
 function isEncryptedFile(json: unknown): boolean;
@@ -2421,6 +2681,11 @@ function parseRecordJarLines(lines: string[], options?: JarRecordParserOptions):
 // @public
 const pbkdf2KeyDerivationParams: Converter<IPbkdf2KeyDerivationParams>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const platformFetchTransport: IFetchTransport;
+
 // @public
 function providerApiKeySecretName(providerId: AiProviderId): string;
 
@@ -2508,6 +2773,9 @@ declare namespace RecordJar {
 export { RecordJar }
 
 // @public
+const REDIRECT_STATUSES: ReadonlyArray<number>;
+
+// @public
 function resolveEffectiveTools(descriptor: IAiProviderDescriptor, settingsTools?: ReadonlyArray<IAiToolEnablement>, perCallTools?: ReadonlyArray<AiServerToolConfig>): ReadonlyArray<AiServerToolConfig>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
@@ -2542,6 +2810,60 @@ function resolveModelAlias(descriptor: IAiProviderDescriptor, model: string): Re
 // @public
 function resolveProviderModel(descriptor: IAiProviderDescriptor, modelOverride: ModelSpec | undefined, context?: ModelSpecKey): Result<string>;
 
+declare namespace SaferFetch {
+    export {
+        DEFAULT_HEADERS_TIMEOUT_MS,
+        DEFAULT_MAX_RESPONSE_BYTES,
+        DEFAULT_TIMEOUT_MS,
+        REDIRECT_STATUSES,
+        SUPPORTED_SCHEMES,
+        FetchFailureReason,
+        FetchTimeoutPhase,
+        IAddressGuard,
+        IFetchTransport,
+        IFetchTransportHints,
+        IGuardVerdict,
+        IRequestGuard,
+        IRequestHop,
+        IResolvedGuards,
+        IResponseBodyGuard,
+        IResponseHeadersGuard,
+        ISaferFetchOptions,
+        ISaferFetchRequest,
+        ISaferFetchResponse,
+        ISaferFetchResponseHead,
+        SaferFetchMethod,
+        SaferFetchRedirectPolicy,
+        allowAnyAddress,
+        allowContentTypes,
+        platformFetchTransport,
+        saferFetchBytes,
+        saferFetchJson,
+        saferFetchText,
+        ISaferFetchJsonOptions
+    }
+}
+export { SaferFetch }
+
+// @public
+function saferFetchBytes(url: string | URL, options: ISaferFetchOptions): Promise<DetailedResult<ISaferFetchResponse<Uint8Array>, FetchFailureReason>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function saferFetchJson<T = JsonValue>(url: string | URL, options: ISaferFetchJsonOptions<T>): Promise<DetailedResult<ISaferFetchResponse<T>, FetchFailureReason>>;
+
+// @public
+type SaferFetchMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+// @public
+type SaferFetchRedirectPolicy = 'reject';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function saferFetchText(url: string | URL, options: ISaferFetchOptions): Promise<DetailedResult<ISaferFetchResponse<string>, FetchFailureReason>>;
+
 // @public
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
 
@@ -2562,6 +2884,9 @@ const SMART_JSON_PROMPT_HINT: string;
 //
 // @public
 function spkiToRawX25519(spki: Uint8Array): Result<Uint8Array>;
+
+// @public
+const SUPPORTED_SCHEMES: ReadonlyArray<string>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //

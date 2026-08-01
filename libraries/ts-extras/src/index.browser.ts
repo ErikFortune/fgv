@@ -32,6 +32,8 @@ import * as Hash from './packlets/hash/index.browser';
 import * as Mustache from './packlets/mustache';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import * as RecordJar from './packlets/record-jar/index.browser';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import * as SaferFetch from './packlets/safer-fetch/index.browser';
 import * as Yaml from './packlets/yaml';
 import * as ZipFileTree from './packlets/zip-file-tree';
 
@@ -49,6 +51,7 @@ export {
   Hash,
   Mustache,
   RecordJar,
+  SaferFetch,
   Yaml,
   ZipFileTree
 };
