@@ -1,11 +1,11 @@
 # Brief — S2a: address classification (pure)
 
-**Read first:** `.ai/tasks/active/safe-fetch/plan.md` and
+**Read first:** `.ai/tasks/active/safer-fetch/plan.md` and
 `.claude/project/fetch-primitive-threat-model.md` — especially **§ 3's address-classification
 bypass table, which is your specification and your test matrix.**
 
-**Branch:** `safe-fetch-address-classification` from `origin/integration/safe-fetch`. PR into
-`integration/safe-fetch`. **Do not merge.**
+**Branch:** `safer-fetch-address-classification` from `origin/integration/safer-fetch`. PR into
+`integration/safer-fetch`. **Do not merge.**
 
 **Estimate:** 1–1.5 sessions — the largest single block in the feature. **Runs in parallel
 with S1.**
@@ -14,7 +14,7 @@ with S1.**
 
 ## Scope
 
-One module in the `safe-fetch` packlet of `@fgv/ts-extras`: a **pure** classifier answering
+One module in the `safer-fetch` packlet of `@fgv/ts-extras`: a **pure** classifier answering
 "is this address private / loopback / link-local / otherwise disallowed?", plus the
 `blockPrivateNetworks()` / `allowAnyAddress()` factories built on it.
 

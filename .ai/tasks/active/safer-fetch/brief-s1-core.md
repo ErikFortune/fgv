@@ -1,11 +1,11 @@
-# Brief — S1: safe-fetch core (runtime-agnostic)
+# Brief — S1: safer-fetch core (runtime-agnostic)
 
-**Read first:** `.ai/tasks/active/safe-fetch/plan.md` (shared context, gates, topology) and
+**Read first:** `.ai/tasks/active/safer-fetch/plan.md` (shared context, gates, topology) and
 `.claude/project/fetch-primitive-threat-model.md` (the spec). Then `CLAUDE.md` and
 `.ai/instructions/*`.
 
-**Branch:** `safe-fetch-core` from `origin/integration/safe-fetch`. PR into
-`integration/safe-fetch`. **Do not merge.**
+**Branch:** `safer-fetch-core` from `origin/integration/safer-fetch`. PR into
+`integration/safer-fetch`. **Do not merge.**
 
 **Estimate:** ~1 session. **Runs in parallel with S2a** — you share no files with it.
 
@@ -13,7 +13,7 @@
 
 ## Scope
 
-A new `safe-fetch` packlet in `@fgv/ts-extras` (D-1: packlet, not a sibling package —
+A new `safer-fetch` packlet in `@fgv/ts-extras` (D-1: packlet, not a sibling package —
 mirror `crypto-utils`, reuse the existing `index.ts` / `index.browser.ts` +
 conditional-`exports` machinery, add **zero** dependencies).
 
@@ -33,7 +33,7 @@ Implement design § 6 and §§ 8–10, 12:
   `Content-Length` is a **fast-reject path only** — absent on chunked, and it lies when
   hostile. The cap must hold without it.
 - Timeout composition (§ 10): overall deadline and headers deadline.
-- The three entry points (§ 6.4): `safeFetchJson` / `safeFetchText` / `safeFetchBytes`.
+- The three entry points (§ 6.4): `saferFetchJson` / `saferFetchText` / `saferFetchBytes`.
 - Defaults per § 12. **`maxResponseBytes` defaults to 5 MiB and tunability is a requirement,
   not a nicety (D-6)** — a per-call option, documented at the entry points rather than only in
   a defaults table.

@@ -1,11 +1,11 @@
 # Brief — S2b: DNS resolution, per-hop guard, redirect walk
 
-**Read first:** `.ai/tasks/active/safe-fetch/plan.md` and
+**Read first:** `.ai/tasks/active/safer-fetch/plan.md` and
 `.claude/project/fetch-primitive-threat-model.md` — **§ 4 in full**, plus § 6.1's hop-chain
 rationale.
 
-**Branch:** `safe-fetch-redirect-walk` from `origin/integration/safe-fetch` **after S1 and S2a
-have landed there.** PR into `integration/safe-fetch`. **Do not merge.**
+**Branch:** `safer-fetch-redirect-walk` from `origin/integration/safer-fetch` **after S1 and S2a
+have landed there.** PR into `integration/safer-fetch`. **Do not merge.**
 
 **Estimate:** 1–1.5 sessions. Depends on both prior streams.
 

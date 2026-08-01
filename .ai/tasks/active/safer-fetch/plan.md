@@ -1,4 +1,4 @@
-# safe-fetch — implementation plan
+# safer-fetch — implementation plan
 
 **Design:** `.claude/project/fetch-primitive-threat-model.md` (PR #587). That document is
 the spec. This plan is only decomposition, sequencing, and the shared context every stream
@@ -13,7 +13,7 @@ an SSRF hole (§ 4 of the design).
 ## Prerequisite — must merge before stream 1 opens
 
 **PR #588 — `DetailedResult` promoted `@beta` → `@public` in `ts-utils`** (design decision
-D-2). Every entry point returns `DetailedResult<ISafeFetchResponse<T>, FetchFailureReason>`;
+D-2). Every entry point returns `DetailedResult<ISaferFetchResponse<T>, FetchFailureReason>`;
 with the stale `@beta` tag those signatures bake `ae-incompatible-release-tags` warnings into
 the checked-in `ts-extras.api.md`. Not a blocker for *writing* code, but a stream that lands
 before it will produce an `api.md` that has to be regenerated afterward.
@@ -131,7 +131,7 @@ diminishing returns until the finding profile actually goes nitpicky.
 
 ## Branch and merge topology
 
-All streams branch from and PR into **`integration/safe-fetch`** (created when S1 opens), not
+All streams branch from and PR into **`integration/safer-fetch`** (created when S1 opens), not
 `release`. The integration branch squashes to `release` once S3 lands and the whole surface is
 coherent. Rationale: the API surface moves across streams, so `api.md` conflicts are expected
 and are cheaper to resolve once at integration than four times against a moving `release`.

@@ -1,10 +1,10 @@
 # Brief — S3: retry, browser packlet, docs, testbed
 
-**Read first:** `.ai/tasks/active/safe-fetch/plan.md` and
+**Read first:** `.ai/tasks/active/safer-fetch/plan.md` and
 `.claude/project/fetch-primitive-threat-model.md` — §§ 5.4, 11, 14.
 
-**Branch:** `safe-fetch-browser-and-docs` from `origin/integration/safe-fetch` **after S1 and
-S2b have landed there.** PR into `integration/safe-fetch`. **Do not merge.**
+**Branch:** `safer-fetch-browser-and-docs` from `origin/integration/safer-fetch` **after S1 and
+S2b have landed there.** PR into `integration/safer-fetch`. **Do not merge.**
 
 **Estimate:** ~1 session, and the piece most likely to shrink — see the retry cut trigger.
 
@@ -30,7 +30,7 @@ non-idempotent method by default.
 
 **2. Browser packlet in `@fgv/ts-web-extras` (D-1, D-8).**
 
-The core wired to `allowAnyAddress()`, with `browserSafeFetchJson` etc. The four-seam split
+The core wired to `allowAnyAddress()`, with `browserSaferFetchJson` etc. The four-seam split
 strengthens the browser case: the request and response guards are runtime-agnostic and useful
 there, so this is no longer "the core minus the thing that matters."
 
