@@ -257,6 +257,7 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly embed?: MemoryEmbedder;
     readonly fragmentEmbedder?: FragmentEmbedder;
     readonly fragmentIndex?: IFragmentVectorIndex;
+    readonly index?: IMemoryIndex;
     readonly logger?: Logging.ILogger;
     readonly observers?: ReadonlyArray<IMemoryObserver>;
     readonly onRecordError?: MemoryRecordErrorMode;

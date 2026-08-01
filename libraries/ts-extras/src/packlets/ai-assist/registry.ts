@@ -30,7 +30,8 @@ import {
   type IAiEmbeddingModelCapability,
   type IAiImageModelCapability,
   type IAiModelCapabilityConfig,
-  type IAiProviderDescriptor
+  type IAiProviderDescriptor,
+  resolveModelAlias
 } from './model';
 
 // ============================================================================
@@ -365,6 +366,42 @@ export function supportsImageGeneration(descriptor: IAiProviderDescriptor): bool
 }
 
 /**
+ * Shared longest-prefix capability match, alias-guarded.
+ *
+ * @remarks
+ * `modelId` is resolved through `resolveModelAlias` **before** any prefix
+ * matching, so an fgv alias (`@<provider>:<role>`) and the concrete id it names
+ * select the same capability. Without this step an alias would fall through to
+ * the `modelPrefix: ''` catch-all every provider declares and yield a
+ * confidently wrong capability rather than no capability.
+ *
+ * An unresolvable alias (sigil-prefixed but unregistered, or cyclic) names no
+ * model, so no capability applies and the match is skipped entirely — it must
+ * never be prefix-matched verbatim. Callers already treat `undefined` as "this
+ * provider has no capability for this model" and fail with that message.
+ *
+ * A concrete (non-sigil) id passes through `resolveModelAlias` verbatim, so
+ * behavior for every raw provider id is unchanged.
+ * @internal
+ */
+function resolveCapabilityForModel<TCapability extends { readonly modelPrefix: string }>(
+  descriptor: IAiProviderDescriptor,
+  modelId: string,
+  capabilities: ReadonlyArray<TCapability> | undefined
+): TCapability | undefined {
+  const concreteModelId = resolveModelAlias(descriptor, modelId).orDefault();
+  if (concreteModelId === undefined) {
+    return undefined;
+  }
+  return (capabilities ?? [])
+    .filter((cap) => concreteModelId.startsWith(cap.modelPrefix))
+    .reduce<TCapability | undefined>(
+      (best, cap) => (best && best.modelPrefix.length >= cap.modelPrefix.length ? best : cap),
+      undefined
+    );
+}
+
+/**
  * Resolve the image-generation capability that applies to a given model id
  * for a provider. Returns the entry from
  * {@link IAiProviderDescriptor.imageGeneration} whose `modelPrefix` is the
@@ -372,22 +409,27 @@ export function supportsImageGeneration(descriptor: IAiProviderDescriptor): bool
  * order does not matter for correctness — only for tie-breaking among rules
  * with identical-length prefixes (an unusual case).
  *
+ * @remarks
+ * `modelId` may be either a concrete provider model id or an fgv model alias
+ * (`@<provider>:<role>`, see `MODEL_ALIAS_SIGIL`) — it is resolved via
+ * `resolveModelAlias` against `descriptor.aliases` before prefix matching,
+ * so both forms select the same capability. A raw provider id passes through
+ * unchanged. An alias that is not registered on `descriptor` (or is cyclic)
+ * names no model and yields `undefined` rather than falling through to the
+ * `modelPrefix: ''` catch-all.
+ *
  * @param descriptor - The provider descriptor
- * @param modelId - The resolved image model id
- * @returns The matching capability, or `undefined` when no rule matches or
- *   the provider declares no image-generation capabilities.
+ * @param modelId - The image model id — concrete or an fgv alias
+ * @returns The matching capability, or `undefined` when no rule matches, the
+ *   provider declares no image-generation capabilities, or `modelId` is an
+ *   unresolvable alias.
  * @public
  */
 export function resolveImageCapability(
   descriptor: IAiProviderDescriptor,
   modelId: string
 ): IAiImageModelCapability | undefined {
-  return (descriptor.imageGeneration ?? [])
-    .filter((cap) => modelId.startsWith(cap.modelPrefix))
-    .reduce<IAiImageModelCapability | undefined>(
-      (best, cap) => (best && best.modelPrefix.length >= cap.modelPrefix.length ? best : cap),
-      undefined
-    );
+  return resolveCapabilityForModel(descriptor, modelId, descriptor.imageGeneration);
 }
 
 /**
@@ -408,22 +450,27 @@ export function supportsEmbedding(descriptor: IAiProviderDescriptor): boolean {
  * `modelPrefix` is the longest prefix of `modelId`. Ties are broken by
  * first-encountered.
  *
+ * @remarks
+ * `modelId` may be either a concrete provider model id or an fgv model alias
+ * (`@<provider>:<role>`, see `MODEL_ALIAS_SIGIL`) — it is resolved via
+ * `resolveModelAlias` against `descriptor.aliases` before prefix matching,
+ * so both forms select the same capability. A raw provider id passes through
+ * unchanged. An alias that is not registered on `descriptor` (or is cyclic)
+ * names no model and yields `undefined` rather than falling through to the
+ * `modelPrefix: ''` catch-all.
+ *
  * @param descriptor - The provider descriptor
- * @param modelId - The resolved embedding model id
- * @returns The matching capability, or `undefined` when no rule matches or the
- *   provider declares no embedding capabilities.
+ * @param modelId - The embedding model id — concrete or an fgv alias
+ * @returns The matching capability, or `undefined` when no rule matches, the
+ *   provider declares no embedding capabilities, or `modelId` is an
+ *   unresolvable alias.
  * @public
  */
 export function resolveEmbeddingCapability(
   descriptor: IAiProviderDescriptor,
   modelId: string
 ): IAiEmbeddingModelCapability | undefined {
-  return (descriptor.embedding ?? [])
-    .filter((cap) => modelId.startsWith(cap.modelPrefix))
-    .reduce<IAiEmbeddingModelCapability | undefined>(
-      (best, cap) => (best && best.modelPrefix.length >= cap.modelPrefix.length ? best : cap),
-      undefined
-    );
+  return resolveCapabilityForModel(descriptor, modelId, descriptor.embedding);
 }
 
 // ============================================================================
