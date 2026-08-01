@@ -96,6 +96,17 @@ export type Ipv4EmbeddingKind =
   | '6to4';
 
 /**
+ * The IPv4 address an IPv6 address embedded, and the way it embedded it.
+ * @public
+ */
+export interface IEmbeddedIpv4 {
+  /** The encoding that carried the IPv4 address. */
+  readonly kind: Ipv4EmbeddingKind;
+  /** The dotted-quad form of the embedded IPv4 address. */
+  readonly address: string;
+}
+
+/**
  * The result of classifying a single IP address literal.
  * @public
  */
@@ -118,10 +129,11 @@ export interface IClassifiedAddress {
    * address.
    */
   readonly classification: AddressClassification;
-  /** Present when `classification` was derived from an embedded IPv4 address. */
-  readonly embedding?: Ipv4EmbeddingKind;
-  /** The dotted-quad form of the embedded IPv4 address, when `embedding` is present. */
-  readonly embeddedIpv4?: string;
+  /**
+   * Present exactly when `classification` was derived from an IPv4 address
+   * embedded in this IPv6 address, and absent otherwise.
+   */
+  readonly embeddedIpv4?: IEmbeddedIpv4;
 }
 
 interface IIpv4Range {
@@ -204,6 +216,13 @@ function parseIpv4Component(text: string): number | undefined {
     digits = text.slice(1);
   }
 
+  // The WHATWG IPv4 number parser returns 0 when stripping the radix prefix
+  // leaves nothing behind, so a bare `0x` is zero: `127.0x.1` is `127.0.0.1`.
+  // Rejecting it here would leave a live encoding bypass.
+  if (digits.length === 0) {
+    return 0;
+  }
+
   const allowed: RegExp = radix === 16 ? /^[0-9a-fA-F]+$/ : radix === 8 ? /^[0-7]+$/ : /^[0-9]+$/;
   if (!allowed.test(digits)) {
     return undefined;
@@ -280,8 +299,12 @@ function parseStrictDottedQuad(text: string): number | undefined {
 /**
  * Parses a colon-separated run of IPv6 groups, allowing a trailing embedded
  * dotted-quad IPv4 literal which expands to the final two groups.
+ *
+ * @param allowEmbeddedIpv4 - whether this run may end in a dotted-quad IPv4
+ * literal. Only the run that ends the whole address may, so the run *before* a
+ * `::` never does: `1.2.3.4::` is malformed, not `102:304::`.
  */
-function parseIpv6Groups(text: string): number[] | undefined {
+function parseIpv6Groups(text: string, allowEmbeddedIpv4: boolean): number[] | undefined {
   if (text.length === 0) {
     return [];
   }
@@ -291,7 +314,7 @@ function parseIpv6Groups(text: string): number[] | undefined {
   for (let i: number = 0; i < parts.length; i++) {
     const part: string = parts[i];
     if (part.indexOf('.') >= 0) {
-      if (i !== parts.length - 1) {
+      if (!allowEmbeddedIpv4 || i !== parts.length - 1) {
         return undefined;
       }
       const embedded: number | undefined = parseStrictDottedQuad(part);
@@ -320,8 +343,8 @@ function parseIpv6(text: string): Uint8Array | undefined {
     if (text.indexOf('::', doubleColon + 1) >= 0) {
       return undefined;
     }
-    const head: number[] | undefined = parseIpv6Groups(text.slice(0, doubleColon));
-    const tail: number[] | undefined = parseIpv6Groups(text.slice(doubleColon + 2));
+    const head: number[] | undefined = parseIpv6Groups(text.slice(0, doubleColon), false);
+    const tail: number[] | undefined = parseIpv6Groups(text.slice(doubleColon + 2), true);
     if (head === undefined || tail === undefined) {
       return undefined;
     }
@@ -331,7 +354,7 @@ function parseIpv6(text: string): Uint8Array | undefined {
     }
     groups = head.concat(new Array<number>(elided).fill(0), tail);
   } else {
-    groups = parseIpv6Groups(text);
+    groups = parseIpv6Groups(text, true);
     if (groups === undefined || groups.length !== 8) {
       return undefined;
     }
@@ -479,8 +502,7 @@ function classifyIpv6Bytes(bytes: Uint8Array): IClassifiedAddress {
       canonical,
       family: 'ipv6',
       classification: classifyIpv4Value(embedding.value),
-      embedding: embedding.kind,
-      embeddedIpv4: ipv4ToString(embedding.value)
+      embeddedIpv4: { kind: embedding.kind, address: ipv4ToString(embedding.value) }
     };
   }
 
@@ -499,19 +521,23 @@ function classifyIpv6Bytes(bytes: Uint8Array): IClassifiedAddress {
 
 /**
  * Normalizes the textual forms an address can arrive in before parsing:
- * surrounding whitespace, the square brackets a URL `hostname` carries for an
- * IPv6 literal, and an IPv6 zone identifier (`%eth0`).
+ * surrounding whitespace and the square brackets a URL `hostname` carries for
+ * an IPv6 literal. A zone identifier is *not* stripped here — it is stripped on
+ * the IPv6 path only, because `8.8.8.8%something` is not an address with a zone
+ * and must fail rather than be read as `8.8.8.8`.
  */
 function normalizeAddressText(address: string): string {
-  let text: string = address.trim();
+  const text: string = address.trim();
   if (text.length > 1 && text[0] === '[' && text[text.length - 1] === ']') {
-    text = text.slice(1, -1);
-  }
-  const zone: number = text.indexOf('%');
-  if (zone >= 0) {
-    text = text.slice(0, zone);
+    return text.slice(1, -1);
   }
   return text;
+}
+
+/** Strips an IPv6 zone identifier (`fe80::1%eth0`). */
+function stripIpv6Zone(text: string): string {
+  const zone: number = text.indexOf('%');
+  return zone >= 0 ? text.slice(0, zone) : text;
 }
 
 /**
@@ -548,7 +574,7 @@ export function classifyAddress(address: string): Result<IClassifiedAddress> {
   }
 
   if (text.indexOf(':') >= 0) {
-    const bytes: Uint8Array | undefined = parseIpv6(text);
+    const bytes: Uint8Array | undefined = parseIpv6(stripIpv6Zone(text));
     if (bytes === undefined) {
       return fail(`"${address}": not a valid IPv6 address literal`);
     }

@@ -23,7 +23,7 @@ import '@fgv/ts-utils-jest';
 import {
   AddressClassification,
   AddressFamily,
-  Ipv4EmbeddingKind,
+  IEmbeddedIpv4,
   classifyAddress
 } from '../../../packlets/safer-fetch';
 
@@ -32,8 +32,7 @@ interface ICase {
   readonly classification: AddressClassification;
   readonly canonical?: string;
   readonly family?: AddressFamily;
-  readonly embedding?: Ipv4EmbeddingKind;
-  readonly embeddedIpv4?: string;
+  readonly embeddedIpv4?: IEmbeddedIpv4;
 }
 
 function expectClassification(testCase: ICase): void {
@@ -44,8 +43,7 @@ function expectClassification(testCase: ICase): void {
     if (testCase.canonical !== undefined) {
       expect(classified.canonical).toBe(testCase.canonical);
     }
-    expect(classified.embedding).toBe(testCase.embedding);
-    expect(classified.embeddedIpv4).toBe(testCase.embeddedIpv4);
+    expect(classified.embeddedIpv4).toEqual(testCase.embeddedIpv4);
   });
 }
 
@@ -163,6 +161,15 @@ describe('classifyAddress', () => {
       { address: '0251.0376.0251.0376', classification: 'link-local', canonical: '169.254.169.254' },
       { address: '169.254.43518', classification: 'link-local', canonical: '169.254.169.254' },
 
+      // Stripping the radix prefix can leave nothing behind, and the WHATWG
+      // number parser reads that as zero — so a bare `0x` is `0` and
+      // `127.0x.1` is `127.0.0.1`. Rejecting it would leave a live bypass.
+      { address: '127.0x.1', classification: 'loopback', canonical: '127.0.0.1' },
+      { address: '0177.0x.1', classification: 'loopback', canonical: '127.0.0.1' },
+      { address: '0x7f.0X.0x.1', classification: 'loopback', canonical: '127.0.0.1' },
+      { address: '0x', classification: 'unspecified', canonical: '0.0.0.0' },
+      { address: '169.254.0x.0xfe', classification: 'link-local', canonical: '169.254.0.254' },
+
       { address: '0x0a.0.0.1', classification: 'private', canonical: '10.0.0.1' },
       { address: '0xc0a80001', classification: 'private', canonical: '192.168.0.1' },
       { address: '0144.100.0.1', classification: 'carrier-grade-nat', canonical: '100.100.0.1' },
@@ -233,53 +240,46 @@ describe('classifyAddress', () => {
         classification: 'link-local',
         canonical: '::ffff:a9fe:a9fe',
         family: 'ipv6',
-        embedding: 'ipv4-mapped',
-        embeddedIpv4: '169.254.169.254'
+        embeddedIpv4: { kind: 'ipv4-mapped', address: '169.254.169.254' }
       },
       {
         address: '::ffff:a9fe:a9fe',
         classification: 'link-local',
         canonical: '::ffff:a9fe:a9fe',
         family: 'ipv6',
-        embedding: 'ipv4-mapped',
-        embeddedIpv4: '169.254.169.254'
+        embeddedIpv4: { kind: 'ipv4-mapped', address: '169.254.169.254' }
       },
       {
         address: '::FFFF:127.0.0.1',
         classification: 'loopback',
         canonical: '::ffff:7f00:1',
         family: 'ipv6',
-        embedding: 'ipv4-mapped',
-        embeddedIpv4: '127.0.0.1'
+        embeddedIpv4: { kind: 'ipv4-mapped', address: '127.0.0.1' }
       },
       {
         address: '::ffff:10.0.0.1',
         classification: 'private',
         family: 'ipv6',
-        embedding: 'ipv4-mapped',
-        embeddedIpv4: '10.0.0.1'
+        embeddedIpv4: { kind: 'ipv4-mapped', address: '10.0.0.1' }
       },
       {
         address: '::ffff:100.64.0.1',
         classification: 'carrier-grade-nat',
         family: 'ipv6',
-        embedding: 'ipv4-mapped',
-        embeddedIpv4: '100.64.0.1'
+        embeddedIpv4: { kind: 'ipv4-mapped', address: '100.64.0.1' }
       },
       // Other direction: a mapped public address stays public.
       {
         address: '::ffff:8.8.8.8',
         classification: 'public',
         family: 'ipv6',
-        embedding: 'ipv4-mapped',
-        embeddedIpv4: '8.8.8.8'
+        embeddedIpv4: { kind: 'ipv4-mapped', address: '8.8.8.8' }
       },
       {
         address: '::ffff:100.128.0.1',
         classification: 'public',
         family: 'ipv6',
-        embedding: 'ipv4-mapped',
-        embeddedIpv4: '100.128.0.1'
+        embeddedIpv4: { kind: 'ipv4-mapped', address: '100.128.0.1' }
       },
 
       // NAT64, RFC 6052 well-known prefix.
@@ -288,22 +288,19 @@ describe('classifyAddress', () => {
         classification: 'link-local',
         canonical: '64:ff9b::a9fe:a9fe',
         family: 'ipv6',
-        embedding: 'nat64',
-        embeddedIpv4: '169.254.169.254'
+        embeddedIpv4: { kind: 'nat64', address: '169.254.169.254' }
       },
       {
         address: '64:ff9b::a9fe:a9fe',
         classification: 'link-local',
         family: 'ipv6',
-        embedding: 'nat64',
-        embeddedIpv4: '169.254.169.254'
+        embeddedIpv4: { kind: 'nat64', address: '169.254.169.254' }
       },
       {
         address: '64:ff9b::8.8.8.8',
         classification: 'public',
         family: 'ipv6',
-        embedding: 'nat64',
-        embeddedIpv4: '8.8.8.8'
+        embeddedIpv4: { kind: 'nat64', address: '8.8.8.8' }
       },
 
       // 6to4 — the IPv4 address lives in bits 16..47, not the low 32.
@@ -311,22 +308,19 @@ describe('classifyAddress', () => {
         address: '2002:a9fe:a9fe::',
         classification: 'link-local',
         family: 'ipv6',
-        embedding: '6to4',
-        embeddedIpv4: '169.254.169.254'
+        embeddedIpv4: { kind: '6to4', address: '169.254.169.254' }
       },
       {
         address: '2002:7f00:1::1',
         classification: 'loopback',
         family: 'ipv6',
-        embedding: '6to4',
-        embeddedIpv4: '127.0.0.1'
+        embeddedIpv4: { kind: '6to4', address: '127.0.0.1' }
       },
       {
         address: '2002:5db8:d822::1',
         classification: 'public',
         family: 'ipv6',
-        embedding: '6to4',
-        embeddedIpv4: '93.184.216.34'
+        embeddedIpv4: { kind: '6to4', address: '93.184.216.34' }
       },
 
       // Deprecated IPv4-compatible form (`::a.b.c.d`).
@@ -334,30 +328,26 @@ describe('classifyAddress', () => {
         address: '::7f00:1',
         classification: 'loopback',
         family: 'ipv6',
-        embedding: 'ipv4-compatible',
-        embeddedIpv4: '127.0.0.1'
+        embeddedIpv4: { kind: 'ipv4-compatible', address: '127.0.0.1' }
       },
       {
         address: '::169.254.169.254',
         classification: 'link-local',
         canonical: '::a9fe:a9fe',
         family: 'ipv6',
-        embedding: 'ipv4-compatible',
-        embeddedIpv4: '169.254.169.254'
+        embeddedIpv4: { kind: 'ipv4-compatible', address: '169.254.169.254' }
       },
       {
         address: '::0.0.0.2',
         classification: 'unspecified',
         family: 'ipv6',
-        embedding: 'ipv4-compatible',
-        embeddedIpv4: '0.0.0.2'
+        embeddedIpv4: { kind: 'ipv4-compatible', address: '0.0.0.2' }
       },
       {
         address: '::8.8.8.8',
         classification: 'public',
         family: 'ipv6',
-        embedding: 'ipv4-compatible',
-        embeddedIpv4: '8.8.8.8'
+        embeddedIpv4: { kind: 'ipv4-compatible', address: '8.8.8.8' }
       },
 
       // `::ffff:0:0:0/96` (IPv4-translated) is only meaningful inside a
@@ -368,11 +358,11 @@ describe('classifyAddress', () => {
     test('the unspecified and loopback addresses are not decoded as IPv4-compatible', () => {
       expect(classifyAddress('::')).toSucceedAndSatisfy((classified) => {
         expect(classified.classification).toBe('unspecified');
-        expect(classified.embedding).toBeUndefined();
+        expect(classified.embeddedIpv4).toBeUndefined();
       });
       expect(classifyAddress('::1')).toSucceedAndSatisfy((classified) => {
         expect(classified.classification).toBe('loopback');
-        expect(classified.embedding).toBeUndefined();
+        expect(classified.embeddedIpv4).toBeUndefined();
       });
     });
   });
@@ -410,7 +400,12 @@ describe('classifyAddress', () => {
     test.each([
       ['', /empty/i],
       ['   ', /empty/i],
-      ['%eth0', /empty/i],
+      ['[]', /empty/i],
+      // A zone identifier belongs to IPv6 only, so this must fail rather than
+      // be read as 8.8.8.8.
+      ['%eth0', /not a valid IP address/i],
+      ['8.8.8.8%eth0', /not a valid IP address/i],
+      ['127.0.0.1%eth0', /not a valid IP address/i],
       ['example.com', /not a valid IP address/i],
       ['localhost', /not a valid IP address/i],
       ['LOCALHOST.', /not a valid IP address/i],
@@ -419,7 +414,6 @@ describe('classifyAddress', () => {
       ['256.0.0.1', /not a valid IP address/i],
       ['1.2.3.256', /not a valid IP address/i],
       ['08.0.0.1', /not a valid IP address/i],
-      ['0x.1', /not a valid IP address/i],
       ['0xzz', /not a valid IP address/i],
       ['-1.0.0.1', /not a valid IP address/i],
       ['1.2..3', /not a valid IP address/i],
@@ -448,6 +442,11 @@ describe('classifyAddress', () => {
       ['::0x7f.0.0.1'],
       ['1.2.3.4:5'],
       ['::1.2.3.4:5'],
+      // An embedded IPv4 tail may only end the whole address, so this is
+      // malformed rather than `102:304::`.
+      ['1.2.3.4::'],
+      ['1.2.3.4::5'],
+      ['1:2:1.2.3.4::5'],
       ['[::1'],
       ['::1]'],
       [':1:2:3:4:5:6:7:8'],

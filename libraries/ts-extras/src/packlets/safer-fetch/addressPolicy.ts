@@ -91,8 +91,8 @@ const PUBLIC_OR_LOOPBACK: ReadonlySet<AddressClassification> = new Set<AddressCl
 
 function describeAddress(classified: IClassifiedAddress): string {
   const embedded: string =
-    classified.embedding !== undefined
-      ? ` via ${classified.embedding} ${String(classified.embeddedIpv4)}`
+    classified.embeddedIpv4 !== undefined
+      ? ` via ${classified.embeddedIpv4.kind} ${classified.embeddedIpv4.address}`
       : '';
   return `${classified.canonical} is ${classified.classification}${embedded}`;
 }
