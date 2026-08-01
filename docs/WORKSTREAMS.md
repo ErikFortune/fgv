@@ -275,6 +275,20 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ---
 
+### `fetch-primitive-threat-model` 🔵
+
+**Status:** 🔵 in flight — **design-only deliverable, awaiting Erik's review.** Branches from `release` @ `c37ec88b2`. Consumer: PersonAIlity. PR open against `release`; **do not merge** until the threat model is reviewed.
+**Workflow shape:** design-first. **No implementation code in this stream** — an implementation stream is commissioned only after review.
+**Deliverable:** `.claude/project/fetch-primitive-threat-model.md`.
+**Package surface (proposed, not yet touched):** `@fgv/ts-extras` (new `safer-fetch` packlet + conditional export) and `@fgv/ts-web-extras` (new `safer-fetch` packlet).
+**Out-of-scope:** all source under `libraries/`, the four existing `ai-assist` `fetch(` sites (deliberately left alone — bearer auth + provider error mapping + an SSE site where a buffering size cap is semantically wrong), `docs/STATUS.md`.
+
+**Mission.** PersonAIlity asked for a `Result`-returning fetch primitive with timeout, size cap, allowlist, and a structured failure taxonomy. Write and land the **threat model** before any code, because the security posture is the product. Three findings drive the design: (1) the redirect policy and the SSRF guard are **one mechanism**, not two bullets — a guard on URL₀ alone is defeated by a single `302` to the cloud metadata endpoint, so `redirect: 'manual'` plus per-hop revalidation plus cross-origin credential stripping ship together or not at all; (2) the guard **cannot exist in the browser** (no DNS API, and `redirect: 'manual'` yields an unreadable opaque redirect), so it splits along the established `crypto-utils` cross-runtime pattern with an explicit per-runtime guarantee table; (3) DNS rebinding is a **documented limit**, closed later via seams designed now — `IGuardVerdict.pinnedAddress?` **and** an injectable `IFetchTransport` (a swappable resolver alone cannot close it; pinning is a property of the connect). Framed deliberately **not** as a Result-integration boundary package — there is no upstream to wrap and the opinion is the entire deliverable.
+
+**Exit gate.** Erik answers the eight open questions in § 16 of the design doc (packlet-vs-sibling-package placement; `DetailedResult`'s `@beta` release-tag cost; required-`guard`-with-no-default; whether the primitive ships with zero in-repo consumers; loopback posture given this repo's own Ollama `http://localhost:11434` path; `maxResponseBytes` default; whether retry belongs in v1; whether the browser package earns its keep). Implementation is a separate stream.
+
+---
+
 ## Completed workstreams
 
 ### `agent-memory-antagonist` ✅
