@@ -33,7 +33,7 @@ is one I would defend; every gap is named rather than implied.
 - [13. Stated limits](#13-stated-limits)
 - [14. Phasing](#14-phasing)
 - [15. Testing notes](#15-testing-notes)
-- [16. Open questions for Erik](#16-open-questions-for-erik)
+- [16. Decisions](#16-decisions)
 - [Appendix A — where the three findings were incomplete](#appendix-a--where-the-three-findings-were-incomplete)
 - [Appendix B — design-history record](#appendix-b--design-history-record)
 
@@ -121,7 +121,7 @@ error mapping.
 whose body is consumed by `sseParser.ts` via `body.getReader()` — a
 buffering size cap is semantically wrong for an unbounded stream, and the
 correct behavior there (a per-event budget, an idle timeout) is a
-different feature. Migrating these four is out of scope for v1; see OQ-4.
+different feature. Migrating these four is out of scope for v1; see D-4.
 
 ### Searches confirming nothing exists
 
@@ -936,7 +936,7 @@ carries `{ ok: true, value } | { ok: false, reason }`. This avoids the
 release-tag warnings but produces double unwrapping at every call site and
 makes `Result`-chaining awkward — a failed fetch would be a *successful*
 `Result`, which inverts the repo's central idiom. Rejected, but the
-release-tag cost is real. See OQ-2.
+release-tag cost is retired by D-2, which promotes `DetailedResult` to `@public` in `ts-utils` ahead of this work.
 
 ### The taxonomy is itself a security-relevant surface
 
@@ -1182,7 +1182,7 @@ polarity; the wrong polarity ships a guard that permits
 `http://127.0.0.1:6379/` so that a dev-time convenience keeps working.
 
 **This is a real interaction that would have surfaced painfully during
-implementation**, and it is the concrete reason OQ-5 needs an answer
+implementation**, and it is the concrete reason D-5 settles the polarity now
 before code is written.
 
 ### L7 — HTTP semantics not implemented
@@ -1219,7 +1219,7 @@ When one is, this ordering keeps each step independently reviewable.
 
 Deferred, additive, not in v1: streaming entry point for large downloads;
 inactivity timeout; pinned-connect transport; migration of the four
-`ai-assist` sites (OQ-4).
+`ai-assist` sites (D-4).
 
 ---
 
@@ -1234,7 +1234,7 @@ greenfield with adversarial semantics, so it is not one of those.
 | Runtime-agnostic core | ~1 | Timeout, streaming cap, content gate, taxonomy, guard orchestration |
 | `blockPrivateNetworks()` + adversarial tests | **1–2** | The dominant and least predictable cost |
 | Browser package + its stated non-guarantees | ~0.5 | Mostly docs; the code is the core minus the guard |
-| Packaging, `api.md`, change files, README | ~0.5 | Higher if OQ-1 lands on sibling packages rather than packlets |
+| Packaging, `api.md`, change files, README | ~0.5 | Packlets per D-1, so the lower end |
 | Review loops | ~1 | Security-sensitive; expect layer 2 to be substantive, not nitpicky |
 
 **The dominant cost is the adversarial test matrix, not the production code.**
@@ -1250,9 +1250,15 @@ in-process. Had the transport seam not been needed for pinned-connect, it would
 have been worth adding for testability alone.
 
 **What still moves the number**, all of them open questions rather than
-unknowns: OQ-1 (packlet vs. sibling packages) and OQ-7 (whether retry is in v1)
-are each worth roughly half a session; OQ-8 (whether the browser package earns
-its keep) slightly less. Taking the recommendations on all three lands at 4.
+decisions rather than unknowns, and all three are now settled: D-1 takes
+packlets (the cheaper end), D-8 keeps the browser package (roughly half a
+session), and D-7 keeps retry with a cut trigger — so if § 11's idempotency
+interactions bite, the estimate drops rather than grows. **Call it 4–5, with
+D-7 the only piece that can move it down.**
+
+One item sits *outside* this estimate: D-2's promotion of `DetailedResult` to
+`@public` in `ts-utils` is a prerequisite in a different package — small and
+mechanical, but it is not free and it is not part of these sessions.
 
 Two things that do *not* move it: the four-seam split is roughly neutral, since
 resolve-at-init (§ 6.3) removes the guard-absent branch from every call path in
@@ -1289,78 +1295,72 @@ adversarial and none of them require a network.
 
 ---
 
-## 16. Open questions for Erik
+## 16. Decisions
 
-**OQ-1 — Packlet or sibling package?**
-Recommendation: **packlets** inside `@fgv/ts-extras` and
-`@fgv/ts-web-extras`, mirroring `crypto-utils`, reusing the existing
-`index.ts` / `index.browser.ts` + conditional-`exports` machinery, adding
-zero dependencies. Sibling packages (`@fgv/ts-extras-fetch`) would be
-justified only if the Node guard eventually wants a native dependency —
-which §5.3 argues against for a security primitive. Confirm?
+All eight open questions were answered in review, 2026-08-01. Recorded here as
+decisions; the reasoning that produced them is in Appendix B where it differs
+from what was originally recommended.
 
-**OQ-2 — `DetailedResult` despite the `@beta` release-tag cost?**
-`DetailedResult<T, FetchFailureReason>` is the idiomatic carrier and has a
-matcher, but it is `@beta` in `ts-utils`, so `@public` signatures
-referencing it bake `ae-incompatible-release-tags` warnings into the
-checked-in `ts-extras.api.md` (`ts-utils.api.md` already carries dozens
-from `ResultMap`). Options: (a) accept the warnings, precedent exists;
-(b) promote `DetailedResult` to `@public` in `ts-utils` — a separate,
-small, arguably overdue change; (c) `Result<ISafeFetchOutcome<T>>`, which
-inverts the repo's idiom (a failed fetch becomes a successful `Result`) and
-I recommend against. Leaning (a), with (b) as a genuinely attractive
-side-quest.
+**D-1 — Packlets, not sibling packages.** `safe-fetch` packlets inside
+`@fgv/ts-extras` and `@fgv/ts-web-extras`, mirroring `crypto-utils` and reusing
+the existing `index.ts` / `index.browser.ts` + conditional-`exports` machinery.
+Zero new dependencies. Package layout in § 5.3 stands as written.
 
-**OQ-3 — Confirm the address-guard factory names.**
-*Resolved in review:* `addressGuard` is required with no default, and the
-other three guards default to silent passthrough (§ 6.1–6.3). Requiring it
-costs one named factory per call site and buys a one-grep audit of every
-call site's posture, with no ambient default to overlook. What remains is
-purely naming: `blockPrivateNetworks()` /
-`blockPrivateNetworks({ allowLoopback: true })` / `allowAnyAddress()`. The
-third is deliberately uncomfortable; say if it should be blunter still.
+**D-2 — `DetailedResult` is promoted to `@public` in `ts-utils`.** It has not
+been genuinely beta since 5.0, and the tag is the only thing that made
+`DetailedResult<T, FetchFailureReason>` costly here. Promoting it removes the
+`ae-incompatible-release-tags` liability at the source rather than accepting
+warnings baked into `ts-extras.api.md` — and it retires the same latent cost for
+every future consumer, including the dozens `ts-utils.api.md` already carries
+from `ResultMap`.
 
-**OQ-4 — Does the primitive ship with zero in-repo consumers?**
-Recommendation: **yes for v1**; leave the four `ai-assist` sites alone
-(bearer auth + provider error mapping + an SSE site where buffering is
-semantically wrong). But this repo's stability model is
-consumption-driven — "we presume instability until at least one consumer
-has applied a feature end-to-end." Shipping a security primitive with no
-in-repo consumer is a deliberate departure from that model. Options:
-accept it (PersonAIlity is the validating consumer); or migrate just
-`apiClient.ts:270` (the `GET` list-models call, the least entangled of the
-four) as a proof-of-fit. I lean accept-it, but flagging the departure.
+**This is a prerequisite change in a different package**, small and mechanical
+(release-tag edit plus `api.md` regeneration in `ts-utils`, then regeneration in
+every package whose report cites it). It does not belong to the fetch
+implementation stream and should land ahead of it.
 
-**OQ-5 — Loopback posture. *Withdrawn.***
-The question presupposed an ambient default. Under § 6.1–6.2 there is none:
-every caller names an address guard. What survives is only "does the short
-factory name block loopback," and it must — the safe reading has to be the
-one you get by typing less. This repo's Ollama path (`localhost:11434`) then
-carries `{ allowLoopback: true }` visibly at its call site, which is exactly
-where that decision should be legible to a reader. No decision needed unless
-you disagree with that polarity.
+**D-3 — `addressGuard` required, no default; the other three default to
+passthrough.** As specified in § 5.5 and § 6.1–6.3. The unified surface is worth
+the one named factory per call site. **Revisit if friction shows up in practice**
+— relaxing later (adding a default) is additive and non-breaking, whereas
+starting permissive and tightening is neither. The asymmetry is why this
+direction is the safe one to start from.
 
-**OQ-6 — `maxResponseBytes` default of 5 MiB.**
-Defensible per §12 but genuinely arbitrary. If a consumer use case is
-"fetch a document for the memory vault," 5 MiB may be tight. Happy to move
-it; wanted a number on the table rather than a shrug.
+**D-4 — Ships with no in-repo consumer.** This would not be the first feature to
+do so. The repo's consumption-driven stability model is real but is in practice
+satisfied by external pressure-testing: PersonAIlity and chocolate lab are the
+consumers that exercise features hardest, and the testbed is the internal
+validation path. A testbed scenario is therefore the substitute for an in-repo
+consumer, not an optional extra — it should ship with the implementation rather
+than after it.
 
-**OQ-7 — Should `retry` live in this primitive at all?**
-It is in the brief and it composes naturally with the taxonomy (which
-already knows what is retryable). But it is the one piece that is not
-security-motivated, and it carries the idempotency and budget subtleties
-in §11. Keeping it is fine; cutting it to v2 would make v1 a tighter
-security story. Slight lean toward keeping, since the taxonomy makes it
-nearly free.
+**D-5 — Loopback blocked by the short factory name.** `blockPrivateNetworks()`
+blocks loopback; `blockPrivateNetworks({ allowLoopback: true })` is the opt-in.
 
-**OQ-8 — Does the browser package earn its keep?**
-Browser callers could import the core from `@fgv/ts-extras/safe-fetch`
-(whose `index.browser.ts` already omits the Node guard). A separate
-`ts-web-extras` packlet adds a named `browserSafeFetchJson` whose TSDoc is
-where the "no SSRF guard here" statement lives. Recommendation: **yes, add
-it** — finding 2 says naming is the mechanism, and a browser caller
-reaching into a package named `ts-extras` for their fetch is exactly the
-ambiguity the split exists to remove.
+Note the blast radius is currently **zero**: `ai-assist` does not use this
+primitive, so the Ollama path (`localhost:11434`) is unaffected by the polarity
+either way. The decision matters for future call sites, not existing ones —
+which is precisely why it was worth settling before any exist.
+
+**D-6 — `maxResponseBytes` defaults to 5 MiB, and tunability is a requirement.**
+If anything 5 MiB is generous for text and JSON. It will not be once media is in
+scope, so the knob must be genuinely easy to reach — a per-call option, not a
+construction-time-only setting, and documented at the entry points rather than
+only in a defaults table. Revisit the *default* when a media use case is real;
+do not revisit the *tunability*.
+
+**D-7 — Retry stays in v1, with a pre-registered cut trigger.** It is a
+convenience feature and the lift looks small; the taxonomy already distinguishes
+retryable from not. **If implementation reveals it is harder than it looks — the
+idempotency and budget interactions in § 11 are the likely source — cut it to v2
+rather than expanding scope to accommodate it.** That decision is made now, so it
+does not get relitigated under schedule pressure by whoever hits the complexity.
+
+**D-8 — The browser package earns its keep.** Reinforced rather than weakened by
+the four-seam split: the request and response guards are runtime-agnostic and
+useful in the browser, so the browser surface is no longer "the core minus the
+thing that matters." § 5.4's guarantee table, with its two ❌ rows, is what keeps
+that honest.
 
 ---
 
@@ -1404,7 +1404,7 @@ itself an internal-network scanning oracle when echoed to untrusted users
 — the precision that makes it useful is what makes it dangerous (L4).
 (b) Blocking loopback collides with this repo's own documented Ollama
 local-dev path; the collision is resolvable but the polarity of the
-default needs an explicit decision before implementation (L6, OQ-5).
+default needed an explicit decision before implementation (L6); settled as D-5.
 
 ---
 
@@ -1444,4 +1444,6 @@ the evidence: a defect *in* a resolve step is findable precisely because there
 is one of them.
 
 **OQ-5 dissolved rather than answered.** With no ambient default, the loopback
-question reduces to which posture the shorter factory name carries.
+question reduced to which posture the shorter factory name carries — settled as
+D-5, with the note that its present blast radius is zero because `ai-assist`
+does not consume this primitive.
