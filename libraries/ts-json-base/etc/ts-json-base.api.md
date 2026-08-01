@@ -378,6 +378,9 @@ interface IBinaryFileTreeAccessors<TCT extends string = string> extends IFileTre
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface IBinaryFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
@@ -535,6 +538,8 @@ interface IMutableBinaryFileTreeAccessors<TCT extends string = string> extends I
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface IMutableBinaryFileTreeFileItem<TCT extends string = string> extends IBinaryFileTreeFileItem<TCT>, IMutableFileTreeFileItem<TCT> {
@@ -662,6 +667,9 @@ interface IReadDirectoryItem<T> {
 function isBinaryAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IBinaryFileTreeAccessors<TCT>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function isBinaryFileItem<TCT extends string = string>(item: AnyFileTreeFileItem<TCT> | FileTreeItem<TCT>): item is IBinaryFileTreeFileItem<TCT>;
@@ -698,6 +706,9 @@ function isMutableAccessors<TCT extends string = string>(accessors: IFileTreeAcc
 // @public
 function isMutableBinaryAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IMutableBinaryFileTreeAccessors<TCT>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public

@@ -196,9 +196,19 @@ export interface IFileTreeFileItem<TCT extends string = string> {
  *
  * @remarks
  * This is an *optional capability* — it is deliberately not part of
- * {@link FileTree.IFileTreeFileItem}, so implementations that have no byte-native
- * backing store simply do not implement it. Use
+ * {@link FileTree.IFileTreeFileItem}. Use
  * {@link FileTree.isBinaryFileItem | isBinaryFileItem} to narrow.
+ *
+ * **The file-item guard narrows the type; it does not promise the call succeeds.**
+ * {@link FileTree.FileItem} — the generic wrapper backing every adapter except zip —
+ * implements this interface unconditionally and delegates to its accessors, reporting
+ * an accessor that lacks the capability as a `Failure` rather than by omitting the
+ * method. So `isBinaryFileItem` is `true` for any `FileItem` regardless of what backs
+ * it. That mirrors the pre-existing `setRawContents` / `getIsMutable` shape on
+ * {@link FileTree.IMutableFileTreeFileItem} rather than introducing a new convention.
+ * For a capability check that *is* a success guarantee, narrow the **accessors** with
+ * {@link FileTree.isBinaryAccessors | isBinaryAccessors} instead; either way, handle
+ * the returned `Result`.
  * @public
  */
 export interface IBinaryFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
@@ -261,11 +271,21 @@ export interface IMutableFileTreeFileItem<TCT extends string = string> extends I
  *
  * @remarks
  * This is an *optional capability* — use
- * {@link FileTree.isMutableBinaryFileItem | isMutableBinaryFileItem} to narrow. Only
- * backing stores that persist bytes verbatim implement it; stores that persist text
- * (in-memory, `localStorage`, HTTP JSON transport) implement the read-only
- * {@link FileTree.IBinaryFileTreeFileItem} instead, because a byte write could not
+ * {@link FileTree.isMutableBinaryFileItem | isMutableBinaryFileItem} to narrow.
+ *
+ * **At the accessors level**, only backing stores that persist bytes verbatim
+ * implement the mutable half; stores that persist text (in-memory, `localStorage`,
+ * HTTP JSON transport) implement only the read-only
+ * {@link FileTree.IBinaryFileTreeAccessors}, because a byte write could not
  * round-trip.
+ *
+ * **At the file-item level that distinction is not visible to the guard.**
+ * {@link FileTree.FileItem} implements this interface unconditionally and delegates to
+ * its accessors, so `isMutableBinaryFileItem` is `true` for any `FileItem` — including
+ * one backed by a text-persisting store, whose `setRawBytes` then returns a `Failure`.
+ * Narrow the **accessors** with
+ * {@link FileTree.isMutableBinaryAccessors | isMutableBinaryAccessors} when you need
+ * the capability check to be a success guarantee.
  * @public
  */
 export interface IMutableBinaryFileTreeFileItem<TCT extends string = string>
@@ -677,7 +697,15 @@ export function isMutableBinaryAccessors<TCT extends string = string>(
 }
 
 /**
- * Type guard to check if a file item supports reading raw bytes.
+ * Type guard narrowing a file item to {@link FileTree.IBinaryFileTreeFileItem}.
+ *
+ * @remarks
+ * Narrows the type; does **not** promise `getRawBytes()` will succeed.
+ * {@link FileTree.FileItem} implements the interface unconditionally and delegates to
+ * its accessors, so this returns `true` for any `FileItem` and the call reports a
+ * non-byte-capable backing store as a `Failure`. Use
+ * {@link FileTree.isBinaryAccessors | isBinaryAccessors} for a capability check that
+ * is a success guarantee.
  * @param item - The file item to check.
  * @returns `true` if the item implements {@link FileTree.IBinaryFileTreeFileItem}.
  * @public
@@ -690,7 +718,14 @@ export function isBinaryFileItem<TCT extends string = string>(
 }
 
 /**
- * Type guard to check if a file item supports both reading and writing raw bytes.
+ * Type guard narrowing a file item to {@link FileTree.IMutableBinaryFileTreeFileItem}.
+ *
+ * @remarks
+ * Narrows the type; does **not** promise `setRawBytes()` will succeed — see
+ * {@link FileTree.isBinaryFileItem | isBinaryFileItem}. Byte writes are supported only
+ * by byte-persisting stores, and that is knowable at the accessors level: use
+ * {@link FileTree.isMutableBinaryAccessors | isMutableBinaryAccessors} when the check
+ * needs to be a success guarantee.
  * @param item - The file item to check.
  * @returns `true` if the item implements {@link FileTree.IMutableBinaryFileTreeFileItem}.
  * @public
