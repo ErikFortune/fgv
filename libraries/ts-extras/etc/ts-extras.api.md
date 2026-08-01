@@ -298,6 +298,8 @@ const allModelCapabilities: ReadonlyArray<AiModelCapability>;
 // @public
 const allModelSpecKeys: ReadonlyArray<ModelSpecKey>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 function allowAnyAddress(): IAddressGuard;
 

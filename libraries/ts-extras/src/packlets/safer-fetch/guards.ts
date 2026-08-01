@@ -48,6 +48,11 @@ import type {
  * where neither DNS resolution nor redirect interposition exists. And omitting it would not
  * make anyone safer — it would make consumers hand-roll something worse. It is deliberately
  * named to be uncomfortable in review and to grep as a distinct posture.
+ *
+ * This is the **guard-layer** factory: it returns an {@link SaferFetch.IAddressGuard}, which is
+ * what an entry point's `addressGuard` option takes. A pure address *policy* — the synchronous,
+ * address-list-in classifier a resolving guard delegates to — is a different layer and needs a
+ * distinct name.
  * @public
  */
 export function allowAnyAddress(): IAddressGuard {
