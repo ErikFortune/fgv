@@ -315,4 +315,16 @@ describe('existing extractor diagnostics are unchanged by the classifier', () =>
   test('fencedStringifiedJson still propagates the raw parse failure unchanged', () => {
     expect(fencedStringifiedJson().convert('{not valid json}')).toFailWith(/failed to parse json/i);
   });
+
+  test('a non-string input is total rather than throwing, matching extractJsonText', () => {
+    // The signature says `string`, but a JS consumer — or a TS caller arriving via an
+    // `unknown`/`any` escape hatch — can still pass a non-string. `extractJsonText`
+    // already guarded this; without the matching guard here the documented "never
+    // fails" contract was false in practice (the BOM strip threw a TypeError).
+    const notStrings: ReadonlyArray<unknown> = [42, null, undefined, {}, [], true];
+    for (const value of notStrings) {
+      expect(() => classifyJsonParseFailure(value as unknown as string)).not.toThrow();
+      expect(classifyJsonParseFailure(value as unknown as string)).toEqual(UNKNOWN);
+    }
+  });
 });
