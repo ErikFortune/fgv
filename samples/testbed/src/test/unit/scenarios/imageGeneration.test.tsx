@@ -58,6 +58,50 @@ describe('imageGenerationScenario metadata', () => {
   test('defaultModelFor resolves the image tier for a known provider', () => {
     expect(defaultModelFor('openai').length).toBeGreaterThan(0);
   });
+
+  test('defaultModelFor returns the CONCRETE image model id, never the fgv alias form', () => {
+    // The bare `AiAssist.resolveModel(descriptor.defaultModel, 'image')` walk this replaced
+    // returned the alias (e.g. '@openai:image'). That value is shown in the Model <input>
+    // beside a fetched list of concrete ids, and it feeds resolveImageCapability.
+    for (const provider of IMAGE_PROVIDERS) {
+      const model = defaultModelFor(provider);
+      expect(model.startsWith(AiAssist.MODEL_ALIAS_SIGIL)).toBe(false);
+      const descriptor = AiAssist.getProviderDescriptor(provider).orThrow();
+      expect(AiAssist.resolveProviderModel(descriptor, undefined, 'image')).toSucceedWith(model);
+    }
+  });
+
+  test('every image provider default resolves a real capability, not the catch-all by accident', () => {
+    // The scenario branches on the resolved capability (`acceptsImageReferenceInput` gates the
+    // "use as reference" affordance; maxCount / acceptedSizes drive the form). Pin that the
+    // capability reached from defaultModelFor is the same one the concrete id selects — the
+    // combined assertion that would have caught the wrong-capability outcome end to end.
+    for (const provider of IMAGE_PROVIDERS) {
+      const descriptor = AiAssist.getProviderDescriptor(provider).orThrow();
+      const viaDefault = AiAssist.resolveImageCapability(descriptor, defaultModelFor(provider));
+      expect(viaDefault).toBeDefined();
+      const concrete = AiAssist.resolveProviderModel(descriptor, undefined, 'image').orThrow();
+      expect(viaDefault).toEqual(AiAssist.resolveImageCapability(descriptor, concrete));
+    }
+  });
+
+  test('the openai and xai defaults resolve their specific-prefix capabilities', () => {
+    // The two providers whose registry entries carry a specific prefix *and* a catch-all —
+    // i.e. the two where the pre-fix alias leak produced a materially different answer.
+    const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+    expect(AiAssist.resolveImageCapability(openai, defaultModelFor('openai'))).toMatchObject({
+      modelPrefix: 'gpt-image-',
+      acceptsImageReferenceInput: true,
+      outputParamStyle: 'output-format'
+    });
+
+    const xai = AiAssist.getProviderDescriptor('xai-grok').orThrow();
+    expect(AiAssist.resolveImageCapability(xai, defaultModelFor('xai-grok'))).toMatchObject({
+      modelPrefix: 'grok-imagine-',
+      format: 'xai-images-edits',
+      acceptsImageReferenceInput: true
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------

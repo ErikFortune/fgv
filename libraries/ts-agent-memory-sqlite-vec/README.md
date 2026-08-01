@@ -83,11 +83,25 @@ const hits = (await retriever.retrieve({ semantic: 'refund policy', topK: 5, max
 // each hit carries { target, locator: { start, end }, score } — read the record, slice the span.
 ```
 
-- Keyed on `target_key` as a `vec0` **`PARTITION KEY`** (many rows share it), with the `[start, end)` offsets in auxiliary columns — so `addFragments` is whole-record-replace, `remove` drops every fragment of a target, and both are per-target-clean.
+- Keyed on `target_key` as a `vec0` **`PARTITION KEY`** (many rows share it), with each fragment's identity in auxiliary columns (`+start_off`, `+end_off`, `+fragment_id`) — so `addFragments` is whole-record-replace, `remove` drops every fragment of a target, and both are per-target-clean.
 - `query(vector, topK, maxPerRecord?)` applies the optional per-record cap **during selection, before the `topK` cut**, so one long document cannot crowd others out.
 - Same dimension-establishment, cosine scoring (`score = 1 − cosineDistance`), reopen-recovery, and loud-failure contract as the record index — byte-identical to `InMemoryFragmentCosineIndex`.
 
+A fragment must carry **at least one** of `locator` / `fragmentId`. The `locator` span is *advisory* — the region of the body the fragment was derived from, **not** a slice guaranteed to reproduce its text — so a rewriting segmenter should omit it and supply a `fragmentId` instead. `fragmentId` is an **opaque bytestring**: stored and returned verbatim, never parsed, never filtered on. Its stability across re-embeds is the caller's business, not this index's (`addFragments` is whole-record-replace, so an updated record re-emits its whole fragment set).
+
 Hold the record and fragment indexes in **distinct tables** (default `memory_vectors` vs `memory_fragments`, or supply `tableName`); they are fully independent and may share one database file.
+
+## Upgrading: `vec0` schema changes require a drop-and-re-index
+
+**There are no in-place migrations for the `vec0` tables this package writes.** When a release changes a table's shape — a new auxiliary column, a different column set — you must **drop the table and re-index**. `DROP TABLE "memory_fragments"` (or point the index at a fresh `tableName`), then re-add every fragment.
+
+This is a property of `vec0`, not a choice: `CREATE VIRTUAL TABLE IF NOT EXISTS` is a no-op against an existing table — SQLite never compares schemas — and `vec0` has no `ALTER TABLE ADD COLUMN`. An old table therefore survives an upgrade untouched and only fails later, opaquely, when a widened statement is prepared.
+
+`SqliteVecFragmentIndex.create` **detects this up front** and fails with a message naming the expected and found columns and stating the remedy, rather than letting `no such column: fragment_id` surface at statement-prepare time.
+
+**The cost is embedding time, never data.** Vectors are derived artifacts — the records in your `FileTreeMemoryStore` vault remain the source of truth — so a re-index re-derives what was dropped and loses nothing.
+
+Known instance: the release that added `IEmbeddedFragment.fragmentId` added a `+fragment_id` auxiliary column to the fragment table. A fragment database written before it must be dropped and re-indexed. (The record table used by `SqliteVecVectorIndex` is unchanged.)
 
 ## Not in scope
 
@@ -97,7 +111,7 @@ Deliberately excluded — reach for the upstream libraries (or a different backe
 - **Connection lifecycle.** You open and close the `better-sqlite3` `Database`; this index never does. Pooling, WAL/pragma tuning, backups, and multi-process coordination are yours.
 - **Embedding.** This is a vector *index*, not an embedder — the store's consumer-wired `MemoryEmbedder` produces the vectors (`@fgv/ts-extras/ai-assist` `callProviderEmbedding`, `@fgv/ts-extras-transformers`, etc.).
 - **A browser sibling.** `better-sqlite3` is Node-only. A WASM-SQLite browser variant, if ever needed, is a separate package.
-- **Schema migration across dimension change.** Re-embedding with a different-dimension model against an existing table fails loudly; drop the table (or use a new `tableName`) to re-index.
+- **Schema migration of any kind.** Re-embedding with a different-dimension model against an existing table fails loudly, and a package release that changes a `vec0` table's columns requires a drop-and-re-index — see [Upgrading](#upgrading-vec0-schema-changes-require-a-drop-and-re-index). Drop the table (or use a new `tableName`) to re-index; `vec0` cannot be altered in place.
 
 ## Runtime requirements
 
