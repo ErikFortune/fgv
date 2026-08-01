@@ -36,6 +36,7 @@ is one I would defend; every gap is named rather than implied.
 - [16. Decisions](#16-decisions)
 - [Appendix A — where the three findings were incomplete](#appendix-a--where-the-three-findings-were-incomplete)
 - [Appendix B — design-history record](#appendix-b--design-history-record)
+- [Appendix C — consumer validation](#appendix-c--consumer-validation-personaility-2026-08-01)
 
 ---
 
@@ -642,6 +643,34 @@ redirect chain with per-hop resolved addresses is a substantially richer one.
 Guards receive it; callers get it only on explicit opt-in, never echoed
 automatically into a returned failure.
 
+#### Named response-headers guards
+
+Content-type gating is the one policy guard worth shipping a factory for,
+rather than leaving every consumer to write it:
+
+```typescript
+/** @public */
+export function allowContentTypes(types: ReadonlyArray<string>): IResponseHeadersGuard;
+```
+
+**Rejecting on `Content-Type` is strictly cheaper than capping mid-read** — it
+costs a header comparison instead of a partial body transfer — so a URL-ingestion
+consumer wants it on every call.
+
+The parse is **not trivial in the way it looks**, which is the argument for
+owning it once. `text/html; charset=utf-8` must match `text/html`. Matching is
+case-insensitive on both type and subtype. `text/*` wildcards need to work.
+Parameters must be stripped, not string-matched around. Every hand-rolled
+version gets a different subset of these right, and the failure is silent —
+a document is rejected, or worse accepted, for reasons the caller never sees.
+
+This deliberately **replaces** an earlier `acceptContentTypes?: string[]`
+option. The option predated the four-seam split; once response-headers guards
+exist, having both would be two mechanisms for one job.
+
+Note the guard runs *before* any body bytes are read, so a rejection costs
+nothing beyond the headers — which is what makes it the right layer for this.
+
 #### Named address guards
 
 The address guard is **required** and has **no default** — see § 6.2. That
@@ -720,8 +749,9 @@ export interface ISafeFetchOptions {
   readonly signal?: AbortSignal;
   readonly logger?: Logging.ILogger;
 
-  /** Content types accepted before the body is read. Per-entry-point default. */
-  readonly acceptContentTypes?: ReadonlyArray<string>;
+  // NOTE: content-type gating is NOT an option here. It is a response-headers
+  // guard — `allowContentTypes([...])` (§ 6.1). The option predated the
+  // four-seam split and would have been a second way to do the same thing.
 }
 ```
 
@@ -1084,8 +1114,28 @@ Rules, each of which is a decision:
   `retryNonIdempotent: true`. A retried `POST` after a timeout can
   double-charge — the timeout does not tell you whether the server
   processed the request.
-- **The guard re-runs on every attempt**, from hop 0. Attempts are not
-  cheaper than first tries from a safety standpoint.
+- **The guard re-runs on every attempt, from hop 0 — a full re-walk, not a
+  resume.** This is the single most important rule in this section, and the
+  reasoning is worth stating rather than asserting.
+
+  Reusing a prior attempt's verdict would make retry its own rebinding
+  vector. The attacker needs the guard check to pass once and the connect to
+  land on a private address; caching the verdict across `N` attempts gives
+  them `N` connects against **one** check, multiplying their odds by the
+  retry count. Retries are also *delayed*, and a delay is precisely when a
+  short-TTL rebind lands. This matters **more** while pinned-connect is
+  deferred (§ 13), not less — the whole reason the hole is survivable today
+  is that a single connect is a single roll.
+
+  A resume is insufficient for a second, independent reason: **the redirect
+  chain is not stable across attempts.** Attempt 2's server may return a
+  different `Location` than attempt 1's. Revalidating only the current hop
+  would validate a chain the request no longer follows. So a retry restarts
+  the walk at hop 0 and revalidates every hop it then encounters.
+
+  Consequence for the budget: retries are *more* expensive than a naive
+  implementation would suggest, because each carries full re-resolution.
+  That cost is deliberate and must not be optimized away by caching.
 - **`Retry-After`** honored on 429/503 (delta-seconds or HTTP-date),
   clamped to `maxDelayMs` — it is an AC2-controlled header, so an
   unclamped `Retry-After: 86400` is a denial-of-service on the caller.
@@ -1447,3 +1497,57 @@ is one of them.
 question reduced to which posture the shorter factory name carries — settled as
 D-5, with the note that its present blast radius is zero because `ai-assist`
 does not consume this primitive.
+
+---
+
+## Appendix C — consumer validation (PersonAIlity, 2026-08-01)
+
+The driving external consumer reviewed the design against their actual use case:
+**an owner pastes a URL; the hub fetches that document server-side and ingests
+its text.** Arbitrary owner-supplied hostnames, one fetch per ingestion. Recorded
+because several decisions were taken *without* a consumer in hand and it matters
+whether they held.
+
+**D-3's strict polarity is validated, not merely tolerated.** They want arbitrary
+hostnames but never private addresses, so `blockPrivateNetworks()` is exactly
+right for them and `allowAnyAddress()` is a test-path-only affordance in their
+deployment. They have **no loopback case** — `ai-assist` is a separate transport
+and, per their own earlier ask, should stay one. So the decision taken before any
+consumer existed is the one the first consumer wants.
+
+**The request guard is confirmed unnecessary** for this use case. Recorded as a
+negative so it does not get designed toward speculatively.
+
+**Redirects followed with per-hop revalidation is the wanted behavior**, not a
+default they would override — confirming § 4's coupling rather than pushing
+against it.
+
+**The failure taxonomy's variants are UX-driven, not structural.** Their five
+cases become five different things an owner is told: *"that address isn't
+allowed" / "that page is too big" / "that site didn't respond" / "that page
+returned an error" / "we couldn't reach it."* A single prose message forces the
+consumer to re-parse strings to choose one. This is the concrete requirement
+behind the structured-failure ask, and it is a better sizing rule than
+structural distinctness.
+
+It also **converges with L4** rather than fighting it: a taxonomy sized to
+user-facing messages is necessarily coarser than one sized to internal
+precision, so the shape the consumer needs is also the shape that leaks least
+to an internal-network scanner. Where the two ever conflict, coarser wins.
+
+**`allowContentTypes()` (§ 6.1) originates here** — they need `text/html`,
+`text/plain`, `application/pdf` accepted and everything else rejected before the
+body streams.
+
+**D-6's tunability requirement is load-bearing for them.** 5 MiB is a fine
+default but real documents clear it — a scanned PDF routinely does — so they tune
+per call. This confirms the knob must stay a **per-call option**, not
+construction-time-only.
+
+**Their one open question — does retry re-run the address guard — was already
+answered by § 11**, but the answer was a single asserted line. It has been
+expanded with its reasoning, plus a second justification they had not reached:
+the redirect chain is not stable across attempts, so a retry must re-walk from
+hop 0 rather than resume.
+
+---
