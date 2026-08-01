@@ -1228,7 +1228,7 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
 
 /**
  * Represents a result with additional detail.
- * @beta
+ * @public
  */
 export type DetailedResult<T, TD> = DetailedSuccess<T, TD> | DetailedFailure<T, TD>;
 

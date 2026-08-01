@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Promote DetailedResult from @beta to @public. It has not been genuinely beta since 5.0, and the tag was the only thing making DetailedResult-returning APIs costly for consumers: any @public signature referencing it baked an ae-incompatible-release-tags warning into the consuming package's checked-in api.md. Removes 168 such warnings from ts-utils.api.md alone. No runtime change.",
+      "type": "minor",
+      "packageName": "@fgv/ts-utils"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}
