@@ -24,12 +24,25 @@ import { zipSync, strToU8 } from 'fflate';
 import { Result, captureResult } from '@fgv/ts-utils';
 
 /**
- * Simple interface for a file to be added to a zip file.
+ * Simple interface for a text file to be added to a zip file.
  * @public
  */
 export interface IZipTextFile {
   readonly path: string;
   readonly contents: string;
+}
+
+/**
+ * Interface for a file to be added to a zip file, whose contents are either text or
+ * raw bytes.
+ *
+ * @remarks
+ * String contents are encoded as UTF-8; `Uint8Array` contents are stored verbatim.
+ * @public
+ */
+export interface IZipFile {
+  readonly path: string;
+  readonly contents: string | Uint8Array;
 }
 
 /**
@@ -48,17 +61,36 @@ export interface ICreateZipOptions {
 
 /**
  * Creates a zip file from an array of text files.
+ *
+ * @remarks
+ * Contents are encoded as UTF-8. Use `createZipFromFiles` to write entries whose
+ * contents are raw bytes.
  * @public
  */
 export function createZipFromTextFiles(
   files: ReadonlyArray<IZipTextFile>,
   options?: ICreateZipOptions
 ): Result<Uint8Array> {
+  return createZipFromFiles(files, options);
+}
+
+/**
+ * Creates a zip file from an array of files whose contents are either text or raw bytes.
+ *
+ * @remarks
+ * String contents are encoded as UTF-8; `Uint8Array` contents are stored verbatim, so
+ * arbitrary binary payloads round-trip through the archive unchanged.
+ * @public
+ */
+export function createZipFromFiles(
+  files: ReadonlyArray<IZipFile>,
+  options?: ICreateZipOptions
+): Result<Uint8Array> {
   return captureResult(() => {
     const out: Record<string, Uint8Array> = {};
     for (const f of files) {
       const normalizedPath = f.path.replace(/^\/+/, '');
-      out[normalizedPath] = strToU8(f.contents);
+      out[normalizedPath] = typeof f.contents === 'string' ? strToU8(f.contents) : f.contents;
     }
     return zipSync(out, { level: options?.level ?? 6 });
     /* c8 ignore next - defensive: zipSync only throws on internal library errors */

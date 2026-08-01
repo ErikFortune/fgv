@@ -64,11 +64,22 @@ export interface IHttpTreeParams<TCT extends string = string> extends FileTree.I
 
 /**
  * HTTP-backed file tree accessors that cache data in memory and persist via REST API.
+ *
+ * @remarks
+ * Supports the read half of the optional binary capability
+ * (`FileTree.IBinaryFileTreeAccessors`) — narrow with
+ * `FileTree.isBinaryAccessors` and call `getFileBytes()` to
+ * read a file's bytes without going through a lenient UTF-8 decode.
+ *
+ * Byte *writes* are deliberately not supported: the REST transport carries file
+ * contents as JSON strings, so bytes that are not valid UTF-8 could not survive a
+ * `syncToDisk()` round-trip. A binary transport would be a wire-format change, not a
+ * local one.
  * @public
  */
 export class HttpTreeAccessors<TCT extends string = string>
   extends FileTree.InMemoryTreeAccessors<TCT>
-  implements FileTree.IPersistentFileTreeAccessors<TCT>
+  implements FileTree.IPersistentFileTreeAccessors<TCT>, FileTree.IBinaryFileTreeAccessors<TCT>
 {
   private readonly _baseUrl: string;
   private readonly _namespace: string | undefined;

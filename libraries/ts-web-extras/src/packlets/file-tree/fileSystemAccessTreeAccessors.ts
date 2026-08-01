@@ -59,11 +59,21 @@ export interface IFileSystemAccessTreeParams<TCT extends string = string>
 /**
  * Implementation of `FileTree.IPersistentFileTreeAccessors` that uses the File System Access API
  * to provide persistent file editing in browsers.
+ *
+ * @remarks
+ * Supports the read half of the optional binary capability
+ * (`FileTree.IBinaryFileTreeAccessors`) — narrow with
+ * `FileTree.isBinaryAccessors` and call `getFileBytes()` to
+ * read a file's bytes without going through a lenient UTF-8 decode.
+ *
+ * Byte *writes* are not supported yet: files are loaded via `File.text()` and synced
+ * back as text, so the in-memory layer holds no byte-native representation to write
+ * into. Enabling them is additive and does not change this class's read behaviour.
  * @public
  */
 export class FileSystemAccessTreeAccessors<TCT extends string = string>
   extends FileTree.InMemoryTreeAccessors<TCT>
-  implements FileTree.IPersistentFileTreeAccessors<TCT>
+  implements FileTree.IPersistentFileTreeAccessors<TCT>, FileTree.IBinaryFileTreeAccessors<TCT>
 {
   private readonly _handles: Map<string, FileSystemFileHandle>;
   private readonly _rootDir: FileSystemDirectoryHandle;
