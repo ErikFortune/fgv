@@ -459,5 +459,22 @@ describe('classifyAddress', () => {
     test('the failing message quotes the address exactly as supplied', () => {
       expect(classifyAddress('metadata.internal')).toFailWith(/"metadata\.internal"/);
     });
+
+    // The platform's URL parser applies IDNA/Unicode normalization, so every
+    // string below is the host `127.0.0.1` once it has been through `new URL`.
+    // This function deliberately does not do that normalization — it classifies
+    // a `hostname`, which has already had it. Handed the raw text it fails,
+    // which is fail-closed only because the caller then resolves it as a name.
+    // These cases pin that boundary so it cannot drift silently.
+    test.each([['１２７.０.０.１'], ['127。0。0。1'], ['⑫7.0.0.1']])(
+      'does not itself normalize %s, which the URL parser reads as 127.0.0.1',
+      (address) => {
+        expect(new URL(`http://${address}/`).hostname).toBe('127.0.0.1');
+        expect(classifyAddress(address)).toFail();
+        expect(classifyAddress(new URL(`http://${address}/`).hostname)).toSucceedAndSatisfy((classified) => {
+          expect(classified.classification).toBe('loopback');
+        });
+      }
+    );
   });
 });

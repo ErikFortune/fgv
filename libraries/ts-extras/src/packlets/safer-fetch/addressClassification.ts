@@ -562,6 +562,16 @@ function stripIpv6Zone(text: string): string {
  * A trailing dot is accepted on an IPv4 literal (`127.0.0.1.`), matching URL
  * hostname normalization.
  *
+ * **Classify a URL's `hostname`, never the raw URL text.** This function does
+ * not apply IDNA/Unicode normalization, and that step is not cosmetic: the
+ * platform's URL parser reads `http://１２７.０.０.１/`, `http://127。0。0。1/` and
+ * even `http://⑫7.0.0.1/` as the host `127.0.0.1`, because IDNA normalizes
+ * fullwidth digits, the ideographic full stop and circled numbers to their
+ * ASCII equivalents. Handed one of those strings directly this function fails —
+ * which is fail-closed, but only because the caller is then expected to treat
+ * "not a literal" as "resolve it as a name". Reading `new URL(...).hostname`
+ * gets the normalization for free and is the only supported use.
+ *
  * @param address - the address literal to classify.
  * @returns `Success` with the {@link IClassifiedAddress | classification},
  * or `Failure` if the supplied text is not a well-formed IP address literal.
