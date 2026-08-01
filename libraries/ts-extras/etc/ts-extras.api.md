@@ -773,8 +773,10 @@ type FetchFailureReason =
     readonly detail: string;
 }
 /**
-* A non-2xx response. `bodyPreview` is opt-in and length-capped because error bodies
-* routinely echo request content, including credentials.
+* A non-2xx response. `bodyPreview` is **never populated in this release** — error bodies
+* routinely echo request content, including credentials, so surfacing one has to be an
+* explicit, length-capped opt-in rather than a default. The field is declared so that adding
+* that opt-in later is additive.
 */
 | {
     readonly kind: 'http-status';
@@ -2093,7 +2095,7 @@ function isAdaptiveThinkingModel(descriptor: IAiProviderDescriptor, modelId: str
 //
 // @public
 interface ISaferFetchJsonOptions<T> extends ISaferFetchOptions {
-    readonly converter?: Converter<T> | Validator<T>;
+    readonly converter: Converter<T> | Validator<T>;
 }
 
 // @public
@@ -2851,7 +2853,12 @@ function saferFetchBytes(url: string | URL, options: ISaferFetchOptions): Promis
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function saferFetchJson<T = JsonValue>(url: string | URL, options: ISaferFetchJsonOptions<T>): Promise<DetailedResult<ISaferFetchResponse<T>, FetchFailureReason>>;
+function saferFetchJson(url: string | URL, options: ISaferFetchOptions): Promise<DetailedResult<ISaferFetchResponse<JsonValue>, FetchFailureReason>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function saferFetchJson<T>(url: string | URL, options: ISaferFetchJsonOptions<T>): Promise<DetailedResult<ISaferFetchResponse<T>, FetchFailureReason>>;
 
 // @public
 type SaferFetchMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';

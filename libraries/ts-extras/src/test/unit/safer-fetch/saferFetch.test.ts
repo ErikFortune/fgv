@@ -20,7 +20,7 @@
 
 import '@fgv/ts-utils-jest';
 
-import { Converters, Logging, fail, succeed, type Result } from '@fgv/ts-utils';
+import { Converters, Logging, Validators, fail, succeed, type Result } from '@fgv/ts-utils';
 
 import { SaferFetch } from '../../..';
 import {
@@ -116,6 +116,24 @@ describe('saferFetch entry points', () => {
       });
     });
 
+    test('saferFetchJson accepts a Validator as well as a Converter', async () => {
+      const validator = Validators.object<{ name: string }>({ name: Validators.string });
+      const transport = respondWith(() => jsonResponse({ name: 'widget' }));
+      await expect(
+        saferFetchJson(URL_UNDER_TEST, { ...options(transport), converter: validator })
+      ).resolves.toSucceedAndSatisfy((response: SaferFetch.ISaferFetchResponse<{ name: string }>) => {
+        expect(response.value.name).toBe('widget');
+      });
+    });
+
+    // A caller-named T with nothing checking it is a claim the primitive cannot keep, so the
+    // surface does not offer one: T comes from the converter or the value comes back JsonValue.
+    test('saferFetchJson does not let a caller assert T without a converter', async () => {
+      const transport = respondWith(() => jsonResponse({ name: 'widget' }));
+      // @ts-expect-error - no overload takes an explicit T without the converter that evidences it.
+      await saferFetchJson<{ name: string }>(URL_UNDER_TEST, options(transport));
+    });
+
     test('accepts a URL instance as well as a string', async () => {
       const transport = respondWith(() => textResponse('ok'));
       await expect(saferFetchText(new URL(URL_UNDER_TEST), options(transport))).resolves.toSucceedAndSatisfy(
@@ -168,6 +186,21 @@ describe('saferFetch entry points', () => {
       expect(Array.from(sent)).toEqual(Array.from(utf8('payload')));
       body[0] = 0;
       expect(sent[0]).not.toBe(0);
+    });
+
+    test('defaults to the platform transport when none is supplied', async () => {
+      const fetchSpy = jest.spyOn(globalThis, 'fetch').mockResolvedValue(textResponse('ok'));
+      try {
+        await expect(
+          saferFetchText(URL_UNDER_TEST, { addressGuard: allowAnyAddress() })
+        ).resolves.toSucceedWith(expect.objectContaining({ value: 'ok' }));
+        expect(fetchSpy).toHaveBeenCalledWith(
+          URL_UNDER_TEST,
+          expect.objectContaining({ redirect: 'manual' })
+        );
+      } finally {
+        fetchSpy.mockRestore();
+      }
     });
 
     test('always requests manual redirects so the platform follows nothing on our behalf', async () => {
@@ -707,6 +740,59 @@ describe('saferFetch entry points', () => {
     test('the deadlines have documented defaults', () => {
       expect(DEFAULT_TIMEOUT_MS).toBe(30_000);
       expect(DEFAULT_HEADERS_TIMEOUT_MS).toBe(10_000);
+    });
+
+    // A guard that hangs — a stalled DNS lookup, an unresponsive remote classifier — must not
+    // hang the call. Each seam is inside the same deadline as the request itself.
+    test('a hanging address guard is stopped by the deadline', async () => {
+      const addressGuard: SaferFetch.IAddressGuard = {
+        name: 'hanging',
+        check: () => new Promise<Result<SaferFetch.IGuardVerdict>>(() => undefined)
+      };
+      const transport = respondWith(() => textResponse('ok'));
+      await expect(
+        saferFetchText(URL_UNDER_TEST, options(transport, { addressGuard, timeoutMs: 20 }))
+      ).resolves.toFailWithDetail(
+        /timed out/i,
+        expect.objectContaining({ kind: 'timeout', phase: 'overall' })
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    test('a hanging response-headers guard is stopped by the deadline, and the body released', async () => {
+      const stream = stallingStreamOf([]);
+      const responseHeadersGuard: SaferFetch.IResponseHeadersGuard = {
+        name: 'hanging',
+        check: () => new Promise<Result<true>>(() => undefined)
+      };
+      const transport = respondWith(() => new Response(stream.stream));
+      await expect(
+        saferFetchText(URL_UNDER_TEST, options(transport, { responseHeadersGuard, timeoutMs: 20 }))
+      ).resolves.toFailWithDetail(/timed out/i, expect.objectContaining({ kind: 'timeout' }));
+      expect(stream.wasCancelled()).toBe(true);
+    });
+
+    test('a hanging response-body guard is stopped by the deadline', async () => {
+      const responseBodyGuard: SaferFetch.IResponseBodyGuard = {
+        name: 'hanging',
+        check: () => new Promise<Result<true>>(() => undefined)
+      };
+      const transport = respondWith(() => textResponse('ok'));
+      await expect(
+        saferFetchText(URL_UNDER_TEST, options(transport, { responseBodyGuard, timeoutMs: 20 }))
+      ).resolves.toFailWithDetail(/timed out/i, expect.objectContaining({ kind: 'timeout' }));
+    });
+
+    test('a hanging request guard is stopped by the deadline', async () => {
+      const requestGuard: SaferFetch.IRequestGuard = {
+        name: 'hanging',
+        check: () => new Promise<Result<SaferFetch.ISaferFetchRequest>>(() => undefined)
+      };
+      const transport = respondWith(() => textResponse('ok'));
+      await expect(
+        saferFetchText(URL_UNDER_TEST, options(transport, { requestGuard, timeoutMs: 20 }))
+      ).resolves.toFailWithDetail(/timed out/i, expect.objectContaining({ kind: 'timeout' }));
+      expect(transport.calls).toHaveLength(0);
     });
   });
 

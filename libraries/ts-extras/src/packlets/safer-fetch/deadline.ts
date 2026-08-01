@@ -60,7 +60,7 @@ export class DeadlineWatch {
   private _headersTimer: ReturnType<typeof setTimeout> | undefined;
   private _cause: DeadlineStopCause | undefined;
   private _inBodyPhase: boolean;
-  private _waiters: Array<(cause: DeadlineStopCause) => void>;
+  private readonly _waiters: Set<(cause: DeadlineStopCause) => void>;
 
   public constructor(timeoutMs: number, headersTimeoutMs: number, callerSignal?: AbortSignal) {
     this._controller = new AbortController();
@@ -69,7 +69,7 @@ export class DeadlineWatch {
     this._headersTimeoutMs = headersTimeoutMs;
     this._callerSignal = callerSignal;
     this._inBodyPhase = false;
-    this._waiters = [];
+    this._waiters = new Set();
 
     this._onCallerAbort = (): void => this._stop('caller-aborted');
     this._overallTimer = setTimeout(() => this._stop(this._inBodyPhase ? 'body' : 'overall'), timeoutMs);
@@ -110,15 +110,30 @@ export class DeadlineWatch {
    * Races a promise against the deadlines. A stopped race reports the cause; the underlying
    * promise is abandoned, not cancelled — the caller is responsible for releasing whatever
    * resource it represents (a response body reader, in practice).
+   *
+   * @remarks
+   * The waiter is removed once the race settles. A body read calls this once per chunk, so a
+   * waiter set that only grew would be a leak proportional to the number of chunks — in the
+   * exact code path whose job is to bound what a hostile response can cost the process.
    */
   public async race<T>(promise: Promise<T>): Promise<DeadlineRace<T>> {
     if (this._cause !== undefined) {
       return { stopped: true, cause: this._cause };
     }
+    // Definitely assigned: a Promise executor runs synchronously.
+    let waiter!: (cause: DeadlineStopCause) => void;
     const stop: Promise<DeadlineRace<T>> = new Promise((resolve) => {
-      this._waiters.push((cause) => resolve({ stopped: true, cause }));
+      waiter = (cause: DeadlineStopCause): void => resolve({ stopped: true, cause });
     });
-    return Promise.race([promise.then((value): DeadlineRace<T> => ({ stopped: false, value })), stop]);
+    this._waiters.add(waiter);
+    try {
+      return await Promise.race([
+        promise.then((value): DeadlineRace<T> => ({ stopped: false, value })),
+        stop
+      ]);
+    } finally {
+      this._waiters.delete(waiter);
+    }
   }
 
   /** Builds the failure reason corresponding to why the call was stopped. */
@@ -147,16 +162,19 @@ export class DeadlineWatch {
     if (this._callerSignal !== undefined) {
       this._callerSignal.removeEventListener('abort', this._onCallerAbort);
     }
-    this._waiters = [];
+    this._waiters.clear();
   }
 
   private _stop(cause: DeadlineStopCause): void {
+    // First cause wins. The overall and headers deadlines can be scheduled for the same instant,
+    // and a caller can abort while one of them is already firing; reporting the second would
+    // rewrite a phase the caller has arguably already been told about.
     if (this._cause !== undefined) {
       return;
     }
     this._cause = cause;
-    const waiters = this._waiters;
-    this._waiters = [];
+    const waiters = Array.from(this._waiters);
+    this._waiters.clear();
     this._controller.abort();
     for (const waiter of waiters) {
       waiter(cause);

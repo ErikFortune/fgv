@@ -83,8 +83,10 @@ export type FetchFailureReason =
   /** The transport could not complete the request. */
   | { readonly kind: 'network'; readonly detail: string }
   /**
-   * A non-2xx response. `bodyPreview` is opt-in and length-capped because error bodies
-   * routinely echo request content, including credentials.
+   * A non-2xx response. `bodyPreview` is **never populated in this release** — error bodies
+   * routinely echo request content, including credentials, so surfacing one has to be an
+   * explicit, length-capped opt-in rather than a default. The field is declared so that adding
+   * that opt-in later is additive.
    */
   | {
       readonly kind: 'http-status';

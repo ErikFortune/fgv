@@ -279,6 +279,11 @@ export interface ISaferFetchOptions {
    * {@link SaferFetch.DEFAULT_HEADERS_TIMEOUT_MS}. Distinguishes "the host is not answering"
    * from "the host is answering slowly", which the failure taxonomy then reports as
    * `timeout.phase`.
+   *
+   * @remarks
+   * Measured from the start of the attempt, which includes guard evaluation — an address guard
+   * that resolves DNS spends this budget too. That is deliberate: the deadline bounds the time
+   * a caller waits for a usable response, not the time one layer of the implementation spends.
    */
   readonly headersTimeoutMs?: number;
 

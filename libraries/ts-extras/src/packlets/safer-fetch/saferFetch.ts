@@ -431,21 +431,22 @@ async function _connect(
   if (sent.stopped) {
     return _stopped<IRawOutcome>(watch, sent.cause);
   }
-  watch.headersReceived();
   if (sent.value.isFailure()) {
-    // A transport failure that arrives after we stopped the call is our abort, not a network
-    // condition: the taxonomy must not say "the host is unreachable" when we hung up.
-    const cause = watch.cause ?? undefined;
-    if (cause !== undefined) {
-      return _stopped<IRawOutcome>(watch, cause);
-    }
+    // No `watch.cause` re-check here: a stop resolves every in-flight race the instant it
+    // fires, so reaching this line means the transport settled *before* we gave up. Reporting
+    // it as a network failure is the honest answer — relabelling it as a timeout because the
+    // deadline expired a microsecond later would be the taxonomy lying about which came first.
     return _fail<IRawOutcome>(
       { kind: 'network', detail: sent.value.message },
       `transport "${transport.name}" failed: ${sent.value.message}`
     );
   }
+  watch.headersReceived();
 
-  return _receive(sent.value.value, url, chain, guards, resolved, watch);
+  // Downstream guards see the chain as it was actually requested, so the URL a response guard
+  // reads is the URL the address guard cleared — not the pre-normalization spelling.
+  const requested: ReadonlyArray<IRequestHop> = [...chain.slice(0, -1), { ...chain[chain.length - 1], url }];
+  return _receive(sent.value.value, url, requested, guards, resolved, watch);
 }
 
 async function _execute(url: string | URL, options: ISaferFetchOptions): Promise<Outcome<IRawOutcome>> {
@@ -604,19 +605,23 @@ export async function saferFetchText(
 }
 
 /**
- * Options for {@link SaferFetch.saferFetchJson}.
+ * Options for the validating form of {@link SaferFetch.saferFetchJson}.
+ *
+ * @remarks
+ * `converter` is **required** here, and `T` is inferred from it. There is deliberately no way
+ * to assert a `T` without supplying the converter that evidences it at runtime: a caller-named
+ * type with nothing checking it is a claim the primitive cannot keep. Omit the whole options
+ * type and the value comes back as `JsonValue`, which is what the wire actually guarantees.
  * @public
  */
 export interface ISaferFetchJsonOptions<T> extends ISaferFetchOptions {
-  /**
-   * Applied to the parsed JSON, taking the caller from wire to validated `T` in one step.
-   * Without it the value is `JsonValue` and the caller validates.
-   */
-  readonly converter?: Converter<T> | Validator<T>;
+  /** Applied to the parsed JSON, taking the caller from wire to validated `T` in one step. */
+  readonly converter: Converter<T> | Validator<T>;
 }
 
 /**
- * Fetches a URL and parses the response body as JSON.
+ * Fetches a URL and parses the response body as JSON, yielding the raw `JsonValue` for the
+ * caller to validate.
  *
  * @remarks
  * **This does not gate on `Content-Type` by itself.** A server returning an HTML error page
@@ -630,34 +635,58 @@ export interface ISaferFetchJsonOptions<T> extends ISaferFetchOptions {
  * and for the warning about echoing failure detail to untrusted callers.
  *
  * @param url - The URL to fetch.
- * @param options - Call options plus an optional `converter`. `addressGuard` is required.
+ * @param options - Call options. `addressGuard` is required. `maxResponseBytes` defaults to
+ * 5 MiB and is meant to be tuned per call.
+ * @public
+ */
+export async function saferFetchJson(
+  url: string | URL,
+  options: ISaferFetchOptions
+): Promise<DetailedResult<ISaferFetchResponse<JsonValue>, FetchFailureReason>>;
+/**
+ * Fetches a URL, parses the response body as JSON, and runs it through the supplied converter
+ * or validator so the caller reaches a validated `T` in one step.
+ *
+ * @remarks
+ * `T` is inferred from `converter` and is never caller-asserted, so the returned type is
+ * evidenced at runtime rather than claimed.
+ *
+ * See {@link SaferFetch.saferFetchBytes} for what this primitive does **not** protect against,
+ * and for the warning about echoing failure detail to untrusted callers.
+ *
+ * @param url - The URL to fetch.
+ * @param options - Call options plus the required `converter`. `addressGuard` is required.
  * `maxResponseBytes` defaults to 5 MiB and is meant to be tuned per call.
  * @public
  */
-export async function saferFetchJson<T = JsonValue>(
+export async function saferFetchJson<T>(
   url: string | URL,
   options: ISaferFetchJsonOptions<T>
-): Promise<DetailedResult<ISaferFetchResponse<T>, FetchFailureReason>> {
+): Promise<DetailedResult<ISaferFetchResponse<T>, FetchFailureReason>>;
+export async function saferFetchJson<T>(
+  url: string | URL,
+  options: ISaferFetchOptions | ISaferFetchJsonOptions<T>
+): Promise<DetailedResult<ISaferFetchResponse<T | JsonValue>, FetchFailureReason>> {
   const raw = await _execute(url, options);
   if (raw.isFailure()) {
-    return _propagate<IRawOutcome, ISaferFetchResponse<T>>(raw);
+    return _propagate<IRawOutcome, ISaferFetchResponse<T | JsonValue>>(raw);
   }
   const text = _decodeText(raw.value);
   if (text.isFailure()) {
-    return _propagate<string, ISaferFetchResponse<T>>(text);
+    return _propagate<string, ISaferFetchResponse<T | JsonValue>>(text);
   }
 
-  const converter = options.converter ?? undefined;
+  const converter = (options as Partial<ISaferFetchJsonOptions<T>>).converter ?? undefined;
   const parser: Converter<T | JsonValue> =
     converter !== undefined
       ? JsonBaseConverters.stringifiedJson<T>(converter)
       : JsonBaseConverters.stringifiedJson();
   const parsed = parser.convert(text.value);
   if (parsed.isFailure()) {
-    return _fail<ISaferFetchResponse<T>>(
+    return _fail<ISaferFetchResponse<T | JsonValue>>(
       { kind: 'parse', detail: parsed.message },
       `failed to parse response as JSON: ${parsed.message}`
     );
   }
-  return _succeed(_toResponse(parsed.value as T, raw.value));
+  return _succeed(_toResponse(parsed.value, raw.value));
 }
