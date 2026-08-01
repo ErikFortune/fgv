@@ -283,6 +283,46 @@ Ranges to reject (v4): `0.0.0.0/8`, `10/8`, `100.64/10`, `127/8`,
 (v6): `::/128`, `::1/128`, `fc00::/7`, `fe80::/10`, `ff00::/8`, plus
 v4-mapped and NAT64 embeddings of the above.
 
+#### Corrections from implementation (S2a, PR #592)
+
+The table above was written against intent. Implementing it — and running a
+differential harness against the platform's own WHATWG URL parser over 4405
+inputs — found four gaps. Each is verified, not asserted; the `node -e` one-liners
+that demonstrate them are reproducible.
+
+**Three additional v4-in-v6 embeddings.** The table lists only the *mapped* form.
+Also required:
+
+| Bypass | Example | Note |
+|---|---|---|
+| **6to4** `2002::/16` | `2002:a9fe:a9fe::` | Embeds v4 in bits 16..47 — this **is** the metadata endpoint |
+| **IPv4-compatible** `::/96` | `::a9fe:a9fe` | Deprecated but still parsed; distinct from the mapped form |
+| **RFC 6145 translated** `::ffff:0:0:0/96` | | Third embedding shape |
+
+**The v6 reject list leaves most of IPv6 classified as public.** Only `2000::/3`
+is assigned global unicast, so a classifier using the reject list alone treats
+`fe00::1`, `1fff::1`, `4000::1` and `100::1` as public — verified: all four pass
+through `new URL()` unchanged and match no listed range. **The v6 fallback must be
+`reserved`, never `public`:** classify what is *known* global unicast and reject
+the rest, rather than rejecting a list and permitting the remainder. This inverts
+the table's polarity for v6 and is the more consequential of the four.
+
+**`0x` with an empty remainder is `0`.** `http://127.0x.1/` has hostname
+`127.0.0.1`. So does `http://0x7f.1/`; `http://127.0x/` is `127.0.0.0`. This was a
+live bypass in S2a's first draft, found by the differential harness rather than by
+review — no reads-against-intent pass would have produced it.
+
+**IDNA is an address-level concern, not only a hostname-allowlist one.** The row
+above files unicode homographs under allowlist matching, which understates it:
+`http://⑫7.0.0.1/`, `http://１２７.０.０.１/` and `http://127。0。0。1/` all have
+hostname `127.0.0.1` after WHATWG normalization. The digits and the separators
+both normalize.
+
+**The operational consequence of the last two:** classify `url.hostname` — the
+parser's normalized output — and **never** raw URL text. Every one of these forms
+is already canonical by the time `hostname` is read, and every one of them defeats
+text matching.
+
 ### 3.7 Out of scope for the guard
 
 - **DNS rebinding.** Documented limit; seam present. See §7 and §13.
