@@ -111,6 +111,12 @@ const allReporterLogLevels: readonly ReporterLogLevel[];
 export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T, aggregatedErrors?: IMessageAggregator): Result<T>;
 
 // @public
+export function allSucceedAsync<T>(work: Iterable<AsyncDeferredResult<unknown>>, successValue: T, options?: IAsyncResultOptions): Promise<Result<T>>;
+
+// @public
+export function allSucceedAsync<TItem, T>(items: Iterable<TItem>, fn: (item: TItem, index: number) => Promise<Result<unknown>>, successValue: T, options?: IAsyncResultOptions): Promise<Result<T>>;
+
+// @public
 function arrayOf<T, TC = unknown>(converter: Converter<T, TC> | Validator<T, TC>, onError?: OnError): Converter<T[], TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -155,7 +161,15 @@ interface ArrayValidatorConstructorParams<T, TC = unknown> extends ValidatorBase
 function asValidator<T, TC = unknown>(converterOrValidator: Converter<T, TC> | Validator<T, TC>): Validator<T, TC>;
 
 // @public
+export type AsyncDeferredResult<T> = () => Promise<Result<T>>;
+
+// @public
 export type AsyncFailureContinuation<T> = (message: string) => PromiseLike<Result<T>>;
+
+// @public
+export type AsyncFieldInitializers<T> = {
+    [key in keyof T]: (state: Partial<T>) => Promise<Result<T[key]>>;
+};
 
 // @public
 export class AsyncResult<T> implements PromiseLike<Result<T>> {
@@ -847,6 +861,9 @@ class Crc32Normalizer extends HashingNormalizer {
     static crc32Hash(parts: string[]): string;
 }
 
+// @public
+export const DEFAULT_RESULT_CONCURRENCY: number;
+
 // @public (undocumented)
 interface DefaultingConverter<T, TD = T, TC = unknown> extends Converter<T | TD, TC> {
     convert(from: unknown, ctx?: TC): Success<T | TD>;
@@ -1055,6 +1072,9 @@ export function _findShouldNotFailFrame(stack: string | undefined, frameDepth: n
 // @public
 export function firstSuccess<T>(results: Iterable<Result<T> | DeferredResult<T>>): Result<T>;
 
+// @public
+export function firstSuccessAsync<T>(work: Iterable<AsyncDeferredResult<T>>, aggregatedErrors?: IMessageAggregator): Promise<Result<T>>;
+
 // @internal
 export function _formatShouldNotFailMessage(originalMessage: string, label: string | undefined, frame: _IShouldNotFailFrame): string;
 
@@ -1257,6 +1277,12 @@ interface IAggregatedResultMapJsonEntryWithItems<TCOLLECTIONID extends string = 
     readonly items: Record<string, unknown>;
     // (undocumented)
     readonly metadata?: unknown;
+}
+
+// @public
+export interface IAsyncResultOptions {
+    readonly aggregatedErrors?: IMessageAggregator;
+    readonly concurrency?: number;
 }
 
 // @public
@@ -1942,7 +1968,19 @@ type LogValueFormatter<T, TD = unknown> = (value: T, detail?: TD) => string;
 export function mapDetailedResults<T, TD>(results: Iterable<DetailedResult<T, TD>>, ignore: TD[], aggregatedErrors?: IMessageAggregator): Result<T[]>;
 
 // @public
+export function mapDetailedResultsAsync<T, TD>(work: Iterable<() => Promise<DetailedResult<T, TD>>>, ignore: TD[], options?: IAsyncResultOptions): Promise<Result<T[]>>;
+
+// @public
+export function mapDetailedResultsAsync<TItem, T, TD>(items: Iterable<TItem>, fn: (item: TItem, index: number) => Promise<DetailedResult<T, TD>>, ignore: TD[], options?: IAsyncResultOptions): Promise<Result<T[]>>;
+
+// @public
 export function mapFailures<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): string[];
+
+// @public
+export function mapFailuresAsync<T>(work: Iterable<AsyncDeferredResult<T>>, options?: IAsyncResultOptions): Promise<string[]>;
+
+// @public
+export function mapFailuresAsync<TItem, T>(items: Iterable<TItem>, fn: (item: TItem, index: number) => Promise<Result<T>>, options?: IAsyncResultOptions): Promise<string[]>;
 
 // @public
 function mapOf<T, TC = unknown, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>): Converter<Map<TK, T>, TC>;
@@ -1963,7 +2001,19 @@ function mappedEnumeratedValue<T, TC = unknown>(map: ReadonlyArray<[T, ReadonlyA
 export function mapResults<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): Result<T[]>;
 
 // @public
+export function mapResultsAsync<T>(work: Iterable<AsyncDeferredResult<T>>, options?: IAsyncResultOptions): Promise<Result<T[]>>;
+
+// @public
+export function mapResultsAsync<TItem, T>(items: Iterable<TItem>, fn: (item: TItem, index: number) => Promise<Result<T>>, options?: IAsyncResultOptions): Promise<Result<T[]>>;
+
+// @public
 export function mapSuccess<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): Result<T[]>;
+
+// @public
+export function mapSuccessAsync<T>(work: Iterable<AsyncDeferredResult<T>>, options?: IAsyncResultOptions): Promise<Result<T[]>>;
+
+// @public
+export function mapSuccessAsync<TItem, T>(items: Iterable<TItem>, fn: (item: TItem, index: number) => Promise<Result<T>>, options?: IAsyncResultOptions): Promise<Result<T[]>>;
 
 // Warning: (ae-forgotten-export) The symbol "KeyedThingFactory" needs to be exported by the entry point index.d.ts
 //
@@ -2297,6 +2347,9 @@ export function populateObject<T>(initializers: FieldInitializers<T>, options?: 
 
 // @public @deprecated
 export function populateObject<T>(initializers: FieldInitializers<T>, order: (keyof T)[] | undefined, aggregatedErrors?: IMessageAggregator): Result<T>;
+
+// @public
+export function populateObjectAsync<T>(initializers: AsyncFieldInitializers<T>, options?: PopulateObjectOptions<T>, aggregatedErrors?: IMessageAggregator): Promise<Result<T>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "populateObject" has more than one declaration; you need to add a TSDoc member reference selector
 //
