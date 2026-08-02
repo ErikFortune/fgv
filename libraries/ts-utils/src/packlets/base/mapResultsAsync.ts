@@ -127,6 +127,38 @@ function _isItemsForm(maybeFn: unknown): boolean {
 }
 
 /**
+ * Determines whether an {@link allSucceedAsync} call used the `(items, fn)` form.
+ * @remarks
+ * `allSucceedAsync` is the only collector whose second parameter is a caller-supplied value
+ * (`successValue: T`) rather than an options bag, so `typeof args[1] === 'function'` is not
+ * sufficient on its own: a legitimate deferred-form call whose `successValue` happens to be a
+ * function has the same arity and the same argument shapes as an `(items, fn)` call.
+ *
+ * The first argument breaks the tie. In the deferred form it is an iterable of
+ * {@link AsyncDeferredResult}, so its entries *are* functions; in the `(items, fn)` form its
+ * entries are arbitrary `TItem`. Checking the first entry therefore disambiguates every case
+ * except an `(items, fn)` call whose items are themselves functions - a strictly rarer shape
+ * than the function-valued `successValue` this rules out, and one where the caller can pass
+ * the deferred form instead.
+ *
+ * Note what this deliberately does *not* do: discriminate on `fn.length`. The documented `fn`
+ * signature takes `(item, index)`, but callers routinely ignore the index and write
+ * `(item) => ...`, which has length 1. Keying on arity would misdispatch that common, correct
+ * call in order to rescue a rare one.
+ *
+ * An empty iterable is safe either way: both forms fold to `succeed(successValue)`.
+ * @param args - the raw positional arguments of the call.
+ * @returns `true` when the call used the `(items, fn)` form.
+ */
+function _isAllSucceedItemsForm(args: unknown[]): boolean {
+  if (!_isItemsForm(args[1]) || args.length < 3) {
+    return false;
+  }
+  const first: unknown = Array.from(args[0] as Iterable<unknown>)[0];
+  return typeof first !== 'function';
+}
+
+/**
  * Runs deferred asynchronous work with a bound on the number of operations in flight at once.
  * @remarks
  * Results are returned in *input* order regardless of the order in which the work completes -
@@ -489,7 +521,7 @@ export function allSucceedAsync<TItem, T>(
 ): Promise<Result<T>>;
 
 export async function allSucceedAsync<TItem, T>(...args: unknown[]): Promise<Result<T>> {
-  const isItems: boolean = _isItemsForm(args[1]) && args.length >= 3;
+  const isItems: boolean = _isAllSucceedItemsForm(args);
   const successValue: T = (isItems ? args[2] : args[1]) as T;
   const options: IAsyncResultOptions | undefined = (isItems ? args[3] : args[2]) as
     | IAsyncResultOptions

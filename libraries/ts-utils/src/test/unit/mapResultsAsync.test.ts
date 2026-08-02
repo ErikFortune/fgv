@@ -553,6 +553,36 @@ describe('async Result family', () => {
         expect(value()).toBe('i am a value');
       });
     });
+
+    // The three-argument shape is the one the dispatch heuristic cannot settle from the second
+    // argument alone: a deferred call whose successValue is a function is indistinguishable
+    // from an (items, fn) call by arity and argument types. The first argument settles it -
+    // deferred work is an iterable of functions. Before that tie-break this call compiled
+    // cleanly and then failed at runtime with 'func(...).then is not a function'.
+    test('treats a function-valued successValue as the success value when options ARE supplied', async () => {
+      const successValue: () => string = () => 'i am a value';
+      expect(
+        await allSucceedAsync([later(1), later(2)], successValue, { concurrency: 2 })
+      ).toSucceedAndSatisfy((value: () => string) => {
+        expect(value()).toBe('i am a value');
+      });
+    });
+
+    // The other half of the tie-break: the (items, fn) form must not be captured by it. The
+    // documented fn signature is (item, index), but callers routinely ignore the index, so a
+    // length-1 callback is the common case and must dispatch as items - which is why the
+    // discriminator deliberately does not key on fn.length.
+    test('still dispatches the (items, fn) form when fn ignores the index', async () => {
+      expect(
+        await allSucceedAsync([1, 2, 3], async (n: number) => succeed(n), 'done', { concurrency: 2 })
+      ).toSucceedWith('done');
+    });
+
+    test('still dispatches the (items, fn) form with three arguments and no options', async () => {
+      expect(
+        await allSucceedAsync([1, 2, 3], async (n: number, i: number) => succeed(n + i), 'ok')
+      ).toSucceedWith('ok');
+    });
   });
 
   describe('populateObjectAsync', () => {
