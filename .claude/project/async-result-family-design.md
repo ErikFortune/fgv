@@ -62,7 +62,7 @@ This is the core finding, and it is why "add async variants" is the wrong framin
 | Class | Members | What async does to it |
 |---|---|---|
 | **Bounded-parallel collectors** | `mapResults`, `mapDetailedResults`, `mapSuccess`, `mapFailures`, `allSucceed` | Mechanical. All five want the *same* scheduler and differ only in how they fold results. |
-| **Inherently serial** | `populateObject`, `firstSuccess` | Want async support but **not** a concurrency bound — they are serial by contract, for different reasons. |
+| **Transitively async** | `populateObject`, `firstSuccess` | The *algorithm* stays synchronous — serial, short-circuiting. Only the primitives they call are async, so the asynchronicity is inherited, not intrinsic. They want `await`, **never** a concurrency bound. |
 
 The five collectors are one primitive plus five folds. That is the shape of the work.
 
@@ -71,12 +71,18 @@ would be meaningless at best and a correctness trap at worst, since offering one
 initializers are independent when the contract says they are not.
 
 `firstSuccess` is serial because **"first" *means* "do not do work you do not need."** An
-earlier draft of this document put it in a third class, treating first-in-order vs.
-first-to-settle as an open semantic choice under a concurrency bound. That was wrong. Running
-N operations and picking the earliest-indexed success is not the short-circuit contract
-preserved under parallelism — it is a *different operation* that does N units of work to
-report one, with whatever side effects those N carry. The short-circuit contract admits
-exactly one implementation: await the first, and on failure await the next.
+earlier draft put it in a third class, treating first-in-order vs. first-to-settle as an open
+semantic choice under a concurrency bound. That was wrong. Running N operations and picking the
+earliest-indexed success is not the short-circuit contract preserved under parallelism — it is
+a *different operation* that does N units of work to report one, with whatever side effects
+those N carry. The short-circuit contract admits exactly one implementation: await the first,
+and on failure await the next.
+
+**"Transitively async" is the load-bearing idea for this class.** These are synchronous
+algorithms that happen to call asynchronous primitives. That framing has a direct API
+consequence: neither member should accept `IAsyncResultOptions`, because a `concurrency` field
+on an operation that is serial by definition is a lie in the type signature. They take an
+aggregator and nothing else.
 
 (The first-to-settle variant is a real thing — it is `Promise.any` with `Result` folding — but
 it is a distinct primitive that would want a distinct name. Nobody has asked for it, and it is
@@ -173,27 +179,49 @@ not.
 
 OQ-1 is resolved; four remain.
 
-**OQ-1 — `firstSuccessAsync` — RESOLVED: do not ship it.**
+**OQ-1 — `firstSuccessAsync` — RESOLVED: ship it, serial, with no concurrency option.**
 
-Per § 2(c) it could only ever be a serial loop, so the "bounded concurrency" motivation that
-drives this whole design does not apply to it. That leaves one honest justification — the sync
-version aggregates *every* attempt's failure message when all attempts fail, which a
-hand-rolled loop typically forgets — and that is not enough on its own.
+This reversed twice, so the reasoning is recorded rather than just the answer.
 
-The deciding evidence is adoption. **`firstSuccess` has zero production callers in this
-repository.** Of 34 references, 32 are in its own test file and 2 are generated `.d.ts`
-output. The synchronous version has not earned its place in-repo since it shipped; adding an
-async sibling for a pattern with no demonstrated demand, which no consumer has requested, is
-speculative surface on a stable package.
+It is **not** part of the bounded-concurrency story — per § 2(c) it is transitively async, so
+the motivation driving the rest of this design does not apply to it. It belongs here only
+because it is a family member that needs `await`.
 
-The nearest in-repo shape is `ts-prompt-assist`'s `chainWalker`, and examining it reinforces
-the cut rather than undermining it: it walks a scope chain serially and stops at the first
-*found* record, but a store failure is **fatal** — it aborts the walk rather than falling
-through to the next scope. That is "first found," not "first success," and
-`firstSuccessAsync` would not have served it. The one real fallback-shaped walk in the repo
-has a different contract.
+The first pass at this question cut it, on the evidence that **`firstSuccess` has zero
+production callers in this repository** — of 34 references, 32 are its own tests and 2 are
+generated `.d.ts`. That evidence was read backwards. The repository performs *all* file I/O
+through `FileTree`, which is asynchronous, so every naturally fallback-shaped job here is
+async and **the synchronous version is structurally incapable of serving any of them.** Zero
+adoption of a synchronous tool for an inherently asynchronous job is not evidence that the job
+does not exist; it is evidence that the tool never fit.
 
-If a consumer later asks with a concrete use case, this is additive and cheap to revisit.
+The motivating case: *load the first of an ordered list of `n` candidate files* — a local
+override before a default, or a search path walked in precedence order. Serial is not a
+compromise there, it is the requirement: the whole point is not to read the later files when
+an earlier one answers.
+
+**Honest caveat on strength of evidence.** Unlike the five collectors — which have three
+existing hand-rolled call sites in-repo — this one has **no existing call site**. A search for
+serial candidate-file fallbacks across all of `libraries/` and `tools/` found none. It ships on
+a named prospective use case, not demonstrated demand. That is a weaker justification, and it
+is the reason to keep the surface minimal: a serial loop plus the error aggregation a
+hand-rolled version invariably forgets.
+
+```typescript
+export function firstSuccessAsync<T>(
+  work: Iterable<AsyncDeferredResult<T>>,
+  aggregatedErrors?: IMessageAggregator
+): Promise<Result<T>>;
+```
+
+**No options bag, and deliberately so** — a `concurrency` field on an operation that is serial
+by definition would be a lie in the type signature. When every attempt fails, the failure
+carries *every* attempt's message, matching the sync sibling.
+
+The nearest in-repo shape remains `ts-prompt-assist`'s `chainWalker`, and it is worth recording
+that this would **not** serve it: `chainWalker` treats a store failure as fatal and only
+advances on a *missing* record. That is "first found," not "first success" — a different
+contract, and not a call site to migrate.
 
 **OQ-2 — default `concurrency`.** Unbounded default reproduces the exact bug the primitive
 exists to prevent, for any caller who does not think about it. A required parameter is safe but
@@ -223,7 +251,7 @@ would be the tail wagging the dog.
 
 ## 5. Scope note
 
-Five collectors + `populateObjectAsync` + one scheduler (no `firstSuccessAsync`, per OQ-1). The scheduler is the only novel logic;
+Five collectors + `populateObjectAsync` + `firstSuccessAsync` + one scheduler. The scheduler is the only novel logic;
 the five folds are near-copies of their sync siblings against a different input shape. Estimate
 is **one session**, plus the in-repo migrations (`HybridRetriever`, the prompt-assist observer
 fan-out, the bcp47 loader) which are optional and separable.
