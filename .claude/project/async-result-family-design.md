@@ -115,7 +115,7 @@ export type AsyncDeferredResult<T> = () => Promise<Result<T>>;
 
 /** @public */
 export interface IAsyncResultOptions {
-  /** Maximum operations in flight at once. See § 4, OQ-2. */
+  /** Maximum operations in flight at once. Defaults to `DEFAULT_RESULT_CONCURRENCY`. */
   readonly concurrency?: number;
   /** Optional aggregator, matching the sync family's third parameter. */
   readonly aggregatedErrors?: IMessageAggregator;
@@ -145,12 +145,24 @@ export function allSucceedAsync<T>(
 Each mirrors its sync sibling's name, parameter order, and fold. A caller who knows the sync
 family knows these.
 
-**Why `Iterable<() => Promise<Result<T>>>` and not `(items, fn)`.** The `() =>` is one extra
-character at the call site and it makes the deferral *visible*. Given that "why can't I just
-pass promises" is the exact misunderstanding that produced this ask, a signature that answers
-the question by its shape is worth more than the brevity. It also matches how the family
-already reads — `Iterable<X>` in, folded value out — and `firstSuccess` already accepts thunks.
-A `(items, fn)` convenience can be layered on later additively if call sites want it (OQ-3).
+Each also carries an `(items, fn, options?)` overload (OQ-3):
+
+```typescript
+export function mapResultsAsync<TItem, T>(
+  items: Iterable<TItem>,
+  fn: (item: TItem, index: number) => Promise<Result<T>>,
+  options?: IAsyncResultOptions
+): Promise<Result<T[]>>;
+```
+
+**Both forms earn their place.** The thunk form makes deferral *visible* — given that "why
+can't I just pass promises" is the misunderstanding that produced this design, a signature that
+answers the question by its shape is worth the extra `() =>`. It also matches how the family
+already reads (`Iterable<X>` in, folded value out) and mirrors `firstSuccess`, which already
+accepts thunks. The `(items, fn)` form makes materialized work *structurally inexpressible* —
+there is nowhere to put an already-started promise. And they cover different cases: `(items,
+fn)` is N applications of one operation, thunks are N different operations, and heterogeneous
+fan-out has no natural `items` array.
 
 **Results stay in input order** regardless of completion order, for all five. Out-of-order
 results would be a silent correctness trap for anyone zipping them back against their inputs.
@@ -167,7 +179,15 @@ export function populateObjectAsync<T>(
   options?: PopulateObjectOptions<T>,
   aggregatedErrors?: IMessageAggregator
 ): Promise<Result<T>>;
+
+export function firstSuccessAsync<T>(
+  work: Iterable<AsyncDeferredResult<T>>,
+  aggregatedErrors?: IMessageAggregator
+): Promise<Result<T>>;
 ```
+
+Note neither takes `IAsyncResultOptions`. They are transitively async (§ 2c) — serial by
+contract — so a `concurrency` field would be a lie in the type signature.
 
 Serial by construction, same `order` semantics. **Deliberately no `concurrency`** — offering
 one would imply initializers are independent, which the `Partial<T>` contract says they are
@@ -177,7 +197,7 @@ not.
 
 ## 4. Open questions
 
-OQ-1 is resolved; four remain.
+**All five resolved.** Retained with their reasoning, since three of the five reversed at least once during review.
 
 **OQ-1 — `firstSuccessAsync` — RESOLVED: ship it, serial, with no concurrency option.**
 
@@ -223,29 +243,81 @@ that this would **not** serve it: `chainWalker` treats a store failure as fatal 
 advances on a *missing* record. That is "first found," not "first success" — a different
 contract, and not a call site to migrate.
 
-**OQ-2 — default `concurrency`.** Unbounded default reproduces the exact bug the primitive
-exists to prevent, for any caller who does not think about it. A required parameter is safe but
-heavy for a general-purpose utility. A small default (4? 8?) is safe but arbitrary. Note the
-safer-fetch precedent (D-3): required-then-relax is the direction that can be loosened later
-without a break, whereas permissive-then-tighten cannot. **My lean: default 1 is wrong (that is
-just a serial loop), unbounded is wrong, so either required or a documented small default.**
+**OQ-2 — default `concurrency` — RESOLVED: optional, with a documented default.**
 
-**OQ-3 — `(items, fn)` convenience overload.** Ship now or wait for a call site to want it?
-Additive either way. My lean: wait.
+`concurrency?: number` on `IAsyncResultOptions`, defaulting to a documented constant exported
+alongside it (so callers can read and reference it rather than guessing). The default must be
+finite — an unbounded default would reproduce the exact bug the primitive exists to prevent for
+any caller who does not think about it.
 
-**OQ-4 — cancellation.** Should a failure stop scheduling remaining work? The sync family has
-no notion — `mapResults` evaluates nothing, it folds. For async, "keep going and aggregate all
-errors" matches `mapResults`' contract; "stop on first failure" matches what most callers want
-from a bounded pool. `allSucceedAsync` in particular has an obvious short-circuit. Related:
-should any of these take an `AbortSignal`? **My lean: match the sync contract (aggregate all)
-for the `map*` family, and leave `AbortSignal` out of v1** — but flag that this makes
-`allSucceedAsync` slower than a hand-rolled version in the failure case.
+**OQ-3 — `(items, fn)` convenience overload — RESOLVED: ship it.**
 
-**OQ-5 — is `ts-utils` the right home?** It is a **stable, non-active-development** surface, so
-this is purely additive and carries compatibility obligations from the day it ships. The
-alternative is `ts-extras`. My lean is `ts-utils` — this is core `Result` vocabulary, the sync
-siblings live there, and splitting the family across packages to avoid a stability obligation
-would be the tail wagging the dog.
+The question asked was what the risk is. Having looked at it concretely, it is low:
+
+- **Overload ambiguity is smaller than it first appears.** The forms are `(work, options?)` and
+  `(items, fn, options?)`; the second argument discriminates cleanly (a function versus an
+  options object), and a single-argument call can only be the thunk form. `populateObject`
+  already carries overloads, so this is a familiar shape in this file.
+- The one genuinely ambiguous case is a `TItem` that is *itself* a function type, where both
+  readings could type-check. It is rare, and it surfaces as a type error rather than silent
+  wrong behaviour.
+- **Real cost is surface, not correctness**: two documented forms and two test paths on a
+  stable package.
+
+There is also a benefit that argues for it beyond convenience: **`(items, fn)` makes
+materialized work structurally inexpressible.** The caller supplies data and a function; there
+is no place to put an already-started promise. Given that "why can't I just pass promises" is
+the misunderstanding that produced this whole design, the form that makes the mistake
+unsayable is worth having.
+
+The two forms serve genuinely different cases and neither subsumes the other: `(items, fn)` is
+N applications of *one* operation; thunks are N *different* operations. Heterogeneous fan-out
+has no natural `items` array.
+
+**OQ-4 — cancellation — RESOLVED: defer it. Retrofitting is safe, which was worth checking.**
+
+The question asked what a retrofit looks like. It splits in two, and both halves are cheaper
+than expected:
+
+*Scheduler-level abort* (stop launching new work) is purely additive — an optional `signal`
+field on `IAsyncResultOptions`, which already exists.
+
+*Work-level abort* (hand each operation a signal so in-flight work can cancel itself) means
+widening `AsyncDeferredResult<T>` from `() => Promise<Result<T>>` to
+`(signal: AbortSignal) => Promise<Result<T>>`. **That widening is not a breaking change**, and
+this is the load-bearing fact: TypeScript accepts a zero-argument function where one taking
+arguments is expected, so every existing `() => doThing()` call site keeps compiling. Verified
+against the repo's own `tsc`, in both directions:
+
+```
+// () => X  assignable to  (s: AbortSignal) => X       — OK, no error
+// (s: AbortSignal) => X  assignable to  () => X       — error TS2322:
+//   Target signature provides too few arguments. Expected 1 or more, but got 0.
+```
+
+The narrowing direction is the one that fails, and we would never need it. The only code a
+retrofit could break is code that *itself invokes* an `AsyncDeferredResult` value — i.e. a
+consumer reimplementing the scheduler, which is neither expected nor supported.
+
+So there is no need to pre-commit the signature defensively. Ship without cancellation; add it
+if a consumer asks.
+
+Failure behaviour, separately: the `map*` family **keeps scheduling and aggregates every
+error**, matching the sync contract. `allSucceedAsync` is the one member with an obvious
+short-circuit, and it deliberately does not take it — consistency with `allSucceed`'s
+aggregate-everything contract beats a faster failure path.
+
+**OQ-5 — home and release tag — RESOLVED: `ts-utils`, tagged `@public`.**
+
+This is core `Result` vocabulary and the sync siblings live there; splitting the family across
+packages to dodge a stability obligation would be the tail wagging the dog.
+
+**Tagged `@public`, not `@beta`.** The entire release line is pre-release, so `@beta` on an
+individual export adds no information — and PR #588 established that stale `@beta` tags carry
+real cost: promoting `DetailedResult` removed **168** `ae-incompatible-release-tags` warnings
+from `ts-utils.api.md`, every one produced by a `@public` signature referencing a `@beta` type.
+Shipping new `@beta` exports that `@public` code will reference would manufacture that same
+liability from day one.
 
 ---
 
