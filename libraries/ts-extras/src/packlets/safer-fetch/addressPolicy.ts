@@ -34,7 +34,7 @@ export interface IAddressCheckVerdict {
   readonly policy: string;
   /**
    * The classification of every address the policy examined, in the order
-   * supplied. Empty for {@link allowAnyAddress}, which classifies nothing.
+   * supplied. Empty for {@link allowAnyAddressPolicy}, which classifies nothing.
    */
   readonly addresses: ReadonlyArray<IClassifiedAddress>;
 }
@@ -182,8 +182,8 @@ export function blockPrivateNetworks(options?: IBlockPrivateNetworksOptions): IA
  * @returns the policy.
  * @public
  */
-export function allowAnyAddress(): IAddressPolicy {
-  const name: string = 'allowAnyAddress';
+export function allowAnyAddressPolicy(): IAddressPolicy {
+  const name: string = 'allowAnyAddressPolicy';
   return {
     name,
     // The parameter is deliberately not declared. This policy does not read the

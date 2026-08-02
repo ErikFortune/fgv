@@ -20,7 +20,11 @@
 
 import '@fgv/ts-utils-jest';
 
-import { type IAddressPolicy, allowAnyAddress, blockPrivateNetworks } from '../../../packlets/safer-fetch';
+import {
+  type IAddressPolicy,
+  allowAnyAddressPolicy,
+  blockPrivateNetworks
+} from '../../../packlets/safer-fetch';
 
 describe('blockPrivateNetworks', () => {
   const policy: IAddressPolicy = blockPrivateNetworks();
@@ -169,11 +173,11 @@ describe('blockPrivateNetworks', () => {
   });
 });
 
-describe('allowAnyAddress', () => {
-  const policy: IAddressPolicy = allowAnyAddress();
+describe('allowAnyAddressPolicy', () => {
+  const policy: IAddressPolicy = allowAnyAddressPolicy();
 
   test('is named so that the absence of protection is greppable at the call site', () => {
-    expect(policy.name).toBe('allowAnyAddress');
+    expect(policy.name).toBe('allowAnyAddressPolicy');
   });
 
   test.each([
@@ -185,7 +189,7 @@ describe('allowAnyAddress', () => {
     [[]]
   ])('permits %j', (addresses) => {
     expect(policy.checkAddresses(addresses)).toSucceedAndSatisfy((verdict) => {
-      expect(verdict.policy).toBe('allowAnyAddress');
+      expect(verdict.policy).toBe('allowAnyAddressPolicy');
       expect(verdict.addresses).toEqual([]);
     });
   });
