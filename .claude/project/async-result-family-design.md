@@ -55,17 +55,32 @@ makes bounding possible. **The deferral concept is already in the library and al
 exported.** The async family is `AsyncDeferredResult<T> = () => Promise<Result<T>>` — a sibling
 of an existing type, not a new concept.
 
-**c) The family does not transpose uniformly. It splits three ways.**
+**c) The family does not transpose uniformly. It splits two ways.**
 
 This is the core finding, and it is why "add async variants" is the wrong framing:
 
 | Class | Members | What async does to it |
 |---|---|---|
 | **Bounded-parallel collectors** | `mapResults`, `mapDetailedResults`, `mapSuccess`, `mapFailures`, `allSucceed` | Mechanical. All five want the *same* scheduler and differ only in how they fold results. |
-| **Short-circuiter** | `firstSuccess` | **Semantics change.** "First" is unambiguous serially; under a bound > 1 it means either first-in-order or first-to-settle, and they differ. Needs a decision, not a transposition. |
-| **Inherently serial** | `populateObject` | Wants async support but **not** a concurrency bound. Each initializer sees `Partial<T>`, so it is serial by contract. A `concurrency` option here would be meaningless at best and a correctness trap at worst. |
+| **Inherently serial** | `populateObject`, `firstSuccess` | Want async support but **not** a concurrency bound — they are serial by contract, for different reasons. |
 
 The five collectors are one primitive plus five folds. That is the shape of the work.
+
+`populateObject` is serial because each initializer sees `Partial<T>`; a `concurrency` option
+would be meaningless at best and a correctness trap at worst, since offering one implies the
+initializers are independent when the contract says they are not.
+
+`firstSuccess` is serial because **"first" *means* "do not do work you do not need."** An
+earlier draft of this document put it in a third class, treating first-in-order vs.
+first-to-settle as an open semantic choice under a concurrency bound. That was wrong. Running
+N operations and picking the earliest-indexed success is not the short-circuit contract
+preserved under parallelism — it is a *different operation* that does N units of work to
+report one, with whatever side effects those N carry. The short-circuit contract admits
+exactly one implementation: await the first, and on failure await the next.
+
+(The first-to-settle variant is a real thing — it is `Promise.any` with `Result` folding — but
+it is a distinct primitive that would want a distinct name. Nobody has asked for it, and it is
+not proposed here.)
 
 **d) There are in-repo consumers today, hand-rolling it unbounded.**
 
@@ -156,13 +171,29 @@ not.
 
 ## 4. Open questions
 
-**OQ-1 — `firstSuccessAsync`: what does "first" mean?** Three defensible answers: (a) first *in
-order* — run bounded, return the earliest-indexed success, which requires waiting for earlier
-work even after a later one succeeds; (b) first *to settle* successfully — return as soon as
-any succeeds; (c) don't ship it. (b) is what most callers picture and is cheapest; (a) is
-deterministic and matches the sync semantics exactly. **They differ observably**, so this is a
-real choice. My lean is (b) with the name saying so — but I would rather have your call than
-guess, and (c) is respectable given no consumer has asked for it.
+OQ-1 is resolved; four remain.
+
+**OQ-1 — `firstSuccessAsync` — RESOLVED: do not ship it.**
+
+Per § 2(c) it could only ever be a serial loop, so the "bounded concurrency" motivation that
+drives this whole design does not apply to it. That leaves one honest justification — the sync
+version aggregates *every* attempt's failure message when all attempts fail, which a
+hand-rolled loop typically forgets — and that is not enough on its own.
+
+The deciding evidence is adoption. **`firstSuccess` has zero production callers in this
+repository.** Of 34 references, 32 are in its own test file and 2 are generated `.d.ts`
+output. The synchronous version has not earned its place in-repo since it shipped; adding an
+async sibling for a pattern with no demonstrated demand, which no consumer has requested, is
+speculative surface on a stable package.
+
+The nearest in-repo shape is `ts-prompt-assist`'s `chainWalker`, and examining it reinforces
+the cut rather than undermining it: it walks a scope chain serially and stops at the first
+*found* record, but a store failure is **fatal** — it aborts the walk rather than falling
+through to the next scope. That is "first found," not "first success," and
+`firstSuccessAsync` would not have served it. The one real fallback-shaped walk in the repo
+has a different contract.
+
+If a consumer later asks with a concrete use case, this is additive and cheap to revisit.
 
 **OQ-2 — default `concurrency`.** Unbounded default reproduces the exact bug the primitive
 exists to prevent, for any caller who does not think about it. A required parameter is safe but
@@ -192,7 +223,7 @@ would be the tail wagging the dog.
 
 ## 5. Scope note
 
-Five collectors + `populateObjectAsync` + one scheduler. The scheduler is the only novel logic;
+Five collectors + `populateObjectAsync` + one scheduler (no `firstSuccessAsync`, per OQ-1). The scheduler is the only novel logic;
 the five folds are near-copies of their sync siblings against a different input shape. Estimate
 is **one session**, plus the in-repo migrations (`HybridRetriever`, the prompt-assist observer
 fan-out, the bcp47 loader) which are optional and separable.
