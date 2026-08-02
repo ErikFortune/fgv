@@ -61,8 +61,8 @@ export const DEFAULT_RESULT_CONCURRENCY: number = 8;
 export interface IAsyncResultOptions {
   /**
    * Maximum number of operations in flight at once.  Defaults to
-   * {@link DEFAULT_RESULT_CONCURRENCY}.  Values below `1` are clamped to `1`; supply
-   * `Number.POSITIVE_INFINITY` to run without a bound.
+   * {@link DEFAULT_RESULT_CONCURRENCY}.  Values below `1`, and `NaN`, are clamped to `1`;
+   * fractional values are truncated; supply `Number.POSITIVE_INFINITY` to run without a bound.
    */
   readonly concurrency?: number;
 
@@ -78,7 +78,7 @@ export interface IAsyncResultOptions {
  * A unit of deferred asynchronous work of arbitrary (not necessarily {@link Result}) shape.
  * @internal
  */
-type IAsyncWork<TWork> = () => Promise<TWork>;
+type AsyncWork<TWork> = () => Promise<TWork>;
 
 /**
  * Determines the effective in-flight bound for a call.
@@ -105,7 +105,7 @@ function _resolveConcurrency(concurrency: number | undefined): number {
  * @returns An array of deferred work in input order.
  * @internal
  */
-function _asWorkArray<TItem, TWork>(workOrItems: Iterable<unknown>, maybeFn: unknown): IAsyncWork<TWork>[] {
+function _asWorkArray<TItem, TWork>(workOrItems: Iterable<unknown>, maybeFn: unknown): AsyncWork<TWork>[] {
   if (_isItemsForm(maybeFn)) {
     const fn: (item: TItem, index: number) => Promise<TWork> = maybeFn as (
       item: TItem,
@@ -113,7 +113,7 @@ function _asWorkArray<TItem, TWork>(workOrItems: Iterable<unknown>, maybeFn: unk
     ) => Promise<TWork>;
     return Array.from(workOrItems as Iterable<TItem>).map((item, index) => () => fn(item, index));
   }
-  return Array.from(workOrItems as Iterable<IAsyncWork<TWork>>);
+  return Array.from(workOrItems as Iterable<AsyncWork<TWork>>);
 }
 
 /**
@@ -143,10 +143,10 @@ function _isItemsForm(maybeFn: unknown): boolean {
  * @internal
  */
 async function _scheduleBounded<TWork>(
-  work: Iterable<IAsyncWork<TWork>>,
+  work: Iterable<AsyncWork<TWork>>,
   concurrency: number | undefined
 ): Promise<Result<TWork>[]> {
-  const thunks: IAsyncWork<TWork>[] = Array.from(work);
+  const thunks: AsyncWork<TWork>[] = Array.from(work);
   const outcomes: Result<TWork>[] = new Array<Result<TWork>>(thunks.length);
   const limit: number = Math.min(_resolveConcurrency(concurrency), thunks.length);
   let next: number = 0;
