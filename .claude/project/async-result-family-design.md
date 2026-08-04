@@ -1,6 +1,8 @@
 # The async Result family — design
 
-**Status:** design only. No implementation.
+**Status:** **implemented and merged** — #596. This document is retained as the rationale
+record, not as a statement of pending work. Where the implementation diverged from what is
+written below, § 6 records it.
 **Package:** `@fgv/ts-utils`, `base` packlet.
 **Origin:** PersonAIlity asked for "N independent async `Result`-returning operations with a
 concurrency bound." Rather than add one function, this sweeps the whole
@@ -331,3 +333,43 @@ fan-out, the bcp47 loader) which are optional and separable.
 **Not in scope:** retry, timeout, or backoff inside the scheduler — those are orthogonal and
 belong to the caller's work function. A scheduler that also retries is two primitives wearing
 one coat.
+
+---
+
+## 6. Divergences found in implementation
+
+Recorded so this document describes what shipped, not what was intended.
+
+**`mapDetailedResultsAsync` deliberately diverges from its sync fold.** `mapDetailedResults`
+ignores a failure whose `detail` is falsy (`result.detail && !ignore.includes(result.detail)`).
+A rejected thunk has *no* detail, so a literal transposition would have **silently swallowed
+rejected promises** — the same defect class as the safer-fetch body-read escape (#594). Capture
+failures are therefore always reported and can never be ignored. The inner fold is otherwise
+identical, falsy-detail quirk included; that quirk is pre-existing sync behaviour and changing
+it is a separate, breaking decision.
+
+**OQ-3's ambiguity assessment was too optimistic, for one member.** § 4 stated the ambiguous
+overload case "surfaces as a type error rather than silent wrong behaviour." That holds for
+four of the five collectors, whose second parameter is an options bag. It did **not** hold for
+`allSucceedAsync`, whose second parameter is a caller-supplied `successValue: T`: a call with a
+function-valued `successValue` *and* options type-checked cleanly under the deferred overload
+and then failed at runtime with `func(...).then is not a function`.
+
+Settled by discriminating on the **first** argument instead — deferred work is an iterable of
+functions, items are arbitrary `TItem`. The residual is an `(items, fn)` call whose items are
+themselves functions, which is rarer than what it rules out and expressible via the deferred
+form. Note the rejected alternative: keying on `fn.length === 2` would misdispatch the common,
+correct `(item) => ...` callback that ignores its index, trading a rare bug for a frequent one.
+
+**Invalid `concurrency` clamps rather than fails.** Forced by `mapFailuresAsync`, which returns
+`Promise<string[]>` and has no `Result` to fail into. `NaN` mattered specifically: an unguarded
+`Math.min(NaN, …)` would have scheduled nothing and returned an array of holes.
+
+## 7. Follow-up: migrating the in-repo call sites
+
+The three hand-rolled sites in § 2(d) — `HybridRetriever`, the prompt-assist observer fan-out,
+the bcp47 registry loader — are **not** migrated. Left deliberately as a separate stream,
+because migration is a **behaviour change, not a refactor**: those sites are unbounded today
+and would pick up `DEFAULT_RESULT_CONCURRENCY` (8). That is the right default, but whether each
+site wants it — versus `Number.POSITIVE_INFINITY` to preserve current behaviour — is a
+per-site judgement about its workload, and should not ride along in a mechanical sweep.
