@@ -23,17 +23,19 @@ import '@fgv/ts-utils-jest';
 import {
   type IAddressPolicy,
   allowAnyAddressPolicy,
-  blockPrivateNetworks
+  blockPrivateNetworksPolicy
 } from '../../../packlets/safer-fetch';
 
-describe('blockPrivateNetworks', () => {
-  const policy: IAddressPolicy = blockPrivateNetworks();
+describe('blockPrivateNetworksPolicy', () => {
+  const policy: IAddressPolicy = blockPrivateNetworksPolicy();
 
   test('is named for the posture it implements', () => {
-    expect(policy.name).toBe('blockPrivateNetworks');
-    expect(blockPrivateNetworks({}).name).toBe('blockPrivateNetworks');
-    expect(blockPrivateNetworks({ allowLoopback: false }).name).toBe('blockPrivateNetworks');
-    expect(blockPrivateNetworks({ allowLoopback: true }).name).toBe('blockPrivateNetworks(allowLoopback)');
+    expect(policy.name).toBe('blockPrivateNetworksPolicy');
+    expect(blockPrivateNetworksPolicy({}).name).toBe('blockPrivateNetworksPolicy');
+    expect(blockPrivateNetworksPolicy({ allowLoopback: false }).name).toBe('blockPrivateNetworksPolicy');
+    expect(blockPrivateNetworksPolicy({ allowLoopback: true }).name).toBe(
+      'blockPrivateNetworksPolicy(allowLoopback)'
+    );
   });
 
   describe('addresses it permits', () => {
@@ -51,7 +53,7 @@ describe('blockPrivateNetworks', () => {
       ['134744072']
     ])('permits %s', (address) => {
       expect(policy.checkAddresses([address])).toSucceedAndSatisfy((verdict) => {
-        expect(verdict.policy).toBe('blockPrivateNetworks');
+        expect(verdict.policy).toBe('blockPrivateNetworksPolicy');
         expect(verdict.addresses).toHaveLength(1);
         expect(verdict.addresses[0].classification).toBe('public');
       });
@@ -102,7 +104,7 @@ describe('blockPrivateNetworks', () => {
       ['2002:a9fe:a9fe::', /link-local/i]
     ])('blocks %s', (address, pattern) => {
       expect(policy.checkAddresses([address])).toFailWith(pattern);
-      expect(policy.checkAddresses([address])).toFailWith(/blockPrivateNetworks/);
+      expect(policy.checkAddresses([address])).toFailWith(/blockPrivateNetworksPolicy/);
       expect(policy.checkAddresses([address])).toFailWith(/is not allowed/);
     });
 
@@ -141,18 +143,18 @@ describe('blockPrivateNetworks', () => {
     test('fails closed when an address is not a well-formed literal', () => {
       expect(policy.checkAddresses(['not-an-address'])).toFailWith(/not a valid IP address/i);
       expect(policy.checkAddresses(['8.8.8.8', '1::2::3'])).toFailWith(/not a valid IPv6 address/i);
-      expect(policy.checkAddresses(['not-an-address'])).toFailWith(/blockPrivateNetworks/);
+      expect(policy.checkAddresses(['not-an-address'])).toFailWith(/blockPrivateNetworksPolicy/);
     });
   });
 
   describe('allowLoopback', () => {
-    const loopbackOk: IAddressPolicy = blockPrivateNetworks({ allowLoopback: true });
+    const loopbackOk: IAddressPolicy = blockPrivateNetworksPolicy({ allowLoopback: true });
 
     test.each([['127.0.0.1'], ['127.1'], ['0177.0.0.1'], ['::1'], ['::ffff:127.0.0.1'], ['::7f00:1']])(
       'permits %s',
       (address) => {
         expect(loopbackOk.checkAddresses([address])).toSucceedAndSatisfy((verdict) => {
-          expect(verdict.policy).toBe('blockPrivateNetworks(allowLoopback)');
+          expect(verdict.policy).toBe('blockPrivateNetworksPolicy(allowLoopback)');
           expect(verdict.addresses[0].classification).toBe('loopback');
         });
       }

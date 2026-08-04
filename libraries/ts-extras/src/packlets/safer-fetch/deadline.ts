@@ -95,8 +95,36 @@ export class DeadlineWatch {
   }
 
   /**
-   * Records that response headers have arrived: the headers deadline no longer applies, and a
-   * subsequent overall-deadline expiry is a body-phase timeout rather than an overall one.
+   * Records that a new attempt is starting: the headers deadline is (re)armed from now.
+   *
+   * @remarks
+   * The headers deadline is **per attempt**, and a redirect walk makes more than one. Without a
+   * re-arm, {@link DeadlineWatch.headersReceived} on the first hop would retire the headers
+   * deadline for the whole call, leaving every later hop bounded only by the overall deadline —
+   * so a chain whose second host simply never answers would hang for the overall budget instead
+   * of failing as `timeout.phase === 'headers'`.
+   *
+   * Called before the address guard rather than before the connect, because guard evaluation
+   * (a DNS resolution, in the shipped guard) is part of the time a caller waits for a usable
+   * response and is deliberately inside this budget.
+   *
+   * The overall deadline is untouched: it spans the whole call, redirects included.
+   */
+  public attemptStarted(): void {
+    if (this._cause !== undefined) {
+      return;
+    }
+    if (this._headersTimer !== undefined) {
+      clearTimeout(this._headersTimer);
+    }
+    this._headersTimer = setTimeout(() => this._stop('headers'), this._headersTimeoutMs);
+    this._inBodyPhase = false;
+  }
+
+  /**
+   * Records that response headers have arrived: the headers deadline no longer applies to this
+   * attempt, and a subsequent overall-deadline expiry is a body-phase timeout rather than an
+   * overall one.
    */
   public headersReceived(): void {
     if (this._headersTimer !== undefined) {

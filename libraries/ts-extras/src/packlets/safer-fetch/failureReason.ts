@@ -62,7 +62,18 @@ export type FetchFailureReason =
       readonly guard: string;
       readonly detail: string;
     }
-  /** A redirect status was received under a redirect policy that rejects redirects. */
+  /**
+   * A redirect status was received that this call would not follow: the policy is `'reject'`,
+   * or the response carried no usable `Location`, or following it would revisit a URL already
+   * in the chain.
+   *
+   * @remarks
+   * The three are deliberately one kind. Splitting them would buy a caller almost nothing and
+   * would widen the scanning oracle this taxonomy already is — and the two follow-time cases
+   * are facts about the chain the redirecting server produced, not about the network behind
+   * this process. "The chain got too long" is a different question and stays
+   * `'too-many-redirects'`.
+   */
   | { readonly kind: 'redirect-rejected'; readonly url: string; readonly status: number }
   /**
    * The platform returned an opaque redirect, whose `Location` is not readable. This is
