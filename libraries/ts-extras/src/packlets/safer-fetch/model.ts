@@ -41,6 +41,14 @@ export type SaferFetchMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELE
  * Following hops also makes this primitive responsible for credential stripping — see
  * `ISaferFetchOptions.sensitiveHeaders`.
  *
+ * **`'validate-each-hop'` is accepted by the browser barrel but cannot succeed there, and fails
+ * loudly rather than degrading.** The type is shared because one core serves both runtimes; the
+ * runtime is not. A browser's `redirect: 'manual'` yields an opaque response — `type` is
+ * `'opaqueredirect'`, `status` is `0`, and `Location` is not readable — so the first redirect
+ * fails as `'redirect-opaque'`. That is the honest outcome: the hop information does not exist
+ * on the browser side of the API, so there is nothing to guard and nothing to follow. Use
+ * `'reject'` there, or handle `'redirect-opaque'`.
+ *
  * A mode that defers to the platform's own redirect following is deliberately absent on Node:
  * it would put hops on the wire that the guard never saw.
  * @public
