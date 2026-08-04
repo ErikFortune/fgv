@@ -59,8 +59,6 @@ export interface IRedirectRewrite {
   /** Header names are lowercased; credential headers are absent on a cross-origin hop. */
   readonly headers: Record<string, string>;
   readonly body: string | Uint8Array | undefined;
-  /** Whether this hop left the previous hop's origin, and so dropped credential headers. */
-  readonly crossOrigin: boolean;
 }
 
 /** Inputs to {@link rewriteForRedirect}. @internal */
@@ -113,7 +111,7 @@ export function rewriteForRedirect(params: IRedirectRewriteParams): IRedirectRew
     }
   }
 
-  return { method, headers, body: dropsBody ? undefined : params.body, crossOrigin };
+  return { method, headers, body: dropsBody ? undefined : params.body };
 }
 
 function _rewriteMethod(status: number, method: SaferFetchMethod): SaferFetchMethod {
