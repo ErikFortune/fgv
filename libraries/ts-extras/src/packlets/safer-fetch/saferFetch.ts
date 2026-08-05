@@ -755,6 +755,25 @@ function _toResponse<T>(value: T, raw: IRawOutcome): ISaferFetchResponse<T> {
   };
 }
 
+/**
+ * Applies the caller's parser to the decoded body.
+ *
+ * @remarks
+ * Exists for the same reason as {@link _decodeText}: it is the boundary where a plain
+ * `Result` from a `Converter` becomes a `DetailedResult` carrying a `FetchFailureReason`.
+ * Isolating that conversion in a named helper is what lets the entry points stay chained.
+ */
+function _parseJson<T>(text: string, parser: Converter<T | JsonValue>): Outcome<T | JsonValue> {
+  const parsed = parser.convert(text);
+  if (parsed.isFailure()) {
+    return _fail<T | JsonValue>(
+      { kind: 'parse', detail: parsed.message },
+      `failed to parse response as JSON: ${parsed.message}`
+    );
+  }
+  return _succeed(parsed.value);
+}
+
 function _decodeText(raw: IRawOutcome): Outcome<string> {
   const charset = parseCharset(raw.head.contentType) ?? 'utf-8';
   // `fatal: true` so an unknown charset, or a byte sequence invalid in the declared one,
@@ -805,11 +824,7 @@ export async function saferFetchBytes(
   url: string | URL,
   options: ISaferFetchOptions
 ): Promise<DetailedResult<ISaferFetchResponse<Uint8Array>, FetchFailureReason>> {
-  const raw = await _execute(url, options);
-  if (raw.isFailure()) {
-    return _propagate<IRawOutcome, ISaferFetchResponse<Uint8Array>>(raw);
-  }
-  return _succeed(_toResponse(raw.value.bytes, raw.value));
+  return (await _execute(url, options)).onSuccess((raw) => _succeed(_toResponse(raw.bytes, raw)));
 }
 
 /**
@@ -833,15 +848,11 @@ export async function saferFetchText(
   url: string | URL,
   options: ISaferFetchOptions
 ): Promise<DetailedResult<ISaferFetchResponse<string>, FetchFailureReason>> {
-  const raw = await _execute(url, options);
-  if (raw.isFailure()) {
-    return _propagate<IRawOutcome, ISaferFetchResponse<string>>(raw);
-  }
-  const text = _decodeText(raw.value);
-  if (text.isFailure()) {
-    return _propagate<string, ISaferFetchResponse<string>>(text);
-  }
-  return _succeed(_toResponse(text.value, raw.value));
+  // Nested rather than flat: `_toResponse` needs both the decoded text and the raw outcome it
+  // came from, and nesting is what keeps `raw` in scope for it.
+  return (await _execute(url, options)).onSuccess((raw) =>
+    _decodeText(raw).onSuccess((text) => _succeed(_toResponse(text, raw)))
+  );
 }
 
 /**
@@ -907,26 +918,17 @@ export async function saferFetchJson<T>(
   url: string | URL,
   options: ISaferFetchOptions | ISaferFetchJsonOptions<T>
 ): Promise<DetailedResult<ISaferFetchResponse<T | JsonValue>, FetchFailureReason>> {
-  const raw = await _execute(url, options);
-  if (raw.isFailure()) {
-    return _propagate<IRawOutcome, ISaferFetchResponse<T | JsonValue>>(raw);
-  }
-  const text = _decodeText(raw.value);
-  if (text.isFailure()) {
-    return _propagate<string, ISaferFetchResponse<T | JsonValue>>(text);
-  }
-
   const converter = (options as Partial<ISaferFetchJsonOptions<T>>).converter ?? undefined;
   const parser: Converter<T | JsonValue> =
     converter !== undefined
       ? JsonBaseConverters.stringifiedJson<T>(converter)
       : JsonBaseConverters.stringifiedJson();
-  const parsed = parser.convert(text.value);
-  if (parsed.isFailure()) {
-    return _fail<ISaferFetchResponse<T | JsonValue>>(
-      { kind: 'parse', detail: parsed.message },
-      `failed to parse response as JSON: ${parsed.message}`
-    );
-  }
-  return _succeed(_toResponse(parsed.value, raw.value));
+
+  // Nested for the same reason as `saferFetchText`: the response needs the raw outcome as well
+  // as the parsed value, and nesting is what keeps `raw` in scope.
+  return (await _execute(url, options)).onSuccess((raw) =>
+    _decodeText(raw).onSuccess((text) =>
+      _parseJson(text, parser).onSuccess((parsed) => _succeed(_toResponse(parsed, raw)))
+    )
+  );
 }
