@@ -40,8 +40,11 @@ import {
   MemoryId,
   MemoryIngestOrchestrator,
   MemoryScopeKey,
+  MtmIdentityCodec,
   ResolutionVerdict,
-  Tag
+  Tag,
+  TemporalIdentityCodec,
+  TemporalVersionedPolicy
 } from '../../../index';
 
 // --- kinds --------------------------------------------------------------------
@@ -55,6 +58,13 @@ const docKind: Kind = 'doc' as Kind;
 // `claim` is the sibling candidate whose edge points at a collapsed candidate.
 // It has no registered policy, so it resolves through the store's DEFAULT policy.
 const claimKind: Kind = 'claim' as Kind;
+// `turn` is the reporter's LITERAL shape: an MTM kind whose turns share one
+// conversation scope and differ only by idStem. This is where the bug bit.
+const turnKind: Kind = 'turn' as Kind;
+// `evt` is a TEMPORAL entity-scoped kind. TemporalIdentityCodec gives each entity
+// its own scope (`<base>/entities/<id>`), so distinct temporal entities were
+// already isolated by the scope filter alone — see the test below.
+const evtKind: Kind = 'evt' as Kind;
 
 const memScope: MemoryScopeKey = LtmIdentityCodec.scope;
 const docScope: MemoryScopeKey = KnowledgeIdentityCodec.scope;
@@ -76,13 +86,17 @@ function registry(): IBodyConverterRegistry {
   reg.register(memKind, Converters.string);
   reg.register(docKind, Converters.string);
   reg.register(claimKind, Converters.string);
+  reg.register(turnKind, Converters.string);
+  reg.register(evtKind, Converters.string);
   return reg;
 }
 
 const codecs: ReadonlyMap<Kind, IIdentityCodec> = new Map<Kind, IIdentityCodec>([
   [memKind, new LtmIdentityCodec()],
   [docKind, new KnowledgeIdentityCodec()],
-  [claimKind, new KnowledgeIdentityCodec()]
+  [claimKind, new KnowledgeIdentityCodec()],
+  [turnKind, new MtmIdentityCodec()],
+  [evtKind, TemporalIdentityCodec.create('events').orThrow()]
 ]);
 
 /**
@@ -98,7 +112,14 @@ function policies(): ReadonlyMap<Kind, IWritePolicy> {
         mutableFields: ['body', 'tags', 'links', 'provenance']
       }).orThrow()
     ],
-    [docKind, KnowledgeLwwPolicy.create().orThrow()]
+    [docKind, KnowledgeLwwPolicy.create().orThrow()],
+    [
+      turnKind,
+      MemoryCapCullPolicy.create({
+        mutableFields: ['body', 'tags', 'links', 'provenance']
+      }).orThrow()
+    ],
+    [evtKind, TemporalVersionedPolicy.create().orThrow()]
   ]);
 }
 
@@ -120,16 +141,24 @@ function buildStore(vectorIndex?: IVectorIndex): FileTreeMemoryStore {
   }).orThrow();
 }
 
-/** Write a record straight through the store (the direct-put path). */
+/**
+ * Write a record straight through the store (the direct-put path). The envelope
+ * `id` is the CODEC-DERIVED stem, which is not always the `entityId` — an MTM
+ * entity `conv-1:2` addresses to `conversations/conv-1` + stem `turn-2`.
+ */
 async function put(
   store: FileTreeMemoryStore,
   kind: Kind,
   entityId: string,
   body: string
 ): Promise<Result<IMemoryRecord<unknown>>> {
+  const idStem: string = codecs
+    .get(kind)!
+    .encode(entityId as EntityId)
+    .orThrow().idStem;
   return store.put({
     envelope: {
-      id: entityId as MemoryId,
+      id: idStem as MemoryId,
       entityId: entityId as EntityId,
       kind,
       tags: [] as ReadonlyArray<Tag>,
@@ -325,6 +354,48 @@ describe('dedupScope on the ingest path', () => {
           verdict: 'duplicate-of',
           target: target(memScope, 'turn-1')
         });
+      });
+    });
+
+    test("the reporter's literal shape: two MTM turns in ONE conversation scope with identical bodies", async () => {
+      // MtmIdentityCodec puts every turn of a conversation in the SAME scope
+      // (`conversations/<id>`), differing only by idStem (`turn-<n>`). That is
+      // exactly where the bug bit: same kind, same scope, different entity, and
+      // a body collision was enough to collapse one turn into the other.
+      const store: FileTreeMemoryStore = buildStore();
+      expect(await put(store, turnKind, 'conv-1:1', 'ok, thanks')).toSucceed();
+
+      const orchestrator: MemoryIngestOrchestrator = buildOrchestrator({
+        store,
+        candidates: [candidate(turnKind, 'conv-1:2', 'ok, thanks')]
+      });
+
+      expect(await orchestrator.ingestItem(item)).toSucceedAndSatisfy((result) => {
+        expect(outcomeFor(result, 'conv-1:2')?.disposition).toBe('written');
+      });
+      expect(await store.list({ kind: turnKind })).toSucceedAndSatisfy((records) => {
+        // Both turns persist. Pre-fix, turn 2 was silently swallowed.
+        expect(records).toHaveLength(2);
+      });
+    });
+
+    test('a TEMPORAL entity kind keeps distinct entities apart (scope isolation, unchanged)', async () => {
+      // TemporalIdentityCodec addresses each entity to its OWN scope
+      // (`events/entities/<id>`), so two distinct temporal entities were never
+      // in one exact-match cohort even before this change — the scope filter
+      // alone separated them. Guarding it so the entity narrowing (which is a
+      // no-op within a single entity's scope, where every version shares the
+      // idStem) is never mistaken for what protects temporal kinds.
+      const store: FileTreeMemoryStore = buildStore();
+      expect(await put(store, evtKind, 'evt-1', 'shared body')).toSucceed();
+
+      const orchestrator: MemoryIngestOrchestrator = buildOrchestrator({
+        store,
+        candidates: [candidate(evtKind, 'evt-2', 'shared body')]
+      });
+
+      expect(await orchestrator.ingestItem(item)).toSucceedAndSatisfy((result) => {
+        expect(outcomeFor(result, 'evt-2')?.disposition).toBe('written');
       });
     });
 

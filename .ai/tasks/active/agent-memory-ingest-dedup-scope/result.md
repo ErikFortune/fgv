@@ -32,7 +32,7 @@ the note three source files have cited since the packlet shipped but which never
   `_redirectEdges`; `_relate` redirects before validating and cycle-guarding; doc updates.
 
 **Tests (3)**
-- `libraries/ts-agent-memory/src/test/unit/ingest/dedupScope.test.ts` — **new**, 14 tests.
+- `libraries/ts-agent-memory/src/test/unit/ingest/dedupScope.test.ts` — **new**, 16 tests.
 - `libraries/ts-agent-memory/src/test/unit/ingest/orchestrator.test.ts` — `mockStore` gains
   `dedupScopeFor` (defaults to `'content'`, mirroring the store's default policy).
 - `libraries/ts-agent-memory/src/test/unit/tools/memoryTools.test.ts` — one stub store gains the member.
@@ -56,7 +56,7 @@ the note three source files have cited since the packlet shipped but which never
 | `rushx build` | `@fgv/ts-agent-memory` | ✅ pass |
 | `rushx lint` | `@fgv/ts-agent-memory` | ✅ pass (run explicitly — not transitive through build) |
 | `rushx fixlint` | `@fgv/ts-agent-memory` | ✅ run before the final commit; no residual changes |
-| `rushx test` | `@fgv/ts-agent-memory` | ✅ 721 passed / 0 failed |
+| `rushx test` | `@fgv/ts-agent-memory` | ✅ 723 passed / 0 failed |
 | coverage | `@fgv/ts-agent-memory` | ✅ **100%** statements, branches, functions, lines |
 | `rush build --to @fgv/ts-agent-memory-sqlite-vec` | dependent package | ✅ pass, untouched |
 
@@ -65,9 +65,11 @@ No coverage directives (`c8 ignore`) were added — 100% was reached by the func
 **Efficacy check.** Each behavioral fix was independently neutralized in source and the suite re-run,
 to prove no test passes vacuously:
 
-- Neutralizing the layer-1 narrowing → **exactly 2 failures**: the entity-granularity test and the
-  reporter's end-to-end scenario.
+- Neutralizing the layer-1 narrowing → **exactly 3 failures**: the flat entity-granularity test, the
+  reporter's literal MTM shape, and the reporter's end-to-end scenario.
 - Neutralizing the redirect map → **exactly 2 failures**: the `'content'` and `'entity'` redirect tests.
+
+The temporal-kind test deliberately passes both with and without the fix — see the codec note below.
 
 ## Observability self-audit
 
@@ -164,6 +166,26 @@ So unpoliced kinds were `'content'` on both paths before this change and remain 
 were already in agreement there. The brief's "every experience and versioned kind" is right for hosts
 that register the experience policies (the documented way to get experience semantics), but overstated
 for hosts that registered nothing.
+
+**The identity codec sharpens this further.** Whether an `'entity'` kind was ever exposed depends on
+whether its codec puts distinct entities in the *same* scope, because the exact-match cohort was
+always scope-filtered:
+
+| Codec | Address shape | Distinct entities share a scope? | Was it exposed? |
+|---|---|---|---|
+| `MtmIdentityCodec` | `conversations/<conv>` + `turn-<n>` | **yes** | **yes** — the reporter's shape |
+| `LtmIdentityCodec` | `conversations` + `<convId>` | **yes** | **yes** |
+| `KnowledgeIdentityCodec` | `knowledge` + `<docId>` | yes | n/a (`'content'` by policy) |
+| `TemporalIdentityCodec` | `<base>/entities/<id>` + `<id>` | **no** — one scope per entity | **no** |
+
+So the bug bit **flat** `'entity'` kinds — MTM turns and LTM conversations — and never temporal ones,
+which the per-entity scope already isolated. Within a single temporal entity's scope every version
+shares the same resolved `idStem`, so the new entity narrowing is a no-op there and the pre-existing
+"skip invalidated versions" filter continues to do the real work. Both facts are pinned by tests
+(`the reporter's literal shape: two MTM turns in ONE conversation scope`, and
+`a TEMPORAL entity kind keeps distinct entities apart (scope isolation, unchanged)` — the latter
+deliberately passes with and without the fix, as a guard against someone later assuming the
+narrowing is what protects temporal kinds).
 
 Also changed, independent of `dedupScope` and affecting **every** ingest host including `'content'`
 ones: a `duplicate-of` collapse no longer fails the whole ingest item when a sibling edge was built
