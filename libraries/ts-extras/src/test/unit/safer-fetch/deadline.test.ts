@@ -289,6 +289,24 @@ describe('DeadlineWatch', () => {
       }
     });
 
+    test('leaves the call out of its body phase, so a backoff timeout is not called a body timeout', async () => {
+      // An attempt that failed *after* headers arrived leaves `headersReceived()` behind it. The
+      // backoff that follows transfers no bytes, so an overall-deadline expiry during it is an
+      // 'overall' timeout, not a 'body' one — `phase` is part of the taxonomy's contract.
+      const watch = new DeadlineWatch(40, 10_000);
+      try {
+        watch.attemptStarted();
+        watch.headersReceived();
+        watch.attemptEnded();
+        await expect(watch.delay(5_000)).resolves.toEqual({ stopped: true, cause: 'overall' });
+        expect(watch.toFailureReason('overall')).toEqual(
+          expect.objectContaining({ kind: 'timeout', phase: 'overall', limitMs: 40 })
+        );
+      } finally {
+        watch.dispose();
+      }
+    });
+
     test('is a no-op on a watch that has not been stopped', async () => {
       const watch = new DeadlineWatch(10_000, 10_000);
       try {

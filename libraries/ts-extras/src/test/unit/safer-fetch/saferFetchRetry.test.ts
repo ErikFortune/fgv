@@ -480,13 +480,17 @@ describe('retry', () => {
 
     test('a caller abort during a backoff is answered during the backoff', async () => {
       const controller = new AbortController();
-      const transport = answering(() => status(503));
+      // `Retry-After` rather than the ordinary backoff, because full jitter makes the computed
+      // delay uniform on `[0, cap)` — a jittered backoff could elapse before the abort lands,
+      // and the test would then be measuring a different path on a coin flip. A honored
+      // `Retry-After` is used unjittered, so this sleep is exactly one second every run.
+      const transport = answering(() => status(503, { 'retry-after': '1' }));
       const pending = saferFetchText(
         URL_UNDER_TEST,
         options(transport, {
           signal: controller.signal,
           timeoutMs: 10_000,
-          retry: { attempts: 1, baseDelayMs: 400, maxDelayMs: 400 }
+          retry: { attempts: 1, baseDelayMs: 400, maxDelayMs: 1_000 }
         })
       );
       // Inside the 400ms backoff, after the first attempt has certainly failed.
@@ -494,8 +498,8 @@ describe('retry', () => {
       controller.abort();
       const startedAt: number = Date.now();
       await expect(pending).resolves.toFailWithDetail(/aborted by caller/i, { kind: 'aborted' });
-      // Answered promptly rather than after the remaining backoff elapsed.
-      expect(Date.now() - startedAt).toBeLessThan(300);
+      // Answered promptly rather than after the remaining ~950ms of backoff elapsed.
+      expect(Date.now() - startedAt).toBeLessThan(500);
       expect(transport.calls).toHaveLength(1);
     });
   });
@@ -514,6 +518,47 @@ describe('retry', () => {
   });
 
   describe('diagnostics', () => {
+    test('a logger that throws does not escape the Result contract', async () => {
+      // The one collaborator this primitive does not wrap. An entry point documented to always
+      // return a `Result` keeps that promise even when a caller's diagnostics sink breaks its
+      // own — a thrown log line must not become the caller's problem.
+      const throwingLogger: Logging.ILogger = {
+        ...new Logging.NoOpLogger(),
+        detail: (): never => {
+          throw new Error('logger exploded');
+        }
+      } as unknown as Logging.ILogger;
+      const transport = answering(
+        () => status(503),
+        () => ok('recovered')
+      );
+      await expect(
+        saferFetchText(URL_UNDER_TEST, options(transport, { logger: throwingLogger }))
+      ).resolves.toFailWithDetail(/logger exploded/i, {
+        kind: 'unknown',
+        detail: expect.stringMatching(/logger exploded/i) as unknown as string
+      });
+    });
+
+    test('a collaborator that throws a non-Error is still reported, not swallowed', async () => {
+      // JavaScript permits throwing anything. Reading `.message` off a string would yield
+      // `undefined` and a failure message that says nothing at all.
+      const throwingLogger: Logging.ILogger = {
+        ...new Logging.NoOpLogger(),
+        detail: (): never => {
+          // eslint-disable-next-line no-throw-literal
+          throw 'a bare string, because JavaScript allows it';
+        }
+      } as unknown as Logging.ILogger;
+      const transport = answering(
+        () => status(503),
+        () => ok('recovered')
+      );
+      await expect(
+        saferFetchText(URL_UNDER_TEST, options(transport, { logger: throwingLogger }))
+      ).resolves.toFailWith(/a bare string, because JavaScript allows it/i);
+    });
+
     test('logs each retry with the failure that prompted it', async () => {
       const logger = new Logging.InMemoryLogger('all');
       const transport = answering(

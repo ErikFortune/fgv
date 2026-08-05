@@ -195,6 +195,14 @@ export class DeadlineWatch {
       clearTimeout(this._headersTimer);
       this._headersTimer = undefined;
     }
+    // No attempt is in flight between attempts, so the call is not in its body phase — whatever
+    // the previous attempt reached. Without this, an attempt that failed *after* headers arrived
+    // (a body-read network error, a non-2xx) would leave the flag set through the backoff, and
+    // an overall-deadline expiry during that sleep would be reported as `timeout.phase: 'body'`
+    // while no bytes were being transferred at all. `phase` is part of the taxonomy's contract,
+    // and a phase that names the wrong thing is exactly the kind of small lie this primitive is
+    // built not to tell.
+    this._inBodyPhase = false;
     if (this._terminal || this._cause === undefined) {
       return;
     }

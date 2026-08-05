@@ -166,6 +166,58 @@ describe('runSaferFetchDemo', () => {
     );
   });
 
+  test('reports every step as unexpected when nothing refuses anything', async () => {
+    // The inverse of the happy path: a surface that permits everything should light up every
+    // step, not just the first, so a regression in the primitive is visible as a pattern.
+    const permissive = deps({
+      saferFetchText: (async () =>
+        succeedWithDetail(
+          response('unexpectedly fine', [BASE_URL])
+        )) as unknown as ISaferFetchDemoDeps['saferFetchText'],
+      saferFetchJson: (async () =>
+        succeedWithDetail(
+          response({ ok: true }, [BASE_URL])
+        )) as unknown as ISaferFetchDemoDeps['saferFetchJson']
+    });
+    await expect(runSaferFetchDemo({ baseUrl: BASE_URL, deps: permissive })).resolves.toSucceedAndSatisfy(
+      (result: ISaferFetchDemoResult) => {
+        expect(result.allAsExpected).toBe(false);
+        // The three steps that expect a *success* still pass; the six that expect a refusal all
+        // report the surprise.
+        expect(result.steps.filter((s) => !s.asExpected)).toHaveLength(6);
+        for (const s of result.steps.filter((step) => !step.asExpected)) {
+          expect(s.outcome).toBe('unexpectedly succeeded');
+        }
+      }
+    );
+  });
+
+  test('does not credit a refusal whose reason is not the one the step is about', async () => {
+    // A step that only asked "did it fail?" would pass on any failure at all. Each one names the
+    // taxonomy entry it is demonstrating, so a call that failed for an unrelated reason — or one
+    // carrying no detail at all — is reported as unexpected rather than counted as a pass.
+    const detailless = <T>(): Outcome<T> =>
+      failWithDetail(
+        'something went wrong, and we cannot say what',
+        undefined as unknown as SaferFetch.FetchFailureReason
+      );
+    const opaque = deps({
+      saferFetchText: (async () => detailless()) as unknown as ISaferFetchDemoDeps['saferFetchText'],
+      saferFetchJson: (async () => detailless()) as unknown as ISaferFetchDemoDeps['saferFetchJson']
+    });
+    await expect(runSaferFetchDemo({ baseUrl: BASE_URL, deps: opaque })).resolves.toSucceedAndSatisfy(
+      (result: ISaferFetchDemoResult) => {
+        // The two steps that assert only "it was refused" still pass; every step that names a
+        // taxonomy entry, and every step that expects a success, does not.
+        expect(stepNamed(result, 'default posture').asExpected).toBe(false);
+        expect(stepNamed(result, '169.254.169.254').asExpected).toBe(false);
+        expect(stepNamed(result, 'Redis port').asExpected).toBe(true);
+        expect(stepNamed(result, 'named opt-in').asExpected).toBe(false);
+        expect(stepNamed(result, 'named opt-in').outcome).toMatch(/cannot say what/);
+      }
+    );
+  });
+
   test('fails the run when the content-type gate itself cannot be constructed', async () => {
     // A malformed entry in a security-adjacent allowlist is reported to its author rather than
     // silently compiled into a pattern that never matches — so the walkthrough stops.

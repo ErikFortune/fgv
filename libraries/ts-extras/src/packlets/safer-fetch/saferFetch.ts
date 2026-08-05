@@ -892,6 +892,62 @@ function _retryDelayMs(
   return delay <= watch.remainingMs ? delay : undefined;
 }
 
+/**
+ * Runs one attempt and, if the policy says so, the next one after it.
+ *
+ * @remarks
+ * Recursive rather than a loop, because **a retry is a fresh start rather than another turn of
+ * something already in progress**: every attempt is a full {@link _walk} from hop 0, and nothing
+ * survives the boundary — not the guard's verdict, not the redirect chain, not the headers a
+ * cross-origin hop stripped, not the previous response's `Retry-After`. Expressing that as a
+ * self-call keeps the "nothing carries over" property visible in the shape of the code rather
+ * than resting on a reader noticing which variables are declared inside the loop body.
+ *
+ * Depth is bounded by `retry.attempts` and each level is `await`ed, so the frames unwind rather
+ * than nest.
+ *
+ * @param attempt - 0-based index of the attempt about to run; `0` is the caller's first request.
+ */
+async function _runAttempt(
+  url: URL,
+  guards: IResolvedGuards,
+  options: ISaferFetchOptions,
+  resolved: IResolvedCallOptions,
+  watch: DeadlineWatch,
+  attempt: number
+): Promise<Outcome<IRawOutcome>> {
+  // Fresh per attempt: notes describe the attempt that just failed, and carrying a previous
+  // attempt's `Retry-After` into a later decision would schedule against a response that is no
+  // longer the reason we are retrying.
+  const notes: IAttemptNotes = {};
+  const walked = await _walk(url, guards, options, resolved, watch, notes);
+  // `!isFailure()` rather than `isSuccess()`: only the former narrows to the failure branch
+  // below, where `detail` is known to be present.
+  if (!walked.isFailure()) {
+    return walked;
+  }
+
+  const delay = _retryDelayMs(walked.detail, attempt, resolved, notes, watch);
+  if (delay === undefined) {
+    return walked;
+  }
+  // Clears an attempt-scoped stop — a headers timeout ends the attempt, not the call — so the
+  // backoff below is not answered instantly by the previous attempt's own deadline. A terminal
+  // stop deliberately survives, and ends the call at the first race below.
+  watch.attemptEnded();
+  resolved.logger.detail(
+    `saferFetch: ${url.toString()} failed (${walked.message}); retrying in ` +
+      `${Math.round(delay)}ms — attempt ${attempt + 2} of ${resolved.retry.attempts + 1}.`
+  );
+
+  // Delayed on the same watch the request races against, so a caller who aborts during a backoff
+  // is answered then rather than after the sleep.
+  const slept = await watch.delay(delay);
+  return slept.stopped
+    ? _stopped<IRawOutcome>(watch, slept.cause)
+    : _runAttempt(url, guards, options, resolved, watch, attempt + 1);
+}
+
 async function _execute(url: string | URL, options: ISaferFetchOptions): Promise<Outcome<IRawOutcome>> {
   const resolvedOptions = _resolveCallOptions(options);
   if (resolvedOptions.isFailure()) {
@@ -911,42 +967,22 @@ async function _execute(url: string | URL, options: ISaferFetchOptions): Promise
   }
 
   const watch = new DeadlineWatch(resolved.timeoutMs, resolved.headersTimeoutMs, options.signal);
-  try {
-    for (let attempt: number = 0; ; attempt++) {
-      // Fresh per attempt: notes describe the attempt that just failed, and carrying a previous
-      // attempt's `Retry-After` into a later decision would schedule against a response that is
-      // no longer the reason we are retrying.
-      const notes: IAttemptNotes = {};
-      const walked = await _walk(parsed.value, guards, options, resolved, watch, notes);
-      // `!isFailure()` rather than `isSuccess()`: only the former narrows to the failure branch
-      // below, where `detail` is known to be present.
-      if (!walked.isFailure()) {
-        return walked;
-      }
-
-      const delay = _retryDelayMs(walked.detail, attempt, resolved, notes, watch);
-      if (delay === undefined) {
-        return walked;
-      }
-      // Clears an attempt-scoped stop — a headers timeout ends the attempt, not the call — so
-      // the backoff below is not answered instantly by the previous attempt's own deadline. A
-      // terminal stop deliberately survives, and ends the call at the first race below.
-      watch.attemptEnded();
-      resolved.logger.detail(
-        `saferFetch: ${parsed.value.toString()} failed (${walked.message}); retrying in ` +
-          `${Math.round(delay)}ms — attempt ${attempt + 2} of ${resolved.retry.attempts + 1}.`
-      );
-
-      // Delayed on the same watch the request races against, so a caller who aborts during a
-      // backoff is answered then rather than after the sleep.
-      const slept = await watch.delay(delay);
-      if (slept.stopped) {
-        return _stopped<IRawOutcome>(watch, slept.cause);
-      }
-    }
-  } finally {
-    watch.dispose();
-  }
+  // `captureAsyncResult` rather than `try`/`finally`, for the same reason `_capture` wraps every
+  // guard and transport call: an entry point documented to always return a `Result` has to keep
+  // that promise even when a collaborator breaks its own. Nothing inside is *supposed* to throw
+  // — guards, transports and the body read are each captured already — but the caller's
+  // `logger` is collaborator code this primitive does not wrap, and a thrown diagnostic must not
+  // become the caller's problem. The watch is disposed on both paths because the capture has
+  // already converted the throw into a value.
+  const ran = await captureAsyncResult(async () =>
+    _runAttempt(parsed.value, guards, options, resolved, watch, 0)
+  );
+  watch.dispose();
+  return ran.isFailure()
+    ? // `'unknown'` is the taxonomy's honest slot for "something violated its contract", rather
+      // than a guess at a more specific kind.
+      _unknown<IRawOutcome>(`saferFetch: unexpected error: ${ran.message}`)
+    : ran.value;
 }
 
 function _toResponse<T>(value: T, raw: IRawOutcome): ISaferFetchResponse<T> {
