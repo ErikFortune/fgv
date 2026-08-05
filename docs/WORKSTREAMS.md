@@ -128,6 +128,16 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-memory-ingest-dedup-scope` 🔵
+
+**Status:** 🔵 queued — branch `agent-memory-ingest-dedup-scope` from `release` @ `b392e1534`; brief at `.ai/tasks/active/agent-memory-ingest-dedup-scope/brief.md`. Runs in parallel with `safer-fetch-s3`; no code overlap, but both edit `.ai/instructions/LIBRARY_CAPABILITIES.md` and this file — **own section only**.
+**Package surface:** `@fgv/ts-agent-memory` (`ingest`, `types/memoryStore.ts`, `store/fileTreeMemoryStore.ts`).
+**Origin:** problem report from PersonAIlity (2026-08-04) against 5.1.0-46, triaged and verified against source.
+
+**Mission.** `dedupScope` is honored by the store and ignored by the ingest orchestrator, so a kind declaring `'entity'` still gets `'content'` behavior through `ingestItem` and the declaration is dead on that path. **`dedupScope` has zero references anywhere in `ingest/`.** Blast radius is wider than the report: `DEFAULT_DEDUP_SCOPE` is `'entity'` and two of the three shipped policies declare it, so every experience and versioned kind is affected. Fixing it needs a seam first — the orchestrator holds an `IMemoryStore`, which exposes no policy accessor, which is why the consumer's proposed fix is not currently expressible. Carries a second, sharper fix the report surfaced: a `duplicate-of` collapse removes an address that sibling edges in the same pass were built against, failing the **whole** ingest item — true even for `'content'` kinds where the collapse is correct. Also writes `.claude/project/agent-memory-ingest-design.md`, the note three source files already cite but which does not exist.
+
+---
+
 ### `private-key-storage` ✅
 
 **Status:** ✅ implemented + reviewed (PR #427, gates green) — ready for squash to `release`
