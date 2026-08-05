@@ -52,6 +52,35 @@ export const DEFAULT_MAX_RESPONSE_BYTES: number = 5 * 1024 * 1024;
 export const REDIRECT_STATUSES: ReadonlyArray<number> = [301, 302, 303, 307, 308];
 
 /**
+ * Default cap on redirect hops followed under `'validate-each-hop'`.
+ *
+ * @remarks
+ * Five is enough for the ordinary shortener-then-canonicalize-then-CDN chains real services
+ * produce and small enough that a chain designed to burn budget is refused quickly. Every hop
+ * costs a full guard evaluation — including a DNS resolution — against the same overall
+ * deadline, so the cap bounds work, not just politeness.
+ * @public
+ */
+export const DEFAULT_MAX_REDIRECTS: number = 5;
+
+/**
+ * Header names dropped on every cross-origin redirect hop, whatever the caller configured.
+ *
+ * @remarks
+ * Turning on manual redirects makes this primitive responsible for a rule the platform was
+ * applying for free: browsers and `curl` both strip credential headers when a redirect leaves
+ * the origin, and a hand-rolled loop that replays them hands `Authorization: Bearer …` to
+ * whatever host the redirect names. Callers add their own names with
+ * `ISaferFetchOptions.sensitiveHeaders`; these three are not removable.
+ * @public
+ */
+export const ALWAYS_STRIPPED_HEADERS: ReadonlyArray<string> = [
+  'authorization',
+  'cookie',
+  'proxy-authorization'
+];
+
+/**
  * URL schemes this primitive will ever request.
  *
  * @remarks

@@ -36,7 +36,9 @@
  */
 
 export {
+  ALWAYS_STRIPPED_HEADERS,
   DEFAULT_HEADERS_TIMEOUT_MS,
+  DEFAULT_MAX_REDIRECTS,
   DEFAULT_MAX_RESPONSE_BYTES,
   DEFAULT_TIMEOUT_MS,
   REDIRECT_STATUSES,
@@ -69,24 +71,29 @@ export { platformFetchTransport } from './transport';
 
 export { saferFetchBytes, saferFetchJson, saferFetchText, type ISaferFetchJsonOptions } from './saferFetch';
 
-// The address-classification layer, exported through the packlet entry point like everything
-// else here.
-//
-// One name is deconflicted: this layer's `allowAnyAddressPolicy` returns a pure, synchronous
-// `IAddressPolicy` over an already-resolved address list, while `allowAnyAddress` above returns
-// the async, hop-chain-aware `IAddressGuard` that entry points actually accept. They are
-// different types at different layers and cannot share a name.
-//
-// `blockPrivateNetworks` keeps its unsuffixed name and currently returns an `IAddressPolicy`.
-// S2b adds the guard that resolves a hostname and delegates to it, and decides at that point
-// whether the unsuffixed name should move to the guard layer.
+// Two layers, one naming rule: an **unsuffixed** factory returns the asynchronous,
+// hop-chain-aware, name-resolving `IAddressGuard` that an entry point's `addressGuard` option
+// takes (`allowAnyAddress`, `blockPrivateNetworks`), while a **`Policy`-suffixed** factory
+// returns the pure, synchronous `IAddressPolicy` over an already-resolved address list that such
+// a guard delegates to (`allowAnyAddressPolicy`, `blockPrivateNetworksPolicy`). The unsuffixed
+// names are the ones callers reach for, which is why they are the ones that fit the call site.
 export {
   allowAnyAddressPolicy,
-  blockPrivateNetworks,
+  blockPrivateNetworksPolicy,
   type IAddressCheckVerdict,
   type IAddressPolicy,
   type IBlockPrivateNetworksOptions
 } from './addressPolicy';
+
+// Node only — it resolves names, and no browser API returns a hostname's A/AAAA records. This
+// is the one module in the packlet that performs I/O, and the reason this barrel and the browser
+// barrel differ at all.
+export {
+  blockPrivateNetworks,
+  nodeHostResolver,
+  type HostResolver,
+  type IBlockPrivateNetworksGuardOptions
+} from './nodeAddressGuard';
 
 export {
   classifyAddress,

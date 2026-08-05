@@ -21,22 +21,32 @@
 /**
  * An HTTP fetch primitive with an explicit threat model (browser version).
  *
- * The entire packlet is runtime-agnostic and contains no `node:` imports, so this barrel is
- * currently identical in content to the Node one. It exists as a distinct barrel because the
- * Node-only address guards land beside the core, and this is the file that must **not** export
- * them.
+ * This barrel deliberately omits `blockPrivateNetworks` and the resolver seam beneath it: that
+ * module imports `node:dns/promises`, and exporting it here would pull a Node builtin into a
+ * browser bundle.
+ *
+ * That is not the only difference. The address-classification layer — `classifyAddress`, and the
+ * pure synchronous policies `allowAnyAddressPolicy` / `blockPrivateNetworksPolicy` — is
+ * runtime-agnostic but is currently exported from the Node barrel only. Nothing prevents a
+ * browser from using it; it simply has not been part of this barrel's surface, and widening a
+ * public surface is left to the stream that owns the browser packlet. What ships here today is
+ * the entry points, the guard/transport seams, `allowAnyAddress`, `allowContentTypes`, and the
+ * shared types and constants.
  *
  * Note: the resolved-address (private-IP) guard and per-hop redirect revalidation are NOT
  * available in a browser, and not for want of implementation. There is no browser API that
  * returns a hostname's A/AAAA records, nothing in `fetch` or `Response` exposes the peer
  * address, and `redirect: 'manual'` yields an opaque response whose `Location` is not
- * readable. `allowAnyAddress()` is the honest choice there, and its name says so.
+ * readable — a `'validate-each-hop'` call there fails as `'redirect-opaque'` rather than
+ * quietly following anything. `allowAnyAddress()` is the honest choice, and its name says so.
  *
  * @packageDocumentation
  */
 
 export {
+  ALWAYS_STRIPPED_HEADERS,
   DEFAULT_HEADERS_TIMEOUT_MS,
+  DEFAULT_MAX_REDIRECTS,
   DEFAULT_MAX_RESPONSE_BYTES,
   DEFAULT_TIMEOUT_MS,
   REDIRECT_STATUSES,

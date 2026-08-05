@@ -30,16 +30,36 @@ export type SaferFetchMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELE
  * How redirects are handled.
  *
  * @remarks
- * `'reject'` fails on any redirect status and is the only mode with an equivalent
- * guarantee on every runtime — a browser cannot inspect a redirect hop at all, so a
+ * `'reject'` fails on any redirect status. It is the default, and the only mode with an
+ * equivalent guarantee on every runtime — a browser cannot inspect a redirect hop at all, so a
  * per-hop revalidating mode is not implementable there.
  *
- * This union is deliberately narrow in this release: only `'reject'` ships. Modes that
- * follow hops arrive with the per-hop revalidation that makes them safe, and widening a
- * union of accepted values is an additive change.
+ * The *guarantee* is equivalent on both runtimes; the failure **reason** is not. Every call uses
+ * `redirect: 'manual'`, so on Node a rejected redirect surfaces as `'redirect-rejected'` carrying
+ * the status, while in a browser the response is opaque — `type` is `'opaqueredirect'` and
+ * `status` is `0`, so there is no status to report — and the same redirect surfaces as
+ * `'redirect-opaque'`. Callers that branch on the reason under `'reject'` must handle both.
+ *
+ * `'validate-each-hop'` follows redirects with `redirect: 'manual'` and runs the **full address
+ * guard on every hop before any connection is made**, resolving `Location` against the hop that
+ * sent it. Redirect handling and the address check are one mechanism, not two: a guard that
+ * validated only the caller's URL is defeated by a single `302` to `http://169.254.169.254/`.
+ * Following hops also makes this primitive responsible for credential stripping — see
+ * `ISaferFetchOptions.sensitiveHeaders`.
+ *
+ * **`'validate-each-hop'` is accepted by the browser barrel but cannot succeed there, and fails
+ * loudly rather than degrading.** The type is shared because one core serves both runtimes; the
+ * runtime is not. A browser's `redirect: 'manual'` yields an opaque response — `type` is
+ * `'opaqueredirect'`, `status` is `0`, and `Location` is not readable — so the first redirect
+ * fails as `'redirect-opaque'`. That is the honest outcome: the hop information does not exist
+ * on the browser side of the API, so there is nothing to guard and nothing to follow. Use
+ * `'reject'` there, or handle `'redirect-opaque'`.
+ *
+ * A mode that defers to the platform's own redirect following is deliberately absent on Node:
+ * it would put hops on the wire that the guard never saw.
  * @public
  */
-export type SaferFetchRedirectPolicy = 'reject';
+export type SaferFetchRedirectPolicy = 'reject' | 'validate-each-hop';
 
 /**
  * One hop in a redirect chain. Entry 0 is the caller's original request.
@@ -52,7 +72,14 @@ export interface IRequestHop {
   readonly status?: number;
   /**
    * The address actually connected to on this hop, when address pinning was in effect.
-   * Always `undefined` in this release — see {@link SaferFetch.IGuardVerdict.pinnedAddress}.
+   *
+   * @remarks
+   * Populated from the address guard's {@link SaferFetch.IGuardVerdict.pinnedAddress} once the
+   * transport has accepted it — which is sound because a transport that cannot honor a pin is
+   * required to fail rather than connect by hostname, so a completed request with a pin set is
+   * evidence the pin held. **Undefined throughout this release**, since no shipped guard pins
+   * and {@link SaferFetch.platformFetchTransport} cannot honor one; the field is where the
+   * rebinding defense's per-hop evidence will live.
    */
   readonly connectedAddress?: string;
 }
@@ -313,9 +340,36 @@ export interface ISaferFetchOptions {
   readonly maxResponseBytes?: number;
 
   /**
-   * How redirects are handled. Default — and, in this release, only — `'reject'`.
+   * How redirects are handled. Defaults to `'reject'`.
+   *
+   * @remarks
+   * The conservative default is deliberate, and is the same polarity as `addressGuard` having no
+   * default: one core serves both runtimes, `'reject'` is the only mode whose guarantee is
+   * identical on each, and following a redirect chain into hosts the caller never named is a
+   * posture worth spelling at the call site. Callers ingesting real-world URLs want
+   * `'validate-each-hop'`.
    */
   readonly redirectPolicy?: SaferFetchRedirectPolicy;
+
+  /**
+   * Cap on redirect hops followed under `'validate-each-hop'`. Default
+   * {@link SaferFetch.DEFAULT_MAX_REDIRECTS} (5). Must be a non-negative integer; `0` refuses
+   * to follow any redirect.
+   */
+  readonly maxRedirects?: number;
+
+  /**
+   * Additional header names to drop on a cross-origin redirect hop, on top of the always-dropped
+   * `authorization`, `cookie` and `proxy-authorization`
+   * ({@link SaferFetch.ALWAYS_STRIPPED_HEADERS}).
+   *
+   * @remarks
+   * Matching is case-insensitive. Use this for bearer-equivalent headers a deployment invented —
+   * `x-api-key`, `x-auth-token`, a signed-request header. Stripping is **monotonic**: once a hop
+   * has left an origin the headers are gone for the rest of the chain, so an `A` → `B` → `A`
+   * chain does not hand the credential back to `A` after `B` has watched it leave.
+   */
+  readonly sensitiveHeaders?: ReadonlyArray<string>;
 
   /** Defaults to {@link SaferFetch.platformFetchTransport}. */
   readonly transport?: IFetchTransport;

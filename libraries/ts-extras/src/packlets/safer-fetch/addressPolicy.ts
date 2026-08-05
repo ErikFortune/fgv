@@ -73,7 +73,7 @@ export interface IAddressPolicy {
 }
 
 /**
- * Options for {@link blockPrivateNetworks}.
+ * Options shared by {@link blockPrivateNetworksPolicy} and the address guard built over it.
  * @public
  */
 export interface IBlockPrivateNetworksOptions {
@@ -149,14 +149,23 @@ function checkAllAddresses(
  * policy — closing that requires connecting to a pinned address. The policy
  * also says nothing about scheme, host, port, redirects or response content.
  *
+ * This is the **policy-layer** factory. It is not what a safer-fetch call's
+ * `addressGuard` option takes: an entry point takes an `IAddressGuard`, which is
+ * the asynchronous, hop-chain-aware, name-resolving half. `blockPrivateNetworks`
+ * (Node only) is the guard that resolves a hostname and delegates every resolved
+ * address to this policy; reach for that unless you are classifying an address
+ * list you already hold.
+ *
  * @param options - optional {@link IBlockPrivateNetworksOptions | relaxations}
  * of the default posture.
  * @returns the policy. Construction cannot fail.
  * @public
  */
-export function blockPrivateNetworks(options?: IBlockPrivateNetworksOptions): IAddressPolicy {
+export function blockPrivateNetworksPolicy(options?: IBlockPrivateNetworksOptions): IAddressPolicy {
   const allowLoopback: boolean = options?.allowLoopback === true;
-  const name: string = allowLoopback ? 'blockPrivateNetworks(allowLoopback)' : 'blockPrivateNetworks';
+  const name: string = allowLoopback
+    ? 'blockPrivateNetworksPolicy(allowLoopback)'
+    : 'blockPrivateNetworksPolicy';
   const allowed: ReadonlySet<AddressClassification> = allowLoopback ? PUBLIC_OR_LOOPBACK : PUBLIC_ONLY;
   return {
     name,
