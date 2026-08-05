@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { DetailedResult, Result, fail, succeed } from '@fgv/ts-utils';
 import type { SaferFetch } from '@fgv/ts-extras';
 
 /**
@@ -71,6 +71,38 @@ function step(name: string, asExpected: boolean, outcome: string): IDemoStep {
   return { name, asExpected, outcome };
 }
 
+/** Whether a call failed with the taxonomy entry the step is about. */
+function refusedBecause<T>(
+  result: DetailedResult<SaferFetch.ISaferFetchResponse<T>, SaferFetch.FetchFailureReason>,
+  kind: SaferFetch.FetchFailureReason['kind']
+): boolean {
+  return result.isFailure() && result.detail?.kind === kind;
+}
+
+/**
+ * Whether the **address guard** refused, for the specific rule this step is about.
+ *
+ * @remarks
+ * A step that only asked "was it refused?" is creditable by any failure at all, which for a
+ * *demonstration* is worse than useless: the guards here come from one family and all refuse as
+ * `'blocked-by-guard'`, so loopback, scheme and port refusals are indistinguishable at the
+ * taxonomy level. `evidence` is the fragment of the guard's own reason that separates them.
+ *
+ * Matched against the reason, never the whole failure message. The message echoes the URL that
+ * was refused, so `'6379'` would be satisfied by `http://127.0.0.1:6379/` itself no matter which
+ * rule said no — the step would be credited by its own input.
+ */
+function refusedByGuard<T>(
+  result: DetailedResult<SaferFetch.ISaferFetchResponse<T>, SaferFetch.FetchFailureReason>,
+  evidence: string
+): boolean {
+  return (
+    result.isFailure() &&
+    result.detail?.kind === 'blocked-by-guard' &&
+    result.detail.detail.includes(evidence)
+  );
+}
+
 /**
  * Walks the Node safer-fetch path end to end against a scripted local server.
  *
@@ -105,7 +137,7 @@ export async function runSaferFetchDemo(
   steps.push(
     step(
       'default posture refuses a loopback URL',
-      defaultPosture.isFailure() && defaultPosture.detail?.kind === 'blocked-by-guard',
+      refusedBecause(defaultPosture, 'blocked-by-guard'),
       defaultPosture.isFailure() ? defaultPosture.message : 'unexpectedly succeeded'
     )
   );
@@ -119,7 +151,9 @@ export async function runSaferFetchDemo(
   steps.push(
     step(
       'default posture refuses plaintext http, even to an allowed address',
-      plaintext.isFailure() && plaintext.detail?.kind === 'blocked-by-guard',
+      // The evidence, not just the refusal: loopback is permitted by this guard, so only the
+      // scheme rule can have said no — and its message is what proves which one did.
+      refusedByGuard(plaintext, 'allowInsecureHttp'),
       plaintext.isFailure() ? plaintext.message : 'unexpectedly succeeded'
     )
   );
@@ -151,7 +185,7 @@ export async function runSaferFetchDemo(
   steps.push(
     step(
       'the same guard still refuses the Redis port',
-      wrongPort.isFailure(),
+      refusedByGuard(wrongPort, '6379'),
       wrongPort.isFailure() ? wrongPort.message : 'unexpectedly succeeded'
     )
   );
@@ -165,7 +199,7 @@ export async function runSaferFetchDemo(
   steps.push(
     step(
       'the content-type gate rejects an HTML page served as 200',
-      wrongType.isFailure() && wrongType.detail?.kind === 'unsupported-content-type',
+      refusedBecause(wrongType, 'unsupported-content-type'),
       wrongType.isFailure() ? wrongType.message : 'unexpectedly succeeded'
     )
   );
@@ -178,7 +212,7 @@ export async function runSaferFetchDemo(
   steps.push(
     step(
       'the streaming size cap trips despite a lying Content-Length',
-      capped.isFailure() && capped.detail?.kind === 'too-large',
+      refusedBecause(capped, 'too-large'),
       capped.isFailure() ? capped.message : 'unexpectedly succeeded'
     )
   );
@@ -206,7 +240,7 @@ export async function runSaferFetchDemo(
   steps.push(
     step(
       'a 302 to 169.254.169.254 is refused at the hop, before any connection',
-      ssrf.isFailure() && ssrf.detail?.kind === 'blocked-by-guard',
+      refusedByGuard(ssrf, '169.254.169.254'),
       ssrf.isFailure() ? ssrf.message : 'unexpectedly succeeded'
     )
   );
@@ -236,7 +270,7 @@ export async function runSaferFetchDemo(
   steps.push(
     step(
       'a POST is not retried without retryNonIdempotent',
-      post.isFailure() && post.detail?.kind === 'http-status',
+      refusedBecause(post, 'http-status'),
       post.isFailure() ? post.message : 'unexpectedly succeeded'
     )
   );

@@ -139,7 +139,11 @@ const cliImpl: ICliScenarioImpl = {
           }`
       );
     } finally {
-      server.close();
+      // Awaited: `close()` is asynchronous, and returning while the listener is still shutting
+      // down leaves an open handle for whatever runs next in the same process. The callback
+      // reports a close error, which is not worth failing a completed walkthrough over — the
+      // scenario's result is already decided — so it is resolved either way.
+      await new Promise<void>((resolve) => server.close(() => resolve()));
     }
   }
 };

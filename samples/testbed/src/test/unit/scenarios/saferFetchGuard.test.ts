@@ -34,13 +34,18 @@ function response<T>(value: T, urlChain: ReadonlyArray<string>): SaferFetch.ISaf
   return { value, status: 200, headers: {}, urlChain, bytesRead: 42 };
 }
 
-function blocked<T>(url: string): Outcome<T> {
-  return failWithDetail(`address guard rejected ${url}`, {
+/**
+ * A guard refusal. `detail` carries the rule that said no, exactly as the real guard's message
+ * does — several steps use guards from the same family whose refusals are all
+ * `'blocked-by-guard'`, and the message is the only thing that distinguishes them.
+ */
+function blocked<T>(url: string, why: string = 'is loopback and is not allowed'): Outcome<T> {
+  return failWithDetail(`address guard rejected ${url}: ${why}`, {
     kind: 'blocked-by-guard',
     url,
     hop: 0,
     guard: 'blockPrivateNetworks',
-    detail: 'is loopback and is not allowed'
+    detail: why
   });
 }
 
@@ -65,7 +70,10 @@ function deps(overrides?: Partial<ISaferFetchDemoDeps>): ISaferFetchDemoDeps {
       case '/redirect':
         return succeedWithDetail(response(value, [`${BASE_URL}/redirect`, `${BASE_URL}/final`]));
       case '/redirect-to-metadata':
-        return blocked('http://169.254.169.254/latest/meta-data/iam/security-credentials/');
+        return blocked(
+          'http://169.254.169.254/latest/meta-data/iam/security-credentials/',
+          '169.254.169.254 is link-local and is not allowed'
+        );
       case '/always-503':
         return failWithDetail('returned 503 Service Unavailable', {
           kind: 'http-status',
@@ -86,11 +94,16 @@ function deps(overrides?: Partial<ISaferFetchDemoDeps>): ISaferFetchDemoDeps {
       // sidecar guard clears a loopback, plaintext-http destination — the default posture and
       // the loopback-only guard each refuse for their own reason — and even the sidecar guard
       // refuses a port it was not given.
+      if (options.addressGuard.name === 'blockPrivateNetworks(partial)') {
+        // Loopback permitted, plaintext http not — so the scheme rule is the one that refuses.
+        return blocked(asString, 'http: is not allowed without allowInsecureHttp');
+      }
       if (options.addressGuard.name !== SIDECAR_GUARD) {
         return blocked(asString);
       }
-      if (new URL(asString).port === '6379') {
-        return blocked(asString);
+      const port: string = new URL(asString).port;
+      if (port === '6379') {
+        return blocked(asString, `port ${port} is not in the allowed port list`);
       }
       return answer(asString, 'body text');
     }) as unknown as ISaferFetchDemoDeps['saferFetchText'],
@@ -223,9 +236,32 @@ describe('runSaferFetchDemo', () => {
         // taxonomy entry, and every step that expects a success, does not.
         expect(stepNamed(result, 'default posture').asExpected).toBe(false);
         expect(stepNamed(result, '169.254.169.254').asExpected).toBe(false);
-        expect(stepNamed(result, 'Redis port').asExpected).toBe(true);
+        // Not credited either: a detail-less failure names no rule, and the port step is about
+        // the port allowlist specifically.
+        expect(stepNamed(result, 'Redis port').asExpected).toBe(false);
         expect(stepNamed(result, 'named opt-in').asExpected).toBe(false);
         expect(stepNamed(result, 'named opt-in').outcome).toMatch(/cannot say what/);
+      }
+    );
+  });
+
+  test('does not credit a step whose refusal names a different rule', async () => {
+    // The sharpest failure mode for a *demonstration*: several of these guards refuse as
+    // `'blocked-by-guard'`, so a step that only asked "was it refused?" would be credited by
+    // the wrong rule saying no — and the walkthrough would claim to prove something it did not.
+    const wrongReason = deps({
+      saferFetchText: (async (url: string | URL) =>
+        blocked(String(url), 'some other rule said no')) as unknown as ISaferFetchDemoDeps['saferFetchText']
+    });
+    await expect(runSaferFetchDemo({ baseUrl: BASE_URL, deps: wrongReason })).resolves.toSucceedAndSatisfy(
+      (result: ISaferFetchDemoResult) => {
+        // Refused, and still not credited: neither the scheme step nor the port step names the
+        // rule it is about.
+        expect(stepNamed(result, 'plaintext http').asExpected).toBe(false);
+        expect(stepNamed(result, 'Redis port').asExpected).toBe(false);
+        // The step that only asks for *a* guard block is still satisfied, which is correct —
+        // that one is about loopback being refused at all, and it names no narrower rule.
+        expect(stepNamed(result, 'default posture refuses a loopback').asExpected).toBe(true);
       }
     );
   });
