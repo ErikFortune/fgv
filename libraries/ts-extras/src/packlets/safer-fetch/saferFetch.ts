@@ -581,8 +581,10 @@ function _nextHop(
   const visited: ReadonlyArray<string> = [...completed.map((h) => h.url.toString()), from.toString()];
   if (visited.includes(to.toString())) {
     return _fail<ISaferFetchRequest>(
-      { kind: 'redirect-rejected', url: to.toString(), status: redirect.status },
-      `${from.toString()} redirected with status ${redirect.status} to a URL already in the chain.`
+      { kind: 'redirect-rejected', url: from.toString(), status: redirect.status },
+      `${from.toString()} redirected with status ${
+        redirect.status
+      } to ${to.toString()}, which is already in the chain.`
     );
   }
 

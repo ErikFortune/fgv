@@ -34,6 +34,12 @@ export type SaferFetchMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELE
  * equivalent guarantee on every runtime — a browser cannot inspect a redirect hop at all, so a
  * per-hop revalidating mode is not implementable there.
  *
+ * The *guarantee* is equivalent on both runtimes; the failure **reason** is not. Every call uses
+ * `redirect: 'manual'`, so on Node a rejected redirect surfaces as `'redirect-rejected'` carrying
+ * the status, while in a browser the response is opaque — `type` is `'opaqueredirect'` and
+ * `status` is `0`, so there is no status to report — and the same redirect surfaces as
+ * `'redirect-opaque'`. Callers that branch on the reason under `'reject'` must handle both.
+ *
  * `'validate-each-hop'` follows redirects with `redirect: 'manual'` and runs the **full address
  * guard on every hop before any connection is made**, resolving `Location` against the hop that
  * sent it. Redirect handling and the address check are one mechanism, not two: a guard that

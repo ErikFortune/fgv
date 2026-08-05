@@ -73,6 +73,12 @@ export type FetchFailureReason =
    * are facts about the chain the redirecting server produced, not about the network behind
    * this process. "The chain got too long" is a different question and stays
    * `'too-many-redirects'`.
+   *
+   * `url` is always the URL that **issued** the rejected redirect — the hop this call actually
+   * requested and got a 3xx back from — never the `Location` target it pointed at. That holds
+   * for all three cases, including the revisit case, where the target is the URL already in the
+   * chain and naming it here would make the same field mean two different things. The target is
+   * named in the message instead. `status` is the redirect status that was received.
    */
   | { readonly kind: 'redirect-rejected'; readonly url: string; readonly status: number }
   /**

@@ -516,11 +516,13 @@ describe('saferFetch redirect walk', () => {
       const a: string = 'https://a.example/x';
       const b: string = 'https://b.example/y';
       const transport = scripted([a, () => redirect(302, b)], [b, () => redirect(302, a)]);
-      await expect(saferFetchText(a, options(transport))).resolves.toFailWithDetail(/already in the chain/, {
-        kind: 'redirect-rejected',
-        url: a,
-        status: 302
-      });
+      // `url` is the hop that issued the rejected redirect — b, not the repeated target a.
+      // Naming the target here would make the field mean something different than it does on
+      // the other two 'redirect-rejected' paths; the target is named in the message.
+      await expect(saferFetchText(a, options(transport))).resolves.toFailWithDetail(
+        /redirected with status 302 to https:\/\/a\.example\/x, which is already in the chain/,
+        { kind: 'redirect-rejected', url: b, status: 302 }
+      );
       // Two requests, not the six the cap alone would have allowed: the repeat is caught before
       // it is issued, so the oscillation never gets a second lap.
       expect(requestedUrls(transport)).toEqual([a, b]);
