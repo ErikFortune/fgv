@@ -44,6 +44,17 @@ Design §14 phases 4–6 are exactly this stream.
   `@fgv/ts-utils` or `@fgv/ts-json-base`, **stop and escalate** — that is a brief amendment.
 - `docs/STATUS.md`.
 - `.claude/project/fetch-primitive-threat-model.md` beyond the divergence record above.
+- `libraries/ts-agent-memory/**` — owned by the **`agent-memory-ingest-dedup-scope`** stream,
+  running in parallel.
+
+### Parallel-stream note (read this before touching either shared file)
+
+`agent-memory-ingest-dedup-scope` is running concurrently. It touches no code this stream touches,
+but it also has `.ai/instructions/LIBRARY_CAPABILITIES.md` and `docs/WORKSTREAMS.md` in scope.
+**Edit only your own section of each**: the safer-fetch capability entry, and this stream's ledger
+entry. Do not reflow, reorder, or reformat surrounding content in either file — that is what turns
+a trivial two-section merge into a real conflict. Whoever merges second resolves; keeping edits
+section-local makes that a non-event.
 
 ## Required reading (load before writing code)
 
