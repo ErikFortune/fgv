@@ -368,8 +368,8 @@ correct `(item) => ...` callback that ignores its index, trading a rare bug for 
 ## 7. Follow-up: migrating the in-repo call sites
 
 The three hand-rolled sites in § 2(d) — `HybridRetriever`, the prompt-assist observer fan-out,
-the bcp47 registry loader — are **not** migrated. Left deliberately as a separate stream,
-because migration is a **behaviour change, not a refactor**: those sites are unbounded today
+the bcp47 registry loader — are **not** migrated. They are left deliberately as a separate
+stream, because migration is a **behaviour change, not a refactor**: those sites are unbounded today
 and would pick up `DEFAULT_RESULT_CONCURRENCY` (8). That is the right default, but whether each
 site wants it — versus `Number.POSITIVE_INFINITY` to preserve current behaviour — is a
 per-site judgement about its workload, and should not ride along in a mechanical sweep.
