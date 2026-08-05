@@ -151,6 +151,14 @@ export function blockPrivateNetworks(options?: IBlockPrivateNetworksGuardOptions
       if (hop === undefined) {
         return fail(`${name}: hop chain is empty.`);
       }
+      // The format applies to the resolution failure only, and deliberately does not wrap the
+      // policy's. The two layers are named separately on purpose: this guard is the resolving,
+      // chain-aware half and reports as `blockPrivateNetworks(...)`, while the pure classifier
+      // beneath it reports as `blockPrivateNetworksPolicy(...)`. A reader of either message can
+      // therefore tell which layer said no — whether DNS failed or an address was classified and
+      // refused — which is the distinction the guard/policy split exists to make legible.
+      // Flattening both to the guard name would read as more consistent and carry strictly less
+      // information. `FetchFailureReason.blocked-by-guard.guard` names the guard either way.
       return (await _addressesFor(hop.url.hostname, resolve))
         .withErrorFormat((message) => `${name}: ${message}`)
         .onSuccess((addresses) => policy.checkAddresses(addresses))

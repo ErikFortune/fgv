@@ -602,6 +602,23 @@ function _nextHop(
   }
   const to = cleared.value;
 
+  // KNOWN LIMIT — detection is exact-match, and the two sides are not normalized alike.
+  // `completed` holds guard-CLEARED URLs, while `to` is the freshly resolved `Location` that the
+  // guard has not seen yet. A guard that normalizes — `IGuardVerdict.url` explicitly permits
+  // lowercasing a host, stripping a trailing dot, punycoding an IDN — can therefore produce a
+  // stored URL that a later raw target does not match, and the repeat runs to `maxRedirects`
+  // instead of being caught here.
+  //
+  // Not reachable with any guard this package ships: neither `allowAnyAddress` nor
+  // `blockPrivateNetworks` normalizes, and the WHATWG parser has already lowercased hosts and
+  // punycoded IDNs on both sides. Bounded when it is reachable — every hop is still fully
+  // address-guarded, so the cost is a longer walk, not a bypass.
+  //
+  // The fix is to compare like with like, checking after the guard clears the hop so the
+  // cleared URL is the identity on both sides. That means splitting the guard step out of
+  // `_connect`, which is S3's to do. Special-casing trailing dots here would be worse than
+  // leaving it: this layer does not own normalization and cannot anticipate what a custom guard
+  // does, so it would advertise a completeness it would not have.
   const visited: ReadonlyArray<string> = [...completed.map((h) => h.url.toString()), from.toString()];
   if (visited.includes(to.toString())) {
     return _fail<ISaferFetchRequest>(
