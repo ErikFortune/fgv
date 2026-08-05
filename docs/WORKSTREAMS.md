@@ -277,9 +277,9 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ### `fetch-primitive-threat-model` 🔵
 
-**Status:** 🔵 in flight — **design-only deliverable, awaiting Erik's review.** Branches from `release` @ `c37ec88b2`. Consumer: PersonAIlity. PR open against `release`; **do not merge** until the threat model is reviewed.
-**Workflow shape:** design-first. **No implementation code in this stream** — an implementation stream is commissioned only after review.
-**Deliverable:** `.claude/project/fetch-primitive-threat-model.md`.
+**Status:** ✅ design reviewed and landed; implementation in flight across four streams. **S1** (core, #592), **S2a** (address classification, #594 via #597), and **S2b** (DNS-resolving guard + redirect walk, #599 — squashed to `release` @ `b392e1534`) have all shipped. **S3** (`safer-fetch-s3`) is the remaining stream — retry, browser packlet, guarantee tables, `LIBRARY_CAPABILITIES` entry; brief at `.ai/tasks/active/safer-fetch-s3/brief.md`. Consumer: PersonAIlity.
+**Workflow shape:** design-first, then phased implementation per design § 14.
+**Deliverable:** `.claude/project/fetch-primitive-threat-model.md` (design) + the `safer-fetch` packlets.
 **Package surface (proposed, not yet touched):** `@fgv/ts-extras` (new `safer-fetch` packlet + conditional export) and `@fgv/ts-web-extras` (new `safer-fetch` packlet).
 **Out-of-scope:** all source under `libraries/`, the four existing `ai-assist` `fetch(` sites (deliberately left alone — bearer auth + provider error mapping + an SSE site where a buffering size cap is semantically wrong), `docs/STATUS.md`.
 
