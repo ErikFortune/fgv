@@ -45,7 +45,7 @@ import { SaferFetch } from '@fgv/ts-extras';
 export type IBrowserSaferFetchOptions = SaferFetch.ISaferFetchOptions;
 
 /**
- * Options for the validating form of {@link browserSaferFetchJson}.
+ * Options for the validating form of `browserSaferFetchJson`.
  * @public
  */
 export interface IBrowserSaferFetchJsonOptions<T> extends IBrowserSaferFetchOptions {
@@ -134,7 +134,7 @@ export async function browserSaferFetchBytes(
  * Fetches a URL in a browser and decodes the response body as text.
  *
  * @remarks
- * See {@link browserSaferFetchBytes} for the three guarantees this runtime cannot offer and for
+ * See `browserSaferFetchBytes` for the three guarantees this runtime cannot offer and for
  * the warning about echoing failure detail to untrusted callers.
  *
  * @param url - The URL to fetch.
@@ -156,7 +156,7 @@ export async function browserSaferFetchText(
  * Fetches a URL in a browser and parses the response body as JSON, yielding the raw `JsonValue`.
  *
  * @remarks
- * See {@link browserSaferFetchBytes} for the three guarantees this runtime cannot offer.
+ * See `browserSaferFetchBytes` for the three guarantees this runtime cannot offer.
  *
  * @param url - The URL to fetch.
  * @param options - Call options. `addressGuard` is required.
@@ -174,7 +174,7 @@ export async function browserSaferFetchJson(
  * `T` is inferred from `converter` and is never caller-asserted, so the returned type is
  * evidenced at runtime rather than claimed.
  *
- * See {@link browserSaferFetchBytes} for the three guarantees this runtime cannot offer.
+ * See `browserSaferFetchBytes` for the three guarantees this runtime cannot offer.
  *
  * @param url - The URL to fetch.
  * @param options - Call options plus the required `converter`. `addressGuard` is required.

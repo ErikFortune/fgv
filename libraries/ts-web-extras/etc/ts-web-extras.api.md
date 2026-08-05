@@ -62,18 +62,12 @@ class BrowserHashProvider {
 // @public
 function browserSaferFetchBytes(url: string | URL, options: IBrowserSaferFetchOptions): Promise<DetailedResult<SaferFetch_2.ISaferFetchResponse<Uint8Array>, SaferFetch_2.FetchFailureReason>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "browserSaferFetchBytes"
-//
 // @public
 function browserSaferFetchJson(url: string | URL, options: IBrowserSaferFetchOptions): Promise<DetailedResult<SaferFetch_2.ISaferFetchResponse<JsonValue>, SaferFetch_2.FetchFailureReason>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "browserSaferFetchBytes"
-//
 // @public
 function browserSaferFetchJson<T>(url: string | URL, options: IBrowserSaferFetchJsonOptions<T>): Promise<DetailedResult<SaferFetch_2.ISaferFetchResponse<T>, SaferFetch_2.FetchFailureReason>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "browserSaferFetchBytes"
-//
 // @public
 function browserSaferFetchText(url: string | URL, options: IBrowserSaferFetchOptions): Promise<DetailedResult<SaferFetch_2.ISaferFetchResponse<string>, SaferFetch_2.FetchFailureReason>>;
 
@@ -297,8 +291,6 @@ export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InM
     syncToDisk(): Promise<Result<void>>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "browserSaferFetchJson"
-//
 // @public
 interface IBrowserSaferFetchJsonOptions<T> extends IBrowserSaferFetchOptions {
     readonly converter: Converter<T> | Validator<T>;

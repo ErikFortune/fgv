@@ -185,6 +185,24 @@ describe('URL-level constraints', () => {
       ).resolves.toSucceed();
     });
 
+    test.each(['ftp://example.com/x', 'file:///etc/passwd', 'gopher://example.com/'])(
+      'refuses %s whether or not allowInsecureHttp is set',
+      async (url: string) => {
+        // `allowInsecureHttp` opts into `http:`, not into "any scheme that is not https". The
+        // core refuses these before a guard ever sees them, so this is unreachable through the
+        // shipped entry points — but the guard is a public export a caller may invoke directly,
+        // and a security check that is only correct because something upstream is correct is one
+        // refactor away from being wrong.
+        const resolver = resolvesTo('93.184.216.34');
+        for (const allowInsecureHttp of [false, true]) {
+          await expect(
+            blockPrivateNetworks({ allowInsecureHttp, resolve: resolver.resolve }).check(chainTo(url))
+          ).resolves.toFailWith(/is not allowed \(only https:, or http: with allowInsecureHttp\)/);
+        }
+        expect(resolver.hostnames).toEqual([]);
+      }
+    );
+
     test('permits https: with no opt-in', async () => {
       await expect(
         blockPrivateNetworks({ resolve: resolvesTo('93.184.216.34').resolve }).check(

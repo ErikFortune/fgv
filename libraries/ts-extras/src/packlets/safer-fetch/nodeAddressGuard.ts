@@ -156,8 +156,17 @@ const DEFAULT_PORTS: Readonly<Record<string, number>> = { 'https:': 443, 'http:'
  * decided to refuse hands an off-allowlist hostname to the resolver for no benefit.
  */
 function _checkUrl(name: string, url: URL, options: IBlockPrivateNetworksGuardOptions): Result<true> {
-  if (url.protocol !== 'https:' && options.allowInsecureHttp !== true) {
-    return fail(`${name}: ${url.protocol} is not allowed without allowInsecureHttp`);
+  if (url.protocol === 'http:') {
+    if (options.allowInsecureHttp !== true) {
+      return fail(`${name}: ${url.protocol} is not allowed without allowInsecureHttp`);
+    }
+  } else if (url.protocol !== 'https:') {
+    // `allowInsecureHttp` opts into **`http:`**, not into "any scheme that is not https". The
+    // core already refuses everything that is not `http:`/`https:` before a guard ever sees a
+    // URL, so this is unreachable through the shipped entry points — but a guard is a public
+    // export a caller may hold and invoke directly, and a security check that is only correct
+    // because something upstream happens to be correct is one refactor away from being wrong.
+    return fail(`${name}: ${url.protocol} is not allowed (only https:, or http: with allowInsecureHttp)`);
   }
 
   const allowHosts = options.allowHosts ?? undefined;

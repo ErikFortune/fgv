@@ -25,6 +25,9 @@ import {
 
 const BASE_URL: string = 'http://127.0.0.1:54321';
 
+/** The name the stand-in gives a guard relaxed enough to clear the local sidecar. */
+const SIDECAR_GUARD: string = 'blockPrivateNetworks(sidecar)';
+
 type Outcome<T> = DetailedResult<SaferFetch.ISaferFetchResponse<T>, SaferFetch.FetchFailureReason>;
 
 function response<T>(value: T, urlChain: ReadonlyArray<string>): SaferFetch.ISaferFetchResponse<T> {
@@ -79,9 +82,11 @@ function deps(overrides?: Partial<ISaferFetchDemoDeps>): ISaferFetchDemoDeps {
       answer(String(url), { ok: true } as unknown)) as unknown as ISaferFetchDemoDeps['saferFetchJson'],
     saferFetchText: (async (url: string | URL, options: SaferFetch.ISaferFetchOptions) => {
       const asString: string = String(url);
-      // The two steps that turn on the *guard*, not on the path: the default posture refuses a
-      // loopback URL, and the sidecar guard refuses a port it was not given.
-      if (options.addressGuard.name === 'blockPrivateNetworks') {
+      // The steps that turn on the *guard* rather than on the path. Only the fully-relaxed
+      // sidecar guard clears a loopback, plaintext-http destination — the default posture and
+      // the loopback-only guard each refuse for their own reason — and even the sidecar guard
+      // refuses a port it was not given.
+      if (options.addressGuard.name !== SIDECAR_GUARD) {
         return blocked(asString);
       }
       if (new URL(asString).port === '6379') {
@@ -90,7 +95,14 @@ function deps(overrides?: Partial<ISaferFetchDemoDeps>): ISaferFetchDemoDeps {
       return answer(asString, 'body text');
     }) as unknown as ISaferFetchDemoDeps['saferFetchText'],
     blockPrivateNetworks: ((options?: SaferFetch.IBlockPrivateNetworksGuardOptions) => ({
-      name: options === undefined ? 'blockPrivateNetworks' : 'blockPrivateNetworks(sidecar)',
+      // Named by how relaxed it is, mirroring how the real factory names itself after its
+      // relaxations — which is what lets the stand-in above tell the three postures apart.
+      name:
+        options === undefined
+          ? 'blockPrivateNetworks'
+          : options.allowHosts !== undefined
+          ? SIDECAR_GUARD
+          : 'blockPrivateNetworks(partial)',
       check: jest.fn()
     })) as unknown as ISaferFetchDemoDeps['blockPrivateNetworks'],
     allowContentTypes: (() =>
@@ -116,7 +128,7 @@ describe('runSaferFetchDemo', () => {
     await expect(runSaferFetchDemo({ baseUrl: BASE_URL, deps: deps() })).resolves.toSucceedAndSatisfy(
       (result: ISaferFetchDemoResult) => {
         expect(result.allAsExpected).toBe(true);
-        expect(result.steps).toHaveLength(9);
+        expect(result.steps).toHaveLength(10);
         for (const s of result.steps) {
           expect(s.outcome).not.toBe('');
         }
@@ -161,7 +173,7 @@ describe('runSaferFetchDemo', () => {
         expect(stepNamed(result, 'default posture').asExpected).toBe(false);
         expect(stepNamed(result, 'default posture').outcome).toBe('unexpectedly succeeded');
         // And the run still reported every step.
-        expect(result.steps).toHaveLength(9);
+        expect(result.steps).toHaveLength(10);
       }
     );
   });
@@ -182,9 +194,9 @@ describe('runSaferFetchDemo', () => {
     await expect(runSaferFetchDemo({ baseUrl: BASE_URL, deps: permissive })).resolves.toSucceedAndSatisfy(
       (result: ISaferFetchDemoResult) => {
         expect(result.allAsExpected).toBe(false);
-        // The three steps that expect a *success* still pass; the six that expect a refusal all
-        // report the surprise.
-        expect(result.steps.filter((s) => !s.asExpected)).toHaveLength(6);
+        // The three steps that expect a *success* still pass; the seven that expect a refusal
+        // all report the surprise.
+        expect(result.steps.filter((s) => !s.asExpected)).toHaveLength(7);
         for (const s of result.steps.filter((step) => !step.asExpected)) {
           expect(s.outcome).toBe('unexpectedly succeeded');
         }

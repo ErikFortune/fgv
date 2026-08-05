@@ -93,7 +93,13 @@ export async function runSaferFetchDemo(
   const steps: IDemoStep[] = [];
 
   // 1. The default posture refuses loopback — before any connection is attempted.
-  const defaultPosture = await deps.saferFetchText(`${params.baseUrl}/json`, {
+  //
+  //    Spelled `https:` deliberately, even though the scenario's server speaks plaintext. The
+  //    default posture refuses BOTH loopback and `http:`, so an `http://127.0.0.1/…` URL here
+  //    would be refused on the scheme and this step would quietly prove the wrong thing. The
+  //    guard decides before any connection, so it never matters that nothing is listening for
+  //    TLS on the other end.
+  const defaultPosture = await deps.saferFetchText(`https://${base.host}/json`, {
     addressGuard: deps.blockPrivateNetworks()
   });
   steps.push(
@@ -101,6 +107,20 @@ export async function runSaferFetchDemo(
       'default posture refuses a loopback URL',
       defaultPosture.isFailure() && defaultPosture.detail?.kind === 'blocked-by-guard',
       defaultPosture.isFailure() ? defaultPosture.message : 'unexpectedly succeeded'
+    )
+  );
+
+  // 1b. And refuses plaintext HTTP on its own account — the other half of the default posture,
+  //     shown separately so neither can be mistaken for the other. Loopback is permitted here,
+  //     so the only thing left to refuse is the scheme.
+  const plaintext = await deps.saferFetchText(`${params.baseUrl}/json`, {
+    addressGuard: deps.blockPrivateNetworks({ allowLoopback: true })
+  });
+  steps.push(
+    step(
+      'default posture refuses plaintext http, even to an allowed address',
+      plaintext.isFailure() && plaintext.detail?.kind === 'blocked-by-guard',
+      plaintext.isFailure() ? plaintext.message : 'unexpectedly succeeded'
     )
   );
 
