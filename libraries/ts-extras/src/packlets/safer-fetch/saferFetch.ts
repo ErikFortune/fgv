@@ -254,6 +254,30 @@ function _resolveCallOptions(options: ISaferFetchOptions): Outcome<IResolvedCall
     );
   }
 
+  // Same reasoning as `redirectPolicy` above, and the stakes are higher: these name the headers
+  // that get stripped on a cross-origin hop. A JavaScript caller can pass anything, and a
+  // non-string entry would throw out of an API contracted to only ever return a `Result`.
+  // Coercing instead of rejecting would be worse than either — `String(123)` is a header name
+  // that silently never matches, so a caller who fumbled the type would believe a credential was
+  // being stripped while it was carried across origins. A non-array is rejected for the same
+  // reason: spreading a bare string would enumerate it into single characters.
+  const extraSensitive = options.sensitiveHeaders;
+  if (extraSensitive !== undefined) {
+    if (!Array.isArray(extraSensitive)) {
+      return _unknown<IResolvedCallOptions>(
+        `sensitiveHeaders must be an array of header names; got ${typeof extraSensitive}.`
+      );
+    }
+    // `findIndex`, not `find`: an array containing `undefined` is itself invalid, and `find`
+    // cannot distinguish that from "no offender".
+    const badIndex = extraSensitive.findIndex((n) => typeof n !== 'string');
+    if (badIndex >= 0) {
+      return _unknown<IResolvedCallOptions>(
+        `sensitiveHeaders[${badIndex}] must be a string header name; got ${typeof extraSensitive[badIndex]}.`
+      );
+    }
+  }
+
   return _succeed({
     method,
     headers: _lowercaseHeaders(options.headers ?? {}),

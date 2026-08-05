@@ -137,6 +137,29 @@ describe('saferFetch redirect walk', () => {
       );
       expect(transport.calls).toHaveLength(0);
     });
+
+    // These names decide which headers get stripped on a cross-origin hop, and the types are only
+    // enforced for TypeScript callers. A JavaScript caller passing the wrong shape must be told,
+    // not silently given a set that stops matching the credential it was meant to strip.
+    test.each([
+      ['a bare string instead of an array', 'authorization', /sensitiveHeaders must be an array/],
+      ['a non-string entry', ['x-token', 42], /sensitiveHeaders\[1\] must be a string header name/],
+      ['an undefined entry', ['x-token', undefined], /sensitiveHeaders\[1\] must be a string header name/]
+    ])(
+      'rejects %s for sensitiveHeaders',
+      async (__name: string, sensitiveHeaders: unknown, expected: RegExp) => {
+        const transport = scripted();
+        await expect(
+          saferFetchText(
+            START,
+            options(transport, {
+              sensitiveHeaders: sensitiveHeaders as unknown as ReadonlyArray<string>
+            })
+          )
+        ).resolves.toFailWith(expected);
+        expect(transport.calls).toHaveLength(0);
+      }
+    );
   });
 
   describe('following', () => {

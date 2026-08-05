@@ -23,7 +23,15 @@
  *
  * This barrel deliberately omits `blockPrivateNetworks` and the resolver seam beneath it: that
  * module imports `node:dns/promises`, and exporting it here would pull a Node builtin into a
- * browser bundle. Everything else in the packlet is runtime-agnostic and is exported from both.
+ * browser bundle.
+ *
+ * That is not the only difference. The address-classification layer — `classifyAddress`, and the
+ * pure synchronous policies `allowAnyAddressPolicy` / `blockPrivateNetworksPolicy` — is
+ * runtime-agnostic but is currently exported from the Node barrel only. Nothing prevents a
+ * browser from using it; it simply has not been part of this barrel's surface, and widening a
+ * public surface is left to the stream that owns the browser packlet. What ships here today is
+ * the entry points, the guard/transport seams, `allowAnyAddress`, `allowContentTypes`, and the
+ * shared types and constants.
  *
  * Note: the resolved-address (private-IP) guard and per-hop redirect revalidation are NOT
  * available in a browser, and not for want of implementation. There is no browser API that
