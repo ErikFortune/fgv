@@ -30,8 +30,10 @@ Design §14 phases 4–6 are exactly this stream.
 - `.ai/instructions/LIBRARY_CAPABILITIES.md` — new entry, see deliverable 6
 - `samples/testbed/**` — one scenario
 - `common/changes/@fgv/ts-extras/*.json`, `common/changes/@fgv/ts-web-extras/*.json`
-- `.claude/project/fetch-primitive-threat-model.md` — **only** to record divergences found in
-  implementation (see OQ-1); do not rewrite the design
+- `.claude/project/fetch-primitive-threat-model.md` — the **status line** (this stream completes
+  the implementation, so it owns marking the design fully implemented) and divergence records
+  (see OQ-1). Do not rewrite the design itself.
+- `docs/WORKSTREAMS.md` — this stream's own entry
 
 ## Out-of-scope paths (you must NOT modify)
 
@@ -114,6 +116,11 @@ orchestrator-level provisioning gap, not an agent-level workaround.
 - [ ] Browser packlet ships with its non-guarantees documented in-code and in the README
 - [ ] §5.4 guarantee table in both READMEs, matching shipped behavior
 - [ ] `LIBRARY_CAPABILITIES.md` entry added, not in the Result-integration-boundary list
+- [ ] **Docs ship with the code, in this PR:** the threat model's status line marked fully
+      implemented, any divergences recorded, and this stream's `docs/WORKSTREAMS.md` entry moved
+      to completed. Do **not** leave these for a follow-up docs PR — that is the exact pattern
+      this stream's own branch had to clean up (see `CODING_STANDARDS.md` § "Docs ship with the
+      code")
 - [ ] `rushx build` passes in every modified package
 - [ ] **`rushx lint` passes in every modified package** *(not run transitively by build)*
 - [ ] `rushx test` passes with 100% coverage in every modified package
