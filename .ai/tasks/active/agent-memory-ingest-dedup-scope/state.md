@@ -23,17 +23,21 @@ Branch: `agent-memory-ingest-dedup-scope` (from `release` @ `b392e1534`)
    citation resolves to its original subject, so no citation needed renumbering.
 
 Plus: README `dedupScope` section with the OQ-3 callout, change file, ledger entry, regenerated
-`api.md`, and `src/test/unit/ingest/dedupScope.test.ts` (14 tests).
+`api.md`, and `src/test/unit/ingest/dedupScope.test.ts` (16 tests, incl. the reporter's literal
+MTM shape and a temporal scope-isolation guard).
 
-**Gates:** build ✅ · lint ✅ · fixlint ✅ · 721 tests ✅ · coverage 100% on all four metrics ✅ ·
+**Gates:** build ✅ · lint ✅ · fixlint ✅ · suite green ✅ · coverage 100% on all four metrics ✅ ·
 `ts-agent-memory-sqlite-vec` builds untouched (no escalation needed — accessor is on the right seam).
 
 **Fixes verified to actually fix:** each was independently neutralized and the suite re-run.
-Neutralizing D2 fails exactly the two entity-granularity tests; neutralizing D3 fails exactly the
-two redirect tests. No test passes vacuously.
+Neutralizing D2 fails exactly the three entity-granularity tests (flat, MTM, and the end-to-end
+scenario); neutralizing D3 fails exactly the two redirect tests. No test passes vacuously. The
+temporal guard deliberately passes either way — `TemporalIdentityCodec` scopes each entity
+separately, so the scope filter alone already isolated temporal kinds.
 
-**In progress:** `code-reviewer` pass on the final diff, then the Copilot loop, then the PR onto
-`release` and `result.md`.
+**Review:** `code-reviewer` on the final diff — no must-fix findings. Copilot loop stopped at round 2
+on diminishing returns (round 1: one valid finding, change-file type `none` → `minor`; round 2: zero
+new comments, three doc-consistency items, all applied). PR [#600](https://github.com/ErikFortune/fgv/pull/600).
 
 **What the brief got wrong** (both recorded in `findings/inbox/`, neither a STOP-rule trigger since
 both files exist and the needed content was reachable):

@@ -83,6 +83,27 @@ door for invoking admission or merge logic out of band.
 > Of the shipped policies, `KnowledgeLwwPolicy` declares `'content'`; `MemoryCapCullPolicy` and
 > `TemporalVersionedPolicy` declare `'entity'`.
 
+### The identity codec decides whether `dedupScope` was ever load-bearing here
+
+The cohort is scope-filtered *before* the entity narrowing applies, so whether an `'entity'` kind was
+ever exposed to the cross-entity collapse depends entirely on whether its `IIdentityCodec` places
+distinct entities in the **same** scope:
+
+| Codec | Address | Distinct entities share a scope? |
+|---|---|---|
+| `MtmIdentityCodec` | `conversations/<conv>` + `turn-<n>` | **yes** |
+| `LtmIdentityCodec` | `conversations` + `<convId>` | **yes** |
+| `KnowledgeIdentityCodec` | `knowledge` + `<docId>` | yes (but `'content'` by policy) |
+| `TemporalIdentityCodec` | `<base>/entities/<id>` + `<id>` | **no** — one scope per entity |
+
+So the amendment is load-bearing for **flat** `'entity'` kinds (MTM turns, LTM conversations) and
+inert for temporal ones, which the per-entity scope already isolated. Within a single temporal
+entity's scope every version resolves to the same `idStem`, so the entity narrowing is a no-op there
+and the live-version filter continues to do the real work.
+
+**Do not** conclude from this that temporal kinds don't need the narrowing — conclude that their
+codec happens to make it redundant. A future flat temporal codec would need it.
+
 **What layer 1 does not do.** The same-entity collapse itself remains the store's job. Layer 1 only
 decides whether a cross-entity body collision is eligible to be a `duplicate-of` at all; it never
 reimplements the store's content-hash comparison, its mutable-metadata check, or its merge.

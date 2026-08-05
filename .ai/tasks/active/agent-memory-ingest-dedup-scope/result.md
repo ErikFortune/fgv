@@ -71,6 +71,51 @@ to prove no test passes vacuously:
 
 The temporal-kind test deliberately passes both with and without the fix — see the codec note below.
 
+## Review loop
+
+**Layer 1 — `code-reviewer` on the final diff, run BEFORE any coverage work.** The ordering
+requirement was satisfied trivially rather than by luck: the functional tests reached 100% on every
+metric on their first full run, so there was no coverage-chasing pass to invert. **No must-fix
+findings.** The reviewer independently re-derived the four correctness-critical claims — the
+single-owner refactor, the exact preservation of `'content'` semantics through the `_findExactMatch`
+restructuring (verified against `IResult.orDefault()`'s overloads in the `ts-utils` source), the
+structural impossibility of redirect chaining, and the temporal entity-vs-version addressing — and
+confirmed each. Its only observations were non-blocking notes.
+
+**Layer 2 — Copilot loop, implementer-driven.**
+
+| Round | Findings | Disposition |
+|---|---|---|
+| 1 | 1 — change file typed `none` despite adding a required interface member and a breaking behavior change | **Valid; fixed** in `b35a5ba58` (`none` → `minor`) |
+| 2 | **0 new comments**; 3 suppressed doc-consistency items | **All valid; all applied** |
+
+Round 1's finding was real and worth the round. I verified its premise against the package's own
+change-file history rather than the single file it cited: the convention is consistent — every
+breaking change here uses `minor`, and `none` is reserved for byte-identical-default additions.
+Left as `none`, this change would have shipped unversioned and absent from the changelog, which is
+the worst outcome for the one change consumers most need to read.
+
+Round 2 surfaced no code findings. Its three suppressed items were all correct and all applied:
+
+1. **A real self-contradiction** in the ledger entry — my corrected blast-radius line sat directly
+   above the brief's inherited (and since-disproven) "every experience and versioned kind is
+   affected". Publishing a claim this PR's own artifacts refute is worse than the original error, so
+   the Mission paragraph was rewritten to the verified scope, with the correction called out.
+2. Stale hard-coded test counts in `docs/WORKSTREAMS.md` and `state.md` (`721`/`14`, now `723`/`16`).
+   Absolute counts in the ledger drift with every follow-up commit, so they were replaced with
+   "suite green" and the point-in-time numbers left only in this file, where they belong.
+3. The stale `14 tests` figure in `state.md`, same fix.
+
+**Loop stopped at round 2 on diminishing returns**, well inside the 10-round cap. The stop signal is
+the finding *profile*, not the count: round 1 produced a substantive release-mechanics finding,
+round 2 produced zero code findings and only doc-consistency items. Per
+`CODING_STANDARDS.md` § "Round count is not the signal", that is the textbook diminishing-returns
+shape, and a third round would be asking a reviewer that just found nothing in the code to find
+something in the code.
+
+CodeRabbit and Greptile both no-opped (auto-review disabled for non-default base branches; expired
+trial, respectively) — neither is a signal either way.
+
 ## Observability self-audit
 
 **Zero `console.*` in business logic.** `grep -rn 'console\.' libraries/ts-agent-memory/src` returns
