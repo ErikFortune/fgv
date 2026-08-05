@@ -109,6 +109,61 @@ and the existing value is preserved verbatim. If you want the guarantees above
 for `provenance` under a cap-cull policy, `provenance` must appear in the
 `mutableFields` you pass to `MemoryCapCullPolicy.create`.
 
+## Dedup granularity — `dedupScope`
+
+Each kind's `IWritePolicy` declares the granularity at which a write
+deduplicates against the existing vault:
+
+- **`'content'`** — scope-wide, cross-id. An identical body anywhere in the
+  scope, even under a different entity, is the same record. The knowledge
+  family (`KnowledgeLwwPolicy`) uses this.
+- **`'entity'`** — same-entity only. An identical re-put of one entity is a
+  no-op, but two *distinct* entities with coincidentally-identical bodies both
+  persist. `MemoryCapCullPolicy` and `TemporalVersionedPolicy` declare this, so
+  every experience and versioned kind gets it.
+
+Read the effective value for a kind through **`IMemoryStore.dedupScopeFor(kind)`**.
+That accessor is the single owner: it resolves the registered policy, the store's
+default policy, the policy's declaration, and finally `DEFAULT_DEDUP_SCOPE` — and
+the store's own write path reads through it too, so nothing can drift out of
+agreement with it.
+
+> **Careful:** `DEFAULT_DEDUP_SCOPE` is `'entity'`, but it is only reached when a
+> policy declares no `dedupScope`. A kind with **no registered policy** falls back
+> to the store's default policy — a `KnowledgeLwwPolicy`, which declares
+> `'content'` explicitly. So an unpoliced kind gets `'content'`, not `'entity'`.
+
+### ⚠️ Behavior change: ingest now honors `dedupScope`
+
+**This changes results for existing hosts, deliberately, with no opt-in flag.**
+
+The ingest orchestrator's stage-4 layer-1 exact match previously ignored
+`dedupScope` entirely and always behaved as `'content'` — the declaration was
+dead code on that path. It now honors the declaration, so:
+
+- A kind declaring **`'entity'`** (i.e. anything using `MemoryCapCullPolicy` or
+  `TemporalVersionedPolicy`) **no longer collapses two distinct entities that
+  share a byte-identical body** during `ingestItem` / `ingestBatch`. Candidates
+  that used to come back `deduped` now come back `written`, and the records
+  genuinely persist. If your vault silently lost turns whose summaries happened
+  to match, it will stop doing that.
+- A kind declaring **`'content'`** is unchanged.
+- A kind with **no registered policy** is unchanged (it resolves to `'content'`,
+  as above).
+
+This is the intended fix, not a regression: the same declaration already governed
+the direct `put` path, and the two paths disagreeing was the bug. It is not
+flagged, because a flag would preserve the disagreement.
+
+Independently of `dedupScope`, a `duplicate-of` collapse no longer orphans
+sibling edges. An edge built against a collapsed candidate is **redirected** to
+the record that candidate collapsed into, instead of failing the entire ingest
+item. This also fixes `'content'` kinds, where the collapse is correct but the
+ingest still should not fail.
+
+See `.claude/project/agent-memory-ingest-design.md` §1 and §3 for the full
+treatment.
+
 ## Conventions
 
 `Result<T>` on every fallible operation; no `any`; Converters/Validators for
