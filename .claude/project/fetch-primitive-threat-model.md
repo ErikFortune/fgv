@@ -1,7 +1,9 @@
 # Safer Fetch Primitive — Threat Model and Design
 
-Status: **design only — no implementation.** Written for review before any
-implementation stream is commissioned.
+Status: **partially implemented.** The core (#594), address classification (#592) and the
+threat-model corrections shipped via #597; the redirect walk and DNS guard (S2b) and the
+browser/retry/docs stream (S3) are in flight. Originally written for review before any
+implementation stream was commissioned; retained as the rationale record.
 Owner libraries (proposed): `@fgv/ts-extras` (core + Node guard) and
 `@fgv/ts-web-extras` (browser entry point)
 Requesting consumer: PersonAIlity

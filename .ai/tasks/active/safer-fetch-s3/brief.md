@@ -10,7 +10,7 @@ legible to consumers. This is the last stream of the safer-fetch series.
 
 **Shipped to `release`** (squash `b392e1534`): the full Node-side primitive — core seams, taxonomy,
 `platformFetchTransport`, deadlines, streaming cap, content-type gate, three entry points
-(S1, #592); address classification + `blockPrivateNetworksPolicy` (S2a, #594/#597); DNS-resolving
+(S1, #594); address classification + `blockPrivateNetworksPolicy` (S2a, #592, integrated via #597); DNS-resolving
 `blockPrivateNetworks()` guard, `redirectPolicy: 'validate-each-hop'`, credential stripping, hop
 cap, loop detection (S2b, #599). 2,533 tests, 100% coverage, no `c8 ignore` in the packlet.
 

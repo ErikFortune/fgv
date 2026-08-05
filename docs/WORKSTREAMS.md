@@ -277,7 +277,7 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ### `fetch-primitive-threat-model` 🔵
 
-**Status:** ✅ design reviewed and landed; implementation in flight across four streams. **S1** (core, #592), **S2a** (address classification, #594 via #597), and **S2b** (DNS-resolving guard + redirect walk, #599 — squashed to `release` @ `b392e1534`) have all shipped. **S3** (`safer-fetch-s3`) is the remaining stream — retry, browser packlet, guarantee tables, `LIBRARY_CAPABILITIES` entry; brief at `.ai/tasks/active/safer-fetch-s3/brief.md`. Consumer: PersonAIlity.
+**Status:** ✅ design reviewed and landed; implementation in flight across four streams. **S1** (core, #594) and **S2a** (address classification, #592) — both integrated via #597 — and **S2b** (DNS-resolving guard + redirect walk, #599 — squashed to `release` @ `b392e1534`) have all shipped. **S3** (`safer-fetch-s3`) is the remaining stream — retry, browser packlet, guarantee tables, `LIBRARY_CAPABILITIES` entry; brief at `.ai/tasks/active/safer-fetch-s3/brief.md`. Consumer: PersonAIlity.
 **Workflow shape:** design-first, then phased implementation per design § 14.
 **Deliverable:** `.claude/project/fetch-primitive-threat-model.md` (design) + the `safer-fetch` packlets.
 **Package surface (proposed, not yet touched):** `@fgv/ts-extras` (new `safer-fetch` packlet + conditional export) and `@fgv/ts-web-extras` (new `safer-fetch` packlet).
