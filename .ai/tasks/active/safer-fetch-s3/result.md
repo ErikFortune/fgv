@@ -58,7 +58,7 @@ libraries.
 | `rushx build` | ✅ | ✅ | ✅ |
 | `rushx lint` | ✅ | ✅ | ✅ |
 | `rushx fixlint` (before final commit) | ✅ | ✅ | ✅ |
-| `rushx test` | ✅ 2,673 passing | ✅ 532 passing | ✅ 489 passing |
+| `rushx test` | ✅ 2,676 passing | ✅ 532 passing | ✅ 490 passing |
 | Coverage | ✅ 100% stmts/branches/funcs/lines | ✅ 100% (branch threshold 95) | ✅ 100% |
 
 **No `c8 ignore` directives** anywhere in either packlet — the property #599 established is
@@ -153,7 +153,27 @@ followed found two gaps, and in both cases the right answer was to change the co
 the measurement — a `c8 ignore` on either would have preserved a `try`/`finally` that should have
 been `captureAsyncResult` and an infinite loop that should have been a recursive call.
 
-**Layer 2 — Copilot.** Requested on the PR; see the PR thread for the per-round record.
+**Layer 2 — Copilot review loop, closed at 2 rounds** on the finding profile rather than the
+round count. Full record in the PR thread; summary:
+
+- **Round 1 — one real defect and two accuracy problems.** `_checkUrl` blocked only when
+  `allowInsecureHttp` was false, so setting the flag admitted any non-`https:` scheme (`ftp:`,
+  `file:`). Unreachable through the shipped entry points — the core refuses those schemes first —
+  but the guard is a public export a caller can invoke directly. The testbed's "default posture
+  refuses loopback" step used an `http:` loopback URL, so after the https-by-default change it
+  demonstrated the *scheme* check and would have kept passing if loopback classification broke.
+  And four `{@link browserSaferFetch*}` references baked `ae-unresolved-link` warnings into the
+  checked-in api.md (19 → 15, the remainder pre-dating this branch).
+- **Round 2 — no new comments; three suppressed test-tightening items, all correct, all fixed.**
+  Each was the round-1 class aimed at the steps just written: the scenario's guards all refuse as
+  `'blocked-by-guard'`, so a step asking only "was it refused?" is creditable by the wrong rule.
+  Writing the fix badly first is what produced the sharper version of the point — matching the
+  evidence against the whole failure message meant `'6379'` was satisfied by
+  `http://127.0.0.1:6379/` itself, so the step was credited by its own input. It now reads the
+  guard's reason, and a test drives a refusal naming a different rule.
+
+**Stopped at 2** because round 2 generated no new comments and its suppressed items were
+test-accuracy tightening rather than correctness findings. Gates re-run after each round.
 
 ## Deviations from the brief
 
