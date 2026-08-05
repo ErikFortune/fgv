@@ -2,7 +2,7 @@
   "changes": [
     {
       "comment": "BREAKING BEHAVIOR CHANGE: the ingest orchestrator's stage-4 layer-1 exact match now honors each kind's declared dedupScope instead of always behaving as 'content'. A kind whose write policy declares dedupScope: 'entity' (MemoryCapCullPolicy and TemporalVersionedPolicy both do) no longer collapses two DISTINCT entities that happen to share a byte-identical body on the ingestItem path — previously it did, silently, and the declaration was dead code there (dedupScope had zero references anywhere in ingest/). Hosts ingesting experience or versioned kinds will see candidates that used to come back 'deduped' now come back 'written'. This is the intended fix and is deliberately NOT behind a flag: the declaration now means the same thing on the direct-put and ingest paths. Kinds with no registered write policy are UNAFFECTED — they resolve through the store's default KnowledgeLwwPolicy, which declares 'content'. Also adds IMemoryStore.dedupScopeFor(kind) (breaking for external IMemoryStore implementers: a new required member) as the single owner of dedup granularity, and redirects sibling edges built against a duplicate-of candidate onto the record it collapsed into instead of failing the whole ingest item — a fix that applies to 'content' kinds too, where the collapse is correct but the ingest still should not fail.",
-      "type": "none",
+      "type": "minor",
       "packageName": "@fgv/ts-agent-memory"
     }
   ],
