@@ -4,12 +4,16 @@
 
 ```ts
 
+import { Converter } from '@fgv/ts-utils';
 import { CryptoUtils as CryptoUtils_2 } from '@fgv/ts-extras';
 import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import type { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { SaferFetch as SaferFetch_2 } from '@fgv/ts-extras';
 import { Uuid } from '@fgv/ts-utils';
+import { Validator } from '@fgv/ts-utils';
 
 // @public
 class BrowserCryptoProvider implements CryptoUtils_2.ICryptoProvider {
@@ -54,6 +58,24 @@ class BrowserHashProvider {
     static hashParts(parts: string[], algorithm?: string, separator?: string): Promise<Result<string>>;
     static hashString(data: string, algorithm?: string): Promise<Result<string>>;
 }
+
+// @public
+function browserSaferFetchBytes(url: string | URL, options: IBrowserSaferFetchOptions): Promise<DetailedResult<SaferFetch_2.ISaferFetchResponse<Uint8Array>, SaferFetch_2.FetchFailureReason>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "browserSaferFetchBytes"
+//
+// @public
+function browserSaferFetchJson(url: string | URL, options: IBrowserSaferFetchOptions): Promise<DetailedResult<SaferFetch_2.ISaferFetchResponse<JsonValue>, SaferFetch_2.FetchFailureReason>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "browserSaferFetchBytes"
+//
+// @public
+function browserSaferFetchJson<T>(url: string | URL, options: IBrowserSaferFetchJsonOptions<T>): Promise<DetailedResult<SaferFetch_2.ISaferFetchResponse<T>, SaferFetch_2.FetchFailureReason>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "browserSaferFetchBytes"
+//
+// @public
+function browserSaferFetchText(url: string | URL, options: IBrowserSaferFetchOptions): Promise<DetailedResult<SaferFetch_2.ISaferFetchResponse<string>, SaferFetch_2.FetchFailureReason>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -275,6 +297,16 @@ export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InM
     syncToDisk(): Promise<Result<void>>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "browserSaferFetchJson"
+//
+// @public
+interface IBrowserSaferFetchJsonOptions<T> extends IBrowserSaferFetchOptions {
+    readonly converter: Converter<T> | Validator<T>;
+}
+
+// @public
+type IBrowserSaferFetchOptions = SaferFetch_2.ISaferFetchOptions;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -428,6 +460,17 @@ export function parseResourceTypes(resourceTypes: string): string[];
 
 // @public
 export function parseUrlParameters(): IUrlConfigOptions;
+
+declare namespace SaferFetch {
+    export {
+        browserSaferFetchBytes,
+        browserSaferFetchJson,
+        browserSaferFetchText,
+        IBrowserSaferFetchJsonOptions,
+        IBrowserSaferFetchOptions
+    }
+}
+export { SaferFetch }
 
 // @public
 export function safeShowDirectoryPicker(window: Window, options?: ShowDirectoryPickerOptions): Promise<FileSystemDirectoryHandle_2 | null>;

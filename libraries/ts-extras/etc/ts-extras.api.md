@@ -642,6 +642,16 @@ const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig;
 // @public
 const DEFAULT_RANGEOF_FORMATS: RangeOfFormats;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const DEFAULT_RETRY_BASE_DELAY_MS: number;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const DEFAULT_RETRY_MAX_DELAY_MS: number;
+
 // @public
 const DEFAULT_SECRET_ITERATIONS: number;
 
@@ -1448,6 +1458,9 @@ interface IArgon2idProvider {
 //
 // @public
 interface IBlockPrivateNetworksGuardOptions extends IBlockPrivateNetworksOptions {
+    readonly allowHosts?: ReadonlyArray<string>;
+    readonly allowInsecureHttp?: boolean;
+    readonly allowPorts?: ReadonlyArray<number>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly resolve?: HostResolver;
 }
@@ -1561,6 +1574,9 @@ interface ICryptoProvider {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     wrapBytes(plaintext: Uint8Array, recipientPublicKey: CryptoKey, options: IWrapBytesOptions): Promise<Result<IWrappedBytes>>;
 }
+
+// @public
+const IDEMPOTENT_METHODS: ReadonlyArray<string>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "DirectEncryptionProvider"
 //
@@ -2230,6 +2246,17 @@ interface IResponseHeadersGuard {
     readonly name: string;
 }
 
+// @public
+interface IRetryPolicy {
+    readonly attempts: number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly baseDelayMs?: number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly maxDelayMs?: number;
+    readonly respectRetryAfter?: boolean;
+    readonly retryNonIdempotent?: boolean;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //
 // @public
@@ -2260,6 +2287,8 @@ interface ISaferFetchOptions {
     readonly responseBodyGuard?: IResponseBodyGuard;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly responseHeadersGuard?: IResponseHeadersGuard;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly retry?: IRetryPolicy;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly sensitiveHeaders?: ReadonlyArray<string>;
     readonly signal?: AbortSignal;
@@ -2965,17 +2994,31 @@ function resolveModelAlias(descriptor: IAiProviderDescriptor, model: string): Re
 // @public
 function resolveProviderModel(descriptor: IAiProviderDescriptor, modelOverride: ModelSpec | undefined, context?: ModelSpecKey): Result<string>;
 
+// @public
+const RETRY_AFTER_STATUSES: ReadonlyArray<number>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const RETRYABLE_HTTP_STATUSES: ReadonlyArray<number>;
+
 declare namespace SaferFetch {
     export {
         ALWAYS_STRIPPED_HEADERS,
         DEFAULT_HEADERS_TIMEOUT_MS,
         DEFAULT_MAX_REDIRECTS,
         DEFAULT_MAX_RESPONSE_BYTES,
+        DEFAULT_RETRY_BASE_DELAY_MS,
+        DEFAULT_RETRY_MAX_DELAY_MS,
         DEFAULT_TIMEOUT_MS,
+        IDEMPOTENT_METHODS,
         REDIRECT_STATUSES,
+        RETRY_AFTER_STATUSES,
+        RETRYABLE_HTTP_STATUSES,
         SUPPORTED_SCHEMES,
         FetchFailureReason,
         FetchTimeoutPhase,
+        IRetryPolicy,
         IAddressGuard,
         IFetchTransport,
         IFetchTransportHints,

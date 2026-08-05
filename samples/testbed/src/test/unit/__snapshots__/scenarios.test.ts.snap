@@ -9,6 +9,7 @@ Array [
   "gate-deny-client-tools",
   "image-generation",
   "streaming-chat",
+  "safer-fetch-guard",
   "local-classifier-safety",
   "local-embedding-search",
   "local-summarization",

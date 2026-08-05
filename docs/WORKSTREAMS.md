@@ -275,21 +275,24 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ---
 
-### `fetch-primitive-threat-model` 🔵
+## Completed workstreams
 
-**Status:** ✅ design reviewed and landed; implementation in flight across four streams. **S1** (core, #594) and **S2a** (address classification, #592) — both integrated via #597 — and **S2b** (DNS-resolving guard + redirect walk, #599 — squashed to `release` @ `b392e1534`) have all shipped. **S3** (`safer-fetch-s3`) is the remaining stream — retry, browser packlet, guarantee tables, `LIBRARY_CAPABILITIES` entry; brief at `.ai/tasks/active/safer-fetch-s3/brief.md`. Consumer: PersonAIlity.
+### `fetch-primitive-threat-model` ✅
+
+**Status:** ✅ **complete — design landed and fully implemented across four streams.** **S1** (core, #594) and **S2a** (address classification, #592) — both integrated via #597 — **S2b** (DNS-resolving guard + redirect walk, #599 — squashed to `release` @ `b392e1534`), and **S3** (`safer-fetch-s3` — retry, the loop-detection restructure, the Result-chaining pass, the `@fgv/ts-web-extras` browser packlet, both guarantee tables, the `LIBRARY_CAPABILITIES` entry, and a testbed scenario). The design doc's status line reads *fully implemented*, and every place the implementation departed from it is recorded in its **Appendix D**. Consumer: PersonAIlity.
 **Workflow shape:** design-first, then phased implementation per design § 14.
 **Deliverable:** `.claude/project/fetch-primitive-threat-model.md` (design) + the `safer-fetch` packlets.
-**Package surface (proposed, not yet touched):** `@fgv/ts-extras` (new `safer-fetch` packlet + conditional export) and `@fgv/ts-web-extras` (new `safer-fetch` packlet).
+**Package surface:** `@fgv/ts-extras` (`safer-fetch` packlet + conditional export) and `@fgv/ts-web-extras` (`safer-fetch` packlet), plus one `samples/testbed` scenario (`safer-fetch-guard`).
 **Out-of-scope:** all source under `libraries/`, the four existing `ai-assist` `fetch(` sites (deliberately left alone — bearer auth + provider error mapping + an SSE site where a buffering size cap is semantically wrong), `docs/STATUS.md`.
 
 **Mission.** PersonAIlity asked for a `Result`-returning fetch primitive with timeout, size cap, allowlist, and a structured failure taxonomy. Write and land the **threat model** before any code, because the security posture is the product. Three findings drive the design: (1) the redirect policy and the SSRF guard are **one mechanism**, not two bullets — a guard on URL₀ alone is defeated by a single `302` to the cloud metadata endpoint, so `redirect: 'manual'` plus per-hop revalidation plus cross-origin credential stripping ship together or not at all; (2) the guard **cannot exist in the browser** (no DNS API, and `redirect: 'manual'` yields an unreadable opaque redirect), so it splits along the established `crypto-utils` cross-runtime pattern with an explicit per-runtime guarantee table; (3) DNS rebinding is a **documented limit**, closed later via seams designed now — `IGuardVerdict.pinnedAddress?` **and** an injectable `IFetchTransport` (a swappable resolver alone cannot close it; pinning is a property of the connect). Framed deliberately **not** as a Result-integration boundary package — there is no upstream to wrap and the opinion is the entire deliverable.
 
-**Exit gate.** Erik answers the eight open questions in § 16 of the design doc (packlet-vs-sibling-package placement; `DetailedResult`'s `@beta` release-tag cost; required-`guard`-with-no-default; whether the primitive ships with zero in-repo consumers; loopback posture given this repo's own Ollama `http://localhost:11434` path; `maxResponseBytes` default; whether retry belongs in v1; whether the browser package earns its keep). Implementation is a separate stream.
+**S3 open questions, as resolved.** **OQ-1** — the browser path keeps `redirect: 'manual'` rather than switching to `'error'`; the guarantee is identical either way and `'error'` would degrade the failure reason from `'redirect-opaque'` to an undifferentiated `'network'`, so §5.4's row was restated instead (design Appendix D-a). **OQ-2** — the browser entry points refuse `'validate-each-hop'` at option resolution, naming the runtime, rather than failing at the first redirect (D-f). **OQ-3** — `classifyAddress` and the pure policies now ship from the browser barrel too, with an explicit note that they cannot substitute for the resolved-address guard (D-g). **OQ-4** — `allowHosts` / `allowPorts` / `allowInsecureHttp` added, so §13 L6's Ollama example is literally runnable; §12's `{443}` *default* was deliberately not adopted, since it would reject a public `:8443` endpoint with a failure reading as an SSRF block (D-c).
+
+**Original exit gate.** Erik answers the eight open questions in § 16 of the design doc (packlet-vs-sibling-package placement; `DetailedResult`'s `@beta` release-tag cost; required-`guard`-with-no-default; whether the primitive ships with zero in-repo consumers; loopback posture given this repo's own Ollama `http://localhost:11434` path; `maxResponseBytes` default; whether retry belongs in v1; whether the browser package earns its keep). Implementation is a separate stream.
 
 ---
 
-## Completed workstreams
 
 ### `agent-memory-antagonist` ✅
 

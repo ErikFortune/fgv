@@ -40,12 +40,18 @@ export {
   DEFAULT_HEADERS_TIMEOUT_MS,
   DEFAULT_MAX_REDIRECTS,
   DEFAULT_MAX_RESPONSE_BYTES,
+  DEFAULT_RETRY_BASE_DELAY_MS,
+  DEFAULT_RETRY_MAX_DELAY_MS,
   DEFAULT_TIMEOUT_MS,
+  IDEMPOTENT_METHODS,
   REDIRECT_STATUSES,
+  RETRY_AFTER_STATUSES,
+  RETRYABLE_HTTP_STATUSES,
   SUPPORTED_SCHEMES
 } from './defaults';
 
 export type { FetchFailureReason, FetchTimeoutPhase } from './failureReason';
+export type { IRetryPolicy } from './retry';
 
 export type {
   IAddressGuard,

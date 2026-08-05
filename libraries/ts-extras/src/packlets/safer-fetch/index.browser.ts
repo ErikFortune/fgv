@@ -25,13 +25,12 @@
  * module imports `node:dns/promises`, and exporting it here would pull a Node builtin into a
  * browser bundle.
  *
- * That is not the only difference. The address-classification layer — `classifyAddress`, and the
- * pure synchronous policies `allowAnyAddressPolicy` / `blockPrivateNetworksPolicy` — is
- * runtime-agnostic but is currently exported from the Node barrel only. Nothing prevents a
- * browser from using it; it simply has not been part of this barrel's surface, and widening a
- * public surface is left to the stream that owns the browser packlet. What ships here today is
- * the entry points, the guard/transport seams, `allowAnyAddress`, `allowContentTypes`, and the
- * shared types and constants.
+ * The address-classification layer — `classifyAddress`, and the pure synchronous policies
+ * `allowAnyAddressPolicy` / `blockPrivateNetworksPolicy` — **is** exported here: it is pure
+ * arithmetic over parsed octets, it works identically in a browser, and it is useful for a
+ * URL-zero check. It is not a substitute for the guard, and cannot be: it classifies an address
+ * a caller already holds, while what the browser lacks is any way to learn the address a
+ * hostname resolves to.
  *
  * Note: the resolved-address (private-IP) guard and per-hop redirect revalidation are NOT
  * available in a browser, and not for want of implementation. There is no browser API that
@@ -48,12 +47,18 @@ export {
   DEFAULT_HEADERS_TIMEOUT_MS,
   DEFAULT_MAX_REDIRECTS,
   DEFAULT_MAX_RESPONSE_BYTES,
+  DEFAULT_RETRY_BASE_DELAY_MS,
+  DEFAULT_RETRY_MAX_DELAY_MS,
   DEFAULT_TIMEOUT_MS,
+  IDEMPOTENT_METHODS,
   REDIRECT_STATUSES,
+  RETRY_AFTER_STATUSES,
+  RETRYABLE_HTTP_STATUSES,
   SUPPORTED_SCHEMES
 } from './defaults';
 
 export type { FetchFailureReason, FetchTimeoutPhase } from './failureReason';
+export type { IRetryPolicy } from './retry';
 
 export type {
   IAddressGuard,
@@ -78,3 +83,29 @@ export { allowAnyAddress, allowContentTypes } from './guards';
 export { platformFetchTransport } from './transport';
 
 export { saferFetchBytes, saferFetchJson, saferFetchText, type ISaferFetchJsonOptions } from './saferFetch';
+
+// Runtime-agnostic and exported from both barrels: the address *classification* layer is pure
+// arithmetic over parsed octets with no I/O, so it works in a browser exactly as it does on
+// Node. It is useful there for a URL-zero check — a caller can refuse an IP-literal URL that
+// classifies as private before ever calling `fetch`.
+//
+// **It cannot substitute for the resolved-address guard.** It classifies an address you already
+// have; the guarantee the browser lacks is *obtaining* the address a hostname resolves to, which
+// no browser API provides. `https://internal.example.com/` resolving to `10.0.0.5` is invisible
+// to every function exported here.
+export {
+  allowAnyAddressPolicy,
+  blockPrivateNetworksPolicy,
+  type IAddressCheckVerdict,
+  type IAddressPolicy,
+  type IBlockPrivateNetworksOptions
+} from './addressPolicy';
+
+export {
+  classifyAddress,
+  type AddressClassification,
+  type AddressFamily,
+  type IClassifiedAddress,
+  type IEmbeddedIpv4,
+  type Ipv4EmbeddingKind
+} from './addressClassification';

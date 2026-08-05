@@ -79,7 +79,9 @@ describe('blockPrivateNetworks (address guard)', () => {
 
     test('blocks the cloud metadata endpoint', async () => {
       await expect(
-        blockPrivateNetworks().check(chainTo('http://169.254.169.254/latest/meta-data/'))
+        blockPrivateNetworks({ allowInsecureHttp: true }).check(
+          chainTo('http://169.254.169.254/latest/meta-data/')
+        )
       ).resolves.toFailWith(/blockPrivateNetworks.*169\.254\.169\.254 is link-local/);
     });
 
@@ -158,6 +160,157 @@ describe('blockPrivateNetworks (address guard)', () => {
     test('fails on an empty chain rather than guessing at a destination', async () => {
       await expect(blockPrivateNetworks().check([])).resolves.toFailWith(/hop chain is empty/);
     });
+  });
+});
+
+describe('URL-level constraints', () => {
+  describe('scheme', () => {
+    test('refuses http: by default', async () => {
+      // Plaintext HTTP is exposed to a network-position attacker and is the scheme every SSRF
+      // payload reaches for. The polarity matches allowLoopback: deny, and opt in visibly.
+      const resolver = resolvesTo('93.184.216.34');
+      await expect(
+        blockPrivateNetworks({ resolve: resolver.resolve }).check(chainTo('http://example.com/x'))
+      ).resolves.toFailWith(/http: is not allowed without allowInsecureHttp/);
+      // Refused before the lookup: an off-posture URL costs a string comparison, not a query.
+      expect(resolver.hostnames).toEqual([]);
+    });
+
+    test('permits http: on explicit opt-in', async () => {
+      await expect(
+        blockPrivateNetworks({
+          allowInsecureHttp: true,
+          resolve: resolvesTo('93.184.216.34').resolve
+        }).check(chainTo('http://example.com/x'))
+      ).resolves.toSucceed();
+    });
+
+    test('permits https: with no opt-in', async () => {
+      await expect(
+        blockPrivateNetworks({ resolve: resolvesTo('93.184.216.34').resolve }).check(
+          chainTo('https://example.com/x')
+        )
+      ).resolves.toSucceed();
+    });
+  });
+
+  describe('allowHosts', () => {
+    test('permits a listed host', async () => {
+      await expect(
+        blockPrivateNetworks({
+          allowHosts: ['example.com', 'other.example'],
+          resolve: resolvesTo('93.184.216.34').resolve
+        }).check(chainTo('https://other.example/x'))
+      ).resolves.toSucceed();
+    });
+
+    test('refuses an unlisted host before resolving it', async () => {
+      const resolver = resolvesTo('93.184.216.34');
+      await expect(
+        blockPrivateNetworks({ allowHosts: ['example.com'], resolve: resolver.resolve }).check(
+          chainTo('https://elsewhere.example/x')
+        )
+      ).resolves.toFailWith(/host "elsewhere.example" is not in the allowed host list/);
+      expect(resolver.hostnames).toEqual([]);
+    });
+
+    test('matches case-insensitively', async () => {
+      await expect(
+        blockPrivateNetworks({
+          allowHosts: ['EXAMPLE.com'],
+          resolve: resolvesTo('93.184.216.34').resolve
+        }).check(chainTo('https://example.com/x'))
+      ).resolves.toSucceed();
+    });
+
+    test('matches exactly, so a suffix is not a match', async () => {
+      // `endsWith('.example.com')` is the classic host-allowlist bypass; an exact list has no
+      // such reading. Both of these are refused.
+      const guard = blockPrivateNetworks({
+        allowHosts: ['example.com'],
+        resolve: resolvesTo('93.184.216.34').resolve
+      });
+      await expect(guard.check(chainTo('https://evil-example.com/x'))).resolves.toFail();
+      await expect(guard.check(chainTo('https://example.com.attacker.net/x'))).resolves.toFail();
+    });
+
+    test('an empty list refuses every host', async () => {
+      await expect(
+        blockPrivateNetworks({ allowHosts: [], resolve: resolvesTo('93.184.216.34').resolve }).check(
+          chainTo('https://example.com/x')
+        )
+      ).resolves.toFailWith(/is not in the allowed host list/);
+    });
+  });
+
+  describe('allowPorts', () => {
+    test('permits a listed explicit port', async () => {
+      await expect(
+        blockPrivateNetworks({
+          allowPorts: [8443],
+          resolve: resolvesTo('93.184.216.34').resolve
+        }).check(chainTo('https://example.com:8443/x'))
+      ).resolves.toSucceed();
+    });
+
+    test('refuses an unlisted port before resolving', async () => {
+      const resolver = resolvesTo('93.184.216.34');
+      await expect(
+        blockPrivateNetworks({ allowPorts: [443], resolve: resolver.resolve }).check(
+          chainTo('https://example.com:8443/x')
+        )
+      ).resolves.toFailWith(/port 8443 is not in the allowed port list/);
+      expect(resolver.hostnames).toEqual([]);
+    });
+
+    test("checks an absent port against the scheme's default", async () => {
+      // Almost every real URL spells the default port by omitting it, so checking the raw
+      // string would reject `https://example.com/` under `[443]`.
+      await expect(
+        blockPrivateNetworks({ allowPorts: [443], resolve: resolvesTo('93.184.216.34').resolve }).check(
+          chainTo('https://example.com/x')
+        )
+      ).resolves.toSucceed();
+      await expect(
+        blockPrivateNetworks({
+          allowPorts: [80],
+          allowInsecureHttp: true,
+          resolve: resolvesTo('93.184.216.34').resolve
+        }).check(chainTo('http://example.com/x'))
+      ).resolves.toSucceed();
+      await expect(
+        blockPrivateNetworks({ allowPorts: [80], resolve: resolvesTo('93.184.216.34').resolve }).check(
+          chainTo('https://example.com/x')
+        )
+      ).resolves.toFailWith(/port 443 is not in the allowed port list/);
+    });
+  });
+
+  test('the documented Ollama reconciliation is runnable as written', async () => {
+    // Design section 13 L6: loopback stays blocked by default, and the local-development path
+    // is reached by naming every deviation. Each one is independently greppable at the call site.
+    const guard = blockPrivateNetworks({
+      allowLoopback: true,
+      allowInsecureHttp: true,
+      allowHosts: ['localhost'],
+      allowPorts: [11434],
+      resolve: resolvesTo('127.0.0.1').resolve
+    });
+    await expect(guard.check(chainTo('http://localhost:11434/v1/models'))).resolves.toSucceed();
+    // And the posture it bought is still narrow: the same guard refuses the Redis port on the
+    // same loopback host, which is the failure the wrong polarity would have shipped.
+    await expect(guard.check(chainTo('http://localhost:6379/'))).resolves.toFail();
+  });
+
+  test('names every relaxation, so a failure says which posture was in force', async () => {
+    expect(
+      blockPrivateNetworks({
+        allowLoopback: true,
+        allowInsecureHttp: true,
+        allowHosts: ['localhost'],
+        allowPorts: [11434]
+      }).name
+    ).toBe('blockPrivateNetworks(allowLoopback, allowInsecureHttp, allowHosts=localhost, allowPorts=11434)');
   });
 });
 

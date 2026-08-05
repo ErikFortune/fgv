@@ -105,11 +105,31 @@ function observingGuard(pinnedAddress?: string): IObservingGuard {
 }
 
 /** A `blockPrivateNetworks` guard whose resolution is scripted, so no test touches DNS. */
-function guardResolving(map: Readonly<Record<string, ReadonlyArray<string>>>): SaferFetch.IAddressGuard {
+function guardResolving(
+  map: Readonly<Record<string, ReadonlyArray<string>>>,
+  overrides?: Partial<SaferFetch.IBlockPrivateNetworksGuardOptions>
+): SaferFetch.IAddressGuard {
   return blockPrivateNetworks({
     resolve: async (hostname: string): Promise<Result<ReadonlyArray<string>>> =>
-      succeed(map[hostname] ?? ['93.184.216.34'])
+      succeed(map[hostname] ?? ['93.184.216.34']),
+    ...overrides
   });
+}
+
+/**
+ * The same guard with plaintext HTTP permitted.
+ *
+ * @remarks
+ * The address-classification tests below redirect to `http://` targets — the metadata endpoint
+ * and a loopback sidecar are both plaintext in reality — and `blockPrivateNetworks` refuses
+ * `http:` before it classifies anything. Opting in here is what keeps those tests about the
+ * address check rather than about the scheme check; the scheme check has its own test.
+ */
+function insecureGuardResolving(
+  map: Readonly<Record<string, ReadonlyArray<string>>>,
+  overrides?: Partial<SaferFetch.IBlockPrivateNetworksGuardOptions>
+): SaferFetch.IAddressGuard {
+  return guardResolving(map, { allowInsecureHttp: true, ...overrides });
 }
 
 describe('saferFetch redirect walk', () => {
@@ -222,14 +242,14 @@ describe('saferFetch redirect walk', () => {
         () => redirect(302, 'http://169.254.169.254/latest/meta-data/iam/security-credentials/')
       ]);
       await expect(
-        saferFetchText(START, options(transport, { addressGuard: guardResolving({}) }))
+        saferFetchText(START, options(transport, { addressGuard: insecureGuardResolving({}) }))
       ).resolves.toFailWithDetail(
         /link-local/,
         expect.objectContaining({
           kind: 'blocked-by-guard',
           url: 'http://169.254.169.254/latest/meta-data/iam/security-credentials/',
           hop: 1,
-          guard: 'blockPrivateNetworks'
+          guard: 'blockPrivateNetworks(allowInsecureHttp)'
         })
       );
       // The assertion that matters: the request was never made. A failure that arrived after the
@@ -245,7 +265,7 @@ describe('saferFetch redirect walk', () => {
 
       const blocked = scripted(...script);
       await expect(
-        saferFetchText(START, options(blocked, { addressGuard: guardResolving({}) }))
+        saferFetchText(START, options(blocked, { addressGuard: insecureGuardResolving({}) }))
       ).resolves.toFailWith(/127\.0\.0\.1 is loopback/);
       expect(requestedUrls(blocked)).toEqual([START]);
 
@@ -256,6 +276,7 @@ describe('saferFetch redirect walk', () => {
           options(permitted, {
             addressGuard: blockPrivateNetworks({
               allowLoopback: true,
+              allowInsecureHttp: true,
               resolve: async (): Promise<Result<ReadonlyArray<string>>> => succeed(['93.184.216.34'])
             })
           })
@@ -548,6 +569,38 @@ describe('saferFetch redirect walk', () => {
       );
       // Two requests, not the six the cap alone would have allowed: the repeat is caught before
       // it is issued, so the oscillation never gets a second lap.
+      expect(requestedUrls(transport)).toEqual([a, b]);
+    });
+
+    test('catches a repeat that only a normalizing guard makes visible', async () => {
+      // The case loop detection used to miss. `completed` holds guard-CLEARED URLs, so comparing
+      // them against a raw `Location` target compares unlike things: a guard that normalizes —
+      // `IGuardVerdict.url` explicitly permits stripping a trailing dot — clears
+      // `https://a.example./x` to `https://a.example/x`, which the raw target never matched.
+      // The repeat then ran to `maxRedirects` instead of being caught. Both sides are cleared
+      // URLs now, so the third hop is refused before it is issued.
+      const a: string = 'https://a.example/x';
+      const b: string = 'https://b.example/y';
+      const dotted: string = 'https://a.example./x';
+      const normalizing: SaferFetch.IAddressGuard = {
+        name: 'trailingDotNormalizer',
+        check: async (
+          chain: ReadonlyArray<SaferFetch.IRequestHop>
+        ): Promise<Result<SaferFetch.IGuardVerdict>> => {
+          const url = new URL(chain[chain.length - 1].url.toString());
+          url.hostname = url.hostname.replace(/\.$/, '');
+          return succeed({ url });
+        }
+      };
+      const transport = scripted([a, () => redirect(302, b)], [b, () => redirect(302, dotted)]);
+
+      await expect(
+        saferFetchText(a, options(transport, { addressGuard: normalizing }))
+      ).resolves.toFailWithDetail(
+        /redirected with status 302 to https:\/\/a\.example\/x, which is already in the chain/,
+        { kind: 'redirect-rejected', url: b, status: 302 }
+      );
+      // Two requests, not the five the cap would have allowed before the fix.
       expect(requestedUrls(transport)).toEqual([a, b]);
     });
 

@@ -80,6 +80,42 @@ export const nodeHostResolver: HostResolver = async (
  */
 export interface IBlockPrivateNetworksGuardOptions extends IBlockPrivateNetworksOptions {
   /**
+   * Restricts every hop to these hostnames. Absent means any hostname.
+   *
+   * @remarks
+   * Matching is case-insensitive and exact — no wildcards and no suffix matching, because
+   * `endsWith('.example.com')` is the classic host-allowlist bypass (`evil-example.com`,
+   * `example.com.attacker.net`) and a primitive that offers the convenient form invites it.
+   * List the hosts.
+   *
+   * **A host allowlist is the recommended posture**, and it is stronger than address
+   * classification alone: with one, DNS rebinding can only be mounted by an allowlisted host's
+   * own resolver, which is a far smaller surface than "any hostname the caller was handed".
+   */
+  readonly allowHosts?: ReadonlyArray<string>;
+
+  /**
+   * Restricts every hop to these ports. Absent means any port.
+   *
+   * @remarks
+   * A URL with no explicit port is checked against the scheme's default — `443` for `https:`,
+   * `80` for `http:` — so `allowPorts: [443]` accepts `https://example.com/`.
+   */
+  readonly allowPorts?: ReadonlyArray<number>;
+
+  /**
+   * Permits `http:` hops. **Off by default**, so this guard requires `https:`.
+   *
+   * @remarks
+   * The core refuses everything that is not `http:` or `https:` and deliberately chooses
+   * between those two here rather than there, because the choice is a posture rather than a
+   * structural rule. Plaintext HTTP is exposed to a network-position attacker and is the scheme
+   * every SSRF payload reaches for, so the polarity matches `allowLoopback`: deny by default,
+   * opt in visibly, and let a reviewer grep for the opt-in.
+   */
+  readonly allowInsecureHttp?: boolean;
+
+  /**
    * Name resolution. Defaults to {@link SaferFetch.nodeHostResolver}.
    *
    * @remarks
@@ -109,6 +145,39 @@ async function _addressesFor(
   return literal.isSuccess() ? succeed([hostname]) : resolve(hostname);
 }
 
+const DEFAULT_PORTS: Readonly<Record<string, number>> = { 'https:': 443, 'http:': 80 };
+
+/**
+ * Checks the constraints that are decidable from the URL alone, before any name resolution.
+ *
+ * @remarks
+ * Ordered before the DNS lookup deliberately: a host that is not on the allowlist should cost a
+ * string comparison rather than a resolution, and a guard that resolves names it has already
+ * decided to refuse hands an off-allowlist hostname to the resolver for no benefit.
+ */
+function _checkUrl(name: string, url: URL, options: IBlockPrivateNetworksGuardOptions): Result<true> {
+  if (url.protocol !== 'https:' && options.allowInsecureHttp !== true) {
+    return fail(`${name}: ${url.protocol} is not allowed without allowInsecureHttp`);
+  }
+
+  const allowHosts = options.allowHosts ?? undefined;
+  if (allowHosts !== undefined && !allowHosts.some((h) => h.toLowerCase() === url.hostname)) {
+    return fail(`${name}: host "${url.hostname}" is not in the allowed host list`);
+  }
+
+  const allowPorts = options.allowPorts ?? undefined;
+  if (allowPorts !== undefined) {
+    // An empty `port` means the scheme's default, which is the spelling almost every real URL
+    // uses — checking the raw string would reject `https://example.com/` under `[443]`.
+    const port = url.port === '' ? DEFAULT_PORTS[url.protocol] : Number(url.port);
+    if (!allowPorts.includes(port)) {
+      return fail(`${name}: port ${port} is not in the allowed port list`);
+    }
+  }
+
+  return succeed(true as const);
+}
+
 /**
  * Creates the recommended address guard: resolves each hop's host and requires every resolved
  * address to be globally routable public unicast.
@@ -127,22 +196,46 @@ async function _addressesFor(
  * special case: a guard that only validated the initial URL is defeated by a single `302` to
  * `http://169.254.169.254/`.
  *
+ * The URL-level constraints — `https:` unless `allowInsecureHttp`, plus the optional `allowHosts`
+ * and `allowPorts` allowlists — are checked **before** the name resolution, so a host the caller
+ * never allowlisted is refused by string comparison rather than handed to a resolver.
+ *
+ * ```typescript
+ * // A local Ollama sidecar: every deviation from the default posture is named and greppable.
+ * const guard = blockPrivateNetworks({
+ *   allowLoopback: true,
+ *   allowInsecureHttp: true,
+ *   allowHosts: ['localhost'],
+ *   allowPorts: [11434]
+ * });
+ * ```
+ *
  * **What this does not protect against.** It validates a resolved address and the transport then
  * re-resolves, so hostile DNS can answer the two lookups differently — the documented
- * DNS-rebinding limit, which is open in this release. It does not narrow the scheme beyond the
- * core's refusal of everything that is not `http:`/`https:`, and it applies no host or port
- * allowlist; a strict host allowlist remains the recommended posture and is the caller's to add
- * as an additional guard.
+ * DNS-rebinding limit, which is open in this release. A strict `allowHosts` list is the
+ * recommended posture precisely because it shrinks that exposure to "an allowlisted host's own
+ * resolver is hostile".
  *
  * @param options - optional relaxations of the default posture, plus the resolver seam.
  * @returns the guard. Construction cannot fail.
  * @public
  */
 export function blockPrivateNetworks(options?: IBlockPrivateNetworksGuardOptions): IAddressGuard {
-  const allowLoopback: boolean = options?.allowLoopback === true;
-  const resolve: HostResolver = options?.resolve ?? nodeHostResolver;
+  const settings: IBlockPrivateNetworksGuardOptions = options ?? {};
+  const allowLoopback: boolean = settings.allowLoopback === true;
+  const resolve: HostResolver = settings.resolve ?? nodeHostResolver;
   const policy: IAddressPolicy = blockPrivateNetworksPolicy({ allowLoopback });
-  const name: string = allowLoopback ? 'blockPrivateNetworks(allowLoopback)' : 'blockPrivateNetworks';
+  // Every relaxation is named in the guard's own name, so a `'blocked-by-guard'` failure — and
+  // any log line carrying it — says which posture was actually in force. Two call sites with
+  // different relaxations are two distinguishable names, not one ambiguous one.
+  const relaxations: ReadonlyArray<string> = [
+    ...(allowLoopback ? ['allowLoopback'] : []),
+    ...(settings.allowInsecureHttp === true ? ['allowInsecureHttp'] : []),
+    ...(settings.allowHosts !== undefined ? [`allowHosts=${settings.allowHosts.join('|')}`] : []),
+    ...(settings.allowPorts !== undefined ? [`allowPorts=${settings.allowPorts.join('|')}`] : [])
+  ];
+  const name: string =
+    relaxations.length > 0 ? `blockPrivateNetworks(${relaxations.join(', ')})` : 'blockPrivateNetworks';
 
   return {
     name,
@@ -159,6 +252,10 @@ export function blockPrivateNetworks(options?: IBlockPrivateNetworksGuardOptions
       // refused — which is the distinction the guard/policy split exists to make legible.
       // Flattening both to the guard name would read as more consistent and carry strictly less
       // information. `FetchFailureReason.blocked-by-guard.guard` names the guard either way.
+      const url = _checkUrl(name, hop.url, settings);
+      if (url.isFailure()) {
+        return fail(url.message);
+      }
       return (await _addressesFor(hop.url.hostname, resolve))
         .withErrorFormat((message) => `${name}: ${message}`)
         .onSuccess((addresses) => policy.checkAddresses(addresses))
