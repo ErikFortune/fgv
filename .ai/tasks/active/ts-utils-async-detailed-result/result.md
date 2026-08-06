@@ -2,7 +2,7 @@
 
 **Branch:** `ts-utils-async-detailed-result` (from `release` @ `b85b094b7`)
 **Commits:** `af421438c` (ts-utils extension + tests) → `bb4813c39` (safer-fetch pass) →
-`9987a21a6` (docs, change files, findings)
+`9987a21a6` (docs, change files, findings) → `5756714ab` (exit artifact) → review fixes
 
 ## Summary
 
@@ -26,13 +26,16 @@ the honest minority the brief anticipated.
 | `libraries/ts-extras/src/packlets/safer-fetch/saferFetch.ts` | 3 sites converted in `_receive` and `_connect` (+45/−46) |
 | `.claude/project/async-result-family-design.md` | new § 8 |
 | `.ai/instructions/LIBRARY_CAPABILITIES.md` | `@fgv/ts-utils` `base` row (surface changed) |
-| `docs/WORKSTREAMS.md` | this stream's entry → Completed |
+| `docs/WORKSTREAMS.md` | this stream's entry, kept under Active as 🔵 (not merged yet) |
 | `common/changes/@fgv/{ts-utils,ts-extras}/*.json` | rush change files |
-| `.ai/tasks/.../findings/inbox/2026-08-06-no-other-consumer-loses-detail.md` | the finding |
+| `.ai/tasks/.../findings/inbox/*.md` | two findings (no consumer losing detail; an Argon2id flake) |
+| `.ai/tasks/.../state.md` | a checkpoint per deliverable |
+| `libraries/ts-extras/src/test/unit/safer-fetch/saferFetch.test.ts` | 3 regression tests for the taxonomy invariant |
 
-**No test file in `safer-fetch` was changed** — all 83 `saferFetch` tests plus the redirect and
-retry suites pass against the converted code unmodified, which is the strongest available evidence
-the pass is behavior-preserving.
+The chaining pass itself required **no `safer-fetch` test change** — all 83 `saferFetch` tests plus
+the redirect and retry suites passed against the converted code unmodified. Three tests were added
+afterwards, for a behavior shift the `code-reviewer` pass caught that the existing suite did not
+cover (below).
 
 ## Build / test / lint status
 
@@ -43,7 +46,7 @@ the pass is behavior-preserving.
 | `rushx test` | `@fgv/ts-utils` | pass — 46 new tests; `result.ts` **100%** stmts/branch/func/lines |
 | `rushx build` | `@fgv/ts-extras` | pass, no warnings |
 | `rushx lint` | `@fgv/ts-extras` | pass, clean |
-| `rushx test` | `@fgv/ts-extras` | pass — `safer-fetch` **100%** across the board, `saferFetch.ts` 100% |
+| `rushx test` | `@fgv/ts-extras` | pass — `safer-fetch` **100%** across the board, `saferFetch.ts` 100% (incl. 3 added regression tests) |
 | `rush build` (**all 32 projects**) | monorepo | pass — no regression anywhere, and **no other package's `.api.md` moved** |
 | `rushx fixlint` / `rush prettier` | both | run via the pre-commit hook on every commit |
 
@@ -140,6 +143,56 @@ supplies no detail, so it would differ from `captureAsyncResult` only in return 
 "escalate if the honest answer is *most of it should stay imperative*" case, and that is the honest
 answer.
 
+## `code-reviewer` pass (layer 1) — run before any coverage chasing
+
+No P1s. Two P2s and two P3s, all resolved. The reviewer independently re-derived the `saferFetch.ts`
+before/after counts from source (they matched) and independently confirmed the two-view constructor
+is sound — noting it is stronger than claimed, since every inherited member is overridden, so the
+base class's `_promise` is never read through any public surface on an `AsyncDetailedResult`.
+
+### P2 (real, fixed) — an internal throw lost its taxonomy entry
+
+The genuine find. Moving `_receive` inside a `thenOnSuccess` callback changed the **shape** of one
+failure class. Verified empirically against both revisions with a `Response` whose `headers` access
+throws:
+
+| | before the pass | after the pass | after the fix |
+|---|---|---|---|
+| `message` | `saferFetch: unexpected error: internal boom` | `internal boom` | `saferFetch: unexpected error: internal boom` |
+| `detail` | `{kind:'unknown', …}` | **`undefined`** | `{kind:'unknown', …}` |
+
+An internal throw used to propagate as a real rejection to `_execute`'s top-level
+`captureAsyncResult` and be reported as `'unknown'`. `AsyncDetailedResult` now catches it earlier
+and yields `detail: undefined` — correct for a *chaining* primitive, since a thrown error supplies
+no reason, but wrong for this module, whose entire product is that **every failure carries a
+machine-readable reason**. A caller doing `switch (r.detail.kind)` — the documented way to consume
+this API — would have faulted on `undefined`.
+
+Fixed with `_withReason` at `_execute`, the single boundary where an `Outcome` becomes the caller's
+result, re-stamping a detail-less failure as `'unknown'` with the identical prefix. Output is now
+byte-identical to the pre-change behavior. Three regression tests pin it across
+`saferFetchText`/`Bytes`/`Json`.
+
+This is worth recording as a general lesson: **catching an exception earlier is not free when the
+failure type is a taxonomy.** The chaining primitive's honest `detail: undefined` and the consumer's
+"every failure has a reason" invariant are both right; the boundary between them is where they have
+to be reconciled.
+
+### P2 (substrate, fixed)
+
+`state.md` still read "stream not started" after three commits, and the ledger entry had been filed
+under **Completed workstreams** although the stream is not merged — the conventions in that same
+file reserve ✅ for *shipped (merged to `release`)*. The entry is back under Active as 🔵 with an
+explicit "PR open, not yet merged", and `state.md` now carries a checkpoint per deliverable. The
+task directory is deliberately **not** moved to `.ai/tasks/completed/2026-08/`: the brief specifies
+the `active/` path for `result.md`, and the move belongs to the orchestrator at merge.
+
+### P3 (fixed)
+
+- Change-file types now match the sibling `async-result-family` stream: `minor` for `ts-utils`
+  (additive public API), `patch` for `ts-extras`. Both were `none`.
+- Stray blank line above the next ledger heading removed.
+
 ## Design decision worth flagging: rejections carry no detail
 
 A callback that throws synchronously or rejects becomes a `DetailedFailure` with
@@ -216,6 +269,15 @@ case the criterion intended something stronger; if so, the change is localized a
 | Options bag | only the five collectors take `IAsyncResultOptions` | N/A — chaining has no concurrency to bound; correctly absent |
 | **Divergence** | `AsyncResult.from` | **`fromDetailed`, not `from`** — the one deliberate divergence, forced by static-side soundness. Documented in the TSDoc, § 8, and `LIBRARY_CAPABILITIES.md`. |
 
+## Second finding: a pre-existing flake, observed not fixed
+
+`KeyStore Argon2id methods › verifySecretFromPasswordArgon2id › returns false when salt does not
+match` failed on one `rushx test` run and passed on two others — including one on the *identical*
+tree, and one on the unmodified committed state. It lives in `crypto-utils/keystore`, which this
+stream does not touch, and `safer-fetch` held 100% on all three runs. Recorded in
+`findings/inbox/2026-08-06-argon2id-salt-test-flake.md`; not investigated further, since only the
+symptom was established.
+
 ## Other-package consumers found losing detail
 
 **None** — and this is a verified negative, not an unchecked box. Full write-up in
@@ -247,7 +309,10 @@ Per the brief, **no other consumer package was migrated.**
 3. **The static is `fromDetailed`, not `from`.** A partial concession to OQ-1's option (c), on the
    static side only, for soundness. Recorded in § 8.
 4. **`detail: undefined` on a captured throw** — see the flagged reading of the acceptance criterion
-   above.
+   above. Note this is the *primitive's* contract; `safer-fetch` re-stamps it at its own boundary so
+   its taxonomy invariant is unaffected.
+5. **Three tests were added to `safer-fetch`** after the review, which the brief permitted ("only if
+   the pass requires it"). It did require it: without them the taxonomy shift above was unpinned.
 
 Nothing in the out-of-scope list was touched: no other `DetailedResult` consumer package was
 migrated, no `safer-fetch` file other than `saferFetch.ts` was edited, `ts-web-extras` was not

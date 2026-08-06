@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@fgv/ts-extras",
-      "comment": "safer-fetch: chain the three sites in saferFetch.ts that the missing detail-preserving async surface blocked. No public API or behavior change.",
-      "type": "none"
+      "comment": "safer-fetch: chain the three sites in saferFetch.ts that the missing detail-preserving async surface blocked, and re-stamp an internal throw caught by a thenOnSuccess callback as kind: 'unknown' so every failure leaving an entry point still carries a FetchFailureReason. No public API change.",
+      "type": "patch"
     }
   ],
   "packageName": "@fgv/ts-extras",

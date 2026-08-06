@@ -478,7 +478,29 @@ the remainder into chains to move the number would have cost readability for not
 
 The most telling number is the last row: `_propagate` — a helper that exists *only* to re-type a
 failure across a stage boundary because the detail could not propagate through a chain — lost 3 of
-its 11 call sites without a single test change.
+its 11 call sites, with every existing test passing unmodified.
+
+### One thing the conversion did change, and the general lesson in it
+
+Catching an exception *earlier* is not free when the failure type is a taxonomy.
+
+Moving `_receive` inside a `thenOnSuccess` callback meant that a throw from inside it — a bug in
+this module rather than in a collaborator the guards already capture — no longer propagated as a
+rejection to `_execute`'s top-level `captureAsyncResult`. `AsyncDetailedResult` catches it first and
+yields `detail: undefined`, which is exactly right *for a chaining primitive*: a thrown error
+supplies no reason and inventing one would be worse. But `safer-fetch`'s entire product is that
+**every failure carries a machine-readable `FetchFailureReason`**, so a caller switching on
+`detail.kind` would have faulted on `undefined`. Measured against both revisions:
+
+| | before | after the pass | after the fix |
+|---|---|---|---|
+| `detail` | `{kind:'unknown', …}` | `undefined` | `{kind:'unknown', …}` |
+
+Reconciled with `_withReason` at `_execute` — the single boundary where an `Outcome` becomes the
+caller's result — which re-stamps a detail-less failure as `'unknown'` with the identical prefix.
+Both contracts are right; the boundary between them is where they have to meet, and it is worth
+naming because **any** consumer adopting `AsyncDetailedResult` with a non-optional detail
+convention will meet the same seam.
 
 ### Why the in-repo migration is deferred again
 

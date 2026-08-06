@@ -183,6 +183,32 @@ function _unknown<T>(message: string): Outcome<T> {
   return _fail<T>({ kind: 'unknown', detail: message }, message);
 }
 
+/** The wrapping every escaped-exception path reports, in one place so the two agree exactly. */
+function _unexpected<T>(message: string): Outcome<T> {
+  return _unknown<T>(`saferFetch: unexpected error: ${message}`);
+}
+
+/**
+ * Restores the taxonomy's invariant that **every** failure leaving this module carries a
+ * `FetchFailureReason`.
+ *
+ * @remarks
+ * Only one thing can produce a detail-less failure: a bug inside this module that throws or
+ * rejects somewhere a `thenOnSuccess` callback catches it. `AsyncDetailedResult` converts such a
+ * throw to a `DetailedFailure` with `detail: undefined` — correctly, since a thrown error supplies
+ * no reason and inventing one would be worse — but that is a *chaining* primitive's contract, not
+ * this module's.
+ *
+ * Before the chaining pass those throws propagated as real rejections all the way to
+ * {@link _execute}'s `captureAsyncResult` and were reported as `'unknown'`. Catching them earlier
+ * must not change what the caller sees, so the same wrapping is reapplied here. Without this a
+ * caller switching on `detail.kind` — the documented way to consume this API — would fault on
+ * `undefined`.
+ */
+function _withReason<T>(outcome: Outcome<T>): Outcome<T> {
+  return outcome.isFailure() && outcome.detail === undefined ? _unexpected<T>(outcome.message) : outcome;
+}
+
 function _blocked<T>(seam: string, url: URL, hop: number, guard: string, detail: string): Outcome<T> {
   return _fail<T>(
     { kind: 'blocked-by-guard', url: url.toString(), hop, guard, detail },
@@ -982,8 +1008,11 @@ async function _execute(url: string | URL, options: ISaferFetchOptions): Promise
   return ran.isFailure()
     ? // `'unknown'` is the taxonomy's honest slot for "something violated its contract", rather
       // than a guess at a more specific kind.
-      _unknown<IRawOutcome>(`saferFetch: unexpected error: ${ran.message}`)
-    : ran.value;
+      _unexpected<IRawOutcome>(ran.message)
+    : // Same wrapping for a throw a `thenOnSuccess` callback caught before it could reach the
+      // capture above — see {@link _withReason}. This is the single boundary where an `Outcome`
+      // becomes the caller's result, so it is the one place the invariant has to hold.
+      _withReason(ran.value);
 }
 
 function _toResponse<T>(value: T, raw: IRawOutcome): ISaferFetchResponse<T> {

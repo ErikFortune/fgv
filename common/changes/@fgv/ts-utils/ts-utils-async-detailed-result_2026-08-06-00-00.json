@@ -3,7 +3,7 @@
     {
       "packageName": "@fgv/ts-utils",
       "comment": "Add AsyncDetailedResult<T, TD> so an async step chained off a DetailedResult preserves its detail type instead of silently degrading to AsyncResult<T>. Additive: the plain-Result path is unchanged.",
-      "type": "none"
+      "type": "minor"
     }
   ],
   "packageName": "@fgv/ts-utils",
