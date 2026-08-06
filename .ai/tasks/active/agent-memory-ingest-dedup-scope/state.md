@@ -39,6 +39,20 @@ separately, so the scope filter alone already isolated temporal kinds.
 on diminishing returns (round 1: one valid finding, change-file type `none` → `minor`; round 2: zero
 new comments, three doc-consistency items, all applied). PR [#600](https://github.com/ErikFortune/fgv/pull/600).
 
+### 2026-08-05 (later) — stream closed out, awaiting review/merge
+
+PR #600 at `25fb509fe`: **CI green**, `mergeable_state: clean`, `origin/release` still at the branch
+point `b392e1534` (no rebase or conflict resolution needed), no unresolved review threads.
+
+Post-CI fix, docs only: the PR body's identity-codec table had lost its `<conv>` / `<id>`
+placeholders — GitHub strips raw angle brackets as HTML, so the rows read `conversations/` +
+`turn-`, gutting the one table that carries the blast-radius argument. Rewritten with brace
+placeholders and split into separate scope / id-stem columns; verified against the stored body.
+
+**Nothing is outstanding on this stream.** The one deliberate non-goal (collapsed candidates are not
+offered to the relation extractor) is in `findings/inbox/` for the orchestrator to triage, not a gap
+in this work. A self check-in is armed against the PR until it merges or closes.
+
 **What the brief got wrong** (both recorded in `findings/inbox/`, neither a STOP-rule trigger since
 both files exist and the needed content was reachable):
 

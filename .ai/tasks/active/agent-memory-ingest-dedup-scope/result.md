@@ -2,7 +2,18 @@
 
 **Branch:** `agent-memory-ingest-dedup-scope` (from `release` @ `b392e1534`)
 **PR:** [#600](https://github.com/ErikFortune/fgv/pull/600) → `release`
-**Commits:** `9bf5ad318` (the fix + docs + tests), `cbb24173c` (state + findings)
+**Status:** ✅ complete — CI green, `mergeable_state: clean`, no unresolved review threads. Awaiting review/merge.
+
+**Commits** (6, on top of the orchestrator's `3d4754deb` brief commit):
+
+| Commit | What |
+|---|---|
+| `9bf5ad318` | the fix + docs + design note + tests (all five deliverables) |
+| `cbb24173c` | state checkpoint + four findings |
+| `be591057d` | this exit artifact |
+| `6bb4db4e6` | the reporter's literal MTM shape + temporal scope-isolation guard |
+| `b35a5ba58` | change-file type `none` → `minor` (Copilot round 1) |
+| `25fb509fe` | Copilot round-2 doc-consistency fixes |
 
 ## Summary
 
@@ -59,6 +70,8 @@ the note three source files have cited since the packlet shipped but which never
 | `rushx test` | `@fgv/ts-agent-memory` | ✅ 723 passed / 0 failed |
 | coverage | `@fgv/ts-agent-memory` | ✅ **100%** statements, branches, functions, lines |
 | `rush build --to @fgv/ts-agent-memory-sqlite-vec` | dependent package | ✅ pass, untouched |
+| `rush build --to @fgv/testbed` | dependent package (out-of-scope for edits) | ✅ pass, untouched — consumes `FileTreeMemoryStore`, does not implement `IMemoryStore`, so the new required member breaks nothing there |
+| CI (`build`) on `25fb509fe` | GitHub Actions | ✅ green |
 
 No coverage directives (`c8 ignore`) were added — 100% was reached by the functional tests alone.
 
