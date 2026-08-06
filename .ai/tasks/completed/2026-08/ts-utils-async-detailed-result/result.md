@@ -53,6 +53,10 @@ The full-monorepo build is load-bearing evidence beyond regression safety: had a
 chaining off a `DetailedResult`, its inferred types would have shifted from `AsyncResult<T>` to
 `AsyncDetailedResult<T, TD>` and its checked-in API report would have changed. None did.
 
+**But note what it did *not* prove.** No in-repo caller chains async off a `DetailedResult`, so a
+green monorepo build could not detect the source-break Copilot found in round 2 — see below. The
+API report was equally blind, because the breaking line was an *addition*.
+
 ## The type-level assertion, and proof it fails against the old code
 
 The brief required a type-level test because **this bug type-checked** — every runtime assertion in
@@ -218,6 +222,50 @@ diminishing-returns signal per `CODING_STANDARDS` ("round 2 surfaces only … st
 nitpick territory regardless of round count"), reached at round 1 here because layer 1 had already
 taken the substantive finding. Round 2 requested to confirm the fixes; **stopping after it unless it
 surfaces something substantive.**
+
+### Round 2 — one substantive finding: the override was source-breaking
+
+Copilot posted the same finding at four sites, and it was right where my own evidence was not.
+
+Declaring only the detail-preserving signature on `DetailedSuccess`/`DetailedFailure` **narrowed**
+the inherited callback parameter from `PromiseLike<Result<TN>>` to
+`PromiseLike<DetailedResult<TN, TD>>`. An existing caller holding a `DetailedResult` and returning
+a plain `Result` from its async callback — reasonable, and compiling before — would stop compiling.
+
+Verified rather than argued, with a probe call site:
+
+```
+TS2322: Type 'Promise<Success<number>>' is not assignable to
+        type 'PromiseLike<DetailedResult<number, Reason>>'.
+```
+
+**My "purely additive" evidence was the wrong instrument.** The API report showed only added lines
+throughout — but the added line *was* the break, because it narrowed an inherited parameter. A
+report diff cannot see source incompatibility of that shape, and the green monorepo build could not
+either, since no in-repo caller chains async off a `DetailedResult` (the very finding recorded
+below). Two independent checks, both blind to the same class.
+
+Fixed by declaring **both** forms as overloads on all four methods — detail-preserving first, the
+inherited plain-`Result` form second. A plain-`Result` callback fails the first, matches the second,
+and gets back exactly `AsyncResult<TN>`, with the callback's value passed through unconverted so
+object identity is preserved too. `ts-utils` carries stability obligations, so making it genuinely
+additive was the right resolution rather than reclassifying the change as breaking.
+
+Now pinned by permanent type-level assertions on **both** forms, in the same suite that previously
+asserted only the new direction. That omission is the real lesson: a test that asserts the new
+behaviour arrives is not the same as one asserting the old behaviour survives.
+
+Round 2 also raised a suppressed comment about the repeated per-line
+`@typescript-eslint/no-use-before-define` suppressions. **Dispositioned, no change:** `Success` and
+`Failure` already use exactly this per-line pattern for `AsyncResult` a few hundred lines up, so the
+new code matches its immediate siblings. The suggested alternative — moving the classes earlier —
+would mean relocating `AsyncResult` and `AsyncDetailedResult` above the detailed classes, a large
+reordering of a core file for a cosmetic gain.
+
+**Loop status: stopping at 2 rounds.** Round 1 was doc-accuracy + a cast + a typo; round 2 produced
+one real structural finding, now fixed and pinned. Per `CODING_STANDARDS`, a substantive round is a
+reason to commission the next one, so round 3 was requested to confirm the overload fix; stopping
+after it unless it surfaces something substantive.
 
 ## Design decision worth flagging: rejections carry no detail
 

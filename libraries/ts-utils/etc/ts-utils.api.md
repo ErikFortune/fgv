@@ -166,6 +166,9 @@ export type AsyncDeferredResult<T> = () => Promise<Result<T>>;
 // @public
 export type AsyncDetailedFailureContinuation<T, TD> = (message: string, detail?: TD) => PromiseLike<DetailedResult<T, TD>>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "thenOnSuccess" has more than one declaration; you need to add a TSDoc member reference selector
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "thenOnSuccess" has more than one declaration; you need to add a TSDoc member reference selector
+//
 // @public
 export class AsyncDetailedResult<T, TD> extends AsyncResult<T> implements PromiseLike<DetailedResult<T, TD>> {
     constructor(promise: PromiseLike<DetailedResult<T, TD>>);
@@ -918,7 +921,9 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
     orThrow(cb: ErrorFormatter): never;
     report(reporter?: IResultReporter<T, unknown>, options?: IResultReportOptions<unknown>): DetailedFailure<T, TD>;
     thenOnFailure(cb: AsyncDetailedFailureContinuation<T, TD>): AsyncDetailedResult<T, TD>;
+    thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
     thenOnSuccess<TN>(__cb: AsyncDetailedSuccessContinuation<T, TD, TN>): AsyncDetailedResult<TN, TD>;
+    thenOnSuccess<TN>(__cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
     static with<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD>;
     withErrorFormat(cb: ErrorFormatter<TD>): DetailedResult<T, TD>;
 }
@@ -944,7 +949,9 @@ export class DetailedSuccess<out T, out TD> extends Success<T> {
     onSuccess<TN>(cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD>;
     report(reporter?: IResultReporter<T, unknown>, options?: IResultReportOptions<unknown>): DetailedSuccess<T, TD>;
     thenOnFailure(__cb: AsyncDetailedFailureContinuation<T, TD>): AsyncDetailedResult<T, TD>;
+    thenOnFailure(__cb: AsyncFailureContinuation<T>): AsyncResult<T>;
     thenOnSuccess<TN>(cb: AsyncDetailedSuccessContinuation<T, TD, TN>): AsyncDetailedResult<TN, TD>;
+    thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
     static with<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD>;
     withErrorFormat(cb: ErrorFormatter): DetailedResult<T, TD>;
 }

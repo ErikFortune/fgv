@@ -423,7 +423,26 @@ extend `AsyncResult<T>`. Confirming that this held — rather than tripping the 
 brief flagged as the signal to prefer distinct method names — was the design's one real risk, and it
 compiled on the first attempt.
 
-Two consequences worth recording:
+**A narrowed override is source-breaking even when the API report is additive.** The first cut
+declared only the detail-preserving signature on `DetailedSuccess`/`DetailedFailure`, which
+*narrowed* the inherited parameter from `PromiseLike<Result<TN>>` to
+`PromiseLike<DetailedResult<TN, TD>>`. An existing caller holding a `DetailedResult` and returning
+a plain `Result` from its callback — perfectly reasonable, and compiling fine before — stopped
+compiling. Verified, not argued: a probe call site failed with
+`TS2322: Type 'Promise<Success<number>>' is not assignable to type 'PromiseLike<DetailedResult<number, Reason>>'`.
+
+The trap is that `etc/ts-utils.api.md` showed **only added lines** throughout, so the API report —
+the usual evidence for "additive" in this repo — could not see it. A report diff proves nothing
+about *source* compatibility when the added line narrows an inherited parameter.
+
+Fixed by declaring **both** forms as overloads on all four methods: the detail-preserving one
+first, the inherited plain-`Result` one second. A plain-`Result` callback fails the first overload,
+matches the second, and gets back exactly `AsyncResult<TN>` — the pre-existing behaviour, including
+object identity, since the callback's value is passed through unconverted. The regression is pinned
+by type-level assertions on both forms; `ts-utils` carries stability obligations, so this had to be
+genuinely additive rather than reclassified as breaking.
+
+Two further consequences worth recording:
 
 - **The rejection guard moves ahead of `super()`.** `AsyncResult`'s constructor converts a rejection
   to `fail<T>(...)` — a plain `Failure`. If the subclass let that happen it would resolve to

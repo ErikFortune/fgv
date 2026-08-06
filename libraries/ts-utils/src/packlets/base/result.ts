@@ -1073,10 +1073,29 @@ export class DetailedSuccess<out T, out TD> extends Success<T> {
    * @returns An {@link AsyncDetailedResult | AsyncDetailedResult<TN, TD>} wrapping the callback's
    * result.
    */
-  public thenOnSuccess<TN>(cb: AsyncDetailedSuccessContinuation<T, TD, TN>): AsyncDetailedResult<TN, TD> {
+  public thenOnSuccess<TN>(cb: AsyncDetailedSuccessContinuation<T, TD, TN>): AsyncDetailedResult<TN, TD>;
+
+  /**
+   * Back-compatible form of the overload above, for a callback which returns a plain
+   * {@link Result} rather than a {@link DetailedResult}.
+   * @remarks
+   * Declared so such a callback keeps compiling, and keeps yielding a plain {@link AsyncResult},
+   * exactly as it did when this class inherited {@link Success.thenOnSuccess}. Without it the override
+   * would *narrow* the inherited parameter type, which is a source-breaking change even though it
+   * only adds API surface - and therefore one an additive-looking API report cannot detect.
+   * @param cb - The async success callback to be invoked.
+   * @returns An {@link AsyncResult} wrapping the callback's result, with no detail.
+   */
+  public thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
+  public thenOnSuccess<TN>(
+    cb: AsyncDetailedSuccessContinuation<T, TD, TN> | AsyncSuccessContinuation<T, TN>
+  ): AsyncDetailedResult<TN, TD> {
     try {
+      // The cast inherent to an overload implementation, contained here. A plain-`Result`
+      // callback's value is passed through **unchanged**, preserving object identity as the
+      // inherited implementation did; that overload returns `AsyncResult`, which has no `detail`.
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      return new AsyncDetailedResult(cb(this._value, this._detail));
+      return new AsyncDetailedResult(cb(this._value, this._detail) as PromiseLike<DetailedResult<TN, TD>>);
     } catch (err: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
       return AsyncDetailedResult.fromDetailed(failWithDetail<TN, TD>(_errorMessage(err)));
@@ -1092,7 +1111,23 @@ export class DetailedSuccess<out T, out TD> extends Success<T> {
    * called in case of failure (ignored).
    * @returns An {@link AsyncDetailedResult | AsyncDetailedResult<T, TD>} wrapping `this`.
    */
-  public thenOnFailure(__cb: AsyncDetailedFailureContinuation<T, TD>): AsyncDetailedResult<T, TD> {
+  public thenOnFailure(__cb: AsyncDetailedFailureContinuation<T, TD>): AsyncDetailedResult<T, TD>;
+
+  /**
+   * Back-compatible form of the overload above, for a callback which returns a plain
+   * {@link Result} rather than a {@link DetailedResult}.
+   * @remarks
+   * Declared so such a callback keeps compiling, and keeps yielding a plain {@link AsyncResult},
+   * exactly as it did when this class inherited {@link Success.thenOnFailure}. Without it the override
+   * would *narrow* the inherited parameter type, which is a source-breaking change even though it
+   * only adds API surface - and therefore one an additive-looking API report cannot detect.
+   * @param cb - The async failure callback to be invoked.
+   * @returns An {@link AsyncResult} wrapping the callback's result, with no detail.
+   */
+  public thenOnFailure(__cb: AsyncFailureContinuation<T>): AsyncResult<T>;
+  public thenOnFailure(
+    __cb: AsyncDetailedFailureContinuation<T, TD> | AsyncFailureContinuation<T>
+  ): AsyncDetailedResult<T, TD> {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     return AsyncDetailedResult.fromDetailed<T, TD>(this);
   }
@@ -1213,7 +1248,23 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
    * @returns An {@link AsyncDetailedResult | AsyncDetailedResult<TN, TD>} carrying this failure's
    * message and detail.
    */
-  public thenOnSuccess<TN>(__cb: AsyncDetailedSuccessContinuation<T, TD, TN>): AsyncDetailedResult<TN, TD> {
+  public thenOnSuccess<TN>(__cb: AsyncDetailedSuccessContinuation<T, TD, TN>): AsyncDetailedResult<TN, TD>;
+
+  /**
+   * Back-compatible form of the overload above, for a callback which returns a plain
+   * {@link Result} rather than a {@link DetailedResult}.
+   * @remarks
+   * Declared so such a callback keeps compiling, and keeps yielding a plain {@link AsyncResult},
+   * exactly as it did when this class inherited {@link Failure.thenOnSuccess}. Without it the override
+   * would *narrow* the inherited parameter type, which is a source-breaking change even though it
+   * only adds API surface - and therefore one an additive-looking API report cannot detect.
+   * @param cb - The async success callback to be invoked.
+   * @returns An {@link AsyncResult} wrapping the callback's result, with no detail.
+   */
+  public thenOnSuccess<TN>(__cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
+  public thenOnSuccess<TN>(
+    __cb: AsyncDetailedSuccessContinuation<T, TD, TN> | AsyncSuccessContinuation<T, TN>
+  ): AsyncDetailedResult<TN, TD> {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     return AsyncDetailedResult.fromDetailed(failWithDetail<TN, TD>(this._message, this._detail));
   }
@@ -1231,10 +1282,29 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
    * @returns An {@link AsyncDetailedResult | AsyncDetailedResult<T, TD>} wrapping the callback's
    * result.
    */
-  public thenOnFailure(cb: AsyncDetailedFailureContinuation<T, TD>): AsyncDetailedResult<T, TD> {
+  public thenOnFailure(cb: AsyncDetailedFailureContinuation<T, TD>): AsyncDetailedResult<T, TD>;
+
+  /**
+   * Back-compatible form of the overload above, for a callback which returns a plain
+   * {@link Result} rather than a {@link DetailedResult}.
+   * @remarks
+   * Declared so such a callback keeps compiling, and keeps yielding a plain {@link AsyncResult},
+   * exactly as it did when this class inherited {@link Failure.thenOnFailure}. Without it the override
+   * would *narrow* the inherited parameter type, which is a source-breaking change even though it
+   * only adds API surface - and therefore one an additive-looking API report cannot detect.
+   * @param cb - The async failure callback to be invoked.
+   * @returns An {@link AsyncResult} wrapping the callback's result, with no detail.
+   */
+  public thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
+  public thenOnFailure(
+    cb: AsyncDetailedFailureContinuation<T, TD> | AsyncFailureContinuation<T>
+  ): AsyncDetailedResult<T, TD> {
     try {
+      // The cast inherent to an overload implementation, contained here. A plain-`Result`
+      // callback's value is passed through **unchanged**, preserving object identity as the
+      // inherited implementation did; that overload returns `AsyncResult`, which has no `detail`.
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      return new AsyncDetailedResult(cb(this._message, this._detail));
+      return new AsyncDetailedResult(cb(this._message, this._detail) as PromiseLike<DetailedResult<T, TD>>);
     } catch (err: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
       return AsyncDetailedResult.fromDetailed(failWithDetail<T, TD>(_errorMessage(err)));

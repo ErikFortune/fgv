@@ -87,9 +87,28 @@ describe('AsyncDetailedResult module', () => {
       const fromPlain: AsyncResult<number> = succeed('x').thenOnSuccess(async (v) => succeed(v.length));
       type _P = Assert<Equals<Awaited<typeof fromPlain>, Result<number>>>;
 
+      // BACK-COMPAT, and the assertion this suite originally lacked. A caller who holds a
+      // `DetailedResult` but returns a plain `Result` from the async callback compiled before the
+      // detail-preserving overrides existed, and must still compile — and must still get exactly
+      // `AsyncResult<TN>`, not the narrower detailed type. Narrowing an inherited parameter is
+      // source-breaking even though it only *adds* lines to the API report, which is why the
+      // report alone could not evidence the "additive" claim.
+      const fromLegacyCallback: AsyncResult<number> = succeedWithDetail<string, Reason>(
+        'x',
+        'parse'
+      ).thenOnSuccess(async (v) => succeed(v.length));
+      type _B1 = Assert<Equals<typeof fromLegacyCallback, AsyncResult<number>>>;
+      type _B2 = Assert<Equals<Awaited<typeof fromLegacyCallback>, Result<number>>>;
+
+      const fromLegacyFailureCallback: AsyncResult<string> = failWithDetail<string, Reason>(
+        'nope',
+        'network'
+      ).thenOnFailure(async () => succeed('recovered'));
+      type _B3 = Assert<Equals<typeof fromLegacyFailureCallback, AsyncResult<string>>>;
+
       // Consume the aliases so `noUnusedLocals` stays satisfied without weakening the checks.
-      const asserted: [_S, _F, _R, _L, _P] = [true, true, true, true, true];
-      expect(asserted).toHaveLength(5);
+      const asserted: [_S, _F, _R, _L, _P, _B1, _B2, _B3] = [true, true, true, true, true, true, true, true];
+      expect(asserted).toHaveLength(8);
 
       // The chains are awaited as well, so a compile-time-only regression cannot hide behind an
       // assertion that never ran.
@@ -98,6 +117,8 @@ describe('AsyncDetailedResult module', () => {
       expect(await fromRecovery).toSucceedWith('recovered');
       expect(await fromLadder).toSucceedWith(false);
       expect(await fromPlain).toSucceedWith(1);
+      expect(await fromLegacyCallback).toSucceedWith(1);
+      expect(await fromLegacyFailureCallback).toSucceedWith('recovered');
     });
   });
 
