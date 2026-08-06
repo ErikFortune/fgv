@@ -68,3 +68,39 @@ matched, and independently confirmed the two-view constructor is sound.
 verifySecretFromPasswordArgon2id › returns false when salt does not match` failed once and passed on
 two other runs of the same tree, including on the unmodified committed state. Pre-existing flake in a
 packlet this stream does not touch.
+
+### 2026-08-06 — Copilot round 2, and a CI signal I could not reproduce
+
+**Round 2 was substantive**, so the loop did not stop at 2. Copilot posted one finding at four
+sites: the overrides *narrowed* the inherited callback parameter from `PromiseLike<Result<TN>>` to
+`PromiseLike<DetailedResult<TN, TD>>`, a **source-break** for a caller holding a `DetailedResult`
+and returning a plain `Result`. Verified with a probe (`TS2322`), fixed by declaring both forms as
+overloads on all four methods, and pinned by permanent type-level assertions on both directions.
+
+The instructive part is why my own evidence missed it: the API report showed only *added* lines
+(the added line **was** the break), and the green monorepo build was blind because no in-repo caller
+chains async off a `DetailedResult`. Two checks, one shared blind spot.
+
+**CI state at the time of writing — unresolved, and not reproducible locally.**
+
+| run | head | conclusion | job duration |
+|---|---|---|---|
+| 1485 | `69b21ee15` | **success** | ~12 min |
+| 1486 | `3e451b627` | cancelled | ~21 min |
+| 1487 | `3c155641a` | failure (job `cancelled`) | 15 min 01 s |
+| 1488 | `be7ece673` | failure (job `cancelled`) | 15 min 02 s |
+
+Every CI step was reproduced locally against the exact head commit and passes:
+`rush change --verify --target-branch origin/release` (both change files found), `rush rebuild`
+(3 min 45 s), `rush test`. The only local failure is `@fgv/ts-json-base`'s `mutableFsTree`
+permission test, which **cannot** pass in a root container and does pass in CI — see the finding
+alongside this file.
+
+The jobs conclude **`cancelled`**, not `failure`; they carry `runner_name: ""` and their logs 404.
+A test failure would conclude `failure` and retain logs. Two runs cut at 15 m 01 s / 15 m 02 s is a
+cap, not a flake. `rerun_workflow_run` returns `403 Resource not accessible by integration`, so the
+run could not be retried directly; pushing this commit re-triggers it.
+
+Read as **infrastructure rather than the diff** — same toolchain, same commands, green 12 minutes in
+on `69b21ee15`. If the re-trigger fails the same way, the next step is a human with Actions access
+checking runner quota/minutes, since nothing further is observable from here.
