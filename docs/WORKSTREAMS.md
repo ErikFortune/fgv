@@ -128,6 +128,16 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `ts-utils-async-detailed-result` 🔵
+
+**Status:** 🔵 queued — branch `ts-utils-async-detailed-result` from `release` @ `b85b094b7`; brief at `.ai/tasks/active/ts-utils-async-detailed-result/brief.md`.
+**Package surface:** `@fgv/ts-utils` (`base/result.ts`) + `@fgv/ts-extras` (`safer-fetch/saferFetch.ts`, as the first consumer).
+
+**Mission.** Chaining an async step off a `DetailedResult<T, TD>` silently degrades it to a plain `Result<T>` and loses `TD`. `DetailedSuccess`/`DetailedFailure` extend `Success`/`Failure` and inherit `thenOnSuccess<TN>(cb): AsyncResult<TN>`, which carries no detail type, and no `AsyncDetailedResult` exists. **It type-checks** — the loss surfaces later or not at all, so a package whose failure taxonomy *is* its product can lose it by writing idiomatic code. Surfaced by `safer-fetch-s3` (#601), whose Result-chaining deliverable landed only partially for exactly this reason. 49 non-test files across 7 packages use `DetailedResult`. Extends the primitive rather than tidying the one consumer; `safer-fetch` rides along as the first real caller so the extension doesn't ship speculatively. Migrating the other six packages is deliberately **out of scope** — same reasoning `async-result-family-design.md` § 7 recorded for the sync family.
+
+---
+
+
 ### `agent-memory-ingest-dedup-scope` 🟢
 
 **Status:** 🟢 implemented + reviewed — PR [#600](https://github.com/ErikFortune/fgv/pull/600) onto `release`, CI green, mergeable clean; ready to merge. Branch `agent-memory-ingest-dedup-scope` from `release` @ `b392e1534`. All five deliverables landed; suite green at 100% coverage; `code-reviewer` clean, Copilot loop stopped at round 2 on diminishing returns. Ran in parallel with `safer-fetch-s3`; no code overlap, but both edit `.ai/instructions/LIBRARY_CAPABILITIES.md` and this file — **own section only**.
