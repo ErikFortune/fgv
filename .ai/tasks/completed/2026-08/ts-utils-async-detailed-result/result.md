@@ -26,10 +26,9 @@ the honest minority the brief anticipated.
 | `libraries/ts-extras/src/packlets/safer-fetch/saferFetch.ts` | 3 sites converted in `_receive` and `_connect` (+45/−46) |
 | `.claude/project/async-result-family-design.md` | new § 8 |
 | `.ai/instructions/LIBRARY_CAPABILITIES.md` | `@fgv/ts-utils` `base` row (surface changed) |
-| `docs/WORKSTREAMS.md` | this stream's entry, kept under Active as 🔵 (not merged yet) |
+| `docs/WORKSTREAMS.md` | this stream's entry → Completed, ✅ |
 | `common/changes/@fgv/{ts-utils,ts-extras}/*.json` | rush change files |
-| `.ai/tasks/.../findings/inbox/*.md` | two findings (no consumer losing detail; an Argon2id flake) |
-| `.ai/tasks/.../state.md` | a checkpoint per deliverable |
+| `.ai/tasks/completed/2026-08/<id>/` | brief, state, result and two findings, moved from `active/` |
 | `libraries/ts-extras/src/test/unit/safer-fetch/saferFetch.test.ts` | 3 regression tests for the taxonomy invariant |
 
 The chaining pass itself required **no `safer-fetch` test change** — all 83 `saferFetch` tests plus
@@ -180,12 +179,17 @@ to be reconciled.
 
 ### P2 (substrate, fixed)
 
-`state.md` still read "stream not started" after three commits, and the ledger entry had been filed
-under **Completed workstreams** although the stream is not merged — the conventions in that same
-file reserve ✅ for *shipped (merged to `release`)*. The entry is back under Active as 🔵 with an
-explicit "PR open, not yet merged", and `state.md` now carries a checkpoint per deliverable. The
-task directory is deliberately **not** moved to `.ai/tasks/completed/2026-08/`: the brief specifies
-the `active/` path for `result.md`, and the move belongs to the orchestrator at merge.
+`state.md` still read "stream not started" after three commits — it now carries a checkpoint per
+deliverable.
+
+The reviewer also flagged the ledger entry as prematurely filed under **Completed**, and I briefly
+moved it back to Active on the reading that ✅ is reserved for merged-to-`release`. **Erik overrode
+that**, and the override is the better convention: the check-in that carries the code may also carry
+the update saying the code is checked in — otherwise every stream needs a second, code-free commit
+to flip a status line, which is exactly the doc-only-diff failure mode `CODING_STANDARDS` warns
+against. So the entry is filed under Completed as ✅, the task directory moved to
+`.ai/tasks/completed/2026-08/`, and design doc § 8 reads "implemented and merged". Ledger, substrate
+path and design-doc status now agree with each other and with this PR.
 
 ### P3 (fixed)
 
@@ -198,10 +202,11 @@ the `active/` path for `result.md`, and the move belongs to the orchestrator at 
 **Round 1 — 3 comments, all valid, all applied.** No correctness findings; the substantive class had
 already been taken by layer 1.
 
-1. **Design-doc accuracy (the real one).** § 8's status line read "implemented and merged" while the
-   PR is open — the same doc-accuracy defect I had just corrected in the ledger, missed one file
-   over. Now reads "implemented; PR #602 open against `release`, not yet merged", with a note that
-   § 1–§ 7 describe #596 and *are* merged, so the two statuses are not confused.
+1. **Design-doc accuracy.** § 8's status line read "implemented and merged" while the PR was open,
+   which I first corrected to name the open PR. Erik then settled the underlying convention the
+   other way — the commit carrying the code carries the checked-in status — so § 8 reads
+   "implemented and merged — #602" and the ledger and substrate path were aligned to match. The
+   finding was still worth having: it surfaced that the three status lines disagreed.
 2. **Unnecessary cast.** `as unknown as Response` on a `Proxy` return — `Proxy`'s constructor is
    generic and infers `Response` from its target. Verified by removing it and rebuilding: it
    compiles, and coverage held at 100%. Correct call, and it removes a cast from a repo whose

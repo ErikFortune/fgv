@@ -378,11 +378,9 @@ per-site judgement about its workload, and should not ride along in a mechanical
 
 ## 8. Follow-on: detail-preserving async chaining (`AsyncDetailedResult`)
 
-**Status: implemented; PR [#602](https://github.com/ErikFortune/fgv/pull/602) open against
-`release`, not yet merged** — the `ts-utils-async-detailed-result` stream. (§ 1–§ 7 above describe
-#596, which *is* merged; this section is newer and its status is tracked separately.) Recorded here
-because this is the same family, found by the same kind of sweep, and the next person asking "does
-the async side of `Result` cover `DetailedResult`?" should find the answer in one place.
+**Status: implemented and merged** — #602, the `ts-utils-async-detailed-result` stream. Recorded
+here because this is the same family, found by the same kind of sweep, and the next person asking
+"does the async side of `Result` cover `DetailedResult`?" should find the answer in one place.
 
 ### The gap, and why it was silent
 

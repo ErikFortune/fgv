@@ -52,9 +52,12 @@ No P1s. Two P2s and two P3s, all resolved:
   `FetchFailureReason`, so a caller switching on `detail.kind` would fault. Fixed with `_withReason`
   at `_execute`, the single boundary where an `Outcome` becomes the caller's result. Output is now
   byte-identical to pre-change. Regression test added across all three entry points.
-- **P2 (substrate).** This file was stale, and the ledger entry had been filed under "Completed"
-  although the stream is not merged — conventions reserve ✅ for *merged to `release`*. Entry moved
-  back to Active as 🔵; this file brought current.
+- **P2 (substrate).** This file was stale after three commits — now carries a checkpoint per
+  deliverable. The reviewer also read the ledger entry's "Completed" filing as premature, and it was
+  briefly moved back to Active; **Erik overrode that**: the check-in that carries the code may also
+  carry the update saying the code is checked in. Entry is filed under Completed as ✅ and the task
+  directory moved to `.ai/tasks/completed/2026-08/`, so ledger, substrate path and design-doc status
+  now all agree.
 - **P3.** Change-file types corrected to match the sibling `async-result-family` stream (`minor` for
   the additive `ts-utils` API; `patch` for `ts-extras`). Stray blank line in the ledger removed.
 
