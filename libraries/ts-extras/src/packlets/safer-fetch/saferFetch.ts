@@ -537,38 +537,37 @@ async function _receive(
   }
 
   const hop = chain.length - 1;
-  const headGuarded = await _raced(
-    watch,
-    () => guards.responseHeaders.check(head, chain),
-    (message) => {
-      // A content-type allowlist names itself by exposing `acceptedContentTypes`, and its
-      // rejections carry a more useful payload than an opaque policy refusal would.
-      const accepted = guards.responseHeaders.acceptedContentTypes ?? undefined;
-      return accepted !== undefined
-        ? _fail<true>(
-            { kind: 'unsupported-content-type', contentType: head.contentType, accepted },
-            `${url.toString()}: ${message}`
-          )
-        : _blocked<true>('response-headers', url, hop, guards.responseHeaders.name, message);
-    },
-    () => _discardBody(response)
-  );
-  if (headGuarded.isFailure()) {
-    return _propagate<true, AttemptOutcome>(headGuarded);
-  }
-
-  const body = await _readCappedBody(response, head, resolved.maxResponseBytes, watch);
-  if (body.isFailure()) {
-    return _propagate<Uint8Array, AttemptOutcome>(body);
-  }
-
+  // Chained rather than stepped: `thenOnSuccess` now preserves `FetchFailureReason` across an
+  // async step, so each stage's failure propagates with its detail intact and the two
+  // `_propagate` re-types this sequence used to need are gone.
   return (
     await _raced(
       watch,
-      () => guards.responseBody.check(body.value, head),
-      (message) => _blocked<true>('response-body', url, hop, guards.responseBody.name, message)
+      () => guards.responseHeaders.check(head, chain),
+      (message) => {
+        // A content-type allowlist names itself by exposing `acceptedContentTypes`, and its
+        // rejections carry a more useful payload than an opaque policy refusal would.
+        const accepted = guards.responseHeaders.acceptedContentTypes ?? undefined;
+        return accepted !== undefined
+          ? _fail<true>(
+              { kind: 'unsupported-content-type', contentType: head.contentType, accepted },
+              `${url.toString()}: ${message}`
+            )
+          : _blocked<true>('response-headers', url, hop, guards.responseHeaders.name, message);
+      },
+      () => _discardBody(response)
     )
-  ).onSuccess(() => _succeed<AttemptOutcome>({ kind: 'final', bytes: body.value, head }));
+  )
+    .thenOnSuccess(async () => _readCappedBody(response, head, resolved.maxResponseBytes, watch))
+    .thenOnSuccess(async (bytes) =>
+      (
+        await _raced(
+          watch,
+          () => guards.responseBody.check(bytes, head),
+          (message) => _blocked<true>('response-body', url, hop, guards.responseBody.name, message)
+        )
+      ).onSuccess(() => _succeed<AttemptOutcome>({ kind: 'final', bytes, head }))
+    );
 }
 
 /**
@@ -667,28 +666,30 @@ async function _connect(
     init.body = typeof request.body === 'string' ? request.body : new Uint8Array(request.body);
   }
 
-  const sent = await _raced(
-    watch,
-    () => transport.fetch(cleared.url, init, { pinnedAddress: cleared.pinnedAddress }),
-    (message) =>
-      _fail<Response>(
-        { kind: 'network', detail: message },
-        `transport "${transport.name}" failed: ${message}`
-      )
-  );
-  if (sent.isFailure()) {
-    return _propagate<Response, IAttempt>(sent);
-  }
-  watch.headersReceived();
-
-  return (await _receive(sent.value, cleared.url, chain, guards, resolved, watch, notes)).onSuccess(
-    (outcome) =>
+  return (
+    await _raced(
+      watch,
+      () => transport.fetch(cleared.url, init, { pinnedAddress: cleared.pinnedAddress }),
+      (message) =>
+        _fail<Response>(
+          { kind: 'network', detail: message },
+          `transport "${transport.name}" failed: ${message}`
+        )
+    )
+  )
+    .thenOnSuccess(async (response) => {
+      // Inside the continuation rather than before it, which is where it already ran: the
+      // headers deadline is retired only once a response has actually arrived.
+      watch.headersReceived();
+      return _receive(response, cleared.url, chain, guards, resolved, watch, notes);
+    })
+    .onSuccess((outcome) =>
       // The pin is recorded only once the transport has accepted it. A transport that cannot
       // honor a pin is required to fail rather than connect by hostname, so a settled request
       // with a pin set is evidence the pin held — which is the only basis on which recording it
       // would be honest.
       _succeed({ url: cleared.url, connectedAddress: cleared.pinnedAddress, outcome })
-  );
+    );
 }
 
 /**
