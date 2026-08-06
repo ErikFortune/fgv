@@ -373,3 +373,127 @@ stream, because migration is a **behaviour change, not a refactor**: those sites
 and would pick up `DEFAULT_RESULT_CONCURRENCY` (8). That is the right default, but whether each
 site wants it — versus `Number.POSITIVE_INFINITY` to preserve current behaviour — is a
 per-site judgement about its workload, and should not ride along in a mechanical sweep.
+
+---
+
+## 8. Follow-on: detail-preserving async chaining (`AsyncDetailedResult`)
+
+**Status: implemented and merged** — the `ts-utils-async-detailed-result` stream. Recorded here
+because this is the same family, found by the same kind of sweep, and the next person asking "does
+the async side of `Result` cover `DetailedResult`?" should find the answer in one place.
+
+### The gap, and why it was silent
+
+§ 2–§ 5 above transposed the *collectors* to async. What none of them touched is the **chaining**
+half of the surface — `thenOnSuccess` / `thenOnFailure`, which bridge a synchronous `Result` into
+an `AsyncResult` chain.
+
+`DetailedSuccess<out T, out TD> extends Success<T>` and `DetailedFailure<out T, out TD> extends
+Failure<T>`. Both override `onSuccess` / `onFailure` to return `DetailedResult<TN, TD>`. **Neither
+overrode `thenOnSuccess` / `thenOnFailure`**, so both inherited the base implementations, whose
+signature is `thenOnSuccess<TN>(cb): AsyncResult<TN>` — no detail type parameter, and no
+`AsyncDetailedResult` for them to return.
+
+The consequence: `someDetailedResult.thenOnSuccess(async (v) => ...)` type-checked, returned
+`AsyncResult<TN>`, and `TD` was gone.
+
+**The dangerous part was that nothing failed at the chain site.** The loss surfaced later, as a
+mismatch at whatever boundary expected the detail back — or not at all, if the caller was going to
+widen anyway. A consumer whose failure taxonomy *is* its product could lose it by writing idiomatic
+code. That is what makes this a primitive-level defect rather than a consumer-level one, and it is
+the case `CODING_STANDARDS` § "Extending Core Libraries Over Working Around Them" names directly.
+
+Surfaced by `safer-fetch-s3` (#601), which recorded the constraint rather than working around it:
+
+> `thenOnSuccess` returns `AsyncResult<T>` and drops the `FetchFailureReason` detail, so async
+> steps stay explicit awaits; that is a constraint of the current ts-utils surface, not a style
+> choice.
+
+### The shape chosen, and the one thing that forced it
+
+`AsyncDetailedResult<T, TD>` is a sibling of `AsyncResult<T>` in the same sense
+`DetailedSuccess` is a sibling of `Success` — which is to say **it extends it**, and that is not a
+stylistic preference. It is the only shape that works.
+
+A standalone class would not have: an override's return type must be assignable to the base
+method's. `DetailedSuccess.onSuccess` can return `DetailedResult<TN, TD>` where `Success.onSuccess`
+returns `Result<TN>` *only because* `DetailedSuccess extends Success` makes the former assignable to
+the latter. The async override needs exactly the same property, so `AsyncDetailedResult<T, TD>` must
+extend `AsyncResult<T>`. Confirming that this held — rather than tripping the variance problem the
+brief flagged as the signal to prefer distinct method names — was the design's one real risk, and it
+compiled on the first attempt.
+
+Two consequences worth recording:
+
+- **The rejection guard moves ahead of `super()`.** `AsyncResult`'s constructor converts a rejection
+  to `fail<T>(...)` — a plain `Failure`. If the subclass let that happen it would resolve to
+  something *typed* `DetailedResult` that was really a plain `Failure`: the exact silent-detail-loss
+  bug, reintroduced one layer down. So the promise is guarded with `failWithDetail` *before* being
+  handed to `super()`, and the base's own `.catch` is then unreachable. Both views observe the same
+  settled values and cannot disagree.
+- **`from` could not be overridden, so the static is named `fromDetailed`.** A static member
+  narrowing its parameter from `Result` to `DetailedResult` is unsound on the static side, which
+  *is* the contravariant-position signal the brief named — it just landed on the static rather than
+  the instance surface, where renaming costs nothing. The inherited `AsyncResult.from` still works
+  and still returns a plain `AsyncResult`.
+
+Per OQ-2, the ladder goes exactly as far as the methods `AsyncResult` already has — `onSuccess`,
+`thenOnSuccess`, `onFailure`, `thenOnFailure`, `withErrorFormat`, `aggregateError`, `report`,
+`then`. **No new combinators were invented**, and there is deliberately no
+`captureAsyncDetailedResult`: a captured throw has no detail to supply, so the function would
+differ from `captureAsyncResult` only in its return type.
+
+### Rejections and throws carry no detail — deliberately
+
+A callback that throws synchronously or returns a rejected promise becomes a `DetailedFailure`
+whose `detail` is `undefined`, never an escaped exception.
+
+`undefined` is the only honest answer. The thrown error supplies no `TD`, and carrying the
+*upstream* detail forward would pair this failure's message with a previous operation's detail —
+on the success path it would additionally promote a *success* detail onto a failure. This matches
+§ 6's `mapDetailedResultsAsync` divergence exactly: a work function that throws or rejects
+"produces no detail at all, so there is nothing for `ignore` to match."
+
+### The first consumer, measured
+
+`saferFetch.ts` is the extension's first real consumer, which is what kept it from shipping
+speculatively. The pass was measured rather than asserted, and the measurement is the finding:
+
+| | before | after |
+|---|---|---|
+| `isFailure()`/`isSuccess()` checks | 21 | 18 |
+| chaining calls | 12 | 15 |
+| `_propagate` call sites | 11 | 8 |
+
+Of the 21 checks, **7** are on an awaited `DetailedResult` — the only ones the gap could have
+blocked — and **3** converted. The other 4 are exempt for reasons unrelated to this extension:
+three are `_walk`'s hop-loop control flow (the exemption in `CODING_STANDARDS`, upheld by S3's own
+reviewer), and one is `_runAttempt`'s retry branch, which reads `walked.detail` to decide whether to
+recurse. The remaining 14 are on synchronous results or on plain `Result`s that never had a detail
+to lose.
+
+So **the ts-utils gap explained a minority of the file's imperative checks, and most of
+`saferFetch.ts` legitimately stays imperative.** That was an anticipated outcome (OQ-3), and forcing
+the remainder into chains to move the number would have cost readability for nothing.
+
+The most telling number is the last row: `_propagate` — a helper that exists *only* to re-type a
+failure across a stage boundary because the detail could not propagate through a chain — lost 3 of
+its 11 call sites without a single test change.
+
+### Why the in-repo migration is deferred again
+
+§ 7 deferred migrating the collectors' hand-rolled call sites because migration there is a
+*behaviour* change (unbounded → `DEFAULT_RESULT_CONCURRENCY`). This deferral is for a different and
+weaker reason: **there is nothing to migrate.**
+
+A sweep of every `thenOnSuccess` / `thenOnFailure` call site in the repo found 34 outside
+`ts-utils`, and **none of them is on a `DetailedResult`**. The five other `DetailedResult` consumer
+packages — `ts-json`, `ts-res`, `ts-json-base`, `ts-utils-jest`, `ts-web-extras` — do not use the
+async bridge at all. `ts-agent-memory`, `ts-prompt-assist` and `tools/ks`, which use it heavily, do
+not reference `DetailedResult` anywhere.
+
+**No consumer is silently losing its detail today.** The trap was armed and only `safer-fetch` had
+walked into it — which is consistent with `safer-fetch` being the package that surfaced it, since a
+consumer whose taxonomy is its product is the one that notices. The corollary is that this fix is
+preventive rather than remedial, and that a future migration stream would be adopting a new
+capability, not repairing existing damage.

@@ -128,15 +128,6 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `ts-utils-async-detailed-result` 🔵
-
-**Status:** 🔵 queued — branch `ts-utils-async-detailed-result` from `release` @ `b85b094b7`; brief at `.ai/tasks/active/ts-utils-async-detailed-result/brief.md`.
-**Package surface:** `@fgv/ts-utils` (`base/result.ts`) + `@fgv/ts-extras` (`safer-fetch/saferFetch.ts`, as the first consumer).
-
-**Mission.** Chaining an async step off a `DetailedResult<T, TD>` silently degrades it to a plain `Result<T>` and loses `TD`. `DetailedSuccess`/`DetailedFailure` extend `Success`/`Failure` and inherit `thenOnSuccess<TN>(cb): AsyncResult<TN>`, which carries no detail type, and no `AsyncDetailedResult` exists. **It type-checks** — the loss surfaces later or not at all, so a package whose failure taxonomy *is* its product can lose it by writing idiomatic code. Surfaced by `safer-fetch-s3` (#601), whose Result-chaining deliverable landed only partially for exactly this reason. 49 non-test files across 7 packages use `DetailedResult`. Extends the primitive rather than tidying the one consumer; `safer-fetch` rides along as the first real caller so the extension doesn't ship speculatively. Migrating the other six packages is deliberately **out of scope** — same reasoning `async-result-family-design.md` § 7 recorded for the sync family.
-
----
-
 
 ### `agent-memory-ingest-dedup-scope` 🟢
 
@@ -298,6 +289,24 @@ Design-triage-implement shape is likely; new public API has real consequences.
 ---
 
 ## Completed workstreams
+
+### `ts-utils-async-detailed-result` 🟢
+
+**Status:** 🟢 implemented + reviewed — branch `ts-utils-async-detailed-result` from `release` @ `b85b094b7`. All four deliverables landed; full monorepo build green; `ts-utils` and `ts-extras` suites pass at 100% coverage on the touched files with **no test changes required in `safer-fetch`**.
+**Substrate:** `.ai/tasks/active/ts-utils-async-detailed-result/{brief.md, result.md, findings/inbox/}`
+**Package surface:** `@fgv/ts-utils` (`base/result.ts`) + `@fgv/ts-extras` (`safer-fetch/saferFetch.ts`, as the first consumer).
+
+**Mission.** Chaining an async step off a `DetailedResult<T, TD>` silently degraded it to a plain `Result<T>` and lost `TD`. `DetailedSuccess`/`DetailedFailure` extend `Success`/`Failure` and inherited `thenOnSuccess<TN>(cb): AsyncResult<TN>`, which carries no detail type, and no `AsyncDetailedResult` existed. **It type-checked** — the loss surfaced later or not at all, so a package whose failure taxonomy *is* its product could lose it by writing idiomatic code. Surfaced by `safer-fetch-s3` (#601), whose Result-chaining deliverable landed only partially for exactly this reason. Extended the primitive rather than tidying the one consumer; `safer-fetch` rode along as the first real caller so the extension didn't ship speculatively.
+
+**Open questions, as resolved.** **OQ-1** — shape (a), an `AsyncDetailedResult<T, TD>` sibling, as recommended. It **extends `AsyncResult<T>`**, which turned out to be forced rather than stylistic: an override's return type must be assignable to the base method's, exactly as `DetailedSuccess extends Success` is what lets `onSuccess` return `DetailedResult`. The brief's escalation trigger (a contravariant position → prefer option (c)) did fire, but only on the **static** `from`, where renaming to `fromDetailed` costs nothing; the instance surface was clean and compiled first try. **OQ-2** — built the ladder, exactly as far as `AsyncResult`'s existing methods; no new combinators, and deliberately no `captureAsyncDetailedResult` (a captured throw has no detail to supply). **OQ-3** — did **not** force the `safer-fetch` pass; see below.
+
+**Measured `saferFetch.ts` pass (the OQ-3 answer).** Of **21** `isFailure()`/`isSuccess()` checks, **7** are on an awaited `DetailedResult` and **3** converted. The other 4 are exempt for reasons unrelated to this gap — 3 are `_walk`'s hop-loop control flow (the `CODING_STANDARDS` exemption, upheld by S3's own reviewer) and 1 is `_runAttempt`'s retry branch, which reads `walked.detail` to decide whether to recurse. The remaining 14 are on synchronous results or plain `Result`s that never had a detail to lose. Net: checks 21→18, chaining calls 12→15, and `_propagate` — a helper that exists *only* because a detail could not survive a chain — dropped from 11 call sites to 8. **The ts-utils gap explained a minority of the file's imperative checks and most of `saferFetch.ts` legitimately stays imperative**, which the brief anticipated and which is recorded rather than papered over.
+
+**Brief numbers corrected in-stream.** The brief's cross-package count (49 non-test files across 7 packages, `ts-utils` 14) measured **51 / 7**, with `ts-utils` at **16**. The `saferFetch.ts` figures were exact on lines (1,174) and chaining calls (12) but the check count is **21, not 22** — 22 *lines* match, and one of them is a comment carrying two occurrences.
+
+**Finding: nothing else is losing detail.** A sweep of all 34 `thenOnSuccess`/`thenOnFailure` call sites outside `ts-utils` found **none on a `DetailedResult`**. The five other `DetailedResult` consumer packages (`ts-json`, `ts-res`, `ts-json-base`, `ts-utils-jest`, `ts-web-extras`) do not use the async bridge at all; `ts-agent-memory`, `ts-prompt-assist` and `tools/ks`, which use it heavily, never reference `DetailedResult`. The trap was armed and only `safer-fetch` had walked into it — so this fix is **preventive, not remedial**, and a future migration stream would be adopting a capability rather than repairing damage. Per the brief, no other consumer package was migrated.
+
+---
 
 ### `fetch-primitive-threat-model` ✅
 
