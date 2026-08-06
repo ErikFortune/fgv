@@ -49,7 +49,7 @@ export type DeadlineRace<T> =
  * @internal
  */
 export class DeadlineWatch {
-  private readonly _controller: AbortController;
+  private _controller: AbortController;
   private readonly _startedAt: number;
   private readonly _timeoutMs: number;
   private readonly _headersTimeoutMs: number;
@@ -59,6 +59,11 @@ export class DeadlineWatch {
   private _overallTimer: ReturnType<typeof setTimeout> | undefined;
   private _headersTimer: ReturnType<typeof setTimeout> | undefined;
   private _cause: DeadlineStopCause | undefined;
+  /**
+   * Whether the current stop ends the whole call rather than just this attempt. The overall
+   * deadline and the caller's signal are terminal; the per-attempt headers deadline is not.
+   */
+  private _terminal: boolean;
   private _inBodyPhase: boolean;
   private readonly _waiters: Set<(cause: DeadlineStopCause) => void>;
 
@@ -68,6 +73,7 @@ export class DeadlineWatch {
     this._timeoutMs = timeoutMs;
     this._headersTimeoutMs = headersTimeoutMs;
     this._callerSignal = callerSignal;
+    this._terminal = false;
     this._inBodyPhase = false;
     this._waiters = new Set();
 
@@ -164,6 +170,86 @@ export class DeadlineWatch {
     }
   }
 
+  /**
+   * Records that an attempt has ended and another may follow: the headers deadline is disarmed,
+   * and a stop that ended only *that attempt* is cleared.
+   *
+   * @remarks
+   * **The headers deadline is attempt-scoped and the overall deadline is not.** A retry attempt
+   * that timed out waiting for headers must not leave the whole call stopped — without this,
+   * retry could never answer a `timeout.phase === 'headers'` failure, which is precisely the
+   * failure retry exists for. The composed signal is replaced rather than reset, because an
+   * aborted `AbortSignal` cannot be un-aborted.
+   *
+   * The overall deadline and the caller's signal are **terminal** by contrast: neither is about
+   * one attempt, and clearing either would let a retry loop outlive the budget the caller set or
+   * ignore the cancellation the caller requested. A terminal stop survives this call, so the
+   * backoff that follows is answered immediately and the call ends.
+   *
+   * Called between attempts rather than at the start of one, so the interval spent in a backoff
+   * is bounded by the overall deadline alone — arming a headers deadline over a sleep during
+   * which no request is outstanding would stop the call for a response nobody is waiting for.
+   */
+  public attemptEnded(): void {
+    if (this._headersTimer !== undefined) {
+      clearTimeout(this._headersTimer);
+      this._headersTimer = undefined;
+    }
+    // No attempt is in flight between attempts, so the call is not in its body phase — whatever
+    // the previous attempt reached. Without this, an attempt that failed *after* headers arrived
+    // (a body-read network error, a non-2xx) would leave the flag set through the backoff, and
+    // an overall-deadline expiry during that sleep would be reported as `timeout.phase: 'body'`
+    // while no bytes were being transferred at all. `phase` is part of the taxonomy's contract,
+    // and a phase that names the wrong thing is exactly the kind of small lie this primitive is
+    // built not to tell.
+    this._inBodyPhase = false;
+    if (this._terminal || this._cause === undefined) {
+      return;
+    }
+    this._cause = undefined;
+    this._controller = new AbortController();
+  }
+
+  /**
+   * How much of the overall deadline is left, in milliseconds, never below zero.
+   *
+   * @remarks
+   * Read by the retry scheduler, which must not sleep past a deadline it is already inside:
+   * "the overall budget is the ceiling" is only enforceable if the remaining budget is
+   * observable.
+   */
+  public get remainingMs(): number {
+    return Math.max(0, this._timeoutMs - (Date.now() - this._startedAt));
+  }
+
+  /**
+   * Waits for the given number of milliseconds, or until the call is stopped — whichever comes
+   * first.
+   *
+   * @remarks
+   * Backing the retry delay with the same watch the request races against is what keeps a
+   * caller's `abort()` responsive *between* attempts. A bare `setTimeout` would leave a caller
+   * who cancelled during a five-second backoff waiting out the full delay before being told the
+   * call was aborted.
+   *
+   * The timer is cleared however the wait ends, so a stopped delay leaves nothing pending —
+   * which matters in a test runner, where a stray timer keeps the process alive.
+   */
+  public async delay(ms: number): Promise<DeadlineRace<true>> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await this.race(
+        new Promise<true>((resolve) => {
+          timer = setTimeout(() => resolve(true), ms);
+        })
+      );
+    } finally {
+      if (timer !== undefined) {
+        clearTimeout(timer);
+      }
+    }
+  }
+
   /** Builds the failure reason corresponding to why the call was stopped. */
   public toFailureReason(cause: DeadlineStopCause): FetchFailureReason {
     if (cause === 'caller-aborted') {
@@ -201,6 +287,9 @@ export class DeadlineWatch {
       return;
     }
     this._cause = cause;
+    // Every cause but the per-attempt headers deadline ends the call: the overall deadline is
+    // the whole budget, and the caller's signal is the caller's decision.
+    this._terminal = cause !== 'headers';
     const waiters = Array.from(this._waiters);
     this._waiters.clear();
     this._controller.abort();

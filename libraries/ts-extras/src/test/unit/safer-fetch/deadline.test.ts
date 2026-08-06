@@ -150,4 +150,173 @@ describe('DeadlineWatch', () => {
       watch.dispose();
     }
   });
+
+  describe('remainingMs', () => {
+    test('reports the unspent share of the overall deadline', async () => {
+      const watch = new DeadlineWatch(1_000, 1_000);
+      try {
+        expect(watch.remainingMs).toBeGreaterThan(900);
+        expect(watch.remainingMs).toBeLessThanOrEqual(1_000);
+        await after(60);
+        expect(watch.remainingMs).toBeLessThan(950);
+      } finally {
+        watch.dispose();
+      }
+    });
+
+    test('never reports a negative budget', async () => {
+      // The retry scheduler compares a computed delay against this; a negative value would read
+      // as "no budget" only by accident, and as a very large budget under a sign slip.
+      const watch = new DeadlineWatch(10, 1_000);
+      try {
+        await after(40);
+        expect(watch.remainingMs).toBe(0);
+      } finally {
+        watch.dispose();
+      }
+    });
+  });
+
+  describe('delay', () => {
+    test('waits out the interval when nothing stops the call', async () => {
+      const watch = new DeadlineWatch(1_000, 1_000);
+      try {
+        const startedAt: number = Date.now();
+        await expect(watch.delay(40)).resolves.toEqual({ stopped: false, value: true });
+        expect(Date.now() - startedAt).toBeGreaterThanOrEqual(30);
+      } finally {
+        watch.dispose();
+      }
+    });
+
+    test('is cut short by a caller abort, and says so', async () => {
+      // What makes a caller's cancellation responsive during a retry backoff rather than after
+      // it: a bare setTimeout would make the caller wait out the full delay.
+      const controller = new AbortController();
+      const watch = new DeadlineWatch(10_000, 10_000, controller.signal);
+      try {
+        const pending = watch.delay(5_000);
+        controller.abort();
+        await expect(pending).resolves.toEqual({ stopped: true, cause: 'caller-aborted' });
+      } finally {
+        watch.dispose();
+      }
+    });
+
+    test('is cut short by the overall deadline', async () => {
+      const watch = new DeadlineWatch(30, 10_000);
+      try {
+        await expect(watch.delay(5_000)).resolves.toEqual({ stopped: true, cause: 'overall' });
+      } finally {
+        watch.dispose();
+      }
+    });
+
+    test('leaves no timer pending once it has been cut short', async () => {
+      // A stray five-second timer would keep a test runner — and a process — alive well past
+      // the call it belonged to.
+      const controller = new AbortController();
+      const watch = new DeadlineWatch(10_000, 10_000, controller.signal);
+      try {
+        const pending = watch.delay(5_000);
+        controller.abort();
+        await pending;
+        // No assertion beyond the suite finishing promptly; jest's open-handle detection is the
+        // real check, and it only reports on a timer that is still armed.
+        expect(watch.cause).toBe('caller-aborted');
+      } finally {
+        watch.dispose();
+      }
+    });
+  });
+
+  describe('attemptEnded', () => {
+    test('clears a headers timeout so the next attempt starts clean', async () => {
+      const watch = new DeadlineWatch(10_000, 20);
+      try {
+        await expect(watch.race(after(200).then(() => 'late'))).resolves.toEqual({
+          stopped: true,
+          cause: 'headers'
+        });
+        const stoppedSignal = watch.signal;
+
+        watch.attemptEnded();
+        expect(watch.cause).toBeUndefined();
+        // A fresh signal, because an aborted one cannot be un-aborted — and the transport on
+        // the next attempt must not be handed a signal that has already fired.
+        expect(watch.signal).not.toBe(stoppedSignal);
+        expect(watch.signal.aborted).toBe(false);
+
+        watch.attemptStarted();
+        await expect(watch.race(Promise.resolve('value'))).resolves.toEqual({
+          stopped: false,
+          value: 'value'
+        });
+      } finally {
+        watch.dispose();
+      }
+    });
+
+    test('does not clear a caller abort', async () => {
+      // The caller's decision is about the call, not about one attempt: clearing it would let a
+      // retry loop ignore a cancellation it has already been told about.
+      const controller = new AbortController();
+      const watch = new DeadlineWatch(10_000, 10_000, controller.signal);
+      try {
+        controller.abort();
+        watch.attemptEnded();
+        expect(watch.cause).toBe('caller-aborted');
+        await expect(watch.race(Promise.resolve('value'))).resolves.toEqual({
+          stopped: true,
+          cause: 'caller-aborted'
+        });
+      } finally {
+        watch.dispose();
+      }
+    });
+
+    test('does not clear an overall-deadline expiry', async () => {
+      const watch = new DeadlineWatch(20, 10_000);
+      try {
+        await expect(watch.race(after(200).then(() => 'late'))).resolves.toEqual({
+          stopped: true,
+          cause: 'overall'
+        });
+        watch.attemptEnded();
+        expect(watch.cause).toBe('overall');
+      } finally {
+        watch.dispose();
+      }
+    });
+
+    test('leaves the call out of its body phase, so a backoff timeout is not called a body timeout', async () => {
+      // An attempt that failed *after* headers arrived leaves `headersReceived()` behind it. The
+      // backoff that follows transfers no bytes, so an overall-deadline expiry during it is an
+      // 'overall' timeout, not a 'body' one — `phase` is part of the taxonomy's contract.
+      const watch = new DeadlineWatch(40, 10_000);
+      try {
+        watch.attemptStarted();
+        watch.headersReceived();
+        watch.attemptEnded();
+        await expect(watch.delay(5_000)).resolves.toEqual({ stopped: true, cause: 'overall' });
+        expect(watch.toFailureReason('overall')).toEqual(
+          expect.objectContaining({ kind: 'timeout', phase: 'overall', limitMs: 40 })
+        );
+      } finally {
+        watch.dispose();
+      }
+    });
+
+    test('is a no-op on a watch that has not been stopped', async () => {
+      const watch = new DeadlineWatch(10_000, 10_000);
+      try {
+        const signal = watch.signal;
+        watch.attemptEnded();
+        expect(watch.cause).toBeUndefined();
+        expect(watch.signal).toBe(signal);
+      } finally {
+        watch.dispose();
+      }
+    });
+  });
 });

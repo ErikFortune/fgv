@@ -91,3 +91,52 @@ export const ALWAYS_STRIPPED_HEADERS: ReadonlyArray<string> = [
  * @public
  */
 export const SUPPORTED_SCHEMES: ReadonlyArray<string> = ['http:', 'https:'];
+
+/**
+ * Default base delay for {@link SaferFetch.IRetryPolicy | retry} backoff, in milliseconds.
+ * @public
+ */
+export const DEFAULT_RETRY_BASE_DELAY_MS: number = 250;
+
+/**
+ * Default ceiling on a single {@link SaferFetch.IRetryPolicy | retry} delay, in milliseconds.
+ *
+ * @remarks
+ * It bounds the computed backoff **and** a server-supplied `Retry-After`. That second role is
+ * the security-relevant one: `Retry-After` is a header an attacker-controlled server chooses
+ * freely, so an unclamped `Retry-After: 86400` is a denial of service on the caller.
+ * @public
+ */
+export const DEFAULT_RETRY_MAX_DELAY_MS: number = 5_000;
+
+/**
+ * HTTP statuses a {@link SaferFetch.IRetryPolicy | retry policy} will retry.
+ *
+ * @remarks
+ * Every other status — including every other 4xx — is terminal. A `401`, a `403` and a `404`
+ * mean the same thing on the second attempt as on the first, and retrying them turns a client
+ * bug into load against a service that already said no.
+ * @public
+ */
+export const RETRYABLE_HTTP_STATUSES: ReadonlyArray<number> = [408, 429, 500, 502, 503, 504];
+
+/**
+ * Statuses whose `Retry-After` header is honored.
+ *
+ * @remarks
+ * `429` and `503` are the two the header is specified for and the two where it carries real
+ * scheduling information. Honoring it on a `500` would let any failing endpoint dictate the
+ * caller's schedule for no benefit.
+ * @public
+ */
+export const RETRY_AFTER_STATUSES: ReadonlyArray<number> = [429, 503];
+
+/**
+ * Methods retried without an explicit opt-in.
+ *
+ * @remarks
+ * A timeout does not tell you whether the server processed the request, so a retried `POST`
+ * can double-charge. `retryNonIdempotent` opts out, per call, visibly.
+ * @public
+ */
+export const IDEMPOTENT_METHODS: ReadonlyArray<string> = ['GET', 'HEAD'];

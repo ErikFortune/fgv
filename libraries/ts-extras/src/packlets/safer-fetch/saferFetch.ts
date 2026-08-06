@@ -45,7 +45,17 @@ import {
 } from './defaults';
 import type { FetchFailureReason } from './failureReason';
 import { resolveGuards } from './guards';
+import {
+  computeRetryDelayMs,
+  honorsRetryAfter,
+  isRetryableFailure,
+  isRetryableMethod,
+  parseRetryAfterMs,
+  resolveRetryPolicy,
+  type IResolvedRetryPolicy
+} from './retry';
 import type {
+  IGuardVerdict,
   IRequestHop,
   IResolvedGuards,
   ISaferFetchOptions,
@@ -83,7 +93,48 @@ interface IResolvedCallOptions {
   readonly maxRedirects: number;
   /** Lowercased; the always-stripped three unioned with the caller's additions. */
   readonly sensitiveHeaders: ReadonlySet<string>;
+  /** Never absent once resolved: an omitted `retry` option resolves to zero attempts. */
+  readonly retry: IResolvedRetryPolicy;
   readonly logger: Logging.ILogger;
+}
+
+/**
+ * Per-attempt out-channel for scheduling information the failure taxonomy deliberately does not
+ * carry.
+ *
+ * @remarks
+ * `Retry-After` is advice to this process about when to come back, not a fact about the response
+ * — and it is chosen by a server this threat model treats as potentially hostile, so it does not
+ * belong on a `FetchFailureReason` that callers are invited to log and map. Carrying it beside
+ * the failure instead of on it keeps the taxonomy's surface unchanged.
+ *
+ * A fresh instance is created per attempt, so a stale header from the attempt before cannot
+ * schedule the attempt after.
+ */
+interface IAttemptNotes {
+  /** Raw `Retry-After` header of the response that failed, when one was sent. */
+  retryAfter?: string;
+}
+
+/**
+ * A hop the address guard has cleared: the URL that will actually be requested, and the address
+ * the guard requires the connection to be pinned to, if any.
+ */
+interface IClearedHop {
+  readonly url: URL;
+  readonly pinnedAddress: string | undefined;
+}
+
+/**
+ * A hop that has already been requested and redirected away from.
+ *
+ * @remarks
+ * Narrows `IRequestHop.status` from optional to required. A completed hop always has one — it
+ * is the redirect status that produced its successor — and typing it as present is what lets
+ * loop detection name that status without inventing a fallback for a case that cannot occur.
+ */
+interface ICompletedHop extends IRequestHop {
+  readonly status: number;
 }
 
 /**
@@ -145,6 +196,43 @@ function _blocked<T>(seam: string, url: URL, hop: number, guard: string, detail:
  */
 async function _capture<T>(fn: () => Promise<Result<T>>): Promise<Result<T>> {
   return captureAsyncResult(fn).onSuccess((inner) => inner);
+}
+
+/**
+ * Runs a guard or transport call against the deadlines and folds all three outcomes — stopped,
+ * refused, cleared — into one `DetailedResult` the caller can chain from.
+ *
+ * @remarks
+ * Exists so the request path reads as a chain rather than as five copies of the same
+ * stopped-then-failed ladder. The taxonomy mapping stays per-site, because it genuinely differs
+ * per site: an address guard's refusal is `'blocked-by-guard'`, a transport's is `'network'`,
+ * and a content-type guard's is `'unsupported-content-type'`.
+ *
+ * **A stop is checked first and is never re-derived afterwards.** A stop resolves every
+ * in-flight race the instant it fires, so reaching the failure branch means the work settled
+ * *before* the call gave up — and relabelling that as a timeout because the deadline expired a
+ * microsecond later would be the taxonomy lying about which came first.
+ *
+ * @param onAbandon - Released whenever the value will not be used — on a stop and on a refusal
+ * alike. In practice this is the response body: leaving one unconsumed holds the connection
+ * open for a call that has already failed.
+ */
+async function _raced<T>(
+  watch: DeadlineWatch,
+  work: () => Promise<Result<T>>,
+  toFailure: (message: string) => Outcome<T>,
+  onAbandon?: () => void
+): Promise<Outcome<T>> {
+  const race = await watch.race(_capture(work));
+  if (race.stopped) {
+    onAbandon?.();
+    return _stopped<T>(watch, race.cause);
+  }
+  if (race.value.isFailure()) {
+    onAbandon?.();
+    return toFailure(race.value.message);
+  }
+  return _succeed(race.value.value);
 }
 
 function _stopMessage(cause: DeadlineStopCause): string {
@@ -278,6 +366,11 @@ function _resolveCallOptions(options: ISaferFetchOptions): Outcome<IResolvedCall
     }
   }
 
+  const retry = resolveRetryPolicy(options.retry);
+  if (retry.isFailure()) {
+    return _unknown<IResolvedCallOptions>(retry.message);
+  }
+
   return _succeed({
     method,
     headers: _lowercaseHeaders(options.headers ?? {}),
@@ -288,6 +381,7 @@ function _resolveCallOptions(options: ISaferFetchOptions): Outcome<IResolvedCall
     redirectPolicy,
     maxRedirects,
     sensitiveHeaders: sensitiveHeaderSet(options.sensitiveHeaders),
+    retry: retry.value,
     logger: options.logger ?? new Logging.NoOpLogger()
   });
 }
@@ -377,14 +471,14 @@ async function _readCappedBody(
   }
   return _succeed(bytes);
 }
-
 async function _receive(
   response: Response,
   url: URL,
   chain: ReadonlyArray<IRequestHop>,
   guards: IResolvedGuards,
   resolved: IResolvedCallOptions,
-  watch: DeadlineWatch
+  watch: DeadlineWatch,
+  notes: IAttemptNotes
 ): Promise<Outcome<AttemptOutcome>> {
   if (response.type === 'opaqueredirect') {
     _discardBody(response);
@@ -416,7 +510,7 @@ async function _receive(
 
   const headers = _readHeaders(response);
   // Annotated because a `Record<string, string>` lookup is typed as present even when the
-  // header was never sent; these two are read as optional everywhere downstream.
+  // header was never sent; these are read as optional everywhere downstream.
   const contentType: string | undefined = headers['content-type'];
   const contentLength: string | undefined = headers['content-length'];
   const head: ISaferFetchResponseHead = {
@@ -429,6 +523,11 @@ async function _receive(
 
   if (!response.ok) {
     _discardBody(response);
+    // Recorded before the failure is built rather than carried on it: `Retry-After` is
+    // scheduling advice for this process, not a fact about the response worth widening the
+    // taxonomy — and the taxonomy is a surface callers may echo, which advice from an
+    // attacker-controlled server should not join.
+    notes.retryAfter = headers['retry-after'];
     return _fail<AttemptOutcome>(
       // `bodyPreview` is deliberately never populated: error bodies routinely echo request
       // content, including credentials.
@@ -438,27 +537,24 @@ async function _receive(
   }
 
   const hop = chain.length - 1;
-  const headGuarded = await watch.race(_capture(() => guards.responseHeaders.check(head, chain)));
-  if (headGuarded.stopped) {
-    _discardBody(response);
-    return _stopped<AttemptOutcome>(watch, headGuarded.cause);
-  }
-  if (headGuarded.value.isFailure()) {
-    _discardBody(response);
-    const accepted = guards.responseHeaders.acceptedContentTypes ?? undefined;
-    if (accepted !== undefined) {
-      return _fail<AttemptOutcome>(
-        { kind: 'unsupported-content-type', contentType: head.contentType, accepted },
-        `${url.toString()}: ${headGuarded.value.message}`
-      );
-    }
-    return _blocked<AttemptOutcome>(
-      'response-headers',
-      url,
-      hop,
-      guards.responseHeaders.name,
-      headGuarded.value.message
-    );
+  const headGuarded = await _raced(
+    watch,
+    () => guards.responseHeaders.check(head, chain),
+    (message) => {
+      // A content-type allowlist names itself by exposing `acceptedContentTypes`, and its
+      // rejections carry a more useful payload than an opaque policy refusal would.
+      const accepted = guards.responseHeaders.acceptedContentTypes ?? undefined;
+      return accepted !== undefined
+        ? _fail<true>(
+            { kind: 'unsupported-content-type', contentType: head.contentType, accepted },
+            `${url.toString()}: ${message}`
+          )
+        : _blocked<true>('response-headers', url, hop, guards.responseHeaders.name, message);
+    },
+    () => _discardBody(response)
+  );
+  if (headGuarded.isFailure()) {
+    return _propagate<true, AttemptOutcome>(headGuarded);
   }
 
   const body = await _readCappedBody(response, head, resolved.maxResponseBytes, watch);
@@ -466,59 +562,95 @@ async function _receive(
     return _propagate<Uint8Array, AttemptOutcome>(body);
   }
 
-  const bodyGuarded = await watch.race(_capture(() => guards.responseBody.check(body.value, head)));
-  if (bodyGuarded.stopped) {
-    return _stopped<AttemptOutcome>(watch, bodyGuarded.cause);
-  }
-  if (bodyGuarded.value.isFailure()) {
-    return _blocked<AttemptOutcome>(
-      'response-body',
-      url,
-      hop,
-      guards.responseBody.name,
-      bodyGuarded.value.message
-    );
-  }
+  return (
+    await _raced(
+      watch,
+      () => guards.responseBody.check(body.value, head),
+      (message) => _blocked<true>('response-body', url, hop, guards.responseBody.name, message)
+    )
+  ).onSuccess(() => _succeed<AttemptOutcome>({ kind: 'final', bytes: body.value, head }));
+}
 
-  return _succeed<AttemptOutcome>({ kind: 'final', bytes: body.value, head });
+/**
+ * Runs the address guard on the hop about to be requested and returns the URL it cleared.
+ *
+ * @remarks
+ * Split out of {@link _connect} so that the guard's verdict is available to the caller *before*
+ * anything is put on the wire. Redirect loop detection needs exactly that: it compares the hop
+ * about to be requested against the hops already requested, and both sides have to be
+ * guard-cleared URLs for the comparison to mean anything (see {@link _detectLoop}).
+ *
+ * It runs after the request guard, so a request guard that returned a replacement request
+ * cannot route around it, and it runs on **every** hop rather than only the first: a `302` to
+ * `http://169.254.169.254/` is exactly what a guard that only saw the caller's URL would miss.
+ */
+async function _clearAddress(
+  chain: ReadonlyArray<IRequestHop>,
+  guards: IResolvedGuards,
+  watch: DeadlineWatch
+): Promise<Outcome<IClearedHop>> {
+  const hop = chain[chain.length - 1];
+  const hopIndex = chain.length - 1;
+  return (
+    await _raced(
+      watch,
+      () => guards.address.check(chain),
+      (message) => _blocked<IGuardVerdict>('address', hop.url, hopIndex, guards.address.name, message)
+    )
+  ).onSuccess((verdict) =>
+    // A guard may normalize the URL it cleared; the normalized URL is what gets requested. The
+    // scheme is re-checked because normalization must never be able to widen it.
+    _checkScheme(verdict.url).onSuccess((url) =>
+      _succeed<IClearedHop>({ url, pinnedAddress: verdict.pinnedAddress ?? undefined })
+    )
+  );
+}
+
+/**
+ * Rejects a hop that revisits a URL already requested on this walk.
+ *
+ * @remarks
+ * `A → B → A → B` passes every per-hop check while consuming the whole redirect budget, and the
+ * hop cap alone would let it — the same reason the address guard is handed the chain rather
+ * than a counter.
+ *
+ * **Both sides of the comparison are guard-cleared URLs**, which is why this runs after
+ * {@link _clearAddress} rather than on the raw `Location` target. A guard may normalize the URL
+ * it clears — `IGuardVerdict.url` explicitly permits lowercasing a host, stripping a trailing
+ * dot, punycoding an IDN — so comparing a cleared URL against an uncleared one lets a repeat
+ * escape detection and run to `maxRedirects` instead. Comparing like with like is the whole
+ * fix; special-casing particular normalizations here would be worse than leaving it, because
+ * this layer does not own normalization and cannot anticipate what a custom guard does.
+ *
+ * `url` on the failure is the URL that **issued** the redirect, never the repeated target — the
+ * contract `FetchFailureReason.redirect-rejected` documents. The target is named in the message.
+ */
+function _detectLoop(cleared: URL, completed: ReadonlyArray<ICompletedHop>): Outcome<URL> {
+  const issuer = completed[completed.length - 1] ?? undefined;
+  // Hop 0 cannot repeat anything, so an empty chain is trivially clear — and there would be no
+  // issuing hop to name if it could.
+  if (issuer === undefined || !completed.some((hop) => hop.url.toString() === cleared.toString())) {
+    return _succeed(cleared);
+  }
+  return _fail<URL>(
+    { kind: 'redirect-rejected', url: issuer.url.toString(), status: issuer.status },
+    `${issuer.url.toString()} redirected with status ${
+      issuer.status
+    } to ${cleared.toString()}, which is already in the chain.`
+  );
 }
 
 async function _connect(
   request: ISaferFetchRequest,
+  cleared: IClearedHop,
   chain: ReadonlyArray<IRequestHop>,
   guards: IResolvedGuards,
   options: ISaferFetchOptions,
   resolved: IResolvedCallOptions,
-  watch: DeadlineWatch
+  watch: DeadlineWatch,
+  notes: IAttemptNotes
 ): Promise<Outcome<IAttempt>> {
   const transport = options.transport ?? platformFetchTransport;
-
-  // The address guard runs immediately before the connect, and after the request guard, so a
-  // request guard that returned a replacement request cannot route around it. It runs on every
-  // hop, not only the first: a `302` to `http://169.254.169.254/` is exactly what a guard that
-  // only saw the caller's URL would miss.
-  const verdict = await watch.race(_capture(() => guards.address.check(chain)));
-  if (verdict.stopped) {
-    return _stopped<IAttempt>(watch, verdict.cause);
-  }
-  if (verdict.value.isFailure()) {
-    return _blocked<IAttempt>(
-      'address',
-      request.url,
-      chain.length - 1,
-      guards.address.name,
-      verdict.value.message
-    );
-  }
-
-  // A guard may normalize the URL it cleared; the normalized URL is what gets requested. The
-  // scheme is re-checked because normalization must never be able to widen it.
-  const cleared = _checkScheme(verdict.value.value.url);
-  if (cleared.isFailure()) {
-    return _propagate<URL, IAttempt>(cleared);
-  }
-  const url = cleared.value;
-  const pinnedAddress = verdict.value.value.pinnedAddress ?? undefined;
 
   const init: RequestInit = {
     method: request.method,
@@ -535,31 +667,27 @@ async function _connect(
     init.body = typeof request.body === 'string' ? request.body : new Uint8Array(request.body);
   }
 
-  const sent = await watch.race(_capture(() => transport.fetch(url, init, { pinnedAddress })));
-  if (sent.stopped) {
-    return _stopped<IAttempt>(watch, sent.cause);
-  }
-  if (sent.value.isFailure()) {
-    // No `watch.cause` re-check here: a stop resolves every in-flight race the instant it
-    // fires, so reaching this line means the transport settled *before* we gave up. Reporting
-    // it as a network failure is the honest answer — relabelling it as a timeout because the
-    // deadline expired a microsecond later would be the taxonomy lying about which came first.
-    return _fail<IAttempt>(
-      { kind: 'network', detail: sent.value.message },
-      `transport "${transport.name}" failed: ${sent.value.message}`
-    );
+  const sent = await _raced(
+    watch,
+    () => transport.fetch(cleared.url, init, { pinnedAddress: cleared.pinnedAddress }),
+    (message) =>
+      _fail<Response>(
+        { kind: 'network', detail: message },
+        `transport "${transport.name}" failed: ${message}`
+      )
+  );
+  if (sent.isFailure()) {
+    return _propagate<Response, IAttempt>(sent);
   }
   watch.headersReceived();
 
-  // Downstream guards see the chain as it was actually requested, so the URL a response guard
-  // reads is the URL the address guard cleared — not the pre-normalization spelling.
-  const requested: ReadonlyArray<IRequestHop> = [...chain.slice(0, -1), { ...chain[chain.length - 1], url }];
-  return (await _receive(sent.value.value, url, requested, guards, resolved, watch)).onSuccess((outcome) =>
-    // The pin is recorded only once the transport has accepted it. A transport that cannot honor
-    // a pin is required to fail rather than connect by hostname, so a settled request with a pin
-    // set is evidence the pin held — which is the only basis on which recording it would be
-    // honest.
-    _succeed({ url, connectedAddress: pinnedAddress, outcome })
+  return (await _receive(sent.value, cleared.url, chain, guards, resolved, watch, notes)).onSuccess(
+    (outcome) =>
+      // The pin is recorded only once the transport has accepted it. A transport that cannot
+      // honor a pin is required to fail rather than connect by hostname, so a settled request
+      // with a pin set is evidence the pin held — which is the only basis on which recording it
+      // would be honest.
+      _succeed({ url: cleared.url, connectedAddress: cleared.pinnedAddress, outcome })
   );
 }
 
@@ -570,13 +698,12 @@ async function _connect(
  * The hop cap is checked before the target is resolved: a chain that has already run out of
  * budget stops for that reason, whatever the `Location` header happens to contain.
  *
- * Loop detection compares against every URL already requested, not just the previous one.
- * `A→B→A→B` passes every per-hop check while consuming the whole budget, and a cap alone would
- * let it — which is the same reason the address guard is handed the chain rather than a counter.
+ * Loop detection is deliberately **not** here — it belongs after the address guard has cleared
+ * the next hop, where both sides of the comparison are cleared URLs. See {@link _detectLoop}.
  */
 function _nextHop(
   from: URL,
-  completed: ReadonlyArray<IRequestHop>,
+  completed: ReadonlyArray<ICompletedHop>,
   redirect: { readonly status: number; readonly location: string },
   request: ISaferFetchRequest,
   resolved: IResolvedCallOptions
@@ -589,6 +716,9 @@ function _nextHop(
     );
   }
 
+  // The plain-`Result`-to-`DetailedResult` conversion is done here rather than chained, for the
+  // same reason `_parseUrl` and `_decodeText` do it: it is the boundary where a `Result` becomes
+  // an `Outcome`, and naming the boundary is what lets everything downstream of it chain.
   const located = resolveLocation(redirect.location, from);
   if (located.isFailure()) {
     return _fail<ISaferFetchRequest>(
@@ -596,56 +726,226 @@ function _nextHop(
       `invalid redirect target: ${located.message}`
     );
   }
-  const cleared = _checkScheme(located.value);
-  if (cleared.isFailure()) {
-    return _propagate<URL, ISaferFetchRequest>(cleared);
-  }
-  const to = cleared.value;
 
-  // KNOWN LIMIT — detection is exact-match, and the two sides are not normalized alike.
-  // `completed` holds guard-CLEARED URLs, while `to` is the freshly resolved `Location` that the
-  // guard has not seen yet. A guard that normalizes — `IGuardVerdict.url` explicitly permits
-  // lowercasing a host, stripping a trailing dot, punycoding an IDN — can therefore produce a
-  // stored URL that a later raw target does not match, and the repeat runs to `maxRedirects`
-  // instead of being caught here.
-  //
-  // Not reachable with any guard this package ships: neither `allowAnyAddress` nor
-  // `blockPrivateNetworks` normalizes, and the WHATWG parser has already lowercased hosts and
-  // punycoded IDNs on both sides. Bounded when it is reachable — every hop is still fully
-  // address-guarded, so the cost is a longer walk, not a bypass.
-  //
-  // The fix is to compare like with like, checking after the guard clears the hop so the
-  // cleared URL is the identity on both sides. That means splitting the guard step out of
-  // `_connect`, which is S3's to do. Special-casing trailing dots here would be worse than
-  // leaving it: this layer does not own normalization and cannot anticipate what a custom guard
-  // does, so it would advertise a completeness it would not have.
-  const visited: ReadonlyArray<string> = [...completed.map((h) => h.url.toString()), from.toString()];
-  if (visited.includes(to.toString())) {
-    return _fail<ISaferFetchRequest>(
-      { kind: 'redirect-rejected', url: from.toString(), status: redirect.status },
-      `${from.toString()} redirected with status ${
-        redirect.status
-      } to ${to.toString()}, which is already in the chain.`
+  return _checkScheme(located.value).onSuccess((to) => {
+    // Headers come from the request that was actually sent on this hop, never from the
+    // caller's original set — that carry-forward is what makes credential stripping monotonic.
+    const rewritten = rewriteForRedirect({
+      from,
+      to,
+      status: redirect.status,
+      method: request.method,
+      headers: request.headers,
+      body: request.body,
+      sensitiveHeaders: resolved.sensitiveHeaders
+    });
+    return _succeed<ISaferFetchRequest>({
+      url: to,
+      method: rewritten.method,
+      headers: rewritten.headers,
+      ...(rewritten.body !== undefined ? { body: rewritten.body } : {})
+    });
+  });
+}
+
+/**
+ * Walks one attempt: the caller's URL, then every redirect hop it leads to, each fully guarded.
+ *
+ * @remarks
+ * **A retry calls this again from the top, with a request rebuilt from the caller's resolved
+ * options.** Nothing is carried across attempts — not the guard's verdict, not the redirect
+ * chain, not the headers a previous attempt's cross-origin hop had already stripped. That is
+ * what makes a retry a full re-walk rather than a resume, and the reason is in
+ * {@link SaferFetch.IRetryPolicy}: a cached verdict would turn retry into a DNS-rebinding
+ * amplifier, and a resumed chain would revalidate hops the new attempt no longer follows.
+ */
+async function _walk(
+  url: URL,
+  guards: IResolvedGuards,
+  options: ISaferFetchOptions,
+  resolved: IResolvedCallOptions,
+  watch: DeadlineWatch,
+  notes: IAttemptNotes
+): Promise<Outcome<IRawOutcome>> {
+  let request: ISaferFetchRequest = {
+    url,
+    method: resolved.method,
+    headers: resolved.headers,
+    ...(resolved.body !== undefined ? { body: resolved.body } : {})
+  };
+  /** Hops already requested and redirected away from, oldest first. */
+  const completed: ICompletedHop[] = [];
+
+  for (;;) {
+    // Re-arms the per-attempt headers deadline. Without this, the first hop's
+    // `headersReceived()` would retire it for the whole call and a later host that never
+    // answers would be bounded only by the overall deadline.
+    watch.attemptStarted();
+
+    const guarded = await _raced(
+      watch,
+      () => guards.request.check(request, [...completed, { url: request.url }]),
+      (message) =>
+        _blocked<ISaferFetchRequest>('request', request.url, completed.length, guards.request.name, message)
     );
+    if (guarded.isFailure()) {
+      return _propagate<ISaferFetchRequest, IRawOutcome>(guarded);
+    }
+
+    const checked = guarded.value;
+    const rechecked = _checkScheme(checked.url);
+    if (rechecked.isFailure()) {
+      return _propagate<URL, IRawOutcome>(rechecked);
+    }
+
+    // The address guard runs immediately before the connect and after the request guard, so it
+    // is always the last word before anything reaches the wire.
+    const cleared = await _clearAddress([...completed, { url: checked.url }], guards, watch);
+    if (cleared.isFailure()) {
+      return _propagate<IClearedHop, IRawOutcome>(cleared);
+    }
+
+    const unrepeated = _detectLoop(cleared.value.url, completed);
+    if (unrepeated.isFailure()) {
+      resolved.logger.detail(`saferFetch: ${cleared.value.url.toString()} failed: ${unrepeated.message}`);
+      return _propagate<URL, IRawOutcome>(unrepeated);
+    }
+
+    // Downstream guards see the chain as it was actually requested, so the URL a response guard
+    // reads is the URL the address guard cleared — not the pre-normalization spelling.
+    const requested: ReadonlyArray<IRequestHop> = [...completed, { url: cleared.value.url }];
+    const attempted = await _connect(
+      checked,
+      cleared.value,
+      requested,
+      guards,
+      options,
+      resolved,
+      watch,
+      notes
+    );
+    if (attempted.isFailure()) {
+      resolved.logger.detail(`saferFetch: ${cleared.value.url.toString()} failed: ${attempted.message}`);
+      return _propagate<IAttempt, IRawOutcome>(attempted);
+    }
+    const attempt = attempted.value;
+
+    if (attempt.outcome.kind === 'final') {
+      return _succeed({
+        bytes: attempt.outcome.bytes,
+        head: attempt.outcome.head,
+        urlChain: [...completed.map((hop) => hop.url.toString()), attempt.url.toString()]
+      });
+    }
+
+    const next = _nextHop(attempt.url, completed, attempt.outcome, checked, resolved);
+    if (next.isFailure()) {
+      resolved.logger.detail(`saferFetch: ${attempt.url.toString()} failed: ${next.message}`);
+      return _propagate<ISaferFetchRequest, IRawOutcome>(next);
+    }
+
+    completed.push({
+      url: attempt.url,
+      status: attempt.outcome.status,
+      ...(attempt.connectedAddress !== undefined ? { connectedAddress: attempt.connectedAddress } : {})
+    });
+    request = next.value;
+  }
+}
+
+/**
+ * Decides how long to wait before retrying a failed walk, or that it must not be retried.
+ *
+ * @remarks
+ * Every rule that can refuse a retry is applied here, in one place, so "would this have been
+ * retried?" is answerable by reading one function: the attempt budget, the retryable-failure
+ * set, the idempotency rule, the `Retry-After` clamp, and the overall deadline as ceiling.
+ *
+ * **The deadline is the last word.** When the remaining budget is shorter than the computed
+ * delay, the call fails with the attempt's own failure rather than sleeping past the deadline
+ * the caller set — a `timeout` reported at `timeoutMs` is what the caller asked for, and one
+ * reported at `timeoutMs + backoff` is a primitive that does not keep its own promises.
+ */
+function _retryDelayMs(
+  reason: FetchFailureReason | undefined,
+  attempt: number,
+  resolved: IResolvedCallOptions,
+  notes: IAttemptNotes,
+  watch: DeadlineWatch
+): number | undefined {
+  const policy = resolved.retry;
+  if (attempt >= policy.attempts) {
+    return undefined;
+  }
+  if (!isRetryableFailure(reason) || !isRetryableMethod(resolved.method, policy)) {
+    return undefined;
+  }
+  const retryAfterMs = honorsRetryAfter(reason, policy)
+    ? parseRetryAfterMs(notes.retryAfter, Date.now())
+    : undefined;
+  const delay = computeRetryDelayMs({
+    attempt,
+    policy,
+    ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
+    random: Math.random
+  });
+  return delay <= watch.remainingMs ? delay : undefined;
+}
+
+/**
+ * Runs one attempt and, if the policy says so, the next one after it.
+ *
+ * @remarks
+ * Recursive rather than a loop, because **a retry is a fresh start rather than another turn of
+ * something already in progress**: every attempt is a full {@link _walk} from hop 0, and nothing
+ * survives the boundary — not the guard's verdict, not the redirect chain, not the headers a
+ * cross-origin hop stripped, not the previous response's `Retry-After`. Expressing that as a
+ * self-call keeps the "nothing carries over" property visible in the shape of the code rather
+ * than resting on a reader noticing which variables are declared inside the loop body.
+ *
+ * Depth is bounded by `retry.attempts` and each level is `await`ed, so the frames unwind rather
+ * than nest.
+ *
+ * @param attempt - 0-based index of the attempt about to run; `0` is the caller's first request.
+ */
+async function _runAttempt(
+  url: URL,
+  guards: IResolvedGuards,
+  options: ISaferFetchOptions,
+  resolved: IResolvedCallOptions,
+  watch: DeadlineWatch,
+  attempt: number
+): Promise<Outcome<IRawOutcome>> {
+  // Fresh per attempt: notes describe the attempt that just failed, and carrying a previous
+  // attempt's `Retry-After` into a later decision would schedule against a response that is no
+  // longer the reason we are retrying.
+  const notes: IAttemptNotes = {};
+  const walked = await _walk(url, guards, options, resolved, watch, notes);
+  // `!isFailure()` rather than `isSuccess()`: only the former narrows to the failure branch
+  // below, where `detail` is known to be present.
+  if (!walked.isFailure()) {
+    return walked;
   }
 
-  // Headers come from the request that was actually sent on this hop, never from the caller's
-  // original set — that carry-forward is what makes credential stripping monotonic.
-  const rewritten = rewriteForRedirect({
-    from,
-    to,
-    status: redirect.status,
-    method: request.method,
-    headers: request.headers,
-    body: request.body,
-    sensitiveHeaders: resolved.sensitiveHeaders
-  });
-  return _succeed({
-    url: to,
-    method: rewritten.method,
-    headers: rewritten.headers,
-    ...(rewritten.body !== undefined ? { body: rewritten.body } : {})
-  });
+  const delay = _retryDelayMs(walked.detail, attempt, resolved, notes, watch);
+  if (delay === undefined) {
+    return walked;
+  }
+  // Clears an attempt-scoped stop — a headers timeout ends the attempt, not the call — so the
+  // backoff below is not answered instantly by the previous attempt's own deadline. A terminal
+  // stop deliberately survives, and ends the call at the first race below.
+  watch.attemptEnded();
+  resolved.logger.detail(
+    `saferFetch: ${url.toString()} failed (${walked.message}); retrying in ` +
+      `${Math.round(delay)}ms — attempt ${attempt + 2} of ${resolved.retry.attempts + 1}.`
+  );
+
+  // Delayed on the same watch the request races against, so a caller who aborts during a backoff
+  // is answered then rather than after the sleep.
+  const slept = await watch.delay(delay);
+  return slept.stopped
+    ? _stopped<IRawOutcome>(watch, slept.cause)
+    : _runAttempt(url, guards, options, resolved, watch, attempt + 1);
 }
 
 async function _execute(url: string | URL, options: ISaferFetchOptions): Promise<Outcome<IRawOutcome>> {
@@ -667,82 +967,22 @@ async function _execute(url: string | URL, options: ISaferFetchOptions): Promise
   }
 
   const watch = new DeadlineWatch(resolved.timeoutMs, resolved.headersTimeoutMs, options.signal);
-  try {
-    let request: ISaferFetchRequest = {
-      url: parsed.value,
-      method: resolved.method,
-      headers: resolved.headers,
-      ...(resolved.body !== undefined ? { body: resolved.body } : {})
-    };
-    /** Hops already requested and redirected away from, oldest first. */
-    const completed: IRequestHop[] = [];
-
-    for (;;) {
-      // Re-arms the per-attempt headers deadline. Without this, the first hop's
-      // `headersReceived()` would retire it for the whole call and a later host that never
-      // answers would be bounded only by the overall deadline.
-      watch.attemptStarted();
-
-      const guarded = await watch.race(
-        _capture(() => guards.request.check(request, [...completed, { url: request.url }]))
-      );
-      if (guarded.stopped) {
-        return _stopped<IRawOutcome>(watch, guarded.cause);
-      }
-      if (guarded.value.isFailure()) {
-        return _blocked<IRawOutcome>(
-          'request',
-          request.url,
-          completed.length,
-          guards.request.name,
-          guarded.value.message
-        );
-      }
-
-      const checked = guarded.value.value;
-      const rechecked = _checkScheme(checked.url);
-      if (rechecked.isFailure()) {
-        return _propagate<URL, IRawOutcome>(rechecked);
-      }
-
-      const attempted = await _connect(
-        checked,
-        [...completed, { url: checked.url }],
-        guards,
-        options,
-        resolved,
-        watch
-      );
-      if (attempted.isFailure()) {
-        resolved.logger.detail(`saferFetch: ${checked.url.toString()} failed: ${attempted.message}`);
-        return _propagate<IAttempt, IRawOutcome>(attempted);
-      }
-      const attempt = attempted.value;
-
-      if (attempt.outcome.kind === 'final') {
-        return _succeed({
-          bytes: attempt.outcome.bytes,
-          head: attempt.outcome.head,
-          urlChain: [...completed.map((h) => h.url.toString()), attempt.url.toString()]
-        });
-      }
-
-      const next = _nextHop(attempt.url, completed, attempt.outcome, checked, resolved);
-      if (next.isFailure()) {
-        resolved.logger.detail(`saferFetch: ${attempt.url.toString()} failed: ${next.message}`);
-        return _propagate<ISaferFetchRequest, IRawOutcome>(next);
-      }
-
-      completed.push({
-        url: attempt.url,
-        status: attempt.outcome.status,
-        ...(attempt.connectedAddress !== undefined ? { connectedAddress: attempt.connectedAddress } : {})
-      });
-      request = next.value;
-    }
-  } finally {
-    watch.dispose();
-  }
+  // `captureAsyncResult` rather than `try`/`finally`, for the same reason `_capture` wraps every
+  // guard and transport call: an entry point documented to always return a `Result` has to keep
+  // that promise even when a collaborator breaks its own. Nothing inside is *supposed* to throw
+  // — guards, transports and the body read are each captured already — but the caller's
+  // `logger` is collaborator code this primitive does not wrap, and a thrown diagnostic must not
+  // become the caller's problem. The watch is disposed on both paths because the capture has
+  // already converted the throw into a value.
+  const ran = await captureAsyncResult(async () =>
+    _runAttempt(parsed.value, guards, options, resolved, watch, 0)
+  );
+  watch.dispose();
+  return ran.isFailure()
+    ? // `'unknown'` is the taxonomy's honest slot for "something violated its contract", rather
+      // than a guess at a more specific kind.
+      _unknown<IRawOutcome>(`saferFetch: unexpected error: ${ran.message}`)
+    : ran.value;
 }
 
 function _toResponse<T>(value: T, raw: IRawOutcome): ISaferFetchResponse<T> {

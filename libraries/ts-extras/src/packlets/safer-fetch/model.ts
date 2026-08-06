@@ -20,6 +20,8 @@
 
 import type { Logging, Result } from '@fgv/ts-utils';
 
+import type { IRetryPolicy } from './retry';
+
 /**
  * HTTP methods a safer-fetch call may use.
  * @public
@@ -370,6 +372,18 @@ export interface ISaferFetchOptions {
    * chain does not hand the credential back to `A` after `B` has watched it leave.
    */
   readonly sensitiveHeaders?: ReadonlyArray<string>;
+
+  /**
+   * Opt-in retry. **Off by default** — a primitive that silently retries changes the semantics
+   * of every call site and amplifies load against a service that is already struggling.
+   *
+   * @remarks
+   * Retries consume `timeoutMs` and never reset it, so enabling retry does not extend the
+   * deadline; and every attempt re-runs the address guard from hop 0 as a full re-walk, never a
+   * resume and never a cached verdict. Both rules are load-bearing rather than incidental — see
+   * {@link SaferFetch.IRetryPolicy}, which states why.
+   */
+  readonly retry?: IRetryPolicy;
 
   /** Defaults to {@link SaferFetch.platformFetchTransport}. */
   readonly transport?: IFetchTransport;

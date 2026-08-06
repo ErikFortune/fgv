@@ -1,7 +1,12 @@
 # Safer Fetch Primitive — Threat Model and Design
 
-Status: **design only — no implementation.** Written for review before any
-implementation stream is commissioned.
+Status: **fully implemented.** The core (#594), address classification (#592) and the
+threat-model corrections shipped via #597; the redirect walk and DNS guard shipped as S2b
+(#599); retry, the browser packlet, the guarantee tables and the `LIBRARY_CAPABILITIES` entry
+shipped as S3 — the last stream of the series. Where the implementation departed from this
+document, the departure is recorded in **Appendix D**, and the shipped behaviour is what the two
+READMEs' guarantee tables state. Originally written for review before any implementation stream
+was commissioned; retained as the rationale record.
 Owner libraries (proposed): `@fgv/ts-extras` (core + Node guard) and
 `@fgv/ts-web-extras` (browser entry point)
 Requesting consumer: PersonAIlity
@@ -37,6 +42,7 @@ is one I would defend; every gap is named rather than implied.
 - [Appendix A — where the three findings were incomplete](#appendix-a--where-the-three-findings-were-incomplete)
 - [Appendix B — design-history record](#appendix-b--design-history-record)
 - [Appendix C — consumer validation](#appendix-c--consumer-validation-personaility-2026-08-01)
+- [Appendix D — implementation divergences](#appendix-d--implementation-divergences)
 
 ---
 
@@ -1626,3 +1632,97 @@ the redirect chain is not stable across attempts, so a retry must re-walk from
 hop 0 rather than resume.
 
 ---
+
+## Appendix D — implementation divergences
+
+Where the shipped code contradicts the body of this document. Recorded rather than silently
+reconciled, because the body is the rationale record and a reader who finds it and the code
+disagreeing deserves to know which is authoritative. **In every row the code is authoritative**,
+and the two READMEs' guarantee tables state what actually ships.
+
+### D-a — `redirect: 'manual'` on both runtimes, not `'error'` in the browser (§ 5.2, § 5.4)
+
+§ 5.4's "Reject-all-redirects mode" row credits the browser with `redirect: 'error'`. The shipped
+core uses `redirect: 'manual'` on **every** call, on both runtimes.
+
+**S3 considered switching the browser path to `'error'` under `'reject'`, and declined.** The
+*guarantee* is identical either way — a manual redirect in a browser yields an opaque response
+with no readable `Location`, which this primitive then rejects, so nothing is ever followed. What
+differs is the failure **reason**, and `'error'` is strictly worse there: the platform rejects the
+promise with a generic `TypeError` indistinguishable from a DNS failure or a connection reset, so
+the taxonomy would report `'network'` — losing the fact that a redirect was the cause. Under
+`'manual'` the same event surfaces as `'redirect-opaque'`, which names it exactly.
+
+For a primitive whose structured failure taxonomy is itself a deliverable (§ 8), trading a
+precise reason for a phrasing that matches the design document is the wrong trade. § 5.4's row is
+restated in both READMEs as "✅ (enforced; surfaces as `'redirect-opaque'`)".
+
+### D-b — `redirectPolicy` defaults to `'reject'` on both runtimes (§ 12)
+
+§ 12 proposes `'validate-each-hop'` (Node) / `'follow-unvalidated'` (browser). Shipped: `'reject'`
+on both, and **there is no `'follow-unvalidated'` mode at all** — a mode that defers to the
+platform's own redirect following would put hops on the wire that the guard never saw, which § 4
+argues against directly. Settled during #599 and carried forward unchanged; the conservative
+default matches the polarity of `addressGuard` having no default.
+
+### D-c — the port allowlist is an opt-in restriction, not a `{443}` default (§ 12)
+
+§ 12 gives ports a default of `{443}` (`{80,443}` with insecure HTTP). Shipped:
+`blockPrivateNetworks({ allowPorts })` restricts when supplied and does not restrict when absent.
+
+A default of `{443}` would reject `https://api.example.com:8443/` — a common, entirely public
+endpoint — with a `'blocked-by-guard'` failure that reads as an SSRF block. The value of a port
+allowlist is deployment-specific in a way the scheme rule's is not, so it is offered rather than
+imposed. § 13 L6's Ollama example passes `allowPorts: [11434]` explicitly and is literally
+runnable as written.
+
+### D-d — the `https:`-only default landed later than the document implies (§ 12)
+
+§ 12 lists a scheme default of `https:` only, opt in with `allowInsecureHttp`. Through S1/S2 no
+shipped guard implemented it: the core refuses everything that is not `http:`/`https:` and
+delegates the choice between the two to the address guard, but no guard made that choice. S3
+implements it on `blockPrivateNetworks`, which now refuses `http:` unless `allowInsecureHttp` is
+set. This is a **behaviour change to a shipped guard** and a strengthening; it is called out here
+because a reader of § 12 would reasonably have assumed it was there from the start.
+
+### D-e — the browser packlet keeps `addressGuard` required (§ 5.3 vs § 5.5)
+
+§ 5.3 describes the browser packlet as "the core wired to `allowAnyAddress()`"; § 5.5's own
+example has a browser caller passing `addressGuard: allowAnyAddress()` explicitly. The two
+readings are incompatible, and the shipped code follows § 5.5.
+
+Wiring the guard internally would remove, on the browser side, the single mechanism § 5.5 argues
+is the most effective one available: a browser call site that spells `allowAnyAddress()` says out
+loud that no SSRF guarantee is in force, and a reviewer greps one identifier to enumerate every
+such site. A wrapper that supplied it silently would make a browser call *look* protected. The
+requirement is also not empty ceremony — a browser guard can still decide on the scheme, host and
+port of the URL it is handed, which is a real (if narrow) posture.
+
+### D-f — the browser refuses `'validate-each-hop'` at option resolution (new)
+
+Not in the document, resolved as an S3 open question. The browser barrel accepts the mode at the
+type level (one core, one shared type) and now rejects it at option resolution with a message
+naming the runtime, rather than accepting it and failing at the first redirect as
+`'redirect-opaque'`. The late failure was honest but reported the symptom; worse, a caller whose
+URLs happen never to redirect would never see it and would ship believing per-hop revalidation
+was in force.
+
+### D-g — the address-classification layer ships from the browser barrel (§ 5.3)
+
+`classifyAddress` and the pure policies `allowAnyAddressPolicy` / `blockPrivateNetworksPolicy` are
+runtime-agnostic — pure arithmetic over parsed octets, no I/O — and now ship from
+`index.browser.ts` as well as `index.ts`. They are useful for a URL-zero check on an IP literal.
+Both barrels state that this is **not** a substitute for the resolved-address guard: it classifies
+an address a caller already holds, and what the browser lacks is any way to learn the address a
+hostname resolves to.
+
+### D-h — the headers deadline is attempt-scoped; the overall deadline is terminal (§ 10, § 11)
+
+An implementation consequence § 10 did not anticipate. § 11 makes `{ kind: 'timeout' }` retryable,
+but a headers timeout stops the composed `AbortSignal` — so a naive implementation could never
+retry the very failure retry exists for. `DeadlineWatch` therefore distinguishes an
+**attempt-scoped** stop (the headers deadline, cleared between attempts along with a fresh
+`AbortController`) from a **terminal** one (the overall deadline and the caller's signal, which
+survive and end the call). The caller-visible contract is exactly what § 10 and § 11 describe;
+this note exists so the distinction is not mistaken for an accident.
+
