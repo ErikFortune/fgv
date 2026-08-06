@@ -193,6 +193,27 @@ the `active/` path for `result.md`, and the move belongs to the orchestrator at 
   (additive public API), `patch` for `ts-extras`. Both were `none`.
 - Stray blank line above the next ledger heading removed.
 
+## Copilot loop (layer 2)
+
+**Round 1 — 3 comments, all valid, all applied.** No correctness findings; the substantive class had
+already been taken by layer 1.
+
+1. **Design-doc accuracy (the real one).** § 8's status line read "implemented and merged" while the
+   PR is open — the same doc-accuracy defect I had just corrected in the ledger, missed one file
+   over. Now reads "implemented; PR #602 open against `release`, not yet merged", with a note that
+   § 1–§ 7 describe #596 and *are* merged, so the two statuses are not confused.
+2. **Unnecessary cast.** `as unknown as Response` on a `Proxy` return — `Proxy`'s constructor is
+   generic and infers `Response` from its target. Verified by removing it and rebuilding: it
+   compiles, and coverage held at 100%. Correct call, and it removes a cast from a repo whose
+   standards treat casts as a smell.
+3. **Grammar.** A missing "that" in a one-line comment. Applied.
+
+Round 1's profile is doc-accuracy + a cast + a typo — no correctness, no anti-patterns. That is the
+diminishing-returns signal per `CODING_STANDARDS` ("round 2 surfaces only … stop now; the loop is in
+nitpick territory regardless of round count"), reached at round 1 here because layer 1 had already
+taken the substantive finding. Round 2 requested to confirm the fixes; **stopping after it unless it
+surfaces something substantive.**
+
 ## Design decision worth flagging: rejections carry no detail
 
 A callback that throws synchronously or rejects becomes a `DetailedFailure` with

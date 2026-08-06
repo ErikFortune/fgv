@@ -183,7 +183,7 @@ function _unknown<T>(message: string): Outcome<T> {
   return _fail<T>({ kind: 'unknown', detail: message }, message);
 }
 
-/** The wrapping every escaped-exception path reports, in one place so the two agree exactly. */
+/** The wrapping that every escaped-exception path reports, defined once so the two agree exactly. */
 function _unexpected<T>(message: string): Outcome<T> {
   return _unknown<T>(`saferFetch: unexpected error: ${message}`);
 }

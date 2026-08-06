@@ -943,7 +943,7 @@ describe('saferFetch entry points', () => {
           const value: unknown = Reflect.get(target, prop, target);
           return typeof value === 'function' ? value.bind(target) : value;
         }
-      }) as unknown as Response;
+      });
     }
 
     /**
