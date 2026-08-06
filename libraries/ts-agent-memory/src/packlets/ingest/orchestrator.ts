@@ -6,6 +6,7 @@
 import { Hash, Logging, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import {
   Convert,
+  DedupScope,
   EntityId,
   IEdge,
   IEdgeTarget,
@@ -17,7 +18,6 @@ import {
   Kind,
   LinkType,
   MemoryId,
-  MemoryScopeKey,
   Tag,
   edgeTargetKey,
   isTemporalRecord,
@@ -310,6 +310,7 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     const edgesResult: Result<ReadonlyArray<ICandidateEdge>> = await this._relate(
       item,
       writablePlans,
+      MemoryIngestOrchestrator._collapseRedirects(plans),
       scoped,
       byKey
     );
@@ -443,7 +444,9 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
 
   /**
    * Stage 4 — resolve a dedup verdict. Layer 1: an exact `{ kind, body }` match in
-   * the candidate's scope is a `duplicate-of` (design note §1). Layer 2 (only when
+   * the candidate's scope is a `duplicate-of`, at the granularity the kind's
+   * {@link DedupScope} declares — scope-wide for `'content'`, restricted to the
+   * candidate's own entity for `'entity'` (design note §1). Layer 2 (only when
    * a resolver + vector index + embedder are all wired): embed the candidate,
    * surface over-threshold neighbors, and dispatch to the {@link IEntityResolver}.
    * Otherwise the verdict is `new` (the exact-only fall-back path).
@@ -456,7 +459,7 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     snapshot: ReadonlyArray<IMemoryRecord<unknown>>,
     byKey: ReadonlyMap<string, IMemoryRecord<unknown>>
   ): Promise<Result<ResolutionVerdict>> {
-    return this._findExactMatch(kind, body, addr.scope, snapshot).thenOnSuccess(async (matchId) => {
+    return this._findExactMatch(kind, body, addr, snapshot).thenOnSuccess(async (matchId) => {
       if (matchId !== undefined) {
         // The exact-match cohort is filtered to `addr.scope`, so the match lives
         // under that scope — its scope-qualified target is `(addr.scope, matchId)`.
@@ -534,27 +537,52 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
   }
 
   /**
-   * Find an existing record in `scope` whose `{ kind, body }` hash matches the
-   * candidate's (layer-1 exact dedup). Invalidated temporal versions are excluded
-   * — only a live (non-temporal or current) record deduplicates a candidate.
+   * Find an existing record whose `{ kind, body }` hash matches the candidate's
+   * (layer-1 exact dedup, design note §1). Invalidated temporal versions are
+   * excluded — only a live (non-temporal or current) record deduplicates a
+   * candidate.
+   *
+   * @remarks
+   * The cohort's granularity is the kind's DECLARED {@link DedupScope}, read
+   * through {@link IMemoryStore.dedupScopeFor} so this layer and the store's own
+   * write path can never disagree:
+   *
+   * - `'content'` — every live same-kind record in the candidate's scope,
+   *   regardless of entity. A cross-id body collision IS a duplicate (the
+   *   knowledge family; unchanged behavior).
+   * - `'entity'` — only records at the candidate's OWN entity address. Two
+   *   distinct entities with byte-identical bodies never collapse into one
+   *   another, which is what the declaration has always meant on the direct-put
+   *   path and now means here too.
+   *
+   * The same-id collapse itself remains the store's job — this layer only decides
+   * whether a cross-id body collision is eligible to be a `duplicate-of` at all.
    */
   private _findExactMatch(
     kind: Kind,
     body: string,
-    scope: MemoryScopeKey,
+    addr: IIdentityCodecResult,
     snapshot: ReadonlyArray<IMemoryRecord<unknown>>
   ): Result<MemoryId | undefined> {
+    const dedupScope: DedupScope = this._store.dedupScopeFor(kind);
     // Same-kind, same-scope, LIVE (non-temporal or current) records are the exact
-    // cohort. `_resolveAddress(...).map(...).orDefault()` collapses an unresolved
-    // codec to a non-matching scope with no explicit failure branch.
-    const cohort: ReadonlyArray<IMemoryRecord<unknown>> = snapshot.filter(
-      (record) =>
-        record.envelope.kind === kind &&
-        !(isTemporalRecord(record) && !isVersionCurrent(record)) &&
-        this._resolveAddress(record.envelope.entityId, record.envelope.kind)
-          .onSuccess((addr) => succeed(addr.scope))
-          .orDefault() === scope
-    );
+    // cohort, narrowed to the candidate's own entity address under `'entity'`
+    // granularity. `_resolveAddress(...).orDefault()` collapses an unresolved
+    // codec to `undefined` — a non-matching address — with no explicit failure
+    // branch, exactly as the scope-only filter did before.
+    const cohort: ReadonlyArray<IMemoryRecord<unknown>> = snapshot.filter((record) => {
+      if (record.envelope.kind !== kind || (isTemporalRecord(record) && !isVersionCurrent(record))) {
+        return false;
+      }
+      const recordAddr: IIdentityCodecResult | undefined = this._resolveAddress(
+        record.envelope.entityId,
+        record.envelope.kind
+      ).orDefault();
+      if (recordAddr === undefined || recordAddr.scope !== addr.scope) {
+        return false;
+      }
+      return dedupScope === 'content' || recordAddr.idStem === addr.idStem;
+    });
     return this._exactKey(kind, body).onSuccess((key) =>
       mapResults(
         cohort.map((record) =>
@@ -588,10 +616,11 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     return this._hasher.computeHash({ kind, body });
   }
 
-  /** Stage 5 — relate (host), validate edges, and run the write-time cycle guard. */
+  /** Stage 5 — relate (host), redirect collapsed targets, validate edges, and run the write-time cycle guard. */
   private async _relate(
     item: IIngestItem,
     writablePlans: ReadonlyArray<ICandidatePlan>,
+    redirects: ReadonlyMap<string, IEdgeTarget>,
     scoped: ReadonlyArray<IScopedRecord>,
     byKey: ReadonlyMap<string, IMemoryRecord<unknown>>
   ): Promise<Result<ReadonlyArray<ICandidateEdge>>> {
@@ -606,26 +635,92 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     if (proposed.isFailure()) {
       return proposed;
     }
+    // Redirect BEFORE validation and BEFORE the cycle guard: an edge naming a
+    // collapsed candidate must be judged — and persisted — against the record it
+    // collapsed into, not against the address that no longer gets written.
+    const edges: ReadonlyArray<ICandidateEdge> = MemoryIngestOrchestrator._redirectEdges(
+      proposed.value,
+      redirects
+    );
     // refIds and the existing-record view (`byKey`, shared with the verdict path)
     // both key on the canonical scoped address, so a stem reused across scopes
     // never aliases.
     const refIds: ReadonlySet<string> = new Set<string>(
       writablePlans.map((plan) => edgeTargetKey(plan.refTarget))
     );
-    const validation: Result<true> = this._validateEdges(item, proposed.value, refIds, byKey);
+    const validation: Result<true> = this._validateEdges(item, edges, refIds, byKey);
     if (validation.isFailure()) {
       return fail(validation.message);
     }
     if (this._cycleGuard === 'reject') {
       const guard: Result<true> = assertNoCycles(
         MemoryIngestOrchestrator._existingEdges(scoped),
-        proposed.value.map((e) => ({ source: e.source, target: e.edge.target, type: e.edge.type }))
+        edges.map((e) => ({ source: e.source, target: e.edge.target, type: e.edge.type }))
       );
       if (guard.isFailure()) {
         return fail(`ingest '${item.id}': ${guard.message}`);
       }
     }
-    return succeed(proposed.value);
+    return succeed(edges);
+  }
+
+  /**
+   * The stage-5 edge-target redirect map for this pass: every `duplicate-of`
+   * candidate's OWN scoped address, mapped to the address of the record its
+   * verdict collapsed it into (design note §3).
+   *
+   * @remarks
+   * A `duplicate-of` verdict means "this candidate IS that record". The candidate
+   * is therefore not written, and its address never becomes a live reference — so
+   * a sibling edge built against it in the same pass would resolve to neither a
+   * written candidate nor an existing record and would fail the WHOLE ingest item.
+   * That is a second-order hazard of collapsing, not a defect in the edge: the
+   * host related two candidates it was correctly told about, and one of them
+   * turned out to already exist.
+   *
+   * Redirecting is the honest repair, and it is independent of {@link DedupScope}
+   * — it applies equally to a `'content'` kind, where the collapse is exactly
+   * right and the ingest still must not fail.
+   *
+   * The map cannot chain: {@link MemoryIngestOrchestrator._planFromVerdict}
+   * requires every target-bearing verdict's target to already exist in the store
+   * snapshot, so a redirect destination is always a persisted record and never
+   * another collapsed candidate. One pass is sufficient by construction.
+   */
+  private static _collapseRedirects(plans: ReadonlyArray<ICandidatePlan>): ReadonlyMap<string, IEdgeTarget> {
+    const redirects: Map<string, IEdgeTarget> = new Map<string, IEdgeTarget>();
+    for (const plan of plans) {
+      if (plan.verdict.verdict === 'duplicate-of') {
+        redirects.set(edgeTargetKey(plan.refTarget), plan.verdict.target);
+      }
+    }
+    return redirects;
+  }
+
+  /**
+   * Rewrite each edge whose TARGET names a collapsed candidate to point at the
+   * record that candidate collapsed into.
+   *
+   * @remarks
+   * Only the target is redirected. An edge whose SOURCE is a collapsed candidate
+   * stays untouched and is still rejected by {@link
+   * MemoryIngestOrchestrator._validateEdges}: sources are the records an edge is
+   * written ONTO, a collapsed candidate is never written, and the relation
+   * extractor is only ever offered writable candidates as edge sources in the
+   * first place. Silently relocating such an edge onto an existing record would
+   * attribute a link the host never asked for — the loud failure is correct there.
+   */
+  private static _redirectEdges(
+    edges: ReadonlyArray<ICandidateEdge>,
+    redirects: ReadonlyMap<string, IEdgeTarget>
+  ): ReadonlyArray<ICandidateEdge> {
+    if (redirects.size === 0) {
+      return edges;
+    }
+    return edges.map((e) => {
+      const to: IEdgeTarget | undefined = redirects.get(edgeTargetKey(e.edge.target));
+      return to === undefined ? e : { ...e, edge: { ...e.edge, target: to } };
+    });
   }
 
   /**

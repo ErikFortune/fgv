@@ -558,6 +558,7 @@ describe('createMemoryTools', () => {
         list: async () => succeed([]),
         listScoped: async () => succeed([]),
         asRecordSource: () => ({ list: async () => succeed([]) }),
+        dedupScopeFor: () => 'content',
         put: async (record) => succeed(record),
         delete: async () => fail('unused')
       };
