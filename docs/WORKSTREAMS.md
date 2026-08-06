@@ -128,6 +128,18 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-memory-ingest-dedup-scope` 🟢
+
+**Status:** 🟢 implemented + reviewed — PR [#600](https://github.com/ErikFortune/fgv/pull/600) onto `release`, CI green, mergeable clean; ready to merge. Branch `agent-memory-ingest-dedup-scope` from `release` @ `b392e1534`. All five deliverables landed; suite green at 100% coverage; `code-reviewer` clean, Copilot loop stopped at round 2 on diminishing returns. Ran in parallel with `safer-fetch-s3`; no code overlap, but both edit `.ai/instructions/LIBRARY_CAPABILITIES.md` and this file — **own section only**.
+**Substrate:** `.ai/tasks/completed/2026-08/agent-memory-ingest-dedup-scope/{brief.md, state.md, result.md, findings/inbox/}`
+**Package surface:** `@fgv/ts-agent-memory` (`ingest`, `store/fileTreeMemoryStore.ts` — `IMemoryStore` lives there, not in the `types/memoryStore.ts` the brief named; that file does not exist).
+**Behavior change (OQ-3, intended, unflagged):** ingest layer-1 now honors `dedupScope`, so `'entity'` kinds (`MemoryCapCullPolicy` / `TemporalVersionedPolicy`) stop collapsing distinct entities with identical bodies on the `ingestItem` path. Kinds with no registered policy are unaffected — they resolve through the store's default `KnowledgeLwwPolicy`, which declares `'content'`.
+**Origin:** problem report from PersonAIlity (2026-08-04) against 5.1.0-46, triaged and verified against source.
+
+**Mission.** `dedupScope` is honored by the store and ignored by the ingest orchestrator, so a kind declaring `'entity'` still gets `'content'` behavior through `ingestItem` and the declaration is dead on that path. **`dedupScope` has zero references anywhere in `ingest/`.** Blast radius is wider than the report, though narrower than the brief stated: the affected kinds are those registering an `'entity'`-declaring policy (`MemoryCapCullPolicy` / `TemporalVersionedPolicy`) **whose codec puts distinct entities in one scope** — MTM turns and LTM conversations. A kind with no registered policy resolves through the store's default `KnowledgeLwwPolicy` to `'content'` and is unaffected; temporal kinds were already isolated because `TemporalIdentityCodec` gives each entity its own scope. (The brief's "every experience and versioned kind is affected" was corrected in-stream — see `result.md`.) Fixing it needs a seam first — the orchestrator holds an `IMemoryStore`, which exposes no policy accessor, which is why the consumer's proposed fix is not currently expressible. Carries a second, sharper fix the report surfaced: a `duplicate-of` collapse removes an address that sibling edges in the same pass were built against, failing the **whole** ingest item — true even for `'content'` kinds where the collapse is correct. Also writes `.claude/project/agent-memory-ingest-design.md`, the note three source files already cite but which did not exist.
+
+---
+
 ### `private-key-storage` ✅
 
 **Status:** ✅ implemented + reviewed (PR #427, gates green) — ready for squash to `release`

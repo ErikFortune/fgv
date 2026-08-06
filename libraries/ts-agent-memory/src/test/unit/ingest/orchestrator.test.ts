@@ -11,6 +11,7 @@ import {
   CONTRADICTS_LINK_TYPE,
   DEFAULT_SIMILARITY_THRESHOLD,
   DEFAULT_SIMILARITY_TOP_K,
+  DedupScope,
   EntityId,
   FileTreeMemoryStore,
   HOST_INGEST_PROVENANCE_SOURCE,
@@ -520,6 +521,9 @@ function mockStore(overrides: Partial<IMemoryStore>): IMemoryStore {
     listScoped:
       overrides.listScoped ??
       ((): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> => Promise.resolve(succeed([]))),
+    // Mirrors the store's default policy (KnowledgeLwwPolicy → 'content'), so a
+    // mock store keeps the pre-accessor layer-1 behavior unless a test overrides it.
+    dedupScopeFor: overrides.dedupScopeFor ?? ((): DedupScope => 'content'),
     asRecordSource:
       overrides.asRecordSource ??
       ((): IMemoryRecordSource => ({
