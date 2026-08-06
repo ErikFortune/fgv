@@ -34,3 +34,16 @@ PR, and `result.md`.
 
 Append a dated checkpoint after each deliverable in the brief, naming what landed, what is in
 progress, and anything the brief got wrong.
+
+### 2026-08-05 — closed out
+
+P2 from the `code-reviewer` pass fixed in `05f424b8`; coverage closed to 100% in all three
+packages with no `c8` directives (both gaps fixed in the code, not the measurement); Copilot loop
+run and closed at 2 rounds (`2fa29bc9`, `e16207d2`); PR #601 opened against `release`; `result.md`
+written. Nothing left in flight.
+
+### 2026-08-06 — artifacts migrated
+
+CI green, PR #601 open and mergeable. Artifacts moved to
+`.ai/tasks/completed/2026-08/safer-fetch-s3/` with a polished `README.md`, per the artifact
+protocol's pre-merge migration rule. This file is archived read-only from here.

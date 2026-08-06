@@ -294,6 +294,7 @@ Design-triage-implement shape is likely; new public API has real consequences.
 **Status:** ✅ **complete — design landed and fully implemented across four streams.** **S1** (core, #594) and **S2a** (address classification, #592) — both integrated via #597 — **S2b** (DNS-resolving guard + redirect walk, #599 — squashed to `release` @ `b392e1534`), and **S3** (`safer-fetch-s3` — retry, the loop-detection restructure, the Result-chaining pass, the `@fgv/ts-web-extras` browser packlet, both guarantee tables, the `LIBRARY_CAPABILITIES` entry, and a testbed scenario). The design doc's status line reads *fully implemented*, and every place the implementation departed from it is recorded in its **Appendix D**. Consumer: PersonAIlity.
 **Workflow shape:** design-first, then phased implementation per design § 14.
 **Deliverable:** `.claude/project/fetch-primitive-threat-model.md` (design) + the `safer-fetch` packlets.
+**S3 artifacts:** `.ai/tasks/completed/2026-08/safer-fetch-s3/{README.md, brief.md, state.md, result.md}`.
 **Package surface:** `@fgv/ts-extras` (`safer-fetch` packlet + conditional export) and `@fgv/ts-web-extras` (`safer-fetch` packlet), plus one `samples/testbed` scenario (`safer-fetch-guard`).
 **Out-of-scope:** all source under `libraries/`, the four existing `ai-assist` `fetch(` sites (deliberately left alone — bearer auth + provider error mapping + an SSE site where a buffering size cap is semantically wrong), `docs/STATUS.md`.
 

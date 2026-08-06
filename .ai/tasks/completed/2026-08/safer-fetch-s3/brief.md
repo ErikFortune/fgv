@@ -180,12 +180,12 @@ orchestrator-level provisioning gap, not an agent-level workaround.
 ## Findings-inbox convention
 
 Findings surfaced during the stream go to per-file inbox entries at
-`.ai/tasks/active/safer-fetch-s3/findings/inbox/<timestamp>-<slug>.md` — one finding per file.
+`.ai/tasks/completed/2026-08/safer-fetch-s3/findings/inbox/<timestamp>-<slug>.md` — one finding per file.
 The orchestrator drains the inbox into `followups.md`. Don't write to `followups.md` directly.
 
 ## Required exit artifact
 
-On completion, write `.ai/tasks/active/safer-fetch-s3/result.md` with: branch name; one-paragraph
+On completion, write `.ai/tasks/completed/2026-08/safer-fetch-s3/result.md` with: branch name; one-paragraph
 summary; files changed; build/test/lint status per command; an **observability self-audit** (grep
 in-scope paths for `console.*` in business logic — zero hits, or document each kept site);
 a **convention-compliance sweep** against `.ai/instructions/CODE_REVIEW_CHECKLIST.md`; a
@@ -195,7 +195,7 @@ cross-runtime patterns); open questions for downstream; and any deviation from t
 
 ## Resume protocol
 
-If interrupted: re-read this brief in full, read `.ai/tasks/active/safer-fetch-s3/state.md` for the
+If interrupted: re-read this brief in full, read `.ai/tasks/completed/2026-08/safer-fetch-s3/state.md` for the
 last checkpoint, and confirm scope and boundaries still apply before resuming.
 
 ## One note on how the prior streams went
