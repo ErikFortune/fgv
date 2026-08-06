@@ -130,7 +130,8 @@ substrate. Don't queue streams against them here.
 
 ### `agent-memory-ingest-dedup-scope` 🟢
 
-**Status:** 🟢 implemented — PR open onto `release`; branch `agent-memory-ingest-dedup-scope` from `release` @ `b392e1534`; brief at `.ai/tasks/active/agent-memory-ingest-dedup-scope/brief.md`, result at `.ai/tasks/active/agent-memory-ingest-dedup-scope/result.md`. All five deliverables landed; suite green at 100% coverage. Runs in parallel with `safer-fetch-s3`; no code overlap, but both edit `.ai/instructions/LIBRARY_CAPABILITIES.md` and this file — **own section only**.
+**Status:** 🟢 implemented + reviewed — PR [#600](https://github.com/ErikFortune/fgv/pull/600) onto `release`, CI green, mergeable clean; ready to merge. Branch `agent-memory-ingest-dedup-scope` from `release` @ `b392e1534`. All five deliverables landed; suite green at 100% coverage; `code-reviewer` clean, Copilot loop stopped at round 2 on diminishing returns. Ran in parallel with `safer-fetch-s3`; no code overlap, but both edit `.ai/instructions/LIBRARY_CAPABILITIES.md` and this file — **own section only**.
+**Substrate:** `.ai/tasks/completed/2026-08/agent-memory-ingest-dedup-scope/{brief.md, state.md, result.md, findings/inbox/}`
 **Package surface:** `@fgv/ts-agent-memory` (`ingest`, `store/fileTreeMemoryStore.ts` — `IMemoryStore` lives there, not in the `types/memoryStore.ts` the brief named; that file does not exist).
 **Behavior change (OQ-3, intended, unflagged):** ingest layer-1 now honors `dedupScope`, so `'entity'` kinds (`MemoryCapCullPolicy` / `TemporalVersionedPolicy`) stop collapsing distinct entities with identical bodies on the `ingestItem` path. Kinds with no registered policy are unaffected — they resolve through the store's default `KnowledgeLwwPolicy`, which declares `'content'`.
 **Origin:** problem report from PersonAIlity (2026-08-04) against 5.1.0-46, triaged and verified against source.
