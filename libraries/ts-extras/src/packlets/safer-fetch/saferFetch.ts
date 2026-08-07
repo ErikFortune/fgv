@@ -183,6 +183,32 @@ function _unknown<T>(message: string): Outcome<T> {
   return _fail<T>({ kind: 'unknown', detail: message }, message);
 }
 
+/** The wrapping that every escaped-exception path reports, defined once so the two agree exactly. */
+function _unexpected<T>(message: string): Outcome<T> {
+  return _unknown<T>(`saferFetch: unexpected error: ${message}`);
+}
+
+/**
+ * Restores the taxonomy's invariant that **every** failure leaving this module carries a
+ * `FetchFailureReason`.
+ *
+ * @remarks
+ * Only one thing can produce a detail-less failure: a bug inside this module that throws or
+ * rejects somewhere a `thenOnSuccess` callback catches it. `AsyncDetailedResult` converts such a
+ * throw to a `DetailedFailure` with `detail: undefined` — correctly, since a thrown error supplies
+ * no reason and inventing one would be worse — but that is a *chaining* primitive's contract, not
+ * this module's.
+ *
+ * Before the chaining pass those throws propagated as real rejections all the way to
+ * {@link _execute}'s `captureAsyncResult` and were reported as `'unknown'`. Catching them earlier
+ * must not change what the caller sees, so the same wrapping is reapplied here. Without this a
+ * caller switching on `detail.kind` — the documented way to consume this API — would fault on
+ * `undefined`.
+ */
+function _withReason<T>(outcome: Outcome<T>): Outcome<T> {
+  return outcome.isFailure() && outcome.detail === undefined ? _unexpected<T>(outcome.message) : outcome;
+}
+
 function _blocked<T>(seam: string, url: URL, hop: number, guard: string, detail: string): Outcome<T> {
   return _fail<T>(
     { kind: 'blocked-by-guard', url: url.toString(), hop, guard, detail },
@@ -537,38 +563,37 @@ async function _receive(
   }
 
   const hop = chain.length - 1;
-  const headGuarded = await _raced(
-    watch,
-    () => guards.responseHeaders.check(head, chain),
-    (message) => {
-      // A content-type allowlist names itself by exposing `acceptedContentTypes`, and its
-      // rejections carry a more useful payload than an opaque policy refusal would.
-      const accepted = guards.responseHeaders.acceptedContentTypes ?? undefined;
-      return accepted !== undefined
-        ? _fail<true>(
-            { kind: 'unsupported-content-type', contentType: head.contentType, accepted },
-            `${url.toString()}: ${message}`
-          )
-        : _blocked<true>('response-headers', url, hop, guards.responseHeaders.name, message);
-    },
-    () => _discardBody(response)
-  );
-  if (headGuarded.isFailure()) {
-    return _propagate<true, AttemptOutcome>(headGuarded);
-  }
-
-  const body = await _readCappedBody(response, head, resolved.maxResponseBytes, watch);
-  if (body.isFailure()) {
-    return _propagate<Uint8Array, AttemptOutcome>(body);
-  }
-
+  // Chained rather than stepped: `thenOnSuccess` now preserves `FetchFailureReason` across an
+  // async step, so each stage's failure propagates with its detail intact and the two
+  // `_propagate` re-types this sequence used to need are gone.
   return (
     await _raced(
       watch,
-      () => guards.responseBody.check(body.value, head),
-      (message) => _blocked<true>('response-body', url, hop, guards.responseBody.name, message)
+      () => guards.responseHeaders.check(head, chain),
+      (message) => {
+        // A content-type allowlist names itself by exposing `acceptedContentTypes`, and its
+        // rejections carry a more useful payload than an opaque policy refusal would.
+        const accepted = guards.responseHeaders.acceptedContentTypes ?? undefined;
+        return accepted !== undefined
+          ? _fail<true>(
+              { kind: 'unsupported-content-type', contentType: head.contentType, accepted },
+              `${url.toString()}: ${message}`
+            )
+          : _blocked<true>('response-headers', url, hop, guards.responseHeaders.name, message);
+      },
+      () => _discardBody(response)
     )
-  ).onSuccess(() => _succeed<AttemptOutcome>({ kind: 'final', bytes: body.value, head }));
+  )
+    .thenOnSuccess(async () => _readCappedBody(response, head, resolved.maxResponseBytes, watch))
+    .thenOnSuccess(async (bytes) =>
+      (
+        await _raced(
+          watch,
+          () => guards.responseBody.check(bytes, head),
+          (message) => _blocked<true>('response-body', url, hop, guards.responseBody.name, message)
+        )
+      ).onSuccess(() => _succeed<AttemptOutcome>({ kind: 'final', bytes, head }))
+    );
 }
 
 /**
@@ -667,28 +692,30 @@ async function _connect(
     init.body = typeof request.body === 'string' ? request.body : new Uint8Array(request.body);
   }
 
-  const sent = await _raced(
-    watch,
-    () => transport.fetch(cleared.url, init, { pinnedAddress: cleared.pinnedAddress }),
-    (message) =>
-      _fail<Response>(
-        { kind: 'network', detail: message },
-        `transport "${transport.name}" failed: ${message}`
-      )
-  );
-  if (sent.isFailure()) {
-    return _propagate<Response, IAttempt>(sent);
-  }
-  watch.headersReceived();
-
-  return (await _receive(sent.value, cleared.url, chain, guards, resolved, watch, notes)).onSuccess(
-    (outcome) =>
+  return (
+    await _raced(
+      watch,
+      () => transport.fetch(cleared.url, init, { pinnedAddress: cleared.pinnedAddress }),
+      (message) =>
+        _fail<Response>(
+          { kind: 'network', detail: message },
+          `transport "${transport.name}" failed: ${message}`
+        )
+    )
+  )
+    .thenOnSuccess(async (response) => {
+      // Inside the continuation rather than before it, which is where it already ran: the
+      // headers deadline is retired only once a response has actually arrived.
+      watch.headersReceived();
+      return _receive(response, cleared.url, chain, guards, resolved, watch, notes);
+    })
+    .onSuccess((outcome) =>
       // The pin is recorded only once the transport has accepted it. A transport that cannot
       // honor a pin is required to fail rather than connect by hostname, so a settled request
       // with a pin set is evidence the pin held — which is the only basis on which recording it
       // would be honest.
       _succeed({ url: cleared.url, connectedAddress: cleared.pinnedAddress, outcome })
-  );
+    );
 }
 
 /**
@@ -981,8 +1008,11 @@ async function _execute(url: string | URL, options: ISaferFetchOptions): Promise
   return ran.isFailure()
     ? // `'unknown'` is the taxonomy's honest slot for "something violated its contract", rather
       // than a guess at a more specific kind.
-      _unknown<IRawOutcome>(`saferFetch: unexpected error: ${ran.message}`)
-    : ran.value;
+      _unexpected<IRawOutcome>(ran.message)
+    : // Same wrapping for a throw a `thenOnSuccess` callback caught before it could reach the
+      // capture above — see {@link _withReason}. This is the single boundary where an `Outcome`
+      // becomes the caller's result, so it is the one place the invariant has to hold.
+      _withReason(ran.value);
 }
 
 function _toResponse<T>(value: T, raw: IRawOutcome): ISaferFetchResponse<T> {

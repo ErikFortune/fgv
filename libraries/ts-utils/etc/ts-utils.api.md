@@ -164,6 +164,29 @@ function asValidator<T, TC = unknown>(converterOrValidator: Converter<T, TC> | V
 export type AsyncDeferredResult<T> = () => Promise<Result<T>>;
 
 // @public
+export type AsyncDetailedFailureContinuation<T, TD> = (message: string, detail?: TD) => PromiseLike<DetailedResult<T, TD>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "thenOnSuccess" has more than one declaration; you need to add a TSDoc member reference selector
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "thenOnSuccess" has more than one declaration; you need to add a TSDoc member reference selector
+//
+// @public
+export class AsyncDetailedResult<T, TD> extends AsyncResult<T> implements PromiseLike<DetailedResult<T, TD>> {
+    constructor(promise: PromiseLike<DetailedResult<T, TD>>);
+    aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter<TD>): AsyncDetailedResult<T, TD>;
+    static fromDetailed<T, TD>(result: DetailedResult<T, TD>): AsyncDetailedResult<T, TD>;
+    onFailure(cb: DetailedFailureContinuation<T, TD>): AsyncDetailedResult<T, TD>;
+    onSuccess<TN>(cb: DetailedSuccessContinuation<T, TD, TN>): AsyncDetailedResult<TN, TD>;
+    report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): AsyncDetailedResult<T, TD>;
+    then<TResult1 = DetailedResult<T, TD>, TResult2 = never>(onfulfilled?: ((value: DetailedResult<T, TD>) => TResult1 | PromiseLike<TResult1>) | null, onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null): Promise<TResult1 | TResult2>;
+    thenOnFailure(cb: AsyncDetailedFailureContinuation<T, TD>): AsyncDetailedResult<T, TD>;
+    thenOnSuccess<TN>(cb: AsyncDetailedSuccessContinuation<T, TD, TN>): AsyncDetailedResult<TN, TD>;
+    withErrorFormat(cb: ErrorFormatter<TD>): AsyncDetailedResult<T, TD>;
+}
+
+// @public
+export type AsyncDetailedSuccessContinuation<T, TD, TN> = (value: T, detail?: TD) => PromiseLike<DetailedResult<TN, TD>>;
+
+// @public
 export type AsyncFailureContinuation<T> = (message: string) => PromiseLike<Result<T>>;
 
 // @public
@@ -897,6 +920,10 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
     // (undocumented)
     orThrow(cb: ErrorFormatter): never;
     report(reporter?: IResultReporter<T, unknown>, options?: IResultReportOptions<unknown>): DetailedFailure<T, TD>;
+    thenOnFailure(cb: AsyncDetailedFailureContinuation<T, TD>): AsyncDetailedResult<T, TD>;
+    thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
+    thenOnSuccess<TN>(__cb: AsyncDetailedSuccessContinuation<T, TD, TN>): AsyncDetailedResult<TN, TD>;
+    thenOnSuccess<TN>(__cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
     static with<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD>;
     withErrorFormat(cb: ErrorFormatter<TD>): DetailedResult<T, TD>;
 }
@@ -921,6 +948,10 @@ export class DetailedSuccess<out T, out TD> extends Success<T> {
     onFailure(__cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD>;
     onSuccess<TN>(cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD>;
     report(reporter?: IResultReporter<T, unknown>, options?: IResultReportOptions<unknown>): DetailedSuccess<T, TD>;
+    thenOnFailure(__cb: AsyncDetailedFailureContinuation<T, TD>): AsyncDetailedResult<T, TD>;
+    thenOnFailure(__cb: AsyncFailureContinuation<T>): AsyncResult<T>;
+    thenOnSuccess<TN>(cb: AsyncDetailedSuccessContinuation<T, TD, TN>): AsyncDetailedResult<TN, TD>;
+    thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
     static with<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD>;
     withErrorFormat(cb: ErrorFormatter): DetailedResult<T, TD>;
 }

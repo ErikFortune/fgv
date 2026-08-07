@@ -929,6 +929,54 @@ describe('saferFetch entry points', () => {
     );
   });
 
+  describe('failure taxonomy invariant', () => {
+    /**
+     * A `Response` whose `headers` access throws, standing in for a bug *inside* this module
+     * rather than in a collaborator the guards already capture.
+     */
+    function throwsOnHeaderRead(): Response {
+      return new Proxy(new Response('hi', { status: 200 }), {
+        get: (target: Response, prop: string | symbol): unknown => {
+          if (prop === 'headers') {
+            throw new Error('internal boom');
+          }
+          const value: unknown = Reflect.get(target, prop, target);
+          return typeof value === 'function' ? value.bind(target) : value;
+        }
+      });
+    }
+
+    /**
+     * Every failure leaving an entry point carries a reason — including one produced by an
+     * internal throw. Such a throw used to propagate to `_execute`'s top-level capture; since the
+     * chaining pass it is caught earlier, by `thenOnSuccess`, which yields `detail: undefined`
+     * because a thrown error supplies no reason. Re-stamping it as `'unknown'` is what keeps a
+     * caller switching on `detail.kind` from faulting on `undefined`.
+     */
+    test('reports an internal throw as `unknown` rather than a detail-less failure', async () => {
+      const transport = respondWith(throwsOnHeaderRead);
+      await expect(saferFetchText(URL_UNDER_TEST, options(transport))).resolves.toFailWithDetail(
+        /saferFetch: unexpected error: internal boom/,
+        expect.objectContaining({ kind: 'unknown' })
+      );
+    });
+
+    test('the same holds for the bytes and json entry points', async () => {
+      await expect(
+        saferFetchBytes(URL_UNDER_TEST, options(respondWith(throwsOnHeaderRead)))
+      ).resolves.toFailWithDetail(
+        /saferFetch: unexpected error: internal boom/,
+        expect.objectContaining({ kind: 'unknown' })
+      );
+      await expect(
+        saferFetchJson(URL_UNDER_TEST, options(respondWith(throwsOnHeaderRead)))
+      ).resolves.toFailWithDetail(
+        /saferFetch: unexpected error: internal boom/,
+        expect.objectContaining({ kind: 'unknown' })
+      );
+    });
+  });
+
   describe('diagnostics', () => {
     test('logs a failure to the supplied logger without changing what the caller receives', async () => {
       const logger = new Logging.InMemoryLogger('detail');
