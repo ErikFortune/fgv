@@ -41,6 +41,10 @@
   "exports": {
     ".": {
       "types": "./lib/index.d.ts",
+      "node": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
       "import": "./dist/index.js",
       "require": "./lib/index.js",
       "default": "./lib/index.js"

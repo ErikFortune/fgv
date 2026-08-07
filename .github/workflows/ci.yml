@@ -33,3 +33,8 @@ jobs:
         run: node common/scripts/install-run-rush.js rebuild --verbose
       - name: Rush test
         run: node common/scripts/install-run-rush.js test --verbose
+      # Runs after rebuild because it loads built artifacts. Neither the build nor the test step
+      # can see this class of defect: TypeScript resolves types either way, and Jest runs in CJS so
+      # it never enters the `import` condition. See the script header.
+      - name: Verify ESM entry points are loadable
+        run: node common/scripts/verify-esm-entrypoints.mjs --verbose
