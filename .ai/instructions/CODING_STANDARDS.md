@@ -590,8 +590,31 @@ Every stream's acceptance criteria list must include:
 - [ ] No `any` types; all fallible operations return `Result<T>`
 - [ ] **`code-reviewer` agent run on the final diff; findings resolved or dispositioned** *(see "Review-loop discipline" below)*
 - [ ] **Copilot review loop driven by implementer; stopped on diminishing returns or 10-round cap** *(see "Review-loop discipline" below)*
+- [ ] **Every doc whose accuracy this stream changes is updated in the same PR** — design docs, READMEs, `LIBRARY_CAPABILITIES.md`, the streams ledger. Docs ship with the code that makes them true, never as a follow-up *(see "Docs ship with the code" below)*
 
 The bolded items above are the gap recently codified — multiple recent streams had lint failures escape into PR-open state, blocking cluster merges, and multi-round Copilot ping-pong on PRs that hadn't been internally reviewed first.
+
+### Docs ship with the code
+
+A stream that implements a design **updates that design's status in its own PR**. A stream that adds
+a public surface **adds its `LIBRARY_CAPABILITIES.md` entry in its own PR**. Never as a follow-up,
+never as a separate docs PR.
+
+**Why this is load-bearing.** The failure is not that the doc is briefly stale — it is that the
+correction becomes its own commit on `release`, and the repo accumulates doc-only commits that
+carry no code. Worse, the stale doc is *read as input by the next stream*: the safer-fetch threat
+model still opened with "design only — no implementation" while S1, S2a and S2b had shipped, and
+that same file was on the next stream's required-reading list. A fresh agent would have started
+from a document asserting that nothing had been built.
+
+The tell that this rule was skipped is a PR whose diff is only `.md` files correcting status lines.
+When you find yourself opening one, the question to ask is not "is this worth merging" but "which
+stream should have carried this, and is that stream still open?" If it is, fold it in and close the
+docs PR. Deferring is what created the cleanup in the first place.
+
+This applies to the streams ledger too: a stream that ships changes `docs/WORKSTREAMS.md`'s entry
+for itself. A ledger describing a shipped stream as "in flight — do not merge" is the same defect
+in a different file.
 
 ### Why this gate is load-bearing
 

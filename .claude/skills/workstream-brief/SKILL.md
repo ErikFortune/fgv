@@ -113,6 +113,9 @@ not an agent-level workaround.
 - [ ] Tests pass (`rush test` or `rushx test`)
 - [ ] Lint clean in any modified project (`rushx lint`)
 - [ ] No ad-hoc `console.*` in business logic — use `@fgv/ts-utils` Logging
+- [ ] Every doc whose accuracy this stream changes is updated **in the same PR** — design-doc
+      status, READMEs, `LIBRARY_CAPABILITIES.md`, and this stream's `docs/WORKSTREAMS.md` entry.
+      Docs ship with the code that makes them true, never as a follow-up docs PR.
 
 ## Handoff contract (what you publish for downstream streams)
 - <artifact> — consumed by <downstream stream id(s)>
@@ -192,6 +195,16 @@ go back to the source doc and refine.
   streams ledger.
 - **Don't skip the out-of-scope list.** That's the whole point of
   doing this for parallel runs.
+- **Don't leave the docs the stream invalidates out of scope.** If a
+  stream implements a design, its design doc's status line is *in*
+  scope and belongs in the deliverables — same for a README, a
+  `LIBRARY_CAPABILITIES.md` entry, and the stream's own
+  `docs/WORKSTREAMS.md` entry. Omit them and the correction becomes a
+  standalone docs PR later, which is both a doc-only commit on
+  `release` and a stale document sitting on the *next* stream's
+  required-reading list. Check the stream's own reading list: if the
+  stream will make one of those files wrong, it must also make it
+  right.
 - **Don't ship a brief without the observability compliance line.**
   When the rule isn't in the brief at the authoring moment, the
   pattern doesn't reach the implementing agent and ad-hoc

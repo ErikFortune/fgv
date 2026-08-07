@@ -148,6 +148,35 @@ export interface IMemoryStore {
   asRecordSource(): IMemoryRecordSource;
 
   /**
+   * The EFFECTIVE {@link DedupScope} for `kind` — the granularity at which a
+   * write for this kind deduplicates against the existing vault.
+   *
+   * @remarks
+   * This is a **read accessor over the store's already-injected write policies**,
+   * and it is the single place any caller — the store's own write path included —
+   * asks what a kind's dedup granularity is. It resolves the full chain the store
+   * applies on write: the kind's registered {@link IWritePolicy}, falling back to
+   * the store's default policy, then that policy's
+   * {@link IWritePolicy.dedupScope | dedupScope}, falling back to
+   * {@link DEFAULT_DEDUP_SCOPE}. Note the store's default policy is a
+   * {@link KnowledgeLwwPolicy}, which declares `'content'` — so a kind with NO
+   * registered policy resolves to `'content'`, not to `DEFAULT_DEDUP_SCOPE`.
+   *
+   * It exists so a caller that must agree with the store about dedup granularity
+   * — notably the ingest orchestrator's stage-4 layer-1 exact match — can read the
+   * declaration through this seam instead of being handed a second copy of the
+   * policy map. A second declaration site is precisely the defect this accessor
+   * was added to remove.
+   *
+   * Deliberately synchronous, total, and NOT `Result`-returning: it reads
+   * constructor-injected configuration, touches no I/O, and cannot fail (every
+   * link in the fallback chain has a total default). It exposes only the scope,
+   * never the {@link IWritePolicy} itself, so it can never become a back door for
+   * invoking admission or merge logic out of band.
+   */
+  dedupScopeFor(kind: Kind): DedupScope;
+
+  /**
    * Write a record. Validates the body, computes a content hash, deduplicates
    * (scope-wide, before policy), applies the kind's {@link IWritePolicy}, stamps
    * transaction-time metadata (`created` / `updated` / `seq` / `contentHash`),
@@ -811,7 +840,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
     hash: string
   ): Promise<Result<IPutOutcome>> {
     const policy: IWritePolicy = this._policyFor(record.envelope.kind);
-    const dedupScope: DedupScope = policy.dedupScope ?? DEFAULT_DEDUP_SCOPE;
+    // Read through the public accessor so the write path and every external
+    // caller (the ingest orchestrator's layer-1) resolve dedup granularity from
+    // ONE place — there is no second declaration site.
+    const dedupScope: DedupScope = this.dedupScopeFor(record.envelope.kind);
     // Content-hash dedup runs BEFORE policy. Its granularity is the kind's
     // `dedupScope`:
     //   - 'content': an identical { kind, body, links } triple ANYWHERE in the
@@ -1241,7 +1273,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
     const priorCurrents: ReadonlyArray<IMemoryRecord<unknown>> = versions.filter(isVersionCurrent);
     const current: IMemoryRecord<unknown> | undefined = selectCurrentVersion(versions);
     const policy: IWritePolicy = this._policyFor(kind);
-    const dedupScope: DedupScope = policy.dedupScope ?? DEFAULT_DEDUP_SCOPE;
+    // Same single-owner read as the flat path (see `_writeResolved`).
+    const dedupScope: DedupScope = this.dedupScopeFor(kind);
     return this._contentHash(kind, body, envelope.links).thenOnSuccess((hash) => {
       // Entity-scoped dedup: a re-put is a no-op only when the CURRENT content AND
       // its mutable metadata are unchanged (does not spawn a redundant version).
@@ -1582,6 +1615,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   private _policyFor(kind: Kind): IWritePolicy {
     return this._writePolicies.get(kind) ?? this._defaultPolicy;
+  }
+
+  /** {@inheritDoc IMemoryStore.dedupScopeFor} */
+  public dedupScopeFor(kind: Kind): DedupScope {
+    return this._policyFor(kind).dedupScope ?? DEFAULT_DEDUP_SCOPE;
   }
 
   /**

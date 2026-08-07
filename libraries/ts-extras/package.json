@@ -36,6 +36,16 @@
         "require": "./lib/packlets/crypto-utils/keystore/index.browser.js"
       }
     },
+    "./safer-fetch": {
+      "node": {
+        "import": "./lib/packlets/safer-fetch/index.js",
+        "require": "./lib/packlets/safer-fetch/index.js"
+      },
+      "default": {
+        "import": "./lib/packlets/safer-fetch/index.browser.js",
+        "require": "./lib/packlets/safer-fetch/index.browser.js"
+      }
+    },
     "./hash": {
       "node": {
         "import": "./lib/packlets/hash/index.node.js",

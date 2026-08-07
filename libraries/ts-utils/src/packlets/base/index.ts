@@ -22,6 +22,7 @@
 
 export * from './brand';
 export * from './mapResults';
+export * from './mapResultsAsync';
 export * from './messageAggregator';
 export { Normalizer } from './normalize';
 export * from './result';

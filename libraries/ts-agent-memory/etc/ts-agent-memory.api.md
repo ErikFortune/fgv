@@ -118,6 +118,7 @@ export const envelopeYamlConverter: Converter<IMemoryEnvelope>;
 export class FileTreeMemoryStore implements IMemoryStore {
     asRecordSource(): IMemoryRecordSource;
     static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore>;
+    dedupScopeFor(kind: Kind): DedupScope;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
@@ -505,6 +506,7 @@ export interface IMemoryRetrieverCapabilities {
 // @public
 export interface IMemoryStore {
     asRecordSource(): IMemoryRecordSource;
+    dedupScopeFor(kind: Kind): DedupScope;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;

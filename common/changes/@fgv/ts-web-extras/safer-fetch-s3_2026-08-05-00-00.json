@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "Add the safer-fetch packlet: SaferFetch.browserSaferFetchBytes / browserSaferFetchText / browserSaferFetchJson, the browser entry points for @fgv/ts-extras's safer-fetch primitive. The runtime-agnostic core is shared verbatim; redirectPolicy 'validate-each-hop' is refused at option resolution with a message naming the runtime rather than failing at the first redirect, and addressGuard stays required so a browser call site spells allowAnyAddress() explicitly. Adds a README carrying the per-runtime guarantee table and the three structurally-absent guarantees.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras",
+  "email": "noreply@anthropic.com"
+}

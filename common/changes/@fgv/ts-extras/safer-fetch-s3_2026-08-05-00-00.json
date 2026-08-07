@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "safer-fetch: add opt-in retry (IRetryPolicy - retryable/never-retryable sets, GET/HEAD-only unless retryNonIdempotent, Retry-After honored on 429/503 and clamped to maxDelayMs, exponential backoff with full jitter, the overall deadline as ceiling, and a full re-walk from hop 0 on every attempt so no guard verdict is ever cached); move redirect loop detection to after the address guard clears the hop so both sides of the comparison are guard-cleared URLs; add allowHosts / allowPorts / allowInsecureHttp to blockPrivateNetworks, which now requires https: unless allowInsecureHttp is set; export the runtime-agnostic address-classification layer from the browser barrel; add the per-runtime guarantee table and stated limits to the README.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
