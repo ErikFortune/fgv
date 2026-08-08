@@ -128,6 +128,16 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `esm-emit-design` 🔵
+
+**Status:** 🔵 queued — **design-only deliverable.** Branch `esm-emit-design` from `release` @ `792b87b5e`; brief at `.ai/tasks/active/esm-emit-design/brief.md`. **No implementation code in this stream**; an implementation stream is commissioned only after review.
+**Deliverable:** `.claude/project/esm-emit-design.md`.
+**Package surface (proposed, not touched by this stream):** `rigs/heft-dual-rig` and every published package's `exports`/`module` fields.
+
+**Mission.** `@fgv` 5.1.0-47 broke every ESM entry point for a consumer. Root cause is one rig config: `additionalModuleKindsToEmit` writes an `esnext` build to `dist` as `.js` with `emitMjsExtensionForESModule: false`, and TypeScript does not rewrite specifiers — so source's extensionless *directory* imports land verbatim in ESM output, which Node cannot resolve (`ERR_UNSUPPORTED_DIR_IMPORT`), and the `.js` extension in a package without `"type": "module"` leaves Node sniffing syntax (`MODULE_TYPELESS_PACKAGE_JSON`). An **interim fix has shipped** (`fix/esm-node-entry-points`): a `node` condition routes Node to the CJS build, plus a CI gate that loads every published entry as a Node ESM consumer would. The interim fix costs Node consumers native ESM, which is what this design weighs. **A legitimate outcome is "delete the ESM emit nothing loads"** — the stream is not obliged to arrive at native ESM.
+
+---
+
 ### `agent-memory-ingest-dedup-scope` 🟢
 
 **Status:** 🟢 implemented + reviewed — PR [#600](https://github.com/ErikFortune/fgv/pull/600) onto `release`, CI green, mergeable clean; ready to merge. Branch `agent-memory-ingest-dedup-scope` from `release` @ `b392e1534`. All five deliverables landed; suite green at 100% coverage; `code-reviewer` clean, Copilot loop stopped at round 2 on diminishing returns. Ran in parallel with `safer-fetch-s3`; no code overlap, but both edit `.ai/instructions/LIBRARY_CAPABILITIES.md` and this file — **own section only**.
