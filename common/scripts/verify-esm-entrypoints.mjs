@@ -46,6 +46,11 @@ const VERBOSE = process.argv.includes('--verbose');
  * survived a green build and a green test run.
  *
  * If a package here ever gains a Node consumer, remove the entry rather than widening the reason.
+ *
+ * Both entries below are **confirmed intent from the package owner** (2026-08-08), not this
+ * script's inference from how they happen to be consumed today. That distinction matters: an
+ * inferred entry would be a guess that silently hardens into policy, which is the failure mode
+ * this list exists to avoid.
  */
 const BUNDLER_ONLY = new Map([
   [
