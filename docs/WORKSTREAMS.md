@@ -128,13 +128,21 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `esm-emit-design` 🔵
+### `esm-emit-design` 🟢
 
-**Status:** 🔵 queued — **design-only deliverable.** Branch `esm-emit-design` from `release` @ `792b87b5e`; brief at `.ai/tasks/active/esm-emit-design/brief.md`. **No implementation code in this stream**; an implementation stream is commissioned only after review.
-**Deliverable:** `.claude/project/esm-emit-design.md`.
+**Status:** 🟢 design complete — awaiting review. Branch `esm-emit-design` from `release` @ `792b87b5e`; brief at `.ai/tasks/active/esm-emit-design/brief.md`, exit artifact at `.ai/tasks/active/esm-emit-design/result.md`. **Design-only: no source, config, rig, or `package.json` change in the diff.** An implementation stream is commissioned from the doc, not by it.
+**Deliverable:** `.claude/project/esm-emit-design.md` — written, all six brief questions answered.
 **Package surface (proposed, not touched by this stream):** `rigs/heft-dual-rig` and every published package's `exports`/`module` fields.
 
 **Mission.** `@fgv` 5.1.0-47 broke every ESM entry point for a consumer. Root cause is one rig config: `additionalModuleKindsToEmit` writes an `esnext` build to `dist` as `.js` with `emitMjsExtensionForESModule: false`, and TypeScript does not rewrite specifiers — so source's extensionless *directory* imports land verbatim in ESM output, which Node cannot resolve (`ERR_UNSUPPORTED_DIR_IMPORT`), and the `.js` extension in a package without `"type": "module"` leaves Node sniffing syntax (`MODULE_TYPELESS_PACKAGE_JSON`). An **interim fix has shipped** (`fix/esm-node-entry-points`): a `node` condition routes Node to the CJS build, plus a CI gate that loads every published entry as a Node ESM consumer would. The interim fix costs Node consumers native ESM, which is what this design weighs. **A legitimate outcome is "delete the ESM emit nothing loads"** — the stream is not obliged to arrive at native ESM.
+
+**Outcome — the evidence reframed the stream.** The cheapest option is dead: `emitMjsExtensionForESModule: true` **errors** against the current rig (it claims the same ESNext module kind as `additionalModuleKindsToEmit`), and run alone it **does not rewrite specifiers at all** — the `.mjs` output fails `ERR_UNSUPPORTED_DIR_IMPORT` *and* `ERR_MODULE_NOT_FOUND`, strictly worse than today's `.js`. Measuring the published 5.1.0-47 then surfaced the larger finding: the ESM emit is **unwired, not worthless**. `@fgv/ts-json-base` already ships a tree-shakeable ESM build that bundles to 37 KB while its `exports` routes browser bundlers at the 130 KB CJS build — **92.6 KB (3.5×) unclaimed**, and **17 of 21 dual-rig packages are in that position** (only `ts-utils`, `ts-bcp47`, `ts-random`, `ts-utils-jest` reference `dist/*.js` at all).
+
+**Recommendation.** Keep the interim shape (Node stays on CJS — OQ-1 has no consumer asking); add `emitModulePackageJson: true` to the rig, which writes `dist/package.json` `{"type":"module"}` and kills the typeless warning **without** a root `"type": "module"` (verified); and route **browser bundlers** at the existing emit via a `browser` condition — behind a **new bundler-resolution CI gate that must land first**. Native ESM (explicit `./x/index.js` specifiers — verified to work, and verified *not* to require `moduleResolution: node16`) is deferred, not foreclosed: ~3,520 specifier rewrites across ~1,300 files plus a permanent authoring rule, for a capability nobody has requested. Sequencing for the implementation stream: rig one-liner + gate → triage what the gate finds → per-package `browser` conditions.
+
+**Corrections to the brief.** (1) Two required-reading files (`common/scripts/verify-esm-entrypoints.mjs`, the PersonAIlity reply note) are **not on this branch** — they live only on the unmerged `fix/esm-node-entry-points`; read from there read-only. (2) OQ-1's suggested "delete the ESM emit" outcome is **not supported** by the evidence — deleting it converts a wiring gap into a permanent capability loss. (3) The recommendation is a **fifth** option the brief's four did not contain, because the bundler row of the consumer table had never been measured.
+
+**Findings filed:** `@fgv/ts-bcp47`'s browser entry transitively imports node `path`/`fs` (pre-existing, both `lib` and `dist`) — the concrete reason the gate sequences before the wiring; and the 17-unreferenced-emits waste-to-win mechanism.
 
 ---
 
