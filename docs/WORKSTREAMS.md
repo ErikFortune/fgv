@@ -128,6 +128,15 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `publish-tarball-gate` 🔵
+
+**Status:** 🔵 queued — **blocked on #603 and #605 landing**, then rebase onto `release`. Branch `publish-tarball-gate` (based on `esm-emit-impl` @ `29d07bcba`); brief at `.ai/tasks/active/publish-tarball-gate/brief.md`.
+**Origin:** direct consumer ask from PersonAIlity, 2026-08-09.
+
+**Mission.** Verify that every path named in a published package's `exports` map exists **in the tarball that ships**, not merely in the working tree. Three defects of one class shipped in a single week — `ts-utils`'s unloadable ESM entry, `ts-web-extras-webauthn`'s `default` naming a file that has never existed, and 5.1.0-27 publishing only `src/` with no build output at all. The gate on #603 checks the working tree, which covers the first two and **cannot** cover the third: `lib/` existed locally and never entered the tarball. Measured up front: `npm pack --dry-run` costs ~12.8 s/package (~5.3 min for 25), so the naive instrument is not viable per-PR — `npm-packlist`, the library npm itself uses, is the recommended one. **This stream builds a detector, not fixes**; anything it flags is a finding.
+
+---
+
 ### `agent-memory-ingest-dedup-scope` 🟢
 
 **Status:** 🟢 implemented + reviewed — PR [#600](https://github.com/ErikFortune/fgv/pull/600) onto `release`, CI green, mergeable clean; ready to merge. Branch `agent-memory-ingest-dedup-scope` from `release` @ `b392e1534`. All five deliverables landed; suite green at 100% coverage; `code-reviewer` clean, Copilot loop stopped at round 2 on diminishing returns. Ran in parallel with `safer-fetch-s3`; no code overlap, but both edit `.ai/instructions/LIBRARY_CAPABILITIES.md` and this file — **own section only**.
