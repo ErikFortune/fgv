@@ -7,13 +7,13 @@
 
 `common/scripts/verify-tarball-exports.mjs` computes the file list npm would actually pack for each
 published package and asserts that every path the manifest names is in it — **every `exports`
-condition, every subpath**, plus `main` / `types` / `module` / `browser`. It is wired into per-PR CI
+condition, every subpath**, plus `main` / `types` / `module` / `browser` / `bin`. It is wired into per-PR CI
 and, as the hard gate, into **all six** publish workflows.
 
-Result on the current tree: **25 packages checked, 199 manifest paths verified, 0 failed, 5.2 s.**
+Result on the current tree: **31 packages checked, 212 manifest paths verified, 0 failed, ~5.8 s.**
 
-The class is demonstrated, not just the instance: three neutralizations, covering both the defect we
-already fixed and the one nothing could previously see.
+The class is demonstrated, not just the instance: four neutralizations, covering the defect we
+already fixed, the one nothing could previously see, and the `bin` surface.
 
 ## The instrument, and its measured cost
 
@@ -23,7 +23,7 @@ already fixed and the one nothing could previously see.
 |---|---|---|
 | `npm pack --dry-run --json` | **7.6–8.2 s per package** → ~3.3 min for 25 | ground truth; the brief measured ~12.8 s/pkg, same conclusion, smaller magnitude on this container |
 | `npm-packlist` + `Arborist.loadActual()` | **7.7 s per package** → ~3.2 min | no better than `npm pack`; the cost is the dependency-graph resolution, not the pack computation |
-| **`npm-packlist` + minimal tree node** | **5.2 s for all 25** (207 ms avg) | what shipped |
+| **`npm-packlist` + minimal tree node** | **5.8 s for all 31** (186 ms avg) | what shipped |
 | hand-rolled ignore rules | n/a | rejected — would drift from real npm behavior, and a gate that models packing incorrectly is worse than no gate |
 
 **The decisive measurement is the second row.** The obvious way to use `npm-packlist` is to hand it
@@ -42,16 +42,17 @@ The one thing the minimal tree gives up is `bundleDependencies` (packed out of `
 invisible to a directory walk). No `@fgv` package declares it, and rather than assume that, the gate
 **fails loudly** with an actionable message if one ever does.
 
-## Neutralization — three demonstrations
+## Neutralization — four demonstrations
 
 The brief required two. A third was added because the second turned out not to reproduce what it
-claimed (see Findings #2).
+claimed (see Findings #2); a fourth covers the `bin` surface added in Copilot round 1.
 
 | # | Simulation | Result |
 |---|---|---|
 | 1 | Revert the `ts-web-extras-webauthn` fix: `default` → `./lib/index.browser.js` | **FAILS**, exit 1, names `. > default > import` and `. > default > require` |
 | 2a | `@fgv/ts-utils`: add `lib/` + `dist/` to `.npmignore` | **FAILS**, exit 1, names the 4 `dist`-targeted paths |
 | 2b | `@fgv/ts-random`: build output **absent from disk** — the true 5.1.0-27 shape | **FAILS**, exit 1, all 7 paths, with the no-build-output diagnosis |
+| 3 | `@fgv/ts-res-cli`: `bin` pointed at a non-existent file | **FAILS**, exit 1, names `(bin.ts-res-compile)` |
 
 Each was reverted immediately and `git status --porcelain libraries/` confirmed empty after each;
 the gate returns to `0 failed` in every case.
@@ -65,8 +66,8 @@ demonstration: it does not produce a build-less tarball at all (see below).
 
 ## Findings filed
 
-Both in `findings/inbox/`. **The gate itself flags zero packages** — every published package's named
-paths are present today. These are hygiene and mental-model findings, not gate failures.
+All three in `findings/inbox/`. #1 and #2 are hygiene / mental-model findings the gate does not fail
+on; **#3 is a live defect the gate caught**.
 
 1. **11 packages ship `src/`, compiled tests, and `.rush/` internals.** `ts-agent-memory` ships 238
    compiled test files and 75 source files; `.rush/temp/shrinkwrap-deps.json` (internal Rush build
@@ -81,6 +82,10 @@ paths are present today. These are hygiene and mental-model findings, not gate f
    can be silently inert, and **a misconfigured `.npmignore` alone cannot produce the 5.1.0-27
    tarball** — that shape requires the build output to be genuinely missing at pack time, which
    points the remedy at the publish pipeline rather than at packaging config.
+3. **`@fgv/ts-res-browser` ships `main` and `types` naming a `lib/` it never builds.** Every
+   published version has carried two dangling pointers; the package's real entry is its `bin`, which
+   works, so nothing ever complained — the same silently-worked-around shape as 5.1.0-27. Found by
+   the first run of the widened gate, and **fixed here** rather than left red (Deviations #4).
 
 ## Placement — OQ-1, resolved as *both*
 
@@ -133,13 +138,14 @@ in the repo, which makes it additive rather than a supersession.
 |---|---|
 | `rush install` | ✅ |
 | `rush rebuild` | ✅ green (required — the gate needs real build output) |
-| `verify-tarball-exports.mjs` | ✅ 25 checked, 199 paths, 0 failed, 5.2 s |
+| `verify-tarball-exports.mjs` | ✅ 31 checked, 212 paths, 0 failed, ~5.8 s |
 | `verify-esm-entrypoints.mjs` | ✅ 23 checked, 2 declared, 0 failed |
 | `verify-bundler-resolution.mjs` | ✅ 19 checked, 6 declared node-only, 0 failed |
 | `rush change --verify` | ✅ (no publishable package touched → no change file owed) |
 | Workflow YAML | ✅ all 8 parse |
 | Shared shrinkwrap | ✅ untouched; dependency scoped to the `rush-pack-check` autoinstaller |
 | `libraries/*` source or `exports` | ✅ unmodified (findings filed instead) |
+| `tools/*` | ⚠️ one subtractive manifest fix — see Deviations #4 |
 
 ## `code-reviewer` — run before any coverage work
 
@@ -165,6 +171,39 @@ The reviewer independently re-derived the two things most worth being wrong abou
 targets, subpath keys and `*` patterns, and confirmed the untested `*` branch of `isPacked` behaves
 correctly (including spanning path separators, matching Node's subpath-pattern semantics).
 
+## Copilot loop — round 1
+
+**Four comments; three actioned, one declined.** Round 1 was **substantive**, not nitpicky, so the
+loop was not stopped here on diminishing returns.
+
+- **`collectPackages()` skipped every package without `exports`** — the round's real finding, and it
+  led directly to a live defect. The filter was inherited from the two sibling gates, where it is
+  correct (they resolve an `exports` condition; a package without one has nothing to resolve) and
+  here it was wrong. It hid **all six publishable `tools/` CLIs**. Fixed, and `bin` added to the
+  checked fields — sharper than `main`, because npm symlinks `bin` at **install** time, so a `bin`
+  naming an unpacked path breaks the install rather than the first import. Coverage went 25 → 31
+  packages, 199 → 214 paths, **and the first run of the widened gate failed on a real defect** (see
+  finding #3).
+- **`SOURCE_ONLY`'s comment contradicted its implementation** — the comment claimed declaring a
+  package "suppresses nothing about this check" while the code `continue`d past verification
+  entirely. Correct catch. Resolved by **deleting the map**, not by correcting the comment: the
+  comment was struggling to justify a mechanism this gate should not have. Both siblings' declaration
+  maps exist because their questions can legitimately be answered "no"; *this* gate's question
+  ("are the paths your manifest names in your tarball?") has no legitimate "no", and a genuinely
+  source-only package passes on the merits anyway since its `main` names files that are in fact
+  packed. An opt-out here had no correct use and one incorrect one — silencing a package that ships
+  broken. That is the silent-skip hole the gate exists to close. Reasoning recorded in the file.
+- **`String(err.message)` on a non-`Error` throw** would stringify to `undefined` and discard the
+  cause, on the one path whose job is to report why the check could not run. Fixed via a `firstLine`
+  helper.
+- **Declined:** a Windows-portability fix to `bundleForBrowser` in `verify-bundler-resolution.mjs`.
+  Real observation, but that file is **base-branch code from #605**, not this stream's, and the brief
+  scopes this stream away from it. Filing it against the owning stream is the right route; widening
+  this PR into a sibling gate's internals is not.
+
+A fourth neutralization was added for the new surface: pointing a `bin` at a non-existent file fails
+the gate, naming `(bin.ts-res-compile)`.
+
 ## Deviations from the brief
 
 1. **The hard dependency was not met, and the stream ran anyway.** The brief and the kickoff both
@@ -176,11 +215,17 @@ correctly (including spanning path separators, matching Node's subpath-pattern s
    **The rebase is still owed** and is recorded in `state.md` and the ledger. There were no conflicts
    to escalate: the base did not move.
 2. **Superseding the sibling's existence pass was declined**, with reasoning — see above.
-3. **`main` / `types` / `module` / `browser` are checked**, slightly beyond the brief's "every
-   `exports` target". They are manifest-named paths whose absence from the tarball is the identical
+3. **`main` / `types` / `module` / `browser` / `bin` are checked**, and packages with **no
+   `exports` at all** are checked, both beyond the brief's "every `exports` target". They are manifest-named paths whose absence from the tarball is the identical
    defect (and demo 2b shows `main` failing in exactly that way), so excluding them would have left a
    gap for no benefit. Reported under their field names so a failure is unambiguous.
-4. **A third neutralization was added.** The brief's second demonstration, taken literally
+4. **`tools/ts-res-browser/package.json` was fixed, against the detector-not-fixer rule.** The
+   widened gate found `main` and `types` naming a `lib/` the package never builds (`noEmit: true`,
+   webpack-only). Leaving it as a finding would have meant merging this PR with its own required
+   check permanently red, blocking every subsequent PR. The correction is subtractive and the
+   evidence unambiguous; a `patch` change file accompanies it. Reverting three lines restores the
+   pure-diagnostic posture. See finding #3.
+5. **A third neutralization was added.** The brief's second demonstration, taken literally
    (`.npmignore`-exclude the build output), does not produce a build-less tarball — finding #2. Demo
    2b reproduces the real shape.
 

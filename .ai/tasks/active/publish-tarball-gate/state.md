@@ -19,11 +19,13 @@ touches except `verify-esm-entrypoints.mjs`, where the change is an additive hea
 - [x] Neutralization 1 — webauthn `default` fix reverted → gate fails, exit 1
 - [x] Neutralization 2a — build output excluded via `.npmignore` → gate fails, exit 1
 - [x] Neutralization 2b — true 5.1.0-27 shape, no build output on disk → gate fails, exit 1
+- [x] Neutralization 3 — `bin` naming an unpacked file → gate fails, exit 1
 - [x] Wired into per-PR CI and all six publish workflows; all YAML validated
-- [x] Findings filed (2)
+- [x] Findings filed (3 — #3 is a live defect the widened gate caught)
 - [x] Docs: ledger, `docs/FUTURE.md`, consumer note
 - [x] All three gates green together
-- [x] `rush change --verify` green (no publishable package touched → no change file owed)
+- [x] `rush change --verify` green (change file added for the one `tools/` manifest fix)
 - [x] `code-reviewer` run **before** any coverage work
-- [ ] Copilot loop
+- [x] Copilot round 1 — 4 comments, 3 actioned (1 substantive: `tools/` invisible to the gate), 1 declined
+- [ ] Copilot round 2 — commissioned; round 1 was substantive, so not stopping on diminishing returns yet
 - [ ] Rebase onto `release` once #603 + #605 land

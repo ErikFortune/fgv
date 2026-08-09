@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-browser",
+      "comment": "Remove dangling `main` and `types`, which named a `lib/` this package never builds (its tsconfig sets noEmit and the build is webpack-only). The package ships a browser bundle and a `bin` CLI; it was never consumable as a library.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-res-browser"
+}

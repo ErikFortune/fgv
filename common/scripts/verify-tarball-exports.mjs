@@ -27,16 +27,15 @@
 //
 // WHY `npm-packlist` AND NOT `npm pack --dry-run`
 //
-// `npm pack --dry-run --json` is the ground truth, and it costs ~12.8 s per package on this
-// container: ~5.3 minutes across 25 packages, against CI runs that have been cancelled around 15
-// minutes. `npm-packlist` computes the same list in-process without spawning npm per package.
-// Reimplementing npm's ignore rules by hand was the third option and is the wrong one — it would
-// drift from real npm behavior, and a gate that models packing incorrectly is worse than none.
+// `npm pack --dry-run --json` is the ground truth, and it spawns npm per package. Measured on a
+// fully built tree here: **7.6-8.2 s per package**, ~3.3 min across the repo, against CI runs that
+// have been cancelled around 15 minutes. `npm-packlist` computes the same list in-process, and the
+// whole repo costs **~5.2 s** — the ratio that makes per-PR placement viable rather than
+// publish-time only. Reimplementing npm's ignore rules by hand was the third option and is the
+// wrong one: it would drift from real npm behavior, and a gate that models packing incorrectly is
+// worse than none.
 //
 // The cost is in how you get `npm-packlist` its tree, not in `npm-packlist`: see `computePackList`.
-// Measured on a fully built tree: **~5.2 s for all 25 packages**, against ~7.6-8.2 s *per package*
-// for `npm pack --dry-run --json` (~3.3 min for the repo). That ratio is what makes per-PR
-// placement viable rather than publish-time only.
 //
 // The output was verified byte-identical to `npm pack --dry-run --json` on four packages spanning
 // both shapes (`ts-web-extras-webauthn` and `ts-extras` with no `.npmignore`, `ts-utils` and
@@ -92,20 +91,31 @@ const TIMING = process.argv.includes('--timing');
 
 const AUTOINSTALLER = join(REPO_ROOT, 'common', 'autoinstallers', 'rush-pack-check');
 
+// THERE IS DELIBERATELY NO DECLARATION / OPT-OUT MAP HERE.
+//
+// Both sibling gates carry one (`BUNDLER_ONLY`, `NEEDS_NODE_BUILTINS`) because both ask a question
+// a package can legitimately answer "no" to: a React component library genuinely need not be
+// Node-loadable, and a native-addon wrapper genuinely need not bundle for a browser. Declaring that
+// on the record beats a silent skip.
+//
+// This gate asks a question **no published package can legitimately answer "no" to**: are the paths
+// your own manifest names actually in your tarball? A package that ships only sources is not an
+// exception to that — its `main` and `exports` name those source files, which *are* packed, so it
+// passes on the merits with nothing to declare.
+//
+// So an opt-out map here would have no correct use and one incorrect one: silencing a package that
+// genuinely ships broken. An earlier revision had an empty `SOURCE_ONLY` map "for the record",
+// whose own comment had to claim it "suppresses nothing" while the code skipped verification
+// entirely for anything listed in it. The comment was wrong, and the mechanism it was defending
+// was the silent-skip hole this gate exists to close. Removed rather than documented.
+
 /**
- * Packages that deliberately publish no build output, each with the reason.
- *
- * Empty, and expected to stay that way. It exists so that a package which genuinely ships only
- * sources has somewhere to say so **on the record**, in the same declaration-over-silent-skip
- * posture as `BUNDLER_ONLY` in `verify-esm-entrypoints.mjs` and `NEEDS_NODE_BUILTINS` in
- * `verify-bundler-resolution.mjs`.
- *
- * A package that merely fails does not belong here. This stream detects; it does not fix. File a
- * finding and leave the gate red — a red gate is information, and this list is not a place to
- * store it. Note also that a source-only package would still have to name paths its tarball
- * contains; declaring it here suppresses nothing about *this* check, it only records intent.
+ * The first line of whatever was thrown, whether or not it was an `Error`.
  */
-const SOURCE_ONLY = new Map();
+function firstLine(err) {
+  const text = err instanceof Error ? err.message : String(err);
+  return text.split('\n')[0];
+}
 
 function loadPacklist() {
   if (!existsSync(join(AUTOINSTALLER, 'node_modules', 'npm-packlist'))) {
@@ -216,6 +226,22 @@ function collectManifestTargets(manifest) {
       targets.push({ conditionPath: `(${field})`, target: value });
     }
   }
+  // `bin` is the sharpest case in this whole file. npm creates a symlink for each entry at install
+  // time, so a `bin` naming a path the tarball does not contain does not fail at first import the
+  // way a bad `main` does — it fails at `npm install`, or leaves a command on the user's PATH that
+  // exits immediately. Every publishable package under tools/ carries one.
+  //
+  // String form (`"bin": "./cli.js"`) is shorthand for a single entry named after the package.
+  const bin = manifest.bin;
+  if (typeof bin === 'string') {
+    targets.push({ conditionPath: '(bin)', target: bin });
+  } else if (bin !== null && typeof bin === 'object') {
+    for (const [command, value] of Object.entries(bin)) {
+      if (typeof value === 'string') {
+        targets.push({ conditionPath: `(bin.${command})`, target: value });
+      }
+    }
+  }
   return targets;
 }
 
@@ -262,7 +288,13 @@ async function collectPackages() {
         continue;
       }
       const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-      if (manifest.private === true || !manifest.exports) {
+      // Only `private` is disqualifying. Both sibling gates additionally skip a package with no
+      // `exports`, which is right for them — they resolve an `exports` condition, so a package
+      // without one has nothing for them to resolve. It is **wrong here**: a package with `main`
+      // and `bin` and no `exports` still names paths that must be in its tarball, and it is a
+      // publishable package like any other. Inheriting that filter hid every package under
+      // `tools/` — six publishable CLIs, each with a `bin` — from the gate entirely.
+      if (manifest.private === true) {
         continue;
       }
       found.push({ name: manifest.name, dir: join(groupDir, entry.name), manifest });
@@ -275,20 +307,10 @@ const packlist = loadPacklist();
 const packages = await collectPackages();
 const failures = [];
 let checked = 0;
-let declared = 0;
 let conditionsChecked = 0;
 let totalPackMs = 0;
 
 for (const pkg of packages) {
-  const sourceOnlyReason = SOURCE_ONLY.get(pkg.name);
-  if (sourceOnlyReason !== undefined) {
-    declared++;
-    if (VERBOSE) {
-      console.log(`  DECL  ${pkg.name} — source-only: ${sourceOnlyReason}`);
-    }
-    continue;
-  }
-
   const startedAt = process.hrtime.bigint();
   let packed;
   try {
@@ -300,7 +322,10 @@ for (const pkg of packages) {
         {
           conditionPath: '(pack)',
           target: '(n/a)',
-          reason: `could not compute the packed file list: ${String(err.message).split('\n')[0]}`
+          // `err.message` only on a real Error — a thrown string or a rejected non-Error would
+          // otherwise stringify to `undefined` and discard the actual cause, on the one path whose
+          // whole job is to report why the check could not run.
+          reason: `could not compute the packed file list: ${firstLine(err)}`
         }
       ]
     });
@@ -369,7 +394,7 @@ for (const pkg of packages) {
 
 console.log(
   `verify-tarball-exports: ${checked} packages checked, ${conditionsChecked} manifest paths verified, ` +
-    `${declared} declared source-only, ${failures.length} failed`
+    `${failures.length} failed`
 );
 if (TIMING) {
   console.log(

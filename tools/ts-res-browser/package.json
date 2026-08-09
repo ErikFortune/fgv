@@ -2,15 +2,12 @@
   "name": "@fgv/ts-res-browser",
   "version": "5.1.0",
   "description": "Visual browser tool for ts-res resources",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
   "bin": {
     "ts-res-browser": "./cli.js"
   },
   "files": [
     "cli.js",
     "dist/**/*",
-    "lib/**/*",
     "README.md",
     "package.json"
   ],
