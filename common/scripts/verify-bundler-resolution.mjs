@@ -144,6 +144,14 @@ function loadEsbuild() {
  * The top-level `module` field is intentionally not consulted. Every package here declares
  * `exports`, and `exports` takes precedence over `module` in every bundler of interest; `module` is
  * a pre-`exports` compatibility shim honored only by tooling too old to read `exports`.
+ *
+ * KNOWN SIMPLIFICATION, inherited from the sibling script rather than introduced here: real
+ * condition resolution walks the keys in the order the `exports` object declares them, so the
+ * author controls precedence. This walks a fixed `browser` → `import` → `default` order instead.
+ * The two agree for every package in this repo today, because none declares a bare `import`
+ * ahead of `browser`. A future package that did would get a silently wrong target rather than an
+ * error. Fix by iterating `Object.keys(root)` and matching against a condition set if that ever
+ * stops being hypothetical.
  */
 function resolveBrowserTarget(exportsField) {
   if (typeof exportsField === 'string') {
@@ -212,7 +220,17 @@ function usesFullySpecifiedSpecifiers(absoluteEntry) {
         }
         walk(full);
       } else if (entry.name.endsWith('.js')) {
-        const source = readFileSync(full, 'utf8');
+        // Comment lines are dropped before scanning: TSDoc survives into the emit, and prose like
+        // "imported from './foo'" would otherwise be read as an unspecified specifier. Line-based
+        // rather than a real comment stripper, which would risk mangling code and turning a false
+        // positive into a false negative — the worse direction for this check to be wrong in.
+        const source = readFileSync(full, 'utf8')
+          .split('\n')
+          .filter((line) => {
+            const t = line.trim();
+            return !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*');
+          })
+          .join('\n');
         // Three forms carry a relative specifier: `… from './x'` (which also covers
         // `export * from`), a side-effect `import './x'`, and a dynamic `import('./x')`.
         const patterns = [

@@ -224,6 +224,21 @@ posture. Deliberately kept identical:
 The header also states plainly what a green result does *not* prove — that esbuild is more permissive
 than webpack, so bundling with one bundler is weaker evidence than it looks.
 
+## Review — layer 1 (`code-reviewer` on the final diff, before any coverage work)
+
+**Verdict: approved. No P1, no P2.** Four P3 advisories; three applied, one correctly deferred.
+
+| # | Finding | Disposition |
+|---|---|---|
+| P3-1 | `resolveBrowserTarget` walks a fixed `browser`→`import`→`default` order, but real resolution honors the order the `exports` object declares. Agrees for every package today; a future package declaring a bare `import` ahead of `browser` would get a silently wrong target. Inherited from the sibling, not introduced here. | **Applied** — documented as a known simplification, naming the fix (iterate `Object.keys(root)`) for whoever hits it. Not changed behaviorally: doing so now would diverge from the sibling with no package to justify it. |
+| P3-2 | The specifier regex could match prose in a surviving TSDoc comment ("imported from './foo'"). No real instance found in the current emit. | **Applied** — comment lines are dropped before scanning. Deliberately line-based, not a real comment stripper: mangling code would turn a false positive into a false *negative*, which is the worse direction here. |
+| P3-3 | The temp entry file is removed in a `finally`, so a `SIGKILL`/OOM mid-run could strand it in a package folder, matched by no `.gitignore` pattern. | **Applied** — `**/.verify-bundler-resolution.entry.mjs` added to `.gitignore`, with a comment saying it only covers the killed-process case. |
+| P3-4 | The sibling's own "not built" vs "dangling pointer" ambiguity remains in `verify-esm-entrypoints.mjs`. | **Deferred, as the reviewer agreed** — out of this stream's scope. The new gate demonstrates the fix; flagged for follow-up. |
+
+The reviewer independently verified the two things most worth being wrong about: that `ts-bcp47`'s public API is unchanged on **both** entries (the `Iana_2` doubling in `api.md` is an internal doc-model artifact; the exported `Iana` namespace shape is untouched), and that the gate's **exit-code path** has no silent-skip hole. Both match the independent runtime checks recorded above.
+
+Gate re-run after the P3 fixes: unchanged — 19 checked, 6 declared, 0 failed; same 10 BLOCKED / 4 clean probe verdict.
+
 ## Open questions
 
 - **OQ-1 (how far to take R3) — answered "none, and here is why."** Not the partial the brief
