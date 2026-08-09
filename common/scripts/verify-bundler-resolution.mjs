@@ -64,8 +64,12 @@ import { readFileSync, existsSync, writeFileSync, rmSync, readdirSync } from 'no
 import { readdir } from 'node:fs/promises';
 import { join, resolve, dirname, relative } from 'node:path';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 
-const REPO_ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..', '..');
+// `fileURLToPath`, not `new URL(...).pathname`: the latter leaves percent-escapes intact (a repo
+// checked out under a path with a space resolves to `.../my%20repo/...`) and prefixes a leading
+// slash onto Windows drive letters.
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PACKAGE_DIRS = ['libraries', 'tools'];
 const VERBOSE = process.argv.includes('--verbose');
 const MEASURE = process.argv.includes('--measure');

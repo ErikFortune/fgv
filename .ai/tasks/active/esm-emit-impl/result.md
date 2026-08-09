@@ -239,6 +239,21 @@ The reviewer independently verified the two things most worth being wrong about:
 
 Gate re-run after the P3 fixes: unchanged — 19 checked, 6 declared, 0 failed; same 10 BLOCKED / 4 clean probe verdict.
 
+## Review — layer 2 (Copilot on the open PR)
+
+**Round 1: 4 comments, all substantive, all applied.** No disputes.
+
+| Comment | Disposition |
+|---|---|
+| `verify-esm-entrypoints.mjs` skips a missing artifact as "not built", so a dangling `exports` pointer passes CI forever — the new gate already fixes this; the sibling should too | **Applied.** This is the same hole `code-reviewer` raised as P3-4 and I deferred as out of scope. Two independent reviewers converging on it outweighs the scope argument, especially in a PR whose subject *is* that class of defect. The same guard as the sibling, with a comment citing the `ts-web-extras-webauthn` instance it would have caught. **No behavior change today** — the gate reports 0 skipped either way — so this is pure future-proofing, not a risk. |
+| `index.node.ts`'s header claims only `src/index.ts` imports it, but the tests do too | **Applied.** The comment was simply wrong. Reworded to say `src/index.ts` is the only *shipped* importer, name the tests as the other one, and state the actual invariant: nothing reachable from `index.browser.ts` may import it. |
+| `REPO_ROOT` uses `new URL(import.meta.url).pathname` — brittle for percent-escaped and Windows paths | **Applied** to the new gate. A real portability bug: a checkout under a path containing a space resolves to `.../my%20repo/...`. |
+| Same, in `verify-esm-entrypoints.mjs` | **Applied.** Inherited — the new gate copied the idiom from its sibling, so both were wrong and both are fixed. |
+
+Verified after: both gates green (23/2/0/0 and 19/6/0/0), `ts-bcp47` build and lint clean, `etc/ts-bcp47.api.md` unchanged (the `index.node.ts` edit is comment-only).
+
+**Loop status:** round 1 was substantive — one real portability bug in two files, one inaccurate comment, and one genuine silent-pass hole in a gate. Not nitpick territory, so the loop continues rather than stopping at an arbitrary round count. Re-requesting review on the follow-up commit.
+
 ## Open questions
 
 - **OQ-1 (how far to take R3) — answered "none, and here is why."** Not the partial the brief

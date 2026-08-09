@@ -30,9 +30,12 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join, resolve, dirname } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 
-const REPO_ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..', '..');
+// `fileURLToPath`, not `new URL(...).pathname`: the latter leaves percent-escapes intact (a repo
+// checked out under a path with a space resolves to `.../my%20repo/...`) and prefixes a leading
+// slash onto Windows drive letters.
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PACKAGE_DIRS = ['libraries', 'tools'];
 const VERBOSE = process.argv.includes('--verbose');
 
@@ -152,8 +155,22 @@ for (const pkg of packages) {
   }
   const absolute = resolve(pkg.dir, target);
   if (!existsSync(absolute)) {
-    // A missing artifact means the package has not been built; that is a build problem, not an
-    // entry-point problem, and reporting it as a load failure would be misleading.
+    // "Not built yet" and "points at a file that will never exist" look identical at this line, and
+    // conflating them is how a dangling `exports` pointer hides: it reads as a skip forever. If the
+    // package has produced *any* build output then a build has run, so the named artifact is
+    // genuinely missing — a packaging defect, and it fails.
+    //
+    // This is not hypothetical. The sibling gate found exactly that in
+    // `@fgv/ts-web-extras-webauthn`, whose `default` condition named a `lib/index.browser.js` that
+    // has no source and is never emitted; it had been reported as a skip.
+    if (existsSync(join(pkg.dir, 'lib')) || existsSync(join(pkg.dir, 'dist'))) {
+      failures.push({
+        name: pkg.name,
+        target,
+        reason: 'artifact does not exist, though the package has been built'
+      });
+      continue;
+    }
     skipped++;
     if (VERBOSE) {
       console.log(`  SKIP  ${pkg.name} -> ${target} (not built)`);

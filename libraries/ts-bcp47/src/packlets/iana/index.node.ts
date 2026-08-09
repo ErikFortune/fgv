@@ -21,7 +21,10 @@
  */
 
 // The node-only IANA surface: everything the shared `./index` barrel exports, plus the filesystem
-// loader. Only `src/index.ts` — the entry the `node` condition resolves — imports this.
+// loader. `src/index.ts` — the entry the `node` condition resolves — is the only *shipped* importer;
+// the filesystem-loader unit tests import it directly as well, since the surface they exercise is
+// deliberately absent from the shared barrel. Nothing reachable from `src/index.browser.ts` may
+// import this file.
 //
 // The export list is spelled out rather than re-exported from `./index` because a packlet file may
 // not import its own index. That mirrors `./index.browser`, which spells out the same list minus
