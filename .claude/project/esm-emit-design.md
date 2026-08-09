@@ -614,3 +614,110 @@ State on `release` @ `792b87b5e` (this branch's base, **pre**-fix), which is wha
 The interim fix adds a `node` condition routing both `import` and `require` at `lib` for the four,
 leaving the bare/`browser` `import` at `dist` for bundlers. That shape is what R1 keeps and R3
 generalizes to the remaining twenty.
+
+---
+
+# Amendment — `moduleResolution` is the missing variable, and it reframes Option B
+
+**Added 2026-08-09**, after the implementation stream and the webauthn defect. Nothing above is
+retracted; this adds a variable the design did not consider and which changes how Option B should be
+costed and motivated.
+
+## The repo is on node10 resolution, and nothing sets it deliberately
+
+`rigs/heft-dual-rig` inherits `@rushstack/heft-node-rig`'s `tsconfig-base.json`, which sets
+`module: commonjs` and `target: es2017` and **does not set `moduleResolution` at all**. With
+`module: commonjs`, TypeScript defaults it to `"node"` — node10, the pre-`exports` algorithm.
+
+Only three consumers override it, and they disagree with each other:
+
+| Project | `moduleResolution` |
+|---|---|
+| `tools/ts-res-ui-playground` | `"node"` |
+| `tools/ts-res-browser` | `"node"` |
+| `apps/sudoku` | `"bundler"` |
+
+## Why that is the missing explanation, not a side note
+
+**Under node10, TypeScript does not read the `exports` map at all.** It resolves through
+`main`/`types` and file paths. So a condition naming a file that has never existed is *structurally
+invisible to the compiler* — which is precisely what the consumer observed about the webauthn
+defect: "Type resolution is fine … so TypeScript is perfectly happy and nothing surfaces until a
+bundler tries to resolve the runtime entry."
+
+That is not a coincidence to be noted. It is a direct consequence of a setting nobody chose.
+
+**Verified by running it**, not inferred. A probe importing `@fgv/ts-utils/lib/index.js` — a subpath
+the package's `exports` map does not expose, and which Node refuses at runtime with
+`ERR_PACKAGE_PATH_NOT_EXPORTED`:
+
+| `module` / `moduleResolution` | result |
+|---|---|
+| `commonjs` / `node` — **what we ship today** | **accepts it** — `exports` not enforced |
+| `node16` / `node16` | rejects it |
+| `nodenext` / `nodenext` | rejects it |
+| `esnext` / `bundler` | rejects it |
+
+(Method note: the first two attempts at this probe produced confidently wrong-looking answers — one
+because the scratch directory could not resolve the workspace package at all, one because
+`module: esnext` with `moduleResolution: node16` is an invalid pairing and tsc bailed on a config
+error before type-checking. Pair `module` and `moduleResolution` correctly, and run from a package
+that actually depends on the target.)
+
+## What this does to Option B
+
+The design rejected Option B as premature: ~3,520 specifier rewrites plus a permanent authoring rule,
+to buy native Node ESM that no consumer had requested. That costing is accurate and the conclusion
+was reasonable **on the framing available at the time**. The framing was incomplete.
+
+Option B is what `moduleResolution: node16` *requires*. So the honest description is not "rewrite
+3,520 specifiers for a capability nobody asked for" but:
+
+> **Adopt `node16` resolution. Explicit specifiers are what it demands, and the compiler maintains
+> the invariant afterwards.**
+
+That changes three things about the trade:
+
+1. **The benefit is no longer hypothetical.** It is a compile-time error for the class that has now
+   shipped three times, plus the ESM emit becoming genuinely loadable as a side effect.
+2. **The permanent authoring rule stops being a cost.** The design counted "a permanent lint rule" as
+   ongoing burden. Under `node16` the compiler enforces it — no lint rule, no drift.
+3. **There is a cheaper rung on the same ladder.** `moduleResolution: bundler` enforces the `exports`
+   map without demanding specifiers. It would have made the webauthn defect a compile error at
+   near-zero migration cost, while catching **nothing** of the specifier class. That is a real
+   intermediate step the design did not have available to consider.
+
+| | reads `exports`? | forces specifiers? | catches |
+|---|---|---|---|
+| `node` (today) | ❌ | ❌ | neither class |
+| `bundler` | ✅ | ❌ | the webauthn class |
+| `node16` / `nodenext` | ✅ | ✅ | **both** |
+
+## Two complications, neither fatal, both real
+
+**The dual emit fights `node16`.** One source tree emitting `commonjs` to `lib` and `esnext` to
+`dist` is the arrangement `node16` is least comfortable with: it determines module format from
+`package.json` `type` and file extension, not from an emit flag. Whether the dual emit survives is
+a question §2 Option D raised and did not settle, and it now has a second reason to be settled.
+
+**This does not subsume the gates, and must not be sold as doing so.** `node16` would catch a broken
+`exports` condition at compile time *for code the repo itself imports*. It would **not** have caught
+`@fgv` 5.1.0-27, which shipped only `src/` — a packing failure with a perfectly valid config, visible
+only to `verify-tarball-exports.mjs`. Compiler enforcement and the pack-list gate cover different
+failure modes. Rolling forward retires neither.
+
+## Recommendation for the implementation stream
+
+Sequence, cheapest-first, each independently valuable:
+
+1. **Set `moduleResolution` explicitly to `node` in the rig**, changing nothing. Today's behavior is
+   an unchosen default; making it explicit is the precondition for moving it deliberately and costs
+   nothing.
+2. **Reconcile the three overriding projects.** Two pin `node`, one uses `bundler`, and no reason is
+   recorded for either.
+3. **Move to `bundler` repo-wide** and fix what it flags. Cheap, and closes the class that has cost
+   the most consumer pain.
+4. **Then evaluate `node16`** — which is Option B, now motivated by compiler enforcement rather than
+   by native ESM, and gated on the dual-emit question.
+
+Steps 1–3 are worth doing regardless of whether step 4 ever happens.
