@@ -7,13 +7,13 @@
 
 `common/scripts/verify-tarball-exports.mjs` computes the file list npm would actually pack for each
 published package and asserts that every path the manifest names is in it — **every `exports`
-condition, every subpath**, plus `main` / `types` / `module` / `browser` / `bin`. It is wired into per-PR CI
+condition, every subpath**, plus `main` / `types` / `module` / `bin` and both forms of `browser`. It is wired into per-PR CI
 and, as the hard gate, into **all six** publish workflows.
 
-Result on the current tree: **31 packages checked, 212 manifest paths verified, 0 failed, ~5.8 s.**
+Result on the current tree: **31 packages checked, 215 manifest paths verified, 0 failed, ~5.8 s.**
 
-The class is demonstrated, not just the instance: four neutralizations, covering the defect we
-already fixed, the one nothing could previously see, and the `bin` surface.
+The class is demonstrated, not just the instance: five neutralizations, covering the defect we
+already fixed, the one nothing could previously see, and the `bin` / `browser`-map surfaces.
 
 ## The instrument, and its measured cost
 
@@ -42,10 +42,11 @@ The one thing the minimal tree gives up is `bundleDependencies` (packed out of `
 invisible to a directory walk). No `@fgv` package declares it, and rather than assume that, the gate
 **fails loudly** with an actionable message if one ever does.
 
-## Neutralization — four demonstrations
+## Neutralization — five demonstrations
 
 The brief required two. A third was added because the second turned out not to reproduce what it
-claimed (see Findings #2); a fourth covers the `bin` surface added in Copilot round 1.
+claimed (see Findings #2); the fourth and fifth cover the `bin` and `browser`-map surfaces added in
+Copilot rounds 1 and 2.
 
 | # | Simulation | Result |
 |---|---|---|
@@ -53,6 +54,7 @@ claimed (see Findings #2); a fourth covers the `bin` surface added in Copilot ro
 | 2a | `@fgv/ts-utils`: add `lib/` + `dist/` to `.npmignore` | **FAILS**, exit 1, names the 4 `dist`-targeted paths |
 | 2b | `@fgv/ts-random`: build output **absent from disk** — the true 5.1.0-27 shape | **FAILS**, exit 1, all 7 paths, with the no-build-output diagnosis |
 | 3 | `@fgv/ts-res-cli`: `bin` pointed at a non-existent file | **FAILS**, exit 1, names `(bin.ts-res-compile)` |
+| 4 | `@fgv/ts-bcp47`: a `browser` **map value** pointed at a non-existent file | **FAILS**, exit 1, names `(browser["./lib/index.js"])` |
 
 Each was reverted immediately and `git status --porcelain libraries/` confirmed empty after each;
 the gate returns to `0 failed` in every case.
@@ -203,6 +205,26 @@ loop was not stopped here on diminishing returns.
 
 A fourth neutralization was added for the new surface: pointing a `bin` at a non-existent file fails
 the gate, naming `(bin.ts-res-compile)`.
+
+## Copilot loop — round 2
+
+**Two comments, both real, both fixed.** Round 2 again surfaced a genuine coverage gap rather than
+nitpicks, so the round-count is not the signal here — the finding profile is.
+
+- **The object form of `browser` was not checked.** `collectManifestTargets` handled only a
+  string-valued `browser`. `@fgv/ts-bcp47` uses the **map** form, and its three replacement values
+  are real paths a browser build resolves to — one of them `lib/index.browser.js`, *the exact
+  filename shape that was dangling in `ts-web-extras-webauthn`*. So this was the live case, not a
+  hypothetical. Values are now checked; **keys deliberately are not**, and checking them would have
+  been a false-positive: `ts-bcp47` maps `./lib/packlets/iana`, a *directory* specifier that is
+  correctly not a packed file, and `"fs": false` (stub-to-empty) names no path at all. Verified
+  against the live manifest before choosing. 212 → 215 paths.
+- **The pack-list failure record had no counts**, so a package whose pack computation *itself* threw
+  would have printed `undefined files would be packed, undefined of them under lib/ or dist/`. The
+  counts line is now suppressed on that path — reporting nothing beats reporting `undefined`, and
+  the no-build-output diagnosis must not assert anything about a list that was never computed.
+  (Copilot also predicted this would trigger the no-build-output banner; it would not —
+  `undefined <= 1` is `false` — but the `undefined` print was real.)
 
 ## Deviations from the brief
 

@@ -220,10 +220,32 @@ function collectExportTargets(exportsField) {
  */
 function collectManifestTargets(manifest) {
   const targets = [];
-  for (const field of ['main', 'types', 'module', 'browser']) {
+  for (const field of ['main', 'types', 'module']) {
     const value = manifest[field];
     if (typeof value === 'string') {
       targets.push({ conditionPath: `(${field})`, target: value });
+    }
+  }
+  // `browser` has two forms. The string form is a plain entry point. The **object** form is a
+  // substitution map a bundler applies module-by-module, and only its *values* are paths this
+  // package must ship — they are what a browser build actually resolves to. `@fgv/ts-bcp47` uses
+  // it, and one of its replacements is `lib/index.browser.js`: the exact filename shape that was
+  // dangling in `ts-web-extras-webauthn`, so this is the live case, not a hypothetical one.
+  //
+  // Keys are deliberately NOT checked. A key is the specifier being replaced, and it is legal for
+  // it to be something that is not a packed file at all — a bare directory (`ts-bcp47` maps
+  // `./lib/packlets/iana`, a directory import) or a node builtin (`"fs": false`). Checking them
+  // would report a false failure on correct config.
+  //
+  // A `false` value means "substitute an empty module" and names no path.
+  const browser = manifest.browser;
+  if (typeof browser === 'string') {
+    targets.push({ conditionPath: '(browser)', target: browser });
+  } else if (browser !== null && typeof browser === 'object') {
+    for (const [specifier, value] of Object.entries(browser)) {
+      if (typeof value === 'string') {
+        targets.push({ conditionPath: `(browser["${specifier}"])`, target: value });
+      }
     }
   }
   // `bin` is the sharpest case in this whole file. npm creates a symlink for each entry at install
@@ -407,16 +429,21 @@ if (failures.length > 0) {
   console.error('\nThe following packages name paths that the published tarball would NOT contain:\n');
   for (const f of failures) {
     console.error(`  ${f.name}`);
-    console.error(
-      `    ${f.packedCount} files would be packed, ${f.buildFileCount} of them under lib/ or dist/.`
-    );
-    if (f.buildFileCount <= 1) {
+    // The pack-list itself can fail, and that failure record has no counts to report — printing
+    // "undefined files would be packed" would be worse than saying nothing, and the no-build-output
+    // diagnosis below would be asserting something about a list that was never computed.
+    if (f.packedCount !== undefined) {
       console.error(
-        '    That is effectively no build output — the shape @fgv 5.1.0-27 shipped. Either the'
+        `    ${f.packedCount} files would be packed, ${f.buildFileCount} of them under lib/ or dist/.`
       );
-      console.error(
-        '    package was never built, or its .npmignore / files field excludes the build output.'
-      );
+      if (f.buildFileCount <= 1) {
+        console.error(
+          '    That is effectively no build output — the shape @fgv 5.1.0-27 shipped. Either the'
+        );
+        console.error(
+          '    package was never built, or its .npmignore / files field excludes the build output.'
+        );
+      }
     }
     for (const m of f.missing) {
       console.error(`    ${m.conditionPath} -> ${m.target}`);
