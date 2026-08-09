@@ -128,6 +128,14 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `module-resolution-upgrade` 🔵
+
+**Status:** 🔵 queued — **blocked on the packaging integration landing**, then branch from `release`. Brief at `.ai/tasks/active/module-resolution-upgrade/brief.md`.
+
+**Mission.** The repo resolves modules under **node10 and nobody chose it** — the rig never sets `moduleResolution`, so `module: commonjs` defaults it. Under node10 **TypeScript does not read the `exports` map at all**, which is the structural reason `ts-web-extras-webauthn`'s `default` condition could name a file that never existed for the package's entire life with every build green. Verified by probe: `commonjs`/`node` accepts an un-exported subpath; `node16`, `nodenext` and `bundler` all reject it. Graded deliverables — make today's default explicit, reconcile the three projects that override it inconsistently, move to `bundler` (which enforces `exports` without demanding specifiers, and is the best evidence-to-cost step), then *evaluate* `node16` — which is Option B, gated on the unresolved dual-emit question. **Landing steps 1–3 and stopping is a success.** Does **not** replace the packaging gates: compiler enforcement cannot see a packing failure like 5.1.0-27.
+
+---
+
 ### `publish-tarball-gate` 🔵
 
 **Status:** 🟢 implemented — gate built, both neutralizations demonstrated, wired per-PR **and** into all six publish workflows. Branch `claude/publish-tarball-gate-omgb9e`; artifacts at `.ai/tasks/active/publish-tarball-gate/{brief.md, state.md, result.md, findings/inbox/}`.
