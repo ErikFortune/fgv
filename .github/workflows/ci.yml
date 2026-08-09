@@ -45,3 +45,11 @@ jobs:
         run: node common/scripts/install-run-rush.js install-autoinstaller --name rush-bundler-check
       - name: Verify browser entry points bundle
         run: node common/scripts/verify-bundler-resolution.mjs --verbose --measure
+      # Both steps above check the working tree. This one checks the tarball npm would actually
+      # publish — the only one of the three that can see a package whose build output never enters
+      # the pack (the @fgv 5.1.0-27 shape). Per-PR placement is affordable because the whole repo
+      # costs ~5 s. The hard gate is in the publish workflows; this is the fast feedback.
+      - name: Install pack-check autoinstaller
+        run: node common/scripts/install-run-rush.js install-autoinstaller --name rush-pack-check
+      - name: Verify exports resolve inside the published tarball
+        run: node common/scripts/verify-tarball-exports.mjs --verbose --timing

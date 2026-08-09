@@ -111,6 +111,58 @@ Node consumer can hit them; they are declared bundler-only in the gate with that
 rather than skipped silently. If either ever needs to be Node-importable, tell us — it is currently
 a stated non-guarantee rather than an oversight.
 
+## Your publish-time ask — now built, and here is exactly which half
+
+You asked for:
+
+> a publish-time check that every path named in an exports map exists in the tarball and loads
+> under its declared condition. That would have caught both, and the 5.1.0-27 build-less publish as
+> well.
+
+That is now `common/scripts/verify-tarball-exports.mjs`. **The "exists in the tarball" half shipped.
+The "and loads" half did not** — read on, because the difference matters for what you can rely on.
+
+**What it does.** It computes the file list npm would actually pack — with `npm-packlist`, the
+library npm itself uses, so it is not our reimplementation of npm's ignore rules — and asserts that
+every path our manifest names is in it. That means **every condition and every subpath**, not just
+the one a given runtime resolves, plus `main` / `types` / `module` / `browser`. It runs on every PR
+*and* immediately before every publish, including the three older manually-triggered publish
+workflows, since those are real bypass paths.
+
+**What it closes that the previous gate did not.** The gate we described above checks the **working
+tree**. That is strictly weaker, and the gap is exactly your third case: in the 5.1.0-27 publish,
+`lib/` existed on our machines the entire time and simply never entered the tarball. Every
+tree-based check was green. This one reads the pack list, so that failure is now visible before the
+upload rather than after.
+
+Verified by neutralization three ways, not one: reverting the `ts-web-extras-webauthn` fix fails it
+(and note that fires on the `default` condition, which Node never selects — a gate that checked only
+the resolved condition would have stayed green); excluding a package's build output from the pack
+fails it; and a package with **no build output on disk at all** — your 5.1.0-27 shape reproduced —
+fails it with that diagnosis named.
+
+**The half that did not ship, stated plainly.** It confirms each path is *present in the tarball*.
+It does not extract the tarball and `import` each entry under its condition. Existence catches all
+three instances we know about and costs ~5 seconds for all 25 packages, which is what let us put it
+on every PR as well as at publish. Loading requires a real pack, an extract, and a dependency
+install per package before any import resolves — a different order of cost, and we did not want to
+delay the half that closes the known failures behind it. It is recorded as a follow-up rather than
+quietly dropped.
+
+The residual gap is narrow but real, and you should know its shape: an artifact that **packs**, and
+that **loads from our tree**, but that would fail from an extracted tarball because something it
+reaches at runtime was not packed. A relative `require` of a data file excluded by `.npmignore` is
+the concrete case. Nothing we have hit is of that shape; if you ever hit one, that is the missing
+half and we will build it.
+
+**One thing we found while building it, which you may want to check on your own packages.** npm
+will not prune the directory containing `main`. An `.npmignore` line reading `lib/` looks like it
+excludes `lib/`, and for the directory your `main` points into it does nothing at all — silently,
+with no warning. We reproduced it against real `npm pack`, not just the library. It is also why a
+misconfigured `.npmignore` alone cannot produce the 5.1.0-27 tarball: that shape requires the build
+output to be genuinely missing at pack time, which points at the publish pipeline rather than at
+packaging config.
+
 ## Also in this change, beyond your report
 
 Investigating the deeper fix turned up something bigger than the bug you hit. Most of it did **not**

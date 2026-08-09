@@ -128,6 +128,26 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `publish-tarball-gate` 🔵
+
+**Status:** 🟢 implemented — gate built, both neutralizations demonstrated, wired per-PR **and** into all six publish workflows. Branch `claude/publish-tarball-gate-omgb9e`; artifacts at `.ai/tasks/active/publish-tarball-gate/{brief.md, state.md, result.md, findings/inbox/}`.
+**⚠️ Rebase still owed.** #603 and #605 were **still open** when this ran, so the hard dependency the brief states was not met. The branch remains based on `esm-emit-impl` @ `29d07bcba` (which carries #603's content), and **must be rebased onto `release` once both land** — nothing here conflicts with them by construction, but the base is unmerged. See `result.md` § Deviations.
+**Origin:** direct consumer ask from PersonAIlity, 2026-08-09.
+
+**Mission.** Verify that every path named in a published package's `exports` map exists **in the tarball that ships**, not merely in the working tree. Three defects of one class shipped in a single week — `ts-utils`'s unloadable ESM entry, `ts-web-extras-webauthn`'s `default` naming a file that has never existed, and 5.1.0-27 publishing only `src/` with no build output at all. The gate on #603 checks the working tree, which covers the first two and **cannot** cover the third: `lib/` existed locally and never entered the tarball. **This stream builds a detector, not fixes**; anything it flags is a finding.
+
+**What shipped.** `common/scripts/verify-tarball-exports.mjs` + the `rush-pack-check` autoinstaller (`npm-packlist`; shared shrinkwrap untouched). It walks the **whole** `exports` map — every condition, every subpath, plus `main`/`types`/`module`/`browser` — against the packed file list. Superseding the sibling's tree-based existence check was considered and **declined with reasoning**: the two cannot disagree in the dangerous direction, and what remains genuinely the sibling's is loadability, not existence. Cross-referenced in both headers.
+
+**Instrument, measured.** `npm-packlist` costs **5.2 s for all 25 packages**; `npm pack --dry-run --json` costs **7.6–8.2 s per package** (~3.3 min for the repo) — so the brief's ~12.8 s/package held in shape if not in magnitude on this container. Output verified **byte-identical to `npm pack`** on four packages spanning both `.npmignore`/no-`.npmignore` shapes. The cost is in getting `npm-packlist` a tree, not in `npm-packlist`: `Arborist.loadActual()` is 7.7 s/package, so the gate passes a minimal tree node instead and **fails loudly** on `bundleDependencies` rather than under-checking silently.
+
+**OQ-1 (placement) — resolved as both.** Publish-time is the hard gate and is wired into **all six** publish workflows, including the three `-legacy` ones, which are `workflow_dispatch`-triggerable and therefore real bypass paths. Per-PR CI too, because ~5 s is unnoticeable. **OQ-3 (does it *load*?) — existence only**; the loading half is recorded in `docs/FUTURE.md` with its cost and the narrow residual case it would close, and stated plainly in the consumer note since they asked for both.
+
+**Neutralizations — three, all demonstrated.** Reverting the webauthn `default` fix fails the gate (and fires on a condition Node never selects, which a single-condition resolver would miss); a `.npmignore`-excluded build output fails it; and the true 5.1.0-27 shape — build output absent from disk — fails it with the no-build-output diagnosis. Tree restored clean after each.
+
+**Findings filed (2).** 11 packages ship `src/`, compiled tests, and `.rush/` internals — split exactly on presence of `.npmignore`; recommend a `files` allowlist. And: **npm will not prune the directory containing `main`**, so an `.npmignore` `lib/` line is silently inert — reproduced against real `npm pack`, and it corrected the gate's own no-build-output heuristic into a reported count.
+
+---
+
 ### `agent-memory-ingest-dedup-scope` 🟢
 
 **Status:** 🟢 implemented + reviewed — PR [#600](https://github.com/ErikFortune/fgv/pull/600) onto `release`, CI green, mergeable clean; ready to merge. Branch `agent-memory-ingest-dedup-scope` from `release` @ `b392e1534`. All five deliverables landed; suite green at 100% coverage; `code-reviewer` clean, Copilot loop stopped at round 2 on diminishing returns. Ran in parallel with `safer-fetch-s3`; no code overlap, but both edit `.ai/instructions/LIBRARY_CAPABILITIES.md` and this file — **own section only**.

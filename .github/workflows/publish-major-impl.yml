@@ -41,5 +41,14 @@ jobs:
       - name: Rush rebuild
         run: node common/scripts/install-run-rush.js rebuild --verbose
 
+      # The publish-time hard gate. Every path a manifest names must be present in the tarball
+      # this publish would upload — @fgv 5.1.0-27 shipped only `src/`, and no tree-based
+      # check could see it. Runs immediately before publish so it reads the same tree npm
+      # packs. Costs ~5 s across the repo, against ~3.3 min for `npm pack --dry-run` per package.
+      - name: Install pack-check autoinstaller
+        run: node common/scripts/install-run-rush.js install-autoinstaller --name rush-pack-check
+      - name: Verify exports resolve inside the published tarball
+        run: node common/scripts/verify-tarball-exports.mjs --verbose --timing
+
       - name: Rush Publish
         run: node common/scripts/install-run-rush.js publish --publish --apply --include-all --add-commit-details --ignore-git-hooks --target-branch ${GITHUB_REF_NAME}
