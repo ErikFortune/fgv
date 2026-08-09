@@ -85,8 +85,10 @@ Three green gates were all blind to it, for three different reasons:
 - **`rush build`** — TypeScript resolves *types*, and the types resolve either way.
 - **`rush test`** — Jest runs in CJS, so every test takes the `require` condition and never enters
   `import` at all.
-- **our bundled apps** — one is a webpack browser build, the other a CJS consumer. Bundlers resolve
-  extensionless directory imports happily, so neither could fail on this.
+- **our bundled apps** — one is a webpack browser build, the other a CJS consumer, and between them
+  they import a fraction of the published surface. Neither reaches most packages at all. (An
+  earlier version of this note said "bundlers resolve extensionless directory imports happily" here
+  too. That is the claim corrected above — it is true of esbuild and false of webpack 5.)
 
 So we added `common/scripts/verify-esm-entrypoints.mjs`, wired into CI: it loads every published
 entry point the way a Node ESM consumer does, and fails the build when one does not load. Verified
