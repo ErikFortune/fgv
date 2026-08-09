@@ -252,7 +252,11 @@ Gate re-run after the P3 fixes: unchanged — 19 checked, 6 declared, 0 failed; 
 
 Verified after: both gates green (23/2/0/0 and 19/6/0/0), `ts-bcp47` build and lint clean, `etc/ts-bcp47.api.md` unchanged (the `index.node.ts` edit is comment-only).
 
-**Loop status:** round 1 was substantive — one real portability bug in two files, one inaccurate comment, and one genuine silent-pass hole in a gate. Not nitpick territory, so the loop continues rather than stopping at an arbitrary round count. Re-requesting review on the follow-up commit.
+**Round 2: zero comments.** Re-requested on `685c886c2`; the pass completed `success` and produced no new threads. All four round-1 threads went `is_outdated` (the lines they pointed at were changed) and are resolved.
+
+**Loop stopped at round 2 on diminishing returns.** Round 1 was substantive — a real portability bug in two files, an inaccurate comment, and a genuine silent-pass hole in a gate — so stopping at round 1 would have been wrong on the repo's own criterion (stop on the *finding profile*, not the round count). Round 2 returning empty is the unambiguous version of that signal. Well short of the 10-round cap.
+
+Worth noting for the layer-1/layer-2 economics the coding standards discuss: round 1's most valuable finding (the sibling gate's silent skip) was one `code-reviewer` had already raised as P3-4, which I dispositioned as out of scope. Two independent reviewers converging on the same hole was the signal that the scope call was wrong — the deferral was defensible in isolation and incorrect in aggregate. The other three were genuinely new to layer 2, and two of them (`REPO_ROOT`) were defects *inherited* by copying the sibling's idiom, which is a class layer 1 is poorly placed to catch because the copied code reads as established convention.
 
 ## Open questions
 
