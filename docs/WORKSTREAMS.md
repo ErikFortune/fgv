@@ -128,6 +128,15 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `esm-emit-impl` 🔵
+
+**Status:** 🔵 queued — branch `esm-emit-impl`, based on `fix/esm-node-entry-points` @ `cebf10bae` (not on `release` directly). Brief at `.ai/tasks/active/esm-emit-impl/brief.md`. **PR #603 is deliberately not being shipped on its own** — this branch supersedes it, so its content ships here or not at all. One stream, one publish.
+**Package surface:** `rigs/heft-dual-rig`, every published package's `exports`, `libraries/ts-bcp47/src`, `common/scripts`, `.github/workflows/ci.yml`.
+
+**Mission.** Implement `.claude/project/esm-emit-design.md` R1–R5 and fix the `ts-bcp47` browser-entry defect the design surfaced. The design reframed the problem: the reported bug (4 packages, Node ESM unloadable) is the smaller half; **20 of 24 published packages already build a tree-shakeable ESM bundle their `exports` never points at**, costing a measured 3.5× browser payload (`ts-json-base`: 130.0 KB shipped vs 37.4 KB available). Native Node ESM has no demonstrated consumer, so it is deferred — not foreclosed. R3 (route bundlers at the ESM emit) is the valuable step **and** the dangerous one: those trees build but have never been bundled, and the one package already wired that way pulls `fs`/`path` into a browser graph. Hence R5, a bundler-resolution gate, must land and go green per package before R3 touches it.
+
+---
+
 ### `agent-memory-ingest-dedup-scope` 🟢
 
 **Status:** 🟢 implemented + reviewed — PR [#600](https://github.com/ErikFortune/fgv/pull/600) onto `release`, CI green, mergeable clean; ready to merge. Branch `agent-memory-ingest-dedup-scope` from `release` @ `b392e1534`. All five deliverables landed; suite green at 100% coverage; `code-reviewer` clean, Copilot loop stopped at round 2 on diminishing returns. Ran in parallel with `safer-fetch-s3`; no code overlap, but both edit `.ai/instructions/LIBRARY_CAPABILITIES.md` and this file — **own section only**.
