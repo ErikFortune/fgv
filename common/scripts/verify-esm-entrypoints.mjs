@@ -35,6 +35,14 @@
 // a question `verify-tarball-exports.mjs` owns outright: that script asserts existence for **every**
 // condition at **every** subpath, against the **packed tarball** rather than the working tree.
 //
+// Note the two branches this comment was written across: this script also carries its own
+// all-conditions existence pass over the working tree (pass 1 below), added on the branch that
+// fixed `@fgv/ts-web-extras-webauthn` and before the pack-list gate existed. That pass is now
+// **redundant with** `verify-tarball-exports.mjs` and is deliberately retained rather than deleted,
+// for one reason: this script runs with no autoinstaller and no dependencies, so it still works in
+// a checkout where the pack-check autoinstaller has not been installed. Removing it is a
+// reasonable follow-up; doing so silently as part of an unrelated change is not.
+//
 // The two are deliberately not merged, and cannot disagree in the dangerous direction: a packed
 // file necessarily exists in the tree, so this script passing can never mask a failure there, while
 // the reverse — a file present locally that never enters the tarball — is exactly the @fgv 5.1.0-27
