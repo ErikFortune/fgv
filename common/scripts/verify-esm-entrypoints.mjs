@@ -22,6 +22,20 @@
 // This script closes that hole the only way it can be closed: by actually loading each entry the
 // way a Node ESM consumer does, and failing loudly when it does not load.
 //
+// WHAT THIS SCRIPT NO LONGER OWNS
+//
+// It checks that the artifact exists before importing it, and that check is now the weaker half of
+// a question `verify-tarball-exports.mjs` owns outright: that script asserts existence for **every**
+// condition at **every** subpath, against the **packed tarball** rather than the working tree.
+//
+// The two are deliberately not merged, and cannot disagree in the dangerous direction: a packed
+// file necessarily exists in the tree, so this script passing can never mask a failure there, while
+// the reverse — a file present locally that never enters the tarball — is exactly the @fgv 5.1.0-27
+// defect and is visible only to the pack-list gate. What remains genuinely this script's own is the
+// part the pack-list cannot answer: whether the entry, once present, **loads** under Node's ESM
+// loader. The existsSync below is retained as the guard that makes that import meaningful, not as
+// an independent existence check.
+//
 // USAGE
 //   node common/scripts/verify-esm-entrypoints.mjs [--verbose]
 //

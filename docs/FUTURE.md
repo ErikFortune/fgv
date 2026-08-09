@@ -822,3 +822,37 @@ rollup) will follow into nothing.
 **Reference**: `.claude/project/esm-emit-design.md` R4 and OQ-2/OQ-3;
 `.ai/tasks/active/esm-emit-impl/result.md` for the per-package routing decisions and the
 measurements behind the `ts-json` / `ts-web-extras` calls.
+
+---
+
+## Tarball gate — verify each packed entry *loads*, not merely that it is present
+
+**Status:** deferred follow-up from the `publish-tarball-gate` stream. Existence shipped; loading
+did not.
+
+`common/scripts/verify-tarball-exports.mjs` asserts that every path a manifest names — every
+`exports` condition, every subpath, plus `main` / `types` / `module` / `browser` — is present in the
+file list npm would pack. The consumer's ask was two-part: that each path "exists in the tarball
+**and loads** under its declared condition". Only the first half shipped.
+
+**Why the first half was enough to ship on its own.** It catches all three defects that motivated
+the gate, including the one no other check could see (5.1.0-27 packing no build output at all), and
+it costs ~1.5 s across 25 packages — cheap enough to run per-PR *and* at publish time. The second
+half needs `npm pack` (or an equivalent tar write), extraction to a temp root, an install of each
+package's dependencies so its imports resolve, and then an import per condition. That is a
+different order of cost and a different failure surface, and pairing it with a same-PR existence
+check would have delayed the half that closes the known instances.
+
+**What the missing half would add.** Existence proves a path is *in* the tarball; it does not prove
+the extracted file evaluates. `verify-esm-entrypoints.mjs` covers loadability for the one condition
+Node resolves, **against the working tree** — so the residual uncovered case is narrow but real: an
+artifact that packs, and that loads from the tree, but would fail to load from an extracted tarball
+because something it reaches at runtime was *not* packed. A relative `require` of a JSON data file
+excluded by `.npmignore` is the concrete shape.
+
+**Prerequisite before this is worth building:** the findings filed by that stream should be resolved
+first. Several packages currently pack their full `src/` tree and Rush internals; an extract-and-load
+check over tarballs that large pays for the noise before it pays for the signal.
+
+**Reference:** `.ai/tasks/active/publish-tarball-gate/result.md` (OQ-3), and the script header's
+"WHAT THIS GATE DOES NOT TELL YOU".
