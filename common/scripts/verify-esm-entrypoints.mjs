@@ -55,11 +55,11 @@ const VERBOSE = process.argv.includes('--verbose');
 const BUNDLER_ONLY = new Map([
   [
     '@fgv/ts-res-ui-components',
-    'React component library; consumed through webpack/vite only. Its `lib` build is ESM with directory imports.'
+    'React component library; consumed through webpack/vite only. Built with `@rushstack/heft-web-rig` (`library` profile), which emits `module: esnext` to `lib` and produces no CJS build. There is no artifact for a `node` condition to point at.'
   ],
   [
     '@fgv/ts-sudoku-ui',
-    'React component library; consumed through webpack only (apps/sudoku). Its `lib` build is ESM with directory imports.'
+    'React component library; consumed through webpack only (apps/sudoku). Built with `@rushstack/heft-web-rig` (`library` profile), which emits `module: esnext` to `lib` and produces no CJS build. There is no artifact for a `node` condition to point at.'
   ]
 ]);
 

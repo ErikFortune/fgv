@@ -1,8 +1,36 @@
 # ESM emit design
 
-**Status:** design complete, awaiting review. **No implementation has been done in this stream** —
-no source, config, rig, or `package.json` change is in its diff. An implementation stream is
-commissioned from this document, not by it.
+**Status: partially implemented, and the core recommendation is BLOCKED** — `esm-emit-impl`
+(branch `esm-emit-impl`), 2026-08-09. **R2 and R3 were implemented, measured, and then reverted:
+both break the repo's own webpack build.** R5 landed; R1 was already in the base branch; R4 is
+recorded in `docs/FUTURE.md`. See `.ai/tasks/active/esm-emit-impl/result.md` and the findings inbox.
+
+**Read §3, §4 and §6 with this correction in front of them.** Four things this document asserted
+need revision, all recorded as findings in `.ai/tasks/active/esm-emit-impl/findings/inbox/`:
+
+1. **§4 is wrong that R2 is safe and independent.** The generated `dist/package.json`
+   `{"type":"module"}` makes webpack 5 apply `fullySpecified` resolution to the `dist` tree, whose
+   extensionless directory imports then fail exactly as they do under Node. Bisected on an otherwise
+   identical tree: `tools/ts-res-ui-playground` goes 0 webpack errors → 6 with R2, and back to 0 when
+   that one generated file is deleted. R2 converts a harmless Node warning into a hard build failure.
+2. **§6 is wrong that "bundlers resolve extensionless directory imports happily."** True of esbuild,
+   false of webpack 5. R3 fails the same way and for the same reason. **R3 is therefore not gated on
+   a bundler-resolution check — it is gated on Option B**, which is the precondition for *any*
+   correct consumer of the ESM emit, not merely for native Node ESM. R3's measured win is not
+   available without Option B; they are one change, not two competing ones.
+3. **§7's "the R3 wins generalize" inference was wrong in both directions.** Measured on every viable
+   candidate before the revert: `ts-app-shell` 7.26× and `ts-json-base` 3.19× on a narrow import
+   (corroborating the 3.48× here), but `ts-json` 0.95× and `ts-web-extras` 1.01× — *larger* as ESM.
+   A clean bundler probe is a precondition for routing, not a reason to route.
+4. **§6 located the `ts-bcp47` defect at the wrong level.** `index.browser.ts` already excluded the
+   filesystem loader; the leak entered from underneath, via ~26 files in `packlets/bcp47` and
+   `packlets/unsd` importing the *node* `../iana` barrel. An entry-level split cannot fix a leak that
+   enters below the entry. (Also: R2 was not one line — `ts-bcp47` overrides the rig's
+   `typescript.json` wholesale.)
+
+**Original status:** design complete, awaiting review. No implementation was done in the design
+stream — no source, config, rig, or `package.json` change was in its diff. An implementation stream
+was commissioned from this document, not by it.
 
 **Stream:** `esm-emit-design`, branch `esm-emit-design` from `release` @ `792b87b5e`.
 **Prior art this builds on:** the interim fix on `fix/esm-node-entry-points` (a `node` condition

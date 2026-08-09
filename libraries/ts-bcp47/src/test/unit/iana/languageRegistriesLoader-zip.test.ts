@@ -23,7 +23,8 @@
 import '@fgv/ts-utils-jest';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as Iana from '../../../packlets/iana';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import * as Iana from '../../../packlets/iana/index.node';
 
 describe('LanguageRegistriesLoader ZIP functionality', () => {
   const testDataDir = 'src/data/iana';

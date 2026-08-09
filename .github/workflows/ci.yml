@@ -38,3 +38,10 @@ jobs:
       # it never enters the `import` condition. See the script header.
       - name: Verify ESM entry points are loadable
         run: node common/scripts/verify-esm-entrypoints.mjs --verbose
+      # The sibling check, one row down the consumer table. The step above asks whether Node can
+      # load the entry; this one asks whether a browser bundler can compile it. Nothing else in CI
+      # reads that row, and routing browser bundlers at the ESM emit makes it load-bearing.
+      - name: Install bundler-check autoinstaller
+        run: node common/scripts/install-run-rush.js install-autoinstaller --name rush-bundler-check
+      - name: Verify browser entry points bundle
+        run: node common/scripts/verify-bundler-resolution.mjs --verbose --measure

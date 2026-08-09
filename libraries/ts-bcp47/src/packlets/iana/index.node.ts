@@ -20,6 +20,13 @@
  * SOFTWARE.
  */
 
+// The node-only IANA surface: everything the shared `./index` barrel exports, plus the filesystem
+// loader. Only `src/index.ts` — the entry the `node` condition resolves — imports this.
+//
+// The export list is spelled out rather than re-exported from `./index` because a packlet file may
+// not import its own index. That mirrors `./index.browser`, which spells out the same list minus
+// the node-only pieces; the three barrels are meant to be read side by side.
+
 import { nowAsYearMonthDay } from './common/utils';
 import * as Converters from './converters';
 import * as Jar from './jar';
@@ -28,12 +35,8 @@ import * as LanguageTagExtensions from './language-tag-extensions';
 import * as Model from './model';
 import * as Validate from './validate';
 
-// This barrel is deliberately free of node built-ins, because it is what every other packlet in
-// this library imports (`packlets/bcp47` and `packlets/unsd` reach it as `../iana`). The
-// filesystem loader lives in `./index.node` instead: re-exporting it here would put `fs` and
-// `path` on the reachable graph of every importer, including `src/index.browser.ts`, which is
-// exactly the defect that shipped in 5.1.0-47.
 export { DefaultRegistries } from './defaultRegistries';
 export * from './languageRegistries';
 export * from './languageRegistriesLoader';
+export * from './languageRegistriesFileLoader';
 export { Converters, Jar, Model, LanguageSubtags, LanguageTagExtensions, Validate, nowAsYearMonthDay };

@@ -128,15 +128,6 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `esm-emit-impl` 🔵
-
-**Status:** 🔵 queued — branch `esm-emit-impl`, based on `fix/esm-node-entry-points` @ `cebf10bae` (not on `release` directly). Brief at `.ai/tasks/active/esm-emit-impl/brief.md`. **PR #603 is deliberately not being shipped on its own** — this branch supersedes it, so its content ships here or not at all. One stream, one publish.
-**Package surface:** `rigs/heft-dual-rig`, every published package's `exports`, `libraries/ts-bcp47/src`, `common/scripts`, `.github/workflows/ci.yml`.
-
-**Mission.** Implement `.claude/project/esm-emit-design.md` R1–R5 and fix the `ts-bcp47` browser-entry defect the design surfaced. The design reframed the problem: the reported bug (4 packages, Node ESM unloadable) is the smaller half; **20 of 24 published packages already build a tree-shakeable ESM bundle their `exports` never points at**, costing a measured 3.5× browser payload (`ts-json-base`: 130.0 KB shipped vs 37.4 KB available). Native Node ESM has no demonstrated consumer, so it is deferred — not foreclosed. R3 (route bundlers at the ESM emit) is the valuable step **and** the dangerous one: those trees build but have never been bundled, and the one package already wired that way pulls `fs`/`path` into a browser graph. Hence R5, a bundler-resolution gate, must land and go green per package before R3 touches it.
-
----
-
 ### `agent-memory-ingest-dedup-scope` 🟢
 
 **Status:** 🟢 implemented + reviewed — PR [#600](https://github.com/ErikFortune/fgv/pull/600) onto `release`, CI green, mergeable clean; ready to merge. Branch `agent-memory-ingest-dedup-scope` from `release` @ `b392e1534`. All five deliverables landed; suite green at 100% coverage; `code-reviewer` clean, Copilot loop stopped at round 2 on diminishing returns. Ran in parallel with `safer-fetch-s3`; no code overlap, but both edit `.ai/instructions/LIBRARY_CAPABILITIES.md` and this file — **own section only**.
@@ -297,6 +288,26 @@ Design-triage-implement shape is likely; new public API has real consequences.
 ---
 
 ## Completed workstreams
+
+### `esm-emit-impl` ⚠️
+
+**Status:** ⚠️ implemented, and it found that the design's central recommendation does not work — branch `esm-emit-impl`, based on `fix/esm-node-entry-points` @ `cebf10bae` (not on `release` directly). **PR #603 was deliberately not shipped on its own** — this branch contains all of it and supersedes it. **R2 and R3 were implemented, measured, and then reverted: both break the repo's own webpack build.** What ships is R5, two real defect fixes it found, and the evidence. Full monorepo build + test green; both entry-point gates green.
+**Substrate:** `.ai/tasks/active/esm-emit-impl/{brief.md, state.md, result.md, findings/inbox/}`
+**Package surface:** `libraries/ts-bcp47/src` + config, `libraries/ts-web-extras-webauthn/package.json` (`exports` only), `common/scripts`, `common/autoinstallers/rush-bundler-check`, `.github/workflows/ci.yml`.
+
+**The headline.** The `dist` ESM emit contains extensionless directory imports — which is *why* Node could not load it, and is the bug that started all this. The design assumed bundlers were fine with that ("bundlers resolve extensionless directory imports happily") and built R2 and R3 on it. **That is true of esbuild and false of webpack 5**, which applies `fullySpecified` to anything it treats as ESM. Bisected on an otherwise identical tree: `tools/ts-res-ui-playground` goes **0 webpack errors → 6** with R2, and back to **0** when the single generated `dist/package.json` is deleted. R3 fails the same way on whatever it routes.
+
+So **R2 is not the safe, independent one-liner §4 called it** — it converts a harmless Node warning into a hard webpack failure — and **R3 is not gated on a bundler-resolution check, it is gated on Option B** (explicit specifiers, the ~3,520-edit codemod the design deferred for want of a consumer asking). Option B is the precondition for *any* correct consumer of the ESM emit, browser bundlers included; R3's measured win is not available without it. They are one change, not two competing ones — which materially changes Option B's cost/benefit as the design weighed it.
+
+**What ships.** The R5 gate (`verify-bundler-resolution.mjs`) + CI wiring, which actually bundles every published package's browser entry with node builtins unpolyfilled; **two real shipped defects it found** — `ts-bcp47`'s browser entry pulled `fs`/`path` into a browser graph (fixed), and `ts-web-extras-webauthn`'s non-Node condition pointed at a file that is never built, so no bundler/Deno/edge consumer could resolve the package at all (fixed, `exports`-only); the §5.1 `BUNDLER_ONLY` reason amendment; **6 packages declared node-only** on the record rather than skipped silently. Gate green at 19 checked / 6 declared / 0 failed.
+
+**Measurements kept for the follow-up**, taken before the revert: `ts-app-shell` **7.26×**, `ts-json-base` **3.19×** (corroborating the design's independent 3.48×), `ts-extras` 1.62×, `ts-res` 1.30× — but `ts-json` **0.95×** and `ts-web-extras` **1.01×**, i.e. *larger* as ESM. §7 flagged "the wins generalize" as inferred; the inference was wrong in both directions. A clean bundler probe is a precondition for routing, not a reason to route.
+
+**The gate now encodes what was learned:** `--probe-esm` marks a package **BLOCKED** when esbuild bundles it but its emitted specifiers are not fully specified, so the next attempt fails fast with the reason instead of rediscovering it by breaking a build. Current verdict: **10 dual-rig packages BLOCKED, 4 clean.**
+
+**Open for the orchestrator.** **Option B should be commissioned as its own stream, scoped as the enabler for R2+R3 rather than as native-ESM support** — that is the recommendation this stream ends on. **OQ-3** — #603 contains nothing this branch does not; recommend closing it. The 6 node-only declarations are **inferred, not owner-confirmed**, which the sibling gate's own comment calls the weaker basis; filed as a finding asking for a yes/no per package.
+
+---
 
 ### `ts-utils-async-detailed-result` ✅
 
