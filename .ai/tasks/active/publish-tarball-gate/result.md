@@ -12,8 +12,9 @@ and, as the hard gate, into **all six** publish workflows.
 
 Result on the current tree: **31 packages checked, 215 manifest paths verified, 0 failed, ~5.8 s.**
 
-The class is demonstrated, not just the instance: five neutralizations, covering the defect we
-already fixed, the one nothing could previously see, and the `bin` / `browser`-map surfaces.
+The class is demonstrated, not just the instance: six neutralizations, covering the defect we
+already fixed, the one nothing could previously see, and the `bin` / `browser`-map / invalid-leaf
+surfaces.
 
 ## The instrument, and its measured cost
 
@@ -42,11 +43,11 @@ The one thing the minimal tree gives up is `bundleDependencies` (packed out of `
 invisible to a directory walk). No `@fgv` package declares it, and rather than assume that, the gate
 **fails loudly** with an actionable message if one ever does.
 
-## Neutralization — five demonstrations
+## Neutralization — six demonstrations
 
 The brief required two. A third was added because the second turned out not to reproduce what it
-claimed (see Findings #2); the fourth and fifth cover the `bin` and `browser`-map surfaces added in
-Copilot rounds 1 and 2.
+claimed (see Findings #2); the rest cover the `bin`, `browser`-map, and invalid-leaf surfaces added
+across Copilot rounds 1–3.
 
 | # | Simulation | Result |
 |---|---|---|
@@ -55,6 +56,7 @@ Copilot rounds 1 and 2.
 | 2b | `@fgv/ts-random`: build output **absent from disk** — the true 5.1.0-27 shape | **FAILS**, exit 1, all 7 paths, with the no-build-output diagnosis |
 | 3 | `@fgv/ts-res-cli`: `bin` pointed at a non-existent file | **FAILS**, exit 1, names `(bin.ts-res-compile)` |
 | 4 | `@fgv/ts-bcp47`: a `browser` **map value** pointed at a non-existent file | **FAILS**, exit 1, names `(browser["./lib/index.js"])` |
+| 5 | `@fgv/ts-random`: a structurally invalid `exports` leaf (`types: true`) | **FAILS**, exit 1, names `. > types -> (boolean)` |
 
 Each was reverted immediately and `git status --porcelain libraries/` confirmed empty after each;
 the gate returns to `0 failed` in every case.
@@ -225,6 +227,34 @@ nitpicks, so the round-count is not the signal here — the finding profile is.
   the no-build-output diagnosis must not assert anything about a list that was never computed.
   (Copilot also predicted this would trigger the no-build-output banner; it would not —
   `undefined <= 1` is `false` — but the `undefined` print was real.)
+
+## Copilot loop — round 3, and the stop
+
+**One comment, fixed.** `collectExportTargets` skipped a structurally invalid `exports` leaf (a
+boolean or number under a condition key) with a comment explaining the skip. Copilot called that a
+silent-pass hole, and it was — by the same argument I had already accepted two rounds earlier for
+the zero-target case. "Nothing to check" and "fine" are different statements, and a manifest with a
+boolean under a condition key is defective. It now fails, naming the condition path and the type
+found. Verified with `exports['.'].types = true`.
+
+**Stopping the loop here, on diminishing returns rather than the cap.** The finding profile is the
+signal, and it flattened:
+
+| Round | Profile |
+|---|---|
+| 1 | **Real coverage hole** — `tools/` invisible to the gate; led directly to a live shipping defect (finding #3) |
+| 2 | **Real coverage hole** — the object form of `browser` unread, on the one package that uses it, naming the same filename shape as the original webauthn defect |
+| 3 | **Consistency hardening** — a manifest shape that cannot occur in a *valid* manifest, tightened to fail rather than skip |
+
+Rounds 1 and 2 each found a surface the gate was not reading at all, on live manifests. Round 3
+found a defensive branch worth tightening but no unread surface — every field a real manifest uses
+is now covered, and the remaining item was about behavior under input that would already be broken.
+That is the turn from substantive to advisory, so the loop stops at three rather than running to the
+ten-round cap.
+
+Round 1's Windows-portability comment on `verify-bundler-resolution.mjs` was re-raised in round 3 as
+a suppressed comment. Still declined, same reason: that file is base-branch code from #605, and it
+belongs to that stream.
 
 ## Deviations from the brief
 

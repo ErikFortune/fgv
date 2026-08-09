@@ -29,5 +29,7 @@ touches except `verify-esm-entrypoints.mjs`, where the change is an additive hea
 - [x] Copilot round 1 — 4 comments, 3 actioned (1 substantive: `tools/` invisible to the gate), 1 declined
 - [x] Copilot round 2 — 2 comments, both real, both fixed (`browser` map form; `undefined` counts on the pack-failure path)
 - [x] Neutralization 4 — `browser` map value naming an unpacked file → gate fails, exit 1
-- [ ] Copilot round 3 — commissioned; round 2 was substantive, so not calling diminishing returns yet
+- [x] Copilot round 3 — 1 comment, fixed (invalid `exports` leaf now fails instead of being skipped)
+- [x] Neutralization 5 — invalid `exports` leaf (`types: true`) → gate fails, exit 1
+- [x] **Copilot loop stopped at round 3 on diminishing returns** — see `result.md`
 - [ ] Rebase onto `release` once #603 + #605 land

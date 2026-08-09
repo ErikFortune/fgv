@@ -30,7 +30,7 @@
 // `npm pack --dry-run --json` is the ground truth, and it spawns npm per package. Measured on a
 // fully built tree here: **7.6-8.2 s per package**, ~3.3 min across the repo, against CI runs that
 // have been cancelled around 15 minutes. `npm-packlist` computes the same list in-process, and the
-// whole repo costs **~5.2 s** — the ratio that makes per-PR placement viable rather than
+// whole repo costs **~5.8 s for 31 packages** — the ratio that makes per-PR placement viable rather
 // publish-time only. Reimplementing npm's ignore rules by hand was the third option and is the
 // wrong one: it would drift from real npm behavior, and a gate that models packing incorrectly is
 // worse than none.
@@ -180,9 +180,13 @@ async function computePackList(packlist, pkg) {
  * publisher has to be right about *all* of them, and the webauthn defect lived in a condition Node
  * never selects. Arrays (fallback lists) and nested condition objects are both walked; `null`
  * targets are the documented way to block a subpath and are not paths at all, so they are skipped.
+ *
+ * Returns both the paths found and any structurally invalid leaves, so the caller can fail on a
+ * defective manifest instead of reporting success over a shape this walk could not read.
  */
 function collectExportTargets(exportsField) {
   const targets = [];
+  const invalid = [];
   const walk = (node, path) => {
     if (node === null || node === undefined) {
       return;
@@ -201,12 +205,19 @@ function collectExportTargets(exportsField) {
       }
       return;
     }
-    // Anything else — a number, a boolean — is not a valid `exports` leaf under Node's spec and
-    // names no path, so there is nothing to check. Narrated rather than left as a silent fallthrough,
-    // because every other skip in this file is on the record and this one should read the same way.
+    // Anything else — a number, a boolean — is not a valid `exports` leaf under Node's spec. It
+    // names no path, so there is nothing to *check*, but "nothing to check" and "fine" are not the
+    // same statement and this file does not get to conflate them: a manifest with a boolean under a
+    // condition key is defective, and passing it silently is the same silent-pass hole the
+    // zero-target case above fails on. Reported as a failure for the same reason, rather than
+    // skipped with a comment explaining the skip.
+    invalid.push({
+      conditionPath: path.length > 0 ? path.join(' > ') : '.',
+      value: `${typeof node}`
+    });
   };
   walk(exportsField, []);
-  return targets;
+  return { targets, invalid };
 }
 
 /**
@@ -356,10 +367,22 @@ for (const pkg of packages) {
   const packMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
   totalPackMs += packMs;
 
-  const targets = [
-    ...collectExportTargets(pkg.manifest.exports),
-    ...collectManifestTargets(pkg.manifest)
-  ];
+  const exportTargets = collectExportTargets(pkg.manifest.exports);
+  const targets = [...exportTargets.targets, ...collectManifestTargets(pkg.manifest)];
+  if (exportTargets.invalid.length > 0) {
+    failures.push({
+      name: pkg.name,
+      missing: exportTargets.invalid.map((i) => ({
+        conditionPath: i.conditionPath,
+        target: `(${i.value})`,
+        reason: `invalid \`exports\` leaf — expected a string path, a nested condition object, an array, or null`
+      })),
+      buildFileCount: [...packed].filter((f) => f.startsWith('lib/') || f.startsWith('dist/')).length,
+      packedCount: packed.size
+    });
+    checked++;
+    continue;
+  }
   // A package that declares `exports` but yields no path to check would otherwise be counted as
   // "checked" having verified nothing — a success report for a check that never ran, which is the
   // exact failure mode this family of gates exists to remove. It fails rather than warns: an
