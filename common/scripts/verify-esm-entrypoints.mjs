@@ -11,8 +11,15 @@
 //   - Jest runs in CJS, so every test takes the `require` condition and never enters the `import`
 //     condition at all.
 //   - The bundled apps (`apps/sudoku` via webpack, `samples/testbed` via heft/CJS) are a browser
-//     bundler and a CJS consumer respectively. Bundlers resolve extensionless directory imports
-//     happily, so neither app can fail on this either.
+//     bundler and a CJS consumer respectively, and between them they import a fraction of the
+//     published surface. Neither reaches most packages at all.
+//
+// A word on bundlers, because an earlier version of this comment got it wrong and the error was
+// load-bearing: it is NOT true that "bundlers resolve extensionless directory imports happily".
+// esbuild does. **webpack 5 does not**, once it treats the tree as ESM — it applies
+// `fullySpecified` resolution and hard-fails. Declaring the emit ESM (a `dist/package.json` with
+// `{"type":"module"}`) is enough to trigger it. That difference was discovered by trying it: the
+// repo's own webpack app went from 0 errors to 6. Do not reason about "bundlers" as one thing.
 //
 // The gap reached a consumer: `@fgv` 5.1.0-47 routed `exports.import` to an ESM emit whose
 // internal specifiers were extensionless directory imports (`from './packlets/base'`). Node's ESM
@@ -30,9 +37,12 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join, resolve, dirname } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 
-const REPO_ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..', '..');
+// `fileURLToPath`, not `new URL(...).pathname`: the latter leaves percent-escapes intact (a repo
+// checked out under a path with a space resolves to `.../my%20repo/...`) and prefixes a leading
+// slash onto Windows drive letters.
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PACKAGE_DIRS = ['libraries', 'tools'];
 const VERBOSE = process.argv.includes('--verbose');
 
@@ -40,8 +50,9 @@ const VERBOSE = process.argv.includes('--verbose');
  * Packages that are deliberately NOT loadable by Node's ESM loader, each with the reason.
  *
  * This list is an explicit declaration, not a suppression. A package belongs here only when its
- * consumers are bundlers — which resolve extensionless directory imports that Node will not — and
- * never a Node ESM `import`. Adding an entry is a decision on the record; the alternative is a
+ * consumers are bundlers — specifically ones that tolerate this emit's specifiers, which is not all
+ * of them (see the note above) — and never a Node ESM `import`. Adding an entry is a decision on
+ * the record; the alternative is a
  * silent skip that reads the same as "we forgot", which is exactly how the 5.1.0-47 breakage
  * survived a green build and a green test run.
  *
@@ -55,11 +66,11 @@ const VERBOSE = process.argv.includes('--verbose');
 const BUNDLER_ONLY = new Map([
   [
     '@fgv/ts-res-ui-components',
-    'React component library; consumed through webpack/vite only. Its `lib` build is ESM with directory imports.'
+    'React component library; consumed through webpack/vite only. Built with `@rushstack/heft-web-rig` (`library` profile), which emits `module: esnext` to `lib` and produces no CJS build. There is no artifact for a `node` condition to point at.'
   ],
   [
     '@fgv/ts-sudoku-ui',
-    'React component library; consumed through webpack only (apps/sudoku). Its `lib` build is ESM with directory imports.'
+    'React component library; consumed through webpack only (apps/sudoku). Built with `@rushstack/heft-web-rig` (`library` profile), which emits `module: esnext` to `lib` and produces no CJS build. There is no artifact for a `node` condition to point at.'
   ]
 ]);
 
@@ -105,6 +116,40 @@ function resolveImportTarget(exportsField) {
   return undefined;
 }
 
+/**
+ * Every file path named anywhere in an `exports` map, with the condition path that named it.
+ *
+ * @remarks
+ * The load check above only ever examines the ONE target Node resolves — `node`, else `import`,
+ * else `default`. A package with a `node` block therefore has its `default` condition never looked
+ * at, and `default` is exactly what browser bundlers, Deno, and edge runtimes take. That blind spot
+ * is not theoretical: `@fgv/ts-web-extras-webauthn` shipped a `default` naming a
+ * `lib/index.browser.js` with no source and no build step, so the package was unresolvable from any
+ * web client, while every Node-facing check stayed green.
+ *
+ * Checking that each named file exists is cheap, needs no bundler, and catches the whole class —
+ * a condition pointing at something that will never exist is a packaging defect regardless of which
+ * runtime takes it.
+ */
+function collectExportTargets(node, conditionPath, out) {
+  if (typeof node === 'string') {
+    if (node.startsWith('./')) {
+      out.push({ condition: conditionPath || '.', target: node });
+    }
+    return out;
+  }
+  if (node === null || typeof node !== 'object') {
+    return out;
+  }
+  for (const [key, value] of Object.entries(node)) {
+    // The subpath key is literally `"."`, so joining with a dot would render `..default.import`.
+    // `types` names a `.d.ts`, which is a real artifact and worth checking on the same terms.
+    const next = conditionPath === '' ? key : `${conditionPath}${conditionPath.endsWith('.') ? '' : '.'}${key}`;
+    collectExportTargets(value, next, out);
+  }
+  return out;
+}
+
 async function collectPackages() {
   const found = [];
   for (const group of PACKAGE_DIRS) {
@@ -136,6 +181,24 @@ let checked = 0;
 let skipped = 0;
 let declared = 0;
 
+// Pass 1 — every condition, not just the one Node takes. Runs for BUNDLER_ONLY packages too: a
+// package being bundler-only excuses it from *loading* under Node, never from naming files it has.
+for (const pkg of packages) {
+  const built = existsSync(join(pkg.dir, 'lib')) || existsSync(join(pkg.dir, 'dist'));
+  if (!built) {
+    continue;
+  }
+  for (const { condition, target } of collectExportTargets(pkg.manifest.exports, '', [])) {
+    if (!existsSync(resolve(pkg.dir, target))) {
+      failures.push({
+        name: pkg.name,
+        target: `${target}  (condition: ${condition})`,
+        reason: 'condition names an artifact that does not exist, though the package has been built'
+      });
+    }
+  }
+}
+
 for (const pkg of packages) {
   const bundlerOnlyReason = BUNDLER_ONLY.get(pkg.name);
   if (bundlerOnlyReason !== undefined) {
@@ -152,8 +215,22 @@ for (const pkg of packages) {
   }
   const absolute = resolve(pkg.dir, target);
   if (!existsSync(absolute)) {
-    // A missing artifact means the package has not been built; that is a build problem, not an
-    // entry-point problem, and reporting it as a load failure would be misleading.
+    // "Not built yet" and "points at a file that will never exist" look identical at this line, and
+    // conflating them is how a dangling `exports` pointer hides: it reads as a skip forever. If the
+    // package has produced *any* build output then a build has run, so the named artifact is
+    // genuinely missing — a packaging defect, and it fails.
+    //
+    // This is not hypothetical. It was found in
+    // `@fgv/ts-web-extras-webauthn`, whose `default` condition named a `lib/index.browser.js` that
+    // has no source and is never emitted; it had been reported as a skip.
+    if (existsSync(join(pkg.dir, 'lib')) || existsSync(join(pkg.dir, 'dist'))) {
+      failures.push({
+        name: pkg.name,
+        target,
+        reason: 'artifact does not exist, though the package has been built'
+      });
+      continue;
+    }
     skipped++;
     if (VERBOSE) {
       console.log(`  SKIP  ${pkg.name} -> ${target} (not built)`);
@@ -180,7 +257,7 @@ console.log(
 );
 
 if (failures.length > 0) {
-  console.error('\nThe following packages are NOT loadable by Node under the `import` condition:\n');
+  console.error('\nThe following packages have a broken published entry point:\n');
   for (const f of failures) {
     console.error(`  ${f.name}`);
     console.error(`    import -> ${f.target}`);

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras-webauthn",
+      "comment": "Fix the `default` export condition, which pointed at `./lib/index.browser.js` — a file this package has no source for and never emits. `default` is the condition every non-Node consumer takes, so browser bundlers, Deno, and edge runtimes could not resolve the package at all; only Node worked, via its own correct `node` condition. It now points at `./lib/index.js`, matching the sibling packages that likewise have a single entry point.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras-webauthn"
+}

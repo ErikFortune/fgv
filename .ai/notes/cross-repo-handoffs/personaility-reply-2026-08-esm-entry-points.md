@@ -47,12 +47,36 @@ Verified that named exports resolve correctly through the ESM→CJS interop (`su
 `captureResult`, `Converters`, `mapResults` all come through as expected), so
 `import { succeed } from '@fgv/ts-utils'` works.
 
-Bundlers still receive the `dist` ESM tree via the bare `import` condition, so **tree-shaking is
-unaffected**. The ESM emit was never broken for bundlers — they resolve directory imports. Only
-Node was.
+Bundlers still receive the `dist` ESM tree via the bare `import` condition, so **nothing about what
+you resolve today changes**.
+
+**A correction to something we told you earlier in this exchange.** We said the ESM emit "was never
+broken for bundlers — they resolve directory imports." That is **not true as stated**, and the
+distinction turned out to matter. esbuild tolerates those specifiers; **webpack 5 does not** once it
+treats the tree as ESM, and neither does anything else that resolves ESM strictly. We only learned
+this by trying to point browser bundlers at that emit and watching our own webpack app go from 0
+errors to 6. So: the emit is fine for the bundlers currently reaching it, and **not** fine as a
+general ESM artifact. If you are on vite, its dev path is esbuild and its build path is rollup —
+those are two different resolvers, and we have not verified the rollup one.
 
 **Your workaround's lift condition is met** once you take the next publish: `import` from these
 packages resolves and loads. You can revert to a normal import at the marked site.
+
+## Also fixed here: `@fgv/ts-web-extras-webauthn` was unresolvable from any web client
+
+Its `default` condition — the one every browser bundler, Deno, and edge runtime takes — pointed at
+`./lib/index.browser.js`, a file with **no source in the package and no build step that emits it**.
+Not a broken build: a pointer at something that has never existed. Out of the box, that package
+could not be resolved by a web client at all.
+
+We understand a vite alias was added on your side to work around this. **Drop it after this
+publish** — the condition now points at the real artifact. Please also tell us when something like
+that gets papered over: a silent alias is invisible to us, and this defect shipped in 5.1.0-47 and
+would have kept shipping. We found it by accident, from a gate written for a different problem.
+
+That is worth stating plainly rather than as a footnote: **a workaround that is not reported is a
+defect we cannot fix.** We would rather have a bug report that turns out to be our documentation
+being unclear than a working build that hides a real hole.
 
 ## What we added, because nothing we had could have caught this
 
