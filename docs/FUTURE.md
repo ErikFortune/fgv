@@ -870,24 +870,39 @@ get `lib/index.d.ts` (the raw per-file emit) instead, via TypeScript's fallback 
 the resolved `.js`. `@fgv/ts-bcp47` shows the correct shape: per-branch `types`, first in each
 condition block.
 
-Two halves, and the second is the durable one:
+**The obvious fix is a trap, and the real one is a build change.** There is exactly **one**
+API-Extractor rollup per package and it describes the **Node** entry; every dual-entry package emits
+a genuinely different `lib/index.browser.d.ts`. Today an exports-aware consumer resolves `default` ->
+`lib/index.browser.js` and picks up the browser declaration by adjacency, which is **correct**.
+Hoisting a single `types` key above the branches would hand browser consumers the Node surface —
+advertising members like `convertJsonFileSync` that the browser build does not have. A regression,
+not a fix. The correct shape needs per-branch `types` first within each block, which requires the
+build to first *produce* a browser rollup (a second API-Extractor invocation per dual-entry package,
+not yet sized).
 
-1. Reorder `types` first in each condition block across the 21 packages, preferring per-branch
-   entries so the Node and browser branches can name different declaration files.
-2. Extend a gate to assert reachability — walk each `exports` object in key order and fail when a
-   condition sits behind one that matches unconditionally.
+Three parts, and **the third is the one worth doing first**:
 
-**Why deferred**: nothing is broken today, because the fallback works. It is filed rather than fixed
-because it is a 21-package `exports` change and the `module-resolution-upgrade` brief scoped
-`exports` blocks as findings, not edits.
+1. **Build**: emit a browser `.d.ts` rollup per dual-entry package. The real cost.
+2. **`exports`**: per-branch `types`, first in each block, once there is something correct to point at.
+3. **Gate**: assert *reachability* — walk each `exports` object in key order and fail when a condition
+   sits behind one that matches unconditionally. Independent of 1 and 2, and cheap.
+
+**What it costs consumers today**: less than the heading suggests. node10 consumers — the
+overwhelming majority, and this repo itself — never read `exports`; they resolve the top-level
+`"types": "dist/<pkg>.d.ts"` and get the rollup, unaffected. Exports-aware consumers resolve the
+per-file `lib/**/*.d.ts` tree instead: same symbols, uncurated rather than the curated rollup, still
+type-checks. So this is a contract-vs-delivery defect and a **gate blind spot**, not a live breakage.
+
+**Why deferred**: nothing is broken today. It is filed rather than fixed because part 1 is a build
+change of unknown size and the `module-resolution-upgrade` brief scoped `exports` blocks as findings,
+not edits.
 
 **Why it still matters**: it is the same *shape* as the `@fgv/ts-web-extras-webauthn` defect — a
 condition no resolver can reach — and that shape is exactly what our existence-only gates are blind
-to. The declared contract is also not the delivered one: the manifest advertises the rollup and
-consumers receive the per-file emit.
+to. `@fgv/ts-bcp47` is closest to correct (per-branch `types`, first in each block) but points all
+three branches at the same Node rollup.
 
-**Dependencies**: none. Independent of the `module`/emit decision below, and the better-evidenced of
-the two.
+**Dependencies**: none. Independent of the `module`/emit decision below.
 
 **Reference**: `module-resolution-upgrade` stream, 2026-08-10 — surfaced while diagnosing why a
 `bundler`-mode sweep resolved every dual-entry package to its browser build. Finding at

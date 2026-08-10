@@ -136,9 +136,12 @@ Untouched, as the brief required — this work does not replace them, and per OQ
 
 ## Recommended next
 
-1. **Reachability, not just existence** — reorder `types` in the 21 packages and extend a gate to
-   assert a condition can actually be selected. Independent of the emit question; best remaining
-   defect-prevention available.
+1. **Reachability, not just existence** — extend a gate to assert a condition can actually be
+   selected, not merely that the file it names exists. Independent of the emit question and cheap.
+   **Do this before the `exports` reorder, not after**: the reorder is not the 21-line edit it looks
+   like — there is one API-Extractor rollup per package describing the *Node* entry, so hoisting a
+   single `types` key above the branches would give browser consumers the Node surface. Fixing it
+   properly needs a browser `.d.ts` rollup the build does not yet emit.
 2. **Type-check the three webpack apps** — add the step and fix the 35 errors together, since adding
    the step first turns `rush build` red.
 3. **Decide the emit once** — `module` is the real variable. Treat "off node10" as one decision.
