@@ -26,6 +26,11 @@ the packaging integration carrying the amendment this brief rests on had landed.
    result, not by the brief). 21 declare an unreachable `types` condition. Filed — the largest item
    surfaced, and independent of the emit question.
 8. **D4 deliberately not attempted.** Its gate is unchanged and now also gates D3.
+9. **`code-reviewer` pass.** Caught a real off-by-one in the headline finding's own count (21 of 25,
+   not 20) that had propagated into four documents, plus a misclassification of `ts-bcp47` — which is
+   in fact the reference shape the finding recommends. Both corrected.
+10. **Fixed the `jest-snapshot/build` import** on the owner's call; exports-aware check over
+   `ts-utils` now clean.
 
 ## Notes for whoever picks this up
 

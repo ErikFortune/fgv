@@ -71,10 +71,12 @@ Repo-wide sweep, 29 projects, `module: esnext` + `moduleResolution: bundler` + `
 | dual-entry `@fgv` package resolved to its **browser** build (`bundler` does not set the `node` condition) — 46 × TS2339, 20 × TS7006 cascade, 2 × TS2551, 1 × TS2724 | 69 | **not defects.** The checker asked what a browser bundler sees while type-checking Node code |
 | `clipboardy` resolved to `browser.js`, no types (TS7016) | 1 | same cause, third-party |
 | `mustache` `Writer` not a named export (TS2614) | 1 | **false positive introduced by the overlay** — `module: esnext` changes named-import semantics; compiles under the real `commonjs` emit |
-| `jest-snapshot/build` not exposed by that package's `exports` (TS2307 ×2) | 2 | **real, filed.** Confirmed `ERR_PACKAGE_PATH_NOT_EXPORTED` at runtime; latent only because the import is type-only and erased from both emits |
+| `jest-snapshot/build` not exposed by that package's `exports` (TS2307 ×2) | 2 | **real - FIXED** (`0d1700513`). Confirmed `ERR_PACKAGE_PATH_NOT_EXPORTED` at runtime; was latent only because the import is type-only and erased from both emits |
 
-Nothing was bulk-fixed. The one real item is in `libraries/*/src/**`, in scope only under deliverable
-4, which was not attempted.
+Nothing was bulk-fixed. **The one real item was fixed** (`0d1700513`) - it is two lines in
+`libraries/ts-utils/src/test/helpers/`, technically in scope only under deliverable 4, and folded in
+on the owner's call after the triage was reviewed. Re-running the exports-aware check over `ts-utils`
+now reports zero errors where it reported the two TS2307s.
 
 ## Open questions
 
@@ -94,7 +96,7 @@ Nothing was bulk-fixed. The one real item is in `libraries/*/src/**`, in scope o
 - `bundler-mode-asks-the-wrong-question-for-node-packages` — answers OQ-2; rules out the gate
 - `twenty-one-packages-declare-an-unreachable-types-condition` — **the largest item surfaced**; same
   shape as the webauthn defect, independent of the emit question
-- `ts-utils-imports-a-subpath-jest-snapshot-does-not-export` — the one real defect from the sweep
+- `ts-utils-imports-a-subpath-jest-snapshot-does-not-export` — the one real defect from the sweep; **fixed**
 - `three-webpack-apps-are-never-type-checked` — 35 pre-existing errors nothing runs
 - `heft-blocks-a-shared-tsconfig-layer` — answers OQ-3
 
@@ -107,7 +109,7 @@ Nothing was bulk-fixed. The one real item is in `libraries/*/src/**`, in scope o
 | `verify-bundler-resolution.mjs` | ✅ |
 | `verify-tarball-exports.mjs` | ✅ |
 | `rush test` | ⚠️ 1 pre-existing failure, **environmental** — see below |
-| `rush change --verify` | ✅ (no shipped-code change) |
+| `rush change --verify` | ✅ — 29 change files, all `type: "none"` |
 
 `ts-json-base` › `FsFileTreeAccessors › fileIsMutable › returns permission-denied for read-only file`
 fails **in this container only**, because the session runs as `uid 0` and root ignores the
@@ -127,6 +129,10 @@ Untouched, as the brief required — this work does not replace them, and per OQ
 - **The `types`-condition audit was not in the brief.** It came out of diagnosing the 70 browser-entry
   errors and is the most consequential thing found. Filed, not fixed, per the brief's rule that
   `exports` blocks are findings unless fixing one unblocks the step.
+- **The `jest-snapshot/build` fix was folded in on the owner's call**, after the triage was reviewed.
+  Strictly it sits in `libraries/*/src/**`, in scope only under deliverable 4 — but it is two lines,
+  the correct form already existed in `@fgv/ts-utils-jest` to copy, and leaving a confirmed
+  `ERR_PACKAGE_PATH_NOT_EXPORTED` in the tree to be re-discovered later was the worse trade.
 
 ## Recommended next
 
@@ -136,3 +142,6 @@ Untouched, as the brief required — this work does not replace them, and per OQ
 2. **Type-check the three webpack apps** — add the step and fix the 35 errors together, since adding
    the step first turns `rush build` red.
 3. **Decide the emit once** — `module` is the real variable. Treat "off node10" as one decision.
+
+(The sweep's one real defect, `jest-snapshot/build`, was fixed in this stream and is no longer a
+prerequisite for that decision.)

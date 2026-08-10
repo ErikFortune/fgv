@@ -939,8 +939,9 @@ resolves to its browser build; `customConditions: ["node"]` takes it to 3 but bl
 **Why deferred**: needs the emit answered first, and the reachability item above delivers more
 defect-prevention for far less.
 
-**Dependencies**: design § 2 Option D. Also note the one real defect a move would force fixing:
-`@fgv/ts-utils` imports `jest-snapshot/build`, a subpath that package does not export.
+**Dependencies**: design § 2 Option D. The one real defect a move would otherwise have forced fixing
+- `@fgv/ts-utils` importing `jest-snapshot/build`, a subpath that package does not export - was
+fixed in the `module-resolution-upgrade` stream, so it is no longer a prerequisite.
 
 **Reference**: `module-resolution-upgrade` stream, 2026-08-10;
 `.claude/project/esm-emit-design.md` § "Amendment 2 — what the graded steps actually cost, measured".

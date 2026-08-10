@@ -1,6 +1,7 @@
 # `@fgv/ts-utils` imports `jest-snapshot/build`, a subpath the package does not export
 
 **Severity:** real violation, currently latent. The one genuine defect the compiler sweep found.
+**Status: FIXED in this stream** (`0d1700513`) - see § Fix.
 
 ## The imports
 
@@ -51,8 +52,9 @@ and in the `.d.ts`.
 suffice; verify against the installed version's `build/index.d.ts` re-exports before changing it.
 Two files, both under `src/test/helpers/`.
 
-Left unfixed here because the stream's in-scope paths cover `libraries/*/src/**` only under
-deliverable 4, which was not attempted.
+**Fixed** rather than deferred, on the owner's call - it is two lines, and the exports-aware
+type-check over `ts-utils` now reports zero errors where it previously reported the two TS2307s.
+Both imports merged into the existing `jest-snapshot` import, matching `@fgv/ts-utils-jest`'s form.
 
 ## Scope note — the published matcher package does not carry this
 

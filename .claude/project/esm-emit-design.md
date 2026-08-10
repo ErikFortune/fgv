@@ -814,10 +814,11 @@ is strictly weaker for this class. Do not build the gate.**
 
 Total yield for 73 errors: **one** latent violation the existing gates cannot see.
 
-- **`@fgv/ts-utils` imports `jest-snapshot/build`**, a subpath `jest-snapshot`'s `exports` map does
-  not expose. Confirmed at runtime: `ERR_PACKAGE_PATH_NOT_EXPORTED`. It has never fired only because
+- **`@fgv/ts-utils` imported `jest-snapshot/build`**, a subpath `jest-snapshot`'s `exports` map does
+  not expose. Confirmed at runtime: `ERR_PACKAGE_PATH_NOT_EXPORTED`. It had never fired only because
   `Context` is a type-only import and is erased from both emits — adding one value import from that
-  specifier turns a green build into a runtime crash.
+  specifier would have turned a green build into a runtime crash. **Fixed in this stream**: `Context`
+  comes from the package root, as `@fgv/ts-utils-jest` already did.
 - The `mustache` `Writer` error is a **false positive introduced by the overlay itself** (`module:
   esnext` changes named-import semantics); under the real `commonjs` emit it compiles.
 
