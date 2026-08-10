@@ -980,10 +980,14 @@ resolves to its browser build; `customConditions: ["node"]` takes it to 3 but bl
 work lands **incrementally, package by package, with no flag day** — it does not require the
 resolution or emit change to go first.
 
-**The blocker is the lint rule, not the specifiers.** Options: fix it upstream (small, correct,
-benefits every Rushstack consumer), patch it locally (a maintained fork of a lint plugin), or disable
-`packlets/mechanics` (discards a real architectural guard this repo leans on). **Start here, not by
-flipping `moduleResolution`.**
+**The blocker is the lint rule, not the specifiers — and the fix is five lines, verified.** The
+same-packlet branch of `PackletAnalyzer` already strips an explicit `index` segment (its comment
+names `"../index.js"` verbatim); the cross-packlet branch twenty lines below compares the path raw.
+Applying the same normalization there took `ts-utils` from 282 warnings to **0**, and a genuine
+bypass (`'../base/result.js'`) is **still flagged** — so it is strictly a relaxation in the correct
+direction. Plan: patch locally to unblock (five lines, one file), upstream the same diff in parallel,
+drop the patch when it releases. Disabling `packlets/mechanics` is now clearly wrong. **Start here,
+not by flipping `moduleResolution`.**
 
 **Why deferred**: needs the emit answered first, and the reachability item above delivers more
 defect-prevention for far less.

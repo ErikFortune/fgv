@@ -97,15 +97,74 @@ after):
 **This is a structural conflict between Rushstack's packlet convention and ESM's extension
 requirement, not a codemod defect.** They cannot both be satisfied as the rule is written.
 
-### The three ways out, none free
+### The fix is five lines, and upstream already half-wrote it
 
-1. **Upstream fix** — teach the rule to accept `<packlet>/index.js` as the entry point. Correct, small
-   (a few lines in `PackletAnalyzer`), and gated on Rushstack's release cadence. Best long-term.
-2. **Patch locally** via `pnpm patch` / a Rush autoinstaller override. Fast, but a maintained fork of
-   a lint plugin.
-3. **Disable `packlets/mechanics`.** Cheapest, and it discards a real architectural guard — the rule
-   is what stops packlets reaching into each other's internals. Given how much this repo leans on
-   packlet boundaries, this is the worst option despite being the easiest.
+**The same-packlet branch of the same function already performs exactly the normalization needed**,
+with a comment naming this case verbatim:
+
+```js
+// We discard the file extension to handle a degenerate case like:
+//   import { X } from "../index.js";
+const lastPart = Path.parse(importedPathParts[importedPathParts.length - 1]).name;
+let pathToCompare;
+if (lastPart.toUpperCase() === 'INDEX') {
+  pathToCompare = Path.dirname(importedPath);   // strip the explicit `index` segment
+} else {
+  pathToCompare = importedPath;
+}
+```
+
+The cross-packlet `else` branch, twenty lines below, compares `importedPath` **raw**. So this is not
+a design decision upstream made against us — it is normalization applied on one branch and not the
+other.
+
+Proposed change (`PackletAnalyzer.ts`, cross-packlet branch):
+
+```diff
+   const entryPointPath = Path.join(this.packletsFolderPath, importedPackletName);
+-  if (!Path.isEqual(importedPath, entryPointPath)) {
++  // Same normalization the same-packlet branch performs above: an explicit `index`
++  // segment, with or without a file extension, names the entry point.
++  const lastPart = Path.parse(importedPathParts[importedPathParts.length - 1]).name;
++  const pathToCompare =
++    lastPart.toUpperCase() === 'INDEX' ? Path.dirname(importedPath) : importedPath;
++  if (!Path.isEqual(pathToCompare, entryPointPath)) {
+     const entryPointModulePath = Path.convertToSlashes(Path.relative(inputFileFolder, entryPointPath));
+     return { messageId: 'bypassed-entry-point', data: { entryPointModulePath } };
+   }
+```
+
+**Verified by patching the installed plugin and re-running lint**, not proposed on inspection:
+
+| | packlet warnings in `ts-utils` |
+|---|---:|
+| baseline (bare specifiers) | 0 |
+| extensions, unpatched rule | **282** |
+| extensions, patched rule | **0** |
+
+And **verified it does not weaken the rule**, which is the half that matters. With the patch applied,
+changing one import from `'../base/index.js'` to `'../base/result.js'` — a genuine entry-point bypass
+— is still reported:
+
+```
+23:1  warning  The import statement does not use the packlet's entry point "../base"
+```
+
+So the change is strictly a relaxation in the correct direction: it accepts `<packlet>/index` and
+`<packlet>/index.js`, which *are* the entry point, and continues to reject every path that is not.
+It cannot newly-flag anything.
+
+### The three ways out, in preference order
+
+1. **Upstream PR** — the diff above. Small, provably behaviour-preserving for real bypasses, and it
+   fixes this for every Rushstack consumer adopting ESM specifiers. Gated on their release cadence.
+2. **Patch locally** (`pnpm patch` / autoinstaller override) while the PR lands. The patch is five
+   lines against one file, so the maintenance burden is near zero and it unblocks immediately.
+3. **Disable `packlets/mechanics`.** Now clearly the wrong answer — it discards a guard that the
+   verification above shows still works, to avoid a five-line change.
+
+**1 and 2 together are the plan**: patch locally to unblock, upstream in parallel, drop the patch
+when the release lands.
 
 ## Total cost, honestly
 
