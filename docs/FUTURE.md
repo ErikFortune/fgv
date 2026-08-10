@@ -948,6 +948,13 @@ emit flag.
 
 **Consumers are not on the ESM path at all** — 25 of 25 packages route `node.import` at the
 CommonJS `lib/`, so both "stop shipping `dist`" and "fix and activate it" are non-breaking for them.
+**Measured, not assumed**: an external `"type": "module"` package installed from real `npm pack`
+tarballs gets 79 named exports via `cjs-module-lexer`, and a TypeScript `node16` consumer
+type-checks, emits and runs clean end-to-end. The only sharp edge is importing a *type* by name from
+JavaScript, which `verbatimModuleSyntax` catches at compile time (`TS1484`). The upside of activating
+ESM is ~5% bundle on `ts-bcp47` (the only package shipping both entries, and a data-heavy low-end
+data point) plus statically-checkable named exports — CJS silently binds `undefined` for a
+mistyped named import where ESM fails the build.
 The ~3,520-specifier change is the price of having a working ESM emit, not of `node16`. Ordering
 trap: adding `dist/package.json` `{"type":"module"}` before fixing specifiers is what would break the
 bundler path that works today, by engaging webpack's `fullySpecified`.

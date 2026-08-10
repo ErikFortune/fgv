@@ -90,7 +90,7 @@ now reports zero errors where it reported the two TS2307s.
 - **OQ-3 (does the rig change belong upstream)** — **answered: the layer was forced, not chosen.**
   Per project is the only shape Heft supports.
 
-## Findings filed (7)
+## Findings filed (8)
 
 - `bundler-is-unreachable-from-module-commonjs` — blocks D3 as briefed
 - `bundler-mode-asks-the-wrong-question-for-node-packages` — answers OQ-2; rules out the gate
@@ -104,6 +104,12 @@ now reports zero errors where it reported the two TS2307s.
   own first version**, which wrongly claimed `ts-bcp47`'s ESM entry was broken — that was Node's ESM
   loader applied to a browser-branch entry no consumer reaches; esbuild *and* webpack 5 both bundle
   it clean, and the three gates already cover every condition a real consumer takes.
+- `what-external-esm-consumers-actually-get` — **settles the emit decision's central unknown**, tested
+  against packed tarballs installed into a `"type": "module"` package: external ESM consumers work
+  today (79 named exports via `cjs-module-lexer`; TS `node16` type-checks, emits and runs clean). The
+  only sharp edge is importing a *type* by name from JavaScript, which `verbatimModuleSyntax` catches
+  at compile time. Activating ESM is worth ~5% bundle on the one package shipping both, plus
+  statically-checkable named exports — **and neither direction breaks anyone.**
 
 ## Gate status
 
