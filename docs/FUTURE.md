@@ -964,6 +964,27 @@ errors, 70 of them because `bundler` does not set the `node` condition and every
 resolves to its browser build; `customConditions: ["node"]` takes it to 3 but blinds the pass to
 `default` — the webauthn class. Both passes are weaker than the existing scripts.
 
+**Cost, measured by doing it and reverting** (not estimated) — see the
+`cost-of-activating-the-esm-emit-measured-by-doing-it` finding:
+
+| item | size | |
+|---|---|---|
+| specifier rewrite | codemod over **3,697** sites in 1,374 files; **2** needed hands | measured |
+| does it build on today's config? | **yes** — 32 of 35 projects clean, no resolution change needed | measured |
+| the 3 webpack apps | one line of `resolve.extensionAlias` each | measured |
+| **packlet lint conflict** | **1,830 violations** — `@rushstack/eslint-plugin-packlets` compares the entry point by exact path equality, so `../base/index.js` is never the entry point. No rule option. | measured |
+| `dist/package.json` `{"type":"module"}` | per-package build step | small, unwritten |
+| per-branch `types` + a browser `.d.ts` rollup | second API-Extractor pass per dual-entry package | **not sized** |
+
+**The de-risking fact**: extensions build fine under today's `node10`/`commonjs`, so the specifier
+work lands **incrementally, package by package, with no flag day** — it does not require the
+resolution or emit change to go first.
+
+**The blocker is the lint rule, not the specifiers.** Options: fix it upstream (small, correct,
+benefits every Rushstack consumer), patch it locally (a maintained fork of a lint plugin), or disable
+`packlets/mechanics` (discards a real architectural guard this repo leans on). **Start here, not by
+flipping `moduleResolution`.**
+
 **Why deferred**: needs the emit answered first, and the reachability item above delivers more
 defect-prevention for far less.
 

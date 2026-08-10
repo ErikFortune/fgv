@@ -90,7 +90,7 @@ now reports zero errors where it reported the two TS2307s.
 - **OQ-3 (does the rig change belong upstream)** — **answered: the layer was forced, not chosen.**
   Per project is the only shape Heft supports.
 
-## Findings filed (8)
+## Findings filed (9)
 
 - `bundler-is-unreachable-from-module-commonjs` — blocks D3 as briefed
 - `bundler-mode-asks-the-wrong-question-for-node-packages` — answers OQ-2; rules out the gate
@@ -110,6 +110,12 @@ now reports zero errors where it reported the two TS2307s.
   only sharp edge is importing a *type* by name from JavaScript, which `verbatimModuleSyntax` catches
   at compile time. Activating ESM is worth ~5% bundle on the one package shipping both, plus
   statically-checkable named exports — **and neither direction breaks anyone.**
+- `cost-of-activating-the-esm-emit-measured-by-doing-it` — **sizes the emit change by running the
+  codemod repo-wide and rebuilding, then reverting.** Specifiers are mechanical (3,697 sites, 2 by
+  hand) and **build on today's config**, so the work is incrementally landable with no flag day; the
+  3 webpack apps need one line each. **The dominant, previously-unknown cost is 1,830
+  `@rushstack/eslint-plugin-packlets` violations** — the rule compares the packlet entry point by
+  exact path equality, so `../base/index.js` can never satisfy it, and there is no option.
 
 ## Gate status
 
