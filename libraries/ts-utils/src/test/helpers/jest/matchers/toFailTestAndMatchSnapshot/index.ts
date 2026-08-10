@@ -2,8 +2,7 @@
 import { matcherName, predicate } from './predicate';
 
 import { matcherHint } from 'jest-matcher-utils';
-import { toMatchSnapshot } from 'jest-snapshot';
-import { Context } from 'jest-snapshot/build';
+import { Context, toMatchSnapshot } from 'jest-snapshot';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
