@@ -721,3 +721,121 @@ Sequence, cheapest-first, each independently valuable:
    by native ESM, and gated on the dual-emit question.
 
 Steps 1–3 are worth doing regardless of whether step 4 ever happens.
+
+---
+
+# Amendment 2 — what the graded steps actually cost, measured
+
+**Added 2026-08-10** by the `module-resolution-upgrade` stream. This records outcomes against the
+four graded steps the first amendment recommended. Two landed as costed. **Step 3 is not available
+at the price it was quoted, and the reason changes the shape of step 4.**
+
+## Step 1 — make today's behavior explicit: landed, and it is genuinely free
+
+`moduleResolution: "node"` is now stated in all 31 rig-inheriting projects. Verified free the way
+the amendment asked: a full `rush rebuild` before and after, hashing every emitted `.js`, `.d.ts`,
+`.map` and `.json` under `lib/` and `dist/`, plus every checked-in `etc/*.api.md`.
+
+> **8,836 artifacts, zero differences.**
+
+**It is stated per project rather than in the rig, and that was forced rather than chosen** — which
+also answers OQ-3. Heft rejects a TypeScript 5.0 `extends` array outright (`The "path" argument must
+be of type string. Received an instance of Array`), and a rig-provided base cannot work either:
+`@fgv/heft-dual-rig` is a workspace package, so every relative path inside a tsconfig it provides
+resolves — after the symlink is followed — into `rigs/heft-dual-rig/` rather than into the consuming
+project. That is precisely why `@rushstack/heft-node-rig` can use the pattern and an fgv workspace
+rig cannot. Full detail in the stream's `heft-blocks-a-shared-tsconfig-layer` finding.
+
+## Step 2 — reconcile the three overrides: landed, and it exposed something larger
+
+All three webpack apps now declare `bundler`, with the reason recorded at each site: they are bundled
+by webpack and never loaded by Node, so the compiler should model what webpack does.
+
+**But none of the three is type-checked by anything.** All three compile via `babel-loader`, which
+strips types without checking them, and their `build` script is bare `webpack --mode production` —
+Heft's TypeScript plugin never runs. Running `tsc --noEmit` by hand: `ts-res-browser` 0 errors,
+`ts-res-ui-playground` **22**, `apps/sudoku` **13**. Pre-existing and unrelated to resolution —
+confirmed by running the playground under both `node` and `bundler` and getting 22 either way.
+
+So the reconciliation is correct and worth keeping, and it currently buys nothing. Filed separately.
+
+## Step 3 — move to `bundler` repo-wide: **not available**
+
+> **`moduleResolution: bundler` cannot be set on a `module: commonjs` project, and every one of the
+> 29 rig-inheriting projects is `module: commonjs`.**
+
+Measured on `ts-random`, holding `module: commonjs` and varying only `moduleResolution`:
+
+| `moduleResolution` | result |
+|---|---|
+| `node10` | **the only legal value** |
+| `bundler` | `TS5095` — requires `module` `preserve` or `es2015`+ |
+| `node16` | `TS5110` — requires `module: Node16` |
+| `nodenext` | `TS5110` — requires `module: NodeNext` |
+
+The first amendment's probe varied `module` and `moduleResolution` **together**, so it never asked
+whether its `bundler` row was reachable from where the repo sits. It is not.
+
+**This is the load-bearing correction.** Step 3 was costed as cheap *because* it left the emit alone,
+and step 4 as expensive *because* it did not. That distinction does not survive: every path off
+node10 changes `module`, and changing `module` changes the emit. **Steps 3 and 4 share one
+prerequisite — settling what this repo emits — and should be decided together, not sequenced.**
+
+## Was there a way to get step 3's benefit without the emit change? No.
+
+The obvious workaround — a type-check-only overlay (`module: esnext` + `moduleResolution: bundler` +
+`noEmit`) run as a CI gate — was built and run across all 29 projects. It does not hold up, and
+**answers OQ-2 in the negative**:
+
+| configuration | errors |
+|---|---:|
+| `bundler` | **73** |
+| `bundler` + `customConditions: ["node"]` | **3** |
+
+`bundler` does not set the `node` export condition, so every dual-entry `@fgv` package skips its
+`node` branch and resolves to `default` — the **browser** build, which legitimately lacks the
+Node-only surface. 70 of the 73 are that one cause. The packages are correct; the checker was asking
+what a browser bundler sees while type-checking Node code.
+
+And `customConditions: ["node"]` is not the fix it appears to be. It pins the resolver to the `node`
+branch, so the pass **never evaluates `default`** — which is exactly what `ts-web-extras-webauthn`
+got wrong. Neither pass is a gate:
+
+| pass | sees `node` | sees `default` | verdict |
+|---|---|---|---|
+| `bundler` | ❌ | ✅ | 70 false positives |
+| `bundler` + `customConditions: ["node"]` | ✅ | ❌ | blind to the webauthn class |
+
+`verify-esm-entrypoints.mjs` and `verify-tarball-exports.mjs` already assert every condition at every
+subpath, unconditionally, and do not depend on the repo happening to import them. **A compiler pass
+is strictly weaker for this class. Do not build the gate.**
+
+## What the sweep did find — one real defect, and one real audit
+
+Total yield for 73 errors: **one** latent violation the existing gates cannot see.
+
+- **`@fgv/ts-utils` imports `jest-snapshot/build`**, a subpath `jest-snapshot`'s `exports` map does
+  not expose. Confirmed at runtime: `ERR_PACKAGE_PATH_NOT_EXPORTED`. It has never fired only because
+  `Context` is a type-only import and is erased from both emits — adding one value import from that
+  specifier turns a green build into a runtime crash.
+- The `mustache` `Writer` error is a **false positive introduced by the overlay itself** (`module:
+  esnext` changes named-import semantics); under the real `commonjs` emit it compiles.
+
+Separately, auditing condition *order* — which no probe here required, but which the browser-entry
+result prompted — found that **20 of 25 published packages declare a `types` condition that can never
+be selected**, because it is listed after `default`, which matches unconditionally. Nothing has
+broken (TypeScript falls back to the `.d.ts` beside the resolved `.js`), but the declared contract is
+not the delivered one, and it is the same *shape* as the webauthn defect: a condition no resolver can
+reach. **Our gates check that each named file exists; none checks that it is reachable.** That gap is
+worth closing regardless of what happens to `module`.
+
+## Revised recommendation
+
+1. **Steps 1 and 2 are done.** They stand on their own.
+2. **Do not build a `bundler` type-check gate.** Weaker than the scripts, and noisy.
+3. **Fix the reachability gap** — reorder `types` in the 20 packages, and extend a gate to assert
+   reachability, not just existence. Independent of the emit question and the best remaining
+   defect-prevention available.
+4. **Treat "move off node10" as one decision, gated on the emit**, rather than a cheap rung and an
+   expensive one. The first amendment's closing line — "Steps 1–3 are worth doing regardless of
+   whether step 4 ever happens" — holds for 1–2 and does not hold for 3.

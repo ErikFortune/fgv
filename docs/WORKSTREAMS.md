@@ -128,11 +128,21 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `module-resolution-upgrade` 🔵
+### `module-resolution-upgrade` 🟢
 
-**Status:** 🔵 queued — **blocked on the packaging integration landing**, then branch from `release`. Brief at `.ai/tasks/active/module-resolution-upgrade/brief.md`.
+**Status:** 🟢 implemented — deliverables 1 and 2 landed; **3 is not available and 4 was deliberately not attempted**. Branch `module-resolution-upgrade` from `release` @ `af2178cde` (after #608). Artifacts at `.ai/tasks/active/module-resolution-upgrade/{brief.md, state.md, result.md, findings/inbox/}`; outcomes recorded in `.claude/project/esm-emit-design.md` § "Amendment 2".
 
-**Mission.** The repo resolves modules under **node10 and nobody chose it** — the rig never sets `moduleResolution`, so `module: commonjs` defaults it. Under node10 **TypeScript does not read the `exports` map at all**, which is the structural reason `ts-web-extras-webauthn`'s `default` condition could name a file that never existed for the package's entire life with every build green. Verified by probe: `commonjs`/`node` accepts an un-exported subpath; `node16`, `nodenext` and `bundler` all reject it. Graded deliverables — make today's default explicit, reconcile the three projects that override it inconsistently, move to `bundler` (which enforces `exports` without demanding specifiers, and is the best evidence-to-cost step), then *evaluate* `node16` — which is Option B, gated on the unresolved dual-emit question. **Landing steps 1–3 and stopping is a success.** Does **not** replace the packaging gates: compiler enforcement cannot see a packing failure like 5.1.0-27.
+**Mission.** The repo resolves modules under **node10 and nobody chose it** — the rig never sets `moduleResolution`, so `module: commonjs` defaults it. Under node10 **TypeScript does not read the `exports` map at all**, which is the structural reason `ts-web-extras-webauthn`'s `default` condition could name a file that never existed for the package's entire life with every build green.
+
+**What shipped.** `moduleResolution: "node"` is now **stated** in all 31 rig-inheriting projects, and the three freestanding webpack tsconfigs agree on `bundler` with the reason recorded. Verified free the way the brief demanded — full `rush rebuild` before and after, hashing every emitted `.js`/`.d.ts`/`.map`/`.json` plus every checked-in `etc/*.api.md`: **8,836 artifacts, zero differences.** No shipped code changed; no change files needed.
+
+**The load-bearing correction — step 3 is not available at the price it was quoted.** `moduleResolution: bundler` **cannot be set on a `module: commonjs` project**, and all 29 rig-inheriting projects are; `node10` is the only legal value there (`bundler` → TS5095, `node16`/`nodenext` → TS5110). The design amendment's probe varied `module` and `moduleResolution` *together* and so never asked whether its `bundler` row was reachable from where the repo sits. **Every path off node10 changes the emit, so steps 3 and 4 share one prerequisite and are one decision, not a cheap rung and an expensive one.**
+
+**OQ-2 answered in the negative, with the substitute ruled out.** A type-check-only `bundler` overlay was built and swept across all 29 projects: **73 errors, of which 70 are one cause** — `bundler` does not set the `node` export condition, so every dual-entry `@fgv` package resolves to its **browser** build and legitimately lacks the Node-only surface. `customConditions: ["node"]` takes it to 3, but only by pinning the resolver to `node` so the pass **never evaluates `default`** — exactly what webauthn got wrong. Neither pass is a gate, and both are weaker than `verify-esm-entrypoints` / `verify-tarball-exports`, which assert every condition at every subpath unconditionally. **Recommendation: do not build it.** **OQ-3** answered too: the per-project shape was **forced, not chosen** — Heft rejects a TS 5.0 `extends` array, and a workspace-symlinked rig's relative paths resolve into the rig's own tree.
+
+**Findings filed (6).** The largest is not from the brief: **20 of 25 published packages declare a `types` condition that can never be selected**, because it sits after `default`, which matches unconditionally — the same *shape* as the webauthn defect. Nothing has broken (TypeScript falls back to the `.d.ts` beside the resolved `.js`), but **our gates check that each named file exists; none checks that it is reachable.** Also: `@fgv/ts-utils` imports `jest-snapshot/build`, a subpath that package does not export (confirmed `ERR_PACKAGE_PATH_NOT_EXPORTED` at runtime; latent only because the import is type-only and erased) — the sweep's one real defect. And: the three webpack apps compile via `babel-loader` and are **never type-checked**; `ts-res-ui-playground` has 22 pre-existing errors and `apps/sudoku` 13.
+
+**Gates untouched and green**, as the brief required — and per OQ-2 this work cannot replace them.
 
 ---
 

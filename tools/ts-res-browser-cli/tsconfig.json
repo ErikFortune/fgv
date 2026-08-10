@@ -1,6 +1,10 @@
 {
   "extends": "./node_modules/@rushstack/heft-node-rig/profiles/default/tsconfig-base.json",
   "compilerOptions": {
+    // node10 — stated rather than left to TypeScript's silent default, which is what let a
+    // broken `exports` condition stay invisible to the compiler. See
+    // `.claude/project/esm-emit-design.md` § "Amendment — `moduleResolution` is the missing variable".
+    "moduleResolution": "node",
     "types": ["node"],
     "incremental": false
   }

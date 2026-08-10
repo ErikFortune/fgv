@@ -1,11 +1,37 @@
 # State — `module-resolution-upgrade`
 
-Branch: not yet created. Branch from `release` **after** the packaging integration lands, since this
-brief rests on the amendment that integration carries.
+Branch: `module-resolution-upgrade`, from `release` @ `af2178cde` (after #608). Hard dependency met —
+the packaging integration carrying the amendment this brief rests on had landed.
 
 ## Checkpoints
 
-_None yet — stream not started._
+1. **Mapped the tsconfig chain.** The dual rig provides **no** tsconfig — `@fgv/heft-dual-rig` owns
+   heft config only, and every project extends `@rushstack/heft-node-rig`'s (or `heft-web-rig`'s)
+   `tsconfig-base.json` directly. 23 projects on the dual rig, 6 on `heft-node-rig`, 5 on
+   `heft-web-rig` (2 extending its base, 3 freestanding).
+2. **Tried a shared fgv-owned layer, twice, and it does not work.** `extends` array → Heft throws
+   (`path must be of type string`). Rig-provided base → a workspace symlink makes every relative path
+   resolve into `rigs/heft-dual-rig/` instead of the consumer. Filed; answers OQ-3.
+3. **D1 landed inline in 31 projects.** Baseline `rush rebuild` → hash → apply → rebuild → hash:
+   **8,836 artifacts, zero differences.**
+4. **D2 landed.** The two `node` outliers moved to `bundler`, matching `apps/sudoku`. Discovered all
+   three are babel-loader and never type-checked; 22 + 13 pre-existing errors. Filed.
+5. **D3 blocked, established by measurement.** `bundler` is illegal with `module: commonjs` (TS5095);
+   so are `node16`/`nodenext` (TS5110). `node10` is the only legal value. Every path off it changes
+   the emit.
+6. **Swept a type-check-only substitute across all 29 projects.** 73 errors → 3 with
+   `customConditions: ["node"]`; 70 were the browser-entry cause. Neither pass is a gate. Filed;
+   answers OQ-2 in the negative.
+7. **Audited condition order across all 25 published packages** (prompted by the browser-entry
+   result, not by the brief). 20 declare an unreachable `types` condition. Filed — the largest item
+   surfaced, and independent of the emit question.
+8. **D4 deliberately not attempted.** Its gate is unchanged and now also gates D3.
 
-Record what each graded step actually cost, especially step 3's triage list. Stopping after step 3
-is an expected outcome, not a partial failure.
+## Notes for whoever picks this up
+
+- `rush test` shows **1 failure in this container only**: `ts-json-base`'s `fileIsMutable`
+  permission-denied test, defeated by running as `uid 0`. Verified pre-existing against a clean tree.
+- The probe configs (`tsconfig.resolution-check.json`) were generated per project and deleted. To
+  reproduce, extend the project tsconfig with `module: esnext`, `moduleResolution: bundler`,
+  `noEmit: true`, and `inlineSources: false` (the upstream base sets `inlineSources`, which errors
+  without a sourcemap).
