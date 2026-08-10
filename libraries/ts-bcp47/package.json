@@ -19,7 +19,7 @@
       },
       "node": {
         "types": "./dist/ts-bcp47.d.ts",
-        "import": "./dist/index.js",
+        "import": "./lib/index.js",
         "require": "./lib/index.js"
       },
       "default": {

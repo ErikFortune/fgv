@@ -786,3 +786,73 @@ format-visible fields exist before that persistence format freezes; D3 parked; D
 that path is in the consumer repo); grounding in this repo at
 `libraries/ts-extras/src/packlets/crypto-utils/keystore/model.ts`; format-superset precedent =
 the `keystore-v2` optional `escrowedPrivateKeyJwk` escrow field.
+
+---
+
+## R4 — stop emitting `dist` JS for packages nothing routes at it
+
+`@fgv/heft-dual-rig` emits an `esnext` build into `dist` for all 21 of its packages. Exactly
+**four** point at that emit (`ts-utils`, `ts-bcp47`, `ts-random`, `ts-utils-jest`, via
+`import`/`module`). The other 17 build, package, and publish a full parallel ESM tree that no
+`exports` key, no `module` field, and no consumer path resolves to.
+
+**This became more attractive, not less, after `esm-emit-impl`.** That stream tried to claim the
+unreferenced emit's value via R3 and found the emit cannot be pointed at by webpack at all until it
+carries explicit specifiers (Option B). So the 17 are not "nearly useful" — they are unusable as
+shipped, and stay that way until a much larger change lands.
+
+The clean lever is per-package rather than a rig flag: move a package to
+`@rushstack/heft-node-rig` (already used by the CLIs) so it stops emitting `dist` JS at all. Note
+`dist` itself must survive — API Extractor's `.d.ts` rollup lands there too; only the JS emit
+within it is unreferenced.
+
+**Two are measured not worth routing even after Option B**: `ts-json` (0.92–0.95×) and
+`ts-web-extras` (0.96–1.01×) bundle *larger* as ESM than the CJS build bundlers get today, so they
+will not be claimed by a future R3 pass and are the strongest R4 candidates.
+
+**Why deferred**: the design that produced it called this "low value, near-zero risk, and entirely
+optional", and explicitly preferred recording it here over blocking R2/R3 on it. The waste is build
+time and tarball size, not correctness.
+
+**Dependencies**: none, but it interacts with `module`. Four packages carry a `module` field
+pointing at `dist/index.js`. **`module` must be removed in the same commit that stops emitting what
+it points at**, or it becomes a dangling pointer that pre-`exports` bundlers (webpack 4, old
+rollup) will follow into nothing.
+
+**Reference**: `.claude/project/esm-emit-design.md` R4 and OQ-2/OQ-3;
+`.ai/tasks/active/esm-emit-impl/result.md` for the per-package routing decisions and the
+measurements behind the `ts-json` / `ts-web-extras` calls.
+
+---
+
+## Tarball gate — verify each packed entry *loads*, not merely that it is present
+
+**Status:** deferred follow-up from the `publish-tarball-gate` stream. Existence shipped; loading
+did not.
+
+`common/scripts/verify-tarball-exports.mjs` asserts that every path a manifest names — every
+`exports` condition, every subpath, plus `main` / `types` / `module` / `browser` — is present in the
+file list npm would pack. The consumer's ask was two-part: that each path "exists in the tarball
+**and loads** under its declared condition". Only the first half shipped.
+
+**Why the first half was enough to ship on its own.** It catches all three defects that motivated
+the gate, including the one no other check could see (5.1.0-27 packing no build output at all), and
+it costs ~1.5 s across 25 packages — cheap enough to run per-PR *and* at publish time. The second
+half needs `npm pack` (or an equivalent tar write), extraction to a temp root, an install of each
+package's dependencies so its imports resolve, and then an import per condition. That is a
+different order of cost and a different failure surface, and pairing it with a same-PR existence
+check would have delayed the half that closes the known instances.
+
+**What the missing half would add.** Existence proves a path is *in* the tarball; it does not prove
+the extracted file evaluates. `verify-esm-entrypoints.mjs` covers loadability for the one condition
+Node resolves, **against the working tree** — so the residual uncovered case is narrow but real: an
+artifact that packs, and that loads from the tree, but would fail to load from an extracted tarball
+because something it reaches at runtime was *not* packed. A relative `require` of a JSON data file
+excluded by `.npmignore` is the concrete shape.
+
+**Prerequisite before this is worth building:** the findings filed by that stream should be resolved
+first. Several packages currently pack their full `src/` tree and Rush internals; an extract-and-load
+check over tarballs that large pays for the noise before it pays for the signal.
+
+**Reference:** `.ai/tasks/active/publish-tarball-gate/result.md` (OQ-3), and the script header's
+"WHAT THIS GATE DOES NOT TELL YOU".

@@ -21,7 +21,8 @@
  */
 
 import * as Bcp47 from './packlets/bcp47';
-import * as Iana from './packlets/iana';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import * as Iana from './packlets/iana/index.node';
 import * as Unsd from './packlets/unsd';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import * as Utils from './packlets/utils/public';
