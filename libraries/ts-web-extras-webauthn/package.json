@@ -17,6 +17,16 @@
       "types": "./dist/ts-web-extras-webauthn.d.ts"
     }
   },
+  "files": [
+    "lib",
+    "dist",
+    "CHANGELOG.json",
+    "README.md",
+    "LICENSE",
+    "!lib/test",
+    "!dist/test",
+    "!**/*.test.*"
+  ],
   "scripts": {
     "build": "NODE_OPTIONS=--disable-warning=DEP0040 heft test --clean",
     "clean": "heft clean",
