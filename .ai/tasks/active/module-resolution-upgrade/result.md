@@ -90,7 +90,7 @@ now reports zero errors where it reported the two TS2307s.
 - **OQ-3 (does the rig change belong upstream)** — **answered: the layer was forced, not chosen.**
   Per project is the only shape Heft supports.
 
-## Findings filed (6)
+## Findings filed (7)
 
 - `bundler-is-unreachable-from-module-commonjs` — blocks D3 as briefed
 - `bundler-mode-asks-the-wrong-question-for-node-packages` — answers OQ-2; rules out the gate
@@ -99,6 +99,10 @@ now reports zero errors where it reported the two TS2307s.
 - `ts-utils-imports-a-subpath-jest-snapshot-does-not-export` — the one real defect from the sweep; **fixed**
 - `three-webpack-apps-are-never-type-checked` — 35 pre-existing errors nothing runs
 - `heft-blocks-a-shared-tsconfig-layer` — answers OQ-3
+- `the-esm-emit-is-shipped-dead-and-its-one-live-reference-is-broken` — **reframes the emit
+  decision**: 25 of 25 packages route `import` at the CJS `lib/`, so no consumer is on the ESM path;
+  `dist/` is built, packed and reached by nothing except `ts-bcp47`'s browser branch, which does not
+  load (`ERR_UNSUPPORTED_DIR_IMPORT`, no `dist/package.json` `type: module`)
 
 ## Gate status
 
