@@ -99,10 +99,11 @@ now reports zero errors where it reported the two TS2307s.
 - `ts-utils-imports-a-subpath-jest-snapshot-does-not-export` — the one real defect from the sweep; **fixed**
 - `three-webpack-apps-are-never-type-checked` — 35 pre-existing errors nothing runs
 - `heft-blocks-a-shared-tsconfig-layer` — answers OQ-3
-- `the-esm-emit-is-shipped-dead-and-its-one-live-reference-is-broken` — **reframes the emit
-  decision**: 25 of 25 packages route `import` at the CJS `lib/`, so no consumer is on the ESM path;
-  `dist/` is built, packed and reached by nothing except `ts-bcp47`'s browser branch, which does not
-  load (`ERR_UNSUPPORTED_DIR_IMPORT`, no `dist/package.json` `type: module`)
+- `the-esm-emit-is-shipped-and-dead` — **reframes the emit decision**: 25 of 25 packages route
+  `import` at the CJS `lib/`, so no consumer is on the ESM path. Also **carries a correction to its
+  own first version**, which wrongly claimed `ts-bcp47`'s ESM entry was broken — that was Node's ESM
+  loader applied to a browser-branch entry no consumer reaches; esbuild *and* webpack 5 both bundle
+  it clean, and the three gates already cover every condition a real consumer takes.
 
 ## Gate status
 

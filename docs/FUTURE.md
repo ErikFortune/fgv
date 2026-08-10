@@ -946,6 +946,12 @@ one source tree emitting `commonjs` to `lib` and `esnext` to `dist` is what `nod
 with, since it derives module format from `package.json` `type` and file extension rather than an
 emit flag.
 
+**Consumers are not on the ESM path at all** — 25 of 25 packages route `node.import` at the
+CommonJS `lib/`, so both "stop shipping `dist`" and "fix and activate it" are non-breaking for them.
+The ~3,520-specifier change is the price of having a working ESM emit, not of `node16`. Ordering
+trap: adding `dist/package.json` `{"type":"module"}` before fixing specifiers is what would break the
+bundler path that works today, by engaging webpack's `fullySpecified`.
+
 **Do not** substitute a type-check-only `bundler` overlay as a CI gate. It was built and swept: 73
 errors, 70 of them because `bundler` does not set the `node` condition and every dual-entry package
 resolves to its browser build; `customConditions: ["node"]` takes it to 3 but blinds the pass to
