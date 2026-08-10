@@ -856,3 +856,91 @@ check over tarballs that large pays for the noise before it pays for the signal.
 
 **Reference:** `.ai/tasks/active/publish-tarball-gate/result.md` (OQ-3), and the script header's
 "WHAT THIS GATE DOES NOT TELL YOU".
+
+## Gate `exports`-condition **reachability**, not just existence
+
+All three packaging gates (`verify-esm-entrypoints`, `verify-bundler-resolution`,
+`verify-tarball-exports`) ask the same question of an `exports` map: *does each named file exist?*
+None asks the prior question: *can any resolver actually select this condition?*
+
+**21 of 25 published packages currently fail that second question.** They declare `types` after
+`default`, and `default` matches unconditionally, so the `types` entry — which names the curated
+API-Extractor rollup in `dist/` — is dead in every consumer under every resolution mode. Consumers
+get `lib/index.d.ts` (the raw per-file emit) instead, via TypeScript's fallback to the `.d.ts` beside
+the resolved `.js`. `@fgv/ts-bcp47` shows the correct shape: per-branch `types`, first in each
+condition block.
+
+Two halves, and the second is the durable one:
+
+1. Reorder `types` first in each condition block across the 21 packages, preferring per-branch
+   entries so the Node and browser branches can name different declaration files.
+2. Extend a gate to assert reachability — walk each `exports` object in key order and fail when a
+   condition sits behind one that matches unconditionally.
+
+**Why deferred**: nothing is broken today, because the fallback works. It is filed rather than fixed
+because it is a 21-package `exports` change and the `module-resolution-upgrade` brief scoped
+`exports` blocks as findings, not edits.
+
+**Why it still matters**: it is the same *shape* as the `@fgv/ts-web-extras-webauthn` defect — a
+condition no resolver can reach — and that shape is exactly what our existence-only gates are blind
+to. The declared contract is also not the delivered one: the manifest advertises the rollup and
+consumers receive the per-file emit.
+
+**Dependencies**: none. Independent of the `module`/emit decision below, and the better-evidenced of
+the two.
+
+**Reference**: `module-resolution-upgrade` stream, 2026-08-10 — surfaced while diagnosing why a
+`bundler`-mode sweep resolved every dual-entry package to its browser build. Finding at
+`.ai/tasks/active/module-resolution-upgrade/findings/inbox/2026-08-10-twenty-one-packages-declare-an-unreachable-types-condition.md`.
+
+## Type-check the three webpack apps
+
+`apps/sudoku`, `tools/ts-res-browser`, and `tools/ts-res-ui-playground` compile via `babel-loader`,
+which strips types without checking them, and their `build` script is bare `webpack --mode
+production` — Heft's TypeScript plugin never runs. **Nothing in `rush build` or `rush test` type-checks
+them.** Running `tsc --noEmit` by hand: `ts-res-browser` 0 errors, `ts-res-ui-playground` **22**,
+`apps/sudoku` **13** — ordinary API drift (`IConfigInitFactory` no longer exported by `@fgv/ts-res`,
+`ViewStateTools.Message` → `IMessage`, `GridTools.GridViewInitParams` → `IGridViewInitParams`),
+unused locals, and two test-only deps missing from `apps/sudoku`.
+
+Add a type-check step (a `tsc --noEmit` pre-step or `fork-ts-checker-webpack-plugin`) **and** fix the
+35 errors in the same change — adding the step first turns `rush build` red.
+
+**Why deferred**: out of scope for the stream that found it, which was reconciling `moduleResolution`
+across these three projects. Note the interaction: that reconciliation is correct and currently buys
+nothing, because whatever these tsconfigs declare, no compiler reads them.
+
+**Dependencies**: none.
+
+**Reference**: `module-resolution-upgrade` stream, 2026-08-10. Finding at
+`.ai/tasks/active/module-resolution-upgrade/findings/inbox/2026-08-10-three-webpack-apps-are-never-type-checked.md`.
+
+## Decide the module emit — the single gate on moving off node10
+
+The repo resolves modules under node10, which is why TypeScript does not read the `exports` map at
+all, which is why a broken condition is invisible to the compiler. Moving off it is **one decision,
+not a ladder**: `moduleResolution` `bundler`, `node16`, and `nodenext` are each illegal with
+`module: commonjs` (TS5095 / TS5110), and every one of the 29 rig-inheriting projects is
+`module: commonjs`. **`node10` is the only legal value there**, so any move changes `module`, and
+changing `module` changes the emit.
+
+That collapses the graded plan in `.claude/project/esm-emit-design.md`'s first amendment: its step 3
+(`bundler` repo-wide) was costed as cheap *because* it left the emit alone, and that is not
+available. Steps 3 and 4 share one prerequisite — the dual-emit question from design § 2 Option D:
+one source tree emitting `commonjs` to `lib` and `esnext` to `dist` is what `node16` is least happy
+with, since it derives module format from `package.json` `type` and file extension rather than an
+emit flag.
+
+**Do not** substitute a type-check-only `bundler` overlay as a CI gate. It was built and swept: 73
+errors, 70 of them because `bundler` does not set the `node` condition and every dual-entry package
+resolves to its browser build; `customConditions: ["node"]` takes it to 3 but blinds the pass to
+`default` — the webauthn class. Both passes are weaker than the existing scripts.
+
+**Why deferred**: needs the emit answered first, and the reachability item above delivers more
+defect-prevention for far less.
+
+**Dependencies**: design § 2 Option D. Also note the one real defect a move would force fixing:
+`@fgv/ts-utils` imports `jest-snapshot/build`, a subpath that package does not export.
+
+**Reference**: `module-resolution-upgrade` stream, 2026-08-10;
+`.claude/project/esm-emit-design.md` § "Amendment 2 — what the graded steps actually cost, measured".

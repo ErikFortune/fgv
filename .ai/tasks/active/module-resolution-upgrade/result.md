@@ -11,6 +11,9 @@
 | 3 — move to `bundler` repo-wide | **not available** — see below; deliberately not forced |
 | 4 — evaluate `node16`/`nodenext` | **not attempted** — its gate now also gates step 3 |
 
+All three of the stream's durable follow-ups are promoted into `docs/FUTURE.md` (reachability gate,
+type-checking the webpack apps, the emit decision) rather than left only in `findings/inbox/`.
+
 ### 1 — landed
 
 `moduleResolution: "node"` is now stated in all 31 rig-inheriting projects (23 on `@fgv/heft-dual-rig`,
@@ -29,8 +32,10 @@ rig's own tree. Answers OQ-3; detail in the `heft-blocks-a-shared-tsconfig-layer
 ### 2 — landed
 
 `tools/ts-res-browser` and `tools/ts-res-ui-playground` moved from `node` to `bundler`, matching
-`apps/sudoku`. All three are webpack-bundled and never Node-loaded, so `bundler` models what webpack
-actually does. The reason is recorded at each site.
+`apps/sudoku`, which already declared it. All three are webpack-bundled and never Node-loaded, so
+`bundler` models what webpack actually does. The reason is now recorded at all three sites —
+`apps/sudoku`'s value was already correct but carried only a bare `/* Bundler mode */`, so it gained
+the same comment without a value change (leaving deliverable 1's byte-identical verification intact).
 
 `ts-res-browser` type-checks clean under `bundler`. The other two do not type-check at all — see the
 finding; that is pre-existing and unrelated.
@@ -87,7 +92,7 @@ Nothing was bulk-fixed. The one real item is in `libraries/*/src/**`, in scope o
 
 - `bundler-is-unreachable-from-module-commonjs` — blocks D3 as briefed
 - `bundler-mode-asks-the-wrong-question-for-node-packages` — answers OQ-2; rules out the gate
-- `twenty-packages-declare-an-unreachable-types-condition` — **the largest item surfaced**; same
+- `twenty-one-packages-declare-an-unreachable-types-condition` — **the largest item surfaced**; same
   shape as the webauthn defect, independent of the emit question
 - `ts-utils-imports-a-subpath-jest-snapshot-does-not-export` — the one real defect from the sweep
 - `three-webpack-apps-are-never-type-checked` — 35 pre-existing errors nothing runs
@@ -125,7 +130,7 @@ Untouched, as the brief required — this work does not replace them, and per OQ
 
 ## Recommended next
 
-1. **Reachability, not just existence** — reorder `types` in the 20 packages and extend a gate to
+1. **Reachability, not just existence** — reorder `types` in the 21 packages and extend a gate to
    assert a condition can actually be selected. Independent of the emit question; best remaining
    defect-prevention available.
 2. **Type-check the three webpack apps** — add the step and fix the 35 errors together, since adding

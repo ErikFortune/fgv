@@ -1,4 +1,4 @@
-# 20 of 25 published packages declare a `types` condition that can never be selected
+# 21 of 25 published packages declare a `types` condition that can never be selected
 
 **Severity:** the same *shape* as the webauthn defect — a condition no resolver can reach. Lower
 consequence, because the fallback happens to work. Filed, not fixed, per the brief's scope rule.
@@ -25,12 +25,13 @@ Audited across all 25 published packages by walking each root `exports` object's
 
 | verdict | count | packages |
 |---|---:|---|
-| `types` after `default` — unreachable | 19 | `ts-agent-memory`, `ts-agent-memory-sqlite-vec`, `ts-app-shell`, `ts-extras`, `ts-extras-argon2`, `ts-extras-mcp`, `ts-extras-ollama`, `ts-extras-transformers`, `ts-extras-webauthn`, `ts-http-storage`, `ts-json`, `ts-json-base`, `ts-prompt-assist`, `ts-res`, `ts-res-ui-components`, `ts-sudoku-lib`, `ts-sudoku-ui`, `ts-web-extras`, `ts-web-extras-transformers`, `ts-web-extras-webauthn` |
+| `types` after `default` — unreachable | 20 | `ts-agent-memory`, `ts-agent-memory-sqlite-vec`, `ts-app-shell`, `ts-extras`, `ts-extras-argon2`, `ts-extras-mcp`, `ts-extras-ollama`, `ts-extras-transformers`, `ts-extras-webauthn`, `ts-http-storage`, `ts-json`, `ts-json-base`, `ts-prompt-assist`, `ts-res`, `ts-res-ui-components`, `ts-sudoku-lib`, `ts-sudoku-ui`, `ts-web-extras`, `ts-web-extras-transformers`, `ts-web-extras-webauthn` |
 | `types` after `import`/`require` — also unreachable | 1 | `ts-web-extras-argon2` |
-| no `types` condition at all | 1 | `ts-bcp47` |
+| **per-branch `types`, first in each block — the shape this finding recommends** | 1 | `ts-bcp47` |
 | `types` first — correct | 3 | `ts-utils`, `ts-utils-jest`, `ts-random` |
 
-(The count in the heading is 19 + 1 = 20 unreachable.)
+(The count in the heading is 20 + 1 = 21 unreachable. `ts-web-extras-argon2` is not in the
+20-name list above, so it is not double-counted.)
 
 ## Why nothing has broken
 
@@ -61,5 +62,5 @@ browser branches can name different declaration files:
 "default": { "types": "./dist/<pkg>.browser.d.ts", "import": "./lib/index.browser.js", "require": "./lib/index.browser.js" }
 ```
 
-This is a 20-package `exports` change and belongs in its own stream, alongside a gate extension that
+This is a 21-package `exports` change and belongs in its own stream, alongside a gate extension that
 asserts **reachability** rather than only existence — the check the current three gates do not make.

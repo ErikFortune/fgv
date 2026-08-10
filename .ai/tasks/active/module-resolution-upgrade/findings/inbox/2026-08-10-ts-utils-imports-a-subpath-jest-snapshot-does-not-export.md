@@ -53,3 +53,10 @@ Two files, both under `src/test/helpers/`.
 
 Left unfixed here because the stream's in-scope paths cover `libraries/*/src/**` only under
 deliverable 4, which was not attempted.
+
+## Scope note — the published matcher package does not carry this
+
+`@fgv/ts-utils-jest` ships its own independent copy of these two matchers, and **it imports `Context`
+from the package root**, correctly. The defect is confined to `@fgv/ts-utils`'s in-tree
+`src/test/helpers/` copies. Worth knowing before sizing the fix: it is two files in one package, not
+a duplicated-across-packages problem, and the correct form already exists in the repo to copy from.

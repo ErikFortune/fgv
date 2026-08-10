@@ -23,7 +23,7 @@ the packaging integration carrying the amendment this brief rests on had landed.
    `customConditions: ["node"]`; 70 were the browser-entry cause. Neither pass is a gate. Filed;
    answers OQ-2 in the negative.
 7. **Audited condition order across all 25 published packages** (prompted by the browser-entry
-   result, not by the brief). 20 declare an unreachable `types` condition. Filed — the largest item
+   result, not by the brief). 21 declare an unreachable `types` condition. Filed — the largest item
    surfaced, and independent of the emit question.
 8. **D4 deliberately not attempted.** Its gate is unchanged and now also gates D3.
 

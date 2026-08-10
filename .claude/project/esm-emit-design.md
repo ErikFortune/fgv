@@ -748,7 +748,7 @@ rig cannot. Full detail in the stream's `heft-blocks-a-shared-tsconfig-layer` fi
 
 ## Step 2 — reconcile the three overrides: landed, and it exposed something larger
 
-All three webpack apps now declare `bundler`, with the reason recorded at each site: they are bundled
+All three webpack apps now declare `bundler`, with the reason recorded at each site (`apps/sudoku` gained the comment without a value change): they are bundled
 by webpack and never loaded by Node, so the compiler should model what webpack does.
 
 **But none of the three is type-checked by anything.** All three compile via `babel-loader`, which
@@ -822,7 +822,7 @@ Total yield for 73 errors: **one** latent violation the existing gates cannot se
   esnext` changes named-import semantics); under the real `commonjs` emit it compiles.
 
 Separately, auditing condition *order* — which no probe here required, but which the browser-entry
-result prompted — found that **20 of 25 published packages declare a `types` condition that can never
+result prompted — found that **21 of 25 published packages declare a `types` condition that can never
 be selected**, because it is listed after `default`, which matches unconditionally. Nothing has
 broken (TypeScript falls back to the `.d.ts` beside the resolved `.js`), but the declared contract is
 not the delivered one, and it is the same *shape* as the webauthn defect: a condition no resolver can
@@ -833,7 +833,7 @@ worth closing regardless of what happens to `module`.
 
 1. **Steps 1 and 2 are done.** They stand on their own.
 2. **Do not build a `bundler` type-check gate.** Weaker than the scripts, and noisy.
-3. **Fix the reachability gap** — reorder `types` in the 20 packages, and extend a gate to assert
+3. **Fix the reachability gap** — reorder `types` in the 21 packages, and extend a gate to assert
    reachability, not just existence. Independent of the emit question and the best remaining
    defect-prevention available.
 4. **Treat "move off node10" as one decision, gated on the emit**, rather than a cheap rung and an
