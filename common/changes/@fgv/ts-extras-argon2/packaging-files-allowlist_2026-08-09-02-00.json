@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-argon2",
+      "comment": "Declare a `files` allowlist so the published tarball contains only build output and package metadata. Previously the tarball also carried `src/`, compiled tests, and Rush build internals (`.rush/`, `rush-logs/`, `temp/`, `config/`), because the package declared no position on what ships and inherited npm's defaults. No published entry point changes.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-argon2"
+}

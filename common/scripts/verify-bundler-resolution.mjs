@@ -90,6 +90,27 @@ const AUTOINSTALLER = join(REPO_ROOT, 'common', 'autoinstallers', 'rush-bundler-
  *
  * A package that merely *happens* to fail does not belong here. Fix it, or file a finding and leave
  * the gate red — a red gate is information, and this list is not a place to store it.
+ *
+ * BASIS FOR EACH ENTRY (audited 2026-08-09)
+ *
+ * These were originally filed as *inferred* — the gate observed that they do not bundle, which is
+ * not the same claim as "they are not meant to". Each has since been checked against independent
+ * evidence, because an inferred entry is a guess that hardens silently into policy:
+ *
+ *   - `ts-extras-argon2`, `ts-extras-mcp`, `ts-extras-ollama`, `ts-agent-memory-sqlite-vec` —
+ *     confirmed by `.ai/instructions/LIBRARY_CAPABILITIES.md`, which states node-only status and/or
+ *     names a browser sibling as explicitly out of scope for each. The published contract already
+ *     says so; this list now agrees with it rather than guessing alongside it.
+ *   - `ts-utils-jest` — jest matchers consumed as a devDependency by test suites. No browser
+ *     consumer is possible in principle.
+ *   - `ts-http-storage` — the one that needed real checking, because the name reads
+ *     browser-relevant ("HTTP storage"). It is not: it depends on `hono` and exports `service` and
+ *     `routes`, so it is a storage service *served over* HTTP, with the filesystem as its backing
+ *     provider. Both halves are node by construction. Worth recording the reasoning, since the next
+ *     reader will have the same initial doubt.
+ *
+ * None of these is owner-*asserted* the way the two `BUNDLER_ONLY` entries are; they are
+ * owner-checkable, and the evidence is named above so that checking is cheap.
  */
 const NEEDS_NODE_BUILTINS = new Map([
   [
