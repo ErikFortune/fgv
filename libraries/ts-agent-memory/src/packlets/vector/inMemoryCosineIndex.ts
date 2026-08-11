@@ -8,8 +8,11 @@ import { IEdgeTarget, edgeTargetKey } from '../types';
 import {
   IMemoryRecordSource,
   IScopedMemoryRecord,
+  ISkippedVectorRecord,
   IVectorIndex,
   IVectorQueryHit,
+  IVectorRebuildOptions,
+  IVectorRebuildReport,
   MemoryEmbedder
 } from './vectorIndex';
 
@@ -135,28 +138,54 @@ export class InMemoryCosineIndex implements IVectorIndex {
   /**
    * Re-embed every record from `source` and rebuild the index from scratch.
    * Clears the current contents (and the established dimension) first, so a
-   * re-embed with a different model is supported. Returns the number of vectors
-   * indexed.
+   * re-embed with a different model is supported. Returns an
+   * {@link IVectorRebuildReport} describing what was indexed, declined and skipped.
    *
-   * On any failure (list, embed, or add) the index is rolled back to empty
-   * rather than left in a partially-rebuilt state — a caller that retries a query
-   * after a failed rebuild sees a clean empty index, never a half-populated one.
+   * @remarks
+   * **A failure to LIST is always fatal**, under either mode: an unreadable source
+   * says nothing about which records exist, so there is no partial result to
+   * report honestly.
+   *
+   * Per-record embed/add failures are governed by
+   * {@link IVectorRebuildOptions.onRecordError}, which defaults to `'fail'` —
+   * **the historical all-or-nothing contract, unchanged**: the index is rolled back
+   * to empty rather than left partially rebuilt, so a caller that retries a query
+   * sees a clean empty index it can reason about.
+   *
+   * `'skip'` opts into the lenient shape the store's own open already uses: the
+   * rebuild continues and every casualty is returned structurally on
+   * {@link IVectorRebuildReport.skipped}. **It reports more, it does not report
+   * less** — the point is to stop one bad record emptying an entire index, not to
+   * make failures quieter. A caller that ignores `skipped` under `'skip'` has
+   * chosen to, rather than been given no way to know.
+   *
+   * A {@link MemoryEmbedder} decline is not a failure under either mode: it is
+   * counted on {@link IVectorRebuildReport.declined} and never appears in `skipped`.
+   *
    * Both consumer-supplied hooks are capture-wrapped, so a `source` or `embed`
-   * that throws or rejects becomes a `Failure` on that same path rather than an
-   * exception escaping mid-rebuild.
+   * that throws or rejects becomes a `Failure` on the path above rather than an
+   * exception escaping mid-rebuild — which would bypass the rollback entirely.
    *
    * @param source - The scope-qualified record source to re-embed.
    * @param embed - The embedder applied to each record.
+   * @param options - Rebuild options; omit for the historical `'fail'` behavior.
    */
-  public async rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder): Promise<Result<number>> {
-    // Reset up front so the "any failure leaves the index empty" contract holds
-    // even when the listing itself fails (no stale vectors survive a failed
-    // rebuild).
+  public async rebuild(
+    source: IMemoryRecordSource,
+    embed: MemoryEmbedder,
+    options?: IVectorRebuildOptions
+  ): Promise<Result<IVectorRebuildReport>> {
+    const lenient: boolean = (options?.onRecordError ?? 'fail') === 'skip';
+    // Reset up front so a failed rebuild leaves a clean empty index rather than a
+    // half-populated one (unchanged). Under `'skip'` nothing aborts, so the reset
+    // is simply "start from scratch".
     this._reset();
     const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await invokeHook(() => source.list());
     if (listed.isFailure()) {
       return fail(`vector index rebuild: failed to list records: ${listed.message}`);
     }
+    let declined: number = 0;
+    const skipped: ISkippedVectorRecord[] = [];
     for (const scoped of listed.value) {
       // Both hooks are consumer-supplied, so a throw or rejection is captured
       // into a `Failure` rather than escaping as an exception — otherwise a
@@ -165,24 +194,35 @@ export class InMemoryCosineIndex implements IVectorIndex {
       // exists to prevent.
       const embedded: Result<Float32Array | undefined> = await invokeHook(() => embed(scoped.record));
       if (embedded.isFailure()) {
-        this._reset();
-        return fail(
-          `vector index rebuild: embedding '${edgeTargetKey(scoped.target)}' failed: ${embedded.message}`
-        );
+        const error: string = `vector index rebuild: embedding '${edgeTargetKey(scoped.target)}' failed: ${
+          embedded.message
+        }`;
+        // `'fail'` keeps the historical all-or-nothing contract EXACTLY: reset and
+        // abort, so a caller that retries a query sees a clean empty index rather
+        // than a partially-rebuilt one it cannot reason about.
+        if (!lenient) {
+          this._reset();
+          return fail(error);
+        }
+        skipped.push({ target: scoped.target, error });
+        continue;
       }
-      // `undefined` is a deliberate decline, not a failure: skip the record and
-      // keep going. Treating it as an error would empty the whole index over a
-      // routine policy decision, given the all-or-nothing contract above.
+      // A decline is not an error under either mode — it is counted, never skipped.
       if (embedded.value === undefined) {
+        declined++;
         continue;
       }
       const added: Result<string> = await this.add(scoped.target, embedded.value);
       if (added.isFailure()) {
-        this._reset();
-        return fail(`vector index rebuild: ${added.message}`);
+        const error: string = `vector index rebuild: ${added.message}`;
+        if (!lenient) {
+          this._reset();
+          return fail(error);
+        }
+        skipped.push({ target: scoped.target, error });
       }
     }
-    return succeed(this._vectors.size);
+    return succeed({ indexed: this._vectors.size, declined, skipped });
   }
 
   /** Empty the index and forget the established dimension. */

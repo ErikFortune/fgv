@@ -559,7 +559,7 @@ export class InMemoryCosineIndex implements IVectorIndex {
     add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
     static create(): Result<InMemoryCosineIndex>;
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
-    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder): Promise<Result<number>>;
+    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<Result<IVectorRebuildReport>>;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
     get size(): number;
 }
@@ -628,6 +628,12 @@ export interface ISkippedRecord {
 }
 
 // @public
+export interface ISkippedVectorRecord {
+    readonly error: string;
+    readonly target: IEdgeTarget;
+}
+
+// @public
 export function isTemporalIdentityCodec(codec: IIdentityCodec): codec is ITemporalIdentityCodec;
 
 // @public
@@ -670,6 +676,18 @@ export interface IVectorQueryHit {
     readonly locator?: IFragmentLocator;
     readonly score: number;
     readonly target: IEdgeTarget;
+}
+
+// @public
+export interface IVectorRebuildOptions {
+    readonly onRecordError?: VectorRebuildErrorMode;
+}
+
+// @public
+export interface IVectorRebuildReport {
+    readonly declined: number;
+    readonly indexed: number;
+    readonly skipped: ReadonlyArray<ISkippedVectorRecord>;
 }
 
 // @public
@@ -937,6 +955,9 @@ export class TemporalVersionedPolicy implements IWritePolicy {
     readonly dedupScope: DedupScope;
     readonly mutableFields: ReadonlyArray<string>;
 }
+
+// @public
+export type VectorRebuildErrorMode = 'skip' | 'fail';
 
 // (No @packageDocumentation comment for this package)
 

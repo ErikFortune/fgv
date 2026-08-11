@@ -222,6 +222,70 @@ export interface IFragmentVectorIndex {
 }
 
 /**
+ * How a vector-index rebuild treats a record whose embedding **fails**.
+ *
+ * @remarks
+ * Deliberately mirrors the store's own open-time `onRecordError` mode, including
+ * its default: `'fail'` preserves the historical all-or-nothing contract exactly,
+ * and `'skip'` is opt-in. Defined here rather than imported from the store packlet
+ * — the `vector` packlet does not depend on `store`, and the two modes describe
+ * different domains that merely happen to share a shape.
+ *
+ * A **decline** (a {@link MemoryEmbedder} resolving `undefined`) is not an error
+ * and is unaffected by this mode: it is always skipped and counted separately.
+ * @public
+ */
+export type VectorRebuildErrorMode = 'skip' | 'fail';
+
+/**
+ * A record a rebuild could not embed, retained so a partial rebuild reports what
+ * it lost rather than merely how much it kept.
+ * @public
+ */
+export interface ISkippedVectorRecord {
+  /** The scope-qualified address of the record that could not be embedded. */
+  readonly target: IEdgeTarget;
+  /** The embedding (or add) failure message. */
+  readonly error: string;
+}
+
+/**
+ * What a rebuild actually did — the structural answer to "is this index complete?".
+ *
+ * @remarks
+ * A bare count cannot distinguish the three ways a record can be absent from the
+ * index, and that distinction is the entire point: **`declined` was intentional,
+ * `skipped` was a fault, and neither is the same as "never attempted"**. A caller
+ * deriving coverage from a count alone cannot tell an embedder outage from a
+ * deliberate policy, which is precisely the confusion this type exists to end.
+ * @public
+ */
+export interface IVectorRebuildReport {
+  /** Records embedded and added to the index. */
+  readonly indexed: number;
+  /** Records the embedder deliberately declined (resolved `undefined`). */
+  readonly declined: number;
+  /**
+   * Records whose embedding or add FAILED and were skipped. Non-empty only under
+   * {@link VectorRebuildErrorMode | `onRecordError: 'skip'`} — under `'fail'` the
+   * first failure aborts the rebuild and no report is returned at all.
+   */
+  readonly skipped: ReadonlyArray<ISkippedVectorRecord>;
+}
+
+/**
+ * Options for a vector-index rebuild.
+ * @public
+ */
+export interface IVectorRebuildOptions {
+  /**
+   * How to treat a record whose embedding fails. Defaults to `'fail'` — the
+   * historical behavior, unchanged for every existing caller.
+   */
+  readonly onRecordError?: VectorRebuildErrorMode;
+}
+
+/**
  * Embeds a complete record into a vector for the store's embed-on-write hook.
  * Async and `Result`-returning, since a real embedder does a network call (cloud
  * provider) or in-process model inference. The consumer wires this — the core
