@@ -870,22 +870,21 @@ get `lib/index.d.ts` (the raw per-file emit) instead, via TypeScript's fallback 
 the resolved `.js`. `@fgv/ts-bcp47` shows the correct shape: per-branch `types`, first in each
 condition block.
 
-**The obvious fix is a trap, and the real one is a build change.** There is exactly **one**
-API-Extractor rollup per package and it describes the **Node** entry; every dual-entry package emits
-a genuinely different `lib/index.browser.d.ts`. Today an exports-aware consumer resolves `default` ->
-`lib/index.browser.js` and picks up the browser declaration by adjacency, which is **correct**.
-Hoisting a single `types` key above the branches would hand browser consumers the Node surface —
-advertising members like `convertJsonFileSync` that the browser build does not have. A regression,
-not a fix. The correct shape needs per-branch `types` first within each block, which requires the
-build to first *produce* a browser rollup (a second API-Extractor invocation per dual-entry package,
-not yet sized).
+**The obvious fix is a trap, but the real one is still manifest-only.** There is exactly **one**
+API-Extractor rollup per package and it describes the **Node** entry, so hoisting a single `types`
+key above the branches would hand browser consumers the Node surface — advertising members like
+`convertJsonFileSync` that the browser build does not have. But the browser branch **needs no `types`
+key at all**: it already resolves `lib/index.browser.d.ts` by adjacency to the `.js` it selects, which
+is correct (verified). So `types` goes first **inside the `node` block only**, and no browser rollup
+has to exist.
 
-Three parts, and **the third is the one worth doing first**:
+Two parts, and **the second is the one worth doing first**:
 
-1. **Build**: emit a browser `.d.ts` rollup per dual-entry package. The real cost.
-2. **`exports`**: per-branch `types`, first in each block, once there is something correct to point at.
-3. **Gate**: assert *reachability* — walk each `exports` object in key order and fail when a condition
-   sits behind one that matches unconditionally. Independent of 1 and 2, and cheap.
+1. **`exports`**: `types` first within the `node` block, across 21 packages. Manifest-only — no build
+   change, nothing unsized.
+2. **Gate**: assert *reachability* — walk each `exports` object in key order and fail when a condition
+   sits behind one that matches unconditionally. Independent of 1, cheap, and the check none of the
+   three existing gates makes.
 
 **What it costs consumers today**: less than the heading suggests. node10 consumers — the
 overwhelming majority, and this repo itself — never read `exports`; they resolve the top-level
@@ -985,9 +984,13 @@ same-packlet branch of `PackletAnalyzer` already strips an explicit `index` segm
 names `"../index.js"` verbatim); the cross-packlet branch twenty lines below compares the path raw.
 Applying the same normalization there took `ts-utils` from 282 warnings to **0**, and a genuine
 bypass (`'../base/result.js'`) is **still flagged** — so it is strictly a relaxation in the correct
-direction. Plan: patch locally to unblock (five lines, one file), upstream the same diff in parallel,
-drop the patch when it releases. Disabling `packlets/mechanics` is now clearly wrong. **Start here,
-not by flipping `moduleResolution`.**
+direction. Plan **if and only if this stream is ever commissioned**: patch locally to unblock (five lines, one
+file), upstream the same diff in parallel, drop the patch when it releases. Disabling
+`packlets/mechanics` is now clearly wrong. **Start here, not by flipping `moduleResolution`.**
+
+**Nothing currently decided needs the Rushstack change.** It is a prerequisite of the ESM specifier
+work and of nothing else — not of PR #609, not of the reachability item above, not of the gates. If
+the emit decision lands on "stop shipping `dist`", the Rushstack change is never needed at all.
 
 **Why deferred**: needs the emit answered first, and the reachability item above delivers more
 defect-prevention for far less.

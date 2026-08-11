@@ -163,8 +163,10 @@ It cannot newly-flag anything.
 3. **Disable `packlets/mechanics`.** Now clearly the wrong answer — it discards a guard that the
    verification above shows still works, to avoid a five-line change.
 
-**1 and 2 together are the plan**: patch locally to unblock, upstream in parallel, drop the patch
-when the release lands.
+**1 and 2 together are the plan — *conditional on this work being commissioned at all*.** Nothing
+currently decided requires the Rushstack change: it is a prerequisite of the ESM specifier work and
+of nothing else. Not of PR #609, not of the `types`-reachability fix, not of the existing gates. If
+the emit decision lands on "stop shipping `dist`", it is never needed.
 
 ## Total cost, honestly
 
@@ -175,7 +177,7 @@ when the release lands.
 | webpack apps | 1 line × 3 configs | **measured** |
 | **packlet lint conflict** | **1,830 violations; needs an upstream or local rule fix** | **measured** |
 | `dist/package.json` `{"type":"module"}` | per-package build step, unwritten | estimated small |
-| per-branch `types` + browser `.d.ts` rollup | second API-Extractor pass per dual-entry package | **not sized** |
+| per-branch `types` | **manifest-only** — `types` first in the `node` block; the browser branch resolves its declaration by adjacency and needs no key, so no browser rollup has to exist | **measured** |
 | `exports` rewiring | 25 manifests | estimated small |
 
 **Ordering trap, restated:** add `{"type":"module"}` only *after* the specifiers are fixed. Doing it

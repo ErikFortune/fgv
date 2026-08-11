@@ -52,40 +52,43 @@ is what the repo and most consumers use today, `exports` is not read at all and 
    browser target and wrong for a Node target using `bundler` resolution — and nothing announces
    which one happened.
 
-## Suggested fix — and the trap in the obvious version
+## Suggested fix — manifest-only, and smaller than first written
 
-**Do not simply move `types` to the front.** For a dual-entry package that makes things *worse*.
+**Correction to an earlier version of this finding**, which said the fix needed per-branch `types`
+and therefore a browser `.d.ts` rollup the build does not emit. **It does not.**
 
-There is exactly **one API-Extractor rollup per package**, and it describes the **Node** entry
-(`dist/ts-json-base.d.ts`, `dist/ts-extras.d.ts`, ...). Meanwhile every dual-entry package emits a
-genuinely different browser declaration (`lib/index.browser.d.ts`). Today, an exports-aware consumer
-resolves `default` -> `lib/index.browser.js` and picks up `lib/index.browser.d.ts` by adjacency —
-which is **correct for that branch**. Hoisting a single `types` key above the branches would hand
-browser consumers the Node surface, advertising members like `convertJsonFileSync` that do not exist
-in the browser build. That is a regression, not a fix.
+The trap is real: there is exactly one API-Extractor rollup per package and it describes the **Node**
+entry, so hoisting a single `types` key above the branches would hand browser consumers the Node
+surface. But the conclusion drawn from it was wrong. **The browser branch does not need a `types` key
+at all** — it already resolves `lib/index.browser.d.ts` by adjacency to the `.js` it selects, which is
+correct. Verified: an exports-aware pass over `ts-extras` resolves `@fgv/ts-json-base` to
+`index.browser` and correctly reports the Node-only members as absent.
 
-Verified: `ls libraries/*/dist/*.d.ts` yields one rollup per package, and no package emits a
-browser-specific rollup for a `types` key to point at.
-
-The correct shape needs **per-branch `types`, first within each block**, which means the build must
-first *produce* a browser rollup:
+So the fix is to put `types` first **inside the `node` block only**:
 
 ```json
-"node":    { "types": "./dist/<pkg>.d.ts",         "import": "./lib/index.js",         "require": "./lib/index.js" },
-"default": { "types": "./dist/<pkg>.browser.d.ts", "import": "./lib/index.browser.js", "require": "./lib/index.browser.js" }
+"node":    { "types": "./dist/<pkg>.d.ts", "import": "./lib/index.js", "require": "./lib/index.js" },
+"default": {                               "import": "./lib/index.browser.js", "require": "./lib/index.browser.js" }
 ```
 
-So this is **not** a 21-line `exports` edit. It is:
+**No build change. No browser rollup. A manifest edit across 21 packages**, plus the durable half:
 
-1. A **build change** — a second API-Extractor invocation per dual-entry package to roll up the
-   browser entry point. This is the real cost and it is not yet sized.
-2. The `exports` reordering, once there is something correct to point at.
-3. A **gate extension** asserting *reachability* — walk each `exports` object in key order and fail
-   when a condition sits behind one that matches unconditionally. This is the durable half, and it is
-   independent of 1 and 2.
+- **A gate asserting reachability** — walk each `exports` object in key order and fail when a
+  condition sits behind one that matches unconditionally. Independent of the manifest edit, and the
+  part actually worth having, since it is the check none of the three existing gates makes.
 
-`@fgv/ts-bcp47` is the closest to correct (per-branch `types`, first in each block) but points all
-three branches at the same Node rollup, so it has the payload problem without the ordering problem.
+`@fgv/ts-bcp47` is the closest to correct today (per-branch `types`, first in each block) but points
+all three branches at the same Node rollup — the payload problem without the ordering problem.
+
+## What the Node rollup is actually for
+
+Worth stating, since "is this only for docs?" is the natural question: **no.** `dist/<pkg>.d.ts` is
+the value of the top-level `"types"` field, which is what **node10 consumers read** — and node10 is
+what most consumers and this repo itself use. API Extractor also emits the `etc/*.api.md` report and
+the doc model from the same analysis. So the rollup is the published type surface for the majority of
+consumers, not a docs artifact.
+
+A *browser* rollup, by contrast, is used for nothing and does not need to exist.
 
 ## How much does this actually cost consumers today?
 

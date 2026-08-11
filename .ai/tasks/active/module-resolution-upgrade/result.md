@@ -154,11 +154,11 @@ Untouched, as the brief required — this work does not replace them, and per OQ
 ## Recommended next
 
 1. **Reachability, not just existence** — extend a gate to assert a condition can actually be
-   selected, not merely that the file it names exists. Independent of the emit question and cheap.
-   **Do this before the `exports` reorder, not after**: the reorder is not the 21-line edit it looks
-   like — there is one API-Extractor rollup per package describing the *Node* entry, so hoisting a
-   single `types` key above the branches would give browser consumers the Node surface. Fixing it
-   properly needs a browser `.d.ts` rollup the build does not yet emit.
+   selected, not merely that the file it names exists. Independent of the emit question and cheap;
+   it is the check none of the three existing gates makes. The accompanying `exports` edit is
+   **manifest-only**: `types` first inside the `node` block across 21 packages. The browser branch
+   needs no `types` key — it already resolves `lib/index.browser.d.ts` by adjacency, correctly — so
+   **no browser `.d.ts` rollup has to be built.** (An earlier version of this artifact said it did.)
 2. **Type-check the three webpack apps** — add the step and fix the 35 errors together, since adding
    the step first turns `rush build` red.
 3. **Decide the emit once** — `module` is the real variable. Treat "off node10" as one decision.
