@@ -128,6 +128,30 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟡
+
+**Status:** 🟡 in flight. Triage + the consumer reply are on branch `personaility-asks-2026-08`; each item ships as its **own** PR. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md` (triage, incl. the verification of their claims against our source) and `…-reply-2026-08-11-ask-package.md` (what we committed to).
+
+**Origin.** One consolidated ask package from PersonAIlity, 2026-08-11 — nine open items, none blocking them, every one carrying a workaround they are already running. They explicitly invited "not now" on the whole package. We re-verified every load-bearing mechanic against our own source before acting (both sides shipped a wrong sweep this month); **all their claims held**, down to exact control flow.
+
+**The through-line, adopted as ours.** Four of the nine are one species — **a failure reported as a success**. We already solved it well once on the record path (`onRecordError: 'skip'` + structural `skippedRecords`); items 1, 4 and 5 ask for that same shape in three more places.
+
+**Stream A = ask items 1–4**, one package, cheapest together, in the order **4 → 2 → 1 → 3**:
+
+| item | change | state |
+|---|---|---|
+| **4** | `MemoryEmbedder` may resolve `undefined` to **decline** a record — stored with no `embeddingRef`, no failure, **nothing logged**; skipped (not counted) on rebuild; `'new'` on the ingest path | branch `agent-memory-embedder-decline`; `code-reviewer` **approved**, no P1/P2 |
+| **2** | per-kind embed declaration, default "embed everything" so existing consumers stay byte-identical | queued |
+| **1** | partial-tolerant `rebuild` + a coverage accessor (the lenient-open shape) | queued |
+| **3** | promote reconcile/backfill onto `IVectorIndex`, shipping with its `sqlite-vec` implementation | queued |
+
+**Answered without scheduling:** item 5 (strict text read — half already shipped in `-47`; their own note de-prioritised it), 6 (provenance query axis — **intent stated so they can design against it existing**), 7 (index read surface — deferred deliberately, breaking, wants its own design), 8 (prompt-slot writability — taking the one-sentence "advisory" doc remedy), 9 (`ts-res` `addResource` — not taking a round, fold into the next touch).
+
+**Two things we owe them back, tracked here:** our `latest` dist-tag is mis-set on some packages (cosmetic for us, actively misleading for a consumer — part of how `ts-agent-memory-sqlite-vec` was recorded as unavailable while shipping the seam they needed), and the 21-of-25 unreachable `types` condition from the module-resolution stream.
+
+---
+
+
 ### `module-resolution-upgrade` 🟢
 
 **Status:** 🟢 implemented — deliverables 1 and 2 landed; **3 is not available and 4 was deliberately not attempted**. Branch `module-resolution-upgrade` from `release` @ `af2178cde` (after #608). Artifacts at `.ai/tasks/active/module-resolution-upgrade/{brief.md, state.md, result.md, findings/inbox/}`; outcomes recorded in `.claude/project/esm-emit-design.md` § "Amendment 2".
