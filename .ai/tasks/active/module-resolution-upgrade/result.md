@@ -16,7 +16,7 @@ type-checking the webpack apps, the emit decision) rather than left only in `fin
 
 ### 1 — landed
 
-`moduleResolution: "node"` is now stated in all 31 rig-inheriting projects (23 on `@fgv/heft-dual-rig`,
+`moduleResolution: "node10"` is now stated in all 31 rig-inheriting projects (23 on `@fgv/heft-dual-rig`,
 6 on `@rushstack/heft-node-rig` directly, 2 on `@rushstack/heft-web-rig`). The three freestanding
 webpack tsconfigs already stated one.
 
@@ -24,6 +24,11 @@ Verified free as the brief required — full `rush rebuild` before and after, ha
 `.js` / `.d.ts` / `.map` / `.json` under `lib/` and `dist/` plus every checked-in `etc/*.api.md`:
 
 > **8,836 artifacts compared, zero differences.**
+
+Spelled `node10` rather than the legacy alias `node`: they are the same setting — `tsc --showConfig`
+normalizes `"node"` to `"node10"` — and the explicit spelling cannot drift from the comment beside it
+(a Copilot finding). Verified the toolchain accepts it: `rush rebuild` green, no `etc/*.api.md`
+movement.
 
 Stated per project rather than in the rig because **both shared-layer shapes are blocked by Heft** —
 it rejects a TS 5.0 `extends` array, and a workspace-symlinked rig's relative paths resolve into the

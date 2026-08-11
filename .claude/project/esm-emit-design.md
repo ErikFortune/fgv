@@ -732,7 +732,7 @@ at the price it was quoted, and the reason changes the shape of step 4.**
 
 ## Step 1 — make today's behavior explicit: landed, and it is genuinely free
 
-`moduleResolution: "node"` is now stated in all 31 rig-inheriting projects. Verified free the way
+`moduleResolution: "node10"` is now stated in all 31 rig-inheriting projects. Verified free the way
 the amendment asked: a full `rush rebuild` before and after, hashing every emitted `.js`, `.d.ts`,
 `.map` and `.json` under `lib/` and `dist/`, plus every checked-in `etc/*.api.md`.
 
