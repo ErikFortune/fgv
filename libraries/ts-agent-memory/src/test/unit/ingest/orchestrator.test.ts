@@ -524,6 +524,7 @@ function mockStore(overrides: Partial<IMemoryStore>): IMemoryStore {
     // Mirrors the store's default policy (KnowledgeLwwPolicy → 'content'), so a
     // mock store keeps the pre-accessor layer-1 behavior unless a test overrides it.
     dedupScopeFor: overrides.dedupScopeFor ?? ((): DedupScope => 'content'),
+    embedsKind: () => true,
     asRecordSource:
       overrides.asRecordSource ??
       ((): IMemoryRecordSource => ({

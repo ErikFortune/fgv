@@ -120,6 +120,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore>;
     dedupScopeFor(kind: Kind): DedupScope;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+    embedsKind(kind: Kind): boolean;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
@@ -256,6 +257,7 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
     readonly defaultCodec?: IIdentityCodec;
     readonly embed?: MemoryEmbedder;
+    readonly embedKinds?: ReadonlySet<Kind>;
     readonly fragmentEmbedder?: FragmentEmbedder;
     readonly fragmentIndex?: IFragmentVectorIndex;
     readonly index?: IMemoryIndex;
@@ -508,6 +510,7 @@ export interface IMemoryStore {
     asRecordSource(): IMemoryRecordSource;
     dedupScopeFor(kind: Kind): DedupScope;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+    embedsKind(kind: Kind): boolean;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
