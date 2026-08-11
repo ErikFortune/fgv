@@ -7,6 +7,9 @@
     "skipLibCheck": true,
 
     /* Bundler mode */
+    // `bundler`: this project is bundled by webpack and never loaded by Node, so the compiler
+    // should model what webpack does — including honouring the `exports` map, which node10
+    // resolution ignores entirely. Matches `tools/ts-res-browser` and `tools/ts-res-ui-playground`.
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
