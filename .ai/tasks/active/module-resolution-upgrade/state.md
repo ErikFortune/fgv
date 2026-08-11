@@ -31,6 +31,16 @@ the packaging integration carrying the amendment this brief rests on had landed.
    in fact the reference shape the finding recommends. Both corrected.
 10. **Fixed the `jest-snapshot/build` import** on the owner's call; exports-aware check over
    `ts-utils` now clean.
+11. **Measured what external ESM consumers get**, against packed tarballs installed into a
+   `"type": "module"` package: they work today. Also measured the ESM-activation cost by running the
+   codemod repo-wide and reverting - the dominant cost is 1,830 packlet lint violations, fixable
+   upstream in five lines (verified, including that it still catches real bypasses).
+12. **Copilot round 1** - 3 comments, all substantive, all resolved: `import type { Context }` (in
+   `ts-utils-jest` too, which Copilot could not see), and `moduleResolution` spelled `node10` so the
+   value cannot drift from its comment. Round 2 requested.
+13. **Corrected the `types`-reachability fix**: it is manifest-only. The browser branch needs no
+   `types` key - it resolves `lib/index.browser.d.ts` by adjacency, correctly - so **no browser
+   `.d.ts` rollup has to be built.** Removes the last unsized item from the ESM costing.
 
 ## Notes for whoever picks this up
 

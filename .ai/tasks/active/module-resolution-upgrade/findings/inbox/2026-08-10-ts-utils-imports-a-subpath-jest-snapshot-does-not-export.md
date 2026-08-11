@@ -54,11 +54,22 @@ Two files, both under `src/test/helpers/`.
 
 **Fixed** rather than deferred, on the owner's call - it is two lines, and the exports-aware
 type-check over `ts-utils` now reports zero errors where it previously reported the two TS2307s.
-Both imports merged into the existing `jest-snapshot` import, matching `@fgv/ts-utils-jest`'s form.
+
+**Then fixed again, properly.** The first pass merged `Context` into the existing *value* import
+(`import { Context, toMatchSnapshot }`). Copilot flagged that `Context` is used only as a type, and
+it is right in a way this stream had already measured from the other side: a **type imported by name
+becomes a runtime named import in the ESM emit**, which Node rejects with `SyntaxError: Named export
+not found` - exactly the failure documented in the `what-external-esm-consumers-actually-get`
+finding. The final form is `import type { Context } from 'jest-snapshot';` on its own line. Verified:
+`Context` no longer appears in the emitted ESM import.
 
 ## Scope note — the published matcher package does not carry this
 
-`@fgv/ts-utils-jest` ships its own independent copy of these two matchers, and **it imports `Context`
-from the package root**, correctly. The defect is confined to `@fgv/ts-utils`'s in-tree
-`src/test/helpers/` copies. Worth knowing before sizing the fix: it is two files in one package, not
-a duplicated-across-packages problem, and the correct form already exists in the repo to copy from.
+`@fgv/ts-utils-jest` ships its own independent copies of these matchers (three files) and imports
+`Context` from the **package root**, so it never carried the `jest-snapshot/build` subpath defect.
+
+**But it did carry the type-vs-value half**, and Copilot could not see it because those files are not
+in this PR's diff. All three were given `import type` in the same change. Fixing only the two flagged
+files would have left the latent issue in the package that actually *ships* the matchers, and would
+have made this finding's original claim - that ts-utils-jest "has the correct form" - only half
+true.
