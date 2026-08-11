@@ -740,7 +740,7 @@ export class MemoryCapCullPolicy implements IWritePolicy {
 export type MemoryDetailTier = 'gist' | 'full';
 
 // @public
-export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array>>;
+export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array | undefined>>;
 
 // @public
 export type MemoryId = Brand<string, 'MemoryId'>;

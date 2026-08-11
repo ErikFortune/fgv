@@ -970,15 +970,25 @@ export class FileTreeMemoryStore implements IMemoryStore {
     const vectorIndex: IVectorIndex = this._vectorIndex;
     const embed: MemoryEmbedder = this._embed;
     const target: IEdgeTarget = { scope, id: built.envelope.id };
-    const embedded: Result<Float32Array> = await this._tryVectorOp(
+    const embedded: Result<Float32Array | undefined> = await this._tryVectorOp(
       () => embed(built),
       `embedding '${built.envelope.id}'`
     );
     if (embedded.isFailure()) {
       return succeed(built);
     }
+    // A deliberate decline (`undefined`) stores the record with no embedding
+    // reference and says nothing about it. Deliberately NOT logged, unlike the
+    // failure path above: a warning per write would make routine policy look like
+    // a recurring fault, which is the confusion this return value exists to end.
+    if (embedded.value === undefined) {
+      return succeed(built);
+    }
+    // Hoisted: the `undefined` check above does not narrow across the callback
+    // boundary below, and a local keeps the non-null assertion out of the code.
+    const vector: Float32Array = embedded.value;
     const added: Result<string> = await this._tryVectorOp(
-      () => vectorIndex.add(target, embedded.value),
+      () => vectorIndex.add(target, vector),
       `vector add for '${built.envelope.id}'`
     );
     if (added.isFailure()) {

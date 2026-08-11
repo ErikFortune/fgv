@@ -23,6 +23,7 @@ import {
   EntityId,
   MemoryId,
   MemoryIndex,
+  MemoryEmbedder,
   MemoryScopeKey,
   MtmIdentityCodec,
   IWritePolicy,
@@ -114,7 +115,7 @@ class SpyVectorIndex implements IVectorIndex {
 
 function knowledgeStore(
   vectorIndex?: IVectorIndex,
-  embed?: (r: IMemoryRecord<unknown>) => Promise<Result<Float32Array>>,
+  embed?: MemoryEmbedder,
   logger?: Logging.ILogger
 ): FileTreeMemoryStore {
   const registry: IBodyConverterRegistry = BodyConverterRegistry.create().orThrow();
@@ -413,6 +414,85 @@ describe('FileTreeMemoryStore embed-on-write', () => {
           ]);
         }
       );
+    });
+  });
+
+  describe('when the embedder declines a record', () => {
+    /**
+     * A policy embedder: it embeds knowledge and deliberately declines anything
+     * else. This is the shape the `undefined` return exists to make expressible —
+     * before it, the only way to say "not this one" was `fail`, which is
+     * indistinguishable from an embedder outage.
+     */
+    const decliningEmbed: MemoryEmbedder = (r) =>
+      r.envelope.kind === knowledgeKind ? recordEmbed(r) : Promise.resolve(succeed(undefined));
+
+    test('stores the record with no embeddingRef and adds nothing to the index', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const store = knowledgeStore(index, () => Promise.resolve(succeed(undefined)));
+      expect(await store.put(makeRecord('doc-a', 'cat cat'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+      expect(index.size).toBe(0);
+      // And the absence round-trips through disk rather than being an in-memory artifact.
+      expect(await store.getById('knowledge' as MemoryScopeKey, 'doc-a' as MemoryId)).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown> | undefined) => {
+          expect(record?.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+    });
+
+    test('logs nothing — a decline is policy, not a fault', async () => {
+      // The distinction that matters: the failure paths above each emit a warn.
+      // A decline must not, or routine policy reads as a recurring outage.
+      const logger = new Logging.InMemoryLogger();
+      const store = knowledgeStore(
+        InMemoryCosineIndex.create().orThrow(),
+        () => Promise.resolve(succeed(undefined)),
+        logger
+      );
+      expect(await store.put(makeRecord('doc-a', 'cat cat'))).toSucceed();
+      expect(logger.logged).toHaveLength(0);
+    });
+
+    test('never calls the index for a declined record', async () => {
+      const spy = new SpyVectorIndex();
+      const store = knowledgeStore(spy, () => Promise.resolve(succeed(undefined)));
+      expect(await store.put(makeRecord('doc-a', 'cat cat'))).toSucceed();
+      expect(spy.calls).toEqual([]);
+    });
+
+    test('declines one kind while still embedding another, in the same store', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const registry: IBodyConverterRegistry = BodyConverterRegistry.create().orThrow();
+      registry.register(knowledgeKind, Converters.string);
+      registry.register(factKind, Converters.string);
+      const store = FileTreeMemoryStore.create({
+        root: mutableRoot(),
+        registry,
+        codecs: new Map<Kind, IIdentityCodec>([
+          [knowledgeKind, new KnowledgeIdentityCodec()],
+          [factKind, new KnowledgeIdentityCodec()]
+        ]),
+        vectorIndex: index,
+        embed: decliningEmbed
+      }).orThrow();
+
+      expect(await store.put(makeRecord('doc-a', 'cat cat', 'knowledge'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBe('knowledge\0doc-a');
+        }
+      );
+      expect(await store.put(makeRecord('fact-a', 'cat cat', 'fact'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+      // Only the embedded kind occupies an index slot — which is the point: a
+      // declined kind cannot crowd the topK window it can never be returned from.
+      expect(index.size).toBe(1);
     });
   });
 });

@@ -145,12 +145,18 @@ export class InMemoryCosineIndex implements IVectorIndex {
       return fail(`vector index rebuild: failed to list records: ${listed.message}`);
     }
     for (const scoped of listed.value) {
-      const embedded: Result<Float32Array> = await embed(scoped.record);
+      const embedded: Result<Float32Array | undefined> = await embed(scoped.record);
       if (embedded.isFailure()) {
         this._reset();
         return fail(
           `vector index rebuild: embedding '${edgeTargetKey(scoped.target)}' failed: ${embedded.message}`
         );
+      }
+      // `undefined` is a deliberate decline, not a failure: skip the record and
+      // keep going. Treating it as an error would empty the whole index over a
+      // routine policy decision, given the all-or-nothing contract above.
+      if (embedded.value === undefined) {
+        continue;
       }
       const added: Result<string> = await this.add(scoped.target, embedded.value);
       if (added.isFailure()) {
