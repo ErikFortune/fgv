@@ -139,8 +139,16 @@ export interface IMemoryStore {
   /**
    * Adapt this store to the {@link IMemoryRecordSource} seam so it can drive
    * {@link IVectorIndex} rebuilds (e.g. `InMemoryCosineIndex.rebuild`). The
-   * returned source's `list()` delegates to {@link IMemoryStore.listScoped}. The
-   * store cannot implement {@link IMemoryRecordSource} directly because its
+   * returned source's `list()` delegates to {@link IMemoryStore.listScoped},
+   * **filtered to the kinds {@link IMemoryStore.embedsKind | embedsKind} reports** —
+   * this source exists to feed the record vector index, so a kind excluded from
+   * that index is excluded here too, and a reopen does not re-embed records the
+   * index will never return. With no
+   * {@link IFileTreeMemoryStoreCreateParams.embedKinds | embedKinds} declaration
+   * every kind participates and the filter is the identity. `listScoped` itself is
+   * **not** filtered and remains the whole-vault surface.
+   *
+   * The store cannot implement {@link IMemoryRecordSource} directly because its
    * `list(filter?)` returns bare records (the ergonomic query surface) while the
    * seam's `list()` returns scope-qualified records.
    */
