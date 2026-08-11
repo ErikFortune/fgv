@@ -232,7 +232,10 @@ export interface IFragmentVectorIndex {
  * different domains that merely happen to share a shape.
  *
  * A **decline** (a {@link MemoryEmbedder} resolving `undefined`) is not an error
- * and is unaffected by this mode: it is always skipped and counted separately.
+ * and is unaffected by this mode: it is always **excluded** from the index and
+ * counted on {@link IVectorRebuildReport.declined}, **never** appearing in
+ * {@link IVectorRebuildReport.skipped}. The word is worth being careful with here:
+ * `skipped` is now a formal field meaning *a fault*, and a decline is the opposite.
  * @public
  */
 export type VectorRebuildErrorMode = 'skip' | 'fail';
@@ -303,8 +306,9 @@ export interface IVectorRebuildOptions {
  * any other. What a decline never does is warn merely for having happened.
  *
  * The distinction is load-bearing wherever the two are treated differently. On the
- * rebuild path a declined record is skipped and does not count against the index;
- * a failed one is a genuine error. Collapsing "I chose not to" into `fail` would
+ * rebuild path a declined record is **excluded** from the index and counted on
+ * {@link IVectorRebuildReport.declined}; a failed one is a genuine error and, under
+ * `onRecordError: 'skip'`, is reported on {@link IVectorRebuildReport.skipped}. Collapsing "I chose not to" into `fail` would
  * make a deliberate policy indistinguishable from an embedder outage in the logs,
  * and would put a routine decision on whatever error path the caller has wired.
  *

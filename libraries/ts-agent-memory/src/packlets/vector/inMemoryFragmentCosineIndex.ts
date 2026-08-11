@@ -232,6 +232,14 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
    * @param source - The scope-qualified record source to re-embed.
    * @param embed - The fragment embedder applied to each record.
    */
+  /**
+   * @remarks
+   * **Deliberately still returns a bare count**, unlike the record-granular
+   * {@link InMemoryCosineIndex.rebuild}, which reports an
+   * {@link IVectorRebuildReport}. The asymmetry is scope, not oversight: the
+   * fragment path is tracked separately and gains the same treatment when the
+   * `IVectorIndex`/`IFragmentVectorIndex` contracts are revisited together.
+   */
   public async rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder): Promise<Result<number>> {
     this._reset();
     const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await source.list();
