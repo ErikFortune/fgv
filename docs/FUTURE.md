@@ -892,9 +892,10 @@ overwhelming majority, and this repo itself — never read `exports`; they resol
 per-file `lib/**/*.d.ts` tree instead: same symbols, uncurated rather than the curated rollup, still
 type-checks. So this is a contract-vs-delivery defect and a **gate blind spot**, not a live breakage.
 
-**Why deferred**: nothing is broken today. It is filed rather than fixed because part 1 is a build
-change of unknown size and the `module-resolution-upgrade` brief scoped `exports` blocks as findings,
-not edits.
+**Why deferred**: nothing is broken today, and the `module-resolution-upgrade` brief scoped `exports`
+blocks as findings rather than edits. **Not** because it is large — an earlier draft said part 1 was
+"a build change of unknown size", which was retracted when the browser-rollup requirement turned out
+not to exist. Both parts are small and fully sized.
 
 **Why it still matters**: it is the same *shape* as the `@fgv/ts-web-extras-webauthn` defect — a
 condition no resolver can reach — and that shape is exactly what our existence-only gates are blind
