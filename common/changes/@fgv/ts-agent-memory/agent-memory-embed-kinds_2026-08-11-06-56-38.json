@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Additive `embedKinds?` store create param + `IMemoryStore.embedsKind(kind)` declare which kinds participate in the record vector index. Absent means every kind participates, so existing consumers are unaffected.",
+      "type": "none",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}
