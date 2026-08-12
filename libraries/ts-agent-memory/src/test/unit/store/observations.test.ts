@@ -20,6 +20,7 @@ import {
   Kind,
   KnowledgeIdentityCodec,
   MemoryCapCullPolicy,
+  MemoryEmbedOutcome,
   MemoryEmbedder,
   MemoryId,
   MemoryObservationStore,
@@ -263,7 +264,7 @@ describe('FileTreeMemoryStore observations', () => {
 
     const okEmbed: MemoryEmbedder = () => Promise.resolve(succeed(Float32Array.from([1, 0])));
 
-    function writeEmbeds(o: MemoryObservationStore): ReadonlyArray<unknown> {
+    function writeEmbeds(o: MemoryObservationStore): ReadonlyArray<MemoryEmbedOutcome | undefined> {
       return o.query({ phase: 'write' }).map((r) => r.embed);
     }
 

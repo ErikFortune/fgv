@@ -191,9 +191,11 @@ export class VectorMaintenance {
       return succeed({ record: built, embed: 'failed' });
     }
     // A deliberate decline (`undefined`) stores the record with no embedding
-    // reference and says nothing about it. Deliberately NOT logged, unlike the
-    // failure path above: a warning per write would make routine policy look like
-    // a recurring fault, which is the confusion this return value exists to end.
+    // reference. Deliberately NOT logged, unlike the failure path above: a warning
+    // per write would make routine policy look like a recurring fault, which is
+    // the confusion this return value exists to end. It is still *reported* — as
+    // `embed: 'declined'` on the write observation — because saying nothing at all
+    // is what left `embeddingRef` absence three-ways ambiguous.
     if (embedded.value === undefined) {
       return succeed(declineEmbedding(built, vectorIndex, target, 'declined'));
     }
