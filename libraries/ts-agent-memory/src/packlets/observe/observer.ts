@@ -44,10 +44,14 @@ export type MemoryObservationOutcome = 'success' | 'failure';
  *   declaration, so the embedder was never called. Also not a fault, and the
  *   cheaper of the two.
  * - `'failed'` — the embedder returned a `Failure` (or threw), **or** the index
- *   `add` did. Both are faults and both leave the record unindexed; the
- *   store's diagnostic logger names which one, because the remediation differs
- *   (an embedder outage versus an index outage) while the coverage answer —
- *   "this record needs a re-embed" — does not.
+ *   `add` did. Both are faults, and what they leave behind depends on whether
+ *   the record had been embedded before: a **first** write ends up with no
+ *   `embeddingRef` and nothing in the index, while an **update** keeps the
+ *   reference and vector it already had — so the index goes on answering on the
+ *   record's **previous** content until a `rebuild` reconciles it. Stale, not
+ *   absent. The store's diagnostic logger names which fault it was, because the
+ *   remediation differs (an embedder outage versus an index outage) while the
+ *   coverage answer — "this record needs a re-embed" — does not.
  *
  * Absent on a write observation means **no outcome is being reported**, which
  * covers three cases:

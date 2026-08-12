@@ -377,10 +377,9 @@ describe('FileTreeMemoryStore observations', () => {
       // a failed write produced no stored record.
       const observations = MemoryObservationStore.create().orThrow();
       const store = embeddingStore(okEmbed, [observations]);
-      const mismatched: IMemoryRecord<unknown> = {
-        ...makeRecord('doc-a'),
-        body: 42 as unknown as string
-      };
+      // `IMemoryRecord<unknown>` already admits a non-string body, so this needs
+      // no cast — the registered converter is what rejects it.
+      const mismatched: IMemoryRecord<unknown> = { ...makeRecord('doc-a'), body: 42 };
       expect(await store.put(mismatched)).toFail();
       const records = observations.query({ phase: 'write' });
       expect(records[0].outcome).toBe('failure');
