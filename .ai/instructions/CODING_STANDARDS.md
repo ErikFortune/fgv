@@ -571,6 +571,21 @@ rushx test     # Jest with coverage gates
 
 All three must pass. CI catches what's left, but the local feedback loop is faster and catches issues before reviewers see them.
 
+### A local warning is a CI failure — `rushx build` exit 0 is not the gate
+
+CI runs `rush rebuild`, which exits **non-zero on "SUCCESS WITH WARNINGS"**. A per-project
+`rushx build` (Heft) exits **0** on the same warning and prints it as a passing build. So a warning
+you can see and shrug at locally is a red X on the PR.
+
+Observed on the PersonAIlity Stream A stack: `fileTreeMemoryStore.ts` crossed the 2000-line
+`max-lines` limit. Local `heft build` said `Finished` with `Encountered 1 warning`, exit 0; the same
+tree failed CI outright. The warning had been dispositioned as advisory tech debt on that basis — a
+disposition that was simply wrong about the facts.
+
+**Rule:** treat *every* warning in `rushx build` / `rushx lint` output as blocking. There is no
+advisory tier in this repo's CI. When you catch yourself writing "warning, not error, so no gate is
+red", verify it by running `rush rebuild` (or reading the PR's check) before believing it.
+
 ### `rushx lint` is a first-class gate
 
 `rushx build` does **not** transitively run lint in this monorepo's Heft config. Lint is a separate gate. PRs have repeatedly merged with passing build + tests but failing lint, blocking downstream cluster merges. Treat lint as mandatory, not optional.
