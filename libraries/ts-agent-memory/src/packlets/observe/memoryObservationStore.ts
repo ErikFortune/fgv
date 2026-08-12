@@ -148,6 +148,12 @@ export class MemoryObservationStore implements IMemoryObserver {
     if (criteria.outcome !== undefined && record.outcome !== criteria.outcome) {
       return false;
     }
+    // A record carrying no embed outcome never matches an `embed` criterion —
+    // "the question did not apply here" is not the same answer as any of the
+    // four, and matching it would put unwired writes in a coverage-gap report.
+    if (criteria.embed !== undefined && record.embed !== criteria.embed) {
+      return false;
+    }
     return true;
   }
 }

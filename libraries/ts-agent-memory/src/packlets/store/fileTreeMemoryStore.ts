@@ -34,6 +34,7 @@ import { IIndexedMemoryRecord, IMemoryIndex, MemoryIndex } from '../index';
 import {
   IMemoryObservationRecord,
   IMemoryObserver,
+  MemoryEmbedOutcome,
   MemoryObservationOutcome,
   MemoryObservationPhase
 } from '../observe';
@@ -426,6 +427,13 @@ export interface IFileTreeMemoryStoreCreateParams {
 interface IPutOutcome {
   readonly record: IMemoryRecord<unknown>;
   readonly evicted: ReadonlyArray<MemoryId>;
+  /**
+   * What the record-granular index did about this write, for the `'write'`
+   * observation. Absent whenever no outcome is being reported — nothing wired,
+   * a dedup no-op that attempted nothing, or a failed write. See
+   * `MemoryEmbedOutcome`.
+   */
+  readonly embed?: MemoryEmbedOutcome;
 }
 
 interface IInternalParams {
@@ -739,7 +747,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
       outcome: result.isSuccess() ? 'success' : 'failure',
       id: result.isSuccess() ? result.value.record.envelope.id : record.envelope.id,
       provenance: record.envelope.provenance,
-      error: result.isFailure() ? result.message : undefined
+      error: result.isFailure() ? result.message : undefined,
+      embed: result.isSuccess() ? result.value.embed : undefined
     });
     // Fire one `'delete'` observation per record evicted by cap-cull. The
     // evicted records are always in the same `(scope, kind)` cohort as the
@@ -797,6 +806,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       readonly id?: MemoryId;
       readonly provenance?: IProvenance;
       readonly error?: string;
+      readonly embed?: MemoryEmbedOutcome;
     }
   ): Promise<void> {
     if (this._observers.length === 0) {
@@ -811,7 +821,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
       kind,
       outcome: details.outcome,
       error: details.error,
-      provenance: details.provenance
+      provenance: details.provenance,
+      embed: details.embed
     };
     const awaited: Promise<void>[] = [];
     for (const observer of this._observers) {
@@ -1016,10 +1027,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
       )
       .onSuccess((embedded) =>
         this._persist(embedded.record, scope, idStem).onSuccess((persisted) =>
-          succeed({ persisted, stale: embedded.stale })
+          succeed({ persisted, stale: embedded.stale, embed: embedded.embed })
         )
       )
-      .thenOnSuccess(async ({ persisted, stale }) => {
+      .thenOnSuccess(async ({ persisted, stale, embed }) => {
         // Everything after the authoritative `_persist` commit is best-effort and
         // never turns a committed write into a `Failure`:
         //   - a stale vector superseded by a decline is pruned here rather than at
@@ -1034,7 +1045,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
         await this._vectors.pruneStaleVector(stale);
         const evicted: ReadonlyArray<MemoryId> = this._applyEvictions(decision, scope);
         await this._vectors.removeEvictedVectors(evicted, scope);
-        return succeed({ record: persisted, evicted });
+        return succeed({ record: persisted, evicted, embed });
       });
   }
 
@@ -1270,18 +1281,18 @@ export class FileTreeMemoryStore implements IMemoryStore {
               )
               .onSuccess((embedded) =>
                 this._persist(embedded.record, scope, versionStem).onSuccess((persisted) =>
-                  succeed({ persisted, stale: embedded.stale })
+                  succeed({ persisted, stale: embedded.stale, embed: embedded.embed })
                 )
               )
-              .onSuccess(({ persisted, stale }) =>
+              .onSuccess(({ persisted, stale, embed }) =>
                 this._invalidateCurrents(scope, priorCurrents, validAt, now).onSuccess(() =>
-                  succeed({ persisted, stale })
+                  succeed({ persisted, stale, embed })
                 )
               )
               // Post-commit and best-effort, exactly as on the flat path.
-              .thenOnSuccess(async ({ persisted, stale }) => {
+              .thenOnSuccess(async ({ persisted, stale, embed }) => {
                 await this._vectors.pruneStaleVector(stale);
-                return succeed({ record: persisted, evicted: [] });
+                return succeed({ record: persisted, evicted: [], embed });
               })
           );
       });
