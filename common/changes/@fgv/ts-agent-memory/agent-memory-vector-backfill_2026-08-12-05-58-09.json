@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "`IVectorIndex` now requires `size` (coverage) and `rebuild` (backfill/reconcile); `SqliteVecVectorIndex` implements both, so a persistent index can be backfilled through the contract.",
+      "type": "none",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}
