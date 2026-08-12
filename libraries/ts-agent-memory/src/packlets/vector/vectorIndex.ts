@@ -230,8 +230,13 @@ export interface IFragmentVectorIndex {
  * @remarks
  * Resolving to `undefined` means **"intentionally not embedded"** — a deliberate
  * decline, not an error. The record is stored without an embedding reference, no
- * failure is reported, and nothing is logged. This is distinct from a `Failure`,
- * which means the embedder *tried and could not*.
+ * failure is reported, and **the decline itself logs nothing**. This is distinct
+ * from a `Failure`, which means the embedder *tried and could not*.
+ *
+ * "Logs nothing" is a statement about the decline, not a promise of silence: a
+ * decline on a record that was already embedded also prunes the vector that
+ * reference named, and if that prune fails it is a genuine fault and warns like
+ * any other. What a decline never does is warn merely for having happened.
  *
  * The distinction is load-bearing wherever the two are treated differently. On the
  * rebuild path a declined record is skipped and does not count against the index;
