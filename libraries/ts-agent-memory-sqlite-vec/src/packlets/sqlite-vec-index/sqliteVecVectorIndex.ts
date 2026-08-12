@@ -8,8 +8,14 @@ import { load as loadSqliteVec } from 'sqlite-vec';
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import {
   IEdgeTarget,
+  IMemoryRecordSource,
+  IScopedMemoryRecord,
+  ISkippedVectorRecord,
   IVectorIndex,
   IVectorQueryHit,
+  IVectorRebuildOptions,
+  IVectorRebuildReport,
+  MemoryEmbedder,
   MemoryId,
   MemoryScopeKey,
   edgeTargetKey
@@ -147,6 +153,67 @@ export class SqliteVecVectorIndex implements IVectorIndex {
         return target;
       }).withErrorFormat((e) => `vector index: cannot remove '${edgeTargetKey(target)}': ${e}`)
     );
+  }
+
+  /** {@inheritDoc IVectorIndex.rebuild} */
+  public async rebuild(
+    source: IMemoryRecordSource,
+    embed: MemoryEmbedder,
+    options?: IVectorRebuildOptions
+  ): Promise<Result<IVectorRebuildReport>> {
+    const lenient: boolean = (options?.onRecordError ?? 'fail') === 'skip';
+    // Clear up front so a rebuild starts from scratch, matching
+    // `InMemoryCosineIndex`. Unlike that one this survives the process, so a
+    // half-rebuilt file would be a durable wrong answer rather than a transient
+    // one — which is exactly why the `'fail'` path below clears again.
+    this._clear();
+    const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await source.list();
+    if (listed.isFailure()) {
+      return fail(`vector index rebuild: failed to list records: ${listed.message}`);
+    }
+    let declined: number = 0;
+    const skipped: ISkippedVectorRecord[] = [];
+    for (const scoped of listed.value) {
+      const embedded: Result<Float32Array | undefined> = await embed(scoped.record);
+      if (embedded.isFailure()) {
+        const error: string = `vector index rebuild: embedding '${edgeTargetKey(scoped.target)}' failed: ${
+          embedded.message
+        }`;
+        if (!lenient) {
+          this._clear();
+          return fail(error);
+        }
+        skipped.push({ target: scoped.target, error });
+        continue;
+      }
+      if (embedded.value === undefined) {
+        declined++;
+        continue;
+      }
+      const added: Result<string> = await this.add(scoped.target, embedded.value);
+      if (added.isFailure()) {
+        const error: string = `vector index rebuild: ${added.message}`;
+        if (!lenient) {
+          this._clear();
+          return fail(error);
+        }
+        skipped.push({ target: scoped.target, error });
+      }
+    }
+    return succeed({ indexed: this.size, declined, skipped });
+  }
+
+  /**
+   * Empty the table. Deliberately does NOT drop it or forget the established
+   * dimension: the `vec0` table's dimension is fixed at creation and a re-embed at
+   * a different dimension needs a drop-and-re-index, which is a consumer decision
+   * (see the package README on `vec0` schema changes), not something a rebuild
+   * should do silently.
+   */
+  private _clear(): void {
+    if (this._stmts !== undefined) {
+      this._db.prepare(`DELETE FROM "${this._table}"`).run();
+    }
   }
 
   /** {@inheritDoc IVectorIndex.query} */

@@ -15,8 +15,11 @@ import {
   IIndexedMemoryRecord,
   IMemoryIndex,
   IMemoryRecord,
+  IMemoryRecordSource,
   IVectorIndex,
   IVectorQueryHit,
+  IVectorRebuildOptions,
+  IVectorRebuildReport,
   InMemoryCosineIndex,
   Kind,
   KnowledgeIdentityCodec,
@@ -161,6 +164,16 @@ class SpyVectorIndex implements IVectorIndex {
   }
   public query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
     return this._inner.query(vector, topK);
+  }
+  public get size(): number {
+    return this._inner.size;
+  }
+  public rebuild(
+    source: IMemoryRecordSource,
+    embed: MemoryEmbedder,
+    options?: IVectorRebuildOptions
+  ): Promise<Result<IVectorRebuildReport>> {
+    return this._inner.rebuild(source, embed, options);
   }
 }
 

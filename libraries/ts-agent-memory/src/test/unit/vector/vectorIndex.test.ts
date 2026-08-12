@@ -4,11 +4,14 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Result, succeed } from '@fgv/ts-utils';
+import { Result, fail, succeed } from '@fgv/ts-utils';
 import {
   IEdgeTarget,
+  IMemoryRecordSource,
   IVectorIndex,
   IVectorQueryHit,
+  IVectorRebuildReport,
+  MemoryEmbedder,
   MemoryId,
   MemoryScopeKey,
   edgeTargetKey
@@ -41,6 +44,36 @@ class StubVectorIndex implements IVectorIndex {
       .map((t) => ({ target: t, score: vector.length }))
       .slice(0, topK);
     return Promise.resolve(succeed(hits));
+  }
+
+  public get size(): number {
+    return this._vectors.size;
+  }
+
+  public async rebuild(
+    source: IMemoryRecordSource,
+    embed: MemoryEmbedder
+  ): Promise<Result<IVectorRebuildReport>> {
+    this._vectors.clear();
+    const listed = await source.list();
+    if (listed.isFailure()) {
+      return fail(listed.message);
+    }
+    let indexed: number = 0;
+    let declined: number = 0;
+    for (const scoped of listed.value) {
+      const embedded = await embed(scoped.record);
+      if (embedded.isFailure()) {
+        return fail(embedded.message);
+      }
+      if (embedded.value === undefined) {
+        declined++;
+        continue;
+      }
+      (await this.add(scoped.target, embedded.value)).orThrow();
+      indexed++;
+    }
+    return succeed({ indexed, declined, skipped: [] });
   }
 }
 

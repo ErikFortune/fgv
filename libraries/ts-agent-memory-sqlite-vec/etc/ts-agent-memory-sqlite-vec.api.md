@@ -8,8 +8,12 @@ import type BetterSqlite3 from 'better-sqlite3';
 import { IEdgeTarget } from '@fgv/ts-agent-memory';
 import { IEmbeddedFragment } from '@fgv/ts-agent-memory';
 import { IFragmentVectorIndex } from '@fgv/ts-agent-memory';
+import { IMemoryRecordSource } from '@fgv/ts-agent-memory';
 import { IVectorIndex } from '@fgv/ts-agent-memory';
 import { IVectorQueryHit } from '@fgv/ts-agent-memory';
+import { IVectorRebuildOptions } from '@fgv/ts-agent-memory';
+import { IVectorRebuildReport } from '@fgv/ts-agent-memory';
+import { MemoryEmbedder } from '@fgv/ts-agent-memory';
 import { Result } from '@fgv/ts-utils';
 
 // @public
@@ -54,6 +58,10 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     //
     // (undocumented)
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IVectorIndex"
+    //
+    // (undocumented)
+    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<Result<IVectorRebuildReport>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IVectorIndex"
     //
     // (undocumented)

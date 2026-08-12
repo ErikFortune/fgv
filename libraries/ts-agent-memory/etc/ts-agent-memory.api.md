@@ -667,7 +667,9 @@ export interface ITemporalVersionAddress {
 export interface IVectorIndex {
     add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<Result<IVectorRebuildReport>>;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
+    readonly size: number;
 }
 
 // @public
