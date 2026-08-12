@@ -222,7 +222,9 @@ export interface IFragmentVectorIndex {
 }
 
 /**
- * How a vector-index rebuild treats a record whose embedding **fails**.
+ * How a vector-index rebuild treats a record it cannot index — whether the
+ * **embedding** failed or the subsequent **add** did. Both are governed by this
+ * one mode; neither is unconditionally fatal.
  *
  * @remarks
  * Deliberately mirrors the store's own open-time `onRecordError` mode, including
@@ -248,7 +250,7 @@ export type VectorRebuildErrorMode = 'skip' | 'fail';
 export interface ISkippedVectorRecord {
   /** The scope-qualified address of the record that could not be embedded. */
   readonly target: IEdgeTarget;
-  /** The embedding (or add) failure message. */
+  /** The failure message, from either the embed or the subsequent add. */
   readonly error: string;
 }
 
@@ -282,8 +284,9 @@ export interface IVectorRebuildReport {
  */
 export interface IVectorRebuildOptions {
   /**
-   * How to treat a record whose embedding fails. Defaults to `'fail'` — the
-   * historical behavior, unchanged for every existing caller.
+   * How to treat a record the rebuild cannot index — an embed failure OR an add
+   * failure. Defaults to `'fail'` — the historical behavior, unchanged for every
+   * existing caller.
    */
   readonly onRecordError?: VectorRebuildErrorMode;
 }

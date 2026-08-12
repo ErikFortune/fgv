@@ -570,7 +570,6 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
     static create(): Result<InMemoryFragmentCosineIndex>;
     get fragmentCount(): number;
     query(vector: Float32Array, topK: number, maxPerRecord?: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
-    // (undocumented)
     rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder): Promise<Result<number>>;
     get recordCount(): number;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
