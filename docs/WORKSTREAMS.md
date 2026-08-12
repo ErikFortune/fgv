@@ -128,26 +128,31 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟡
+### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
 
-**Status:** 🟡 in flight. Triage + the consumer reply are on branch `personaility-asks-2026-08`; each item ships as its **own** PR. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md` (triage, incl. the verification of their claims against our source) and `…-reply-2026-08-11-ask-package.md` (what we committed to).
+**Status:** 🟢 **shipped to `release`** — all five units merged 2026-08-12, plus one unplanned refactor that unblocked them. Nothing published yet; the alpha still has to go out. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md`, `…-reply-2026-08-11-ask-package.md`, `…-status-2026-08-12-stream-a.md`, `…-status-2026-08-12-shipped.md`.
 
 **Origin.** One consolidated ask package from PersonAIlity, 2026-08-11 — nine open items, none blocking them, every one carrying a workaround they are already running. They explicitly invited "not now" on the whole package. We re-verified every load-bearing mechanic against our own source before acting (both sides shipped a wrong sweep this month); **all their claims held**, down to exact control flow.
 
 **The through-line, adopted as ours.** Four of the nine are one species — **a failure reported as a success**. We already solved it well once on the record path (`onRecordError: 'skip'` + structural `skippedRecords`); items 1, 4 and 5 ask for that same shape in three more places.
 
-**Stream A = ask items 1–4**, one package, cheapest together, in the order **4 → 2 → 1 → 3**:
-
-| item | change | state |
+| item | change | shipped |
 |---|---|---|
-| **4** | `MemoryEmbedder` may resolve `undefined` to **decline** a record — stored with no `embeddingRef`, no failure, **nothing logged**; skipped (not counted) on rebuild; `'new'` on the ingest path | branch `agent-memory-embedder-decline`; `code-reviewer` **approved**, no P1/P2 |
-| **2** | per-kind embed declaration, default "embed everything" so existing consumers stay byte-identical | queued |
-| **1** | partial-tolerant `rebuild` returning a structural `IVectorRebuildReport` (`indexed`/`declined`/`skipped`), `onRecordError` defaulting to `'fail'` so existing behavior is unchanged | branch `agent-memory-partial-rebuild`; `code-reviewer` approved pending doc fixes, applied. **Rebuild half only** — the coverage accessor moves to item 3, so the `IVectorIndex` contract changes once and `SqliteVecVectorIndex` implements it in lockstep |
-| **3** | promote reconcile/backfill onto `IVectorIndex`, shipping with its `sqlite-vec` implementation | queued |
+| **4** | `MemoryEmbedder` may resolve `undefined` to **decline** a record — no `embeddingRef`, no failure, and the decline itself logs nothing. A decline on an already-embedded record drops the inherited reference *and* prunes the vector it named, **after** the commit | #611 |
+| **2** | `embedKinds?: ReadonlySet<Kind>` + `IMemoryStore.embedsKind`; absent means every kind participates. The gate sits **before** the embedder call, so an excluded kind costs nothing, and narrowing it on an existing vault retires the embeddings it no longer maintains | #612 |
+| **1** | partial-tolerant `rebuild` returning `IVectorRebuildReport` (`indexed` / `declined` / `skipped`), `onRecordError` defaulting to `'fail'` | #613 |
+| **3** | `size` + `rebuild` promoted onto `IVectorIndex`, with `SqliteVecVectorIndex` implementing both | #614 |
+| **5** *(added mid-stream, at the consumer's ask)* | `embed?: MemoryEmbedOutcome` on write observations + a matching query axis — the write-path axis the first status note told them was still open | #615 |
 
-**Answered without scheduling:** item 5 (strict text read — half already shipped in `-47`; their own note de-prioritised it), 6 (provenance query axis — **intent stated so they can design against it existing**), 7 (index read surface — deferred deliberately, breaking, wants its own design), 8 (prompt-slot writability — taking the one-sentence "advisory" doc remedy), 9 (`ts-res` `addResource` — not taking a round, fold into the next touch).
+**One unplanned unit: #616.** CI rejected the stack on a `max-lines` warning; the store had crossed 2000 lines. Extracting a `VectorMaintenance` collaborator took it from 1991 → 1758 with no test file changed and a byte-identical `api.md`.
 
-**Two things we owe them back, tracked here:** our `latest` dist-tag is mis-set on some packages (cosmetic for us, actively misleading for a consumer — part of how `ts-agent-memory-sqlite-vec` was recorded as unavailable while shipping the seam they needed), and the 21-of-25 unreachable `types` condition from the module-resolution stream.
+**Two bugs this stream found in its own work, both worth recording.** `rebuild` cleared the index *before* attempting to list — so a transient list failure destroyed a healthy index, **durably** on the sqlite sibling. A pre-existing test pinned the destructive behavior as intended, and the package was at 100% coverage the whole time; no test had ever seeded a populated index before a failing list. And the decline path pruned its stale vector *before* `_persist`, so a failed write would have deleted a vector that was still accurate for the content actually on disk.
+
+**Three process lessons, all codified in `CODING_STANDARDS.md`:** a local warning is a CI failure (`rush rebuild` exits non-zero on "success with warnings" where `rushx build` exits 0); widening a shared interface needs a repo-wide build, not a per-package one (a test double in `samples/testbed` broke #614); and a green Copilot check only means the job ran — three of the five PRs had substantive findings recorded solely in *suppressed* comments.
+
+**Answered without scheduling:** item 5's original scope (strict text read — half already shipped in `-47`), 6 (provenance query axis — **intent stated so they can design against it existing**), 7 (index read surface — deferred deliberately, breaking, wants its own design), 8 (prompt-slot writability — the one-sentence "advisory" doc remedy), 9 (`ts-res` `addResource` — fold into the next touch).
+
+**Still owed back to them:** the mis-set `latest` dist-tag, and the 21-of-25 unreachable `types` condition from the module-resolution stream. Both predate this stream.
 
 ---
 
