@@ -139,8 +139,16 @@ export interface IMemoryStore {
   /**
    * Adapt this store to the {@link IMemoryRecordSource} seam so it can drive
    * {@link IVectorIndex} rebuilds (e.g. `InMemoryCosineIndex.rebuild`). The
-   * returned source's `list()` delegates to {@link IMemoryStore.listScoped}. The
-   * store cannot implement {@link IMemoryRecordSource} directly because its
+   * returned source's `list()` delegates to {@link IMemoryStore.listScoped},
+   * **filtered to the kinds {@link IMemoryStore.embedsKind | embedsKind} reports** —
+   * this source exists to feed the record vector index, so a kind excluded from
+   * that index is excluded here too, and a reopen does not re-embed records the
+   * index will never return. With no
+   * {@link IFileTreeMemoryStoreCreateParams.embedKinds | embedKinds} declaration
+   * every kind participates and the filter is the identity. `listScoped` itself is
+   * **not** filtered and remains the whole-vault surface.
+   *
+   * The store cannot implement {@link IMemoryRecordSource} directly because its
    * `list(filter?)` returns bare records (the ergonomic query surface) while the
    * seam's `list()` returns scope-qualified records.
    */
@@ -174,6 +182,26 @@ export interface IMemoryStore {
    * invoking admission or merge logic out of band.
    */
   dedupScopeFor(kind: Kind): DedupScope;
+
+  /**
+   * Whether records of `kind` participate in the **record-granular** vector index.
+   *
+   * @remarks
+   * A read accessor over the store's injected {@link IFileTreeMemoryStoreCreateParams.embedKinds | embedKinds}
+   * declaration, in the same spirit as {@link IMemoryStore.dedupScopeFor} — one
+   * place to ask, so the store's write path and any caller reasoning about index
+   * coverage cannot disagree. `true` for every kind when no declaration was made.
+   *
+   * **This is distinct from a {@link MemoryEmbedder} decline, and the difference is
+   * cost.** An embedder that returns `undefined` has already been called: the
+   * round trip is paid, and on a locally-hosted model that round trip is the
+   * expense. A kind excluded here is never handed to the embedder at all. The
+   * decline makes the intent *expressible*; this makes it *free*.
+   *
+   * Deliberately synchronous, total, and NOT `Result`-returning: it reads
+   * constructor-injected configuration, touches no I/O, and cannot fail.
+   */
+  embedsKind(kind: Kind): boolean;
 
   /**
    * Write a record. Validates the body, computes a content hash, deduplicates
@@ -220,6 +248,37 @@ export interface IFileTreeMemoryStoreCreateParams {
    * guard-host-callbacks conventions).
    */
   readonly rankProjectors?: ReadonlyMap<Kind, RankProjector>;
+  /**
+   * The kinds whose records participate in the **record-granular** vector index.
+   *
+   * @remarks
+   * **Absent means every kind participates**, which is the pre-existing behavior —
+   * so omitting this is byte-identical to before it existed. Supplying it makes the
+   * set an allowlist: a kind outside it is never handed to the {@link MemoryEmbedder}
+   * on write, and is omitted from {@link IMemoryStore.asRecordSource | asRecordSource},
+   * so a rebuild driven from this store does not pay for it either.
+   *
+   * Two costs motivate it, and the second is the one that is easy to miss:
+   *
+   * - **Embedder work on the critical path.** Embed-on-write is synchronous with
+   *   the write. A bookkeeping row — a status, a counter, a lease — that no query
+   *   will ever return still pays a full embedding round trip, and on a
+   *   locally-hosted model the first call after a restart pays a cold model load
+   *   on top.
+   * - **Un-queried kinds crowd the `topK` window.** `IVectorIndex.query` applies
+   *   `topK` *before* any kind filter the retriever adds, so vectors that can never
+   *   be returned still occupy candidate slots. Over-fetching to compensate hides
+   *   this until the un-queried kinds start scoring well — at which point recall is
+   *   silently lost. Restricting what is indexed fixes the recall problem, not just
+   *   the cost.
+   *
+   * Applies to the record-granular path only. The fragment path
+   * ({@link IFileTreeMemoryStoreCreateParams.fragmentIndex | fragmentIndex} /
+   * `fragmentEmbedder`) is independent and unaffected — a kind may legitimately be
+   * fragment-embedded and not record-embedded, which is the right shape for a long
+   * document whose whole body exceeds the model's context.
+   */
+  readonly embedKinds?: ReadonlySet<Kind>;
   /** Default codec for kinds without an explicit entry. */
   readonly defaultCodec?: IIdentityCodec;
   /**
@@ -375,6 +434,8 @@ interface IInternalParams {
   readonly writePolicies: ReadonlyMap<Kind, IWritePolicy>;
   readonly codecs: ReadonlyMap<Kind, IIdentityCodec>;
   readonly rankProjectors: ReadonlyMap<Kind, RankProjector>;
+  /** `undefined` = no declaration = every kind participates in the vector index. */
+  readonly embedKinds: ReadonlySet<Kind> | undefined;
   readonly defaultCodec?: IIdentityCodec;
   readonly defaultPolicy: IWritePolicy;
   readonly scopeEncoding: (scope: MemoryScopeKey) => Result<string>;
@@ -408,6 +469,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
   private readonly _writePolicies: ReadonlyMap<Kind, IWritePolicy>;
   private readonly _codecs: ReadonlyMap<Kind, IIdentityCodec>;
   private readonly _rankProjectors: ReadonlyMap<Kind, RankProjector>;
+  /** `undefined` = no declaration = every kind participates. */
+  private readonly _embedKinds: ReadonlySet<Kind> | undefined;
   private readonly _defaultCodec: IIdentityCodec | undefined;
   private readonly _defaultPolicy: IWritePolicy;
   private readonly _scopeEncoding: (scope: MemoryScopeKey) => Result<string>;
@@ -460,6 +523,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     this._writePolicies = params.writePolicies;
     this._codecs = params.codecs;
     this._rankProjectors = params.rankProjectors;
+    this._embedKinds = params.embedKinds ?? undefined;
     this._defaultCodec = params.defaultCodec;
     this._defaultPolicy = params.defaultPolicy;
     this._scopeEncoding = params.scopeEncoding;
@@ -473,7 +537,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
       embed: params.embed,
       fragmentIndex: params.fragmentIndex,
       fragmentEmbedder: params.fragmentEmbedder,
-      warn: (message) => this._warnSwallowed(message)
+      warn: (message) => this._warnSwallowed(message),
+      embedsKind: (kind) => this.embedsKind(kind)
     });
     this._skippedRecords = [];
     this._seq = 0;
@@ -509,6 +574,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
           writePolicies: params.writePolicies ?? new Map<Kind, IWritePolicy>(),
           codecs: params.codecs ?? new Map<Kind, IIdentityCodec>(),
           rankProjectors: params.rankProjectors ?? new Map<Kind, RankProjector>(),
+          embedKinds: params.embedKinds,
           defaultCodec: params.defaultCodec,
           defaultPolicy,
           scopeEncoding: params.scopeEncoding ?? defaultMemoryScopeEncoding,
@@ -617,7 +683,17 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   /** {@inheritDoc IMemoryStore.asRecordSource} */
   public asRecordSource(): IMemoryRecordSource {
-    return { list: (): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> => this.listScoped() };
+    return {
+      // Filtered to the kinds that participate in the record vector index. This
+      // source exists to drive `IVectorIndex` rebuilds, so a kind excluded from the
+      // index has no business being re-embedded on open — which is where the cost
+      // is worst, since a rebuild embeds the whole vault serially. With no
+      // `embedKinds` declaration every kind passes and this is the identity filter.
+      list: async (): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> =>
+        (await this.listScoped()).onSuccess((scoped: ReadonlyArray<IScopedMemoryRecord>) =>
+          succeed(scoped.filter((s) => this.embedsKind(s.record.envelope.kind)))
+        )
+    };
   }
 
   /**
@@ -1506,6 +1582,13 @@ export class FileTreeMemoryStore implements IMemoryStore {
   /** {@inheritDoc IMemoryStore.dedupScopeFor} */
   public dedupScopeFor(kind: Kind): DedupScope {
     return this._policyFor(kind).dedupScope ?? DEFAULT_DEDUP_SCOPE;
+  }
+
+  /** {@inheritDoc IMemoryStore.embedsKind} */
+  public embedsKind(kind: Kind): boolean {
+    // No declaration means every kind participates — the behavior that predates
+    // this param, so an existing consumer is unaffected.
+    return this._embedKinds === undefined || this._embedKinds.has(kind);
   }
 
   /**

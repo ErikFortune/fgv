@@ -662,4 +662,158 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       expect(order).toEqual(['commit:doc-a', 'remove:doc-a']);
     });
   });
+
+  describe('embedKinds — declaring which kinds participate', () => {
+    /** A store registering two kinds, optionally restricting which are embedded. */
+    function twoKindStore(
+      index: IVectorIndex,
+      embed: MemoryEmbedder,
+      embedKinds?: ReadonlySet<Kind>
+    ): FileTreeMemoryStore {
+      const registry: IBodyConverterRegistry = BodyConverterRegistry.create().orThrow();
+      registry.register(knowledgeKind, Converters.string);
+      registry.register(factKind, Converters.string);
+      return FileTreeMemoryStore.create({
+        root: mutableRoot(),
+        registry,
+        codecs: new Map<Kind, IIdentityCodec>([
+          [knowledgeKind, new KnowledgeIdentityCodec()],
+          [factKind, new KnowledgeIdentityCodec()]
+        ]),
+        vectorIndex: index,
+        embed,
+        embedKinds
+      }).orThrow();
+    }
+
+    test('with no declaration every kind participates — unchanged behavior', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const store = twoKindStore(index, recordEmbed);
+      expect(store.embedsKind(knowledgeKind)).toBe(true);
+      expect(store.embedsKind(factKind)).toBe(true);
+      expect(await store.put(makeRecord('doc-a', 'cat', 'knowledge'))).toSucceed();
+      expect(await store.put(makeRecord('fact-a', 'cat', 'fact'))).toSucceed();
+      expect(index.size).toBe(2);
+    });
+
+    test('an excluded kind is never handed to the embedder at all', async () => {
+      // The distinction from a MemoryEmbedder decline: a decline is CALLED and
+      // returns undefined, paying the round trip. This must not call it.
+      const seen: string[] = [];
+      const countingEmbed: MemoryEmbedder = (r) => {
+        seen.push(r.envelope.kind as string);
+        return recordEmbed(r);
+      };
+      const index = InMemoryCosineIndex.create().orThrow();
+      const store = twoKindStore(index, countingEmbed, new Set<Kind>([knowledgeKind]));
+      expect(await store.put(makeRecord('doc-a', 'cat', 'knowledge'))).toSucceed();
+      expect(await store.put(makeRecord('fact-a', 'cat', 'fact'))).toSucceed();
+      expect(seen).toEqual(['knowledge']);
+      expect(index.size).toBe(1);
+    });
+
+    test('an excluded kind is stored normally, just without an embeddingRef', async () => {
+      const store = twoKindStore(
+        InMemoryCosineIndex.create().orThrow(),
+        recordEmbed,
+        new Set<Kind>([knowledgeKind])
+      );
+      expect(await store.put(makeRecord('fact-a', 'cat', 'fact'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+      // Still fully readable — exclusion is about the index, not about storage.
+      expect(await store.get(factKind, 'fact-a' as EntityId)).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown> | undefined) => {
+          expect(record?.body).toBe('cat');
+        }
+      );
+    });
+
+    test('narrowing the declaration retires the embeddings the store no longer maintains', async () => {
+      // The migration case: a vault embedded everything, then the consumer
+      // narrowed `embedKinds`. Without this, every previously-embedded record of
+      // a now-excluded kind would keep claiming an embedding the store will
+      // never refresh, and its vector would keep answering queries.
+      const index = InMemoryCosineIndex.create().orThrow();
+      const root = mutableRoot();
+      const registry: IBodyConverterRegistry = BodyConverterRegistry.create().orThrow();
+      registry.register(knowledgeKind, Converters.string);
+      registry.register(factKind, Converters.string);
+      const codecs = new Map<Kind, IIdentityCodec>([
+        [knowledgeKind, new KnowledgeIdentityCodec()],
+        [factKind, new KnowledgeIdentityCodec()]
+      ]);
+      const before = FileTreeMemoryStore.create({
+        root,
+        registry,
+        codecs,
+        vectorIndex: index,
+        embed: recordEmbed
+      }).orThrow();
+      (await before.put(makeRecord('fact-a', 'cat', 'fact'))).orThrow();
+      expect(index.size).toBe(1);
+
+      // Reopen the SAME vault with the kind excluded, then re-put the record.
+      const after = FileTreeMemoryStore.create({
+        root,
+        registry,
+        codecs,
+        vectorIndex: index,
+        embed: recordEmbed,
+        embedKinds: new Set<Kind>([knowledgeKind])
+      }).orThrow();
+      expect(await after.put(makeRecord('fact-a', 'dog', 'fact'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+      expect(index.size).toBe(0);
+    });
+
+    test('embedsKind reports the declaration', () => {
+      const store = twoKindStore(
+        InMemoryCosineIndex.create().orThrow(),
+        recordEmbed,
+        new Set<Kind>([knowledgeKind])
+      );
+      expect(store.embedsKind(knowledgeKind)).toBe(true);
+      expect(store.embedsKind(factKind)).toBe(false);
+    });
+
+    test('asRecordSource omits excluded kinds, so a rebuild does not pay for them', async () => {
+      // The restart cost: a rebuild embeds the whole vault serially, so an
+      // un-queried kind is worst exactly here.
+      const store = twoKindStore(
+        InMemoryCosineIndex.create().orThrow(),
+        recordEmbed,
+        new Set<Kind>([knowledgeKind])
+      );
+      expect(await store.put(makeRecord('doc-a', 'cat', 'knowledge'))).toSucceed();
+      expect(await store.put(makeRecord('fact-a', 'cat', 'fact'))).toSucceed();
+
+      const fresh = InMemoryCosineIndex.create().orThrow();
+      const seen: string[] = [];
+      const countingEmbed: MemoryEmbedder = (r) => {
+        seen.push(r.envelope.kind as string);
+        return recordEmbed(r);
+      };
+      expect(await fresh.rebuild(store.asRecordSource(), countingEmbed)).toSucceedWith(1);
+      expect(seen).toEqual(['knowledge']);
+    });
+
+    test('listScoped still returns every record — only the vector source is filtered', async () => {
+      const store = twoKindStore(
+        InMemoryCosineIndex.create().orThrow(),
+        recordEmbed,
+        new Set<Kind>([knowledgeKind])
+      );
+      expect(await store.put(makeRecord('doc-a', 'cat', 'knowledge'))).toSucceed();
+      expect(await store.put(makeRecord('fact-a', 'cat', 'fact'))).toSucceed();
+      expect(await store.listScoped()).toSucceedAndSatisfy((all: ReadonlyArray<unknown>) => {
+        expect(all).toHaveLength(2);
+      });
+    });
+  });
 });

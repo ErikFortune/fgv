@@ -190,7 +190,9 @@ opportunistically when the right surface area is touched.
 
   **Scope sketch**: split by concern into sibling modules under `ai-assist/` (e.g. `completionClient.ts`, `imageGenerationClient.ts`, `listModelsClient.ts`, and a `proxiedClient.ts` — or co-locate each proxied variant with its direct sibling), keeping the shared HTTP helpers (`fetchJson`/`fetchMultipart`/`fetchGetJson`) and response validators in a small internal module. Re-export the public surface unchanged from `index.ts` so `etc/ts-extras.api.md` is unaffected (pure file-organization move, no API change → Rush change `none`). Verify per-file `max-lines` compliance without JSDoc trimming.
 
-  **Not a P2**: no functional or API impact; the file works correctly. This is a maintainability/headroom issue — but it becomes a soft blocker on the *next* edit, so it should be done before, not during, the next feature.
+  **Upgraded from "soft blocker" to hard blocker**: no functional or API impact; the file works correctly. This is a maintainability/headroom issue — but it becomes a soft blocker on the *next* edit, so it should be done before, not during, the next feature.
+
+  **Correction (2026-08, PersonAIlity Stream A):** "soft blocker" understated it. CI runs `rush rebuild`, which exits **non-zero on "SUCCESS WITH WARNINGS"** — so the first line that pushes this file past 2000 turns the PR's check red, not yellow. A local `rushx build` exits 0 on that same warning, which is how the identical situation in `ts-agent-memory` reached CI before anyone noticed (fixed in #616 by extracting a collaborator). Whoever next edits `apiClient.ts` should assume they have **zero** headroom.
 
   **Reference**: PR #478 (`ai-assist-message-ordering`) — repeated JSDoc trims to keep the file ≤2000 lines while adding proxy-path validation guards; Erik 2026-06-07 ("we won't be able to cut lines every time").
 

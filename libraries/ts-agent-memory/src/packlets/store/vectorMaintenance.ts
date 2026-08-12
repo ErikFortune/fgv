@@ -4,7 +4,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { IEdgeTarget, IMemoryRecord, MemoryId, MemoryScopeKey } from '../types';
+import { IEdgeTarget, IMemoryRecord, Kind, MemoryId, MemoryScopeKey } from '../types';
 import {
   FragmentEmbedder,
   IEmbeddedFragment,
@@ -83,6 +83,12 @@ export interface IVectorMaintenanceParams {
   readonly fragmentEmbedder?: FragmentEmbedder;
   /** The store's swallowed-failure logger; every vector fault is best-effort. */
   readonly warn: (message: string) => void;
+  /**
+   * The store's per-kind record-index participation predicate
+   * (`IMemoryStore.embedsKind`). Passed in rather than re-derived so the store's
+   * declaration and the gate that enforces it cannot disagree.
+   */
+  readonly embedsKind: (kind: Kind) => boolean;
 }
 
 /**
@@ -108,6 +114,7 @@ export class VectorMaintenance {
   private readonly _fragmentIndex: IFragmentVectorIndex | undefined;
   private readonly _fragmentEmbedder: FragmentEmbedder | undefined;
   private readonly _warn: (message: string) => void;
+  private readonly _embedsKind: (kind: Kind) => boolean;
 
   public constructor(params: IVectorMaintenanceParams) {
     this._vectorIndex = params.vectorIndex;
@@ -115,6 +122,7 @@ export class VectorMaintenance {
     this._fragmentIndex = params.fragmentIndex;
     this._fragmentEmbedder = params.fragmentEmbedder;
     this._warn = params.warn;
+    this._embedsKind = params.embedsKind;
   }
 
   /**
@@ -152,6 +160,19 @@ export class VectorMaintenance {
     const vectorIndex: IVectorIndex = this._vectorIndex;
     const embed: MemoryEmbedder = this._embed;
     const target: IEdgeTarget = { scope, id: built.envelope.id };
+    // Gate BEFORE the embedder call, which is the whole point: a `MemoryEmbedder`
+    // decline still pays the round trip, and on a locally-hosted model that round
+    // trip IS the cost. A kind excluded here is never handed to the embedder.
+    //
+    // An exclusion reaches the same conclusion as a decline — this record is
+    // intentionally not embedded — so it takes the same path: an inherited
+    // `embeddingRef` is dropped and the vector it named is pruned after the
+    // commit. Otherwise narrowing `embedKinds` on an existing vault would leave
+    // every previously-embedded record of the excluded kind claiming an
+    // embedding the store no longer maintains.
+    if (!this._embedsKind(built.envelope.kind)) {
+      return succeed(declineEmbedding(built, vectorIndex, target));
+    }
     const embedded: Result<Float32Array | undefined> = await this._tryVectorOp(
       () => embed(built),
       `embedding '${built.envelope.id}'`
