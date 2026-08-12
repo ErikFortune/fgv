@@ -5,16 +5,52 @@
 
 import type BetterSqlite3 from 'better-sqlite3';
 import { load as loadSqliteVec } from 'sqlite-vec';
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureAsyncResult, captureResult, fail, succeed } from '@fgv/ts-utils';
 import {
   IEdgeTarget,
+  IMemoryRecordSource,
+  IScopedMemoryRecord,
+  ISkippedVectorRecord,
   IVectorIndex,
   IVectorQueryHit,
+  IVectorRebuildOptions,
+  IVectorRebuildReport,
+  MemoryEmbedder,
   MemoryId,
   MemoryScopeKey,
   edgeTargetKey
 } from '@fgv/ts-agent-memory';
 import { ISqliteVecVectorIndexCreateParams } from './model';
+
+/**
+ * Invoke a consumer-supplied hook that already returns a `Result`, converting a
+ * synchronous throw or a promise rejection into a `Failure` rather than letting
+ * it escape. `captureAsyncResult` wraps the hook's own `Result`, so the outcome
+ * is flattened back to one level.
+ *
+ * @remarks
+ * This is `@fgv/ts-utils`' own `_invokeDeferred` shape (see `mapResultsAsync`),
+ * which is `@internal` there and so cannot be imported. `@fgv/ts-agent-memory`
+ * carries an identical private copy for the in-memory index. Exporting a single
+ * `AsyncDeferredResult`-invoking primitive from `ts-utils` is the right home and
+ * is recorded in `docs/TECH_DEBT.md`; duplicating three lines twice is the
+ * cheaper thing to do from inside this stream than widening it to a foundational
+ * library.
+ */
+async function invokeHook<T>(hook: () => Promise<Result<T>>): Promise<Result<T>> {
+  return (await captureAsyncResult(hook)).onSuccess((inner) => inner);
+}
+
+/**
+ * Compose the failure that aborted a rebuild with the outcome of the rollback
+ * that followed it. A rollback that ALSO fails is worth saying out loud: the
+ * `'fail'` path promises an empty index, and a caller that retries against a
+ * table which is neither the old index nor empty is working from a state the
+ * contract never described.
+ */
+function withRollbackNote(error: string, rollback: Result<true>): string {
+  return rollback.isFailure() ? `${error} (rollback also failed: ${rollback.message})` : error;
+}
 
 /** Default name for the `vec0` virtual table. */
 const DEFAULT_TABLE_NAME: string = 'memory_vectors';
@@ -146,6 +182,93 @@ export class SqliteVecVectorIndex implements IVectorIndex {
         }
         return target;
       }).withErrorFormat((e) => `vector index: cannot remove '${edgeTargetKey(target)}': ${e}`)
+    );
+  }
+
+  /**
+   * Re-embed every record from `source` and rebuild the persisted index — see
+   * `IVectorIndex.rebuild` for the mode semantics, which this implementation
+   * matches exactly.
+   *
+   * @remarks
+   * **Not atomic, and cannot be.** `better-sqlite3` transactions are synchronous,
+   * so one cannot span the `await embed(...)` calls this loop makes — unlike
+   * {@link SqliteVecVectorIndex.add}, which wraps its delete-then-insert. The
+   * `'fail'` / `'skip'` modes therefore cover only failures JavaScript can catch:
+   * a process kill mid-rebuild leaves the table holding neither the old index nor
+   * the complete new one, and the remedy is to run `rebuild` again.
+   */
+  public async rebuild(
+    source: IMemoryRecordSource,
+    embed: MemoryEmbedder,
+    options?: IVectorRebuildOptions
+  ): Promise<Result<IVectorRebuildReport>> {
+    const lenient: boolean = (options?.onRecordError ?? 'fail') === 'skip';
+    // `source` is consumer-supplied, so a throw or rejection becomes a `Failure`
+    // here rather than escaping as an exception.
+    const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await invokeHook(() => source.list());
+    if (listed.isFailure()) {
+      // Deliberately BEFORE any clear: a failed list is no evidence about the
+      // vectors already held, and no re-embedding has been attempted, so there is
+      // no half-rebuilt state to protect against. Clearing here would destroy a
+      // healthy persisted index over a transient read error.
+      return fail(`vector index rebuild: failed to list records: ${listed.message}`);
+    }
+    const cleared: Result<true> = this._clear();
+    if (cleared.isFailure()) {
+      return fail(`vector index rebuild: failed to clear the index: ${cleared.message}`);
+    }
+    let declined: number = 0;
+    const skipped: ISkippedVectorRecord[] = [];
+    for (const scoped of listed.value) {
+      // Likewise capture-wrapped: an embedder that throws mid-loop would
+      // otherwise escape past the `'fail'` rollback below, leaving this DURABLE
+      // table holding a partial index that survives the process.
+      const embedded: Result<Float32Array | undefined> = await invokeHook(() => embed(scoped.record));
+      if (embedded.isFailure()) {
+        const error: string = `vector index rebuild: embedding '${edgeTargetKey(scoped.target)}' failed: ${
+          embedded.message
+        }`;
+        if (!lenient) {
+          return fail(withRollbackNote(error, this._clear()));
+        }
+        skipped.push({ target: scoped.target, error });
+        continue;
+      }
+      if (embedded.value === undefined) {
+        declined++;
+        continue;
+      }
+      const added: Result<string> = await this.add(scoped.target, embedded.value);
+      if (added.isFailure()) {
+        const error: string = `vector index rebuild: ${added.message}`;
+        if (!lenient) {
+          return fail(withRollbackNote(error, this._clear()));
+        }
+        skipped.push({ target: scoped.target, error });
+      }
+    }
+    return captureResult(() => this.size)
+      .withErrorFormat((msg) => `vector index rebuild: failed to count the rebuilt index: ${msg}`)
+      .onSuccess((indexed) => succeed({ indexed, declined, skipped }));
+  }
+
+  /**
+   * Empty the table. Deliberately does NOT drop it or forget the established
+   * dimension: the `vec0` table's dimension is fixed at creation and a re-embed at
+   * a different dimension needs a drop-and-re-index, which is a consumer decision
+   * (see the package README on `vec0` schema changes), not something a rebuild
+   * should do silently.
+   */
+  private _clear(): Result<true> {
+    if (this._stmts === undefined) {
+      return succeed(true);
+    }
+    // Capture-wrapped like `add` / `remove` / `query`: a closed connection or an
+    // I/O error here is a `Failure`, not an exception thrown out of a method
+    // whose signature promises a `Result`.
+    return captureResult(() => this._db.prepare(`DELETE FROM "${this._table}"`).run()).onSuccess(() =>
+      succeed(true)
     );
   }
 

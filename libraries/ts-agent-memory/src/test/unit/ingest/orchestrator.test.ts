@@ -698,6 +698,9 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
     const ghostIndex: IVectorIndex = {
       add: (t) => Promise.resolve(succeed(t.id as string)),
       remove: (t) => Promise.resolve(succeed(t)),
+      size: 0,
+      rebuild: () => Promise.resolve(succeed({ indexed: 0, declined: 0, skipped: [] })),
+
       query: (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> =>
         Promise.resolve(succeed([{ target: kt('ghost'), score: 0.99 }]))
     };
@@ -729,6 +732,9 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
     const failingIndex: IVectorIndex = {
       add: (t) => Promise.resolve(succeed(t.id as string)),
       remove: (t) => Promise.resolve(succeed(t)),
+      size: 0,
+      rebuild: () => Promise.resolve(succeed({ indexed: 0, declined: 0, skipped: [] })),
+
       query: (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> => Promise.resolve(fail('query kaput'))
     };
     const orch = buildOrchestrator({

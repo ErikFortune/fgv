@@ -373,6 +373,26 @@ describe('InMemoryCosineIndex', () => {
       }
     });
 
+    test('a list failure leaves an already-populated index INTACT', async () => {
+      // The regression this exists for: the reset used to run before the list, so
+      // a transient read error discarded a perfectly good index. Fatal-to-the-call
+      // must not mean destructive-to-the-data — nothing was re-embedded, so there
+      // is nothing to roll back.
+      for (const mode of ['fail', 'skip'] as const) {
+        const index = InMemoryCosineIndex.create().orThrow();
+        (await index.add(target('s', 'kept'), Float32Array.from([1, 1]))).orThrow();
+        expect(
+          await index.rebuild(new FakeSource(fail('disk gone')), embed, { onRecordError: mode })
+        ).toFail();
+        expect(index.size).toBe(1);
+        expect(await index.query(Float32Array.from([1, 1]), 5)).toSucceedAndSatisfy(
+          (hits: ReadonlyArray<IVectorQueryHit>) => {
+            expect(hits.map((h) => h.target.id)).toEqual(['kept']);
+          }
+        );
+      }
+    });
+
     test('clears prior contents and re-establishes the dimension', async () => {
       const index = InMemoryCosineIndex.create().orThrow();
       // Seed a 3-dim vector, then rebuild with a 2-dim embedder.
@@ -384,13 +404,17 @@ describe('InMemoryCosineIndex', () => {
       expect(await index.query(Float32Array.from([97, 1]), 1)).toSucceed();
     });
 
-    test('fails loudly when the source list fails', async () => {
+    test('fails loudly when the source list fails, without discarding what it holds', async () => {
+      // This test previously asserted `size === 0` here — it was PINNING the
+      // reset-before-list behavior as intended. That behavior was wrong: a failed
+      // list is no evidence about the vectors already held, and on the durable
+      // sibling it destroyed persisted data. The seeded entry now proves the
+      // opposite property, which is the one worth having.
       const index = InMemoryCosineIndex.create().orThrow();
-      // Seed an entry so the reset-before-list rollback is observable, not just "stayed empty".
       (await index.add(target('s', 'seed'), Float32Array.from([1, 1]))).orThrow();
       const source = new FakeSource(fail('disk gone'));
       expect(await index.rebuild(source, embed)).toFailWith(/failed to list records: disk gone/i);
-      expect(index.size).toBe(0);
+      expect(index.size).toBe(1);
     });
 
     test('fails loudly and rolls back to empty when an embedding fails mid-rebuild', async () => {

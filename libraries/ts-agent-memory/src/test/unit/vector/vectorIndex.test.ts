@@ -4,11 +4,14 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Result, succeed } from '@fgv/ts-utils';
+import { Result, fail, succeed } from '@fgv/ts-utils';
 import {
   IEdgeTarget,
+  IMemoryRecordSource,
   IVectorIndex,
   IVectorQueryHit,
+  IVectorRebuildReport,
+  MemoryEmbedder,
   MemoryId,
   MemoryScopeKey,
   edgeTargetKey
@@ -42,6 +45,39 @@ class StubVectorIndex implements IVectorIndex {
       .slice(0, topK);
     return Promise.resolve(succeed(hits));
   }
+
+  public get size(): number {
+    return this._vectors.size;
+  }
+
+  public async rebuild(
+    source: IMemoryRecordSource,
+    embed: MemoryEmbedder
+  ): Promise<Result<IVectorRebuildReport>> {
+    const listed = await source.list();
+    if (listed.isFailure()) {
+      // Deliberately BEFORE the clear, mirroring the contract both shipped
+      // implementations follow: a failed list is no evidence about the vectors
+      // already held, so it must not destroy a healthy index.
+      return fail(listed.message);
+    }
+    this._vectors.clear();
+    let indexed: number = 0;
+    let declined: number = 0;
+    for (const scoped of listed.value) {
+      const embedded = await embed(scoped.record);
+      if (embedded.isFailure()) {
+        return fail(embedded.message);
+      }
+      if (embedded.value === undefined) {
+        declined++;
+        continue;
+      }
+      (await this.add(scoped.target, embedded.value)).orThrow();
+      indexed++;
+    }
+    return succeed({ indexed, declined, skipped: [] });
+  }
 }
 
 describe('IVectorIndex seam', () => {
@@ -60,5 +96,22 @@ describe('IVectorIndex seam', () => {
       }
     );
     expect(await index.remove(a)).toSucceedWith(a);
+  });
+
+  test('a conforming rebuild leaves an already-populated index intact when the source cannot list', async () => {
+    // The seam-level statement of the rule both shipped implementations follow.
+    // Asserted here because the stub is what a third-party implementer reads to
+    // learn the contract, and it previously modelled the opposite.
+    const index = new StubVectorIndex();
+    (await index.add(target('conv-a', 'turn-1'), Float32Array.from([1, 2, 3]))).orThrow();
+    expect(index.size).toBe(1);
+
+    const unreadable: IMemoryRecordSource = {
+      list: () => Promise.resolve(fail('disk gone'))
+    };
+    expect(
+      await index.rebuild(unreadable, () => Promise.resolve(succeed(Float32Array.from([1]))))
+    ).toFailWith(/disk gone/i);
+    expect(index.size).toBe(1);
   });
 });

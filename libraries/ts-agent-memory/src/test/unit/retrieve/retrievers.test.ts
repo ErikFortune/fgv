@@ -15,6 +15,7 @@ import {
   IMemoryRetrieverCapabilities,
   IVectorIndex,
   IVectorQueryHit,
+  IVectorRebuildReport,
   Kind,
   MemoryId,
   MemoryIndex,
@@ -392,6 +393,8 @@ describe('orderBy: rank axis', () => {
     const vectorIndex: IVectorIndex = {
       add: (t: IEdgeTarget) => Promise.resolve(succeed(`ref-${t.id}`)),
       remove: (t: IEdgeTarget) => Promise.resolve(succeed(t)),
+      size: 0,
+      rebuild: () => Promise.resolve(succeed({ indexed: 0, declined: 0, skipped: [] })),
       query: () =>
         Promise.resolve(
           succeed([
@@ -596,6 +599,12 @@ class FakeVectorIndex implements IVectorIndex {
     this.lastTopK = topK;
     return Promise.resolve(this._failQuery ? fail('vector backend down') : succeed(this._hits));
   }
+  public get size(): number {
+    return this._hits.length;
+  }
+  public rebuild(): Promise<Result<IVectorRebuildReport>> {
+    return Promise.resolve(succeed({ indexed: this._hits.length, declined: 0, skipped: [] }));
+  }
 }
 
 describe('SemanticRetriever', () => {
@@ -769,6 +778,8 @@ describe('SemanticRetriever', () => {
     const rejectingIndex: IVectorIndex = {
       add: (t: IEdgeTarget) => Promise.resolve(succeed(`ref-${t.id}`)),
       remove: (t: IEdgeTarget) => Promise.resolve(succeed(t)),
+      size: 0,
+      rebuild: () => Promise.resolve(succeed({ indexed: 0, declined: 0, skipped: [] })),
       query: () => Promise.reject(new Error('socket hangup'))
     };
     const r = SemanticRetriever.create({
