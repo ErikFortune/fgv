@@ -14,6 +14,7 @@ import type {
   IEdgeTarget,
   IVectorIndex,
   IVectorQueryHit,
+  IVectorRebuildReport,
   MemoryId,
   MemoryScopeKey
 } from '@fgv/ts-agent-memory';
@@ -72,7 +73,13 @@ function fakeIndex(overrides: Partial<IVectorIndex>): IVectorIndex {
   return {
     add: overrides.add ?? (async (): Promise<Result<string>> => succeed('k')),
     remove: overrides.remove ?? (async (t: IEdgeTarget): Promise<Result<IEdgeTarget>> => succeed(t)),
-    query: overrides.query ?? (async (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> => succeed([]))
+    query: overrides.query ?? (async (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> => succeed([])),
+    size: overrides.size ?? 0,
+    // A list failure must leave an already-populated index intact, so the
+    // fake reports nothing rather than pretending to have rebuilt anything.
+    rebuild:
+      overrides.rebuild ??
+      (async (): Promise<Result<IVectorRebuildReport>> => succeed({ indexed: 0, declined: 0, skipped: [] }))
   };
 }
 
