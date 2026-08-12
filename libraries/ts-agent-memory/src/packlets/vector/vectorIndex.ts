@@ -243,12 +243,13 @@ export interface IFragmentVectorIndex {
 export type VectorRebuildErrorMode = 'skip' | 'fail';
 
 /**
- * A record a rebuild could not embed, retained so a partial rebuild reports what
- * it lost rather than merely how much it kept.
+ * A record a rebuild could not index — because the embed failed or because the
+ * subsequent add did — retained so a partial rebuild reports what it lost rather
+ * than merely how much it kept.
  * @public
  */
 export interface ISkippedVectorRecord {
-  /** The scope-qualified address of the record that could not be embedded. */
+  /** The scope-qualified address of the record that could not be indexed. */
   readonly target: IEdgeTarget;
   /** The failure message, from either the embed or the subsequent add. */
   readonly error: string;
