@@ -957,6 +957,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * derived index is reconciled by a later `rebuild`. A pass-through no-op when
    * unwired (byte-identical record).
    *
+   * A **decline** is not a failure and is handled differently: see
+   * {@link FileTreeMemoryStore._dropStaleEmbedding}.
+   *
    * Always succeeds (`Result` is the chain's shape, never a vector-induced
    * failure).
    */
@@ -982,7 +985,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     // failure path above: a warning per write would make routine policy look like
     // a recurring fault, which is the confusion this return value exists to end.
     if (embedded.value === undefined) {
-      return succeed(built);
+      return this._dropStaleEmbedding(built, target);
     }
     // Hoisted: the `undefined` check above does not narrow across the callback
     // boundary below, and a local keeps the non-null assertion out of the code.
@@ -995,6 +998,51 @@ export class FileTreeMemoryStore implements IMemoryStore {
       return succeed(built);
     }
     return succeed({ envelope: { ...built.envelope, embeddingRef: added.value }, body: built.body });
+  }
+
+  /**
+   * Reconcile a record the embedder **declined** with whatever the index already
+   * holds for it, and return the record with no `embeddingRef`.
+   *
+   * @remarks
+   * A decline says "this record is intentionally not embedded". A re-put of a
+   * record that *was* embedded (or a caller who supplied an `embeddingRef` — the
+   * field is store-derived by contract but nothing strips it) arrives here
+   * carrying an inherited reference, so returning it unchanged would persist
+   * `embeddingRef` on a record the store just decided not to embed.
+   *
+   * Clearing the reference alone would be cosmetic and arguably worse: the index
+   * entry keyed on this target would survive, so a semantic query would keep
+   * returning the record — scored on its **previous** content — while the record
+   * itself claimed not to be indexed. So the vector goes too. `remove` runs only
+   * when a reference was actually inherited, which keeps the common decline (a
+   * record that was never embedded) free of an index round trip.
+   *
+   * Best-effort like the rest of the vector path: a failed `remove` is logged and
+   * the reference is still dropped, because the record's own claim about itself
+   * should be true even when the derived index is momentarily stale — that is
+   * exactly what a later `rebuild` reconciles.
+   */
+  private async _dropStaleEmbedding(
+    built: IMemoryRecord<string>,
+    target: IEdgeTarget
+  ): Promise<Result<IMemoryRecord<string>>> {
+    if (built.envelope.embeddingRef === undefined) {
+      return succeed(built);
+    }
+    const vectorIndex: IVectorIndex | undefined = this._vectorIndex;
+    if (vectorIndex !== undefined) {
+      await this._tryVectorOp(
+        () => vectorIndex.remove(target),
+        `vector remove for declined '${built.envelope.id}'`
+      );
+    }
+    // Rest-spread rather than `embeddingRef: undefined`: the envelope is YAML-
+    // serialized, and an explicitly-undefined key is a serializer-dependent way
+    // to say "absent" where dropping the key is not.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { embeddingRef, ...envelope } = built.envelope;
+    return succeed({ envelope, body: built.body });
   }
 
   /**

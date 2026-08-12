@@ -1,7 +1,7 @@
 {
   "changes": [
     {
-      "comment": "`MemoryEmbedder` may now resolve to `undefined` to decline a record: stored with no embedding reference, no failure, and nothing logged. Additive - existing embedders remain valid.",
+      "comment": "`MemoryEmbedder` may now resolve to `undefined` to decline a record: stored with no embedding reference, no failure, and nothing logged. A decline on a record that was previously embedded drops the inherited `embeddingRef` and removes the stale vector, so the record's claim about itself stays true and a query cannot answer on superseded content. Additive - existing embedders remain valid.",
       "type": "minor",
       "packageName": "@fgv/ts-agent-memory"
     }

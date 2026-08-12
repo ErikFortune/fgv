@@ -495,4 +495,91 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       expect(index.size).toBe(1);
     });
   });
+
+  describe('when a decline arrives for a record that was already embedded', () => {
+    /**
+     * An embedder whose policy changes between writes: it embeds until `declining`
+     * is set, then declines. This is the shape a consumer produces by narrowing
+     * which kinds they index, or by an embedder that starts skipping records whose
+     * revised content it has nothing useful to say about.
+     */
+    function togglingEmbed(state: { declining: boolean }): MemoryEmbedder {
+      return (r) => (state.declining ? Promise.resolve(succeed(undefined)) : recordEmbed(r));
+    }
+
+    test('drops the inherited embeddingRef rather than persisting a stale one', async () => {
+      const state = { declining: false };
+      const index = InMemoryCosineIndex.create().orThrow();
+      const store = knowledgeStore(index, togglingEmbed(state));
+
+      expect(await store.put(makeRecord('doc-a', 'cat cat'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBe('knowledge\0doc-a');
+        }
+      );
+
+      state.declining = true;
+      expect(await store.put(makeRecord('doc-a', 'dog dog'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          // The update inherits the previous envelope's fields, so without the
+          // drop this would still claim an embedding the store just declined.
+          expect(record.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+      // And the absence is what landed on disk, not just what `put` returned.
+      expect(await store.getById('knowledge' as MemoryScopeKey, 'doc-a' as MemoryId)).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown> | undefined) => {
+          expect(record?.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+    });
+
+    test('removes the stale vector, so a query cannot answer on superseded content', async () => {
+      const state = { declining: false };
+      const index = InMemoryCosineIndex.create().orThrow();
+      const store = knowledgeStore(index, togglingEmbed(state));
+      (await store.put(makeRecord('doc-a', 'cat cat'))).orThrow();
+      expect(index.size).toBe(1);
+
+      state.declining = true;
+      (await store.put(makeRecord('doc-a', 'dog dog'))).orThrow();
+
+      // Clearing the reference alone would leave this entry in place, and a
+      // 'cat' query would keep returning doc-a — scored on a body it no longer
+      // has, for a record that claims not to be indexed at all.
+      expect(index.size).toBe(0);
+      expect(await index.query(featureVector('cat'), 5)).toSucceedWith([]);
+    });
+
+    test('does not touch the index when there was no inherited reference', async () => {
+      // The common decline: a record that was never embedded. It must not cost a
+      // remove round trip — on a durable index that is a wasted DB write per put.
+      const spy = new SpyVectorIndex();
+      const store = knowledgeStore(spy, () => Promise.resolve(succeed(undefined)));
+      expect(await store.put(makeRecord('doc-a', 'cat cat'))).toSucceed();
+      expect(await store.put(makeRecord('doc-a', 'dog dog'))).toSucceed();
+      expect(spy.calls).toEqual([]);
+    });
+
+    test('drops the reference even when the index remove fails', async () => {
+      // Best-effort like the rest of the vector path: the record's claim about
+      // itself should be true even when the derived index is momentarily stale.
+      const state = { declining: false };
+      const spy = new SpyVectorIndex();
+      const logger = new Logging.InMemoryLogger();
+      const store = knowledgeStore(spy, togglingEmbed(state), logger);
+      (await store.put(makeRecord('doc-a', 'cat cat'))).orThrow();
+
+      state.declining = true;
+      spy.failRemove = true;
+      expect(await store.put(makeRecord('doc-a', 'dog dog'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+      expect(spy.calls).toEqual(['add:doc-a', 'remove:doc-a']);
+      // A failed remove IS a fault (unlike the decline itself), so it is logged.
+      expect(logger.logged.join('\n')).toMatch(/vector remove for declined 'doc-a'/);
+    });
+  });
 });
