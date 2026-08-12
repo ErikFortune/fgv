@@ -1,7 +1,7 @@
 {
   "changes": [
     {
-      "comment": "Write observations now carry `embed?: MemoryEmbedOutcome` ('embedded' | 'declined' | 'excluded' | 'failed'), and `IMemoryObservationQuery` gains a matching `embed` axis. Closes the last place where `embeddingRef` absence was three-ways ambiguous: the put's own outcome is 'success' whether the embedder declined, the kind was excluded, or the embed failed, because embed-on-write is best-effort. Absent when the question does not apply (nothing wired, or a dedup no-op). Additive.",
+      "comment": "Write observations now carry `embed?: MemoryEmbedOutcome` ('embedded' | 'declined' | 'excluded' | 'failed'), and `IMemoryObservationQuery` gains a matching `embed` axis. Closes the last place where `embeddingRef` absence was three-ways ambiguous: the put's own outcome is 'success' whether the embedder declined, the kind was excluded, or the embed failed, because embed-on-write is best-effort. Absent whenever no outcome is reported: nothing wired, a dedup no-op that attempted nothing, or a failed write (the field describes a stored record, and a failed write produced none). Additive.",
       "type": "minor",
       "packageName": "@fgv/ts-agent-memory"
     }

@@ -429,7 +429,9 @@ interface IPutOutcome {
   readonly evicted: ReadonlyArray<MemoryId>;
   /**
    * What the record-granular index did about this write, for the `'write'`
-   * observation. Absent on a dedup no-op, which attempts nothing.
+   * observation. Absent whenever no outcome is being reported — nothing wired,
+   * a dedup no-op that attempted nothing, or a failed write. See
+   * `MemoryEmbedOutcome`.
    */
   readonly embed?: MemoryEmbedOutcome;
 }
