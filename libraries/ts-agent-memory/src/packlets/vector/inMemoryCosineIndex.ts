@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
 import { IEdgeTarget, edgeTargetKey } from '../types';
 import {
   IMemoryRecordSource,
@@ -12,6 +12,16 @@ import {
   IVectorQueryHit,
   MemoryEmbedder
 } from './vectorIndex';
+
+/**
+ * Invoke a consumer-supplied hook that already returns a `Result`, converting a
+ * synchronous throw or a promise rejection into a `Failure` rather than letting
+ * it escape. `captureAsyncResult` wraps the hook's own `Result`, so the outcome
+ * is flattened back to one level.
+ */
+async function invokeHook<T>(hook: () => Promise<Result<T>>): Promise<Result<T>> {
+  return (await captureAsyncResult(hook)).onSuccess((inner) => inner);
+}
 
 /** One stored embedding: the scope-qualified address plus its vector. */
 interface IStoredVector {
@@ -131,6 +141,9 @@ export class InMemoryCosineIndex implements IVectorIndex {
    * On any failure (list, embed, or add) the index is rolled back to empty
    * rather than left in a partially-rebuilt state — a caller that retries a query
    * after a failed rebuild sees a clean empty index, never a half-populated one.
+   * Both consumer-supplied hooks are capture-wrapped, so a `source` or `embed`
+   * that throws or rejects becomes a `Failure` on that same path rather than an
+   * exception escaping mid-rebuild.
    *
    * @param source - The scope-qualified record source to re-embed.
    * @param embed - The embedder applied to each record.
@@ -140,17 +153,28 @@ export class InMemoryCosineIndex implements IVectorIndex {
     // even when the listing itself fails (no stale vectors survive a failed
     // rebuild).
     this._reset();
-    const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await source.list();
+    const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await invokeHook(() => source.list());
     if (listed.isFailure()) {
       return fail(`vector index rebuild: failed to list records: ${listed.message}`);
     }
     for (const scoped of listed.value) {
-      const embedded: Result<Float32Array> = await embed(scoped.record);
+      // Both hooks are consumer-supplied, so a throw or rejection is captured
+      // into a `Failure` rather than escaping as an exception — otherwise a
+      // badly-behaved embedder would reject out of `rebuild` mid-loop and leave
+      // the index half-populated, which is precisely what the rollback below
+      // exists to prevent.
+      const embedded: Result<Float32Array | undefined> = await invokeHook(() => embed(scoped.record));
       if (embedded.isFailure()) {
         this._reset();
         return fail(
           `vector index rebuild: embedding '${edgeTargetKey(scoped.target)}' failed: ${embedded.message}`
         );
+      }
+      // `undefined` is a deliberate decline, not a failure: skip the record and
+      // keep going. Treating it as an error would empty the whole index over a
+      // routine policy decision, given the all-or-nothing contract above.
+      if (embedded.value === undefined) {
+        continue;
       }
       const added: Result<string> = await this.add(scoped.target, embedded.value);
       if (added.isFailure()) {

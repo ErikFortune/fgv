@@ -552,6 +552,29 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
     });
   });
 
+  test('a declined candidate is written as new without consulting the resolver', async () => {
+    // An embedder that declines this kind has no vector to search with, so layer-2
+    // similarity dedup cannot run. That is the same position as "found nothing
+    // similar" — `'new'` — and must NOT be an error: declining to embed a kind
+    // must not make that kind un-ingestable.
+    const vectorIndex = InMemoryCosineIndex.create().orThrow();
+    const store = buildStore({ vectorIndex, embed });
+    await putNote(store, 'doc-a', 'apple pie');
+    const declining: MemoryEmbedder = (record) =>
+      record.body === 'apple tart' ? Promise.resolve(succeed(undefined)) : embed(record);
+    const orch = buildOrchestrator({
+      store,
+      vectorIndex,
+      embed: declining,
+      entityResolver: resolver(() => fail('resolver must not be called for a declined candidate')),
+      extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
+    });
+    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
+      expect(r.records[0].disposition).toBe('written');
+      expect(r.records[0].resolution.verdict).toBe('new');
+    });
+  });
+
   test('resolver verdict duplicate-of dedups against the surfaced neighbor', async () => {
     const vectorIndex = InMemoryCosineIndex.create().orThrow();
     const store = buildStore({ vectorIndex, embed });

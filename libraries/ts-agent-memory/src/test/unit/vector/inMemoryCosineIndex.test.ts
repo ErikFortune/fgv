@@ -253,6 +253,31 @@ describe('InMemoryCosineIndex', () => {
       );
     });
 
+    test('skips a declined record without failing, and reports only what it indexed', async () => {
+      // The distinction this asserts: a decline must NOT take the all-or-nothing
+      // path that a failure takes. Before `undefined` existed, an embedder with a
+      // per-kind policy could only say `fail` here, which empties the whole index.
+      const index = InMemoryCosineIndex.create().orThrow();
+      const declineB = (r: IMemoryRecord<unknown>): Promise<Result<Float32Array | undefined>> =>
+        (r.envelope.id as string) === 'b' ? Promise.resolve(succeed(undefined)) : embed(r);
+      const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b'), scoped('s', 'c')]));
+      expect(await index.rebuild(source, declineB)).toSucceedWith(2);
+      expect(index.size).toBe(2);
+      // 'a' and 'c' remain queryable; 'b' is simply absent.
+      expect(await index.query(Float32Array.from([99, 1]), 5)).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          expect(hits.map((h) => h.target.id).sort()).toEqual(['a', 'c']);
+        }
+      );
+    });
+
+    test('an all-declining embedder yields an empty index and still succeeds', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b')]));
+      expect(await index.rebuild(source, () => Promise.resolve(succeed(undefined)))).toSucceedWith(0);
+      expect(index.size).toBe(0);
+    });
+
     test('keeps same-stem records under different scopes distinct across a rebuild', async () => {
       const index = InMemoryCosineIndex.create().orThrow();
       const source = new FakeSource(succeed([scoped('conv-a', 'turn-3'), scoped('conv-b', 'turn-3')]));
@@ -312,6 +337,50 @@ describe('InMemoryCosineIndex', () => {
       const source = new FakeSource(succeed([scoped('s', 'a')]));
       const emptyEmbed = (): Promise<Result<Float32Array>> => Promise.resolve(succeed(new Float32Array(0)));
       expect(await index.rebuild(source, emptyEmbed)).toFailWith(/empty vector/i);
+      expect(index.size).toBe(0);
+    });
+
+    test('converts a throwing source into a failure rather than rejecting', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const throwingSource: IMemoryRecordSource = {
+        list: () => {
+          throw new Error('source exploded');
+        }
+      };
+      expect(await index.rebuild(throwingSource, embed)).toFailWith(
+        /failed to list records:.*source exploded/i
+      );
+    });
+
+    test('converts a throwing embedder into a failure and still rolls back', async () => {
+      // The contract is "any failure leaves the index empty". An escaping
+      // exception would break it twice over: the caller gets a rejection instead
+      // of a Failure, and the rollback below never runs — so the index is left
+      // half-populated with whatever embedded before the throw.
+      const index = InMemoryCosineIndex.create().orThrow();
+      let calls: number = 0;
+      const throwingEmbed = (): Promise<Result<Float32Array>> => {
+        calls += 1;
+        if (calls === 1) {
+          return Promise.resolve(succeed(Float32Array.from([1, 1])));
+        }
+        throw new Error('embedder exploded');
+      };
+      const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b')]));
+      expect(await index.rebuild(source, throwingEmbed)).toFailWith(
+        /embedding 's\0b' failed:.*embedder exploded/i
+      );
+      expect(index.size).toBe(0);
+    });
+
+    test('converts a rejecting embedder into a failure', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const rejectingEmbed = (): Promise<Result<Float32Array>> =>
+        Promise.reject(new Error('model unreachable'));
+      const source = new FakeSource(succeed([scoped('s', 'a')]));
+      expect(await index.rebuild(source, rejectingEmbed)).toFailWith(
+        /embedding 's\0a' failed:.*model unreachable/i
+      );
       expect(index.size).toBe(0);
     });
   });

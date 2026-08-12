@@ -13,6 +13,7 @@ import {
   IEdgeTarget,
   IIdentityCodec,
   IIndexedMemoryRecord,
+  IMemoryIndex,
   IMemoryRecord,
   IVectorIndex,
   IVectorQueryHit,
@@ -23,7 +24,10 @@ import {
   EntityId,
   MemoryId,
   MemoryIndex,
+  MemoryIndexPatchOp,
+  MemoryEmbedder,
   MemoryScopeKey,
+  Tag,
   MtmIdentityCodec,
   IWritePolicy,
   SemanticRetriever,
@@ -92,13 +96,61 @@ const recordEmbed = (r: IMemoryRecord<unknown>): Promise<Result<Float32Array>> =
 const queryEmbed = (text: string): Promise<Result<Float32Array>> =>
   Promise.resolve(succeed(featureVector(text)));
 
+/**
+ * A faithful delegating {@link MemoryIndex} that appends a marker when the store
+ * commits a `put` — the last step of `_persist`, so anything recorded after it
+ * happened after the write landed. Injected via the documented `index` seam
+ * rather than by spying on internals.
+ */
+class CommitRecordingIndex implements IMemoryIndex {
+  private readonly _inner: IMemoryIndex = MemoryIndex.create().orThrow();
+  private readonly _order: string[];
+
+  public constructor(order: string[]) {
+    this._order = order;
+  }
+  public rebuild(entries: ReadonlyArray<IIndexedMemoryRecord>): Result<number> {
+    return this._inner.rebuild(entries);
+  }
+  public patch(op: MemoryIndexPatchOp, entry: IIndexedMemoryRecord): Result<IIndexedMemoryRecord> {
+    return this._inner.patch(op, entry).onSuccess((applied) => {
+      if (op === 'put') {
+        this._order.push(`commit:${applied.record.envelope.id}`);
+      }
+      return succeed(applied);
+    });
+  }
+  public entries(): ReadonlyArray<IIndexedMemoryRecord> {
+    return this._inner.entries();
+  }
+  public byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>> {
+    return this._inner.byKind(kind);
+  }
+  public byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>> {
+    return this._inner.byTag(tag);
+  }
+  public byRecency(): ReadonlyArray<IMemoryRecord<unknown>> {
+    return this._inner.byRecency();
+  }
+  public byRank(): ReadonlyArray<IMemoryRecord<unknown>> {
+    return this._inner.byRank();
+  }
+  public backlinks(target: IEdgeTarget): ReadonlyArray<IEdgeTarget> {
+    return this._inner.backlinks(target);
+  }
+}
+
 /** Records add/remove call order and can be configured to fail either op. */
 class SpyVectorIndex implements IVectorIndex {
-  public readonly calls: string[] = [];
+  public readonly calls: string[];
   public failAdd: boolean = false;
   public failRemove: boolean = false;
   private readonly _inner: InMemoryCosineIndex = InMemoryCosineIndex.create().orThrow();
 
+  /** Pass a shared array to interleave these calls with another double's. */
+  public constructor(calls: string[] = []) {
+    this.calls = calls;
+  }
   public async add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>> {
     this.calls.push(`add:${target.id}`);
     return this.failAdd ? fail('add boom') : this._inner.add(target, vector);
@@ -114,7 +166,7 @@ class SpyVectorIndex implements IVectorIndex {
 
 function knowledgeStore(
   vectorIndex?: IVectorIndex,
-  embed?: (r: IMemoryRecord<unknown>) => Promise<Result<Float32Array>>,
+  embed?: MemoryEmbedder,
   logger?: Logging.ILogger
 ): FileTreeMemoryStore {
   const registry: IBodyConverterRegistry = BodyConverterRegistry.create().orThrow();
@@ -413,6 +465,201 @@ describe('FileTreeMemoryStore embed-on-write', () => {
           ]);
         }
       );
+    });
+  });
+
+  describe('when the embedder declines a record', () => {
+    /**
+     * A policy embedder: it embeds knowledge and deliberately declines anything
+     * else. This is the shape the `undefined` return exists to make expressible —
+     * before it, the only way to say "not this one" was `fail`, which is
+     * indistinguishable from an embedder outage.
+     */
+    const decliningEmbed: MemoryEmbedder = (r) =>
+      r.envelope.kind === knowledgeKind ? recordEmbed(r) : Promise.resolve(succeed(undefined));
+
+    test('stores the record with no embeddingRef and adds nothing to the index', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const store = knowledgeStore(index, () => Promise.resolve(succeed(undefined)));
+      expect(await store.put(makeRecord('doc-a', 'cat cat'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+      expect(index.size).toBe(0);
+      // And the absence round-trips through disk rather than being an in-memory artifact.
+      expect(await store.getById('knowledge' as MemoryScopeKey, 'doc-a' as MemoryId)).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown> | undefined) => {
+          expect(record?.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+    });
+
+    test('logs nothing — a decline is policy, not a fault', async () => {
+      // The distinction that matters: the failure paths above each emit a warn.
+      // A decline must not, or routine policy reads as a recurring outage.
+      const logger = new Logging.InMemoryLogger();
+      const store = knowledgeStore(
+        InMemoryCosineIndex.create().orThrow(),
+        () => Promise.resolve(succeed(undefined)),
+        logger
+      );
+      expect(await store.put(makeRecord('doc-a', 'cat cat'))).toSucceed();
+      expect(logger.logged).toHaveLength(0);
+    });
+
+    test('never calls the index for a declined record', async () => {
+      const spy = new SpyVectorIndex();
+      const store = knowledgeStore(spy, () => Promise.resolve(succeed(undefined)));
+      expect(await store.put(makeRecord('doc-a', 'cat cat'))).toSucceed();
+      expect(spy.calls).toEqual([]);
+    });
+
+    test('declines one kind while still embedding another, in the same store', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const registry: IBodyConverterRegistry = BodyConverterRegistry.create().orThrow();
+      registry.register(knowledgeKind, Converters.string);
+      registry.register(factKind, Converters.string);
+      const store = FileTreeMemoryStore.create({
+        root: mutableRoot(),
+        registry,
+        codecs: new Map<Kind, IIdentityCodec>([
+          [knowledgeKind, new KnowledgeIdentityCodec()],
+          [factKind, new KnowledgeIdentityCodec()]
+        ]),
+        vectorIndex: index,
+        embed: decliningEmbed
+      }).orThrow();
+
+      expect(await store.put(makeRecord('doc-a', 'cat cat', 'knowledge'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBe('knowledge\0doc-a');
+        }
+      );
+      expect(await store.put(makeRecord('fact-a', 'cat cat', 'fact'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+      // Only the embedded kind occupies an index slot — which is the point: a
+      // declined kind cannot crowd the topK window it can never be returned from.
+      expect(index.size).toBe(1);
+    });
+  });
+
+  describe('when a decline arrives for a record that was already embedded', () => {
+    /**
+     * An embedder whose policy changes between writes: it embeds until `declining`
+     * is set, then declines. This is the shape a consumer produces by narrowing
+     * which kinds they index, or by an embedder that starts skipping records whose
+     * revised content it has nothing useful to say about.
+     */
+    function togglingEmbed(state: { declining: boolean }): MemoryEmbedder {
+      return (r) => (state.declining ? Promise.resolve(succeed(undefined)) : recordEmbed(r));
+    }
+
+    test('drops the inherited embeddingRef rather than persisting a stale one', async () => {
+      const state = { declining: false };
+      const index = InMemoryCosineIndex.create().orThrow();
+      const store = knowledgeStore(index, togglingEmbed(state));
+
+      expect(await store.put(makeRecord('doc-a', 'cat cat'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBe('knowledge\0doc-a');
+        }
+      );
+
+      state.declining = true;
+      expect(await store.put(makeRecord('doc-a', 'dog dog'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          // The update inherits the previous envelope's fields, so without the
+          // drop this would still claim an embedding the store just declined.
+          expect(record.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+      // And the absence is what landed on disk, not just what `put` returned.
+      expect(await store.getById('knowledge' as MemoryScopeKey, 'doc-a' as MemoryId)).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown> | undefined) => {
+          expect(record?.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+    });
+
+    test('removes the stale vector, so a query cannot answer on superseded content', async () => {
+      const state = { declining: false };
+      const index = InMemoryCosineIndex.create().orThrow();
+      const store = knowledgeStore(index, togglingEmbed(state));
+      (await store.put(makeRecord('doc-a', 'cat cat'))).orThrow();
+      expect(index.size).toBe(1);
+
+      state.declining = true;
+      (await store.put(makeRecord('doc-a', 'dog dog'))).orThrow();
+
+      // Clearing the reference alone would leave this entry in place, and a
+      // 'cat' query would keep returning doc-a — scored on a body it no longer
+      // has, for a record that claims not to be indexed at all.
+      expect(index.size).toBe(0);
+      expect(await index.query(featureVector('cat'), 5)).toSucceedWith([]);
+    });
+
+    test('does not touch the index when there was no inherited reference', async () => {
+      // The common decline: a record that was never embedded. It must not cost a
+      // remove round trip — on a durable index that is a wasted DB write per put.
+      const spy = new SpyVectorIndex();
+      const store = knowledgeStore(spy, () => Promise.resolve(succeed(undefined)));
+      expect(await store.put(makeRecord('doc-a', 'cat cat'))).toSucceed();
+      expect(await store.put(makeRecord('doc-a', 'dog dog'))).toSucceed();
+      expect(spy.calls).toEqual([]);
+    });
+
+    test('drops the reference even when the index remove fails', async () => {
+      // Best-effort like the rest of the vector path: the record's claim about
+      // itself should be true even when the derived index is momentarily stale.
+      const state = { declining: false };
+      const spy = new SpyVectorIndex();
+      const logger = new Logging.InMemoryLogger();
+      const store = knowledgeStore(spy, togglingEmbed(state), logger);
+      (await store.put(makeRecord('doc-a', 'cat cat'))).orThrow();
+
+      state.declining = true;
+      spy.failRemove = true;
+      expect(await store.put(makeRecord('doc-a', 'dog dog'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+      expect(spy.calls).toEqual(['add:doc-a', 'remove:doc-a']);
+      // A failed remove IS a fault (unlike the decline itself), so it is logged.
+      expect(logger.logged.some((m) => /vector remove for declined 'doc-a'/.test(m))).toBe(true);
+    });
+
+    test('prunes the stale vector only after the write has committed', async () => {
+      // Ordering that matters: a persist that fails leaves the PREVIOUS body on
+      // disk, and the superseded vector is still an accurate embedding of THAT
+      // body. Pruning at the point of the decline would delete a correct vector
+      // on behalf of a write that never landed — so the prune belongs on the far
+      // side of the commit, the same rule the cull-oldest pruning already
+      // follows. Asserted as ordering against the index patch, which is the last
+      // step of the commit.
+      const order: string[] = [];
+      const state = { declining: false };
+      const spy = new SpyVectorIndex(order);
+      const registry: IBodyConverterRegistry = BodyConverterRegistry.create().orThrow();
+      registry.register(knowledgeKind, Converters.string);
+      const store = FileTreeMemoryStore.create({
+        root: mutableRoot(),
+        registry,
+        codecs: new Map<Kind, IIdentityCodec>([[knowledgeKind, new KnowledgeIdentityCodec()]]),
+        index: new CommitRecordingIndex(order),
+        vectorIndex: spy,
+        embed: togglingEmbed(state)
+      }).orThrow();
+      (await store.put(makeRecord('doc-a', 'cat cat'))).orThrow();
+
+      order.length = 0;
+      state.declining = true;
+      (await store.put(makeRecord('doc-a', 'dog dog'))).orThrow();
+      expect(order).toEqual(['commit:doc-a', 'remove:doc-a']);
     });
   });
 });

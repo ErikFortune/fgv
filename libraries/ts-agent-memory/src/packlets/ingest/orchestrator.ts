@@ -495,15 +495,25 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     byKey: ReadonlyMap<string, IMemoryRecord<unknown>>,
     provisional: IMemoryRecord<unknown>
   ): Promise<Result<ResolutionVerdict>> {
-    const embedded: Result<Float32Array> = await this._capture(
+    const embedded: Result<Float32Array | undefined> = await this._capture(
       () => wiring.embed(provisional),
       `ingest '${candidate.envelope.entityId}': embed candidate`
     );
     if (embedded.isFailure()) {
       return fail(embedded.message);
     }
+    // The embedder deliberately declined this candidate, so there is no vector to
+    // search with and layer-2 similarity dedup cannot run for it. That is the same
+    // position as a search that found nothing similar — `'new'` — and not an
+    // error: declining to embed a kind must not make it un-ingestable.
+    if (embedded.value === undefined) {
+      return succeed({ verdict: 'new' });
+    }
+    // Hoisted: the `undefined` check above does not narrow across the callback
+    // boundary below, and a local keeps the non-null assertion out of the code.
+    const vector: Float32Array = embedded.value;
     const queried = await this._capture(
-      () => wiring.vectorIndex.query(embedded.value, this._similarityTopK),
+      () => wiring.vectorIndex.query(vector, this._similarityTopK),
       `ingest '${candidate.envelope.entityId}': similarity query`
     );
     if (queried.isFailure()) {

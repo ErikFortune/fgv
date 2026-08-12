@@ -226,9 +226,30 @@ export interface IFragmentVectorIndex {
  * Async and `Result`-returning, since a real embedder does a network call (cloud
  * provider) or in-process model inference. The consumer wires this — the core
  * package never calls an embedding provider directly, staying embedder-agnostic.
+ *
+ * @remarks
+ * Resolving to `undefined` means **"intentionally not embedded"** — a deliberate
+ * decline, not an error. The record is stored without an embedding reference, no
+ * failure is reported, and **the decline itself logs nothing**. This is distinct
+ * from a `Failure`, which means the embedder *tried and could not*.
+ *
+ * "Logs nothing" is a statement about the decline, not a promise of silence: a
+ * decline on a record that was already embedded also prunes the vector that
+ * reference named, and if that prune fails it is a genuine fault and warns like
+ * any other. What a decline never does is warn merely for having happened.
+ *
+ * The distinction is load-bearing wherever the two are treated differently. On the
+ * rebuild path a declined record is skipped and does not count against the index;
+ * a failed one is a genuine error. Collapsing "I chose not to" into `fail` would
+ * make a deliberate policy indistinguishable from an embedder outage in the logs,
+ * and would put a routine decision on whatever error path the caller has wired.
+ *
+ * The embedder receives the whole record, so the usual reason to decline is the
+ * record's `kind` — a control or bookkeeping row that no query should ever return.
+ *
  * @public
  */
-export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array>>;
+export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array | undefined>>;
 
 /**
  * The fragment-granular sibling of {@link MemoryEmbedder}: chunks a record's body
