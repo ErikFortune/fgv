@@ -127,6 +127,30 @@ opportunistically when the right surface area is touched.
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `ts-agent-memory`'s `FileTreeMemoryStore` has crossed the repo's 2000-line `max-lines` limit.**
+  `libraries/ts-agent-memory/src/packlets/store/fileTreeMemoryStore.ts` is ~2086 lines and now emits a
+  standing `max-lines` ESLint **warning** on every build of the package (warning, not error — `heft build`
+  and `eslint` both still exit 0, so no gate is red). It grew there across the PersonAIlity Stream A stack:
+  1872 on `release` → 1991 after the embedder-decline unit → ~2086 after the per-kind `embedKinds` unit.
+
+  **Trigger**: the next substantive change to the store's write path — including the queued embed-outcome
+  observation field, which touches `_embedOnWrite` again and will push it further over.
+
+  **Scope sketch**: the vector-maintenance concern is the cohesive extraction candidate —
+  `_embedOnWrite` / `_declineEmbedding` / `_pruneStaleVector` / `_embedFragmentsOnWrite` /
+  `_removeEvictedVectors` / `_tryVectorOp` plus `IEmbedOnWriteOutcome`, roughly 250 lines that talk to the
+  two index seams and touch little store state beyond `_vectorIndex` / `_embed` / `_logger`.
+  `_declineEmbedding` is already `static` and pure. A sibling module in the same packlet holding a small
+  `VectorMaintenance` collaborator constructed from those three fields would take the file back under the
+  limit without fragmenting the write chain itself, which stays in the store.
+
+  **Deliberately not done in Stream A**: splitting the store's write path is a refactor with real regression
+  surface, and doing it inside a stack of four PRs the consumer is waiting on would have mixed a structural
+  change into units that are supposed to be readable as single answers to single asks. Recorded rather than
+  silently carried.
+
+  **Reference**: PersonAIlity Stream A (#611–#614); surfaced by the `max-lines` warning on the #612 rebase.
+
 - **[P3] `ai-assist` fence extraction mis-slices a fenced body that itself contains a triple backtick.**
   `FENCED_BLOCK` in `libraries/ts-extras/src/packlets/ai-assist/jsonResponse.ts` is a single lazy-body regex (`([\s\S]*?)` between an opening fence and the first following ` ``` `). When a model emits a fenced JSON block whose *body* contains a literal triple backtick — most plausibly inside a string value, e.g. ` ```json\n{"snippet": "``` foo ```"}\n``` ` — the lazy body stops at the inner backticks and `extractJsonText` hands `JSON.parse` a truncated candidate. Long-standing and **not introduced by the `ai-assist-fenced-json-diagnostics` stream**: that stream only renumbered the regex's capture groups (opening fence became group 1, body group 2, so a body offset can be mapped back to the original text), verified behaviour-preserving over a 6804-input fuzz. The new `classifyJsonParseFailure` degrades safely here — it reports `'unknown'` rather than compounding the mis-slice with a confident wrong verdict.
 

@@ -731,6 +731,47 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       );
     });
 
+    test('narrowing the declaration retires the embeddings the store no longer maintains', async () => {
+      // The migration case: a vault embedded everything, then the consumer
+      // narrowed `embedKinds`. Without this, every previously-embedded record of
+      // a now-excluded kind would keep claiming an embedding the store will
+      // never refresh, and its vector would keep answering queries.
+      const index = InMemoryCosineIndex.create().orThrow();
+      const root = mutableRoot();
+      const registry: IBodyConverterRegistry = BodyConverterRegistry.create().orThrow();
+      registry.register(knowledgeKind, Converters.string);
+      registry.register(factKind, Converters.string);
+      const codecs = new Map<Kind, IIdentityCodec>([
+        [knowledgeKind, new KnowledgeIdentityCodec()],
+        [factKind, new KnowledgeIdentityCodec()]
+      ]);
+      const before = FileTreeMemoryStore.create({
+        root,
+        registry,
+        codecs,
+        vectorIndex: index,
+        embed: recordEmbed
+      }).orThrow();
+      (await before.put(makeRecord('fact-a', 'cat', 'fact'))).orThrow();
+      expect(index.size).toBe(1);
+
+      // Reopen the SAME vault with the kind excluded, then re-put the record.
+      const after = FileTreeMemoryStore.create({
+        root,
+        registry,
+        codecs,
+        vectorIndex: index,
+        embed: recordEmbed,
+        embedKinds: new Set<Kind>([knowledgeKind])
+      }).orThrow();
+      expect(await after.put(makeRecord('fact-a', 'dog', 'fact'))).toSucceedAndSatisfy(
+        (record: IMemoryRecord<unknown>) => {
+          expect(record.envelope.embeddingRef).toBeUndefined();
+        }
+      );
+      expect(index.size).toBe(0);
+    });
+
     test('embedsKind reports the declaration', () => {
       const store = twoKindStore(
         InMemoryCosineIndex.create().orThrow(),
