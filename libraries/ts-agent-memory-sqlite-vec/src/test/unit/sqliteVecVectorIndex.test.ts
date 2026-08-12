@@ -362,6 +362,37 @@ describe('SqliteVecVectorIndex', () => {
       }
     });
 
+    test('a clear failure is a Failure, not an exception thrown out of rebuild', async () => {
+      // `_clear` runs a better-sqlite3 statement. Before this, a closed
+      // connection (or any driver error) escaped as a throw from a method whose
+      // signature promises a Result — unlike add / remove / query, which have
+      // always been capture-wrapped.
+      const own = new BetterSqlite3(':memory:');
+      const index = (await SqliteVecVectorIndex.create({ database: own })).orThrow();
+      (await index.add(target('s', 'seed'), vec(1, 1))).orThrow();
+      own.close();
+      expect(await index.rebuild(source(['a']), embed)).toFailWith(/failed to clear the index/i);
+    });
+
+    test('says so when the rollback ALSO fails, rather than reporting a clean abort', async () => {
+      // The 'fail' path promises an empty index. If the rollback cannot deliver
+      // one, a caller retrying against a table that is neither the old index nor
+      // empty is working from a state the contract never described — so both
+      // failures are reported, not just the one that started it.
+      const own = new BetterSqlite3(':memory:');
+      const index = (await SqliteVecVectorIndex.create({ database: own })).orThrow();
+      const collapsing: MemoryEmbedder = (r) => {
+        if ((r.envelope.id as string) === 'b') {
+          own.close();
+          return Promise.resolve(fail('model down'));
+        }
+        return Promise.resolve(succeed(vec(1, 1)));
+      };
+      expect(await index.rebuild(source(['a', 'b']), collapsing)).toFailWith(
+        /embedding 's\0b' failed: model down \(rollback also failed:/
+      );
+    });
+
     test('a throwing source becomes a failure and leaves the persisted index intact', async () => {
       const index = await makeIndex();
       (await index.add(target('s', 'kept'), vec(1, 1))).orThrow();

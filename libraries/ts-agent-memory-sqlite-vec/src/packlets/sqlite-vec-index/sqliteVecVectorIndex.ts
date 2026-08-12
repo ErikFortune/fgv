@@ -41,6 +41,17 @@ async function invokeHook<T>(hook: () => Promise<Result<T>>): Promise<Result<T>>
   return (await captureAsyncResult(hook)).onSuccess((inner) => inner);
 }
 
+/**
+ * Compose the failure that aborted a rebuild with the outcome of the rollback
+ * that followed it. A rollback that ALSO fails is worth saying out loud: the
+ * `'fail'` path promises an empty index, and a caller that retries against a
+ * table which is neither the old index nor empty is working from a state the
+ * contract never described.
+ */
+function withRollbackNote(error: string, rollback: Result<true>): string {
+  return rollback.isFailure() ? `${error} (rollback also failed: ${rollback.message})` : error;
+}
+
 /** Default name for the `vec0` virtual table. */
 const DEFAULT_TABLE_NAME: string = 'memory_vectors';
 
@@ -203,7 +214,10 @@ export class SqliteVecVectorIndex implements IVectorIndex {
       // healthy persisted index over a transient read error.
       return fail(`vector index rebuild: failed to list records: ${listed.message}`);
     }
-    this._clear();
+    const cleared: Result<true> = this._clear();
+    if (cleared.isFailure()) {
+      return fail(`vector index rebuild: failed to clear the index: ${cleared.message}`);
+    }
     let declined: number = 0;
     const skipped: ISkippedVectorRecord[] = [];
     for (const scoped of listed.value) {
@@ -216,8 +230,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
           embedded.message
         }`;
         if (!lenient) {
-          this._clear();
-          return fail(error);
+          return fail(withRollbackNote(error, this._clear()));
         }
         skipped.push({ target: scoped.target, error });
         continue;
@@ -230,13 +243,14 @@ export class SqliteVecVectorIndex implements IVectorIndex {
       if (added.isFailure()) {
         const error: string = `vector index rebuild: ${added.message}`;
         if (!lenient) {
-          this._clear();
-          return fail(error);
+          return fail(withRollbackNote(error, this._clear()));
         }
         skipped.push({ target: scoped.target, error });
       }
     }
-    return succeed({ indexed: this.size, declined, skipped });
+    return captureResult(() => this.size)
+      .withErrorFormat((msg) => `vector index rebuild: failed to count the rebuilt index: ${msg}`)
+      .onSuccess((indexed) => succeed({ indexed, declined, skipped }));
   }
 
   /**
@@ -246,10 +260,16 @@ export class SqliteVecVectorIndex implements IVectorIndex {
    * (see the package README on `vec0` schema changes), not something a rebuild
    * should do silently.
    */
-  private _clear(): void {
-    if (this._stmts !== undefined) {
-      this._db.prepare(`DELETE FROM "${this._table}"`).run();
+  private _clear(): Result<true> {
+    if (this._stmts === undefined) {
+      return succeed(true);
     }
+    // Capture-wrapped like `add` / `remove` / `query`: a closed connection or an
+    // I/O error here is a `Failure`, not an exception thrown out of a method
+    // whose signature promises a `Result`.
+    return captureResult(() => this._db.prepare(`DELETE FROM "${this._table}"`).run()).onSuccess(() =>
+      succeed(true)
+    );
   }
 
   /** {@inheritDoc IVectorIndex.query} */
