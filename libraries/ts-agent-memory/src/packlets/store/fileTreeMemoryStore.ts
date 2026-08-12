@@ -418,10 +418,6 @@ export class FileTreeMemoryStore implements IMemoryStore {
   /** Record- and fragment-vector maintenance; every operation is best-effort. */
   private readonly _vectors: VectorMaintenance;
   private readonly _logger: Logging.ILogger;
-  private readonly _vectorIndex: IVectorIndex | undefined;
-  private readonly _embed: MemoryEmbedder | undefined;
-  private readonly _fragmentIndex: IFragmentVectorIndex | undefined;
-  private readonly _fragmentEmbedder: FragmentEmbedder | undefined;
   /**
    * Records the initial walk could not load. Populated during `create()` in
    * {@link MemoryRecordErrorMode | `'skip'` mode}; empty otherwise.
@@ -472,10 +468,6 @@ export class FileTreeMemoryStore implements IMemoryStore {
     this._hasher = new Hash.Crc32Normalizer();
     this._observers = params.observers;
     this._logger = params.logger;
-    this._vectorIndex = params.vectorIndex;
-    this._embed = params.embed;
-    this._fragmentIndex = params.fragmentIndex;
-    this._fragmentEmbedder = params.fragmentEmbedder;
     this._vectors = new VectorMaintenance({
       vectorIndex: params.vectorIndex,
       embed: params.embed,
