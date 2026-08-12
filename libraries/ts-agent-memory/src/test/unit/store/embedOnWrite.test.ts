@@ -799,7 +799,11 @@ describe('FileTreeMemoryStore embed-on-write', () => {
         seen.push(r.envelope.kind as string);
         return recordEmbed(r);
       };
-      expect(await fresh.rebuild(store.asRecordSource(), countingEmbed)).toSucceedWith(1);
+      expect(await fresh.rebuild(store.asRecordSource(), countingEmbed)).toSucceedWith({
+        indexed: 1,
+        declined: 0,
+        skipped: []
+      });
       expect(seen).toEqual(['knowledge']);
     });
 

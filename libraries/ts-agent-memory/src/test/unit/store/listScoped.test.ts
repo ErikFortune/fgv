@@ -118,7 +118,11 @@ describe('FileTreeMemoryStore.asRecordSource — drives an IVectorIndex rebuild'
     const index = InMemoryCosineIndex.create().orThrow();
     // The store satisfies IMemoryRecordSource via asRecordSource(); rebuild
     // re-embeds every record and keys each vector on the scoped (scope, id).
-    expect(await index.rebuild(store.asRecordSource(), recordEmbed)).toSucceedWith(2);
+    expect(await index.rebuild(store.asRecordSource(), recordEmbed)).toSucceedWith({
+      indexed: 2,
+      declined: 0,
+      skipped: []
+    });
     expect(index.size).toBe(2);
 
     // The two same-stem records occupy DISTINCT vector entries: a query for 'cat'

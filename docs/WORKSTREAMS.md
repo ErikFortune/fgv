@@ -142,7 +142,7 @@ substrate. Don't queue streams against them here.
 |---|---|---|
 | **4** | `MemoryEmbedder` may resolve `undefined` to **decline** a record — stored with no `embeddingRef`, no failure, **nothing logged**; skipped (not counted) on rebuild; `'new'` on the ingest path | branch `agent-memory-embedder-decline`; `code-reviewer` **approved**, no P1/P2 |
 | **2** | per-kind embed declaration, default "embed everything" so existing consumers stay byte-identical | queued |
-| **1** | partial-tolerant `rebuild` + a coverage accessor (the lenient-open shape) | queued |
+| **1** | partial-tolerant `rebuild` returning a structural `IVectorRebuildReport` (`indexed`/`declined`/`skipped`), `onRecordError` defaulting to `'fail'` so existing behavior is unchanged | branch `agent-memory-partial-rebuild`; `code-reviewer` approved pending doc fixes, applied. **Rebuild half only** — the coverage accessor moves to item 3, so the `IVectorIndex` contract changes once and `SqliteVecVectorIndex` implements it in lockstep |
 | **3** | promote reconcile/backfill onto `IVectorIndex`, shipping with its `sqlite-vec` implementation | queued |
 
 **Answered without scheduling:** item 5 (strict text read — half already shipped in `-47`; their own note de-prioritised it), 6 (provenance query axis — **intent stated so they can design against it existing**), 7 (index read surface — deferred deliberately, breaking, wants its own design), 8 (prompt-slot writability — taking the one-sentence "advisory" doc remedy), 9 (`ts-res` `addResource` — not taking a round, fold into the next touch).

@@ -222,6 +222,77 @@ export interface IFragmentVectorIndex {
 }
 
 /**
+ * How a vector-index rebuild treats a record it cannot index — whether the
+ * **embedding** failed or the subsequent **add** did. Both are governed by this
+ * one mode; neither is unconditionally fatal.
+ *
+ * @remarks
+ * Deliberately mirrors the store's own open-time `onRecordError` mode, including
+ * its default: `'fail'` preserves the historical all-or-nothing contract exactly,
+ * and `'skip'` is opt-in. Defined here rather than imported from the store packlet
+ * — the `vector` packlet does not depend on `store`, and the two modes describe
+ * different domains that merely happen to share a shape.
+ *
+ * A **decline** (a {@link MemoryEmbedder} resolving `undefined`) is not an error
+ * and is unaffected by this mode: it is always **excluded** from the index and
+ * counted on {@link IVectorRebuildReport.declined}, **never** appearing in
+ * {@link IVectorRebuildReport.skipped}. The word is worth being careful with here:
+ * `skipped` is now a formal field meaning *a fault*, and a decline is the opposite.
+ * @public
+ */
+export type VectorRebuildErrorMode = 'skip' | 'fail';
+
+/**
+ * A record a rebuild could not index — because the embed failed or because the
+ * subsequent add did — retained so a partial rebuild reports what it lost rather
+ * than merely how much it kept.
+ * @public
+ */
+export interface ISkippedVectorRecord {
+  /** The scope-qualified address of the record that could not be indexed. */
+  readonly target: IEdgeTarget;
+  /** The failure message, from either the embed or the subsequent add. */
+  readonly error: string;
+}
+
+/**
+ * What a rebuild actually did — the structural answer to "is this index complete?".
+ *
+ * @remarks
+ * A bare count cannot distinguish the three ways a record can be absent from the
+ * index, and that distinction is the entire point: **`declined` was intentional,
+ * `skipped` was a fault, and neither is the same as "never attempted"**. A caller
+ * deriving coverage from a count alone cannot tell an embedder outage from a
+ * deliberate policy, which is precisely the confusion this type exists to end.
+ * @public
+ */
+export interface IVectorRebuildReport {
+  /** Records embedded and added to the index. */
+  readonly indexed: number;
+  /** Records the embedder deliberately declined (resolved `undefined`). */
+  readonly declined: number;
+  /**
+   * Records whose embedding or add FAILED and were skipped. Non-empty only under
+   * {@link VectorRebuildErrorMode | `onRecordError: 'skip'`} — under `'fail'` the
+   * first failure aborts the rebuild and no report is returned at all.
+   */
+  readonly skipped: ReadonlyArray<ISkippedVectorRecord>;
+}
+
+/**
+ * Options for a vector-index rebuild.
+ * @public
+ */
+export interface IVectorRebuildOptions {
+  /**
+   * How to treat a record the rebuild cannot index — an embed failure OR an add
+   * failure. Defaults to `'fail'` — the historical behavior, unchanged for every
+   * existing caller.
+   */
+  readonly onRecordError?: VectorRebuildErrorMode;
+}
+
+/**
  * Embeds a complete record into a vector for the store's embed-on-write hook.
  * Async and `Result`-returning, since a real embedder does a network call (cloud
  * provider) or in-process model inference. The consumer wires this — the core
@@ -239,8 +310,9 @@ export interface IFragmentVectorIndex {
  * any other. What a decline never does is warn merely for having happened.
  *
  * The distinction is load-bearing wherever the two are treated differently. On the
- * rebuild path a declined record is skipped and does not count against the index;
- * a failed one is a genuine error. Collapsing "I chose not to" into `fail` would
+ * rebuild path a declined record is **excluded** from the index and counted on
+ * {@link IVectorRebuildReport.declined}; a failed one is a genuine error and, under
+ * `onRecordError: 'skip'`, is reported on {@link IVectorRebuildReport.skipped}. Collapsing "I chose not to" into `fail` would
  * make a deliberate policy indistinguishable from an embedder outage in the logs,
  * and would put a routine decision on whatever error path the caller has wired.
  *
