@@ -142,9 +142,10 @@ export class InMemoryCosineIndex implements IVectorIndex {
    * {@link IVectorRebuildReport} describing what was indexed, declined and skipped.
    *
    * @remarks
-   * **A failure to LIST is always fatal**, under either mode: an unreadable source
-   * says nothing about which records exist, so there is no partial result to
-   * report honestly.
+   * **A failure to LIST is always fatal**, under either mode — and **leaves the
+   * existing index untouched**: an unreadable source says nothing about which
+   * records exist, so there is neither an honest partial to report nor any reason
+   * to discard what is already held.
    *
    * Per-record embed/add failures are governed by
    * {@link IVectorRebuildOptions.onRecordError}, which defaults to `'fail'` —
@@ -176,14 +177,19 @@ export class InMemoryCosineIndex implements IVectorIndex {
     options?: IVectorRebuildOptions
   ): Promise<Result<IVectorRebuildReport>> {
     const lenient: boolean = (options?.onRecordError ?? 'fail') === 'skip';
-    // Reset up front so a failed rebuild leaves a clean empty index rather than a
-    // half-populated one (unchanged). Under `'skip'` nothing aborts, so the reset
-    // is simply "start from scratch".
-    this._reset();
     const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await invokeHook(() => source.list());
     if (listed.isFailure()) {
+      // Deliberately BEFORE the reset. This used to reset first, on the reasoning
+      // that no stale vectors should survive a failed rebuild — but a failed list
+      // is no evidence about the vectors already held, and nothing has been
+      // re-embedded yet, so there is no half-rebuilt state to guard against.
+      // Leaving the prior contents intact is the more correct answer, and on the
+      // durable sibling (`SqliteVecVectorIndex`) resetting here was data loss.
       return fail(`vector index rebuild: failed to list records: ${listed.message}`);
     }
+    // From here a rebuild is genuinely starting, so clear. A mid-loop failure
+    // under `'fail'` still resets, which is what keeps that contract honest.
+    this._reset();
     let declined: number = 0;
     const skipped: ISkippedVectorRecord[] = [];
     for (const scoped of listed.value) {

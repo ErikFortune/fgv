@@ -362,6 +362,24 @@ describe('SqliteVecVectorIndex', () => {
       }
     });
 
+    test('a list failure leaves an already-populated PERSISTED index intact', async () => {
+      // The regression this exists for, and it mattered most here: the table was
+      // cleared before the list was even attempted, so a transient read error
+      // destroyed durable data that survives the process. Fatal-to-the-call must
+      // not mean destructive-to-the-data.
+      for (const mode of ['fail', 'skip'] as const) {
+        const index = await makeIndex();
+        (await index.add(target('s', 'kept'), vec(1, 1))).orThrow();
+        expect(await index.rebuild(source([], true), embed, { onRecordError: mode })).toFail();
+        expect(index.size).toBe(1);
+        expect(await index.query(vec(1, 1), 5)).toSucceedAndSatisfy(
+          (hits: ReadonlyArray<IVectorQueryHit>) => {
+            expect(hits.map((h) => h.target.id)).toEqual(['kept']);
+          }
+        );
+      }
+    });
+
     test("'skip' reports an add failure too", async () => {
       const index = await makeIndex();
       // Establish dimension 2, then hand the rebuild a 3-dim vector for 'b'.

@@ -155,7 +155,19 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     );
   }
 
-  /** {@inheritDoc IVectorIndex.rebuild} */
+  /**
+   * Re-embed every record from `source` and rebuild the persisted index — see
+   * `IVectorIndex.rebuild` for the mode semantics, which this implementation
+   * matches exactly.
+   *
+   * @remarks
+   * **Not atomic, and cannot be.** `better-sqlite3` transactions are synchronous,
+   * so one cannot span the `await embed(...)` calls this loop makes — unlike
+   * {@link SqliteVecVectorIndex.add}, which wraps its delete-then-insert. The
+   * `'fail'` / `'skip'` modes therefore cover only failures JavaScript can catch:
+   * a process kill mid-rebuild leaves the table holding neither the old index nor
+   * the complete new one, and the remedy is to run `rebuild` again.
+   */
   public async rebuild(
     source: IMemoryRecordSource,
     embed: MemoryEmbedder,
@@ -166,11 +178,15 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     // `InMemoryCosineIndex`. Unlike that one this survives the process, so a
     // half-rebuilt file would be a durable wrong answer rather than a transient
     // one — which is exactly why the `'fail'` path below clears again.
-    this._clear();
     const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await source.list();
     if (listed.isFailure()) {
+      // Deliberately BEFORE any clear: a failed list is no evidence about the
+      // vectors already held, and no re-embedding has been attempted, so there is
+      // no half-rebuilt state to protect against. Clearing here would destroy a
+      // healthy persisted index over a transient read error.
       return fail(`vector index rebuild: failed to list records: ${listed.message}`);
     }
+    this._clear();
     let declined: number = 0;
     const skipped: ISkippedVectorRecord[] = [];
     for (const scoped of listed.value) {

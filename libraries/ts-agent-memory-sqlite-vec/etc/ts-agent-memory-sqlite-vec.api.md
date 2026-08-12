@@ -58,9 +58,6 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     //
     // (undocumented)
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IVectorIndex"
-    //
-    // (undocumented)
     rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<Result<IVectorRebuildReport>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IVectorIndex"
     //

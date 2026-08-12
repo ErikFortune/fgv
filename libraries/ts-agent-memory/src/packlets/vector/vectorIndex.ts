@@ -129,14 +129,19 @@ export interface IVectorIndex {
   query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
 
   /**
-   * The number of vectors currently held — the index's **coverage**.
+   * The number of vectors currently held.
    *
    * @remarks
    * On the contract because without it a caller cannot distinguish *"the index is
    * empty"* from *"nothing matched"*: {@link IVectorIndex.query} answers an empty
-   * index with `succeed([])`, which is indistinguishable from a genuine miss. Any
-   * "is semantic search available?" check a caller can otherwise write tests the
-   * **wiring**, which stays true while the index holds nothing.
+   * index with `succeed([])`, which is indistinguishable from a genuine miss. The
+   * only other check available to a caller — "is a vector index wired?" — tests the
+   * **wiring**, and that stays true while the index holds nothing.
+   *
+   * Note the narrow scope: this answers *how many vectors are held*, **not** how
+   * many there ought to be. Full coverage — "is every record that should be indexed
+   * actually indexed?" — still requires comparing against the record source and
+   * {@link IMemoryStore.embedsKind}.
    *
    * Synchronous and non-`Result` because both shipped implementations can answer it
    * without I/O that can fail — the in-memory index reads a `Map`'s size, and the
@@ -150,9 +155,10 @@ export interface IVectorIndex {
    *
    * @remarks
    * On the contract because a persisted index is unusable without it. Records
-   * written while the index was unwired, a re-embed after a dimension change, and
-   * reconciliation after a swallowed embed-on-write failure are all unreachable
-   * otherwise — and the store's own docstring already promises *"the derived index
+   * written while the index was unwired, a re-embed after a dimension change (where
+   * the backend supports one — a `vec0`-backed table's dimension is fixed at
+   * creation, so there it needs a drop-and-re-index instead), and reconciliation
+   * after a swallowed embed-on-write failure are all unreachable otherwise — and the store's own docstring already promises *"the derived index
    * is reconciled by a later `rebuild`"*, a promise the contract could not keep for
    * any index but the bundled one. A caller moving from the bundled implementation
    * to a persistent one found the swap type-checked everywhere **except** the one
