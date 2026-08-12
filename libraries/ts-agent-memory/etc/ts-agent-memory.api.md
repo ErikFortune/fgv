@@ -428,6 +428,7 @@ export interface IMemoryIngestOrchestratorCreateParams {
 
 // @public
 export interface IMemoryObservationQuery {
+    readonly embed?: MemoryEmbedOutcome;
     readonly kind?: Kind;
     readonly limit?: number;
     readonly outcome?: MemoryObservationOutcome;
@@ -440,6 +441,7 @@ export interface IMemoryObservationQuery {
 
 // @public
 export interface IMemoryObservationRecord {
+    readonly embed?: MemoryEmbedOutcome;
     readonly error?: string;
     readonly id?: MemoryId;
     readonly kind?: Kind;
@@ -764,6 +766,9 @@ export type MemoryDetailTier = 'gist' | 'full';
 
 // @public
 export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array | undefined>>;
+
+// @public
+export type MemoryEmbedOutcome = 'embedded' | 'declined' | 'excluded' | 'failed';
 
 // @public
 export type MemoryId = Brand<string, 'MemoryId'>;

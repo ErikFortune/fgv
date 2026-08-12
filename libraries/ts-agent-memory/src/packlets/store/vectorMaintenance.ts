@@ -4,6 +4,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
+import { MemoryEmbedOutcome } from '../observe';
 import { IEdgeTarget, IMemoryRecord, Kind, MemoryId, MemoryScopeKey } from '../types';
 import {
   FragmentEmbedder,
@@ -27,6 +28,11 @@ import {
 export interface IEmbedOnWriteOutcome {
   readonly record: IMemoryRecord<string>;
   readonly stale?: { readonly index: IVectorIndex; readonly target: IEdgeTarget };
+  /**
+   * What the record-granular index did, surfaced on the write observation.
+   * `undefined` when the question does not apply (nothing wired).
+   */
+  readonly embed?: MemoryEmbedOutcome;
 }
 
 /**
@@ -57,17 +63,18 @@ export interface IEmbedOnWriteOutcome {
 function declineEmbedding(
   built: IMemoryRecord<string>,
   index: IVectorIndex,
-  target: IEdgeTarget
+  target: IEdgeTarget,
+  embed: MemoryEmbedOutcome
 ): IEmbedOnWriteOutcome {
   if (built.envelope.embeddingRef === undefined) {
-    return { record: built };
+    return { record: built, embed };
   }
   // Rest-spread rather than `embeddingRef: undefined`: the envelope is YAML-
   // serialized, and an explicitly-undefined key is a serializer-dependent way
   // to say "absent" where dropping the key is not.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { embeddingRef, ...envelope } = built.envelope;
-  return { record: { envelope, body: built.body }, stale: { index, target } };
+  return { record: { envelope, body: built.body }, stale: { index, target }, embed };
 }
 
 /**
@@ -155,6 +162,9 @@ export class VectorMaintenance {
     scope: MemoryScopeKey
   ): Promise<Result<IEmbedOnWriteOutcome>> {
     if (this._vectorIndex === undefined || this._embed === undefined) {
+      // No outcome: with nothing wired there is no index for the record to be
+      // absent from, so reporting one would invent a coverage question the
+      // deployment has not asked.
       return succeed({ record: built });
     }
     const vectorIndex: IVectorIndex = this._vectorIndex;
@@ -171,21 +181,21 @@ export class VectorMaintenance {
     // every previously-embedded record of the excluded kind claiming an
     // embedding the store no longer maintains.
     if (!this._embedsKind(built.envelope.kind)) {
-      return succeed(declineEmbedding(built, vectorIndex, target));
+      return succeed(declineEmbedding(built, vectorIndex, target, 'excluded'));
     }
     const embedded: Result<Float32Array | undefined> = await this._tryVectorOp(
       () => embed(built),
       `embedding '${built.envelope.id}'`
     );
     if (embedded.isFailure()) {
-      return succeed({ record: built });
+      return succeed({ record: built, embed: 'failed' });
     }
     // A deliberate decline (`undefined`) stores the record with no embedding
     // reference and says nothing about it. Deliberately NOT logged, unlike the
     // failure path above: a warning per write would make routine policy look like
     // a recurring fault, which is the confusion this return value exists to end.
     if (embedded.value === undefined) {
-      return succeed(declineEmbedding(built, vectorIndex, target));
+      return succeed(declineEmbedding(built, vectorIndex, target, 'declined'));
     }
     // Hoisted: the `undefined` check above does not narrow across the callback
     // boundary below, and a local keeps the non-null assertion out of the code.
@@ -195,10 +205,11 @@ export class VectorMaintenance {
       `vector add for '${built.envelope.id}'`
     );
     if (added.isFailure()) {
-      return succeed({ record: built });
+      return succeed({ record: built, embed: 'failed' });
     }
     return succeed({
-      record: { envelope: { ...built.envelope, embeddingRef: added.value }, body: built.body }
+      record: { envelope: { ...built.envelope, embeddingRef: added.value }, body: built.body },
+      embed: 'embedded'
     });
   }
 
