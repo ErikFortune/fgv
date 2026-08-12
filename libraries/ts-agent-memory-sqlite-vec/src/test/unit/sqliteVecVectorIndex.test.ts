@@ -362,6 +362,37 @@ describe('SqliteVecVectorIndex', () => {
       }
     });
 
+    test('a throwing source becomes a failure and leaves the persisted index intact', async () => {
+      const index = await makeIndex();
+      (await index.add(target('s', 'kept'), vec(1, 1))).orThrow();
+      const throwing: IMemoryRecordSource = {
+        list: () => {
+          throw new Error('source exploded');
+        }
+      };
+      expect(await index.rebuild(throwing, embed)).toFailWith(/failed to list records.*source exploded/);
+      expect(index.size).toBe(1);
+    });
+
+    test('a throwing embedder becomes a failure and still clears, rather than escaping mid-rebuild', async () => {
+      // Worse here than in memory: an exception escaping past the `'fail'`
+      // rollback would leave a DURABLE table holding a partial index that
+      // survives the process, which a later query would answer from.
+      const index = await makeIndex();
+      let calls: number = 0;
+      const throwingEmbed: MemoryEmbedder = () => {
+        calls += 1;
+        if (calls === 1) {
+          return Promise.resolve(succeed(vec(1, 1)));
+        }
+        throw new Error('embedder exploded');
+      };
+      expect(await index.rebuild(source(['a', 'b']), throwingEmbed)).toFailWith(
+        /embedding 's\0b' failed.*embedder exploded/
+      );
+      expect(index.size).toBe(0);
+    });
+
     test('a list failure leaves an already-populated PERSISTED index intact', async () => {
       // The regression this exists for, and it mattered most here: the table was
       // cleared before the list was even attempted, so a transient read error

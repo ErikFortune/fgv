@@ -5,7 +5,7 @@
 
 import type BetterSqlite3 from 'better-sqlite3';
 import { load as loadSqliteVec } from 'sqlite-vec';
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureAsyncResult, captureResult, fail, succeed } from '@fgv/ts-utils';
 import {
   IEdgeTarget,
   IMemoryRecordSource,
@@ -21,6 +21,25 @@ import {
   edgeTargetKey
 } from '@fgv/ts-agent-memory';
 import { ISqliteVecVectorIndexCreateParams } from './model';
+
+/**
+ * Invoke a consumer-supplied hook that already returns a `Result`, converting a
+ * synchronous throw or a promise rejection into a `Failure` rather than letting
+ * it escape. `captureAsyncResult` wraps the hook's own `Result`, so the outcome
+ * is flattened back to one level.
+ *
+ * @remarks
+ * This is `@fgv/ts-utils`' own `_invokeDeferred` shape (see `mapResultsAsync`),
+ * which is `@internal` there and so cannot be imported. `@fgv/ts-agent-memory`
+ * carries an identical private copy for the in-memory index. Exporting a single
+ * `AsyncDeferredResult`-invoking primitive from `ts-utils` is the right home and
+ * is recorded in `docs/TECH_DEBT.md`; duplicating three lines twice is the
+ * cheaper thing to do from inside this stream than widening it to a foundational
+ * library.
+ */
+async function invokeHook<T>(hook: () => Promise<Result<T>>): Promise<Result<T>> {
+  return (await captureAsyncResult(hook)).onSuccess((inner) => inner);
+}
 
 /** Default name for the `vec0` virtual table. */
 const DEFAULT_TABLE_NAME: string = 'memory_vectors';
@@ -174,11 +193,9 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     options?: IVectorRebuildOptions
   ): Promise<Result<IVectorRebuildReport>> {
     const lenient: boolean = (options?.onRecordError ?? 'fail') === 'skip';
-    // Clear up front so a rebuild starts from scratch, matching
-    // `InMemoryCosineIndex`. Unlike that one this survives the process, so a
-    // half-rebuilt file would be a durable wrong answer rather than a transient
-    // one — which is exactly why the `'fail'` path below clears again.
-    const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await source.list();
+    // `source` is consumer-supplied, so a throw or rejection becomes a `Failure`
+    // here rather than escaping as an exception.
+    const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await invokeHook(() => source.list());
     if (listed.isFailure()) {
       // Deliberately BEFORE any clear: a failed list is no evidence about the
       // vectors already held, and no re-embedding has been attempted, so there is
@@ -190,7 +207,10 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     let declined: number = 0;
     const skipped: ISkippedVectorRecord[] = [];
     for (const scoped of listed.value) {
-      const embedded: Result<Float32Array | undefined> = await embed(scoped.record);
+      // Likewise capture-wrapped: an embedder that throws mid-loop would
+      // otherwise escape past the `'fail'` rollback below, leaving this DURABLE
+      // table holding a partial index that survives the process.
+      const embedded: Result<Float32Array | undefined> = await invokeHook(() => embed(scoped.record));
       if (embedded.isFailure()) {
         const error: string = `vector index rebuild: embedding '${edgeTargetKey(scoped.target)}' failed: ${
           embedded.message
