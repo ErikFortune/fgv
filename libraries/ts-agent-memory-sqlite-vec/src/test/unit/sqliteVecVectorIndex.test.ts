@@ -9,7 +9,18 @@ import BetterSqlite3 from 'better-sqlite3';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { IEdgeTarget, IVectorQueryHit, MemoryId, MemoryScopeKey } from '@fgv/ts-agent-memory';
+import { Result, fail, succeed } from '@fgv/ts-utils';
+import {
+  IEdgeTarget,
+  IMemoryRecord,
+  IMemoryRecordSource,
+  IScopedMemoryRecord,
+  IVectorQueryHit,
+  IVectorRebuildReport,
+  MemoryEmbedder,
+  MemoryId,
+  MemoryScopeKey
+} from '@fgv/ts-agent-memory';
 import { SqliteVecVectorIndex } from '../../index';
 
 function target(scope: string, id: string): IEdgeTarget {
@@ -248,6 +259,142 @@ describe('SqliteVecVectorIndex', () => {
       } finally {
         second.close();
       }
+    });
+  });
+
+  describe('rebuild — the backfill the IVectorIndex contract now requires', () => {
+    /** A scripted source; the embedder keys off the id's first char code. */
+    function source(ids: ReadonlyArray<string>, listFails: boolean = false): IMemoryRecordSource {
+      return {
+        list: (): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> =>
+          Promise.resolve(
+            listFails
+              ? fail('disk gone')
+              : succeed(
+                  ids.map((id) => ({
+                    target: target('s', id),
+                    record: {
+                      envelope: { id: id as unknown as MemoryId } as IMemoryRecord<unknown>['envelope'],
+                      body: `body-${id}`
+                    }
+                  }))
+                )
+          )
+      };
+    }
+    const embed: MemoryEmbedder = (r) =>
+      Promise.resolve(succeed(vec((r.envelope.id as string).charCodeAt(0), 1)));
+
+    test('backfills a persistent index that was written to while unwired', async () => {
+      // The scenario the ask names: records exist, the index does not know them.
+      const index = await makeIndex();
+      expect(index.size).toBe(0);
+      expect(await index.rebuild(source(['a', 'b', 'c']), embed)).toSucceedWith({
+        indexed: 3,
+        declined: 0,
+        skipped: []
+      });
+      expect(index.size).toBe(3);
+      expect(await index.query(vec(99, 1), 1)).toSucceedAndSatisfy((hits: ReadonlyArray<IVectorQueryHit>) => {
+        expect(hits[0].target.id).toBe('c');
+      });
+    });
+
+    test('clears prior contents so a rebuild is not additive', async () => {
+      const index = await makeIndex();
+      (await index.add(target('s', 'stale'), vec(1, 1))).orThrow();
+      expect(await index.rebuild(source(['a']), embed)).toSucceedWith({
+        indexed: 1,
+        declined: 0,
+        skipped: []
+      });
+      expect(index.size).toBe(1);
+    });
+
+    test("defaults to 'fail': one bad record leaves the persisted index empty", async () => {
+      // Durable storage makes this sharper than in-memory: a half-rebuilt file is a
+      // wrong answer that survives the process.
+      const index = await makeIndex();
+      const failB: MemoryEmbedder = (r) =>
+        (r.envelope.id as string) === 'b' ? Promise.resolve(fail('no model')) : embed(r);
+      expect(await index.rebuild(source(['a', 'b', 'c']), failB)).toFailWith(/no model/);
+      expect(index.size).toBe(0);
+    });
+
+    test("'skip' keeps the healthy records and reports each casualty", async () => {
+      const index = await makeIndex();
+      const failB: MemoryEmbedder = (r) =>
+        (r.envelope.id as string) === 'b' ? Promise.resolve(fail('no model')) : embed(r);
+      expect(
+        await index.rebuild(source(['a', 'b', 'c']), failB, { onRecordError: 'skip' })
+      ).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
+        expect(report.indexed).toBe(2);
+        expect(report.skipped).toHaveLength(1);
+        expect(report.skipped[0].target.id).toBe('b');
+        expect(report.skipped[0].error).toMatch(/no model/);
+      });
+      expect(index.size).toBe(2);
+    });
+
+    test('counts a decline separately from a failure', async () => {
+      const index = await makeIndex();
+      const mixed: MemoryEmbedder = (r) => {
+        const id: string = r.envelope.id as string;
+        if (id === 'b') return Promise.resolve(fail('no model'));
+        if (id === 'c') return Promise.resolve(succeed(undefined));
+        return embed(r);
+      };
+      expect(
+        await index.rebuild(source(['a', 'b', 'c']), mixed, { onRecordError: 'skip' })
+      ).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
+        expect(report.indexed).toBe(1);
+        expect(report.declined).toBe(1);
+        expect(report.skipped.map((s) => s.target.id)).toEqual(['b']);
+      });
+    });
+
+    test('a list failure is fatal under both modes', async () => {
+      for (const mode of ['fail', 'skip'] as const) {
+        const index = await makeIndex();
+        expect(await index.rebuild(source([], true), embed, { onRecordError: mode })).toFailWith(
+          /failed to list records.*disk gone/
+        );
+      }
+    });
+
+    test("'skip' reports an add failure too", async () => {
+      const index = await makeIndex();
+      // Establish dimension 2, then hand the rebuild a 3-dim vector for 'b'.
+      const badDim: MemoryEmbedder = (r) =>
+        (r.envelope.id as string) === 'b' ? Promise.resolve(succeed(vec(1, 2, 3))) : embed(r);
+      expect(await index.rebuild(source(['a', 'b']), badDim, { onRecordError: 'skip' })).toSucceedAndSatisfy(
+        (report: IVectorRebuildReport) => {
+          expect(report.indexed).toBe(1);
+          expect(report.skipped).toHaveLength(1);
+          expect(report.skipped[0].error).toMatch(/dimension/);
+        }
+      );
+    });
+
+    test("defaults to 'fail' on an ADD failure too, clearing the persisted table", async () => {
+      // Distinct from the embed-failure path: here the embedder succeeds and the
+      // index rejects the vector. On durable storage the clear is what stops a
+      // half-rebuilt file outliving the process.
+      const index = await makeIndex();
+      const badDim: MemoryEmbedder = (r) =>
+        (r.envelope.id as string) === 'b' ? Promise.resolve(succeed(vec(1, 2, 3))) : embed(r);
+      expect(await index.rebuild(source(['a', 'b', 'c']), badDim)).toFailWith(/dimension/);
+      expect(index.size).toBe(0);
+    });
+
+    test('rebuilding an index that was never added to is a no-op that succeeds', async () => {
+      // Exercises the `_clear` guard when no statements are prepared yet.
+      const index = await makeIndex();
+      expect(await index.rebuild(source([]), embed)).toSucceedWith({
+        indexed: 0,
+        declined: 0,
+        skipped: []
+      });
     });
   });
 });
