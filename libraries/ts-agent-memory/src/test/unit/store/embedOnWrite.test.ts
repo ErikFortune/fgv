@@ -13,6 +13,7 @@ import {
   IEdgeTarget,
   IIdentityCodec,
   IIndexedMemoryRecord,
+  IMemoryIndex,
   IMemoryRecord,
   IVectorIndex,
   IVectorQueryHit,
@@ -23,8 +24,10 @@ import {
   EntityId,
   MemoryId,
   MemoryIndex,
+  MemoryIndexPatchOp,
   MemoryEmbedder,
   MemoryScopeKey,
+  Tag,
   MtmIdentityCodec,
   IWritePolicy,
   SemanticRetriever,
@@ -93,13 +96,61 @@ const recordEmbed = (r: IMemoryRecord<unknown>): Promise<Result<Float32Array>> =
 const queryEmbed = (text: string): Promise<Result<Float32Array>> =>
   Promise.resolve(succeed(featureVector(text)));
 
+/**
+ * A faithful delegating {@link MemoryIndex} that appends a marker when the store
+ * commits a `put` — the last step of `_persist`, so anything recorded after it
+ * happened after the write landed. Injected via the documented `index` seam
+ * rather than by spying on internals.
+ */
+class CommitRecordingIndex implements IMemoryIndex {
+  private readonly _inner: IMemoryIndex = MemoryIndex.create().orThrow();
+  private readonly _order: string[];
+
+  public constructor(order: string[]) {
+    this._order = order;
+  }
+  public rebuild(entries: ReadonlyArray<IIndexedMemoryRecord>): Result<number> {
+    return this._inner.rebuild(entries);
+  }
+  public patch(op: MemoryIndexPatchOp, entry: IIndexedMemoryRecord): Result<IIndexedMemoryRecord> {
+    return this._inner.patch(op, entry).onSuccess((applied) => {
+      if (op === 'put') {
+        this._order.push(`commit:${applied.record.envelope.id}`);
+      }
+      return succeed(applied);
+    });
+  }
+  public entries(): ReadonlyArray<IIndexedMemoryRecord> {
+    return this._inner.entries();
+  }
+  public byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>> {
+    return this._inner.byKind(kind);
+  }
+  public byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>> {
+    return this._inner.byTag(tag);
+  }
+  public byRecency(): ReadonlyArray<IMemoryRecord<unknown>> {
+    return this._inner.byRecency();
+  }
+  public byRank(): ReadonlyArray<IMemoryRecord<unknown>> {
+    return this._inner.byRank();
+  }
+  public backlinks(target: IEdgeTarget): ReadonlyArray<IEdgeTarget> {
+    return this._inner.backlinks(target);
+  }
+}
+
 /** Records add/remove call order and can be configured to fail either op. */
 class SpyVectorIndex implements IVectorIndex {
-  public readonly calls: string[] = [];
+  public readonly calls: string[];
   public failAdd: boolean = false;
   public failRemove: boolean = false;
   private readonly _inner: InMemoryCosineIndex = InMemoryCosineIndex.create().orThrow();
 
+  /** Pass a shared array to interleave these calls with another double's. */
+  public constructor(calls: string[] = []) {
+    this.calls = calls;
+  }
   public async add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>> {
     this.calls.push(`add:${target.id}`);
     return this.failAdd ? fail('add boom') : this._inner.add(target, vector);
@@ -579,7 +630,36 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       );
       expect(spy.calls).toEqual(['add:doc-a', 'remove:doc-a']);
       // A failed remove IS a fault (unlike the decline itself), so it is logged.
-      expect(logger.logged.join('\n')).toMatch(/vector remove for declined 'doc-a'/);
+      expect(logger.logged.some((m) => /vector remove for declined 'doc-a'/.test(m))).toBe(true);
+    });
+
+    test('prunes the stale vector only after the write has committed', async () => {
+      // Ordering that matters: a persist that fails leaves the PREVIOUS body on
+      // disk, and the superseded vector is still an accurate embedding of THAT
+      // body. Pruning at the point of the decline would delete a correct vector
+      // on behalf of a write that never landed — so the prune belongs on the far
+      // side of the commit, the same rule the cull-oldest pruning already
+      // follows. Asserted as ordering against the index patch, which is the last
+      // step of the commit.
+      const order: string[] = [];
+      const state = { declining: false };
+      const spy = new SpyVectorIndex(order);
+      const registry: IBodyConverterRegistry = BodyConverterRegistry.create().orThrow();
+      registry.register(knowledgeKind, Converters.string);
+      const store = FileTreeMemoryStore.create({
+        root: mutableRoot(),
+        registry,
+        codecs: new Map<Kind, IIdentityCodec>([[knowledgeKind, new KnowledgeIdentityCodec()]]),
+        index: new CommitRecordingIndex(order),
+        vectorIndex: spy,
+        embed: togglingEmbed(state)
+      }).orThrow();
+      (await store.put(makeRecord('doc-a', 'cat cat'))).orThrow();
+
+      order.length = 0;
+      state.declining = true;
+      (await store.put(makeRecord('doc-a', 'dog dog'))).orThrow();
+      expect(order).toEqual(['commit:doc-a', 'remove:doc-a']);
     });
   });
 });
