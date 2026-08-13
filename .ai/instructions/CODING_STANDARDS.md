@@ -571,6 +571,37 @@ rushx test     # Jest with coverage gates
 
 All three must pass. CI catches what's left, but the local feedback loop is faster and catches issues before reviewers see them.
 
+### A local warning is a CI failure — `rushx build` exit 0 is not the gate
+
+CI runs `rush rebuild`, which exits **non-zero on "SUCCESS WITH WARNINGS"**. A per-project
+`rushx build` (Heft) exits **0** on the same warning and prints it as a passing build. So a warning
+you can see and shrug at locally is a red X on the PR.
+
+Observed on the PersonAIlity Stream A stack: `fileTreeMemoryStore.ts` crossed the 2000-line
+`max-lines` limit. Local `heft build` said `Finished` with `Encountered 1 warning`, exit 0; the same
+tree failed CI outright. The warning had been dispositioned as advisory tech debt on that basis — a
+disposition that was simply wrong about the facts.
+
+**Rule:** treat *every* warning in `rushx build` / `rushx lint` output as blocking. There is no
+advisory tier in this repo's CI. When you catch yourself writing "warning, not error, so no gate is
+red", verify it by running `rush rebuild` (or reading the PR's check) before believing it.
+
+### Widening a shared interface needs a repo-wide build, not a per-package one
+
+`rushx build` / `rushx test` in the packages you edited cannot see a consumer you did not edit. When a
+change makes an **interface member required** — or renames/removes one — every implementation in the
+monorepo has to be found, including test doubles in `samples/` and `tools/`.
+
+Observed on the PersonAIlity Stream A stack: promoting `size` and `rebuild` onto `IVectorIndex` was
+verified green in `ts-agent-memory` and `ts-agent-memory-sqlite-vec`, and failed CI on a fake index
+in `samples/testbed` that nothing in either package references.
+
+**Rule:** for any change that widens or narrows a shared contract, before pushing either
+(a) run `node common/scripts/install-run-rush.js rebuild` (optionally `--to <a downstream project>`),
+or (b) `grep -rl '<TheInterface>' --include=*.ts libraries/ tools/ samples/` and check every hit.
+Test doubles are the usual casualty: they implement the interface structurally and are invisible to
+the package's own suite.
+
 ### `rushx lint` is a first-class gate
 
 `rushx build` does **not** transitively run lint in this monorepo's Heft config. Lint is a separate gate. PRs have repeatedly merged with passing build + tests but failing lint, blocking downstream cluster merges. Treat lint as mandatory, not optional.

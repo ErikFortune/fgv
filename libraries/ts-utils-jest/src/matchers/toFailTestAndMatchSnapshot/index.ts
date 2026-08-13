@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Context, toMatchSnapshot } from 'jest-snapshot';
+import type { Context } from 'jest-snapshot';
+import { toMatchSnapshot } from 'jest-snapshot';
 import { matcherName, predicate } from './predicate';
 
 import { matcherHint } from 'jest-matcher-utils';

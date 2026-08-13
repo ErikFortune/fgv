@@ -5,12 +5,18 @@
 ```ts
 
 import type { AuthenticationResponseJSON } from '@simplewebauthn/browser';
+import type { PublicKeyCredentialCreationOptionsJSON as PublicKeyCredentialCreationOptionsJSON_2 } from '@simplewebauthn/browser';
+import type { PublicKeyCredentialRequestOptionsJSON as PublicKeyCredentialRequestOptionsJSON_2 } from '@simplewebauthn/browser';
 import type { RegistrationResponseJSON } from '@simplewebauthn/browser';
 import { Result } from '@fgv/ts-utils';
 import type { StartAuthenticationOpts } from '@simplewebauthn/browser';
 import type { StartRegistrationOpts } from '@simplewebauthn/browser';
 
 export { AuthenticationResponseJSON }
+
+export { PublicKeyCredentialCreationOptionsJSON_2 as PublicKeyCredentialCreationOptionsJSON }
+
+export { PublicKeyCredentialRequestOptionsJSON_2 as PublicKeyCredentialRequestOptionsJSON }
 
 export { RegistrationResponseJSON }
 

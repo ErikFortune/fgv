@@ -11,12 +11,22 @@
         "require": "./lib/index.js"
       },
       "default": {
-        "import": "./lib/index.browser.js",
-        "require": "./lib/index.browser.js"
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
       },
       "types": "./dist/ts-web-extras-webauthn.d.ts"
     }
   },
+  "files": [
+    "lib",
+    "dist",
+    "CHANGELOG.json",
+    "README.md",
+    "LICENSE",
+    "!lib/test",
+    "!dist/test",
+    "!**/*.test.*"
+  ],
   "scripts": {
     "build": "NODE_OPTIONS=--disable-warning=DEP0040 heft test --clean",
     "clean": "heft clean",

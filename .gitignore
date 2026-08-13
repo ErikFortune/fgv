@@ -85,3 +85,8 @@ dist/
 temp/
 .claude/scheduled_tasks.lock
 .claude/worktrees/
+
+# Scratch entry point written into a package folder by common/scripts/verify-bundler-resolution.mjs.
+# The script removes it in a `finally`, so this only catches the case where the process is killed
+# outright (OOM, SIGKILL) between writing and cleaning up.
+**/.verify-bundler-resolution.entry.mjs

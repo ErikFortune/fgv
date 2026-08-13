@@ -11,6 +11,16 @@
       "types": "./dist/ts-web-extras-argon2.d.ts"
     }
   },
+  "files": [
+    "lib",
+    "dist",
+    "CHANGELOG.json",
+    "README.md",
+    "LICENSE",
+    "!lib/test",
+    "!dist/test",
+    "!**/*.test.*"
+  ],
   "scripts": {
     "build": "heft build --clean",
     "clean": "heft clean",

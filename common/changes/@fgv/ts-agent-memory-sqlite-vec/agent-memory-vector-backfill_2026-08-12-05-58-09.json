@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "`IVectorIndex` now requires `size` (the current vector count) and `rebuild` (backfill/reconcile); `SqliteVecVectorIndex` implements both, so a persistent index can be backfilled through the contract.",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory-sqlite-vec"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory-sqlite-vec",
+  "email": "noreply@anthropic.com"
+}

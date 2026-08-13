@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Fix the Node ESM entry point. The `import` condition routed to an ESM emit whose internal specifiers are extensionless directory imports, which Node's ESM resolver cannot resolve, so `import` from this package failed at module evaluation with ERR_UNSUPPORTED_DIR_IMPORT. A `node` condition now routes both `import` and `require` to the CJS build; bundlers continue to receive the ESM tree and keep tree-shaking.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

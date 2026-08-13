@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Internal refactor only: the store's record- and fragment-vector maintenance moves out of `FileTreeMemoryStore` into a `VectorMaintenance` collaborator in the same packlet. No public API change and no behavior change - the test suite is untouched and still passes at 100%.",
+      "type": "none",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

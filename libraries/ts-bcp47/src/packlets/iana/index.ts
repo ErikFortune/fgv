@@ -28,8 +28,12 @@ import * as LanguageTagExtensions from './language-tag-extensions';
 import * as Model from './model';
 import * as Validate from './validate';
 
+// This barrel is deliberately free of node built-ins, because it is what every other packlet in
+// this library imports (`packlets/bcp47` and `packlets/unsd` reach it as `../iana`). The
+// filesystem loader lives in `./index.node` instead: re-exporting it here would put `fs` and
+// `path` on the reachable graph of every importer, including `src/index.browser.ts`, which is
+// exactly the defect that shipped in 5.1.0-47.
 export { DefaultRegistries } from './defaultRegistries';
 export * from './languageRegistries';
 export * from './languageRegistriesLoader';
-export * from './languageRegistriesFileLoader';
 export { Converters, Jar, Model, LanguageSubtags, LanguageTagExtensions, Validate, nowAsYearMonthDay };

@@ -10,7 +10,6 @@ import {
   DEFAULT_DEDUP_SCOPE,
   DedupScope,
   EntityId,
-  IEdgeTarget,
   IIdentityCodec,
   IMemoryEnvelope,
   IMemoryRecord,
@@ -30,16 +29,17 @@ import {
   selectVersionAsOf
 } from '../types';
 import { IBodyConverterRegistry as IRegistry, parseMemoryFile, serializeMemoryFile } from '../converters';
+import { VectorMaintenance } from './vectorMaintenance';
 import { IIndexedMemoryRecord, IMemoryIndex, MemoryIndex } from '../index';
 import {
   IMemoryObservationRecord,
   IMemoryObserver,
+  MemoryEmbedOutcome,
   MemoryObservationOutcome,
   MemoryObservationPhase
 } from '../observe';
 import {
   FragmentEmbedder,
-  IEmbeddedFragment,
   IFragmentVectorIndex,
   IMemoryRecordSource,
   IScopedMemoryRecord,
@@ -140,8 +140,16 @@ export interface IMemoryStore {
   /**
    * Adapt this store to the {@link IMemoryRecordSource} seam so it can drive
    * {@link IVectorIndex} rebuilds (e.g. `InMemoryCosineIndex.rebuild`). The
-   * returned source's `list()` delegates to {@link IMemoryStore.listScoped}. The
-   * store cannot implement {@link IMemoryRecordSource} directly because its
+   * returned source's `list()` delegates to {@link IMemoryStore.listScoped},
+   * **filtered to the kinds {@link IMemoryStore.embedsKind | embedsKind} reports** —
+   * this source exists to feed the record vector index, so a kind excluded from
+   * that index is excluded here too, and a reopen does not re-embed records the
+   * index will never return. With no
+   * {@link IFileTreeMemoryStoreCreateParams.embedKinds | embedKinds} declaration
+   * every kind participates and the filter is the identity. `listScoped` itself is
+   * **not** filtered and remains the whole-vault surface.
+   *
+   * The store cannot implement {@link IMemoryRecordSource} directly because its
    * `list(filter?)` returns bare records (the ergonomic query surface) while the
    * seam's `list()` returns scope-qualified records.
    */
@@ -175,6 +183,26 @@ export interface IMemoryStore {
    * invoking admission or merge logic out of band.
    */
   dedupScopeFor(kind: Kind): DedupScope;
+
+  /**
+   * Whether records of `kind` participate in the **record-granular** vector index.
+   *
+   * @remarks
+   * A read accessor over the store's injected {@link IFileTreeMemoryStoreCreateParams.embedKinds | embedKinds}
+   * declaration, in the same spirit as {@link IMemoryStore.dedupScopeFor} — one
+   * place to ask, so the store's write path and any caller reasoning about index
+   * coverage cannot disagree. `true` for every kind when no declaration was made.
+   *
+   * **This is distinct from a {@link MemoryEmbedder} decline, and the difference is
+   * cost.** An embedder that returns `undefined` has already been called: the
+   * round trip is paid, and on a locally-hosted model that round trip is the
+   * expense. A kind excluded here is never handed to the embedder at all. The
+   * decline makes the intent *expressible*; this makes it *free*.
+   *
+   * Deliberately synchronous, total, and NOT `Result`-returning: it reads
+   * constructor-injected configuration, touches no I/O, and cannot fail.
+   */
+  embedsKind(kind: Kind): boolean;
 
   /**
    * Write a record. Validates the body, computes a content hash, deduplicates
@@ -221,6 +249,37 @@ export interface IFileTreeMemoryStoreCreateParams {
    * guard-host-callbacks conventions).
    */
   readonly rankProjectors?: ReadonlyMap<Kind, RankProjector>;
+  /**
+   * The kinds whose records participate in the **record-granular** vector index.
+   *
+   * @remarks
+   * **Absent means every kind participates**, which is the pre-existing behavior —
+   * so omitting this is byte-identical to before it existed. Supplying it makes the
+   * set an allowlist: a kind outside it is never handed to the {@link MemoryEmbedder}
+   * on write, and is omitted from {@link IMemoryStore.asRecordSource | asRecordSource},
+   * so a rebuild driven from this store does not pay for it either.
+   *
+   * Two costs motivate it, and the second is the one that is easy to miss:
+   *
+   * - **Embedder work on the critical path.** Embed-on-write is synchronous with
+   *   the write. A bookkeeping row — a status, a counter, a lease — that no query
+   *   will ever return still pays a full embedding round trip, and on a
+   *   locally-hosted model the first call after a restart pays a cold model load
+   *   on top.
+   * - **Un-queried kinds crowd the `topK` window.** `IVectorIndex.query` applies
+   *   `topK` *before* any kind filter the retriever adds, so vectors that can never
+   *   be returned still occupy candidate slots. Over-fetching to compensate hides
+   *   this until the un-queried kinds start scoring well — at which point recall is
+   *   silently lost. Restricting what is indexed fixes the recall problem, not just
+   *   the cost.
+   *
+   * Applies to the record-granular path only. The fragment path
+   * ({@link IFileTreeMemoryStoreCreateParams.fragmentIndex | fragmentIndex} /
+   * `fragmentEmbedder`) is independent and unaffected — a kind may legitimately be
+   * fragment-embedded and not record-embedded, which is the right shape for a long
+   * document whose whole body exceeds the model's context.
+   */
+  readonly embedKinds?: ReadonlySet<Kind>;
   /** Default codec for kinds without an explicit entry. */
   readonly defaultCodec?: IIdentityCodec;
   /**
@@ -368,6 +427,13 @@ export interface IFileTreeMemoryStoreCreateParams {
 interface IPutOutcome {
   readonly record: IMemoryRecord<unknown>;
   readonly evicted: ReadonlyArray<MemoryId>;
+  /**
+   * What the record-granular index did about this write, for the `'write'`
+   * observation. Absent whenever no outcome is being reported — nothing wired,
+   * a dedup no-op that attempted nothing, or a failed write. See
+   * `MemoryEmbedOutcome`.
+   */
+  readonly embed?: MemoryEmbedOutcome;
 }
 
 interface IInternalParams {
@@ -376,6 +442,8 @@ interface IInternalParams {
   readonly writePolicies: ReadonlyMap<Kind, IWritePolicy>;
   readonly codecs: ReadonlyMap<Kind, IIdentityCodec>;
   readonly rankProjectors: ReadonlyMap<Kind, RankProjector>;
+  /** `undefined` = no declaration = every kind participates in the vector index. */
+  readonly embedKinds: ReadonlySet<Kind> | undefined;
   readonly defaultCodec?: IIdentityCodec;
   readonly defaultPolicy: IWritePolicy;
   readonly scopeEncoding: (scope: MemoryScopeKey) => Result<string>;
@@ -409,6 +477,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
   private readonly _writePolicies: ReadonlyMap<Kind, IWritePolicy>;
   private readonly _codecs: ReadonlyMap<Kind, IIdentityCodec>;
   private readonly _rankProjectors: ReadonlyMap<Kind, RankProjector>;
+  /** `undefined` = no declaration = every kind participates. */
+  private readonly _embedKinds: ReadonlySet<Kind> | undefined;
   private readonly _defaultCodec: IIdentityCodec | undefined;
   private readonly _defaultPolicy: IWritePolicy;
   private readonly _scopeEncoding: (scope: MemoryScopeKey) => Result<string>;
@@ -416,11 +486,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
   private readonly _index: IMemoryIndex;
   private readonly _hasher: Hash.Crc32Normalizer;
   private readonly _observers: ReadonlyArray<IMemoryObserver>;
+  /** Record- and fragment-vector maintenance; every operation is best-effort. */
+  private readonly _vectors: VectorMaintenance;
   private readonly _logger: Logging.ILogger;
-  private readonly _vectorIndex: IVectorIndex | undefined;
-  private readonly _embed: MemoryEmbedder | undefined;
-  private readonly _fragmentIndex: IFragmentVectorIndex | undefined;
-  private readonly _fragmentEmbedder: FragmentEmbedder | undefined;
   /**
    * Records the initial walk could not load. Populated during `create()` in
    * {@link MemoryRecordErrorMode | `'skip'` mode}; empty otherwise.
@@ -463,6 +531,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     this._writePolicies = params.writePolicies;
     this._codecs = params.codecs;
     this._rankProjectors = params.rankProjectors;
+    this._embedKinds = params.embedKinds ?? undefined;
     this._defaultCodec = params.defaultCodec;
     this._defaultPolicy = params.defaultPolicy;
     this._scopeEncoding = params.scopeEncoding;
@@ -471,10 +540,14 @@ export class FileTreeMemoryStore implements IMemoryStore {
     this._hasher = new Hash.Crc32Normalizer();
     this._observers = params.observers;
     this._logger = params.logger;
-    this._vectorIndex = params.vectorIndex;
-    this._embed = params.embed;
-    this._fragmentIndex = params.fragmentIndex;
-    this._fragmentEmbedder = params.fragmentEmbedder;
+    this._vectors = new VectorMaintenance({
+      vectorIndex: params.vectorIndex,
+      embed: params.embed,
+      fragmentIndex: params.fragmentIndex,
+      fragmentEmbedder: params.fragmentEmbedder,
+      warn: (message) => this._warnSwallowed(message),
+      embedsKind: (kind) => this.embedsKind(kind)
+    });
     this._skippedRecords = [];
     this._seq = 0;
     this._observationSeq = 0;
@@ -509,6 +582,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
           writePolicies: params.writePolicies ?? new Map<Kind, IWritePolicy>(),
           codecs: params.codecs ?? new Map<Kind, IIdentityCodec>(),
           rankProjectors: params.rankProjectors ?? new Map<Kind, RankProjector>(),
+          embedKinds: params.embedKinds,
           defaultCodec: params.defaultCodec,
           defaultPolicy,
           scopeEncoding: params.scopeEncoding ?? defaultMemoryScopeEncoding,
@@ -617,7 +691,17 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   /** {@inheritDoc IMemoryStore.asRecordSource} */
   public asRecordSource(): IMemoryRecordSource {
-    return { list: (): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> => this.listScoped() };
+    return {
+      // Filtered to the kinds that participate in the record vector index. This
+      // source exists to drive `IVectorIndex` rebuilds, so a kind excluded from the
+      // index has no business being re-embedded on open — which is where the cost
+      // is worst, since a rebuild embeds the whole vault serially. With no
+      // `embedKinds` declaration every kind passes and this is the identity filter.
+      list: async (): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> =>
+        (await this.listScoped()).onSuccess((scoped: ReadonlyArray<IScopedMemoryRecord>) =>
+          succeed(scoped.filter((s) => this.embedsKind(s.record.envelope.kind)))
+        )
+    };
   }
 
   /**
@@ -663,7 +747,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
       outcome: result.isSuccess() ? 'success' : 'failure',
       id: result.isSuccess() ? result.value.record.envelope.id : record.envelope.id,
       provenance: record.envelope.provenance,
-      error: result.isFailure() ? result.message : undefined
+      error: result.isFailure() ? result.message : undefined,
+      embed: result.isSuccess() ? result.value.embed : undefined
     });
     // Fire one `'delete'` observation per record evicted by cap-cull. The
     // evicted records are always in the same `(scope, kind)` cohort as the
@@ -721,6 +806,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       readonly id?: MemoryId;
       readonly provenance?: IProvenance;
       readonly error?: string;
+      readonly embed?: MemoryEmbedOutcome;
     }
   ): Promise<void> {
     if (this._observers.length === 0) {
@@ -735,7 +821,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
       kind,
       outcome: details.outcome,
       error: details.error,
-      provenance: details.provenance
+      provenance: details.provenance,
+      embed: details.embed
     };
     const awaited: Promise<void>[] = [];
     for (const observer of this._observers) {
@@ -932,109 +1019,34 @@ export class FileTreeMemoryStore implements IMemoryStore {
     }
     return this._buildRecord(record, body, existing, policy, hash)
       .onSuccess((built) => succeed(this._stampRank(built)))
-      .thenOnSuccess((built) => this._embedOnWrite(built, scope))
-      .thenOnSuccess((built) => this._embedFragmentsOnWrite(built, scope))
-      .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, idStem))
-      .thenOnSuccess(async (persisted) => {
+      .thenOnSuccess((built) => this._vectors.embedOnWrite(built, scope))
+      .thenOnSuccess(async (embedded) =>
+        (await this._vectors.embedFragmentsOnWrite(embedded.record, scope)).onSuccess((withFragments) =>
+          succeed({ ...embedded, record: withFragments })
+        )
+      )
+      .onSuccess((embedded) =>
+        this._persist(embedded.record, scope, idStem).onSuccess((persisted) =>
+          succeed({ persisted, stale: embedded.stale, embed: embedded.embed })
+        )
+      )
+      .thenOnSuccess(async ({ persisted, stale, embed }) => {
         // Everything after the authoritative `_persist` commit is best-effort and
         // never turns a committed write into a `Failure`:
+        //   - a stale vector superseded by a decline is pruned here rather than at
+        //     the point of the decline, because a `_persist` that fails leaves the
+        //     PREVIOUS content on disk — content that vector is still an accurate
+        //     embedding of. Pruning early would delete a correct vector on behalf
+        //     of a write that never landed;
         //   - a cull-oldest eviction that fails is logged (the per-(scope,kind)
         //     cap may be transiently exceeded; the next write's admission restores
         //     it), and only the successfully-evicted ids flow onward;
         //   - vector pruning of the evicted cohort is likewise best-effort.
+        await this._vectors.pruneStaleVector(stale);
         const evicted: ReadonlyArray<MemoryId> = this._applyEvictions(decision, scope);
-        await this._removeEvictedVectors(evicted, scope);
-        return succeed({ record: persisted, evicted });
+        await this._vectors.removeEvictedVectors(evicted, scope);
+        return succeed({ record: persisted, evicted, embed });
       });
-  }
-
-  /**
-   * Best-effort embed-on-write. When a vector index AND an embedder are wired,
-   * embeds the built record, `add`s the vector (replace semantics handle a same-id
-   * re-embed — no explicit remove), and stamps the returned `embeddingRef`. A
-   * failure (returned `fail` OR a thrown/rejected hook) is logged and the
-   * unembedded record is returned unchanged — the put still persists, and the
-   * derived index is reconciled by a later `rebuild`. A pass-through no-op when
-   * unwired (byte-identical record).
-   *
-   * Always succeeds (`Result` is the chain's shape, never a vector-induced
-   * failure).
-   */
-  private async _embedOnWrite(
-    built: IMemoryRecord<string>,
-    scope: MemoryScopeKey
-  ): Promise<Result<IMemoryRecord<string>>> {
-    if (this._vectorIndex === undefined || this._embed === undefined) {
-      return succeed(built);
-    }
-    const vectorIndex: IVectorIndex = this._vectorIndex;
-    const embed: MemoryEmbedder = this._embed;
-    const target: IEdgeTarget = { scope, id: built.envelope.id };
-    const embedded: Result<Float32Array> = await this._tryVectorOp(
-      () => embed(built),
-      `embedding '${built.envelope.id}'`
-    );
-    if (embedded.isFailure()) {
-      return succeed(built);
-    }
-    const added: Result<string> = await this._tryVectorOp(
-      () => vectorIndex.add(target, embedded.value),
-      `vector add for '${built.envelope.id}'`
-    );
-    if (added.isFailure()) {
-      return succeed(built);
-    }
-    return succeed({ envelope: { ...built.envelope, embeddingRef: added.value }, body: built.body });
-  }
-
-  /**
-   * Best-effort fragment-embed-on-write. When a fragment index AND a fragment
-   * embedder are wired, chunks + embeds the built record and replaces its
-   * fragments in the index (`addFragments` is whole-record-replace, so a re-authored
-   * document never leaves stale fragments behind — no explicit remove needed). A
-   * failure (returned `fail` OR a thrown/rejected hook) is logged and the record is
-   * returned unchanged — the put still persists, and the fragment index is a derived
-   * view a later `rebuild` reconciles. Unlike {@link FileTreeMemoryStore._embedOnWrite}
-   * it stamps nothing on the record (fragments have no per-record `embeddingRef`
-   * analog). A pass-through no-op when unwired (byte-identical record).
-   */
-  private async _embedFragmentsOnWrite(
-    built: IMemoryRecord<string>,
-    scope: MemoryScopeKey
-  ): Promise<Result<IMemoryRecord<string>>> {
-    if (this._fragmentIndex === undefined || this._fragmentEmbedder === undefined) {
-      return succeed(built);
-    }
-    const fragmentIndex: IFragmentVectorIndex = this._fragmentIndex;
-    const fragmentEmbedder: FragmentEmbedder = this._fragmentEmbedder;
-    const target: IEdgeTarget = { scope, id: built.envelope.id };
-    const embedded: Result<ReadonlyArray<IEmbeddedFragment>> = await this._tryVectorOp(
-      () => fragmentEmbedder(built),
-      `fragment embedding '${built.envelope.id}'`
-    );
-    if (embedded.isFailure()) {
-      return succeed(built);
-    }
-    await this._tryVectorOp(
-      () => fragmentIndex.addFragments(target, embedded.value),
-      `fragment add for '${built.envelope.id}'`
-    );
-    return succeed(built);
-  }
-
-  /**
-   * Best-effort fragment removal. A no-op unless the full fragment lifecycle is
-   * wired (both an index AND an embedder), so an unwired store does no fragment
-   * work and behaves byte-identically. Failures are logged, never surfaced — a
-   * committed delete/eviction must not fail because a derived fragment index could
-   * not be pruned.
-   */
-  private async _removeFragmentsBestEffort(target: IEdgeTarget): Promise<void> {
-    if (this._fragmentIndex === undefined || this._fragmentEmbedder === undefined) {
-      return;
-    }
-    const fragmentIndex: IFragmentVectorIndex = this._fragmentIndex;
-    await this._tryVectorOp(() => fragmentIndex.remove(target), `fragment removal for '${target.id}'`);
   }
 
   /**
@@ -1060,56 +1072,6 @@ export class FileTreeMemoryStore implements IMemoryStore {
       }
     }
     return evicted;
-  }
-
-  /**
-   * Best-effort vector removal for each evicted record (never fails the put).
-   * Every evicted record is in the same `scope` as the incoming write (the
-   * cull-oldest cohort is the incoming record's `(scope, kind)` cohort), so that
-   * scope qualifies each removal target.
-   */
-  private async _removeEvictedVectors(
-    evicted: ReadonlyArray<MemoryId>,
-    scope: MemoryScopeKey
-  ): Promise<void> {
-    for (const id of evicted) {
-      await this._removeVectorBestEffort({ scope, id });
-      await this._removeFragmentsBestEffort({ scope, id });
-    }
-  }
-
-  /**
-   * Run a consumer-supplied vector hook, normalizing a thrown/rejected hook into a
-   * `Failure` and logging any failure at `warn`. Best-effort: the caller proceeds
-   * regardless, since the index is rebuildable.
-   */
-  private async _tryVectorOp<T>(op: () => Promise<Result<T>>, label: string): Promise<Result<T>> {
-    let result: Result<T>;
-    try {
-      result = await op();
-    } catch (err) {
-      result = fail(`${label} threw: ${String(err)}`);
-    }
-    if (result.isFailure()) {
-      this._warnSwallowed(
-        `memory: ${label} failed (best-effort; derived index left for rebuild): ${result.message}`
-      );
-    }
-    return result;
-  }
-
-  /**
-   * Best-effort vector removal. A no-op unless the full vector lifecycle is wired
-   * (both an index AND an embedder), so an unwired store does no vector work and
-   * behaves byte-identically. Failures are logged, never surfaced — a committed
-   * delete/eviction must not fail because a derived index could not be pruned.
-   */
-  private async _removeVectorBestEffort(target: IEdgeTarget): Promise<void> {
-    if (this._vectorIndex === undefined || this._embed === undefined) {
-      return;
-    }
-    const vectorIndex: IVectorIndex = this._vectorIndex;
-    await this._tryVectorOp(() => vectorIndex.remove(target), `vector removal for '${target.id}'`);
   }
 
   /**
@@ -1215,8 +1177,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       return this._deleteFile(scope, idStem)
         .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
         .thenOnSuccess(async () => {
-          await this._removeVectorBestEffort({ scope, id: existing.envelope.id });
-          await this._removeFragmentsBestEffort({ scope, id: existing.envelope.id });
+          await this._vectors.removeAll({ scope, id: existing.envelope.id });
           return succeed(existing.envelope.id);
         });
     });
@@ -1312,15 +1273,27 @@ export class FileTreeMemoryStore implements IMemoryStore {
           .thenOnSuccess((versionStem) =>
             this._buildVersionedRecord(record, body, current, policy, hash, versionStem, validAt, now, seq)
               .onSuccess((built) => succeed(this._stampRank(built)))
-              .thenOnSuccess((built) => this._embedOnWrite(built, scope))
-              .thenOnSuccess((built) => this._embedFragmentsOnWrite(built, scope))
-              .onSuccess((embeddedBuilt) => this._persist(embeddedBuilt, scope, versionStem))
-              .onSuccess((persisted) =>
-                this._invalidateCurrents(scope, priorCurrents, validAt, now).onSuccess(() =>
-                  succeed(persisted)
+              .thenOnSuccess((built) => this._vectors.embedOnWrite(built, scope))
+              .thenOnSuccess(async (embedded) =>
+                (await this._vectors.embedFragmentsOnWrite(embedded.record, scope)).onSuccess(
+                  (withFragments) => succeed({ ...embedded, record: withFragments })
                 )
               )
-              .onSuccess((persisted) => succeed({ record: persisted, evicted: [] }))
+              .onSuccess((embedded) =>
+                this._persist(embedded.record, scope, versionStem).onSuccess((persisted) =>
+                  succeed({ persisted, stale: embedded.stale, embed: embedded.embed })
+                )
+              )
+              .onSuccess(({ persisted, stale, embed }) =>
+                this._invalidateCurrents(scope, priorCurrents, validAt, now).onSuccess(() =>
+                  succeed({ persisted, stale, embed })
+                )
+              )
+              // Post-commit and best-effort, exactly as on the flat path.
+              .thenOnSuccess(async ({ persisted, stale, embed }) => {
+                await this._vectors.pruneStaleVector(stale);
+                return succeed({ record: persisted, evicted: [], embed });
+              })
           );
       });
     });
@@ -1620,6 +1593,13 @@ export class FileTreeMemoryStore implements IMemoryStore {
   /** {@inheritDoc IMemoryStore.dedupScopeFor} */
   public dedupScopeFor(kind: Kind): DedupScope {
     return this._policyFor(kind).dedupScope ?? DEFAULT_DEDUP_SCOPE;
+  }
+
+  /** {@inheritDoc IMemoryStore.embedsKind} */
+  public embedsKind(kind: Kind): boolean {
+    // No declaration means every kind participates — the behavior that predates
+    // this param, so an existing consumer is unaffected.
+    return this._embedKinds === undefined || this._embedKinds.has(kind);
   }
 
   /**

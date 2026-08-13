@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras-webauthn",
+      "comment": "Re-export `PublicKeyCredentialCreationOptionsJSON` and `PublicKeyCredentialRequestOptionsJSON` from `@simplewebauthn/browser`, so consumers can name the option types directly instead of reaching them by indexed access off `StartRegistrationOpts` / `StartAuthenticationOpts`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras-webauthn"
+}

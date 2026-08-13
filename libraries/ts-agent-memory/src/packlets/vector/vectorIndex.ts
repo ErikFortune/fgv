@@ -127,6 +127,51 @@ export interface IVectorIndex {
    * Return the `topK` nearest records to `vector`, in descending score order.
    */
   query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+
+  /**
+   * The number of vectors currently held.
+   *
+   * @remarks
+   * On the contract because without it a caller cannot distinguish *"the index is
+   * empty"* from *"nothing matched"*: {@link IVectorIndex.query} answers an empty
+   * index with `succeed([])`, which is indistinguishable from a genuine miss. The
+   * only other check available to a caller — "is a vector index wired?" — tests the
+   * **wiring**, and that stays true while the index holds nothing.
+   *
+   * Note the narrow scope: this answers *how many vectors are held*, **not** how
+   * many there ought to be. Full coverage — "is every record that should be indexed
+   * actually indexed?" — still requires comparing against the record source and
+   * {@link IMemoryStore.embedsKind}.
+   *
+   * Synchronous and non-`Result` because both shipped implementations can answer it
+   * without I/O that can fail — the in-memory index reads a `Map`'s size, and the
+   * SQLite-backed one a prepared `COUNT` against an open connection it already owns.
+   */
+  readonly size: number;
+
+  /**
+   * Re-embed every record from `source` and rebuild the index from scratch — the
+   * **backfill / reconcile** operation.
+   *
+   * @remarks
+   * On the contract because a persisted index is unusable without it. Records
+   * written while the index was unwired, a re-embed after a dimension change (where
+   * the backend supports one — a `vec0`-backed table's dimension is fixed at
+   * creation, so there it needs a drop-and-re-index instead), and reconciliation
+   * after a swallowed embed-on-write failure are all unreachable otherwise — and the store's own docstring already promises *"the derived index
+   * is reconciled by a later `rebuild`"*, a promise the contract could not keep for
+   * any index but the bundled one. A caller moving from the bundled implementation
+   * to a persistent one found the swap type-checked everywhere **except** the one
+   * place it backfills, which is the place that mattered.
+   *
+   * See {@link IVectorRebuildReport} for what it reports and
+   * {@link IVectorRebuildOptions} for the failure mode.
+   */
+  rebuild(
+    source: IMemoryRecordSource,
+    embed: MemoryEmbedder,
+    options?: IVectorRebuildOptions
+  ): Promise<Result<IVectorRebuildReport>>;
 }
 
 /**
@@ -222,13 +267,106 @@ export interface IFragmentVectorIndex {
 }
 
 /**
+ * How a vector-index rebuild treats a record it cannot index — whether the
+ * **embedding** failed or the subsequent **add** did. Both are governed by this
+ * one mode; neither is unconditionally fatal.
+ *
+ * @remarks
+ * Deliberately mirrors the store's own open-time `onRecordError` mode, including
+ * its default: `'fail'` preserves the historical all-or-nothing contract exactly,
+ * and `'skip'` is opt-in. Defined here rather than imported from the store packlet
+ * — the `vector` packlet does not depend on `store`, and the two modes describe
+ * different domains that merely happen to share a shape.
+ *
+ * A **decline** (a {@link MemoryEmbedder} resolving `undefined`) is not an error
+ * and is unaffected by this mode: it is always **excluded** from the index and
+ * counted on {@link IVectorRebuildReport.declined}, **never** appearing in
+ * {@link IVectorRebuildReport.skipped}. The word is worth being careful with here:
+ * `skipped` is now a formal field meaning *a fault*, and a decline is the opposite.
+ * @public
+ */
+export type VectorRebuildErrorMode = 'skip' | 'fail';
+
+/**
+ * A record a rebuild could not index — because the embed failed or because the
+ * subsequent add did — retained so a partial rebuild reports what it lost rather
+ * than merely how much it kept.
+ * @public
+ */
+export interface ISkippedVectorRecord {
+  /** The scope-qualified address of the record that could not be indexed. */
+  readonly target: IEdgeTarget;
+  /** The failure message, from either the embed or the subsequent add. */
+  readonly error: string;
+}
+
+/**
+ * What a rebuild actually did — the structural answer to "is this index complete?".
+ *
+ * @remarks
+ * A bare count cannot distinguish the three ways a record can be absent from the
+ * index, and that distinction is the entire point: **`declined` was intentional,
+ * `skipped` was a fault, and neither is the same as "never attempted"**. A caller
+ * deriving coverage from a count alone cannot tell an embedder outage from a
+ * deliberate policy, which is precisely the confusion this type exists to end.
+ * @public
+ */
+export interface IVectorRebuildReport {
+  /** Records embedded and added to the index. */
+  readonly indexed: number;
+  /** Records the embedder deliberately declined (resolved `undefined`). */
+  readonly declined: number;
+  /**
+   * Records whose embedding or add FAILED and were skipped. Non-empty only under
+   * {@link VectorRebuildErrorMode | `onRecordError: 'skip'`} — under `'fail'` the
+   * first failure aborts the rebuild and no report is returned at all.
+   */
+  readonly skipped: ReadonlyArray<ISkippedVectorRecord>;
+}
+
+/**
+ * Options for a vector-index rebuild.
+ * @public
+ */
+export interface IVectorRebuildOptions {
+  /**
+   * How to treat a record the rebuild cannot index — an embed failure OR an add
+   * failure. Defaults to `'fail'` — the historical behavior, unchanged for every
+   * existing caller.
+   */
+  readonly onRecordError?: VectorRebuildErrorMode;
+}
+
+/**
  * Embeds a complete record into a vector for the store's embed-on-write hook.
  * Async and `Result`-returning, since a real embedder does a network call (cloud
  * provider) or in-process model inference. The consumer wires this — the core
  * package never calls an embedding provider directly, staying embedder-agnostic.
+ *
+ * @remarks
+ * Resolving to `undefined` means **"intentionally not embedded"** — a deliberate
+ * decline, not an error. The record is stored without an embedding reference, no
+ * failure is reported, and **the decline itself logs nothing**. This is distinct
+ * from a `Failure`, which means the embedder *tried and could not*.
+ *
+ * "Logs nothing" is a statement about the decline, not a promise of silence: a
+ * decline on a record that was already embedded also prunes the vector that
+ * reference named, and if that prune fails it is a genuine fault and warns like
+ * any other. What a decline never does is warn merely for having happened.
+ *
+ * The distinction is load-bearing wherever the two are treated differently. On the
+ * rebuild path a declined record is **excluded** from the index and counted on
+ * {@link IVectorRebuildReport.declined}; a failed one is a genuine error and, under
+ * `onRecordError: 'skip'`, is reported on {@link IVectorRebuildReport.skipped}. Collapsing "I chose not to" into `fail` would
+ * make a deliberate policy indistinguishable from an embedder outage in the logs,
+ * and would put a routine decision on whatever error path the caller has wired.
+ *
+ * The embedder receives the whole record, so the usual reason to decline is the
+ * record's `kind` — a control or bookkeeping row that no query should ever return.
+ *
  * @public
  */
-export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array>>;
+export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array | undefined>>;
 
 /**
  * The fragment-granular sibling of {@link MemoryEmbedder}: chunks a record's body

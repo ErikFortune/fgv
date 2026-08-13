@@ -120,6 +120,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore>;
     dedupScopeFor(kind: Kind): DedupScope;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+    embedsKind(kind: Kind): boolean;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
@@ -256,6 +257,7 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
     readonly defaultCodec?: IIdentityCodec;
     readonly embed?: MemoryEmbedder;
+    readonly embedKinds?: ReadonlySet<Kind>;
     readonly fragmentEmbedder?: FragmentEmbedder;
     readonly fragmentIndex?: IFragmentVectorIndex;
     readonly index?: IMemoryIndex;
@@ -426,6 +428,7 @@ export interface IMemoryIngestOrchestratorCreateParams {
 
 // @public
 export interface IMemoryObservationQuery {
+    readonly embed?: MemoryEmbedOutcome;
     readonly kind?: Kind;
     readonly limit?: number;
     readonly outcome?: MemoryObservationOutcome;
@@ -438,6 +441,7 @@ export interface IMemoryObservationQuery {
 
 // @public
 export interface IMemoryObservationRecord {
+    readonly embed?: MemoryEmbedOutcome;
     readonly error?: string;
     readonly id?: MemoryId;
     readonly kind?: Kind;
@@ -508,6 +512,7 @@ export interface IMemoryStore {
     asRecordSource(): IMemoryRecordSource;
     dedupScopeFor(kind: Kind): DedupScope;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+    embedsKind(kind: Kind): boolean;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
@@ -556,7 +561,7 @@ export class InMemoryCosineIndex implements IVectorIndex {
     add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
     static create(): Result<InMemoryCosineIndex>;
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
-    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder): Promise<Result<number>>;
+    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<Result<IVectorRebuildReport>>;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
     get size(): number;
 }
@@ -625,6 +630,12 @@ export interface ISkippedRecord {
 }
 
 // @public
+export interface ISkippedVectorRecord {
+    readonly error: string;
+    readonly target: IEdgeTarget;
+}
+
+// @public
 export function isTemporalIdentityCodec(codec: IIdentityCodec): codec is ITemporalIdentityCodec;
 
 // @public
@@ -658,7 +669,9 @@ export interface ITemporalVersionAddress {
 export interface IVectorIndex {
     add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<Result<IVectorRebuildReport>>;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
+    readonly size: number;
 }
 
 // @public
@@ -667,6 +680,18 @@ export interface IVectorQueryHit {
     readonly locator?: IFragmentLocator;
     readonly score: number;
     readonly target: IEdgeTarget;
+}
+
+// @public
+export interface IVectorRebuildOptions {
+    readonly onRecordError?: VectorRebuildErrorMode;
+}
+
+// @public
+export interface IVectorRebuildReport {
+    readonly declined: number;
+    readonly indexed: number;
+    readonly skipped: ReadonlyArray<ISkippedVectorRecord>;
 }
 
 // @public
@@ -740,7 +765,10 @@ export class MemoryCapCullPolicy implements IWritePolicy {
 export type MemoryDetailTier = 'gist' | 'full';
 
 // @public
-export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array>>;
+export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array | undefined>>;
+
+// @public
+export type MemoryEmbedOutcome = 'embedded' | 'declined' | 'excluded' | 'failed';
 
 // @public
 export type MemoryId = Brand<string, 'MemoryId'>;
@@ -934,6 +962,9 @@ export class TemporalVersionedPolicy implements IWritePolicy {
     readonly dedupScope: DedupScope;
     readonly mutableFields: ReadonlyArray<string>;
 }
+
+// @public
+export type VectorRebuildErrorMode = 'skip' | 'fail';
 
 // (No @packageDocumentation comment for this package)
 

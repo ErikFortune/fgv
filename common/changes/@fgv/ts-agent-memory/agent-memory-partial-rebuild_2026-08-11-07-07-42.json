@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "`InMemoryCosineIndex.rebuild` now returns a structural `IVectorRebuildReport` (indexed / declined / skipped) and accepts `onRecordError: 'skip' | 'fail'`, defaulting to `'fail'` so existing behavior is unchanged.",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

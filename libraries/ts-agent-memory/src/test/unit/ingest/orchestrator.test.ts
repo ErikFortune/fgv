@@ -524,6 +524,7 @@ function mockStore(overrides: Partial<IMemoryStore>): IMemoryStore {
     // Mirrors the store's default policy (KnowledgeLwwPolicy → 'content'), so a
     // mock store keeps the pre-accessor layer-1 behavior unless a test overrides it.
     dedupScopeFor: overrides.dedupScopeFor ?? ((): DedupScope => 'content'),
+    embedsKind: () => true,
     asRecordSource:
       overrides.asRecordSource ??
       ((): IMemoryRecordSource => ({
@@ -544,6 +545,29 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
       vectorIndex,
       embed,
       entityResolver: resolver(() => succeed({ verdict: 'new' })),
+      extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
+    });
+    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
+      expect(r.records[0].disposition).toBe('written');
+      expect(r.records[0].resolution.verdict).toBe('new');
+    });
+  });
+
+  test('a declined candidate is written as new without consulting the resolver', async () => {
+    // An embedder that declines this kind has no vector to search with, so layer-2
+    // similarity dedup cannot run. That is the same position as "found nothing
+    // similar" — `'new'` — and must NOT be an error: declining to embed a kind
+    // must not make that kind un-ingestable.
+    const vectorIndex = InMemoryCosineIndex.create().orThrow();
+    const store = buildStore({ vectorIndex, embed });
+    await putNote(store, 'doc-a', 'apple pie');
+    const declining: MemoryEmbedder = (record) =>
+      record.body === 'apple tart' ? Promise.resolve(succeed(undefined)) : embed(record);
+    const orch = buildOrchestrator({
+      store,
+      vectorIndex,
+      embed: declining,
+      entityResolver: resolver(() => fail('resolver must not be called for a declined candidate')),
       extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
@@ -674,6 +698,9 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
     const ghostIndex: IVectorIndex = {
       add: (t) => Promise.resolve(succeed(t.id as string)),
       remove: (t) => Promise.resolve(succeed(t)),
+      size: 0,
+      rebuild: () => Promise.resolve(succeed({ indexed: 0, declined: 0, skipped: [] })),
+
       query: (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> =>
         Promise.resolve(succeed([{ target: kt('ghost'), score: 0.99 }]))
     };
@@ -705,6 +732,9 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
     const failingIndex: IVectorIndex = {
       add: (t) => Promise.resolve(succeed(t.id as string)),
       remove: (t) => Promise.resolve(succeed(t)),
+      size: 0,
+      rebuild: () => Promise.resolve(succeed({ indexed: 0, declined: 0, skipped: [] })),
+
       query: (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> => Promise.resolve(fail('query kaput'))
     };
     const orch = buildOrchestrator({

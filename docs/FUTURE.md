@@ -786,3 +786,219 @@ format-visible fields exist before that persistence format freezes; D3 parked; D
 that path is in the consumer repo); grounding in this repo at
 `libraries/ts-extras/src/packlets/crypto-utils/keystore/model.ts`; format-superset precedent =
 the `keystore-v2` optional `escrowedPrivateKeyJwk` escrow field.
+
+---
+
+## R4 — stop emitting `dist` JS for packages nothing routes at it
+
+`@fgv/heft-dual-rig` emits an `esnext` build into `dist` for all 21 of its packages. Exactly
+**four** point at that emit (`ts-utils`, `ts-bcp47`, `ts-random`, `ts-utils-jest`, via
+`import`/`module`). The other 17 build, package, and publish a full parallel ESM tree that no
+`exports` key, no `module` field, and no consumer path resolves to.
+
+**This became more attractive, not less, after `esm-emit-impl`.** That stream tried to claim the
+unreferenced emit's value via R3 and found the emit cannot be pointed at by webpack at all until it
+carries explicit specifiers (Option B). So the 17 are not "nearly useful" — they are unusable as
+shipped, and stay that way until a much larger change lands.
+
+The clean lever is per-package rather than a rig flag: move a package to
+`@rushstack/heft-node-rig` (already used by the CLIs) so it stops emitting `dist` JS at all. Note
+`dist` itself must survive — API Extractor's `.d.ts` rollup lands there too; only the JS emit
+within it is unreferenced.
+
+**Two are measured not worth routing even after Option B**: `ts-json` (0.92–0.95×) and
+`ts-web-extras` (0.96–1.01×) bundle *larger* as ESM than the CJS build bundlers get today, so they
+will not be claimed by a future R3 pass and are the strongest R4 candidates.
+
+**Why deferred**: the design that produced it called this "low value, near-zero risk, and entirely
+optional", and explicitly preferred recording it here over blocking R2/R3 on it. The waste is build
+time and tarball size, not correctness.
+
+**Dependencies**: none, but it interacts with `module`. Four packages carry a `module` field
+pointing at `dist/index.js`. **`module` must be removed in the same commit that stops emitting what
+it points at**, or it becomes a dangling pointer that pre-`exports` bundlers (webpack 4, old
+rollup) will follow into nothing.
+
+**Reference**: `.claude/project/esm-emit-design.md` R4 and OQ-2/OQ-3;
+`.ai/tasks/active/esm-emit-impl/result.md` for the per-package routing decisions and the
+measurements behind the `ts-json` / `ts-web-extras` calls.
+
+---
+
+## Tarball gate — verify each packed entry *loads*, not merely that it is present
+
+**Status:** deferred follow-up from the `publish-tarball-gate` stream. Existence shipped; loading
+did not.
+
+`common/scripts/verify-tarball-exports.mjs` asserts that every path a manifest names — every
+`exports` condition, every subpath, plus `main` / `types` / `module` / `browser` — is present in the
+file list npm would pack. The consumer's ask was two-part: that each path "exists in the tarball
+**and loads** under its declared condition". Only the first half shipped.
+
+**Why the first half was enough to ship on its own.** It catches all three defects that motivated
+the gate, including the one no other check could see (5.1.0-27 packing no build output at all), and
+it costs ~1.5 s across 25 packages — cheap enough to run per-PR *and* at publish time. The second
+half needs `npm pack` (or an equivalent tar write), extraction to a temp root, an install of each
+package's dependencies so its imports resolve, and then an import per condition. That is a
+different order of cost and a different failure surface, and pairing it with a same-PR existence
+check would have delayed the half that closes the known instances.
+
+**What the missing half would add.** Existence proves a path is *in* the tarball; it does not prove
+the extracted file evaluates. `verify-esm-entrypoints.mjs` covers loadability for the one condition
+Node resolves, **against the working tree** — so the residual uncovered case is narrow but real: an
+artifact that packs, and that loads from the tree, but would fail to load from an extracted tarball
+because something it reaches at runtime was *not* packed. A relative `require` of a JSON data file
+excluded by `.npmignore` is the concrete shape.
+
+**Prerequisite before this is worth building:** the findings filed by that stream should be resolved
+first. Several packages currently pack their full `src/` tree and Rush internals; an extract-and-load
+check over tarballs that large pays for the noise before it pays for the signal.
+
+**Reference:** `.ai/tasks/active/publish-tarball-gate/result.md` (OQ-3), and the script header's
+"WHAT THIS GATE DOES NOT TELL YOU".
+
+## Gate `exports`-condition **reachability**, not just existence
+
+All three packaging gates (`verify-esm-entrypoints`, `verify-bundler-resolution`,
+`verify-tarball-exports`) ask the same question of an `exports` map: *does each named file exist?*
+None asks the prior question: *can any resolver actually select this condition?*
+
+**21 of 25 published packages currently fail that second question.** They declare `types` after
+`default`, and `default` matches unconditionally, so the `types` entry — which names the curated
+API-Extractor rollup in `dist/` — is dead in every consumer under every resolution mode. Consumers
+get `lib/index.d.ts` (the raw per-file emit) instead, via TypeScript's fallback to the `.d.ts` beside
+the resolved `.js`. `@fgv/ts-bcp47` shows the correct shape: per-branch `types`, first in each
+condition block.
+
+**The obvious fix is a trap, but the real one is still manifest-only.** There is exactly **one**
+API-Extractor rollup per package and it describes the **Node** entry, so hoisting a single `types`
+key above the branches would hand browser consumers the Node surface — advertising members like
+`convertJsonFileSync` that the browser build does not have. But the browser branch **needs no `types`
+key at all**: it already resolves `lib/index.browser.d.ts` by adjacency to the `.js` it selects, which
+is correct (verified). So `types` goes first **inside the `node` block only**, and no browser rollup
+has to exist.
+
+Two parts, and **the second is the one worth doing first**:
+
+1. **`exports`**: `types` first within the `node` block, across 21 packages. Manifest-only — no build
+   change, nothing unsized.
+2. **Gate**: assert *reachability* — walk each `exports` object in key order and fail when a condition
+   sits behind one that matches unconditionally. Independent of 1, cheap, and the check none of the
+   three existing gates makes.
+
+**What it costs consumers today**: less than the heading suggests. node10 consumers — the
+overwhelming majority, and this repo itself — never read `exports`; they resolve the top-level
+`"types": "dist/<pkg>.d.ts"` and get the rollup, unaffected. Exports-aware consumers resolve the
+per-file `lib/**/*.d.ts` tree instead: same symbols, uncurated rather than the curated rollup, still
+type-checks. So this is a contract-vs-delivery defect and a **gate blind spot**, not a live breakage.
+
+**Why deferred**: nothing is broken today, and the `module-resolution-upgrade` brief scoped `exports`
+blocks as findings rather than edits. **Not** because it is large — an earlier draft said part 1 was
+"a build change of unknown size", which was retracted when the browser-rollup requirement turned out
+not to exist. Both parts are small and fully sized.
+
+**Why it still matters**: it is the same *shape* as the `@fgv/ts-web-extras-webauthn` defect — a
+condition no resolver can reach — and that shape is exactly what our existence-only gates are blind
+to. `@fgv/ts-bcp47` is closest to correct (per-branch `types`, first in each block) but points all
+three branches at the same Node rollup.
+
+**Dependencies**: none. Independent of the `module`/emit decision below.
+
+**Reference**: `module-resolution-upgrade` stream, 2026-08-10 — surfaced while diagnosing why a
+`bundler`-mode sweep resolved every dual-entry package to its browser build. Finding at
+`.ai/tasks/active/module-resolution-upgrade/findings/inbox/2026-08-10-twenty-one-packages-declare-an-unreachable-types-condition.md`.
+
+## Type-check the three webpack apps
+
+`apps/sudoku`, `tools/ts-res-browser`, and `tools/ts-res-ui-playground` compile via `babel-loader`,
+which strips types without checking them, and their `build` script is bare `webpack --mode
+production` — Heft's TypeScript plugin never runs. **Nothing in `rush build` or `rush test` type-checks
+them.** Running `tsc --noEmit` by hand: `ts-res-browser` 0 errors, `ts-res-ui-playground` **22**,
+`apps/sudoku` **13** — ordinary API drift (`IConfigInitFactory` no longer exported by `@fgv/ts-res`,
+`ViewStateTools.Message` → `IMessage`, `GridTools.GridViewInitParams` → `IGridViewInitParams`),
+unused locals, and two test-only deps missing from `apps/sudoku`.
+
+Add a type-check step (a `tsc --noEmit` pre-step or `fork-ts-checker-webpack-plugin`) **and** fix the
+35 errors in the same change — adding the step first turns `rush build` red.
+
+**Why deferred**: out of scope for the stream that found it, which was reconciling `moduleResolution`
+across these three projects. Note the interaction: that reconciliation is correct and currently buys
+nothing, because whatever these tsconfigs declare, no compiler reads them.
+
+**Dependencies**: none.
+
+**Reference**: `module-resolution-upgrade` stream, 2026-08-10. Finding at
+`.ai/tasks/active/module-resolution-upgrade/findings/inbox/2026-08-10-three-webpack-apps-are-never-type-checked.md`.
+
+## Decide the module emit — the single gate on moving off node10
+
+The repo resolves modules under node10, which is why TypeScript does not read the `exports` map at
+all, which is why a broken condition is invisible to the compiler. Moving off it is **one decision,
+not a ladder**: `moduleResolution` `bundler`, `node16`, and `nodenext` are each illegal with
+`module: commonjs` (TS5095 / TS5110), and every one of the 29 rig-inheriting projects is
+`module: commonjs`. **`node10` is the only legal value there**, so any move changes `module`, and
+changing `module` changes the emit.
+
+That collapses the graded plan in `.claude/project/esm-emit-design.md`'s first amendment: its step 3
+(`bundler` repo-wide) was costed as cheap *because* it left the emit alone, and that is not
+available. Steps 3 and 4 share one prerequisite — the dual-emit question from design § 2 Option D:
+one source tree emitting `commonjs` to `lib` and `esnext` to `dist` is what `node16` is least happy
+with, since it derives module format from `package.json` `type` and file extension rather than an
+emit flag.
+
+**Consumers are not on the ESM path at all** — 25 of 25 packages route `node.import` at the
+CommonJS `lib/`, so both "stop shipping `dist`" and "fix and activate it" are non-breaking for them.
+**Measured, not assumed**: an external `"type": "module"` package installed from real `npm pack`
+tarballs gets 79 named exports via `cjs-module-lexer`, and a TypeScript `node16` consumer
+type-checks, emits and runs clean end-to-end. The only sharp edge is importing a *type* by name from
+JavaScript, which `verbatimModuleSyntax` catches at compile time (`TS1484`). The upside of activating
+ESM is ~5% bundle on `ts-bcp47` (the only package shipping both entries, and a data-heavy low-end
+data point) plus statically-checkable named exports — CJS silently binds `undefined` for a
+mistyped named import where ESM fails the build.
+The ~3,520-specifier change is the price of having a working ESM emit, not of `node16`. Ordering
+trap: adding `dist/package.json` `{"type":"module"}` before fixing specifiers is what would break the
+bundler path that works today, by engaging webpack's `fullySpecified`.
+
+**Do not** substitute a type-check-only `bundler` overlay as a CI gate. It was built and swept: 73
+errors, 70 of them because `bundler` does not set the `node` condition and every dual-entry package
+resolves to its browser build; `customConditions: ["node"]` takes it to 3 but blinds the pass to
+`default` — the webauthn class. Both passes are weaker than the existing scripts.
+
+**Cost, measured by doing it and reverting** (not estimated) — see the
+`cost-of-activating-the-esm-emit-measured-by-doing-it` finding:
+
+| item | size | |
+|---|---|---|
+| specifier rewrite | codemod over **3,697** sites in 1,374 files; **2** needed hands | measured |
+| does it build on today's config? | **yes** — 32 of 35 projects clean, no resolution change needed | measured |
+| the 3 webpack apps | one line of `resolve.extensionAlias` each | measured |
+| **packlet lint conflict** | **1,830 violations** — `@rushstack/eslint-plugin-packlets` compares the entry point by exact path equality, so `../base/index.js` is never the entry point. No rule option. | measured |
+| `dist/package.json` `{"type":"module"}` | per-package build step | small, unwritten |
+| per-branch `types` + a browser `.d.ts` rollup | second API-Extractor pass per dual-entry package | **not sized** |
+
+**The de-risking fact**: extensions build fine under today's `node10`/`commonjs`, so the specifier
+work lands **incrementally, package by package, with no flag day** — it does not require the
+resolution or emit change to go first.
+
+**The blocker is the lint rule, not the specifiers — and the fix is five lines, verified.** The
+same-packlet branch of `PackletAnalyzer` already strips an explicit `index` segment (its comment
+names `"../index.js"` verbatim); the cross-packlet branch twenty lines below compares the path raw.
+Applying the same normalization there took `ts-utils` from 282 warnings to **0**, and a genuine
+bypass (`'../base/result.js'`) is **still flagged** — so it is strictly a relaxation in the correct
+direction. Plan **if and only if this stream is ever commissioned**: patch locally to unblock (five lines, one
+file), upstream the same diff in parallel, drop the patch when it releases. Disabling
+`packlets/mechanics` is now clearly wrong. **Start here, not by flipping `moduleResolution`.**
+
+**Nothing currently decided needs the Rushstack change.** It is a prerequisite of the ESM specifier
+work and of nothing else — not of PR #609, not of the reachability item above, not of the gates. If
+the emit decision lands on "stop shipping `dist`", the Rushstack change is never needed at all.
+
+**Why deferred**: needs the emit answered first, and the reachability item above delivers more
+defect-prevention for far less.
+
+**Dependencies**: design § 2 Option D. The one real defect a move would otherwise have forced fixing
+- `@fgv/ts-utils` importing `jest-snapshot/build`, a subpath that package does not export - was
+fixed in the `module-resolution-upgrade` stream, so it is no longer a prerequisite.
+
+**Reference**: `module-resolution-upgrade` stream, 2026-08-10;
+`.claude/project/esm-emit-design.md` § "Amendment 2 — what the graded steps actually cost, measured".

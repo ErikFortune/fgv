@@ -128,9 +128,73 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟡
+
+**Status:** 🟡 in flight. Triage + the consumer reply are on branch `personaility-asks-2026-08`; each item ships as its **own** PR. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md` (triage, incl. the verification of their claims against our source) and `…-reply-2026-08-11-ask-package.md` (what we committed to).
+
+**Origin.** One consolidated ask package from PersonAIlity, 2026-08-11 — nine open items, none blocking them, every one carrying a workaround they are already running. They explicitly invited "not now" on the whole package. We re-verified every load-bearing mechanic against our own source before acting (both sides shipped a wrong sweep this month); **all their claims held**, down to exact control flow.
+
+**The through-line, adopted as ours.** Four of the nine are one species — **a failure reported as a success**. We already solved it well once on the record path (`onRecordError: 'skip'` + structural `skippedRecords`); items 1, 4 and 5 ask for that same shape in three more places.
+
+**Stream A = ask items 1–4**, one package, cheapest together, in the order **4 → 2 → 1 → 3**:
+
+| item | change | state |
+|---|---|---|
+| **4** | `MemoryEmbedder` may resolve `undefined` to **decline** a record — stored with no `embeddingRef`, no failure, **nothing logged**; skipped (not counted) on rebuild; `'new'` on the ingest path | branch `agent-memory-embedder-decline`; `code-reviewer` **approved**, no P1/P2 |
+| **2** | per-kind embed declaration, default "embed everything" so existing consumers stay byte-identical | queued |
+| **1** | partial-tolerant `rebuild` returning a structural `IVectorRebuildReport` (`indexed`/`declined`/`skipped`), `onRecordError` defaulting to `'fail'` so existing behavior is unchanged | branch `agent-memory-partial-rebuild`; `code-reviewer` approved pending doc fixes, applied. **Rebuild half only** — the coverage accessor moves to item 3, so the `IVectorIndex` contract changes once and `SqliteVecVectorIndex` implements it in lockstep |
+| **3** | promote reconcile/backfill onto `IVectorIndex`, shipping with its `sqlite-vec` implementation | queued |
+
+**Answered without scheduling:** item 5 (strict text read — half already shipped in `-47`; their own note de-prioritised it), 6 (provenance query axis — **intent stated so they can design against it existing**), 7 (index read surface — deferred deliberately, breaking, wants its own design), 8 (prompt-slot writability — taking the one-sentence "advisory" doc remedy), 9 (`ts-res` `addResource` — not taking a round, fold into the next touch).
+
+**Two things we owe them back, tracked here:** our `latest` dist-tag is mis-set on some packages (cosmetic for us, actively misleading for a consumer — part of how `ts-agent-memory-sqlite-vec` was recorded as unavailable while shipping the seam they needed), and the 21-of-25 unreachable `types` condition from the module-resolution stream.
+
+---
+
+
+### `module-resolution-upgrade` 🟢
+
+**Status:** 🟢 implemented — deliverables 1 and 2 landed; **3 is not available and 4 was deliberately not attempted**. Branch `module-resolution-upgrade` from `release` @ `af2178cde` (after #608). Artifacts at `.ai/tasks/active/module-resolution-upgrade/{brief.md, state.md, result.md, findings/inbox/}`; outcomes recorded in `.claude/project/esm-emit-design.md` § "Amendment 2".
+
+**Mission.** The repo resolves modules under **node10 and nobody chose it** — the rig never sets `moduleResolution`, so `module: commonjs` defaults it. Under node10 **TypeScript does not read the `exports` map at all**, which is the structural reason `ts-web-extras-webauthn`'s `default` condition could name a file that never existed for the package's entire life with every build green.
+
+**What shipped.** `moduleResolution: "node10"` is now **stated** in all 31 rig-inheriting projects, and the three freestanding webpack tsconfigs agree on `bundler`, each with the reason recorded. Verified free the way the brief demanded — full `rush rebuild` before and after, hashing every emitted `.js`/`.d.ts`/`.map`/`.json` plus every checked-in `etc/*.api.md`: **8,836 artifacts, zero differences.** No shipped code changed; no change files needed.
+
+**The load-bearing correction — step 3 is not available at the price it was quoted.** `moduleResolution: bundler` **cannot be set on a `module: commonjs` project**, and 29 of those 31 are (the other 2 are the `heft-web-rig` libraries, which declare `module: ES2020`); `node10` is the only legal value there (`bundler` → TS5095, `node16`/`nodenext` → TS5110). The design amendment's probe varied `module` and `moduleResolution` *together* and so never asked whether its `bundler` row was reachable from where the repo sits. **Every path off node10 changes the emit, so steps 3 and 4 share one prerequisite and are one decision, not a cheap rung and an expensive one.**
+
+**OQ-2 answered in the negative, with the substitute ruled out.** A type-check-only `bundler` overlay was built and swept across all 29 projects: **73 errors, of which 70 are one cause** — `bundler` does not set the `node` export condition, so every dual-entry `@fgv` package resolves to its **browser** build and legitimately lacks the Node-only surface. `customConditions: ["node"]` takes it to 3, but only by pinning the resolver to `node` so the pass **never evaluates `default`** — exactly what webauthn got wrong. Neither pass is a gate, and both are weaker than `verify-esm-entrypoints` / `verify-tarball-exports`, which assert every condition at every subpath unconditionally. **Recommendation: do not build it.** **OQ-3** answered too: the per-project shape was **forced, not chosen** — Heft rejects a TS 5.0 `extends` array, and a workspace-symlinked rig's relative paths resolve into the rig's own tree.
+
+**Findings filed (9).** The largest is not from the brief: **21 of 25 published packages declare a `types` condition that can never be selected**, because it sits after `default`, which matches unconditionally — the same *shape* as the webauthn defect. Nothing has broken (TypeScript falls back to the `.d.ts` beside the resolved `.js`), but **our gates check that each named file exists; none checks that it is reachable** — that blind spot, not the ordering itself, is the finding. Note the obvious fix is a trap: there is one API-Extractor rollup per package and it describes the *Node* entry, so hoisting a single `types` key above the branches would hand browser consumers the Node surface. The correct shape needs a browser rollup the build does not yet emit. Also: `@fgv/ts-utils` imported `jest-snapshot/build`, a subpath that package does not export (confirmed `ERR_PACKAGE_PATH_NOT_EXPORTED` at runtime; latent only because the import is type-only and erased) — the sweep's one real defect, **fixed here** by importing `Context` from the package root as `@fgv/ts-utils-jest` already does. And: the three webpack apps compile via `babel-loader` and are **never type-checked**; `ts-res-ui-playground` has 22 pre-existing errors and `apps/sudoku` 13.
+
+**Reframing the emit decision.** Asked what changing the emit would cost consumers, and the answer is *nothing, because none of them are on it*: **25 of 25 packages route `node.import` at `./lib/index.js`, the CommonJS build**, and `main` is `lib/index.js` everywhere. The ESM tree in `dist/` is built and packed and reached by one browser branch (`@fgv/ts-bcp47`). So the choice is stop shipping `dist`, or fix and activate it — and the ~3,520-specifier change usually costed as "the price of `node16`" is really **the price of having a working ESM emit at all**, which we currently pay for and do not get. Note the ordering trap in option 2: adding `dist/package.json` `{"type":"module"}` *first* is what would break the bundler path that works today, by engaging webpack's `fullySpecified` before the specifiers are fixed.
+
+**Gates untouched and green**, as the brief required — and per OQ-2 this work cannot replace them.
+
+---
+
+### `publish-tarball-gate` 🔵
+
+**Status:** 🟢 implemented — gate built, both neutralizations demonstrated, wired per-PR **and** into all six publish workflows. Branch `claude/publish-tarball-gate-omgb9e`; artifacts at `.ai/tasks/active/publish-tarball-gate/{brief.md, state.md, result.md, findings/inbox/}`.
+**⚠️ Rebase still owed.** #603 and #605 were **still open** when this ran, so the hard dependency the brief states was not met. The branch remains based on `esm-emit-impl` @ `29d07bcba` (which carries #603's content), and **must be rebased onto `release` once both land** — nothing here conflicts with them by construction, but the base is unmerged. See `result.md` § Deviations.
+**Origin:** direct consumer ask from PersonAIlity, 2026-08-09.
+
+**Mission.** Verify that every path named in a published package's `exports` map exists **in the tarball that ships**, not merely in the working tree. Three defects of one class shipped in a single week — `ts-utils`'s unloadable ESM entry, `ts-web-extras-webauthn`'s `default` naming a file that has never existed, and 5.1.0-27 publishing only `src/` with no build output at all. The gate on #603 checks the working tree, which covers the first two and **cannot** cover the third: `lib/` existed locally and never entered the tarball. **This stream builds a detector, not fixes**; anything it flags is a finding.
+
+**What shipped.** `common/scripts/verify-tarball-exports.mjs` + the `rush-pack-check` autoinstaller (`npm-packlist`; shared shrinkwrap untouched). It walks the **whole** `exports` map — every condition, every subpath, plus `main`/`types`/`module`/`browser` — against the packed file list. Superseding the sibling's tree-based existence check was considered and **declined with reasoning**: the two cannot disagree in the dangerous direction, and what remains genuinely the sibling's is loadability, not existence. Cross-referenced in both headers.
+
+**Instrument, measured.** `npm-packlist` costs **5.2 s for all 25 packages**; `npm pack --dry-run --json` costs **7.6–8.2 s per package** (~3.3 min for the repo) — so the brief's ~12.8 s/package held in shape if not in magnitude on this container. Output verified **byte-identical to `npm pack`** on four packages spanning both `.npmignore`/no-`.npmignore` shapes. The cost is in getting `npm-packlist` a tree, not in `npm-packlist`: `Arborist.loadActual()` is 7.7 s/package, so the gate passes a minimal tree node instead and **fails loudly** on `bundleDependencies` rather than under-checking silently.
+
+**OQ-1 (placement) — resolved as both.** Publish-time is the hard gate and is wired into **all six** publish workflows, including the three `-legacy` ones, which are `workflow_dispatch`-triggerable and therefore real bypass paths. Per-PR CI too, because ~5 s is unnoticeable. **OQ-3 (does it *load*?) — existence only**; the loading half is recorded in `docs/FUTURE.md` with its cost and the narrow residual case it would close, and stated plainly in the consumer note since they asked for both.
+
+**Neutralizations — three, all demonstrated.** Reverting the webauthn `default` fix fails the gate (and fires on a condition Node never selects, which a single-condition resolver would miss); a `.npmignore`-excluded build output fails it; and the true 5.1.0-27 shape — build output absent from disk — fails it with the no-build-output diagnosis. Tree restored clean after each.
+
+**Findings filed (2).** 11 packages ship `src/`, compiled tests, and `.rush/` internals — split exactly on presence of `.npmignore`; recommend a `files` allowlist. And: **npm will not prune the directory containing `main`**, so an `.npmignore` `lib/` line is silently inert — reproduced against real `npm pack`, and it corrected the gate's own no-build-output heuristic into a reported count.
+
+---
+
 ### `agent-memory-ingest-dedup-scope` 🟢
 
-**Status:** 🟢 implemented + reviewed — PR [#600](https://github.com/ErikFortune/fgv/pull/600) onto `release`, CI green, mergeable clean; ready to merge. Branch `agent-memory-ingest-dedup-scope` from `release` @ `b392e1534`. All five deliverables landed; suite green at 100% coverage; `code-reviewer` clean, Copilot loop stopped at round 2 on diminishing returns. Ran in parallel with `safer-fetch-s3`; no code overlap, but both edit `.ai/instructions/LIBRARY_CAPABILITIES.md` and this file — **own section only**.
+**Status:** ✅ shipped — PR [#600](https://github.com/ErikFortune/fgv/pull/600) merged to `release` as `02ba90459`. Branch `agent-memory-ingest-dedup-scope` from `release` @ `b392e1534`. All five deliverables landed; suite green at 100% coverage; `code-reviewer` clean, Copilot loop stopped at round 2 on diminishing returns. Ran in parallel with `safer-fetch-s3`; no code overlap, but both edit `.ai/instructions/LIBRARY_CAPABILITIES.md` and this file — **own section only**.
 **Substrate:** `.ai/tasks/completed/2026-08/agent-memory-ingest-dedup-scope/{brief.md, state.md, result.md, findings/inbox/}`
 **Package surface:** `@fgv/ts-agent-memory` (`ingest`, `store/fileTreeMemoryStore.ts` — `IMemoryStore` lives there, not in the `types/memoryStore.ts` the brief named; that file does not exist).
 **Behavior change (OQ-3, intended, unflagged):** ingest layer-1 now honors `dedupScope`, so `'entity'` kinds (`MemoryCapCullPolicy` / `TemporalVersionedPolicy`) stop collapsing distinct entities with identical bodies on the `ingestItem` path. Kinds with no registered policy are unaffected — they resolve through the store's default `KnowledgeLwwPolicy`, which declares `'content'`.
@@ -288,6 +352,26 @@ Design-triage-implement shape is likely; new public API has real consequences.
 ---
 
 ## Completed workstreams
+
+### `esm-emit-impl` ⚠️
+
+**Status:** ⚠️ implemented, and it found that the design's central recommendation does not work — branch `esm-emit-impl`, based on `fix/esm-node-entry-points` @ `cebf10bae` (not on `release` directly). **PR #603 was deliberately not shipped on its own** — this branch contains all of it and supersedes it. **R2 and R3 were implemented, measured, and then reverted: both break the repo's own webpack build.** What ships is R5, two real defect fixes it found, and the evidence. Full monorepo build + test green; both entry-point gates green.
+**Substrate:** `.ai/tasks/active/esm-emit-impl/{brief.md, state.md, result.md, findings/inbox/}`
+**Package surface:** `libraries/ts-bcp47/src` + config, `libraries/ts-web-extras-webauthn/package.json` (`exports` only), `common/scripts`, `common/autoinstallers/rush-bundler-check`, `.github/workflows/ci.yml`.
+
+**The headline.** The `dist` ESM emit contains extensionless directory imports — which is *why* Node could not load it, and is the bug that started all this. The design assumed bundlers were fine with that ("bundlers resolve extensionless directory imports happily") and built R2 and R3 on it. **That is true of esbuild and false of webpack 5**, which applies `fullySpecified` to anything it treats as ESM. Bisected on an otherwise identical tree: `tools/ts-res-ui-playground` goes **0 webpack errors → 6** with R2, and back to **0** when the single generated `dist/package.json` is deleted. R3 fails the same way on whatever it routes.
+
+So **R2 is not the safe, independent one-liner §4 called it** — it converts a harmless Node warning into a hard webpack failure — and **R3 is not gated on a bundler-resolution check, it is gated on Option B** (explicit specifiers, the ~3,520-edit codemod the design deferred for want of a consumer asking). Option B is the precondition for *any* correct consumer of the ESM emit, browser bundlers included; R3's measured win is not available without it. They are one change, not two competing ones — which materially changes Option B's cost/benefit as the design weighed it.
+
+**What ships.** The R5 gate (`verify-bundler-resolution.mjs`) + CI wiring, which actually bundles every published package's browser entry with node builtins unpolyfilled; **two real shipped defects it found** — `ts-bcp47`'s browser entry pulled `fs`/`path` into a browser graph (fixed), and `ts-web-extras-webauthn`'s non-Node condition pointed at a file that is never built, so no bundler/Deno/edge consumer could resolve the package at all (fixed, `exports`-only); the §5.1 `BUNDLER_ONLY` reason amendment; **6 packages declared node-only** on the record rather than skipped silently. Gate green at 19 checked / 6 declared / 0 failed.
+
+**Measurements kept for the follow-up**, taken before the revert: `ts-app-shell` **7.26×**, `ts-json-base` **3.19×** (corroborating the design's independent 3.48×), `ts-extras` 1.62×, `ts-res` 1.30× — but `ts-json` **0.95×** and `ts-web-extras` **1.01×**, i.e. *larger* as ESM. §7 flagged "the wins generalize" as inferred; the inference was wrong in both directions. A clean bundler probe is a precondition for routing, not a reason to route.
+
+**The gate now encodes what was learned:** `--probe-esm` marks a package **BLOCKED** when esbuild bundles it but its emitted specifiers are not fully specified, so the next attempt fails fast with the reason instead of rediscovering it by breaking a build. Current verdict: **10 dual-rig packages BLOCKED, 4 clean.**
+
+**Open for the orchestrator.** **Option B should be commissioned as its own stream, scoped as the enabler for R2+R3 rather than as native-ESM support** — that is the recommendation this stream ends on. **OQ-3** — #603 contains nothing this branch does not; recommend closing it. The 6 node-only declarations are **inferred, not owner-confirmed**, which the sibling gate's own comment calls the weaker basis; filed as a finding asking for a yes/no per package.
+
+---
 
 ### `ts-utils-async-detailed-result` ✅
 
