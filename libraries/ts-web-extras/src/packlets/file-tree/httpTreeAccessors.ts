@@ -68,13 +68,26 @@ export interface IHttpTreeParams<TCT extends string = string> extends FileTree.I
  * @remarks
  * Supports the read half of the optional binary capability
  * (`FileTree.IBinaryFileTreeAccessors`) — narrow with
- * `FileTree.isBinaryAccessors` and call `getFileBytes()` to
- * read a file's bytes without going through a lenient UTF-8 decode.
+ * `FileTree.isBinaryAccessors` and call `getFileBytes()`.
  *
- * Byte *writes* are deliberately not supported: the REST transport carries file
- * contents as JSON strings, so bytes that are not valid UTF-8 could not survive a
- * `syncToDisk()` round-trip. A binary transport would be a wire-format change, not a
- * local one.
+ * **`getFileBytes()` on this adapter is NOT byte-faithful, and must not be used to
+ * detect invalid UTF-8.** The REST transport carries file contents as JSON
+ * strings, so `JSON.parse` has already decoded them **leniently** — substituting
+ * U+FFFD for every invalid sequence — before this class ever sees them. The
+ * inherited `getFileBytes()` then *re-encodes* that string, so what you get back
+ * is well-formed UTF-8 whose corruption is already baked in and no longer
+ * detectable. A `TextDecoder('utf-8', { fatal: true })` over those bytes will
+ * succeed, having nothing left to check. Use it to move text around, not to
+ * assert anything about the bytes on the server.
+ *
+ * (An earlier version of this doc said `getFileBytes()` reads bytes "without going
+ * through a lenient UTF-8 decode". That is true of the byte-seeded stores this
+ * class inherits from and false here, where the decode happens upstream in the
+ * transport.)
+ *
+ * Byte *writes* are deliberately not supported, for the same underlying reason:
+ * bytes that are not valid UTF-8 could not survive a `syncToDisk()` round-trip. A
+ * binary transport would be a wire-format change, not a local one.
  * @public
  */
 export class HttpTreeAccessors<TCT extends string = string>

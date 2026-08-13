@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Correct the HttpTreeAccessors docstring, which claimed getFileBytes() read a file's bytes without going through a lenient UTF-8 decode. Over that transport the bytes are a UTF-8 encode of an already-decoded JSON string field. Documentation only.",
+      "type": "none",
+      "packageName": "@fgv/ts-web-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras"
+}
