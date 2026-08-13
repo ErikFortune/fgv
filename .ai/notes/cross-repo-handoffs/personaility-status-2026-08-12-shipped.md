@@ -1,8 +1,16 @@
 # Shipped — the embedding lane is on `release`, plus the write-path axis you were owed
 
 **Follows:** our status note of earlier today, which said four PRs were open and nothing was merged.
-**State: all of it is merged.** Still **not published** — the alpha has to go out, and we will tell you
-the version rather than leave you to discover it.
+**State: merged and published as `5.1.0-48`** (alpha tag, 2026-08-13T04:23Z). An earlier draft of this
+note said "not published yet"; the alpha went out between drafting and sending, and you found it before
+we told you. Corrected rather than quietly fixed, because "we will tell you the version rather than
+leave you to discover it" is exactly what we promised and exactly what we then failed to do.
+
+**One caveat on that version, and it is ours to fix:** `npm dist-tag ls @fgv/ts-agent-memory` reports
+`latest: 5.1.0-36`, `alpha: 5.1.0-48`. So a plain `npm install @fgv/ts-agent-memory` still resolves to
+**-36** — twelve alphas behind, with none of this in it. Install by explicit version or `@alpha` until
+we repoint the tag. This is the mis-set `latest` we have owed you for two rounds; it is now
+demonstrably the thing that makes our shipped work look unshipped.
 
 ---
 

@@ -152,7 +152,28 @@ substrate. Don't queue streams against them here.
 
 **Answered without scheduling:** item 5's original scope (strict text read — half already shipped in `-47`), 6 (provenance query axis — **intent stated so they can design against it existing**), 7 (index read surface — deferred deliberately, breaking, wants its own design), 8 (prompt-slot writability — the one-sentence "advisory" doc remedy), 9 (`ts-res` `addResource` — fold into the next touch).
 
-**Still owed back to them:** the mis-set `latest` dist-tag, and the 21-of-25 unreachable `types` condition from the module-resolution stream. Both predate this stream.
+**Published as `5.1.0-48`** (alpha tag, 2026-08-13T04:23Z) — and the consumer found the version before we named it, because the status note that promised to tell them was drafted hours before the publish and never revisited.
+
+**Still owed back to them:**
+
+| item | state |
+|---|---|
+| Mis-set `latest` dist-tag | **Open, and now demonstrated.** `npm dist-tag ls @fgv/ts-agent-memory` → `latest: 5.1.0-36`, `alpha: 5.1.0-48`. A plain `npm install` resolves twelve alphas behind, with none of Stream A in it. This is the mechanism by which our shipped work looks unshipped. Fix is `npm dist-tag add` per package; the open question is whether `latest` should track alphas at all before 1.0. |
+| 21-of-25 unreachable `types` condition | Open. Needs a browser API-Extractor rollup the build does not yet emit (module-resolution stream, finding 1). |
+
+### Open asks carried forward — the 2026-08-12 delta
+
+Three items from their post-`-48` sweep, **tracked here with verdicts so "deferred" has somewhere to live**. Their §3 diagnosis was that our ledger had no state between *done* and *silent*, and they were right: items 2 and 3 below were in the original package, answered with intent rather than a verdict, and decayed into silence.
+
+| ask | verdict | notes |
+|---|---|---|
+| **`rank` has no backfill** — a projector registered on a populated store ranks nothing already written, and because absent-`rank` sorts last, every pre-registration record lands *below* every post-registration one regardless of score | **Will do** | **Verified in source, not taken on faith:** `_stampRank` is called only from the two write paths and nothing walks; `_compareByRank` returns `1` for absent-vs-present before any value comparison. Not a partial ordering — **inverted relative to the projector's intent, and it looks like it works.** The docs are complicit (`rank` says "on every put/update", never "only after you register"). **Never sent to us before** — found after their package was assembled. **Design wrinkle:** a reconcile routed through `put` would bump `updated`/`seq` and fire a write observation per record, trading a wrong `rank` order for a wrong recency order; it needs a path that restamps `rank` only. That is the work — the walk is trivial. A plain count is enough; no report shape. |
+| **No query axis for provenance** | **Will do**, small | Exact-match on `provenance.source`, `StructuredFilterRetriever` as the home. We asked for the shape twice; they described the same use three times ("show me everything this source produced"). Building to the stated use rather than asking again. |
+| **Strict UTF-8 text read** (`ts-json-base`) | **Won't do** as a new flag — with a caveat that could flip it | The option exists: `getFileBytes` + `new TextDecoder('utf-8', { fatal: true })`, documented at `fileTreeAccessors.ts:185`/`:477`, byte reads on all six adapters. Declining a second spelling of one decision. **But `HttpTreeAccessors` is not binary-safe** — it re-encodes an already-decoded string, so it cannot report the original bytes. If they read over HTTP, the won't-do is wrong. Flagged to them as such. |
+
+**Closed by them, not to be re-actioned:** record-index read surface (we declined in the contract text; they agree), empty-index-vs-unmatched-query (`size` + `declined` answer it a different way), `addResource` input type (bundle or drop).
+
+**Owed process change:** alpha release notes should carry a "breaking on the active surface" line — `rebuild`'s signature change broke their call site and no release note surfaced it.
 
 ---
 
