@@ -158,8 +158,28 @@ substrate. Don't queue streams against them here.
 
 | item | state |
 |---|---|
-| An **alpha is sitting on the `latest` tag** for two packages | **Open, and narrower than we had been describing it.** The established packages are correct — `ts-utils` / `ts-extras` / `ts-json-base` are all `latest: 5.0.2` (a real release), `alpha: 5.1.0-48`. But `ts-agent-memory` (`latest: 5.1.0-36`) and `ts-agent-memory-sqlite-vec` (`latest: 5.1.0-42`) have never had a stable release, and an accidental publish left an **alpha** on their `latest` tag. **The harm is misrepresentation, not staleness:** pre-1.0 consumers track `@alpha` and were never going to install from `latest`, so this did not hide Stream A from anyone — but anyone who does install from `latest` gets a months-old alpha *presented as a stable release*. **Correct the earlier framing:** we had recorded this as "the mechanism by which our shipped work looks unshipped" and told the consumer a tag fix would help them. Both overstated it. Fix: decide what `latest` should mean on a pre-1.0 package (unset, or a deliberate release), and stop accidental publishes moving it. |
+| An **alpha is sitting on the `latest` tag** for two packages | **Open, and narrower than we had been describing it.** The established packages are correct — `ts-utils` / `ts-extras` / `ts-json-base` are all `latest: 5.0.2` (a real release), `alpha: 5.1.0-48`. But `ts-agent-memory` (`latest: 5.1.0-36`) and `ts-agent-memory-sqlite-vec` (`latest: 5.1.0-42`) have never had a stable release, and an accidental publish left an **alpha** on their `latest` tag. **The harm is misrepresentation, not staleness:** pre-1.0 consumers track `@alpha` and were never going to install from `latest`, so this did not hide Stream A from anyone — but anyone who does install from `latest` gets a months-old alpha *presented as a stable release*. **Correct the earlier framing:** we had recorded this as "the mechanism by which our shipped work looks unshipped" and told the consumer a tag fix would help them. Both overstated it. Fix: leave `latest` unset on a pre-1.0 co-developed package until there is a deliberate release, and stop accidental publishes moving it. |
 | 21-of-25 unreachable `types` condition | Open. Needs a browser API-Extractor rollup the build does not yet emit (module-resolution stream, finding 1). |
+
+### Why these packages stay in alpha — the co-development posture
+
+`ts-agent-memory`, `ts-agent-memory-sqlite-vec` and the surfaces around them are **co-developed with
+consumers**, currently PersonAIlity (active) and chocolate-lab (dormant). Staying on the alpha channel
+is **deliberate**, not a backlog item: it is what lets us take the breaking changes we keep discovering
+*while* the consumer adopts brand-new code, without a compatibility tax on work whose shape is still
+being learned. `rebuild`'s signature change breaking their one call site is the system working, not
+failing.
+
+Two things follow, and both have already been got wrong once:
+
+- **The alpha tag is the product channel for these consumers.** Do not describe `@alpha` to them as a
+  workaround, and do not offer a `latest` fix as though it would change what they install. Both were
+  said in a draft of the 2026-08-13 note and corrected before sending.
+- **`latest` on a package that has never had a stable release should be unset**, not pointed
+  somewhere. There is no "current stable" to name, and naming an alpha misrepresents it as one.
+
+The corollary for reviewers: on these packages, "this is breaking" is not an objection by itself. The
+objection is "this is breaking *and* the new shape isn't better", or "this breaks silently".
 
 ### Open asks carried forward — the 2026-08-12 delta
 
