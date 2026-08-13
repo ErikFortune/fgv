@@ -28,7 +28,12 @@ import {
   selectCurrentVersion,
   selectVersionAsOf
 } from '../types';
-import { IBodyConverterRegistry as IRegistry, parseMemoryFile, serializeMemoryFile } from '../converters';
+import {
+  IBodyConverterRegistry as IRegistry,
+  parseMemoryFile,
+  serializeMemoryFile,
+  splitFrontmatter
+} from '../converters';
 import { VectorMaintenance } from './vectorMaintenance';
 import { IIndexedMemoryRecord, IMemoryIndex, MemoryIndex } from '../index';
 import {
@@ -212,6 +217,37 @@ export interface IMemoryStore {
    * existing record unchanged on a dedup no-op.
    */
   put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
+
+  /**
+   * Re-apply the kind's {@link RankProjector} to every record of `kind` already
+   * in the store, restamping {@link IMemoryEnvelope.rank}. Returns the number of
+   * records whose `rank` actually changed.
+   *
+   * @remarks
+   * **This exists because `rank` is otherwise new-store-only, and fails in a way
+   * that looks like it works.** The projector runs on the write path only, so
+   * registering one against a populated store ranks nothing already written —
+   * and because an absent `rank` sorts *last*, every pre-registration record
+   * lands below every post-registration one no matter what the projector would
+   * have scored it. The ordering is not merely partial; it is **inverted with
+   * respect to the projector's own intent**, with no failure anywhere to say so.
+   *
+   * Deliberately **does not** touch `created` / `updated` / `seq`, and fires no
+   * `'write'` observation. Routing a reconcile through {@link IMemoryStore.put}
+   * would bump transaction time on every record — trading a wrong `rank` order
+   * for a wrong recency order, and flooding any wired observer with writes that
+   * are not writes. The body is re-serialized verbatim from the file's own
+   * bytes; only the envelope's `rank` moves.
+   *
+   * Fails loudly if `kind` has no registered projector: asking to reconcile a
+   * kind you never configured is a caller error, not a no-op.
+   *
+   * **Not atomic, and safe for it.** A failure part-way leaves earlier records
+   * restamped. That is benign because restamping is idempotent — re-running
+   * converges — which is also why no report shape is offered here. A count is
+   * enough.
+   */
+  reconcileRank(kind: Kind): Promise<Result<number>>;
 
   /**
    * Delete a record by `(kind, entityId)`. Non-temporal kinds physically delete
@@ -738,6 +774,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
       }
     }
     return result;
+  }
+
+  /** {@inheritDoc IMemoryStore.reconcileRank} */
+  public async reconcileRank(kind: Kind): Promise<Result<number>> {
+    return this._enqueue(() => this._reconcileRankLocked(kind));
   }
 
   /** {@inheritDoc IMemoryStore.put} */
@@ -1543,6 +1584,88 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   private _contentHash(kind: Kind, body: string, links: IMemoryEnvelope['links']): Result<string> {
     return this._hasher.computeHash({ kind, body, links });
+  }
+
+  /**
+   * The locked body of {@link FileTreeMemoryStore.reconcileRank}.
+   *
+   * @remarks
+   * Re-reads each record's file rather than trusting the in-memory index, for
+   * two reasons: the index holds converted bodies on some paths and raw ones on
+   * others, and re-serializing a *converted* body could change the bytes on disk
+   * — a reconcile of an ordering field has no business rewriting content.
+   * `splitFrontmatter` yields the body verbatim, so only the envelope moves.
+   *
+   * The projector is fed an `IMemoryRecord<string>` carrying that raw body,
+   * which is exactly the shape {@link FileTreeMemoryStore._stampRank} hands it
+   * on the write path — so a projector cannot see one thing on a write and
+   * another on a reconcile. `_stampRank` itself is reused verbatim, which also
+   * inherits its throw semantics (logged at `warn`, `rank` cleared).
+   */
+  private async _reconcileRankLocked(kind: Kind): Promise<Result<number>> {
+    if (!this._rankProjectors.has(kind)) {
+      return fail(`memory reconcileRank '${kind}': no rank projector is registered for this kind`);
+    }
+    const targets: ReadonlyArray<IIndexedMemoryRecord> = this._index
+      .entries()
+      .filter((entry) => entry.record.envelope.kind === kind);
+    let restamped: number = 0;
+    for (const target of targets) {
+      const applied: Result<boolean> = this._restampOne(target.scope, target.record.envelope.id);
+      if (applied.isFailure()) {
+        return fail(`memory reconcileRank '${kind}': ${applied.message}`);
+      }
+      if (applied.value) {
+        restamped++;
+      }
+    }
+    return succeed(restamped);
+  }
+
+  /**
+   * Re-apply the rank projector to one record on disk. Returns whether `rank`
+   * actually changed — an unchanged rank writes nothing, so a reconcile over an
+   * already-consistent store touches no files.
+   */
+  private _restampOne(scope: MemoryScopeKey, id: MemoryId): Result<boolean> {
+    return this._resolveScopeDir(scope).onSuccess((scopeDir) => {
+      /* c8 ignore next 3 - defensive: the scope dir exists for any indexed record */
+      if (scopeDir === undefined) {
+        return fail(`'${id}': scope '${scope}' not found`);
+      }
+      return scopeDir.getChildren().onSuccess((children) => {
+        const targetName: string = `${id}${MEMORY_FILE_EXTENSION}`;
+        const file: FileTree.IFileTreeFileItem | undefined = children.find(
+          (c): c is FileTree.IFileTreeFileItem => c.type === 'file' && c.name === targetName
+        );
+        /* c8 ignore next 3 - defensive: the file exists for any indexed record */
+        if (file === undefined) {
+          return fail(`'${id}': file not found`);
+        }
+        return file.getRawContents().onSuccess((raw) =>
+          // `parseMemoryFile` validates the body through the registered Converter,
+          // so a corrupt record is refused rather than silently rewritten;
+          // `splitFrontmatter` supplies the same body verbatim for the write.
+          parseMemoryFile(raw, this._registry)
+            .withErrorFormat((msg) => `'${id}': ${msg}`)
+            .onSuccess((parsed) =>
+              splitFrontmatter(raw)
+                .withErrorFormat((msg) => `'${id}': ${msg}`)
+                .onSuccess((parts) => {
+                  const before: number | undefined = parsed.envelope.rank;
+                  const stamped: IMemoryRecord<string> = this._stampRank({
+                    envelope: parsed.envelope,
+                    body: parts.body
+                  });
+                  if (stamped.envelope.rank === before) {
+                    return succeed(false);
+                  }
+                  return this._persist(stamped, scope, id).onSuccess(() => succeed(true));
+                })
+            )
+        );
+      });
+    });
   }
 
   /**

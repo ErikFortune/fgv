@@ -17,6 +17,7 @@ import {
   Kind,
   KnowledgeIdentityCodec,
   MemoryIndex,
+  MemoryObservationStore,
   MemoryScopeKey,
   RankProjector,
   RecencyRetriever,
@@ -122,6 +123,17 @@ describe('FileTreeMemoryStore rank axis', () => {
   const knowledgeProjectors: ReadonlyMap<Kind, RankProjector> = new Map<Kind, RankProjector>([
     [knowledgeKind, lengthProjector]
   ]);
+
+  async function indexFromStore(store: FileTreeMemoryStore): Promise<MemoryIndex> {
+    const records = (await store.list()).orThrow();
+    const index = MemoryIndex.create().orThrow();
+    // Scope is not returned by `list`; a per-id synthetic scope keeps the
+    // (scope, id) index keys distinct, which is all ordering needs here.
+    index
+      .rebuild(records.map((record) => ({ scope: record.envelope.id as unknown as MemoryScopeKey, record })))
+      .orThrow();
+    return index;
+  }
 
   describe('put stamps rank (flat / non-versioned path)', () => {
     test('runs the kind projector and stamps the numeric result', async () => {
@@ -309,19 +321,6 @@ describe('FileTreeMemoryStore rank axis', () => {
   });
 
   describe('orderBy: rank retrieval (store-stamped ranks flow end-to-end)', () => {
-    async function indexFromStore(store: FileTreeMemoryStore): Promise<MemoryIndex> {
-      const records = (await store.list()).orThrow();
-      const index = MemoryIndex.create().orThrow();
-      // Scope is not returned by `list`; a per-id synthetic scope keeps the
-      // (scope, id) index keys distinct, which is all ordering needs here.
-      index
-        .rebuild(
-          records.map((record) => ({ scope: record.envelope.id as unknown as MemoryScopeKey, record }))
-        )
-        .orThrow();
-      return index;
-    }
-
     test('orders by store-stamped rank descending, honoring kinds + limit + offset', async () => {
       const store = createStore({ rankProjectors: knowledgeProjectors }).orThrow();
       // ranks: a=1, bbb=3, cc=2 (by body length)
@@ -344,6 +343,182 @@ describe('FileTreeMemoryStore rank axis', () => {
       ).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
         expect(records.map((r) => r.envelope.id)).toEqual(['cc']);
       });
+    });
+  });
+  describe('reconcileRank — the migration path', () => {
+    /**
+     * Seed a store with no projector wired, then reopen the SAME root with one.
+     * This is the exact situation the consumer described: records already exist
+     * and the projector has never run against them.
+     */
+    async function populatedThenProjectored(): Promise<{
+      root: FileTree.IMutableFileTreeDirectoryItem;
+      store: FileTreeMemoryStore;
+    }> {
+      const root = mutableRoot();
+      const before = createStore({ root }).orThrow();
+      (await before.put(makeRecord({ id: 'long', body: 'xxxxxxxxxx' }))).orThrow();
+      (await before.put(makeRecord({ id: 'short', body: 'x' }))).orThrow();
+      const store = createStore({ root, rankProjectors: knowledgeProjectors }).orThrow();
+      return { root, store };
+    }
+
+    test('reproduces the inversion, then fixes it', async () => {
+      const { store } = await populatedThenProjectored();
+
+      // A newly-written record IS ranked; the pre-existing ones are not. Absent
+      // sorts last and the unranked pair then falls through to the RECENCY
+      // tiebreak, so the projector's highest-scoring record ('long', scored 10)
+      // lands dead last — below 'new' (3) and below 'short' (1). That is the
+      // consumer's finding, and the tiebreak makes it worse than they described:
+      // the surviving order among unranked records is arbitrary with respect to
+      // rank, so it looks like a working ranking with a plausible tail.
+      (await store.put(makeRecord({ id: 'new', body: 'yyy' }))).orThrow();
+      const before = RecencyRetriever.create(await indexFromStore(store)).orThrow();
+      expect(await before.retrieve({ kinds: [knowledgeKind], orderBy: 'rank' })).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(records.map((r) => r.envelope.id)).toEqual(['new', 'short', 'long']);
+        }
+      );
+
+      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(2);
+
+      const after = RecencyRetriever.create(await indexFromStore(store)).orThrow();
+      expect(await after.retrieve({ kinds: [knowledgeKind], orderBy: 'rank' })).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          // Now ordered by what the projector actually says: 10, 3, 1.
+          expect(records.map((r) => r.envelope.id)).toEqual(['long', 'new', 'short']);
+        }
+      );
+    });
+
+    test('does not disturb transaction time — that is the whole reason it is not a put', async () => {
+      const { store } = await populatedThenProjectored();
+      const readBack = async (id: string): Promise<IMemoryRecord<unknown>> =>
+        (
+          await store.getById('knowledge' as MemoryScopeKey, id as IMemoryRecord<unknown>['envelope']['id'])
+        ).orThrow()!;
+
+      const beforeRec = await readBack('long');
+      clockValue = 99999; // a reconcile that stamped `updated` would pick this up
+      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(2);
+      const afterRec = await readBack('long');
+
+      expect(afterRec.envelope.rank).toBe(10);
+      expect(afterRec.envelope.updated).toBe(beforeRec.envelope.updated);
+      expect(afterRec.envelope.created).toBe(beforeRec.envelope.created);
+      expect(afterRec.envelope.seq).toBe(beforeRec.envelope.seq);
+      expect(afterRec.envelope.contentHash).toBe(beforeRec.envelope.contentHash);
+      // And the body is byte-identical — a rank reconcile must not rewrite content.
+      expect(afterRec.body).toBe('xxxxxxxxxx');
+    });
+
+    test('fires no write observation — a reconcile is not a write', async () => {
+      const root = mutableRoot();
+      const seeded = createStore({ root }).orThrow();
+      (await seeded.put(makeRecord({ id: 'a', body: 'aaaa' }))).orThrow();
+
+      const observations = MemoryObservationStore.create().orThrow();
+      const store = FileTreeMemoryStore.create({
+        root,
+        registry: registry(),
+        codecs,
+        rankProjectors: knowledgeProjectors,
+        observers: [observations],
+        clock
+      }).orThrow();
+
+      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(1);
+      expect(observations.query({})).toHaveLength(0);
+    });
+
+    test('is idempotent — a second run changes nothing and reports 0', async () => {
+      const { store } = await populatedThenProjectored();
+      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(2);
+      // The count is "records whose rank actually changed", so a converged store
+      // reports 0 and writes no files. This is also why a partial failure is safe.
+      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(0);
+    });
+
+    test('fails loudly for a kind with no projector, rather than reporting 0', async () => {
+      const { store } = await populatedThenProjectored();
+      // Reporting "0 reconciled" here would be indistinguishable from "already
+      // consistent" — the exact ambiguity this whole lane exists to remove.
+      expect(await store.reconcileRank(plainKind)).toFailWith(
+        /no rank projector is registered for this kind/i
+      );
+    });
+
+    test('touches only the requested kind', async () => {
+      const root = mutableRoot();
+      const seeded = createStore({ root }).orThrow();
+      (await seeded.put(makeRecord({ id: 'k', body: 'kkkk' }))).orThrow();
+      (await seeded.put(makeRecord({ id: 'p', kind: plainKind, body: 'pppppp' }))).orThrow();
+
+      const store = createStore({
+        root,
+        rankProjectors: new Map<Kind, RankProjector>([
+          [knowledgeKind, lengthProjector],
+          [plainKind, lengthProjector]
+        ])
+      }).orThrow();
+      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(1);
+
+      const plain = (
+        await store.getById('knowledge' as MemoryScopeKey, 'p' as IMemoryRecord<unknown>['envelope']['id'])
+      ).orThrow();
+      expect(plain?.envelope.rank).toBeUndefined();
+    });
+
+    test('fails loudly when a record has become unreadable since the index was built', async () => {
+      // The index is built at open; `_restampOne` re-reads from disk. If the file
+      // changed underneath (external edit, partial write), the reconcile must say
+      // so rather than skip the record and report a count that looks complete.
+      const root = mutableRoot();
+      const seeded = createStore({ root }).orThrow();
+      (await seeded.put(makeRecord({ id: 'a', body: 'aaaa' }))).orThrow();
+      const store = createStore({ root, rankProjectors: knowledgeProjectors }).orThrow();
+
+      const scopeDir = root
+        .getChildren()
+        .orThrow()
+        .find((c) => c.name === 'knowledge');
+      if (scopeDir === undefined || scopeDir.type !== 'directory') {
+        throw new Error('expected a knowledge scope directory');
+      }
+      const file = scopeDir
+        .getChildren()
+        .orThrow()
+        .find((c) => c.name === 'a.md');
+      if (file === undefined || file.type !== 'file' || !FileTree.isMutableFileItem(file)) {
+        throw new Error('expected a mutable a.md');
+      }
+      file.setRawContents('this file no longer has frontmatter').orThrow();
+
+      expect(await store.reconcileRank(knowledgeKind)).toFailWith(
+        /reconcileRank 'knowledge'.*'a'.*frontmatter/i
+      );
+    });
+
+    test('a throwing projector clears rank, matching the write path', async () => {
+      const root = mutableRoot();
+      const seeded = createStore({ root, rankProjectors: knowledgeProjectors }).orThrow();
+      (await seeded.put(makeRecord({ id: 'a', body: 'aaaa' }))).orThrow();
+
+      const logger = new Logging.InMemoryLogger();
+      const store = createStore({
+        root,
+        rankProjectors: new Map<Kind, RankProjector>([[knowledgeKind, throwingProjector]]),
+        logger
+      }).orThrow();
+      // Reused `_stampRank`, so the reconcile inherits the write path's staleness
+      // contract: a throw CLEARS a now-unjustified rank rather than keeping it.
+      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(1);
+      const rec = (
+        await store.getById('knowledge' as MemoryScopeKey, 'a' as IMemoryRecord<unknown>['envelope']['id'])
+      ).orThrow();
+      expect(rec?.envelope.rank).toBeUndefined();
+      expect(logger.logged.some((m) => /rank projector threw/.test(m))).toBe(true);
     });
   });
 });

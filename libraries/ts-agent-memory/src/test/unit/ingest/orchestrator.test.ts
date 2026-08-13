@@ -525,6 +525,7 @@ function mockStore(overrides: Partial<IMemoryStore>): IMemoryStore {
     // mock store keeps the pre-accessor layer-1 behavior unless a test overrides it.
     dedupScopeFor: overrides.dedupScopeFor ?? ((): DedupScope => 'content'),
     embedsKind: () => true,
+    reconcileRank: () => Promise.resolve(succeed(0)),
     asRecordSource:
       overrides.asRecordSource ??
       ((): IMemoryRecordSource => ({
