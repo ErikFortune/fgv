@@ -69,7 +69,6 @@ import {
   resolveEffectiveBaseUrl
 } from './endpoint';
 import { type IAiApiConfig, fetchJson } from './http';
-import {} from './imageOptionsResolver';
 import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolFormats';
 
 // ============================================================================

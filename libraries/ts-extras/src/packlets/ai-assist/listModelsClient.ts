@@ -37,8 +37,6 @@ import {
   type IAiModelInfo,
   type IAiProviderDescriptor
 } from './model';
-import {} from './thinkingOptionsResolver';
-import {} from './chatRequestBuilders';
 import {
   anthropicAuthHeaders,
   bearerAuthHeader,
@@ -47,7 +45,6 @@ import {
 } from './endpoint';
 import { type IAiApiConfig, fetchGetJson, fetchJson } from './http';
 import { DEFAULT_MODEL_CAPABILITY_CONFIG } from './registry';
-import {} from './imageOptionsResolver';
 
 // ---- Proxied list-models response ----
 

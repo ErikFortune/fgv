@@ -40,8 +40,6 @@ import {
   type ModelSpec,
   resolveProviderModel
 } from './model';
-import {} from './thinkingOptionsResolver';
-import {} from './chatRequestBuilders';
 import { bearerAuthHeader, geminiAuthHeader, resolveEffectiveBaseUrl } from './endpoint';
 import { type IAiApiConfig, fetchJson, fetchMultipart } from './http';
 import { resolveImageCapability, supportsImageGeneration } from './registry';
