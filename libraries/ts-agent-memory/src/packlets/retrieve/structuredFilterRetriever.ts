@@ -25,11 +25,19 @@ import {
  * than failing).
  *
  * @remarks
- * `provenanceSource` is applied by the shared pre-filter, so every retriever
- * narrows by it. What this retriever adds is answering a query whose *only* axis
+ * `provenanceSource` is *applied* by the shared pre-filter, so every retriever
+ * narrows by it. What this retriever adds is *answering* a query whose only axis
  * is `provenanceSource` — the "show me everything this source produced" request,
  * which would otherwise fall through the `filter`-absent guard and come back
  * empty.
+ *
+ * Consequently, inside a {@link HybridRetriever} composed with the universal
+ * {@link RecencyRetriever}, a `provenanceSource`-only query is answered by both
+ * children and every matching record scores twice under a score-union merge.
+ * That is the established behavior for a dedicated-axis retriever composed with
+ * the universal one — {@link TagRetriever} double-scores a `tag`-only query the
+ * same way — and is intentional here, not an artifact of grafting a second axis
+ * onto a retriever whose original concern was arbitrary predicates.
  * @public
  */
 export class StructuredFilterRetriever implements IMemoryRetriever {

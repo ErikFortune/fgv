@@ -667,6 +667,29 @@ describe('provenanceSource on the shared pre-filter', () => {
   });
 });
 
+describe('provenanceSource composition', () => {
+  test('a HybridRetriever double-scores a provenanceSource-only query, as it does a tag-only one', async () => {
+    // `StructuredFilterRetriever` now answers a `provenanceSource`-only query, so
+    // composed with the universal `RecencyRetriever` both children return the same
+    // set. That is the established dedicated-axis + universal pattern (identical to
+    // `TagRetriever` + `RecencyRetriever` on a tag-only query), pinned here so the
+    // doubling reads as intentional rather than as an artifact of the new axis.
+    const index = buildIndex([
+      { id: 'a', source: 'bad-run', updated: 10 },
+      { id: 'b', source: 'agent', updated: 20 }
+    ]);
+    const hybrid = HybridRetriever.create(
+      [RecencyRetriever.create(index).orThrow(), StructuredFilterRetriever.create(index).orThrow()],
+      ScoreUnionMergeStrategy.create().orThrow()
+    ).orThrow();
+    expect(await hybrid.retrieve({ provenanceSource: 'bad-run' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(ids(records)).toEqual(['a']);
+      }
+    );
+  });
+});
+
 /** A scripted in-memory vector index returning canned hits. */
 class FakeVectorIndex implements IVectorIndex {
   private readonly _hits: ReadonlyArray<IVectorQueryHit>;
@@ -749,6 +772,32 @@ describe('SemanticRetriever', () => {
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
         // Hit order preserved (b before a), NOT recency order.
         expect(ids(records)).toEqual(['b', 'a']);
+      }
+    );
+  });
+
+  test('applies the provenanceSource pre-filter per hit, after the vector resolve', async () => {
+    // The one path worth pinning by name: this retriever calls
+    // `indexedRecordMatchesQuery` itself, per resolved hit, rather than going
+    // through `selectByQuery` like its siblings. That second call site is where
+    // a new shared axis can silently fail to apply.
+    const index = buildIndex([
+      { id: 'a', source: 'human' },
+      { id: 'b', source: 'agent' }
+    ]);
+    const r = SemanticRetriever.create({
+      index,
+      backend: {
+        vectorIndex: new FakeVectorIndex([
+          { target: et('b'), score: 0.9 },
+          { target: et('a'), score: 0.7 }
+        ]),
+        embedQuery: okEmbed
+      }
+    }).orThrow();
+    expect(await r.retrieve({ semantic: 'q', provenanceSource: 'human' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(ids(records)).toEqual(['a']);
       }
     );
   });

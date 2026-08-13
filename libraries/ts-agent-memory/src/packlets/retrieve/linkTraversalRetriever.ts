@@ -52,7 +52,7 @@ export const LINK_TRAVERSAL_NO_SEED_MESSAGE: string =
  *   is the exact, collision-free cycle key — no structural hashing (e.g.
  *   `Crc32Normalizer`) is needed. A self-loop or any multi-hop cycle terminates
  *   because a revisited node is never re-expanded.
- * - **Post-filter.** The scope / kind / tag / predicate axes of the query are
+ * - **Post-filter.** The scope / kind / tag / provenance-source / predicate axes of the query are
  *   applied to the reached records (the link axes are the traversal itself).
  * @public
  */

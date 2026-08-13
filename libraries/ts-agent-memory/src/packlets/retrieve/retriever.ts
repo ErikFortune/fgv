@@ -111,7 +111,7 @@ export interface IMemoryQuery {
    * empty page, never a throw.
    */
   readonly offset?: number;
-  /** Arbitrary predicate applied after the scope / kind / tag pre-filter. */
+  /** Arbitrary predicate applied after the scope / kind / tag / provenance-source pre-filter. */
   readonly filter?: (record: IMemoryRecord<unknown>) => boolean;
 }
 

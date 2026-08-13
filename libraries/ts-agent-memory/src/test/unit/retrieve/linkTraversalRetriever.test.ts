@@ -32,6 +32,7 @@ interface IEntrySpec {
   readonly seq?: number;
   readonly links?: ReadonlyArray<LinkSpec>;
   readonly rank?: number;
+  readonly source?: string;
 }
 
 /** A scope-qualified traversal seed (defaults to the fixture's default scope). */
@@ -60,7 +61,7 @@ function makeEntry(spec: IEntrySpec): IIndexedMemoryRecord {
         seq: spec.seq ?? 0,
         contentHash: 'h',
         ...(spec.rank !== undefined ? { rank: spec.rank } : {}),
-        provenance: { source: 'agent' }
+        provenance: { source: spec.source ?? 'agent' }
       })
       .orThrow(),
     body: `body-${spec.id}`
@@ -248,6 +249,20 @@ describe('LinkTraversalRetriever', () => {
       const retriever = LinkTraversalRetriever.create(index).orThrow();
       expect(
         await retriever.retrieve({ linkedFrom: seed('a'), kind: 'keep' as unknown as Kind })
+      ).toSucceedAndSatisfy((records) => {
+        expect(ids(records)).toEqual(['b']);
+      });
+    });
+
+    test('applies the provenance-source pre-filter to the reached records', async () => {
+      const index = buildIndex([
+        { id: 'a', links: ['b', 'c'] },
+        { id: 'b', source: 'bad-run' },
+        { id: 'c', source: 'agent' }
+      ]);
+      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      expect(
+        await retriever.retrieve({ linkedFrom: seed('a'), provenanceSource: 'bad-run' })
       ).toSucceedAndSatisfy((records) => {
         expect(ids(records)).toEqual(['b']);
       });

@@ -29,7 +29,7 @@ export const TEMPORAL_CAPABILITIES: IMemoryRetrieverCapabilities = {
 };
 
 /**
- * Group the temporal records surviving a query's scope / kind / tag / predicate
+ * Group the temporal records surviving a query's scope / kind / tag / provenance-source / predicate
  * pre-filter by entity (`kind` + `entityId`). Non-temporal records are excluded —
  * the temporal retrievers operate only over versioned entities. The map values
  * are each entity's versions (unordered).

@@ -18,7 +18,7 @@ import {
 } from './retriever';
 
 /**
- * Returns records matching the query's scope / kind / tag / predicate filters,
+ * Returns records matching the query's scope / kind / tag / provenance-source / predicate filters,
  * ordered most-recently-updated first. The universal v1 retriever — an empty
  * query returns the whole vault in recency order.
  * @public
