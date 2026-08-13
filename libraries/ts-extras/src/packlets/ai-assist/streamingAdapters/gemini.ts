@@ -34,6 +34,7 @@ import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 
 import { buildGeminiContents } from '../chatRequestBuilders';
+import { geminiAuthHeader } from '../endpoint';
 import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toGeminiTools } from '../toolFormats';
@@ -264,7 +265,7 @@ export async function callGeminiStream(
   if (tools && tools.length > 0) {
     body.tools = toGeminiTools(tools);
   }
-  const headers: Record<string, string> = { 'x-goog-api-key': config.apiKey };
+  const headers: Record<string, string> = geminiAuthHeader(config.apiKey);
   /* c8 ignore next 4 - optional logger diagnostic output */
   if (logger) {
     const toolTypes = tools && tools.length > 0 ? tools.map((t) => t.type).join(',') : 'none';

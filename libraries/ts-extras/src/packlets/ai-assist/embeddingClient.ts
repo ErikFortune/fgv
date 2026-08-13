@@ -40,7 +40,7 @@ import {
   type ModelSpec,
   resolveProviderModel
 } from './model';
-import { bearerAuthHeader, resolveEffectiveBaseUrl } from './endpoint';
+import { bearerAuthHeader, geminiAuthHeader, resolveEffectiveBaseUrl } from './endpoint';
 import { resolveEmbeddingCapability, supportsEmbedding } from './registry';
 import { type IAiApiConfig, fetchJson } from './http';
 
@@ -297,7 +297,7 @@ async function callGeminiEmbeddings(
     ...(sendDimensions ? { outputDimensionality: request.dimensions } : {})
   }));
   const body: Record<string, unknown> = { requests };
-  const headers: Record<string, string> = { 'x-goog-api-key': config.apiKey };
+  const headers: Record<string, string> = geminiAuthHeader(config.apiKey);
   const url = `${config.baseUrl}/models/${bare}:batchEmbedContents`;
 
   /* c8 ignore next 1 - optional logger */
