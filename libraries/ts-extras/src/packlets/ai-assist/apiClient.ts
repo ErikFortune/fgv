@@ -28,7 +28,7 @@
  * @packageDocumentation
  */
 
-import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
+import { type JsonObject } from '@fgv/ts-json-base';
 import { fail, type Logging, mapResults, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 
 import {
@@ -73,8 +73,13 @@ import {
   normalizeOutboundMessages,
   splitChatRequest
 } from './chatRequestBuilders';
-import { bearerAuthHeader, resolveEffectiveBaseUrl } from './endpoint';
-import { type IAiApiConfig, fetchJson } from './http';
+import {
+  anthropicAuthHeaders,
+  bearerAuthHeader,
+  geminiAuthHeader,
+  resolveEffectiveBaseUrl
+} from './endpoint';
+import { type IAiApiConfig, fetchGetJson, fetchJson, fetchMultipart } from './http';
 import { DEFAULT_MODEL_CAPABILITY_CONFIG, resolveImageCapability, supportsImageGeneration } from './registry';
 import {
   resolveImageOptions,
@@ -142,66 +147,8 @@ export interface IProviderCompletionParams extends IChatRequest {
 }
 
 // ============================================================================
-// Shared helpers
+// Image attachment helpers
 // ============================================================================
-
-/**
- * Makes a multipart/form-data POST request and returns the parsed JSON, or a
- * failure. The Content-Type header (with boundary) is set automatically by
- * `fetch` from the `FormData` body — callers must NOT pass it explicitly.
- * @internal
- */
-async function fetchMultipart(
-  url: string,
-  headers: Record<string, string>,
-  body: FormData,
-  logger?: Logging.ILogger,
-  signal?: AbortSignal
-): Promise<Result<JsonObject>> {
-  /* c8 ignore next 1 - optional logger */
-  logger?.detail(`AI API request: POST ${url} (multipart)`);
-
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body,
-      signal
-    });
-  } catch (err: unknown) {
-    /* c8 ignore next 1 - defensive: fetch errors are always Error instances in practice */
-    const detail = err instanceof Error ? err.message : String(err);
-    /* c8 ignore next 1 - optional logger */
-    logger?.error(`AI API request failed: ${detail}`);
-    return fail(`AI API request failed: ${detail}`);
-  }
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => 'unknown error');
-    /* c8 ignore next 1 - optional logger */
-    logger?.error(`AI API returned ${response.status}: ${errorText}`);
-    return fail(`AI API returned ${response.status}: ${errorText}`);
-  }
-
-  /* c8 ignore next 1 - optional logger */
-  logger?.detail(`AI API response: ${response.status}`);
-
-  let json: unknown;
-  try {
-    json = await response.json();
-  } catch /* c8 ignore start - defensive: response.json() failure on a 2xx */ {
-    logger?.error('AI API returned invalid JSON response');
-    return fail('AI API returned invalid JSON response');
-  } /* c8 ignore stop */
-
-  /* c8 ignore next 5 - defensive: provider returning non-object JSON on a 2xx */
-  if (!isJsonObject(json)) {
-    logger?.error('AI API returned non-object JSON response');
-    return fail('AI API returned non-object JSON response');
-  }
-  return succeed(json);
-}
 
 /**
  * Decodes a base64-encoded image attachment into a `Blob` suitable for use as
@@ -250,56 +197,6 @@ function extensionForMimeType(mimeType: string): string {
     default:
       return 'bin';
   }
-}
-
-/**
- * Makes an HTTP GET request and returns the parsed JSON, or a failure.
- * @internal
- */
-async function fetchGetJson(
-  url: string,
-  headers: Record<string, string>,
-  logger?: Logging.ILogger,
-  signal?: AbortSignal
-): Promise<Result<JsonObject>> {
-  /* c8 ignore next 1 - optional logger */
-  logger?.detail(`AI API request: GET ${url}`);
-
-  let response: Response;
-  try {
-    response = await fetch(url, { method: 'GET', headers, signal });
-  } catch (err: unknown) {
-    /* c8 ignore next 1 - defensive: fetch errors are always Error instances in practice */
-    const detail = err instanceof Error ? err.message : String(err);
-    /* c8 ignore next 1 - optional logger */
-    logger?.error(`AI API request failed: ${detail}`);
-    return fail(`AI API request failed: ${detail}`);
-  }
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => 'unknown error');
-    /* c8 ignore next 1 - optional logger */
-    logger?.error(`AI API returned ${response.status}: ${errorText}`);
-    return fail(`AI API returned ${response.status}: ${errorText}`);
-  }
-
-  /* c8 ignore next 1 - optional logger */
-  logger?.detail(`AI API response: ${response.status}`);
-
-  let json: unknown;
-  try {
-    json = await response.json();
-  } catch /* c8 ignore start - defensive: response.json() failure on a 2xx */ {
-    logger?.error('AI API returned invalid JSON response');
-    return fail('AI API returned invalid JSON response');
-  } /* c8 ignore stop */
-
-  /* c8 ignore next 5 - defensive: provider returning non-object JSON on a 2xx */
-  if (!isJsonObject(json)) {
-    logger?.error('AI API returned non-object JSON response');
-    return fail('AI API returned non-object JSON response');
-  }
-  return succeed(json);
 }
 
 // ============================================================================
@@ -629,11 +526,7 @@ async function callAnthropicCompletion(
     logger?.info(`Anthropic completion: model=${config.model}`);
   }
 
-  const headers: Record<string, string> = {
-    'x-api-key': config.apiKey,
-    'anthropic-version': '2023-06-01',
-    'anthropic-dangerous-direct-browser-access': 'true'
-  };
+  const headers: Record<string, string> = anthropicAuthHeaders(config.apiKey);
 
   const jsonResult = await fetchJson(url, headers, body, logger, signal);
   if (jsonResult.isFailure()) {
@@ -708,9 +601,7 @@ async function callGeminiCompletion(
     logger?.info(`Gemini completion: model=${config.model}`);
   }
 
-  const headers: Record<string, string> = {
-    'x-goog-api-key': config.apiKey
-  };
+  const headers: Record<string, string> = geminiAuthHeader(config.apiKey);
 
   const jsonResult = await fetchJson(url, headers, body, logger, signal);
   if (jsonResult.isFailure()) {
@@ -1183,6 +1074,34 @@ async function callXaiImagesEdits(
   return fetchJson(`${config.baseUrl}/images/edits`, bearerAuthHeader(config.apiKey), body, logger, signal);
 }
 
+/**
+ * Normalizes an xAI images API response (OpenAI-shaped) into the provider-neutral
+ * generated-image result.
+ *
+ * @remarks
+ * Shared by the generations path and the edits path. These were two independent
+ * copies 160 lines apart — identical but for the receiver name — so the
+ * `defaultOutputMimeType` fallback and the error prefix each existed twice, and a
+ * fix to one would silently have missed the other.
+ * @internal
+ */
+function normalizeXaiImageResponse(
+  json: JsonObject,
+  capability: IAiImageModelCapability
+): Result<IAiImageGenerationResponse> {
+  return openAiImageResponse
+    .validate(json)
+    .withErrorFormat((msg) => `xAI images API response: ${msg}`)
+    .onSuccess((response) =>
+      succeed({
+        images: response.data.map((item) => ({
+          mimeType: capability.defaultOutputMimeType ?? 'image/jpeg',
+          base64: item.b64_json
+        }))
+      })
+    );
+}
+
 /** Calls xAI /images/generations; uses aspect_ratio instead of size. @internal */
 async function callXaiImageGeneration(
   config: IAiApiConfig,
@@ -1211,19 +1130,7 @@ async function callXaiImageGeneration(
   /* c8 ignore next 1 - optional logger */
   logger?.info(`xAI image generation: model=${config.model}, n=${resolved.n}`);
   const fetched = await fetchJson(`${config.baseUrl}/images/generations`, headers, body, logger, signal);
-  return fetched.onSuccess((json) =>
-    openAiImageResponse
-      .validate(json)
-      .withErrorFormat((msg) => `xAI images API response: ${msg}`)
-      .onSuccess((response) =>
-        succeed({
-          images: response.data.map((item) => ({
-            mimeType: capability.defaultOutputMimeType ?? 'image/jpeg',
-            base64: item.b64_json
-          }))
-        })
-      )
-  );
+  return fetched.onSuccess((json) => normalizeXaiImageResponse(json, capability));
 }
 
 /**
@@ -1262,9 +1169,7 @@ async function callGeminiImageOutGeneration(
   if (Object.keys(generationConfig).length > 0) {
     body.generationConfig = generationConfig;
   }
-  const headers: Record<string, string> = {
-    'x-goog-api-key': config.apiKey
-  };
+  const headers: Record<string, string> = geminiAuthHeader(config.apiKey);
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`Gemini image-out: model=${config.model}, refs=${refs.length}`);
@@ -1373,19 +1278,7 @@ export async function callProviderImageGeneration(
       const refs = request.referenceImages ?? [];
       if (refs.length > 0) {
         const editsResult = await callXaiImagesEdits(config, request, resolved, logger, signal);
-        return editsResult.onSuccess((json) =>
-          openAiImageResponse
-            .validate(json)
-            .withErrorFormat((msg) => `xAI images API response: ${msg}`)
-            .onSuccess((response) =>
-              succeed({
-                images: response.data.map((item) => ({
-                  mimeType: capability.defaultOutputMimeType ?? 'image/jpeg',
-                  base64: item.b64_json
-                }))
-              })
-            )
-        );
+        return editsResult.onSuccess((json) => normalizeXaiImageResponse(json, capability));
       }
       return callXaiImageGeneration(config, request, capability, resolved, logger, signal);
     }
@@ -1627,11 +1520,7 @@ async function callAnthropicListModels(
   signal?: AbortSignal
 ): Promise<Result<ReadonlyArray<IAiModelInfo>>> {
   const url = `${config.baseUrl}/models`;
-  const headers: Record<string, string> = {
-    'x-api-key': config.apiKey,
-    'anthropic-version': '2023-06-01',
-    'anthropic-dangerous-direct-browser-access': 'true'
-  };
+  const headers: Record<string, string> = anthropicAuthHeaders(config.apiKey);
   /* c8 ignore next 1 - optional logger */
   logger?.info(`List models: provider=${providerId}, format=anthropic`);
   const jsonResult = await fetchGetJson(url, headers, logger, signal);
@@ -1663,9 +1552,7 @@ async function callGeminiListModels(
   signal?: AbortSignal
 ): Promise<Result<ReadonlyArray<IAiModelInfo>>> {
   const url = `${config.baseUrl}/models`;
-  const headers: Record<string, string> = {
-    'x-goog-api-key': config.apiKey
-  };
+  const headers: Record<string, string> = geminiAuthHeader(config.apiKey);
   /* c8 ignore next 1 - optional logger */
   logger?.info(`List models: provider=${providerId}, format=gemini`);
   const jsonResult = await fetchGetJson(url, headers, logger, signal);
