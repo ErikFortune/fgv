@@ -4,7 +4,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { IEdgeTarget, IMemoryRecord, Kind, MemoryScopeKey, Tag } from '../types';
+import { IEdgeTarget, IMemoryRecord, Kind, MemoryScopeKey, ProvenanceSource, Tag } from '../types';
 import { IIndexedMemoryRecord } from '../index';
 
 /**
@@ -34,6 +34,23 @@ export interface IMemoryQuery {
   readonly scope?: MemoryScopeKey;
   /** Restrict to records carrying this tag (exact match). */
   readonly tag?: Tag;
+  /**
+   * Restrict to records whose {@link IProvenance.source | provenance.source} is
+   * exactly this value — the "show me everything this source produced" axis, for
+   * review, attribution, and retraction after a bad ingest.
+   *
+   * @remarks
+   * Exact match on `source` only, deliberately: not a subset match over the whole
+   * {@link IProvenance} block, not a presence check, and not a match on `by` /
+   * `model` / the consumer-owned extension keys. `source` is the only field of
+   * that block the library assigns meaning to, and every record carries one
+   * (`envelope.provenance` is required), so this axis is total — it partitions
+   * the vault rather than filtering out records that merely omit a field.
+   *
+   * Applied in the shared pre-filter alongside `scope` / `kind` / `tag`, so every
+   * retriever honours it and combining axes composes as AND.
+   */
+  readonly provenanceSource?: ProvenanceSource;
   /**
    * Restrict to records of this kind — the single-kind shorthand for
    * {@link IMemoryQuery.kinds | kinds}. When both are set they compose as AND
@@ -223,9 +240,10 @@ export function orderingCompare(
 }
 
 /**
- * Whether an indexed entry satisfies a query's scope / kind / tag / predicate
- * pre-filter (the axes shared by every v1 retriever). The `semantic` / `asOf` /
- * link axes are NOT applied here — those are each retriever's own concern.
+ * Whether an indexed entry satisfies a query's scope / kind / tag /
+ * provenance-source / predicate pre-filter (the axes shared by every v1
+ * retriever). The `semantic` / `asOf` / link axes are NOT applied here — those
+ * are each retriever's own concern.
  * @public
  */
 export function indexedRecordMatchesQuery(entry: IIndexedMemoryRecord, query: IMemoryQuery): boolean {
@@ -241,6 +259,12 @@ export function indexedRecordMatchesQuery(entry: IIndexedMemoryRecord, query: IM
   if (query.tag !== undefined && !entry.record.envelope.tags.includes(query.tag)) {
     return false;
   }
+  if (
+    query.provenanceSource !== undefined &&
+    entry.record.envelope.provenance.source !== query.provenanceSource
+  ) {
+    return false;
+  }
   if (query.filter !== undefined && !query.filter(entry.record)) {
     return false;
   }
@@ -248,8 +272,9 @@ export function indexedRecordMatchesQuery(entry: IIndexedMemoryRecord, query: IM
 }
 
 /**
- * Apply the shared scope / kind / tag / predicate pre-filter to a set of indexed
- * entries, returning the surviving records (unordered, unlimited).
+ * Apply the shared scope / kind / tag / provenance-source / predicate pre-filter
+ * to a set of indexed entries, returning the surviving records (unordered,
+ * unlimited).
  * @public
  */
 export function selectByQuery(
