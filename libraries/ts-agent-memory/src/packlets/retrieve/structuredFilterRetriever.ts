@@ -19,10 +19,16 @@ import {
 
 /**
  * Returns records matching `query.filter` or `query.provenanceSource`, narrowed
- * by any scope / kind / tag pre-filter and recency-ordered. Those two are this
- * retriever's axes: a query carrying neither is not its concern and yields an
- * empty success (so it contributes nothing to a {@link HybridRetriever}, rather
- * than failing).
+ * by any scope / kind / tag / provenance-source pre-filter and recency-ordered.
+ * Those two are this retriever's axes: a query carrying neither is not its
+ * concern and yields an empty success (so it contributes nothing to a
+ * {@link HybridRetriever}, rather than failing).
+ *
+ * Note `provenanceSource` appears on both sides of that sentence, and the
+ * duplication is real rather than sloppy: it is one of this retriever's two
+ * *dispatch* axes (it decides whether the query is this retriever's concern at
+ * all) **and** a member of the shared *pre-filter* (it narrows the result set,
+ * as it does for every other retriever). `filter` is likewise both.
  *
  * @remarks
  * `provenanceSource` is *applied* by the shared pre-filter, so every retriever
