@@ -125,13 +125,11 @@ describe('FileTreeMemoryStore rank axis', () => {
   ]);
 
   async function indexFromStore(store: FileTreeMemoryStore): Promise<MemoryIndex> {
-    const records = (await store.list()).orThrow();
+    // `listScoped` returns the real `(scope, id)` addresses, so the index is keyed
+    // the way the store keys it rather than by a fabricated stand-in.
+    const scoped = (await store.listScoped()).orThrow();
     const index = MemoryIndex.create().orThrow();
-    // Scope is not returned by `list`; a per-id synthetic scope keeps the
-    // (scope, id) index keys distinct, which is all ordering needs here.
-    index
-      .rebuild(records.map((record) => ({ scope: record.envelope.id as unknown as MemoryScopeKey, record })))
-      .orThrow();
+    index.rebuild(scoped.map(({ target, record }) => ({ scope: target.scope, record }))).orThrow();
     return index;
   }
 
