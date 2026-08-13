@@ -27,6 +27,7 @@ import {
   IFileTreeAccessors,
   IMutableBinaryFileTreeFileItem,
   isBinaryAccessors,
+  isStrictTextAccessors,
   isMutableAccessors,
   isMutableBinaryAccessors,
   SaveDetail
@@ -159,6 +160,16 @@ export class FileItem<TCT extends string = string> implements IMutableBinaryFile
    */
   public getRawContents(): Result<string> {
     return this._hal.getFileContents(this.absolutePath);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IStrictTextFileTreeFileItem.getTextStrict}
+   */
+  public getTextStrict(): Result<string> {
+    if (isStrictTextAccessors(this._hal)) {
+      return this._hal.getFileTextStrict(this.absolutePath);
+    }
+    return fail(`${this.absolutePath}: strict UTF-8 decoding is not supported by this store`);
   }
 
   /**

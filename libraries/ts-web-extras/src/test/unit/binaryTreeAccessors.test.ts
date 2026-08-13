@@ -124,3 +124,49 @@ describe('ts-web-extras tree accessors binary capability', () => {
     });
   });
 });
+
+describe('ts-web-extras tree accessors strict-text capability', () => {
+  // Both of these stores inherit `getFileTextStrict` from the in-memory base and both
+  // hold only already-decoded strings, so both refuse every file — structurally, from
+  // the per-file custody rule, rather than from a hand-written per-adapter special case.
+  // That refusal is the point: over HTTP the "bytes" are a re-encode of a JSON string
+  // field, so a strict decode that succeeded would be a check that cannot fail.
+
+  it('HttpTreeAccessors implements the capability but refuses every file', async () => {
+    const accessors = (
+      await HttpTreeAccessors.fromHttp({
+        baseUrl: 'https://corpus.example/api',
+        fetchImpl: createCorpusFetch(CORPUS_TEXT)
+      })
+    ).orThrow();
+
+    expect(FileTree.isStrictTextAccessors(accessors)).toBe(true);
+    expect(accessors.getFileTextStrict('/corpus.md')).toFailWith(/already-decoded text/i);
+  });
+
+  it('HttpTreeAccessors refuses through the file-item surface too', async () => {
+    const accessors = (
+      await HttpTreeAccessors.fromHttp({
+        baseUrl: 'https://corpus.example/api',
+        fetchImpl: createCorpusFetch(CORPUS_TEXT)
+      })
+    ).orThrow();
+
+    const item = accessors.getItem('/corpus.md').orThrow();
+    expect(FileTree.isStrictTextFileItem(item)).toBe(true);
+    if (FileTree.isStrictTextFileItem(item)) {
+      expect(item.getTextStrict()).toFailWith(/already-decoded text/i);
+    }
+  });
+
+  it('LocalStorageTreeAccessors refuses for the same reason', () => {
+    const storage = createStorage({ 'data-key': JSON.stringify({ notes: CORPUS_TEXT }) });
+    const accessors = LocalStorageTreeAccessors.fromStorage({
+      storage,
+      pathToKeyMap: { '/data': 'data-key' }
+    }).orThrow();
+
+    expect(FileTree.isStrictTextAccessors(accessors)).toBe(true);
+    expect(accessors.getFileTextStrict('/data/notes.yaml')).toFailWith(/already-decoded text/i);
+  });
+});

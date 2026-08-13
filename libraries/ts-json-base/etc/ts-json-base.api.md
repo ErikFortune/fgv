@@ -231,6 +231,10 @@ class FileItem<TCT extends string = string> implements IMutableBinaryFileTreeFil
     //
     // (undocumented)
     getRawContents(): Result<string>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getTextStrict(): Result<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected readonly _hal: IFileTreeAccessors<TCT>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -256,8 +260,10 @@ declare namespace FileTree {
         isMutableAccessors,
         isPersistentAccessors,
         isBinaryAccessors,
+        isStrictTextAccessors,
         isMutableBinaryAccessors,
         isBinaryFileItem,
+        isStrictTextFileItem,
         isMutableBinaryFileItem,
         isMutableFileItem,
         isMutableDirectoryItem,
@@ -270,6 +276,7 @@ declare namespace FileTree {
         IFileTreeInitParams,
         IDeleteChildOptions,
         IFileTreeFileItem,
+        IStrictTextFileTreeFileItem,
         IBinaryFileTreeFileItem,
         IMutableFileTreeFileItem,
         IMutableBinaryFileTreeFileItem,
@@ -284,6 +291,7 @@ declare namespace FileTree {
         IBinaryFileTreeAccessors,
         IMutableBinaryFileTreeAccessors,
         IPersistentFileTreeAccessors,
+        IStrictTextFileTreeAccessors,
         FileTree_2 as FileTree,
         DirectoryItem,
         FileItem,
@@ -356,6 +364,7 @@ class FsFileTreeAccessors<TCT extends string = string> implements IMutableBinary
     getFileBytes(filePath: string): Result<Uint8Array>;
     getFileContents(filePath: string): Result<string>;
     getFileContentType(filePath: string, provided?: string): Result<TCT | undefined>;
+    getFileTextStrict(filePath: string): Result<string>;
     getItem(itemPath: string): Result<FileTreeItem<TCT>>;
     protected readonly _inferContentType: (filePath: string) => Result<TCT | undefined>;
     joinPaths(...paths: string[]): string;
@@ -629,6 +638,7 @@ class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFile
     getFileBytes(path: string): Result<Uint8Array>;
     getFileContents(path: string): Result<string>;
     getFileContentType(path: string, provided?: string): Result<TCT | undefined>;
+    getFileTextStrict(path: string): Result<string>;
     getItem(itemPath: string): Result<FileTreeItem<TCT>>;
     joinPaths(...paths: string[]): string;
     resolveAbsolutePath(...paths: string[]): string;
@@ -731,6 +741,34 @@ function isPathMutable(path: string, mutable: boolean | IFilterSpec | undefined)
 //
 // @public
 function isPersistentAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IPersistentFileTreeAccessors<TCT>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isStrictTextAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IStrictTextFileTreeAccessors<TCT>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isStrictTextFileItem<TCT extends string = string>(item: AnyFileTreeFileItem<TCT> | FileTreeItem<TCT>): item is IStrictTextFileTreeFileItem<TCT>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IStrictTextFileTreeAccessors<TCT extends string = string> extends IFileTreeAccessors<TCT> {
+    getFileTextStrict(path: string): Result<string>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IStrictTextFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
+    getTextStrict(): Result<string>;
+}
 
 // @public
 type ItemNameTransformFunction<T> = (name: string, item: T) => Result<string>;
