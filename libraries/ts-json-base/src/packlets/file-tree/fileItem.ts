@@ -26,6 +26,7 @@ import { JsonValue } from '../json';
 import {
   IFileTreeAccessors,
   IMutableBinaryFileTreeFileItem,
+  IStrictTextFileTreeFileItem,
   isBinaryAccessors,
   isStrictTextAccessors,
   isMutableAccessors,
@@ -38,13 +39,18 @@ import {
  *
  * @remarks
  * Implements the optional binary capability
- * ({@link FileTree.IMutableBinaryFileTreeFileItem}) by delegating to the underlying
- * accessors. As with {@link FileTree.FileItem.setRawContents | setRawContents} and
- * {@link FileTree.FileItem.getIsMutable | getIsMutable}, the byte methods report an
- * accessor that lacks the capability as a `Failure` rather than by omitting the method.
+ * ({@link FileTree.IMutableBinaryFileTreeFileItem}) and the optional strict-text
+ * capability ({@link FileTree.IStrictTextFileTreeFileItem}) by delegating to the
+ * underlying accessors. As with
+ * {@link FileTree.FileItem.setRawContents | setRawContents} and
+ * {@link FileTree.FileItem.getIsMutable | getIsMutable}, the byte methods and
+ * {@link FileTree.FileItem.getTextStrict | getTextStrict} report an accessor that
+ * lacks the capability as a `Failure` rather than by omitting the method.
  * @public
  */
-export class FileItem<TCT extends string = string> implements IMutableBinaryFileTreeFileItem<TCT> {
+export class FileItem<TCT extends string = string>
+  implements IMutableBinaryFileTreeFileItem<TCT>, IStrictTextFileTreeFileItem<TCT>
+{
   /**
    * {@inheritDoc FileTree.IFileTreeFileItem."type"}
    */

@@ -22,7 +22,12 @@
 
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
-import { HttpTreeAccessors, LocalStorageTreeAccessors } from '../../packlets/file-tree';
+import {
+  FileSystemAccessTreeAccessors,
+  HttpTreeAccessors,
+  LocalStorageTreeAccessors
+} from '../../packlets/file-tree';
+import { createMockDirectoryHandle } from '../utils/fileSystemAccessMocks';
 
 const CORPUS_TEXT: string = 'agent corpus — built-in, with a non-ASCII em dash';
 
@@ -126,11 +131,12 @@ describe('ts-web-extras tree accessors binary capability', () => {
 });
 
 describe('ts-web-extras tree accessors strict-text capability', () => {
-  // Both of these stores inherit `getFileTextStrict` from the in-memory base and both
-  // hold only already-decoded strings, so both refuse every file — structurally, from
-  // the per-file custody rule, rather than from a hand-written per-adapter special case.
-  // That refusal is the point: over HTTP the "bytes" are a re-encode of a JSON string
-  // field, so a strict decode that succeeded would be a check that cannot fail.
+  // All three of this packlet's accessors inherit `getFileTextStrict` from the
+  // in-memory base and all three hold only already-decoded strings, so all three
+  // refuse every file — structurally, from the per-file custody rule, rather than
+  // from a hand-written per-adapter special case. That refusal is the point: over
+  // HTTP the "bytes" are a re-encode of a JSON string field, so a strict decode
+  // that succeeded would be a check that cannot fail.
 
   it('HttpTreeAccessors implements the capability but refuses every file', async () => {
     const accessors = (
@@ -157,6 +163,16 @@ describe('ts-web-extras tree accessors strict-text capability', () => {
     if (FileTree.isStrictTextFileItem(item)) {
       expect(item.getTextStrict()).toFailWith(/already-decoded text/i);
     }
+  });
+
+  it('FileSystemAccessTreeAccessors refuses too, since it seeds from a lenient file.text()', async () => {
+    const dirHandle = createMockDirectoryHandle('/', {
+      'notes.md': { content: CORPUS_TEXT, type: 'text/markdown' }
+    });
+    const accessors = (await FileSystemAccessTreeAccessors.fromDirectoryHandle(dirHandle)).orThrow();
+
+    expect(FileTree.isStrictTextAccessors(accessors)).toBe(true);
+    expect(accessors.getFileTextStrict('/notes.md')).toFailWith(/already-decoded text/i);
   });
 
   it('LocalStorageTreeAccessors refuses for the same reason', () => {

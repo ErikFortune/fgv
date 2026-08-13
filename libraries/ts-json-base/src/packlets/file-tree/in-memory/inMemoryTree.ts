@@ -366,16 +366,15 @@ export class InMemoryTreeAccessors<TCT extends string = string>
    */
   public getFileTextStrict(path: string): Result<string> {
     return this._getFile(path).onSuccess((file) => {
-      if (!(file.contents instanceof Uint8Array)) {
+      const { contents } = file;
+      if (!(contents instanceof Uint8Array)) {
         return fail(
           `${this.resolveAbsolutePath(
             path
           )}: cannot decode strictly - this store holds already-decoded text, not the original bytes`
         );
       }
-      return captureResult(() =>
-        new TextDecoder('utf-8', { fatal: true }).decode(file.contents as Uint8Array)
-      );
+      return captureResult(() => new TextDecoder('utf-8', { fatal: true }).decode(contents));
     });
   }
 
