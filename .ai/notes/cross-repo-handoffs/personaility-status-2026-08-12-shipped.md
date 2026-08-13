@@ -6,11 +6,26 @@ note said "not published yet"; the alpha went out between drafting and sending, 
 we told you. Corrected rather than quietly fixed, because "we will tell you the version rather than
 leave you to discover it" is exactly what we promised and exactly what we then failed to do.
 
-**One caveat on that version, and it is ours to fix:** `npm dist-tag ls @fgv/ts-agent-memory` reports
-`latest: 5.1.0-36`, `alpha: 5.1.0-48`. So a plain `npm install @fgv/ts-agent-memory` still resolves to
-**-36** — twelve alphas behind, with none of this in it. Install by explicit version or `@alpha` until
-we repoint the tag. This is the mis-set `latest` we have owed you for two rounds; it is now
-demonstrably the thing that makes our shipped work look unshipped.
+**Keep tracking `@alpha`.** That is the supported channel for you and will stay that way until 1.0 —
+this is not a workaround and there is no tag change coming that makes a plain `npm install` give you
+current code. We have described the `latest` situation to you before in a way that implied otherwise;
+that was wrong and this replaces it.
+
+**What is actually wrong with `latest`, narrowly.** On our established packages it points at a real
+release, as it should — `@fgv/ts-utils`, `@fgv/ts-extras` and `@fgv/ts-json-base` are all
+`latest: 5.0.2`, `alpha: 5.1.0-48`. But on the two packages you depend on most it points at an
+**alpha**:
+
+| package | `latest` | `alpha` |
+|---|---|---|
+| `@fgv/ts-agent-memory` | **5.1.0-36** ← an alpha | 5.1.0-48 |
+| `@fgv/ts-agent-memory-sqlite-vec` | **5.1.0-42** ← an alpha | 5.1.0-48 |
+
+Those two have never had a stable release; an accidental publish left an alpha sitting on the tag.
+So the harm is not that you get *stale* code — you were never going to install from `latest` — it is
+that anyone who does gets **a months-old alpha presented as a stable release**, with no signal that it
+is neither. That is worth fixing on its own terms, and it is on us, but it was never the thing
+standing between you and `-48`.
 
 ---
 

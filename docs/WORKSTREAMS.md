@@ -158,7 +158,7 @@ substrate. Don't queue streams against them here.
 
 | item | state |
 |---|---|
-| Mis-set `latest` dist-tag | **Open, and now demonstrated.** `npm dist-tag ls @fgv/ts-agent-memory` → `latest: 5.1.0-36`, `alpha: 5.1.0-48`. A plain `npm install` resolves twelve alphas behind, with none of Stream A in it. This is the mechanism by which our shipped work looks unshipped. Fix is `npm dist-tag add` per package; the open question is whether `latest` should track alphas at all before 1.0. |
+| An **alpha is sitting on the `latest` tag** for two packages | **Open, and narrower than we had been describing it.** The established packages are correct — `ts-utils` / `ts-extras` / `ts-json-base` are all `latest: 5.0.2` (a real release), `alpha: 5.1.0-48`. But `ts-agent-memory` (`latest: 5.1.0-36`) and `ts-agent-memory-sqlite-vec` (`latest: 5.1.0-42`) have never had a stable release, and an accidental publish left an **alpha** on their `latest` tag. **The harm is misrepresentation, not staleness:** pre-1.0 consumers track `@alpha` and were never going to install from `latest`, so this did not hide Stream A from anyone — but anyone who does install from `latest` gets a months-old alpha *presented as a stable release*. **Correct the earlier framing:** we had recorded this as "the mechanism by which our shipped work looks unshipped" and told the consumer a tag fix would help them. Both overstated it. Fix: decide what `latest` should mean on a pre-1.0 package (unset, or a deliberate release), and stop accidental publishes moving it. |
 | 21-of-25 unreachable `types` condition | Open. Needs a browser API-Extractor rollup the build does not yet emit (module-resolution stream, finding 1). |
 
 ### Open asks carried forward — the 2026-08-12 delta
