@@ -12,7 +12,7 @@ wrong last time.
 |---|---|
 | **2.1** `rank` has no backfill | **Will do.** Confirmed as described, including the inversion. |
 | **2.2** provenance query axis | **Will do**, small, and we are picking the shape rather than asking a third time. |
-| **2.3** strict UTF-8 text read | **Won't do as a new flag — because the option already exists.** Details below; push back if the path is impractical. |
+| **2.3** strict UTF-8 text read | **Will do** — reversing an earlier won't-do. The path we would have pointed you at is false on the HTTP adapter you are adopting. One question back. |
 
 ---
 
@@ -62,40 +62,60 @@ is the natural home, and it is additive. If exact-match-on-`source` turns out to
 once you use it, say so and we will widen it — that is a cheaper round than another round of
 specification before anything exists.
 
-## 2.3 — the option exists; we would rather not add a second way to spell it
+## 2.3 — **we take it back. Will do, and we owe you a correction**
 
-This one is a **won't-do with a path**, and if the path is bad the won't-do is wrong — so please
-check it before accepting.
+An earlier draft of this reply answered *won't-do*, on the grounds that `getFileBytes` +
+`new TextDecoder('utf-8', { fatal: true })` already spells strictness. We learned you are moving to
+the **HTTP** adapter, went and checked it properly, and that answer is not merely inconvenient for
+you — **it is wrong, and the thing it points you at is a lie on that adapter.**
 
-Read the bytes and decode strictly yourself:
+### What we actually found
 
-```ts
-// `item` is a FileTree file item
-const bytes = item.getFileBytes().orThrow();
-const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes); // throws on invalid UTF-8
-```
+`HttpTreeAccessors` extends `InMemoryTreeAccessors` and is seeded from the REST payload's
+`contents: string`. The base's `getFileBytes` returns byte-seeded contents verbatim but **encodes**
+string-seeded contents. Over HTTP every file is the string case.
 
-Byte reads ship on **all six** adapters (Node `fs`, in-memory, zip, browser FSA, `localStorage`,
-HTTP), so this is not a Node-only escape hatch. The recipe is documented in our source at
-`fileTreeAccessors.ts:185` and `:477` — which, given you found the *other* half of your original
-report already documented, suggests our docs are discoverable only if you already know to look. That
-is a fair criticism of us and separate from this verdict.
+So the sequence is: your bytes → the server's JSON encoder → **`JSON.parse` decodes them, leniently,
+substituting U+FFFD** → we hold a `string` → `getFileBytes()` re-encodes that string → you decode it
+with `{ fatal: true }` → **it succeeds.** Clean, valid UTF-8. Every invalid sequence already became
+U+FFFD one layer upstream, outside our code, and re-encoding a replacement character produces
+perfectly valid bytes.
 
-**Two caveats, both of which could flip this to a will-do:**
+You would have gotten a green light from a check that had nothing left to check.
 
-1. **Use the accessor-level guard, not the file-item one.** `isBinaryFileItem` narrows the type but is
-   **not a success guarantee** — `FileItem` implements the binary interfaces unconditionally and
-   delegates, so a non-capable store reports a `Failure` rather than failing the guard. If you need
-   the check itself to guarantee success, use `isBinaryAccessors` / `isMutableBinaryAccessors`.
-2. **`HttpTreeAccessors` is not binary-safe for genuinely binary content** — it preloads from a JSON
-   API whose `contents` field is typed `string`, so its "bytes" are a UTF-8 *re-encode* of an
-   already-decoded string. For your case that is arguably fine (you want to detect invalid UTF-8 in
-   text), but it means the HTTP adapter cannot tell you what the original bytes were — it has already
-   lost them. **If you are reading over HTTP, this won't-do is wrong and we should talk.**
+**And our own docstring says the opposite.** `HttpTreeAccessors`' class doc currently claims you can
+"call `getFileBytes()` to read a file's bytes *without going through a lenient UTF-8 decode*." For
+this adapter that is false — the lenient decode already happened before the accessor existed. **We
+are fixing that docstring regardless of what we build**, because it is wrong today and it is wrong on
+exactly the path you are adopting.
 
-Our reasoning for not adding a flag: the bytes capability is the one place that decision lives, and a
-`strict: true` on the text read would be a second spelling of it. But that reasoning is worth exactly
-what the path above is worth, and caveat 2 is a real hole.
+### What we will build, and the part that matters
+
+A strict read, **and a refusal**:
+
+- On adapters that hold real bytes (Node `fs`, zip, in-memory, browser FSA, `localStorage`) a strict
+  read is meaningful, and that is the straightforward half.
+- On `HttpTreeAccessors` a strict read must **fail loudly as unsupported**, not succeed. If we shipped
+  the flag without that, we would hand you the same false confidence in a new wrapper — and you would
+  have *more* reason to trust it, because you asked for it by name.
+
+That refusal is the established shape here, not an invention for this case: our browser `safer-fetch`
+**rejects `redirectPolicy: 'validate-each-hop'` at option resolution** rather than accepting it and
+failing at the first redirect, precisely so a caller whose URLs never redirect cannot ship believing a
+guarantee is in force. Same principle, same reason.
+
+### The question we need back from you
+
+If you need to know that the bytes on the server were valid UTF-8, **no flag on our side can tell you**
+— the information is destroyed by the transport before we see it. That needs a bytes-native transport
+(base64 or an octet-stream body), which is a **wire-format change**, and our own docs already
+acknowledge as much for the write direction: byte *writes* are unsupported over HTTP for this exact
+reason.
+
+So: is your requirement **(a)** "detect invalid UTF-8 in files I read from local/zip/FSA stores, and
+get a loud unsupported over HTTP", or **(b)** "detect it over HTTP too"? (a) is the work described
+above. (b) is a transport design conversation and we should have it as one rather than let us build
+(a) and hand you a refusal where you needed an answer.
 
 ---
 
