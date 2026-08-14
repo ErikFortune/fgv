@@ -20,16 +20,9 @@
  * SOFTWARE.
  */
 
-import {
-  captureResult,
-  DetailedResult,
-  fail,
-  type Result,
-  succeed,
-  succeedWithDetail,
-  Logging
-} from '@fgv/ts-utils';
+import { DetailedResult, fail, type Result, succeed, succeedWithDetail, Logging } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import { CryptoUtils } from '@fgv/ts-extras';
 
 interface IHttpStorageTreeItem {
   readonly path: string;
@@ -478,14 +471,12 @@ export class HttpTreeAccessors<TCT extends string = string>
     if (response.encoding !== 'base64') {
       return succeed(response.contents);
     }
-    return captureResult(() => {
-      const binary = atob(response.contents);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      return bytes;
-    }).withErrorFormat((message: string) => `${filePath}: malformed base64 in storage response: ${message}`);
+    // Strict on purpose: a malformed payload here means the response is corrupt,
+    // and the lenient `CryptoUtils.fromBase64` would salvage plausible-looking
+    // garbage from it rather than saying so.
+    return CryptoUtils.fromBase64Strict(response.contents).withErrorFormat(
+      (message: string) => `${filePath}: malformed base64 in storage response: ${message}`
+    );
   }
 
   private static async _loadFiles<TCT extends string = string>(

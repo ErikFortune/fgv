@@ -69,6 +69,43 @@ export function fromBase64(base64: string): Uint8Array {
 }
 /* c8 ignore stop */
 
+/**
+ * Decodes a base64 string to a `Uint8Array`, **rejecting input that is not
+ * well-formed base64** instead of silently salvaging what it can.
+ *
+ * @remarks
+ * The difference from {@link CryptoUtils.fromBase64 | fromBase64} is the failure
+ * mode, and it is the whole reason this exists. `fromBase64` is `Buffer`-first
+ * where a `Buffer` exists, and `Buffer.from(s, 'base64')` **discards** characters
+ * outside the base64 alphabet rather than complaining — so a corrupted or
+ * truncated payload decodes to plausible-looking garbage and the corruption is
+ * discovered, if ever, much further downstream. Use this variant whenever the
+ * base64 arrived from somewhere you do not control (a wire response, a file, user
+ * input) and a malformed value means "something is wrong", not "do your best".
+ *
+ * Implemented over `atob`, which rejects out-of-alphabet characters and bad
+ * lengths. Note it inherits `atob`'s one leniency: per the WHATWG forgiving-base64
+ * algorithm, ASCII whitespace inside the input is stripped rather than rejected.
+ * That is deliberate — line-wrapped base64 is common and benign — and it does not
+ * weaken the guarantee that matters here, which is that corrupt bytes fail loudly.
+ * @param base64 - Base64 string to decode.
+ * @returns `Success` with the decoded bytes, or `Failure` if `base64` is not
+ * well-formed.
+ * @public
+ */
+export function fromBase64Strict(base64: string): Result<Uint8Array> {
+  return captureResult(() => {
+    // `atob` yields a "binary string": one UTF-16 code unit per byte, each in
+    // 0..255, so `charCodeAt` reads the bytes back losslessly for all 256 values.
+    const binary: string = atob(base64);
+    const bytes: Uint8Array = new Uint8Array(binary.length);
+    for (let i: number = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+  }).withErrorFormat(() => 'invalid base64 string');
+}
+
 // ============================================================================
 // Create Encrypted File Parameters
 // ============================================================================

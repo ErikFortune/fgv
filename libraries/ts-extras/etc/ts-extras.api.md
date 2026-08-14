@@ -539,6 +539,7 @@ declare namespace CryptoUtils {
         createEncryptedFile,
         decryptFile,
         fromBase64,
+        fromBase64Strict,
         ICreateEncryptedFileParams,
         toBase64,
         tryDecryptFile,
@@ -954,6 +955,11 @@ type FormattersByTarget<T> = FormattersByExtendedTarget<FormatTargets, T>;
 
 // @public
 function fromBase64(base64: string): Uint8Array;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function fromBase64Strict(base64: string): Result<Uint8Array>;
 
 // @public
 const GCM_AUTH_TAG_SIZE: number;

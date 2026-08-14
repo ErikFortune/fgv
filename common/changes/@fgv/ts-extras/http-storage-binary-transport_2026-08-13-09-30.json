@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Add CryptoUtils.fromBase64Strict — a Result-returning base64 decode that rejects malformed input instead of silently salvaging it, unlike the Buffer-first fromBase64 which drops out-of-alphabet characters without complaint. Use it when the base64 came from somewhere you do not control. BrowserCryptoProvider.fromBase64 in @fgv/ts-web-extras now delegates to it, collapsing a duplicated decode loop.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

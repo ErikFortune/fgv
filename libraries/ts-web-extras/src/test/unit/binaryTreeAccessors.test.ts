@@ -324,4 +324,53 @@ describe('HttpTreeAccessors byte-faithful transport (contentEncoding: base64)', 
       })
     ).toFailWith(/malformed base64/i);
   });
+
+  it('round-trips every byte value 0-255, not just the fixture', async () => {
+    // The decode is atob + a charCode walk over a "binary string". That is correct
+    // for the whole 0..255 range by construction; asserting it beats arguing it.
+    const allBytes = Uint8Array.from({ length: 256 }, (__v, i) => i);
+    const { fetchImpl } = createByteFetch(allBytes);
+    const accessors = (
+      await HttpTreeAccessors.fromHttp({
+        baseUrl: 'https://corpus.example/api',
+        fetchImpl,
+        contentEncoding: 'base64'
+      })
+    ).orThrow();
+
+    expect(accessors.getFileBytes('/corpus.md')).toSucceedWith(allBytes);
+  });
+
+  it('a later text write over a byte-seeded file syncs as text, not as stale bytes', async () => {
+    // Reads are byte-faithful; writes still go up as UTF-8 text. Pinning the seam
+    // between them: once a file is overwritten with a string, the sync must send
+    // that string — never the Uint8Array the file was originally seeded with.
+    const { fetchImpl } = createByteFetch(new TextEncoder().encode('original'));
+    const sent: string[] = [];
+    const recordingFetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'PUT') {
+        sent.push(String(init.body));
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ path: '/corpus.md', contents: '' })
+        } as Response;
+      }
+      return fetchImpl(input, init);
+    }) as unknown as typeof fetch;
+
+    const accessors = (
+      await HttpTreeAccessors.fromHttp({
+        baseUrl: 'https://corpus.example/api',
+        fetchImpl: recordingFetch,
+        contentEncoding: 'base64',
+        mutable: true
+      })
+    ).orThrow();
+
+    expect(accessors.saveFileContents('/corpus.md', 'replaced')).toSucceed();
+    expect(await accessors.syncToDisk()).toSucceed();
+    expect(sent).toHaveLength(1);
+    expect(JSON.parse(sent[0]).contents).toBe('replaced');
+  });
 });

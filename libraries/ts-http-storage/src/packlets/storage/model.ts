@@ -113,6 +113,14 @@ export interface IStoragePathRequest {
  * @public
  */
 export interface IStorageReadFileRequest extends IStoragePathRequest {
+  /**
+   * Preferred wire encoding for the response's `contents`. Absent means `'utf8'`.
+   *
+   * @remarks
+   * A preference, not a demand — see {@link IStorageFileResponse.encoding}, which
+   * reports what the server actually produced and is the field a client must
+   * branch on.
+   */
   readonly encoding?: StorageContentEncoding;
 }
 

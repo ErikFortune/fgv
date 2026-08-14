@@ -115,7 +115,6 @@ export interface IStoragePathRequest {
 
 // @public
 export interface IStorageReadFileRequest extends IStoragePathRequest {
-    // (undocumented)
     readonly encoding?: StorageContentEncoding;
 }
 
