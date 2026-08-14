@@ -116,6 +116,38 @@ opportunistically when the right surface area is touched.
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `@fgv/ts-web-extras`'s safer-fetch suite cannot exercise a successful response — jsdom ships no Fetch globals.**
+  `libraries/ts-web-extras/src/test/unit/browserSaferFetch.test.ts` drives only a *failing*
+  scripted transport, because the jsdom test environment provides no `Response` constructor, so
+  the suite cannot build one to return. Every success-path semantic on the browser entry points —
+  the content-type gate firing on a real header set, the streaming size cap counting decoded
+  bytes, body-guard dispatch, the shape of a returned `ISaferFetchResponse<T>` — is covered
+  **solely** by the `@fgv/ts-extras` suite, on the shared runtime-agnostic core.
+
+  That is *mostly* fine by construction: the core genuinely is shared verbatim, which is the
+  design's whole premise. The gap is that the premise is untested on the browser side, so a
+  browser-specific regression in the thin wrapper — an option not threaded, a guard not passed
+  through — would not be caught by either suite.
+
+  **Trigger**: next substantive change to the browser safer-fetch packlet, or whenever the test
+  environment gains Fetch globals.
+
+  **Scope sketch**: either point the browser package's jest environment at one that supplies
+  `Response` (Node 20+ has it natively — `testEnvironment: 'node'` for this file alone, since it
+  tests no DOM), or inject a minimal `Response` polyfill into the suite's setup. Then port the
+  success-path cases from the `ts-extras` suite so the wrapper is exercised end to end.
+
+  **Not a P2**: the shared core is well covered and the wrapper is thin; this is a coverage-shape
+  gap rather than a known defect. It earns an entry because it is a **security** primitive whose
+  browser posture is already the weaker of the two — three guarantees are structurally absent
+  there and stated rather than degraded — so the wrapper is exactly where a silent regression
+  would be least visible and most costly.
+
+  **Reference**: `safer-fetch-s3` (#601) `result.md` / `README.md`, which record the constraint;
+  surfaced 2026-08-14 by the retroactive `finalize-task` sweep, which found it recorded in no
+  durable ledger. Note `docs/TECH_DEBT.md` and `docs/FUTURE.md` contain no other safer-fetch
+  entry at all.
+
 - **[P3] `importPublicKeyFromMultibaseSpki` still early-returns instead of chaining; the bridge pattern it was waiting for has shipped.**
   `libraries/ts-extras/src/packlets/crypto-utils/spkiHelpers.ts` breaks its `Result` chain at the
   sync→async transition — `const decodeResult = multibaseBase64UrlDecode(encoded); if

@@ -579,4 +579,75 @@ instinct the `per-provider-testbed-scenarios` cluster is the canonical example o
 
 ---
 
-*Sections below are appended per batch as the sweep proceeds.*
+## Batch 5 — `safer-fetch-s3`, and the `active/` triage
+
+### B5.1 — eight of the nine streams in `active/` already shipped
+
+Full detail in **`docs/ACTIVE-STREAM-TRIAGE.md`** (added in this PR). Classification, decided
+from source rather than from artifacts: **8 SHIPPED-UNMIGRATED, 1 PROPOSED.** The single genuine
+proposal is `agent-memory-mcp-server`, which is conditional by construction and stays put.
+
+This is the sweep's largest single finding and it is the protocol failure at full scale. The
+artifact protocol says the migration ships **in the same PR as the work**; for these eight the
+work merged weeks ago, so that PR is long gone and the honest move is a judgement call:
+`close`-after-the-fact (move now, backfill `meta.yaml` + README + ledger entry) versus running
+`retroactive` where they sit. **That call is yours** — it moves directories, and getting it
+wrong scatters artifacts.
+
+Note what this does to the corpus arithmetic quoted throughout this file: the "68 directories,
+41 entries" split treats `active/` and `completed/` as meaningful states. For eight of nine
+directories, `active/` is simply wrong.
+
+**Decision needed**, and the report proposes an order: the seven straightforward ones as a batch,
+then two that need a decision rather than a script —
+
+- **`safer-fetch`** → migrate *intact* with `ledgerEntry: fetch-primitive-threat-model`. It is the
+  **sole surviving artifact record** for sub-streams S1 / S2a / S2b, which have no archived
+  directories of their own. Splitting or thinning it loses them.
+- **`esm-emit-design`** → do **not** migrate alone. Its implementing sibling `esm-emit-impl` is
+  also in `active/` and is narrated in the ledger's *Completed* section with a ⚠️. Move the
+  design→implement pair together and update the ledger's `active/` path references in the same
+  change. Leaving both is defensible; splitting them is not.
+
+The report also flags three artifact claims to correct during migration, including
+`packaging-prepublish-fixes`'s finding header reading *"not fixed, deliberately"* for something
+fixed in the same PR — all 25 LICENSE files now exist.
+
+### B5.2 — safer-fetch's security guarantees hold; one coverage gap filed
+
+All six spot-checked guarantees on the fetch primitive verified **in code, not prose** — required
+`addressGuard`, per-hop revalidation before any connection, monotonic credential stripping,
+guard-cleared loop comparison, full re-walk on retry with a clamped `Retry-After`, and the
+browser sibling refusing `'validate-each-hop'` at option resolution. **No overstated guarantee.**
+
+Filed to `TECH_DEBT.md` (P3): the browser suite cannot construct a `Response` — jsdom ships no
+Fetch globals — so `browserSaferFetch.test.ts` drives only a *failing* transport, and every
+success-path semantic on the browser entry points is covered solely by the `ts-extras` suite on
+the shared core. Mostly fine by construction; the gap is that the premise is untested on the
+browser side, so a regression in the thin wrapper would be caught by neither suite. Before this,
+`TECH_DEBT.md` and `FUTURE.md` contained **zero** safer-fetch entries.
+
+---
+
+## Where the sweep landed
+
+**22 streams recorded** across five stacked PRs (#625–#629), each with a `meta.yaml` carrying a
+synthesis, keywords, verified PR attribution, and — where they apply — `ledgerEntry:` /
+`relatedStreams:` / `prHistory`. Drafted ledger entries sit in the PR review threads, uncommitted,
+because ledger prose is a curation decision.
+
+**Fixed along the way, all checkable facts:** a `TECH_DEBT` entry pointing at a deleted file; a
+findings disposition that read `OPEN` for ten weeks after its fix shipped; a `FUTURE.md` entry
+describing a feature that shipped two months earlier; a ledger status reading "ready for
+promotion" for a cluster promoted months ago; a wrong TypeScript field name in the ledger; six
+dead `.ai/tasks/active/` doc links; and two deferrals that were lost — one of which two separate
+streams each believed the other had filed.
+
+**The pattern worth acting on** is not any single correction. Across five batches, **every stale
+artifact found was true when it was written.** Nothing in the workflow revisits a deferral, a
+debt entry, a finding, or a `FUTURE` item once its trigger fires *somewhere else* — and the
+`FUTURE.md` entries rot in *both* directions, some describing work already done. Six deferrals
+were found living only inside completed-stream artifacts, where no ledger reader will ever meet
+them.
+
+That is the structural gap. The corrections in these PRs are symptoms of it.
