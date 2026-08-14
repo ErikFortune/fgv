@@ -65,8 +65,9 @@ Everything below is a *step* of this. The stream's centre of gravity is not the 
 PR as the work"* — and names its own recurrence: on the `ai-assist-client-tools` cluster close
 (2026-06-04, #451 → #452), *"the codified rule existed; the failure was the orchestrator's
 pre-promotion checklist not gating on it."* The fix applied then was **another checklist gate**.
-Today: **68 stream directories on disk, 43 narrated ledger entries.** Roughly 25 streams closed
-without one.
+Today: **68 stream directories on disk, 41 narrated ledger entries, and 31 directories with no
+ledger entry under their own name** — 20 of which are not mentioned in `WORKSTREAMS.md` at all.
+Measured 2026-08-14 as a set difference on stream ids, not a subtraction of totals.
 
 Writing it down did not work. Adding a gate did not work. The remaining move is to make the ritual
 **one invocation** instead of a list a tired agent is asked to remember at the end of a long stream.
@@ -300,11 +301,18 @@ The two artifacts have different audiences, and that is the whole resolution:
 
 | | audience | shape | coverage |
 |---|---|---|---|
-| `docs/WORKSTREAMS.md` | humans | curated, narrative, selective | **43** entries — the ones worth narrating |
+| `docs/WORKSTREAMS.md` | humans | curated, narrative, selective | **41** entries — the ones worth narrating |
 | `.ai/tasks/INDEX.md` | agents | mechanical, uniform | **68** — every stream directory on disk |
 
-That coverage gap is the generated index's actual reason to exist: **~25 streams have artifacts
-and no ledger entry.** An agent needs all of them; a human reading a ledger wants the curated set.
+That coverage gap is the generated index's actual reason to exist: **31 streams have artifacts
+and no ledger entry under their own name, and 20 of those are absent from the ledger entirely.**
+An agent needs all of them; a human reading a ledger wants the curated set.
+
+The generator must compute this as a **set difference on stream ids**, not `68 − 41`. Subtracting
+totals nets naming mismatches against genuine gaps in both directions and lands on a number that
+is wrong twice over — which is how the "~25" in the first draft of this brief happened. Four
+ledger entries name streams with no matching directory; a subtraction silently cancels them
+against four real gaps. Report both directions separately.
 
 Gitignoring also removes a failure mode worth avoiding on principle — an agent resolving a merge
 conflict in a *generated* file by hand-editing it, producing a corrupt index that then reads as

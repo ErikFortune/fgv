@@ -16,9 +16,10 @@ that ritual in one pass.
 > recurrence on the `ai-assist-client-tools` cluster close (#451 → #452):
 > *"the codified rule existed; the failure was the orchestrator's pre-promotion
 > checklist not gating on it."* The remedy applied then was another checklist gate.
-> The corpus today holds substantially more stream directories than the ledger
-> narrates. Writing it down did not hold; gating on a list did not hold. One
-> invocation at the end of a long stream is what is left to try.
+> Measured 2026-08-14: **68 stream directories, 41 ledger entries, 31 directories with
+> no entry under their own name — 20 of them unmentioned in the ledger entirely.**
+> Writing it down did not hold; gating on a list did not hold. One invocation at the
+> end of a long stream is what is left to try.
 
 ## Modes
 
@@ -215,8 +216,31 @@ If the pass changes `meta.yaml`, recompute `sourceHash`.
 
 ### 8. Report the ledger gap
 
-Count stream directories under `.ai/tasks/` against `### ` entries in
-`docs/WORKSTREAMS.md`. Report the streams with no entry.
+Take the **set difference on stream ids, in both directions** — not the difference of
+two totals. Report the streams with no entry.
+
+```bash
+find .ai/tasks/active -mindepth 1 -maxdepth 1 -type d -printf '%f\n'  > /tmp/d.txt
+find .ai/tasks/completed -mindepth 2 -maxdepth 2 -type d -printf '%f\n' >> /tmp/d.txt
+sort -u /tmp/d.txt -o /tmp/d.txt
+grep -o '^### `[^`]*`' docs/WORKSTREAMS.md | sed 's/^### `//;s/`$//' | sort -u > /tmp/l.txt
+comm -23 /tmp/d.txt /tmp/l.txt   # directories with no ledger entry  ← the worklist
+comm -13 /tmp/d.txt /tmp/l.txt   # ledger entries with no directory  ← naming mismatches
+```
+
+**Two traps, both of which have already produced a wrong number in a committed doc:**
+
+- **`grep -c '^### '` over-counts.** The ledger carries prose section headings at the
+  same level as stream entries. Match on the backticked form and nothing else.
+- **`dirs − entries` is not the gap.** Ledger entries naming a stream whose directory
+  is absent (or differently named) cancel against real gaps, so the subtraction lands
+  low and hides the reconciliation work. Both `comm` directions are the report; the
+  second is short and each line in it is a question worth answering.
+
+A directory absent from `comm -23` is not necessarily narrated — it may be *mentioned*
+inside another stream's entry without having one of its own. If you want that finer
+read, grep each gap id against the whole ledger and separate "unmentioned" from
+"mentioned in passing".
 
 This is the backlog that motivated the skill. Surfacing it each run keeps it from
 drifting back out of view — and in retroactive mode it *is* the worklist.

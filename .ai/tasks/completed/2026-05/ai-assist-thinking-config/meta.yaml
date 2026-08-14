@@ -1,0 +1,82 @@
+id: ai-assist-thinking-config
+status: shipped
+packages:
+  - '@fgv/ts-extras'
+prs: [332, 334]
+closed: 2026-05
+summary:
+  intended: >
+    Make `@fgv/ts-extras/ai-assist` usable against reasoning models. The concrete
+    symptom was that ai-assist unconditionally sends `temperature`, which every
+    provider's thinking models reject — so pointing a caller at one produced an HTTP
+    400. The brief explicitly refused the narrow fix ("drop temperature for thinking
+    models") and framed this as feature work: design a coherent `IThinkingConfig`
+    abstraction mapping cleanly onto all four providers' reasoning surfaces, decide how
+    it interacts with sampling params, and give callers one consistent way to opt in
+    with budget controls. Phase A was research and design only, writing nothing but
+    `design.md` and `state.md`; phase B implemented against nine binding decisions.
+  shipped: >
+    Thinking support on both `callProviderCompletion` and `callProviderCompletionStream`
+    across Anthropic, OpenAI, Gemini and xAI, built on the layered-options pattern the
+    image-generation stream had just crystallised. `IThinkingConfig` carries a
+    cross-provider `effort?: 'low' | 'medium' | 'high'` shorthand plus an optional
+    `providers[]` array of per-provider blocks with `models[]` narrowing and an `'other'`
+    escape hatch, merged under three precedence tiers. Temperature conflicts fail loudly
+    as `Result.fail` on Anthropic/OpenAI/xAI and pass through on Gemini. Wire encoding
+    landed per provider (Anthropic `thinking` + `output_config`, OpenAI chat
+    `reasoning_effort`, OpenAI Responses `reasoning.effort`, Gemini
+    `thinkingConfig.thinkingBudget`, xAI `reasoning_effort`) plus proxy passthrough, and
+    `extractAnthropicText` became unconditional so thinking blocks are filtered out
+    cleanly in the non-streaming path. Merged to `claude/ai-assist-features` at 100%
+    coverage.
+  diverged: >
+    The defining divergence is that phase A was rejected at signoff and re-run. V1's
+    design recommended a unified type with hard-coded silent translation tables — the
+    exact shape the parallel image-generation stream had explicitly rejected — so a
+    `brief-phase-a-v2.md` re-commissioned the design against nine now-non-negotiable
+    decisions, preserving v1's provider research (which was sound) and discarding its
+    architecture. `design-v1.md` is archived alongside for the record. The brief-v2
+    names the process lesson directly: running the two streams' phase A in parallel was
+    justified on the grounds that their research outputs were disjoint, but their
+    *pattern-extraction* outputs feed each other, so disjointness at the research level
+    was the wrong test. Second, three decisions shipped on unverified defaults because
+    no API key was available at implementation time — the xAI temperature-rejection
+    policy (D8, conservatively copied from Anthropic/OpenAI), Gemini's integer thinking
+    budgets (A3, taken from the design doc rather than live docs), and Anthropic Sonnet
+    4.5's wire format (A2) — each with the specific reversal documented in the README.
+    Third, thinking-event surfacing was cut to a followup stream under D9 rather than
+    shipped. Two review findings were explicitly declined:
+    `validateResolvedThinkingConfig` (needs a model capability registry that did not
+    exist) and a `modelNameMatches` suffix tightening (no known false positive). The
+    review loop ran substantially longer than the stream's own summary admits — see the
+    accuracy note below.
+  sourceLine: '**PR:** [#334](https://github.com/ErikFortune/fgv/pull/334) — `feat(ai-assist): thinking-config Phase B — layered options for extended thinking/reasoning`'
+notes:
+  - >
+    README internal inconsistency (found during the retroactive antagonist pass, not
+    corrected in place): the "PR review fixes" heading says the items were addressed
+    "across five rounds of Copilot review" and the acceptance box ticks "All 5 rounds of
+    Copilot review feedback addressed", but the table immediately below lists rounds
+    R1 through R7. Seven is consistent with the described work — R6 and R7 both carry
+    substantive `hasThinkingConfig` fixes plus a deferral each. Treat seven as the real
+    count; the "five" reads as a figure written before the last two rounds and never
+    updated. Under the review-loop discipline in `CODING_STANDARDS.md` a seven-round
+    loop is itself a signal worth noting rather than a detail.
+keywords:
+  - extended-thinking
+  - reasoning-effort
+  - thinking-budget
+  - temperature-conflict
+  - layered-options
+  - merge-precedence
+  - provider-escape-hatch
+  - model-context-selection
+  - anthropic-output-config
+  - openai-responses-reasoning
+  - gemini-thinking-budget
+  - grok-reasoning
+  - design-rejected-at-signoff
+  - parallel-phase-a
+  - unverified-defaults
+  - copilot-review-loop
+sourceHash: 206cc46b23c6ed67

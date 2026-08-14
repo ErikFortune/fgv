@@ -1,0 +1,70 @@
+id: crypto-batch-2-hpke
+status: shipped
+packages:
+  - '@fgv/ts-extras'
+  - '@fgv/ts-web-extras'
+prs: [343, 346, 348]
+closed: 2026-05
+summary:
+  intended: >
+    Give a cross-repo consumer HPKE base mode (RFC 9180) for several Phase 2 flows —
+    per-session material delivery, master-key wrap at unlock, recovery-proof envelopes,
+    and later cross-instance delivery — each using the `info` parameter to bind a
+    ciphertext to a specific context so a captured one cannot be replayed elsewhere. Two
+    decisions were settled with the user before phase A: HPKE gets its own namespace
+    rather than extending the existing `wrapBytes` / `unwrapBytes`, because ECIES-P256 and
+    RFC 9180 HPKE X25519 are different protocols with different security properties and
+    smearing them under one API would cost reason-ability (D1); and HKDF ships alongside
+    HPKE in the same deliverable, with its exact placement left to the design (D2). Phase A
+    was design only; phase B implemented against the resulting contract.
+  shipped: >
+    `HpkeProvider` for the DHKEM(X25519, HKDF-SHA256) + HKDF-SHA256 + AES-256-GCM suite,
+    as a class with a private constructor and a `static create(subtle)` factory matching
+    the shape of `NodeCryptoProvider` / `BrowserCryptoProvider` / `KeyStore` /
+    `DirectEncryptionProvider`. Public surface is `sealBase`, `openBase`, `hkdf`,
+    `encodeEnvelope` and `decodeEnvelope`, with Encap/Decap/KeySchedule kept private.
+    D2 resolved to exporting HKDF from the HPKE class rather than adding a method to
+    `ICryptoProvider`. 24 Node tests plus 18 browser tests at 100% coverage, including
+    anchors proving a Node-sealed ciphertext opens under jsdom Web Crypto.
+  diverged: >
+    The load-bearing divergence is a correctness one, and it went the right way: phase B's
+    step-zero RFC verification found that `design.md` §1 specified the label `"dh"` in
+    ExtractAndExpand where RFC 9180 §4.1 requires `"eae_prk"`. The agent stopped, surfaced
+    it, and corrected against OpenSSL's happykey and several independent implementations
+    rather than implementing the signed-off design as written — a signed-off design being
+    wrong on a cryptographic detail is exactly the case where following the contract would
+    have shipped a silently non-interoperable HPKE. Note that `design.md` is archived with
+    the error still in it, flagged by a pointer in the README rather than corrected in
+    place. Second, the brief asked for "both Node and browser implementations" and what
+    shipped is a single implementation in `ts-extras` with `SubtleCrypto` injected at
+    construction, re-exported from `ts-web-extras` — the runtime difference collapsed into
+    one argument. Third, the cross-runtime test strategy could not use published vectors:
+    RFC 9180 Appendix A carries no DHKEM(X25519) + AES-256-GCM vectors (A.1 is
+    AES-128-GCM), so the suite anchors on self-generated cross-runtime values instead,
+    which proves Node/browser agreement but not conformance to an external reference.
+    Finally, the re-export path was chosen as `CryptoUtils.HpkeProvider` rather than a
+    `@fgv/ts-extras/crypto` subpath because the monorepo rig's `moduleResolution: node`
+    does not resolve `exports`-field subpaths — a constraint that has since been revisited
+    by the tsconfig/module-resolution work, so `LIBRARY_CAPABILITIES.md` now documents the
+    subpath as available.
+  sourceLine: '**Status:** Completed 2026-05'
+keywords:
+  - hpke
+  - rfc-9180
+  - base-mode
+  - dhkem
+  - x25519
+  - hkdf
+  - rfc-5869
+  - aes-256-gcm
+  - aead
+  - context-binding
+  - info-parameter
+  - envelope-encoding
+  - subtlecrypto-injection
+  - cross-runtime-anchors
+  - missing-rfc-test-vectors
+  - design-vs-rfc-discrepancy
+  - factory-pattern
+  - module-resolution-subpath
+sourceHash: 2bb28885246aca84

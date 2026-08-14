@@ -1,0 +1,70 @@
+id: ai-assist-image-generation
+status: shipped
+packages:
+  - '@fgv/ts-extras'
+prs: [329]
+closed: 2026-05
+summary:
+  intended: >
+    A two-phase design-then-implement stream to complete image generation across all
+    four providers. Phase A was research and design only, explicitly forbidden from
+    touching production code: inventory each provider's real capabilities, analyse the
+    gap against the current implementation, and recommend a caller-facing type shape,
+    a registry shape, failure semantics, output unification, a streaming position, and
+    migration impact — writing only `design.md` and `state.md`. Phase B was commissioned
+    separately against eight signed-off decisions (D1–D8) as a binding contract. The
+    proximate trigger was two concrete consumer-reported bugs: `gpt-image-1` HTTP 400
+    on `response_format`, and `dall-e-3` failing silently on `count > 1`.
+  shipped: >
+    A structural reshape rather than a bug fix, on the finding that both bugs shared one
+    cause — the types and registry did not model per-model capability divergence.
+    `IAiImageGenerationOptions` gained an optional `models?: ReadonlyArray<IModelFamilyConfig>`
+    of family-scoped blocks discriminated on `provider` + `family`, merged under four
+    precedence tiers (generic → family-generic → model-specific → other-block escape
+    hatch), returning `Result<IResolvedImageOptions>`. Six per-family config types shipped,
+    plus a reshaped `IAiImageModelCapability` carrying `outputParamStyle` and a
+    self-documenting `supportsQualityParam` in place of the opaque `acceptedQualities: []`.
+    Wire encoders were fixed or added for all four providers, including a new xAI adapter
+    pair sending `aspect_ratio` rather than `size` and using a JSON edits body rather than
+    OpenAI's multipart. Four deprecated models and the obsolete `imagen.negativePrompt`
+    were dropped outright, and xAI's already-broken `defaultModel.image` was repointed.
+    100 tests across the resolver and encoders; merged to the `claude/ai-assist-features`
+    integration branch, not directly to `release`.
+  diverged: >
+    The largest delta is architectural and happened at the signoff gate, not during
+    implementation: phase A recommended "Approach A unified", and the signed-off D1 is a
+    materially different layered-options architecture. The stream's own README draws the
+    lesson — a design can be correct on inventory and wrong on architecture, and the
+    orchestrator+user review gate is what catches that even when the design reads as
+    polished. Second, phase A flagged a missing Gemini `responseModalities: ["IMAGE"]`
+    as an urgent broken path; the user empirically refuted it against the live API and
+    D5 became "do NOT add it" — the docs were stale, and the stream's recorded lesson is
+    to live-verify any "this is currently broken" claim before acting on its urgency.
+    Third, the reshape swept in scope the brief never framed: dropping four deprecated
+    models with no migration path (D3) and fixing a pre-existing wrong xAI image default.
+    Two review findings were deliberately declined rather than fixed and logged to
+    `TECH_DEBT.md` with triggers: `try/catch` + `instanceof Error` boilerplate at four
+    `apiClient.ts` sites whose `c8 ignore` directives `captureAsyncResult()` would make
+    unnecessary (P2), and `resolveImageCapability` returning `| undefined` instead of
+    `Result` (P3). The `| undefined` return has since been amended by the model-alias
+    work but still returns `undefined` rather than a `Result`.
+  sourceLine: '**PR:** [#329](https://github.com/ErikFortune/fgv/pull/329) — `feat(ai-assist): layered image generation options architecture (Phase B)`'
+keywords:
+  - image-generation
+  - dall-e
+  - gpt-image-1
+  - grok-imagine
+  - imagen-4
+  - gemini-flash-image
+  - layered-options
+  - merge-precedence
+  - discriminated-config-blocks
+  - provider-capability-registry
+  - wire-encoder
+  - response-format-vs-output-format
+  - aspect-ratio
+  - deprecated-model-removal
+  - design-then-implement
+  - signoff-gate
+  - stale-docs
+sourceHash: 2fafbf3649cb23d5

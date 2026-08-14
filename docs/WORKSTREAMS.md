@@ -314,14 +314,24 @@ post-close edits detectably stale rather than quietly wrong.
 
 **`INDEX.md` is gitignored (decided 2026-08-14).** The question was whether it is useful to
 someone browsing from outside the repo — and that audience is already served, better, by *this
-file*: 803 lines, 43 curated stream entries, Active and Completed. The generated index would
+file*: 803 lines, 41 curated stream entries, Active and Completed. The generated index would
 duplicate that for humans while being worse at it. Its unique value is **completeness for
-machines**: **68 stream directories exist on disk against 43 narrated entries here**, so ~25
-streams have artifacts and no ledger entry. Agents need all 68; humans want the curated 43.
+machines**: **68 stream directories exist on disk against 41 narrated entries here**, and
+**31 of those directories have no entry under their own name — 20 of them are not mentioned
+anywhere in this file, even in passing.** Agents need all 68; humans want the curated 41.
 Different audiences, different artifacts, no reason to commit the machine one — which also
 removes the merge-conflict class and the risk of an agent hand-merging a generated file into
 something corrupt that reads as authoritative. **Side benefit taken:** the generator also reports
-stream dirs missing a ledger entry, turning that 25-stream gap into a worklist.
+stream dirs missing a ledger entry, turning that 31-stream gap into a worklist.
+
+*(Counts measured 2026-08-14. An earlier draft of this section said "43 narrated entries" and
+"~25 streams" — both wrong. The 43 counted this file's two prose section headings as if they
+were streams, and the 25 was a subtraction of two totals rather than a set difference, which
+silently nets naming mismatches against genuine gaps. Four ledger entries name a stream with no
+matching directory (`ai-assist-thinking-events`, `fetch-primitive-threat-model`,
+`personaility-asks-2026-08`, `ts-prompt-assist-features`); some of those are the same stream as
+a differently-named directory, which is exactly the reconciliation a set difference surfaces and
+a subtraction hides.)*
 
 **The open question that sizes the second stream** — resolve it before anything else there:
 does `ISchemaValidator.toJson()` drop straight into MCP tool registration? If yes the adapter is

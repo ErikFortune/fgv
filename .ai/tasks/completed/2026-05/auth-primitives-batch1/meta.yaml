@@ -1,0 +1,66 @@
+id: auth-primitives-batch1
+status: shipped
+packages:
+  - '@fgv/ts-extras'
+  - '@fgv/ts-web-extras'
+  - '@fgv/ts-utils'
+prs: [322]
+closed: 2026-05
+summary:
+  intended: >
+    Four targeted crypto/serialization primitives to unblock personaility's
+    `auth-primitives-foundation` workstream: add `'x25519'` to the `KeyPairAlgorithm`
+    union and its params table; add RFC 8785 `canonicalize(value: JsonValue): string`
+    (brief's preferred attachment point was `HashingNormalizer`, with explicit
+    permission to move it to `Normalizer` if that felt wrong); add multibase
+    base64url + SPKI export/import helpers to `@fgv/ts-extras/crypto-utils` as
+    standalone module exports — the brief put `ICryptoProvider` explicitly
+    out of scope, "no new methods"; and update `LIBRARY_CAPABILITIES.md`.
+  shipped: >
+    All four, published in `5.1.0-26` alpha and consumed by personaility. X25519
+    needed no provider-side code — both `NodeCryptoProvider` and
+    `BrowserCryptoProvider` are fully table-driven and picked it up from the params
+    table alone. `canonicalize()` landed on the base `Normalizer` in
+    `ts-utils/base/normalize.ts`, implemented as recursive descent emitting directly
+    to a string. `spkiHelpers.ts` shipped four pure module-level exports
+    (`multibaseBase64UrlEncode`/`Decode`, `exportPublicKeyAsMultibaseSpki`,
+    `importPublicKeyFromMultibaseSpki`) from both `index.ts` and `index.browser.ts`.
+    `LIBRARY_CAPABILITIES.md` was created by this PR — it did not exist before
+    `bb913392`.
+  diverged: >
+    Three deltas, all documented in the artifacts. (1) `canonicalize()` moved off
+    `HashingNormalizer` onto the base `Normalizer` during orchestrator review
+    (`r3214578687`), on the grounds that it uses none of the hashing functionality;
+    the brief had anticipated and pre-authorized exactly this judgment call, and the
+    move made the method available to `Crc32Normalizer` and every future subclass.
+    (2) Phase 1 (X25519) was already fully present on the branch when the implementing
+    agent started — model union, params table entry, and both providers' test files —
+    so the stream shipped less new work than its brief describes. (3) `spkiHelpers.ts`
+    was revised post-review to route every SPKI operation through an injected
+    `ICryptoProvider` and to add alphabet + length validation in
+    `multibaseBase64UrlDecode`; the brief had specified neither, and the injected
+    provider is the reason the shipped signatures take a `provider` argument. Separately
+    and outside the code: artifact migration to `completed/` and the polished README
+    were done post-merge rather than in the same PR as the work — the stream's own
+    README flags this as the first observed instance of that protocol failure under
+    the then-new substrate. That failure has since recurred often enough to motivate
+    the `finalize-task` skill.
+  sourceLine: '**PR:** [#322](https://github.com/ErikFortune/fgv/pull/322) — `feat(auth-primitives-batch1): X25519 keypair, SPKI helpers, RFC 8785 canonicalize`'
+keywords:
+  - x25519
+  - curve25519
+  - key-agreement
+  - keypair-algorithm-table
+  - rfc-8785
+  - canonical-json
+  - json-canonicalization
+  - integer-key-reordering
+  - multibase
+  - base64url
+  - spki
+  - public-key-export
+  - crypto-provider
+  - cross-runtime
+  - library-capabilities-genesis
+  - post-merge-migration
+sourceHash: 6f9babf90106ec2c
