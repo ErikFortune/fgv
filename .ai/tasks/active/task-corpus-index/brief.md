@@ -74,28 +74,61 @@ packages: ['@fgv/ts-agent-memory', '@fgv/ts-agent-memory-sqlite-vec']
 prs: [585]
 opened: 2026-07-28
 closed: 2026-07-31
-summary: >                      # EXTRACTED, not written — see below
-  Fragment identity on IVectorQueryHit — opaque consumer-minted fragmentId
-  alongside the advisory locator span.
+summary:                         # generated synthesis + extracted check — see below
+  intended: …
+  shipped: …
+  diverged: …
+  sourceLine: …                  # verbatim from result.md
 keywords: [vector-index, fragment, locator, opaque-id, sqlite-vec, re-embed]
 sourceHash: 3f9a1c…              # over the artifacts this was derived from
 ```
 
-#### Summary is extracted; keywords are generated. The split is load-bearing.
+#### Summary is a generated synthesis; the extracted line rides along as its check
 
-Sampling the corpus, `result.md` and `README.md` **already open with authored summary lines** —
-`**Shipped:** …`, `## Outcome`, `## Delivered`, `**Status:** …`. So:
+An earlier draft of this brief said summary should be **extracted** rather than generated, on the
+grounds that extraction cannot hallucinate. That was over-cautious, and it gave up the thing that
+makes a summary worth reading.
 
-- **`summary` → extractive.** Take the authored line. It **cannot hallucinate**, and the author
-  already wrote the sentence they meant. A generated paraphrase that is confidently wrong, sitting
-  committed in a completion record, reads as authoritative — that is the failure to design out,
-  and extraction designs it out rather than mitigating it.
-- **`keywords` → generative.** This is where a model earns its keep: surfacing concepts a grep
-  would miss because they are not literally in the text. The failure mode is benign — a bad
-  keyword costs one wasted search, not a false belief.
+The most useful fact about a closed stream is the **delta between what it was asked to do
+(`brief.md`) and what it actually did (`result.md`)** — including what got cut. No authored line
+contains that, because it spans two files. Extraction yields the outcome and silently drops the
+fact that the outcome changed shape. `orchestrator.md` already names this as where drift lives:
+when a stream revises approach mid-flight, the change file and `state.md` "frequently still
+describe the rejected approach." That is a synthesis problem, and only synthesis solves it.
 
-Where no summary line can be extracted, **leave it blank.** A blank summary is honest; a
-fabricated one is worse than none.
+The real risk was never generation — it was **unreviewed** generation. Building at completion
+already puts the summary in the stream-closing PR, in front of the one person who still has full
+context. Two refinements make that review effective rather than nominal:
+
+- **Structure the synthesis.** Separate `intended` / `shipped` / `diverged` fields, not free
+  prose. A wrong claim in a named field is visible at a glance; the same claim buried in a
+  paragraph is not. `diverged` empty is a legitimate and common answer.
+- **Carry the extracted line alongside as a check.** `sourceLine`, verbatim from `result.md`'s
+  authored opener (`**Shipped:**` / `## Outcome` / `## Delivered` / `**Status:**`). No extra model
+  call, and it lets a reader — human or agent — spot a synthesis that has drifted from its source
+  without opening the stream.
+
+```yaml
+summary:
+  intended: >
+    Carry an opaque consumer-minted fragment id on IVectorQueryHit alongside the
+    existing locator span.
+  shipped: >
+    Same, plus enforcement that at least one of the two is present — via the
+    converter and re-checked in both index implementations.
+  diverged: >
+    A conditional-required union was considered for that enforcement and rejected;
+    the converter does it instead.
+  sourceLine: '**Shipped:** fragment identity on `IVectorQueryHit` …'   # verbatim
+keywords: [vector-index, fragment, locator, opaque-id, sqlite-vec, re-embed]
+```
+
+Where `result.md` is thin or absent, leave the generated fields blank rather than inventing them —
+**blank still beats fabricated.** That rule survives from the extractive draft; what changes is
+that it is now the fallback rather than the default.
+
+**Keywords stay generated**, for the reason they always were: that is where a model adds recall
+over a literal grep, and a bad keyword costs one wasted search rather than a false belief.
 
 #### Staleness
 
