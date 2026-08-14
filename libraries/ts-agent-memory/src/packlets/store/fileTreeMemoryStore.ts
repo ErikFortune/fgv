@@ -1594,7 +1594,18 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * two reasons: the index holds converted bodies on some paths and raw ones on
    * others, and re-serializing a *converted* body could change the bytes on disk
    * — a reconcile of an ordering field has no business rewriting content.
-   * `splitFrontmatter` yields the body verbatim, so only the envelope moves.
+   * `splitFrontmatter` hands back the body text unconverted, so the round trip
+   * carries the authored characters through untouched and only the envelope
+   * moves.
+   *
+   * "Untouched" is not quite "byte-identical", and the exception is line
+   * endings: `splitFrontmatter` strips a trailing `\r` per line and
+   * `joinFrontmatter` writes `\n` delimiters, so a CRLF-authored file comes back
+   * LF-normalized. That is **the store's behavior on every write path, not
+   * something reconcile introduces** — an ordinary `put` normalizes the same way
+   * — so reconcile does not rewrite content that a subsequent write would have
+   * left alone. The property being claimed here is the narrower and load-bearing
+   * one: no body is round-tripped through its registered Converter.
    *
    * The projector is fed an `IMemoryRecord<string>` carrying that raw body,
    * which is exactly the shape {@link FileTreeMemoryStore._stampRank} hands it

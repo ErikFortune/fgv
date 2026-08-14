@@ -49,6 +49,28 @@ function mutableRoot(
   return root;
 }
 
+/** Resolves a persisted memory file under the `knowledge` scope directory. */
+function persistedFile(
+  root: FileTree.IMutableFileTreeDirectoryItem,
+  name: string
+): FileTree.IFileTreeFileItem {
+  const scopeDir = root
+    .getChildren()
+    .orThrow()
+    .find((c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory' && c.name === 'knowledge');
+  if (scopeDir === undefined) {
+    throw new Error('expected a knowledge scope directory');
+  }
+  const file = scopeDir
+    .getChildren()
+    .orThrow()
+    .find((c): c is FileTree.IFileTreeFileItem => c.type === 'file' && c.name === name);
+  if (file === undefined) {
+    throw new Error(`expected a persisted file named ${name}`);
+  }
+  return file;
+}
+
 function registry(): IBodyConverterRegistry {
   const reg = BodyConverterRegistry.create().orThrow();
   reg.register(knowledgeKind, Converters.string);
@@ -360,6 +382,38 @@ describe('FileTreeMemoryStore rank axis', () => {
       const store = createStore({ root, rankProjectors: knowledgeProjectors }).orThrow();
       return { root, store };
     }
+
+    test('carries an authored body through unconverted, normalizing only line endings', async () => {
+      // Copilot round 2 surfaced that the docstring claimed the body came back
+      // "verbatim". It does not: `splitFrontmatter` strips a trailing \r per line
+      // and `joinFrontmatter` writes \n, so a CRLF-authored file is LF-normalized.
+      // That is the store's behavior on every write, not a reconcile quirk — pinned
+      // here so the docstring and the code cannot drift apart again.
+      const root = mutableRoot();
+      const seed = createStore({ root }).orThrow();
+      (await seed.put(makeRecord({ id: 'crlf', body: 'alpha\nbeta' }))).orThrow();
+
+      // Rewrite the persisted file with CRLF line endings, as an external editor would.
+      const file = persistedFile(root, 'crlf.md');
+      const authored = file.getRawContents().orThrow().replace(/\n/g, '\r\n');
+      if (!FileTree.isMutableFileItem(file)) {
+        throw new Error('expected a mutable file item');
+      }
+      file.setRawContents(authored).orThrow();
+      expect(file.getRawContents().orThrow()).toContain('\r\n');
+
+      const store = createStore({ root, rankProjectors: knowledgeProjectors }).orThrow();
+      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(1);
+
+      const after = persistedFile(root, 'crlf.md').getRawContents().orThrow();
+      // The authored characters survive; the line endings are normalized.
+      expect(after).toContain('alpha\nbeta');
+      expect(after).not.toContain('\r\n');
+      expect(parseMemoryFile(after, registry())).toSucceedAndSatisfy((rec: IMemoryRecord<unknown>) => {
+        expect(rec.body).toBe('alpha\nbeta');
+        expect(rec.envelope.rank).toBe('alpha\nbeta'.length);
+      });
+    });
 
     test('reproduces the inversion, then fixes it', async () => {
       const { store } = await populatedThenProjectored();
