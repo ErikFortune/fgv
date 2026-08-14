@@ -133,6 +133,12 @@ retired PR is often the most instructive thing a cluster produced — the reason
 shape changed. Verify state rather than assuming: a number appearing in an artifact is not
 evidence it landed.
 
+**A sub-stream's `prs` names the PRs it authored, not the one that carried it to `release`.**
+When a cluster promotes several sub-streams in one squash, that promotion PR belongs to the
+**cluster parent's** record only. Putting it on every sub-stream inflates each one's apparent
+footprint and makes the same PR look like four separate pieces of work. Record the
+relationship with `relatedStreams` instead.
+
 Two more fields, both optional and both worth adding when they apply:
 
 - **`ledgerEntry:`** when `docs/WORKSTREAMS.md` narrates the stream under a *different*

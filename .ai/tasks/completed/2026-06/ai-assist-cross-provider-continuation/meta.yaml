@@ -1,7 +1,7 @@
 id: ai-assist-cross-provider-continuation
 status: shipped
 packages: ['@fgv/ts-extras']
-prs: [454, 459]
+prs: [454]
 opened: 2026-06-04
 closed: 2026-06
 relatedStreams:
@@ -209,6 +209,16 @@ notes:
     `ai-assist-message-ordering` (#480) made that branch reachable from the
     completion path. The teaching point stands; the file-and-branch citation no
     longer resolves.
+  - >
+    #459 IS DELIBERATELY NOT IN `prs`. It is the `per-provider-testbed-scenarios` cluster's
+    promotion PR to `release` and belongs to the cluster parent's record; this stream's own
+    PR is #454, which merged into the cluster integration branch (squash `38d6dc02e`). Two
+    independent drafters on this sweep batch treated the cluster-promotion PR differently —
+    one listed it here, one excluded it from the sibling `ai-assist-responses-reasoning-events`
+    record — and the exclusion is the correct rule: a sub-stream's `prs` names the PRs it
+    authored, not the squash that carried it to `release` alongside its siblings. Listing it
+    on all four sub-streams would make one promotion look like four pieces of work.
+    Normalized 2026-08-14; rule added to the finalize-task skill.
 keywords:
   - continuation-forwarding
   - rawTail
