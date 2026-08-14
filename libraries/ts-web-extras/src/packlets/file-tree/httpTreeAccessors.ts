@@ -448,12 +448,6 @@ export class HttpTreeAccessors<TCT extends string = string>
   }
 
   /**
-   * Loads files from the HTTP backend for the specified directory path.
-   * @param params - Configuration parameters for the HTTP tree accessors.
-   * @param directoryPath - The path to the directory to load files from.
-   * @returns A promise that resolves to a result containing the loaded files or an error message.
-   */
-  /**
    * Resolves a file response's `contents` to what should seed the in-memory tree:
    * raw bytes when the server says it sent base64, the string verbatim otherwise.
    *
@@ -479,6 +473,12 @@ export class HttpTreeAccessors<TCT extends string = string>
     );
   }
 
+  /**
+   * Loads files from the HTTP backend for the specified directory path.
+   * @param params - Configuration parameters for the HTTP tree accessors.
+   * @param directoryPath - The path to the directory to load files from.
+   * @returns A promise that resolves to a result containing the loaded files or an error message.
+   */
   private static async _loadFiles<TCT extends string = string>(
     params: IHttpTreeParams<TCT>,
     directoryPath: string

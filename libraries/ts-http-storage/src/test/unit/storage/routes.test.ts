@@ -12,7 +12,7 @@ import {
 
 class InMemoryProvider implements IHttpStorageProvider {
   /** Records the encoding the route passed through, so a test can assert it arrived. */
-  public lastEncoding: string | undefined;
+  public lastEncoding: StorageContentEncoding | undefined;
 
   private readonly _files: Map<string, string> = new Map();
 

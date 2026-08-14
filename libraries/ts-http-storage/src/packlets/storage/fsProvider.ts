@@ -98,9 +98,10 @@ export class FsStorageProvider implements IHttpStorageProvider {
       if (!stats.isFile()) {
         return fail(`${itemPath}: not a file`);
       }
-      // Byte-faithful only when asked. Reading without an encoding yields the raw
-      // bytes; base64 carries them intact. The default path stays a lenient UTF-8
-      // decode, which is lossy but is what every existing caller already receives.
+      // Byte-faithful only when asked. On the base64 branch `readFile` is called
+      // with no encoding argument, so it yields the raw bytes and base64 carries
+      // them intact. The default branch below still decodes as UTF-8 — lossy, but
+      // it is what every existing caller already receives.
       if (encoding === 'base64') {
         const bytes = await fsp.readFile(resolved.value);
         return succeed({
