@@ -250,6 +250,17 @@ shared generated file. Because the skill regenerates first, no agent depends on 
 being fresh, which removes the need for a CI verify gate too — consistent with the change-file
 lesson about gates invisible to the local suite.
 
+**Metadata is a per-stream `meta.yaml`, built once at stream completion (decided 2026-08-14).**
+Not hand-authored frontmatter across 269 files. It hooks the completion transition that already
+exists, lands in the stream-closing PR where a human still has context to review it, and — because
+each stream writes only its own directory — **removes the shared-file conflict class entirely**.
+The split inside it is load-bearing: **`summary` is extracted** from the authored `**Shipped:**` /
+`## Outcome` / `## Delivered` line these files already open with, because a generated paraphrase
+that is confidently wrong and committed reads as authoritative; **`keywords` are generated**,
+because that is where a model adds recall and a bad keyword costs one wasted grep rather than a
+false belief. Blank beats fabricated where nothing is extractable. A `sourceHash` makes
+post-close edits detectably stale rather than quietly wrong.
+
 **`INDEX.md` is gitignored (decided 2026-08-14).** The question was whether it is useful to
 someone browsing from outside the repo — and that audience is already served, better, by *this
 file*: 803 lines, 43 curated stream entries, Active and Completed. The generated index would

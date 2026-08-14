@@ -23,6 +23,11 @@ half — indexing the corpus into `@fgv/ts-agent-memory` behind an MCP server �
 separately as `agent-memory-mcp-server`. **Do that one only if this one proves insufficient**,
 and the point of shipping this first is to find out.
 
+Generated **keywords** (§1) sharpen that test considerably. They are the cheap bridge between
+grep and semantic search: they surface concepts a literal search misses, which is most of what
+the vector path would buy. If keywords close the discovery gap, the second stream stays unbuilt —
+which is the outcome to hope for.
+
 ## The shape of the corpus (verified 2026-08-14)
 
 Strong, near-universal file conventions already exist:
@@ -44,7 +49,68 @@ directory name.
 
 ## Scope
 
-### 1. Frontmatter on stream artifacts
+### 1. A per-stream `meta.yaml`, built once at completion (decided 2026-08-14)
+
+**Do not hand-author frontmatter across 269 files.** Generate a single per-stream metadata
+artifact — `<stream-dir>/meta.yaml` — as a step of the existing completion transition
+(`active/<id>/` → `completed/<bucket>/<id>/`, per
+`.ai/conventions/workflow/artifact-protocol.md`). Built **once**, when the stream closes and
+`result.md` exists, i.e. when there is finally something true to summarize.
+
+Three properties fall out of that placement, and they are why this shape beats
+per-file frontmatter:
+
+- **The conflict class disappears.** Each stream writes only its own directory. Nothing is
+  shared, so nothing collides — which is the cost the shared-`INDEX.md` design was paying.
+- **It hooks a workflow step that already exists**, rather than adding discipline anyone has to
+  remember.
+- **It lands in the stream-closing PR**, so a human reviews the summary at the one moment they
+  still have the context to catch a wrong one.
+
+```yaml
+id: agent-memory-fragment-id
+status: shipped
+packages: ['@fgv/ts-agent-memory', '@fgv/ts-agent-memory-sqlite-vec']
+prs: [585]
+opened: 2026-07-28
+closed: 2026-07-31
+summary: >                      # EXTRACTED, not written — see below
+  Fragment identity on IVectorQueryHit — opaque consumer-minted fragmentId
+  alongside the advisory locator span.
+keywords: [vector-index, fragment, locator, opaque-id, sqlite-vec, re-embed]
+sourceHash: 3f9a1c…              # over the artifacts this was derived from
+```
+
+#### Summary is extracted; keywords are generated. The split is load-bearing.
+
+Sampling the corpus, `result.md` and `README.md` **already open with authored summary lines** —
+`**Shipped:** …`, `## Outcome`, `## Delivered`, `**Status:** …`. So:
+
+- **`summary` → extractive.** Take the authored line. It **cannot hallucinate**, and the author
+  already wrote the sentence they meant. A generated paraphrase that is confidently wrong, sitting
+  committed in a completion record, reads as authoritative — that is the failure to design out,
+  and extraction designs it out rather than mitigating it.
+- **`keywords` → generative.** This is where a model earns its keep: surfacing concepts a grep
+  would miss because they are not literally in the text. The failure mode is benign — a bad
+  keyword costs one wasted search, not a false belief.
+
+Where no summary line can be extracted, **leave it blank.** A blank summary is honest; a
+fabricated one is worse than none.
+
+#### Staleness
+
+Record `sourceHash` over the artifacts the meta was derived from. If the artifacts are edited
+after close, the hash mismatches and the meta is known-stale rather than quietly wrong. The
+generator reports mismatches; it does not silently regenerate (regenerating would re-run the model
+and could overwrite a human-corrected summary).
+
+#### Backfill
+
+One-time pass over the 52 completed streams. Same rules: extract summaries, generate keywords,
+blank where nothing is extractable. Reviewable as its own PR — and it is the moment to catch
+whether extraction is actually picking the right line.
+
+### 1b. (superseded) Frontmatter on stream artifacts
 
 Add YAML frontmatter to `brief.md` / `result.md` / `README.md`. Minimum viable set, chosen so
 every field is either already known at authoring time or mechanically derivable:
@@ -63,10 +129,12 @@ summary: >
 ---
 ```
 
-**Do not retrofit all 269 files by hand.** Backfill mechanically where the value is derivable
-(`id` from the directory, `status` from which tree it sits in, `closed` from the bucket, `prs`
-by grepping the artifacts for `#\d+`), and leave `summary` blank where it cannot be derived —
-a blank summary is honest, a fabricated one is worse than none.
+**Superseded by §1.** Retained only to record what was considered: per-file YAML frontmatter on
+`brief.md` / `result.md` / `README.md`, hand-authored going forward and mechanically backfilled.
+Rejected because it needs authoring discipline on every artifact forever, spreads one stream's
+metadata across three files, and — unlike a per-stream `meta.yaml` — does not by itself remove
+the shared-file conflict problem. The derivable-field and blank-over-fabricated rules carry
+forward into §1 unchanged.
 
 ### 2. A generated `.ai/tasks/INDEX.md` — **gitignored** (decided 2026-08-14)
 
@@ -76,7 +144,12 @@ Regenerated by a script, never hand-edited (say so at the top of the file).
 Must include, per stream: id, status, packages touched, PR numbers, dates, one-line summary,
 and the path to its directory.
 
-**Add it to `.gitignore`.** The question was whether it is useful to someone browsing the repo
+**Add it to `.gitignore` — note this is the opposite call from `meta.yaml` in §1, and the reason
+is cost.** A `meta.yaml` is expensive to produce (a model call, once) and wants human review, so
+it is committed. `INDEX.md` is cheap to derive from the committed metas (parse + collate, no model
+call), so nothing is gained by storing it and the conflict cost is avoided.
+
+The question was whether it is useful to someone browsing the repo
 from outside; the answer is that **that audience is already served, and better, by
 `docs/WORKSTREAMS.md`** — 803 lines, 43 stream entries, with both Active and Completed sections,
 curated and narrative. A generated table would duplicate its job for humans while being strictly
@@ -109,9 +182,12 @@ A script under `common/scripts/` or a small `tools/` project. Requirements:
   tooling, but the convention is not situational and the corpus walk is exactly what `FileTree`
   is for.
 - **`Result<T>` throughout**; no throwing across module boundaries.
-- **Frontmatter parsing via `Yaml.yamlConverter`** from `@fgv/ts-extras`, not a hand-rolled
-  parser.
-- **Fails loudly on a malformed or missing frontmatter block**, listing every offending file in
+- **`meta.yaml` parsing via `Yaml.yamlConverter`** from `@fgv/ts-extras`, not a hand-rolled
+  parser, and validated through a Converter so a malformed meta is a typed failure rather than a
+  loose object.
+- **Fails loudly on a malformed `meta.yaml`**, and **reports** (does not fail on) a stream
+  directory that has none — an un-closed stream legitimately has no meta yet. Lists every
+  offending file in
   one aggregated error (`MessageAggregator`), rather than silently emitting a partial index. A
   partial index that looks complete is the failure mode this stream exists to prevent.
 - Idempotent: running it twice with no corpus change produces a byte-identical `INDEX.md`.
