@@ -493,4 +493,90 @@ traps for anyone reading the PR rather than the stream artifacts:
 
 ---
 
+## Batch 4 — `ts-extras-mcp`, `ts-prompt-assist-observability`, and three brief-only 2026-07 streams
+
+### B4.1 — three streams closed with only a brief, and it was one batch, not three accidents
+
+`ai-assist-gemini-image-refusal`, `ai-assist-openai-frontier-responses` and
+`crypto-utils-base64url-hardening` each sit in `completed/` containing **only `brief.md`** — no
+result, no state, no README. That is ambiguous between "shipped without an exit artifact",
+"never ran", and "absorbed elsewhere", and the artifacts cannot settle it.
+
+**Resolved from current source**, which is the only decisive evidence: every brief's concrete
+change exists in the code today, each PR traces to a squash commit on `origin/release`, and a
+pickaxe confirms the marker lines arrived *with* those commits. **All three merged 2026-07-07.**
+So: one batch where exit artifacts were skipped wholesale.
+
+Their records leave `summary.shipped` and `summary.diverged` **blank** per the retroactive rule —
+with only a brief there is no authored account, and synthesizing one from brief-plus-source
+would present this sweep's inference as the stream's own claim. Findings sit in `notes`,
+attributed here.
+
+**Decision needed:** all three warrant ledger entries (two are unmentioned anywhere). More
+usefully — this is a workflow failure mode, not a records problem. A stream that ships without
+an exit artifact leaves nothing to finalize *from*.
+
+### B4.2 — an unclosed STOP-FLAG that a later rotation may have overtaken
+
+`ai-assist-openai-frontier-responses`'s brief ends at a STOP-FLAG requiring a **live
+`gpt-5.5-pro` canary run by the principal**. Nothing records that it ran. The #568 model
+rotation then repointed `@openai:pro` to `gpt-5.6-sol`, which may have made the gate moot — or
+may have quietly stepped over it.
+
+**Decision needed, and this is the one I'd look at first in this batch:** confirm whether the
+canary ran, or whether the routing it was meant to validate is now exercised by a different
+model. A gate that was neither closed nor cancelled is the worst of the three states.
+
+### B4.3 — the observation fan-out claim is no longer exhaustive
+
+Refining B3.1 with better attribution. `LIBRARY_CAPABILITIES.md` says observer fan-out fires
+"once per public `resolve` / `resolveJsonOutput` / `resolveFreeTextOutput` call". A **fourth**
+producer now exists: `PromptLibrary` exposes an `_observationSeam`
+(`promptLibrary.ts:320,379`) handing the seq minter and `_observe` to `HorizontalComposer`.
+
+**Whose defect it is matters, and it is not `ts-prompt-assist-observability`'s.** That stream's
+own artifacts prove `'compose'` was explicitly deferred — `phase-b-triage.md` OQ-7 and its
+README both list composer-side observation as out of scope, and the (now struck) `FUTURE.md`
+entry names the seq-coordination seam as the blocker #538 later solved. The enumeration was
+**correct when written** and went stale two months later. Same rot pattern, but the record that
+wrote it was right.
+
+**Decision needed:** the `LIBRARY_CAPABILITIES` edit from B3.1, widened to cover the seam.
+
+### B4.4 — a doc reference to a stream directory that does not exist
+
+`docs/` references `.ai/tasks/active/credential-store`. No directory of that name exists in
+`active/` **or** `completed/`. Either a stream never created, one deleted without updating its
+referrer, or a rename whose old name survived.
+
+**Decision needed:** you will know which. I did not guess. (Six *other* stale `active/` paths
+were confirmed migrated and repointed in this PR; the remaining ten are correct.)
+
+### B4.5 — the Result-integration-boundary convention is not uniform on dependencies
+
+`LIBRARY_CAPABILITIES.md` presents "Result-integration boundary" as a package-shape convention
+with an explicit NOT-in-scope list. The **dependency posture inside it was never uniform**:
+`ts-extras-mcp` and `ts-extras-webauthn` take direct dependencies; `ts-extras-transformers` and
+`ts-extras-ollama` use peers. `ts-extras-mcp`'s design cites "webauthn-style" explicitly, so
+this is a consistent *choice*, not an oversight — but the convention text does not mention the
+axis at all.
+
+**Decision needed:** decide it once and say so in the convention, or state that the posture is
+per-package by design. Either is fine; silence is what makes each new boundary package
+re-litigate it.
+
+### B4.6 — `ts-extras-mcp`'s one-file-SDK-isolation claim, precisely
+
+It holds for shipped code: production imports of `@modelcontextprotocol/sdk` live only in
+`sdk.ts`. One test file imports the SDK's server/in-memory-transport surface deliberately, for
+a real-SDK end-to-end pass. So the v2 rename is one production file **plus that test** — the
+claim stands, but "isolated to one file" is worth reading as "one file in `src/packlets`".
+
+Worth noting *why* that test exists: rather than trust 100% coverage over a mocked SDK seam,
+the stream re-verified both constraints against a real in-memory MCP server across all five
+rejected schema classes. It found no production bug and closed a fidelity gap — the same
+instinct the `per-provider-testbed-scenarios` cluster is the canonical example of.
+
+---
+
 *Sections below are appended per batch as the sweep proceeds.*
