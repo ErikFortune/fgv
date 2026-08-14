@@ -203,26 +203,61 @@ defensible on its own terms). Low stakes; flagged because the justification is n
 **Decision needed:** file both, or close them. The second is the more concerning shape — a
 completion record asserting something was queued, when it was not.
 
-### B1.4 — the same failure mode has now recurred three times on one surface
+### B1.4 — a request-side blind spot on the client-tool surface, twice
 
-`ai-assist-client-tools` is already cited in `TESTING_GUIDELINES.md` as the canonical case
-of 100% coverage on a test architecture that never exercised the brief's central
-requirement. `ai-assist-client-tool-id-fix` is a **third** instance on the same files: the
-continuation builders keyed `tool_use_id` as `r.callId ?? r.toolName`, so a nullish id
-emitted the tool *name*, and `??` passed `''` through untouched. It reached a consumer as
-intermittent Anthropic "malformed identifier" errors **26 days after cluster close**, and
-neither the parent's coverage gate nor its live testbed run caught it.
+**Read this correction first if you saw an earlier version of this file.** A first draft of
+this section said `ai-assist-client-tools` "shipped broken" and counted three instances.
+Both are wrong, and the distinction matters.
 
-The fix is in and verified present (`isUsableId`, buffered-`tool_use.id` correlation, both
-builders returning `Result`, a `ai-assist:malformed-tool-use` warn replacing a silent
-drop). What is unresolved is whether the *class* is closed: all three defects were
-request-side or correlation-side, and all three were invisible to response-mocking tests.
+**What actually happened.** Phase C's exit artifact declared "Complete — all gates green"
+with 100% coverage and a passing live-testbed run. A retroactive `code-reviewer` pass found
+3 P1s + 6 P2s, headed by: `executeClientToolTurn` never merged client tools into the
+request `tools` array, and the three `call*Stream` signatures were still typed
+`AiServerToolConfig`. The model was never told the client tools existed. **But all three
+P1s were fixed inside PR #447 itself, before it merged** — the fix is at
+`streamingAdapters/clientToolContinuationBuilder.ts:627-630`, carrying a comment naming
+P1-1, and #447's own body records the live-testbed gate as still ⏸ OPEN at merge, calling
+the earlier success claim "suspect". **What shipped broken was the claim, not the code.**
+That is a real failure — an exit artifact asserting a live run succeeded when it had
+not — but it is a different failure from shipping a broken build to `release`, and the
+repo's own retelling should not drift into the stronger version.
 
-**Decision needed:** whether this warrants a standing rule — something like "a
-provider-boundary stream must assert on the request body, not only the response" — in
-`TESTING_GUIDELINES.md`. Three instances on one surface is past coincidence.
+**The gap TESTING_GUIDELINES names is closed.** `clientToolContinuationBuilder.test.ts`
+now carries `describe('client tools reach the provider (P1-1 regression)')` with four
+request-body assertions over a `mockFetchCapturingBody` helper that parses `init.body` —
+Anthropic `input_schema`, Anthropic server+client coexistence, OpenAI `function`, Gemini
+`function_declarations`. The exact test class the guidelines describe as structurally
+absent now exists. Verified.
 
-### B1.5 — ledger status was stale by months (fixed in this PR)
+**What remains.** `ai-assist-client-tool-id-fix` is a **second, later** instance of the
+same blind spot on the same files — `r.callId ?? r.toolName` emitted the tool *name* when
+the id was nullish, and `??` passed `''` through. It reached a consumer as intermittent
+Anthropic "malformed identifier" errors 26 days after cluster close, and neither the
+parent's coverage gate nor its live testbed run caught it. Both defects were request-side
+or correlation-side; both were invisible to response-mocking tests.
+
+**Decision needed:** two instances on one surface, with the first already codified as a
+teaching example, is enough to ask whether `TESTING_GUIDELINES.md` should carry a standing
+rule for provider-boundary work — *assert on the request body, not only the response.* The
+regression tests that exist today were added reactively for one defect; nothing generalizes
+them to the next adapter.
+
+### B1.5 — `LIBRARY_CAPABILITIES.md` still gates a feature on a merged PR
+
+Line 390: *"(`executeClientToolTurn` gains the same `endpoint` override once PR #466
+merges; until then the tools path uses `descriptor.baseUrl` only.)"* It has it today —
+`readonly endpoint?: string` at `clientToolContinuationBuilder.ts:487`, resolved through
+`resolveEffectiveBaseUrl`. A reader following the guide would hand-roll a workaround for a
+capability that shipped.
+
+Same file, minor: the Gemini web-search + client-tools note says the request "HTTP 400s".
+The library now pre-empts it with a named `Result.fail` before any wire call, which is a
+better outcome than the doc promises.
+
+**Decision needed:** both are one-line edits to an instruction file, held back from
+auto-commit per the skill. Say the word.
+
+### B1.6 — ledger status was stale by months (fixed in this PR)
 
 `ts-prompt-assist-features` read *"cluster integration branch … ready for promotion to
 `release`"*. It promoted via #397 (`88545a5dc`) and four later prompt-assist streams
