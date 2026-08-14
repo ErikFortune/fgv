@@ -101,11 +101,28 @@ generation is fine when it is reviewed at the moment someone still has context.
 unavoidable — *"this stream touched `@fgv/ts-agent-memory`'s public surface; does
 `LIBRARY_CAPABILITIES.md` need an entry?"* — not to answer it.
 
+#### The skill itself is written — `.claude/skills/finalize-task/SKILL.md`
+
+Authored 2026-08-14, ahead of the tooling, because **every step is doable by hand**: an agent can
+read the artifacts, write the YAML, move the directory, draft the ledger entry. The proposed
+`rush index-tasks` generator makes some steps cheaper; it is not a prerequisite. That means the
+skill is usable **today**, including for the retroactive backfill, and the remaining work in this
+stream is tooling that accelerates a ritual which already runs.
+
 #### Must run retroactively
 
-The 25-stream backfill uses the same skill against already-completed streams. If it only works on
-a live stream, the existing gap never closes and we have built a tool that prevents future
-instances of a problem while leaving the current one intact.
+The backfill uses the same skill against already-completed streams — and **retroactive mode moves
+nothing**, because those streams already sit in `completed/`. It runs steps 1, 2, 4, 5 and 7 and
+deliberately skips the migration (step 3) and the change-file gate (step 6): the work merged long
+ago, so there is nothing to move and no change file to verify.
+
+If the skill only worked on a live stream, the existing gap would never close and we would have
+built something that prevents future instances of a problem while leaving the current one intact.
+
+Two rules carry extra weight in this mode, both encoded in the skill: **prefer blank over
+reconstruction** (these streams closed weeks or months ago; the artifacts are the only evidence),
+and **batch the runs but not the review** — a reviewer skimming twenty drafted ledger entries at
+once will not catch a wrong one.
 
 #### Relationship to the read side
 

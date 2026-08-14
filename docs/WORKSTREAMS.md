@@ -226,8 +226,15 @@ stream.
 bucket derivation, index regeneration and `rush change --verify` get automated. The
 `WORKSTREAMS.md` entry is **drafted for review**, and `LIBRARY_CAPABILITIES.md` is **prompted, not
 written** — auto-generated prose would degrade two artifacts whose whole value is that they are
-curated. Must run **retroactively**, or the existing 25-stream gap never closes. And it should
-close *itself*: if `/finalize-task` cannot finalize its own stream, it is not finished.
+curated. Must run **retroactively** — and in that mode it **moves nothing**, since those streams already
+sit in `completed/`; it backfills metadata and ledger entries in place, skipping the migration and
+the change-file gate. And it should close *itself*: if `/finalize-task` cannot finalize its own
+stream, it is not finished.
+
+**The skill is written and usable now** — `.claude/skills/finalize-task/SKILL.md`, authored ahead
+of the tooling because every step is doable by hand. The generator would make some steps cheaper;
+it was never a prerequisite. So the retroactive backfill can start immediately, and what remains
+in this stream is tooling that accelerates a ritual already running.
 
 **Origin.** Erik, 2026-08-14: *"Can you suggest a memory tool to index our task files so you can
 read them? Prefer to just adopt if there's something that meets our needs but we can build if
