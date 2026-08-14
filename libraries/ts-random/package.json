@@ -4,6 +4,7 @@
   "description": "",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "sideEffects": false,
   "scripts": {
     "build": "heft build --clean",
     "clean": "heft clean",

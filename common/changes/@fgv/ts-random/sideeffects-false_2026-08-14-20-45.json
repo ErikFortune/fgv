@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-random",
+      "comment": "Declare \"sideEffects\": false so bundlers can tree-shake the package. src/index.ts is pure re-exports with no module-level side effects; this was the one miss in an audit of all 25 libraries against the MONOREPO_GUIDE requirement.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-random"
+}
