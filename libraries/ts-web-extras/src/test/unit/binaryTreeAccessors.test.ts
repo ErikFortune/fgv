@@ -186,3 +186,191 @@ describe('ts-web-extras tree accessors strict-text capability', () => {
     expect(accessors.getFileTextStrict('/data/notes.yaml')).toFailWith(/already-decoded text/i);
   });
 });
+
+describe('HttpTreeAccessors byte-faithful transport (contentEncoding: base64)', () => {
+  /** Bytes that are not valid UTF-8 — the case the whole feature exists for. */
+  const MALFORMED_UTF8: Uint8Array = new Uint8Array([0x41, 0x80, 0xc3, 0x42]);
+
+  function toBase64(bytes: Uint8Array): string {
+    let binary = '';
+    for (const b of bytes) {
+      binary += String.fromCharCode(b);
+    }
+    return btoa(binary);
+  }
+
+  /**
+   * A storage API that honours `?encoding=base64` and reports what it sent.
+   * `capturedEncoding` records what the client actually asked for.
+   */
+  function createByteFetch(
+    bytes: Uint8Array,
+    options: { readonly honourEncoding?: boolean } = {}
+  ): { fetchImpl: typeof fetch; capturedEncoding: () => string | null } {
+    let captured: string | null = null;
+    const honour = options.honourEncoding ?? true;
+    const fetchImpl = (async (input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      let body: unknown;
+      if (url.pathname.includes('/tree/children')) {
+        body = { path: '/', children: [{ path: '/corpus.md', name: 'corpus.md', type: 'file' }] };
+      } else {
+        captured = url.searchParams.get('encoding');
+        body =
+          honour && captured === 'base64'
+            ? { path: '/corpus.md', contents: toBase64(bytes), encoding: 'base64' }
+            : // The text-only server: ignores the parameter, answers UTF-8, says so.
+              { path: '/corpus.md', contents: new TextDecoder().decode(bytes), encoding: 'utf8' };
+      }
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => body,
+        text: async () => JSON.stringify(body)
+      } as Response;
+    }) as unknown as typeof fetch;
+    return { fetchImpl, capturedEncoding: () => captured };
+  }
+
+  it('requests base64 and seeds the tree with the origin bytes verbatim', async () => {
+    const { fetchImpl, capturedEncoding } = createByteFetch(MALFORMED_UTF8);
+    const accessors = (
+      await HttpTreeAccessors.fromHttp({
+        baseUrl: 'https://corpus.example/api',
+        fetchImpl,
+        contentEncoding: 'base64'
+      })
+    ).orThrow();
+
+    expect(capturedEncoding()).toBe('base64');
+    expect(accessors.getFileBytes('/corpus.md')).toSucceedWith(MALFORMED_UTF8);
+  });
+
+  it('makes the strict-text capability decidable — the point of the whole exercise', async () => {
+    const { fetchImpl } = createByteFetch(MALFORMED_UTF8);
+    const accessors = (
+      await HttpTreeAccessors.fromHttp({
+        baseUrl: 'https://corpus.example/api',
+        fetchImpl,
+        contentEncoding: 'base64'
+      })
+    ).orThrow();
+
+    // Under the default transport this refuses for want of custody. With the bytes
+    // in hand it reaches a verdict instead — and the verdict is that they are bad.
+    expect(accessors.getFileTextStrict('/corpus.md')).toFail();
+  });
+
+  it('decodes strictly and succeeds for well-formed bytes', async () => {
+    const valid = new TextEncoder().encode(CORPUS_TEXT);
+    const { fetchImpl } = createByteFetch(valid);
+    const accessors = (
+      await HttpTreeAccessors.fromHttp({
+        baseUrl: 'https://corpus.example/api',
+        fetchImpl,
+        contentEncoding: 'base64'
+      })
+    ).orThrow();
+
+    expect(accessors.getFileTextStrict('/corpus.md')).toSucceedWith(CORPUS_TEXT);
+    expect(accessors.getFileContents('/corpus.md')).toSucceedWith(CORPUS_TEXT);
+  });
+
+  it('degrades rather than corrupting when the server ignores the parameter', async () => {
+    // The load-bearing safety property: the client branches on the RESPONSE's
+    // encoding, never on its own request. A client that base64-decoded because it
+    // had asked would mangle every file this server returns.
+    const valid = new TextEncoder().encode(CORPUS_TEXT);
+    const { fetchImpl } = createByteFetch(valid, { honourEncoding: false });
+    const accessors = (
+      await HttpTreeAccessors.fromHttp({
+        baseUrl: 'https://corpus.example/api',
+        fetchImpl,
+        contentEncoding: 'base64'
+      })
+    ).orThrow();
+
+    expect(accessors.getFileContents('/corpus.md')).toSucceedWith(CORPUS_TEXT);
+    // Text-only server → no custody → the honest refusal, not a false verdict.
+    expect(accessors.getFileTextStrict('/corpus.md')).toFailWith(/already-decoded text/i);
+  });
+
+  it('defaults to utf8, leaving existing deployments byte-identical', async () => {
+    const { fetchImpl, capturedEncoding } = createByteFetch(new TextEncoder().encode(CORPUS_TEXT));
+    const accessors = (
+      await HttpTreeAccessors.fromHttp({ baseUrl: 'https://corpus.example/api', fetchImpl })
+    ).orThrow();
+
+    expect(capturedEncoding()).toBeNull();
+    expect(accessors.getFileContents('/corpus.md')).toSucceedWith(CORPUS_TEXT);
+    expect(accessors.getFileTextStrict('/corpus.md')).toFailWith(/already-decoded text/i);
+  });
+
+  it('fails loudly on malformed base64 rather than seeding garbage', async () => {
+    const fetchImpl = (async (input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      const body = url.pathname.includes('/tree/children')
+        ? { path: '/', children: [{ path: '/corpus.md', name: 'corpus.md', type: 'file' }] }
+        : { path: '/corpus.md', contents: 'not!valid!base64!', encoding: 'base64' };
+      return { ok: true, status: 200, statusText: 'OK', json: async () => body } as Response;
+    }) as unknown as typeof fetch;
+
+    expect(
+      await HttpTreeAccessors.fromHttp({
+        baseUrl: 'https://corpus.example/api',
+        fetchImpl,
+        contentEncoding: 'base64'
+      })
+    ).toFailWith(/malformed base64/i);
+  });
+
+  it('round-trips every byte value 0-255, not just the fixture', async () => {
+    // The decode is atob + a charCode walk over a "binary string". That is correct
+    // for the whole 0..255 range by construction; asserting it beats arguing it.
+    const allBytes = Uint8Array.from({ length: 256 }, (__v, i) => i);
+    const { fetchImpl } = createByteFetch(allBytes);
+    const accessors = (
+      await HttpTreeAccessors.fromHttp({
+        baseUrl: 'https://corpus.example/api',
+        fetchImpl,
+        contentEncoding: 'base64'
+      })
+    ).orThrow();
+
+    expect(accessors.getFileBytes('/corpus.md')).toSucceedWith(allBytes);
+  });
+
+  it('a later text write over a byte-seeded file syncs as text, not as stale bytes', async () => {
+    // Reads are byte-faithful; writes still go up as UTF-8 text. Pinning the seam
+    // between them: once a file is overwritten with a string, the sync must send
+    // that string — never the Uint8Array the file was originally seeded with.
+    const { fetchImpl } = createByteFetch(new TextEncoder().encode('original'));
+    const sent: string[] = [];
+    const recordingFetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'PUT') {
+        sent.push(String(init.body));
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ path: '/corpus.md', contents: '' })
+        } as Response;
+      }
+      return fetchImpl(input, init);
+    }) as unknown as typeof fetch;
+
+    const accessors = (
+      await HttpTreeAccessors.fromHttp({
+        baseUrl: 'https://corpus.example/api',
+        fetchImpl: recordingFetch,
+        contentEncoding: 'base64',
+        mutable: true
+      })
+    ).orThrow();
+
+    expect(accessors.saveFileContents('/corpus.md', 'replaced')).toSucceed();
+    expect(await accessors.syncToDisk()).toSucceed();
+    expect(sent).toHaveLength(1);
+    expect(JSON.parse(sent[0]).contents).toBe('replaced');
+  });
+});

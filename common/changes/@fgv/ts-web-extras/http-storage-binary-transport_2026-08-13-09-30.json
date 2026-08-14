@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "HttpTreeAccessors accepts contentEncoding: 'base64' to request byte-faithful file contents and seeds its in-memory tree with the decoded bytes, which makes getFileBytes() honest and the optional strict-text capability decidable over HTTP. Defaults to utf8 (unchanged). The client branches on the response's encoding field, never on its own request, so a server that ignores the parameter degrades to text rather than corrupting every file.",
+      "type": "minor",
+      "packageName": "@fgv/ts-web-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras"
+}
