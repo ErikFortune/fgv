@@ -222,6 +222,19 @@ entries**. Writing it down did not work; adding a gate did not work. The remaini
 it **one invocation** rather than a list a tired agent is asked to remember at the end of a long
 stream.
 
+**And an antagonist pass before anything is handed over.** Every artifact the ritual produces is a
+claim about what happened, written by whoever just spent a long stream forming a view of what
+happened — the exact condition under which a confidently wrong claim goes unnoticed. `STATUS.md`
+already measured this: *"Independent layer-1 passes earn their cost … commissioning independent
+`code-reviewer` passes retroactively found: a real P2 on #582."* So the pass is independent where a
+reviewer can be spawned, refute-first by framing, and required to state what it checked — *"looks
+right"* is not an output. It targets **inaccuracies** (every claim traces to a quotable line;
+`sourceLine` appears verbatim; PR numbers belong to this stream) and, harder and more valuable,
+**omissions** — the highest-yield being *"`diverged` is empty: true, or unexamined?"*, since an
+empty `diverged` on a stream that visibly changed shape is the characteristic failure of the whole
+ritual. It is **not optional in retroactive mode** — more important there, not less, since you are
+reconstructing a stream you did not run.
+
 **The design line: script what cannot be wrong, prompt what needs judgment.** Directory moves,
 bucket derivation, index regeneration and `rush change --verify` get automated. The
 `WORKSTREAMS.md` entry is **drafted for review**, and `LIBRARY_CAPABILITIES.md` is **prompted, not

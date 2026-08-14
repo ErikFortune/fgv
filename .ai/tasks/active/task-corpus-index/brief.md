@@ -84,6 +84,7 @@ Writing it down did not work. Adding a gate did not work. The remaining move is 
 | **draft** the `docs/WORKSTREAMS.md` entry | **model, requires review** | see below |
 | **prompt** for `LIBRARY_CAPABILITIES.md` | **judgment** | see below |
 | **prompt** for design-doc status | **judgment** | "docs ship with the code" — a shipped design says so in its own PR |
+| **antagonist pass** over all of the above | **adversarial, independent** | refute-first; targets inaccuracies *and* omissions — see below |
 
 #### The mechanical / judgment split is the whole design
 
@@ -108,6 +109,31 @@ read the artifacts, write the YAML, move the directory, draft the ledger entry. 
 `rush index-tasks` generator makes some steps cheaper; it is not a prerequisite. That means the
 skill is usable **today**, including for the retroactive backfill, and the remaining work in this
 stream is tooling that accelerates a ritual which already runs.
+
+#### The antagonist pass is the step that makes the rest trustworthy
+
+Every artifact this ritual produces is a **claim about what happened**, written by whoever just
+spent a long stream forming a view of what happened. That is exactly when a confidently wrong
+claim gets written and not noticed — and this repo has measured it. `docs/STATUS.md`: *"Independent
+layer-1 passes earn their cost. Four streams … self-reviewed instead. Commissioning independent
+`code-reviewer` passes retroactively found: a real P2 on #582."*
+
+So the pass is **independent where possible** (spawn a reviewer) and **refute-first** by framing:
+its job is to find what is wrong or missing, and *"looks right"* is not an output — a clean pass
+must state what it checked, or it is indistinguishable from a pass that never ran.
+
+Two classes, and the second is the harder and more valuable one:
+
+- **Inaccuracies** — every claim in the synthesis must trace to a quotable line; `sourceLine` must
+  actually appear verbatim; PR numbers must belong to this stream and be in the state claimed.
+- **Omissions** — *"what should be here and is not?"* The highest-yield check is **`diverged`
+  empty: true, or unexamined?** An empty `diverged` on a stream that visibly changed shape is the
+  characteristic failure of this whole ritual. Then: deferred items recorded nowhere, public
+  surface with no capabilities draft, an implemented design whose doc still says "design only",
+  undispositioned findings in `findings/inbox/`.
+
+Declines get **recorded with reasoning**, per the convention used throughout the repo — a
+considered-and-rejected option stops the next person re-litigating it.
 
 #### Must run retroactively
 

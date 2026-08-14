@@ -1,13 +1,14 @@
 ---
 name: finalize-task
-description: Use to close out a workstream or chore batch — the full completion ritual in one pass. Generates the stream's meta.yaml (summary synthesis + keywords), migrates active/<id>/ to completed/<bucket>/<id>/, scaffolds the polished README, drafts the docs/WORKSTREAMS.md ledger entry for review, and prompts on LIBRARY_CAPABILITIES.md and design-doc status. Load this skill BEFORE opening the PR that closes a stream — the migration ships in the same PR as the work, never as a follow-up. Also has a RETROACTIVE mode for already-completed streams that backfills metadata and ledger entries WITHOUT moving anything, used to close the gap between stream directories on disk and narrated ledger entries.
+description: Use to close out a workstream or chore batch — the full completion ritual in one pass. Generates the stream's meta.yaml (summary synthesis + keywords), migrates active/<id>/ to completed/<bucket>/<id>/, scaffolds the polished README, drafts the docs/WORKSTREAMS.md ledger entry for review, prompts on LIBRARY_CAPABILITIES.md and design-doc status, and runs an antagonist pass that tries to refute its own output for inaccuracies and omissions before anything is handed over. Load this skill BEFORE opening the PR that closes a stream — the migration ships in the same PR as the work, never as a follow-up. Also has a RETROACTIVE mode for already-completed streams that backfills metadata and ledger entries WITHOUT moving anything, used to close the gap between stream directories on disk and narrated ledger entries.
 ---
 
 # Finalize Task
 
 Closing a stream is a multi-part ritual: metadata, artifact migration, a polished
-completion record, a ledger entry, a capabilities entry, change-file verification.
-This skill is that ritual in one pass.
+completion record, a ledger entry, a capabilities entry, change-file verification —
+then an **antagonist pass** over everything the ritual just asserted. This skill is
+that ritual in one pass.
 
 > **Why this is a skill and not a checklist.** It has been a checklist twice.
 > `.ai/conventions/workflow/artifact-protocol.md` states the rule unambiguously —
@@ -148,7 +149,62 @@ Ask each question out loud; do not answer them silently:
   about to be lost?
 - **Lesson worth codifying?** → `.ai/instructions/`, per the lessons convention.
 
-### 6. Verify the mechanical gates
+### 6. Antagonist pass — try to refute your own output
+
+Everything produced above is a **claim about what happened**, written by whoever just spent a long
+stream forming a view of what happened. That is precisely the condition under which a confidently
+wrong claim gets written and not noticed.
+
+**Commission an independent reviewer if you can spawn one** (`code-reviewer`, or a general agent
+briefed as below). `docs/STATUS.md` records why: *"Independent layer-1 passes earn their cost.
+Four streams ran without an agent-spawn tool in their session and self-reviewed instead.
+Commissioning independent `code-reviewer` passes retroactively found: a real P2 on #582…"*. If you
+cannot spawn one, run the pass yourself — but run it **as a separate deliberate pass with the
+brief below**, not as a re-read.
+
+**Frame it to refute, not to approve.** The reviewer's job is to find what is wrong or missing.
+"Looks right" is not an output; if nothing survives scrutiny, say so explicitly and name what was
+checked.
+
+**Default to "wrong" under uncertainty.** A claim you cannot trace to an artifact is a finding,
+not a maybe.
+
+#### The two classes, and the harder one
+
+**Inaccuracies** — claims contradicted by the evidence:
+
+- Does every assertion in `summary.intended` / `shipped` trace to a specific line in `brief.md` /
+  `result.md`? Quote the line or drop the claim.
+- Does `sourceLine` actually appear verbatim in the source file?
+- Do the `prs` numbers belong to *this* stream, and are they in the state claimed (merged vs
+  open)? Check, do not assume.
+- Does the drafted ledger entry's status marker match reality?
+- Do `packages` match what the PRs actually touched?
+
+**Omissions** — the harder half, and the more valuable. Ask *"what should be here and is not?"*:
+
+- **`diverged` is empty — is that true, or unexamined?** This is the highest-yield check. Read
+  `brief.md` and `result.md` side by side and look for scope cut, a reversed verdict, a rejected
+  approach, a finding that changed the design, or something shipped that the brief never mentioned.
+  An empty `diverged` on a stream that visibly changed shape is the characteristic failure of this
+  whole ritual.
+- Did the stream **defer** anything that is now recorded nowhere — not in `FUTURE.md`, not in
+  `TECH_DEBT.md`, not in the ledger entry?
+- Did it change a **public surface** with no `LIBRARY_CAPABILITIES.md` draft?
+- Did it **implement a design** whose doc still says "design only"?
+- Did it surface a **lesson** that will be lost?
+- Are there findings in `findings/inbox/` that were never dispositioned?
+- Does the ledger entry omit an **open question** the stream left behind?
+
+#### Handling the findings
+
+Fix inaccuracies. Fill genuine omissions. For anything you decline, **record the decline with its
+reasoning** in the artifact — the repo's convention throughout is that a considered-and-rejected
+option is more useful than silence, because it stops the next person re-litigating it.
+
+If the pass changes `meta.yaml`, recompute `sourceHash`.
+
+### 7. Verify the mechanical gates
 
 - `rush change --verify --target-branch origin/release` — **CI's first gate, and
   invisible to the entire local build/test suite.** A missing change file fails the job
@@ -157,7 +213,7 @@ Ask each question out loud; do not answer them silently:
 - `git diff --name-only origin/release... | cut -d/ -f2` against the change files
   actually being shipped.
 
-### 7. Report the ledger gap
+### 8. Report the ledger gap
 
 Count stream directories under `.ai/tasks/` against `### ` entries in
 `docs/WORKSTREAMS.md`. Report the streams with no entry.
@@ -169,8 +225,10 @@ drifting back out of view — and in retroactive mode it *is* the worklist.
 
 Used to close the existing gap between stream directories and ledger entries.
 
-1. Steps 1, 2, 4, 5, 7 — **not 3, and not 6** (the work merged long ago; there are no
-   change files to verify and nothing to migrate).
+1. Steps 1, 2, 4, 5, **6**, 8 — **not 3, and not 7** (the work merged long ago; there is nothing
+   to migrate and no change file to verify). **The antagonist pass is not optional here** — it is
+   more important in retroactive mode, not less, because you are reconstructing a stream you did
+   not run from artifacts written by someone else.
 2. Set `status: shipped` and derive `closed` from the bucket the stream already sits in.
 3. Batch them, but **do not batch the review** — each drafted ledger entry is a claim
    about what a stream did, and a reviewer skimming twenty at once will not catch a
@@ -199,5 +257,10 @@ Stop and ask rather than guessing when:
 - **Moving anything in retroactive mode.**
 - **Treating a green `rush change --verify` as the only gate.** It is the first one,
   not the last.
+- **Running the antagonist pass as a re-read.** Re-reading your own draft in the same frame that
+  produced it is not a review. Spawn an independent reviewer, or at minimum stop, change frame,
+  and work the checklist explicitly.
+- **An antagonist pass that returns "looks good".** If it found nothing, it must say what it
+  checked. A clean pass with no stated scope is indistinguishable from a pass that did not run.
 - **Doing step 3 in a follow-up PR.** That is the named failure this skill exists to
   prevent.
