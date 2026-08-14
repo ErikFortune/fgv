@@ -156,4 +156,83 @@ stream's entry instead, and says so.
 
 ---
 
+## Batch 1 — `ks-encoding`, `result-should-not-fail`, `ts-prompt-assist`, `ai-assist-client-tools`, `ai-assist-client-tool-id-fix`
+
+### B1.1 — a public `@fgv/ts-utils` method is documented nowhere authoritative
+
+`Result<T>.shouldNotFail(label?, frameDepth?)` shipped in #400 on the repo's
+most-depended-on library. `grep shouldNotFail` returns **zero hits** in
+`.ai/instructions/CODING_STANDARDS.md` and **zero** in
+`.ai/instructions/LIBRARY_CAPABILITIES.md` — verified. `CODING_STANDARDS.md` §
+"Extracting Values" still documents only `orThrow` / `orDefault` / `orDefaultLazy`; the
+`ts-utils` base-packlet row in the capabilities guide never names it. It is discoverable
+only from the `/result-pattern` skill.
+
+The capabilities guide opens with *"Before writing new utility code, scan this guide. If a
+capability is listed here, use the existing library — do not reimplement it."* A method
+absent from it is, by the guide's own logic, a method that will be reimplemented.
+
+**Decision needed:** both are instruction-file edits, which the skill holds back from
+auto-commit. Drafts are ready — say the word and they go in. Suggested shape: a bullet in
+§ "Extracting Values" positioning `.shouldNotFail()` for declaration-time sites, and a
+clause on the `base` row of the capabilities table.
+
+### B1.2 — `@fgv/ks` still hand-rolls hex; the primitive now exists
+
+`tools/ks/src/encoding.ts:29` uses `Buffer.from(bytes).toString('hex')`. The stream's own
+`result.md` justified that: *"there is no fgv-canonical hex primitive."* True when written
+(#425, 2026-05-27). `CryptoUtils.hexEncode` / `hexDecode` landed in #554 (2026-07-18) and
+are in `etc/ts-extras.api.md`. So this is now a published-primitives miss rather than a
+justified stdlib reach — exactly the drift the `/published-primitives-reflex` skill exists
+to catch, arriving by the primitive moving rather than the consumer.
+
+**Decision needed:** one-line adoption, or leave it (a Node CLI reaching for `Buffer` is
+defensible on its own terms). Low stakes; flagged because the justification is now stale.
+
+### B1.3 — an open question and a deferral, both recorded nowhere
+
+- **`ks-encoding`:** whether `ks get` / `ks export` should auto-detect non-UTF-8 secret
+  bytes and default to `base64`. Lives only in the stream's `result.md`. Its stated
+  precondition has **half** landed: `KeyStore` now carries an `'opaque'` symmetric secret
+  type with `importSecretBytes` / `getSecretBytes`, but `tools/ks/src` exposes none of it,
+  so the "via the CLI" half has not arrived.
+- **`ts-prompt-assist`:** the archived README says typed qualifier *values* (round-2
+  finding F5) is "queued in `docs/FUTURE.md`". It is in neither `FUTURE.md` nor
+  `TECH_DEBT.md`.
+
+**Decision needed:** file both, or close them. The second is the more concerning shape — a
+completion record asserting something was queued, when it was not.
+
+### B1.4 — the same failure mode has now recurred three times on one surface
+
+`ai-assist-client-tools` is already cited in `TESTING_GUIDELINES.md` as the canonical case
+of 100% coverage on a test architecture that never exercised the brief's central
+requirement. `ai-assist-client-tool-id-fix` is a **third** instance on the same files: the
+continuation builders keyed `tool_use_id` as `r.callId ?? r.toolName`, so a nullish id
+emitted the tool *name*, and `??` passed `''` through untouched. It reached a consumer as
+intermittent Anthropic "malformed identifier" errors **26 days after cluster close**, and
+neither the parent's coverage gate nor its live testbed run caught it.
+
+The fix is in and verified present (`isUsableId`, buffered-`tool_use.id` correlation, both
+builders returning `Result`, a `ai-assist:malformed-tool-use` warn replacing a silent
+drop). What is unresolved is whether the *class* is closed: all three defects were
+request-side or correlation-side, and all three were invisible to response-mocking tests.
+
+**Decision needed:** whether this warrants a standing rule — something like "a
+provider-boundary stream must assert on the request body, not only the response" — in
+`TESTING_GUIDELINES.md`. Three instances on one surface is past coincidence.
+
+### B1.5 — ledger status was stale by months (fixed in this PR)
+
+`ts-prompt-assist-features` read *"cluster integration branch … ready for promotion to
+`release`"*. It promoted via #397 (`88545a5dc`) and four later prompt-assist streams
+(#407, #460, #490, #538) had already built on top. **Corrected in this PR** rather than
+merely flagged, since the fact is checkable and the wrong version actively misleads.
+
+Worth noting as a category: a status line that was true when written and rots silently is
+harder to catch than a wrong one, because nothing ever revisits it. This sweep found it
+only because it was reading the entry for another reason.
+
+---
+
 *Sections below are appended per batch as the sweep proceeds.*
