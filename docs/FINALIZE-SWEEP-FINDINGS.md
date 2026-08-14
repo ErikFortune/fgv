@@ -396,4 +396,101 @@ vague would have made both records less useful than either alone.
 
 ---
 
+## Batch 3 — `json-schema-converter-alignment`, `ollama-native`, `prompt-assist-horizontal-composition`, `retaining-logger-ring-buffer-refactor`, `ts-agent-memory-vector`
+
+### B3.1 — a public surface documents three phases; four shipped
+
+`PromptObservationPhase` is `'resolve' | 'json-output' | 'free-text-output' | 'compose'` —
+four members (`observe/types.ts:35`), with the seam wired in `horizontalComposer.ts`, shipped
+via **#538**. `.ai/instructions/LIBRARY_CAPABILITIES.md`'s ts-prompt-assist observability
+paragraph still enumerates **three** and omits `'compose'`.
+
+This is worse than a stale plan: a consumer writing an `IPromptObserver` from the guide would
+not know a fourth phase can arrive, and the guide is the documented entry point for exactly
+that. **Decision needed** — it is a `LIBRARY_CAPABILITIES` edit, which the skill holds back
+from auto-commit. The `docs/FUTURE.md` half (which claimed compose "emits **no** observation")
+was a plain fact correction and **is fixed in this PR**.
+
+### B3.2 — `HorizontalComposer`'s documented safeguard pipeline is wrong about where directives are checked
+
+`LIBRARY_CAPABILITIES.md` folds `allowedDirectives` into `applySafeguards`. In code it is a
+**separate `_checkAllowedDirectives` pass that runs before** it, and it screens **each
+contribution's** directive rather than the merged one. The stream's own `result.md` gets this
+wrong in the same direction ("merged directive only known post-merge").
+
+The pipeline, the `escape: 'none'` render and the reject→`fail` behaviour are all correct as
+documented; only the directive-check attribution drifted.
+
+Two omissions on the same entry, one load-bearing: the documented `create()` validation list
+("unique provenance; every referenced contributor + slot exists") omits that **every
+`logicalSlotName` must be declared on `composedDescriptor.slots`** — a check that exists
+*precisely because* an undeclared slot would render but be skipped by the safeguard pass. That
+check is part of the safety closure the paragraph is selling, and it is missing from the sales
+pitch. Also `IComposedPrompt`'s field list omits `descriptor`.
+
+**Decision needed:** same `LIBRARY_CAPABILITIES` hold. Drafts ready.
+
+### B3.3 — "mentioned" and "narrated" are different, and only reading both tells you which
+
+Three of this batch's five streams were *mentioned* in existing entries. On inspection:
+
+- **`json-schema-converter-alignment`** — genuinely narrated. It is a two-phase **spike absorbed
+  into its child's record**: `json-schema-derives-t`'s Substrate line claims all six of its
+  files and its Origin paragraph narrates the spike's shape and verdict. It authored no merged
+  PR; its files reached `release` via the child's #444. → `ledgerEntry:` pointer, no new entry.
+- **`ts-agent-memory-vector`** — the parent entry narrates *the work* (naming
+  `InMemoryCosineIndex` and embed-on-write) and lists #502 among its constituent PRs, but the
+  **stream id never appears in prose**. A reader learns what shipped, not that the stream
+  existed. → fold in one sentence, no heading.
+- **`ollama-native`** — *not* narrated. The single mention is one clause in
+  `ai-assist-embeddings`'s Outcome recording that this stream's OQ-1 was resolved **there**.
+  Nothing records the package, its six primitives, or its six PRs. → new entry.
+
+This is why the raw gap count was never the worklist. **No decision needed** — recorded because
+any future reconciliation tool has to make the same three-way distinction, and a count cannot.
+
+### B3.4 — two more deferrals with no durable home
+
+- **`ollama-native`:** OQ-2 `generateStructured` (`/api/generate` one-shot structured output)
+  and OQ-3's deferred `AbortSignal` on the fast metadata ops (`listModels` / `showModel` /
+  `listRunning` / `deleteModel`) live only in `design.md`. Also the brief's rejected-Option-C
+  consolation prize — an additive cross-provider `responseFormat?` on the completion path,
+  which would have served OpenAI/Groq/Mistral too — is in no ledger.
+- **`prompt-assist-horizontal-composition`:** whether the composed body should be *resolved*
+  from the composed descriptor's candidates rather than passed in as `composedBody`
+  (`result.md` only); the YAML `compositionConverter` for `ILogicalSlotConfig[]` (OQ-3, in
+  `LIBRARY_CAPABILITIES` prose but neither `FUTURE` nor `TECH_DEBT`); and design §5's
+  "expose the token scanner as a utility" note.
+
+**Decision needed:** file, or close. Running total across the sweep: **six** deferrals found
+living only inside completed-stream artifacts.
+
+### B3.5 — an undocumented packlet, and why it exists
+
+`@fgv/ts-utils` gained a `logging-interface` packlet (`ILogger`, `IDetailLogger`,
+`ReporterLogLevel`, `isDetailLogger`). It is internal-only and not exported from the library
+root, so `LIBRARY_CAPABILITIES.md` correctly needs no entry — but **why** the library has an
+interface-only packlet is recorded nowhere except one stream's `state.md`.
+
+The reason is a real constraint a future agent will re-derive the hard way:
+`collections/readOnlyConvertingResultMap.ts` already imports `ILogger` from `logging`, so
+composing a `collections` primitive inside `logging` creates a packlet cycle. The first fix —
+extracting to `base/loggerInterface.ts` — was **rejected** because it made `ILogger` a
+top-level export alongside `Logging.ILogger` (non-no-op `api.md`, dual import paths forever);
+an `import type` cycle-break was rejected as a footgun. The shipped shape gives
+`base → logging-interface → collections → logging`. The drafted ledger entry carries this.
+
+### B3.6 — two merged PR bodies now describe the opposite of what shipped
+
+Not fixable and not worth a follow-up — a merged PR body is a historical record — but both are
+traps for anyone reading the PR rather than the stream artifacts:
+
+- **#502** still says *"Embedding-failure policy: fail the `put` loudly, persist nothing"*. That
+  reversed **inside the same PR's review loop**: the shipped policy is a best-effort derived
+  index — the FileTree record store is authoritative, the vector index is rebuildable, so a
+  failed embed/`add`/`remove` is warn-logged and the record operation still succeeds.
+- **#477** says `@fgv/ts-utils` is "dep + peer"; it is peer + dev.
+
+---
+
 *Sections below are appended per batch as the sweep proceeds.*

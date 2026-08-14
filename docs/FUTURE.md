@@ -265,7 +265,20 @@ Erik's framing (2026-06-05): "consider using ts-res instead of hardcoding custom
 
 **Reference:** PR #460 review thread on `promptObservationStore.ts:195`; the `_resolveCandidates` path in `promptLibrary.ts` is the reference for what a ts-res-equivalent resolver needs to do.
 
-### Composer-emitted composed-observation record (nesting contributor records)
+### ~~Composer-emitted composed-observation record (nesting contributor records)~~ ✅ SHIPPED via #538
+
+**Verified 2026-08-14:** `PromptObservationPhase` in `libraries/ts-prompt-assist/src/packlets/observe/types.ts:35` is
+`'resolve' | 'json-output' | 'free-text-output' | 'compose'` — four members — and
+`horizontalComposer.ts` carries the observation seam. The text below described the
+pre-#538 state and read as unbuilt for roughly two months after it shipped.
+
+**Knock-on, not yet fixed:** `.ai/instructions/LIBRARY_CAPABILITIES.md`'s ts-prompt-assist
+observability paragraph still enumerates **three** phases and omits `'compose'`. That one is a
+public-surface documentation gap, not just a stale plan — a consumer writing an
+`IPromptObserver` from the guide would not know a fourth phase can arrive. Raised in
+`docs/FINALIZE-SWEEP-FINDINGS.md`.
+
+*Original entry, retained for the design reasoning:*
 
 Observation fan-out today fires only at `PromptLibrary`'s three public boundaries (`resolve` / `resolveJsonOutput` / `resolveFreeTextOutput`). `HorizontalComposer.compose()` — which takes several already-resolved contributor prompts and merges them into one `IComposedPrompt` — emits **no** observation. So an audit trail sees the N individual contributor `resolve` records but nothing tying them to the composed output, and no record of the merge itself (per-logical-slot strategy, provenance ordering, safeguard findings from `applySafeguards` over the merged slot map).
 
