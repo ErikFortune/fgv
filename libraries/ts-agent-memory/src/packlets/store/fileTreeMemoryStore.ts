@@ -1596,7 +1596,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * — a reconcile of an ordering field has no business rewriting content.
    * `splitFrontmatter` hands back the body text unconverted, so the round trip
    * carries the authored characters through untouched and only the envelope
-   * moves.
+   * moves. The parsed record is additionally put through `_verifyLoaded`, the
+   * same id-vs-filename and scope-derived-entityId check the load paths apply —
+   * without it, reconcile would be the one path that accepts and rewrites a file
+   * the store would refuse to load.
    *
    * "Untouched" is not quite "byte-identical", and the exception is line
    * endings: `splitFrontmatter` strips a trailing `\r` per line and
@@ -1655,10 +1658,16 @@ export class FileTreeMemoryStore implements IMemoryStore {
         }
         return file.getRawContents().onSuccess((raw) =>
           // `parseMemoryFile` validates the body through the registered Converter,
-          // so a corrupt record is refused rather than silently rewritten;
-          // `splitFrontmatter` supplies the same body verbatim for the write.
+          // so a corrupt record is refused rather than silently rewritten, and
+          // `_verifyLoaded` re-applies the same id-vs-filename and
+          // scope-derived-entityId checks the two load paths apply. Reconcile is a
+          // read-then-write, and a file can change on disk after the index was
+          // built, so skipping them would make this the one path that accepts —
+          // and rewrites — a record the store would otherwise refuse to load.
+          // `splitFrontmatter` then supplies the body text for the write.
           parseMemoryFile(raw, this._registry)
             .withErrorFormat((msg) => `'${id}': ${msg}`)
+            .onSuccess((parsedRecord) => this._verifyLoaded(scope, file, parsedRecord))
             .onSuccess((parsed) =>
               splitFrontmatter(raw)
                 .withErrorFormat((msg) => `'${id}': ${msg}`)

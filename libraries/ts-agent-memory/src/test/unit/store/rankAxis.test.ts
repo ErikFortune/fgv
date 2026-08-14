@@ -383,6 +383,25 @@ describe('FileTreeMemoryStore rank axis', () => {
       return { root, store };
     }
 
+    test('refuses a file whose envelope id no longer matches its filename', async () => {
+      // Reconcile is a read-then-write, and a file can be edited after the index
+      // was built. It applies the same consistency checks the load paths do, so an
+      // inconsistent-but-parseable file fails loudly instead of being rewritten.
+      const root = mutableRoot();
+      const seed = createStore({ root }).orThrow();
+      (await seed.put(makeRecord({ id: 'doc-a', body: 'abcd' }))).orThrow();
+
+      const store = createStore({ root, rankProjectors: knowledgeProjectors }).orThrow();
+      const file = persistedFile(root, 'doc-a.md');
+      if (!FileTree.isMutableFileItem(file)) {
+        throw new Error('expected a mutable file item');
+      }
+      // Corrupt the frontmatter id so it no longer agrees with the filename stem.
+      file.setRawContents(file.getRawContents().orThrow().replace('id: doc-a', 'id: doc-b')).orThrow();
+
+      expect(await store.reconcileRank(knowledgeKind)).toFailWith(/does not match filename stem/i);
+    });
+
     test('carries an authored body through unconverted, normalizing only line endings', async () => {
       // Copilot round 2 surfaced that the docstring claimed the body came back
       // "verbatim". It does not: `splitFrontmatter` strips a trailing \r per line
