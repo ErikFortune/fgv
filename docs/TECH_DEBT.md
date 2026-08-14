@@ -219,7 +219,25 @@ opportunistically when the right surface area is touched.
 
   **Reference**: PR #329 review — pattern pre-existed the PR, absolved from that review.
 
-- **[P3] `ai-assist/apiClient.ts` is at the 2000-line `max-lines` cap; decompose it.**
+- **[P3] ~~`ai-assist/apiClient.ts` is at the 2000-line `max-lines` cap; decompose it.~~ ✅ RESOLVED 2026-08 by #620.**
+  **The file no longer exists.** #620 split it by concern into `completionClient.ts` /
+  `imageGenerationClient.ts` / `listModelsClient.ts` (plus `embeddingClient.ts` and
+  `streamingClient.ts`) — which is precisely the split this entry's own "scope sketch"
+  below proposed, down to the module names. Verified 2026-08-14: `ls` on the path fails;
+  the named siblings are present.
+
+  *Closed by the retroactive `finalize-task` sweep. Note the 2026-08 "Correction" paragraph
+  at the end of this entry — the one warning that whoever next edits the file has zero
+  headroom — was written about a file that was already gone or going. A debt entry whose
+  own resolution has shipped is worse than a missing one: it sends the next reader to a
+  path that does not exist, and it makes the ledger look busier than the work actually is.
+  The original text is kept below for the reasoning, which remains the best statement of
+  why the split was needed.*
+
+  ---
+
+  *Original entry, retained for its reasoning:*
+
   `libraries/ts-extras/src/packlets/ai-assist/apiClient.ts` sits right at the ESLint `max-lines` ceiling (2000). It is a monolith spanning four largely-independent concerns: chat completion (OpenAI/Anthropic/Gemini adapters + dispatcher), image generation (adapters + dispatcher + response validators), list-models (adapters + capability resolution), and the proxied variants of all three. Every additive change to any one concern now requires trimming JSDoc elsewhere in the file purely to stay under the cap — this happened repeatedly on `ai-assist-message-ordering` (PR #478), where each Copilot round that added a proxy-path guard forced compensating comment cuts. This is unsustainable: doc quality is being traded for line budget, and the next feature touching this file will hit the wall immediately.
 
   **Trigger**: next substantive change to `apiClient.ts` (any new provider adapter, image format, list-models source, or proxy field), or proactively before the next ai-assist feature stream.

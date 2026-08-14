@@ -122,6 +122,27 @@ Layer 1 (harness-supplied tools) shipped: `IAiClientTool`, `executeClientToolTur
 
 **MCP tools (layer 2).** **Slice 1 shipped 2026-06-06 via the `ts-extras-mcp` stream** — the new `@fgv/ts-extras-mcp` (Node) package wraps `@modelcontextprotocol/sdk`, discovers a server's tools, and adapts each into an `AiAssist.IAiClientTool` (`adaptMcpTools`) that drops directly into `executeClientToolTurn`. Graceful degradation: tools whose `inputSchema` is outside the `JsonSchema.fromJson` subset are excluded, surfaced on `skipped`, and NOISY-warned with the raw schema. Compatibility probe: the `samples/testbed` `mcp-probe` scenario. See `.ai/tasks/active/ts-extras-mcp/`.
 
+**`runToolUseConversation` — the multi-turn orchestration helper (re-queued 2026-08-14).**
+`executeClientToolTurn` is deliberately a **per-turn** primitive: the consumer drives the outer
+loop. The higher-level helper that owns the loop — round cap, termination on a no-tool round,
+cumulative continuation threading — was scoped out of `ai-assist-client-tools` at v0.1 and has
+never been built.
+
+*Why this paragraph exists.* It was deferred by **two** streams (`ai-assist-client-tools` and
+`ai-assist-cross-provider-continuation`), each recording it as out-of-scope and each believing it
+was captured here. It was not — a grep across `docs/` and `.ai/instructions/` on 2026-08-14
+returned nothing outside completed-stream artifacts. Re-queued by the retroactive `finalize-task`
+sweep. Two independent deferrals landing in the same hole is the argument for the deferral itself
+being the thing that needs a durable home, not the item.
+
+*Preconditions now met that were not at v0.1:* continuation forwarding reaches all four providers
+(`ai-assist-cross-provider-continuation`, #454) and `continuation.messages` is cumulative across
+rounds (`ai-assist-tool-continuation`, #488), so a loop helper can now be written provider-agnostically
+against a replace-not-concat contract. **Note the one gap it would inherit:** every `*ClientTools`
+testbed scenario is still two-turn, the degenerate case where replace and accumulate coincide — the
+exact blind spot that hid the original per-round bug. A multi-round live scenario should land with
+or before the helper.
+
 **Dependencies**: ai-assist-client-tools cluster closed to release (done 2026-06-04).
 
 **Reference**: 2026-05-30 conversation (Erik watching personaility's roadmap); `.ai/tasks/active/ai-assist-client-tools/`; PR #447; `.ai/tasks/active/ts-extras-mcp/`.

@@ -176,12 +176,21 @@ notes:
     and is presented for review, not committed; the recommendation is one cluster
     heading with this stream as a row, not four headings.
   - >
-    NOTHING DEFERRED BY THIS STREAM WENT UNRECORDED. `state.md` files no follow-up
-    findings ("none — the change matched the brief's sketched shape exactly"), and
-    every out-of-scope item in the brief is durably tracked elsewhere: MCP layer 2
-    shipped as `@fgv/ts-extras-mcp`; `runToolUseConversation` is queued in
-    `docs/FUTURE.md`; thinking-content surfacing is the `ai-assist-thinking-events`
-    entry (🟡) in `docs/WORKSTREAMS.md`. The only untracked residue is two
+    DEFERRALS — one is genuinely lost. `state.md` files no follow-up findings
+    ("none — the change matched the brief's sketched shape exactly"), and two of
+    the brief's three out-of-scope items are durably tracked: MCP layer 2 shipped
+    as `@fgv/ts-extras-mcp`, and thinking-content surfacing is the
+    `ai-assist-thinking-events` entry (🟡) in `docs/WORKSTREAMS.md`. The third is
+    **not**: the higher-level `runToolUseConversation` multi-turn orchestration
+    helper — named out-of-scope by this brief ("Future stream"), decided against
+    for v0.1 by `ai-assist-client-tools`, and asserted by that stream's own
+    `meta.yaml` to be "queued in `FUTURE.md`" — appears **nowhere** in
+    `docs/FUTURE.md`, `docs/TECH_DEBT.md` or `docs/WORKSTREAMS.md` as of
+    2026-08-14 (grep over `docs/` and `.ai/` outside `tasks/completed/` returns
+    nothing). It survives only inside archived task artifacts. Two streams have
+    now deferred it believing it was captured. It should be re-queued in
+    `docs/FUTURE.md`; that edit is outside this backfill's scope and is surfaced,
+    not made. The only other untracked residue is two
     dispositioned code-reviewer P3s that are cleanup-shaped and deliberately
     blast-radius-limited (the pre-existing Anthropic continuation test not adopting
     the new `mockSseResponseCapturingBody` helper; the imperative

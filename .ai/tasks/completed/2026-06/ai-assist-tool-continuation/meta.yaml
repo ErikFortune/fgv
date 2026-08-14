@@ -21,8 +21,10 @@ relatedStreams:
       `IAiClientToolContinuation.messages` from per-round to cumulative
       (#488, 2026-06-09). The dependency runs one way and is load-bearing:
       this stream's brief cites all three forwarding sites (`:487/:501/:514`)
-      as already wired, which is only true because the cross-provider stream had
-      landed five days earlier; had it not, the cumulative prepend would have
+      as already wired, which is only true because the cross-provider work had
+      already landed — verified in git: #459 (2026-06-05) is an ancestor of #488
+      (2026-06-09) and carries the `rawTail` consumption in all four files. Had
+      it not landed first, the cumulative prepend would have
       been correct on Anthropic and inert everywhere else. Read together as
       "who owns the continuation surface": cross-provider owns *whether a
       provider receives the tail at all*; this stream owns *what the tail
