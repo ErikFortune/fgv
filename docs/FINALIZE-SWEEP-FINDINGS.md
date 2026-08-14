@@ -359,6 +359,30 @@ intact and important; the citation is now unverifiable.
 instruction file, and a reader who goes to check the example and finds nothing may discount the
 whole guideline, which argues for fixing it, but that is your call.
 
+### B2.8 — three `docs/FUTURE.md` entries are stale in the *opposite* direction
+
+A new category, and the one I'd act on soonest after B2.5. Where the `TECH_DEBT` entry
+(B2.3) pointed at a deleted file, these describe **work that has since shipped** and still
+read as unqueued:
+
+- **Provider-side request validation** — the Gemini grounding + client-tools case now
+  **fails fast** with a named `Result.fail` before any wire call (`ai-assist-antagonist`,
+  #529). The entry should narrow to the generalized registry, not be closed outright.
+- **Generic-version-alias library surface** — substantially delivered by `ai-assist-model-aliases`
+  (#505–#508) and the model-tiers work. The entry still reads as unqueued **and still cites
+  `gpt-4o` as OpenAI's default**, which is doubly misleading now.
+- **Library default `max_output_tokens` for reasoning models** — genuinely still open, but its
+  stated workaround (`otherParams`) is superseded by the first-class `maxTokens` param (#573).
+
+**Decision needed:** narrowing or closing a FUTURE entry is a scoping call, not a fact
+correction, so I did not touch them. The `gpt-4o` reference is the one worth fixing regardless
+of what you decide about the entries themselves — it will misinform anyone who reads it.
+
+The pattern across B2.3, B2.4 and B2.8 is worth naming: **five artifacts in one batch were
+stale, and every one of them was true when written.** Nothing in the workflow revisits a
+deferral, a debt entry, or a finding once its trigger has fired somewhere else. That is the
+structural gap; the individual corrections are symptoms.
+
 ### B2.7 — two similarly-named streams, relationship now pinned
 
 `ai-assist-cross-provider-continuation` and `ai-assist-tool-continuation` sound like the same
