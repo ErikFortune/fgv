@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Add the optional strict-text FileTree capability: IStrictTextFileTreeAccessors.getFileTextStrict / IStrictTextFileTreeFileItem.getTextStrict with isStrictTextAccessors / isStrictTextFileItem guards. FsTree decodes real disk bytes strictly; the in-memory tree decides per file and refuses already-decoded (string/JSON) contents rather than reporting a success it cannot stand behind.",
+      "type": "none",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

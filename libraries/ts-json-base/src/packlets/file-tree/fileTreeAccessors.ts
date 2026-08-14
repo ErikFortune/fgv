@@ -192,6 +192,30 @@ export interface IFileTreeFileItem<TCT extends string = string> {
 }
 
 /**
+ * Extended file item interface for files whose text can be decoded **strictly**.
+ *
+ * @remarks
+ * An *optional capability*, mirroring
+ * {@link FileTree.IBinaryFileTreeFileItem | IBinaryFileTreeFileItem}: narrow with
+ * {@link FileTree.isStrictTextFileItem | isStrictTextFileItem}.
+ *
+ * As with the binary guards, **the file-item guard narrows the type only and is
+ * not a success guarantee** — {@link FileTree.FileItem | FileItem} implements
+ * this unconditionally and delegates, reporting a store that cannot honour it as
+ * a `Failure` rather than omitting the method. Use
+ * {@link FileTree.isStrictTextAccessors | isStrictTextAccessors} when the check
+ * itself must guarantee success.
+ * @public
+ */
+export interface IStrictTextFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
+  /**
+   * Gets the file's contents with a strict UTF-8 decode, failing on malformed
+   * input rather than substituting U+FFFD.
+   */
+  getTextStrict(): Result<string>;
+}
+
+/**
  * Extended file item interface for files whose contents can be read as raw bytes.
  *
  * @remarks
@@ -680,6 +704,57 @@ export function isBinaryAccessors<TCT extends string = string>(
 }
 
 /**
+ * Extended accessors for stores that can decode a file's text **strictly** —
+ * failing on malformed UTF-8 instead of substituting U+FFFD.
+ *
+ * @remarks
+ * This is an *optional capability*, deliberately not part of
+ * {@link FileTree.IFileTreeAccessors}. Narrow with
+ * {@link FileTree.isStrictTextAccessors | isStrictTextAccessors}.
+ *
+ * **The capability is about custody of the bytes, not about the adapter.** A
+ * store can only answer "was this valid UTF-8?" if it still holds the original
+ * bytes. A store whose transport already decoded them — a REST payload carrying
+ * `contents` as a JSON string, `localStorage`, an in-memory tree seeded with a
+ * `string` — cannot answer it *even in principle*: the substitution happened
+ * before the store existed, and re-encoding the decoded string produces
+ * well-formed UTF-8 whose corruption is baked in and no longer detectable.
+ *
+ * Such stores therefore **fail** rather than reporting success. That is the
+ * whole point of the capability: a strict read that quietly succeeded on an
+ * already-decoded string would be a green light from a check that cannot fail,
+ * which is worse than not offering one.
+ * @public
+ */
+export interface IStrictTextFileTreeAccessors<TCT extends string = string> extends IFileTreeAccessors<TCT> {
+  /**
+   * Reads a file's contents, decoding UTF-8 strictly.
+   * @param path - Absolute path of the file.
+   * @returns `Success` with the decoded text; `Failure` if the bytes are not
+   * valid UTF-8, or if this store no longer holds the original bytes to judge.
+   */
+  getFileTextStrict(path: string): Result<string>;
+}
+
+/**
+ * Narrows accessors to {@link FileTree.IStrictTextFileTreeAccessors}.
+ *
+ * @remarks
+ * Unlike the file-item guards, this one is a genuine capability check on the
+ * store. Note it reports whether the store *implements* strict decoding, not
+ * whether any particular file can be judged — a store that keeps some files as
+ * bytes and others as already-decoded strings implements the capability and
+ * fails per-file for the latter.
+ * @public
+ */
+export function isStrictTextAccessors<TCT extends string = string>(
+  accessors: IFileTreeAccessors<TCT>
+): accessors is IStrictTextFileTreeAccessors<TCT> {
+  const strict = accessors as IStrictTextFileTreeAccessors<TCT>;
+  return typeof strict.getFileTextStrict === 'function';
+}
+
+/**
  * Type guard to check if accessors support both reading and writing raw bytes.
  * @param accessors - The accessors to check.
  * @returns `true` if the accessors implement {@link FileTree.IMutableBinaryFileTreeAccessors}.
@@ -715,6 +790,21 @@ export function isBinaryFileItem<TCT extends string = string>(
 ): item is IBinaryFileTreeFileItem<TCT> {
   const binary = item as IBinaryFileTreeFileItem<TCT>;
   return binary.type === 'file' && typeof binary.getRawBytes === 'function';
+}
+
+/**
+ * Narrows a file item to {@link FileTree.IStrictTextFileTreeFileItem}.
+ *
+ * @remarks
+ * Type narrowing only — see that interface's remarks. `FileItem` always
+ * satisfies this guard; whether the call succeeds depends on the store.
+ * @public
+ */
+export function isStrictTextFileItem<TCT extends string = string>(
+  item: AnyFileTreeFileItem<TCT> | FileTreeItem<TCT>
+): item is IStrictTextFileTreeFileItem<TCT> {
+  const strict = item as IStrictTextFileTreeFileItem<TCT>;
+  return strict.type === 'file' && typeof strict.getTextStrict === 'function';
 }
 
 /**

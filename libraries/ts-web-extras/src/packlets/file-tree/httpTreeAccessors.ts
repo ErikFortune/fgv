@@ -85,6 +85,12 @@ export interface IHttpTreeParams<TCT extends string = string> extends FileTree.I
  * class inherits from and false here, where the decode happens upstream in the
  * transport.)
  *
+ * For the same reason this store implements the optional strict-text capability
+ * (`FileTree.IStrictTextFileTreeAccessors`) but **fails every file**: with no
+ * custody of the original bytes it cannot answer "was this valid UTF-8?" even in
+ * principle, and re-encoding the decoded string would always produce well-formed
+ * UTF-8 — a success from a check that cannot fail.
+ *
  * Byte *writes* are deliberately not supported, for the same underlying reason:
  * bytes that are not valid UTF-8 could not survive a `syncToDisk()` round-trip. A
  * binary transport would be a wire-format change, not a local one.

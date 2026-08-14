@@ -36,7 +36,9 @@ import { FileTree, JsonValue } from '@fgv/ts-json-base';
  * undecoded bytes.
  * @public
  */
-export class ZipFileItem<TCT extends string = string> implements FileTree.IBinaryFileTreeFileItem<TCT> {
+export class ZipFileItem<TCT extends string = string>
+  implements FileTree.IBinaryFileTreeFileItem<TCT>, FileTree.IStrictTextFileTreeFileItem<TCT>
+{
   /**
    * Indicates that this `FileTree.FileTreeItem` is a file.
    */
@@ -84,6 +86,12 @@ export class ZipFileItem<TCT extends string = string> implements FileTree.IBinar
   private _contents: string | undefined;
 
   /**
+   * Whether `_bytes` is what the archive carried, rather than a re-encode of text
+   * supplied to the constructor. Only the former can answer "was this valid UTF-8?".
+   */
+  private readonly _bytesAreOriginal: boolean;
+
+  /**
    * The ZIP file tree accessors that created this item.
    */
   private readonly _accessors: ZipFileTreeAccessors<TCT>;
@@ -114,8 +122,10 @@ export class ZipFileItem<TCT extends string = string> implements FileTree.IBinar
     if (typeof contents === 'string') {
       this._contents = contents;
       this._bytes = new TextEncoder().encode(contents);
+      this._bytesAreOriginal = false;
     } else {
       this._bytes = contents;
+      this._bytesAreOriginal = true;
     }
     this._accessors = accessors;
     this.absolutePath = '/' + zipFilePath;
@@ -182,6 +192,26 @@ export class ZipFileItem<TCT extends string = string> implements FileTree.IBinar
   public getRawBytes(): Result<Uint8Array> {
     return succeed(this._bytes);
   }
+
+  /**
+   * Gets the file's contents, decoding UTF-8 strictly.
+   *
+   * @remarks
+   * Decidable for an entry read out of the archive, which is byte-native: this
+   * item holds exactly the bytes the archive carried. An item constructed from
+   * already-decoded text fails instead — its bytes are a re-encode, so they are
+   * well-formed UTF-8 by construction and a success would say nothing.
+   * @returns `Success` with the decoded text; `Failure` if the entry's bytes are
+   * not valid UTF-8, or if this item never held the original bytes.
+   */
+  public getTextStrict(): Result<string> {
+    if (!this._bytesAreOriginal) {
+      return fail(
+        `${this.absolutePath}: cannot decode strictly - this item was constructed from already-decoded text, not the original bytes`
+      );
+    }
+    return captureResult(() => new TextDecoder('utf-8', { fatal: true }).decode(this._bytes));
+  }
 }
 
 /**
@@ -241,7 +271,7 @@ export class ZipDirectoryItem<TCT extends string = string> implements FileTree.I
  * @public
  */
 export class ZipFileTreeAccessors<TCT extends string = string>
-  implements FileTree.IBinaryFileTreeAccessors<TCT>
+  implements FileTree.IBinaryFileTreeAccessors<TCT>, FileTree.IStrictTextFileTreeAccessors<TCT>
 {
   /**
    * The unzipped file data.
@@ -513,6 +543,20 @@ export class ZipFileTreeAccessors<TCT extends string = string>
    */
   public getFileBytes(path: string): Result<Uint8Array> {
     return this._getFileItem(path).onSuccess((item) => item.getRawBytes());
+  }
+
+  /**
+   * Gets the contents of a file in the file tree, decoding UTF-8 strictly.
+   *
+   * @remarks
+   * Always decidable here: ZIP entries are byte-native, so this store holds
+   * exactly the bytes the archive carried.
+   * @param path - Absolute path of the entry.
+   * @returns `Success` with the decoded text; `Failure` if the entry's bytes are
+   * not valid UTF-8.
+   */
+  public getFileTextStrict(path: string): Result<string> {
+    return this._getFileItem(path).onSuccess((item) => item.getTextStrict());
   }
 
   /**
