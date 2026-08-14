@@ -2,6 +2,12 @@
 
 **Status: PROPOSED — not started.** Drafted 2026-08-14.
 
+**Scope grew during drafting, and the centre moved.** It began as "an index so an agent can find
+things." It is now **two skills and the metadata contract between them**: `/finalize-task` (write
+side — the completion ritual made executable) and `/task-corpus` (read side). The index is one
+derived artifact in the middle, not the point. The retitle is deliberate but the id is kept,
+since the ledger already references it.
+
 ## Motivation
 
 `.ai/tasks/` holds **269 markdown files / 3.1 MB** across **14 active** and **52 completed**
@@ -48,6 +54,65 @@ there is no machine-readable statement of what a stream *is*, so the only handle
 directory name.
 
 ## Scope
+
+### 0. `/finalize-task` — the completion ritual, made executable (decided 2026-08-14)
+
+Everything below is a *step* of this. The stream's centre of gravity is not the index; it is that
+**closing a stream is a multi-part ritual that is currently manual and demonstrably not happening.**
+
+**The evidence is unusually strong, because the rule already exists and already failed twice.**
+`.ai/conventions/workflow/artifact-protocol.md` is unambiguous — *"the migration ships in the same
+PR as the work"* — and names its own recurrence: on the `ai-assist-client-tools` cluster close
+(2026-06-04, #451 → #452), *"the codified rule existed; the failure was the orchestrator's
+pre-promotion checklist not gating on it."* The fix applied then was **another checklist gate**.
+Today: **68 stream directories on disk, 43 narrated ledger entries.** Roughly 25 streams closed
+without one.
+
+Writing it down did not work. Adding a gate did not work. The remaining move is to make the ritual
+**one invocation** instead of a list a tired agent is asked to remember at the end of a long stream.
+
+#### What it does
+
+| step | kind | notes |
+|---|---|---|
+| generate `meta.yaml` (§1) | **mechanical + model** | synthesis reviewed in the same PR |
+| move `active/<id>/` → `completed/<bucket>/<id>/` | **mechanical** | bucket derived from close date |
+| scaffold the polished `README.md` | **model, drafted** | protocol § "What the polished README looks like" |
+| regenerate `INDEX.md` (§2) | **mechanical** | gitignored; cheap |
+| `rush change --verify --target-branch origin/release` | **mechanical** | CI's first gate, invisible to the local suite |
+| report stream dirs missing a ledger entry | **mechanical** | the 25-stream backlog, surfaced |
+| **draft** the `docs/WORKSTREAMS.md` entry | **model, requires review** | see below |
+| **prompt** for `LIBRARY_CAPABILITIES.md` | **judgment** | see below |
+| **prompt** for design-doc status | **judgment** | "docs ship with the code" — a shipped design says so in its own PR |
+
+#### The mechanical / judgment split is the whole design
+
+**Script what cannot be wrong.** Moving a directory, deriving a bucket, regenerating a derived
+index, running a verify command — these have one right answer and no upside to a human doing them.
+
+**Do not auto-write the narrative artifacts.** `docs/WORKSTREAMS.md`'s value *is* that it is
+curated and narrative; `LIBRARY_CAPABILITIES.md` is consumer-facing and dense with hard-won
+opinion. Auto-generated prose in either would be worse than the gap it fills, and would degrade an
+artifact that is currently good. The skill **drafts** the ledger entry and **prompts** on
+capabilities — it does not commit either unreviewed. Same principle as the summary in §1:
+generation is fine when it is reviewed at the moment someone still has context.
+
+**Prompting beats silence.** For the judgment steps the skill's job is to make the question
+unavoidable — *"this stream touched `@fgv/ts-agent-memory`'s public surface; does
+`LIBRARY_CAPABILITIES.md` need an entry?"* — not to answer it.
+
+#### Must run retroactively
+
+The 25-stream backfill uses the same skill against already-completed streams. If it only works on
+a live stream, the existing gap never closes and we have built a tool that prevents future
+instances of a problem while leaving the current one intact.
+
+#### Relationship to the read side
+
+`/finalize-task` is the **write** side; `/task-corpus` (§5) is the **read** side. `meta.yaml` is
+the contract between them. They can ship independently — the read skill degrades gracefully
+against streams that predate the write skill (their metas are simply absent, and the index reports
+them as such).
 
 ### 1. A per-stream `meta.yaml`, built once at completion (decided 2026-08-14)
 
@@ -257,7 +322,7 @@ failure message name the one-command fix.
 **No generated-at timestamp in the file.** It would break the idempotency requirement above, and
 git already carries the file's age.
 
-### 5. A repo skill — `/task-corpus`
+### 5. `/task-corpus` — the read side
 
 The generator alone does not solve the stated problem. **The failure is not knowing to look**, so a
 skill whose description amounts to "read the index" would be nearly useless.
@@ -283,12 +348,28 @@ most of the skill.
 The skill must **regenerate the index before reading it** (`rush index-tasks`), then read. State
 that as a step, not an aside.
 
+## Why the write side matters more than the index
+
+The index answers *"what exists?"*. It is only as good as the metadata under it — and the reason
+metadata is missing is that **closing a stream is a ritual nobody executes completely**. Build the
+index alone and it faithfully reports a corpus that is 37% unregistered. Build `/finalize-task`
+and the index gets a corpus worth indexing, plus the ledger stops drifting, plus
+`LIBRARY_CAPABILITIES.md` stops needing follow-up PRs that `CODING_STANDARDS.md` § "Docs ship with
+the code" already forbids.
+
+If only one half ships, ship the write side.
+
 ## Explicitly NOT in scope
 
 - **Semantic / vector search over the corpus.** That is `agent-memory-mcp-server`. Shipping
   this stream is partly an experiment to find out whether that one is needed at all.
 - **Restructuring the two-tree layout** or renaming existing artifacts. The layout is fine;
   it is undescribed, not wrong.
+- **Auto-committing `docs/WORKSTREAMS.md` or `LIBRARY_CAPABILITIES.md` entries.** `/finalize-task`
+  drafts and prompts; a human or reviewing agent accepts. Auto-generated prose would degrade two
+  artifacts whose value is that they are curated — see §0.
+- **Replacing the orchestrator's judgment.** The skill sequences a ritual; it does not decide
+  whether a stream is done.
 - **A pre-commit hook, and a CI verify gate.** Both considered and declined with reasoning in
   §4 — the hook because it is demonstrably bypassed in exactly the bulk-work sessions that need
   it and because it conflicts across parallel worktrees, the gate because §5 removes the need.
@@ -316,6 +397,10 @@ that as a step, not an aside.
 
 - [ ] `rushx build` / `rushx lint` / `rushx test` green in any package the generator lives in
 - [ ] `/task-corpus` skill regenerates before reading — verified by following it, not by reading it
+- [ ] **`/finalize-task` runs retroactively** — proven on a real already-completed stream, not
+      only on a live one
+- [ ] **`/finalize-task` used to close this very stream.** If it cannot finalize itself, it is not
+      finished. This is the cheapest possible end-to-end test and it costs nothing extra.
 - [ ] 100% coverage on the generator's own logic
 - [ ] Change file for every touched package
 - [ ] Generator is idempotent (assert it in a test, not by inspection)
@@ -324,7 +409,11 @@ that as a step, not an aside.
 
 ## How we will know it worked
 
-The honest test is not "the index exists". It is: **an agent asked a question whose answer is in
+**For the write side:** the gap stops growing. Count stream dirs against ledger entries before and
+after; the number closed without an entry should go to zero for streams closed after it lands. The
+existing 25 are a separate backfill, and their count is the second measure.
+
+**For the read side:** the honest test is not "the index exists". It is: **an agent asked a question whose answer is in
 a completed stream finds it without knowing the stream's name.** Try it cold on a real question
 after landing — e.g. *"did we ever decide whether `rebuild` should fail or skip on a bad
 record?"* — and record whether the index got there. If it did not, that is the signal to pick up

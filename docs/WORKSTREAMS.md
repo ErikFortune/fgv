@@ -205,6 +205,30 @@ Three items from their post-`-48` sweep, **tracked here with verdicts so "deferr
 `.ai/tasks/active/agent-memory-mcp-server/brief.md`.
 **Ordering is a hard dependency and the second is conditional on the first's outcome.**
 
+**Scope moved during drafting.** It began as an index; it is now **two skills and the metadata
+contract between them** — `/finalize-task` (write side) and `/task-corpus` (read side).
+**If only one half ships, ship the write side**, because the index is only as good as the metadata
+under it.
+
+**Why `/finalize-task`, and why the evidence is unusually strong.** Closing a stream is a
+multi-part ritual — generate metadata, migrate `active/` → `completed/`, write the polished
+README, update this ledger, update `LIBRARY_CAPABILITIES.md`, verify change files. The rule is
+already written down and unambiguous (`artifact-protocol.md`: *"the migration ships in the same PR
+as the work"*), and it **already failed twice**: the protocol names its own recurrence on the
+`ai-assist-client-tools` cluster close (#451 → #452), where *"the codified rule existed; the
+failure was the orchestrator's pre-promotion checklist not gating on it"* — and the fix applied
+then was *another checklist gate*. The result today is **68 stream directories against 43 ledger
+entries**. Writing it down did not work; adding a gate did not work. The remaining move is to make
+it **one invocation** rather than a list a tired agent is asked to remember at the end of a long
+stream.
+
+**The design line: script what cannot be wrong, prompt what needs judgment.** Directory moves,
+bucket derivation, index regeneration and `rush change --verify` get automated. The
+`WORKSTREAMS.md` entry is **drafted for review**, and `LIBRARY_CAPABILITIES.md` is **prompted, not
+written** — auto-generated prose would degrade two artifacts whose whole value is that they are
+curated. Must run **retroactively**, or the existing 25-stream gap never closes. And it should
+close *itself*: if `/finalize-task` cannot finalize its own stream, it is not finished.
+
 **Origin.** Erik, 2026-08-14: *"Can you suggest a memory tool to index our task files so you can
 read them? Prefer to just adopt if there's something that meets our needs but we can build if
 needed."*
