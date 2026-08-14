@@ -47,6 +47,7 @@ interface IRecordSpec {
   readonly updated?: number;
   readonly seq?: number;
   readonly rank?: number;
+  readonly source?: string;
 }
 
 function makeEntry(spec: IRecordSpec): IIndexedMemoryRecord {
@@ -63,7 +64,7 @@ function makeEntry(spec: IRecordSpec): IIndexedMemoryRecord {
         seq: spec.seq ?? 0,
         contentHash: 'h',
         ...(spec.rank !== undefined ? { rank: spec.rank } : {}),
-        provenance: { source: 'agent' }
+        provenance: { source: spec.source ?? 'agent' }
       })
       .orThrow(),
     body: `body-${spec.id}`
@@ -573,9 +574,119 @@ describe('StructuredFilterRetriever', () => {
     });
   });
 
-  test('returns empty (not failure) when no predicate is supplied', async () => {
+  test('returns empty (not failure) when neither of its axes is supplied', async () => {
     const r = StructuredFilterRetriever.create(buildIndex([{ id: 'a' }])).orThrow();
     expect(await r.retrieve({})).toSucceedWith([]);
+  });
+
+  test('answers a query whose only axis is provenanceSource', async () => {
+    // The "show me everything this source produced" request — for review,
+    // attribution, and retraction after a bad ingest.
+    const r = StructuredFilterRetriever.create(
+      buildIndex([
+        { id: 'a', source: 'bad-run', updated: 10 },
+        { id: 'b', source: 'agent', updated: 20 },
+        { id: 'c', source: 'bad-run', updated: 30 }
+      ])
+    ).orThrow();
+    expect(await r.retrieve({ provenanceSource: 'bad-run' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(ids(records)).toEqual(['c', 'a']);
+      }
+    );
+  });
+
+  test('composes provenanceSource with the predicate as AND', async () => {
+    const r = StructuredFilterRetriever.create(
+      buildIndex([
+        { id: 'keep', source: 'bad-run' },
+        { id: 'wrong-source', source: 'agent' },
+        { id: 'drop', source: 'bad-run' }
+      ])
+    ).orThrow();
+    expect(
+      await r.retrieve({
+        provenanceSource: 'bad-run',
+        filter: (rec) => rec.envelope.id !== 'drop'
+      })
+    ).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+      expect(ids(records)).toEqual(['keep']);
+    });
+  });
+
+  test('matches provenance source exactly, not by prefix or substring', async () => {
+    const r = StructuredFilterRetriever.create(
+      buildIndex([
+        { id: 'exact', source: 'ingest' },
+        { id: 'longer', source: 'ingest-v2' }
+      ])
+    ).orThrow();
+    expect(await r.retrieve({ provenanceSource: 'ingest' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(ids(records)).toEqual(['exact']);
+      }
+    );
+  });
+
+  test('yields an empty page for a source no record carries', async () => {
+    const r = StructuredFilterRetriever.create(buildIndex([{ id: 'a', source: 'agent' }])).orThrow();
+    expect(await r.retrieve({ provenanceSource: 'never-used' })).toSucceedWith([]);
+  });
+});
+
+describe('provenanceSource on the shared pre-filter', () => {
+  // It is applied by `indexedRecordMatchesQuery`, so every retriever narrows by
+  // it — not just the one that treats it as a dispatch axis.
+  test('narrows a RecencyRetriever query', async () => {
+    const r = RecencyRetriever.create(
+      buildIndex([
+        { id: 'a', source: 'human', updated: 10 },
+        { id: 'b', source: 'agent', updated: 20 }
+      ])
+    ).orThrow();
+    expect(await r.retrieve({ provenanceSource: 'human' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(ids(records)).toEqual(['a']);
+      }
+    );
+  });
+
+  test('composes with the tag axis as AND on a TagRetriever query', async () => {
+    const r = TagRetriever.create(
+      buildIndex([
+        { id: 'both', source: 'human', tags: ['x'] },
+        { id: 'tag-only', source: 'agent', tags: ['x'] },
+        { id: 'source-only', source: 'human', tags: ['y'] }
+      ])
+    ).orThrow();
+    expect(await r.retrieve({ tag: 'x' as Tag, provenanceSource: 'human' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(ids(records)).toEqual(['both']);
+      }
+    );
+  });
+});
+
+describe('provenanceSource composition', () => {
+  test('a HybridRetriever double-scores a provenanceSource-only query, as it does a tag-only one', async () => {
+    // `StructuredFilterRetriever` now answers a `provenanceSource`-only query, so
+    // composed with the universal `RecencyRetriever` both children return the same
+    // set. That is the established dedicated-axis + universal pattern (identical to
+    // `TagRetriever` + `RecencyRetriever` on a tag-only query), pinned here so the
+    // doubling reads as intentional rather than as an artifact of the new axis.
+    const index = buildIndex([
+      { id: 'a', source: 'bad-run', updated: 10 },
+      { id: 'b', source: 'agent', updated: 20 }
+    ]);
+    const hybrid = HybridRetriever.create(
+      [RecencyRetriever.create(index).orThrow(), StructuredFilterRetriever.create(index).orThrow()],
+      ScoreUnionMergeStrategy.create().orThrow()
+    ).orThrow();
+    expect(await hybrid.retrieve({ provenanceSource: 'bad-run' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(ids(records)).toEqual(['a']);
+      }
+    );
   });
 });
 
@@ -661,6 +772,32 @@ describe('SemanticRetriever', () => {
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
         // Hit order preserved (b before a), NOT recency order.
         expect(ids(records)).toEqual(['b', 'a']);
+      }
+    );
+  });
+
+  test('applies the provenanceSource pre-filter per hit, after the vector resolve', async () => {
+    // The one path worth pinning by name: this retriever calls
+    // `indexedRecordMatchesQuery` itself, per resolved hit, rather than going
+    // through `selectByQuery` like its siblings. That second call site is where
+    // a new shared axis can silently fail to apply.
+    const index = buildIndex([
+      { id: 'a', source: 'human' },
+      { id: 'b', source: 'agent' }
+    ]);
+    const r = SemanticRetriever.create({
+      index,
+      backend: {
+        vectorIndex: new FakeVectorIndex([
+          { target: et('b'), score: 0.9 },
+          { target: et('a'), score: 0.7 }
+        ]),
+        embedQuery: okEmbed
+      }
+    }).orThrow();
+    expect(await r.retrieve({ semantic: 'q', provenanceSource: 'human' })).toSucceedAndSatisfy(
+      (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(ids(records)).toEqual(['a']);
       }
     );
   });

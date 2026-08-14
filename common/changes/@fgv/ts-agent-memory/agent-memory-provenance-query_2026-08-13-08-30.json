@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Add IMemoryQuery.provenanceSource - exact match on envelope.provenance.source, applied by the shared pre-filter so every retriever narrows by it. StructuredFilterRetriever additionally treats it as a dispatch axis, so a query whose only axis is provenanceSource is answerable there.",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}

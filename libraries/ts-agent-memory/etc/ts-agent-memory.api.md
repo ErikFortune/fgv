@@ -477,6 +477,7 @@ export interface IMemoryQuery {
     readonly linkedTo?: IEdgeTarget;
     readonly offset?: number;
     readonly orderBy?: 'recency' | 'rank';
+    readonly provenanceSource?: ProvenanceSource;
     readonly scope?: MemoryScopeKey;
     readonly semantic?: string;
     readonly tag?: Tag;

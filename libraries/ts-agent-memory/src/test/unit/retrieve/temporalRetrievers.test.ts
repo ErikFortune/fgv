@@ -28,6 +28,7 @@ interface IVersionSpec {
   // eslint-disable-next-line @rushstack/no-new-null -- invalid_at null is the meaningful still-valid sentinel
   readonly invalidAt?: number | null;
   readonly kind?: string;
+  readonly source?: string;
 }
 
 function versionEntry(spec: IVersionSpec): IIndexedMemoryRecord {
@@ -47,7 +48,7 @@ function versionEntry(spec: IVersionSpec): IIndexedMemoryRecord {
         updated: spec.validAt,
         seq: spec.seq,
         contentHash: `h-${spec.entityId}-${spec.seq}`,
-        provenance: { source: 'agent' },
+        provenance: { source: spec.source ?? 'agent' },
         temporal
       })
       .orThrow(),
@@ -115,6 +116,28 @@ describe('temporal retrievers', () => {
     test('honors scope / kind pre-filter and limit', async () => {
       expect(await retriever.retrieve({ kind: factKind, limit: 1 })).toSucceedAndSatisfy((records) => {
         expect(records).toHaveLength(1);
+      });
+    });
+
+    test('honors the provenance-source pre-filter, which runs before version grouping', async () => {
+      // The three temporal retrievers share `groupTemporalVersionsByEntity`, so
+      // pinning the axis on one of them pins it for all three. Worth pinning at
+      // all because the filter runs BEFORE versions are grouped per entity: an
+      // entity whose current version came from another source drops out entirely
+      // rather than falling back to an older version that matches.
+      const scoped = MemoryIndex.create().orThrow();
+      scoped
+        .rebuild([
+          versionEntry({ entityId: 'fact-1', seq: 1, validAt: 100, invalidAt: 200, source: 'bad-run' }),
+          versionEntry({ entityId: 'fact-1', seq: 2, validAt: 200, source: 'agent' }),
+          versionEntry({ entityId: 'fact-2', seq: 3, validAt: 150, source: 'bad-run' })
+        ])
+        .orThrow();
+      const r = CurrentValidRetriever.create(scoped).orThrow();
+      expect(await r.retrieve({ provenanceSource: 'bad-run' })).toSucceedAndSatisfy((records) => {
+        // fact-2's current version matches. fact-1's current version (v2) came
+        // from 'agent', so fact-1 is absent — NOT represented by its superseded v1.
+        expect(ids(records).sort()).toEqual(['fact-2-v3']);
       });
     });
   });
