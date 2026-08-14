@@ -4,7 +4,9 @@
 **Surfaced by:** `per-provider-testbed-scenarios` stream — live run of `gemini-client-tools` against the real Gemini API
 **Library:** `@fgv/ts-extras/ai-assist`
 **Severity:** P1 — client tools are completely non-functional on Gemini (every request with a client tool 400s)
-**Disposition:** OPEN — library bug; out of scope for this stream per the brief (any `@fgv/ts-extras/ai-assist` change is out of scope → file finding). Recommend a separate additive library fix (same path as PR #454).
+**Disposition:** **RESOLVED** by the `ai-assist-cross-provider-fixes` stream (PR #457, merged 2026-06-05 into the `per-provider-testbed-scenarios` integration branch; promoted to `release` in the cluster-close squash #459) — exactly the "separate additive library fix, same path as PR #454" this finding recommended. `toGeminiTools` now runs each client tool's `parametersSchema.toJson()` through a recursive `@internal` `toGeminiParameterSchema` that strips the draft-07-only keywords Gemini's OpenAPI-3.0 subset rejects (`additionalProperties`, `$schema`). Verified in current source: helper at `toolFormats.ts:228`, wired at the `case 'client_tool':` arm of `toGeminiTools` (`:282`). The stripping is **keyword-aware** rather than depth-blind — a Copilot round-1 finding on #457 caught that the brief's own sketch would have deleted a real tool parameter *named* `additionalProperties` inside a `properties` map; the shipped helper does not.
+
+*Disposition corrected 2026-08-14 by the retroactive `finalize-task` sweep. It had read `OPEN` for roughly ten weeks after the fix shipped. Its two siblings in this inbox were both updated post-hoc with resolution detail; this one was handed to cluster-close and dropped — the fold-in was half-done, with the OpenAI/xAI sibling updated and this one missed.*
 
 ---
 

@@ -270,4 +270,130 @@ only because it was reading the entry for another reason.
 
 ---
 
+## Batch 2 — the 2026-06 ai-assist streams
+
+Six streams: `ai-assist-cross-provider-continuation`, `-cross-provider-fixes`,
+`-message-ordering`, `-responses-reasoning-events`, `-tool-continuation`, and the cluster
+parent `per-provider-testbed-scenarios` (pulled forward from batch 3 — see B2.5).
+
+### B2.1 — a deferral both of two streams believed the other had filed (re-queued in this PR)
+
+`runToolUseConversation`, the multi-turn loop helper above the per-turn
+`executeClientToolTurn` primitive, was scoped out by **`ai-assist-client-tools`** and again
+by **`ai-assist-cross-provider-continuation`**. Each recorded it as out-of-scope; each
+believed it was captured in `docs/FUTURE.md`. A grep across `docs/` and `.ai/instructions/`
+returns nothing outside completed-stream artifacts. **Re-queued in this PR.**
+
+Two independent deferrals landing in the same hole is the argument for the deferral
+*mechanism* needing a home, not the item. Both streams did the right thing locally and the
+item still vanished.
+
+Its preconditions have since been met — #454 wired continuation to all four providers, #488
+made `continuation.messages` cumulative — so the helper is now writable provider-agnostically.
+The gap it would inherit: **every `*ClientTools` testbed scenario is still two-turn**, the
+degenerate case where replace and accumulate coincide, which is precisely the blind spot that
+hid the original per-round bug. Noted in the re-queued entry.
+
+**No decision needed** unless you disagree with the re-queue.
+
+### B2.2 — a second lost deferral, not re-queued
+
+`ai-assist-tool-continuation`'s brief offered "extend one `*ClientTools` scenario past two
+rounds, or file it as a fast-follow". Neither happened. All four scenarios remain two-turn
+as of 2026-08-14 and it is in no ledger.
+
+**Decision needed:** file it, or accept unit-level proof for the cumulative-continuation
+semantics. I have not filed it because it overlaps B2.1's inherited gap and you may want them
+as one item rather than two.
+
+### B2.3 — a `TECH_DEBT` entry pointing at a file that no longer exists (closed in this PR)
+
+The P3 "decompose `ai-assist/apiClient.ts`" described a 2000-line monolith. **#620 already
+split it** into `completionClient.ts` / `imageGenerationClient.ts` / `listModelsClient.ts` —
+exactly the split the entry's own scope sketch proposed, down to the module names. Marked
+RESOLVED; the original reasoning is retained because it is still the best statement of why.
+
+Worth noting how it survived: a **2026-08 "Correction" paragraph was added to that entry**,
+warning that whoever next edits the file has zero headroom because CI fails on
+`SUCCESS WITH WARNINGS`. That correction was written about a file that was already gone or
+going. Someone revisited the entry recently and still did not check whether it was live.
+
+### B2.4 — a findings-inbox disposition that read OPEN for ten weeks (closed in this PR)
+
+`2026-06-04-gemini-tool-schema-additionalproperties.md` recommended "a separate additive
+library fix". That fix shipped in **#457** — `toGeminiParameterSchema`, verified present — and
+the disposition was never updated. Its two siblings in the same inbox both were.
+
+The bug was not minor: Gemini's OpenAPI-3.0 subset **rejects** the draft-07 keywords
+`JsonSchema` emits strict-by-default, so client tools were **completely non-functional on
+Gemini** until it landed.
+
+### B2.5 — four streams, one story, zero ledger entries
+
+Neither `per-provider-testbed-scenarios` nor any of its three sub-streams appears anywhere in
+`docs/WORKSTREAMS.md`. Two drafters reached that conclusion independently and both recommended
+**one cluster entry** over four headings, matching the ledger's existing
+`### <id> ✅ (cluster)` convention.
+
+I pulled the cluster parent forward from batch 3 so it could be narrated as a unit rather than
+split across two PRs. **Decision needed:** confirm the cluster shape, or say you want four
+separate entries.
+
+The story is worth having in the ledger on its own merits: the cluster ran an **empirical
+loop** — build live per-provider scenarios, run them against real APIs, let what breaks drive
+library fixes — and it caught four bugs across four rounds, every one invisible to a
+100%-coverage unit suite. Round 4 used a diagnostic that round 3 had added to **falsify its
+own motivating hypothesis**: the OpenAI/xAI empty-completion bug was not budget exhaustion but
+an `item_id ↔ call_id` correlation error, with a second latent bug surfacing the moment the
+first fix let function calls flow. That is an argument for live-API testing that a mocked
+suite structurally cannot make.
+
+### B2.6 — a `TESTING_GUIDELINES` citation that no longer resolves
+
+§ "Coverage Gap Resolution" cites `c8 ignore` directives on "the `rawTail` branch in
+`chatRequestBuilders.ts`". Per #454's diff the directives were on the `options?.head` branch,
+and **none remain in that file today** — `grep -c "c8 ignore"` returns 0. The teaching point is
+intact and important; the citation is now unverifiable.
+
+**Decision needed:** a one-line annotation, or leave it. I did not edit it — it is an
+instruction file, and a reader who goes to check the example and finds nothing may discount the
+whole guideline, which argues for fixing it, but that is your call.
+
+### B2.8 — three `docs/FUTURE.md` entries are stale in the *opposite* direction
+
+A new category, and the one I'd act on soonest after B2.5. Where the `TECH_DEBT` entry
+(B2.3) pointed at a deleted file, these describe **work that has since shipped** and still
+read as unqueued:
+
+- **Provider-side request validation** — the Gemini grounding + client-tools case now
+  **fails fast** with a named `Result.fail` before any wire call (`ai-assist-antagonist`,
+  #529). The entry should narrow to the generalized registry, not be closed outright.
+- **Generic-version-alias library surface** — substantially delivered by `ai-assist-model-aliases`
+  (#505–#508) and the model-tiers work. The entry still reads as unqueued **and still cites
+  `gpt-4o` as OpenAI's default**, which is doubly misleading now.
+- **Library default `max_output_tokens` for reasoning models** — genuinely still open, but its
+  stated workaround (`otherParams`) is superseded by the first-class `maxTokens` param (#573).
+
+**Decision needed:** narrowing or closing a FUTURE entry is a scoping call, not a fact
+correction, so I did not touch them. The `gpt-4o` reference is the one worth fixing regardless
+of what you decide about the entries themselves — it will misinform anyone who reads it.
+
+The pattern across B2.3, B2.4 and B2.8 is worth naming: **five artifacts in one batch were
+stale, and every one of them was true when written.** Nothing in the workflow revisits a
+deferral, a debt entry, or a finding once its trigger has fired somewhere else. That is the
+structural gap; the individual corrections are symptoms.
+
+### B2.7 — two similarly-named streams, relationship now pinned
+
+`ai-assist-cross-provider-continuation` and `ai-assist-tool-continuation` sound like the same
+work. They are orthogonal and neither supersedes the other: **cross-provider owns whether a
+provider receives the continuation tail at all; tool-continuation owns what that tail contains
+across rounds.** #459 is a git ancestor of #488, and the order is load-bearing — reversed, the
+cumulative prepend would have been correct on Anthropic and inert on the other three.
+
+Recorded in both records via `relatedStreams`. No decision needed; flagged because leaving it
+vague would have made both records less useful than either alone.
+
+---
+
 *Sections below are appended per batch as the sweep proceeds.*
