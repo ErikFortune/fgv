@@ -6,10 +6,14 @@ import {
   type IHttpStorageProviderFactory,
   type IStorageFileResponse,
   type IStorageSyncResponse,
-  type IStorageTreeItem
+  type IStorageTreeItem,
+  type StorageContentEncoding
 } from '../../../packlets/storage';
 
 class InMemoryProvider implements IHttpStorageProvider {
+  /** Records the encoding the route passed through, so a test can assert it arrived. */
+  public lastEncoding: string | undefined;
+
   private readonly _files: Map<string, string> = new Map();
 
   private _basename(path: string): string {
@@ -37,10 +41,17 @@ class InMemoryProvider implements IHttpStorageProvider {
     return succeed(children);
   }
 
-  public async getFile(path: string): Promise<Result<IStorageFileResponse>> {
+  public async getFile(
+    path: string,
+    encoding?: StorageContentEncoding
+  ): Promise<Result<IStorageFileResponse>> {
+    this.lastEncoding = encoding;
     const contents = this._files.get(path);
     if (contents === undefined) {
       return fail(`${path}: not found`);
+    }
+    if (encoding === 'base64') {
+      return succeed({ path, contents: Buffer.from(contents, 'utf8').toString('base64'), encoding });
     }
     return succeed({ path, contents });
   }
@@ -161,5 +172,42 @@ describe('createStorageRoutes', () => {
 
     const getResponse = await app.request(new Request('http://localhost/file?path=/data/remove-me.txt'));
     expect(getResponse.status).toBe(404);
+  });
+
+  test('passes the encoding query parameter through to the provider', async () => {
+    const provider = new InMemoryProvider();
+    const app = createStorageRoutes({ providers: new TestProviderFactory(provider) });
+
+    await app.request(
+      new Request('http://localhost/file', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: '/a.txt', contents: 'hello' })
+      })
+    );
+
+    const plain = await app.request(new Request('http://localhost/file?path=/a.txt'));
+    expect(plain.status).toBe(200);
+    expect(provider.lastEncoding).toBeUndefined();
+    await expect(plain.json()).resolves.toEqual({ path: '/a.txt', contents: 'hello' });
+
+    const encoded = await app.request(new Request('http://localhost/file?path=/a.txt&encoding=base64'));
+    expect(encoded.status).toBe(200);
+    expect(provider.lastEncoding).toBe('base64');
+    await expect(encoded.json()).resolves.toEqual({
+      path: '/a.txt',
+      contents: Buffer.from('hello', 'utf8').toString('base64'),
+      encoding: 'base64'
+    });
+  });
+
+  test('rejects an unrecognized encoding rather than silently ignoring it', async () => {
+    // A typo must not quietly degrade to utf8 — that is how a caller ends up
+    // believing it has byte fidelity it never had.
+    const provider = new InMemoryProvider();
+    const app = createStorageRoutes({ providers: new TestProviderFactory(provider) });
+
+    const response = await app.request(new Request('http://localhost/file?path=/a.txt&encoding=base-64'));
+    expect(response.status).toBe(400);
   });
 });

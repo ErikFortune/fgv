@@ -22,7 +22,7 @@ export class FsStorageProvider implements IHttpStorageProvider {
     // (undocumented)
     getChildren(itemPath: string): Promise<Result<ReadonlyArray<IStorageTreeItem>>>;
     // (undocumented)
-    getFile(itemPath: string): Promise<Result<IStorageFileResponse>>;
+    getFile(itemPath: string, encoding?: StorageContentEncoding): Promise<Result<IStorageFileResponse>>;
     // (undocumented)
     getItem(itemPath: string): Promise<Result<IStorageTreeItem>>;
     // (undocumented)
@@ -48,7 +48,7 @@ export class HttpStorageService {
     // (undocumented)
     getChildren(request: IStoragePathRequest): Promise<Result<IStorageTreeChildrenResponse>>;
     // (undocumented)
-    getFile(request: IStoragePathRequest): Promise<Result<IStorageFileResponse>>;
+    getFile(request: IStorageReadFileRequest): Promise<Result<IStorageFileResponse>>;
     // (undocumented)
     getItem(request: IStoragePathRequest): Promise<Result<IStorageTreeItem>>;
     // (undocumented)
@@ -79,8 +79,7 @@ export interface IHttpStorageProvider {
     deleteFile(path: string): Promise<Result<boolean>>;
     // (undocumented)
     getChildren(path: string): Promise<Result<ReadonlyArray<IStorageTreeItem>>>;
-    // (undocumented)
-    getFile(path: string): Promise<Result<IStorageFileResponse>>;
+    getFile(path: string, encoding?: StorageContentEncoding): Promise<Result<IStorageFileResponse>>;
     // (undocumented)
     getItem(path: string): Promise<Result<IStorageTreeItem>>;
     // (undocumented)
@@ -101,6 +100,7 @@ export interface IStorageFileResponse {
     readonly contents: string;
     // (undocumented)
     readonly contentType?: string;
+    readonly encoding?: StorageContentEncoding;
     // (undocumented)
     readonly path: string;
 }
@@ -111,6 +111,12 @@ export interface IStoragePathRequest {
     readonly namespace?: StorageNamespace;
     // (undocumented)
     readonly path: string;
+}
+
+// @public
+export interface IStorageReadFileRequest extends IStoragePathRequest {
+    // (undocumented)
+    readonly encoding?: StorageContentEncoding;
 }
 
 // @public
@@ -158,6 +164,12 @@ export function normalizeRequestPath(requestPath: string): string;
 export function sanitizeNamespace(namespace?: string): Result<string>;
 
 // @public
+export type StorageContentEncoding = 'utf8' | 'base64';
+
+// @public
+export const storageContentEncoding: Converter<StorageContentEncoding>;
+
+// @public
 export const storageFileResponse: Converter<IStorageFileResponse>;
 
 // @public
@@ -168,6 +180,9 @@ export type StorageNamespace = string;
 
 // @public
 export const storagePathRequest: Converter<IStoragePathRequest>;
+
+// @public
+export const storageReadFileRequest: Converter<IStorageReadFileRequest>;
 
 // @public
 export const storageSyncRequest: Converter<IStorageSyncRequest>;

@@ -35,6 +35,23 @@ export type StorageNamespace = string;
 export type StorageItemType = 'file' | 'directory';
 
 /**
+ * How a file's bytes are represented in the `contents` field on the wire.
+ *
+ * @remarks
+ * - `'utf8'` — `contents` is the file decoded as UTF-8 text. This is the
+ *   historical (and default) representation, and it is **lossy**: the decode is
+ *   the lenient WHATWG one, so any byte sequence that is not valid UTF-8 has
+ *   already been replaced by U+FFFD by the time it reaches the wire, and the
+ *   substitution is not recoverable downstream.
+ * - `'base64'` — `contents` is the file's bytes, base64-encoded. Byte-faithful
+ *   and therefore the only representation over which a consumer can decide
+ *   whether the stored bytes were valid UTF-8, or read genuinely binary content.
+ *   Costs roughly 33% more payload.
+ * @public
+ */
+export type StorageContentEncoding = 'utf8' | 'base64';
+
+/**
  * Storage tree item metadata.
  * @public
  */
@@ -61,6 +78,20 @@ export interface IStorageFileResponse {
   readonly path: string;
   readonly contents: string;
   readonly contentType?: string;
+
+  /**
+   * How `contents` is encoded. Absent means `'utf8'`.
+   *
+   * @remarks
+   * **This field describes what the server actually produced, not what the
+   * client asked for**, and a client must branch on it rather than on its own
+   * request. A provider that does not implement `'base64'` ignores the request
+   * and answers with UTF-8 text; a client that base64-decoded on the strength of
+   * having *asked* would corrupt every such response. Trusting the field instead
+   * makes an older or simpler provider degrade to today's behavior rather than
+   * to garbage.
+   */
+  readonly encoding?: StorageContentEncoding;
 }
 
 /**
@@ -70,6 +101,19 @@ export interface IStorageFileResponse {
 export interface IStoragePathRequest {
   readonly path: string;
   readonly namespace?: StorageNamespace;
+}
+
+/**
+ * Request for reading a file, with an optional preferred content encoding.
+ *
+ * @remarks
+ * `encoding` is a *preference*, not a demand: a provider that cannot honour it
+ * answers in `'utf8'` and says so on {@link IStorageFileResponse.encoding}. The
+ * response is the authority.
+ * @public
+ */
+export interface IStorageReadFileRequest extends IStoragePathRequest {
+  readonly encoding?: StorageContentEncoding;
 }
 
 /**
@@ -105,7 +149,15 @@ export interface IStorageSyncResponse {
 export interface IHttpStorageProvider {
   getItem(path: string): Promise<Result<IStorageTreeItem>>;
   getChildren(path: string): Promise<Result<ReadonlyArray<IStorageTreeItem>>>;
-  getFile(path: string): Promise<Result<IStorageFileResponse>>;
+  /**
+   * Reads a file.
+   * @param path - Path of the file to read.
+   * @param encoding - Preferred wire encoding for the returned `contents`. A
+   * provider that does not implement the requested encoding MUST answer in
+   * `'utf8'` and report that on the response, rather than failing — the field is
+   * a preference and the response is the authority.
+   */
+  getFile(path: string, encoding?: StorageContentEncoding): Promise<Result<IStorageFileResponse>>;
   saveFile(path: string, contents: string, contentType?: string): Promise<Result<IStorageFileResponse>>;
   deleteFile(path: string): Promise<Result<boolean>>;
   createDirectory(path: string): Promise<Result<IStorageTreeItem>>;

@@ -31,6 +31,7 @@ import type {
   IStorageFileResponse,
   IStorageSyncResponse,
   IStorageTreeItem,
+  StorageContentEncoding,
   StorageItemType
 } from './model';
 import type { IHttpStorageProviderFactory } from './provider';
@@ -84,7 +85,10 @@ export class FsStorageProvider implements IHttpStorageProvider {
     }
   }
 
-  public async getFile(itemPath: string): Promise<Result<IStorageFileResponse>> {
+  public async getFile(
+    itemPath: string,
+    encoding?: StorageContentEncoding
+  ): Promise<Result<IStorageFileResponse>> {
     const resolved = this._resolveAbsolutePath(itemPath);
     if (resolved.isFailure()) {
       return fail(resolved.message);
@@ -94,6 +98,21 @@ export class FsStorageProvider implements IHttpStorageProvider {
       if (!stats.isFile()) {
         return fail(`${itemPath}: not a file`);
       }
+      // Byte-faithful only when asked. Reading without an encoding yields the raw
+      // bytes; base64 carries them intact. The default path stays a lenient UTF-8
+      // decode, which is lossy but is what every existing caller already receives.
+      if (encoding === 'base64') {
+        const bytes = await fsp.readFile(resolved.value);
+        return succeed({
+          path: normalizeRequestPath(itemPath),
+          contents: bytes.toString('base64'),
+          encoding: 'base64'
+        });
+      }
+      // Deliberately no `encoding` field on the default path: absent means `'utf8'`,
+      // so an existing deployment's responses stay byte-identical. It also leaves a
+      // usable signal — a client that asked for base64 and got no field back knows
+      // the request was not honoured, rather than having to guess.
       const contents = await fsp.readFile(resolved.value, 'utf8');
       return succeed({
         path: normalizeRequestPath(itemPath),

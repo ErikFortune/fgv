@@ -26,6 +26,7 @@ import type {
   IHttpStorageProvider,
   IStorageFileResponse,
   IStoragePathRequest,
+  IStorageReadFileRequest,
   IStorageSyncRequest,
   IStorageSyncResponse,
   IStorageTreeChildrenResponse,
@@ -68,12 +69,12 @@ export class HttpStorageService {
     });
   }
 
-  public async getFile(request: IStoragePathRequest): Promise<Result<IStorageFileResponse>> {
+  public async getFile(request: IStorageReadFileRequest): Promise<Result<IStorageFileResponse>> {
     const providerResult = this._getProvider(request.namespace);
     if (providerResult.isFailure()) {
       return fail(providerResult.message);
     }
-    return providerResult.value.getFile(request.path);
+    return providerResult.value.getFile(request.path, request.encoding);
   }
 
   public async saveFile(request: IStorageWriteFileRequest): Promise<Result<IStorageFileResponse>> {

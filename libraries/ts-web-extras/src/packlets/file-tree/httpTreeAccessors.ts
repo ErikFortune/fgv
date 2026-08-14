@@ -20,7 +20,15 @@
  * SOFTWARE.
  */
 
-import { DetailedResult, fail, type Result, succeed, succeedWithDetail, Logging } from '@fgv/ts-utils';
+import {
+  captureResult,
+  DetailedResult,
+  fail,
+  type Result,
+  succeed,
+  succeedWithDetail,
+  Logging
+} from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
 interface IHttpStorageTreeItem {
@@ -38,7 +46,19 @@ interface IHttpStorageFileResponse {
   readonly path: string;
   readonly contents: string;
   readonly contentType?: string;
+  readonly encoding?: HttpContentEncoding;
 }
+
+/**
+ * How a file's bytes are represented in the storage API's `contents` field.
+ *
+ * @remarks
+ * Mirrors `StorageContentEncoding` in `@fgv/ts-http-storage`. Declared here
+ * rather than imported because this package must not take a dependency on the
+ * server library — the two are ends of a wire contract, not layers of a stack.
+ * @public
+ */
+export type HttpContentEncoding = 'utf8' | 'base64';
 
 interface IHttpStorageSyncResponse {
   readonly synced: number;
@@ -60,6 +80,29 @@ export interface IHttpTreeParams<TCT extends string = string> extends FileTree.I
   readonly fetchImpl?: typeof fetch;
   readonly userId?: string;
   readonly logger?: Logging.LogReporter<unknown>;
+
+  /**
+   * Wire encoding to request for file contents. Default `'utf8'` — today's
+   * behavior, byte-identical.
+   *
+   * @remarks
+   * Set `'base64'` to make this store **byte-faithful**: the server sends the
+   * file's bytes rather than a lenient UTF-8 decode of them, and this tree is
+   * seeded with those bytes verbatim. That is what makes `getFileBytes()`
+   * honest here and what lets the optional strict-text capability
+   * (`FileTree.getFileTextStrict`) actually decide whether the stored bytes were
+   * valid UTF-8, instead of refusing for want of custody. It also makes reading
+   * genuinely binary content (images, PDFs) correct rather than lossy.
+   *
+   * The cost is roughly 33% more payload per file, which is why it is opt-in
+   * rather than the default.
+   *
+   * **Requesting it is not the same as getting it.** A server that does not
+   * implement base64 ignores the parameter and answers in UTF-8, saying so on
+   * the response; this store branches on what came back, not on what it asked
+   * for, so such a server degrades to today's behavior rather than to garbage.
+   */
+  readonly contentEncoding?: HttpContentEncoding;
 }
 
 /**
@@ -70,30 +113,36 @@ export interface IHttpTreeParams<TCT extends string = string> extends FileTree.I
  * (`FileTree.IBinaryFileTreeAccessors`) — narrow with
  * `FileTree.isBinaryAccessors` and call `getFileBytes()`.
  *
- * **`getFileBytes()` on this adapter is NOT byte-faithful, and must not be used to
- * detect invalid UTF-8.** The REST transport carries file contents as JSON
+ * **Whether this adapter is byte-faithful depends on
+ * {@link IHttpTreeParams.contentEncoding | contentEncoding}, and nothing else.**
+ *
+ * Under the default `'utf8'`, it is **not**, and `getFileBytes()` must not be used
+ * to detect invalid UTF-8. The REST transport carries file contents as JSON
  * strings, so `JSON.parse` has already decoded them **leniently** — substituting
  * U+FFFD for every invalid sequence — before this class ever sees them. The
  * inherited `getFileBytes()` then *re-encodes* that string, so what you get back
  * is well-formed UTF-8 whose corruption is already baked in and no longer
  * detectable. A `TextDecoder('utf-8', { fatal: true })` over those bytes will
- * succeed, having nothing left to check. Use it to move text around, not to
- * assert anything about the bytes on the server.
+ * succeed, having nothing left to check. For the same reason the optional
+ * strict-text capability (`FileTree.IStrictTextFileTreeAccessors`) **fails every
+ * file**: with no custody of the original bytes it cannot answer "was this valid
+ * UTF-8?" even in principle, so it refuses rather than returning a success from a
+ * check that cannot fail.
+ *
+ * Under `contentEncoding: 'base64'`, all of that goes away. The server sends the
+ * file's bytes and this tree is seeded with them verbatim, so `getFileBytes()`
+ * returns what the origin actually stored and `getFileTextStrict()` decides
+ * honestly. Nothing in the capability implementations is special-cased for HTTP —
+ * they follow the general custody rule, and this option is simply how this store
+ * comes to have custody.
  *
  * (An earlier version of this doc said `getFileBytes()` reads bytes "without going
- * through a lenient UTF-8 decode". That is true of the byte-seeded stores this
- * class inherits from and false here, where the decode happens upstream in the
- * transport.)
+ * through a lenient UTF-8 decode", unconditionally. That was true of the
+ * byte-seeded stores this class inherits from and false here.)
  *
- * For the same reason this store implements the optional strict-text capability
- * (`FileTree.IStrictTextFileTreeAccessors`) but **fails every file**: with no
- * custody of the original bytes it cannot answer "was this valid UTF-8?" even in
- * principle, and re-encoding the decoded string would always produce well-formed
- * UTF-8 — a success from a check that cannot fail.
- *
- * Byte *writes* are deliberately not supported, for the same underlying reason:
- * bytes that are not valid UTF-8 could not survive a `syncToDisk()` round-trip. A
- * binary transport would be a wire-format change, not a local one.
+ * Byte *writes* remain unsupported: `syncToDisk()` still sends `contents` as UTF-8
+ * text, so bytes that are not valid UTF-8 could not survive the round trip. The
+ * read direction is byte-faithful; the write direction is not yet.
  * @public
  */
 export class HttpTreeAccessors<TCT extends string = string>
@@ -411,6 +460,34 @@ export class HttpTreeAccessors<TCT extends string = string>
    * @param directoryPath - The path to the directory to load files from.
    * @returns A promise that resolves to a result containing the loaded files or an error message.
    */
+  /**
+   * Resolves a file response's `contents` to what should seed the in-memory tree:
+   * raw bytes when the server says it sent base64, the string verbatim otherwise.
+   *
+   * @remarks
+   * The branch is on **`response.encoding`, never on what was requested.** A
+   * server that does not implement base64 ignores the query parameter and answers
+   * in UTF-8; decoding that as base64 because we happened to ask would silently
+   * corrupt every file. Trusting the response makes the same client correct
+   * against both a byte-faithful server and a text-only one.
+   */
+  private static _decodeContents(
+    filePath: string,
+    response: IHttpStorageFileResponse
+  ): Result<string | Uint8Array> {
+    if (response.encoding !== 'base64') {
+      return succeed(response.contents);
+    }
+    return captureResult(() => {
+      const binary = atob(response.contents);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes;
+    }).withErrorFormat((message: string) => `${filePath}: malformed base64 in storage response: ${message}`);
+  }
+
   private static async _loadFiles<TCT extends string = string>(
     params: IHttpTreeParams<TCT>,
     directoryPath: string
@@ -439,16 +516,21 @@ export class HttpTreeAccessors<TCT extends string = string>
       } else {
         const fileResult = await this._requestWithParams<IHttpStorageFileResponse>(params, '/file', {
           path: item.path,
-          namespace: params.namespace
+          namespace: params.namespace,
+          encoding: params.contentEncoding
         });
         if (fileResult.isFailure()) {
           return fail(fileResult.message);
         }
 
         const contentType = params.inferContentType?.(item.path, fileResult.value.contentType).orDefault();
+        const decoded = HttpTreeAccessors._decodeContents(item.path, fileResult.value);
+        if (decoded.isFailure()) {
+          return fail(decoded.message);
+        }
         allFiles.push({
           path: item.path,
-          contents: fileResult.value.contents,
+          contents: decoded.value,
           contentType
         });
       }
