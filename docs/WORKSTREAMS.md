@@ -240,6 +240,16 @@ question the index failed to surface.**
   direction and puts a server explicitly out of scope. **The missing piece is a server, not a
   capability.**
 
+**Invocation decided (2026-08-14): on demand, not pre-commit.** A `rush index-tasks` custom
+command, and a `/task-corpus` skill that **regenerates before reading**. The hook was declined on
+evidence: `common/git-hooks/pre-commit` already exists, and it was bypassed repeatedly in the very
+session that motivated this — agents committing from bare worktrees where the rush autoinstaller
+was never installed, so the hook would have failed the commit. It does not run in exactly the
+bulk-work sessions where freshness matters, and it would conflict across parallel worktrees on one
+shared generated file. Because the skill regenerates first, no agent depends on the committed copy
+being fresh, which removes the need for a CI verify gate too — consistent with the change-file
+lesson about gates invisible to the local suite.
+
 **The open question that sizes the second stream** — resolve it before anything else there:
 does `ISchemaValidator.toJson()` drop straight into MCP tool registration? If yes the adapter is
 small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the estimate moves.

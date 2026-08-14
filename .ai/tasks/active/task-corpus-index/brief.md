@@ -92,18 +92,63 @@ A script under `common/scripts/` or a small `tools/` project. Requirements:
   partial index that looks complete is the failure mode this stream exists to prevent.
 - Idempotent: running it twice with no corpus change produces a byte-identical `INDEX.md`.
 
-### 4. Keep it honest over time
+### 4. Invocation — on demand, **not** pre-commit (decided 2026-08-14)
 
-A generated index rots the moment someone adds a stream without frontmatter. Add a check —
-cheapest first:
+Ship it as a **Rush custom command**, `rush index-tasks`, alongside the existing `rush prettier`
+in `common/config/rush/command-line.json`. Regenerating is the whole interface.
 
-- Minimum: a `rushx` script (e.g. `rush index-tasks --verify`) that regenerates into a temp
-  location and fails if it differs from the checked-in `INDEX.md`, plus a line in
-  `.ai/conventions/workflow/artifact-protocol.md` saying frontmatter is part of the protocol.
-- Consider (do not assume): wiring that verify into CI. **Weigh it against the change-file
-  gate lesson** — CI gates that are invisible locally cost more than they save. If it is
-  wired, it must be runnable locally with one obvious command, and the failure message must
-  name the fix.
+**Do not put it in the pre-commit hook.** Two reasons, both concrete:
+
+1. **A pre-commit guarantee is not one, and this repo has the receipts.** `common/git-hooks/pre-commit`
+   already exists and runs `rush prettier`. It was bypassed **repeatedly in the 2026-08-14 session**
+   via `git -c core.hooksPath=/dev/null commit` — not to evade it, but because the agent was
+   committing from bare `git worktree`s where the rush autoinstaller had never been set up and the
+   hook would have failed the commit outright. That is exactly the bulk-work situation where index
+   freshness matters most, and it is precisely where the hook does not run.
+2. **It is a cross-stream conflict magnet.** One generated file that *every* task-touching branch
+   rewrites, in a repo that deliberately runs parallel worktrees. Every merge conflicts on
+   `INDEX.md`. Resolution is mechanical (re-run the generator) but it is friction on every stream,
+   paid forever, to buy a guarantee that item 1 says we do not actually get.
+
+**The move that makes the gate unnecessary: the skill regenerates before it reads** (see §5). Once
+the agent path never trusts the committed copy, staleness cannot produce a wrong answer — it can
+only show a human a slightly old file on GitHub. That decouples correctness from discipline, which
+is the only durable way to win this.
+
+So: **no CI verify at first.** The change-file lesson in `CODING_STANDARDS.md` is that a gate
+invisible to the local suite costs more than it saves; adding one here to protect a
+human-convenience artifact would be building machinery ahead of the justification. If drift is
+later shown to actually mislead someone, add `rush index-tasks --verify` then — and make its
+failure message name the one-command fix.
+
+**No generated-at timestamp in the file.** It would break the idempotency requirement above, and
+git already carries the file's age.
+
+### 5. A repo skill — `/task-corpus`
+
+The generator alone does not solve the stated problem. **The failure is not knowing to look**, so a
+skill whose description amounts to "read the index" would be nearly useless.
+
+Follow the shape the repo's existing skills use (`.claude/skills/<name>/SKILL.md`, frontmatter
+`name` + `description`, with the description carrying explicit **trigger** conditions — see
+`filetree-io`'s "Load this skill BEFORE writing `fs.readFile`…"). The triggers are the deliverable.
+
+Trigger on, at minimum:
+
+- before designing anything that sounds like it may have been designed before
+- before answering a "did we ever decide…" / "why is X the way it is" question
+- before writing a new stream brief (there may be a prior stream, or a deliberate scope cut)
+- when a consumer asks about a shipped behavior's rationale
+- before recording a lesson (it may already be codified)
+
+Body should teach the corpus's **shape**, because that is the retrieval strategy: `brief.md` is
+what a stream was *asked* to do, `result.md` is what it *actually did including deviations*,
+`README.md` is the polished record, `design.md` is the bundle, and `state.md` is a live scratchpad
+that may be stale by design. Knowing that "what shipped, and what got cut" lives in `result.md` is
+most of the skill.
+
+The skill must **regenerate the index before reading it** (`rush index-tasks`), then read. State
+that as a step, not an aside.
 
 ## Explicitly NOT in scope
 
@@ -111,6 +156,9 @@ cheapest first:
   this stream is partly an experiment to find out whether that one is needed at all.
 - **Restructuring the two-tree layout** or renaming existing artifacts. The layout is fine;
   it is undescribed, not wrong.
+- **A pre-commit hook, and a CI verify gate.** Both considered and declined with reasoning in
+  §4 — the hook because it is demonstrably bypassed in exactly the bulk-work sessions that need
+  it and because it conflicts across parallel worktrees, the gate because §5 removes the need.
 - **Backfilling `summary` for all 269 files by hand.** Derivable fields only; blanks stay blank.
 - **Indexing anything outside `.ai/tasks/`** — `.ai/notes/`, `docs/`, `.claude/project/` are
   adjacent problems. Note that the branch-migration plan that motivated this stream lives in
@@ -126,10 +174,16 @@ cheapest first:
    discoverable to humans; the former keeps the generated artifact next to its source.
 3. Is `packages` worth maintaining by hand where it is not derivable, or should it be derived
    from the merged PR's touched paths and omitted when unknown?
+4. Should `INDEX.md` be committed at all, given §5 means no agent depends on the committed copy?
+   Committing it buys GitHub browsability for humans and costs occasional cross-branch conflicts;
+   gitignoring it costs nothing and buys nothing for agents. Leaning commit, because a human
+   skimming stream history on GitHub is a real use and the conflicts are mechanically resolvable
+   by regeneration.
 
 ## Gates
 
 - [ ] `rushx build` / `rushx lint` / `rushx test` green in any package the generator lives in
+- [ ] `/task-corpus` skill regenerates before reading — verified by following it, not by reading it
 - [ ] 100% coverage on the generator's own logic
 - [ ] Change file for every touched package
 - [ ] Generator is idempotent (assert it in a test, not by inspection)
