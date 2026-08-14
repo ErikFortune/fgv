@@ -743,7 +743,8 @@ So **R2 is not the safe, independent one-liner §4 called it** — it converts a
 
 ### `ts-prompt-assist-features` ✅ (cluster)
 
-**Status:** ✅ shipped — cluster integration branch `claude/ts-prompt-assist-features` ready for promotion to `release`
+**Status:** ✅ shipped — cluster integration branch `claude/ts-prompt-assist-features` promoted to `release` via [#397](https://github.com/ErikFortune/fgv/pull/397) (`88545a5dc`). *(Corrected 2026-08-14: this line read "ready for promotion to `release`" long after the promotion landed, and four later prompt-assist streams — #407, #460, #490, #538 — had already built on top of it.)*
+**Directory:** `.ai/tasks/completed/2026-05/ts-prompt-assist/` — note the directory name differs from this entry's id, so id-matching tools report this stream as un-narrated; `meta.yaml` carries a `ledgerEntry:` field recording the mapping.
 **Cluster scope:** `@fgv/ts-prompt-assist` v0.1 (new library) + `@fgv/ts-extras/mustache` additive extension + `@fgv/ts-res` typed-conditions support (sub-stream below) + sample-app demonstration in `samples/ai-image-gen-sample`
 **Sub-stream:** [`ts-res-typed-conditions`](#ts-res-typed-conditions-) (below)
 

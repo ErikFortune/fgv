@@ -113,6 +113,36 @@ opening the stream. If you cannot find one, leave it blank.
 the stream id would miss — the problem class, the primitives touched, the failure mode
 addressed. Skip words already in the id.
 
+**`prs` is merged PRs only, and stays a flat list of integers.** An index tool reads it;
+a dict or a list of objects breaks that. A stream that also has *retired*, *superseded*
+or *deliberately-held* PRs puts them in a sibling `prHistory` map instead —
+
+```yaml
+prs: [357, 358, 372]
+prHistory:
+  retired:
+    - number: 359
+      why: 'first single-agent attempt; abandoned after context drift, never merged'
+  held:
+    - number: 373
+      why: 'deliberately not merged so the next round could be a cold-start integration'
+```
+
+This is not tidiness. Listing a closed-unmerged PR in `prs` **asserts it merged**, and a
+retired PR is often the most instructive thing a cluster produced — the reason a workflow
+shape changed. Verify state rather than assuming: a number appearing in an artifact is not
+evidence it landed.
+
+Two more fields, both optional and both worth adding when they apply:
+
+- **`ledgerEntry:`** when `docs/WORKSTREAMS.md` narrates the stream under a *different*
+  name than the directory. Without it, every future reconciliation reports the stream as
+  un-narrated and someone re-does this work. (Known instances: directory `ts-prompt-assist`
+  → entry `ts-prompt-assist-features`; directory `safer-fetch-s3` → narrated as the S3
+  sub-stream of `fetch-primitive-threat-model`.)
+- **`relatedStreams:`** — `{id, relationship}` pairs. A one-file fix stream is illegible
+  alone; its parent is the most important fact about it.
+
 ### 3. Migrate the artifacts — **`close` mode only**
 
 **Skip this entire step in retroactive mode.**
