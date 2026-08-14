@@ -1,0 +1,230 @@
+id: ai-assist-cross-provider-continuation
+status: shipped
+packages: ['@fgv/ts-extras']
+prs: [454, 459]
+opened: 2026-06-04
+closed: 2026-06
+relatedStreams:
+  - id: per-provider-testbed-scenarios
+    relationship: >
+      Parent cluster. This stream is round 1 of that cluster's four-round
+      "testbed surfaces a wire-shape bug → library sub-stream fixes it →
+      testbed re-runs" empirical loop. It was commissioned mid-cluster
+      specifically to unblock the paused testbed PR #453, shares the
+      `per-provider-testbed-scenarios` integration branch, and reached
+      `release` inside that cluster's promotion PR #459. The cluster README
+      (`.ai/tasks/completed/2026-06/per-provider-testbed-scenarios/README.md`)
+      is the polished narrative for this stream — there is no separate README
+      here — and it locks three of this stream's design decisions in its
+      cluster-wide "Architectural decisions" table.
+  - id: ai-assist-client-tools
+    relationship: >
+      Predecessor. That cluster shipped `executeClientToolTurn` with
+      deliberately Anthropic-only continuation forwarding (Erik's call at the
+      time: "OpenAI/Gemini/xAI extension is anticipated future work") and
+      pre-declared `IBuildMessagesOptions.rawTail` in anticipation of exactly
+      this extension. The design hook was already in place when this stream
+      was commissioned; the stream's whole job was to make the other two
+      builders honor it.
+  - id: ai-assist-cross-provider-fixes
+    relationship: >
+      Sibling sub-stream (rounds 2–3 of the same cluster, PR #457). Gemini
+      tool-schema sanitization + `incompleteReason` capture. No file overlap
+      with this stream.
+  - id: ai-assist-responses-reasoning-events
+    relationship: >
+      Sibling sub-stream and cluster closeout (round 4, PR #458) — and the
+      stream that made this one's OpenAI/xAI claim true on the live wire.
+      This stream delivered *forwarding* (the tail reaches the request body);
+      #458 then found that `buildOpenAiContinuation` emitted the optional `id`
+      instead of the required `call_id`, so the forwarded OpenAI/xAI tail was
+      HTTP-400-rejected until it landed, alongside the `item_id ↔ call_id`
+      correlation fix that made function-call events fire at all on reasoning
+      models. Read the two together before concluding when cross-provider
+      continuation actually started working end-to-end.
+  - id: ai-assist-tool-continuation
+    relationship: >
+      Successor (PR #488, 2026-06-07). Made `IAiClientToolContinuation.messages`
+      cumulative across rounds by prepending the inbound `continuationMessages`
+      to the per-round tail. This stream forwarded whatever the caller supplied;
+      that stream fixed what the caller gets back, so `replace` became the
+      correct multi-round idiom. The `continuationMessages` TSDoc this stream
+      rewrote was rewritten again there.
+  - id: ai-assist-message-ordering
+    relationship: >
+      Successor (PR #480). Unified every turn entry point on
+      `IChatRequest { system?, messages }`, reshaping `executeClientToolTurn`'s
+      params and removing the dead `tail` builder option from
+      `chatRequestBuilders.ts`. `continuationMessages` was explicitly left
+      unchanged as a distinct post-current-turn axis — this stream's seam
+      survived that refactor intact.
+summary:
+  intended: >
+    Close the Anthropic-only gap in client-tool continuation wire-forwarding.
+    The brief (`## Mission`) asked to extend `executeClientToolTurn`'s
+    `continuationMessages` so it flows to **all four providers**' request
+    builders as `rawTail`: widen `callOpenAiResponsesStream` and
+    `callGeminiStream` with an optional
+    `continuationMessages?: ReadonlyArray<JsonObject>`, have `buildMessages`
+    (OpenAI/xAI Responses) and `buildGeminiContents` consume the pre-declared
+    `IBuildMessagesOptions.rawTail`, forward it from the `openai` and `gemini`
+    arms of `executeClientToolTurn`'s switch, and verify — "don't speculate;
+    read `executeClientToolTurn`'s switch" — that xAI inherits via
+    `apiFormat: 'openai'` routing. Explicitly out of scope: any Anthropic
+    behavior change (read-only reference pattern), `samples/testbed` scenario
+    edits (PR #453 was paused precisely to keep them in final form), MCP layer
+    2, `runToolUseConversation`, and thinking-content surfacing. Minimum-additive
+    discipline throughout; 100% coverage in `@fgv/ts-extras`; `code-reviewer`
+    before coverage closure per L37.
+  shipped: >
+    Exactly that seam, on the four files the brief named. `callOpenAiResponsesStream`
+    and `callGeminiStream` each gained a trailing optional `continuationMessages?`
+    threaded to their builder as `rawTail`; `buildMessages` and
+    `buildGeminiContents` now consume it; the `openai` and `gemini` switch arms
+    forward it. Two `@internal` converters were added to `chatRequestBuilders.ts`:
+    `openAiRawTailItemConverter` (an `isJsonObject` guard, item preserved whole)
+    and `geminiRawTailMessageConverter` (projects to
+    `{ role: 'user'|'model', parts: unknown[] }`). +7 tests, all asserting the
+    captured **request body** rather than call success — OpenAI and Gemini tail
+    shape, both providers' malformed-item skip, xAI inheritance driven end-to-end
+    through `executeClientToolTurn`, and two no-options builder calls closing the
+    `options === undefined` short-circuit with a functional test rather than a
+    `c8 ignore`. xAI routing verified against `registry.ts`'s `xai-grok` descriptor,
+    not assumed. No Anthropic behavior change; API Extractor produced no
+    `etc/ts-extras.api.md` diff because every addition is `@internal`. All gates
+    green; `code-reviewer` run before coverage closure (1 P1 + 3 P2 + 2 P3,
+    all fixed or dispositioned with reasoning). Merged as PR #454 onto the
+    cluster's integration branch, promoted to `release` in #459.
+  diverged: >
+    **The brief's sketched shape held; the shape of the *data* did not.** The
+    brief asked `buildMessages` to "reconstruct the OpenAI Responses input
+    shape: `function_call` items followed by `function_call_output` items",
+    reading as a projection parallel to Anthropic's `{ role, content }` one.
+    The stream instead appended OpenAI items **verbatim**, because Responses
+    input items are a `type`-keyed discriminated union whose fields differ per
+    item and any projection would drop the distinguishing fields — Gemini kept
+    the projection (`{ role, parts }`) because its turns carry all payload in
+    `parts`. That asymmetry is now a documented consumer-facing caveat in
+    `LIBRARY_CAPABILITIES.md` ("the high-fidelity round-trip is on the
+    OpenAI/xAI path; Anthropic and Gemini preserve only the projected fields")
+    and is locked as a cluster architectural decision. It also cascaded two
+    signature widenings the brief never mentions — `buildMessages` to
+    `Array<Record<string, unknown>>` and `buildGeminiContents` `parts` to
+    `unknown[]`, the latter forced by a `code-reviewer` P2 that caught
+    `Array.isArray` being used to assert `Record<string, unknown>[]`, a type
+    lie. `state.md`'s closing line — "the change matched the brief's sketched
+    shape exactly; no ambiguity surfaced" — is the one artifact claim that
+    reads as too clean.
+
+    **The stream exited one acceptance criterion short, by harness rule.** The
+    brief's last criterion was "PR opens against the `per-provider-testbed-scenarios`
+    integration branch"; `result.md` records that the session's harness rule
+    forbade opening a PR, so the agent pushed the branch and stopped, leaving
+    that box and the Copilot-loop box unchecked in `state.md`. Erik opened #454
+    the same day; Copilot's single review round generated **no comments**, so
+    layer 2 was one round with zero findings — verified on the PR, recorded in
+    no artifact.
+
+    **"All four providers" was true of forwarding and not yet of the wire.**
+    This stream could not live-verify (no keys in session; the brief made that
+    explicitly not a blocker). The cluster's live runs the next day found the
+    OpenAI/xAI continuation still rejected — `buildOpenAiContinuation` emitted
+    the optional `id` where Responses requires `call_id` — so cross-provider
+    continuation did not actually round-trip until PR #458. Nothing here is
+    wrong; the ordering matters to anyone reading "shipped to all four
+    providers" as "worked on all four providers".
+  sourceLine: '**Completed:** 2026-06-04'
+notes:
+  - >
+    ON `sourceLine`. `result.md`'s authored opener is a bare date line — the file
+    carries no `**Status:**` / `**Shipped:**` header. Quoted verbatim (no trailing
+    whitespace; nothing dropped). The more informative authored claim lives in
+    `state.md`: "**Status:** implementation complete 2026-06-04 — all gates green,
+    awaiting PR open against integration branch", which is also the honest record
+    of the exit state (see `diverged`).
+  - >
+    `result.md` names `**Final commit:** ef761b61`, which is not a valid object in
+    this checkout — the branch was squash-merged into the integration branch and
+    that in turn squashed into #459. PR #454's head was `62ea3a78` across 3 commits,
+    so `ef761b61` was already stale when `result.md` was written (two further
+    commits landed after it). Recorded, not corrected: `brief.md`/`state.md`/`result.md`
+    are in-flight evidence and are not edited retroactively.
+  - >
+    VERIFIED AGAINST CURRENT SOURCE (2026-08-14, read-only). Everything this stream
+    shipped is live and none of it has regressed:
+    `chatRequestBuilders.ts:128` `openAiRawTailItemConverter` (verbatim `isJsonObject`
+    guard) and `:141` `geminiRawTailMessageConverter` (`{ role: 'user'|'model',
+    parts: unknown[] }`) both present; `buildMessages` consumes `rawTail` at `:219`
+    and returns `Array<Record<string, unknown>>` at `:208`; `buildGeminiContents`
+    consumes it at `:367` with `parts: unknown[]` at `:352`; `buildAnthropicMessages`
+    still projects via `rawTailMessageConverter` at `:332`. Adapter params live at
+    `openaiResponses.ts:465` and `gemini.ts:237`, both threaded as `rawTail`;
+    `clientToolContinuationBuilder.ts` forwards `continuationMessages` from all three
+    switch arms (`:679` anthropic, `:695` openai, `:709` gemini) and `registry.ts`'s
+    `xai-grok` descriptor still declares `apiFormat: 'openai'`, so xAI still inherits.
+    The per-provider TSDoc this stream rewrote survives on
+    `IExecuteClientToolTurnParams.continuationMessages`. `chatRequestBuilders.ts`
+    carries **no** `c8 ignore` directives today.
+  - >
+    NO LEDGER ENTRY — and neither does the parent. `docs/WORKSTREAMS.md` has no
+    `### \`ai-assist-cross-provider-continuation\`` entry, no
+    `### \`per-provider-testbed-scenarios\`` entry, and no mention of either id
+    anywhere in the file. The whole four-sub-stream cluster is un-narrated in the
+    ledger despite being cited by name in `docs/FUTURE.md:168` and being the
+    cluster the `ai-assist-client-tools` meta record points at. `ledgerEntry:` is
+    omitted rather than guessed. A drafted contribution accompanies this backfill
+    and is presented for review, not committed; the recommendation is one cluster
+    heading with this stream as a row, not four headings.
+  - >
+    NOTHING DEFERRED BY THIS STREAM WENT UNRECORDED. `state.md` files no follow-up
+    findings ("none — the change matched the brief's sketched shape exactly"), and
+    every out-of-scope item in the brief is durably tracked elsewhere: MCP layer 2
+    shipped as `@fgv/ts-extras-mcp`; `runToolUseConversation` is queued in
+    `docs/FUTURE.md`; thinking-content surfacing is the `ai-assist-thinking-events`
+    entry (🟡) in `docs/WORKSTREAMS.md`. The only untracked residue is two
+    dispositioned code-reviewer P3s that are cleanup-shaped and deliberately
+    blast-radius-limited (the pre-existing Anthropic continuation test not adopting
+    the new `mockSseResponseCapturingBody` helper; the imperative
+    `toSucceed()` + `isSuccess()` test shape kept for sibling consistency). Neither
+    is in `TECH_DEBT.md`. Both are small enough that recording them is a judgment
+    call, not an omission — noted here so the next reader does not have to
+    re-derive it.
+  - >
+    ADJACENT DOC DRIFT, not this stream's defect.
+    `.ai/instructions/TESTING_GUIDELINES.md` § "Coverage Gap Resolution" cites
+    "this stream's C4 `c8 ignore` directives on the `rawTail` branch in
+    `chatRequestBuilders.ts`" (attributing them to `ai-assist-client-tools` Phase C).
+    Two corrections: the directives visible in PR #454's diff were on the
+    `options?.head` branch, not `rawTail`; and no `c8 ignore` directive remains in
+    `chatRequestBuilders.ts` today — the `head`-branch ones went when
+    `ai-assist-message-ordering` (#480) made that branch reachable from the
+    completion path. The teaching point stands; the file-and-branch citation no
+    longer resolves.
+keywords:
+  - continuation-forwarding
+  - rawTail
+  - continuationMessages
+  - executeClientToolTurn
+  - client-tool-round-trip
+  - wire-position
+  - provider-native-wire-objects
+  - verbatim-passthrough-vs-projection
+  - type-keyed-discriminated-union
+  - function_call
+  - function_call_output
+  - functionCall
+  - functionResponse
+  - apiFormat-routing
+  - xai-inherits-openai-path
+  - request-body-assertion
+  - streaming-adapters
+  - chatRequestBuilders
+  - internal-only-surface-change
+  - api-extractor-no-diff
+  - L37
+  - code-reviewer-before-coverage
+  - type-lie-Array-isArray
+  - cluster-sub-stream
+  - empirical-loop-round-1
+  - unblocks-paused-pr
+sourceHash: 0ca29a172295106c
