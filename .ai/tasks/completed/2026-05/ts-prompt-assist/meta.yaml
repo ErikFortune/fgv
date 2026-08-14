@@ -1,125 +1,152 @@
 id: ts-prompt-assist
-status: shipped
-kind: cluster
 ledgerEntry: ts-prompt-assist-features
-closed: 2026-05
+status: shipped
 packages:
   - '@fgv/ts-prompt-assist'
   - '@fgv/ts-extras'
   - '@fgv/ts-res'
   - '@fgv/ts-utils'
-  - 'samples/ai-image-gen-sample'
+  - samples/ai-image-gen-sample
 prs:
-  merged:
-    # Phase A — research and design
-    - 357 # Phase A design lock; design.md authored
-    - 358 # Phase B brief authoring
-    # Ship-then-tidy cleanups + surface tidy
-    - 367 # orchestrator-led post-merge cleanup (sub-phase nits)
-    - 370 # orchestrator-led post-merge cleanup (sub-phase nits)
-    - 372 # surface tidy: resolveAndValidateOutput<T> -> resolveJsonOutput<K> + resolveFreeTextOutput
-    # Pressure-test round 1 + ergonomics absorbs
-    - 374 # round-1 findings doc cherry-pick (#373 held unmerged by design)
-    - 375 # ts-utils Failure<T>.withType<U>()
-    - 376 # ts-res mixed-shape QualifierCollector.create + IQualifierContext Partial-widen
-    - 377 # ts-extras Yaml browser export bug + L13 cross-runtime micro-test
-    - 380 # ts-prompt-assist ergonomics absorb (F3 / F9 / F12 / F14)
-    # Repo-infra adjacent
-    - 381 # code-reviewer agent promoted to top-level discovery scope
-    - 383 # release -> integration merge to absorb the discovery fix
-    # ts-res-typed-conditions sub-stream decision track + implementation
-    - 387 # option-space brief
-    - 388 # first evaluation
-    - 389 # addendum: the "leaf-only" structural correction
-    - 390 # substrate prep
-    - 391 # B-1 Decl-tree cascade
-    - 392 # B-2 sub-brief + state.md
-    - 393 # B-2 design notes (Candidate D — sibling typed* exports)
-    - 394 # B-2 Converter parameterization (16 typed siblings)
-    - 395 # B-3 ts-prompt-assist consumer port + F2 + F6 absorb
-    # Round-2 pressure test + cluster promotion
-    - 384 # round-2 sample-app integration (held, landed after B-3)
-    - 397 # cluster integration branch -> release
+  - 357
+  - 358
+  - 367
+  - 370
+  - 372
+  - 374
+  - 375
+  - 376
+  - 377
+  - 380
+  - 381
+  - 383
+  - 384
+  - 387
+  - 388
+  - 389
+  - 390
+  - 391
+  - 392
+  - 393
+  - 394
+  - 395
+  - 397
+prHistory:
   retired:
     - number: 359
       state: closed-unmerged
-      why: >
-        First single-agent Phase B attempt. Retired without merge after mid-run
-        context drift produced ~35 reviewer-flagged issues. Verified 2026-08-14
-        via the GitHub API: state closed, merged false, closed_at 2026-05-16.
-        Its retirement is the cluster's most reusable artifact — it forced the
+      why: "First single-agent Phase B attempt. Retired without merge after mid-run context drift produced
+        ~35 reviewer-flagged issues. Verified 2026-08-14 via the GitHub API: state closed, merged false,
+        closed_at 2026-05-16. Its retirement is the cluster's most reusable artifact — it forced the
         sub-phase decomposition discipline.
+
+        "
   superseded:
     - number: 385
-      why: round-2 F1+F2+F6 absorb attempt; F1's local sibling types obsoleted by ts-res-layer ownership (closed, superseded by #395)
+      why: round-2 F1+F2+F6 absorb attempt; F1's local sibling types obsoleted by ts-res-layer ownership
+        (closed, superseded by
     - number: 386
-      why: leaf-only Decl parameterization; had no plumbing through container types (closed, superseded by the full cascade in #391)
+      why: leaf-only Decl parameterization; had no plumbing through container types (closed, superseded
+        by the full cascade in
   held:
     - number: 373
-      why: round-1 consumer-port integration deliberately NOT merged so round-2 could be a cold-start integration; only the findings doc was cherry-picked (via #374)
-  unattributed_subphase_prs: >
-    Phase B sub-phases B-0a / B-0b / B-1a / B-1b / B-2 / B-3 / B-4 / B-5 each
-    landed as their own PR onto the cluster integration branch, but the archived
-    artifacts name them by sub-phase label rather than by number. Not listed
-    above rather than guessed.
+      why: round-1 consumer-port integration deliberately NOT merged so round-2 could be a cold-start
+        integration; only the findings doc was cherry-picked (via
+  unattributed_subphase_prs: 'Phase B sub-phases B-0a / B-0b / B-1a / B-1b / B-2 / B-3 / B-4 / B-5
+    each landed as their own PR onto the cluster integration branch, but the archived artifacts name
+    them by sub-phase label rather than by number. Not listed above rather than guessed.
 
+    '
+closed: 2026-05
 summary:
-  intended: >
-    Phase A of a design-triage-implement-refine cluster: produce a binding
-    design.md for @fgv/ts-prompt-assist v0.1 — a ts-res-driven prompt
-    resolution library — validating the consumer-supplied conceptual model
-    (non-negotiable) and its proposed data-structure shapes (adjustable)
-    against fgv conventions, resolving three named open questions (scope
-    encoding flexibility, resource-binding substitution merge semantics,
-    watch() semantics), and locking the v0.1 API surface, package layout,
-    dependency graph and acceptance criteria so Phase B could implement
-    without further design adjudication.
-  shipped: >
-    @fgv/ts-prompt-assist v0.1 as a whole cluster, not just a design:
-    PromptLibrary.create / resolve (scope-chain walk, ts-res candidate
-    selection, enforced-lock binding merge, recursive resource bindings with
-    RFC 8785 cycle detection + depth cap, verbatim Mustache render) /
-    resolveJsonOutput<K> / resolveFreeTextOutput / describe; IPromptStore
-    (read-only at v0.1) with FileTreePromptStore and PromptStoreFixture.build;
-    PromptRegistry<TResponse> with three typed sub-registries;
-    IPromptSafetyPolicy; buildSimpleDescriptor. Plus two upstream extensions
-    it needed to be coherent — MustacheTemplate.create(t, { escape: 'none' })
-    on @fgv/ts-extras, and the ts-res-typed-conditions sub-stream that taught
-    @fgv/ts-res to honour qualifier-name semantics at both type and runtime
-    levels — plus an end-to-end demonstration in samples/ai-image-gen-sample.
-    Promoted to release via #397.
-  diverged: >
-    Four divergences, one of them a process reversal that outlived the code.
-    (1) PROCESS — the single-agent Phase B was abandoned. #359 was retired
-    without merge after mid-run context drift produced ~35 reviewer-flagged
-    issues, forcing a rescope into eight sub-phase commissions (B-0a … B-5)
-    with ten explicit guardrails added in brief-phase-b.md. Every sub-phase
-    then landed clean. The cluster's durable output is arguably this operating
-    model, not the library.
-    (2) PUBLIC SURFACE — the surface-tidy round (#372) replaced
-    resolveAndValidateOutput<T> with resolveJsonOutput<K> +
-    resolveFreeTextOutput, deleting the last caller-asserted-T boundary in
-    favour of a runtime-evidenced kind check against the descriptor's
-    output.kind, and retiring both surviving P2 TECH_DEBT entries.
-    (3) SCOPE GROWTH — the two consumer-port pressure tests (round 1 = 14
-    findings, 0 P1 / 5 P2 / 9 P3; round 2 a deliberate cold-start integration
-    reporting "materially smoother than round-1") pushed ergonomics work into
-    three packages the Phase A brief never named: ts-utils (#375
-    Failure.withType), ts-res (#376), ts-extras (#377 Yaml browser export bug).
-    Round-1 triage also reversed several of its own findings — F5/F10/F11
-    retracted by the agent on review, F6 dropped as breaking fixture→FileTree
-    migration symmetry, F7/F8 deferred to v0.2 pending real consumer evidence.
-    (4) ARCHITECTURAL LAYER MOVED — round-2 finding F1 was first attempted as
-    local sibling types inside ts-prompt-assist (#385), then as leaf-only Decl
-    parameterization in ts-res (#386). A senior-developer stress-test addendum
-    (#389) showed #386 had no plumbing through the container types, so the
-    narrow could not reach the leaf from any realistic authoring chain. The fix
-    moved down a library to a full Decl-tree cascade plus sibling typed*
-    Converter exports, spawning the ts-res-typed-conditions sub-stream — an
-    instance of the repo's "extend the core library rather than work around it"
-    rule being applied mid-stream at real cost.
-  sourceLine: 'This cluster delivered `@fgv/ts-prompt-assist` v0.1 — a ts-res-driven prompt resolution library with Mustache substitution, scope-chain walking, resource bindings, output validation, and LLM-prompt safeguards — plus the upstream `@fgv/ts-res` capability changes that the v0.1 needs to be coherent'
+  intended: 'Phase A of a design-triage-implement-refine cluster: produce a binding design.md for
+    @fgv/ts-prompt-assist v0.1 — a ts-res-driven prompt resolution library — validating the consumer-supplied
+    conceptual model (non-negotiable) and its proposed data-structure shapes (adjustable) against
+    fgv conventions, resolving three named open questions (scope encoding flexibility, resource-binding
+    substitution merge semantics, watch() semantics), and locking the v0.1 API surface, package layout,
+    dependency graph and acceptance criteria so Phase B could implement without further design adjudication.
 
+    '
+  shipped: "@fgv/ts-prompt-assist v0.1 as a whole cluster, not just a design: PromptLibrary.create
+    / resolve (scope-chain walk, ts-res candidate selection, enforced-lock binding merge, recursive
+    resource bindings with RFC 8785 cycle detection + depth cap, verbatim Mustache render) / resolveJsonOutput<K>
+    / resolveFreeTextOutput / describe; IPromptStore (read-only at v0.1) with FileTreePromptStore
+    and PromptStoreFixture.build; PromptRegistry<TResponse> with three typed sub-registries; IPromptSafetyPolicy;
+    buildSimpleDescriptor. Plus two upstream extensions it needed to be coherent — MustacheTemplate.create(t,
+    { escape: 'none' }) on @fgv/ts-extras, and the ts-res-typed-conditions sub-stream that taught
+    @fgv/ts-res to honour qualifier-name semantics at both type and runtime levels — plus an end-to-end
+    demonstration in samples/ai-image-gen-sample. Promoted to release via #397.
+
+    "
+  diverged: 'Four divergences, one of them a process reversal that outlived the code. (1) PROCESS
+    — the single-agent Phase B was abandoned. #359 was retired without merge after mid-run context
+    drift produced ~35 reviewer-flagged issues, forcing a rescope into eight sub-phase commissions
+    (B-0a … B-5) with ten explicit guardrails added in brief-phase-b.md. Every sub-phase then landed
+    clean. The cluster''s durable output is arguably this operating model, not the library. (2) PUBLIC
+    SURFACE — the surface-tidy round (#372) replaced resolveAndValidateOutput<T> with resolveJsonOutput<K>
+    + resolveFreeTextOutput, deleting the last caller-asserted-T boundary in favour of a runtime-evidenced
+    kind check against the descriptor''s output.kind, and retiring both surviving P2 TECH_DEBT entries.
+    (3) SCOPE GROWTH — the two consumer-port pressure tests (round 1 = 14 findings, 0 P1 / 5 P2 /
+    9 P3; round 2 a deliberate cold-start integration reporting "materially smoother than round-1")
+    pushed ergonomics work into three packages the Phase A brief never named: ts-utils (#375 Failure.withType),
+    ts-res (#376), ts-extras (#377 Yaml browser export bug). Round-1 triage also reversed several
+    of its own findings — F5/F10/F11 retracted by the agent on review, F6 dropped as breaking fixture→FileTree
+    migration symmetry, F7/F8 deferred to v0.2 pending real consumer evidence. (4) ARCHITECTURAL
+    LAYER MOVED — round-2 finding F1 was first attempted as local sibling types inside ts-prompt-assist
+    (#385), then as leaf-only Decl parameterization in ts-res (#386). A senior-developer stress-test
+    addendum (#389) showed #386 had no plumbing through the container types, so the narrow could
+    not reach the leaf from any realistic authoring chain. The fix moved down a library to a full
+    Decl-tree cascade plus sibling typed* Converter exports, spawning the ts-res-typed-conditions
+    sub-stream — an instance of the repo''s "extend the core library rather than work around it"
+    rule being applied mid-stream at real cost.
+
+    '
+  sourceLine: This cluster delivered `@fgv/ts-prompt-assist` v0.1 — a ts-res-driven prompt resolution
+    library with Mustache substitution, scope-chain walking, resource bindings, output validation,
+    and LLM-prompt safeguards — plus the upstream `@fgv/ts-res` capability changes that the v0.1
+    needs to be coherent
+notes:
+  - "LEDGER ID MISMATCH (the reason this record exists). This directory is `ts-prompt-assist`; its
+    docs/WORKSTREAMS.md entry is headed `ts-prompt-assist-features` (the cluster / integration-branch
+    name). A reconciliation that diffs directory names against backticked ledger headings will therefore
+    report this stream as un-narrated forever, and will separately report `ts-prompt-assist-features`
+    as a ledger entry with no directory. Both halves are the same mismatch. `ledgerEntry:` above is
+    the authoritative cross-reference; do NOT draft a new ledger entry for this directory. Renaming
+    either side would break the other's inbound links (the ledger's ts-res-typed-conditions entry
+    deep-links two files in this directory by path), so recording the mismatch is preferred to fixing
+    it.
+
+    "
+  - 'STALE LEDGER STATUS. The `ts-prompt-assist-features` entry still reads "cluster integration branch
+    `claude/ts-prompt-assist-features` ready for promotion to `release`". It promoted: commit 88545a5dc
+    on origin/release, "ts-prompt-assist-features cluster → release (#397)". Verified 2026-08-14. Three
+    later prompt-assist streams have shipped on top of it (#407, #460, #490, #538). The status line
+    should read shipped-via-#397.
+
+    '
+  - 'SUB-STREAM. `ts-res-typed-conditions` has its own completed directory and its own ledger entry.
+    The two `ts-res-typed-conditions-*.md` files in THIS directory are the design-track docs (option-space
+    brief + owner-lens evaluation with the load-bearing "leaf-only" addendum) authored here before
+    the sub-stream was carved out; they are byte-distinct from every file in the sub-stream directory
+    and both the sub-stream''s brief.md and the ledger cite them at this path. They are the single
+    canonical copy — not orphaned duplicates.
+
+    '
+  - '#384 is listed once but did double duty: it was the round-2 pressure-test sample-app integration,
+    held, and landed after B-3 with the sample updated to demonstrate the typed qualifier-name flow
+    end-to-end.
+
+    '
+  - 'DEFERRED WORK — mostly recorded, one gap. Write API / watch / LLM-call orchestration / default
+    anti-jailbreak content / free-text output validators are stated as v0.1 non-goals in README and
+    LIBRARY_CAPABILITIES.md. Editor UX survives in docs/FUTURE.md under the heading "Generic editor
+    UX for `@fgv/ts-prompt-assist`" (not under the id `ts-prompt-assist-editor-ui` the archived README
+    uses), and the samples followup under "Samples app for `@fgv/ts-prompt-assist`", now marked superseded
+    by `samples/testbed`. GAP: **typed qualifier VALUES (round-2 F5)** appears in neither docs/FUTURE.md
+    nor docs/TECH_DEBT.md — grepped 2026-08-14. The archived README asserts it is queued in FUTURE.md;
+    it is not. Its only surviving record is pressure-test-findings-round-2.md and this note.
+
+    '
 keywords:
   - lookup-then-compose
   - qualifier-conditional prompt selection
@@ -140,48 +167,6 @@ keywords:
   - typed qualifier names
   - Decl-tree cascade
   - LLM prompt library
-
-notes:
-  - >
-    LEDGER ID MISMATCH (the reason this record exists). This directory is
-    `ts-prompt-assist`; its docs/WORKSTREAMS.md entry is headed
-    `ts-prompt-assist-features` (the cluster / integration-branch name).
-    A reconciliation that diffs directory names against backticked ledger
-    headings will therefore report this stream as un-narrated forever, and
-    will separately report `ts-prompt-assist-features` as a ledger entry with
-    no directory. Both halves are the same mismatch. `ledgerEntry:` above is
-    the authoritative cross-reference; do NOT draft a new ledger entry for
-    this directory. Renaming either side would break the other's inbound
-    links (the ledger's ts-res-typed-conditions entry deep-links two files in
-    this directory by path), so recording the mismatch is preferred to fixing
-    it.
-  - >
-    STALE LEDGER STATUS. The `ts-prompt-assist-features` entry still reads
-    "cluster integration branch `claude/ts-prompt-assist-features` ready for
-    promotion to `release`". It promoted: commit 88545a5dc on origin/release,
-    "ts-prompt-assist-features cluster → release (#397)". Verified 2026-08-14.
-    Three later prompt-assist streams have shipped on top of it (#407, #460,
-    #490, #538). The status line should read shipped-via-#397.
-  - >
-    SUB-STREAM. `ts-res-typed-conditions` has its own completed directory and
-    its own ledger entry. The two `ts-res-typed-conditions-*.md` files in THIS
-    directory are the design-track docs (option-space brief + owner-lens
-    evaluation with the load-bearing "leaf-only" addendum) authored here
-    before the sub-stream was carved out; they are byte-distinct from every
-    file in the sub-stream directory and both the sub-stream's brief.md and
-    the ledger cite them at this path. They are the single canonical copy —
-    not orphaned duplicates.
-  - >
-    #384 is listed once but did double duty: it was the round-2 pressure-test
-    sample-app integration, held, and landed after B-3 with the sample updated
-    to demonstrate the typed qualifier-name flow end-to-end.
-  - >
-    Deferred work is recorded — write API / watch / LLM-call orchestration /
-    default anti-jailbreak content / free-text output validators are stated as
-    v0.1 non-goals in README and LIBRARY_CAPABILITIES.md; editor UX
-    (`ts-prompt-assist-editor-ui`), standalone samples
-    (`ts-prompt-assist-samples`) and typed qualifier VALUES (round-2 F5) are
-    queued in docs/FUTURE.md.
-
 sourceHash: 3e6aa92c761db7c7
-sourceHashScope: 'sha256 of `cat *.md` in this directory, first 16 chars (12 files, 2026-08-14)'
+kind: cluster
+sourceHashScope: sha256 of `cat *.md` in this directory, first 16 chars (12 files, 2026-08-14)
