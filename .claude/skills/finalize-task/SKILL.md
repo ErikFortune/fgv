@@ -205,6 +205,43 @@ option is more useful than silence, because it stops the next person re-litigati
 
 If the pass changes `meta.yaml`, recompute `sourceHash`.
 
+#### Which artifacts may be corrected, and how
+
+The split is by **who wrote it and when**, not by which file is convenient:
+
+| artifact | on a wrong claim |
+|---|---|
+| `brief.md`, `brief-phase-*.md`, `design*.md`, `state.md` | **never edit** — authored in flight, evidence of what was known at the time |
+| `README.md` | **amend in place, preserving the original** |
+| `meta.yaml` | edit freely; it is this ritual's own output |
+
+`README.md` is a *synthesis written after the fact*, and later agents read it as a statement
+of what shipped. A synthesis that is wrong about its own subject is a hazard, not a
+historical record — but silently rewriting it destroys the audit trail, so do neither.
+Instead:
+
+1. Correct the claim inline, with a pointer to the appendix entry.
+2. Add an `## Appendix A — corrections (YYYY-MM-DD)` at the end.
+3. Under it, one `### A.n — <what was wrong>` per finding, each **quoting the original
+   verbatim in a blockquote**, then stating what is true and how it was verified.
+4. Add a `### Checked and unchanged` closing section naming what survived scrutiny — a
+   correction list with no stated scope is indistinguishable from a partial pass.
+5. Note the amendment in a blockquote under the header so a skimmer sees it.
+
+Some findings are *additions* rather than corrections — a followup recorded nowhere durable,
+a lesson that was surfaced and dropped, a binding constraint that was missed. Those belong in
+the appendix too; title it `— notes` rather than `— corrections` if nothing in the file was
+actually wrong.
+
+**Leave a design error in `design.md` uncorrected even when the code is right** — that a
+signed-off design was wrong and step-zero verification caught it is the most valuable thing
+such a stream records. Say so explicitly in the appendix, or a later reader reads the
+divergence as an oversight.
+
+Anchors: GitHub slugs lowercase the heading, strip punctuation, and replace **each** space
+with a hyphen without collapsing runs — so `### A.1 — the thing` becomes
+`#a1--the-thing` (two hyphens, from the spaces that flanked the em dash).
+
 ### 7. Verify the mechanical gates
 
 - `rush change --verify --target-branch origin/release` — **CI's first gate, and
@@ -259,6 +296,9 @@ Used to close the existing gap between stream directories and ledger entries.
    wrong one.
 4. Prefer blank fields over reconstruction. These streams closed weeks or months ago;
    the artifacts are the only evidence, and if they do not say it, you do not know it.
+5. **Amending a README is in scope; moving anything is not.** Retroactive mode's
+   no-move rule is about *directory structure*, not about leaving a false claim standing.
+   Follow the correction convention in step 6 — inline fix plus a verbatim appendix.
 
 ## Stop conditions
 
