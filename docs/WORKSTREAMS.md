@@ -198,6 +198,54 @@ Three items from their post-`-48` sweep, **tracked here with verdicts so "deferr
 ---
 
 
+### `task-corpus-index` 🔵 → `agent-memory-mcp-server` 🔵 (a conditional pair)
+
+**Status:** 🔵 both **proposed, neither started**. Briefs at
+`.ai/tasks/active/task-corpus-index/brief.md` and
+`.ai/tasks/active/agent-memory-mcp-server/brief.md`.
+**Ordering is a hard dependency and the second is conditional on the first's outcome.**
+
+**Origin.** Erik, 2026-08-14: *"Can you suggest a memory tool to index our task files so you can
+read them? Prefer to just adopt if there's something that meets our needs but we can build if
+needed."*
+
+**The problem, stated precisely.** `.ai/tasks/` is **269 markdown files / 3.1 MB** across 14
+active and 52 completed streams, and it is the repo's institutional memory. An agent picking up
+cold cannot use most of it — but **not because retrieval is hard**. 3 MB is instantly greppable
+and every agent already has `Grep`/`Glob`/`Read`. The failure is **discovery**: you cannot grep
+for a stream whose existence you do not suspect. Demonstrated in the same session — the
+branch-migration plan existed, complete and current, and took four searches across three wrong
+guesses to find. One search less and it would have been re-derived.
+
+**Why two streams and not one.** The corpus already has strong file conventions (`brief.md` 59,
+`state.md` 47, `result.md` 32, `README.md` 28, `design.md` 16) and a documented two-tree layout —
+but **no frontmatter and no index**. So the cheap hypothesis is that discovery is a *metadata*
+problem, not a *search* problem, and `task-corpus-index` tests it: frontmatter plus a generated
+`INDEX.md` plus a generator that fails loudly rather than emitting a partial index.
+
+`agent-memory-mcp-server` is the expensive half, and it is **deliberately gated on evidence**.
+It builds `@fgv/ts-agent-memory-mcp` — a Result-integration boundary over the MCP SDK's *server*
+side — and ingests the corpus into a vault. Worth doing if the index falls short; a large build
+in search of a justification if it doesn't. **Start it only on a recorded instance of a real
+question the index failed to surface.**
+
+**The adopt-vs-build finding.** Surveyed before proposing a build, per the ask:
+- **Off-the-shelf MCP memory servers** are knowledge-graph shaped (entities/relations for
+  conversational recall), not corpus indexers for an existing markdown tree. Adopting one still
+  leaves the ingest pass — which is the actual work. Poor fit. *(Not exhaustively surveyed;
+  worth a second look before committing to the build.)*
+- **Our own `@fgv/ts-agent-memory` is the right substrate** and is unreachable for one specific,
+  verified reason: `createMemoryTools` returns `AiAssist.IAiClientTool[]` for ai-assist loops
+  (`memoryTools.ts:693`), and `@fgv/ts-extras-mcp` is an MCP **client** that adapts the other
+  direction and puts a server explicitly out of scope. **The missing piece is a server, not a
+  capability.**
+
+**The open question that sizes the second stream** — resolve it before anything else there:
+does `ISchemaValidator.toJson()` drop straight into MCP tool registration? If yes the adapter is
+small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the estimate moves.
+
+---
+
 ### `module-resolution-upgrade` 🟢
 
 **Status:** 🟢 implemented — deliverables 1 and 2 landed; **3 is not available and 4 was deliberately not attempted**. Branch `module-resolution-upgrade` from `release` @ `af2178cde` (after #608). Artifacts at `.ai/tasks/active/module-resolution-upgrade/{brief.md, state.md, result.md, findings/inbox/}`; outcomes recorded in `.claude/project/esm-emit-design.md` § "Amendment 2".
