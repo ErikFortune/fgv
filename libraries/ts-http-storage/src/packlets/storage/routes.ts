@@ -26,6 +26,7 @@ import type { Logging } from '@fgv/ts-utils';
 
 import {
   storagePathRequest,
+  storageReadFileRequest,
   storageSyncRequest,
   storageWriteFileRequest,
   storageTreeChildrenResponse,
@@ -110,7 +111,13 @@ export function createStorageRoutes(options: ICreateStorageRoutesOptions): Hono 
   });
 
   routes.get('/file', async (c) => {
-    const parsed = storagePathRequest.convert(parsePathQuery(c.req.query('path'), c.req.query('namespace')));
+    const requestedEncoding = c.req.query('encoding');
+    const parsed = storageReadFileRequest.convert({
+      ...parsePathQuery(c.req.query('path'), c.req.query('namespace')),
+      // Absent leaves `encoding` off the request entirely, so the converter's
+      // optional field stays absent rather than becoming an explicit undefined.
+      ...(requestedEncoding !== undefined ? { encoding: requestedEncoding } : {})
+    });
     if (parsed.isFailure()) {
       return c.json({ error: `invalid request: ${parsed.message}` }, 400);
     }

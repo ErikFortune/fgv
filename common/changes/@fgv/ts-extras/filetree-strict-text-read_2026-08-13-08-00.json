@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "ZipFileTreeAccessors / ZipFileItem implement the optional strict-text capability (getFileTextStrict / getTextStrict) over byte-native archive entries; an item constructed from already-decoded text refuses instead.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

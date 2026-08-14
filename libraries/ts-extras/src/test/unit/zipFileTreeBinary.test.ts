@@ -134,3 +134,41 @@ describe('ZIP binary capability', () => {
     });
   });
 });
+
+describe('ZIP strict-text capability', () => {
+  /** Bytes that are not valid UTF-8: a lone continuation byte and a truncated sequence. */
+  const MALFORMED_UTF8: Uint8Array = new Uint8Array([0x41, 0x80, 0xc3, 0x42]);
+
+  it('advertises the capability on both the accessors and the items', () => {
+    const accessors = buildArchive([{ path: 'a.txt', contents: 'hello' }]);
+    expect(FileTree.isStrictTextAccessors(accessors)).toBe(true);
+    expect(FileTree.isStrictTextFileItem(accessors.getItem('/a.txt').orThrow())).toBe(true);
+  });
+
+  it('decodes a well-formed entry strictly', () => {
+    const accessors = buildArchive([{ path: 'a.txt', contents: 'héllo — ok' }]);
+    expect(accessors.getFileTextStrict('/a.txt')).toSucceedWith('héllo — ok');
+  });
+
+  it('fails loudly on an entry whose bytes a lenient decode would silently repair', () => {
+    const accessors = buildArchive([{ path: 'bad.txt', contents: MALFORMED_UTF8 }]);
+    expect(accessors.getFileContents('/bad.txt')).toSucceedAndSatisfy((text) => {
+      expect(text).toContain('�');
+    });
+    expect(accessors.getFileTextStrict('/bad.txt')).toFail();
+  });
+
+  it('fails for a missing entry and for a directory', () => {
+    const accessors = buildArchive([{ path: '/nested/a.txt', contents: 'hello' }]);
+    expect(accessors.getFileTextStrict('/missing.txt')).toFailWith(/not found/i);
+    expect(accessors.getFileTextStrict('/nested')).toFailWith(/not a file/i);
+  });
+
+  it('refuses an item constructed from already-decoded text', () => {
+    // Its bytes are a re-encode, so they are well-formed by construction and a
+    // success would be a green light from a check that cannot fail.
+    const accessors = buildArchive([{ path: 'a.txt', contents: 'seed' }]);
+    const item = new ZipFileItem('a.txt', 'h�llo', accessors);
+    expect(item.getTextStrict()).toFailWith(/already-decoded text/i);
+  });
+});

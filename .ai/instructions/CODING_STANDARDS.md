@@ -586,6 +586,28 @@ disposition that was simply wrong about the facts.
 advisory tier in this repo's CI. When you catch yourself writing "warning, not error, so no gate is
 red", verify it by running `rush rebuild` (or reading the PR's check) before believing it.
 
+### Every touched package needs a change file — CI's first gate, before any build
+
+CI's `build` job runs `rush change --verify --target-branch origin/release` **before it compiles
+anything**. Touch a file in a package and ship no `common/changes/@fgv/<pkg>/*.json` entry for it and
+the job fails in ~30 seconds, having built nothing. The failure names only the package, so it reads
+like an infrastructure problem rather than a missing artifact.
+
+Two things make this easy to miss. It is invisible to the whole local suite — `rushx build`, `rushx
+lint`, `rushx test` and even a full `rush rebuild` all pass, because none of them consults the change
+files. And **the gate keys off files touched, not surface changed**: a docstring correction, a
+move-only refactor, and a comment-only edit each need one, even when the change file's own `type` is
+`"none"` and the `.api.md` is byte-identical.
+
+Observed 2026-08-13, three PRs at once: #619 (an internal ai-assist refactor, `@fgv/ts-extras`) and
+#617 (a docstring correction, `@fgv/ts-web-extras`) both red on this and nothing else, and #620 was
+carrying the same latent defect behind a branch base that suppressed its checks.
+
+**Rule:** the last step before opening a PR is `git diff --name-only origin/release... | cut -d/ -f2`
+against the change files you are shipping — or just run `rush change --verify --target-branch
+origin/release` locally, which is the same check CI runs and takes about a second. A PR whose only
+red check is `rush change` has not been reviewed for anything yet; fix it before reading further.
+
 ### Widening a shared interface needs a repo-wide build, not a per-package one
 
 `rushx build` / `rushx test` in the packages you edited cannot see a consumer you did not edit. When a
@@ -618,6 +640,7 @@ Every stream's acceptance criteria list must include:
 - [ ] **`rushx lint` passes in every modified package** *(load-bearing — not transitively run by build)*
 - [ ] `rushx test` passes with 100% coverage in every modified package
 - [ ] **`rushx fixlint` was run before the final commit** *(catches the mechanical class)*
+- [ ] **Every package the branch touches has a change file** — verify with `rush change --verify --target-branch origin/release` *(CI's first gate, and invisible to the entire local build/test suite)*
 - [ ] No `any` types; all fallible operations return `Result<T>`
 - [ ] **`code-reviewer` agent run on the final diff; findings resolved or dispositioned** *(see "Review-loop discipline" below)*
 - [ ] **Copilot review loop driven by implementer; stopped on diminishing returns or 10-round cap** *(see "Review-loop discipline" below)*

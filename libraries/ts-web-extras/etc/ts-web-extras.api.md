@@ -280,6 +280,9 @@ function getOriginalFile(fileList: FileList, path: string): Result<File>;
 const HpkeProvider: typeof CryptoUtils_2.HpkeProvider;
 
 // @public
+export type HttpContentEncoding = 'utf8' | 'base64';
+
+// @public
 export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT>, FileTree.IBinaryFileTreeAccessors<TCT> {
     // (undocumented)
     deleteFile(path: string): Result<boolean>;
@@ -378,6 +381,7 @@ export interface IHttpTreeParams<TCT extends string = string> extends FileTree.I
     readonly autoSync?: boolean;
     // (undocumented)
     readonly baseUrl: string;
+    readonly contentEncoding?: HttpContentEncoding;
     // (undocumented)
     readonly fetchImpl?: typeof fetch;
     // (undocumented)

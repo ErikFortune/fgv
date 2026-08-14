@@ -351,16 +351,7 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
    * @returns Success with decoded bytes, or Failure if invalid base64
    */
   public fromBase64(base64: string): Result<Uint8Array> {
-    try {
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      return Success.with(bytes);
-    } catch (e) {
-      return Failure.with('Invalid base64 string');
-    }
+    return CryptoUtils.fromBase64Strict(base64).withErrorFormat(() => 'Invalid base64 string');
   }
 
   // ============================================================================

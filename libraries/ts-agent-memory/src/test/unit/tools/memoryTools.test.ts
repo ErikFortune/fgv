@@ -560,6 +560,7 @@ describe('createMemoryTools', () => {
         asRecordSource: () => ({ list: async () => succeed([]) }),
         dedupScopeFor: () => 'content',
         embedsKind: () => true,
+        reconcileRank: () => Promise.resolve(succeed(0)),
         put: async (record) => succeed(record),
         delete: async () => fail('unused')
       };

@@ -25,10 +25,12 @@ import { type Converter, Converters } from '@fgv/ts-utils';
 import type {
   IStorageFileResponse,
   IStoragePathRequest,
+  IStorageReadFileRequest,
   IStorageSyncRequest,
   IStorageTreeChildrenResponse,
   IStorageTreeItem,
   IStorageWriteFileRequest,
+  StorageContentEncoding,
   StorageItemType
 } from './model';
 
@@ -55,6 +57,24 @@ export const storagePathRequest: Converter<IStoragePathRequest> =
   Converters.strictObject<IStoragePathRequest>({
     path: Converters.string,
     namespace: Converters.string.optional()
+  });
+
+/**
+ * Converter for the wire content encoding.
+ * @public
+ */
+export const storageContentEncoding: Converter<StorageContentEncoding> =
+  Converters.enumeratedValue<StorageContentEncoding>(['utf8', 'base64']);
+
+/**
+ * Converter for read-file requests.
+ * @public
+ */
+export const storageReadFileRequest: Converter<IStorageReadFileRequest> =
+  Converters.strictObject<IStorageReadFileRequest>({
+    path: Converters.string,
+    namespace: Converters.string.optional(),
+    encoding: storageContentEncoding.optional()
   });
 
 /**
@@ -86,7 +106,8 @@ export const storageFileResponse: Converter<IStorageFileResponse> =
   Converters.strictObject<IStorageFileResponse>({
     path: Converters.string,
     contents: Converters.string,
-    contentType: Converters.string.optional()
+    contentType: Converters.string.optional(),
+    encoding: storageContentEncoding.optional()
   });
 
 /**

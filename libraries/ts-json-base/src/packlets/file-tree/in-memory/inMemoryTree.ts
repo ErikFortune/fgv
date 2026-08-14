@@ -347,6 +347,38 @@ export class InMemoryTreeAccessors<TCT extends string = string>
   }
 
   /**
+   * Reads a file's contents, decoding UTF-8 strictly.
+   *
+   * @remarks
+   * Decidable **per file**, not per store: only a byte-seeded file still has the
+   * original bytes to judge. A `string`- or JSON-seeded file was decoded before
+   * this tree received it, so the substitution — if any — already happened
+   * upstream and re-encoding would produce well-formed UTF-8. Those fail rather
+   * than reporting a success this store cannot stand behind.
+   *
+   * This is also what makes the derived string-backed stores correct for free:
+   * an HTTP tree seeded from a JSON `contents` field, or a `localStorage` tree,
+   * holds only strings and so refuses every file — structurally, not by a
+   * hand-written special case.
+   * @param path - Absolute path of the file.
+   * @returns `Success` with the decoded text; `Failure` if the bytes are not
+   * valid UTF-8, or if this store no longer holds the original bytes to judge.
+   */
+  public getFileTextStrict(path: string): Result<string> {
+    return this._getFile(path).onSuccess((file) => {
+      const { contents } = file;
+      if (!(contents instanceof Uint8Array)) {
+        return fail(
+          `${this.resolveAbsolutePath(
+            path
+          )}: cannot decode strictly - this store holds already-decoded text, not the original bytes`
+        );
+      }
+      return captureResult(() => new TextDecoder('utf-8', { fatal: true }).decode(contents));
+    });
+  }
+
+  /**
    * Looks up the mutable-layer file at a path.
    * @param path - Path of the file to look up.
    * @returns `Success` with the file, or `Failure` if it is missing or is a directory.

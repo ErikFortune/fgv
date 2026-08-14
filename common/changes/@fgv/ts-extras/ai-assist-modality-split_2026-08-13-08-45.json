@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Split the ai-assist apiClient into three modality clients (completion, image generation, list-models). Move-only: no public surface change, no behavior change.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

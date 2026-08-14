@@ -128,26 +128,72 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟡
+### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
 
-**Status:** 🟡 in flight. Triage + the consumer reply are on branch `personaility-asks-2026-08`; each item ships as its **own** PR. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md` (triage, incl. the verification of their claims against our source) and `…-reply-2026-08-11-ask-package.md` (what we committed to).
+**Status:** 🟢 **shipped to `release`** — all five units merged 2026-08-12, plus one unplanned refactor that unblocked them. Nothing published yet; the alpha still has to go out. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md`, `…-reply-2026-08-11-ask-package.md`, `…-status-2026-08-12-stream-a.md`, `…-status-2026-08-12-shipped.md`.
 
 **Origin.** One consolidated ask package from PersonAIlity, 2026-08-11 — nine open items, none blocking them, every one carrying a workaround they are already running. They explicitly invited "not now" on the whole package. We re-verified every load-bearing mechanic against our own source before acting (both sides shipped a wrong sweep this month); **all their claims held**, down to exact control flow.
 
 **The through-line, adopted as ours.** Four of the nine are one species — **a failure reported as a success**. We already solved it well once on the record path (`onRecordError: 'skip'` + structural `skippedRecords`); items 1, 4 and 5 ask for that same shape in three more places.
 
-**Stream A = ask items 1–4**, one package, cheapest together, in the order **4 → 2 → 1 → 3**:
-
-| item | change | state |
+| item | change | shipped |
 |---|---|---|
-| **4** | `MemoryEmbedder` may resolve `undefined` to **decline** a record — stored with no `embeddingRef`, no failure, **nothing logged**; skipped (not counted) on rebuild; `'new'` on the ingest path | branch `agent-memory-embedder-decline`; `code-reviewer` **approved**, no P1/P2 |
-| **2** | per-kind embed declaration, default "embed everything" so existing consumers stay byte-identical | queued |
-| **1** | partial-tolerant `rebuild` returning a structural `IVectorRebuildReport` (`indexed`/`declined`/`skipped`), `onRecordError` defaulting to `'fail'` so existing behavior is unchanged | branch `agent-memory-partial-rebuild`; `code-reviewer` approved pending doc fixes, applied. **Rebuild half only** — the coverage accessor moves to item 3, so the `IVectorIndex` contract changes once and `SqliteVecVectorIndex` implements it in lockstep |
-| **3** | promote reconcile/backfill onto `IVectorIndex`, shipping with its `sqlite-vec` implementation | queued |
+| **4** | `MemoryEmbedder` may resolve `undefined` to **decline** a record — no `embeddingRef`, no failure, and the decline itself logs nothing. A decline on an already-embedded record drops the inherited reference *and* prunes the vector it named, **after** the commit | #611 |
+| **2** | `embedKinds?: ReadonlySet<Kind>` + `IMemoryStore.embedsKind`; absent means every kind participates. The gate sits **before** the embedder call, so an excluded kind costs nothing, and narrowing it on an existing vault retires the embeddings it no longer maintains | #612 |
+| **1** | partial-tolerant `rebuild` returning `IVectorRebuildReport` (`indexed` / `declined` / `skipped`), `onRecordError` defaulting to `'fail'` | #613 |
+| **3** | `size` + `rebuild` promoted onto `IVectorIndex`, with `SqliteVecVectorIndex` implementing both | #614 |
+| **5** *(added mid-stream, at the consumer's ask)* | `embed?: MemoryEmbedOutcome` on write observations + a matching query axis — the write-path axis the first status note told them was still open | #615 |
 
-**Answered without scheduling:** item 5 (strict text read — half already shipped in `-47`; their own note de-prioritised it), 6 (provenance query axis — **intent stated so they can design against it existing**), 7 (index read surface — deferred deliberately, breaking, wants its own design), 8 (prompt-slot writability — taking the one-sentence "advisory" doc remedy), 9 (`ts-res` `addResource` — not taking a round, fold into the next touch).
+**One unplanned unit: #616.** CI rejected the stack on a `max-lines` warning; the store had crossed 2000 lines. Extracting a `VectorMaintenance` collaborator took it from 1991 → 1758 with no test file changed and a byte-identical `api.md`.
 
-**Two things we owe them back, tracked here:** our `latest` dist-tag is mis-set on some packages (cosmetic for us, actively misleading for a consumer — part of how `ts-agent-memory-sqlite-vec` was recorded as unavailable while shipping the seam they needed), and the 21-of-25 unreachable `types` condition from the module-resolution stream.
+**Two bugs this stream found in its own work, both worth recording.** `rebuild` cleared the index *before* attempting to list — so a transient list failure destroyed a healthy index, **durably** on the sqlite sibling. A pre-existing test pinned the destructive behavior as intended, and the package was at 100% coverage the whole time; no test had ever seeded a populated index before a failing list. And the decline path pruned its stale vector *before* `_persist`, so a failed write would have deleted a vector that was still accurate for the content actually on disk.
+
+**Three process lessons, all codified in `CODING_STANDARDS.md`:** a local warning is a CI failure (`rush rebuild` exits non-zero on "success with warnings" where `rushx build` exits 0); widening a shared interface needs a repo-wide build, not a per-package one (a test double in `samples/testbed` broke #614); and a green Copilot check only means the job ran — three of the five PRs had substantive findings recorded solely in *suppressed* comments.
+
+**Answered without scheduling:** item 5's original scope (strict text read — half already shipped in `-47`), 6 (provenance query axis — **intent stated so they can design against it existing**), 7 (index read surface — deferred deliberately, breaking, wants its own design), 8 (prompt-slot writability — the one-sentence "advisory" doc remedy), 9 (`ts-res` `addResource` — fold into the next touch).
+
+**Published as `5.1.0-48`** (alpha tag, 2026-08-13T04:23Z) — and the consumer found the version before we named it, because the status note that promised to tell them was drafted hours before the publish and never revisited.
+
+**Still owed back to them:**
+
+| item | state |
+|---|---|
+| An **alpha is sitting on the `latest` tag** for two packages | **Open, and narrower than we had been describing it.** The established packages are correct — `ts-utils` / `ts-extras` / `ts-json-base` are all `latest: 5.0.2` (a real release), `alpha: 5.1.0-48`. But `ts-agent-memory` (`latest: 5.1.0-36`) and `ts-agent-memory-sqlite-vec` (`latest: 5.1.0-42`) have never had a stable release, and an accidental publish left an **alpha** on their `latest` tag. **The harm is misrepresentation, not staleness:** pre-1.0 consumers track `@alpha` and were never going to install from `latest`, so this did not hide Stream A from anyone — but anyone who does install from `latest` gets a months-old alpha *presented as a stable release*. **Correct the earlier framing:** we had recorded this as "the mechanism by which our shipped work looks unshipped" and told the consumer a tag fix would help them. Both overstated it. Fix: leave `latest` unset on a pre-1.0 co-developed package until there is a deliberate release, and stop accidental publishes moving it. |
+| 21-of-25 unreachable `types` condition | Open. Needs a browser API-Extractor rollup the build does not yet emit (module-resolution stream, finding 1). |
+
+### Why these packages stay in alpha — the co-development posture
+
+`ts-agent-memory`, `ts-agent-memory-sqlite-vec` and the surfaces around them are **co-developed with
+consumers**, currently PersonAIlity (active) and chocolate-lab (dormant). Staying on the alpha channel
+is **deliberate**, not a backlog item: it is what lets us take the breaking changes we keep discovering
+*while* the consumer adopts brand-new code, without a compatibility tax on work whose shape is still
+being learned. `rebuild`'s signature change breaking their one call site is the system working, not
+failing.
+
+Two things follow, and both have already been got wrong once:
+
+- **The alpha tag is the product channel for these consumers.** Do not describe `@alpha` to them as a
+  workaround, and do not offer a `latest` fix as though it would change what they install. Both were
+  said in a draft of the 2026-08-13 note and corrected before sending.
+- **`latest` on a package that has never had a stable release should be unset**, not pointed
+  somewhere. There is no "current stable" to name, and naming an alpha misrepresents it as one.
+
+The corollary for reviewers: on these packages, "this is breaking" is not an objection by itself. The
+objection is "this is breaking *and* the new shape isn't better", or "this breaks silently".
+
+### Open asks carried forward — the 2026-08-12 delta
+
+Three items from their post-`-48` sweep, **tracked here with verdicts so "deferred" has somewhere to live**. Their §3 diagnosis was that our ledger had no state between *done* and *silent*, and they were right: items 2 and 3 below were in the original package, answered with intent rather than a verdict, and decayed into silence.
+
+| ask | verdict | notes |
+|---|---|---|
+| **`rank` has no backfill** — a projector registered on a populated store ranks nothing already written, and because absent-`rank` sorts last, every pre-registration record lands *below* every post-registration one regardless of score | **Will do** | **Verified in source, not taken on faith:** `_stampRank` is called only from the two write paths and nothing walks; `_compareByRank` returns `1` for absent-vs-present before any value comparison. Not a partial ordering — **inverted relative to the projector's intent, and it looks like it works.** The docs are complicit (`rank` says "on every put/update", never "only after you register"). **Never sent to us before** — found after their package was assembled. **Design wrinkle:** a reconcile routed through `put` would bump `updated`/`seq` and fire a write observation per record, trading a wrong `rank` order for a wrong recency order; it needs a path that restamps `rank` only. That is the work — the walk is trivial. A plain count is enough; no report shape. |
+| **No query axis for provenance** | **Will do**, small | Exact-match on `provenance.source`, `StructuredFilterRetriever` as the home. We asked for the shape twice; they described the same use three times ("show me everything this source produced"). Building to the stated use rather than asking again. |
+| **Strict UTF-8 text read** (`ts-json-base`) | **Will do** — *reversed from an initial won't-do* | The initial answer pointed at `getFileBytes` + a fatal `TextDecoder`. On learning the consumer is moving to the **HTTP** adapter we checked it properly: `HttpTreeAccessors` is seeded from the REST payload's `contents: string`, so `JSON.parse` has already decoded leniently and substituted U+FFFD **before this code runs**; the inherited `getFileBytes` then re-encodes that string. A fatal decode over those bytes **succeeds, having nothing left to check** — the recommended escape hatch is a green light on a check that cannot fail. **Its class docstring asserted the opposite and is corrected in this PR** (a live doc bug, independent of the feature). **Shape:** strict read on byte-faithful adapters, and a **loud unsupported** on HTTP rather than a success — the precedent is browser `safer-fetch` refusing `validate-each-hop` at option resolution instead of failing later. **Open question back to them:** do they need detection *over HTTP*? That needs a bytes-native transport (a wire-format change), not a flag. |
+
+**Closed by them, not to be re-actioned:** record-index read surface (we declined in the contract text; they agree), empty-index-vs-unmatched-query (`size` + `declined` answer it a different way), `addResource` input type (bundle or drop).
+
+**Owed process change:** alpha release notes should carry a "breaking on the active surface" line — `rebuild`'s signature change broke their call site and no release note surfaced it.
 
 ---
 

@@ -19,7 +19,7 @@ import {
 
 /**
  * Returns records carrying `query.tag`, recency-ordered within the tag and
- * narrowed by any scope / kind / predicate filters. Tag is this retriever's
+ * narrowed by any scope / kind / provenance-source / predicate filters. Tag is this retriever's
  * axis: a query without a `tag` is not its concern and yields an empty success
  * (so it contributes nothing to a {@link HybridRetriever}, rather than failing).
  * @public

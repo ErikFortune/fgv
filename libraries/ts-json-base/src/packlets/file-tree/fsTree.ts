@@ -161,6 +161,22 @@ export class FsFileTreeAccessors<TCT extends string = string>
   }
 
   /**
+   * Reads a file's contents, decoding UTF-8 strictly.
+   *
+   * @remarks
+   * Always decidable here: the bytes are read from disk, so this store has
+   * custody of exactly what was written.
+   * @param filePath - Absolute path of the file.
+   * @returns `Success` with the decoded text; `Failure` if the bytes are not
+   * valid UTF-8.
+   */
+  public getFileTextStrict(filePath: string): Result<string> {
+    return this.getFileBytes(filePath).onSuccess((bytes) =>
+      captureResult(() => new TextDecoder('utf-8', { fatal: true }).decode(bytes))
+    );
+  }
+
+  /**
    * Gets the content type of a file in the file tree.
    * @param filePath - Absolute path of the file.
    * @param provided - Optional supplied content type.

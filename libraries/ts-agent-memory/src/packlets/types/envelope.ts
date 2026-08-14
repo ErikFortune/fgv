@@ -152,6 +152,14 @@ export interface IMemoryEnvelope {
    * Absent when the kind has no registered projector (or the projector threw on
    * this record). Ordered retrieval (`orderBy: 'rank'`) and the index's rank view
    * sort by this value descending, placing records with an absent `rank` last.
+   *
+   * **The projector runs on the write path only — registering one does not rank
+   * records already in the store.** Because absent sorts last, those records land
+   * below every subsequently-written one regardless of what the projector would
+   * have scored them, so the result is not a partial ordering but one inverted
+   * with respect to the projector's intent, with nothing failing to say so. Call
+   * `IMemoryStore.reconcileRank` after registering a projector against a
+   * populated store.
    */
   readonly rank?: number;
   /** Structured provenance (never a flat enum). */
@@ -191,6 +199,9 @@ export interface IMemoryRecord<TBody = unknown> {
  * {@link IMemoryEnvelope.rank}. The store never interprets the body — the host
  * owns what the number means. A projector that throws is treated as "no rank
  * for this record" (logged at `warn`), never failing the write.
+ *
+ * Runs on writes only. To apply a newly-registered projector to records that
+ * already exist, call `IMemoryStore.reconcileRank`.
  * @public
  */
 export type RankProjector = (record: IMemoryRecord<unknown>) => number;

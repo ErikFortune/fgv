@@ -1,8 +1,14 @@
+import '@fgv/ts-utils-jest';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-import { FsStorageProvider, FsStorageProviderFactory, sanitizeNamespace } from '../../../packlets/storage';
+import {
+  FsStorageProvider,
+  FsStorageProviderFactory,
+  type IStorageFileResponse,
+  sanitizeNamespace
+} from '../../../packlets/storage';
 
 describe('sanitizeNamespace', () => {
   test('returns default when namespace is empty', () => {
@@ -125,5 +131,71 @@ describe('FsStorageProviderFactory', () => {
 
     expect(result.isFailure()).toBe(true);
     expect(result.message).toContain('outside root');
+  });
+});
+
+describe('FsStorageProvider content encoding', () => {
+  /** Bytes that are not valid UTF-8 — a lone continuation byte and a truncated sequence. */
+  const MALFORMED_UTF8: Buffer = Buffer.from([0x41, 0x80, 0xc3, 0x42]);
+
+  let rootPath: string;
+
+  beforeEach(() => {
+    rootPath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-http-storage-encoding-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(rootPath, { recursive: true, force: true });
+  });
+
+  test('base64 carries bytes the utf8 path destroys', async () => {
+    fs.writeFileSync(path.join(rootPath, 'bad.bin'), MALFORMED_UTF8);
+    const provider = new FsStorageProvider(rootPath);
+
+    expect(await provider.getFile('/bad.bin', 'base64')).toSucceedAndSatisfy(
+      (response: IStorageFileResponse) => {
+        expect(response.encoding).toBe('base64');
+        expect(Buffer.from(response.contents, 'base64')).toEqual(MALFORMED_UTF8);
+      }
+    );
+
+    // The default path is lossy, and this is the loss: the invalid sequences have
+    // become U+FFFD and re-encoding cannot recover them.
+    expect(await provider.getFile('/bad.bin')).toSucceedAndSatisfy((response: IStorageFileResponse) => {
+      expect(response.encoding).toBeUndefined();
+      expect(response.contents).toContain('�');
+      expect(Buffer.from(response.contents, 'utf8')).not.toEqual(MALFORMED_UTF8);
+    });
+  });
+
+  test('reports the encoding it actually produced, so a client can branch on it', async () => {
+    fs.writeFileSync(path.join(rootPath, 'a.txt'), 'hello');
+    const provider = new FsStorageProvider(rootPath);
+
+    // Absent means utf8, which keeps existing responses byte-identical — and means
+    // "asked for base64, got no field" is itself the signal that it wasn't honoured.
+    expect(await provider.getFile('/a.txt')).toSucceedAndSatisfy((r: IStorageFileResponse) => {
+      expect(r.encoding).toBeUndefined();
+    });
+    expect(await provider.getFile('/a.txt', 'utf8')).toSucceedAndSatisfy((r: IStorageFileResponse) => {
+      expect(r.encoding).toBeUndefined();
+    });
+    expect(await provider.getFile('/a.txt', 'base64')).toSucceedAndSatisfy((r: IStorageFileResponse) => {
+      expect(r.encoding).toBe('base64');
+    });
+  });
+
+  test('round-trips ordinary text through base64 unchanged', async () => {
+    fs.writeFileSync(path.join(rootPath, 'a.txt'), 'héllo — em dash');
+    const provider = new FsStorageProvider(rootPath);
+
+    expect(await provider.getFile('/a.txt', 'base64')).toSucceedAndSatisfy((r: IStorageFileResponse) => {
+      expect(Buffer.from(r.contents, 'base64').toString('utf8')).toBe('héllo — em dash');
+    });
+  });
+
+  test('fails for a missing file regardless of encoding', async () => {
+    const provider = new FsStorageProvider(rootPath);
+    expect(await provider.getFile('/nope.bin', 'base64')).toFail();
   });
 });

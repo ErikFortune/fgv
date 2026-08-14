@@ -35,6 +35,7 @@ import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/
 import { type JsonObject } from '@fgv/ts-json-base';
 
 import { buildAnthropicMessages } from '../chatRequestBuilders';
+import { anthropicAuthHeaders } from '../endpoint';
 import {
   AiPrompt,
   DEFAULT_ANTHROPIC_MAX_TOKENS,
@@ -542,11 +543,7 @@ export async function callAnthropicStream(
   if (tools && tools.length > 0) {
     body.tools = toAnthropicTools(tools);
   }
-  const headers: Record<string, string> = {
-    'x-api-key': config.apiKey,
-    'anthropic-version': '2023-06-01',
-    'anthropic-dangerous-direct-browser-access': 'true'
-  };
+  const headers: Record<string, string> = anthropicAuthHeaders(config.apiKey);
   /* c8 ignore next 4 - optional logger diagnostic output */
   if (logger) {
     const toolTypes = tools && tools.length > 0 ? tools.map((t) => t.type).join(',') : 'none';

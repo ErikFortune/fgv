@@ -126,6 +126,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
     listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
     put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
+    reconcileRank(kind: Kind): Promise<Result<number>>;
     get skippedRecords(): ReadonlyArray<ISkippedRecord>;
 }
 
@@ -477,6 +478,7 @@ export interface IMemoryQuery {
     readonly linkedTo?: IEdgeTarget;
     readonly offset?: number;
     readonly orderBy?: 'recency' | 'rank';
+    readonly provenanceSource?: ProvenanceSource;
     readonly scope?: MemoryScopeKey;
     readonly semantic?: string;
     readonly tag?: Tag;
@@ -518,6 +520,7 @@ export interface IMemoryStore {
     list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
     listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
     put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
+    reconcileRank(kind: Kind): Promise<Result<number>>;
 }
 
 // @public

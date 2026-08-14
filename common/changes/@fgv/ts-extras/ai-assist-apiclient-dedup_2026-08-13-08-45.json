@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Internal refactor of the ai-assist HTTP layer: collapse three near-identical fetch-and-parse helpers into one, and single-source the Anthropic and Gemini auth headers. No public surface change.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
