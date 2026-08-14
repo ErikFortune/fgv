@@ -2,7 +2,7 @@ id: ai-assist-thinking-config
 status: shipped
 packages:
   - '@fgv/ts-extras'
-prs: [332, 334]
+prs: [330, 332, 333, 334]
 closed: 2026-05
 summary:
   intended: >
@@ -42,14 +42,23 @@ summary:
     was the wrong test. Second, three decisions shipped on unverified defaults because
     no API key was available at implementation time — the xAI temperature-rejection
     policy (D8, conservatively copied from Anthropic/OpenAI), Gemini's integer thinking
-    budgets (A3, taken from the design doc rather than live docs), and Anthropic Sonnet
-    4.5's wire format (A2) — each with the specific reversal documented in the README.
-    Third, thinking-event surfacing was cut to a followup stream under D9 rather than
+    budgets (A3, taken from the design doc rather than live docs), and the Anthropic
+    thinking wire format (A2). A2 is the one that bit, and it was worse than merely
+    unverified — see the wire-shape note below. Third, the xAI D7 registry-staleness fix
+    shipped as real production scope (retired models removed, `grok-4.3` made the
+    default) that the ORIGINAL brief never framed; `design-v1.md` Q5 had explicitly
+    called it "out of scope for the thinking-config stream" and deferred the call, and
+    the v2 revision folded it in as a binding decision by analogy with the sibling
+    image-gen stream's D3. It has a clean paper trail, but it is the same in-flight
+    scope-widening pattern both streams show and it is invisible from the original brief.
+    Fourth, thinking-event surfacing was cut to a followup stream under D9 rather than
     shipped. Two review findings were explicitly declined:
     `validateResolvedThinkingConfig` (needs a model capability registry that did not
-    exist) and a `modelNameMatches` suffix tightening (no known false positive). The
-    review loop ran substantially longer than the stream's own summary admits — see the
-    accuracy note below.
+    exist) and a `modelNameMatches` suffix tightening — the latter's "no known false
+    positive" still holds, since the model line has rotated to `gpt-5.6-luna` / `-terra`
+    / `-sol` / `gpt-5.4-nano`, none of which collide the way `gpt-5-pro` vs `gpt-5`
+    would have. The review loop ran substantially longer than the stream's own summary
+    admits — see the accuracy note below.
   sourceLine: '**PR:** [#334](https://github.com/ErikFortune/fgv/pull/334) — `feat(ai-assist): thinking-config Phase B — layered options for extended thinking/reasoning`'
 notes:
   - >
@@ -61,7 +70,53 @@ notes:
     substantive `hasThinkingConfig` fixes plus a deferral each. Treat seven as the real
     count; the "five" reads as a figure written before the last two rounds and never
     updated. Under the review-loop discipline in `CODING_STANDARDS.md` a seven-round
-    loop is itself a signal worth noting rather than a detail.
+    loop is itself a signal worth noting rather than a detail. The seven-round count is
+    corroborated independently against PR #334 itself, not just the README's own table.
+  - >
+    A2 SHIPPED A WIRE SHAPE THAT MATCHED NEITHER ANTHROPIC MODE, and calling it an
+    "unverified default" undersells it. The two real modes are legacy
+    (`thinking: { type: 'enabled', budget_tokens: N }`) and adaptive
+    (`thinking: { type: 'adaptive' }` + top-level `output_config.effort`). `design.md`
+    specified adaptive and flagged that Sonnet 4.5 might not accept it, asking phase B to
+    verify. Phase B could not verify (no API key) and shipped a hybrid — `type: 'enabled'`
+    with `output_config` and no `budget_tokens` — which is the legacy discriminator
+    carrying the adaptive payload. That is a design-vs-implementation divergence, not a
+    conservative default, and the stream's own design doc is the thing it diverged from.
+    It was corrected 2.5 months later under live validation by `14574e45c`, after the
+    Claude 5 family began rejecting the legacy shape with HTTP 400; the fix branches on
+    `useAdaptiveThinking` and emits each mode correctly. None of that reversal is recorded
+    in this stream's artifacts — the README's B.0 only speculates a possible future fix
+    path. The generalizable point: an unverifiable decision should ship as ONE of the
+    documented shapes, not a blend of two, because a blend cannot be right anywhere.
+  - >
+    A SURFACED LESSON WAS LOST. `state.md` lists four lessons-codification candidates;
+    three reached `.ai/notes/orchestrator/lessons-pending.md` as L1–L3. The fourth did
+    not: "D5 (unconditional Anthropic `extractAnthropicText`) had test collateral damage —
+    existing tests used `{content: [{text}]}` without `type: 'text'`. When changing
+    response-parsing logic, audit all response fixtures immediately." Filed to
+    lessons-pending on 2026-08-14 as part of this pass.
+  - >
+    THREE OF FOUR FOLLOWUPS LIVE NOWHERE DURABLE. Checked each against `docs/FUTURE.md`,
+    `docs/TECH_DEBT.md` and `docs/WORKSTREAMS.md`: (a) `ai-assist-thinking-events` IS
+    durably tracked — a live entry in `WORKSTREAMS.md`, still unshipped, and
+    `LIBRARY_CAPABILITIES.md`'s claim that thinking-event surfacing remains that stream's
+    scope is accurate, not stale. But (b) the xAI live temperature verification, (c)
+    `validateResolvedThinkingConfig`, and (d) the `modelNameMatches` tightening appear in
+    no ledger. (b) is confirmed still unresolved in source — `thinkingOptionsResolver.ts`
+    still carries the comment "Conservative default ... live verification pending" — with
+    no follow-up commit since the original merge. A followup recorded only inside a
+    `completed/` README is invisible to any later orchestrator scanning the ledgers.
+  - >
+    The parallel-phase-A lesson this stream surfaced is captured as L1 in
+    `lessons-pending.md` but remains UNCODIFIED roughly three months and dozens of streams
+    later; the most recent sweep took L38/L39/L40 and did not reach it. Not lost, but not
+    resolved either.
+  - >
+    `WORKSTREAMS.md`'s entry for this stream says "4-tier merge logic". The source and
+    `design.md` both describe four numbered rules where rule 4 shares rule 3's precedence
+    — three effective tiers, which is what this record says. The sibling
+    `imageOptionsResolver` uses the identical "same precedence as model-specific" phrasing,
+    so both streams are three-effective-tier despite four numbered steps.
 keywords:
   - extended-thinking
   - reasoning-effort

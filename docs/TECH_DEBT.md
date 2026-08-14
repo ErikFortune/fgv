@@ -116,6 +116,32 @@ opportunistically when the right surface area is touched.
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `importPublicKeyFromMultibaseSpki` still early-returns instead of chaining; the bridge pattern it was waiting for has shipped.**
+  `libraries/ts-extras/src/packlets/crypto-utils/spkiHelpers.ts` breaks its `Result` chain at the
+  sync→async transition — `const decodeResult = multibaseBase64UrlDecode(encoded); if
+  (decodeResult.isFailure()) { return fail(...); }` — rather than chaining into the awaited
+  `provider.importPublicKeySpki(...)`. Its sibling `exportPublicKeyAsMultibaseSpki` chains cleanly, so
+  the two read differently for no reason a caller can see.
+
+  **Trigger**: fired already, and that is the point of this entry. The
+  `auth-primitives-batch1` README deferred it explicitly — "a candidate to revisit if a clean
+  `Result`-to-`AsyncResult` bridge pattern emerges" — and `AsyncResult` with `thenOnSuccess` /
+  `thenOnFailure` has since shipped in `@fgv/ts-utils` and is documented in `CODING_STANDARDS.md`
+  § "Async Result Chaining". Address on the next substantive change to `crypto-utils`.
+
+  **Scope sketch**: `return multibaseBase64UrlDecode(encoded).thenOnSuccess(async (bytes) =>
+  provider.importPublicKeySpki(bytes, algorithm)).withErrorFormat((e) =>
+  `importPublicKeyFromMultibaseSpki: ${e}`)`. Behaviour-preserving; the existing tests should pass
+  unchanged, which is the check that it was purely stylistic.
+
+  **Not a P2**: it is a readability defect in a correct function, not a correctness or type-safety
+  one. It earns an entry only because it was a *recorded deferral whose stated precondition is now
+  met* — the class of debt that otherwise disappears, since a deferral living solely in a completed
+  stream's README has no reader at the moment its trigger fires.
+
+  **Reference**: `auth-primitives-batch1` (#322) "Notes for sibling-sweep / future cleanup"; surfaced
+  2026-08-14 by the retroactive `finalize-task` antagonist pass over that stream.
+
 - **[P3] `@fgv/ts-utils` should export a single-`AsyncDeferredResult` invoker; two packages now carry a private copy.**
   Invoking one consumer-supplied `() => Promise<Result<T>>` and turning a synchronous throw or a rejection
   into a `Failure` requires `captureAsyncResult` plus a flatten (`.onSuccess((inner) => inner)`), because

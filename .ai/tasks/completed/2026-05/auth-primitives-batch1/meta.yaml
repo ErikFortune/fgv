@@ -10,42 +10,105 @@ summary:
   intended: >
     Four targeted crypto/serialization primitives to unblock personaility's
     `auth-primitives-foundation` workstream: add `'x25519'` to the `KeyPairAlgorithm`
-    union and its params table; add RFC 8785 `canonicalize(value: JsonValue): string`
-    (brief's preferred attachment point was `HashingNormalizer`, with explicit
-    permission to move it to `Normalizer` if that felt wrong); add multibase
-    base64url + SPKI export/import helpers to `@fgv/ts-extras/crypto-utils` as
-    standalone module exports — the brief put `ICryptoProvider` explicitly
-    out of scope, "no new methods"; and update `LIBRARY_CAPABILITIES.md`.
+    union and its params table; add RFC 8785 canonicalization, briefed as
+    `canonicalize(value: JsonValue): string` with `HashingNormalizer` as the preferred
+    attachment point and explicit permission to move it to `Normalizer` if that felt
+    wrong; add multibase base64url + SPKI export/import helpers to
+    `@fgv/ts-extras/crypto-utils` as standalone module exports; and update
+    `LIBRARY_CAPABILITIES.md`. The brief put `ICryptoProvider` **out of scope
+    unconditionally** — `brief.md:52`, "no new methods (standalone helpers only, not
+    interface methods)" — with no judgment-call escape clause of the kind it granted
+    for the canonicalize attachment point.
   shipped: >
-    All four, published in `5.1.0-26` alpha and consumed by personaility. X25519
-    needed no provider-side code — both `NodeCryptoProvider` and
-    `BrowserCryptoProvider` are fully table-driven and picked it up from the params
-    table alone. `canonicalize()` landed on the base `Normalizer` in
-    `ts-utils/base/normalize.ts`, implemented as recursive descent emitting directly
-    to a string. `spkiHelpers.ts` shipped four pure module-level exports
-    (`multibaseBase64UrlEncode`/`Decode`, `exportPublicKeyAsMultibaseSpki`,
-    `importPublicKeyFromMultibaseSpki`) from both `index.ts` and `index.browser.ts`.
-    `LIBRARY_CAPABILITIES.md` was created by this PR — it did not exist before
-    `bb913392`.
+    All four, published in `5.1.0-26` alpha and consumed by personaility. X25519 needed
+    no provider-side code — both `NodeCryptoProvider` and `BrowserCryptoProvider` are
+    fully table-driven and picked it up from the params table alone (neither provider
+    file contains the string `x25519`). `canonicalize()` landed on the base `Normalizer`
+    in `ts-utils/base/normalize.ts`, implemented as recursive descent that concatenates
+    directly to a string and never builds an intermediate object — the load-bearing
+    detail, since reconstructing an object literal would let the JS engine reorder
+    integer-string keys and put `"2"` before `"10"`. `spkiHelpers.ts` shipped four pure
+    module-level exports from both `index.ts` and `index.browser.ts`.
+    `LIBRARY_CAPABILITIES.md` was **moved** into `.ai/instructions/` by this PR and its
+    crypto-utils and hash sections expanded.
   diverged: >
-    Three deltas, all documented in the artifacts. (1) `canonicalize()` moved off
-    `HashingNormalizer` onto the base `Normalizer` during orchestrator review
-    (`r3214578687`), on the grounds that it uses none of the hashing functionality;
-    the brief had anticipated and pre-authorized exactly this judgment call, and the
-    move made the method available to `Crc32Normalizer` and every future subclass.
-    (2) Phase 1 (X25519) was already fully present on the branch when the implementing
-    agent started — model union, params table entry, and both providers' test files —
-    so the stream shipped less new work than its brief describes. (3) `spkiHelpers.ts`
-    was revised post-review to route every SPKI operation through an injected
-    `ICryptoProvider` and to add alphabet + length validation in
-    `multibaseBase64UrlDecode`; the brief had specified neither, and the injected
-    provider is the reason the shipped signatures take a `provider` argument. Separately
-    and outside the code: artifact migration to `completed/` and the polished README
-    were done post-merge rather than in the same PR as the work — the stream's own
-    README flags this as the first observed instance of that protocol failure under
-    the then-new substrate. That failure has since recurred often enough to motivate
-    the `finalize-task` skill.
+    Four deltas, the first of which is a scope-boundary breach that the stream's own
+    README denies.
+
+    (1) `ICryptoProvider` gained two new interface methods, `exportPublicKeySpki` and
+    `importPublicKeySpki`, both fully implemented in `NodeCryptoProvider` and
+    `BrowserCryptoProvider`. `brief.md:52` forbade exactly this. The README's "Key
+    decisions" asserts the opposite — "`ICryptoProvider` was deliberately left
+    untouched" — which is not a simplification but a false statement: verified by
+    `git show bb9133920^:.../model.ts` (zero occurrences) against `bb9133920` (both
+    methods present). The change looks defensible on the merits, since routing SPKI
+    through the provider is what makes the helpers cross-runtime, and it was the
+    orchestrator's own post-review request. What is wrong is that a rule the brief
+    stated without exception was crossed and then recorded as having been honoured.
+    `LIBRARY_CAPABILITIES.md:365` does document the two new methods, so the public
+    surface was disclosed there; the README and the `WORKSTREAMS.md` entry both omit
+    them.
+
+    (2) `canonicalize()` moved off `HashingNormalizer` onto the base `Normalizer` per
+    review `r3214578687`, on the grounds that it uses none of the hashing
+    functionality. The brief pre-authorized this judgment call, and the move made the
+    method available to `Crc32Normalizer` and every future subclass. Its **signature**
+    also diverged and that part is unrecorded anywhere: shipped as
+    `canonicalize(from: unknown): Result<string>`, not the briefed
+    `(value: JsonValue): string`. This is the repo's own standard correctly applied —
+    a `Symbol`, `Date`, `Map` or `NaN` is a real failure mode and the tests assert
+    `.toFail()` on each — but the brief's literal contract is not what shipped.
+
+    (3) Phase 1 (X25519) is claimed by `state.md` to have been already present on the
+    branch when the implementing agent started, which would mean the stream shipped
+    less new work than its brief describes. This could not be corroborated: the PR was
+    squash-merged, its commit message narrates Phase 1 in first-person implementation
+    terms, and the pre-squash commits are not reachable. Recorded as an unresolved
+    provenance gap rather than a fact.
+
+    (4) `spkiHelpers.ts` was revised post-review to take an injected `ICryptoProvider`
+    (the cause of (1)) and to add alphabet + length validation in
+    `multibaseBase64UrlDecode`; the brief specified neither.
+
+    Separately and outside the code: artifact migration to `completed/` and the polished
+    README were done post-merge rather than in the same PR as the work — the README
+    flags this as the first observed instance of that protocol failure under the
+    then-new substrate. It has since recurred often enough to motivate the
+    `finalize-task` skill this record was written by.
   sourceLine: '**PR:** [#322](https://github.com/ErikFortune/fgv/pull/322) — `feat(auth-primitives-batch1): X25519 keypair, SPKI helpers, RFC 8785 canonicalize`'
+notes:
+  - >
+    CORRECTION to an earlier draft of this file (2026-08-14): it claimed
+    `LIBRARY_CAPABILITIES.md` was created by this PR and "did not exist before
+    `bb913392`". That is false. The file dates to #312 (`852033274`, 2026-05-02) at
+    `.agents/LIBRARY_CAPABILITIES.md`; #322 moved it to `.ai/instructions/`. The move
+    was not clean — the `.agents/` copy still resolves at `bb9133920` and survived
+    until #510 removed the deprecated tree, so two copies coexisted for a stretch. The
+    false claim came from verifying with `git log --diff-filter=A` **without
+    `--follow`**, which sees only a file's first appearance at its current path and so
+    reports every path move as a creation. Note `WORKSTREAMS.md` had this right all
+    along, describing the change as sections added rather than a file created.
+  - >
+    README accuracy defects, found during the retroactive antagonist pass and left
+    uncorrected in place (retroactive mode does not rewrite historical artifacts;
+    raised for a decision instead). Two are material because future agents read this
+    README as evidence: the "`ICryptoProvider` was deliberately left untouched" claim
+    in "Key decisions" is false per (1) above; and the shipped-signature list at
+    README.md:17-18 omits the `provider: ICryptoProvider` argument both SPKI helpers
+    take. The second was stale **at merge**, not merely overtaken later — the blob at
+    `bb9133920` already carries the three-argument signatures, so the README reproduced
+    the brief's pre-revision shapes rather than what it was documenting.
+    `LIBRARY_CAPABILITIES.md:362` records the correct signatures.
+  - >
+    STILL-OPEN, now actionable, and recorded in no debt ledger: the README's
+    "Notes for sibling-sweep" flags that `importPublicKeyFromMultibaseSpki`
+    early-returns on `isFailure()` instead of chaining the sync→async transition, and
+    defers it "if a clean `Result`-to-`AsyncResult` bridge pattern emerges". That
+    pattern has since shipped — `AsyncResult` with `thenOnSuccess` / `thenOnFailure`
+    is in `@fgv/ts-utils` and is documented in `CODING_STANDARDS.md` § "Async Result
+    Chaining". The early-return is still in the source and `docs/TECH_DEBT.md` has no
+    entry for it. The trigger fired and nobody was watching, which is the failure mode
+    a deferral recorded only in a completed stream's README always has.
 keywords:
   - x25519
   - curve25519
@@ -60,7 +123,9 @@ keywords:
   - spki
   - public-key-export
   - crypto-provider
+  - icryptoprovider-surface-growth
   - cross-runtime
-  - library-capabilities-genesis
+  - out-of-scope-breach
   - post-merge-migration
+  - stale-readme-signatures
 sourceHash: 6f9babf90106ec2c
