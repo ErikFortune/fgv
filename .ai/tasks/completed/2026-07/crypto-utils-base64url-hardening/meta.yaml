@@ -1,0 +1,69 @@
+id: crypto-utils-base64url-hardening
+status: shipped
+packages: ['@fgv/ts-extras']
+prs: [519]
+closed: 2026-07
+summary:
+  intended: >
+    Three bundled items for the PersonAIlity V2 identity/signing track. Item 3: extract
+    bare `base64UrlNoPadEncode` / `base64UrlNoPadDecode` from the multibase helpers and
+    refactor `multibaseBase64UrlEncode`/`Decode` to delegate, so one implementation exists
+    rather than two. Item 2: a branded `MultibaseSpkiPublicKey`, an
+    `isValidMultibaseSpkiPublicKey` guard sharing one shape rule with the decoder, a
+    validating `multibaseSpkiPublicKey` Converter, and tightened export/import signatures.
+    Item 5: file an RFC 9421 HTTP-message-signature entry in `docs/FUTURE.md` (docs only).
+  shipped: >
+  diverged: >
+  # summary.shipped / diverged intentionally BLANK: the directory holds only brief.md.
+  # This stream bundled three items and tightened two signatures — exactly the shape where
+  # a scope cut or a partial landing would matter — and no authored account of the outcome
+  # exists. Reconstructing one from source would dress this sweep's inference as the
+  # stream's own testimony. See notes.
+  sourceLine: '# Brief — crypto-utils base64url + branded multibase SPKI hardening (items 2 + 3)'
+  # sourceLine is the opening line of brief.md (the commission), NOT a result/README opener.
+keywords:
+  - base64url
+  - no-pad encoding
+  - multibase
+  - SPKI
+  - branded type
+  - type guard
+  - converter
+  - RFC 9421
+  - WebAuthn
+  - single source of truth refactor
+  - PersonAIlity V2 identity
+notes: >
+  RETROACTIVE finalize sweep, 2026-08-14. Directory holds only brief.md; status resolved
+  from external evidence:
+
+  (1) Merged commit 479e20bd3 "feat(crypto-utils): base64url-no-pad helpers + branded
+  MultibaseSpkiPublicKey (#519)", 2026-07-07, on origin/release.
+
+  (2) All three items are present in current source.
+  `libraries/ts-extras/src/packlets/crypto-utils/spkiHelpers.ts`:
+  `base64UrlNoPadEncode` (:45), `base64UrlNoPadDecode` (:72), the multibase pair delegating
+  to them (`'m' + base64UrlNoPadEncode(data)` :195; `base64UrlNoPadDecode(encoded.slice(1))`
+  :220), the shared shape rule `MultibaseSpkiPublicKeyRegExp` (:160) with
+  `isValidMultibaseSpkiPublicKey` built on it (:175-178) — the brief's "do NOT duplicate a
+  divergent regex" constraint is visibly honoured. The Converter is at `converters.ts:125`;
+  the brand rides `model.ts`. Both `index.ts` (:66-73) and `index.browser.ts` (:73-80)
+  export the new surface, as the brief required. Item 5's RFC 9421 entry is at
+  `docs/FUTURE.md:662`, and its dependency note on this stream's base64url primitives is at
+  :679.
+
+  Verdict: SHIPPED. Ran, landed as briefed, wrote no exit artifact.
+
+  Two later changes a reader should not misread as this stream's divergence, both assessed
+  by this sweep from git rather than from any artifact: (a) `importPublicKeyFromMultibaseSpki`
+  today takes a plain `string`, not the brand the brief asked for — that tightening was
+  deliberately relaxed afterwards by commit 197f68490 (#530, "export
+  MultibaseSpkiPublicKeyRegExp; widen import to accept string"), whose docstring gives the
+  reason (callers holding an unbranded value from storage or the wire). `export` still
+  returns the brand as briefed. (b) commit 81b071af7 (#554) added Argon2id secret /
+  associatedData / hex codec to the same packlet — unrelated to this stream.
+
+  Whether the brief's signature tightening was landed and then reversed, or was already
+  contested during the stream, is not knowable from this directory. #530's existence
+  implies it landed first.
+sourceHash: e8bcb980e87ce422

@@ -88,13 +88,13 @@ Arguments against: every consumer's scope hierarchy is bespoke; editor screens t
 
 **Dependencies**: `ts-prompt-assist` v0.1 ships and stabilizes; consumer's in-app editor lands; second consumer surfaces (or doesn't). If a second consumer wants the same editor shape, that's strong evidence for genericizing.
 
-**Reference**: `.ai/tasks/active/ts-prompt-assist/brief.md` (stream commission discussion).
+**Reference**: `.ai/tasks/completed/2026-05/ts-prompt-assist/brief.md` (stream commission discussion).
 
 ---
 
 ## Samples app for `@fgv/ts-prompt-assist`
 
-**Status: superseded by `samples/testbed` (2026-05-22).** Absorbed into the general-purpose `samples/testbed` sample-browser being built under the `local-ai-exploration` cluster. The testbed will demonstrate `@fgv/ts-prompt-assist` scenarios alongside scenarios for other fgv capabilities (ai-assist, ts-res, bcp-47, crypto, etc.) — one general showcase that grows scenarios over time beats two parallel demo apps. See `.ai/tasks/active/local-ai-exploration/brief.md`.
+**Status: superseded by `samples/testbed` (2026-05-22).** Absorbed into the general-purpose `samples/testbed` sample-browser being built under the `local-ai-exploration` cluster. The testbed will demonstrate `@fgv/ts-prompt-assist` scenarios alongside scenarios for other fgv capabilities (ai-assist, ts-res, bcp-47, crypto, etc.) — one general showcase that grows scenarios over time beats two parallel demo apps. See `.ai/tasks/completed/2026-05/local-ai-exploration/brief.md`.
 
 ---
 
@@ -120,7 +120,7 @@ Layer 1 (harness-supplied tools) shipped: `IAiClientTool`, `executeClientToolTur
 
 **Remaining future work:**
 
-**MCP tools (layer 2).** **Slice 1 shipped 2026-06-06 via the `ts-extras-mcp` stream** — the new `@fgv/ts-extras-mcp` (Node) package wraps `@modelcontextprotocol/sdk`, discovers a server's tools, and adapts each into an `AiAssist.IAiClientTool` (`adaptMcpTools`) that drops directly into `executeClientToolTurn`. Graceful degradation: tools whose `inputSchema` is outside the `JsonSchema.fromJson` subset are excluded, surfaced on `skipped`, and NOISY-warned with the raw schema. Compatibility probe: the `samples/testbed` `mcp-probe` scenario. See `.ai/tasks/active/ts-extras-mcp/`.
+**MCP tools (layer 2).** **Slice 1 shipped 2026-06-06 via the `ts-extras-mcp` stream** — the new `@fgv/ts-extras-mcp` (Node) package wraps `@modelcontextprotocol/sdk`, discovers a server's tools, and adapts each into an `AiAssist.IAiClientTool` (`adaptMcpTools`) that drops directly into `executeClientToolTurn`. Graceful degradation: tools whose `inputSchema` is outside the `JsonSchema.fromJson` subset are excluded, surfaced on `skipped`, and NOISY-warned with the raw schema. Compatibility probe: the `samples/testbed` `mcp-probe` scenario. See `.ai/tasks/completed/2026-06/ts-extras-mcp/`.
 
 **`runToolUseConversation` — the multi-turn orchestration helper (re-queued 2026-08-14).**
 `executeClientToolTurn` is deliberately a **per-turn** primitive: the consumer drives the outer
@@ -145,7 +145,7 @@ or before the helper.
 
 **Dependencies**: ai-assist-client-tools cluster closed to release (done 2026-06-04).
 
-**Reference**: 2026-05-30 conversation (Erik watching personaility's roadmap); `.ai/tasks/active/ai-assist-client-tools/`; PR #447; `.ai/tasks/active/ts-extras-mcp/`.
+**Reference**: 2026-05-30 conversation (Erik watching personaility's roadmap); `.ai/tasks/completed/2026-06/ai-assist-client-tools/`; PR #447; `.ai/tasks/completed/2026-06/ts-extras-mcp/`.
 
 ---
 
@@ -162,7 +162,7 @@ Deferred from the `ts-extras-mcp` slice-1 stream (2026-06-06). Each is additive 
 
 **Headline follow-on lever — additively widen `JsonSchema.fromJson`'s supported subset** (in `@fgv/ts-json-base`). The single biggest real-world risk is schema-subset mismatch: real MCP servers advertise `$ref`/`$defs`, `oneOf`, `pattern`, union `type` arrays, etc. that `fromJson` rejects, so those tools land in `adaptMcpTools`' `skipped` set. `$ref`/`$defs` resolution and `pattern` passthrough are the highest-value additions. This is a separate small `ts-json-base` stream, commissioned based on what the `mcp-probe` scenario surfaces against real servers — NOT done in the `ts-extras-mcp` stream.
 
-**Reference**: `.ai/tasks/active/ts-extras-mcp/brief.md` + `design.md`.
+**Reference**: `.ai/tasks/completed/2026-06/ts-extras-mcp/brief.md` + `design.md`.
 
 
 ---

@@ -435,7 +435,7 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 **Status:** 🟢 ready to commission (substrate prep in flight)
 **Branch base:** `release`
 **Workflow shape:** single-PR breaking-change feature
-**Substrate:** `.ai/tasks/active/prompt-assist-screeners/{brief.md, state.md}`
+**Substrate:** `.ai/tasks/completed/2026-05/prompt-assist-screeners/{brief.md, state.md}`
 **Package surface:** `@fgv/ts-prompt-assist` (safety packlet) + `.ai/instructions/LIBRARY_CAPABILITIES.md` + in-repo consumers of the dropped fields
 **Out-of-scope:** the local-classifier screener itself (B-3 of `local-ai-exploration`); LLM-based screening; screener caching; parallel execution; whole-prompt/post-render screening hook.
 
