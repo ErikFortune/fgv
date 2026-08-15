@@ -23,6 +23,37 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## `IFragmentVectorIndex` rebuild has no coverage report
+
+`InMemoryFragmentCosineIndex.rebuild(source, embed)` returns a bare `Result<number>` — the total
+fragment count — while the record-granular `IVectorIndex.rebuild` returns a per-kind
+`IVectorRebuildReport` on a `DetailedResult` that survives a failure. Since
+`vector-rebuild-report-by-kind` (2026-08-15) the asymmetry is wider than it was: the fragment path
+now *reads* the new `IMemoryRecordListing` and **discards its `excluded` tally on the floor**,
+because a bare count has nowhere honest to put it.
+
+The shape, when it is done, is not a design question — the rule is already written on
+`IVectorRebuildReport`'s docstring and applies verbatim: every count resolved by `Kind`, `excluded`
+optional because only the source can know it, and the report carried on the failure as well as the
+success. The interesting part is what a *fragment* report should count that a record report does
+not: fragments-per-record is the number a caller actually wants when asking "is my sub-document
+coverage what I intended?", and neither `indexed` nor a record count answers it.
+
+**Why deferred**: `vector-rebuild-report-by-kind` scoped it out explicitly and the code says so at
+`inMemoryFragmentCosineIndex.ts` — *"the fragment path is tracked separately and gains the same
+treatment when the `IVectorIndex`/`IFragmentVectorIndex` contracts are revisited together"*. No
+consumer has asked; the fragment path is newer and less exercised than the record path.
+
+**Dependencies**: none technical. It is breaking on `IFragmentVectorIndex` and on
+`SqliteVecFragmentIndex`, so it wants the same consumer coordination the record-side change got —
+cheapest bundled with the next breaking change to either fragment contract rather than alone.
+
+**Reference**: `.ai/tasks/completed/2026-08/vector-rebuild-report-by-kind/` — brief's "Explicitly
+NOT in scope", and the `listed.value.excluded` drop site in
+`libraries/ts-agent-memory/src/packlets/vector/inMemoryFragmentCosineIndex.ts`. Filed here on
+2026-08-15 because it survived only in a code comment and a completed stream's README, and stream
+migration is the event that buries that class of item.
+
 ## `ts-prompt-assist` — cache parsed store records in the resolve path
 
 `PromptLibrary.resolve` re-reads and **re-parses YAML from the store on every call**. The resolve path (`resolve/promptLibrary.ts:622`) calls `walkScopeChain(this._store, …)` unconditionally first, and `FileTreePromptStore` has no record cache — `store.get` → `_readPromptFile` → `yamlConverter.convert(text)` (`store/fileTreePromptStore.ts:160/239/254`) parses on every read. Per resolve this is **O(scope-chain depth) for the requested prompt only** — the `<id>.yaml` in each scope of *that resolve's* chain (`chainWalker.ts:44`) + the per-scope `_bindings.yaml` (`:67`) + recursively the inner-prompt files for any `kind: 'resource'` slots. It is NOT a re-parse of the whole library.

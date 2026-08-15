@@ -67,6 +67,38 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] `fileTreeMemoryStore.ts` is 9 lines under the 2000-line `max-lines` cap.**
+  1991 lines as of `vector-rebuild-report-by-kind` (2026-08-15), which spent its own headroom: the
+  `asRecordSource()` filter-and-tally had to be extracted to
+  `libraries/ts-agent-memory/src/packlets/store/vectorRecordSource.ts` purely to get back under the
+  cap. In this repo a `max-lines` warning is a **CI failure** — `rush rebuild` exits non-zero on
+  "SUCCESS WITH WARNINGS" while a per-project `rushx build` exits 0 — so the next feature that adds
+  a dozen lines to this file turns a green local build into a red PR.
+
+  This file has been here before. `CODING_STANDARDS.md` § "A local warning is a CI failure" is
+  written from *this exact file* crossing the cap on the PersonAIlity Stream A stack. There is no
+  standing entry for it because the only max-lines entry the ledger carried was `apiClient.ts`,
+  retired 2026-08-14 when #620 split it.
+
+  **Trigger**: the next stream that adds a public member, a create param, or a write-path branch to
+  `FileTreeMemoryStore` — i.e. almost any `ts-agent-memory` feature. Do the split first, not after
+  the red check.
+
+  **Scope sketch**: the collaborator-extraction pattern already used twice on this file is the
+  answer — `VectorMaintenance` (#…, `agent-memory-store-vector-slice`) and now
+  `vectorRecordSource`. The next candidates are the temporal projection helpers (`_projectAsOf` and
+  friends) and the observation fan-out, both of which are self-contained and take the store
+  structurally rather than importing it. Neither is a public-surface change, so both ship as
+  `"type": "none"`.
+
+  **Not a P3**: P3 is opportunistic, and 9 lines of headroom means the trigger is not "if someone
+  touches this" but "the next time anyone does". The failure mode is also invisible locally, which
+  is what makes it cost a review cycle rather than a minute.
+
+  **Reference**: `vector-rebuild-report-by-kind` (2026-08-15) — its `result.md` records the
+  extraction as a deviation from its brief and states plainly that it bought ~9 lines, not a
+  solution.
+
 - **[P2] `ts-prompt-assist` needs a *member-level* TSDoc pass — 66 undocumented members, plus one thrice-repeated inline union.**
   **Re-scoped 2026-08-14. The top-level half of this entry is DONE and the original framing is now
   misleading.** Measured against `etc/ts-prompt-assist.api.md`: **135 of 135 top-level exported

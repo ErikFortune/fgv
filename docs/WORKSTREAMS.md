@@ -151,7 +151,7 @@ substrate. Don't queue streams against them here.
 
 **Status:** ✅ shipped. **Breaking** on a pre-1.0 surface, by agreement with the consumer. Delivery must be coordinated — see below.
 **Package surface:** `@fgv/ts-agent-memory` (`IVectorRebuildReport`, `IMemoryRecordSource`, `InMemoryCosineIndex`), `@fgv/ts-agent-memory-sqlite-vec` (contract follower), `.ai/instructions/LIBRARY_CAPABILITIES.md`.
-**Brief:** `.ai/tasks/active/vector-rebuild-report-by-kind/brief.md`
+**Artifacts:** `.ai/tasks/completed/2026-08/vector-rebuild-report-by-kind/` (`brief.md`, `result.md`, `README.md`, `meta.yaml`)
 **Origin:** four-round exchange with PersonAIlity, 2026-08-15, out of their ask 1 of 9 — which had already shipped in `5.1.0-48`.
 
 **Mission.** Resolve every count in `IVectorRebuildReport` by kind, add `excluded` (which needs `IMemoryRecordSource.list()` to report what it filtered), and decouple coverage reporting from the error-handling mode.
@@ -169,7 +169,6 @@ substrate. Don't queue streams against them here.
 
 The repo-wide `rush rebuild` earned its place: it caught exactly the casualty the brief predicted — a fake `IVectorIndex` in `samples/testbed` that neither library's own suite can see.
 
-**Artifacts:** `.ai/tasks/active/vector-rebuild-report-by-kind/` (`brief.md`, `result.md`).
 
 ### `sqlite-vec-path-open` 🟢 (queued 2026-08-15 — small, additive)
 

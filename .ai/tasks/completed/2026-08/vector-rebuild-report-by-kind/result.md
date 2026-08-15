@@ -37,9 +37,11 @@ proximate cause is mechanical: the store file was at 1995 lines against a 2000-l
 and a warning there is a CI failure (`CODING_STANDARDS.md` § "A local warning is a CI failure").
 Writing the tally inline crossed it. The extraction is minimal — one exported function taking the
 two store capabilities it needs structurally, so it does not import the store that imports it — and
-it leaves the file at 1991. Flagged because it is a file that has crossed this line before
-(`TECH_DEBT.md`), and the next addition to it will hit the same wall; this bought ~9 lines, not a
-solution.
+it leaves the file at 1991. Flagged because it is a file that has crossed this line before —
+`CODING_STANDARDS.md` § "A local warning is a CI failure" is written from *this exact file* — and
+the next addition to it will hit the same wall; this bought ~9 lines, not a solution. There was no
+standing `TECH_DEBT.md` entry for it (the only max-lines entry the ledger carried was
+`apiClient.ts`, retired 2026-08-14); one is filed now.
 
 **`indexed` is no longer read back off the index.** Both implementations tally per successful `add`
 in the loop instead: the in-memory one used `this._vectors.size` and the SQLite one a `COUNT(*)`.

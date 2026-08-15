@@ -1,0 +1,66 @@
+id: vector-rebuild-report-by-kind
+status: shipped
+packages:
+  - '@fgv/ts-agent-memory'
+  - '@fgv/ts-agent-memory-sqlite-vec'
+prs: []
+opened: 2026-08-15
+closed: 2026-08-15
+summary:
+  intended: >
+    Resolve every count in `IVectorRebuildReport` by `Kind`; add an `excluded` count, which
+    requires `IMemoryRecordSource.list()` to report what it filtered because the rebuild never
+    sees an excluded record; decouple coverage from the `onRecordError` mode so a `'fail'`
+    failure still yields a report; and land a docstring whose closing clause makes kind-resolution
+    the default for any future count. Breaking on a pre-1.0 surface, by agreement with the
+    consumer, with delivery coordination named as non-optional.
+  shipped: >
+    All four, in one change rather than the staged pair the consumer left open. `indexed` and
+    `declined` became `ReadonlyMap<Kind, number>`, `excluded?` joined them, `skipped` stayed
+    per-record with its reason stated on the field. `IMemoryRecordSource.list()` returns a new
+    `IMemoryRecordListing`, with `undefined` (source cannot say) never collapsed into an empty
+    map (source excluded nothing). `IVectorIndex.rebuild` returns
+    `DetailedResult<IVectorRebuildReport, IVectorRebuildReport>`; the `'fail'` contract is
+    otherwise untouched. Both shipped indexes kept observably identical, testbed test double
+    updated, coordination flag written.
+  diverged: >
+    Two things the brief did not anticipate, both structural. (1) `indexed` stopped being read
+    back off the index — `_vectors.size` in-memory, `COUNT(*)` in SQLite — and is now tallied per
+    successful `add`. Forced, since neither a Map nor a vec0 table knows kinds; it makes the
+    sum-of-buckets invariant exact and removed the SQLite path's one fallible step, but it gives
+    up a self-correcting property against a duplicate-target source, which is now documented on
+    the field. (2) `asRecordSource()`'s filter moved into a new package-internal
+    `store/vectorRecordSource.ts` because `fileTreeMemoryStore.ts` was at 1995 lines against a
+    2000-line `max-lines` cap and the inline tally crossed it — a warning that is a CI failure in
+    this repo. That bought ~9 lines, not a solution.
+  sourceLine: '**Shipped:** every count in `IVectorRebuildReport` is now resolved by `Kind`, the exclusion count originates in the layer that decides it, and a failed rebuild carries its partial report — one change rather than the staged pair the consumer left open.'
+keywords:
+  - vector index coverage
+  - semantic recall backfill
+  - reconcile reporting
+  - per-kind breakdown
+  - bare total ambiguity
+  - DetailedResult failure payload
+  - partial report on abort
+  - embedKinds exclusion tally
+  - IMemoryRecordSource seam change
+  - pre-1.0 breaking change
+  - cross-repo consumer negotiation
+  - max-lines cap pressure
+relatedStreams:
+  - id: agent-memory-vector-backfill
+    relationship: >
+      predecessor — promoted `size` and `rebuild` onto the `IVectorIndex` contract, creating the
+      report this stream re-shapes
+  - id: agent-memory-partial-rebuild
+    relationship: >
+      predecessor — introduced `IVectorRebuildReport` with the bare `indexed` / `declined` counts
+      and the `onRecordError` mode
+  - id: agent-memory-embed-kinds
+    relationship: >
+      predecessor — introduced `embedKinds` / `embedsKind`, whose upstream filter is the reason
+      `excluded` had to originate in the record source rather than the rebuild
+notes: >
+  Landed on its own branch stacked on `integration/sweep-followups`; `prs` is filled in when its
+  PR opens. The stream authored no PR before this record was written, and an empty list is the
+  honest state rather than naming the integration branch's own PR, which it does not belong to.
