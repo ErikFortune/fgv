@@ -240,11 +240,19 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
    * @param embed - The fragment embedder applied to each record.
    */
   public async rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder): Promise<Result<number>> {
-    this._reset();
     const listed: Result<IMemoryRecordListing> = await source.list();
     if (listed.isFailure()) {
+      // Deliberately BEFORE the reset, matching the record-granular sibling: a
+      // failed list is no evidence about the fragments already held, and nothing
+      // has been re-embedded yet, so there is no half-rebuilt state to guard
+      // against. Discarding a healthy index over a transient read error is data
+      // loss, not caution. See `InMemoryCosineIndex.rebuild`, where the same
+      // ordering was corrected first.
       return fail(`fragment index rebuild: failed to list records: ${listed.message}`);
     }
+    // From here a rebuild is genuinely starting, so clear. A mid-loop failure
+    // still resets, which is what keeps the all-or-nothing contract honest.
+    this._reset();
     // `listed.value.excluded` is deliberately dropped: this path returns a bare
     // count, so there is nowhere honest to report it. It arrives with the fragment
     // path's own report, if and when that contract gains one.

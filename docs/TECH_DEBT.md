@@ -67,11 +67,46 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] The `samples/testbed` fake `IVectorIndex` has broken on two consecutive `ts-agent-memory`
+  contract changes, with the rule codified in between.**
+  `samples/testbed/src/test/unit/scenarios/sqliteVecMemoryPersistence.test.ts` hand-implements
+  `IVectorIndex` (via `fakeIndex(overrides: Partial<IVectorIndex>)`). It broke on
+  `personaility-asks-2026-08` (#614, which promoted `size` / `rebuild` onto the contract) and again
+  on `vector-rebuild-report-by-kind` (2026-08-15, which reshaped the report and widened `rebuild`'s
+  return type). Both times it was invisible to `rushx build` / `rushx test` in **both** libraries
+  and surfaced only in a repo-wide `rush rebuild`.
+
+  `CODING_STANDARDS.md` § "Widening a shared interface needs a repo-wide build" is written **from
+  this exact file**, and it did not prevent the second break — because it is advice a person has to
+  recall at the moment they are busy with something else, which is the failure mode the 2026-08-14
+  disposition pass named as the reason four tech-debt triggers fired unnoticed. A third restatement
+  is not the answer.
+
+  **Trigger**: the next change to `IVectorIndex`, `IFragmentVectorIndex`, `IMemoryIndex` or
+  `IMemoryRecordSource`. Which, given the queued `agent-memory-index-partial-read`, is imminent.
+
+  **Scope sketch**: two candidates, not exclusive. (a) Replace the hand-rolled fake with a shared
+  test double exported from a single place, so a contract change updates one file rather than
+  N — this is the `succeed()`/`fail()`-over-hand-rolled-Result-shapes lesson applied to interfaces.
+  (b) Put `node common/scripts/install-run-rush.js rebuild` on the acceptance-criteria list for any
+  stream whose brief declares a shared-contract change, so it is a checked box rather than a
+  remembered practice. (b) is cheap and mechanical; (a) removes the class.
+
+  **Not a P3**: P3 is opportunistic, and the trigger has fired twice in two streams on the same
+  contract with a third queued. The cost each time is a red repo-wide build discovered after the
+  per-package gates were green — i.e. after an implementer reasonably believed they were done.
+
+  **Reference**: `docs/WORKSTREAMS.md` § `personaility-asks-2026-08` (the #614 break) and
+  § `vector-rebuild-report-by-kind` (the second). Escalated by that stream's antagonist pass, which
+  observed that its README had closed the same observation with "nothing new to codify" while the
+  *other* recurrence it hit — this file's line cap — was correctly escalated.
+
 - **[P2] `fileTreeMemoryStore.ts` is 9 lines under the 2000-line `max-lines` cap.**
-  1991 lines as of `vector-rebuild-report-by-kind` (2026-08-15), which spent its own headroom: the
+  1991 lines as of `vector-rebuild-report-by-kind` (2026-08-15), which spent most of its own
+  headroom: its inline version measured 2012, and the
   `asRecordSource()` filter-and-tally had to be extracted to
   `libraries/ts-agent-memory/src/packlets/store/vectorRecordSource.ts` purely to get back under the
-  cap. In this repo a `max-lines` warning is a **CI failure** — `rush rebuild` exits non-zero on
+  cap — a saving of 4 lines, leaving 9. In this repo a `max-lines` warning is a **CI failure** — `rush rebuild` exits non-zero on
   "SUCCESS WITH WARNINGS" while a per-project `rushx build` exits 0 — so the next feature that adds
   a dozen lines to this file turns a green local build into a red PR.
 
@@ -96,8 +131,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   is what makes it cost a review cycle rather than a minute.
 
   **Reference**: `vector-rebuild-report-by-kind` (2026-08-15) — its `result.md` records the
-  extraction as a deviation from its brief and states plainly that it bought ~9 lines, not a
-  solution.
+  extraction as a deviation from its brief, with the measured 2012 / 1995 / 1991 numbers.
 
 - **[P2] `ts-prompt-assist` needs a *member-level* TSDoc pass — 66 undocumented members, plus one thrice-repeated inline union.**
   **Re-scoped 2026-08-14. The top-level half of this entry is DONE and the original framing is now

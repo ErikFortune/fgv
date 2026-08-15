@@ -147,9 +147,9 @@ substrate. Don't queue streams against them here.
 
 **Carried forward from the predecessor, do not lose in migration:** #582's `result.md` records that its review was a **self-review, not an independent `code-reviewer` pass** (no agent-spawn tool in that session) and asks the orchestrator to commission one. Whether that happened is not determinable from inside this repo.
 
-### `vector-rebuild-report-by-kind` ✅ (shipped 2026-08-15 — breaking, coordinated)
+### `vector-rebuild-report-by-kind` 🔵 (code complete 2026-08-15 — breaking, coordinated)
 
-**Status:** ✅ shipped. **Breaking** on a pre-1.0 surface, by agreement with the consumer. Delivery must be coordinated — see below.
+**Status:** 🔵 in flight — code complete, all gates green, awaiting merge to `release`. Deliberately **not** ✅: this ledger's own legend defines that as *merged to `release`*, and nothing is merged. **Breaking** on a pre-1.0 surface, by agreement with the consumer. Delivery must be coordinated — see below.
 **Package surface:** `@fgv/ts-agent-memory` (`IVectorRebuildReport`, `IMemoryRecordSource`, `InMemoryCosineIndex`), `@fgv/ts-agent-memory-sqlite-vec` (contract follower), `.ai/instructions/LIBRARY_CAPABILITIES.md`.
 **Artifacts:** `.ai/tasks/completed/2026-08/vector-rebuild-report-by-kind/` (`brief.md`, `result.md`, `README.md`, `meta.yaml`)
 **Origin:** four-round exchange with PersonAIlity, 2026-08-15, out of their ask 1 of 9 — which had already shipped in `5.1.0-48`.
@@ -162,12 +162,17 @@ substrate. Don't queue streams against them here.
 
 **Coordination is not optional.** Their bump tooling takes the whole `@fgv` set at once, so a breaking seam change would otherwise arrive with everything else and be discovered by a red build rather than by reading. Flag the alpha that carries it. The flag is written: `.ai/notes/cross-repo-handoffs/personaility-reply-2026-08-15-rebuild-report-shipped.md`, naming both breaks, the migration, and the rollback-report trap.
 
-**What shipped, and where it differs from the brief.** All four deliverables landed in one change rather than the staged pair the consumer left open — staging meant two breaking releases against the same three fields, the second breaking every reader the first had just made them fix. Two things the brief did not anticipate:
+**What shipped, and where it differs from the brief.** All four deliverables landed in one change rather than the staged pair the consumer left open — staging meant two breaking releases against the same three fields, the second breaking every reader the first had just made them fix. Three things the brief did not anticipate:
 
 - **`indexed` stopped being read back off the index.** Both implementations tally per successful `add` instead — the in-memory one used `_vectors.size`, the SQLite one a `COUNT(*)`. Forced (neither knows kinds) and better twice over: `indexed` becomes a per-record tally consistent with its siblings so the sum-of-buckets invariant holds exactly, and the SQLite side lost the one fallible step in assembling a report.
-- **`asRecordSource()`'s filter moved to a new package-internal `store/vectorRecordSource.ts`.** `fileTreeMemoryStore.ts` was at 1995 lines against a 2000-line `max-lines` cap and the inline tally crossed it. The extraction leaves it at 1991 — **that bought ~9 lines, not a solution**, and this file has crossed the line before (`TECH_DEBT.md`). The next addition hits the same wall.
+- **`asRecordSource()`'s filter moved to a new package-internal `store/vectorRecordSource.ts`.** `fileTreeMemoryStore.ts` was at 1995 lines against a 2000-line `max-lines` cap and the inline tally took it to 2012. The extraction leaves it at 1991 — **4 lines bought, 9 of headroom left**, neither of which is a solution. This file has crossed the line before: `CODING_STANDARDS.md` § "A local warning is a CI failure" is written from it. Filed as a P2 in `TECH_DEBT.md` by this stream, since the ledger carried no standing entry — the only max-lines entry was `apiClient.ts`, retired 2026-08-14.
+- **The fragment index was modified despite being explicitly out of scope**, forced by the seam change — and editing it surfaced that `InMemoryFragmentCosineIndex.rebuild` reset **before** listing, so a transient list failure emptied a healthy index. That is the exact data-loss ordering the record-granular sibling documents as already corrected, and on the durable sibling it had been real loss. Fixed here along with the test that was pinning it.
 
-The repo-wide `rush rebuild` earned its place: it caught exactly the casualty the brief predicted — a fake `IVectorIndex` in `samples/testbed` that neither library's own suite can see.
+The repo-wide `rush rebuild` earned its place: it caught exactly the casualty the brief predicted — a fake `IVectorIndex` in `samples/testbed` that neither library's own suite can see. **That is the second consecutive stream against this contract to break that same file** (the first broke #614), with the rule codified in `CODING_STANDARDS.md` in between and written from that very fake. The recurrence is filed as tech debt proposing a mechanical gate; a third restatement of the rule would not have helped.
+
+**Open, and not discharged by the close:** the coordination flag is **written but not acknowledged**. The brief called coordination "required and not optional" because a silent arrival is the failure mode, and writing the note is only half of it. Confirm PersonAIlity has read it before the alpha carrying this publishes.
+
+An independent antagonist pass over the closure record produced eleven findings, all actioned — including this entry's own stale `TECH_DEBT.md` citation and a premature ✅. Dispositions in the stream's `result.md`; the substantive ones in its README's Appendix A.
 
 
 ### `sqlite-vec-path-open` 🟢 (queued 2026-08-15 — small, additive)

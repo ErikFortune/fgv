@@ -35,11 +35,12 @@ carries no detail, because nothing was attempted and the existing index is untou
 out of `fileTreeMemoryStore.ts` into a new package-internal `store/vectorRecordSource.ts`. The
 proximate cause is mechanical: the store file was at 1995 lines against a 2000-line `max-lines` cap,
 and a warning there is a CI failure (`CODING_STANDARDS.md` § "A local warning is a CI failure").
-Writing the tally inline crossed it. The extraction is minimal — one exported function taking the
-two store capabilities it needs structurally, so it does not import the store that imports it — and
-it leaves the file at 1991. Flagged because it is a file that has crossed this line before —
+Writing the tally inline took it to 2012 (measured — `heft lint` named the number). The extraction
+is minimal — one exported function taking the two store capabilities it needs structurally, so it
+does not import the store that imports it — and it leaves the file at 1991: **4 lines bought, 9 of
+headroom left.** Flagged because it is a file that has crossed this line before —
 `CODING_STANDARDS.md` § "A local warning is a CI failure" is written from *this exact file* — and
-the next addition to it will hit the same wall; this bought ~9 lines, not a solution. There was no
+the next addition to it will hit the same wall; neither number is a solution. There was no
 standing `TECH_DEBT.md` entry for it (the only max-lines entry the ledger carried was
 `apiClient.ts`, retired 2026-08-14); one is filed now.
 
@@ -49,9 +50,24 @@ Necessary (neither the map nor the table knows kinds) and better on both counts 
 a per-record tally consistent with its siblings, so the sum-of-buckets invariant holds exactly, and
 on the SQLite side it removed the one fallible step in assembling the report.
 
-Nothing else diverged. Everything the brief listed as out of scope stayed out: the `'fail'`
-semantics, `IVectorIndex.query`, the fragment index's own report, and a records-seen count
-(superseded — summing the maps gives it).
+**The fragment index was modified, and the brief put it out of scope.** *(Added after the
+antagonist pass, which caught that this section originally restated the out-of-scope item more
+narrowly than the brief had — "the fragment index's own report" — and then concluded nothing else
+diverged.)* The brief's line is unqualified: *"The fragment index. `IFragmentVectorIndex` has no
+rebuild report; out of scope here."* The seam change to `IMemoryRecordSource.list()` forced
+`InMemoryFragmentCosineIndex.rebuild` to follow mechanically, and a forced follow is still a
+crossing of a declared boundary.
+
+It earned its keep. Editing that function surfaced that it ran `this._reset()` **before**
+`await source.list()` — so a transient list failure silently emptied a healthy fragment index. That
+is the exact data-loss ordering the record-granular sibling documents as a correction it already
+made, and on the durable sibling had already caused real loss. Fixed here, along with the test that
+was pinning the wrong behavior (it asserted `recordCount === 0` after a list failure). The scope
+widening is small and deliberate; it can be split out if preferred.
+
+Everything else the brief listed as out of scope stayed out: the `'fail'` semantics,
+`IVectorIndex.query`, the fragment index's own **report shape** (recorded in `docs/FUTURE.md`), and
+a records-seen count (superseded — summing the maps gives it).
 
 ## The reply owed, answered
 
@@ -77,6 +93,7 @@ the two breaks, the rollback-report trap, and the migration.
   total that the per-kind breakdown tells apart
 - `LIBRARY_CAPABILITIES.md` updated in the same PR
 - `code-reviewer` run on the final diff before first push — findings below
+- Independent antagonist pass over the closure record — findings below
 
 ## `code-reviewer` findings and dispositions
 
@@ -102,6 +119,41 @@ type does not promise — and it was duplicated across two packages. Every call 
 of the helper are gone. Verified the assertions still fail on a wrong value rather than passing
 vacuously.
 
-**P3 — the interface doc overclaimed that a `list` failure is the *only* no-detail failure. Fixed.**
-`SqliteVecVectorIndex` has a second: a failure to clear its table. The doc now covers the general
-case — nothing was attempted, whatever the implementation's pre-loop step is.
+**P3 — the interface doc overclaimed that a `list` failure is the *only* no-detail failure. Fixed
+in TSDoc, and initially MISSED in `LIBRARY_CAPABILITIES.md`.** `SqliteVecVectorIndex` has a second:
+a failure to clear its table. The TSDoc now covers the general case — nothing was attempted,
+whatever the implementation's pre-loop step is — but the same sentence had been written into the
+capabilities doc and was left standing, so "all resolved" was false for about an hour. The
+antagonist pass caught it; both now say the same thing. Worth recording because the capabilities
+doc was an explicit brief gate, i.e. the one doc this stream had committed to getting right.
+
+
+## Antagonist-pass findings (independent agent, post-closure)
+
+Run per the `/finalize-task` step-6 brief: refute, do not approve. Eleven findings, all actioned.
+
+**Fixed in code:** the `InMemoryFragmentCosineIndex.rebuild` reset-before-list data-loss ordering
+described above, plus the test that pinned it.
+
+**Corrected in the record:** `relatedStreams` named three ids that resolve to nothing — they are
+change-file basenames, not streams; the real predecessor is `personaility-asks-2026-08` (Stream A).
+The `docs/WORKSTREAMS.md` entry still carried the wrong `TECH_DEBT.md` citation that this stream's
+own commit message says it had corrected — corrected in two artifacts, missed in the third. The
+"bought ~9 lines" figure was the *remaining headroom*; the extraction bought 4 (1995 → 1991). The
+inline-version claim was asserted rather than cited; it is 2012, measured. `packages` omitted
+`@fgv/testbed`, which `result.md` lists — the publishable-only convention is now stated in
+`meta.yaml` rather than left implicit.
+
+**Marker honesty:** the ledger's own legend defines ✅ as "merged to `release`". Nothing is merged,
+so the entry is 🔵 and `meta.yaml` is `in-flight` until the PR lands.
+
+**Escalated:** the `samples/testbed` fake index has now broken on two consecutive streams against
+the same contract, with the rule codified in between. The README originally closed "nothing new to
+codify"; the recurrence is itself the new datum, and it is filed as tech debt proposing a mechanical
+gate. The asymmetry was the tell — the *other* recurrence this stream hit, `fileTreeMemoryStore.ts`
+crossing the cap twice, was correctly escalated to a durable entry, and the same reasoning had not
+been applied here.
+
+**Still open:** the coordination flag has been written but not acknowledged. Writing it is half of
+what the brief required; `meta.yaml`'s notes and the ledger entry now carry the confirm-before-alpha
+obligation forward.

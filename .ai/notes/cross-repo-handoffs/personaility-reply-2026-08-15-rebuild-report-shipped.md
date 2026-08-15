@@ -91,6 +91,15 @@ all-zero report would describe an index the call never disturbed. `.detail` is `
   the new listing shape and drops `excluded` on the floor, because a bare count has nowhere honest
   to put it. When that contract gains a report it gains the rule with it.
 
+  **One thing there did change, and it is a fix you want.** Editing that function surfaced that
+  `InMemoryFragmentCosineIndex.rebuild` called `reset()` **before** `list()`, so a transient
+  source-read failure silently emptied a healthy fragment index. That is the same data-loss
+  ordering the record-granular index had already corrected — and on the durable sibling it was real
+  loss, not a hypothetical. A failed list now leaves your fragments intact, matching
+  `InMemoryCosineIndex`. No signature change; strictly safer behavior. If you have any retry or
+  reconcile path that tolerated an emptied fragment index after a failed rebuild, it will now find
+  the index still populated.
+
 ## Migration, concretely
 
 Every existing reader breaks, including yours — accepted knowingly by both sides, and cheaper now

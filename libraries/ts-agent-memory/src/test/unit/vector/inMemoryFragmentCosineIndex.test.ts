@@ -357,12 +357,25 @@ describe('InMemoryFragmentCosineIndex', () => {
       expect(await index.query(Float32Array.from([97, 1]), 1)).toSucceed();
     });
 
-    test('fails loudly when the source list fails and rolls back to empty', async () => {
+    test('fails loudly when the source list fails, WITHOUT discarding what it holds', async () => {
+      // This test previously asserted `recordCount === 0` here — it was PINNING
+      // the reset-before-list behavior as intended. That behavior was wrong for
+      // the same reason it was wrong on the record-granular sibling: a failed
+      // list is no evidence about the fragments already held, and nothing has
+      // been re-embedded, so a transient read error was quietly emptying a
+      // healthy index. The seeded entry now proves the opposite property, which
+      // is the one worth having.
       const index = InMemoryFragmentCosineIndex.create().orThrow();
       (await index.addFragments(target('knowledge', 'seed'), [frag(0, 5, [1, 1])])).orThrow();
       const source = new FakeSource(fail('disk gone'));
       expect(await index.rebuild(source, embed)).toFailWith(/failed to list records: disk gone/i);
-      expect(index.recordCount).toBe(0);
+      expect(index.recordCount).toBe(1);
+      // And it is still queryable, not merely counted.
+      expect(await index.query(Float32Array.from([1, 1]), 5)).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          expect(hits.map((h) => h.target.id)).toEqual(['seed']);
+        }
+      );
     });
 
     test('fails loudly and rolls back to empty when an embedding fails mid-rebuild', async () => {
