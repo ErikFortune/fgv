@@ -5,6 +5,38 @@ opportunistically when the right surface area is touched.
 
 ---
 
+## Disposition pass — 2026-08-14
+
+Every entry was verified against current source. **Four retired, ten kept, four of those
+rewritten.** The ledger went from 14 entries to 10.
+
+**Retired** (evidence in git history; nothing carried forward):
+`IProvenance.derivedFrom` bare-id ambiguity (all three sub-resolutions shipped — the entry was
+pure history and longer than any live item) · `ts-web-extras` lint cleanup (`eslint src` now
+exits **0**, not the recorded 126 violations) · `"sideEffects": false` convention (already stated
+in `MONOREPO_GUIDE.md`; audit of all 25 libraries found one real miss, filed as a chore rather
+than standing debt) · `apiClient.ts` at the `max-lines` cap (#620 split it; the only durable
+lesson was already codified verbatim in `CODING_STANDARDS.md`).
+
+### Four triggers have already fired without anyone acting
+
+This is the finding worth acting on, and it is the same failure the recent artifact sweep found
+everywhere else: **a trigger phrased as "next time someone touches X" depends on a person
+recalling a ledger entry at the moment they are busy with something else.** These four fired and
+nobody noticed:
+
+| entry | trigger | what actually happened |
+|---|---|---|
+| `ts-prompt-assist` TSDoc | "once the v0.1 surface is stable" | v0.1 shipped; two features were built on top of it |
+| cross-runtime export parity | "anytime an `index.browser.ts` is touched" | `ts-web-extras` took three export-adding features; **9 of 10 packages still untested** |
+| `createMemoryTools` codec duplication | "when the temporal write path lands" | it landed, with tests |
+| `AsyncDeferredResult` invoker | "the third consumer" | there are now **four** |
+
+The cross-runtime one is the instructive case: its trigger has fired at least three times, so the
+fix is not to restate it but to **replace recall with a mechanical gate** — see that entry.
+
+---
+
 ## Priority key
 
 - **P1** — blocking / structural; address before resuming major feature work.
@@ -35,23 +67,34 @@ opportunistically when the right surface area is touched.
 
 ## P2 — Fix before next major feature in affected area
 
-- **[RESOLVED] `@fgv/ts-agent-memory` `IProvenance.derivedFrom` carries the same latent bare-id ambiguity that scope-qualified edges just fixed.** *(fully resolved by the `agent-memory-scoped-finish` follow-on — see the two RESOLVED markers below; the historical context is retained.)*
-  The scoped-edge-targets change (`IEdge.target: MemoryId → IEdgeTarget`) made every attributed edge unambiguous across scopes, and threaded the same `(scope, id)` fix through backlinks, link traversal, the ingest cycle guard, and the ingest edge-validation path. `IProvenance.derivedFrom` (`libraries/ts-agent-memory/src/packlets/types/envelope.ts`) remains a bare `MemoryId` and shares the identical root cause: per-scope codecs (e.g. the MTM codec's `turn-<n>` stems) legally reuse a stem across scopes, so a bare `derivedFrom` id is ambiguous. It is **not dereferenced anywhere today** — the ingest pipeline only stamps it from `IIngestItem.sourceId` and never resolves it back to a record — so there is no live correctness bug, only a latent one that would surface the moment a consumer tries to walk the provenance spine by id.
+- **[P2] `ts-prompt-assist` needs a *member-level* TSDoc pass — 66 undocumented members, plus one thrice-repeated inline union.**
+  **Re-scoped 2026-08-14. The top-level half of this entry is DONE and the original framing is now
+  misleading.** Measured against `etc/ts-prompt-assist.api.md`: **135 of 135 top-level exported
+  symbols carry TSDoc; zero undocumented.** What remains is **66 `(undocumented)` markers on
+  interface and class *members*** — concentrated in `IPromptSlot` (5), `IChainWalkResult` (4),
+  `IPromptStoreFixtureSeedRecord` (4), `IResourceSlotBinding` (4), `ISafeguardFinding` (4),
+  `IStoredPromptRecord` (4), then a tail of threes.
 
-  **RESOLVED (vector/similarity + entity-resolution half):** the vector/similarity path is now scope-qualified — `IVectorIndex.add`/`remove` take an `IEdgeTarget`, `IVectorQueryHit` carries a `target: IEdgeTarget`, `InMemoryCosineIndex._vectors` keys by `edgeTargetKey(target)` (storing the target as the value), `IEntityResolutionCandidate.id → target: IEdgeTarget`, and `ResolutionVerdict`'s three target-bearing arms are `target: IEdgeTarget`. The orchestrator's bare `_indexById`/`byId` snapshot index was removed entirely; the verdict/similarity lookups now route through the same scope-qualified `byKey` view (keyed by `edgeTargetKey`) that the edge path already used, and the store threads the write/delete/cap-cull-evict scope through `_embedOnWrite` / `_removeVectorBestEffort`. `IMemoryRecordSource.list()` now yields `IScopedMemoryRecord` so a whole-vault `rebuild` re-indexes on the scoped key too. Landed as the `agent-memory-scoped-vectors` follow-on (breaking on the pre-1.0 `IEntityResolver` host contract, consistent with the no-shim posture).
+  The named anti-pattern also still stands: `Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<string | Qualifiers.IQualifierDecl>`
+  is spelled inline **three times** in `resolve/promptLibrary.ts` (`:90`, `:1342`, `:1362`) with no
+  named type to attach docs to.
 
-  **~~New follow-up (store scoped-`list()` gap)~~ — RESOLVED (`agent-memory-scoped-finish`):** the gap was: `IMemoryRecordSource.list()` returns `IScopedMemoryRecord[]`, but `IMemoryStore.list()` returned bare `IMemoryRecord[]`, so the store did not *structurally* satisfy `IMemoryRecordSource` and `InMemoryCosineIndex.rebuild` (zero non-test callers) could not be wired to a real store. Closed via **option (b) — additive, no disturbance to `list()`:** `IMemoryStore` gained `listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>` (whole-vault, no filter — a direct projection over the derived index's already-carried `IIndexedMemoryRecord.scope`) plus `asRecordSource(): IMemoryRecordSource` (a thin adapter whose `list()` delegates to `listScoped()`). `list(filter?)` keeps returning bare records (the ergonomic query surface, 1 production + ~20 test consumers) — retyping it (option a) would have churned every consumer and muddied the filtered-query return with rebuild-oriented scope addresses. A real `FileTreeMemoryStore` now drives `InMemoryCosineIndex.rebuild(store.asRecordSource(), embed)`, re-indexing on the scoped `(scope, id)` key (two same-stem records in different scopes index as distinct vector entries).
+  That makes this a bounded, gradeable task rather than the open-ended audit it was written as —
+  which is the main reason it has sat: "audit TSDoc presence and quality" has no finish line, and
+  "close 66 markers and extract one union" does.
 
-  **~~Still deferred (`derivedFrom` half)~~ — RESOLVED (`agent-memory-scoped-finish`):** `IProvenance.derivedFrom` promoted from bare `MemoryId` to `IEdgeTarget`; `IIngestItem.sourceId` promoted likewise (a breaking change on the pre-1.0 host ingest contract — the host now supplies a scope-qualified `sourceId`, no shim); the ingest stamping site (`orchestrator._buildRecord`) threads the scoped target through unchanged; and the envelope frontmatter converter serializes `derivedFrom` as the nested `{ scope, id }` object (mirroring `edgeConverter.target`), round-tripped by `edgeTargetConverter`. A same-stem-different-scope `derivedFrom` round-trips to its own scoped ref; a bare-scalar or missing-`scope`/`id` `derivedFrom` is rejected.
+  *Original framing, superseded: it described the surface as carrying "minimal TSDoc" on methods,
+  parameters and return shapes. True in 2026-06; not true now.*
 
-  **Reference**: the `agent-memory-scoped-edges` stream (scope-qualified `IEdge.target`) deferred both halves; the `agent-memory-scoped-vectors` stream resolved the vector/verdict half; the **`agent-memory-scoped-finish`** stream resolved the remaining `derivedFrom` half and the store scoped-`list()` gap, completing the scope-qualified-addressing migration.
-
-- **[P2] `ts-prompt-assist` (and adjacent `ts-res` qualifier surface) needs an API documentation pass once the v0.1 surface settles.**
   PR #380 review surfaced that the recently-extended `ts-prompt-assist` surface — `PromptLibrary` + `IPromptLibraryCreateParams` + `IPromptResolveRequest` + the related fixture / resource-binding / resolve-output types — carries minimal TSDoc on individual methods, parameters, and return shapes. The v0.1 surface has been moving fast (Phase B sub-phases + post-merge cleanups + surface-tidy + round-1 ergonomics absorption), so documenting heavily during churn was the right call; with v0.1 effectively settled now, the next concern is consumer-facing TSDoc quality on the public surface.
 
   A related pattern Erik flagged in the same PR #380 review: **inline anonymous types + union types should be extracted to named `type` / `interface` declarations** so they have a single place to attach TSDoc. The library currently has a few patterns like `qualifiers: IReadOnlyQualifierCollector | ReadonlyArray<TAxes | (IQualifierDecl & { readonly name: TAxes })>` that would benefit from a named extracted type.
 
-  **Trigger**: post-round-2 pressure-test, once the consumer port (agent chat application) confirms the surface is stable. Don't run this during cluster-close — let the round-2 absorption settle first so the docs don't have to be rewritten after.
+  **Trigger — FIRED.** The stated trigger was "post-round-2 pressure-test, once the surface is
+  stable". v0.1 shipped, `LIBRARY_CAPABILITIES.md` documents it as settled, and both
+  `HorizontalComposer` and the observation store have since been built *on top of* it. The
+  surface is stable; the wait is over. Re-triggered on: just do it, or the next substantive
+  change to the packlet.
 
   **Scope sketch**: commission a documentation-pass agent against `@fgv/ts-prompt-assist`'s public surface (and any new `@fgv/ts-res` qualifier surface from PR B). For each exported type / class / method:
   - Audit TSDoc presence + quality (does it answer "why" not just "what"; do `@public` symbols have useful `@remarks`).
@@ -67,38 +110,6 @@ opportunistically when the right surface area is touched.
 
   **Reference**: PR #380 (round-1 ergonomics PR C) — Erik's review surfaced both the doc gap and the inline-types pattern. Cluster spans `libraries/ts-prompt-assist` + the `ts-res` qualifier collector surface PR B extended.
 
-- **[P2] `@fgv/ts-web-extras` lint content cleanup (config landed; 126 source violations remain).**
-  Local sweep (chore/comprehensive-lint-fix) added the missing `eslint.config.js` to three sibling packages (`ts-http-storage`, `ts-random`, `tools/repo-template`) which all pass clean. Adding the same config to `ts-web-extras` surfaces **126 problems (6 errors + 120 warnings)** that were hidden while the config was missing. The config addition for `ts-web-extras` is therefore being held back until the source violations are resolved; the package continues to bypass the lint gate in the meantime.
-
-  Rule-violation breakdown:
-  | Rule | Count | Character |
-  |---|---|---|
-  | `@typescript-eslint/naming-convention` | 52 | DOM-mirror interfaces in `file-api-types/` (`FileSystemHandle`, `FileSystemFileHandle`, `FileSystemDirectoryHandle`, etc.) + test `Mock*` types missing `I` prefix |
-  | `@typescript-eslint/no-explicit-any` | 24 | Real `any` types in fileApiTreeAccessors / fileSystemAccessTreeAccessors / mocks — repo-banned |
-  | `@typescript-eslint/explicit-member-accessibility` | 17 | Missing `public` / `private` modifiers |
-  | `@rushstack/typedef-var` | 8 | Missing type annotations |
-  | `@typescript-eslint/no-unused-vars` | 7 | Mechanical cleanup |
-  | `@rushstack/no-new-null` | 6 | File API mirrors that use `null` (browser convention) |
-  | `no-void` | 4 errors | `return void x` pattern; mechanical fix |
-  | `require-yield` | 2 | Likely async-generator issues |
-  | `@rushstack/packlets/mechanics` | 2 | Packlet boundary |
-  | `import/no-internal-modules` | 1 error | Plugin rule definition missing — config-side fix |
-  | `require-atomic-updates` | 1 error | `globalThis.fetch = ...` race condition flag in tests; needs human review |
-  | Other | 2 | `prefer-const`, `typedef` |
-
-  **Trigger**: next time `ts-web-extras` is open for substantive changes, or before the next `release → main` promotion (so we don't keep shipping un-linted browser-side code).
-
-  **Scope sketch**: three policy questions to adjudicate before mechanical work:
-  1. **DOM-mirror naming.** The 3 DOM-mirror interfaces in `file-api-types/` intentionally match browser API names. Recommend: scoped rule override for that file rather than rename. Per CODING_STANDARDS, surface to orchestrator before disabling.
-  2. **`no-explicit-any` (24 violations).** These violate the repo's "absolute and non-negotiable" Priority-1 rule. Genuine fixes required (likely `unknown` + cast in test mocks; real types in production adapters).
-  3. **Test-file `Mock*` interface names.** Either rename (mechanical) or apply a test-file-scoped override.
-
-  After adjudication, mechanical fixes for the rest are straightforward (4× `no-void`, 17× missing accessibility, 8× missing typedefs, 7× unused vars, 1× `prefer-const`, etc.). The `require-atomic-updates` and `import/no-internal-modules` errors need individual investigation.
-
-  **Not a P1**: shipped code; no production breakage; downstream consumers integrate it. P2 because the gate is actively bypassed for browser-side changes.
-
-  **Reference**: PR #353 (this stream) added the three sibling configs and confirmed scope; original P2 entry from PR #350 (cluster close) reframed.
-
 - **[P2] Cross-runtime entry-point export parity is not systematically tested.**
   Libraries with both Node (`src/index.ts`) and browser (`src/index.browser.ts`) entry points can drift in export names without CI catching it. api-extractor runs only on the Node entry point, so a typo or rename in the browser entry slips through. Pattern has bitten the team three times: `@fgv/ts-extras` exported `Crypto` instead of `CryptoUtils` (personaility web app); `@fgv/ts-extras` missed `Yaml` entirely (ts-prompt-assist sample app, fixed in #377); plus the earlier `repo-template` issue. **`@fgv/ts-extras` now has the recommended micro-test** (`src/test/unit/index.browser.test.ts` asserts every top-level name in `index.ts` is also in `index.browser.ts`); other libraries with browser entries still need it.
 
@@ -106,7 +117,20 @@ opportunistically when the right surface area is touched.
 
   **Libraries with `*.browser.ts` entries that still need the micro-test:** `ts-bcp47`, `ts-res`, `ts-web-extras`, `ts-app-shell`, `ts-res-ui-components`, `ts-json`, `ts-json-base`, `ts-sudoku-lib`, `ts-sudoku-ui`.
 
-  **Trigger**: anytime one of those libraries' `index.browser.ts` is touched substantively (new exports added, namespace renames, refactors). Also: anytime a cross-runtime export bug is reported, expand the affected library's micro-test rather than just patching the single export.
+  **Trigger — FIRED repeatedly without effect; needs replacing, not restating (2026-08-14).**
+  The stated trigger is "anytime one of those libraries' `index.browser.ts` is touched
+  substantively". Verified today: **nine of the ten packages shipping an `index.browser.ts` still
+  have no parity test** — `grep -rl "index.browser" --include=*.test.ts` returns three files, all
+  in `ts-extras`. Meanwhile `ts-web-extras` alone has taken safer-fetch, `IdbPrivateKeyStorage`
+  and the base64 `contentEncoding` work since this was written, every one of them export-adding,
+  and still has none.
+
+  A trigger that has fired three times unnoticed is not a trigger — it relies on an author
+  remembering a ledger entry at the moment they are busy with something else. **Replace it with a
+  mechanical gate**: fold the parity check into something CI already runs (the change-file gate is
+  the natural host, since it already keys off "which packages did this branch touch"), so the
+  question is asked by the machine rather than recalled by a person. That reframing is the actual
+  work item now; the per-package micro-tests are the easy part.
 
   **Scope sketch**: copy the pattern from `@fgv/ts-extras/src/test/unit/index.browser.test.ts` — imports both `index.ts` and `index.browser.ts` directly via relative paths, asserts every top-level name exported from Node is also exported from browser. Browser may have additional names (e.g. back-compat aliases) but nothing Node ships may go missing on browser. Per-library cost: ~15 lines.
 
@@ -116,7 +140,78 @@ opportunistically when the right surface area is touched.
 
 ## P3 — Opportunistic cleanup
 
-- **[P3] `@fgv/ts-utils` should export a single-`AsyncDeferredResult` invoker; two packages now carry a private copy.**
+- **[P3] `@fgv/ts-web-extras`'s safer-fetch suite cannot exercise a successful response — jsdom ships no Fetch globals.**
+  `libraries/ts-web-extras/src/test/unit/browserSaferFetch.test.ts` drives only a *failing*
+  scripted transport, because the jsdom test environment provides no `Response` constructor, so
+  the suite cannot build one to return. Every success-path semantic on the browser entry points —
+  the content-type gate firing on a real header set, the streaming size cap counting decoded
+  bytes, body-guard dispatch, the shape of a returned `ISaferFetchResponse<T>` — is covered
+  **solely** by the `@fgv/ts-extras` suite, on the shared runtime-agnostic core.
+
+  That is *mostly* fine by construction: the core genuinely is shared verbatim, which is the
+  design's whole premise. The gap is that the premise is untested on the browser side, so a
+  browser-specific regression in the thin wrapper — an option not threaded, a guard not passed
+  through — would not be caught by either suite.
+
+  **Trigger**: next substantive change to the browser safer-fetch packlet, or whenever the test
+  environment gains Fetch globals.
+
+  **Scope sketch**: either point the browser package's jest environment at one that supplies
+  `Response` (Node 20+ has it natively — `testEnvironment: 'node'` for this file alone, since it
+  tests no DOM), or inject a minimal `Response` polyfill into the suite's setup. Then port the
+  success-path cases from the `ts-extras` suite so the wrapper is exercised end to end.
+
+  **Not a P2**: the shared core is well covered and the wrapper is thin; this is a coverage-shape
+  gap rather than a known defect. It earns an entry because it is a **security** primitive whose
+  browser posture is already the weaker of the two — three guarantees are structurally absent
+  there and stated rather than degraded — so the wrapper is exactly where a silent regression
+  would be least visible and most costly.
+
+  **Reference**: `safer-fetch-s3` (#601) `result.md` / `README.md`, which record the constraint;
+  surfaced 2026-08-14 by the retroactive `finalize-task` sweep, which found it recorded in no
+  durable ledger. Note `docs/TECH_DEBT.md` and `docs/FUTURE.md` contain no other safer-fetch
+  entry at all.
+
+- **[P3] `importPublicKeyFromMultibaseSpki` still early-returns instead of chaining; the bridge pattern it was waiting for has shipped.**
+  `libraries/ts-extras/src/packlets/crypto-utils/spkiHelpers.ts` breaks its `Result` chain at the
+  sync→async transition — `const decodeResult = multibaseBase64UrlDecode(encoded); if
+  (decodeResult.isFailure()) { return fail(...); }` — rather than chaining into the awaited
+  `provider.importPublicKeySpki(...)`. Its sibling `exportPublicKeyAsMultibaseSpki` chains cleanly, so
+  the two read differently for no reason a caller can see.
+
+  **Trigger**: fired already, and that is the point of this entry. The
+  `auth-primitives-batch1` README deferred it explicitly — "a candidate to revisit if a clean
+  `Result`-to-`AsyncResult` bridge pattern emerges" — and `AsyncResult` with `thenOnSuccess` /
+  `thenOnFailure` has since shipped in `@fgv/ts-utils` and is documented in `CODING_STANDARDS.md`
+  § "Async Result Chaining". Address on the next substantive change to `crypto-utils`.
+
+  **Scope sketch**: `return multibaseBase64UrlDecode(encoded).thenOnSuccess(async (bytes) =>
+  provider.importPublicKeySpki(bytes, algorithm)).withErrorFormat((e) =>
+  `importPublicKeyFromMultibaseSpki: ${e}`)`. Behaviour-preserving; the existing tests should pass
+  unchanged, which is the check that it was purely stylistic.
+
+  **Not a P2**: it is a readability defect in a correct function, not a correctness or type-safety
+  one. It earns an entry only because it was a *recorded deferral whose stated precondition is now
+  met* — the class of debt that otherwise disappears, since a deferral living solely in a completed
+  stream's README has no reader at the moment its trigger fires.
+
+  **Reference**: `auth-primitives-batch1` (#322) "Notes for sibling-sweep / future cleanup"; surfaced
+  2026-08-14 by the retroactive `finalize-task` antagonist pass over that stream.
+
+- **[P3] `@fgv/ts-utils` should export a single-`AsyncDeferredResult` invoker; FOUR packages now carry a private copy.**
+  **Recount 2026-08-14 — the entry said two; there are four, so its own trigger fired twice over.**
+  Beyond the two named below, `@fgv/ts-extras` has `_capture<T>` in
+  `safer-fetch/saferFetch.ts:223-224` (same body, different name) and `@fgv/ts-prompt-assist`
+  inlines the flatten at `safeguards/safeguardEngine.ts:128` with a comment explaining it.
+  `_invokeDeferred` is still unexported (`mapResultsAsync.ts:235`) and absent from
+  `etc/ts-utils.api.md`.
+
+  **This also retires the entry's own "why not done inline" reasoning**, which argued the carry
+  was cheaper than widening one consumer's PR stack. That held for two copies inside one stack.
+  It does not hold for four independent packages, two of which have nothing to do with agent
+  memory — at that point the duplication is a repo-wide pattern and the export is the cheaper
+  end state.
+
   Invoking one consumer-supplied `() => Promise<Result<T>>` and turning a synchronous throw or a rejection
   into a `Failure` requires `captureAsyncResult` plus a flatten (`.onSuccess((inner) => inner)`), because
   `captureAsyncResult` wraps the hook's own `Result` and yields `Result<Result<T>>`. `ts-utils` already has
@@ -124,7 +219,8 @@ opportunistically when the right surface area is touched.
   `@fgv/ts-agent-memory` (`inMemoryCosineIndex.ts`) and `@fgv/ts-agent-memory-sqlite-vec`
   (`sqliteVecVectorIndex.ts`) each define an identical private `invokeHook`.
 
-  **Trigger**: the third consumer that needs it, or the next time the async `Result` family is touched.
+  **Trigger — FIRED (twice). Re-triggered on:** the next time the async `Result` family is
+  touched, or simply do it — this is a ~20-line additive export on `ts-utils` plus four deletions.
 
   **Scope sketch**: export the existing `_invokeDeferred` under a public name (`captureDeferredResult` reads
   naturally alongside `captureResult` / `captureAsyncResult`, and `AsyncDeferredResult<T>` is already
@@ -140,7 +236,23 @@ opportunistically when the right surface area is touched.
 - **[P3] `ai-assist` fence extraction mis-slices a fenced body that itself contains a triple backtick.**
   `FENCED_BLOCK` in `libraries/ts-extras/src/packlets/ai-assist/jsonResponse.ts` is a single lazy-body regex (`([\s\S]*?)` between an opening fence and the first following ` ``` `). When a model emits a fenced JSON block whose *body* contains a literal triple backtick — most plausibly inside a string value, e.g. ` ```json\n{"snippet": "``` foo ```"}\n``` ` — the lazy body stops at the inner backticks and `extractJsonText` hands `JSON.parse` a truncated candidate. Long-standing and **not introduced by the `ai-assist-fenced-json-diagnostics` stream**: that stream only renumbered the regex's capture groups (opening fence became group 1, body group 2, so a body offset can be mapped back to the original text), verified behaviour-preserving over a 6804-input fuzz. The new `classifyJsonParseFailure` degrades safely here — it reports `'unknown'` rather than compounding the mis-slice with a confident wrong verdict.
 
-  **Trigger**: the next time fence extraction is touched, or the first time a consumer reports a fenced response with embedded backticks failing to parse. Not urgent — the failure is loud (a parse failure), not silent.
+  **Reproduced 2026-08-14.** Input ` ```json\n{"snippet": "``` foo ```"}\n``` ` yields capture
+  group 2 = `{"snippet": "`, which reaches `findBalancedJsonSubstring`, classifies as
+  `'unclosed'`, and fails with: *"JSON structure opened but never closed (depth 1 at end of
+  input) — response may have been truncated (check IAiCompletionResponse.truncated / raise
+  maxTokens)"*.
+
+  **That message is a confidently wrong verdict**, which sharpens this entry considerably. The
+  original text claimed the failure is merely "loud (a parse failure), not silent" and credited
+  `classifyJsonParseFailure` with degrading safely to `'unknown'`. Both are too generous: the
+  consumer is told the response was truncated and to raise `maxTokens`, on a response the model
+  formed correctly and that was never truncated. Acting on that advice cannot fix it. Being
+  loudly wrong about the cause is worse than failing opaquely, and it is exactly the class of
+  misdiagnosis `classifyJsonParseFailure` exists to prevent.
+
+  **Trigger**: the next time fence extraction is touched, or the first consumer report of a
+  fenced response with embedded backticks failing to parse — which will most likely arrive
+  *described as a truncation problem*, because that is what the library told them.
 
   **Scope sketch**: harden the fence scan — prefer counting the opening run's backtick length and matching a closing run of at least that length at a line start (the CommonMark rule), instead of the current first-` ``` `-wins lazy match. Keep `extractJsonText`'s messages unchanged; `locateJsonCandidate` is already the single source of truth for the strip-wrappers step, so the change lands in one place and both the extractor and the classifier follow.
 
@@ -151,9 +263,22 @@ opportunistically when the right surface area is touched.
 - **[P3] `ts-agent-memory` L2 `createMemoryTools` duplicates the store's codec wiring instead of delegating.**
   `createMemoryTools({ codecs?, defaultCodec? })` (`libraries/ts-agent-memory/src/packlets/tools/memoryTools.ts`) accepts the per-kind identity codecs a second time, in addition to `FileTreeMemoryStore.create({ codecs })`. `memory_write` needs them because `IMemoryStore.put` (`fileTreeMemoryStore.ts:496-502`) validates `envelope.id === codec-derived idStem` and does not derive/stamp the id itself — so a caller building a new `IMemoryRecord` must compute the same `idStem` up front, which requires the same codec the store was constructed with. The testbed scenario passes the same `codecs` map to both constructors, illustrating the drift risk: a host that re-wires the store's codecs but forgets the mirrored `createMemoryTools` config gets a confusing "envelope id does not match codec-derived stem" failure at `put()` time. Scope isolation is NOT compromised (codec `scope` is derived deterministically from `kind`, not from agent input; a mismatch loudly rejects the write rather than writing cross-scope), so this is a DX/robustness smell, not a security gap.
 
-  **Trigger**: when the temporal write path lands (it touches the same `IMemoryStore` write surface) or the next time `createMemoryTools` is extended.
+  **Trigger — ALREADY FIRED, unnoticed (2026-08-14).** The stated trigger was "when the temporal
+  write path lands". It landed: `TemporalVersionedPolicy` is in `packlets/types/writePolicy.ts`
+  and wired in `fileTreeMemoryStore.ts`, with `test/unit/store/temporalStore.test.ts` alongside.
+  Nobody acted. Re-triggered on: the next time `createMemoryTools` is extended, or the next
+  substantive change to the store's write path.
 
-  **Scope sketch**: add an additive method to `IMemoryStore` — e.g. `resolveWriteAddress(kind, entityId): Result<IIdentityCodecResult>` delegating to the store's already-configured `codecs`/`defaultCodec` — and have `memory_write` call it, dropping the `codecs?`/`defaultCodec?` params from `ICreateMemoryToolsParams`. Purely additive on the active `ts-agent-memory` surface; removes the duplicate config and the drift failure mode.
+  **Scope sketch — now cheaper than when written.** Add an additive method to `IMemoryStore` —
+  `resolveWriteAddress(kind, entityId): Result<IIdentityCodecResult>` delegating to the store's
+  already-configured `codecs`/`defaultCodec` — and have `memory_write` call it, dropping the
+  `codecs?`/`defaultCodec?` params from `ICreateMemoryToolsParams`.
+
+  When this was written that was a novel shape. It is not any more: `IMemoryStore.dedupScopeFor(kind)`
+  and `embedsKind(kind)` both shipped since, and both are exactly this pattern — a total,
+  synchronous, store-owned accessor existing so that two code paths cannot disagree about a
+  store-owned fact. `dedupScopeFor`'s own docstring makes the argument. So the proposal is now a
+  third sibling of two shipped accessors rather than a new idea, and it should be scoped as such.
 
   **Reference**: `agent-memory-l2-tools` stream; code-reviewer pass on the L2 diff (2026-07-07).
 
@@ -169,47 +294,53 @@ opportunistically when the right surface area is touched.
 
   **Not a P2**: no shipped-behavior regression; the alias layer's value is precisely bounded and the doc (`LIBRARY_CAPABILITIES.md`, packlet README) states the boundary explicitly. This entry exists so the two manual axes are not forgotten on the next rotation.
 
-  **Reference**: `ai-assist-model-aliases` design §3 + Tier 2 manual-axis bumps (`.ai/tasks/active/ai-assist-model-aliases/state.md`).
+  **Reference**: `ai-assist-model-aliases` design §3 + Tier 2 manual-axis bumps (`.ai/tasks/completed/2026-06/ai-assist-model-aliases/state.md`).
 
-- **[P3] New pure-library packages must declare `"sideEffects": false` in `package.json`.**
-  Every `libraries/` package whose `src/index.ts` exports only functions and types (no module-level side effects) carries `"sideEffects": false` so bundlers can tree-shake it. This was caught in PR review on `crypto-batch-2-webauthn`: `@fgv/ts-extras-webauthn` was missing the field; `@fgv/ts-web-extras-webauthn` had it. Fixed in-stream, but the gap reveals a scaffolding-checklist hole — the standard "new package" template doesn't enforce it.
+- **[P3] The capability resolvers in `ai-assist/registry.ts` return `| undefined` instead of `Result<T>`, and `undefined` is now three-ways ambiguous.**
+  **Two functions, not one** (the original entry named only the first, and its line reference was
+  stale): `resolveImageCapability` at `registry.ts:428-433` → `IAiImageModelCapability | undefined`,
+  and `resolveEmbeddingCapability` at `registry.ts:469-474` → `IAiEmbeddingModelCapability | undefined`.
+  Both delegate to the same private `resolveCapabilityForModel`, so the fix is one shared helper
+  plus two public wrappers.
 
-  **Trigger**: next stream that creates a new pure-library package, or next time someone refactors the scaffolding template / `rush.json` registration guide.
-
-  **Scope sketch**: (a) audit existing `libraries/*/package.json` to confirm everyone has the field correctly set (one quick grep), and (b) add a line to the per-package scaffolding doc / convention note that flags `"sideEffects": false` as required alongside `"main"` and `"types"`. Optionally add a tiny test or pre-PR check that fails when a `libraries/` package is missing the field and has no module-level side effects.
-
-  **Not a P2**: failure mode is "consumer bundle size slightly larger than necessary," not a functional regression.
-
-  **Reference**: PR #347 review (crypto-batch-2-webauthn); lesson captured in `.ai/tasks/completed/2026-05/crypto-batch-2-webauthn/README.md` § L1.
-
-- **[P3] `resolveImageCapability` in `ai-assist/registry.ts` returns `| undefined` instead of `Result<IAiImageModelCapability>`.**
-  `registry.ts:328–339`. The function returns `undefined` when no capability matches `modelId`, silently swallowing the "unknown model" case. Callers must null-check rather than chain. Returning `Result<IAiImageModelCapability>` with a contextual error message would let callers propagate the failure cleanly.
+  **The case is stronger than "non-idiomatic" now.** When the alias layer landed, these gained a
+  third failure mode, so `undefined` collapses three distinct outcomes: no capability rule matched
+  the model; the provider declares no capabilities of that modality at all; or **`modelId` was an
+  unresolvable or cyclic `@alias`** — a real error, flattened into "not found". The docstrings at
+  `:418-419` and `:465-466` acknowledge the alias case explicitly, which means the code already
+  knows a distinction it has no way to return.
 
   **Trigger**: next substantive change to the provider registry or capability resolution path.
 
-  **Scope sketch**: change return type to `Result<IAiImageModelCapability>`; return `fail(\`model '${modelId}' not found in provider '${descriptor.name}' image capabilities\`)` when the reduce produces `undefined`; update call sites (primarily in `apiClient.ts`) to chain off the result.
+  **Scope sketch**: change both return types to `Result<T>`; fail with a message that
+  distinguishes the three cases (an unresolvable alias should not read as "model not found");
+  update call sites to chain. Note the original sketch pointed at call sites "primarily in
+  `apiClient.ts`" — **that file no longer exists**; the callers now live in
+  `imageGenerationClient.ts` and `embeddingClient.ts`.
 
-  **Not a P2**: the function is currently only called in contexts that already handle `undefined` defensively; behaviour is correct, just non-idiomatic.
+  **Not a P2**: callers currently handle `undefined` defensively, so behaviour is correct today.
+  The ambiguity is a latent diagnostic failure, not a live bug.
 
   **Reference**: PR #329 review — pattern pre-existed the PR, absolved from that review.
-
-- **[P3] `ai-assist/apiClient.ts` is at the 2000-line `max-lines` cap; decompose it.**
-  `libraries/ts-extras/src/packlets/ai-assist/apiClient.ts` sits right at the ESLint `max-lines` ceiling (2000). It is a monolith spanning four largely-independent concerns: chat completion (OpenAI/Anthropic/Gemini adapters + dispatcher), image generation (adapters + dispatcher + response validators), list-models (adapters + capability resolution), and the proxied variants of all three. Every additive change to any one concern now requires trimming JSDoc elsewhere in the file purely to stay under the cap — this happened repeatedly on `ai-assist-message-ordering` (PR #478), where each Copilot round that added a proxy-path guard forced compensating comment cuts. This is unsustainable: doc quality is being traded for line budget, and the next feature touching this file will hit the wall immediately.
-
-  **Trigger**: next substantive change to `apiClient.ts` (any new provider adapter, image format, list-models source, or proxy field), or proactively before the next ai-assist feature stream.
-
-  **Scope sketch**: split by concern into sibling modules under `ai-assist/` (e.g. `completionClient.ts`, `imageGenerationClient.ts`, `listModelsClient.ts`, and a `proxiedClient.ts` — or co-locate each proxied variant with its direct sibling), keeping the shared HTTP helpers (`fetchJson`/`fetchMultipart`/`fetchGetJson`) and response validators in a small internal module. Re-export the public surface unchanged from `index.ts` so `etc/ts-extras.api.md` is unaffected (pure file-organization move, no API change → Rush change `none`). Verify per-file `max-lines` compliance without JSDoc trimming.
-
-  **Upgraded from "soft blocker" to hard blocker**: no functional or API impact; the file works correctly. This is a maintainability/headroom issue — but it becomes a soft blocker on the *next* edit, so it should be done before, not during, the next feature.
-
-  **Correction (2026-08, PersonAIlity Stream A):** "soft blocker" understated it. CI runs `rush rebuild`, which exits **non-zero on "SUCCESS WITH WARNINGS"** — so the first line that pushes this file past 2000 turns the PR's check red, not yellow. A local `rushx build` exits 0 on that same warning, which is how the identical situation in `ts-agent-memory` reached CI before anyone noticed (fixed in #616 by extracting a collaborator). Whoever next edits `apiClient.ts` should assume they have **zero** headroom.
-
-  **Reference**: PR #478 (`ai-assist-message-ordering`) — repeated JSDoc trims to keep the file ≤2000 lines while adding proxy-path validation guards; Erik 2026-06-07 ("we won't be able to cut lines every time").
 
 ## P4 — Doc / minor consistency
 
 - **[P4] `mutableFsTree` `permission-denied for read-only file` test fails when the test container runs as root.**
   `@fgv/ts-json-base` `mutableFsTree` suite — one test expects `chmod`-based read-only enforcement to block a write. When the test container runs as root (the default in the cloud-agent harness), `chmod` is advisory; the kernel lets root write read-only files regardless. Reproduces on the `release` baseline; **not a regression** from any recent stream. Surfaced (and explicitly dispositioned as unrelated) during the `capture-async-result-upgrade` full-repo `rush test` sweep (PR #433).
+
+  **Confirmed still failing, live, 2026-08-14.** Reproduced in this container (`id -u` → 0):
+  `npx heft test --test-path-pattern mutableFsTree` fails on
+  *`FsFileTreeAccessors › fileIsMutable › returns permission-denied for read-only file`*. Root
+  cause verified directly — `fs.accessSync(<0o444 file>, W_OK)` **succeeds** as root, so
+  `fsTree.ts:237` never throws and `:245` returns `succeedWithDetail(true, 'persistent')`. The
+  test at `mutableFsTree.test.ts:83-94` is unguarded: no `process.getuid` check, no `.skip`.
+
+  **Second symptom the entry missed, and the reason to raise this above pure cosmetics:**
+  `fsTree.ts:246` carries `/* c8 ignore next 3 - unreachable when running as root (CI), tested in
+  mutableFsTree.test.ts */`. That justification is **self-contradictory** — it excuses itself by
+  pointing at the very test that cannot pass under the condition it names. So the debt has
+  already leaked out of the test and into a coverage directive with a false rationale, which is
+  the kind of thing a later reader will trust. Fix both in the same change.
 
   **Trigger**: opportunistic — next time the `mutableFsTree` test surface is open, or when CI logs become a meaningful nuisance.
 

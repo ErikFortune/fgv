@@ -1,0 +1,91 @@
+id: prompt-assist-horizontal-composition
+status: shipped
+packages: ['@fgv/ts-prompt-assist']
+prs: [490, 491, 492]
+opened: 2026-06-07
+closed: 2026-06
+summary:
+  intended: >
+    Design-only pass (per brief.md) answering a downstream PersonAIlity request for
+    *horizontal* multi-contributor prompt composition — N independently-authored peer
+    contributors merged into one prompt over a shared logical-slot space, ordered by a
+    per-contributor provenance priority, with directive-aware merge in which a
+    `constraint` is never adjudicated away. The brief asked for an A-vs-B recommendation
+    (expose primitives so the consumer builds the composer, vs a first-class composer in
+    fgv), the exact primitive surface, the safety/lift boundary, provenance modelling,
+    roadmap placement of the dependency-ordered topo-sort extension, and a phased plan.
+    Explicitly no implementation.
+  shipped: >
+    Design (A-now / B-committed, safety-gated) plus BOTH implementation phases, all
+    promoted to `release` in one squash. Phase A (#491) added `IResolvedPromptSlot` and
+    `IResolvedPrompt.slots` — the supported per-slot projection of `trace.mergedBindings`
+    (`name`/`value`/`directive`/`source`/`wasEnforced`/`winningScope?`), with the interim
+    "an external composer bypasses `applySafeguards` — self-screen" callout in TSDoc.
+    Phase B (#492) added the `composition` packlet: `HorizontalComposer.create` (synchronous
+    build-time validation of the explicit logical-slot map) + `async compose()`
+    (directive-aware merge → safeguard boundary over the merged slot map with the composed
+    descriptor → Mustache render with `escape: 'none'` → `IComposedPrompt`), closing the
+    safety gap phase A left open. Constraints concatenate provenance-ascending first and
+    are never dropped under any strategy; declared `logicalSlots` order is documented as a
+    tiebreaker only, keeping the B+1 topo-sort non-breaking.
+  diverged: >
+    Substantial, in four directions. (1) SCOPE — the brief was design-only ("No
+    implementation"), and the stream shipped design + phase A + phase B within the same
+    day; both implementation phases were commissioned mid-stream via `phase-a-brief.md` /
+    `phase-b-brief.md`. (2) A SIGNED-OFF DESIGN RULE DID NOT SHIP — design §3c's stated
+    v0.1 merge rule was "if both constraint and non-constraint contributions exist,
+    concatenate all (safe conservative)", i.e. `overwrite` collapses to concatenate
+    whenever a constraint is present. What shipped is the phase-B brief's sharper rule:
+    the constraint block concatenates first and the non-constraints then apply the
+    *declared* strategy on top, so `overwrite` still discards lower-provenance
+    non-constraints alongside constraints. The shipped rule is the one now documented
+    everywhere; design §3c was left uncorrected as the record of what was signed off.
+    (3) DESIGN SEQUENCING REVERSED — design §6 made phase B conditional on the consumer
+    first proving an external composer shape on the phase-A primitive ("the lift brief
+    should be commissioned after the consumer has iterated"); the phase-B brief overrode
+    this deliberately ("we're building now on the strength of the consumer-accepted
+    design — the consumer's first adoption is the battle-test") and flagged it as
+    residual risk. (4) SHIPPED-BUT-UNSCOPED — `composedBody: string` was added to
+    `IHorizontalComposeParams` at implementation time because `IPromptDescriptor` carries
+    no body (bodies live on candidate records), so §3d's "render the composed descriptor's
+    body template" was unimplementable as written; ratified after the fact, and it leaves
+    an open consumer-adoption question (should the composed body be *resolved* from the
+    composed descriptor's candidates instead?) that lives only in `result.md`.
+    `create()` also validates three things neither the design nor the brief scoped —
+    duplicate contributor provenance, duplicate logical-slot names, and any logical slot
+    absent from `composedDescriptor.slots` (the last is a genuine safety-closure argument:
+    an undeclared logical slot would render but be skipped by `applySafeguards`).
+    Smaller forks: `allowedDirectives` conformance moved from `create()` (design §3b step 3)
+    to `compose()`; `ILogicalSlotStrategy` shipped unprefixed as `LogicalSlotStrategy`
+    (repo convention); OQ-2 resolved to YAML-authored composed descriptors (design option
+    (a)) rather than the design's recommended option (c) "consumer-supplied or
+    composer-synthesized"; `IHorizontalComposeParams` landed in `composition/types.ts`
+    rather than the scoped `types/composition.ts`.
+  sourceLine: 'Horizontal (multi-contributor) prompt-slot composition for `@fgv/ts-prompt-assist` — provenance-ordered, directive-aware merge of N peer contributors into one prompt (the message-role generalization). PersonAIlity consumer request; design accepted **A-Now / B-Committed**.'
+keywords:
+  - multi-contributor prompt merge
+  - logical slot map
+  - explicit contributor-slot references
+  - provenance ordering
+  - directive-aware merge
+  - constraint never dropped
+  - message-role generalization
+  - render-then-merge
+  - safeguard closure
+  - external-composer safety gap
+  - trailblaze-then-lift
+  - design-then-implement
+  - topo-sort deferral
+  - cross-slot placeholders
+  - PersonAIlity consumer request
+relatedStreams:
+  - id: ts-prompt-assist-observability
+    relationship: >
+      supplies the `_observe` fan-out + per-instance seq counter that a later stream
+      (#538) extended to a composer-emitted `'compose'` observation record nesting each
+      contributor's resolve trace.
+  - id: prompt-assist-screeners
+    relationship: >
+      owns the `IScreener` / `applySafeguards` pipeline that `HorizontalComposer.compose`
+      re-runs over the merged slot map — the mechanism of this stream's safety closure.
+sourceHash: 1eae36a8a4120f0b

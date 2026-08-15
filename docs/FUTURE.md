@@ -88,13 +88,13 @@ Arguments against: every consumer's scope hierarchy is bespoke; editor screens t
 
 **Dependencies**: `ts-prompt-assist` v0.1 ships and stabilizes; consumer's in-app editor lands; second consumer surfaces (or doesn't). If a second consumer wants the same editor shape, that's strong evidence for genericizing.
 
-**Reference**: `.ai/tasks/active/ts-prompt-assist/brief.md` (stream commission discussion).
+**Reference**: `.ai/tasks/completed/2026-05/ts-prompt-assist/brief.md` (stream commission discussion).
 
 ---
 
 ## Samples app for `@fgv/ts-prompt-assist`
 
-**Status: superseded by `samples/testbed` (2026-05-22).** Absorbed into the general-purpose `samples/testbed` sample-browser being built under the `local-ai-exploration` cluster. The testbed will demonstrate `@fgv/ts-prompt-assist` scenarios alongside scenarios for other fgv capabilities (ai-assist, ts-res, bcp-47, crypto, etc.) — one general showcase that grows scenarios over time beats two parallel demo apps. See `.ai/tasks/active/local-ai-exploration/brief.md`.
+**Status: superseded by `samples/testbed` (2026-05-22).** Absorbed into the general-purpose `samples/testbed` sample-browser being built under the `local-ai-exploration` cluster. The testbed will demonstrate `@fgv/ts-prompt-assist` scenarios alongside scenarios for other fgv capabilities (ai-assist, ts-res, bcp-47, crypto, etc.) — one general showcase that grows scenarios over time beats two parallel demo apps. See `.ai/tasks/completed/2026-05/local-ai-exploration/brief.md`.
 
 ---
 
@@ -120,11 +120,53 @@ Layer 1 (harness-supplied tools) shipped: `IAiClientTool`, `executeClientToolTur
 
 **Remaining future work:**
 
-**MCP tools (layer 2).** **Slice 1 shipped 2026-06-06 via the `ts-extras-mcp` stream** — the new `@fgv/ts-extras-mcp` (Node) package wraps `@modelcontextprotocol/sdk`, discovers a server's tools, and adapts each into an `AiAssist.IAiClientTool` (`adaptMcpTools`) that drops directly into `executeClientToolTurn`. Graceful degradation: tools whose `inputSchema` is outside the `JsonSchema.fromJson` subset are excluded, surfaced on `skipped`, and NOISY-warned with the raw schema. Compatibility probe: the `samples/testbed` `mcp-probe` scenario. See `.ai/tasks/active/ts-extras-mcp/`.
+**MCP tools (layer 2).** **Slice 1 shipped 2026-06-06 via the `ts-extras-mcp` stream** — the new `@fgv/ts-extras-mcp` (Node) package wraps `@modelcontextprotocol/sdk`, discovers a server's tools, and adapts each into an `AiAssist.IAiClientTool` (`adaptMcpTools`) that drops directly into `executeClientToolTurn`. Graceful degradation: tools whose `inputSchema` is outside the `JsonSchema.fromJson` subset are excluded, surfaced on `skipped`, and NOISY-warned with the raw schema. Compatibility probe: the `samples/testbed` `mcp-probe` scenario. See `.ai/tasks/completed/2026-06/ts-extras-mcp/`.
+
+**`runToolUseConversation` — the multi-turn orchestration helper (re-queued 2026-08-14).**
+`executeClientToolTurn` is deliberately a **per-turn** primitive: the consumer drives the outer
+loop. The higher-level helper that owns the loop — round cap, termination on a no-tool round,
+cumulative continuation threading — was scoped out of `ai-assist-client-tools` at v0.1 and has
+never been built.
+
+*Why this paragraph exists.* It was deferred by **two** streams (`ai-assist-client-tools` and
+`ai-assist-cross-provider-continuation`), each recording it as out-of-scope and each believing it
+was captured here. It was not — a grep across `docs/` and `.ai/instructions/` on 2026-08-14
+returned nothing outside completed-stream artifacts. Re-queued by the retroactive `finalize-task`
+sweep. Two independent deferrals landing in the same hole is the argument for the deferral itself
+being the thing that needs a durable home, not the item.
+
+*Preconditions now met that were not at v0.1:* continuation forwarding reaches all four providers
+(`ai-assist-cross-provider-continuation`, #454) and `continuation.messages` is cumulative across
+rounds (`ai-assist-tool-continuation`, #488), so a loop helper can now be written provider-agnostically
+against a replace-not-concat contract. **Note the one gap it would inherit:** every `*ClientTools`
+testbed scenario is still two-turn, the degenerate case where replace and accumulate coincide — the
+exact blind spot that hid the original per-round bug. A multi-round live scenario should land with
+or before the helper.
+
+**`runToolUseConversation` — the multi-turn orchestration helper (re-queued 2026-08-14).**
+`executeClientToolTurn` is deliberately a **per-turn** primitive: the consumer drives the outer
+loop. The higher-level helper that owns the loop — round cap, termination on a no-tool round,
+cumulative continuation threading — was scoped out of `ai-assist-client-tools` at v0.1 and has
+never been built.
+
+*Why this paragraph exists.* It was deferred by **two** streams (`ai-assist-client-tools` and
+`ai-assist-cross-provider-continuation`), each recording it as out-of-scope and each believing it
+was captured here. It was not — a grep across `docs/` and `.ai/instructions/` on 2026-08-14
+returned nothing outside completed-stream artifacts. Re-queued by the retroactive `finalize-task`
+sweep. Two independent deferrals landing in the same hole is the argument for the deferral itself
+being the thing that needs a durable home, not the item.
+
+*Preconditions now met that were not at v0.1:* continuation forwarding reaches all four providers
+(`ai-assist-cross-provider-continuation`, #454) and `continuation.messages` is cumulative across
+rounds (`ai-assist-tool-continuation`, #488), so a loop helper can now be written provider-agnostically
+against a replace-not-concat contract. **Note the one gap it would inherit:** every `*ClientTools`
+testbed scenario is still two-turn, the degenerate case where replace and accumulate coincide — the
+exact blind spot that hid the original per-round bug. A multi-round live scenario should land with
+or before the helper.
 
 **Dependencies**: ai-assist-client-tools cluster closed to release (done 2026-06-04).
 
-**Reference**: 2026-05-30 conversation (Erik watching personaility's roadmap); `.ai/tasks/active/ai-assist-client-tools/`; PR #447; `.ai/tasks/active/ts-extras-mcp/`.
+**Reference**: 2026-05-30 conversation (Erik watching personaility's roadmap); `.ai/tasks/completed/2026-06/ai-assist-client-tools/`; PR #447; `.ai/tasks/completed/2026-06/ts-extras-mcp/`.
 
 ---
 
@@ -141,7 +183,7 @@ Deferred from the `ts-extras-mcp` slice-1 stream (2026-06-06). Each is additive 
 
 **Headline follow-on lever — additively widen `JsonSchema.fromJson`'s supported subset** (in `@fgv/ts-json-base`). The single biggest real-world risk is schema-subset mismatch: real MCP servers advertise `$ref`/`$defs`, `oneOf`, `pattern`, union `type` arrays, etc. that `fromJson` rejects, so those tools land in `adaptMcpTools`' `skipped` set. `$ref`/`$defs` resolution and `pattern` passthrough are the highest-value additions. This is a separate small `ts-json-base` stream, commissioned based on what the `mcp-probe` scenario surfaces against real servers — NOT done in the `ts-extras-mcp` stream.
 
-**Reference**: `.ai/tasks/active/ts-extras-mcp/brief.md` + `design.md`.
+**Reference**: `.ai/tasks/completed/2026-06/ts-extras-mcp/brief.md` + `design.md`.
 
 
 ---
@@ -244,7 +286,20 @@ Erik's framing (2026-06-05): "consider using ts-res instead of hardcoding custom
 
 **Reference:** PR #460 review thread on `promptObservationStore.ts:195`; the `_resolveCandidates` path in `promptLibrary.ts` is the reference for what a ts-res-equivalent resolver needs to do.
 
-### Composer-emitted composed-observation record (nesting contributor records)
+### ~~Composer-emitted composed-observation record (nesting contributor records)~~ ✅ SHIPPED via #538
+
+**Verified 2026-08-14:** `PromptObservationPhase` in `libraries/ts-prompt-assist/src/packlets/observe/types.ts:35` is
+`'resolve' | 'json-output' | 'free-text-output' | 'compose'` — four members — and
+`horizontalComposer.ts` carries the observation seam. The text below described the
+pre-#538 state and read as unbuilt for roughly two months after it shipped.
+
+**Knock-on, not yet fixed:** `.ai/instructions/LIBRARY_CAPABILITIES.md`'s ts-prompt-assist
+observability paragraph still enumerates **three** phases and omits `'compose'`. That one is a
+public-surface documentation gap, not just a stale plan — a consumer writing an
+`IPromptObserver` from the guide would not know a fourth phase can arrive. Raised in
+`docs/FINALIZE-SWEEP-FINDINGS.md`.
+
+*Original entry, retained for the design reasoning:*
 
 Observation fan-out today fires only at `PromptLibrary`'s three public boundaries (`resolve` / `resolveJsonOutput` / `resolveFreeTextOutput`). `HorizontalComposer.compose()` — which takes several already-resolved contributor prompts and merges them into one `IComposedPrompt` — emits **no** observation. So an audit trail sees the N individual contributor `resolve` records but nothing tying them to the composed output, and no record of the merge itself (per-logical-slot strategy, provenance ordering, safeguard findings from `applySafeguards` over the merged slot map).
 

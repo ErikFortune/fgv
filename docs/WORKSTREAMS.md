@@ -198,6 +198,147 @@ Three items from their post-`-48` sweep, **tracked here with verdicts so "deferr
 ---
 
 
+### `task-corpus-index` 🔵 → `agent-memory-mcp-server` 🔵 (a conditional pair)
+
+**Status:** 🔵 both **proposed, neither started**. Briefs at
+`.ai/tasks/active/task-corpus-index/brief.md` and
+`.ai/tasks/active/agent-memory-mcp-server/brief.md`.
+**Ordering is a hard dependency and the second is conditional on the first's outcome.**
+
+**Scope moved during drafting.** It began as an index; it is now **two skills and the metadata
+contract between them** — `/finalize-task` (write side) and `/task-corpus` (read side).
+**If only one half ships, ship the write side**, because the index is only as good as the metadata
+under it.
+
+**Why `/finalize-task`, and why the evidence is unusually strong.** Closing a stream is a
+multi-part ritual — generate metadata, migrate `active/` → `completed/`, write the polished
+README, update this ledger, update `LIBRARY_CAPABILITIES.md`, verify change files. The rule is
+already written down and unambiguous (`artifact-protocol.md`: *"the migration ships in the same PR
+as the work"*), and it **already failed twice**: the protocol names its own recurrence on the
+`ai-assist-client-tools` cluster close (#451 → #452), where *"the codified rule existed; the
+failure was the orchestrator's pre-promotion checklist not gating on it"* — and the fix applied
+then was *another checklist gate*. The result today is **68 stream directories against 43 ledger
+entries**. Writing it down did not work; adding a gate did not work. The remaining move is to make
+it **one invocation** rather than a list a tired agent is asked to remember at the end of a long
+stream.
+
+**And an antagonist pass before anything is handed over.** Every artifact the ritual produces is a
+claim about what happened, written by whoever just spent a long stream forming a view of what
+happened — the exact condition under which a confidently wrong claim goes unnoticed. `STATUS.md`
+already measured this: *"Independent layer-1 passes earn their cost … commissioning independent
+`code-reviewer` passes retroactively found: a real P2 on #582."* So the pass is independent where a
+reviewer can be spawned, refute-first by framing, and required to state what it checked — *"looks
+right"* is not an output. It targets **inaccuracies** (every claim traces to a quotable line;
+`sourceLine` appears verbatim; PR numbers belong to this stream) and, harder and more valuable,
+**omissions** — the highest-yield being *"`diverged` is empty: true, or unexamined?"*, since an
+empty `diverged` on a stream that visibly changed shape is the characteristic failure of the whole
+ritual. It is **not optional in retroactive mode** — more important there, not less, since you are
+reconstructing a stream you did not run.
+
+**The design line: script what cannot be wrong, prompt what needs judgment.** Directory moves,
+bucket derivation, index regeneration and `rush change --verify` get automated. The
+`WORKSTREAMS.md` entry is **drafted for review**, and `LIBRARY_CAPABILITIES.md` is **prompted, not
+written** — auto-generated prose would degrade two artifacts whose whole value is that they are
+curated. Must run **retroactively** — and in that mode it **moves nothing**, since those streams already
+sit in `completed/`; it backfills metadata and ledger entries in place, skipping the migration and
+the change-file gate. And it should close *itself*: if `/finalize-task` cannot finalize its own
+stream, it is not finished.
+
+**The skill is written and usable now** — `.claude/skills/finalize-task/SKILL.md`, authored ahead
+of the tooling because every step is doable by hand. The generator would make some steps cheaper;
+it was never a prerequisite. So the retroactive backfill can start immediately, and what remains
+in this stream is tooling that accelerates a ritual already running.
+
+**Origin.** Erik, 2026-08-14: *"Can you suggest a memory tool to index our task files so you can
+read them? Prefer to just adopt if there's something that meets our needs but we can build if
+needed."*
+
+**The problem, stated precisely.** `.ai/tasks/` is **269 markdown files / 3.1 MB** across 14
+active and 52 completed streams, and it is the repo's institutional memory. An agent picking up
+cold cannot use most of it — but **not because retrieval is hard**. 3 MB is instantly greppable
+and every agent already has `Grep`/`Glob`/`Read`. The failure is **discovery**: you cannot grep
+for a stream whose existence you do not suspect. Demonstrated in the same session — the
+branch-migration plan existed, complete and current, and took four searches across three wrong
+guesses to find. One search less and it would have been re-derived.
+
+**Why two streams and not one.** The corpus already has strong file conventions (`brief.md` 59,
+`state.md` 47, `result.md` 32, `README.md` 28, `design.md` 16) and a documented two-tree layout —
+but **no frontmatter and no index**. So the cheap hypothesis is that discovery is a *metadata*
+problem, not a *search* problem, and `task-corpus-index` tests it: frontmatter plus a generated
+`INDEX.md` plus a generator that fails loudly rather than emitting a partial index.
+
+`agent-memory-mcp-server` is the expensive half, and it is **deliberately gated on evidence**.
+It builds `@fgv/ts-agent-memory-mcp` — a Result-integration boundary over the MCP SDK's *server*
+side — and ingests the corpus into a vault. Worth doing if the index falls short; a large build
+in search of a justification if it doesn't. **Start it only on a recorded instance of a real
+question the index failed to surface.**
+
+**The adopt-vs-build finding.** Surveyed before proposing a build, per the ask:
+- **Off-the-shelf MCP memory servers** are knowledge-graph shaped (entities/relations for
+  conversational recall), not corpus indexers for an existing markdown tree. Adopting one still
+  leaves the ingest pass — which is the actual work. Poor fit. *(Not exhaustively surveyed;
+  worth a second look before committing to the build.)*
+- **Our own `@fgv/ts-agent-memory` is the right substrate** and is unreachable for one specific,
+  verified reason: `createMemoryTools` returns `AiAssist.IAiClientTool[]` for ai-assist loops
+  (`memoryTools.ts:693`), and `@fgv/ts-extras-mcp` is an MCP **client** that adapts the other
+  direction and puts a server explicitly out of scope. **The missing piece is a server, not a
+  capability.**
+
+**Invocation decided (2026-08-14): on demand, not pre-commit.** A `rush index-tasks` custom
+command, and a `/task-corpus` skill that **regenerates before reading**. The hook was declined on
+evidence: `common/git-hooks/pre-commit` already exists, and it was bypassed repeatedly in the very
+session that motivated this — agents committing from bare worktrees where the rush autoinstaller
+was never installed, so the hook would have failed the commit. It does not run in exactly the
+bulk-work sessions where freshness matters, and it would conflict across parallel worktrees on one
+shared generated file. Because the skill regenerates first, no agent depends on the committed copy
+being fresh, which removes the need for a CI verify gate too — consistent with the change-file
+lesson about gates invisible to the local suite.
+
+**Metadata is a per-stream `meta.yaml`, built once at stream completion (decided 2026-08-14).**
+Not hand-authored frontmatter across 269 files. It hooks the completion transition that already
+exists, lands in the stream-closing PR where a human still has context to review it, and — because
+each stream writes only its own directory — **removes the shared-file conflict class entirely**.
+**`summary` is a generated synthesis** across `brief.md` and `result.md` — because the most useful
+fact about a closed stream is the delta between what it was asked to do and what it actually did,
+including what got cut, and no authored line contains that (it spans two files). An extraction-only
+draft was considered and **rejected as over-cautious**: it yields the outcome while silently
+dropping that the outcome changed shape, which is exactly where `orchestrator.md` says drift
+lives. The risk was never generation but *unreviewed* generation, and building at completion
+already puts it in the closing PR in front of someone with full context. Made auditable by
+structuring it (`intended` / `shipped` / `diverged` as named fields, so a wrong claim is visible
+rather than buried) and by carrying the extracted authored line verbatim as `sourceLine`, a
+free check a reader can compare against without opening the stream. **`keywords` are generated**
+too — that is where a model adds recall, and a bad keyword costs one wasted grep rather than a
+false belief. Blank beats fabricated wherever `result.md` is thin. A `sourceHash` makes
+post-close edits detectably stale rather than quietly wrong.
+
+**`INDEX.md` is gitignored (decided 2026-08-14).** The question was whether it is useful to
+someone browsing from outside the repo — and that audience is already served, better, by *this
+file*: 803 lines, 41 curated stream entries, Active and Completed. The generated index would
+duplicate that for humans while being worse at it. Its unique value is **completeness for
+machines**: **68 stream directories exist on disk against 41 narrated entries here**, and
+**31 of those directories have no entry under their own name — 20 of them are not mentioned
+anywhere in this file, even in passing.** Agents need all 68; humans want the curated 41.
+Different audiences, different artifacts, no reason to commit the machine one — which also
+removes the merge-conflict class and the risk of an agent hand-merging a generated file into
+something corrupt that reads as authoritative. **Side benefit taken:** the generator also reports
+stream dirs missing a ledger entry, turning that 31-stream gap into a worklist.
+
+*(Counts measured 2026-08-14. An earlier draft of this section said "43 narrated entries" and
+"~25 streams" — both wrong. The 43 counted this file's two prose section headings as if they
+were streams, and the 25 was a subtraction of two totals rather than a set difference, which
+silently nets naming mismatches against genuine gaps. Four ledger entries name a stream with no
+matching directory (`ai-assist-thinking-events`, `fetch-primitive-threat-model`,
+`personaility-asks-2026-08`, `ts-prompt-assist-features`); some of those are the same stream as
+a differently-named directory, which is exactly the reconciliation a set difference surfaces and
+a subtraction hides.)*
+
+**The open question that sizes the second stream** — resolve it before anything else there:
+does `ISchemaValidator.toJson()` drop straight into MCP tool registration? If yes the adapter is
+small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the estimate moves.
+
+---
+
 ### `module-resolution-upgrade` 🟢
 
 **Status:** 🟢 implemented — deliverables 1 and 2 landed; **3 is not available and 4 was deliberately not attempted**. Branch `module-resolution-upgrade` from `release` @ `af2178cde` (after #608). Artifacts at `.ai/tasks/active/module-resolution-upgrade/{brief.md, state.md, result.md, findings/inbox/}`; outcomes recorded in `.claude/project/esm-emit-design.md` § "Amendment 2".
@@ -294,7 +435,7 @@ Three items from their post-`-48` sweep, **tracked here with verdicts so "deferr
 **Status:** 🟢 ready to commission (substrate prep in flight)
 **Branch base:** `release`
 **Workflow shape:** single-PR breaking-change feature
-**Substrate:** `.ai/tasks/active/prompt-assist-screeners/{brief.md, state.md}`
+**Substrate:** `.ai/tasks/completed/2026-05/prompt-assist-screeners/{brief.md, state.md}`
 **Package surface:** `@fgv/ts-prompt-assist` (safety packlet) + `.ai/instructions/LIBRARY_CAPABILITIES.md` + in-repo consumers of the dropped fields
 **Out-of-scope:** the local-classifier screener itself (B-3 of `local-ai-exploration`); LLM-based screening; screener caching; parallel execution; whole-prompt/post-render screening hook.
 
@@ -532,7 +673,7 @@ So **R2 is not the safe, independent one-liner §4 called it** — it converts a
 **Substrate:** `.ai/tasks/completed/2026-06/json-schema-derives-t/{state.md, README.md}` + `.ai/tasks/completed/2026-06/json-schema-converter-alignment/{brief.md, state.md, research.md, derives-t-feasibility-brief.md, derives-t-feasibility.md, README.md}` (alignment spike rides with this stream's squash)
 **Package surface:** `@fgv/ts-json-base` (new `json-schema-builder` packlet, consumer-facing `JsonSchema` namespace) — ~505 lines impl + ~620 lines tests; no surface change to existing exports.
 
-**Mission.** Typed JSON Schema with derived static types for the LLM-tool subset. **Schema IS the validator.** Each factory returns an `ISchemaValidator<T>` that extends `Validator<T>`, carries the phantom `static: T` for `Static<typeof schema>` extraction, and exposes `validate()` / `convert()` / `toJson()` as methods. `fromJson(rawJsonObject)` parses incoming JSON Schema (e.g. from MCP) into an `ISchemaValidator<JsonValue>` via `Converters.discriminatedObject` with arms recursing through `self` (enabled by PR #442's discriminatedObject self-fix). Consumer authors a single typed value and gets verified-not-asserted type safety end-to-end.
+**Mission.** Typed JSON Schema with derived static types for the LLM-tool subset. **Schema IS the validator.** Each factory returns an `ISchemaValidator<T>` that extends `Validator<T>`, carries the phantom `__staticType?: T` for `Static<typeof schema>` extraction, and exposes `validate()` / `convert()` / `toJson()` as methods. *(Field name corrected 2026-08-14 — this line read `static: T`, which is not what shipped and is not a legal property name to write in TypeScript source.)* `fromJson(rawJsonObject)` parses incoming JSON Schema (e.g. from MCP) into an `ISchemaValidator<JsonValue>` via `Converters.discriminatedObject` with arms recursing through `self` (enabled by PR #442's discriminatedObject self-fix). Consumer authors a single typed value and gets verified-not-asserted type safety end-to-end.
 
 **Origin.** Surfaced during `ai-assist-client-tools` Phase A review: a consumer authoring both JSON Schema (wire) and Converter/Validator (runtime) over the same shape is error-prone. Two-phase spike (`json-schema-converter-alignment`) tested feasibility; phase-1 broad survey + phase-2 schema-derives-T feasibility verdict, both shipped as substrate artifacts. Erik chose Option 1 (commission alignment now, hold ai-assist-client-tools Phase B/C). Four Copilot review rounds + structural pivots; round 3 surfaced a load-bearing validator/convert symmetry bug; loop converged on diminishing returns at round 4 (4 of 10 used per L33).
 
@@ -602,7 +743,8 @@ So **R2 is not the safe, independent one-liner §4 called it** — it converts a
 
 ### `ts-prompt-assist-features` ✅ (cluster)
 
-**Status:** ✅ shipped — cluster integration branch `claude/ts-prompt-assist-features` ready for promotion to `release`
+**Status:** ✅ shipped — cluster integration branch `claude/ts-prompt-assist-features` promoted to `release` via [#397](https://github.com/ErikFortune/fgv/pull/397) (`88545a5dc`). *(Corrected 2026-08-14: this line read "ready for promotion to `release`" long after the promotion landed, and four later prompt-assist streams — #407, #460, #490, #538 — had already built on top of it.)*
+**Directory:** `.ai/tasks/completed/2026-05/ts-prompt-assist/` — note the directory name differs from this entry's id, so id-matching tools report this stream as un-narrated; `meta.yaml` carries a `ledgerEntry:` field recording the mapping.
 **Cluster scope:** `@fgv/ts-prompt-assist` v0.1 (new library) + `@fgv/ts-extras/mustache` additive extension + `@fgv/ts-res` typed-conditions support (sub-stream below) + sample-app demonstration in `samples/ai-image-gen-sample`
 **Sub-stream:** [`ts-res-typed-conditions`](#ts-res-typed-conditions-) (below)
 
