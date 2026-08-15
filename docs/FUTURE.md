@@ -1057,3 +1057,35 @@ fixed in the `module-resolution-upgrade` stream, so it is no longer a prerequisi
 
 **Reference**: `module-resolution-upgrade` stream, 2026-08-10;
 `.claude/project/esm-emit-design.md` § "Amendment 2 — what the graded steps actually cost, measured".
+
+---
+
+## Considered and closed — deferrals found by the 2026-08-14 finalize sweep
+
+The sweep found deferrals living only inside completed-stream artifacts, where no ledger reader
+would ever meet them. Two were genuinely lost and were re-queued (`runToolUseConversation`
+above; the safer-fetch browser coverage gap, filed to `TECH_DEBT.md`). One was actioned
+directly: `ks`'s hand-rolled hex, swapped onto `CryptoUtils.hexEncode`.
+
+**The rest are recorded here as closed, with reasoning, so they are not re-found and
+re-litigated by the next sweep.** That is the whole point of this section — a deferral with no
+home gets rediscovered forever, and silence about a decision is indistinguishable from having
+never made one. If any of these acquires a consumer, reopen it by moving it up into a real entry
+rather than arguing from this list.
+
+| deferral | origin | why closed |
+|---|---|---|
+| **>2-round live testbed scenario** | `ai-assist-tool-continuation` | Not closed so much as **rehomed**: it is attached to the `runToolUseConversation` entry above, because a multi-round loop helper shipped without a multi-round live test would inherit exactly the two-turn blind spot that hid the original per-round bug. It belongs to that work, not beside it. |
+| **`generateStructured`** (`/api/generate` one-shot structured output) | `ollama-native` OQ-2 | No consumer has asked. `@fgv/ts-extras-ollama` is a deliberately small Result-integration boundary whose value is its cut list; speculatively widening it works against the package's design. `chatStructured` already covers the structured-output need. |
+| **`AbortSignal` on the fast metadata ops** (`listModels` / `showModel` / `listRunning` / `deleteModel`) | `ollama-native` OQ-3 | Same reasoning, plus these are sub-second local calls against a sidecar — the cancellation that mattered (`pullModel`, `chatStructured`) shipped. |
+| **Additive cross-provider `responseFormat?` on the completion path** | `ollama-native`, the rejected Option C's consolation prize | Would have served OpenAI/Groq/Mistral too, which is what makes it tempting — but it is an `ai-assist` design question wearing an Ollama costume. If it comes back it should come back as an `ai-assist` proposal with those providers named, not as an Ollama leftover. |
+| **YAML `compositionConverter` for `ILogicalSlotConfig[]`** | `prompt-assist-horizontal-composition` OQ-3 | Already documented on the public surface: `LIBRARY_CAPABILITIES.md` states the config is "code-authored at v0.1 — no YAML converter yet". A stated limitation on the surface consumers actually read is a better home than a backlog entry they do not. |
+| **`composedBody` vs resolving from the composed descriptor's candidates** | `prompt-assist-horizontal-composition` | A consumer-adoption question, not a library one. It cannot be answered before a consumer composes in anger; PersonAIlity is the only candidate and has not. Reopen when it does. |
+| **Expose the token scanner as a utility** | `prompt-assist-horizontal-composition` design §5 | Speculative generalization with no second caller. The repo's own published-primitives discipline cuts both ways: extract when a second consumer appears, not in anticipation of one. |
+| **`ks` non-UTF-8 secret auto-detect** (default `get`/`export` to base64) | `ks-encoding` | Was moot when deferred — `importApiKey` took only `string`, so every stored secret was UTF-8 by construction. Still effectively moot: `KeyStore` has since gained `'opaque'` + `importSecretBytes`/`getSecretBytes`, but **`@fgv/ks` exposes none of it**, so there is still no way to get non-UTF-8 bytes into a keystore through the CLI. Reopen if and when the CLI grows an opaque-secret path — that is the real precondition, and it is a cleaner trigger than the original. |
+
+**One correction to the sweep's own findings.** It reported that `ts-prompt-assist`'s README
+claimed typed-qualifier-VALUES was "queued in `docs/FUTURE.md`" when it was not. **That was
+wrong.** The README lists typed qualifier values as a plain out-of-scope bullet with no queued
+claim; the two adjacent bullets that *do* carry that phrasing — editor UX and the samples app —
+are both accurate, and both entries exist above. Nothing needed fixing there, and nothing was.
