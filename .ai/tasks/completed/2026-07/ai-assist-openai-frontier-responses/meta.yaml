@@ -14,10 +14,15 @@ summary:
   shipped: >
   diverged: >
   # summary.shipped / diverged intentionally BLANK: only brief.md exists — no result.md,
-  # no README.md, no state.md. In particular the brief's STOP-FLAG means the stream was
-  # required to hand back a live-canary note; whether it did, and what the principal's
-  # live gpt-5.5-pro run returned, is recorded nowhere in this directory. Inventing either
-  # would be a false claim. See notes.
+  # no README.md, no state.md. Inventing an account from brief-plus-source would present
+  # this sweep's inference as the stream's own record. See notes.
+  #
+  # STOP-FLAG RESOLVED 2026-08-15. The brief ended at a gate requiring a live gpt-5.5-pro
+  # canary run by the principal (no keys in CI). This sweep flagged it as neither closed
+  # nor cancelled — the worst of the three states — because nothing in the repo recorded
+  # the outcome. The owner has since confirmed the canary was run. Recorded as
+  # OWNER-ATTESTED rather than verified: this pass did not see the run, and the
+  # distinction is the point of the provenance discipline the rest of this record follows.
   sourceLine: '# Brief — ai-assist: route OpenAI Responses-API-only models through the completion path (restore invokable frontier)'
   # sourceLine is the opening line of brief.md (the commission), NOT a result/README opener.
 keywords:

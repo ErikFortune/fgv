@@ -211,7 +211,20 @@ Design space:
 
 **Remaining future scope (carried forward):**
 
-### Generic-version-alias library surface (companion concern)
+### ~~Generic-version-alias library surface (companion concern)~~ ✅ SUBSTANTIALLY DELIVERED
+
+**Superseded 2026-08-15.** The `@<provider>:<role>` alias layer shipped in
+`ai-assist-model-aliases` (#505–#508) and the quality-tier axis followed it, so the "resolve a
+stable name to the current concrete id via a registry-maintained mapping" concern this entry
+describes is built. The text below is retained for the two axes the alias layer deliberately did
+**not** cover — capability-detection `idPattern` rules and the typed `*ModelNames` unions — which
+remain manual on a provider rotation and are tracked as a live entry in `docs/TECH_DEBT.md`
+rather than here.
+
+Note the example below is now doubly stale: it cites `gpt-4o` as OpenAI's default, which it has
+not been for two model generations (the line is currently `gpt-5.6-*`, selected by tier).
+
+*Original entry:*
 
 `<provider>:<family>-<major>-<minor>`-style canonical aliases resolving to the current dated snapshot via a registry-maintained mapping. The exact alias syntax should match the underlying SDK / API conventions per provider (e.g. Anthropic accepts `'claude-sonnet-4-6'` directly per the latest SDK; OpenAI / Gemini / xAI use different conventions). Provider-specific subaliases stay. The registry's `defaultModel` per provider currently pins a specific dated snapshot that goes stale (e.g. `gpt-4o` is not reasoning-capable but is the OpenAI default, so the new OpenAI testbed scenario had to explicitly pin `gpt-5.1`). Roughly 1-2 days of implementation work.
 
@@ -229,13 +242,25 @@ The closeout sub-stream (PR #458) shipped warn-on-unrecognized-event drift instr
 
 ### Library default `max_output_tokens` for reasoning models
 
+**Still open, but its stated workaround is superseded (2026-08-15 note).** The entry advises the
+consumer to pass `max_output_tokens` through the `otherParams` escape hatch; a first-class
+`maxTokens` request param has since shipped (#573), so the workaround is now just "set
+`maxTokens`". That makes the case for a library default weaker, not stronger — the ergonomic gap
+this was filed against has mostly closed on its own.
+
 OpenAI Responses + reasoning models can silently truncate when the consumer doesn't set `max_output_tokens` and the model's reasoning + tool-use steps consume the default output budget before emitting visible text. The cluster's empirical loop surfaced this as the leading hypothesis on round 3 (ruled out via `incompleteReason` capture in round 4). Real root cause was the `item_id ↔ call_id` adapter bug, not budget exhaustion, but the usability gap is real: naive consumers calling with `reasoning.effort: 'low'` on a simple question can still hit budget exhaustion under realistic prompts.
 
 **Proposed fix:** the OpenAI Responses adapter applies a sane default `max_output_tokens` for reasoning models when the consumer doesn't supply one. Consumer can override via the existing `otherParams` mechanism.
 
 **Why deferred:** usability call, not a bug. The current behavior (consumer must supply `max_output_tokens` for reasoning workloads OR set `incompleteReason: 'max_output_tokens'` is the diagnostic) is correct but easy to miss.
 
-### Provider-side request validation (fail-fast on impossible combinations)
+### Provider-side request validation (fail-fast on impossible combinations) — ⚠️ NARROWED
+
+**The motivating case has shipped (2026-08-15 note).** The Gemini grounding + client-tools
+combination this entry was filed for now **fails fast with a named `Result.fail` before any wire
+call** (`ai-assist-antagonist`, #529). What remains open is the generalized version — a registry
+of impossible per-provider combinations, checked uniformly — rather than the specific one. Read
+the text below as describing the general shape, not an unfixed bug.
 
 Gemini's API forbids combining built-in grounding (`web_search`) with function calling in the same request — surfaces as HTTP 400 with `INVALID_ARGUMENT`. The cluster's per-provider-testbed-scenarios round 2 hit this; the resolution was a scenario-side fix (drop `web_search` from the Gemini scenario), but a library-side improvement could fail-fast at request-build time with a clearer error pointing to the mutual-exclusion constraint.
 

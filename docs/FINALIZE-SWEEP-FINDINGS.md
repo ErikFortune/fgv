@@ -651,3 +651,35 @@ were found living only inside completed-stream artifacts, where no ledger reader
 them.
 
 That is the structural gap. The corrections in these PRs are symptoms of it.
+
+---
+
+## Dispositions — 2026-08-15
+
+Owner ruled on the five headline items. Actioned on `integration/sweep-followups`.
+
+| # | item | ruling | what was done |
+|---|---|---|---|
+| 1 | `argon2` pinned below its binding floor | **fix** | `~0.44.0` → `^0.45.0` (resolves 0.45.1), lockfile updated, change file added. D3's cross-runtime byte-identical output re-verified — the RFC vector and 7-case sweep still agree between `argon2` and `hash-wasm`. `hash-wasm` deliberately left at `~4.12.0`: a style deviation, not a floor violation, and widening the browser engine's minor range on the one property that must stay byte-identical is a bad trade. |
+| 2 | unclosed `gpt-5.5-pro` canary STOP-FLAG | **resolve — test was done** | Recorded in the stream's `meta.yaml` as **owner-attested**, dated, explicitly not verified by this pass. The brief is an in-flight artifact and was not edited. |
+| 3 | `LIBRARY_CAPABILITIES` drift | **fix** | Five edits — see below. |
+| 4 | `.ai/tasks/active/credential-store` names a directory that exists nowhere | **owner will look** | Untouched. |
+| 5 | boundary-package dependency posture unstated | **add it** | Stated in the convention section, with the axis that actually decides it. |
+
+### Item 3, in detail
+
+- **Observation phases: three → four.** `'compose'` added to the `IPromptObservationRecord` phase list, and the fan-out paragraph now says a fourth producer exists (`PromptLibrary`'s observation seam, fired by `HorizontalComposer.compose()`). This was the load-bearing one: a consumer writing an `IPromptObserver` from the guide would not have known a fourth phase arrives.
+- **`HorizontalComposer`'s `allowedDirectives` check** was documented as part of `applySafeguards`. It is a **separate pass that runs before** it, screening **each contribution's** directive — the merged slot has no single directive to screen. Corrected.
+- **`create()`'s validation list** omitted two shipped checks, one load-bearing: every `logicalSlotName` must be declared on `composedDescriptor.slots`, which exists *precisely because* an undeclared slot would render and then be skipped by the safeguard pass. Added, with that reason.
+- **`executeClientToolTurn`'s `endpoint` override** was gated on "once PR #466 merges". It has it. Corrected to describe what ships.
+- **Gemini grounding + client tools** was documented as producing a provider HTTP 400. The library now pre-empts it with a named `Result.fail` before any wire call — a better outcome than the doc promised.
+
+### Also taken as obvious cleanup
+
+- **Three `FUTURE.md` entries stale in the shipped direction**, annotated rather than deleted, because each retains scope that is genuinely still open: the generic-version-alias surface (delivered by #505–#508; its `gpt-4o`-is-the-default example was two model generations out of date), provider-side request validation (the motivating Gemini case now fails fast; only the generalized registry remains), and the `max_output_tokens` default (still open, but its `otherParams` workaround is superseded by first-class `maxTokens` from #573 — which makes the case *weaker*, not stronger).
+- **`TESTING_GUIDELINES`' `c8 ignore` example** cited directives in `chatRequestBuilders.ts` that no longer exist — the `options?.head` path became reachable in #480 and they went with it. Marked historical so nobody hunts for the code.
+- **The `ai-assist-client-tools` retelling in `TESTING_GUIDELINES`** implied a broken build shipped. It did not: all three P1s were fixed inside #447 along with the four request-body tests that should have existed from the start, and those tests are in the suite today. What shipped broken was the **exit artifact's claim**. Corrected in place — and it is arguably a *purer* example of what that section teaches, since the gate signed off on an assertion nobody had checked.
+
+### Still open after this pass
+
+`credential-store` (owner looking) · the `active/` migrations in `ACTIVE-STREAM-TRIAGE.md`, including the two deferrals that should be filed **before** migrating, since migration is the event that buries them · directory/entry naming mismatches · the two `ai-assist` request-side-blind-spot instances, if they warrant a standing rule.
