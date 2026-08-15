@@ -64,11 +64,6 @@ class FakeSource implements IMemoryRecordSource {
   }
 }
 
-/** A per-kind count map's entries, as plain pairs, for readable assertions. */
-function pairs(map: ReadonlyMap<Kind, number> | undefined): ReadonlyArray<[string, number]> | undefined {
-  return map === undefined ? undefined : Array.from(map.entries()).map(([k, n]): [string, number] => [k, n]);
-}
-
 /** The sum of every count in a per-kind map — the total a caller derives. */
 function total(map: ReadonlyMap<Kind, number>): number {
   let sum: number = 0;
@@ -276,8 +271,8 @@ describe('InMemoryCosineIndex', () => {
       const index = InMemoryCosineIndex.create().orThrow();
       const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b'), scoped('s', 'c')]));
       expect(await index.rebuild(source, embed)).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
-        expect(pairs(report.indexed)).toEqual([['note', 3]]);
-        expect(pairs(report.declined)).toEqual([]);
+        expect(report.indexed).toEqual(new Map([['note', 3]]));
+        expect(report.declined).toEqual(new Map<Kind, number>());
         expect(report.skipped).toEqual([]);
       });
       expect(index.size).toBe(3);
@@ -298,8 +293,8 @@ describe('InMemoryCosineIndex', () => {
         (r.envelope.id as string) === 'b' ? Promise.resolve(succeed(undefined)) : embed(r);
       const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b'), scoped('s', 'c')]));
       expect(await index.rebuild(source, declineB)).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
-        expect(pairs(report.indexed)).toEqual([['note', 2]]);
-        expect(pairs(report.declined)).toEqual([['note', 1]]);
+        expect(report.indexed).toEqual(new Map([['note', 2]]));
+        expect(report.declined).toEqual(new Map([['note', 1]]));
         expect(report.skipped).toEqual([]);
       });
       expect(index.size).toBe(2);
@@ -319,8 +314,8 @@ describe('InMemoryCosineIndex', () => {
           // An all-declining rebuild leaves `indexed` EMPTY rather than zero-valued:
           // a kind that contributed nothing has no entry, so a caller reading the
           // map sees the absence rather than having to compare against zero.
-          expect(pairs(report.indexed)).toEqual([]);
-          expect(pairs(report.declined)).toEqual([['note', 2]]);
+          expect(report.indexed).toEqual(new Map<Kind, number>());
+          expect(report.declined).toEqual(new Map([['note', 2]]));
         }
       );
       expect(index.size).toBe(0);
@@ -332,7 +327,7 @@ describe('InMemoryCosineIndex', () => {
       // The embedder keys only off the (shared) id, so a bare-id rebuild would
       // index just one entry; the scoped rebuild indexes both.
       expect(await index.rebuild(source, embed)).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
-        expect(pairs(report.indexed)).toEqual([['note', 2]]);
+        expect(report.indexed).toEqual(new Map([['note', 2]]));
       });
       expect(index.size).toBe(2);
       expect(await index.query(Float32Array.from([116, 1]), 5)).toSucceedAndSatisfy(
@@ -361,8 +356,8 @@ describe('InMemoryCosineIndex', () => {
       const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b'), scoped('s', 'c')]));
       expect(await index.rebuild(source, failB, { onRecordError: 'skip' })).toSucceedAndSatisfy(
         (report: IVectorRebuildReport) => {
-          expect(pairs(report.indexed)).toEqual([['note', 2]]);
-          expect(pairs(report.declined)).toEqual([]);
+          expect(report.indexed).toEqual(new Map([['note', 2]]));
+          expect(report.declined).toEqual(new Map<Kind, number>());
           // Structural, not just a count: the caller can name and re-drive the loss.
           expect(report.skipped).toHaveLength(1);
           expect(report.skipped[0].target.id).toBe('b');
@@ -385,8 +380,8 @@ describe('InMemoryCosineIndex', () => {
       const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b'), scoped('s', 'c')]));
       expect(await index.rebuild(source, mixed, { onRecordError: 'skip' })).toSucceedAndSatisfy(
         (report: IVectorRebuildReport) => {
-          expect(pairs(report.indexed)).toEqual([['note', 1]]);
-          expect(pairs(report.declined)).toEqual([['note', 1]]);
+          expect(report.indexed).toEqual(new Map([['note', 1]]));
+          expect(report.declined).toEqual(new Map([['note', 1]]));
           expect(report.skipped.map((s) => s.target.id)).toEqual(['b']);
         }
       );
@@ -401,7 +396,7 @@ describe('InMemoryCosineIndex', () => {
       const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b')]));
       expect(await index.rebuild(source, emptyForB, { onRecordError: 'skip' })).toSucceedAndSatisfy(
         (report: IVectorRebuildReport) => {
-          expect(pairs(report.indexed)).toEqual([['note', 1]]);
+          expect(report.indexed).toEqual(new Map([['note', 1]]));
           expect(report.skipped).toHaveLength(1);
           expect(report.skipped[0].error).toMatch(/empty vector/);
         }
@@ -444,7 +439,7 @@ describe('InMemoryCosineIndex', () => {
       (await index.add(target('s', 'old'), Float32Array.from([1, 2, 3]))).orThrow();
       const source = new FakeSource(succeed([scoped('s', 'a')]));
       expect(await index.rebuild(source, embed)).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
-        expect(pairs(report.indexed)).toEqual([['note', 1]]);
+        expect(report.indexed).toEqual(new Map([['note', 1]]));
       });
       expect(index.size).toBe(1);
       // The 2-dim query now succeeds (dimension was reset by rebuild).
@@ -545,16 +540,18 @@ describe('InMemoryCosineIndex', () => {
         );
         expect(await InMemoryCosineIndex.create().orThrow().rebuild(healthy, embed)).toSucceedAndSatisfy(
           (report: IVectorRebuildReport) => {
-            expect(pairs(report.indexed)).toEqual([
-              ['knowledge', 2],
-              ['ingestion-job', 1]
-            ]);
+            expect(report.indexed).toEqual(
+              new Map([
+                ['knowledge', 2],
+                ['ingestion-job', 1]
+              ])
+            );
             expect(total(report.indexed)).toBe(3);
           }
         );
         expect(await InMemoryCosineIndex.create().orThrow().rebuild(drifted, embed)).toSucceedAndSatisfy(
           (report: IVectorRebuildReport) => {
-            expect(pairs(report.indexed)).toEqual([['ingestion-job', 3]]);
+            expect(report.indexed).toEqual(new Map([['ingestion-job', 3]]));
             // Same total, and that is exactly the point: the total cannot tell the
             // two rebuilds apart and the breakdown can.
             expect(total(report.indexed)).toBe(3);
@@ -601,10 +598,12 @@ describe('InMemoryCosineIndex', () => {
           ])
         );
         expect(await index.rebuild(source, embed)).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
-          expect(pairs(report.excluded)).toEqual([
-            ['ingestion-job', 12],
-            ['audit', 3]
-          ]);
+          expect(report.excluded).toEqual(
+            new Map([
+              ['ingestion-job', 12],
+              ['audit', 3]
+            ])
+          );
         });
       });
 
@@ -655,9 +654,9 @@ describe('InMemoryCosineIndex', () => {
         );
         expect(result).toFailWith(/embedding 's\0c' failed.*no model/);
         expect(result.detail).toBeDefined();
-        expect(pairs(result.detail!.indexed)).toEqual([['knowledge', 1]]);
-        expect(pairs(result.detail!.declined)).toEqual([['knowledge', 1]]);
-        expect(pairs(result.detail!.excluded)).toEqual([['audit', 2]]);
+        expect(result.detail!.indexed).toEqual(new Map([['knowledge', 1]]));
+        expect(result.detail!.declined).toEqual(new Map([['knowledge', 1]]));
+        expect(result.detail!.excluded).toEqual(new Map([['audit', 2]]));
         // Unchanged and load-bearing: the rollback still ran, so the report
         // describes the ATTEMPT, not the surviving index.
         expect(index.size).toBe(0);
@@ -670,7 +669,7 @@ describe('InMemoryCosineIndex', () => {
         const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b')]));
         const result = await index.rebuild(source, emptyForB);
         expect(result).toFailWith(/empty vector/i);
-        expect(pairs(result.detail!.indexed)).toEqual([['note', 1]]);
+        expect(result.detail!.indexed).toEqual(new Map([['note', 1]]));
         expect(index.size).toBe(0);
       });
 

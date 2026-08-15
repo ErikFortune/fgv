@@ -74,4 +74,32 @@ the two breaks, the rollback-report trap, and the migration.
   distinct from an empty map; and the motivating case — two rebuilds with an identical `indexed`
   total that the per-kind breakdown tells apart
 - `LIBRARY_CAPABILITIES.md` updated in the same PR
-- `code-reviewer` run on the final diff before first push
+- `code-reviewer` run on the final diff before first push — findings below
+
+## `code-reviewer` findings and dispositions
+
+**P1 — change files typed `"none"` while the comment said BREAKING. Fixed, but not as prescribed.**
+The contradiction was real and the reviewer was right that `"none"` is the type most likely to be
+dropped from generated changelog output — precisely the silence the brief's coordination clause
+exists to prevent. It prescribed `"major"`, which is wrong here: the `@fgv` set is a
+`lockStepVersion` policy with `nextBump: minor`, and the direct precedent is
+`agent-memory-rank-reconcile`, whose own comment reads *"BREAKING on the active surface: `IMemoryStore`
+gains a required member"* and which is typed `"minor"`. Both change files are now `"minor"`.
+
+**P2 — `indexed` lost its self-correcting property. Accepted; documented rather than reverted.** It
+was previously read off ground truth after the loop, so a source listing the same target twice could
+not make it disagree with `size`; it is now a per-record tally and can. The tally is forced (neither
+a `Map` nor a `vec0` table knows kinds), and a total that silently disagreed with its own per-kind
+breakdown would be the worse failure. The trade is now stated on the field's docstring rather than
+left silent.
+
+**P2 — Map assertions over-specified iteration order. Fixed.** The `pairs()` helper was converting
+maps to arrays and comparing with an order-sensitive `toEqual`, pinning insertion order that the
+type does not promise — and it was duplicated across two packages. Every call site now compares the
+`Map` directly (`toEqual(new Map([...]))`, which Jest compares order-independently) and both copies
+of the helper are gone. Verified the assertions still fail on a wrong value rather than passing
+vacuously.
+
+**P3 — the interface doc overclaimed that a `list` failure is the *only* no-detail failure. Fixed.**
+`SqliteVecVectorIndex` has a second: a failure to clear its table. The doc now covers the general
+case — nothing was attempted, whatever the implementation's pre-loop step is.

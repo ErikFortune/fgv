@@ -298,12 +298,6 @@ describe('SqliteVecVectorIndex', () => {
       };
     }
 
-    /** A per-kind count map's entries, as plain pairs, for readable assertions. */
-    function pairs(map: ReadonlyMap<Kind, number> | undefined): ReadonlyArray<[string, number]> | undefined {
-      return map === undefined
-        ? undefined
-        : Array.from(map.entries()).map(([k, n]): [string, number] => [k, n]);
-    }
     const embed: MemoryEmbedder = (r) =>
       Promise.resolve(succeed(vec((r.envelope.id as string).charCodeAt(0), 1)));
 
@@ -313,8 +307,8 @@ describe('SqliteVecVectorIndex', () => {
       expect(index.size).toBe(0);
       expect(await index.rebuild(source(['a', 'b', 'c']), embed)).toSucceedAndSatisfy(
         (report: IVectorRebuildReport) => {
-          expect(pairs(report.indexed)).toEqual([['note', 3]]);
-          expect(pairs(report.declined)).toEqual([]);
+          expect(report.indexed).toEqual(new Map([['note', 3]]));
+          expect(report.declined).toEqual(new Map<Kind, number>());
           expect(report.skipped).toEqual([]);
         }
       );
@@ -329,7 +323,7 @@ describe('SqliteVecVectorIndex', () => {
       (await index.add(target('s', 'stale'), vec(1, 1))).orThrow();
       expect(await index.rebuild(source(['a']), embed)).toSucceedAndSatisfy(
         (report: IVectorRebuildReport) => {
-          expect(pairs(report.indexed)).toEqual([['note', 1]]);
+          expect(report.indexed).toEqual(new Map([['note', 1]]));
         }
       );
       expect(index.size).toBe(1);
@@ -352,7 +346,7 @@ describe('SqliteVecVectorIndex', () => {
       expect(
         await index.rebuild(source(['a', 'b', 'c']), failB, { onRecordError: 'skip' })
       ).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
-        expect(pairs(report.indexed)).toEqual([['note', 2]]);
+        expect(report.indexed).toEqual(new Map([['note', 2]]));
         expect(report.skipped).toHaveLength(1);
         expect(report.skipped[0].target.id).toBe('b');
         expect(report.skipped[0].error).toMatch(/no model/);
@@ -371,8 +365,8 @@ describe('SqliteVecVectorIndex', () => {
       expect(
         await index.rebuild(source(['a', 'b', 'c']), mixed, { onRecordError: 'skip' })
       ).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
-        expect(pairs(report.indexed)).toEqual([['note', 1]]);
-        expect(pairs(report.declined)).toEqual([['note', 1]]);
+        expect(report.indexed).toEqual(new Map([['note', 1]]));
+        expect(report.declined).toEqual(new Map([['note', 1]]));
         expect(report.skipped.map((s) => s.target.id)).toEqual(['b']);
       });
     });
@@ -473,7 +467,7 @@ describe('SqliteVecVectorIndex', () => {
         (r.envelope.id as string) === 'b' ? Promise.resolve(succeed(vec(1, 2, 3))) : embed(r);
       expect(await index.rebuild(source(['a', 'b']), badDim, { onRecordError: 'skip' })).toSucceedAndSatisfy(
         (report: IVectorRebuildReport) => {
-          expect(pairs(report.indexed)).toEqual([['note', 1]]);
+          expect(report.indexed).toEqual(new Map([['note', 1]]));
           expect(report.skipped).toHaveLength(1);
           expect(report.skipped[0].error).toMatch(/dimension/);
         }
@@ -514,12 +508,14 @@ describe('SqliteVecVectorIndex', () => {
         );
         expect(await index.rebuild(scripted, declineB)).toSucceedAndSatisfy(
           (report: IVectorRebuildReport) => {
-            expect(pairs(report.indexed)).toEqual([
-              ['knowledge', 1],
-              ['ingestion-job', 1]
-            ]);
-            expect(pairs(report.declined)).toEqual([['knowledge', 1]]);
-            expect(pairs(report.excluded)).toEqual([['audit', 4]]);
+            expect(report.indexed).toEqual(
+              new Map([
+                ['knowledge', 1],
+                ['ingestion-job', 1]
+              ])
+            );
+            expect(report.declined).toEqual(new Map([['knowledge', 1]]));
+            expect(report.excluded).toEqual(new Map([['audit', 4]]));
           }
         );
       });
@@ -548,7 +544,7 @@ describe('SqliteVecVectorIndex', () => {
         );
         expect(result).toFailWith(/no model/);
         expect(result.detail).toBeDefined();
-        expect(pairs(result.detail!.indexed)).toEqual([['knowledge', 2]]);
+        expect(result.detail!.indexed).toEqual(new Map([['knowledge', 2]]));
         expect(index.size).toBe(0);
       });
 

@@ -814,12 +814,12 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       };
       expect(await fresh.rebuild(store.asRecordSource(), countingEmbed)).toSucceedAndSatisfy(
         (report: IVectorRebuildReport) => {
-          expect(Array.from(report.indexed.entries())).toEqual([['knowledge', 1]]);
+          expect(report.indexed).toEqual(new Map([['knowledge', 1]]));
           // The excluded kind is COUNTED rather than silently absent — this is the
           // arithmetic that previously did not add up: the 'fact' record appeared
           // in none of indexed / declined / skipped, so a caller computing coverage
           // undercounted, and undercounted in the direction of looking healthier.
-          expect(Array.from(report.excluded!.entries())).toEqual([['fact', 1]]);
+          expect(report.excluded!).toEqual(new Map([['fact', 1]]));
         }
       );
       expect(seen).toEqual(['knowledge']);
@@ -841,8 +841,8 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       const fresh = InMemoryCosineIndex.create().orThrow();
       expect(await fresh.rebuild(store.asRecordSource(), recordEmbed)).toSucceedAndSatisfy(
         (report: IVectorRebuildReport) => {
-          expect(Array.from(report.indexed.entries())).toEqual([['knowledge', 1]]);
-          expect(Array.from(report.excluded!.entries())).toEqual([['fact', 2]]);
+          expect(report.indexed).toEqual(new Map([['knowledge', 1]]));
+          expect(report.excluded!).toEqual(new Map([['fact', 2]]));
         }
       );
     });

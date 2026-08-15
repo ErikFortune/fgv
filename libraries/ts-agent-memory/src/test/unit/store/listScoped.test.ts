@@ -121,7 +121,7 @@ describe('FileTreeMemoryStore.asRecordSource — drives an IVectorIndex rebuild'
     // re-embeds every record and keys each vector on the scoped (scope, id).
     expect(await index.rebuild(store.asRecordSource(), recordEmbed)).toSucceedAndSatisfy(
       (report: IVectorRebuildReport) => {
-        expect(Array.from(report.indexed.entries())).toEqual([[mtmKind, 2]]);
+        expect(report.indexed).toEqual(new Map([[mtmKind, 2]]));
         expect(report.declined.size).toBe(0);
         // The store-backed source always tracks exclusions, so an empty map here
         // says "nothing was excluded" rather than "cannot say".

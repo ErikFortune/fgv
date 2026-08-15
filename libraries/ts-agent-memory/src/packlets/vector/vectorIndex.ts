@@ -176,10 +176,12 @@ export interface IVectorIndex {
    * arrived on a failure — it describes the attempt, not the surviving index.
    *
    * On success the report is the **value** — that is where it belongs, and the
-   * `detail` is not also populated. The one failure that carries no report is a
-   * `source.list()` failure, which leaves the existing index untouched and so has
-   * nothing honest to describe; an all-zero report there would describe an index
-   * this call never disturbed.
+   * `detail` is not also populated. A failure carries no report when nothing was
+   * attempted: always a `source.list()` failure, and additionally whatever
+   * pre-loop step an implementation needs before it can start (the durable
+   * `SqliteVecVectorIndex` must clear its table, and a failure to do so is such a
+   * case). Those leave the existing index untouched, so an all-zero report would
+   * describe an index the call never disturbed.
    */
   rebuild(
     source: IMemoryRecordSource,
@@ -352,7 +354,19 @@ export interface ISkippedVectorRecord {
  * @public
  */
 export interface IVectorRebuildReport {
-  /** Records embedded and added to the index, counted by {@link Kind}. */
+  /**
+   * Records embedded and added to the index, counted by {@link Kind}.
+   *
+   * @remarks
+   * A count of successful `add` calls, so it lines up with its per-record
+   * siblings and the buckets sum back to the listing. It is deliberately **not**
+   * read back off {@link IVectorIndex.size} at the end, which no implementation
+   * could resolve by kind anyway. The trade that makes: a `source` that lists the
+   * same `(scope, id)` twice contributes twice here while the index holds one
+   * vector, where a size read would have self-corrected. A source that does that
+   * is malformed, and a total that silently disagreed with the per-kind
+   * breakdown would be the worse failure.
+   */
   readonly indexed: ReadonlyMap<Kind, number>;
   /**
    * Records the embedder deliberately declined (resolved `undefined`), counted by
