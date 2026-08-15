@@ -2,6 +2,11 @@
 
 **Answering:** *ts-res — `addResource` input type vs `resourceCollectionDecl` output (soft / ergonomics)*, re-verified by you against 5.1.0-47 on 2026-08-11.
 
+**OUTCOME (2026-08-15): accepted by PersonAIlity; ask withdrawn. Closed — no change on either side.**
+The cast is being removed on their side. Nothing is owed by us, and there is no ts-res work queued from this.
+
+---
+
 **Verdict: no change needed — and none of the three candidates is the right answer. The cast is unnecessary. Delete it.**
 
 We think `ontologyResolver.ts` compiles without the `as ReadonlyArray<ResourceJson.Json.ILooseResourceDecl>`. If it does, this closes with zero API change on either side. If it doesn't, we want to know immediately, because then we are missing something real and it is more interesting than the original ask.
