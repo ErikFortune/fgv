@@ -663,7 +663,7 @@ Owner ruled on the five headline items. Actioned on `integration/sweep-followups
 | 1 | `argon2` pinned below its binding floor | **fix** | `~0.44.0` → `^0.45.0` (resolves 0.45.1), lockfile updated, change file added. D3's cross-runtime byte-identical output re-verified — the RFC vector and 7-case sweep still agree between `argon2` and `hash-wasm`. `hash-wasm` deliberately left at `~4.12.0`: a style deviation, not a floor violation, and widening the browser engine's minor range on the one property that must stay byte-identical is a bad trade. |
 | 2 | unclosed `gpt-5.5-pro` canary STOP-FLAG | **resolve — test was done** | Recorded in the stream's `meta.yaml` as **owner-attested**, dated, explicitly not verified by this pass. The brief is an in-flight artifact and was not edited. |
 | 3 | `LIBRARY_CAPABILITIES` drift | **fix** | Five edits — see below. |
-| 4 | `.ai/tasks/active/credential-store` names a directory that exists nowhere | **owner will look** | Untouched. |
+| 4 | `.ai/tasks/active/credential-store` names a directory that exists nowhere | **withdrawn — the finding was wrong** | `docs/FUTURE.md:865` reads *"**consumer's** `.ai/tasks/active/credential-store/spec.md`"*. It is a cross-repo pointer at PersonAIlity's tree, correctly labelled as theirs. Nothing is dangling. The sweep grepped for `.ai/tasks/active/<name>` and treated every hit as pointing at our tree, missing the qualifier immediately before it. |
 | 5 | boundary-package dependency posture unstated | **add it** | Stated in the convention section, with the axis that actually decides it. |
 
 ### Item 3, in detail
@@ -682,4 +682,17 @@ Owner ruled on the five headline items. Actioned on `integration/sweep-followups
 
 ### Still open after this pass
 
-`credential-store` (owner looking) · the `active/` migrations in `ACTIVE-STREAM-TRIAGE.md`, including the two deferrals that should be filed **before** migrating, since migration is the event that buries them · directory/entry naming mismatches · the two `ai-assist` request-side-blind-spot instances, if they warrant a standing rule.
+the `active/` migrations in `ACTIVE-STREAM-TRIAGE.md`, including the two deferrals that should be filed **before** migrating, since migration is the event that buries them · directory/entry naming mismatches · the two `ai-assist` request-side-blind-spot instances, if they warrant a standing rule.
+
+### Triage step 1, ruled 2026-08-15
+
+The triage report asked for two deferrals to be filed **before** any `active/` migration, on the
+grounds that migration is the event that buries them. Owner ruled on both:
+
+- **Web-rig coverage gate** (`ts-res-ui-components` and siblings declare thresholds of `0`, so
+  #517's rig fix never reaches them) — **deferred.** Not filed. Recorded here so the next sweep
+  finds a decision rather than re-discovering the gap: it is known, and it is not being carried.
+- **`IMemoryIndex` partial-read redesign** — **queued**, as
+  `agent-memory-index-partial-read` 🟢 in `docs/WORKSTREAMS.md` § Active workstreams. It is next
+  up. It went to the ledger's active queue rather than `FUTURE.md` because it is work we intend
+  to start, and `FUTURE.md` is where things go when we don't.

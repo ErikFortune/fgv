@@ -128,6 +128,25 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-memory-index-partial-read` 🟢 (queued 2026-08-15 — next up)
+
+**Status:** 🟢 ready to start. **Design-first, and breaking.** No hard dependency unmet.
+**Package surface (expected):** `@fgv/ts-agent-memory` (`IMemoryIndex`, `MemoryIndex`, `FileTreeMemoryStore`'s read paths) — and by contract anything implementing `IMemoryIndex`.
+**Predecessor:** `agent-memory-index-injection-seam` (#582), which shipped the injection point and named this as the sequel.
+
+**Mission.** Lower `FileTreeMemoryStore`'s resident-memory ceiling — for real, rather than making it measurable.
+
+**Why it needs a stream and not a patch.** #582 added `index?: IMemoryIndex` so a caller can supply their own index, and it is easy to read that as the memory fix. It is not, and `LIBRARY_CAPABILITIES.md` says so in as many words: *"This is an instrumentation seam, not a resident-memory fix — `IMemoryIndex`'s read surface returns whole records by construction, so any conforming index still materializes every body."* An injected index changes **where** records come from, not **whether** bodies are held. The ceiling is in the contract, so only a contract change moves it.
+
+**Shape of the work.** Partial reads: let the index answer with enough to satisfy filtering, ordering and cohort selection **without materializing every body**, and fetch bodies on demand. That is a breaking change to `IMemoryIndex`'s read surface, which is why it is design-first. Two constraints the design has to respect, both learned the hard way on this surface:
+
+- The store's **write path** reads the index too — content-hash dedup, write-policy admission cohorts, and the temporal versioned put/delete paths all derive from it. A read surface that serves retrieval but starves those is a regression with a long fuse.
+- A **reshaping** index changes write semantics (what a versioned `put` treats as current, what cap-cull evicts), not just what reads return. The current guidance is that only a faithful delegating decorator is safe to inject; the redesign has to say what replaces that rule.
+
+**Why it is queued rather than deferred.** It survived only in TSDoc prose and one `LIBRARY_CAPABILITIES.md` sentence — `grep -niE "partial-read|resident memory|IMemoryIndex"` over `FUTURE.md` and `TECH_DEBT.md` returned nothing. Filed here on 2026-08-15 so it has a ledger home before its predecessor's artifacts migrate out of `active/`, since migration is the event that buries this class of item.
+
+**Carried forward from the predecessor, do not lose in migration:** #582's `result.md` records that its review was a **self-review, not an independent `code-reviewer` pass** (no agent-spawn tool in that session) and asks the orchestrator to commission one. Whether that happened is not determinable from inside this repo.
+
 ### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
 
 **Status:** 🟢 **shipped to `release`** — all five units merged 2026-08-12, plus one unplanned refactor that unblocked them. Nothing published yet; the alpha still has to go out. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md`, `…-reply-2026-08-11-ask-package.md`, `…-status-2026-08-12-stream-a.md`, `…-status-2026-08-12-shipped.md`.
