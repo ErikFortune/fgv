@@ -147,6 +147,21 @@ substrate. Don't queue streams against them here.
 
 **Carried forward from the predecessor, do not lose in migration:** #582's `result.md` records that its review was a **self-review, not an independent `code-reviewer` pass** (no agent-spawn tool in that session) and asks the orchestrator to commission one. Whether that happened is not determinable from inside this repo.
 
+### `vector-rebuild-report-by-kind` 🟢 (queued 2026-08-15 — breaking, coordinated)
+
+**Status:** 🟢 ready to start. **Breaking** on a pre-1.0 surface, by agreement with the consumer. Delivery must be coordinated — see below.
+**Package surface:** `@fgv/ts-agent-memory` (`IVectorRebuildReport`, `IMemoryRecordSource`, `InMemoryCosineIndex`), `@fgv/ts-agent-memory-sqlite-vec` (contract follower), `.ai/instructions/LIBRARY_CAPABILITIES.md`.
+**Brief:** `.ai/tasks/active/vector-rebuild-report-by-kind/brief.md`
+**Origin:** four-round exchange with PersonAIlity, 2026-08-15, out of their ask 1 of 9 — which had already shipped in `5.1.0-48`.
+
+**Mission.** Resolve every count in `IVectorRebuildReport` by kind, add `excluded` (which needs `IMemoryRecordSource.list()` to report what it filtered), and decouple coverage reporting from the error-handling mode.
+
+**The rule the stream exists to install**, and the reason it is worth a stream rather than a patch: *every count in a coverage report is resolved by kind, because such a report exists to answer "is my coverage what I intended?", and no bare total can answer that in either direction.* The tempting exception — that `indexed` is the positive case and recoverable from the index — was tested against the API report and is **false**: hits carry `target`, not `kind`; `query` needs a probe vector and a `topK`; there is no enumeration. `indexed` is in fact the more dangerous count to leave bare, being the one a coverage surface renders.
+
+**How it got here is the justification.** The consumer's first proposed fix was in the wrong layer and they conceded it; their counter caught us about to reproduce the thread's own defect one layer down; and their final question — *what is the rule, so the next person is not deciding a fourth field by re-running this argument?* — inverted the answer we were about to give. The brief carries the rejected alternatives with their reasons so they are not re-litigated.
+
+**Coordination is not optional.** Their bump tooling takes the whole `@fgv` set at once, so a breaking seam change would otherwise arrive with everything else and be discovered by a red build rather than by reading. Flag the alpha that carries it.
+
 ### `sqlite-vec-path-open` 🟢 (queued 2026-08-15 — small, additive)
 
 **Status:** 🟢 ready to start. Additive; nothing existing changes or goes away.

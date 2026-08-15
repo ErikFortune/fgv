@@ -2,6 +2,8 @@
 
 **Answering:** your §2, 2026-08-15.
 
+**STATUS (2026-08-15): queued as the `vector-rebuild-report-by-kind` stream** — `.ai/tasks/active/vector-rebuild-report-by-kind/brief.md`, 🟢 ready to start in `docs/WORKSTREAMS.md`. The brief carries the rule, the rejected alternatives with their reasons, the docstring obligation, and the coordination requirement. One question still open with you: staged or in one change.
+
 **Short version: kind-resolve `indexed` too. The distinction you offered is false — we checked — and once it falls, the rule that replaces it is simpler than any exception would have been.**
 
 ---
