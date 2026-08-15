@@ -149,7 +149,7 @@ substrate. Don't queue streams against them here.
 
 ### `vector-rebuild-report-by-kind` 🔵 (code complete 2026-08-15 — breaking, coordinated)
 
-**Status:** 🔵 in flight — code complete, all gates green, awaiting merge to `release`. Deliberately **not** ✅: this ledger's own legend defines that as *merged to `release`*, and nothing is merged. **Breaking** on a pre-1.0 surface, by agreement with the consumer. Delivery must be coordinated — see below.
+**Status:** 🔵 in flight — code complete, all gates green, **#633** open against `integration/sweep-followups`, awaiting merge to `release`. Deliberately **not** ✅: this ledger's own legend defines that as *merged to `release`*, and nothing is merged. **Breaking** on a pre-1.0 surface, by agreement with the consumer. Delivery must be coordinated — see below.
 **Package surface:** `@fgv/ts-agent-memory` (`IVectorRebuildReport`, `IMemoryRecordSource`, `InMemoryCosineIndex`), `@fgv/ts-agent-memory-sqlite-vec` (contract follower), `.ai/instructions/LIBRARY_CAPABILITIES.md`.
 **Artifacts:** `.ai/tasks/completed/2026-08/vector-rebuild-report-by-kind/` (`brief.md`, `result.md`, `README.md`, `meta.yaml`)
 **Origin:** four-round exchange with PersonAIlity, 2026-08-15, out of their ask 1 of 9 — which had already shipped in `5.1.0-48`.

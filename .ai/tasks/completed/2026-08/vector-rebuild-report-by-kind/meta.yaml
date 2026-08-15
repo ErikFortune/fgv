@@ -7,7 +7,10 @@ status: in-flight
 packages:
   - '@fgv/ts-agent-memory'
   - '@fgv/ts-agent-memory-sqlite-vec'
+# Open, not merged — this list asserts merged PRs, so it stays empty until #633 lands.
+# See `notes`.
 prs: []
+openPrs: [633]
 opened: 2026-08-15
 closed: 2026-08-15
 summary:
@@ -76,8 +79,8 @@ notes: >
   On its own branch stacked on `integration/sweep-followups`. `status` stays `in-flight` and the
   ledger marker stays blue until the PR merges to `release` — the ledger's own legend defines
   green-tick as "merged to `release`", and marking it earlier asserts a merge that has not
-  happened. `prs` is filled in when the PR opens; an empty list is the honest state rather than
-  naming the integration branch's own PR, which this stream does not belong to.
+  happened. #633 (→ `integration/sweep-followups`) carries it; `prs` stays empty until that merges to
+  `release`, since the field asserts merged PRs. It is tracked meanwhile on `openPrs`.
   Open and not yet discharged: the coordination flag has been WRITTEN but not acknowledged. The
   brief called coordination "required and not optional" because a silent arrival is the failure
   mode, and writing the note is only half of that. Confirm PersonAIlity has read
