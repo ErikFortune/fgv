@@ -147,6 +147,19 @@ substrate. Don't queue streams against them here.
 
 **Carried forward from the predecessor, do not lose in migration:** #582's `result.md` records that its review was a **self-review, not an independent `code-reviewer` pass** (no agent-spawn tool in that session) and asks the orchestrator to commission one. Whether that happened is not determinable from inside this repo.
 
+### `sqlite-vec-path-open` 🟢 (queued 2026-08-15 — small, additive)
+
+**Status:** 🟢 ready to start. Additive; nothing existing changes or goes away.
+**Package surface:** `@fgv/ts-agent-memory-sqlite-vec` (both index classes + `model.ts`), `.ai/instructions/LIBRARY_CAPABILITIES.md`.
+**Brief:** `.ai/tasks/active/sqlite-vec-path-open/brief.md`
+**Origin:** PersonAIlity ask, 2026-08-14, against `5.1.0-49`. Consumer-marked **low** priority with a shipped workaround and an explicit "a won't-do is a fine answer".
+
+**Mission.** Add a path-based factory beside the existing bring-your-own-`Database` one, so the single-index case needs neither a consumer value-import of `better-sqlite3` nor a hand-rolled `captureResult` around a constructor that throws.
+
+**Why it is worth doing at all.** All four of the ask's claims re-verified against source, and one is sharper than the ask states: our three source files import `better-sqlite3` as `import type` **only**. The consumer's value-import is not shared discomfort — it exists solely because our factory signature forces it. This really is the one place the wrapper leaks its own dependency into consumer source.
+
+**Two corrections to the ask, both in the brief.** It names one class; `SqliteVecFragmentIndex.create` has the same shape and the same leak, so a fragment-only consumer is unhelped — do both or neither. And `close()` cannot just be a method: `create()`-made instances hold a consumer-owned handle and must stay incapable of closing it, so the disposer should travel with `open()`'s return rather than sit on the class. That second one changes their call site, so it is worth telling them before we build.
+
 ### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
 
 **Status:** 🟢 **shipped to `release`** — all five units merged 2026-08-12, plus one unplanned refactor that unblocked them. Nothing published yet; the alpha still has to go out. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md`, `…-reply-2026-08-11-ask-package.md`, `…-status-2026-08-12-stream-a.md`, `…-status-2026-08-12-shipped.md`.
