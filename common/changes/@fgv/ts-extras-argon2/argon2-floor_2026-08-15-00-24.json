@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-argon2",
+      "comment": "Raise the argon2 dependency to ^0.45.0, the floor the stream's binding phase-B brief specified. It shipped pinned ~0.44.0 — a tilde range that can never reach the stated floor. Resolves to 0.45.1. Cross-runtime byte-identical output re-verified: the RFC 9106 parameter-set vector and the 7-case sweep still agree between argon2 and hash-wasm, which is the load-bearing property.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-argon2"
+}
