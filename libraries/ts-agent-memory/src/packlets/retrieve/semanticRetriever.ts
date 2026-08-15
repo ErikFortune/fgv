@@ -4,16 +4,18 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { IMemoryRecord, edgeTargetKey } from '../types';
-import { IIndexedMemoryRecord, IMemoryIndex } from '../index';
+import { IMemoryRecord, IMemoryRecordResolver } from '../types';
+import { IIndexedMemoryEntry, IMemoryIndex } from '../index';
 import { IVectorIndex, IVectorQueryHit } from '../vector';
 import {
   IMemoryQuery,
   IMemoryRetriever,
   IMemoryRetrieverCapabilities,
+  IRetrieverCreateParams,
   SEMANTIC_UNWIRED_MESSAGE,
   indexedRecordMatchesQuery,
-  limitRecords,
+  limitEntries,
+  materializeEntries,
   temporalUnwiredMessage
 } from './retriever';
 
@@ -42,9 +44,7 @@ export interface ISemanticBackend {
  * Construction options for {@link SemanticRetriever.create}.
  * @public
  */
-export interface ISemanticRetrieverCreateParams {
-  /** The record index, used to resolve vector hits back to full records. */
-  readonly index: IMemoryIndex;
+export interface ISemanticRetrieverCreateParams extends IRetrieverCreateParams {
   /**
    * The semantic backend. When absent, the retriever reports
    * `supportsSemanticRecall: false` and a `query.semantic` request degrades
@@ -67,11 +67,13 @@ export interface ISemanticRetrieverCreateParams {
  */
 export class SemanticRetriever implements IMemoryRetriever {
   private readonly _index: IMemoryIndex;
+  private readonly _resolver: IMemoryRecordResolver;
   private readonly _backend: ISemanticBackend | undefined;
 
-  private constructor(index: IMemoryIndex, backend: ISemanticBackend | undefined) {
-    this._index = index;
-    this._backend = backend;
+  private constructor(params: ISemanticRetrieverCreateParams) {
+    this._index = params.index;
+    this._resolver = params.resolver;
+    this._backend = params.backend;
   }
 
   /** {@inheritDoc IMemoryRetriever.capabilities} */
@@ -85,7 +87,7 @@ export class SemanticRetriever implements IMemoryRetriever {
 
   /** Family-convention factory. */
   public static create(params: ISemanticRetrieverCreateParams): Result<SemanticRetriever> {
-    return succeed(new SemanticRetriever(params.index, params.backend));
+    return succeed(new SemanticRetriever(params));
   }
 
   /** {@inheritDoc IMemoryRetriever.retrieve} */
@@ -118,22 +120,20 @@ export class SemanticRetriever implements IMemoryRetriever {
     if (hits.isFailure()) {
       return fail(hits.message);
     }
-    // Key by the canonical scope-qualified target so a hit re-resolves to the
-    // exact record it scored against — a bare id would alias two records that
-    // share a filename stem across scopes.
-    const byKey: Map<string, IIndexedMemoryRecord> = new Map(
-      this._index
-        .entries()
-        .map((entry) => [edgeTargetKey({ scope: entry.scope, id: entry.record.envelope.id }), entry])
-    );
-    const records: IMemoryRecord<unknown>[] = [];
+    // Resolve each hit by its canonical scope-qualified target — a bare id would
+    // alias two records that share a filename stem across scopes. This used to
+    // build a Map over the ENTIRE index to look up at most `topK` of them; the
+    // index's own `get` makes it O(hits).
+    const selected: IIndexedMemoryEntry[] = [];
     for (const hit of hits.value) {
-      const entry: IIndexedMemoryRecord | undefined = byKey.get(edgeTargetKey(hit.target));
+      const entry: IIndexedMemoryEntry | undefined = this._index.get(hit.target);
       if (entry !== undefined && indexedRecordMatchesQuery(entry, query)) {
-        records.push(entry.record);
+        selected.push(entry);
       }
     }
-    return succeed(limitRecords(records, query.limit, query.offset));
+    // Hit order IS the ranking, so the page is taken before materializing and
+    // only the returned records are read.
+    return materializeEntries(limitEntries(selected, query.limit, query.offset), this._resolver);
   }
 
   /**

@@ -23,6 +23,53 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## `listScoped` can fail on a concurrent eviction, and the loss is not countable
+
+`FileTreeMemoryStore.listScoped()` is the sole feed for `asRecordSource()`, and therefore for
+`IVectorIndex.rebuild`. Since `agent-memory-index-partial-read` (2026-08-15) the index holds
+envelopes rather than records, so `listScoped` reads a file per record — and it does **not** hold the
+write lock. A concurrent `put` whose cap-cull physically evicts a record between the envelope
+snapshot and the read makes the whole call fail, which fails a live rebuild over an entirely ordinary
+write.
+
+**The obvious fix is wrong and was tried.** Dropping the vanished record instead lands it in none of
+the listing's `records` / `excluded`, nor the report's `indexed` / `declined` / `skipped` — so a
+caller computing coverage undercounts *in the direction of looking healthier*. That is verbatim the
+failure `vectorRecordSource`'s own tally exists to prevent, reintroduced one layer down. It was
+caught by that stream's antagonist pass and reverted to fail-loud, which is recoverable where a
+silent undercount is not.
+
+**What a real fix needs**: make the loss *countable*. Either extend `IMemoryRecordListing` with a
+third tally beside `excluded` (a record that vanished mid-read is neither excluded nor a fault of the
+embedder, so it is a genuinely new category), or take a read lock for the duration of the walk and
+pay the write-latency instead. Both are contract or concurrency decisions that should not be made
+inside an unrelated stream.
+
+**Trigger**: the next `IMemoryRecordSource` / `IVectorRebuildReport` change, or the first report of a
+rebuild failing under write load.
+
+**Reference**: `.ai/tasks/completed/2026-08/agent-memory-index-partial-read/` § "The one that nearly
+shipped wrong".
+
+---
+
+## Whether on-demand body reads want a cache
+
+`agent-memory-index-partial-read` made every `list` / retrieve materialize bodies from storage on
+demand. Its brief put a cache policy explicitly out of scope, and the design argued (OQ-3) that the
+required-narrowing selection makes caching moot by removing the accidental whole-vault read.
+
+That argument covers the *accidental* case, not the deliberate one: a caller with a genuinely hot
+working set now re-reads the same files on every query, and nothing measures how often. **Open, and
+deliberately not answered by symmetry** — if it is worth doing, it should be driven by a measured
+consumer workload, with the eviction policy chosen from what that workload shows. Recording it here
+because the stream's `result.md` re-opened it after the design closed it, and a question live in two
+documents with opposite answers is a question that belongs in this file.
+
+**Trigger**: a consumer reporting read amplification, or the first workload measurement.
+
+---
+
 ## `IFragmentVectorIndex` rebuild has no coverage report
 
 `InMemoryFragmentCosineIndex.rebuild(source, embed)` returns a bare `Result<number>` — the total

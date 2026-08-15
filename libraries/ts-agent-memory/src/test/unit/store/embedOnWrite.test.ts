@@ -12,6 +12,7 @@ import {
   IBodyConverterRegistry,
   IEdgeTarget,
   IIdentityCodec,
+  IIndexedMemoryEntry,
   IIndexedMemoryRecord,
   IMemoryIndex,
   IMemoryRecord,
@@ -36,7 +37,8 @@ import {
   SemanticRetriever,
   TemporalIdentityCodec,
   TemporalVersionedPolicy,
-  envelopeConverter
+  envelopeConverter,
+  scanEveryRecord
 } from '../../../index';
 
 const knowledgeKind: Kind = 'knowledge' as Kind;
@@ -112,7 +114,7 @@ class CommitRecordingIndex implements IMemoryIndex {
   public constructor(order: string[]) {
     this._order = order;
   }
-  public rebuild(entries: ReadonlyArray<IIndexedMemoryRecord>): Result<number> {
+  public rebuild(entries: ReadonlyArray<IIndexedMemoryEntry>): Result<number> {
     return this._inner.rebuild(entries);
   }
   public patch(op: MemoryIndexPatchOp, entry: IIndexedMemoryRecord): Result<IIndexedMemoryRecord> {
@@ -123,19 +125,23 @@ class CommitRecordingIndex implements IMemoryIndex {
       return succeed(applied);
     });
   }
-  public entries(): ReadonlyArray<IIndexedMemoryRecord> {
+  public get(target: IEdgeTarget): IIndexedMemoryEntry | undefined {
+    return this._inner.get(target);
+  }
+
+  public entries(): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.entries();
   }
-  public byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byKind(kind: Kind): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byKind(kind);
   }
-  public byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byTag(tag: Tag): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byTag(tag);
   }
-  public byRecency(): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byRecency(): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byRecency();
   }
-  public byRank(): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byRank(): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byRank();
   }
   public backlinks(target: IEdgeTarget): ReadonlyArray<IEdgeTarget> {
@@ -390,16 +396,22 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       // store's derived index is private and the two are intentionally
       // decoupled), so build a record index mirroring the store — keyed by the
       // shared vectorIndex instance — for hit hydration.
-      const listed: ReadonlyArray<IMemoryRecord<unknown>> = (await store.list()).orThrow();
+      const listed: ReadonlyArray<IMemoryRecord<unknown>> = (await store.list(scanEveryRecord())).orThrow();
       const recordIndex = MemoryIndex.create().orThrow();
       recordIndex
         .rebuild(
-          listed.map((record): IIndexedMemoryRecord => ({ scope: 'knowledge' as MemoryScopeKey, record }))
+          listed.map(
+            (record): IIndexedMemoryEntry => ({
+              scope: 'knowledge' as MemoryScopeKey,
+              envelope: record.envelope
+            })
+          )
         )
         .orThrow();
 
       const retriever = SemanticRetriever.create({
         index: recordIndex,
+        resolver: store,
         backend: { vectorIndex: index, embedQuery: queryEmbed }
       }).orThrow();
       expect(retriever.capabilities.supportsSemanticRecall).toBe(true);

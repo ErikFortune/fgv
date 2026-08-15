@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "BREAKING: IMemoryIndex holds and returns IIndexedMemoryEntry (scope + envelope, no body) across every read; adds get(target) for O(1) keyed lookup; rebuild takes projected entries while patch keeps whole records. IMemoryStore.list now requires a selection that narrows and rejects one that does not, naming the new scanEveryRecord() opt-out; listEntries() is the free envelope-only whole-vault read. Retrievers take { index, resolver } and materialize through the new IMemoryRecordResolver. Removes the store's resident-body ceiling from the contract rather than from one implementation, and drops the open path's peak body residency from N records to one. IMemoryStore additionally extends IMemoryRecordResolver and gains a required listEntries(), so any implementation or test double of it must be widened. The @public free functions indexedRecordMatchesQuery and selectByQuery take entries now, and selectByQuery returns them.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}

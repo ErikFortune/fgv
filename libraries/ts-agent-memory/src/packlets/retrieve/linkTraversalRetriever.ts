@@ -4,15 +4,17 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { IEdgeTarget, IMemoryRecord, edgeTargetKey } from '../types';
-import { IIndexedMemoryRecord, IMemoryIndex } from '../index';
+import { IEdgeTarget, IMemoryRecord, IMemoryRecordResolver, edgeTargetKey } from '../types';
+import { IIndexedMemoryEntry, IMemoryIndex } from '../index';
 import {
   IMemoryQuery,
   IMemoryRetriever,
   IMemoryRetrieverCapabilities,
+  IRetrieverCreateParams,
   guardRetrieverCapabilities,
   indexedRecordMatchesQuery,
-  limitRecords,
+  limitEntries,
+  materializeEntries,
   orderingCompare
 } from './retriever';
 
@@ -58,14 +60,16 @@ export const LINK_TRAVERSAL_NO_SEED_MESSAGE: string =
  */
 export class LinkTraversalRetriever implements IMemoryRetriever {
   private readonly _index: IMemoryIndex;
+  private readonly _resolver: IMemoryRecordResolver;
 
-  private constructor(index: IMemoryIndex) {
-    this._index = index;
+  private constructor(params: IRetrieverCreateParams) {
+    this._index = params.index;
+    this._resolver = params.resolver;
   }
 
   /** Family-convention factory. */
-  public static create(index: IMemoryIndex): Result<LinkTraversalRetriever> {
-    return succeed(new LinkTraversalRetriever(index));
+  public static create(params: IRetrieverCreateParams): Result<LinkTraversalRetriever> {
+    return succeed(new LinkTraversalRetriever(params));
   }
 
   /** {@inheritDoc IMemoryRetriever.capabilities} */
@@ -88,7 +92,6 @@ export class LinkTraversalRetriever implements IMemoryRetriever {
       return fail(LINK_TRAVERSAL_NO_SEED_MESSAGE);
     }
     const hops: number = query.hops ?? DEFAULT_HOPS;
-    const byKey: ReadonlyMap<string, IIndexedMemoryRecord> = this._indexByKey();
 
     // The visited-set IS the cycle guard: nodes are canonicalized to their
     // `(scope, id)` string, so set membership is an exact identity check. The
@@ -99,7 +102,7 @@ export class LinkTraversalRetriever implements IMemoryRetriever {
     for (let hop = 0; hop < hops && frontier.length > 0; hop++) {
       const next: IEdgeTarget[] = [];
       for (const node of frontier) {
-        for (const neighbor of outbound ? this._outbound(node, byKey) : this._inbound(node)) {
+        for (const neighbor of outbound ? this._outbound(node) : this._inbound(node)) {
           const neighborKey: string = edgeTargetKey(neighbor);
           if (!visited.has(neighborKey)) {
             visited.add(neighborKey);
@@ -111,40 +114,25 @@ export class LinkTraversalRetriever implements IMemoryRetriever {
       frontier = next;
     }
 
-    const entries: IIndexedMemoryRecord[] = [];
+    const entries: IIndexedMemoryEntry[] = [];
     for (const node of reached) {
-      const match: IIndexedMemoryRecord | undefined = byKey.get(edgeTargetKey(node));
+      const match: IIndexedMemoryEntry | undefined = this._index.get(node);
       if (match !== undefined) {
         entries.push(match);
       }
     }
-    const ordered: IMemoryRecord<unknown>[] = entries
+    const ordered: ReadonlyArray<IIndexedMemoryEntry> = entries
       .filter((entry) => indexedRecordMatchesQuery(entry, query))
-      .map((entry) => entry.record)
       .sort(orderingCompare(query.orderBy));
-    return succeed(limitRecords(ordered, query.limit, query.offset));
-  }
-
-  /**
-   * Group the index's entries by their scope-qualified {@link edgeTargetKey}
-   * `(scope, id)` composite. Each composite is the index's primary key, so it maps
-   * to exactly one entry — two records that reuse a filename stem across scopes
-   * (e.g. `turn-0` in two conversations) get distinct keys and never collide.
-   */
-  private _indexByKey(): ReadonlyMap<string, IIndexedMemoryRecord> {
-    const byKey: Map<string, IIndexedMemoryRecord> = new Map<string, IIndexedMemoryRecord>();
-    for (const entry of this._index.entries()) {
-      byKey.set(edgeTargetKey({ scope: entry.scope, id: entry.record.envelope.id }), entry);
-    }
-    return byKey;
+    return materializeEntries(limitEntries(ordered, query.limit, query.offset), this._resolver);
   }
 
   /** Outbound neighbors: the scope-qualified targets of every edge on the record at `node`. */
-  private _outbound(node: IEdgeTarget, byKey: ReadonlyMap<string, IIndexedMemoryRecord>): IEdgeTarget[] {
+  private _outbound(node: IEdgeTarget): IEdgeTarget[] {
     const targets: IEdgeTarget[] = [];
-    const match: IIndexedMemoryRecord | undefined = byKey.get(edgeTargetKey(node));
+    const match: IIndexedMemoryEntry | undefined = this._index.get(node);
     if (match !== undefined) {
-      for (const edge of match.record.envelope.links) {
+      for (const edge of match.envelope.links) {
         targets.push(edge.target);
       }
     }

@@ -83,7 +83,15 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   is not the answer.
 
   **Trigger**: the next change to `IVectorIndex`, `IFragmentVectorIndex`, `IMemoryIndex` or
-  `IMemoryRecordSource`. Which, given the queued `agent-memory-index-partial-read`, is imminent.
+  `IMemoryRecordSource`.
+
+  **THIRD FIRING, 2026-08-15 — and it widened the class.** `agent-memory-index-partial-read` broke
+  `samples/testbed` again, and this time the casualty was **`scenarios/memoryToolsGate/index.ts`, a
+  *source* file**, not a test double: it constructs retrievers, and the `{ index, resolver }`
+  widening reached it. So remedy (a) — a shared exported test double — would **not** have caught
+  this one; only (b), the repo-wide build, did. That reweights the sketch: (b) is no longer merely
+  the cheap option, it is the only one demonstrated to cover the observed cases. Three streams,
+  three catches, all by `rush rebuild` after green per-package gates.
 
   **Scope sketch**: two candidates, not exclusive. (a) Replace the hand-rolled fake with a shared
   test double exported from a single place, so a contract change updates one file rather than
@@ -92,8 +100,8 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   stream whose brief declares a shared-contract change, so it is a checked box rather than a
   remembered practice. (b) is cheap and mechanical; (a) removes the class.
 
-  **Not a P3**: P3 is opportunistic, and the trigger has fired twice in two streams on the same
-  contract with a third queued. The cost each time is a red repo-wide build discovered after the
+  **Not a P3**: P3 is opportunistic, and the trigger has now fired **three times in three
+  consecutive streams** on the same contract. The cost each time is a red repo-wide build discovered after the
   per-package gates were green — i.e. after an implementer reasonably believed they were done.
 
   **Reference**: `docs/WORKSTREAMS.md` § `personaility-asks-2026-08` (the #614 break) and

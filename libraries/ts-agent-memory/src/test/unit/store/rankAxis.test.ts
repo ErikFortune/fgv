@@ -151,7 +151,9 @@ describe('FileTreeMemoryStore rank axis', () => {
     // the way the store keys it rather than by a fabricated stand-in.
     const scoped = (await store.listScoped()).orThrow();
     const index = MemoryIndex.create().orThrow();
-    index.rebuild(scoped.map(({ target, record }) => ({ scope: target.scope, record }))).orThrow();
+    index
+      .rebuild(scoped.map(({ target, record }) => ({ scope: target.scope, envelope: record.envelope })))
+      .orThrow();
     return index;
   }
 
@@ -350,7 +352,10 @@ describe('FileTreeMemoryStore rank axis', () => {
       // A plain-kind record has no projector → rank absent → sorts last.
       await store.put(makeRecord({ id: 'p', kind: plainKind, body: 'zzzz' }));
 
-      const retriever = RecencyRetriever.create(await indexFromStore(store)).orThrow();
+      const retriever = RecencyRetriever.create({
+        index: await indexFromStore(store),
+        resolver: store
+      }).orThrow();
       expect(await retriever.retrieve({ orderBy: 'rank' })).toSucceedAndSatisfy(
         (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
           expect(records.map((r) => r.envelope.id)).toEqual(['bbb', 'cc', 'a', 'p']);
@@ -445,7 +450,10 @@ describe('FileTreeMemoryStore rank axis', () => {
       // the surviving order among unranked records is arbitrary with respect to
       // rank, so it looks like a working ranking with a plausible tail.
       (await store.put(makeRecord({ id: 'new', body: 'yyy' }))).orThrow();
-      const before = RecencyRetriever.create(await indexFromStore(store)).orThrow();
+      const before = RecencyRetriever.create({
+        index: await indexFromStore(store),
+        resolver: store
+      }).orThrow();
       expect(await before.retrieve({ kinds: [knowledgeKind], orderBy: 'rank' })).toSucceedAndSatisfy(
         (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
           expect(records.map((r) => r.envelope.id)).toEqual(['new', 'short', 'long']);
@@ -454,7 +462,10 @@ describe('FileTreeMemoryStore rank axis', () => {
 
       expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(2);
 
-      const after = RecencyRetriever.create(await indexFromStore(store)).orThrow();
+      const after = RecencyRetriever.create({
+        index: await indexFromStore(store),
+        resolver: store
+      }).orThrow();
       expect(await after.retrieve({ kinds: [knowledgeKind], orderBy: 'rank' })).toSucceedAndSatisfy(
         (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
           // Now ordered by what the projector actually says: 10, 3, 1.

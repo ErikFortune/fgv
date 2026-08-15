@@ -27,6 +27,7 @@ import {
   IIngestItemResult,
   InMemoryCosineIndex,
   IMemoryClassification,
+  IIndexedMemoryEntry,
   IMemoryClassifier,
   IMemoryEnvelope,
   IMemoryRecord,
@@ -53,7 +54,8 @@ import {
   Tag,
   TemporalIdentityCodec,
   TemporalVersionedPolicy,
-  serializeMemoryFile
+  serializeMemoryFile,
+  scanEveryRecord
 } from '../../../index';
 
 // --- kinds --------------------------------------------------------------------
@@ -519,9 +521,14 @@ function mockStore(overrides: Partial<IMemoryStore>): IMemoryStore {
     list:
       overrides.list ??
       ((): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>> => Promise.resolve(succeed([]))),
+    listEntries:
+      overrides.listEntries ??
+      ((): Promise<Result<ReadonlyArray<IIndexedMemoryEntry>>> => Promise.resolve(succeed([]))),
     listScoped:
       overrides.listScoped ??
       ((): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> => Promise.resolve(succeed([]))),
+    resolveRecord:
+      overrides.resolveRecord ?? ((): Result<IMemoryRecord<unknown> | undefined> => succeed(undefined)),
     // Mirrors the store's default policy (KnowledgeLwwPolicy → 'content'), so a
     // mock store keeps the pre-accessor layer-1 behavior unless a test overrides it.
     dedupScopeFor: overrides.dedupScopeFor ?? ((): DedupScope => 'content'),
@@ -1067,10 +1074,12 @@ describe('MemoryIngestOrchestrator — contradicts→temporal interlock', () => 
       (rec: IMemoryRecord<unknown> | undefined) => expect(rec?.body).toBe('the sky is grey')
     );
     // The prior version is invalidated (invalidate-don't-delete).
-    expect(await store.list()).toSucceedAndSatisfy((all: ReadonlyArray<IMemoryRecord<unknown>>) => {
-      const v1 = all.find((rec) => rec.envelope.id === v1Id);
-      expect(v1?.envelope.temporal?.invalid_at).toBe(2000);
-    });
+    expect(await store.list(scanEveryRecord())).toSucceedAndSatisfy(
+      (all: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        const v1 = all.find((rec) => rec.envelope.id === v1Id);
+        expect(v1?.envelope.temporal?.invalid_at).toBe(2000);
+      }
+    );
   });
 
   test('an invalidated version does not exact-dedup a later candidate that repeats its body', async () => {

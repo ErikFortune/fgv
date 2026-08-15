@@ -271,6 +271,59 @@ if (this.internalState.isCorrupted()) {
 
 ---
 
+## Measurement Harnesses
+
+A harness that reports a number is not a test, and it fails differently: a broken test goes red, a
+broken harness prints a plausible figure and is believed. The rules below come from a resident-memory
+harness that produced confident, meaningless numbers twice before it produced a real one.
+
+### Sanity-check that the fixture frees what it claims to hold
+
+**Before trusting any figure a memory harness prints, verify that dropping the fixture releases
+roughly what building it consumed.** If it does not, the fixture was never resident and every number
+downstream of it is noise.
+
+Concretely, on the `agent-memory-index-partial-read` stream: bodies built as
+`` `${i}:`.padEnd(4096, 'abc…') `` measured **1.15 MiB** for 2000 strings totalling **8.2 MiB of
+characters**, and freeing all of them released **0.04 MiB**. V8 shares the padding's backing store
+across calls, so the corpus did not exist in the sense the harness assumed — and the A/B built on it
+compared two numbers that were both float. Random hex (`crypto.randomBytes(n).toString('hex')`)
+retains and releases exactly its own size and is the safe default for a synthetic corpus.
+
+The check is three lines and it is not optional:
+
+```js
+const base = sample();
+let held = build();              // the fixture
+const built = sample() - base;
+held = undefined;
+const released = built - (sample() - base);
+// released should be ≈ built. If it is not, stop — the fixture is not resident.
+```
+
+### An A/B must not share a corpus between its passes
+
+If both passes read from one pre-built collection, that collection retains everything, and the
+"holds more" side costs one pointer per entry. The comparison then reports **no difference** — for
+entirely the wrong reason, and in the direction that flatters whichever change you were hoping to
+validate. Each pass must build its own corpus and let its own references die as it goes.
+
+### Prefer a script to a test excluded from the coverage gate
+
+A measurement that has to be excluded from the gate is telling you it does not belong in the suite:
+it puts a machine-dependent number behind CI and makes CI's runtime a function of the fixture size.
+Put it under the package's `perf/` directory, run it on demand, and paste its output into the
+stream's `result.md` where a reviewer can see the actual figures rather than a green check.
+
+### State the prediction before running it
+
+The point of a harness is that it can **falsify** a design. Write down what the number should be and
+what a miss means *before* the first run — e.g. "if the drop is not roughly the body volume, the
+design is wrong and the design doc should be revised rather than the threshold lowered." A threshold
+chosen after seeing the result measures nothing.
+
+---
+
 ## Testing Principles
 
 ### Core Guidelines

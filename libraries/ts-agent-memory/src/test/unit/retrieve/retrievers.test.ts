@@ -8,13 +8,14 @@ import { DetailedResult, Result, fail, succeed, succeedWithDetail } from '@fgv/t
 import {
   HybridRetriever,
   IEdgeTarget,
-  IIndexedMemoryRecord,
   IMemoryQuery,
   IMemoryRecord,
   IMemoryRetriever,
   IMemoryRetrieverCapabilities,
   IVectorIndex,
   IVectorQueryHit,
+  IIndexedMemoryEntry,
+  IRetrieverCreateParams,
   IVectorRebuildReport,
   Kind,
   MemoryId,
@@ -50,7 +51,7 @@ interface IRecordSpec {
   readonly source?: string;
 }
 
-function makeEntry(spec: IRecordSpec): IIndexedMemoryRecord {
+function makeEntry(spec: IRecordSpec): { scope: MemoryScopeKey; record: IMemoryRecord<unknown> } {
   const record: IMemoryRecord<unknown> = {
     envelope: envelopeConverter
       .convert({
@@ -74,8 +75,26 @@ function makeEntry(spec: IRecordSpec): IIndexedMemoryRecord {
 
 function buildIndex(specs: ReadonlyArray<IRecordSpec>): MemoryIndex {
   const index = MemoryIndex.create().orThrow();
-  index.rebuild(specs.map(makeEntry)).orThrow();
+  index.rebuild(specs.map(makeEntry).map((e) => ({ scope: e.scope, envelope: e.record.envelope }))).orThrow();
   return index;
+}
+
+/**
+ * An index plus a resolver over it — the pair every retriever now takes.
+ * Bodies in this suite are the synthetic `body-<id>` markers `makeEntry` mints,
+ * so the resolver reconstitutes them from the entry rather than needing a second
+ * copy of the fixture.
+ */
+function backed(index: MemoryIndex): IRetrieverCreateParams {
+  return {
+    index,
+    resolver: {
+      resolveRecord: (scope: MemoryScopeKey, id: MemoryId): Result<IMemoryRecord<unknown> | undefined> => {
+        const entry: IIndexedMemoryEntry | undefined = index.get({ scope, id });
+        return succeed(entry === undefined ? undefined : { envelope: entry.envelope, body: `body-${id}` });
+      }
+    }
+  };
 }
 
 function ids(records: ReadonlyArray<IMemoryRecord<unknown>>): ReadonlyArray<string> {
@@ -132,9 +151,7 @@ describe('retrieve helpers', () => {
   });
 
   describe('limitRecords', () => {
-    const records = buildIndex([{ id: 'a' }, { id: 'b' }, { id: 'c' }])
-      .entries()
-      .map((e) => e.record);
+    const records = [{ id: 'a' }, { id: 'b' }, { id: 'c' }].map((spec) => makeEntry(spec).record);
 
     test('returns all records when no limit is supplied', () => {
       expect(limitRecords(records)).toHaveLength(3);
@@ -176,7 +193,7 @@ describe('retrieve helpers', () => {
 
 describe('RecencyRetriever', () => {
   test('reports all-false capabilities', () => {
-    const r = RecencyRetriever.create(buildIndex([])).orThrow();
+    const r = RecencyRetriever.create(backed(buildIndex([]))).orThrow();
     expect(r.capabilities).toEqual({
       supportsSemanticRecall: false,
       supportsTemporalQuery: false,
@@ -186,11 +203,13 @@ describe('RecencyRetriever', () => {
 
   test('returns every record most-recently-updated first', async () => {
     const r = RecencyRetriever.create(
-      buildIndex([
-        { id: 'a', updated: 10 },
-        { id: 'b', updated: 30 },
-        { id: 'c', updated: 20 }
-      ])
+      backed(
+        buildIndex([
+          { id: 'a', updated: 10 },
+          { id: 'b', updated: 30 },
+          { id: 'c', updated: 20 }
+        ])
+      )
     ).orThrow();
     expect(await r.retrieve({})).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
       expect(ids(records)).toEqual(['b', 'c', 'a']);
@@ -199,11 +218,13 @@ describe('RecencyRetriever', () => {
 
   test('breaks ties on seq descending', async () => {
     const r = RecencyRetriever.create(
-      buildIndex([
-        { id: 'a', updated: 10, seq: 1 },
-        { id: 'b', updated: 10, seq: 3 },
-        { id: 'c', updated: 10, seq: 2 }
-      ])
+      backed(
+        buildIndex([
+          { id: 'a', updated: 10, seq: 1 },
+          { id: 'b', updated: 10, seq: 3 },
+          { id: 'c', updated: 10, seq: 2 }
+        ])
+      )
     ).orThrow();
     expect(await r.retrieve({})).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
       expect(ids(records)).toEqual(['b', 'c', 'a']);
@@ -217,7 +238,7 @@ describe('RecencyRetriever', () => {
       { id: 'c', scope: 'other', kind: 'knowledge', tags: ['x'], updated: 60 },
       { id: 'd', scope: 'knowledge', kind: 'note', tags: ['x'], updated: 70 }
     ]);
-    const r = RecencyRetriever.create(index).orThrow();
+    const r = RecencyRetriever.create(backed(index)).orThrow();
     expect(
       await r.retrieve({
         scope: 'knowledge' as MemoryScopeKey,
@@ -233,11 +254,13 @@ describe('RecencyRetriever', () => {
 
   test('limit truncates to the top-N after ordering', async () => {
     const r = RecencyRetriever.create(
-      buildIndex([
-        { id: 'a', updated: 10 },
-        { id: 'b', updated: 30 },
-        { id: 'c', updated: 20 }
-      ])
+      backed(
+        buildIndex([
+          { id: 'a', updated: 10 },
+          { id: 'b', updated: 30 },
+          { id: 'c', updated: 20 }
+        ])
+      )
     ).orThrow();
     expect(await r.retrieve({ limit: 2 })).toSucceedAndSatisfy(
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -247,12 +270,12 @@ describe('RecencyRetriever', () => {
   });
 
   test('degrades loudly on a semantic request', async () => {
-    const r = RecencyRetriever.create(buildIndex([{ id: 'a' }])).orThrow();
+    const r = RecencyRetriever.create(backed(buildIndex([{ id: 'a' }]))).orThrow();
     expect(await r.retrieve({ semantic: 'hello' })).toFailWith(/semantic recall requires a vector index/i);
   });
 
   test('degrades loudly on a link-traversal request', async () => {
-    const r = RecencyRetriever.create(buildIndex([{ id: 'a' }])).orThrow();
+    const r = RecencyRetriever.create(backed(buildIndex([{ id: 'a' }]))).orThrow();
     expect(await r.retrieve({ linkedTo: et('a') })).toFailWith(/link traversal requires/i);
   });
 });
@@ -314,11 +337,14 @@ describe('orderBy: rank axis', () => {
   });
 
   describe.each([
-    ['RecencyRetriever', (index: MemoryIndex): IMemoryRetriever => RecencyRetriever.create(index).orThrow()],
-    ['TagRetriever', (index: MemoryIndex): IMemoryRetriever => TagRetriever.create(index).orThrow()],
+    [
+      'RecencyRetriever',
+      (index: MemoryIndex): IMemoryRetriever => RecencyRetriever.create(backed(index)).orThrow()
+    ],
+    ['TagRetriever', (index: MemoryIndex): IMemoryRetriever => TagRetriever.create(backed(index)).orThrow()],
     [
       'StructuredFilterRetriever',
-      (index: MemoryIndex): IMemoryRetriever => StructuredFilterRetriever.create(index).orThrow()
+      (index: MemoryIndex): IMemoryRetriever => StructuredFilterRetriever.create(backed(index)).orThrow()
     ]
   ])('%s honors orderBy', (name, make) => {
     // Tag / structured-filter need their axis present to return anything.
@@ -375,7 +401,7 @@ describe('orderBy: rank axis', () => {
       { id: 'c', rank: 2, tags: ['x'], updated: 100, seq: 3 }
     ]);
     const hybrid = HybridRetriever.create(
-      [RecencyRetriever.create(index).orThrow(), TagRetriever.create(index).orThrow()],
+      [RecencyRetriever.create(backed(index)).orThrow(), TagRetriever.create(backed(index)).orThrow()],
       ScoreUnionMergeStrategy.create().orThrow()
     ).orThrow();
     expect(await hybrid.retrieve({ tag: 'x' as Tag, orderBy: 'rank' })).toSucceedAndSatisfy(
@@ -412,7 +438,7 @@ describe('orderBy: rank axis', () => {
         )
     };
     const r = SemanticRetriever.create({
-      index,
+      ...backed(index),
       backend: {
         vectorIndex,
         embedQuery: () => Promise.resolve(succeed(Float32Array.from([0.1])))
@@ -430,12 +456,14 @@ describe('orderBy: rank axis', () => {
 describe('query axes: kinds (kind-set) and offset', () => {
   function multiKindRetriever(): RecencyRetriever {
     return RecencyRetriever.create(
-      buildIndex([
-        { id: 'k1', kind: 'knowledge', updated: 40 },
-        { id: 'n1', kind: 'note', updated: 30 },
-        { id: 'e1', kind: 'event', updated: 20 },
-        { id: 'k2', kind: 'knowledge', updated: 10 }
-      ])
+      backed(
+        buildIndex([
+          { id: 'k1', kind: 'knowledge', updated: 40 },
+          { id: 'n1', kind: 'note', updated: 30 },
+          { id: 'e1', kind: 'event', updated: 20 },
+          { id: 'k2', kind: 'knowledge', updated: 10 }
+        ])
+      )
     ).orThrow();
   }
 
@@ -485,12 +513,14 @@ describe('query axes: kinds (kind-set) and offset', () => {
   describe('offset', () => {
     function ordered(): RecencyRetriever {
       return RecencyRetriever.create(
-        buildIndex([
-          { id: 'a', updated: 10 },
-          { id: 'b', updated: 40 },
-          { id: 'c', updated: 30 },
-          { id: 'd', updated: 20 }
-        ])
+        backed(
+          buildIndex([
+            { id: 'a', updated: 10 },
+            { id: 'b', updated: 40 },
+            { id: 'c', updated: 30 },
+            { id: 'd', updated: 20 }
+          ])
+        )
       ).orThrow();
     }
 
@@ -541,11 +571,13 @@ class RecordingRetriever implements IMemoryRetriever {
 describe('TagRetriever', () => {
   test('returns records carrying the tag, recency-ordered', async () => {
     const r = TagRetriever.create(
-      buildIndex([
-        { id: 'a', tags: ['x'], updated: 10 },
-        { id: 'b', tags: ['x', 'y'], updated: 30 },
-        { id: 'c', tags: ['y'], updated: 20 }
-      ])
+      backed(
+        buildIndex([
+          { id: 'a', tags: ['x'], updated: 10 },
+          { id: 'b', tags: ['x', 'y'], updated: 30 },
+          { id: 'c', tags: ['y'], updated: 20 }
+        ])
+      )
     ).orThrow();
     expect(await r.retrieve({ tag: 'x' as Tag })).toSucceedAndSatisfy(
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -555,12 +587,12 @@ describe('TagRetriever', () => {
   });
 
   test('returns empty (not failure) when no tag is supplied', async () => {
-    const r = TagRetriever.create(buildIndex([{ id: 'a', tags: ['x'] }])).orThrow();
+    const r = TagRetriever.create(backed(buildIndex([{ id: 'a', tags: ['x'] }]))).orThrow();
     expect(await r.retrieve({})).toSucceedWith([]);
   });
 
   test('degrades loudly on a semantic request', async () => {
-    const r = TagRetriever.create(buildIndex([{ id: 'a', tags: ['x'] }])).orThrow();
+    const r = TagRetriever.create(backed(buildIndex([{ id: 'a', tags: ['x'] }]))).orThrow();
     expect(await r.retrieve({ tag: 'x' as Tag, semantic: 'q' })).toFailWith(/semantic recall requires/i);
   });
 });
@@ -568,11 +600,13 @@ describe('TagRetriever', () => {
 describe('StructuredFilterRetriever', () => {
   test('applies the predicate over the scope/kind/tag pre-filter', async () => {
     const r = StructuredFilterRetriever.create(
-      buildIndex([
-        { id: 'keep-1', updated: 10 },
-        { id: 'drop-1', updated: 30 },
-        { id: 'keep-2', updated: 20 }
-      ])
+      backed(
+        buildIndex([
+          { id: 'keep-1', updated: 10 },
+          { id: 'drop-1', updated: 30 },
+          { id: 'keep-2', updated: 20 }
+        ])
+      )
     ).orThrow();
     expect(
       await r.retrieve({ filter: (rec) => (rec.envelope.id as string).startsWith('keep') })
@@ -582,7 +616,7 @@ describe('StructuredFilterRetriever', () => {
   });
 
   test('returns empty (not failure) when neither of its axes is supplied', async () => {
-    const r = StructuredFilterRetriever.create(buildIndex([{ id: 'a' }])).orThrow();
+    const r = StructuredFilterRetriever.create(backed(buildIndex([{ id: 'a' }]))).orThrow();
     expect(await r.retrieve({})).toSucceedWith([]);
   });
 
@@ -590,11 +624,13 @@ describe('StructuredFilterRetriever', () => {
     // The "show me everything this source produced" request — for review,
     // attribution, and retraction after a bad ingest.
     const r = StructuredFilterRetriever.create(
-      buildIndex([
-        { id: 'a', source: 'bad-run', updated: 10 },
-        { id: 'b', source: 'agent', updated: 20 },
-        { id: 'c', source: 'bad-run', updated: 30 }
-      ])
+      backed(
+        buildIndex([
+          { id: 'a', source: 'bad-run', updated: 10 },
+          { id: 'b', source: 'agent', updated: 20 },
+          { id: 'c', source: 'bad-run', updated: 30 }
+        ])
+      )
     ).orThrow();
     expect(await r.retrieve({ provenanceSource: 'bad-run' })).toSucceedAndSatisfy(
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -605,11 +641,13 @@ describe('StructuredFilterRetriever', () => {
 
   test('composes provenanceSource with the predicate as AND', async () => {
     const r = StructuredFilterRetriever.create(
-      buildIndex([
-        { id: 'keep', source: 'bad-run' },
-        { id: 'wrong-source', source: 'agent' },
-        { id: 'drop', source: 'bad-run' }
-      ])
+      backed(
+        buildIndex([
+          { id: 'keep', source: 'bad-run' },
+          { id: 'wrong-source', source: 'agent' },
+          { id: 'drop', source: 'bad-run' }
+        ])
+      )
     ).orThrow();
     expect(
       await r.retrieve({
@@ -623,10 +661,12 @@ describe('StructuredFilterRetriever', () => {
 
   test('matches provenance source exactly, not by prefix or substring', async () => {
     const r = StructuredFilterRetriever.create(
-      buildIndex([
-        { id: 'exact', source: 'ingest' },
-        { id: 'longer', source: 'ingest-v2' }
-      ])
+      backed(
+        buildIndex([
+          { id: 'exact', source: 'ingest' },
+          { id: 'longer', source: 'ingest-v2' }
+        ])
+      )
     ).orThrow();
     expect(await r.retrieve({ provenanceSource: 'ingest' })).toSucceedAndSatisfy(
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -636,7 +676,7 @@ describe('StructuredFilterRetriever', () => {
   });
 
   test('yields an empty page for a source no record carries', async () => {
-    const r = StructuredFilterRetriever.create(buildIndex([{ id: 'a', source: 'agent' }])).orThrow();
+    const r = StructuredFilterRetriever.create(backed(buildIndex([{ id: 'a', source: 'agent' }]))).orThrow();
     expect(await r.retrieve({ provenanceSource: 'never-used' })).toSucceedWith([]);
   });
 });
@@ -646,10 +686,12 @@ describe('provenanceSource on the shared pre-filter', () => {
   // it — not just the one that treats it as a dispatch axis.
   test('narrows a RecencyRetriever query', async () => {
     const r = RecencyRetriever.create(
-      buildIndex([
-        { id: 'a', source: 'human', updated: 10 },
-        { id: 'b', source: 'agent', updated: 20 }
-      ])
+      backed(
+        buildIndex([
+          { id: 'a', source: 'human', updated: 10 },
+          { id: 'b', source: 'agent', updated: 20 }
+        ])
+      )
     ).orThrow();
     expect(await r.retrieve({ provenanceSource: 'human' })).toSucceedAndSatisfy(
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -660,11 +702,13 @@ describe('provenanceSource on the shared pre-filter', () => {
 
   test('composes with the tag axis as AND on a TagRetriever query', async () => {
     const r = TagRetriever.create(
-      buildIndex([
-        { id: 'both', source: 'human', tags: ['x'] },
-        { id: 'tag-only', source: 'agent', tags: ['x'] },
-        { id: 'source-only', source: 'human', tags: ['y'] }
-      ])
+      backed(
+        buildIndex([
+          { id: 'both', source: 'human', tags: ['x'] },
+          { id: 'tag-only', source: 'agent', tags: ['x'] },
+          { id: 'source-only', source: 'human', tags: ['y'] }
+        ])
+      )
     ).orThrow();
     expect(await r.retrieve({ tag: 'x' as Tag, provenanceSource: 'human' })).toSucceedAndSatisfy(
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -686,7 +730,10 @@ describe('provenanceSource composition', () => {
       { id: 'b', source: 'agent', updated: 20 }
     ]);
     const hybrid = HybridRetriever.create(
-      [RecencyRetriever.create(index).orThrow(), StructuredFilterRetriever.create(index).orThrow()],
+      [
+        RecencyRetriever.create(backed(index)).orThrow(),
+        StructuredFilterRetriever.create(backed(index)).orThrow()
+      ],
       ScoreUnionMergeStrategy.create().orThrow()
     ).orThrow();
     expect(await hybrid.retrieve({ provenanceSource: 'bad-run' })).toSucceedAndSatisfy(
@@ -736,32 +783,32 @@ describe('SemanticRetriever', () => {
     Promise.resolve(succeed(Float32Array.from([0.1, 0.2])));
 
   test('reports supportsSemanticRecall=false when no backend is wired', () => {
-    const r = SemanticRetriever.create({ index: buildIndex([]) }).orThrow();
+    const r = SemanticRetriever.create({ ...backed(buildIndex([])) }).orThrow();
     expect(r.capabilities.supportsSemanticRecall).toBe(false);
   });
 
   test('reports supportsSemanticRecall=true when a backend is wired', () => {
     const r = SemanticRetriever.create({
-      index: buildIndex([]),
+      ...backed(buildIndex([])),
       backend: { vectorIndex: new FakeVectorIndex([]), embedQuery: okEmbed }
     }).orThrow();
     expect(r.capabilities.supportsSemanticRecall).toBe(true);
   });
 
   test('degrades loudly on a semantic request when no backend is wired', async () => {
-    const r = SemanticRetriever.create({ index: buildIndex([{ id: 'a' }]) }).orThrow();
+    const r = SemanticRetriever.create({ ...backed(buildIndex([{ id: 'a' }])) }).orThrow();
     expect(await r.retrieve({ semantic: 'hi' })).toFailWith(
       /semantic recall requires a vector index; none configured/i
     );
   });
 
   test('returns empty (not failure) when no semantic term is supplied', async () => {
-    const r = SemanticRetriever.create({ index: buildIndex([{ id: 'a' }]) }).orThrow();
+    const r = SemanticRetriever.create({ ...backed(buildIndex([{ id: 'a' }])) }).orThrow();
     expect(await r.retrieve({})).toSucceedWith([]);
   });
 
   test('degrades loudly on an as-of request', async () => {
-    const r = SemanticRetriever.create({ index: buildIndex([{ id: 'a' }]) }).orThrow();
+    const r = SemanticRetriever.create({ ...backed(buildIndex([{ id: 'a' }])) }).orThrow();
     expect(await r.retrieve({ asOf: 5 })).toFailWith(/temporal query requires temporal index/i);
   });
 
@@ -772,7 +819,7 @@ describe('SemanticRetriever', () => {
       { id: 'c', updated: 50 }
     ]);
     const r = SemanticRetriever.create({
-      index,
+      ...backed(index),
       backend: {
         vectorIndex: new FakeVectorIndex([
           { target: et('b'), score: 0.9 },
@@ -799,7 +846,7 @@ describe('SemanticRetriever', () => {
       { id: 'b', source: 'agent' }
     ]);
     const r = SemanticRetriever.create({
-      index,
+      ...backed(index),
       backend: {
         vectorIndex: new FakeVectorIndex([
           { target: et('b'), score: 0.9 },
@@ -821,7 +868,7 @@ describe('SemanticRetriever', () => {
       { id: 'b', tags: ['y'] }
     ]);
     const r = SemanticRetriever.create({
-      index,
+      ...backed(index),
       backend: {
         vectorIndex: new FakeVectorIndex([
           { target: et('gone'), score: 0.99 },
@@ -848,7 +895,7 @@ describe('SemanticRetriever', () => {
       { id: 'turn-3', scope: 'conv-b', tags: ['from-b'] }
     ]);
     const r = SemanticRetriever.create({
-      index,
+      ...backed(index),
       backend: {
         // The vector backend scored the conv-b record; the retriever must return
         // exactly that record, never the same-stem conv-a record.
@@ -873,7 +920,10 @@ describe('SemanticRetriever', () => {
       { target: et('b'), score: 0.8 },
       { target: et('c'), score: 0.7 }
     ]);
-    const r = SemanticRetriever.create({ index, backend: { vectorIndex, embedQuery: okEmbed } }).orThrow();
+    const r = SemanticRetriever.create({
+      ...backed(index),
+      backend: { vectorIndex, embedQuery: okEmbed }
+    }).orThrow();
     expect(await r.retrieve({ semantic: 'q', topK: 2, limit: 2 })).toSucceedAndSatisfy(
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
         expect(ids(records)).toEqual(['a', 'b']);
@@ -886,7 +936,7 @@ describe('SemanticRetriever', () => {
   test('defaults topK to 10 when the query omits it', async () => {
     const vectorIndex = new FakeVectorIndex([{ target: et('a'), score: 0.9 }]);
     const r = SemanticRetriever.create({
-      index: buildIndex([{ id: 'a' }]),
+      ...backed(buildIndex([{ id: 'a' }])),
       backend: { vectorIndex, embedQuery: okEmbed }
     }).orThrow();
     expect(await r.retrieve({ semantic: 'q' })).toSucceed();
@@ -895,7 +945,7 @@ describe('SemanticRetriever', () => {
 
   test('fails loudly when the embedder fails', async () => {
     const r = SemanticRetriever.create({
-      index: buildIndex([{ id: 'a' }]),
+      ...backed(buildIndex([{ id: 'a' }])),
       backend: {
         vectorIndex: new FakeVectorIndex([]),
         embedQuery: () => Promise.resolve(fail('no embed model'))
@@ -906,7 +956,7 @@ describe('SemanticRetriever', () => {
 
   test('fails loudly when the vector backend fails', async () => {
     const r = SemanticRetriever.create({
-      index: buildIndex([{ id: 'a' }]),
+      ...backed(buildIndex([{ id: 'a' }])),
       backend: { vectorIndex: new FakeVectorIndex([], true), embedQuery: okEmbed }
     }).orThrow();
     expect(await r.retrieve({ semantic: 'q' })).toFailWith(/vector query failed: vector backend down/i);
@@ -914,7 +964,7 @@ describe('SemanticRetriever', () => {
 
   test('normalizes a rejecting embedder into a Failure (never escapes as a rejection)', async () => {
     const r = SemanticRetriever.create({
-      index: buildIndex([{ id: 'a' }]),
+      ...backed(buildIndex([{ id: 'a' }])),
       backend: {
         vectorIndex: new FakeVectorIndex([]),
         embedQuery: () => Promise.reject(new Error('embedder blew up'))
@@ -940,7 +990,7 @@ describe('SemanticRetriever', () => {
       query: () => Promise.reject(new Error('socket hangup'))
     };
     const r = SemanticRetriever.create({
-      index: buildIndex([{ id: 'a' }]),
+      ...backed(buildIndex([{ id: 'a' }])),
       backend: { vectorIndex: rejectingIndex, embedQuery: okEmbed }
     }).orThrow();
     expect(await r.retrieve({ semantic: 'q' })).toFailWith(/vector query failed: .*socket hangup/i);
@@ -998,9 +1048,9 @@ describe('HybridRetriever', () => {
 
   test('capabilities are the union of composed retrievers', () => {
     const { index } = build();
-    const recency = RecencyRetriever.create(index).orThrow();
+    const recency = RecencyRetriever.create(backed(index)).orThrow();
     const semantic = SemanticRetriever.create({
-      index,
+      ...backed(index),
       backend: {
         vectorIndex: new FakeVectorIndex([]),
         embedQuery: () => Promise.resolve(succeed(Float32Array.from([1])))
@@ -1019,8 +1069,8 @@ describe('HybridRetriever', () => {
 
   test('merges the results of composed retrievers', async () => {
     const { index } = build();
-    const recency = RecencyRetriever.create(index).orThrow();
-    const tag = TagRetriever.create(index).orThrow();
+    const recency = RecencyRetriever.create(backed(index)).orThrow();
+    const tag = TagRetriever.create(backed(index)).orThrow();
     const hybrid = HybridRetriever.create(
       [recency, tag],
       ScoreUnionMergeStrategy.create().orThrow()
@@ -1036,9 +1086,9 @@ describe('HybridRetriever', () => {
 
   test('routes a semantic query only to the semantic-capable child', async () => {
     const { index } = build();
-    const recency = RecencyRetriever.create(index).orThrow();
+    const recency = RecencyRetriever.create(backed(index)).orThrow();
     const semantic = SemanticRetriever.create({
-      index,
+      ...backed(index),
       backend: {
         vectorIndex: new FakeVectorIndex([{ target: et('b'), score: 0.9 }]),
         embedQuery: () => Promise.resolve(succeed(Float32Array.from([1])))
@@ -1085,7 +1135,7 @@ describe('HybridRetriever', () => {
 
   test('degrades loudly when its union does not support a requested capability', async () => {
     const { index } = build();
-    const recency = RecencyRetriever.create(index).orThrow();
+    const recency = RecencyRetriever.create(backed(index)).orThrow();
     const hybrid = HybridRetriever.create([recency], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
     expect(await hybrid.retrieve({ semantic: 'q' })).toFailWith(/semantic recall requires/i);
   });
@@ -1093,7 +1143,7 @@ describe('HybridRetriever', () => {
   test('propagates a child failure rather than dropping it silently', async () => {
     const { index } = build();
     const semantic = SemanticRetriever.create({
-      index,
+      ...backed(index),
       backend: {
         vectorIndex: new FakeVectorIndex([], true),
         embedQuery: () => Promise.resolve(succeed(Float32Array.from([1])))
@@ -1115,9 +1165,9 @@ describe('HybridRetriever', () => {
       { id: 'c', updated: 30 },
       { id: 'd', updated: 40 }
     ]);
-    const recency = RecencyRetriever.create(index).orThrow();
+    const recency = RecencyRetriever.create(backed(index)).orThrow();
     const semantic = SemanticRetriever.create({
-      index,
+      ...backed(index),
       backend: {
         vectorIndex: new FakeVectorIndex([
           { target: et('d'), score: 0.9 },
@@ -1139,7 +1189,7 @@ describe('HybridRetriever', () => {
 
   test('applies the hybrid-level limit after merge', async () => {
     const { index } = build();
-    const recency = RecencyRetriever.create(index).orThrow();
+    const recency = RecencyRetriever.create(backed(index)).orThrow();
     const hybrid = HybridRetriever.create([recency], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
     expect(await hybrid.retrieve({ limit: 1 })).toSucceedAndSatisfy(
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -1151,7 +1201,7 @@ describe('HybridRetriever', () => {
 
   test('applies the { offset, limit } window after merge', async () => {
     const { index } = build();
-    const recency = RecencyRetriever.create(index).orThrow();
+    const recency = RecencyRetriever.create(backed(index)).orThrow();
     const hybrid = HybridRetriever.create([recency], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
     // Merged recency order is [b(30), c(20), a(10)]; offset 1 + limit 1 → [c].
     expect(await hybrid.retrieve({ offset: 1, limit: 1 })).toSucceedAndSatisfy(
