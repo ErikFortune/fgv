@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "BREAKING: resolve every IVectorRebuildReport count by kind (indexed/declined as ReadonlyMap<Kind, number>, new optional excluded); IMemoryRecordSource.list() now returns IMemoryRecordListing so the exclusion tally originates where the decision is made; IVectorIndex.rebuild returns a DetailedResult so a failed rebuild carries its partial report",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}

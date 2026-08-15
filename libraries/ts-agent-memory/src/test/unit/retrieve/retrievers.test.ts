@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { DetailedResult, Result, fail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import {
   HybridRetriever,
   IEdgeTarget,
@@ -395,7 +395,14 @@ describe('orderBy: rank axis', () => {
       add: (t: IEdgeTarget) => Promise.resolve(succeed(`ref-${t.id}`)),
       remove: (t: IEdgeTarget) => Promise.resolve(succeed(t)),
       size: 0,
-      rebuild: () => Promise.resolve(succeed({ indexed: 0, declined: 0, skipped: [] })),
+      rebuild: () =>
+        Promise.resolve(
+          succeedWithDetail({
+            indexed: new Map<Kind, number>(),
+            declined: new Map<Kind, number>(),
+            skipped: []
+          })
+        ),
       query: () =>
         Promise.resolve(
           succeed([
@@ -713,8 +720,14 @@ class FakeVectorIndex implements IVectorIndex {
   public get size(): number {
     return this._hits.length;
   }
-  public rebuild(): Promise<Result<IVectorRebuildReport>> {
-    return Promise.resolve(succeed({ indexed: this._hits.length, declined: 0, skipped: [] }));
+  public rebuild(): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>> {
+    return Promise.resolve(
+      succeedWithDetail({
+        indexed: new Map<Kind, number>([['hit' as Kind, this._hits.length]]),
+        declined: new Map<Kind, number>(),
+        skipped: []
+      })
+    );
   }
 }
 
@@ -916,7 +929,14 @@ describe('SemanticRetriever', () => {
       add: (t: IEdgeTarget) => Promise.resolve(succeed(`ref-${t.id}`)),
       remove: (t: IEdgeTarget) => Promise.resolve(succeed(t)),
       size: 0,
-      rebuild: () => Promise.resolve(succeed({ indexed: 0, declined: 0, skipped: [] })),
+      rebuild: () =>
+        Promise.resolve(
+          succeedWithDetail({
+            indexed: new Map<Kind, number>(),
+            declined: new Map<Kind, number>(),
+            skipped: []
+          })
+        ),
       query: () => Promise.reject(new Error('socket hangup'))
     };
     const r = SemanticRetriever.create({

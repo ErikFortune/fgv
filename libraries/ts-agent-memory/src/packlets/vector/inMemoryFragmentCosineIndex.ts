@@ -9,8 +9,8 @@ import {
   FragmentEmbedder,
   IEmbeddedFragment,
   IFragmentVectorIndex,
+  IMemoryRecordListing,
   IMemoryRecordSource,
-  IScopedMemoryRecord,
   IVectorQueryHit
 } from './vectorIndex';
 
@@ -241,11 +241,14 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
    */
   public async rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder): Promise<Result<number>> {
     this._reset();
-    const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await source.list();
+    const listed: Result<IMemoryRecordListing> = await source.list();
     if (listed.isFailure()) {
       return fail(`fragment index rebuild: failed to list records: ${listed.message}`);
     }
-    for (const scoped of listed.value) {
+    // `listed.value.excluded` is deliberately dropped: this path returns a bare
+    // count, so there is nowhere honest to report it. It arrives with the fragment
+    // path's own report, if and when that contract gains one.
+    for (const scoped of listed.value.records) {
       const embedded: Result<ReadonlyArray<IEmbeddedFragment>> = await embed(scoped.record);
       if (embedded.isFailure()) {
         this._reset();

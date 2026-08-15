@@ -9,12 +9,13 @@ import BetterSqlite3 from 'better-sqlite3';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { DetailedResult, Result, fail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import type {
   IEdgeTarget,
   IVectorIndex,
   IVectorQueryHit,
   IVectorRebuildReport,
+  Kind,
   MemoryId,
   MemoryScopeKey
 } from '@fgv/ts-agent-memory';
@@ -79,7 +80,12 @@ function fakeIndex(overrides: Partial<IVectorIndex>): IVectorIndex {
     // fake reports nothing rather than pretending to have rebuilt anything.
     rebuild:
       overrides.rebuild ??
-      (async (): Promise<Result<IVectorRebuildReport>> => succeed({ indexed: 0, declined: 0, skipped: [] }))
+      (async (): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>> =>
+        succeedWithDetail({
+          indexed: new Map<Kind, number>(),
+          declined: new Map<Kind, number>(),
+          skipped: []
+        }))
   };
 }
 

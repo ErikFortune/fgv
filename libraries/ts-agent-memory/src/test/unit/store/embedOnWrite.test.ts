@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converters, DetailedResult, Logging, Result, fail, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   BodyConverterRegistry,
@@ -172,7 +172,7 @@ class SpyVectorIndex implements IVectorIndex {
     source: IMemoryRecordSource,
     embed: MemoryEmbedder,
     options?: IVectorRebuildOptions
-  ): Promise<Result<IVectorRebuildReport>> {
+  ): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>> {
     return this._inner.rebuild(source, embed, options);
   }
 }
@@ -812,12 +812,39 @@ describe('FileTreeMemoryStore embed-on-write', () => {
         seen.push(r.envelope.kind as string);
         return recordEmbed(r);
       };
-      expect(await fresh.rebuild(store.asRecordSource(), countingEmbed)).toSucceedWith({
-        indexed: 1,
-        declined: 0,
-        skipped: []
-      });
+      expect(await fresh.rebuild(store.asRecordSource(), countingEmbed)).toSucceedAndSatisfy(
+        (report: IVectorRebuildReport) => {
+          expect(Array.from(report.indexed.entries())).toEqual([['knowledge', 1]]);
+          // The excluded kind is COUNTED rather than silently absent — this is the
+          // arithmetic that previously did not add up: the 'fact' record appeared
+          // in none of indexed / declined / skipped, so a caller computing coverage
+          // undercounted, and undercounted in the direction of looking healthier.
+          expect(Array.from(report.excluded!.entries())).toEqual([['fact', 1]]);
+        }
+      );
       expect(seen).toEqual(['knowledge']);
+    });
+
+    test('accumulates the exclusion count across records of the same kind', async () => {
+      // Two of one excluded kind, one of another, so the tally is exercised past
+      // its first occurrence — a per-kind count that only ever reads 1 would be
+      // indistinguishable from a presence flag.
+      const store = twoKindStore(
+        InMemoryCosineIndex.create().orThrow(),
+        recordEmbed,
+        new Set<Kind>([knowledgeKind])
+      );
+      expect(await store.put(makeRecord('doc-a', 'cat', 'knowledge'))).toSucceed();
+      expect(await store.put(makeRecord('fact-a', 'cat', 'fact'))).toSucceed();
+      expect(await store.put(makeRecord('fact-b', 'dog', 'fact'))).toSucceed();
+
+      const fresh = InMemoryCosineIndex.create().orThrow();
+      expect(await fresh.rebuild(store.asRecordSource(), recordEmbed)).toSucceedAndSatisfy(
+        (report: IVectorRebuildReport) => {
+          expect(Array.from(report.indexed.entries())).toEqual([['knowledge', 1]]);
+          expect(Array.from(report.excluded!.entries())).toEqual([['fact', 2]]);
+        }
+      );
     });
 
     test('listScoped still returns every record — only the vector source is filtered', async () => {

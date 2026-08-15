@@ -10,6 +10,7 @@ import {
   IEmbeddedFragment,
   IFragmentLocator,
   IMemoryRecord,
+  IMemoryRecordListing,
   IMemoryRecordSource,
   IScopedMemoryRecord,
   IVectorQueryHit,
@@ -52,8 +53,10 @@ class FakeSource implements IMemoryRecordSource {
   public constructor(result: Result<ReadonlyArray<IScopedMemoryRecord>>) {
     this._result = result;
   }
-  public list(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> {
-    return Promise.resolve(this._result);
+  public list(): Promise<Result<IMemoryRecordListing>> {
+    return Promise.resolve(
+      this._result.onSuccess((records: ReadonlyArray<IScopedMemoryRecord>) => succeed({ records }))
+    );
   }
 }
 

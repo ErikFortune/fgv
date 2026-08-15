@@ -5,16 +5,26 @@
 
 import type BetterSqlite3 from 'better-sqlite3';
 import { load as loadSqliteVec } from 'sqlite-vec';
-import { Result, captureAsyncResult, captureResult, fail, succeed } from '@fgv/ts-utils';
+import {
+  DetailedResult,
+  Result,
+  captureAsyncResult,
+  captureResult,
+  fail,
+  failWithDetail,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
 import {
   IEdgeTarget,
+  IMemoryRecordListing,
   IMemoryRecordSource,
-  IScopedMemoryRecord,
   ISkippedVectorRecord,
   IVectorIndex,
   IVectorQueryHit,
   IVectorRebuildOptions,
   IVectorRebuildReport,
+  Kind,
   MemoryEmbedder,
   MemoryId,
   MemoryScopeKey,
@@ -50,6 +60,11 @@ async function invokeHook<T>(hook: () => Promise<Result<T>>): Promise<Result<T>>
  */
 function withRollbackNote(error: string, rollback: Result<true>): string {
   return rollback.isFailure() ? `${error} (rollback also failed: ${rollback.message})` : error;
+}
+
+/** Increment `kind`'s tally by one — see the identical local in the in-memory index. */
+function tally(counts: Map<Kind, number>, kind: Kind): void {
+  counts.set(kind, (counts.get(kind) ?? 0) + 1);
 }
 
 /** Default name for the `vec0` virtual table. */
@@ -202,25 +217,36 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     source: IMemoryRecordSource,
     embed: MemoryEmbedder,
     options?: IVectorRebuildOptions
-  ): Promise<Result<IVectorRebuildReport>> {
+  ): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>> {
     const lenient: boolean = (options?.onRecordError ?? 'fail') === 'skip';
     // `source` is consumer-supplied, so a throw or rejection becomes a `Failure`
     // here rather than escaping as an exception.
-    const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await invokeHook(() => source.list());
+    const listed: Result<IMemoryRecordListing> = await invokeHook(() => source.list());
     if (listed.isFailure()) {
       // Deliberately BEFORE any clear: a failed list is no evidence about the
       // vectors already held, and no re-embedding has been attempted, so there is
       // no half-rebuilt state to protect against. Clearing here would destroy a
-      // healthy persisted index over a transient read error.
-      return fail(`vector index rebuild: failed to list records: ${listed.message}`);
+      // healthy persisted index over a transient read error. No report either, for
+      // the same reason — there is nothing this call disturbed to describe.
+      return failWithDetail(`vector index rebuild: failed to list records: ${listed.message}`);
     }
     const cleared: Result<true> = this._clear();
     if (cleared.isFailure()) {
-      return fail(`vector index rebuild: failed to clear the index: ${cleared.message}`);
+      // Also nothing established: the table still holds whatever it held.
+      return failWithDetail(`vector index rebuild: failed to clear the index: ${cleared.message}`);
     }
-    let declined: number = 0;
+    const indexed: Map<Kind, number> = new Map<Kind, number>();
+    const declined: Map<Kind, number> = new Map<Kind, number>();
     const skipped: ISkippedVectorRecord[] = [];
-    for (const scoped of listed.value) {
+    // Absent stays absent — only the source knows whether it filtered anything.
+    const report = (): IVectorRebuildReport => ({
+      indexed,
+      declined,
+      excluded: listed.value.excluded,
+      skipped
+    });
+    for (const scoped of listed.value.records) {
+      const kind: Kind = scoped.record.envelope.kind;
       // Likewise capture-wrapped: an embedder that throws mid-loop would
       // otherwise escape past the `'fail'` rollback below, leaving this DURABLE
       // table holding a partial index that survives the process.
@@ -230,27 +256,30 @@ export class SqliteVecVectorIndex implements IVectorIndex {
           embedded.message
         }`;
         if (!lenient) {
-          return fail(withRollbackNote(error, this._clear()));
+          return failWithDetail(withRollbackNote(error, this._clear()), report());
         }
         skipped.push({ target: scoped.target, error });
         continue;
       }
       if (embedded.value === undefined) {
-        declined++;
+        tally(declined, kind);
         continue;
       }
       const added: Result<string> = await this.add(scoped.target, embedded.value);
       if (added.isFailure()) {
         const error: string = `vector index rebuild: ${added.message}`;
         if (!lenient) {
-          return fail(withRollbackNote(error, this._clear()));
+          return failWithDetail(withRollbackNote(error, this._clear()), report());
         }
         skipped.push({ target: scoped.target, error });
+        continue;
       }
+      // Tallied in the loop rather than read back off `size` at the end. That
+      // `COUNT` was also the only fallible step in assembling the report, so the
+      // per-kind tally removes a failure path as well as a rounding of the answer.
+      tally(indexed, kind);
     }
-    return captureResult(() => this.size)
-      .withErrorFormat((msg) => `vector index rebuild: failed to count the rebuilt index: ${msg}`)
-      .onSuccess((indexed) => succeed({ indexed, declined, skipped }));
+    return succeedWithDetail(report());
   }
 
   /**

@@ -5,6 +5,7 @@
 ```ts
 
 import type BetterSqlite3 from 'better-sqlite3';
+import { DetailedResult } from '@fgv/ts-utils';
 import { IEdgeTarget } from '@fgv/ts-agent-memory';
 import { IEmbeddedFragment } from '@fgv/ts-agent-memory';
 import { IFragmentVectorIndex } from '@fgv/ts-agent-memory';
@@ -58,7 +59,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     //
     // (undocumented)
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
-    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<Result<IVectorRebuildReport>>;
+    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IVectorIndex"
     //
     // (undocumented)

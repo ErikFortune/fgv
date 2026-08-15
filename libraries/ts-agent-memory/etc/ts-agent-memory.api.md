@@ -7,6 +7,7 @@
 import { AiAssist } from '@fgv/ts-extras';
 import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonSchema } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
@@ -492,8 +493,14 @@ export interface IMemoryRecord<TBody = unknown> {
 }
 
 // @public
+export interface IMemoryRecordListing {
+    readonly excluded?: ReadonlyMap<Kind, number>;
+    readonly records: ReadonlyArray<IScopedMemoryRecord>;
+}
+
+// @public
 export interface IMemoryRecordSource {
-    list(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
+    list(): Promise<Result<IMemoryRecordListing>>;
 }
 
 // @public
@@ -564,7 +571,7 @@ export class InMemoryCosineIndex implements IVectorIndex {
     add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
     static create(): Result<InMemoryCosineIndex>;
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
-    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<Result<IVectorRebuildReport>>;
+    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>>;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
     get size(): number;
 }
@@ -672,7 +679,7 @@ export interface ITemporalVersionAddress {
 export interface IVectorIndex {
     add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
-    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<Result<IVectorRebuildReport>>;
+    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>>;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
     readonly size: number;
 }
@@ -692,8 +699,9 @@ export interface IVectorRebuildOptions {
 
 // @public
 export interface IVectorRebuildReport {
-    readonly declined: number;
-    readonly indexed: number;
+    readonly declined: ReadonlyMap<Kind, number>;
+    readonly excluded?: ReadonlyMap<Kind, number>;
+    readonly indexed: ReadonlyMap<Kind, number>;
     readonly skipped: ReadonlyArray<ISkippedVectorRecord>;
 }
 

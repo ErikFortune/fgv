@@ -52,6 +52,7 @@ import {
   MemoryEmbedder
 } from '../vector';
 import { defaultMemoryScopeEncoding } from './scopeEncoding';
+import { vectorRecordSource } from './vectorRecordSource';
 
 /** The on-disk extension for a memory record file. */
 const MEMORY_FILE_EXTENSION: string = '.md';
@@ -153,6 +154,11 @@ export interface IMemoryStore {
    * {@link IFileTreeMemoryStoreCreateParams.embedKinds | embedKinds} declaration
    * every kind participates and the filter is the identity. `listScoped` itself is
    * **not** filtered and remains the whole-vault surface.
+   *
+   * The filter also **counts what it drops**, onto
+   * {@link IMemoryRecordListing.excluded} — this is the layer where the exclusion
+   * decision is made and so the only one that can. The count is always present
+   * (empty when nothing was excluded).
    *
    * The store cannot implement {@link IMemoryRecordSource} directly because its
    * `list(filter?)` returns bare records (the ergonomic query surface) while the
@@ -727,17 +733,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   /** {@inheritDoc IMemoryStore.asRecordSource} */
   public asRecordSource(): IMemoryRecordSource {
-    return {
-      // Filtered to the kinds that participate in the record vector index. This
-      // source exists to drive `IVectorIndex` rebuilds, so a kind excluded from the
-      // index has no business being re-embedded on open — which is where the cost
-      // is worst, since a rebuild embeds the whole vault serially. With no
-      // `embedKinds` declaration every kind passes and this is the identity filter.
-      list: async (): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> =>
-        (await this.listScoped()).onSuccess((scoped: ReadonlyArray<IScopedMemoryRecord>) =>
-          succeed(scoped.filter((s) => this.embedsKind(s.record.envelope.kind)))
-        )
-    };
+    return vectorRecordSource(this);
   }
 
   /**

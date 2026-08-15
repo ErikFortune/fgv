@@ -557,7 +557,7 @@ describe('createMemoryTools', () => {
         getById: async () => fail('unused'),
         list: async () => succeed([]),
         listScoped: async () => succeed([]),
-        asRecordSource: () => ({ list: async () => succeed([]) }),
+        asRecordSource: () => ({ list: async () => succeed({ records: [] }) }),
         dedupScopeFor: () => 'content',
         embedsKind: () => true,
         reconcileRank: () => Promise.resolve(succeed(0)),

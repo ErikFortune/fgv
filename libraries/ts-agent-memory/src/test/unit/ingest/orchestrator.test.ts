@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converters, Logging, Result, fail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   BodyConverterRegistry,
@@ -30,6 +30,7 @@ import {
   IMemoryClassifier,
   IMemoryEnvelope,
   IMemoryRecord,
+  IMemoryRecordListing,
   IMemoryRecordSource,
   IMemoryStore,
   IProvenance,
@@ -529,7 +530,8 @@ function mockStore(overrides: Partial<IMemoryStore>): IMemoryStore {
     asRecordSource:
       overrides.asRecordSource ??
       ((): IMemoryRecordSource => ({
-        list: (): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> => Promise.resolve(succeed([]))
+        list: (): Promise<Result<IMemoryRecordListing>> =>
+          Promise.resolve(succeed({ records: [], excluded: new Map<Kind, number>() }))
       })),
     put: overrides.put ?? ((r): Promise<Result<IMemoryRecord<unknown>>> => Promise.resolve(succeed(r))),
     delete: overrides.delete ?? ((): Promise<Result<MemoryId>> => Promise.resolve(fail('n/a')))
@@ -700,7 +702,14 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
       add: (t) => Promise.resolve(succeed(t.id as string)),
       remove: (t) => Promise.resolve(succeed(t)),
       size: 0,
-      rebuild: () => Promise.resolve(succeed({ indexed: 0, declined: 0, skipped: [] })),
+      rebuild: () =>
+        Promise.resolve(
+          succeedWithDetail({
+            indexed: new Map<Kind, number>(),
+            declined: new Map<Kind, number>(),
+            skipped: []
+          })
+        ),
 
       query: (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> =>
         Promise.resolve(succeed([{ target: kt('ghost'), score: 0.99 }]))
@@ -734,7 +743,14 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
       add: (t) => Promise.resolve(succeed(t.id as string)),
       remove: (t) => Promise.resolve(succeed(t)),
       size: 0,
-      rebuild: () => Promise.resolve(succeed({ indexed: 0, declined: 0, skipped: [] })),
+      rebuild: () =>
+        Promise.resolve(
+          succeedWithDetail({
+            indexed: new Map<Kind, number>(),
+            declined: new Map<Kind, number>(),
+            skipped: []
+          })
+        ),
 
       query: (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> => Promise.resolve(fail('query kaput'))
     };

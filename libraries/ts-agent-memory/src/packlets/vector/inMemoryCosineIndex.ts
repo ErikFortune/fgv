@@ -3,11 +3,19 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
-import { IEdgeTarget, edgeTargetKey } from '../types';
 import {
+  DetailedResult,
+  Result,
+  captureAsyncResult,
+  fail,
+  failWithDetail,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
+import { IEdgeTarget, Kind, edgeTargetKey } from '../types';
+import {
+  IMemoryRecordListing,
   IMemoryRecordSource,
-  IScopedMemoryRecord,
   ISkippedVectorRecord,
   IVectorIndex,
   IVectorQueryHit,
@@ -24,6 +32,17 @@ import {
  */
 async function invokeHook<T>(hook: () => Promise<Result<T>>): Promise<Result<T>> {
   return (await captureAsyncResult(hook)).onSuccess((inner) => inner);
+}
+
+/**
+ * Increment `kind`'s tally by one. Both shipped implementations accumulate their
+ * per-kind counts this way; it is a three-line local rather than an exported
+ * helper because publishing a mutation primitive on the package surface would buy
+ * nothing a caller could not write, and would invite treating the accumulation
+ * shape as part of the contract when only the report is.
+ */
+function tally(counts: Map<Kind, number>, kind: Kind): void {
+  counts.set(kind, (counts.get(kind) ?? 0) + 1);
 }
 
 /** One stored embedding: the scope-qualified address plus its vector. */
@@ -163,6 +182,11 @@ export class InMemoryCosineIndex implements IVectorIndex {
    * A {@link MemoryEmbedder} decline is not a failure under either mode: it is
    * counted on {@link IVectorRebuildReport.declined} and never appears in `skipped`.
    *
+   * **A `'fail'` failure carries the partial report on its `detail`** — the
+   * rollback still runs, so that report describes the aborted attempt rather than
+   * the (now empty) index. The one failure with no detail is a `list` failure,
+   * which disturbs nothing and has nothing to describe.
+   *
    * Both consumer-supplied hooks are capture-wrapped, so a `source` or `embed`
    * that throws or rejects becomes a `Failure` on the path above rather than an
    * exception escaping mid-rebuild — which would bypass the rollback entirely.
@@ -175,9 +199,9 @@ export class InMemoryCosineIndex implements IVectorIndex {
     source: IMemoryRecordSource,
     embed: MemoryEmbedder,
     options?: IVectorRebuildOptions
-  ): Promise<Result<IVectorRebuildReport>> {
+  ): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>> {
     const lenient: boolean = (options?.onRecordError ?? 'fail') === 'skip';
-    const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await invokeHook(() => source.list());
+    const listed: Result<IMemoryRecordListing> = await invokeHook(() => source.list());
     if (listed.isFailure()) {
       // Deliberately BEFORE the reset. This used to reset first, on the reasoning
       // that no stale vectors should survive a failed rebuild — but a failed list
@@ -185,14 +209,28 @@ export class InMemoryCosineIndex implements IVectorIndex {
       // re-embedded yet, so there is no half-rebuilt state to guard against.
       // Leaving the prior contents intact is the more correct answer, and on the
       // durable sibling (`SqliteVecVectorIndex`) resetting here was data loss.
-      return fail(`vector index rebuild: failed to list records: ${listed.message}`);
+      //
+      // No detail, for the same reason: an all-zero report would describe an index
+      // this call never touched.
+      return failWithDetail(`vector index rebuild: failed to list records: ${listed.message}`);
     }
     // From here a rebuild is genuinely starting, so clear. A mid-loop failure
     // under `'fail'` still resets, which is what keeps that contract honest.
     this._reset();
-    let declined: number = 0;
+    const indexed: Map<Kind, number> = new Map<Kind, number>();
+    const declined: Map<Kind, number> = new Map<Kind, number>();
     const skipped: ISkippedVectorRecord[] = [];
-    for (const scoped of listed.value) {
+    // Only the source knows what it filtered, so an absent `excluded` propagates
+    // as absent rather than becoming an empty map — "cannot say" and "excluded
+    // nothing" are different answers.
+    const report = (): IVectorRebuildReport => ({
+      indexed,
+      declined,
+      excluded: listed.value.excluded,
+      skipped
+    });
+    for (const scoped of listed.value.records) {
+      const kind: Kind = scoped.record.envelope.kind;
       // Both hooks are consumer-supplied, so a throw or rejection is captured
       // into a `Failure` rather than escaping as an exception — otherwise a
       // badly-behaved embedder would reject out of `rebuild` mid-loop and leave
@@ -205,17 +243,18 @@ export class InMemoryCosineIndex implements IVectorIndex {
         }`;
         // `'fail'` keeps the historical all-or-nothing contract EXACTLY: reset and
         // abort, so a caller that retries a query sees a clean empty index rather
-        // than a partially-rebuilt one it cannot reason about.
+        // than a partially-rebuilt one it cannot reason about. What is new is only
+        // that the failure also carries what the attempt had established.
         if (!lenient) {
           this._reset();
-          return fail(error);
+          return failWithDetail(error, report());
         }
         skipped.push({ target: scoped.target, error });
         continue;
       }
       // A decline is not an error under either mode — it is counted, never skipped.
       if (embedded.value === undefined) {
-        declined++;
+        tally(declined, kind);
         continue;
       }
       const added: Result<string> = await this.add(scoped.target, embedded.value);
@@ -223,12 +262,17 @@ export class InMemoryCosineIndex implements IVectorIndex {
         const error: string = `vector index rebuild: ${added.message}`;
         if (!lenient) {
           this._reset();
-          return fail(error);
+          return failWithDetail(error, report());
         }
         skipped.push({ target: scoped.target, error });
+        continue;
       }
+      // Tallied per successful add rather than read back off `size` at the end:
+      // `size` counts distinct addresses, and this count must line up with its
+      // per-record siblings so the three still sum to the records seen.
+      tally(indexed, kind);
     }
-    return succeed({ indexed: this._vectors.size, declined, skipped });
+    return succeedWithDetail(report());
   }
 
   /** Empty the index and forget the established dimension. */
