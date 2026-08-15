@@ -147,9 +147,9 @@ substrate. Don't queue streams against them here.
 
 **Carried forward from the predecessor, do not lose in migration:** #582's `result.md` records that its review was a **self-review, not an independent `code-reviewer` pass** (no agent-spawn tool in that session) and asks the orchestrator to commission one. Whether that happened is not determinable from inside this repo.
 
-### `vector-rebuild-report-by-kind` 🟢 (queued 2026-08-15 — breaking, coordinated)
+### `vector-rebuild-report-by-kind` ✅ (shipped 2026-08-15 — breaking, coordinated)
 
-**Status:** 🟢 ready to start. **Breaking** on a pre-1.0 surface, by agreement with the consumer. Delivery must be coordinated — see below.
+**Status:** ✅ shipped. **Breaking** on a pre-1.0 surface, by agreement with the consumer. Delivery must be coordinated — see below.
 **Package surface:** `@fgv/ts-agent-memory` (`IVectorRebuildReport`, `IMemoryRecordSource`, `InMemoryCosineIndex`), `@fgv/ts-agent-memory-sqlite-vec` (contract follower), `.ai/instructions/LIBRARY_CAPABILITIES.md`.
 **Brief:** `.ai/tasks/active/vector-rebuild-report-by-kind/brief.md`
 **Origin:** four-round exchange with PersonAIlity, 2026-08-15, out of their ask 1 of 9 — which had already shipped in `5.1.0-48`.
@@ -160,7 +160,16 @@ substrate. Don't queue streams against them here.
 
 **How it got here is the justification.** The consumer's first proposed fix was in the wrong layer and they conceded it; their counter caught us about to reproduce the thread's own defect one layer down; and their final question — *what is the rule, so the next person is not deciding a fourth field by re-running this argument?* — inverted the answer we were about to give. The brief carries the rejected alternatives with their reasons so they are not re-litigated.
 
-**Coordination is not optional.** Their bump tooling takes the whole `@fgv` set at once, so a breaking seam change would otherwise arrive with everything else and be discovered by a red build rather than by reading. Flag the alpha that carries it.
+**Coordination is not optional.** Their bump tooling takes the whole `@fgv` set at once, so a breaking seam change would otherwise arrive with everything else and be discovered by a red build rather than by reading. Flag the alpha that carries it. The flag is written: `.ai/notes/cross-repo-handoffs/personaility-reply-2026-08-15-rebuild-report-shipped.md`, naming both breaks, the migration, and the rollback-report trap.
+
+**What shipped, and where it differs from the brief.** All four deliverables landed in one change rather than the staged pair the consumer left open — staging meant two breaking releases against the same three fields, the second breaking every reader the first had just made them fix. Two things the brief did not anticipate:
+
+- **`indexed` stopped being read back off the index.** Both implementations tally per successful `add` instead — the in-memory one used `_vectors.size`, the SQLite one a `COUNT(*)`. Forced (neither knows kinds) and better twice over: `indexed` becomes a per-record tally consistent with its siblings so the sum-of-buckets invariant holds exactly, and the SQLite side lost the one fallible step in assembling a report.
+- **`asRecordSource()`'s filter moved to a new package-internal `store/vectorRecordSource.ts`.** `fileTreeMemoryStore.ts` was at 1995 lines against a 2000-line `max-lines` cap and the inline tally crossed it. The extraction leaves it at 1991 — **that bought ~9 lines, not a solution**, and this file has crossed the line before (`TECH_DEBT.md`). The next addition hits the same wall.
+
+The repo-wide `rush rebuild` earned its place: it caught exactly the casualty the brief predicted — a fake `IVectorIndex` in `samples/testbed` that neither library's own suite can see.
+
+**Artifacts:** `.ai/tasks/active/vector-rebuild-report-by-kind/` (`brief.md`, `result.md`).
 
 ### `sqlite-vec-path-open` 🟢 (queued 2026-08-15 — small, additive)
 
