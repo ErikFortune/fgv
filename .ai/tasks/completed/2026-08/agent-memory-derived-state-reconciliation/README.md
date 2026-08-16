@@ -305,3 +305,45 @@ per-retriever regression tests were added in response to this same pass and each
 verified); the "Outstanding at close" list, all three items of which are still outstanding; and the
 `prs` / `openPrs` split in `meta.yaml` — this stream has authored no PR of its own, and #633 is the
 open PR it will ride.
+
+## Appendix B — the external review loop (2026-08-16)
+
+Layer 2 ran as five CodeRabbit rounds on #633 and is recorded here because the finding profile
+contradicts the assumption the layer-1 artifacts were written under.
+
+**Five real defects, all in code that had already passed a `code-reviewer` pass, an independent
+antagonist pass, and a 100%-coverage gate.** Two of the five were in *fixes to earlier rounds'
+findings*, which is the part worth carrying forward: a fix is new code and inherits none of the
+review the surrounding code has had.
+
+| round | outcome |
+|---|---|
+| 1 | four findings, incl. the `MemoryListSelection` and unwrapped-hooks items in Appendix A |
+| 2 | a defect in round 1's own fix |
+| 3 | `index.has` left unwrapped when the other four hooks were wrapped — again inside a prior fix |
+| 4 | **non-incremental read**: `SqliteVecVectorIndex.size` leaked a `bigint` (below) |
+| 5 | no new defect; verdict re-baselined |
+
+**Rounds 1–3 never examined `materializePage` or the sqlite-vec native boundary.** Both are unchanged
+relative to the squash base, and an incremental reviewer deduped them as "similar to previous
+changes" — visible in each run's own skipped-files list. The 🟠 High merge-risk verdict standing at
+that point restated round-1 items that were already fixed. Asking for those two areas *by name*, and
+for the verdict to be re-derived rather than carried forward, is what produced round 4.
+
+**The round-4 finding.** `COUNT(*)` returns a `bigint` under `better-sqlite3` safe-integer mode, and
+`size` cast it to `number` without converting. `SqliteVecFragmentIndex`'s two counts have always
+converted — this was the outlier, which is how the pair drifted. This stream widened its blast
+radius: `coverage()` surfaces that value as `IIndexCoverage.indexSize`, also declared `number`.
+
+**Its regression test needed two attempts, and the first is the instructive one.** Written in the
+obvious order — enable safe-integer mode, insert, assert — it **passes against the unfixed code**:
+`defaultSafeIntegers` applies only to statements prepared *after* the call, and the index prepares
+its own at create/first-add. The flag must be set before the index is built, which is also the
+realistic order under this package's BYO-`Database` posture. Caught only by reverting the fix and
+noticing the test stayed green — the same negative-verification step Appendix A records for every
+other fix, doing its job on a test that would otherwise have shipped pinning nothing.
+
+### Coverage note
+
+`materializePage` and the sqlite-vec native boundary were reached by round 4's manual read only.
+Rounds 1–3 skipped both. Everything else in the diff was covered incrementally across rounds 1–3.
