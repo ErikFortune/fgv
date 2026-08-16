@@ -95,7 +95,14 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     if (this._stmts === undefined) {
       return 0;
     }
-    return (this._stmts.count.get() as { c: number }).c;
+    // `Number(...)` narrows the count in case the consumer enabled better-sqlite3
+    // safe-integer mode (`db.defaultSafeIntegers(true)`), which returns `count(*)`
+    // as a `bigint`. Without it a `bigint` leaks through a `number`-typed contract
+    // member — and now through `IIndexCoverage.indexSize`, which is also declared
+    // `number`, so the coverage report would carry a value of the wrong runtime
+    // type. `SqliteVecFragmentIndex`'s two counts have always converted; this one
+    // was the outlier.
+    return Number((this._stmts.count.get() as { c: number | bigint }).c);
   }
 
   /**

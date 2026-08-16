@@ -174,6 +174,33 @@ describe('SqliteVecVectorIndex', () => {
     });
   });
 
+  describe('size', () => {
+    test('returns a number under better-sqlite3 safe-integer mode, not a bigint', async () => {
+      // `COUNT(*)` comes back as a `bigint` once the consumer enables safe-integer
+      // mode, and `size` is declared `number` on `IVectorIndex`. Without the
+      // conversion the bigint leaks through the contract AND onward into
+      // `IIndexCoverage.indexSize`, which is also declared `number` — so a coverage
+      // report would carry a value of the wrong runtime type while type-checking
+      // clean. The fragment index's two counts have always converted; this one was
+      // the outlier.
+      //
+      // The flag is set BEFORE the index is created, which is the only ordering
+      // that reproduces it: `defaultSafeIntegers` applies to statements prepared
+      // AFTER the call, and the index prepares its own at create/first-add. Setting
+      // it afterwards leaves the already-prepared `count` statement in number mode
+      // and the test passes against the unfixed code — a false pin. Consumers own
+      // the connection here (BYO `Database`), so flag-then-hand-over is the
+      // realistic order.
+      db.defaultSafeIntegers(true);
+      const index = await makeIndex();
+      (await index.add(target('knowledge', 'a'), Float32Array.from([1, 0]))).orThrow();
+      (await index.add(target('knowledge', 'b'), Float32Array.from([0, 1]))).orThrow();
+
+      expect(typeof index.size).toBe('number');
+      expect(index.size).toBe(2);
+    });
+  });
+
   describe('has', () => {
     test('answers false before any add has created the table', async () => {
       const index = await makeIndex();
