@@ -70,7 +70,37 @@ documents with opposite answers is a question that belongs in this file.
 
 ---
 
-## `IFragmentVectorIndex` rebuild has no coverage report
+## `IFragmentVectorIndex` has no `rebuild` and no `size` — E4, unfixed on the fragment lane
+
+**Corrected 2026-08-15.** This entry previously read *"rebuild has no coverage report"*, which
+understates it by a whole level. The contract is:
+
+```ts
+IFragmentVectorIndex = addFragments | remove | query
+```
+
+**No `rebuild`. No `size`.** `InMemoryFragmentCosineIndex.rebuild` exists on the **concrete class
+only** (`:242`), returning a bare `Result<number>`; **`SqliteVecFragmentIndex` has no `rebuild` at
+all**. So the missing report is a symptom — the operation is not on the contract, and the persistent
+implementation does not have it in any form.
+
+**This is E4.** PersonAIlity raised exactly this for the record lane on 2026-08-11 — *"the store
+accepts `vectorIndex?: IVectorIndex`, so a host can inject a persistent index, and then has no
+contract-level way to backfill it"* — and `-48` fixed it by promoting `rebuild` onto `IVectorIndex`
+alongside `size`. The fragment lane never got the same treatment, and it is **worse off than the
+record lane was**: there, the persistent index existed and merely lacked the method, so promoting it
+gave `SqliteVecVectorIndex` a contract to satisfy. Here `SqliteVecFragmentIndex` has nothing to
+promote, so a persistent fragment index cannot be backfilled by any route, contractual or concrete.
+Records written while it was unwired, a re-embed after a dimension change, and reconciliation after a
+swallowed fragment-embed failure are all unreachable — the same three consequences E4 enumerated.
+
+**Consequence for the queued `agent-memory-index-coverage-accessor` stream**: an unnamed
+`reconcileEmbeddings(kind)` has nothing to call on the fragment half, which is the decisive argument
+for the operation naming its lane. See that stream's entry in `docs/WORKSTREAMS.md`.
+
+The original coverage-report content follows, and still applies once the operation exists.
+
+### The report shape, once `rebuild` is on the contract
 
 `InMemoryFragmentCosineIndex.rebuild(source, embed)` returns a bare `Result<number>` — the total
 fragment count — while the record-granular `IVectorIndex.rebuild` returns a per-kind
