@@ -4,7 +4,15 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { IEdgeTarget, IMemoryRecord, Kind, MemoryId, MemoryScopeKey, edgeTargetKey } from '../types';
+import {
+  IEdgeTarget,
+  IMemoryRecord,
+  Kind,
+  MemoryId,
+  MemoryScopeKey,
+  edgeTargetKey,
+  embeddingRefOf
+} from '../types';
 import { IIndexedMemoryEntry } from '../index';
 import { ISkippedVectorRecord } from '../vector';
 import { DerivedArtifact, ReconcileReport } from './reconcile';
@@ -89,7 +97,7 @@ export async function reconcileVectors(params: IReconcileVectorsParams): Promise
       // The record lane can still be inconsistent while the index holds the
       // vector: a reference lost after the vector was committed. Repairing it
       // costs a write and no embedding.
-      if (!fragment && entry.envelope.embeddingRef === undefined) {
+      if (!fragment && embeddingRefOf(entry.envelope) === undefined) {
         // The one place a synthesized reference is unavoidable: `has` proved the
         // vector exists but there is no contract member that returns the
         // reference the index minted for it, and re-deriving one would cost the

@@ -209,6 +209,18 @@ export interface IVectorIndex {
    * `SqliteVecVectorIndex` must clear its table, and a failure to do so is such a
    * case). Those leave the existing index untouched, so an all-zero report would
    * describe an index the call never disturbed.
+   *
+   * **A rebuild does NOT re-establish the vector dimension on a persistent
+   * index, and this is the one place the two shipped implementations genuinely
+   * differ.** The in-memory indexes forget their dimension when they reset, so a
+   * rebuild with a different-dimension embedder simply re-establishes it. A
+   * `vec0`-backed index cannot: its reset is a `DELETE FROM`, the table's
+   * declared dimension is part of its schema, and `vec0` has no `ALTER TABLE`.
+   * So a rebuild that changes dimension **succeeds in memory and fails on
+   * SQLite**, where it needs the same drop-and-re-index the package README
+   * prescribes for any schema change (drop the table, or point the index at a
+   * fresh `tableName`). Only embedding time is at risk — vectors are derived and
+   * the vault records remain authoritative.
    */
   rebuild(
     source: IMemoryRecordSource,
@@ -364,6 +376,18 @@ export interface IFragmentVectorIndex {
    * untouched); a genuine rebuild then resets first; `onRecordError` defaults to
    * `'fail'`; and a failure carries whatever the attempt had established on the
    * `detail`.
+   *
+   * **A rebuild does NOT re-establish the vector dimension on a persistent
+   * index, and this is the one place the two shipped implementations genuinely
+   * differ.** The in-memory indexes forget their dimension when they reset, so a
+   * rebuild with a different-dimension embedder simply re-establishes it. A
+   * `vec0`-backed index cannot: its reset is a `DELETE FROM`, the table's
+   * declared dimension is part of its schema, and `vec0` has no `ALTER TABLE`.
+   * So a rebuild that changes dimension **succeeds in memory and fails on
+   * SQLite**, where it needs the same drop-and-re-index the package README
+   * prescribes for any schema change (drop the table, or point the index at a
+   * fresh `tableName`). Only embedding time is at risk — vectors are derived and
+   * the vault records remain authoritative.
    */
   rebuild(
     source: IMemoryRecordSource,

@@ -17,6 +17,19 @@ import { Kind, MemoryScopeKey, Tag } from '../types';
  * @public
  */
 export interface IMemoryStoreListFilter {
+  /**
+   * Never present on a narrowing filter.
+   *
+   * @remarks
+   * Exclusivity marker, paired with the `never`s on {@link IWholeVaultScan}.
+   * Without it `{ scanEveryRecord: true, kind }` type-checks — TypeScript's
+   * excess-property check on a union admits any property declared by *any*
+   * member — and `list` then takes the scan branch and silently discards the
+   * narrowing. Since the whole point of requiring a selection is that a
+   * whole-vault read must be deliberate, a call that reads the whole vault while
+   * *looking* narrowed is the one outcome this surface must not permit.
+   */
+  readonly scanEveryRecord?: never;
   /** Restrict to records in this scope. */
   readonly scope?: MemoryScopeKey;
   /** Restrict to records of this kind. */
@@ -40,7 +53,21 @@ export interface IMemoryStoreListFilter {
 export interface IWholeVaultScan {
   /** Discriminator. Always `true`; produced only by {@link scanEveryRecord}. */
   readonly scanEveryRecord: true;
-  /** Optional temporal projection, exactly as on {@link IMemoryStoreListFilter}. */
+  /**
+   * Never present on a whole-vault scan — see
+   * {@link IMemoryStoreListFilter.scanEveryRecord} for why these markers exist.
+   * A scan that also carried a narrowing axis would have that axis dropped.
+   */
+  readonly scope?: never;
+  /** Never present on a whole-vault scan. See {@link IWholeVaultScan.scope}. */
+  readonly kind?: never;
+  /** Never present on a whole-vault scan. See {@link IWholeVaultScan.scope}. */
+  readonly tag?: never;
+  /**
+   * Optional temporal projection, exactly as on {@link IMemoryStoreListFilter}.
+   * NOT excluded, because `asOf` projects rather than narrows and composes with
+   * a whole-vault read exactly as it does with a filtered one.
+   */
   readonly asOf?: number;
 }
 

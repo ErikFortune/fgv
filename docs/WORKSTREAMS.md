@@ -164,7 +164,13 @@ Fragment vectors closes **E4 on that lane** — the defect fixed for the record 
 
 **Deferred, and filed rather than lost** (`docs/FUTURE.md`): a restamped `embeddingRef` synthesizes the scoped key rather than recovering the reference the index minted, because no contract member returns it — correct for both shipped indexes, undecided for a third-party one because no consumer has a non-key reference and picking under that condition would be guessing. Plus the design's two open questions: no progress callback on `reconcile` (OQ-1), and `coverage()` does not cross-reference the observation store to split a shortfall into declined-vs-failed (OQ-2, and `reconcile` learns that split authoritatively anyway).
 
-**Outstanding:** the CodeRabbit review loop on #633, which covers all three stacked streams — no automated external review has run on any of them; and the cross-repo note.
+**The CodeRabbit pass then found three more real bugs, and the best of them was a *value*, not a branch.** `IMemoryEnvelope.embeddingRef` is `string | null | undefined` where `null` is the **documented** "not embedded" sentinel — so both obvious presence checks are wrong, in opposite directions, and all three in-repo call sites had one of them: `coverage` counted a `null` as covered (inflating health in the confident direction), `reconcile` read a `null` as a reference and skipped the restamp, and `declineEmbedding` spent an index round trip the comment beside it says it avoids. Neither mistake is a type error, and neither is visible to a coverage gate, for exactly the reason codified two findings earlier: **the sentinel is a value rather than a branch.** Collapsed onto one exported `embeddingRefOf(envelope)`, which returns the reference rather than a boolean so a caller needing the string gets the check for free.
+
+Also from that pass: the repair path called all four **consumer-supplied** hooks bare, so an embedder that *throws* rather than fails escaped as a rejected promise out of `IMemoryStore.reconcile` — a Result-contract break at a public boundary, forty lines from the write path that had always captured the identical calls. And `MemoryListSelection`'s two members were not mutually exclusive, so `{ scanEveryRecord: true, kind }` type-checked and `list` took the scan branch and **silently discarded the narrowing** — a whole-vault read wearing a narrowed call's clothes, on the surface whose entire purpose is that whole-vault reads be deliberate. Fixed with `never` markers and pinned by a `@ts-expect-error` that becomes the build failure if they are removed.
+
+Three of the five findings were ours to have caught; the third `embeddingRef` site was one CodeRabbit itself missed and the verification pass found. Every fix is pinned by a test that was **watched failing** against the reverted code first.
+
+**Outstanding:** the cross-repo note.
 
 ### `agent-memory-index-partial-read` 🔵 (code complete 2026-08-15 — breaking, coordinated)
 

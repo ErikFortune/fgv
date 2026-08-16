@@ -18,6 +18,8 @@ import {
   InMemoryFragmentCosineIndex,
   Kind,
   KnowledgeIdentityCodec,
+  MemoryId,
+  MemoryScopeKey,
   ReconcileReport,
   envelopeConverter
 } from '../../../index';
@@ -31,6 +33,10 @@ import { reconcileVectors } from '../../../packlets/store/storeReconcile';
 import { VectorMaintenance } from '../../../packlets/store/vectorMaintenance';
 
 const knowledgeKind: Kind = 'knowledge' as Kind;
+// The scope a KnowledgeIdentityCodec addresses. Branded rather than `as never`:
+// `never` is assignable to everything, so a swapped scope/id or a renamed brand
+// would compile silently — which is the opposite of what a test assertion is for.
+const knowledgeScope: MemoryScopeKey = 'knowledge' as MemoryScopeKey;
 const noteKind: Kind = 'note' as Kind;
 
 function mutableRoot(): FileTree.IMutableFileTreeDirectoryItem {
@@ -76,6 +82,22 @@ function record(id: string, kind: Kind = knowledgeKind): IMemoryRecord<unknown> 
   };
 }
 
+/** The single record file a one-record vault holds. */
+function onlyRecordFile(root: FileTree.IMutableFileTreeDirectoryItem): FileTree.IMutableFileTreeFileItem {
+  const scopeDir = root
+    .getChildren()
+    .orThrow()
+    .find((c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory');
+  const file = scopeDir
+    ?.getChildren()
+    .orThrow()
+    .find((c): c is FileTree.IFileTreeFileItem => c.type === 'file');
+  if (file === undefined || !FileTree.isMutableFileItem(file)) {
+    throw new Error('expected a mutable record file');
+  }
+  return file;
+}
+
 const okEmbed = (): Promise<Result<Float32Array | undefined>> =>
   Promise.resolve(succeed(Float32Array.from([1, 0])));
 const okFragments = (): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> =>
@@ -104,7 +126,7 @@ describe('IMemoryStore.reconcile — record-vector', () => {
 
     // Drop one vector behind the store's back — a swallowed embed failure, or a
     // record written while the index was unwired.
-    (await index.remove({ scope: 'knowledge' as never, id: 'b' as never })).orThrow();
+    (await index.remove({ scope: knowledgeScope, id: 'b' as MemoryId })).orThrow();
 
     expect(await store.reconcile(knowledgeKind, 'record-vector')).toSucceedAndSatisfy(
       (r: ReconcileReport) => {
@@ -171,6 +193,100 @@ describe('IMemoryStore.reconcile — record-vector', () => {
       }
     );
     expect(embedCalls).toBe(afterWrites);
+  });
+
+  test('treats embeddingRef: null as missing and restamps it', async () => {
+    // `embeddingRef` is `string | null | undefined`, and `null` is the DOCUMENTED
+    // "not embedded" sentinel — so `=== undefined` misses it and the record is
+    // reported as already indexed while its envelope claims no embedding. Not a
+    // type error, and invisible to a coverage gate, because the sentinel is a
+    // VALUE rather than a branch. Both this and the coverage sibling shipped
+    // before `embeddingRefOf` existed.
+    const index = InMemoryCosineIndex.create().orThrow();
+    let embedCalls: number = 0;
+    const counting = (): Promise<Result<Float32Array | undefined>> => {
+      embedCalls += 1;
+      return okEmbed();
+    };
+    const root = mutableRoot();
+    const store = FileTreeMemoryStore.create({
+      root,
+      registry: registry(),
+      codecs: codecs(),
+      vectorIndex: index,
+      embed: counting
+    }).orThrow();
+    (await store.put(record('a'))).orThrow();
+    const afterWrites: number = embedCalls;
+
+    // Rewrite the reference to the explicit null sentinel, leaving the vector.
+    const file = onlyRecordFile(root);
+    file
+      .setRawContents(
+        file
+          .getRawContents()
+          .orThrow()
+          .replace(/^embeddingRef:.*$/m, 'embeddingRef: null')
+      )
+      .orThrow();
+
+    const reopened = FileTreeMemoryStore.create({
+      root,
+      registry: registry(),
+      codecs: codecs(),
+      vectorIndex: index,
+      embed: counting
+    }).orThrow();
+
+    expect(await reopened.reconcile(knowledgeKind, 'record-vector')).toSucceedAndSatisfy(
+      (r: ReconcileReport) => {
+        const report = r as IVectorReconcileReport;
+        // Restamped, NOT alreadyIndexed: a null reference is a missing one.
+        expect(report.restamped).toBe(1);
+        expect(report.alreadyIndexed).toBe(0);
+      }
+    );
+    // Still no embedder call — the vector was there all along.
+    expect(embedCalls).toBe(afterWrites);
+  });
+
+  test('returns a Failure when a consumer embedder THROWS rather than failing', async () => {
+    // Every hook the repair path calls is consumer-supplied. Unwrapped, a throw
+    // escapes as a rejected promise out of `IMemoryStore.reconcile` and the
+    // Result contract is broken at the public boundary. The write path had always
+    // captured these; the repair path called the same hooks bare.
+    const index = InMemoryCosineIndex.create().orThrow();
+    const store = FileTreeMemoryStore.create({
+      root: mutableRoot(),
+      registry: registry(),
+      codecs: codecs(),
+      vectorIndex: index,
+      embed: okEmbed
+    }).orThrow();
+    (await store.put(record('a'))).orThrow();
+    (await index.remove({ scope: knowledgeScope, id: 'a' as MemoryId })).orThrow();
+
+    const throwing = FileTreeMemoryStore.create({
+      root: mutableRoot(),
+      registry: registry(),
+      codecs: codecs(),
+      vectorIndex: InMemoryCosineIndex.create().orThrow(),
+      embed: () => {
+        throw new Error('embedder exploded');
+      }
+    }).orThrow();
+    (await throwing.put(record('a'))).orThrow();
+
+    // The whole call resolves rather than rejecting, and the throw is reported
+    // per-record like any other fault.
+    expect(await throwing.reconcile(knowledgeKind, 'record-vector')).toSucceedAndSatisfy(
+      (r: ReconcileReport) => {
+        const report = r as IVectorReconcileReport;
+        expect(report.failed).toHaveLength(1);
+        expect(report.failed[0].error).toMatch(/threw.*embedder exploded/i);
+        expect(report.repaired).toBe(0);
+      }
+    );
   });
 
   test('counts a decline rather than treating it as a gap or a fault', async () => {
@@ -322,7 +438,7 @@ describe('IMemoryStore.reconcile — every casualty is collected, never fatal', 
       embed: okEmbed
     }).orThrow();
     (await store.put(record('a'))).orThrow();
-    (await index.remove({ scope: 'knowledge' as never, id: 'a' as never })).orThrow();
+    (await index.remove({ scope: knowledgeScope, id: 'a' as MemoryId })).orThrow();
 
     const scopeDir = root
       .getChildren()
@@ -389,7 +505,7 @@ describe('IMemoryStore.reconcile — every casualty is collected, never fatal', 
 
     // (b) index does NOT hold it, so the record is read, embedded, and the stamp
     // fails on the same corrupt file.
-    (await index.remove({ scope: 'knowledge' as never, id: 'a' as never })).orThrow();
+    (await index.remove({ scope: knowledgeScope, id: 'a' as MemoryId })).orThrow();
     expect(await reopened.reconcile(knowledgeKind, 'record-vector')).toSucceedAndSatisfy(
       (r: ReconcileReport) => {
         expect(r.failed).toHaveLength(1);
@@ -413,7 +529,7 @@ describe('IMemoryStore.reconcile — fragment-vector', () => {
     }).orThrow();
     (await store.put(record('a'))).orThrow();
     (await store.put(record('b'))).orThrow();
-    (await index.remove({ scope: 'knowledge' as never, id: 'b' as never })).orThrow();
+    (await index.remove({ scope: knowledgeScope, id: 'b' as MemoryId })).orThrow();
 
     expect(await store.reconcile(knowledgeKind, 'fragment-vector')).toSucceedAndSatisfy(
       (r: ReconcileReport) => {
@@ -437,7 +553,7 @@ describe('IMemoryStore.reconcile — fragment-vector', () => {
       fragmentEmbedder: okFragments
     }).orThrow();
     (await store.put(record('a'))).orThrow();
-    (await index.remove({ scope: 'knowledge' as never, id: 'a' as never })).orThrow();
+    (await index.remove({ scope: knowledgeScope, id: 'a' as MemoryId })).orThrow();
 
     const failing = FileTreeMemoryStore.create({
       root,
@@ -493,7 +609,7 @@ describe('reconcileVectors — the injected stamp seam', () => {
     const result = await reconcileVectors({
       kind: knowledgeKind,
       artifact: 'record-vector',
-      targets: [{ scope: 'knowledge' as never, envelope: rec.envelope }],
+      targets: [{ scope: knowledgeScope, envelope: rec.envelope }],
       maintenance,
       embedsKind: () => true,
       resolve: () => succeed(rec),
@@ -512,7 +628,7 @@ describe('VectorMaintenance repair entry points guard their own wiring', () => {
   // still guards rather than c8-ignored defensive code, because they are
   // package-internal entry points a future caller could reach without the check.
   const bare = new VectorMaintenance({ embedsKind: () => true, warn: () => undefined });
-  const t = { scope: 'knowledge' as never, id: 'a' as never };
+  const t = { scope: knowledgeScope, id: 'a' as MemoryId };
 
   test('reembedRecord refuses an unwired record lane', async () => {
     expect(await bare.reembedRecord(record('a'), t)).toFailWith(/record-vector lane is not wired/i);

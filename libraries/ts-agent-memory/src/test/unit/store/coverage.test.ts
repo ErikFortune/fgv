@@ -181,6 +181,54 @@ describe('IMemoryStore.coverage', () => {
     });
   });
 
+  test('does not count embeddingRef: null as covered', async () => {
+    // `null` is the documented "not embedded" sentinel, so `!== undefined` counts
+    // an embedding that is not there — inflating coverage in the confident
+    // direction, which is the one direction a health surface must not be wrong in.
+    // The reconcile sibling had the same bug running the other way.
+    const root = mutableRoot();
+    const store = FileTreeMemoryStore.create({
+      root,
+      registry: registry(),
+      codecs: codecs(),
+      vectorIndex: InMemoryCosineIndex.create().orThrow(),
+      embed
+    }).orThrow();
+    (await store.put(record('a'))).orThrow();
+
+    const scopeDir = root
+      .getChildren()
+      .orThrow()
+      .find((c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory');
+    const file = scopeDir
+      ?.getChildren()
+      .orThrow()
+      .find((c): c is FileTree.IFileTreeFileItem => c.type === 'file');
+    if (file === undefined || !FileTree.isMutableFileItem(file)) {
+      throw new Error('expected a mutable record file');
+    }
+    file
+      .setRawContents(
+        file
+          .getRawContents()
+          .orThrow()
+          .replace(/^embeddingRef:.*$/m, 'embeddingRef: null')
+      )
+      .orThrow();
+
+    const reopened = FileTreeMemoryStore.create({
+      root,
+      registry: registry(),
+      codecs: codecs(),
+      vectorIndex: InMemoryCosineIndex.create().orThrow(),
+      embed
+    }).orThrow();
+
+    expect(await reopened.coverage()).toSucceedAndSatisfy((c: IDerivedStateCoverage) => {
+      expect(c.recordVectors?.perKind.get(knowledgeKind)).toEqual({ expected: 1, covered: 0 });
+    });
+  });
+
   test('covered is a BELIEF and indexSize is a FACT — their divergence is the signal', async () => {
     // The load-bearing property. A vault whose records carry `embeddingRef` from a
     // previous session, reopened against a FRESH in-memory index, reports full

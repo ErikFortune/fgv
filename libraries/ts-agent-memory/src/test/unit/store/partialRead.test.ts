@@ -27,6 +27,7 @@ import {
   TemporalIdentityCodec,
   TemporalVersionedPolicy,
   envelopeConverter,
+  MemoryListSelection,
   scanEveryRecord
 } from '../../../index';
 
@@ -184,6 +185,26 @@ describe('partial-read store surface', () => {
           expect(records.map((r) => r.envelope.id)).toEqual(['a']);
         }
       );
+    });
+
+    test('a scan cannot be combined with a narrowing axis — enforced at COMPILE time', async () => {
+      // Not a runtime assertion: the guarantee is that this cannot be written.
+      //
+      // The union's members are structural, and TypeScript's excess-property check
+      // admits any property declared by ANY member of a union — so before the
+      // `never` markers, `{ scanEveryRecord: true, kind }` type-checked, `list`
+      // took the scan branch, and the narrowing was silently discarded. A call
+      // that reads the WHOLE VAULT while looking narrowed is the one outcome a
+      // surface built around deliberate whole-vault reads must not permit.
+      //
+      // `@ts-expect-error` is the pin: if the markers are ever removed, this stops
+      // being an error and the directive itself becomes the build failure. Keep it.
+      const store = await seeded(['a']);
+      // @ts-expect-error -- scanEveryRecord is mutually exclusive with scope/kind/tag
+      const mixed: MemoryListSelection = { scanEveryRecord: true, kind: knowledgeKind };
+      // Referenced so the binding is not merely unused; the assertion above is the test.
+      expect(typeof mixed).toBe('object');
+      expect(await store.list(scanEveryRecord())).toSucceed();
     });
   });
 

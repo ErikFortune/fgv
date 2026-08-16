@@ -110,6 +110,9 @@ export function edgeTargetKey(target: IEdgeTarget): string;
 export const embeddedFragmentConverter: Converter<IEmbeddedFragment>;
 
 // @public
+export function embeddingRefOf(envelope: IMemoryEnvelope): string | undefined;
+
+// @public
 export type EntityId = Brand<string, 'EntityId'>;
 
 // @public
@@ -607,6 +610,7 @@ export interface IMemoryStore extends IMemoryRecordResolver {
 export interface IMemoryStoreListFilter {
     readonly asOf?: number;
     readonly kind?: Kind;
+    readonly scanEveryRecord?: never;
     readonly scope?: MemoryScopeKey;
     readonly tag?: Tag;
 }
@@ -815,7 +819,10 @@ export interface IVectorReconcileReport extends IReconcileReportBase {
 // @public
 export interface IWholeVaultScan {
     readonly asOf?: number;
+    readonly kind?: never;
     readonly scanEveryRecord: true;
+    readonly scope?: never;
+    readonly tag?: never;
 }
 
 // @public

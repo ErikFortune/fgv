@@ -4,7 +4,7 @@
  */
 
 import { Result, captureResult, succeed } from '@fgv/ts-utils';
-import { Kind } from '../types';
+import { Kind, embeddingRefOf } from '../types';
 import { IIndexedMemoryEntry } from '../index';
 import { IFragmentVectorIndex, IVectorIndex } from '../vector';
 import { IArtifactCoverage, IDerivedStateCoverage } from './coverage';
@@ -98,7 +98,7 @@ export function computeCoverage(params: IComputeCoverageParams): Result<IDerived
       // caller sizing the gap. That residue is not lost: its vector still counts
       // toward `indexSize`, which is exactly the belief-vs-fact disagreement that
       // field exists to surface.
-      if (entry.envelope.embeddingRef !== undefined) {
+      if (embeddingRefOf(entry.envelope) !== undefined) {
         bucket.covered += 1;
       }
     }

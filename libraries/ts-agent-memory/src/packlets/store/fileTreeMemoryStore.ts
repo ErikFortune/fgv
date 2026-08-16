@@ -525,7 +525,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   /** {@inheritDoc IMemoryStore.list} */
   public async list(selection: MemoryListSelection): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>> {
-    const scan: boolean = isWholeVaultScan(selection);
+    // Deliberately NOT annotated `: boolean`. An explicit annotation discards the
+    // type predicate, and TypeScript's aliased-condition narrowing is what lets
+    // the ternary below see `selection` as a filter on the false branch. With the
+    // annotation this line compiles and the next one does not.
+    const scan = isWholeVaultScan(selection);
     const filter: IMemoryStoreListFilter = scan ? {} : selection;
     if (!scan && filter.scope === undefined && filter.kind === undefined && filter.tag === undefined) {
       // `asOf` alone does not narrow — it collapses versions, it does not exclude
