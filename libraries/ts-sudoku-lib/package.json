@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-sudoku-lib",
-  "version": "5.1.0-49",
+  "version": "5.1.0-50",
   "description": "Sudoku rules library",
   "main": "lib/index.js",
   "types": "dist/ts-sudoku-lib.d.ts",
