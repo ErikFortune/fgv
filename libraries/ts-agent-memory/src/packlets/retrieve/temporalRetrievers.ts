@@ -4,15 +4,22 @@
  */
 
 import { Result, succeed } from '@fgv/ts-utils';
-import { IMemoryRecord, isTemporalRecord, selectCurrentVersion, selectVersionAsOf } from '../types';
-import { IMemoryIndex } from '../index';
+import {
+  IMemoryRecord,
+  IMemoryRecordResolver,
+  isTemporalRecord,
+  selectCurrentVersion,
+  selectVersionAsOf
+} from '../types';
+import { IIndexedMemoryEntry, IMemoryIndex } from '../index';
 import {
   IMemoryQuery,
   IMemoryRetriever,
   IMemoryRetrieverCapabilities,
+  IRetrieverCreateParams,
   guardRetrieverCapabilities,
   indexedRecordMatchesQuery,
-  limitRecords,
+  materializePage,
   recencyCompare
 } from './retriever';
 
@@ -37,18 +44,18 @@ export const TEMPORAL_CAPABILITIES: IMemoryRetrieverCapabilities = {
 function groupTemporalVersionsByEntity(
   index: IMemoryIndex,
   query: IMemoryQuery
-): Map<string, IMemoryRecord<unknown>[]> {
-  const groups: Map<string, IMemoryRecord<unknown>[]> = new Map<string, IMemoryRecord<unknown>[]>();
+): Map<string, IIndexedMemoryEntry[]> {
+  const groups: Map<string, IIndexedMemoryEntry[]> = new Map<string, IIndexedMemoryEntry[]>();
   for (const entry of index.entries()) {
-    if (!isTemporalRecord(entry.record) || !indexedRecordMatchesQuery(entry, query)) {
+    if (!isTemporalRecord(entry) || !indexedRecordMatchesQuery(entry, query)) {
       continue;
     }
-    const key: string = `${entry.record.envelope.kind}\0${entry.record.envelope.entityId}`;
-    const existing: IMemoryRecord<unknown>[] | undefined = groups.get(key);
+    const key: string = `${entry.envelope.kind}\0${entry.envelope.entityId}`;
+    const existing: IIndexedMemoryEntry[] | undefined = groups.get(key);
     if (existing === undefined) {
-      groups.set(key, [entry.record]);
+      groups.set(key, [entry]);
     } else {
-      existing.push(entry.record);
+      existing.push(entry);
     }
   }
   return groups;
@@ -63,9 +70,11 @@ function groupTemporalVersionsByEntity(
  */
 export class CurrentValidRetriever implements IMemoryRetriever {
   private readonly _index: IMemoryIndex;
+  private readonly _resolver: IMemoryRecordResolver;
 
-  private constructor(index: IMemoryIndex) {
-    this._index = index;
+  private constructor(params: IRetrieverCreateParams) {
+    this._index = params.index;
+    this._resolver = params.resolver;
   }
 
   /** {@inheritDoc IMemoryRetriever.capabilities} */
@@ -74,23 +83,23 @@ export class CurrentValidRetriever implements IMemoryRetriever {
   }
 
   /** Family-convention factory. */
-  public static create(index: IMemoryIndex): Result<CurrentValidRetriever> {
-    return succeed(new CurrentValidRetriever(index));
+  public static create(params: IRetrieverCreateParams): Result<CurrentValidRetriever> {
+    return succeed(new CurrentValidRetriever(params));
   }
 
   /** {@inheritDoc IMemoryRetriever.retrieve} */
   public retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>> {
     return Promise.resolve(
       guardRetrieverCapabilities(query, this.capabilities).onSuccess(() => {
-        const selected: IMemoryRecord<unknown>[] = [];
+        const selected: IIndexedMemoryEntry[] = [];
         for (const versions of groupTemporalVersionsByEntity(this._index, query).values()) {
-          const current: IMemoryRecord<unknown> | undefined = selectCurrentVersion(versions);
+          const current: IIndexedMemoryEntry | undefined = selectCurrentVersion(versions);
           if (current !== undefined) {
             selected.push(current);
           }
         }
         selected.sort(recencyCompare);
-        return succeed(limitRecords(selected, query.limit, query.offset));
+        return materializePage(selected, query, this._resolver);
       })
     );
   }
@@ -106,9 +115,11 @@ export class CurrentValidRetriever implements IMemoryRetriever {
  */
 export class AsOfRetriever implements IMemoryRetriever {
   private readonly _index: IMemoryIndex;
+  private readonly _resolver: IMemoryRecordResolver;
 
-  private constructor(index: IMemoryIndex) {
-    this._index = index;
+  private constructor(params: IRetrieverCreateParams) {
+    this._index = params.index;
+    this._resolver = params.resolver;
   }
 
   /** {@inheritDoc IMemoryRetriever.capabilities} */
@@ -117,8 +128,8 @@ export class AsOfRetriever implements IMemoryRetriever {
   }
 
   /** Family-convention factory. */
-  public static create(index: IMemoryIndex): Result<AsOfRetriever> {
-    return succeed(new AsOfRetriever(index));
+  public static create(params: IRetrieverCreateParams): Result<AsOfRetriever> {
+    return succeed(new AsOfRetriever(params));
   }
 
   /** {@inheritDoc IMemoryRetriever.retrieve} */
@@ -129,15 +140,15 @@ export class AsOfRetriever implements IMemoryRetriever {
           return succeed([]);
         }
         const asOf: number = query.asOf;
-        const selected: IMemoryRecord<unknown>[] = [];
+        const selected: IIndexedMemoryEntry[] = [];
         for (const versions of groupTemporalVersionsByEntity(this._index, query).values()) {
-          const valid: IMemoryRecord<unknown> | undefined = selectVersionAsOf(versions, asOf);
+          const valid: IIndexedMemoryEntry | undefined = selectVersionAsOf(versions, asOf);
           if (valid !== undefined) {
             selected.push(valid);
           }
         }
         selected.sort(recencyCompare);
-        return succeed(limitRecords(selected, query.limit, query.offset));
+        return materializePage(selected, query, this._resolver);
       })
     );
   }
@@ -158,9 +169,11 @@ export class AsOfRetriever implements IMemoryRetriever {
  */
 export class HistoryRetriever implements IMemoryRetriever {
   private readonly _index: IMemoryIndex;
+  private readonly _resolver: IMemoryRecordResolver;
 
-  private constructor(index: IMemoryIndex) {
-    this._index = index;
+  private constructor(params: IRetrieverCreateParams) {
+    this._index = params.index;
+    this._resolver = params.resolver;
   }
 
   /** {@inheritDoc IMemoryRetriever.capabilities} */
@@ -169,26 +182,26 @@ export class HistoryRetriever implements IMemoryRetriever {
   }
 
   /** Family-convention factory. */
-  public static create(index: IMemoryIndex): Result<HistoryRetriever> {
-    return succeed(new HistoryRetriever(index));
+  public static create(params: IRetrieverCreateParams): Result<HistoryRetriever> {
+    return succeed(new HistoryRetriever(params));
   }
 
   /** {@inheritDoc IMemoryRetriever.retrieve} */
   public retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>> {
     return Promise.resolve(
       guardRetrieverCapabilities(query, this.capabilities).onSuccess(() => {
-        const history: IMemoryRecord<unknown>[] = [];
+        const history: IIndexedMemoryEntry[] = [];
         for (const versions of groupTemporalVersionsByEntity(this._index, query).values()) {
           history.push(...versions);
         }
         history.sort(HistoryRetriever._byValidAtAscending);
-        return succeed(limitRecords(history, query.limit, query.offset));
+        return materializePage(history, query, this._resolver);
       })
     );
   }
 
   /** A version's world-truth start: its `valid_at`, defaulting to `created` when absent. */
-  private static _startOf(record: IMemoryRecord<unknown>): number {
+  private static _startOf(record: IIndexedMemoryEntry): number {
     const temporal: IMemoryRecord<unknown>['envelope']['temporal'] = record.envelope.temporal;
     /* c8 ignore next 3 -- unreachable: HistoryRetriever orders only temporal records (pre-filtered by isTemporalRecord), so `temporal` is always present; the guard keeps the type honest */
     if (temporal === undefined) {
@@ -202,7 +215,7 @@ export class HistoryRetriever implements IMemoryRetriever {
    * `created` when absent), with `seq` as a stable ascending tiebreak so
    * same-instant versions order by write sequence.
    */
-  private static _byValidAtAscending(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number {
+  private static _byValidAtAscending(a: IIndexedMemoryEntry, b: IIndexedMemoryEntry): number {
     const aStart: number = HistoryRetriever._startOf(a);
     const bStart: number = HistoryRetriever._startOf(b);
     return aStart !== bStart ? aStart - bStart : a.envelope.seq - b.envelope.seq;

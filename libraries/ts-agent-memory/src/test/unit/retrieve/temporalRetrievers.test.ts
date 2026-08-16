@@ -4,12 +4,16 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { Result, succeed } from '@fgv/ts-utils';
 import {
   AsOfRetriever,
   CurrentValidRetriever,
   HistoryRetriever,
   HybridRetriever,
+  IIndexedMemoryEntry,
   IIndexedMemoryRecord,
+  IRetrieverCreateParams,
+  MemoryId,
   IMemoryRecord,
   Kind,
   MemoryIndex,
@@ -31,7 +35,7 @@ interface IVersionSpec {
   readonly source?: string;
 }
 
-function versionEntry(spec: IVersionSpec): IIndexedMemoryRecord {
+function versionRecord(spec: IVersionSpec): IIndexedMemoryRecord {
   const temporal: Record<string, unknown> = { valid_at: spec.validAt };
   if (spec.invalidAt !== undefined) {
     temporal.invalid_at = spec.invalidAt;
@@ -58,7 +62,7 @@ function versionEntry(spec: IVersionSpec): IIndexedMemoryRecord {
 }
 
 /** A flat (non-temporal) entry, to prove the temporal retrievers ignore it. */
-function flatEntry(id: string): IIndexedMemoryRecord {
+function flatRecord(id: string): IIndexedMemoryRecord {
   const record: IMemoryRecord<unknown> = {
     envelope: envelopeConverter
       .convert({
@@ -84,15 +88,35 @@ function ids(records: ReadonlyArray<IMemoryRecord<unknown>>): string[] {
 }
 
 // fact-1: v1 [100,200), v2 [200,∞) current. fact-2: v1 [150,∞) current. Plus a flat doc.
+/** Index + a resolver that reconstitutes this suite's synthetic marker bodies. */
+function backed(index: MemoryIndex): IRetrieverCreateParams {
+  return {
+    index,
+    resolver: {
+      resolveRecord: (scope: MemoryScopeKey, id: MemoryId): Result<IMemoryRecord<unknown> | undefined> => {
+        const entry: IIndexedMemoryEntry | undefined = index.get({ scope, id });
+        return succeed(entry === undefined ? undefined : { envelope: entry.envelope, body: `body-${id}` });
+      }
+    }
+  };
+}
+
+/** Project a whole-record fixture onto the entry form `rebuild` takes. */
+function asEntry(e: IIndexedMemoryRecord): IIndexedMemoryEntry {
+  return { scope: e.scope, envelope: e.record.envelope };
+}
+
 function buildIndex(): MemoryIndex {
   const index = MemoryIndex.create().orThrow();
   index
-    .rebuild([
-      versionEntry({ entityId: 'fact-1', seq: 1, validAt: 100, invalidAt: 200 }),
-      versionEntry({ entityId: 'fact-1', seq: 2, validAt: 200 }),
-      versionEntry({ entityId: 'fact-2', seq: 3, validAt: 150 }),
-      flatEntry('doc-a')
-    ])
+    .rebuild(
+      [
+        versionRecord({ entityId: 'fact-1', seq: 1, validAt: 100, invalidAt: 200 }),
+        versionRecord({ entityId: 'fact-1', seq: 2, validAt: 200 }),
+        versionRecord({ entityId: 'fact-2', seq: 3, validAt: 150 }),
+        flatRecord('doc-a')
+      ].map(asEntry)
+    )
     .orThrow();
   return index;
 }
@@ -100,8 +124,43 @@ function buildIndex(): MemoryIndex {
 describe('temporal retrievers', () => {
   const index: MemoryIndex = buildIndex();
 
+  // REGRESSION, one per retriever. `query.filter` is applied AFTER materialization
+  // — `indexedRecordMatchesQuery` is handed an envelope and structurally cannot
+  // apply it — so a retriever that pre-filters and then materializes on its own
+  // silently ignores the predicate. That shipped once. Testing the shared
+  // `materializePage` in isolation does NOT catch a retriever that stops calling
+  // it: both it and the old helpers stay exported and covered. Only a retrieve()
+  // that asserts the predicate reached the result does.
+  describe('query.filter reaches every temporal retriever', () => {
+    const nothing = (): boolean => false;
+
+    test('CurrentValidRetriever applies it', async () => {
+      const r = CurrentValidRetriever.create(backed(index)).orThrow();
+      expect(await r.retrieve({})).toSucceedAndSatisfy((all) => {
+        expect(all.length).toBeGreaterThan(0);
+      });
+      expect(await r.retrieve({ filter: nothing })).toSucceedWith([]);
+    });
+
+    test('AsOfRetriever applies it', async () => {
+      const r = AsOfRetriever.create(backed(index)).orThrow();
+      expect(await r.retrieve({ asOf: 250 })).toSucceedAndSatisfy((all) => {
+        expect(all.length).toBeGreaterThan(0);
+      });
+      expect(await r.retrieve({ asOf: 250, filter: nothing })).toSucceedWith([]);
+    });
+
+    test('HistoryRetriever applies it', async () => {
+      const r = HistoryRetriever.create(backed(index)).orThrow();
+      expect(await r.retrieve({})).toSucceedAndSatisfy((all) => {
+        expect(all.length).toBeGreaterThan(0);
+      });
+      expect(await r.retrieve({ filter: nothing })).toSucceedWith([]);
+    });
+  });
+
   describe('CurrentValidRetriever', () => {
-    const retriever = CurrentValidRetriever.create(index).orThrow();
+    const retriever = CurrentValidRetriever.create(backed(index)).orThrow();
 
     test('declares supportsTemporalQuery', () => {
       expect(retriever.capabilities.supportsTemporalQuery).toBe(true);
@@ -127,13 +186,15 @@ describe('temporal retrievers', () => {
       // rather than falling back to an older version that matches.
       const scoped = MemoryIndex.create().orThrow();
       scoped
-        .rebuild([
-          versionEntry({ entityId: 'fact-1', seq: 1, validAt: 100, invalidAt: 200, source: 'bad-run' }),
-          versionEntry({ entityId: 'fact-1', seq: 2, validAt: 200, source: 'agent' }),
-          versionEntry({ entityId: 'fact-2', seq: 3, validAt: 150, source: 'bad-run' })
-        ])
+        .rebuild(
+          [
+            versionRecord({ entityId: 'fact-1', seq: 1, validAt: 100, invalidAt: 200, source: 'bad-run' }),
+            versionRecord({ entityId: 'fact-1', seq: 2, validAt: 200, source: 'agent' }),
+            versionRecord({ entityId: 'fact-2', seq: 3, validAt: 150, source: 'bad-run' })
+          ].map(asEntry)
+        )
         .orThrow();
-      const r = CurrentValidRetriever.create(scoped).orThrow();
+      const r = CurrentValidRetriever.create(backed(scoped)).orThrow();
       expect(await r.retrieve({ provenanceSource: 'bad-run' })).toSucceedAndSatisfy((records) => {
         // fact-2's current version matches. fact-1's current version (v2) came
         // from 'agent', so fact-1 is absent — NOT represented by its superseded v1.
@@ -143,7 +204,7 @@ describe('temporal retrievers', () => {
   });
 
   describe('AsOfRetriever', () => {
-    const retriever = AsOfRetriever.create(index).orThrow();
+    const retriever = AsOfRetriever.create(backed(index)).orThrow();
 
     test('empty when no asOf axis is supplied', async () => {
       expect(await retriever.retrieve({})).toSucceedWith([]);
@@ -162,7 +223,7 @@ describe('temporal retrievers', () => {
   });
 
   describe('HistoryRetriever', () => {
-    const retriever = HistoryRetriever.create(index).orThrow();
+    const retriever = HistoryRetriever.create(backed(index)).orThrow();
 
     test('returns all versions ascending by valid_at', async () => {
       expect(await retriever.retrieve({ kind: factKind })).toSucceedAndSatisfy((records) => {
@@ -199,8 +260,10 @@ describe('temporal retrievers', () => {
           body: 'nv'
         }
       };
-      idx.rebuild([noValidAt, versionEntry({ entityId: 'early', seq: 2, validAt: 100 })]).orThrow();
-      const r = HistoryRetriever.create(idx).orThrow();
+      idx
+        .rebuild([noValidAt, versionRecord({ entityId: 'early', seq: 2, validAt: 100 })].map(asEntry))
+        .orThrow();
+      const r = HistoryRetriever.create(backed(idx)).orThrow();
       // `nv` has no valid_at → its start defaults to created (700), after early (100).
       expect(await r.retrieve({})).toSucceedAndSatisfy((records) => {
         expect(ids(records)).toEqual(['early-v2', 'nv-v1']);
@@ -211,12 +274,14 @@ describe('temporal retrievers', () => {
       // Two versions of one entity sharing a valid_at — the seq tiebreak orders them.
       const tieIndex = MemoryIndex.create().orThrow();
       tieIndex
-        .rebuild([
-          versionEntry({ entityId: 'tie', seq: 5, validAt: 500, invalidAt: 500 }),
-          versionEntry({ entityId: 'tie', seq: 4, validAt: 500 })
-        ])
+        .rebuild(
+          [
+            versionRecord({ entityId: 'tie', seq: 5, validAt: 500, invalidAt: 500 }),
+            versionRecord({ entityId: 'tie', seq: 4, validAt: 500 })
+          ].map(asEntry)
+        )
         .orThrow();
-      const tieRetriever = HistoryRetriever.create(tieIndex).orThrow();
+      const tieRetriever = HistoryRetriever.create(backed(tieIndex)).orThrow();
       expect(await tieRetriever.retrieve({})).toSucceedAndSatisfy((records) => {
         expect(ids(records)).toEqual(['tie-v4', 'tie-v5']);
       });
@@ -225,13 +290,13 @@ describe('temporal retrievers', () => {
 
   describe('loud-degrade + Hybrid composite', () => {
     test('a non-temporal retriever loud-degrades on an asOf query', async () => {
-      const recency = RecencyRetriever.create(index).orThrow();
+      const recency = RecencyRetriever.create(backed(index)).orThrow();
       expect(await recency.retrieve({ asOf: 150 })).toFailWith(/temporal query requires temporal index/i);
     });
 
     test('a Hybrid of [Recency, AsOf] lights up temporal recall via the temporal child', async () => {
-      const recency = RecencyRetriever.create(index).orThrow();
-      const asOf = AsOfRetriever.create(index).orThrow();
+      const recency = RecencyRetriever.create(backed(index)).orThrow();
+      const asOf = AsOfRetriever.create(backed(index)).orThrow();
       const hybrid = HybridRetriever.create(
         [recency, asOf],
         ScoreUnionMergeStrategy.create().orThrow()

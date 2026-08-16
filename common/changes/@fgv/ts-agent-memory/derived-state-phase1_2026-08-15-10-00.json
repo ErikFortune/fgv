@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "BREAKING: IVectorIndex and IFragmentVectorIndex both gain has(target): Promise<Result<boolean>>, the membership check that makes a targeted (rather than destructive) repair possible — envelope.embeddingRef is the store's BELIEF and is wrong in exactly the situation a repair runs in, and only the index can report the case where it holds the vector but the envelope lost its reference. IFragmentVectorIndex additionally gains recordCount, fragmentCount and rebuild(source, embed, options?), closing on the fragment lane the backfill gap that was fixed for the record lane in an earlier release: rebuild existed only on the bundled in-memory class and SqliteVecFragmentIndex had none at all, so a persistent fragment index could not be reconciled by any route. Deliberately NOT named size, unlike IVectorIndex.size: this index is one-to-many, so size has two defensible readings and a reader arriving from the record sibling would take the wrong one silently. New IFragmentVectorRebuildReport mirrors IVectorRebuildReport (every count resolved by Kind, optional excluded, carried on failure as well as success) and adds fragments — the fan-out, which indexed cannot express and which is the difference between a reconcile that finishes and one that blocks a request.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}

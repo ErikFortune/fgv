@@ -4,13 +4,14 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { DetailedResult, Result, fail, failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import {
   IEdgeTarget,
   IMemoryRecordSource,
   IVectorIndex,
   IVectorQueryHit,
   IVectorRebuildReport,
+  Kind,
   MemoryEmbedder,
   MemoryId,
   MemoryScopeKey,
@@ -46,6 +47,10 @@ class StubVectorIndex implements IVectorIndex {
     return Promise.resolve(succeed(hits));
   }
 
+  public has(t: IEdgeTarget): Promise<Result<boolean>> {
+    return Promise.resolve(succeed(this._vectors.has(edgeTargetKey(t))));
+  }
+
   public get size(): number {
     return this._vectors.size;
   }
@@ -53,30 +58,37 @@ class StubVectorIndex implements IVectorIndex {
   public async rebuild(
     source: IMemoryRecordSource,
     embed: MemoryEmbedder
-  ): Promise<Result<IVectorRebuildReport>> {
+  ): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>> {
     const listed = await source.list();
     if (listed.isFailure()) {
       // Deliberately BEFORE the clear, mirroring the contract both shipped
       // implementations follow: a failed list is no evidence about the vectors
-      // already held, so it must not destroy a healthy index.
-      return fail(listed.message);
+      // already held, so it must not destroy a healthy index. No detail either —
+      // nothing was attempted, so there is nothing to report.
+      return failWithDetail(listed.message);
     }
     this._vectors.clear();
-    let indexed: number = 0;
-    let declined: number = 0;
-    for (const scoped of listed.value) {
+    const indexed: Map<Kind, number> = new Map<Kind, number>();
+    const declined: Map<Kind, number> = new Map<Kind, number>();
+    for (const scoped of listed.value.records) {
+      const kind: Kind = scoped.record.envelope.kind;
       const embedded = await embed(scoped.record);
       if (embedded.isFailure()) {
-        return fail(embedded.message);
+        return failWithDetail(embedded.message, {
+          indexed,
+          declined,
+          excluded: listed.value.excluded,
+          skipped: []
+        });
       }
       if (embedded.value === undefined) {
-        declined++;
+        declined.set(kind, (declined.get(kind) ?? 0) + 1);
         continue;
       }
       (await this.add(scoped.target, embedded.value)).orThrow();
-      indexed++;
+      indexed.set(kind, (indexed.get(kind) ?? 0) + 1);
     }
-    return succeed({ indexed, declined, skipped: [] });
+    return succeedWithDetail({ indexed, declined, excluded: listed.value.excluded, skipped: [] });
   }
 }
 

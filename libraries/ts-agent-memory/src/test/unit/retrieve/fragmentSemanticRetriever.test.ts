@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Result, fail, succeed, DetailedResult, failWithDetail } from '@fgv/ts-utils';
 import {
   FRAGMENT_SEMANTIC_UNWIRED_MESSAGE,
   FragmentSemanticRetriever,
@@ -14,7 +14,8 @@ import {
   IFragmentVectorIndex,
   IVectorQueryHit,
   MemoryId,
-  MemoryScopeKey
+  MemoryScopeKey,
+  IFragmentVectorRebuildReport
 } from '../../../index';
 
 function target(scope: string, id: string): IEdgeTarget {
@@ -49,6 +50,18 @@ class FakeFragmentIndex implements IFragmentVectorIndex {
   }
   public remove(t: IEdgeTarget): Promise<Result<IEdgeTarget>> {
     return Promise.resolve(succeed(t));
+  }
+  public has(): Promise<Result<boolean>> {
+    return Promise.resolve(succeed(false));
+  }
+  public get recordCount(): number {
+    return 0;
+  }
+  public get fragmentCount(): number {
+    return this._hits.length;
+  }
+  public rebuild(): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>> {
+    return Promise.resolve(failWithDetail('not used by the retriever'));
   }
   public query(
     __vector: Float32Array,
@@ -151,6 +164,10 @@ describe('FragmentSemanticRetriever', () => {
       addFragments: (__t: IEdgeTarget, f: ReadonlyArray<IEmbeddedFragment>) =>
         Promise.resolve(succeed(f.length)),
       remove: (t: IEdgeTarget) => Promise.resolve(succeed(t)),
+      has: () => Promise.resolve(succeed(false)),
+      recordCount: 0,
+      fragmentCount: 0,
+      rebuild: () => Promise.resolve(failWithDetail('unused')),
       query: () => Promise.reject(new Error('socket hangup'))
     };
     const r = FragmentSemanticRetriever.create({

@@ -10,11 +10,18 @@ import { load as loadSqliteVec } from 'sqlite-vec';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { Result, fail, succeed } from '@fgv/ts-utils';
 import {
   IEdgeTarget,
   IEmbeddedFragment,
   IFragmentLocator,
+  IFragmentVectorRebuildReport,
+  IMemoryRecord,
+  IMemoryRecordListing,
+  IMemoryRecordSource,
+  IScopedMemoryRecord,
   IVectorQueryHit,
+  Kind,
   MemoryId,
   MemoryScopeKey
 } from '@fgv/ts-agent-memory';
@@ -620,6 +627,233 @@ describe('SqliteVecFragmentIndex', () => {
         second.close();
         fs.rmSync(dir, { recursive: true, force: true });
       }
+    });
+  });
+
+  describe('has', () => {
+    test('answers false before any add has created the table', async () => {
+      // The table is created lazily on first add, so "nothing held" must be a
+      // truthful `false` rather than a statement-prepare error.
+      const index = await makeIndex();
+      expect(await index.has(target('knowledge', 'doc-1'))).toSucceedWith(false);
+    });
+
+    test('answers true once a record has fragments, false after removal', async () => {
+      const index = await makeIndex();
+      const t = target('knowledge', 'doc-1');
+      (await index.addFragments(t, [frag(0, 5, 1, 0)])).orThrow();
+      expect(await index.has(t)).toSucceedWith(true);
+      (await index.remove(t)).orThrow();
+      expect(await index.has(t)).toSucceedWith(false);
+    });
+
+    test('keys on scope as well as id', async () => {
+      const index = await makeIndex();
+      (await index.addFragments(target('conv-a', 'turn-3'), [frag(0, 5, 1, 0)])).orThrow();
+      expect(await index.has(target('conv-a', 'turn-3'))).toSucceedWith(true);
+      expect(await index.has(target('conv-b', 'turn-3'))).toSucceedWith(false);
+    });
+
+    test('fails rather than throwing when the connection is closed', async () => {
+      const index = await makeIndex();
+      (await index.addFragments(target('knowledge', 'doc-1'), [frag(0, 5, 1, 0)])).orThrow();
+      db.close();
+      expect(await index.has(target('knowledge', 'doc-1'))).toFailWith(/cannot check 'knowledge/i);
+    });
+  });
+
+  describe('rebuild', () => {
+    function record(id: string, kind: string = 'knowledge'): IMemoryRecord<unknown> {
+      return {
+        envelope: { id: id as MemoryId, kind: kind as Kind } as IMemoryRecord<unknown>['envelope'],
+        body: `body-${id}`
+      };
+    }
+    function scoped(scope: string, id: string, kind?: string): IScopedMemoryRecord {
+      return { target: target(scope, id), record: record(id, kind) };
+    }
+    class FakeSource implements IMemoryRecordSource {
+      private readonly _result: Result<ReadonlyArray<IScopedMemoryRecord>>;
+      private readonly _excluded: ReadonlyMap<Kind, number> | undefined;
+      public constructor(
+        result: Result<ReadonlyArray<IScopedMemoryRecord>>,
+        excluded?: ReadonlyMap<Kind, number>
+      ) {
+        this._result = result;
+        this._excluded = excluded;
+      }
+      public list(): Promise<Result<IMemoryRecordListing>> {
+        return Promise.resolve(
+          this._result.onSuccess((records) =>
+            succeed(this._excluded === undefined ? { records } : { records, excluded: this._excluded })
+          )
+        );
+      }
+    }
+    const embed = (): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> =>
+      Promise.resolve(succeed([frag(0, 5, 1, 0), frag(5, 10, 0, 1)]));
+
+    test('re-embeds every record and resolves indexed and the fan-out by kind', async () => {
+      const index = await makeIndex();
+      const source = new FakeSource(succeed([scoped('knowledge', 'a'), scoped('conv-a', 't1', 'turn')]));
+      expect(await index.rebuild(source, embed)).toSucceedAndSatisfy(
+        (report: IFragmentVectorRebuildReport) => {
+          expect(report.indexed.get('knowledge' as Kind)).toBe(1);
+          expect(report.fragments.get('knowledge' as Kind)).toBe(2);
+          expect(report.indexed.get('turn' as Kind)).toBe(1);
+          expect(report.fragments.get('turn' as Kind)).toBe(2);
+        }
+      );
+      expect(index.recordCount).toBe(2);
+      expect(index.fragmentCount).toBe(4);
+    });
+
+    test('clears prior contents first', async () => {
+      const index = await makeIndex();
+      (await index.addFragments(target('knowledge', 'old'), [frag(0, 5, 1, 0)])).orThrow();
+      const source = new FakeSource(succeed([scoped('knowledge', 'a')]));
+      expect(await index.rebuild(source, embed)).toSucceed();
+      expect(index.recordCount).toBe(1);
+      expect(await index.has(target('knowledge', 'old'))).toSucceedWith(false);
+    });
+
+    test('fails on a list failure WITHOUT discarding a healthy persisted index', async () => {
+      // The durability stake: on this backend, clearing before the list would be
+      // real data loss surviving the process, not a transient inconvenience.
+      const index = await makeIndex();
+      (await index.addFragments(target('knowledge', 'seed'), [frag(0, 5, 1, 1)])).orThrow();
+      const result = await index.rebuild(new FakeSource(fail('disk gone')), embed);
+      expect(result.isFailure()).toBe(true);
+      expect(result.detail).toBeUndefined();
+      expect(index.recordCount).toBe(1);
+    });
+
+    test('counts an empty-array embed as declined, and still replaces', async () => {
+      const index = await makeIndex();
+      (await index.addFragments(target('knowledge', 'a'), [frag(0, 5, 1, 1)])).orThrow();
+      const source = new FakeSource(succeed([scoped('knowledge', 'a')]));
+      expect(await index.rebuild(source, () => Promise.resolve(succeed([])))).toSucceedAndSatisfy(
+        (report: IFragmentVectorRebuildReport) => {
+          expect(report.declined.get('knowledge' as Kind)).toBe(1);
+          expect(report.indexed.size).toBe(0);
+        }
+      );
+      expect(index.recordCount).toBe(0);
+    });
+
+    test("'fail' rolls back to empty and carries the attempt on the detail", async () => {
+      const index = await makeIndex();
+      let calls: number = 0;
+      const flaky = (): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> => {
+        calls += 1;
+        return Promise.resolve(calls === 1 ? succeed([frag(0, 5, 1, 1)]) : fail('no model'));
+      };
+      const source = new FakeSource(succeed([scoped('knowledge', 'a'), scoped('conv-a', 't1')]));
+      const result = await index.rebuild(source, flaky);
+      expect(result.isFailure()).toBe(true);
+      expect(result.detail?.indexed.get('knowledge' as Kind)).toBe(1);
+      expect(index.recordCount).toBe(0);
+    });
+
+    test("'skip' keeps the healthy records and reports every casualty", async () => {
+      const index = await makeIndex();
+      let calls: number = 0;
+      const flaky = (): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> => {
+        calls += 1;
+        return Promise.resolve(calls === 1 ? fail('no model') : succeed([frag(0, 5, 1, 1)]));
+      };
+      const source = new FakeSource(succeed([scoped('conv-a', 't1'), scoped('knowledge', 'a')]));
+      expect(await index.rebuild(source, flaky, { onRecordError: 'skip' })).toSucceedAndSatisfy(
+        (report: IFragmentVectorRebuildReport) => {
+          expect(report.skipped).toHaveLength(1);
+          expect(report.indexed.get('knowledge' as Kind)).toBe(1);
+        }
+      );
+      expect(index.recordCount).toBe(1);
+    });
+
+    test("'skip' also survives an ADD failure", async () => {
+      const index = await makeIndex();
+      let calls: number = 0;
+      const embedThenBad = (): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> => {
+        calls += 1;
+        // A dimension mismatch against the established dimension is an add-side
+        // rejection, distinct from an embedder failure.
+        return Promise.resolve(calls === 1 ? succeed([frag(0, 5, 1, 1)]) : succeed([frag(0, 5, 1, 1, 1)]));
+      };
+      const source = new FakeSource(succeed([scoped('knowledge', 'a'), scoped('conv-a', 't1')]));
+      expect(await index.rebuild(source, embedThenBad, { onRecordError: 'skip' })).toSucceedAndSatisfy(
+        (report: IFragmentVectorRebuildReport) => {
+          expect(report.skipped).toHaveLength(1);
+          expect(report.indexed.get('knowledge' as Kind)).toBe(1);
+        }
+      );
+      expect(index.recordCount).toBe(1);
+    });
+
+    test('fails with no detail when the up-front clear fails — nothing was attempted', async () => {
+      // Distinct from a mid-loop rollback: the table still holds whatever it held,
+      // so an all-zero report would describe an index this call never disturbed.
+      const index = await makeIndex();
+      (await index.addFragments(target('knowledge', 'seed'), [frag(0, 5, 1, 1)])).orThrow();
+      db.close();
+      const result = await index.rebuild(new FakeSource(succeed([scoped('knowledge', 'a')])), embed);
+      expect(result.isFailure()).toBe(true);
+      expect(result.message).toMatch(/failed to clear the index/i);
+      expect(result.detail).toBeUndefined();
+    });
+
+    test("'fail' rolls back when the ADD is what failed, not the embedder", async () => {
+      const index = await makeIndex();
+      let calls: number = 0;
+      const embedThenBad = (): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> => {
+        calls += 1;
+        return Promise.resolve(calls === 1 ? succeed([frag(0, 5, 1, 1)]) : succeed([frag(0, 5, 1, 1, 1)]));
+      };
+      const source = new FakeSource(succeed([scoped('knowledge', 'a'), scoped('conv-a', 't1')]));
+      const result = await index.rebuild(source, embedThenBad);
+      expect(result.isFailure()).toBe(true);
+      expect(result.detail?.indexed.get('knowledge' as Kind)).toBe(1);
+      expect(index.recordCount).toBe(0);
+    });
+
+    test('propagates the listing excluded tally rather than dropping it', async () => {
+      const index = await makeIndex();
+      const source = new FakeSource(
+        succeed([scoped('knowledge', 'a')]),
+        new Map<Kind, number>([['bookkeeping' as Kind, 3]])
+      );
+      expect(await index.rebuild(source, embed)).toSucceedAndSatisfy(
+        (report: IFragmentVectorRebuildReport) => {
+          expect(report.excluded?.get('bookkeeping' as Kind)).toBe(3);
+        }
+      );
+    });
+
+    test('captures a rejecting embedder rather than letting it escape', async () => {
+      const index = await makeIndex();
+      const source = new FakeSource(succeed([scoped('knowledge', 'a')]));
+      expect(await index.rebuild(source, () => Promise.reject(new Error('socket hangup')))).toFailWith(
+        /socket hangup/i
+      );
+    });
+
+    test('reports a rollback that also failed, rather than silently promising empty', async () => {
+      // The `'fail'` path promises an empty index; a caller retrying against a
+      // table that is neither the old index nor empty is in a state the contract
+      // never described, and on a durable table that state survives the process.
+      const index = await makeIndex();
+      const source = new FakeSource(succeed([scoped('knowledge', 'a'), scoped('conv-a', 't1')]));
+      let calls: number = 0;
+      const flaky = (): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> => {
+        calls += 1;
+        if (calls === 2) {
+          db.close();
+          return Promise.resolve(fail('no model'));
+        }
+        return Promise.resolve(succeed([frag(0, 5, 1, 1)]));
+      };
+      expect(await index.rebuild(source, flaky)).toFailWith(/rollback also failed/i);
     });
   });
 

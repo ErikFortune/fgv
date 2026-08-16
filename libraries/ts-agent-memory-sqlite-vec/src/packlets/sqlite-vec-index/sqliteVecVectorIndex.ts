@@ -5,52 +5,32 @@
 
 import type BetterSqlite3 from 'better-sqlite3';
 import { load as loadSqliteVec } from 'sqlite-vec';
-import { Result, captureAsyncResult, captureResult, fail, succeed } from '@fgv/ts-utils';
+import {
+  DetailedResult,
+  Result,
+  captureResult,
+  fail,
+  failWithDetail,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
 import {
   IEdgeTarget,
+  IMemoryRecordListing,
   IMemoryRecordSource,
-  IScopedMemoryRecord,
   ISkippedVectorRecord,
   IVectorIndex,
   IVectorQueryHit,
   IVectorRebuildOptions,
   IVectorRebuildReport,
+  Kind,
   MemoryEmbedder,
   MemoryId,
   MemoryScopeKey,
   edgeTargetKey
 } from '@fgv/ts-agent-memory';
+import { invokeHook, tally, withRollbackNote } from './rebuildHelpers';
 import { ISqliteVecVectorIndexCreateParams } from './model';
-
-/**
- * Invoke a consumer-supplied hook that already returns a `Result`, converting a
- * synchronous throw or a promise rejection into a `Failure` rather than letting
- * it escape. `captureAsyncResult` wraps the hook's own `Result`, so the outcome
- * is flattened back to one level.
- *
- * @remarks
- * This is `@fgv/ts-utils`' own `_invokeDeferred` shape (see `mapResultsAsync`),
- * which is `@internal` there and so cannot be imported. `@fgv/ts-agent-memory`
- * carries an identical private copy for the in-memory index. Exporting a single
- * `AsyncDeferredResult`-invoking primitive from `ts-utils` is the right home and
- * is recorded in `docs/TECH_DEBT.md`; duplicating three lines twice is the
- * cheaper thing to do from inside this stream than widening it to a foundational
- * library.
- */
-async function invokeHook<T>(hook: () => Promise<Result<T>>): Promise<Result<T>> {
-  return (await captureAsyncResult(hook)).onSuccess((inner) => inner);
-}
-
-/**
- * Compose the failure that aborted a rebuild with the outcome of the rollback
- * that followed it. A rollback that ALSO fails is worth saying out loud: the
- * `'fail'` path promises an empty index, and a caller that retries against a
- * table which is neither the old index nor empty is working from a state the
- * contract never described.
- */
-function withRollbackNote(error: string, rollback: Result<true>): string {
-  return rollback.isFailure() ? `${error} (rollback also failed: ${rollback.message})` : error;
-}
 
 /** Default name for the `vec0` virtual table. */
 const DEFAULT_TABLE_NAME: string = 'memory_vectors';
@@ -115,7 +95,14 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     if (this._stmts === undefined) {
       return 0;
     }
-    return (this._stmts.count.get() as { c: number }).c;
+    // `Number(...)` narrows the count in case the consumer enabled better-sqlite3
+    // safe-integer mode (`db.defaultSafeIntegers(true)`), which returns `count(*)`
+    // as a `bigint`. Without it a `bigint` leaks through a `number`-typed contract
+    // member — and now through `IIndexCoverage.indexSize`, which is also declared
+    // `number`, so the coverage report would carry a value of the wrong runtime
+    // type. `SqliteVecFragmentIndex`'s two counts have always converted; this one
+    // was the outlier.
+    return Number((this._stmts.count.get() as { c: number | bigint }).c);
   }
 
   /**
@@ -171,6 +158,21 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     );
   }
 
+  /** {@inheritDoc IVectorIndex.has} */
+  public has(target: IEdgeTarget): Promise<Result<boolean>> {
+    return Promise.resolve(
+      captureResult(() => {
+        // Before any add has created the table there is nothing held, which is a
+        // truthful `false` rather than an error — same posture as `remove`'s
+        // idempotence and `size`'s zero.
+        if (this._stmts === undefined) {
+          return false;
+        }
+        return this._stmts.has.get(edgeTargetKey(target)) !== undefined;
+      }).withErrorFormat((e) => `vector index: cannot check '${edgeTargetKey(target)}': ${e}`)
+    );
+  }
+
   /** {@inheritDoc IVectorIndex.remove} */
   public remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>> {
     return Promise.resolve(
@@ -202,25 +204,36 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     source: IMemoryRecordSource,
     embed: MemoryEmbedder,
     options?: IVectorRebuildOptions
-  ): Promise<Result<IVectorRebuildReport>> {
+  ): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>> {
     const lenient: boolean = (options?.onRecordError ?? 'fail') === 'skip';
     // `source` is consumer-supplied, so a throw or rejection becomes a `Failure`
     // here rather than escaping as an exception.
-    const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await invokeHook(() => source.list());
+    const listed: Result<IMemoryRecordListing> = await invokeHook(() => source.list());
     if (listed.isFailure()) {
       // Deliberately BEFORE any clear: a failed list is no evidence about the
       // vectors already held, and no re-embedding has been attempted, so there is
       // no half-rebuilt state to protect against. Clearing here would destroy a
-      // healthy persisted index over a transient read error.
-      return fail(`vector index rebuild: failed to list records: ${listed.message}`);
+      // healthy persisted index over a transient read error. No report either, for
+      // the same reason — there is nothing this call disturbed to describe.
+      return failWithDetail(`vector index rebuild: failed to list records: ${listed.message}`);
     }
     const cleared: Result<true> = this._clear();
     if (cleared.isFailure()) {
-      return fail(`vector index rebuild: failed to clear the index: ${cleared.message}`);
+      // Also nothing established: the table still holds whatever it held.
+      return failWithDetail(`vector index rebuild: failed to clear the index: ${cleared.message}`);
     }
-    let declined: number = 0;
+    const indexed: Map<Kind, number> = new Map<Kind, number>();
+    const declined: Map<Kind, number> = new Map<Kind, number>();
     const skipped: ISkippedVectorRecord[] = [];
-    for (const scoped of listed.value) {
+    // Absent stays absent — only the source knows whether it filtered anything.
+    const report = (): IVectorRebuildReport => ({
+      indexed,
+      declined,
+      excluded: listed.value.excluded,
+      skipped
+    });
+    for (const scoped of listed.value.records) {
+      const kind: Kind = scoped.record.envelope.kind;
       // Likewise capture-wrapped: an embedder that throws mid-loop would
       // otherwise escape past the `'fail'` rollback below, leaving this DURABLE
       // table holding a partial index that survives the process.
@@ -230,35 +243,39 @@ export class SqliteVecVectorIndex implements IVectorIndex {
           embedded.message
         }`;
         if (!lenient) {
-          return fail(withRollbackNote(error, this._clear()));
+          return failWithDetail(withRollbackNote(error, this._clear()), report());
         }
         skipped.push({ target: scoped.target, error });
         continue;
       }
       if (embedded.value === undefined) {
-        declined++;
+        tally(declined, kind);
         continue;
       }
       const added: Result<string> = await this.add(scoped.target, embedded.value);
       if (added.isFailure()) {
         const error: string = `vector index rebuild: ${added.message}`;
         if (!lenient) {
-          return fail(withRollbackNote(error, this._clear()));
+          return failWithDetail(withRollbackNote(error, this._clear()), report());
         }
         skipped.push({ target: scoped.target, error });
+        continue;
       }
+      // Tallied in the loop rather than read back off `size` at the end. That
+      // `COUNT` was also the only fallible step in assembling the report, so the
+      // per-kind tally removes a failure path as well as a rounding of the answer.
+      tally(indexed, kind);
     }
-    return captureResult(() => this.size)
-      .withErrorFormat((msg) => `vector index rebuild: failed to count the rebuilt index: ${msg}`)
-      .onSuccess((indexed) => succeed({ indexed, declined, skipped }));
+    return succeedWithDetail(report());
   }
 
   /**
-   * Empty the table. Deliberately does NOT drop it or forget the established
-   * dimension: the `vec0` table's dimension is fixed at creation and a re-embed at
-   * a different dimension needs a drop-and-re-index, which is a consumer decision
-   * (see the package README on `vec0` schema changes), not something a rebuild
-   * should do silently.
+   * **Empties the rows; does NOT release the table's declared dimension.** That
+   * is a `vec0` constraint rather than a choice — the dimension is schema, and
+   * there is no `ALTER TABLE` for it — so a rebuild at a new dimension fails
+   * here where it would succeed on the in-memory sibling, which forgets its
+   * dimension on reset. Changing dimension needs a drop-and-re-index; see the
+   * note on `IVectorIndex.rebuild`.
    */
   private _clear(): Result<true> {
     if (this._stmts === undefined) {
@@ -331,7 +348,10 @@ export class SqliteVecVectorIndex implements IVectorIndex {
       query: this._db.prepare(
         `SELECT target_key, distance FROM "${this._table}" WHERE embedding MATCH ? AND k = ?`
       ),
-      count: this._db.prepare(`SELECT count(*) AS c FROM "${this._table}"`)
+      count: this._db.prepare(`SELECT count(*) AS c FROM "${this._table}"`),
+      // `LIMIT 1` rather than a count: membership needs existence, not cardinality,
+      // and vec0 can stop at the first row.
+      has: this._db.prepare(`SELECT 1 FROM "${this._table}" WHERE target_key = ? LIMIT 1`)
     };
   }
 
@@ -375,4 +395,5 @@ interface ISqliteVecStatements {
   readonly replace: (key: string, blob: Uint8Array) => void;
   readonly query: BetterSqlite3.Statement;
   readonly count: BetterSqlite3.Statement;
+  readonly has: BetterSqlite3.Statement;
 }

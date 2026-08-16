@@ -4,15 +4,17 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { DetailedResult, Result, fail, succeed } from '@fgv/ts-utils';
 import {
   IEdgeTarget,
   IMemoryRecord,
+  IMemoryRecordListing,
   IMemoryRecordSource,
   IScopedMemoryRecord,
   IVectorQueryHit,
   IVectorRebuildReport,
   InMemoryCosineIndex,
+  Kind,
   MemoryId,
   MemoryScopeKey
 } from '../../../index';
@@ -22,29 +24,53 @@ function target(scope: string, id: string): IEdgeTarget {
   return { scope: scope as MemoryScopeKey, id: id as MemoryId };
 }
 
-/** A trivial record carrying just the id + a marker body, for rebuild tests. */
-function record(id: string, body: string = `body-${id}`): IMemoryRecord<unknown> {
+/** A trivial record carrying just the id, kind + a marker body, for rebuild tests. */
+function record(id: string, body: string = `body-${id}`, kind: string = 'note'): IMemoryRecord<unknown> {
   return {
-    // The cosine index only reads `envelope.id`; a minimal envelope suffices.
-    envelope: { id: id as MemoryId } as IMemoryRecord<unknown>['envelope'],
+    // The cosine index reads `envelope.id` and `envelope.kind`; a minimal envelope suffices.
+    envelope: { id: id as MemoryId, kind: kind as Kind } as IMemoryRecord<unknown>['envelope'],
     body
   };
 }
 
 /** A scope-qualified record entry for a rebuild source. */
-function scoped(scope: string, id: string, body?: string): IScopedMemoryRecord {
-  return { target: target(scope, id), record: record(id, body) };
+function scoped(scope: string, id: string, body?: string, kind?: string): IScopedMemoryRecord {
+  return { target: target(scope, id), record: record(id, body, kind) };
 }
 
-/** A scripted record source for `rebuild`. */
+/**
+ * A scripted record source for `rebuild`. `excluded` is left undefined unless a
+ * test supplies one, which is the "this source does not track exclusions" case —
+ * deliberately NOT the same as an empty map.
+ */
 class FakeSource implements IMemoryRecordSource {
   private readonly _result: Result<ReadonlyArray<IScopedMemoryRecord>>;
-  public constructor(result: Result<ReadonlyArray<IScopedMemoryRecord>>) {
+  private readonly _excluded: ReadonlyMap<Kind, number> | undefined;
+  public constructor(
+    result: Result<ReadonlyArray<IScopedMemoryRecord>>,
+    excluded?: ReadonlyMap<Kind, number>
+  ) {
     this._result = result;
+    this._excluded = excluded;
   }
-  public list(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> {
-    return Promise.resolve(this._result);
+  public list(): Promise<Result<IMemoryRecordListing>> {
+    return Promise.resolve(
+      this._result.onSuccess((records: ReadonlyArray<IScopedMemoryRecord>) =>
+        // `excluded` is spread in only when this source tracks it, so an untracking
+        // source yields a listing with no such key at all.
+        succeed(this._excluded === undefined ? { records } : { records, excluded: this._excluded })
+      )
+    );
   }
+}
+
+/** The sum of every count in a per-kind map — the total a caller derives. */
+function total(map: ReadonlyMap<Kind, number>): number {
+  let sum: number = 0;
+  for (const n of map.values()) {
+    sum += n;
+  }
+  return sum;
 }
 
 describe('InMemoryCosineIndex', () => {
@@ -234,6 +260,33 @@ describe('InMemoryCosineIndex', () => {
     });
   });
 
+  describe('has', () => {
+    test('answers true for a held target and false for an absent one', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const t = target('knowledge', 'a');
+      expect(await index.has(t)).toSucceedWith(false);
+      (await index.add(t, Float32Array.from([1, 0]))).orThrow();
+      expect(await index.has(t)).toSucceedWith(true);
+    });
+
+    test('keys on scope as well as id', async () => {
+      // The same reason `add` keys on the scoped address: two records sharing a
+      // filename stem across scopes must not answer for each other.
+      const index = InMemoryCosineIndex.create().orThrow();
+      (await index.add(target('conv-a', 'turn-3'), Float32Array.from([1, 0]))).orThrow();
+      expect(await index.has(target('conv-a', 'turn-3'))).toSucceedWith(true);
+      expect(await index.has(target('conv-b', 'turn-3'))).toSucceedWith(false);
+    });
+
+    test('reflects a remove', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const t = target('knowledge', 'a');
+      (await index.add(t, Float32Array.from([1, 0]))).orThrow();
+      (await index.remove(t)).orThrow();
+      expect(await index.has(t)).toSucceedWith(false);
+    });
+  });
+
   describe('rebuild', () => {
     const embed = (r: IMemoryRecord<unknown>): Promise<Result<Float32Array>> => {
       // Deterministic: encode the id's first char code into a 2-vector.
@@ -244,7 +297,11 @@ describe('InMemoryCosineIndex', () => {
     test('re-embeds every scoped record from the source and reports the count', async () => {
       const index = InMemoryCosineIndex.create().orThrow();
       const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b'), scoped('s', 'c')]));
-      expect(await index.rebuild(source, embed)).toSucceedWith({ indexed: 3, declined: 0, skipped: [] });
+      expect(await index.rebuild(source, embed)).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
+        expect(report.indexed).toEqual(new Map([['note', 3]]));
+        expect(report.declined).toEqual(new Map<Kind, number>());
+        expect(report.skipped).toEqual([]);
+      });
       expect(index.size).toBe(3);
       expect(await index.query(Float32Array.from([99, 1]), 1)).toSucceedAndSatisfy(
         (hits: ReadonlyArray<IVectorQueryHit>) => {
@@ -262,7 +319,11 @@ describe('InMemoryCosineIndex', () => {
       const declineB = (r: IMemoryRecord<unknown>): Promise<Result<Float32Array | undefined>> =>
         (r.envelope.id as string) === 'b' ? Promise.resolve(succeed(undefined)) : embed(r);
       const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b'), scoped('s', 'c')]));
-      expect(await index.rebuild(source, declineB)).toSucceedWith({ indexed: 2, declined: 1, skipped: [] });
+      expect(await index.rebuild(source, declineB)).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
+        expect(report.indexed).toEqual(new Map([['note', 2]]));
+        expect(report.declined).toEqual(new Map([['note', 1]]));
+        expect(report.skipped).toEqual([]);
+      });
       expect(index.size).toBe(2);
       // 'a' and 'c' remain queryable; 'b' is simply absent.
       expect(await index.query(Float32Array.from([99, 1]), 5)).toSucceedAndSatisfy(
@@ -275,11 +336,15 @@ describe('InMemoryCosineIndex', () => {
     test('an all-declining embedder yields an empty index and still succeeds', async () => {
       const index = InMemoryCosineIndex.create().orThrow();
       const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b')]));
-      expect(await index.rebuild(source, () => Promise.resolve(succeed(undefined)))).toSucceedWith({
-        indexed: 0,
-        declined: 2,
-        skipped: []
-      });
+      expect(await index.rebuild(source, () => Promise.resolve(succeed(undefined)))).toSucceedAndSatisfy(
+        (report: IVectorRebuildReport) => {
+          // An all-declining rebuild leaves `indexed` EMPTY rather than zero-valued:
+          // a kind that contributed nothing has no entry, so a caller reading the
+          // map sees the absence rather than having to compare against zero.
+          expect(report.indexed).toEqual(new Map<Kind, number>());
+          expect(report.declined).toEqual(new Map([['note', 2]]));
+        }
+      );
       expect(index.size).toBe(0);
     });
 
@@ -288,7 +353,9 @@ describe('InMemoryCosineIndex', () => {
       const source = new FakeSource(succeed([scoped('conv-a', 'turn-3'), scoped('conv-b', 'turn-3')]));
       // The embedder keys only off the (shared) id, so a bare-id rebuild would
       // index just one entry; the scoped rebuild indexes both.
-      expect(await index.rebuild(source, embed)).toSucceedWith({ indexed: 2, declined: 0, skipped: [] });
+      expect(await index.rebuild(source, embed)).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
+        expect(report.indexed).toEqual(new Map([['note', 2]]));
+      });
       expect(index.size).toBe(2);
       expect(await index.query(Float32Array.from([116, 1]), 5)).toSucceedAndSatisfy(
         (hits: ReadonlyArray<IVectorQueryHit>) => {
@@ -316,8 +383,8 @@ describe('InMemoryCosineIndex', () => {
       const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b'), scoped('s', 'c')]));
       expect(await index.rebuild(source, failB, { onRecordError: 'skip' })).toSucceedAndSatisfy(
         (report: IVectorRebuildReport) => {
-          expect(report.indexed).toBe(2);
-          expect(report.declined).toBe(0);
+          expect(report.indexed).toEqual(new Map([['note', 2]]));
+          expect(report.declined).toEqual(new Map<Kind, number>());
           // Structural, not just a count: the caller can name and re-drive the loss.
           expect(report.skipped).toHaveLength(1);
           expect(report.skipped[0].target.id).toBe('b');
@@ -340,8 +407,8 @@ describe('InMemoryCosineIndex', () => {
       const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b'), scoped('s', 'c')]));
       expect(await index.rebuild(source, mixed, { onRecordError: 'skip' })).toSucceedAndSatisfy(
         (report: IVectorRebuildReport) => {
-          expect(report.indexed).toBe(1);
-          expect(report.declined).toBe(1);
+          expect(report.indexed).toEqual(new Map([['note', 1]]));
+          expect(report.declined).toEqual(new Map([['note', 1]]));
           expect(report.skipped.map((s) => s.target.id)).toEqual(['b']);
         }
       );
@@ -356,7 +423,7 @@ describe('InMemoryCosineIndex', () => {
       const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b')]));
       expect(await index.rebuild(source, emptyForB, { onRecordError: 'skip' })).toSucceedAndSatisfy(
         (report: IVectorRebuildReport) => {
-          expect(report.indexed).toBe(1);
+          expect(report.indexed).toEqual(new Map([['note', 1]]));
           expect(report.skipped).toHaveLength(1);
           expect(report.skipped[0].error).toMatch(/empty vector/);
         }
@@ -398,7 +465,9 @@ describe('InMemoryCosineIndex', () => {
       // Seed a 3-dim vector, then rebuild with a 2-dim embedder.
       (await index.add(target('s', 'old'), Float32Array.from([1, 2, 3]))).orThrow();
       const source = new FakeSource(succeed([scoped('s', 'a')]));
-      expect(await index.rebuild(source, embed)).toSucceedWith({ indexed: 1, declined: 0, skipped: [] });
+      expect(await index.rebuild(source, embed)).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
+        expect(report.indexed).toEqual(new Map([['note', 1]]));
+      });
       expect(index.size).toBe(1);
       // The 2-dim query now succeeds (dimension was reset by rebuild).
       expect(await index.query(Float32Array.from([97, 1]), 1)).toSucceed();
@@ -475,6 +544,172 @@ describe('InMemoryCosineIndex', () => {
         /embedding 's\0b' failed:.*embedder exploded/i
       );
       expect(index.size).toBe(0);
+    });
+
+    describe('per-kind coverage', () => {
+      test('resolves every count by kind, so a drifted rebuild is distinguishable', async () => {
+        // The motivating case. Both rebuilds below index exactly three records, so
+        // a bare `indexed: 3` reads identically for a healthy vault and one whose
+        // knowledge coverage collapsed. The per-kind maps do not.
+        const healthy = new FakeSource(
+          succeed([
+            scoped('s', 'a', undefined, 'knowledge'),
+            scoped('s', 'b', undefined, 'knowledge'),
+            scoped('s', 'c', undefined, 'ingestion-job')
+          ])
+        );
+        const drifted = new FakeSource(
+          succeed([
+            scoped('s', 'a', undefined, 'ingestion-job'),
+            scoped('s', 'b', undefined, 'ingestion-job'),
+            scoped('s', 'c', undefined, 'ingestion-job')
+          ])
+        );
+        expect(await InMemoryCosineIndex.create().orThrow().rebuild(healthy, embed)).toSucceedAndSatisfy(
+          (report: IVectorRebuildReport) => {
+            expect(report.indexed).toEqual(
+              new Map([
+                ['knowledge', 2],
+                ['ingestion-job', 1]
+              ])
+            );
+            expect(total(report.indexed)).toBe(3);
+          }
+        );
+        expect(await InMemoryCosineIndex.create().orThrow().rebuild(drifted, embed)).toSucceedAndSatisfy(
+          (report: IVectorRebuildReport) => {
+            expect(report.indexed).toEqual(new Map([['ingestion-job', 3]]));
+            // Same total, and that is exactly the point: the total cannot tell the
+            // two rebuilds apart and the breakdown can.
+            expect(total(report.indexed)).toBe(3);
+          }
+        );
+      });
+
+      test('totals still sum to what a caller would compute over every record seen', async () => {
+        const index = InMemoryCosineIndex.create().orThrow();
+        const mixed = (r: IMemoryRecord<unknown>): Promise<Result<Float32Array | undefined>> => {
+          const id: string = r.envelope.id as string;
+          if (id === 'b') return Promise.resolve(fail('no model'));
+          if (id === 'c') return Promise.resolve(succeed(undefined));
+          return embed(r);
+        };
+        const source = new FakeSource(
+          succeed([
+            scoped('s', 'a', undefined, 'knowledge'),
+            scoped('s', 'b', undefined, 'knowledge'),
+            scoped('s', 'c', undefined, 'ingestion-job'),
+            scoped('s', 'd', undefined, 'ingestion-job')
+          ]),
+          new Map<Kind, number>([['audit' as Kind, 5]])
+        );
+        expect(await index.rebuild(source, mixed, { onRecordError: 'skip' })).toSucceedAndSatisfy(
+          (report: IVectorRebuildReport) => {
+            // Every one of the four listed records lands in exactly one bucket, so
+            // the buckets sum back to the listing — the property the report exists
+            // to preserve.
+            expect(total(report.indexed) + total(report.declined) + report.skipped.length).toBe(4);
+            // And the excluded records are additional to those four, never among them.
+            expect(total(report.excluded!)).toBe(5);
+          }
+        );
+      });
+
+      test('propagates the source-reported exclusions verbatim', async () => {
+        const index = InMemoryCosineIndex.create().orThrow();
+        const source = new FakeSource(
+          succeed([scoped('s', 'a', undefined, 'knowledge')]),
+          new Map<Kind, number>([
+            ['ingestion-job' as Kind, 12],
+            ['audit' as Kind, 3]
+          ])
+        );
+        expect(await index.rebuild(source, embed)).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
+          expect(report.excluded).toEqual(
+            new Map([
+              ['ingestion-job', 12],
+              ['audit', 3]
+            ])
+          );
+        });
+      });
+
+      test('a source that does not report exclusions yields undefined, NOT an empty map', async () => {
+        // The distinction the optionality exists for: "cannot say" and "excluded
+        // nothing" are different answers, and a rebuild must not manufacture the
+        // second when it was only given the first.
+        const untracking = new FakeSource(succeed([scoped('s', 'a')]));
+        expect(await InMemoryCosineIndex.create().orThrow().rebuild(untracking, embed)).toSucceedAndSatisfy(
+          (report: IVectorRebuildReport) => {
+            expect(report.excluded).toBeUndefined();
+          }
+        );
+
+        const tracking = new FakeSource(succeed([scoped('s', 'a')]), new Map<Kind, number>());
+        expect(await InMemoryCosineIndex.create().orThrow().rebuild(tracking, embed)).toSucceedAndSatisfy(
+          (report: IVectorRebuildReport) => {
+            expect(report.excluded).toBeDefined();
+            expect(report.excluded!.size).toBe(0);
+          }
+        );
+      });
+    });
+
+    describe("a 'fail' failure carries the report too", () => {
+      test('reports what the aborted attempt had established, and still resets and fails', async () => {
+        // The `'fail'` contract is UNCHANGED — reset, abort, fail. What is new is
+        // that the failure also says how far it got, which is precisely when a
+        // caller most wants to know.
+        const index = InMemoryCosineIndex.create().orThrow();
+        const failC = (r: IMemoryRecord<unknown>): Promise<Result<Float32Array | undefined>> => {
+          const id: string = r.envelope.id as string;
+          if (id === 'c') return Promise.resolve(fail('no model'));
+          if (id === 'b') return Promise.resolve(succeed(undefined));
+          return embed(r);
+        };
+        const source = new FakeSource(
+          succeed([
+            scoped('s', 'a', undefined, 'knowledge'),
+            scoped('s', 'b', undefined, 'knowledge'),
+            scoped('s', 'c', undefined, 'knowledge')
+          ]),
+          new Map<Kind, number>([['audit' as Kind, 2]])
+        );
+        const result: DetailedResult<IVectorRebuildReport, IVectorRebuildReport> = await index.rebuild(
+          source,
+          failC
+        );
+        expect(result).toFailWith(/embedding 's\0c' failed.*no model/);
+        expect(result.detail).toBeDefined();
+        expect(result.detail!.indexed).toEqual(new Map([['knowledge', 1]]));
+        expect(result.detail!.declined).toEqual(new Map([['knowledge', 1]]));
+        expect(result.detail!.excluded).toEqual(new Map([['audit', 2]]));
+        // Unchanged and load-bearing: the rollback still ran, so the report
+        // describes the ATTEMPT, not the surviving index.
+        expect(index.size).toBe(0);
+      });
+
+      test('carries the report when the ADD fails, not only the embed', async () => {
+        const index = InMemoryCosineIndex.create().orThrow();
+        const emptyForB = (r: IMemoryRecord<unknown>): Promise<Result<Float32Array | undefined>> =>
+          (r.envelope.id as string) === 'b' ? Promise.resolve(succeed(Float32Array.from([]))) : embed(r);
+        const source = new FakeSource(succeed([scoped('s', 'a'), scoped('s', 'b')]));
+        const result = await index.rebuild(source, emptyForB);
+        expect(result).toFailWith(/empty vector/i);
+        expect(result.detail!.indexed).toEqual(new Map([['note', 1]]));
+        expect(index.size).toBe(0);
+      });
+
+      test('carries NO report when the source cannot list — nothing was attempted', async () => {
+        // An all-zero report here would describe an index this call never touched,
+        // which is worse than saying nothing.
+        const index = InMemoryCosineIndex.create().orThrow();
+        (await index.add(target('s', 'kept'), Float32Array.from([1, 1]))).orThrow();
+        const result = await index.rebuild(new FakeSource(fail('disk gone')), embed);
+        expect(result).toFailWith(/failed to list records/i);
+        expect(result.detail).toBeUndefined();
+        expect(index.size).toBe(1);
+      });
     });
 
     test('converts a rejecting embedder into a failure', async () => {

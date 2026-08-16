@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result } from '@fgv/ts-utils';
-import { IEdgeTarget, IMemoryRecord } from '../types';
+import { DetailedResult, Result } from '@fgv/ts-utils';
+import { IEdgeTarget, IMemoryRecord, Kind } from '../types';
 
 /**
  * A half-open `[start, end)` span into a record's body — the in-record locator a
@@ -129,6 +129,33 @@ export interface IVectorIndex {
   query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
 
   /**
+   * Whether this index holds a vector for the scope-qualified `target`.
+   *
+   * @remarks
+   * On the contract because it is what makes a **targeted** repair possible, and
+   * the reason is sharper than convenience: the only other way to ask *"is this
+   * record indexed?"* is {@link IMemoryEnvelope.embeddingRef} — and that field is
+   * the store's **belief**, which is wrong in precisely the situation a repair
+   * runs in. A reopened vault backed by a fresh in-memory index carries an
+   * `embeddingRef` on every record while holding no vectors at all. **A repair
+   * that trusts the field it is repairing is not a repair.**
+   *
+   * It also makes a case *detectable* that an `embeddingRef`-only check cannot
+   * see at all: the index holds the vector but the envelope lost its reference
+   * (a failure swallowed after the vector was committed). That record needs its
+   * reference restamped and **no embedder call**, which is only knowable by
+   * asking the index.
+   *
+   * `Promise<Result<boolean>>`, unlike the synchronous {@link IVectorIndex.size},
+   * because the two are not the same kind of accessor and should not be made to
+   * look alike: `size` is a count both shipped implementations hold or can read
+   * without a failure mode, while `has` on a durable backend is a keyed query
+   * that can fail. Idempotent and side-effect-free; an absent target is
+   * `succeed(false)`, never a failure.
+   */
+  has(target: IEdgeTarget): Promise<Result<boolean>>;
+
+  /**
    * The number of vectors currently held.
    *
    * @remarks
@@ -166,12 +193,40 @@ export interface IVectorIndex {
    *
    * See {@link IVectorRebuildReport} for what it reports and
    * {@link IVectorRebuildOptions} for the failure mode.
+   *
+   * **A failure carries the report too, on the `detail`** — coverage is most
+   * wanted exactly when a rebuild did not complete, and withholding it there made
+   * the answer depend on the error-handling mode rather than on the question. The
+   * `'fail'` contract itself is unchanged: it still resets, still aborts, still
+   * returns a failure. It simply also says what it had established before it
+   * stopped. See {@link IVectorRebuildReport} for how to read a report that
+   * arrived on a failure — it describes the attempt, not the surviving index.
+   *
+   * On success the report is the **value** — that is where it belongs, and the
+   * `detail` is not also populated. A failure carries no report when nothing was
+   * attempted: always a `source.list()` failure, and additionally whatever
+   * pre-loop step an implementation needs before it can start (the durable
+   * `SqliteVecVectorIndex` must clear its table, and a failure to do so is such a
+   * case). Those leave the existing index untouched, so an all-zero report would
+   * describe an index the call never disturbed.
+   *
+   * **A rebuild does NOT re-establish the vector dimension on a persistent
+   * index, and this is the one place the two shipped implementations genuinely
+   * differ.** The in-memory indexes forget their dimension when they reset, so a
+   * rebuild with a different-dimension embedder simply re-establishes it. A
+   * `vec0`-backed index cannot: its reset is a `DELETE FROM`, the table's
+   * declared dimension is part of its schema, and `vec0` has no `ALTER TABLE`.
+   * So a rebuild that changes dimension **succeeds in memory and fails on
+   * SQLite**, where it needs the same drop-and-re-index the package README
+   * prescribes for any schema change (drop the table, or point the index at a
+   * fresh `tableName`). Only embedding time is at risk — vectors are derived and
+   * the vault records remain authoritative.
    */
   rebuild(
     source: IMemoryRecordSource,
     embed: MemoryEmbedder,
     options?: IVectorRebuildOptions
-  ): Promise<Result<IVectorRebuildReport>>;
+  ): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>>;
 }
 
 /**
@@ -264,6 +319,122 @@ export interface IFragmentVectorIndex {
     topK: number,
     maxPerRecord?: number
   ): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+
+  /**
+   * Whether this index holds **any** fragment for the scope-qualified `target`.
+   *
+   * @remarks
+   * The record-granular rationale on {@link IVectorIndex.has} applies verbatim —
+   * a repair that trusts `embeddingRef` is not a repair. Note the granularity
+   * this deliberately does **not** offer: it answers *"is this record
+   * represented?"*, not *"is this particular fragment present?"*. Fragment
+   * writes are whole-record-replace, so a record is either represented by the
+   * current fragment set or not represented at all; a per-fragment membership
+   * check would imply an incremental write path that does not exist.
+   */
+  has(target: IEdgeTarget): Promise<Result<boolean>>;
+
+  /**
+   * The number of **records** with at least one fragment held.
+   *
+   * @remarks
+   * Deliberately **not** named `size`, unlike {@link IVectorIndex.size}. This
+   * index is one-to-many, so `size` has two defensible readings and a reader
+   * arriving from the record-granular sibling — where `size` counts vectors —
+   * would take the wrong one silently. Two explicitly-named counts cost one extra
+   * member and cannot be misread.
+   */
+  readonly recordCount: number;
+
+  /**
+   * The total number of **fragments** held across all records.
+   *
+   * @remarks
+   * The fan-out, and the number a caller actually watches: fragments-per-record
+   * is what makes a fragment reconcile expensive, and neither `recordCount` nor a
+   * record-granular count answers it.
+   */
+  readonly fragmentCount: number;
+
+  /**
+   * Re-embed every record from `source` and rebuild the fragment index from
+   * scratch — the **backfill / reconcile** operation, sibling to
+   * {@link IVectorIndex.rebuild}.
+   *
+   * @remarks
+   * On the contract for exactly the reasons its record-granular sibling is, and
+   * the fragment lane was worse off: `rebuild` existed only on the bundled
+   * in-memory class, and the durable `SqliteVecFragmentIndex` had **no backfill
+   * at all**, so a persistent fragment index could not be reconciled by any
+   * route — contractual or concrete. Records written while it was unwired, a
+   * re-embed after a segmenter change, and reconciliation after a swallowed
+   * fragment-embed failure were all unreachable.
+   *
+   * Semantics are kept observably identical to the record-granular sibling so a
+   * caller who has learned one has learned both: a `source.list()` failure is
+   * fatal and carries no detail (nothing was attempted, and the existing index is
+   * untouched); a genuine rebuild then resets first; `onRecordError` defaults to
+   * `'fail'`; and a failure carries whatever the attempt had established on the
+   * `detail`.
+   *
+   * **A rebuild does NOT re-establish the vector dimension on a persistent
+   * index, and this is the one place the two shipped implementations genuinely
+   * differ.** The in-memory indexes forget their dimension when they reset, so a
+   * rebuild with a different-dimension embedder simply re-establishes it. A
+   * `vec0`-backed index cannot: its reset is a `DELETE FROM`, the table's
+   * declared dimension is part of its schema, and `vec0` has no `ALTER TABLE`.
+   * So a rebuild that changes dimension **succeeds in memory and fails on
+   * SQLite**, where it needs the same drop-and-re-index the package README
+   * prescribes for any schema change (drop the table, or point the index at a
+   * fresh `tableName`). Only embedding time is at risk — vectors are derived and
+   * the vault records remain authoritative.
+   */
+  rebuild(
+    source: IMemoryRecordSource,
+    embed: FragmentEmbedder,
+    options?: IVectorRebuildOptions
+  ): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>>;
+}
+
+/**
+ * What an {@link IFragmentVectorIndex.rebuild} established, resolved by
+ * {@link Kind} — the fragment-granular sibling of {@link IVectorRebuildReport}.
+ *
+ * @remarks
+ * The rule stated on {@link IVectorRebuildReport} applies here verbatim and is
+ * not re-opened: **every count is resolved by kind unless there is a stated
+ * reason it cannot be**, `excluded` is optional because only the source can know
+ * it, and the report is carried on a failure as well as a success.
+ *
+ * The one member with no record-granular analogue is
+ * {@link IFragmentVectorRebuildReport.fragments | fragments} — the fan-out. It is
+ * the number that distinguishes this lane: `indexed: 40` says forty records are
+ * represented and says nothing about whether that cost forty embedding round
+ * trips or four thousand, which is the difference between a reconcile that
+ * finishes in a second and one that blocks a request past thirty.
+ *
+ * A **declined** record is one whose {@link FragmentEmbedder} returned an empty
+ * array — the fragment lane's way of saying *intentionally not embedded*. Note
+ * this is a different mechanism from a {@link MemoryEmbedder} decline: an empty
+ * array still performs a real whole-record-replace (which is what clears any
+ * stale fragments), where a record-granular decline skips the index entirely.
+ * @public
+ */
+export interface IFragmentVectorRebuildReport {
+  /** Records that ended with at least one fragment held, per kind. */
+  readonly indexed: ReadonlyMap<Kind, number>;
+  /** Fragments held, per kind — the fan-out `indexed` cannot express. */
+  readonly fragments: ReadonlyMap<Kind, number>;
+  /** Records whose embedder intentionally produced no fragments, per kind. */
+  readonly declined: ReadonlyMap<Kind, number>;
+  /**
+   * Records the source filtered out before the rebuild saw them, per kind.
+   * `undefined` means *this source does not report exclusions*; an empty map
+   * means *it does, and excluded nothing*.
+   */
+  readonly excluded?: ReadonlyMap<Kind, number>;
+  /** Records that failed, per record, with the error — a fault, never a decline. */
+  readonly skipped: ReadonlyArray<ISkippedVectorRecord>;
 }
 
 /**
@@ -304,22 +475,83 @@ export interface ISkippedVectorRecord {
  * What a rebuild actually did — the structural answer to "is this index complete?".
  *
  * @remarks
- * A bare count cannot distinguish the three ways a record can be absent from the
- * index, and that distinction is the entire point: **`declined` was intentional,
- * `skipped` was a fault, and neither is the same as "never attempted"**. A caller
- * deriving coverage from a count alone cannot tell an embedder outage from a
- * deliberate policy, which is precisely the confusion this type exists to end.
+ * A bare count cannot distinguish the ways a record can be absent from the index,
+ * and that distinction is the entire point: **`declined` was intentional,
+ * `excluded` was never offered, `skipped` was a fault, and none of them is the
+ * same as "never attempted"**. A caller deriving coverage from a count alone
+ * cannot tell an embedder outage from a deliberate policy, which is precisely the
+ * confusion this type exists to end.
+ *
+ * **Every count in this report is resolved by kind.** A coverage report exists to
+ * answer *"is my coverage what I intended?"*, and a bare total cannot:
+ * `indexed: 500` reads identically whether the right kinds were indexed or a
+ * policy drift silently redirected coverage, and the same is true of every other
+ * count here. Totals are derivable by summing; the per-kind breakdown is not
+ * derivable from anything else — {@link IVectorQueryHit} carries no `kind`,
+ * {@link IVectorIndex.query} answers "what is near this" rather than "what is in
+ * here", and {@link IVectorIndex.size} is a scalar, so the index cannot be
+ * interrogated after the fact for any of them. **A new count added to this report
+ * is resolved by kind unless there is a stated reason it cannot be.**
+ *
+ * `indexed` is the count most tempting to leave bare and the most dangerous to,
+ * because it is the number a coverage surface actually renders: 500 bookkeeping
+ * rows and zero knowledge rows is a healthy-looking number for a catastrophically
+ * broken index.
+ *
+ * **Reading a report that arrived on a failure.** Under
+ * {@link VectorRebuildErrorMode | `onRecordError: 'fail'`} the report is handed
+ * back on the failure's `detail` — *after* the rollback has already run. It
+ * describes the attempt, not the surviving index: `indexed` names what had been
+ * established when the rebuild stopped, and the index itself now holds nothing. It
+ * is a diagnostic ("we were 340 knowledge rows in when the embedder died"), not a
+ * coverage statement. Only a report from a **successful** rebuild describes what
+ * the index holds.
  * @public
  */
 export interface IVectorRebuildReport {
-  /** Records embedded and added to the index. */
-  readonly indexed: number;
-  /** Records the embedder deliberately declined (resolved `undefined`). */
-  readonly declined: number;
+  /**
+   * Records embedded and added to the index, counted by {@link Kind}.
+   *
+   * @remarks
+   * A count of successful `add` calls, so it lines up with its per-record
+   * siblings and the buckets sum back to the listing. It is deliberately **not**
+   * read back off {@link IVectorIndex.size} at the end, which no implementation
+   * could resolve by kind anyway. The trade that makes: a `source` that lists the
+   * same `(scope, id)` twice contributes twice here while the index holds one
+   * vector, where a size read would have self-corrected. A source that does that
+   * is malformed, and a total that silently disagreed with the per-kind
+   * breakdown would be the worse failure.
+   */
+  readonly indexed: ReadonlyMap<Kind, number>;
+  /**
+   * Records the embedder deliberately declined (resolved `undefined`), counted by
+   * {@link Kind}. The embedder was called and answered — contrast `excluded`,
+   * where it never was.
+   */
+  readonly declined: ReadonlyMap<Kind, number>;
+  /**
+   * Records the `source` filtered out before the rebuild ever saw them, counted by
+   * {@link Kind} — for a store-backed source, the kinds outside
+   * {@link IMemoryStore.embedsKind | embedsKind}.
+   *
+   * **Optional, and the optionality is semantic rather than cosmetic**: it is the
+   * one count a rebuild genuinely cannot know for itself, because the decision is
+   * made upstream in the source. `undefined` means *this source does not report
+   * exclusions* — distinct from an empty map, which means *this source reports
+   * them and excluded nothing*. `indexed` and `declined` are knowable by
+   * construction (the rebuild either added the vector or the embedder answered)
+   * and so are never optional.
+   */
+  readonly excluded?: ReadonlyMap<Kind, number>;
   /**
    * Records whose embedding or add FAILED and were skipped. Non-empty only under
    * {@link VectorRebuildErrorMode | `onRecordError: 'skip'`} — under `'fail'` the
-   * first failure aborts the rebuild and no report is returned at all.
+   * first failure aborts the rebuild, so a `'fail'` report names the casualty in
+   * its failure message rather than here.
+   *
+   * Per-record and carrying the error, so it already implies the per-kind
+   * breakdown the counts above spell out; that is the stated reason this one field
+   * is not a `ReadonlyMap<Kind, number>`.
    */
   readonly skipped: ReadonlyArray<ISkippedVectorRecord>;
 }
@@ -396,6 +628,36 @@ export interface IScopedMemoryRecord {
 }
 
 /**
+ * What a {@link IMemoryRecordSource.list} call yields: the records the rebuild
+ * should embed, plus — when the source can say — what it filtered out on the way.
+ *
+ * @remarks
+ * The exclusion count originates here because **this is the layer where the
+ * decision is made**. A rebuild never sees an excluded record, so it cannot count
+ * one; a report assembled without this would silently undercount coverage, and
+ * undercount in the direction of looking healthier.
+ *
+ * A store accessor answering "how many are excluded right now" was considered and
+ * declined: it answers a *different question* than the report does — "excluded
+ * right now" versus "excluded in this reconcile" — and the two legitimately differ
+ * whenever records are written between reconciles. Two correct-and-unequal numbers
+ * are worse than one absent number: they invite treating a real difference as a
+ * bug, or picking whichever supports the conclusion already held.
+ * @public
+ */
+export interface IMemoryRecordListing {
+  /** Every record the rebuild should embed, each paired with its scoped address. */
+  readonly records: ReadonlyArray<IScopedMemoryRecord>;
+  /**
+   * Records this source filtered out, counted by {@link Kind}. Omit it entirely if
+   * the source does not track exclusions — that reads as *"cannot say"* on
+   * {@link IVectorRebuildReport.excluded}, which is distinct from an empty map
+   * (*"nothing was excluded"*).
+   */
+  readonly excluded?: ReadonlyMap<Kind, number>;
+}
+
+/**
  * The minimal record-source surface {@link InMemoryCosineIndex.rebuild} reads to
  * re-embed an entire vault. Each entry carries the record's scope-qualified
  * address (see {@link IScopedMemoryRecord}) so the rebuild keys the vector index
@@ -406,6 +668,10 @@ export interface IScopedMemoryRecord {
  * @public
  */
 export interface IMemoryRecordSource {
-  /** List every record in the vault, each paired with its scoped address. */
-  list(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
+  /**
+   * List every record the rebuild should embed, each paired with its scoped
+   * address, plus the exclusions this source applied if it tracks them. See
+   * {@link IMemoryRecordListing}.
+   */
+  list(): Promise<Result<IMemoryRecordListing>>;
 }

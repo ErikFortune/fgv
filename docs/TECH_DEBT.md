@@ -67,6 +67,98 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] The `samples/testbed` fake `IVectorIndex` has broken on two consecutive `ts-agent-memory`
+  contract changes, with the rule codified in between.**
+  `samples/testbed/src/test/unit/scenarios/sqliteVecMemoryPersistence.test.ts` hand-implements
+  `IVectorIndex` (via `fakeIndex(overrides: Partial<IVectorIndex>)`). It broke on
+  `personaility-asks-2026-08` (#614, which promoted `size` / `rebuild` onto the contract) and again
+  on `vector-rebuild-report-by-kind` (2026-08-15, which reshaped the report and widened `rebuild`'s
+  return type). Both times it was invisible to `rushx build` / `rushx test` in **both** libraries
+  and surfaced only in a repo-wide `rush rebuild`.
+
+  `CODING_STANDARDS.md` § "Widening a shared interface needs a repo-wide build" is written **from
+  this exact file**, and it did not prevent the second break — because it is advice a person has to
+  recall at the moment they are busy with something else, which is the failure mode the 2026-08-14
+  disposition pass named as the reason four tech-debt triggers fired unnoticed. A third restatement
+  is not the answer.
+
+  **Trigger**: the next change to `IVectorIndex`, `IFragmentVectorIndex`, `IMemoryIndex` or
+  `IMemoryRecordSource`.
+
+  **RESOLVED (b), 2026-08-15, after a FOURTH firing.** `derived-state-phase1` broke the same file
+  again — two fake indexes in `sqliteVec*Persistence.test.ts` — bringing it to four consecutive
+  streams on this contract family. Remedy (b) is adopted: the repo-wide `rush rebuild` is now an
+  **acceptance-criteria checkbox** in `CODING_STANDARDS.md` for any stream changing a shared
+  contract, rather than advice a person has to recall. Remedy (a), the shared exported test double,
+  is **not** adopted and is downgraded to a P3: of the four observed casualties one was a *source*
+  file, so (a) covers half the cases and (b) covers all of them. This entry stays open only for that
+  P3 remnant.
+
+  **THIRD FIRING, 2026-08-15 — and it widened the class.** `agent-memory-index-partial-read` broke
+  `samples/testbed` again, and this time the casualty was **`scenarios/memoryToolsGate/index.ts`, a
+  *source* file**, not a test double: it constructs retrievers, and the `{ index, resolver }`
+  widening reached it. So remedy (a) — a shared exported test double — would **not** have caught
+  this one; only (b), the repo-wide build, did. That reweights the sketch: (b) is no longer merely
+  the cheap option, it is the only one demonstrated to cover the observed cases. Three streams,
+  three catches, all by `rush rebuild` after green per-package gates.
+
+  **Scope sketch**: two candidates, not exclusive. (a) Replace the hand-rolled fake with a shared
+  test double exported from a single place, so a contract change updates one file rather than
+  N — this is the `succeed()`/`fail()`-over-hand-rolled-Result-shapes lesson applied to interfaces.
+  (b) Put `node common/scripts/install-run-rush.js rebuild` on the acceptance-criteria list for any
+  stream whose brief declares a shared-contract change, so it is a checked box rather than a
+  remembered practice. (b) is cheap and mechanical; (a) removes the class.
+
+  **Not a P3**: P3 is opportunistic, and the trigger has now fired **three times in three
+  consecutive streams** on the same contract. The cost each time is a red repo-wide build discovered after the
+  per-package gates were green — i.e. after an implementer reasonably believed they were done.
+
+  **Reference**: `docs/WORKSTREAMS.md` § `personaility-asks-2026-08` (the #614 break) and
+  § `vector-rebuild-report-by-kind` (the second). Escalated by that stream's antagonist pass, which
+  observed that its README had closed the same observation with "nothing new to codify" while the
+  *other* recurrence it hit — this file's line cap — was correctly escalated.
+
+- **[P2] `fileTreeMemoryStore.ts` is 5 lines under the 2000-line `max-lines` cap.**
+  **1995 lines as of `agent-memory-derived-state-reconciliation` (2026-08-15)** — the headroom
+  narrowed again, and by the mechanism this entry predicted. It was 1991 after
+  `vector-rebuild-report-by-kind` (2026-08-15), which spent most of its own headroom: that stream's
+  inline version measured 2012, and the `asRecordSource()` filter-and-tally had to be extracted to
+  `libraries/ts-agent-memory/src/packlets/store/vectorRecordSource.ts` purely to get back under the
+  cap — a saving of 4 lines, leaving 9. The derived-state stream then hit the same wall a third
+  time: `coverage()` inlined took the file to 2009, and `storeCoverage.ts` was extracted for the
+  same reason, landing at 1995. In this repo a `max-lines` warning is a **CI failure** — `rush
+  rebuild` exits non-zero on "SUCCESS WITH WARNINGS" while a per-project `rushx build` exits 0 — so
+  the next feature that adds a handful of lines to this file turns a green local build into a red PR.
+
+  This file has been here before. `CODING_STANDARDS.md` § "A local warning is a CI failure" is
+  written from *this exact file* crossing the cap on the PersonAIlity Stream A stack. There is no
+  standing entry for it because the only max-lines entry the ledger carried was `apiClient.ts`,
+  retired 2026-08-14 when #620 split it.
+
+  **Trigger**: the next stream that adds a public member, a create param, or a write-path branch to
+  `FileTreeMemoryStore` — i.e. almost any `ts-agent-memory` feature. Do the split first, not after
+  the red check.
+
+  **Scope sketch**: the collaborator-extraction pattern already used three times on this file is the
+  answer — `VectorMaintenance` (`agent-memory-store-vector-slice`), `vectorRecordSource`
+  (`vector-rebuild-report-by-kind`), and `storeCoverage` / `storeReconcile`
+  (`agent-memory-derived-state-reconciliation`). The next candidates are the temporal projection
+  helpers (`_projectAsOf` and friends) and the observation fan-out, both of which are self-contained
+  and take the store structurally rather than importing it. Neither is a public-surface change, so
+  both ship as `"type": "none"`.
+
+  **Not a P3, and the evidence is now three streams deep**: P3 is opportunistic, and 5 lines of
+  headroom means the trigger is not "if someone touches this" but "the next time anyone does" —
+  which has now been *every* consecutive `ts-agent-memory` stream, each of which discovered the cap
+  mid-implementation and paid an unplanned extraction to get under it. The failure mode is also
+  invisible locally, which is what makes it cost a review cycle rather than a minute. **Consider
+  promoting to P1 if a fourth stream pays this tax**: at that point the extraction is not debt being
+  deferred, it is a per-stream toll being collected.
+
+  **Reference**: `vector-rebuild-report-by-kind` (2026-08-15) — its `result.md` records the first
+  extraction as a deviation from its brief, with the measured 2012 / 1995 / 1991 numbers — and
+  `agent-memory-derived-state-reconciliation` (2026-08-15) for the 2009 → 1995 repeat.
+
 - **[P2] `ts-prompt-assist` needs a *member-level* TSDoc pass — 66 undocumented members, plus one thrice-repeated inline union.**
   **Re-scoped 2026-08-14. The top-level half of this entry is DONE and the original framing is now
   misleading.** Measured against `etc/ts-prompt-assist.api.md`: **135 of 135 top-level exported

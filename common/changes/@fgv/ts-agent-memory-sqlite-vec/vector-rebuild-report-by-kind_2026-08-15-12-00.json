@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory-sqlite-vec",
+      "comment": "SqliteVecVectorIndex.rebuild tracks the new per-kind IVectorRebuildReport and DetailedResult shape, staying observably identical to InMemoryCosineIndex",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory-sqlite-vec"
+}

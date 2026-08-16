@@ -5,7 +5,7 @@
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
 import { MemoryEmbedOutcome } from '../observe';
-import { IEdgeTarget, IMemoryRecord, Kind, MemoryId, MemoryScopeKey } from '../types';
+import { IEdgeTarget, IMemoryRecord, Kind, MemoryId, MemoryScopeKey, embeddingRefOf } from '../types';
 import {
   FragmentEmbedder,
   IEmbeddedFragment,
@@ -13,6 +13,17 @@ import {
   IVectorIndex,
   MemoryEmbedder
 } from '../vector';
+
+/**
+ * What a repair-path re-embed established: how many vectors/fragments were
+ * written, and — record lane only — the reference the index returned, which is
+ * what the store stamps onto the envelope.
+ */
+export interface IReembedOutcome {
+  readonly count: number;
+  /** The index-supplied reference. Empty on the fragment lane, which has none. */
+  readonly ref: string;
+}
 
 /**
  * The internal outcome of record-level embed-on-write: the record to persist,
@@ -66,7 +77,7 @@ function declineEmbedding(
   target: IEdgeTarget,
   embed: MemoryEmbedOutcome
 ): IEmbedOnWriteOutcome {
-  if (built.envelope.embeddingRef === undefined) {
+  if (embeddingRefOf(built.envelope) === undefined) {
     return { record: built, embed };
   }
   // Rest-spread rather than `embeddingRef: undefined`: the envelope is YAML-
@@ -75,6 +86,37 @@ function declineEmbedding(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { embeddingRef, ...envelope } = built.envelope;
   return { record: { envelope, body: built.body }, stale: { index, target }, embed };
+}
+
+/**
+ * Run a consumer-supplied hook, normalizing a synchronous throw or a rejected
+ * promise into a `Failure`.
+ *
+ * @remarks
+ * **Every vector-lane hook belongs to the consumer** — the embedder, the fragment
+ * embedder, and every member of both index seams — so any of them may throw
+ * rather than fail. Left unwrapped, that escapes as a rejected promise out of
+ * `IMemoryStore.reconcile`, which the repo's Result contract says cannot happen.
+ *
+ * **Module-level and exported rather than a private of {@link VectorMaintenance},
+ * because the repair loop in `storeReconcile.ts` needs it too.** It calls
+ * `index.has` per record, which is a consumer hook like any other; when the four
+ * embed/add hooks were wrapped, that fifth one was missed, and a second private
+ * copy would have made the next omission just as easy. One hook, one helper.
+ *
+ * Kept separate from {@link VectorMaintenance._tryVectorOp} (which delegates
+ * here and adds a warn) because that warning says "best-effort; derived index
+ * left for rebuild" — true of a write, false of a repair. The repair *is* the
+ * rebuild, and it returns its failures to the caller who asked for them rather
+ * than logging them past a success.
+ * @internal
+ */
+export async function captureVectorHook<T>(op: () => Promise<Result<T>>, label: string): Promise<Result<T>> {
+  try {
+    return await op();
+  } catch (err) {
+    return fail(`${label} threw: ${String(err)}`);
+  }
 }
 
 /**
@@ -140,6 +182,114 @@ export class VectorMaintenance {
   public async removeAll(target: IEdgeTarget): Promise<void> {
     await this._removeVectorBestEffort(target);
     await this._removeFragmentsBestEffort(target);
+  }
+
+  /**
+   * The wired record-vector index, or `undefined`. Read-only, and exposed solely
+   * so the store's {@link IMemoryStore.coverage} can report an index-side count
+   * without a second copy of the wiring — absent here IS the "lane not wired"
+   * answer that coverage reports as `undefined` rather than as zero.
+   */
+  public get vectorIndex(): IVectorIndex | undefined {
+    return this._vectorIndex;
+  }
+
+  /** The wired fragment index, or `undefined`. See {@link VectorMaintenance.vectorIndex}. */
+  public get fragmentIndex(): IFragmentVectorIndex | undefined {
+    return this._fragmentIndex;
+  }
+
+  /**
+   * The wired record embedder, or `undefined`. Exposed alongside the index
+   * because a lane is only usable when BOTH halves are present — an index with
+   * no embedder is a legal store whose writes simply do not embed, and a repair
+   * has to say so rather than failing every record.
+   */
+  public get embedder(): MemoryEmbedder | undefined {
+    return this._embed;
+  }
+
+  /** The wired fragment embedder, or `undefined`. See {@link VectorMaintenance.embedder}. */
+  public get fragmentEmbedder(): FragmentEmbedder | undefined {
+    return this._fragmentEmbedder;
+  }
+
+  /**
+   * Re-embed one record into the record-vector index — the repair path.
+   *
+   * @remarks
+   * Distinct from {@link VectorMaintenance.embedOnWrite} in the one way that
+   * matters: **this is not best-effort.** Embed-on-write swallows a failure
+   * because a vault record is the source of truth and a write must not be
+   * rejected over a derived artifact; a repair was *asked for* by a caller who
+   * wants to know whether it worked, so a failure is returned.
+   *
+   * `undefined` means the embedder declined — intentionally not embedded, which
+   * is neither a repair nor a fault.
+   */
+  public async reembedRecord(
+    record: IMemoryRecord<unknown>,
+    target: IEdgeTarget
+  ): Promise<Result<IReembedOutcome | undefined>> {
+    if (this._vectorIndex === undefined || this._embed === undefined) {
+      return fail('the record-vector lane is not wired');
+    }
+    const index: IVectorIndex = this._vectorIndex;
+    const embed: MemoryEmbedder = this._embed;
+    const embedded: Result<Float32Array | undefined> = await captureVectorHook(
+      () => embed(record),
+      `re-embedding '${record.envelope.id}'`
+    );
+    if (embedded.isFailure()) {
+      return fail(embedded.message);
+    }
+    if (embedded.value === undefined) {
+      return succeed(undefined);
+    }
+    // Hoisted: the `undefined` check above does not narrow across the callback
+    // boundary below.
+    const vector: Float32Array = embedded.value;
+    // `add`'s return value IS the reference the store stamps — synthesizing one
+    // here would diverge from the write path for any index whose reference is
+    // not the scoped key.
+    return (
+      await captureVectorHook(() => index.add(target, vector), `vector add for '${record.envelope.id}'`)
+    ).onSuccess((ref) => succeed({ count: 1, ref }));
+  }
+
+  /**
+   * Re-embed one record's fragments — the repair path, returning the fragment
+   * count written. See {@link VectorMaintenance.reembedRecord} for why this is
+   * not best-effort. An empty fragment array is this lane's decline and reports
+   * `undefined`, though the whole-record-replace still runs so stale fragments
+   * are cleared.
+   */
+  public async reembedFragments(
+    record: IMemoryRecord<unknown>,
+    target: IEdgeTarget
+  ): Promise<Result<IReembedOutcome | undefined>> {
+    if (this._fragmentIndex === undefined || this._fragmentEmbedder === undefined) {
+      return fail('the fragment lane is not wired');
+    }
+    const index: IFragmentVectorIndex = this._fragmentIndex;
+    const fragmentEmbedder: FragmentEmbedder = this._fragmentEmbedder;
+    const embedded: Result<ReadonlyArray<IEmbeddedFragment>> = await captureVectorHook(
+      () => fragmentEmbedder(record),
+      `re-embedding fragments of '${record.envelope.id}'`
+    );
+    if (embedded.isFailure()) {
+      return fail(embedded.message);
+    }
+    const fragments: ReadonlyArray<IEmbeddedFragment> = embedded.value;
+    return (
+      await captureVectorHook(
+        () => index.addFragments(target, fragments),
+        `fragment add for '${record.envelope.id}'`
+      )
+    ).onSuccess((n) =>
+      // The fragment lane has no envelope reference, so `ref` is empty and unused.
+      succeed(n === 0 ? undefined : { count: n, ref: '' })
+    );
   }
 
   /**
@@ -305,12 +455,7 @@ export class VectorMaintenance {
    * regardless, since the index is rebuildable.
    */
   private async _tryVectorOp<T>(op: () => Promise<Result<T>>, label: string): Promise<Result<T>> {
-    let result: Result<T>;
-    try {
-      result = await op();
-    } catch (err) {
-      result = fail(`${label} threw: ${String(err)}`);
-    }
+    const result: Result<T> = await captureVectorHook(op, label);
     if (result.isFailure()) {
       this._warn(`memory: ${label} failed (best-effort; derived index left for rebuild): ${result.message}`);
     }

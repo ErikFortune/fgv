@@ -5,9 +5,12 @@
 ```ts
 
 import type BetterSqlite3 from 'better-sqlite3';
+import { DetailedResult } from '@fgv/ts-utils';
+import { FragmentEmbedder } from '@fgv/ts-agent-memory';
 import { IEdgeTarget } from '@fgv/ts-agent-memory';
 import { IEmbeddedFragment } from '@fgv/ts-agent-memory';
 import { IFragmentVectorIndex } from '@fgv/ts-agent-memory';
+import { IFragmentVectorRebuildReport } from '@fgv/ts-agent-memory';
 import { IMemoryRecordSource } from '@fgv/ts-agent-memory';
 import { IVectorIndex } from '@fgv/ts-agent-memory';
 import { IVectorQueryHit } from '@fgv/ts-agent-memory';
@@ -39,7 +42,15 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
     //
     // (undocumented)
+    has(target: IEdgeTarget): Promise<Result<boolean>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
+    //
+    // (undocumented)
     query(vector: Float32Array, topK: number, maxPerRecord?: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
+    //
+    // (undocumented)
+    rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>>;
     get recordCount(): number;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
     //
@@ -57,8 +68,12 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IVectorIndex"
     //
     // (undocumented)
+    has(target: IEdgeTarget): Promise<Result<boolean>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IVectorIndex"
+    //
+    // (undocumented)
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
-    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<Result<IVectorRebuildReport>>;
+    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IVectorIndex"
     //
     // (undocumented)

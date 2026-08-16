@@ -23,6 +23,154 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## A restamped `embeddingRef` synthesizes the scoped key rather than recovering the index's
+
+`IMemoryStore.reconcile(kind, 'record-vector')` repairs the case where the index holds a vector but
+the envelope lost its `embeddingRef` — a swallowed failure after the vector was committed. That
+branch's whole value is that it needs **no embedder call**: `has(target)` already proved the vector
+exists.
+
+But there is no contract member that returns *the reference the index minted for that vector*.
+`IVectorIndex` is `add` / `remove` / `query` / `has` / `size` / `rebuild`; only `add` returns a
+reference, and calling it would require the embedding this branch exists to avoid. So the restamp
+writes `edgeTargetKey(target)`.
+
+That is correct for both shipped indexes, whose reference **is** the scoped key. A third-party index
+that mints something else gets the scoped key stamped by a restamp and its own reference stamped by
+`put` — a divergence that is invisible until something reads `embeddingRef` expecting the index's
+form.
+
+**Options, none obviously right:** widen `has` to return `Result<string | undefined>` (the reference
+or absent), which makes the member less pleasant for the common case; add a separate
+`referenceFor(target)`; or drop the restamp optimization and re-embed, which is always correct and
+costs the round trip. Not decided here because no consumer has a non-key reference, and picking
+under that condition would be guessing.
+
+**Trigger**: the first `IVectorIndex` implementation whose `add` returns something other than
+`edgeTargetKey(target)`.
+
+**Reference**: `storeReconcile.ts`, the restamp branch — the assumption is stated at the call site.
+
+---
+
+## A `vec0` rebuild at a new dimension fails with a raw SQLite error instead of an actionable one
+
+Raised by the CodeRabbit pass on #633 and **filed rather than fixed**, because it is a message-quality
+improvement rather than a correctness one and #633 was already large.
+
+**The behaviour today.** `SqliteVecVectorIndex._clear` / `SqliteVecFragmentIndex._clear` empty the rows
+but cannot release the table's declared dimension — it is `vec0` schema and there is no `ALTER TABLE`.
+The in-memory siblings forget their dimension on reset. So a `rebuild` with a different-dimension
+embedder **succeeds in memory and fails on SQLite**, which is the one place the two shipped
+implementations of these contracts genuinely diverge. Both `rebuild` contracts and both `_clear`s now
+say so. It does fail loudly — `add` is capture-wrapped, so the column-width mismatch surfaces as a
+`Failure` and the default `onRecordError: 'fail'` aborts — but the message is SQLite's, not ours, and
+it does not name the remedy.
+
+**The proposed improvement, and the distinction that makes it work.** Check at **`rebuild`** time, not
+at `create`: at `create` there is no dimension to compare against when the table does not yet exist,
+but at `rebuild` the embedder's **first returned vector reveals the new dimension before any row is
+written**. Comparing it to the established `_dimension` there and failing with a message naming the
+drop-and-re-index remedy converts a documented footgun into an enforced one. That framing is
+CodeRabbit's and is better than the version this stream had considered.
+
+**Cost is embedding time, never data** — vectors are derived and the vault records remain
+authoritative. Applies to both index classes.
+
+**Trigger**: the first consumer to change embedding model or dimension against a persistent index —
+or any report of a rebuild failing with an opaque `vec0` error.
+
+---
+
+## `reconcile` reports no progress, and `coverage` cannot split a shortfall into declined vs failed
+
+Both deferred by `agent-memory-derived-state-reconciliation` (2026-08-15) as its design's OQ-1 and
+OQ-2. Recorded here because a deferral that lives only in a stream's `result.md` is a deferral
+nobody will find.
+
+**OQ-1 — no progress callback on `IMemoryStore.reconcile`.** A repair over a large kind can run for
+minutes of embedder time behind one unresolved promise. An `onProgress` hook is the obvious
+addition and is purely additive whenever it lands. Deferred because designing a progress vocabulary
+— per record? per batch? what does it carry? — with no caller to check it against would be
+speculative, and the shape of the first real caller's progress UI is the thing that decides it.
+**Trigger**: the first consumer that runs `reconcile` over a kind large enough to want a progress
+bar, or that reports a reconcile appearing to hang.
+
+**OQ-2 — `coverage()` does not cross-reference the observation store.** Coverage reports a
+shortfall but not *why*: the missing records could be embedder declines (intentional, healthy) or
+embed failures (needs repair). The `'write'` observation's `embed` outcome carries exactly that
+split, so a coverage surface *could* join against `MemoryObservationStore` and report it. Deferred
+for two reasons that are still true: `coverage()` must work with **no observers wired** at all, so
+the split can never be more than an optional enrichment; and `reconcile` learns the same split
+**authoritatively** by re-running the embedder, where the observation store only reports what was
+seen at write time. **Trigger**: a consumer that needs the declined-vs-failed split *without* paying
+for a reconcile — i.e. wants it on a dashboard rather than in a repair.
+
+**Explicitly still out of scope, per the stream's brief**: automatic/scheduled repair, and
+persisting coverage snapshots over time. Both are deployment concerns; the library gives the
+measurement and the repair, and the policy for when to run them belongs to the consumer.
+
+---
+
+## `listScoped` can fail on a concurrent eviction, and the loss is not countable
+
+`FileTreeMemoryStore.listScoped()` is the sole feed for `asRecordSource()`, and therefore for
+`IVectorIndex.rebuild`. Since `agent-memory-index-partial-read` (2026-08-15) the index holds
+envelopes rather than records, so `listScoped` reads a file per record — and it does **not** hold the
+write lock. A concurrent `put` whose cap-cull physically evicts a record between the envelope
+snapshot and the read makes the whole call fail, which fails a live rebuild over an entirely ordinary
+write.
+
+**The obvious fix is wrong and was tried.** Dropping the vanished record instead lands it in none of
+the listing's `records` / `excluded`, nor the report's `indexed` / `declined` / `skipped` — so a
+caller computing coverage undercounts *in the direction of looking healthier*. That is verbatim the
+failure `vectorRecordSource`'s own tally exists to prevent, reintroduced one layer down. It was
+caught by that stream's antagonist pass and reverted to fail-loud, which is recoverable where a
+silent undercount is not.
+
+**What a real fix needs**: make the loss *countable*. Either extend `IMemoryRecordListing` with a
+third tally beside `excluded` (a record that vanished mid-read is neither excluded nor a fault of the
+embedder, so it is a genuinely new category), or take a read lock for the duration of the walk and
+pay the write-latency instead. Both are contract or concurrency decisions that should not be made
+inside an unrelated stream.
+
+**Trigger**: the next `IMemoryRecordSource` / `IVectorRebuildReport` change, or the first report of a
+rebuild failing under write load.
+
+**Reference**: `.ai/tasks/completed/2026-08/agent-memory-index-partial-read/` § "The one that nearly
+shipped wrong".
+
+---
+
+## Whether on-demand body reads want a cache
+
+`agent-memory-index-partial-read` made every `list` / retrieve materialize bodies from storage on
+demand. Its brief put a cache policy explicitly out of scope, and the design argued (OQ-3) that the
+required-narrowing selection makes caching moot by removing the accidental whole-vault read.
+
+That argument covers the *accidental* case, not the deliberate one: a caller with a genuinely hot
+working set now re-reads the same files on every query, and nothing measures how often. **Open, and
+deliberately not answered by symmetry** — if it is worth doing, it should be driven by a measured
+consumer workload, with the eviction policy chosen from what that workload shows. Recording it here
+because the stream's `result.md` re-opened it after the design closed it, and a question live in two
+documents with opposite answers is a question that belongs in this file.
+
+**Trigger**: a consumer reporting read amplification, or the first workload measurement.
+
+---
+
+## `IFragmentVectorIndex` had no `rebuild` and no `size` — **RESOLVED 2026-08-15**
+
+> **Resolved by `agent-memory-derived-state-reconciliation`.** `IFragmentVectorIndex` now carries
+> `has`, `recordCount`, `fragmentCount` and `rebuild`, and `SqliteVecFragmentIndex` implements all
+> four — so a persistent fragment index can be backfilled through the contract, which was E4's whole
+> complaint on that lane. The rebuild returns `IFragmentVectorRebuildReport`, which applies
+> `IVectorRebuildReport`'s per-kind rule verbatim and adds `fragments` (the fan-out), so the
+> `excluded` tally the fragment path used to drop on the floor is now propagated.
+>
+> Kept rather than deleted because the *reasoning* — why a coverage report needs the fan-out that
+> neither `indexed` nor a record count expresses — is what a future fragment-lane change should read.
+
 ## `ts-prompt-assist` — cache parsed store records in the resolve path
 
 `PromptLibrary.resolve` re-reads and **re-parses YAML from the store on every call**. The resolve path (`resolve/promptLibrary.ts:622`) calls `walkScopeChain(this._store, …)` unconditionally first, and `FileTreePromptStore` has no record cache — `store.get` → `_readPromptFile` → `yamlConverter.convert(text)` (`store/fileTreePromptStore.ts:160/239/254`) parses on every read. Per resolve this is **O(scope-chain depth) for the requested prompt only** — the `<id>.yaml` in each scope of *that resolve's* chain (`chainWalker.ts:44`) + the per-scope `_bindings.yaml` (`:67`) + recursively the inner-prompt files for any `kind: 'resource'` slots. It is NOT a re-parse of the whole library.

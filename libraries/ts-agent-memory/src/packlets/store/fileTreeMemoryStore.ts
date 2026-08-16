@@ -10,6 +10,7 @@ import {
   DEFAULT_DEDUP_SCOPE,
   DedupScope,
   EntityId,
+  IEdgeTarget,
   IIdentityCodec,
   IMemoryEnvelope,
   IMemoryRecord,
@@ -21,7 +22,6 @@ import {
   MemoryId,
   MemoryScopeKey,
   RankProjector,
-  Tag,
   isTemporalIdentityCodec,
   isTemporalRecord,
   isVersionCurrent,
@@ -35,7 +35,11 @@ import {
   splitFrontmatter
 } from '../converters';
 import { VectorMaintenance } from './vectorMaintenance';
-import { IIndexedMemoryRecord, IMemoryIndex, MemoryIndex } from '../index';
+import { IDerivedStateCoverage } from './coverage';
+import { computeCoverage } from './storeCoverage';
+import { DerivedArtifact, ReconcileReport } from './reconcile';
+import { reconcileVectors } from './storeReconcile';
+import { IIndexedMemoryEntry, IMemoryIndex, MemoryIndex } from '../index';
 import {
   IMemoryObservationRecord,
   IMemoryObserver,
@@ -52,28 +56,12 @@ import {
   MemoryEmbedder
 } from '../vector';
 import { defaultMemoryScopeEncoding } from './scopeEncoding';
+import { IMemoryStore } from './memoryStore';
+import { IMemoryStoreListFilter, MemoryListSelection, isWholeVaultScan } from './listSelection';
+import { vectorRecordSource } from './vectorRecordSource';
 
 /** The on-disk extension for a memory record file. */
 const MEMORY_FILE_EXTENSION: string = '.md';
-
-/**
- * Filter for {@link IMemoryStore.list}. All present fields are ANDed together.
- * @public
- */
-export interface IMemoryStoreListFilter {
-  /** Restrict to records in this scope. */
-  readonly scope?: MemoryScopeKey;
-  /** Restrict to records of this kind. */
-  readonly kind?: Kind;
-  /** Restrict to records carrying this tag (exact match). */
-  readonly tag?: Tag;
-  /**
-   * For temporal (versioned) kinds: collapse each entity to the single version
-   * valid at this epoch ms. Non-temporal records are timeless and pass through
-   * unchanged. Absent = no temporal projection (every version is returned).
-   */
-  readonly asOf?: number;
-}
 
 /**
  * Policy for how {@link FileTreeMemoryStore.create}'s initial vault walk reacts
@@ -106,157 +94,6 @@ export interface ISkippedRecord {
   readonly scope: MemoryScopeKey;
   /** The parse/validation failure message (includes the record path). */
   readonly error: string;
-}
-
-/**
- * The writable, FileTree-backed, content-hash-deduped memory store.
- * @public
- */
-export interface IMemoryStore {
-  /**
-   * Keyed read by entity id. Resolves `entityId` to a storage address via the
-   * registered {@link IIdentityCodec} for `kind`. Returns `undefined` when no
-   * record exists. For a versioned (temporal) kind this returns the current
-   * version, resolved from the derived in-memory index (not re-read/re-verified
-   * from disk per call — the index is kept in sync with every write).
-   */
-  get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
-
-  /**
-   * Direct read by `(scope, MemoryId)`. Returns `undefined` when not found.
-   */
-  getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
-
-  /**
-   * List records, filtered in-memory over the derived index.
-   */
-  list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
-
-  /**
-   * List EVERY record in the vault, each paired with its scope-qualified
-   * `(scope, id)` address — the projection {@link IMemoryRecordSource} requires.
-   * Unlike {@link IMemoryStore.list | list}, it takes no filter (whole-vault) and
-   * returns {@link IScopedMemoryRecord}s so a re-index keys each entry on the same
-   * scoped target the incremental embed-on-write path uses. Two records that share
-   * a filename stem across scopes appear as distinct entries.
-   */
-  listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
-
-  /**
-   * Adapt this store to the {@link IMemoryRecordSource} seam so it can drive
-   * {@link IVectorIndex} rebuilds (e.g. `InMemoryCosineIndex.rebuild`). The
-   * returned source's `list()` delegates to {@link IMemoryStore.listScoped},
-   * **filtered to the kinds {@link IMemoryStore.embedsKind | embedsKind} reports** —
-   * this source exists to feed the record vector index, so a kind excluded from
-   * that index is excluded here too, and a reopen does not re-embed records the
-   * index will never return. With no
-   * {@link IFileTreeMemoryStoreCreateParams.embedKinds | embedKinds} declaration
-   * every kind participates and the filter is the identity. `listScoped` itself is
-   * **not** filtered and remains the whole-vault surface.
-   *
-   * The store cannot implement {@link IMemoryRecordSource} directly because its
-   * `list(filter?)` returns bare records (the ergonomic query surface) while the
-   * seam's `list()` returns scope-qualified records.
-   */
-  asRecordSource(): IMemoryRecordSource;
-
-  /**
-   * The EFFECTIVE {@link DedupScope} for `kind` — the granularity at which a
-   * write for this kind deduplicates against the existing vault.
-   *
-   * @remarks
-   * This is a **read accessor over the store's already-injected write policies**,
-   * and it is the single place any caller — the store's own write path included —
-   * asks what a kind's dedup granularity is. It resolves the full chain the store
-   * applies on write: the kind's registered {@link IWritePolicy}, falling back to
-   * the store's default policy, then that policy's
-   * {@link IWritePolicy.dedupScope | dedupScope}, falling back to
-   * {@link DEFAULT_DEDUP_SCOPE}. Note the store's default policy is a
-   * {@link KnowledgeLwwPolicy}, which declares `'content'` — so a kind with NO
-   * registered policy resolves to `'content'`, not to `DEFAULT_DEDUP_SCOPE`.
-   *
-   * It exists so a caller that must agree with the store about dedup granularity
-   * — notably the ingest orchestrator's stage-4 layer-1 exact match — can read the
-   * declaration through this seam instead of being handed a second copy of the
-   * policy map. A second declaration site is precisely the defect this accessor
-   * was added to remove.
-   *
-   * Deliberately synchronous, total, and NOT `Result`-returning: it reads
-   * constructor-injected configuration, touches no I/O, and cannot fail (every
-   * link in the fallback chain has a total default). It exposes only the scope,
-   * never the {@link IWritePolicy} itself, so it can never become a back door for
-   * invoking admission or merge logic out of band.
-   */
-  dedupScopeFor(kind: Kind): DedupScope;
-
-  /**
-   * Whether records of `kind` participate in the **record-granular** vector index.
-   *
-   * @remarks
-   * A read accessor over the store's injected {@link IFileTreeMemoryStoreCreateParams.embedKinds | embedKinds}
-   * declaration, in the same spirit as {@link IMemoryStore.dedupScopeFor} — one
-   * place to ask, so the store's write path and any caller reasoning about index
-   * coverage cannot disagree. `true` for every kind when no declaration was made.
-   *
-   * **This is distinct from a {@link MemoryEmbedder} decline, and the difference is
-   * cost.** An embedder that returns `undefined` has already been called: the
-   * round trip is paid, and on a locally-hosted model that round trip is the
-   * expense. A kind excluded here is never handed to the embedder at all. The
-   * decline makes the intent *expressible*; this makes it *free*.
-   *
-   * Deliberately synchronous, total, and NOT `Result`-returning: it reads
-   * constructor-injected configuration, touches no I/O, and cannot fail.
-   */
-  embedsKind(kind: Kind): boolean;
-
-  /**
-   * Write a record. Validates the body, computes a content hash, deduplicates
-   * (scope-wide, before policy), applies the kind's {@link IWritePolicy}, stamps
-   * transaction-time metadata (`created` / `updated` / `seq` / `contentHash`),
-   * writes the file, and patches the index. Returns the written record — or the
-   * existing record unchanged on a dedup no-op.
-   */
-  put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
-
-  /**
-   * Re-apply the kind's {@link RankProjector} to every record of `kind` already
-   * in the store, restamping {@link IMemoryEnvelope.rank}. Returns the number of
-   * records whose `rank` actually changed.
-   *
-   * @remarks
-   * **This exists because `rank` is otherwise new-store-only, and fails in a way
-   * that looks like it works.** The projector runs on the write path only, so
-   * registering one against a populated store ranks nothing already written —
-   * and because an absent `rank` sorts *last*, every pre-registration record
-   * lands below every post-registration one no matter what the projector would
-   * have scored it. The ordering is not merely partial; it is **inverted with
-   * respect to the projector's own intent**, with no failure anywhere to say so.
-   *
-   * Deliberately **does not** touch `created` / `updated` / `seq`, and fires no
-   * `'write'` observation. Routing a reconcile through {@link IMemoryStore.put}
-   * would bump transaction time on every record — trading a wrong `rank` order
-   * for a wrong recency order, and flooding any wired observer with writes that
-   * are not writes. The body is re-serialized verbatim from the file's own
-   * bytes; only the envelope's `rank` moves.
-   *
-   * Fails loudly if `kind` has no registered projector: asking to reconcile a
-   * kind you never configured is a caller error, not a no-op.
-   *
-   * **Not atomic, and safe for it.** A failure part-way leaves earlier records
-   * restamped. That is benign because restamping is idempotent — re-running
-   * converges — which is also why no report shape is offered here. A count is
-   * enough.
-   */
-  reconcileRank(kind: Kind): Promise<Result<number>>;
-
-  /**
-   * Delete a record by `(kind, entityId)`. Non-temporal kinds physically delete
-   * the file and return the deleted record's {@link MemoryId}. Temporal
-   * (versioned) kinds SOFT-delete: the current version is invalidated
-   * (`invalid_at` set), history is retained, and the invalidated version's
-   * {@link MemoryId} is returned.
-   */
-  delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
 }
 
 /**
@@ -665,7 +502,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
           // version whose `invalid_at` is null/absent) from the entity subtree,
           // read off the derived index. `asOf` resolution is via `list({ asOf })`
           // and the temporal retrievers.
-          return succeed(this._readVersionedCurrent(addr.scope));
+          return this._readVersionedCurrent(addr.scope);
         }
         return this._readRecord(addr.scope, addr.idStem);
       })
@@ -687,57 +524,150 @@ export class FileTreeMemoryStore implements IMemoryStore {
   }
 
   /** {@inheritDoc IMemoryStore.list} */
-  public async list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>> {
-    const matches: IMemoryRecord<unknown>[] = this._index
-      .entries()
-      .filter((entry) => {
-        if (filter?.scope !== undefined && entry.scope !== filter.scope) {
-          return false;
-        }
-        if (filter?.kind !== undefined && entry.record.envelope.kind !== filter.kind) {
-          return false;
-        }
-        if (filter?.tag !== undefined && !entry.record.envelope.tags.includes(filter.tag)) {
-          return false;
-        }
-        return true;
-      })
-      .map((entry) => entry.record);
-    if (filter?.asOf === undefined) {
-      // No temporal projection requested: byte-identical to the pre-temporal
-      // behavior (the flat-path guarantee — every version is returned).
-      return succeed(matches);
+  public async list(selection: MemoryListSelection): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>> {
+    // Deliberately NOT annotated `: boolean`. An explicit annotation discards the
+    // type predicate, and TypeScript's aliased-condition narrowing is what lets
+    // the ternary below see `selection` as a filter on the false branch. With the
+    // annotation this line compiles and the next one does not.
+    const scan = isWholeVaultScan(selection);
+    const filter: IMemoryStoreListFilter = scan ? {} : selection;
+    if (!scan && filter.scope === undefined && filter.kind === undefined && filter.tag === undefined) {
+      // `asOf` alone does not narrow — it collapses versions, it does not exclude
+      // entities — so a selection carrying only `asOf` lands here too.
+      return fail(
+        'memory list: a selection must narrow by scope, kind or tag; ' +
+          'pass scanEveryRecord() to read every record in the vault deliberately'
+      );
     }
-    return succeed(FileTreeMemoryStore._projectAsOf(matches, filter.asOf));
+    // Select over envelopes, project temporally, and materialize LAST — so a
+    // narrowed list reads only the files it is going to return.
+    const selected: ReadonlyArray<IIndexedMemoryEntry> = this._index.entries().filter((entry) => {
+      if (filter.scope !== undefined && entry.scope !== filter.scope) {
+        return false;
+      }
+      if (filter.kind !== undefined && entry.envelope.kind !== filter.kind) {
+        return false;
+      }
+      if (filter.tag !== undefined && !entry.envelope.tags.includes(filter.tag)) {
+        return false;
+      }
+      return true;
+    });
+    const projected: ReadonlyArray<IIndexedMemoryEntry> =
+      selection.asOf === undefined
+        ? // No temporal projection requested: the flat-path guarantee — every
+          // version is returned.
+          selected
+        : FileTreeMemoryStore._projectAsOf(selected, selection.asOf);
+    return this._materialize(projected);
+  }
+
+  /** {@inheritDoc IMemoryStore.coverage} */
+  public coverage(): Promise<Result<IDerivedStateCoverage>> {
+    return Promise.resolve(
+      computeCoverage({
+        entries: this._index.entries(),
+        hasRankProjector: (kind) => this._rankProjectors.has(kind),
+        anyRankProjector: this._rankProjectors.size > 0,
+        embedsKind: (kind) => this.embedsKind(kind),
+        vectorIndex: this._vectors.vectorIndex,
+        fragmentIndex: this._vectors.fragmentIndex
+      })
+    );
+  }
+
+  /** {@inheritDoc IMemoryStore.listEntries} */
+  public async listEntries(): Promise<Result<ReadonlyArray<IIndexedMemoryEntry>>> {
+    return succeed(this._index.entries());
   }
 
   /** {@inheritDoc IMemoryStore.listScoped} */
   public async listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> {
-    // The derived index already carries each record's scope
-    // ({@link IIndexedMemoryRecord.scope}), so the scoped projection is a direct
-    // map — the record's `(scope, id)` is exactly the address the vector index
-    // keys on. No filter/temporal projection: the seam re-embeds the whole vault.
-    return succeed(
-      this._index.entries().map((entry) => ({
-        target: { scope: entry.scope, id: entry.record.envelope.id },
-        record: entry.record
-      }))
+    // The derived index already carries each record's scope, so the scoped
+    // projection keys straight off it — `(scope, id)` is exactly the address the
+    // vector index uses. Bodies ARE materialized here: this seam feeds an
+    // embedder, which is the one consumer that genuinely needs every body. No
+    // filter/temporal projection — it re-embeds the whole vault by contract.
+    //
+    // **Complete or failed — never quietly short.** This call is the sole feed
+    // for `asRecordSource()`, and therefore for `IVectorIndex.rebuild`'s coverage
+    // report. A record dropped here would land in none of `records` / `excluded`
+    // / `indexed` / `declined` / `skipped`, so a caller computing coverage would
+    // undercount *in the direction of looking healthier* — which is precisely the
+    // failure `vectorRecordSource`'s own tally exists to prevent, reintroduced one
+    // layer down. A loud failure is recoverable; a silent undercount is not.
+    //
+    // Two consequences worth stating rather than discovering. Before the index
+    // was projected this method read nothing and could not fail, because the
+    // index held the records themselves; it now costs a full-vault read and is
+    // fallible. And it is NOT write-locked, so a concurrent `put` whose cap-cull
+    // physically evicts a record between the snapshot and the read will fail it.
+    // That window is real and is tracked in `docs/FUTURE.md` — the answer is to
+    // make the loss *countable*, not to swallow it.
+    return mapResults(
+      this._index.entries().map((entry) => {
+        const target: IEdgeTarget = { scope: entry.scope, id: entry.envelope.id };
+        return this._resolveRequired(entry).onSuccess((record) => succeed({ target, record }));
+      })
+    );
+  }
+
+  /** {@inheritDoc IMemoryRecordResolver.resolveRecord} */
+  public resolveRecord(scope: MemoryScopeKey, id: MemoryId): Result<IMemoryRecord<unknown> | undefined> {
+    return this._readRecord(scope, id);
+  }
+
+  /**
+   * Materialize a selected set of entries into records, dropping any that have
+   * vanished since selection.
+   *
+   * @remarks
+   * A miss is not a failure. Selection reads the in-memory index and
+   * materialization reads storage, so a record deleted in between is a legitimate
+   * race and yields a shorter list rather than an error. A read that FAILS is a
+   * real fault and propagates.
+   */
+  private _materialize(
+    entries: ReadonlyArray<IIndexedMemoryEntry>
+  ): Result<ReadonlyArray<IMemoryRecord<unknown>>> {
+    return mapResults(entries.map((entry) => this._readRecord(entry.scope, entry.envelope.id))).onSuccess(
+      (records) => succeed(records.filter((r): r is IMemoryRecord<unknown> => r !== undefined))
+    );
+  }
+
+  /**
+   * Materialize one entry, treating "gone" as a fault rather than a miss.
+   *
+   * @remarks
+   * For paths where a vanished record really does mean the index and the vault
+   * disagree, rather than that something legitimately removed it in between.
+   *
+   * Three of the four callers hold the write lock, so nothing can have removed
+   * the record since the entry was read. `get()`'s versioned path does not, and
+   * is safe only because temporal kinds never physically delete a version — they
+   * invalidate in place, and cap-cull does not apply to them. **If eviction is
+   * ever added to the temporal path, that caller must change**, or it
+   * reintroduces the race this method exists to detect.
+   *
+   * `listScoped` also does not hold the lock, and uses this deliberately anyway:
+   * it feeds a coverage report, so a silent drop there is worse than a loud
+   * failure. See its comment, and `docs/FUTURE.md` for the eviction window.
+   *
+   * The drop-tolerant counterpart is {@link FileTreeMemoryStore._materialize},
+   * for readers where a record that vanished between selection and
+   * materialization is a miss rather than a fault.
+   */
+  private _resolveRequired(entry: IIndexedMemoryEntry): Result<IMemoryRecord<unknown>> {
+    return this._readRecord(entry.scope, entry.envelope.id).onSuccess((record) =>
+      record === undefined
+        ? fail(`memory: index entry '${entry.scope}/${entry.envelope.id}' has no record in the vault`)
+        : succeed(record)
     );
   }
 
   /** {@inheritDoc IMemoryStore.asRecordSource} */
   public asRecordSource(): IMemoryRecordSource {
-    return {
-      // Filtered to the kinds that participate in the record vector index. This
-      // source exists to drive `IVectorIndex` rebuilds, so a kind excluded from the
-      // index has no business being re-embedded on open — which is where the cost
-      // is worst, since a rebuild embeds the whole vault serially. With no
-      // `embedKinds` declaration every kind passes and this is the identity filter.
-      list: async (): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> =>
-        (await this.listScoped()).onSuccess((scoped: ReadonlyArray<IScopedMemoryRecord>) =>
-          succeed(scoped.filter((s) => this.embedsKind(s.record.envelope.kind)))
-        )
-    };
+    return vectorRecordSource(this);
   }
 
   /**
@@ -748,27 +678,27 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * contributes nothing.
    */
   private static _projectAsOf(
-    records: ReadonlyArray<IMemoryRecord<unknown>>,
+    entries: ReadonlyArray<IIndexedMemoryEntry>,
     asOf: number
-  ): ReadonlyArray<IMemoryRecord<unknown>> {
-    const passthrough: IMemoryRecord<unknown>[] = [];
-    const groups: Map<string, IMemoryRecord<unknown>[]> = new Map<string, IMemoryRecord<unknown>[]>();
-    for (const record of records) {
-      if (!isTemporalRecord(record)) {
-        passthrough.push(record);
+  ): ReadonlyArray<IIndexedMemoryEntry> {
+    const passthrough: IIndexedMemoryEntry[] = [];
+    const groups: Map<string, IIndexedMemoryEntry[]> = new Map<string, IIndexedMemoryEntry[]>();
+    for (const entry of entries) {
+      if (!isTemporalRecord(entry)) {
+        passthrough.push(entry);
         continue;
       }
-      const key: string = `${record.envelope.kind}\0${record.envelope.entityId}`;
-      const existing: IMemoryRecord<unknown>[] | undefined = groups.get(key);
+      const key: string = `${entry.envelope.kind}\0${entry.envelope.entityId}`;
+      const existing: IIndexedMemoryEntry[] | undefined = groups.get(key);
       if (existing === undefined) {
-        groups.set(key, [record]);
+        groups.set(key, [entry]);
       } else {
-        existing.push(record);
+        existing.push(entry);
       }
     }
-    const result: IMemoryRecord<unknown>[] = [...passthrough];
+    const result: IIndexedMemoryEntry[] = [...passthrough];
     for (const versions of groups.values()) {
-      const valid: IMemoryRecord<unknown> | undefined = selectVersionAsOf(versions, asOf);
+      const valid: IIndexedMemoryEntry | undefined = selectVersionAsOf(versions, asOf);
       if (valid !== undefined) {
         result.push(valid);
       }
@@ -776,9 +706,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return result;
   }
 
-  /** {@inheritDoc IMemoryStore.reconcileRank} */
-  public async reconcileRank(kind: Kind): Promise<Result<number>> {
-    return this._enqueue(() => this._reconcileRankLocked(kind));
+  /** {@inheritDoc IMemoryStore.reconcile} */
+  public async reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>> {
+    return this._enqueue(() => this._reconcileLocked(kind, artifact));
   }
 
   /** {@inheritDoc IMemoryStore.put} */
@@ -988,13 +918,16 @@ export class FileTreeMemoryStore implements IMemoryStore {
       // (tags / provenance — outside the content hash but inside the policy's
       // mutableFields) actually applies. Content-dedup must never shadow LWW for
       // the same entity.
-      const duplicate: IMemoryRecord<unknown> | undefined = this._findByContentHash(
+      const duplicate: Result<IMemoryRecord<unknown> | undefined> = this._findByContentHash(
         scope,
         hash,
         record.envelope.id
       );
-      if (duplicate !== undefined) {
-        return succeed({ record: duplicate, evicted: [] });
+      if (duplicate.isFailure()) {
+        return fail(duplicate.message);
+      }
+      if (duplicate.value !== undefined) {
+        return succeed({ record: duplicate.value, evicted: [] });
       }
     }
     return this._readRecord(scope, idStem).thenOnSuccess((existing) => {
@@ -1017,13 +950,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
       // (a replace, not a grow). The same-id `existing` record is threaded
       // separately into `_buildRecord` for the merge-patch. Knowledge LWW ignores
       // this argument, so its behavior is unchanged by the wider cohort.
-      const cohort: ReadonlyArray<IMemoryRecord<unknown>> = this._admissionCohort(
-        scope,
-        record.envelope.kind,
-        idStem
-      );
-      return policy
-        .admit(record, cohort)
+      return this._admissionCohort(scope, record.envelope.kind, idStem)
+        .onSuccess((cohort) => policy.admit(record, cohort))
         .thenOnSuccess((decision) =>
           this._admitWrite(record, body, scope, idStem, hash, policy, existing, decision)
         );
@@ -1230,8 +1158,19 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * null/absent. `undefined` when the entity has no current version (never
    * written, or fully invalidated / soft-deleted).
    */
-  private _readVersionedCurrent(scope: MemoryScopeKey): IMemoryRecord<unknown> | undefined {
-    return selectCurrentVersion(this._versionsForEntity(scope));
+  private _readVersionedCurrent(scope: MemoryScopeKey): Result<IMemoryRecord<unknown> | undefined> {
+    // Select over ENVELOPES, then materialize the one winner — which is what
+    // `IMemoryStore.get`'s docstring promises and what `selectCurrentVersion`
+    // being generic over `IEnvelopeCarrier` exists for. Materializing every
+    // version first (as this did) cost N file reads and N body validations to
+    // return one record, and made that docstring false.
+    const current: IIndexedMemoryEntry | undefined = selectCurrentVersion(
+      this._index.entries().filter((entry) => entry.scope === scope)
+    );
+    if (current === undefined) {
+      return succeed(undefined);
+    }
+    return this._resolveRequired(current);
   }
 
   /**
@@ -1239,11 +1178,16 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * files for one entity live under exactly that scope (which encodes the
    * entityId), so a scope filter over the index isolates one entity's versions.
    */
-  private _versionsForEntity(scope: MemoryScopeKey): ReadonlyArray<IMemoryRecord<unknown>> {
-    return this._index
-      .entries()
-      .filter((entry) => entry.scope === scope)
-      .map((entry) => entry.record);
+  private _versionsForEntity(scope: MemoryScopeKey): Result<ReadonlyArray<IMemoryRecord<unknown>>> {
+    // Selected on the envelope (scope), materialized after — so a versioned write
+    // reads only that entity's versions, never the vault. Bounded by the entity's
+    // version count.
+    return mapResults(
+      this._index
+        .entries()
+        .filter((entry) => entry.scope === scope)
+        .map((entry) => this._resolveRequired(entry))
+    );
   }
 
   /**
@@ -1271,7 +1215,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
     // still-current version at snapshot time — normally one, but two-or-more if a
     // prior invalidation partially failed; invalidating all of them lets the write
     // self-heal a stuck state (P2-7).
-    const versions: ReadonlyArray<IMemoryRecord<unknown>> = this._versionsForEntity(scope);
+    const snapshot: Result<ReadonlyArray<IMemoryRecord<unknown>>> = this._versionsForEntity(scope);
+    if (snapshot.isFailure()) {
+      return fail(snapshot.message);
+    }
+    const versions: ReadonlyArray<IMemoryRecord<unknown>> = snapshot.value;
     const priorCurrents: ReadonlyArray<IMemoryRecord<unknown>> = versions.filter(isVersionCurrent);
     const current: IMemoryRecord<unknown> | undefined = selectCurrentVersion(versions);
     const policy: IWritePolicy = this._policyFor(kind);
@@ -1469,7 +1417,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * builds on it), so a hard delete would defeat the purpose.
    */
   private async _deleteVersioned(entityId: EntityId, scope: MemoryScopeKey): Promise<Result<MemoryId>> {
-    const versions: ReadonlyArray<IMemoryRecord<unknown>> = this._versionsForEntity(scope);
+    const snapshot: Result<ReadonlyArray<IMemoryRecord<unknown>>> = this._versionsForEntity(scope);
+    if (snapshot.isFailure()) {
+      return fail(snapshot.message);
+    }
+    const versions: ReadonlyArray<IMemoryRecord<unknown>> = snapshot.value;
     const currents: ReadonlyArray<IMemoryRecord<unknown>> = versions.filter(isVersionCurrent);
     const current: IMemoryRecord<unknown> | undefined = selectCurrentVersion(versions);
     if (current === undefined) {
@@ -1526,14 +1478,17 @@ export class FileTreeMemoryStore implements IMemoryStore {
     scope: MemoryScopeKey,
     kind: Kind,
     idStem: string
-  ): ReadonlyArray<IMemoryRecord<unknown>> {
-    return this._index
-      .entries()
-      .filter(
-        (entry) =>
-          entry.scope === scope && entry.record.envelope.kind === kind && entry.record.envelope.id !== idStem
-      )
-      .map((entry) => entry.record);
+  ): Result<ReadonlyArray<IMemoryRecord<unknown>>> {
+    // Envelope-only selection; the cohort is per-(scope, kind) and bounded by the
+    // cull cap, so materializing it is small by construction.
+    return mapResults(
+      this._index
+        .entries()
+        .filter(
+          (entry) => entry.scope === scope && entry.envelope.kind === kind && entry.envelope.id !== idStem
+        )
+        .map((entry) => this._resolveRequired(entry))
+    );
   }
 
   /**
@@ -1545,16 +1500,17 @@ export class FileTreeMemoryStore implements IMemoryStore {
     scope: MemoryScopeKey,
     hash: string,
     excludeId?: string
-  ): IMemoryRecord<unknown> | undefined {
-    const match: IIndexedMemoryRecord | undefined = this._index
+  ): Result<IMemoryRecord<unknown> | undefined> {
+    // The clearest win of the projection: the hash lives on the envelope, so this
+    // scans envelopes and reads exactly ONE file — the match — where it used to
+    // hold every body in the scope to look at one field.
+    const match: IIndexedMemoryEntry | undefined = this._index
       .entries()
       .find(
         (entry) =>
-          entry.scope === scope &&
-          entry.record.envelope.contentHash === hash &&
-          entry.record.envelope.id !== excludeId
+          entry.scope === scope && entry.envelope.contentHash === hash && entry.envelope.id !== excludeId
       );
-    return match?.record;
+    return match === undefined ? succeed(undefined) : this._resolveRequired(match);
   }
 
   /**
@@ -1587,7 +1543,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
   }
 
   /**
-   * The locked body of {@link FileTreeMemoryStore.reconcileRank}.
+   * The rank branch of {@link FileTreeMemoryStore.reconcile}, under the write lock.
    *
    * @remarks
    * Re-reads each record's file rather than trusting the in-memory index, for
@@ -1616,24 +1572,54 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * another on a reconcile. `_stampRank` itself is reused verbatim, which also
    * inherits its throw semantics (logged at `warn`, `rank` cleared).
    */
-  private async _reconcileRankLocked(kind: Kind): Promise<Result<number>> {
-    if (!this._rankProjectors.has(kind)) {
-      return fail(`memory reconcileRank '${kind}': no rank projector is registered for this kind`);
-    }
-    const targets: ReadonlyArray<IIndexedMemoryRecord> = this._index
+  private async _reconcileLocked(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>> {
+    // Envelope-only selection: the walk needs `(scope, id)` and the kind, and
+    // each branch materializes only the records it decides to repair.
+    const targets: ReadonlyArray<IIndexedMemoryEntry> = this._index
       .entries()
-      .filter((entry) => entry.record.envelope.kind === kind);
-    let restamped: number = 0;
+      .filter((entry) => entry.envelope.kind === kind);
+    if (artifact === 'rank') {
+      return this._reconcileRankLocked(kind, targets);
+    }
+    return reconcileVectors({
+      kind,
+      artifact,
+      targets,
+      maintenance: this._vectors,
+      embedsKind: (k) => this.embedsKind(k),
+      resolve: (scope, id) => this._readRecord(scope, id),
+      stampRef: (scope, id, ref) =>
+        this._rewriteEnvelope(scope, id, (r) =>
+          r.envelope.embeddingRef === ref
+            ? undefined
+            : { envelope: { ...r.envelope, embeddingRef: ref }, body: r.body }
+        )
+    });
+  }
+
+  /** The rank branch of {@link FileTreeMemoryStore._reconcileLocked}. */
+  private async _reconcileRankLocked(
+    kind: Kind,
+    targets: ReadonlyArray<IIndexedMemoryEntry>
+  ): Promise<Result<ReconcileReport>> {
+    if (!this._rankProjectors.has(kind)) {
+      return fail(`memory reconcile '${kind}' rank: no rank projector is registered for this kind`);
+    }
+    // No materialization at all: `_rewriteEnvelope` re-reads each record itself.
+    let repaired: number = 0;
     for (const target of targets) {
-      const applied: Result<boolean> = this._restampOne(target.scope, target.record.envelope.id);
+      const applied: Result<boolean> = this._rewriteEnvelope(target.scope, target.envelope.id, (r) => {
+        const stamped: IMemoryRecord<string> = this._stampRank(r);
+        return stamped.envelope.rank === r.envelope.rank ? undefined : stamped;
+      });
       if (applied.isFailure()) {
-        return fail(`memory reconcileRank '${kind}': ${applied.message}`);
+        return fail(`memory reconcile '${kind}' rank: ${applied.message}`);
       }
       if (applied.value) {
-        restamped++;
+        repaired++;
       }
     }
-    return succeed(restamped);
+    return succeed({ artifact: 'rank', kind, examined: targets.length, repaired, failed: [] });
   }
 
   /**
@@ -1641,7 +1627,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * actually changed — an unchanged rank writes nothing, so a reconcile over an
    * already-consistent store touches no files.
    */
-  private _restampOne(scope: MemoryScopeKey, id: MemoryId): Result<boolean> {
+  private _rewriteEnvelope(
+    scope: MemoryScopeKey,
+    id: MemoryId,
+    mutate: (record: IMemoryRecord<string>) => IMemoryRecord<string> | undefined
+  ): Result<boolean> {
     return this._resolveScopeDir(scope).onSuccess((scopeDir) => {
       /* c8 ignore next 3 - defensive: the scope dir exists for any indexed record */
       if (scopeDir === undefined) {
@@ -1672,12 +1662,16 @@ export class FileTreeMemoryStore implements IMemoryStore {
               splitFrontmatter(raw)
                 .withErrorFormat((msg) => `'${id}': ${msg}`)
                 .onSuccess((parts) => {
-                  const before: number | undefined = parsed.envelope.rank;
-                  const stamped: IMemoryRecord<string> = this._stampRank({
+                  // The mutator says "nothing to change" with `undefined` rather
+                  // than by returning an equal record: persisting unconditionally
+                  // would bump `updated` on every record of the kind, trading a
+                  // wrong value for a wrong timestamp, and a deep comparison here
+                  // would have to know which fields each caller touches.
+                  const stamped: IMemoryRecord<string> | undefined = mutate({
                     envelope: parsed.envelope,
                     body: parts.body
                   });
-                  if (stamped.envelope.rank === before) {
+                  if (stamped === undefined) {
                     return succeed(false);
                   }
                   return this._persist(stamped, scope, id).onSuccess(() => succeed(true));
@@ -1922,8 +1916,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return this._collectEntries(this._root, [], onRecordError).onSuccess((entries) =>
       this._index.rebuild(entries).onSuccess(() => {
         for (const entry of entries) {
-          if (entry.record.envelope.seq > this._seq) {
-            this._seq = entry.record.envelope.seq;
+          if (entry.envelope.seq > this._seq) {
+            this._seq = entry.envelope.seq;
           }
         }
         return succeed(true);
@@ -1936,16 +1930,16 @@ export class FileTreeMemoryStore implements IMemoryStore {
     dir: FileTree.IFileTreeDirectoryItem,
     scopeSegments: ReadonlyArray<string>,
     onRecordError: MemoryRecordErrorMode
-  ): Result<ReadonlyArray<IIndexedMemoryRecord>> {
+  ): Result<ReadonlyArray<IIndexedMemoryEntry>> {
     return dir.getChildren().onSuccess((children) => {
-      const results: Result<ReadonlyArray<IIndexedMemoryRecord>>[] = children.map((child) => {
+      const results: Result<ReadonlyArray<IIndexedMemoryEntry>>[] = children.map((child) => {
         if (child.type === 'directory') {
           return this._collectEntries(child, [...scopeSegments, child.name], onRecordError);
         }
         if (!child.name.endsWith(MEMORY_FILE_EXTENSION) || scopeSegments.length === 0) {
           // Skip non-record files and any record-shaped file sitting at the root
           // (records always live under at least one scope segment).
-          return succeed<ReadonlyArray<IIndexedMemoryRecord>>([]);
+          return succeed<ReadonlyArray<IIndexedMemoryEntry>>([]);
         }
         const scope: MemoryScopeKey = scopeSegments.join('/') as MemoryScopeKey;
         return this._loadRecordFile(scope, child, onRecordError);
@@ -1957,10 +1951,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
       // no element succeeded. `'fail'` mode: `mapResults` fails the whole open on
       // any bad record — byte-identical to the historical load path.
       if (onRecordError === 'skip') {
-        return succeed<ReadonlyArray<IIndexedMemoryRecord>>(mapSuccess(results).orDefault([]).flat());
+        return succeed<ReadonlyArray<IIndexedMemoryEntry>>(mapSuccess(results).orDefault([]).flat());
       }
       return mapResults(results).onSuccess((perChild) =>
-        succeed<ReadonlyArray<IIndexedMemoryRecord>>(perChild.flat())
+        succeed<ReadonlyArray<IIndexedMemoryEntry>>(perChild.flat())
       );
     });
   }
@@ -1976,20 +1970,30 @@ export class FileTreeMemoryStore implements IMemoryStore {
     scope: MemoryScopeKey,
     child: FileTree.IFileTreeFileItem,
     onRecordError: MemoryRecordErrorMode
-  ): Result<ReadonlyArray<IIndexedMemoryRecord>> {
-    return child
-      .getRawContents()
-      .onSuccess((raw) => parseMemoryFile(raw, this._registry))
-      .onSuccess((parsedRecord) => this._verifyLoaded(scope, child, parsedRecord))
-      .onSuccess((verified) => succeed<ReadonlyArray<IIndexedMemoryRecord>>([{ scope, record: verified }]))
-      .onFailure((message) => {
-        if (onRecordError === 'skip') {
-          const path: string = `${scope}/${child.name}`;
-          const error: string = `memory record '${path}': ${message}`;
-          this._skippedRecords.push({ path, scope, error });
-          this._warnSwallowed(error);
-        }
-        return fail(message);
-      });
+  ): Result<ReadonlyArray<IIndexedMemoryEntry>> {
+    return (
+      child
+        .getRawContents()
+        .onSuccess((raw) => parseMemoryFile(raw, this._registry))
+        .onSuccess((parsedRecord) => this._verifyLoaded(scope, child, parsedRecord))
+        // Parse → validate → PROJECT → discard, per file. The body is read and
+        // fully validated (which is what gives `onRecordError` its meaning), then
+        // dropped here rather than carried into the index. Peak body residency
+        // across the whole open is therefore ONE record, not N — which is the
+        // resident-memory moment this whole surface exists to fix, and it is why
+        // the projection had to reach `rebuild` and not just the read methods.
+        .onSuccess((verified) =>
+          succeed<ReadonlyArray<IIndexedMemoryEntry>>([{ scope, envelope: verified.envelope }])
+        )
+        .onFailure((message) => {
+          if (onRecordError === 'skip') {
+            const path: string = `${scope}/${child.name}`;
+            const error: string = `memory record '${path}': ${message}`;
+            this._skippedRecords.push({ path, scope, error });
+            this._warnSwallowed(error);
+          }
+          return fail(message);
+        })
+    );
   }
 }

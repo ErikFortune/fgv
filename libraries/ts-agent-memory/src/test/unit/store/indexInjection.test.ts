@@ -13,6 +13,7 @@ import {
   IBodyConverterRegistry,
   IEdgeTarget,
   IIdentityCodec,
+  IIndexedMemoryEntry,
   IIndexedMemoryRecord,
   IMemoryIndex,
   IMemoryRecord,
@@ -29,7 +30,8 @@ import {
   Tag,
   TemporalIdentityCodec,
   TemporalVersionedPolicy,
-  envelopeConverter
+  envelopeConverter,
+  scanEveryRecord
 } from '../../../index';
 
 const knowledgeKind: Kind = 'knowledge' as Kind;
@@ -92,6 +94,7 @@ class RecordingMemoryIndex implements IMemoryIndex {
   public readonly rebuildSizes: number[] = [];
   public readonly patchCalls: IPatchCall[] = [];
   public entriesCalls: number = 0;
+  public getCalls: number = 0;
 
   private readonly _inner: IMemoryIndex;
 
@@ -103,7 +106,7 @@ class RecordingMemoryIndex implements IMemoryIndex {
     return MemoryIndex.create().onSuccess((inner) => succeed(new RecordingMemoryIndex(inner)));
   }
 
-  public rebuild(entries: ReadonlyArray<IIndexedMemoryRecord>): Result<number> {
+  public rebuild(entries: ReadonlyArray<IIndexedMemoryEntry>): Result<number> {
     this.rebuildSizes.push(entries.length);
     return this._inner.rebuild(entries);
   }
@@ -113,24 +116,29 @@ class RecordingMemoryIndex implements IMemoryIndex {
     return this._inner.patch(op, entry);
   }
 
-  public entries(): ReadonlyArray<IIndexedMemoryRecord> {
+  public entries(): ReadonlyArray<IIndexedMemoryEntry> {
     this.entriesCalls += 1;
     return this._inner.entries();
   }
 
-  public byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>> {
+  public get(target: IEdgeTarget): IIndexedMemoryEntry | undefined {
+    this.getCalls += 1;
+    return this._inner.get(target);
+  }
+
+  public byKind(kind: Kind): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byKind(kind);
   }
 
-  public byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byTag(tag: Tag): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byTag(tag);
   }
 
-  public byRecency(): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byRecency(): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byRecency();
   }
 
-  public byRank(): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byRank(): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byRank();
   }
 
@@ -140,10 +148,22 @@ class RecordingMemoryIndex implements IMemoryIndex {
 }
 
 /**
- * An index that hides every record whose body contains `hidden` from the
- * `entries()` read surface. Not a realistic index — it exists to prove the store
- * reads from the INJECTED index rather than one it built for itself. A store
- * with a private index could not produce these results.
+ * An index that hides every record tagged `hidden` from the `entries()` read
+ * surface.
+ *
+ * **Deliberately non-conforming**, and now explicitly so: `IMemoryIndex`'s
+ * completeness invariant says an implementation may not change WHICH entries
+ * exist. This one does, precisely to prove the store reads from the INJECTED
+ * index rather than one it built for itself — a store with a private index could
+ * not produce these results — and to demonstrate the invariant's stated
+ * consequence, that hiding an entry changes what the next WRITE does rather than
+ * only what reads return.
+ *
+ * It hides on a TAG rather than on body content, because the index no longer
+ * sees bodies. That is the projection working as intended — a body-dependent
+ * index is not expressible against this contract — and a tag is the right
+ * substitute because it survives onto store-minted version ids, which an
+ * id-prefix marker would not.
  */
 class HidingMemoryIndex implements IMemoryIndex {
   private readonly _inner: IMemoryIndex;
@@ -156,7 +176,7 @@ class HidingMemoryIndex implements IMemoryIndex {
     return MemoryIndex.create().onSuccess((inner) => succeed(new HidingMemoryIndex(inner)));
   }
 
-  public rebuild(entries: ReadonlyArray<IIndexedMemoryRecord>): Result<number> {
+  public rebuild(entries: ReadonlyArray<IIndexedMemoryEntry>): Result<number> {
     return this._inner.rebuild(entries);
   }
 
@@ -164,23 +184,30 @@ class HidingMemoryIndex implements IMemoryIndex {
     return this._inner.patch(op, entry);
   }
 
-  public entries(): ReadonlyArray<IIndexedMemoryRecord> {
-    return this._inner.entries().filter((e) => !String(e.record.body).includes('hidden'));
+  public entries(): ReadonlyArray<IIndexedMemoryEntry> {
+    return this._inner.entries().filter((e) => !e.envelope.tags.includes('hidden' as Tag));
   }
 
-  public byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>> {
+  public get(target: IEdgeTarget): IIndexedMemoryEntry | undefined {
+    // Hides through the keyed lookup too, so the two read paths agree about
+    // which entries this (deliberately non-conforming) index admits.
+    const entry: IIndexedMemoryEntry | undefined = this._inner.get(target);
+    return entry !== undefined && entry.envelope.tags.includes('hidden' as Tag) ? undefined : entry;
+  }
+
+  public byKind(kind: Kind): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byKind(kind);
   }
 
-  public byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byTag(tag: Tag): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byTag(tag);
   }
 
-  public byRecency(): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byRecency(): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byRecency();
   }
 
-  public byRank(): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byRank(): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byRank();
   }
 
@@ -206,14 +233,14 @@ const mtmKind: Kind = 'mtm' as Kind;
 let clockValue: number = 1000;
 const clock = (): number => clockValue;
 
-function factRecord(body: string): IMemoryRecord<unknown> {
+function factRecord(body: string, tags: ReadonlyArray<string> = []): IMemoryRecord<unknown> {
   return {
     envelope: envelopeConverter
       .convert({
         id: 'fact-1',
         entityId: 'fact-1',
         kind: 'fact',
-        tags: [],
+        tags: [...tags],
         links: [],
         created: 0,
         updated: 0,
@@ -239,14 +266,14 @@ function versionedStore(index?: IMemoryIndex): FileTreeMemoryStore {
   }).orThrow();
 }
 
-function turnRecord(turn: number, body: string): IMemoryRecord<unknown> {
+function turnRecord(turn: number, body: string, tags: ReadonlyArray<string> = []): IMemoryRecord<unknown> {
   return {
     envelope: envelopeConverter
       .convert({
         id: `turn-${turn}`,
         entityId: `conv-1:${turn}`,
         kind: 'mtm',
-        tags: [],
+        tags: [...tags],
         links: [],
         created: 0,
         updated: 0,
@@ -287,9 +314,11 @@ describe('FileTreeMemoryStore index injection', () => {
       (await store.put(knowledgeRecord('doc-a', 'alpha'))).orThrow();
       (await store.put(knowledgeRecord('doc-b', 'beta'))).orThrow();
 
-      expect(await store.list()).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
-        expect(records.map((r) => r.envelope.id).sort()).toEqual(['doc-a', 'doc-b']);
-      });
+      expect(await store.list(scanEveryRecord())).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(records.map((r) => r.envelope.id).sort()).toEqual(['doc-a', 'doc-b']);
+        }
+      );
       expect(await store.get(knowledgeKind, 'doc-a' as EntityId)).toSucceedAndSatisfy(
         (record: IMemoryRecord<unknown> | undefined) => {
           expect(record?.body).toBe('alpha');
@@ -306,10 +335,12 @@ describe('FileTreeMemoryStore index injection', () => {
       (await first.put(knowledgeRecord('doc-a', 'alpha'))).orThrow();
 
       const reopened = storeWith(undefined, root);
-      expect(await reopened.list()).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
-        expect(records).toHaveLength(1);
-        expect(records[0].envelope.id).toBe('doc-a');
-      });
+      expect(await reopened.list(scanEveryRecord())).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(records).toHaveLength(1);
+          expect(records[0].envelope.id).toBe('doc-a');
+        }
+      );
       // seq resumes past the persisted high-water mark rather than restarting at 1.
       expect(await reopened.put(knowledgeRecord('doc-b', 'beta'))).toSucceedAndSatisfy(
         (record: IMemoryRecord<unknown>) => {
@@ -329,9 +360,11 @@ describe('FileTreeMemoryStore index injection', () => {
       const store = storeWith(null as unknown as IMemoryIndex);
       (await store.put(knowledgeRecord('doc-a', 'alpha'))).orThrow();
 
-      expect(await store.list()).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
-        expect(records.map((r) => r.envelope.id)).toEqual(['doc-a']);
-      });
+      expect(await store.list(scanEveryRecord())).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(records.map((r) => r.envelope.id)).toEqual(['doc-a']);
+        }
+      );
     });
   });
 
@@ -348,9 +381,11 @@ describe('FileTreeMemoryStore index injection', () => {
       // create() rebuilt the injected index exactly once, with both persisted records.
       expect(recording.rebuildSizes).toEqual([2]);
       expect(recording.patchCalls).toEqual([]);
-      expect(await reopened.list()).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
-        expect(records.map((r) => r.envelope.id).sort()).toEqual(['doc-a', 'doc-b']);
-      });
+      expect(await reopened.list(scanEveryRecord())).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(records.map((r) => r.envelope.id).sort()).toEqual(['doc-a', 'doc-b']);
+        }
+      );
     });
 
     test('receives a put patch and a delete patch', async () => {
@@ -379,7 +414,7 @@ describe('FileTreeMemoryStore index injection', () => {
       (await store.put(knowledgeRecord('doc-a', 'alpha', ['topic']))).orThrow();
 
       const before: number = recording.entriesCalls;
-      expect(await store.list()).toSucceed();
+      expect(await store.list(scanEveryRecord())).toSucceed();
       expect(await store.listScoped()).toSucceed();
       expect(recording.entriesCalls).toBeGreaterThan(before);
 
@@ -399,7 +434,7 @@ describe('FileTreeMemoryStore index injection', () => {
       (await store.put(knowledgeRecord('doc-b', 'beta'))).orThrow();
 
       // The consumer's real pattern: the store maintains the index, retrievers read it.
-      const retriever = RecencyRetriever.create(recording).orThrow();
+      const retriever = RecencyRetriever.create({ index: recording, resolver: store }).orThrow();
       expect(await retriever.retrieve({ kind: knowledgeKind })).toSucceedAndSatisfy(
         (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
           expect(records.map((r) => r.envelope.id).sort()).toEqual(['doc-a', 'doc-b']);
@@ -411,13 +446,15 @@ describe('FileTreeMemoryStore index injection', () => {
       const hiding = HidingMemoryIndex.create().orThrow();
       const store = storeWith(hiding);
       (await store.put(knowledgeRecord('doc-a', 'alpha'))).orThrow();
-      (await store.put(knowledgeRecord('doc-b', 'hidden beta'))).orThrow();
+      (await store.put(knowledgeRecord('doc-b', 'beta', ['hidden']))).orThrow();
 
       // Both records persisted, but the injected index hides one from `entries()`,
       // and every store read that goes through the index reflects exactly that.
-      expect(await store.list()).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
-        expect(records.map((r) => r.envelope.id)).toEqual(['doc-a']);
-      });
+      expect(await store.list(scanEveryRecord())).toSucceedAndSatisfy(
+        (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(records.map((r) => r.envelope.id)).toEqual(['doc-a']);
+        }
+      );
       expect(await store.listScoped()).toSucceedAndSatisfy((scoped) => {
         expect(scoped.map((s) => s.target.id)).toEqual(['doc-a']);
       });
@@ -425,7 +462,7 @@ describe('FileTreeMemoryStore index injection', () => {
       // remains the source of truth regardless of what the derived index projects.
       expect(await store.getById(knowledgeScope, 'doc-b' as MemoryId)).toSucceedAndSatisfy(
         (record: IMemoryRecord<unknown> | undefined) => {
-          expect(record?.body).toBe('hidden beta');
+          expect(record?.body).toBe('beta');
         }
       );
     });
@@ -436,20 +473,20 @@ describe('FileTreeMemoryStore index injection', () => {
       // too. This is the documented caveat on the `index` param — the reason to
       // inject only a faithful delegating decorator.
       const control = storeWith();
-      (await control.put(knowledgeRecord('doc-b', 'hidden beta'))).orThrow();
+      (await control.put(knowledgeRecord('doc-b', 'beta', ['hidden']))).orThrow();
       // Default index: an identical body under a NEW id collapses onto the existing
       // record (knowledge declares `dedupScope: 'content'`).
-      expect(await control.put(knowledgeRecord('doc-c', 'hidden beta'))).toSucceedAndSatisfy(
+      expect(await control.put(knowledgeRecord('doc-c', 'beta', ['hidden']))).toSucceedAndSatisfy(
         (record: IMemoryRecord<unknown>) => {
           expect(record.envelope.id).toBe('doc-b');
         }
       );
 
       const hiding = storeWith(HidingMemoryIndex.create().orThrow());
-      (await hiding.put(knowledgeRecord('doc-b', 'hidden beta'))).orThrow();
+      (await hiding.put(knowledgeRecord('doc-b', 'beta', ['hidden']))).orThrow();
       // Hiding index: doc-b is invisible to `entries()`, so the content-hash lookup
       // finds no duplicate and doc-c is written as a distinct record.
-      expect(await hiding.put(knowledgeRecord('doc-c', 'hidden beta'))).toSucceedAndSatisfy(
+      expect(await hiding.put(knowledgeRecord('doc-c', 'beta', ['hidden']))).toSucceedAndSatisfy(
         (record: IMemoryRecord<unknown>) => {
           expect(record.envelope.id).toBe('doc-c');
         }
@@ -470,7 +507,7 @@ describe('FileTreeMemoryStore index injection', () => {
       // invalidate, or tombstone it. That is the documented caveat, and the reason
       // only a faithful delegating decorator is safe to inject.
       const control = versionedStore();
-      (await control.put(factRecord('hidden blue'))).orThrow();
+      (await control.put(factRecord('blue', ['hidden']))).orThrow();
       clockValue = 2000;
       (await control.put(factRecord('grey'))).orThrow();
 
@@ -484,7 +521,7 @@ describe('FileTreeMemoryStore index injection', () => {
 
       const hiding = versionedStore(HidingMemoryIndex.create().orThrow());
       clockValue = 1000;
-      (await hiding.put(factRecord('hidden blue'))).orThrow();
+      (await hiding.put(factRecord('blue', ['hidden']))).orThrow();
       clockValue = 2000;
       (await hiding.put(factRecord('grey'))).orThrow();
 
@@ -493,7 +530,7 @@ describe('FileTreeMemoryStore index injection', () => {
       // still on disk and still carries no `invalid_at` — two live currents.
       expect(await hiding.getById(factScope, 'fact-1-v1' as MemoryId)).toSucceedAndSatisfy(
         (v1: IMemoryRecord<unknown> | undefined) => {
-          expect(v1?.body).toBe('hidden blue');
+          expect(v1?.body).toBe('blue');
           expect(v1?.envelope.temporal?.invalid_at).toBeUndefined();
         }
       );
@@ -521,7 +558,7 @@ describe('FileTreeMemoryStore index injection', () => {
       const recorded = cappedStore(recording);
       for (let turn = 0; turn < 3; turn++) {
         clockValue = 1000 + turn; // distinct `created`, so "oldest" is unambiguous
-        (await recorded.put(turnRecord(turn, turn === 0 ? 'hidden zero' : `turn ${turn}`))).orThrow();
+        (await recorded.put(turnRecord(turn, turn === 0 ? 'zero' : `turn ${turn}`))).orThrow();
       }
 
       // The eviction reaches the INJECTED index as a `delete` patch — the store keeps
@@ -537,12 +574,16 @@ describe('FileTreeMemoryStore index injection', () => {
       const hidden = cappedStore(HidingMemoryIndex.create().orThrow());
       for (let turn = 0; turn < 3; turn++) {
         clockValue = 1000 + turn;
-        (await hidden.put(turnRecord(turn, turn === 0 ? 'hidden zero' : `turn ${turn}`))).orThrow();
+        (
+          await hidden.put(
+            turnRecord(turn, turn === 0 ? 'zero' : `turn ${turn}`, turn === 0 ? ['hidden'] : [])
+          )
+        ).orThrow();
       }
 
       expect(await hidden.get(mtmKind, 'conv-1:0' as EntityId)).toSucceedAndSatisfy(
         (record: IMemoryRecord<unknown> | undefined) => {
-          expect(record?.body).toBe('hidden zero');
+          expect(record?.body).toBe('zero');
         }
       );
     });

@@ -26,7 +26,8 @@ import {
   MtmIdentityCodec,
   Tag,
   envelopeConverter,
-  joinFrontmatter
+  joinFrontmatter,
+  scanEveryRecord
 } from '../../../index';
 
 const knowledgeKind: Kind = 'knowledge' as Kind;
@@ -134,7 +135,7 @@ describe('FileTreeMemoryStore', () => {
   describe('create', () => {
     test('starts from an empty vault', async () => {
       const store = createStore().orThrow();
-      expect(await store.list()).toSucceedWith([]);
+      expect(await store.list(scanEveryRecord())).toSucceedWith([]);
     });
 
     test('indexes a pre-existing vault and resumes seq past the highest persisted seq', async () => {
@@ -145,9 +146,11 @@ describe('FileTreeMemoryStore', () => {
         { path: 'top-level.md', contents: 'ignored at root' }
       ]);
       const store = createStore({ root }).orThrow();
-      expect(await store.list()).toSucceedAndSatisfy((listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
-        expect(listed.map((r) => r.envelope.id).sort()).toEqual(['doc-a', 'doc-b']);
-      });
+      expect(await store.list(scanEveryRecord())).toSucceedAndSatisfy(
+        (listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(listed.map((r) => r.envelope.id).sort()).toEqual(['doc-a', 'doc-b']);
+        }
+      );
       // The next put must get seq 8 (highest persisted was 7).
       expect(await store.put(makeRecord({ id: 'doc-c' }))).toSucceedAndSatisfy(
         (put: IMemoryRecord<unknown>) => {
@@ -501,7 +504,7 @@ describe('FileTreeMemoryStore', () => {
       await store.put(makeRecord({ id: 'a', body: 'a', tags: ['t1'] }));
       await store.put(makeRecord({ id: 'b', body: 'b', tags: ['t2'] }));
 
-      expect(await store.list()).toSucceedAndSatisfy((r) => expect(r).toHaveLength(2));
+      expect(await store.list(scanEveryRecord())).toSucceedAndSatisfy((r) => expect(r).toHaveLength(2));
       expect(await store.list({ scope: 'knowledge' as MemoryScopeKey })).toSucceedAndSatisfy((r) =>
         expect(r).toHaveLength(2)
       );
@@ -528,7 +531,7 @@ describe('FileTreeMemoryStore', () => {
       await store.put(makeRecord({ id: 'doomed', body: 'x' }));
       expect(await store.delete(knowledgeKind, 'doomed' as EntityId)).toSucceedWith('doomed' as MemoryId);
       expect(await store.get(knowledgeKind, 'doomed' as EntityId)).toSucceedWith(undefined);
-      expect(await store.list()).toSucceedAndSatisfy((r) => expect(r).toHaveLength(0));
+      expect(await store.list(scanEveryRecord())).toSucceedAndSatisfy((r) => expect(r).toHaveLength(0));
     });
 
     test('fails when the record does not exist', async () => {
@@ -553,7 +556,7 @@ describe('FileTreeMemoryStore', () => {
         return seq;
       });
       expect([...seqs].sort((a, b) => a - b)).toEqual([1, 2, 3]);
-      expect(await store.list()).toSucceedAndSatisfy((r) => expect(r).toHaveLength(3));
+      expect(await store.list(scanEveryRecord())).toSucceedAndSatisfy((r) => expect(r).toHaveLength(3));
     });
   });
 

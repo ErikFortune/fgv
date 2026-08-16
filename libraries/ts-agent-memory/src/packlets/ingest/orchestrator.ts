@@ -24,7 +24,7 @@ import {
   isVersionCurrent
 } from '../types';
 import { IBodyConverterRegistry } from '../converters';
-import { IMemoryStore } from '../store';
+import { IMemoryStore, scanEveryRecord } from '../store';
 import { IVectorIndex, MemoryEmbedder } from '../vector';
 import { ICycleGuardEdge, assertNoCycles } from './cycleGuard';
 import {
@@ -277,7 +277,20 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
   ): Promise<Result<IIngestItemResult>> {
     // Snapshot the store once; stage-4 resolution and the cycle guard reason over
     // the pre-ingest state.
-    const snapshotResult: Result<ReadonlyArray<IMemoryRecord<unknown>>> = await this._store.list();
+    //
+    // DECLARED, not optimized. This reads every body in the vault on EVERY
+    // ingested item, and `scanEveryRecord()` is how the store now makes a caller
+    // say so out loud. Most of what the snapshot is used for downstream — edge
+    // target existence, the cycle guard's link walk, scoped-address keying — is
+    // envelope-only work that `listEntries()` would serve without reading a
+    // single file; only stage-4 layer-1's exact `{ kind, body }` match needs
+    // bodies, and it needs them for candidates rather than for the whole vault.
+    // Converting this is its own stream (`agent-memory-ingest-snapshot`), because
+    // it is on the write path with its own risk surface. Until then the cost is
+    // at least visible and greppable rather than implied.
+    const snapshotResult: Result<ReadonlyArray<IMemoryRecord<unknown>>> = await this._store.list(
+      scanEveryRecord()
+    );
     if (snapshotResult.isFailure()) {
       return fail(`ingest '${item.id}': failed to snapshot store: ${snapshotResult.message}`);
     }
