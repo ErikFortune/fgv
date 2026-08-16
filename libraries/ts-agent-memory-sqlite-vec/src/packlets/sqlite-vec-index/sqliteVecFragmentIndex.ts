@@ -369,14 +369,13 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     return succeedWithDetail(report());
   }
 
-  /** Empty the table, tolerating a table that does not exist yet. */
   /**
    * **Empties the rows; does NOT release the table's declared dimension.** That
    * is a `vec0` constraint rather than a choice — the dimension is schema, and
    * there is no `ALTER TABLE` for it — so a rebuild at a new dimension fails
    * here where it would succeed on the in-memory sibling, which forgets its
    * dimension on reset. Changing dimension needs a drop-and-re-index; see the
-   * note on `IVectorIndex.rebuild`.
+   * note on `IVectorIndex.rebuild`. Tolerates a table that does not exist yet.
    */
   private _clear(): Result<true> {
     if (this._stmts === undefined) {

@@ -263,13 +263,6 @@ export class SqliteVecVectorIndex implements IVectorIndex {
   }
 
   /**
-   * Empty the table. Deliberately does NOT drop it or forget the established
-   * dimension: the `vec0` table's dimension is fixed at creation and a re-embed at
-   * a different dimension needs a drop-and-re-index, which is a consumer decision
-   * (see the package README on `vec0` schema changes), not something a rebuild
-   * should do silently.
-   */
-  /**
    * **Empties the rows; does NOT release the table's declared dimension.** That
    * is a `vec0` constraint rather than a choice — the dimension is schema, and
    * there is no `ALTER TABLE` for it — so a rebuild at a new dimension fails

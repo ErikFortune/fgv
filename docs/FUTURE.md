@@ -53,6 +53,35 @@ under that condition would be guessing.
 
 ---
 
+## A `vec0` rebuild at a new dimension fails with a raw SQLite error instead of an actionable one
+
+Raised by the CodeRabbit pass on #633 and **filed rather than fixed**, because it is a message-quality
+improvement rather than a correctness one and #633 was already large.
+
+**The behaviour today.** `SqliteVecVectorIndex._clear` / `SqliteVecFragmentIndex._clear` empty the rows
+but cannot release the table's declared dimension — it is `vec0` schema and there is no `ALTER TABLE`.
+The in-memory siblings forget their dimension on reset. So a `rebuild` with a different-dimension
+embedder **succeeds in memory and fails on SQLite**, which is the one place the two shipped
+implementations of these contracts genuinely diverge. Both `rebuild` contracts and both `_clear`s now
+say so. It does fail loudly — `add` is capture-wrapped, so the column-width mismatch surfaces as a
+`Failure` and the default `onRecordError: 'fail'` aborts — but the message is SQLite's, not ours, and
+it does not name the remedy.
+
+**The proposed improvement, and the distinction that makes it work.** Check at **`rebuild`** time, not
+at `create`: at `create` there is no dimension to compare against when the table does not yet exist,
+but at `rebuild` the embedder's **first returned vector reveals the new dimension before any row is
+written**. Comparing it to the established `_dimension` there and failing with a message naming the
+drop-and-re-index remedy converts a documented footgun into an enforced one. That framing is
+CodeRabbit's and is better than the version this stream had considered.
+
+**Cost is embedding time, never data** — vectors are derived and the vault records remain
+authoritative. Applies to both index classes.
+
+**Trigger**: the first consumer to change embedding model or dimension against a persistent index —
+or any report of a rebuild failing with an opaque `vec0` error.
+
+---
+
 ## `reconcile` reports no progress, and `coverage` cannot split a shortfall into declined vs failed
 
 Both deferred by `agent-memory-derived-state-reconciliation` (2026-08-15) as its design's OQ-1 and
