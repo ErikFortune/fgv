@@ -15,6 +15,17 @@ import {
 } from '../vector';
 
 /**
+ * What a repair-path re-embed established: how many vectors/fragments were
+ * written, and — record lane only — the reference the index returned, which is
+ * what the store stamps onto the envelope.
+ */
+export interface IReembedOutcome {
+  readonly count: number;
+  /** The index-supplied reference. Empty on the fragment lane, which has none. */
+  readonly ref: string;
+}
+
+/**
  * The internal outcome of record-level embed-on-write: the record to persist,
  * plus — only when the embedder declined a record that already carried an
  * `embeddingRef` — the index entry that reference superseded.
@@ -140,6 +151,95 @@ export class VectorMaintenance {
   public async removeAll(target: IEdgeTarget): Promise<void> {
     await this._removeVectorBestEffort(target);
     await this._removeFragmentsBestEffort(target);
+  }
+
+  /**
+   * The wired record-vector index, or `undefined`. Read-only, and exposed solely
+   * so the store's {@link IMemoryStore.coverage} can report an index-side count
+   * without a second copy of the wiring — absent here IS the "lane not wired"
+   * answer that coverage reports as `undefined` rather than as zero.
+   */
+  public get vectorIndex(): IVectorIndex | undefined {
+    return this._vectorIndex;
+  }
+
+  /** The wired fragment index, or `undefined`. See {@link VectorMaintenance.vectorIndex}. */
+  public get fragmentIndex(): IFragmentVectorIndex | undefined {
+    return this._fragmentIndex;
+  }
+
+  /**
+   * The wired record embedder, or `undefined`. Exposed alongside the index
+   * because a lane is only usable when BOTH halves are present — an index with
+   * no embedder is a legal store whose writes simply do not embed, and a repair
+   * has to say so rather than failing every record.
+   */
+  public get embedder(): MemoryEmbedder | undefined {
+    return this._embed;
+  }
+
+  /** The wired fragment embedder, or `undefined`. See {@link VectorMaintenance.embedder}. */
+  public get fragmentEmbedder(): FragmentEmbedder | undefined {
+    return this._fragmentEmbedder;
+  }
+
+  /**
+   * Re-embed one record into the record-vector index — the repair path.
+   *
+   * @remarks
+   * Distinct from {@link VectorMaintenance.embedOnWrite} in the one way that
+   * matters: **this is not best-effort.** Embed-on-write swallows a failure
+   * because a vault record is the source of truth and a write must not be
+   * rejected over a derived artifact; a repair was *asked for* by a caller who
+   * wants to know whether it worked, so a failure is returned.
+   *
+   * `undefined` means the embedder declined — intentionally not embedded, which
+   * is neither a repair nor a fault.
+   */
+  public async reembedRecord(
+    record: IMemoryRecord<unknown>,
+    target: IEdgeTarget
+  ): Promise<Result<IReembedOutcome | undefined>> {
+    if (this._vectorIndex === undefined || this._embed === undefined) {
+      return fail('the record-vector lane is not wired');
+    }
+    const index: IVectorIndex = this._vectorIndex;
+    const embedded: Result<Float32Array | undefined> = await this._embed(record);
+    if (embedded.isFailure()) {
+      return fail(embedded.message);
+    }
+    if (embedded.value === undefined) {
+      return succeed(undefined);
+    }
+    // `add`'s return value IS the reference the store stamps — synthesizing one
+    // here would diverge from the write path for any index whose reference is
+    // not the scoped key.
+    return (await index.add(target, embedded.value)).onSuccess((ref) => succeed({ count: 1, ref }));
+  }
+
+  /**
+   * Re-embed one record's fragments — the repair path, returning the fragment
+   * count written. See {@link VectorMaintenance.reembedRecord} for why this is
+   * not best-effort. An empty fragment array is this lane's decline and reports
+   * `undefined`, though the whole-record-replace still runs so stale fragments
+   * are cleared.
+   */
+  public async reembedFragments(
+    record: IMemoryRecord<unknown>,
+    target: IEdgeTarget
+  ): Promise<Result<IReembedOutcome | undefined>> {
+    if (this._fragmentIndex === undefined || this._fragmentEmbedder === undefined) {
+      return fail('the fragment lane is not wired');
+    }
+    const index: IFragmentVectorIndex = this._fragmentIndex;
+    const embedded: Result<ReadonlyArray<IEmbeddedFragment>> = await this._fragmentEmbedder(record);
+    if (embedded.isFailure()) {
+      return fail(embedded.message);
+    }
+    return (await index.addFragments(target, embedded.value)).onSuccess((n) =>
+      // The fragment lane has no envelope reference, so `ref` is empty and unused.
+      succeed(n === 0 ? undefined : { count: n, ref: '' })
+    );
   }
 
   /**

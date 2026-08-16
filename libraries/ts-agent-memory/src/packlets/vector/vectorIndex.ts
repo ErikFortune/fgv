@@ -129,6 +129,33 @@ export interface IVectorIndex {
   query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
 
   /**
+   * Whether this index holds a vector for the scope-qualified `target`.
+   *
+   * @remarks
+   * On the contract because it is what makes a **targeted** repair possible, and
+   * the reason is sharper than convenience: the only other way to ask *"is this
+   * record indexed?"* is {@link IMemoryEnvelope.embeddingRef} — and that field is
+   * the store's **belief**, which is wrong in precisely the situation a repair
+   * runs in. A reopened vault backed by a fresh in-memory index carries an
+   * `embeddingRef` on every record while holding no vectors at all. **A repair
+   * that trusts the field it is repairing is not a repair.**
+   *
+   * It also makes a case *detectable* that an `embeddingRef`-only check cannot
+   * see at all: the index holds the vector but the envelope lost its reference
+   * (a failure swallowed after the vector was committed). That record needs its
+   * reference restamped and **no embedder call**, which is only knowable by
+   * asking the index.
+   *
+   * `Promise<Result<boolean>>`, unlike the synchronous {@link IVectorIndex.size},
+   * because the two are not the same kind of accessor and should not be made to
+   * look alike: `size` is a count both shipped implementations hold or can read
+   * without a failure mode, while `has` on a durable backend is a keyed query
+   * that can fail. Idempotent and side-effect-free; an absent target is
+   * `succeed(false)`, never a failure.
+   */
+  has(target: IEdgeTarget): Promise<Result<boolean>>;
+
+  /**
    * The number of vectors currently held.
    *
    * @remarks
@@ -280,6 +307,110 @@ export interface IFragmentVectorIndex {
     topK: number,
     maxPerRecord?: number
   ): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+
+  /**
+   * Whether this index holds **any** fragment for the scope-qualified `target`.
+   *
+   * @remarks
+   * The record-granular rationale on {@link IVectorIndex.has} applies verbatim —
+   * a repair that trusts `embeddingRef` is not a repair. Note the granularity
+   * this deliberately does **not** offer: it answers *"is this record
+   * represented?"*, not *"is this particular fragment present?"*. Fragment
+   * writes are whole-record-replace, so a record is either represented by the
+   * current fragment set or not represented at all; a per-fragment membership
+   * check would imply an incremental write path that does not exist.
+   */
+  has(target: IEdgeTarget): Promise<Result<boolean>>;
+
+  /**
+   * The number of **records** with at least one fragment held.
+   *
+   * @remarks
+   * Deliberately **not** named `size`, unlike {@link IVectorIndex.size}. This
+   * index is one-to-many, so `size` has two defensible readings and a reader
+   * arriving from the record-granular sibling — where `size` counts vectors —
+   * would take the wrong one silently. Two explicitly-named counts cost one extra
+   * member and cannot be misread.
+   */
+  readonly recordCount: number;
+
+  /**
+   * The total number of **fragments** held across all records.
+   *
+   * @remarks
+   * The fan-out, and the number a caller actually watches: fragments-per-record
+   * is what makes a fragment reconcile expensive, and neither `recordCount` nor a
+   * record-granular count answers it.
+   */
+  readonly fragmentCount: number;
+
+  /**
+   * Re-embed every record from `source` and rebuild the fragment index from
+   * scratch — the **backfill / reconcile** operation, sibling to
+   * {@link IVectorIndex.rebuild}.
+   *
+   * @remarks
+   * On the contract for exactly the reasons its record-granular sibling is, and
+   * the fragment lane was worse off: `rebuild` existed only on the bundled
+   * in-memory class, and the durable `SqliteVecFragmentIndex` had **no backfill
+   * at all**, so a persistent fragment index could not be reconciled by any
+   * route — contractual or concrete. Records written while it was unwired, a
+   * re-embed after a segmenter change, and reconciliation after a swallowed
+   * fragment-embed failure were all unreachable.
+   *
+   * Semantics are kept observably identical to the record-granular sibling so a
+   * caller who has learned one has learned both: a `source.list()` failure is
+   * fatal and carries no detail (nothing was attempted, and the existing index is
+   * untouched); a genuine rebuild then resets first; `onRecordError` defaults to
+   * `'fail'`; and a failure carries whatever the attempt had established on the
+   * `detail`.
+   */
+  rebuild(
+    source: IMemoryRecordSource,
+    embed: FragmentEmbedder,
+    options?: IVectorRebuildOptions
+  ): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>>;
+}
+
+/**
+ * What an {@link IFragmentVectorIndex.rebuild} established, resolved by
+ * {@link Kind} — the fragment-granular sibling of {@link IVectorRebuildReport}.
+ *
+ * @remarks
+ * The rule stated on {@link IVectorRebuildReport} applies here verbatim and is
+ * not re-opened: **every count is resolved by kind unless there is a stated
+ * reason it cannot be**, `excluded` is optional because only the source can know
+ * it, and the report is carried on a failure as well as a success.
+ *
+ * The one member with no record-granular analogue is
+ * {@link IFragmentVectorRebuildReport.fragments | fragments} — the fan-out. It is
+ * the number that distinguishes this lane: `indexed: 40` says forty records are
+ * represented and says nothing about whether that cost forty embedding round
+ * trips or four thousand, which is the difference between a reconcile that
+ * finishes in a second and one that blocks a request past thirty.
+ *
+ * A **declined** record is one whose {@link FragmentEmbedder} returned an empty
+ * array — the fragment lane's way of saying *intentionally not embedded*. Note
+ * this is a different mechanism from a {@link MemoryEmbedder} decline: an empty
+ * array still performs a real whole-record-replace (which is what clears any
+ * stale fragments), where a record-granular decline skips the index entirely.
+ * @public
+ */
+export interface IFragmentVectorRebuildReport {
+  /** Records that ended with at least one fragment held, per kind. */
+  readonly indexed: ReadonlyMap<Kind, number>;
+  /** Fragments held, per kind — the fan-out `indexed` cannot express. */
+  readonly fragments: ReadonlyMap<Kind, number>;
+  /** Records whose embedder intentionally produced no fragments, per kind. */
+  readonly declined: ReadonlyMap<Kind, number>;
+  /**
+   * Records the source filtered out before the rebuild saw them, per kind.
+   * `undefined` means *this source does not report exclusions*; an empty map
+   * means *it does, and excluded nothing*.
+   */
+  readonly excluded?: ReadonlyMap<Kind, number>;
+  /** Records that failed, per record, with the error — a fault, never a decline. */
+  readonly skipped: ReadonlyArray<ISkippedVectorRecord>;
 }
 
 /**

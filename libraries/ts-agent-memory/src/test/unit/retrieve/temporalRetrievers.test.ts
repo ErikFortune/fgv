@@ -124,6 +124,41 @@ function buildIndex(): MemoryIndex {
 describe('temporal retrievers', () => {
   const index: MemoryIndex = buildIndex();
 
+  // REGRESSION, one per retriever. `query.filter` is applied AFTER materialization
+  // — `indexedRecordMatchesQuery` is handed an envelope and structurally cannot
+  // apply it — so a retriever that pre-filters and then materializes on its own
+  // silently ignores the predicate. That shipped once. Testing the shared
+  // `materializePage` in isolation does NOT catch a retriever that stops calling
+  // it: both it and the old helpers stay exported and covered. Only a retrieve()
+  // that asserts the predicate reached the result does.
+  describe('query.filter reaches every temporal retriever', () => {
+    const nothing = (): boolean => false;
+
+    test('CurrentValidRetriever applies it', async () => {
+      const r = CurrentValidRetriever.create(backed(index)).orThrow();
+      expect(await r.retrieve({})).toSucceedAndSatisfy((all) => {
+        expect(all.length).toBeGreaterThan(0);
+      });
+      expect(await r.retrieve({ filter: nothing })).toSucceedWith([]);
+    });
+
+    test('AsOfRetriever applies it', async () => {
+      const r = AsOfRetriever.create(backed(index)).orThrow();
+      expect(await r.retrieve({ asOf: 250 })).toSucceedAndSatisfy((all) => {
+        expect(all.length).toBeGreaterThan(0);
+      });
+      expect(await r.retrieve({ asOf: 250, filter: nothing })).toSucceedWith([]);
+    });
+
+    test('HistoryRetriever applies it', async () => {
+      const r = HistoryRetriever.create(backed(index)).orThrow();
+      expect(await r.retrieve({})).toSucceedAndSatisfy((all) => {
+        expect(all.length).toBeGreaterThan(0);
+      });
+      expect(await r.retrieve({ filter: nothing })).toSucceedWith([]);
+    });
+  });
+
   describe('CurrentValidRetriever', () => {
     const retriever = CurrentValidRetriever.create(backed(index)).orThrow();
 

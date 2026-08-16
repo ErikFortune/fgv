@@ -174,6 +174,45 @@ describe('SqliteVecVectorIndex', () => {
     });
   });
 
+  describe('has', () => {
+    test('answers false before any add has created the table', async () => {
+      const index = await makeIndex();
+      expect(await index.has(target('knowledge', 'a'))).toSucceedWith(false);
+    });
+
+    test('answers true for a held target, false after removal', async () => {
+      const index = await makeIndex();
+      const t = target('knowledge', 'a');
+      (await index.add(t, Float32Array.from([1, 0]))).orThrow();
+      expect(await index.has(t)).toSucceedWith(true);
+      (await index.remove(t)).orThrow();
+      expect(await index.has(t)).toSucceedWith(false);
+    });
+
+    test('keys on scope as well as id', async () => {
+      const index = await makeIndex();
+      (await index.add(target('conv-a', 'turn-3'), Float32Array.from([1, 0]))).orThrow();
+      expect(await index.has(target('conv-a', 'turn-3'))).toSucceedWith(true);
+      expect(await index.has(target('conv-b', 'turn-3'))).toSucceedWith(false);
+    });
+
+    test('survives a reopen — the point of a durable index', async () => {
+      // `has` reading true across a restart is what lets a repair skip a record
+      // without re-embedding it, which is the whole reason it is on the contract.
+      const index = await makeIndex();
+      (await index.add(target('knowledge', 'a'), Float32Array.from([1, 0]))).orThrow();
+      const reopened = (await SqliteVecVectorIndex.create({ database: db })).orThrow();
+      expect(await reopened.has(target('knowledge', 'a'))).toSucceedWith(true);
+    });
+
+    test('fails rather than throwing when the connection is closed', async () => {
+      const index = await makeIndex();
+      (await index.add(target('knowledge', 'a'), Float32Array.from([1, 0]))).orThrow();
+      db.close();
+      expect(await index.has(target('knowledge', 'a'))).toFailWith(/cannot check 'knowledge/i);
+    });
+  });
+
   describe('remove', () => {
     test('removes an entry and shrinks size, returning the target', async () => {
       const index = await makeIndex();

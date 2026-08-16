@@ -8,7 +8,6 @@ import { load as loadSqliteVec } from 'sqlite-vec';
 import {
   DetailedResult,
   Result,
-  captureAsyncResult,
   captureResult,
   fail,
   failWithDetail,
@@ -30,42 +29,8 @@ import {
   MemoryScopeKey,
   edgeTargetKey
 } from '@fgv/ts-agent-memory';
+import { invokeHook, tally, withRollbackNote } from './rebuildHelpers';
 import { ISqliteVecVectorIndexCreateParams } from './model';
-
-/**
- * Invoke a consumer-supplied hook that already returns a `Result`, converting a
- * synchronous throw or a promise rejection into a `Failure` rather than letting
- * it escape. `captureAsyncResult` wraps the hook's own `Result`, so the outcome
- * is flattened back to one level.
- *
- * @remarks
- * This is `@fgv/ts-utils`' own `_invokeDeferred` shape (see `mapResultsAsync`),
- * which is `@internal` there and so cannot be imported. `@fgv/ts-agent-memory`
- * carries an identical private copy for the in-memory index. Exporting a single
- * `AsyncDeferredResult`-invoking primitive from `ts-utils` is the right home and
- * is recorded in `docs/TECH_DEBT.md`; duplicating three lines twice is the
- * cheaper thing to do from inside this stream than widening it to a foundational
- * library.
- */
-async function invokeHook<T>(hook: () => Promise<Result<T>>): Promise<Result<T>> {
-  return (await captureAsyncResult(hook)).onSuccess((inner) => inner);
-}
-
-/**
- * Compose the failure that aborted a rebuild with the outcome of the rollback
- * that followed it. A rollback that ALSO fails is worth saying out loud: the
- * `'fail'` path promises an empty index, and a caller that retries against a
- * table which is neither the old index nor empty is working from a state the
- * contract never described.
- */
-function withRollbackNote(error: string, rollback: Result<true>): string {
-  return rollback.isFailure() ? `${error} (rollback also failed: ${rollback.message})` : error;
-}
-
-/** Increment `kind`'s tally by one — see the identical local in the in-memory index. */
-function tally(counts: Map<Kind, number>, kind: Kind): void {
-  counts.set(kind, (counts.get(kind) ?? 0) + 1);
-}
 
 /** Default name for the `vec0` virtual table. */
 const DEFAULT_TABLE_NAME: string = 'memory_vectors';
@@ -183,6 +148,21 @@ export class SqliteVecVectorIndex implements IVectorIndex {
         this._stmts.replace(key, SqliteVecVectorIndex._toBlob(vector));
         return key;
       }).withErrorFormat((e) => `vector index: cannot add '${key}': ${e}`)
+    );
+  }
+
+  /** {@inheritDoc IVectorIndex.has} */
+  public has(target: IEdgeTarget): Promise<Result<boolean>> {
+    return Promise.resolve(
+      captureResult(() => {
+        // Before any add has created the table there is nothing held, which is a
+        // truthful `false` rather than an error — same posture as `remove`'s
+        // idempotence and `size`'s zero.
+        if (this._stmts === undefined) {
+          return false;
+        }
+        return this._stmts.has.get(edgeTargetKey(target)) !== undefined;
+      }).withErrorFormat((e) => `vector index: cannot check '${edgeTargetKey(target)}': ${e}`)
     );
   }
 
@@ -360,7 +340,10 @@ export class SqliteVecVectorIndex implements IVectorIndex {
       query: this._db.prepare(
         `SELECT target_key, distance FROM "${this._table}" WHERE embedding MATCH ? AND k = ?`
       ),
-      count: this._db.prepare(`SELECT count(*) AS c FROM "${this._table}"`)
+      count: this._db.prepare(`SELECT count(*) AS c FROM "${this._table}"`),
+      // `LIMIT 1` rather than a count: membership needs existence, not cardinality,
+      // and vec0 can stop at the first row.
+      has: this._db.prepare(`SELECT 1 FROM "${this._table}" WHERE target_key = ? LIMIT 1`)
     };
   }
 
@@ -404,4 +387,5 @@ interface ISqliteVecStatements {
   readonly replace: (key: string, blob: Uint8Array) => void;
   readonly query: BetterSqlite3.Statement;
   readonly count: BetterSqlite3.Statement;
+  readonly has: BetterSqlite3.Statement;
 }

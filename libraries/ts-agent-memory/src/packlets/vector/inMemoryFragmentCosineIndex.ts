@@ -3,16 +3,20 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
-import { IEdgeTarget, edgeTargetKey } from '../types';
+import { DetailedResult, Result, fail, failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
+import { IEdgeTarget, Kind, edgeTargetKey } from '../types';
 import {
   FragmentEmbedder,
   IEmbeddedFragment,
   IFragmentVectorIndex,
+  IFragmentVectorRebuildReport,
   IMemoryRecordListing,
   IMemoryRecordSource,
-  IVectorQueryHit
+  ISkippedVectorRecord,
+  IVectorQueryHit,
+  IVectorRebuildOptions
 } from './vectorIndex';
+import { invokeHook, tally } from './rebuildHelpers';
 
 /**
  * The identity fields a fragment was added with, already in query-hit shape: a field
@@ -159,6 +163,11 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
     return Promise.resolve(succeed(stored.length));
   }
 
+  /** {@inheritDoc IFragmentVectorIndex.has} */
+  public has(target: IEdgeTarget): Promise<Result<boolean>> {
+    return Promise.resolve(succeed(this._records.has(edgeTargetKey(target))));
+  }
+
   /** {@inheritDoc IFragmentVectorIndex.remove} */
   public remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>> {
     this._records.delete(edgeTargetKey(target));
@@ -239,38 +248,80 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
    * @param source - The scope-qualified record source to re-embed.
    * @param embed - The fragment embedder applied to each record.
    */
-  public async rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder): Promise<Result<number>> {
-    const listed: Result<IMemoryRecordListing> = await source.list();
+  /** {@inheritDoc IFragmentVectorIndex.rebuild} */
+  public async rebuild(
+    source: IMemoryRecordSource,
+    embed: FragmentEmbedder,
+    options?: IVectorRebuildOptions
+  ): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>> {
+    const lenient: boolean = (options?.onRecordError ?? 'fail') === 'skip';
+    const listed: Result<IMemoryRecordListing> = await invokeHook(() => source.list());
     if (listed.isFailure()) {
       // Deliberately BEFORE the reset, matching the record-granular sibling: a
       // failed list is no evidence about the fragments already held, and nothing
       // has been re-embedded yet, so there is no half-rebuilt state to guard
       // against. Discarding a healthy index over a transient read error is data
-      // loss, not caution. See `InMemoryCosineIndex.rebuild`, where the same
-      // ordering was corrected first.
-      return fail(`fragment index rebuild: failed to list records: ${listed.message}`);
+      // loss, not caution. No detail either — an all-zero report would describe
+      // an index this call never touched.
+      return failWithDetail(`fragment index rebuild: failed to list records: ${listed.message}`);
     }
     // From here a rebuild is genuinely starting, so clear. A mid-loop failure
-    // still resets, which is what keeps the all-or-nothing contract honest.
+    // under `'fail'` still resets, which is what keeps that contract honest.
     this._reset();
-    // `listed.value.excluded` is deliberately dropped: this path returns a bare
-    // count, so there is nowhere honest to report it. It arrives with the fragment
-    // path's own report, if and when that contract gains one.
+    const indexed: Map<Kind, number> = new Map<Kind, number>();
+    const fragments: Map<Kind, number> = new Map<Kind, number>();
+    const declined: Map<Kind, number> = new Map<Kind, number>();
+    const skipped: ISkippedVectorRecord[] = [];
+    // Only the source knows what it filtered, so an absent `excluded` propagates
+    // as absent rather than becoming an empty map. Before this contract existed
+    // the fragment path dropped this tally on the floor, having nowhere honest to
+    // put it.
+    const report = (): IFragmentVectorRebuildReport => ({
+      indexed,
+      fragments,
+      declined,
+      excluded: listed.value.excluded,
+      skipped
+    });
     for (const scoped of listed.value.records) {
-      const embedded: Result<ReadonlyArray<IEmbeddedFragment>> = await embed(scoped.record);
+      const kind: Kind = scoped.record.envelope.kind;
+      // Consumer-supplied, so a throw or rejection is captured rather than
+      // escaping mid-loop and leaving the index half-populated.
+      const embedded: Result<ReadonlyArray<IEmbeddedFragment>> = await invokeHook(() => embed(scoped.record));
       if (embedded.isFailure()) {
-        this._reset();
-        return fail(
-          `fragment index rebuild: embedding '${edgeTargetKey(scoped.target)}' failed: ${embedded.message}`
-        );
+        const error: string = `fragment index rebuild: embedding '${edgeTargetKey(scoped.target)}' failed: ${
+          embedded.message
+        }`;
+        if (!lenient) {
+          this._reset();
+          return failWithDetail(error, report());
+        }
+        skipped.push({ target: scoped.target, error });
+        continue;
       }
+      // An empty array is this lane's decline. It still performs a real
+      // whole-record-replace — which is what clears any stale fragments — so it
+      // is written, then counted as declined rather than indexed.
       const added: Result<number> = await this.addFragments(scoped.target, embedded.value);
       if (added.isFailure()) {
-        this._reset();
-        return fail(`fragment index rebuild: ${added.message}`);
+        const error: string = `fragment index rebuild: ${added.message}`;
+        if (!lenient) {
+          this._reset();
+          return failWithDetail(error, report());
+        }
+        skipped.push({ target: scoped.target, error });
+        continue;
       }
+      if (added.value === 0) {
+        tally(declined, kind);
+        continue;
+      }
+      // Tallied per successful add rather than read back off the counts at the
+      // end, so the per-kind buckets line up with their siblings.
+      tally(indexed, kind);
+      tally(fragments, kind, added.value);
     }
-    return succeed(this.fragmentCount);
+    return succeedWithDetail(report());
   }
 
   /** Empty the index and forget the established dimension. */

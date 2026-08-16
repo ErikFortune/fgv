@@ -75,6 +75,7 @@ function fakeIndex(overrides: Partial<IVectorIndex>): IVectorIndex {
     add: overrides.add ?? (async (): Promise<Result<string>> => succeed('k')),
     remove: overrides.remove ?? (async (t: IEdgeTarget): Promise<Result<IEdgeTarget>> => succeed(t)),
     query: overrides.query ?? (async (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> => succeed([])),
+    has: overrides.has ?? (async (): Promise<Result<boolean>> => succeed(false)),
     size: overrides.size ?? 0,
     // A list failure must leave an already-populated index intact, so the
     // fake reports nothing rather than pretending to have rebuilt anything.

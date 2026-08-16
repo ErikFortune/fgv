@@ -260,6 +260,33 @@ describe('InMemoryCosineIndex', () => {
     });
   });
 
+  describe('has', () => {
+    test('answers true for a held target and false for an absent one', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const t = target('knowledge', 'a');
+      expect(await index.has(t)).toSucceedWith(false);
+      (await index.add(t, Float32Array.from([1, 0]))).orThrow();
+      expect(await index.has(t)).toSucceedWith(true);
+    });
+
+    test('keys on scope as well as id', async () => {
+      // The same reason `add` keys on the scoped address: two records sharing a
+      // filename stem across scopes must not answer for each other.
+      const index = InMemoryCosineIndex.create().orThrow();
+      (await index.add(target('conv-a', 'turn-3'), Float32Array.from([1, 0]))).orThrow();
+      expect(await index.has(target('conv-a', 'turn-3'))).toSucceedWith(true);
+      expect(await index.has(target('conv-b', 'turn-3'))).toSucceedWith(false);
+    });
+
+    test('reflects a remove', async () => {
+      const index = InMemoryCosineIndex.create().orThrow();
+      const t = target('knowledge', 'a');
+      (await index.add(t, Float32Array.from([1, 0]))).orThrow();
+      (await index.remove(t)).orThrow();
+      expect(await index.has(t)).toSucceedWith(false);
+    });
+  });
+
   describe('rebuild', () => {
     const embed = (r: IMemoryRecord<unknown>): Promise<Result<Float32Array>> => {
       // Deterministic: encode the id's first char code into a 2-vector.

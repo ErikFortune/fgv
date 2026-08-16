@@ -95,6 +95,16 @@ function ids(records: ReadonlyArray<IMemoryRecord<unknown>>): string[] {
 }
 
 describe('LinkTraversalRetriever', () => {
+  // REGRESSION — see the note in temporalRetrievers.test.ts. Testing
+  // `materializePage` directly does not catch a retriever that stops calling it.
+  test('query.filter reaches LinkTraversalRetriever', async () => {
+    const index = buildIndex([{ id: 'a', links: ['b'] }, { id: 'b' }]);
+    const r = LinkTraversalRetriever.create(backed(index)).orThrow();
+    expect(await r.retrieve({ linkedFrom: seed('a') })).toSucceedAndSatisfy((all) => {
+      expect(all.length).toBeGreaterThan(0);
+    });
+    expect(await r.retrieve({ linkedFrom: seed('a'), filter: () => false })).toSucceedWith([]);
+  });
   test('reports the link-traversal capability', () => {
     const index = buildIndex([]);
     const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();

@@ -3,15 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {
-  DetailedResult,
-  Result,
-  captureAsyncResult,
-  fail,
-  failWithDetail,
-  succeed,
-  succeedWithDetail
-} from '@fgv/ts-utils';
+import { DetailedResult, Result, fail, failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import { IEdgeTarget, Kind, edgeTargetKey } from '../types';
 import {
   IMemoryRecordListing,
@@ -23,27 +15,7 @@ import {
   IVectorRebuildReport,
   MemoryEmbedder
 } from './vectorIndex';
-
-/**
- * Invoke a consumer-supplied hook that already returns a `Result`, converting a
- * synchronous throw or a promise rejection into a `Failure` rather than letting
- * it escape. `captureAsyncResult` wraps the hook's own `Result`, so the outcome
- * is flattened back to one level.
- */
-async function invokeHook<T>(hook: () => Promise<Result<T>>): Promise<Result<T>> {
-  return (await captureAsyncResult(hook)).onSuccess((inner) => inner);
-}
-
-/**
- * Increment `kind`'s tally by one. Both shipped implementations accumulate their
- * per-kind counts this way; it is a three-line local rather than an exported
- * helper because publishing a mutation primitive on the package surface would buy
- * nothing a caller could not write, and would invite treating the accumulation
- * shape as part of the contract when only the report is.
- */
-function tally(counts: Map<Kind, number>, kind: Kind): void {
-  counts.set(kind, (counts.get(kind) ?? 0) + 1);
-}
+import { invokeHook, tally } from './rebuildHelpers';
 
 /** One stored embedding: the scope-qualified address plus its vector. */
 interface IStoredVector {
@@ -120,6 +92,11 @@ export class InMemoryCosineIndex implements IVectorIndex {
     // The in-memory index keys entries by the canonical scoped-target string, so
     // that key IS the entry reference.
     return Promise.resolve(succeed(key));
+  }
+
+  /** {@inheritDoc IVectorIndex.has} */
+  public has(target: IEdgeTarget): Promise<Result<boolean>> {
+    return Promise.resolve(succeed(this._vectors.has(edgeTargetKey(target))));
   }
 
   /** {@inheritDoc IVectorIndex.remove} */

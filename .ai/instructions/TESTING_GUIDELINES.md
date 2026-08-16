@@ -186,6 +186,35 @@ cd libraries/project-name && rushx coverage
 rushx test --test-path-pattern=filename.test
 ```
 
+### 100% coverage cannot see a predicate that is never called
+
+Coverage instruments **the code you have**. A caller that stops passing a value to a
+function it still calls changes behaviour while touching no line — every line stays
+covered, because every line still runs. This is not an exotic case; it is the ordinary
+consequence of moving a parameter, and it is invisible to the one gate this repo trusts
+most.
+
+Observed 2026-08-15 on `@fgv/ts-agent-memory`. A stream correctly moved `query.filter`
+out of the shared `indexedRecordMatchesQuery` pre-filter (which is handed an envelope,
+while the predicate takes a whole record) and re-applied it in `resolveQuery`. **Five
+retrievers call that pre-filter directly** and materialize on their own. They silently
+stopped applying the predicate and began returning records that had been excluded.
+Nothing failed. Every test passed. **Coverage was 100% throughout, before and after.**
+That surface had had a `code-reviewer` pass *and* an independent antagonist pass two
+days earlier; neither caught it, because neither was looking for a caller that had gone
+quiet.
+
+**Rule: when you move a behaviour out of a shared helper, enumerate the helper's callers
+and write one test per caller that pins the behaviour at *that* call site.** Not one test
+on the helper — the helper is fine. The tests that matter are the ones that fail when a
+single caller is reverted, so verify them that way: revert one call site, watch exactly
+that test go red, restore it. A regression test you have not seen fail is a guess.
+
+The same shape recurs whenever a *value* rather than a *line* carries the behaviour —
+an option that stops being threaded through, a flag defaulted at a new layer, a
+comparator no longer passed. Reach for the caller enumeration whenever a diff moves
+something across a function boundary rather than changing what a function does.
+
 ---
 
 ## Coverage Gap Resolution

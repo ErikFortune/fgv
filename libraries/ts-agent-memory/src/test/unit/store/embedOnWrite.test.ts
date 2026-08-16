@@ -38,7 +38,8 @@ import {
   TemporalIdentityCodec,
   TemporalVersionedPolicy,
   envelopeConverter,
-  scanEveryRecord
+  scanEveryRecord,
+  edgeTargetKey
 } from '../../../index';
 
 const knowledgeKind: Kind = 'knowledge' as Kind;
@@ -171,6 +172,11 @@ class SpyVectorIndex implements IVectorIndex {
   public query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
     return this._inner.query(vector, topK);
   }
+  public has(target: IEdgeTarget): Promise<Result<boolean>> {
+    this.calls.push(`has:${edgeTargetKey(target)}`);
+    return this._inner.has(target);
+  }
+
   public get size(): number {
     return this._inner.size;
   }

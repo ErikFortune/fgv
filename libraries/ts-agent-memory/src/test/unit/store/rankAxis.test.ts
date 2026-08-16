@@ -23,7 +23,8 @@ import {
   RecencyRetriever,
   TemporalIdentityCodec,
   TemporalVersionedPolicy,
-  parseMemoryFile
+  parseMemoryFile,
+  ReconcileReport
 } from '../../../index';
 
 const knowledgeKind: Kind = 'knowledge' as Kind;
@@ -370,7 +371,7 @@ describe('FileTreeMemoryStore rank axis', () => {
       });
     });
   });
-  describe('reconcileRank — the migration path', () => {
+  describe("reconcile(kind, 'rank') — the migration path", () => {
     /**
      * Seed a store with no projector wired, then reopen the SAME root with one.
      * This is the exact situation the consumer described: records already exist
@@ -404,7 +405,7 @@ describe('FileTreeMemoryStore rank axis', () => {
       // Corrupt the frontmatter id so it no longer agrees with the filename stem.
       file.setRawContents(file.getRawContents().orThrow().replace('id: doc-a', 'id: doc-b')).orThrow();
 
-      expect(await store.reconcileRank(knowledgeKind)).toFailWith(/does not match filename stem/i);
+      expect(await store.reconcile(knowledgeKind, 'rank')).toFailWith(/does not match filename stem/i);
     });
 
     test('carries an authored body through unconverted, normalizing only line endings', async () => {
@@ -427,7 +428,9 @@ describe('FileTreeMemoryStore rank axis', () => {
       expect(file.getRawContents().orThrow()).toContain('\r\n');
 
       const store = createStore({ root, rankProjectors: knowledgeProjectors }).orThrow();
-      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(1);
+      expect(await store.reconcile(knowledgeKind, 'rank')).toSucceedAndSatisfy((r: ReconcileReport) => {
+        expect(r.repaired).toBe(1);
+      });
 
       const after = persistedFile(root, 'crlf.md').getRawContents().orThrow();
       // The authored characters survive; the line endings are normalized.
@@ -460,7 +463,9 @@ describe('FileTreeMemoryStore rank axis', () => {
         }
       );
 
-      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(2);
+      expect(await store.reconcile(knowledgeKind, 'rank')).toSucceedAndSatisfy((r: ReconcileReport) => {
+        expect(r.repaired).toBe(2);
+      });
 
       const after = RecencyRetriever.create({
         index: await indexFromStore(store),
@@ -483,7 +488,9 @@ describe('FileTreeMemoryStore rank axis', () => {
 
       const beforeRec = await readBack('long');
       clockValue = 99999; // a reconcile that stamped `updated` would pick this up
-      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(2);
+      expect(await store.reconcile(knowledgeKind, 'rank')).toSucceedAndSatisfy((r: ReconcileReport) => {
+        expect(r.repaired).toBe(2);
+      });
       const afterRec = await readBack('long');
 
       expect(afterRec.envelope.rank).toBe(10);
@@ -510,23 +517,29 @@ describe('FileTreeMemoryStore rank axis', () => {
         clock
       }).orThrow();
 
-      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(1);
+      expect(await store.reconcile(knowledgeKind, 'rank')).toSucceedAndSatisfy((r: ReconcileReport) => {
+        expect(r.repaired).toBe(1);
+      });
       expect(observations.query({})).toHaveLength(0);
     });
 
     test('is idempotent — a second run changes nothing and reports 0', async () => {
       const { store } = await populatedThenProjectored();
-      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(2);
+      expect(await store.reconcile(knowledgeKind, 'rank')).toSucceedAndSatisfy((r: ReconcileReport) => {
+        expect(r.repaired).toBe(2);
+      });
       // The count is "records whose rank actually changed", so a converged store
       // reports 0 and writes no files. This is also why a partial failure is safe.
-      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(0);
+      expect(await store.reconcile(knowledgeKind, 'rank')).toSucceedAndSatisfy((r: ReconcileReport) => {
+        expect(r.repaired).toBe(0);
+      });
     });
 
     test('fails loudly for a kind with no projector, rather than reporting 0', async () => {
       const { store } = await populatedThenProjectored();
       // Reporting "0 reconciled" here would be indistinguishable from "already
       // consistent" — the exact ambiguity this whole lane exists to remove.
-      expect(await store.reconcileRank(plainKind)).toFailWith(
+      expect(await store.reconcile(plainKind, 'rank')).toFailWith(
         /no rank projector is registered for this kind/i
       );
     });
@@ -544,7 +557,9 @@ describe('FileTreeMemoryStore rank axis', () => {
           [plainKind, lengthProjector]
         ])
       }).orThrow();
-      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(1);
+      expect(await store.reconcile(knowledgeKind, 'rank')).toSucceedAndSatisfy((r: ReconcileReport) => {
+        expect(r.repaired).toBe(1);
+      });
 
       const plain = (
         await store.getById('knowledge' as MemoryScopeKey, 'p' as IMemoryRecord<unknown>['envelope']['id'])
@@ -577,8 +592,8 @@ describe('FileTreeMemoryStore rank axis', () => {
       }
       file.setRawContents('this file no longer has frontmatter').orThrow();
 
-      expect(await store.reconcileRank(knowledgeKind)).toFailWith(
-        /reconcileRank 'knowledge'.*'a'.*frontmatter/i
+      expect(await store.reconcile(knowledgeKind, 'rank')).toFailWith(
+        /reconcile 'knowledge' rank.*'a'.*frontmatter/i
       );
     });
 
@@ -595,7 +610,9 @@ describe('FileTreeMemoryStore rank axis', () => {
       }).orThrow();
       // Reused `_stampRank`, so the reconcile inherits the write path's staleness
       // contract: a throw CLEARS a now-unjustified rank rather than keeping it.
-      expect(await store.reconcileRank(knowledgeKind)).toSucceedWith(1);
+      expect(await store.reconcile(knowledgeKind, 'rank')).toSucceedAndSatisfy((r: ReconcileReport) => {
+        expect(r.repaired).toBe(1);
+      });
       const rec = (
         await store.getById('knowledge' as MemoryScopeKey, 'a' as IMemoryRecord<unknown>['envelope']['id'])
       ).orThrow();

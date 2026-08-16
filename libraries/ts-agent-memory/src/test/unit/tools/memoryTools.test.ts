@@ -567,10 +567,12 @@ describe('createMemoryTools', () => {
         listEntries: async () => succeed([]),
         listScoped: async () => succeed([]),
         resolveRecord: () => succeed(undefined),
+        coverage: async () => succeed({ records: new Map<Kind, number>() }),
         asRecordSource: () => ({ list: async () => succeed({ records: [] }) }),
         dedupScopeFor: () => 'content',
         embedsKind: () => true,
-        reconcileRank: () => Promise.resolve(succeed(0)),
+        reconcile: async (kind: Kind) =>
+          succeed({ artifact: 'rank' as const, kind, examined: 0, repaired: 0, failed: [] }),
         put: async (record) => succeed(record),
         delete: async () => fail('unused')
       };

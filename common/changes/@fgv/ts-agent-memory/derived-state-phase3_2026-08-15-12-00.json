@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "BREAKING: IMemoryStore.reconcileRank(kind) is REMOVED, replaced by reconcile(kind, artifact: DerivedArtifact) covering all three derived artifacts ('rank' | 'record-vector' | 'fragment-vector') in one shape. The rank repair's behaviour is unchanged — its careful raw-body round trip and _verifyLoaded checks are kept in full; only the entry point moves. Unlike IVectorIndex.rebuild, which resets and re-embeds everything, reconcile is TARGETED: it asks has(target) per record and skips what the index already holds, so a repair after a brief outage costs a handful of embedder calls rather than a vault. That check also surfaces the record-lane case an embeddingRef-only repair cannot detect — the index holds the vector but the envelope lost its reference — which is repaired by restamping with no embedder call. Returns a ReconcileReport discriminated by artifact; the fragment variant carries `fragments` (the fan-out) and deliberately has no `restamped`, because that lane has no envelope marker to lose. Per-record failures are collected rather than fatal: a repair that stops at the first bad record leaves the rest of the gap open.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}

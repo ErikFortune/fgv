@@ -16,7 +16,9 @@ import {
   IVectorQueryHit,
   InMemoryFragmentCosineIndex,
   MemoryId,
-  MemoryScopeKey
+  MemoryScopeKey,
+  IFragmentVectorRebuildReport,
+  Kind
 } from '../../../index';
 
 /** A scope-qualified target from a `(scope, id)` pair. */
@@ -35,29 +37,49 @@ function frag(start: number, end: number, vector: number[]): IEmbeddedFragment {
 }
 
 /** A trivial record carrying just the id + a marker body, for rebuild tests. */
-function record(id: string, body: string = `body-${id}`): IMemoryRecord<unknown> {
+function record(id: string, body: string = `body-${id}`, kind: string = 'knowledge'): IMemoryRecord<unknown> {
+  // `kind` is load-bearing now that the rebuild report resolves every count by it:
+  // before the report existed this fixture carried an id and nothing else, and a
+  // bare count could not tell.
   return {
-    envelope: { id: id as MemoryId } as IMemoryRecord<unknown>['envelope'],
+    envelope: { id: id as MemoryId, kind: kind as Kind } as IMemoryRecord<unknown>['envelope'],
     body
   };
 }
 
 /** A scope-qualified record entry for a rebuild source. */
-function scoped(scope: string, id: string, body?: string): IScopedMemoryRecord {
-  return { target: target(scope, id), record: record(id, body) };
+function scoped(scope: string, id: string, body?: string, kind?: string): IScopedMemoryRecord {
+  return { target: target(scope, id), record: record(id, body, kind) };
 }
 
 /** A scripted record source for `rebuild`. */
 class FakeSource implements IMemoryRecordSource {
   private readonly _result: Result<ReadonlyArray<IScopedMemoryRecord>>;
-  public constructor(result: Result<ReadonlyArray<IScopedMemoryRecord>>) {
+  private readonly _excluded: ReadonlyMap<Kind, number> | undefined;
+  public constructor(
+    result: Result<ReadonlyArray<IScopedMemoryRecord>>,
+    excluded?: ReadonlyMap<Kind, number>
+  ) {
     this._result = result;
+    this._excluded = excluded;
   }
   public list(): Promise<Result<IMemoryRecordListing>> {
     return Promise.resolve(
-      this._result.onSuccess((records: ReadonlyArray<IScopedMemoryRecord>) => succeed({ records }))
+      this._result.onSuccess((records: ReadonlyArray<IScopedMemoryRecord>) =>
+        // Absent stays absent: "cannot say" and "excluded nothing" differ.
+        succeed(this._excluded === undefined ? { records } : { records, excluded: this._excluded })
+      )
     );
   }
+}
+
+/** Total a per-kind tally — the reports resolve every count by kind. */
+function sum(counts: ReadonlyMap<unknown, number>): number {
+  let total: number = 0;
+  for (const n of counts.values()) {
+    total += n;
+  }
+  return total;
 }
 
 describe('InMemoryFragmentCosineIndex', () => {
@@ -326,6 +348,39 @@ describe('InMemoryFragmentCosineIndex', () => {
     });
   });
 
+  describe('has', () => {
+    test('answers true once a record has fragments, false before and after removal', async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      const t = target('knowledge', 'doc-1');
+      expect(await index.has(t)).toSucceedWith(false);
+      (await index.addFragments(t, [frag(0, 5, [1, 0])])).orThrow();
+      expect(await index.has(t)).toSucceedWith(true);
+      (await index.remove(t)).orThrow();
+      expect(await index.has(t)).toSucceedWith(false);
+    });
+
+    test('answers record-granularity, not fragment-granularity', async () => {
+      // Fragment writes are whole-record-replace, so "is this record represented?"
+      // is the only question with a stable answer — a per-fragment membership check
+      // would imply an incremental write path that does not exist.
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      const t = target('knowledge', 'doc-1');
+      (await index.addFragments(t, [frag(0, 5, [1, 0]), frag(5, 10, [0, 1])])).orThrow();
+      expect(await index.has(t)).toSucceedWith(true);
+      // Replacing with a single fragment leaves the record present, not partially so.
+      (await index.addFragments(t, [frag(0, 3, [1, 1])])).orThrow();
+      expect(await index.has(t)).toSucceedWith(true);
+      expect(index.fragmentCount).toBe(1);
+    });
+
+    test('keys on scope as well as id', async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      (await index.addFragments(target('conv-a', 'turn-3'), [frag(0, 5, [1, 0])])).orThrow();
+      expect(await index.has(target('conv-a', 'turn-3'))).toSucceedWith(true);
+      expect(await index.has(target('conv-b', 'turn-3'))).toSucceedWith(false);
+    });
+  });
+
   describe('rebuild', () => {
     // Deterministic: each record yields two fragments encoding the id's first char code.
     const embed = (r: IMemoryRecord<unknown>): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> => {
@@ -336,7 +391,11 @@ describe('InMemoryFragmentCosineIndex', () => {
     test('re-embeds every scoped record and reports the total fragment count', async () => {
       const index = InMemoryFragmentCosineIndex.create().orThrow();
       const source = new FakeSource(succeed([scoped('knowledge', 'a'), scoped('knowledge', 'b')]));
-      expect(await index.rebuild(source, embed)).toSucceedWith(4);
+      expect(await index.rebuild(source, embed)).toSucceedAndSatisfy(
+        (report: IFragmentVectorRebuildReport) => {
+          expect(sum(report.fragments)).toBe(4);
+        }
+      );
       expect(index.recordCount).toBe(2);
       expect(index.fragmentCount).toBe(4);
     });
@@ -344,7 +403,11 @@ describe('InMemoryFragmentCosineIndex', () => {
     test('keeps same-stem records under different scopes distinct across a rebuild', async () => {
       const index = InMemoryFragmentCosineIndex.create().orThrow();
       const source = new FakeSource(succeed([scoped('conv-a', 'turn-3'), scoped('conv-b', 'turn-3')]));
-      expect(await index.rebuild(source, embed)).toSucceedWith(4);
+      expect(await index.rebuild(source, embed)).toSucceedAndSatisfy(
+        (report: IFragmentVectorRebuildReport) => {
+          expect(sum(report.fragments)).toBe(4);
+        }
+      );
       expect(index.recordCount).toBe(2);
     });
 
@@ -352,7 +415,11 @@ describe('InMemoryFragmentCosineIndex', () => {
       const index = InMemoryFragmentCosineIndex.create().orThrow();
       (await index.addFragments(target('knowledge', 'old'), [frag(0, 5, [1, 2, 3])])).orThrow();
       const source = new FakeSource(succeed([scoped('knowledge', 'a')]));
-      expect(await index.rebuild(source, embed)).toSucceedWith(2);
+      expect(await index.rebuild(source, embed)).toSucceedAndSatisfy(
+        (report: IFragmentVectorRebuildReport) => {
+          expect(sum(report.fragments)).toBe(2);
+        }
+      );
       expect(index.recordCount).toBe(1);
       expect(await index.query(Float32Array.from([97, 1]), 1)).toSucceed();
     });
@@ -400,6 +467,138 @@ describe('InMemoryFragmentCosineIndex', () => {
         Promise.resolve(succeed([frag(0, 5, [])]));
       expect(await index.rebuild(source, emptyEmbed)).toFailWith(/empty fragment vector/i);
       expect(index.recordCount).toBe(0);
+    });
+
+    test('resolves indexed AND the fragment fan-out by kind', async () => {
+      // `indexed` alone cannot say whether forty records cost forty embedding
+      // round trips or four thousand, which is the whole difference between a
+      // reconcile that finishes and one that blocks a request.
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      const source = new FakeSource(
+        succeed([scoped('knowledge', 'a'), scoped('conv-a', 'turn-1', undefined, 'turn')])
+      );
+      expect(await index.rebuild(source, embed)).toSucceedAndSatisfy(
+        (report: IFragmentVectorRebuildReport) => {
+          expect(report.indexed.get('knowledge' as Kind)).toBe(1);
+          expect(report.indexed.get('turn' as Kind)).toBe(1);
+          expect(report.fragments.get('knowledge' as Kind)).toBe(2);
+          expect(report.fragments.get('turn' as Kind)).toBe(2);
+          expect(report.declined.size).toBe(0);
+          expect(report.skipped).toHaveLength(0);
+        }
+      );
+    });
+
+    test('counts an empty-array embed as declined, not indexed — and still replaces', async () => {
+      // An empty array IS this lane's decline, and it is not the same mechanism as
+      // a record-granular one: it still performs a real whole-record-replace, which
+      // is what clears stale fragments.
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      (await index.addFragments(target('knowledge', 'a'), [frag(0, 5, [1, 1])])).orThrow();
+      const source = new FakeSource(succeed([scoped('knowledge', 'a')]));
+      const declining = (): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> => Promise.resolve(succeed([]));
+      expect(await index.rebuild(source, declining)).toSucceedAndSatisfy(
+        (report: IFragmentVectorRebuildReport) => {
+          expect(report.declined.get('knowledge' as Kind)).toBe(1);
+          expect(report.indexed.size).toBe(0);
+          expect(sum(report.fragments)).toBe(0);
+        }
+      );
+      expect(index.recordCount).toBe(0);
+    });
+
+    test("onRecordError 'skip' keeps the healthy records and reports every casualty", async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      let calls: number = 0;
+      const flaky = (): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> => {
+        calls += 1;
+        return Promise.resolve(calls === 1 ? fail('no model') : succeed([frag(0, 5, [1, 1])]));
+      };
+      const source = new FakeSource(succeed([scoped('conv-a', 'turn-1'), scoped('knowledge', 'a')]));
+      expect(await index.rebuild(source, flaky, { onRecordError: 'skip' })).toSucceedAndSatisfy(
+        (report: IFragmentVectorRebuildReport) => {
+          expect(report.skipped).toHaveLength(1);
+          expect(report.skipped[0].target.id).toBe('turn-1');
+          expect(report.skipped[0].error).toMatch(/no model/i);
+          expect(report.indexed.get('knowledge' as Kind)).toBe(1);
+        }
+      );
+      // The point of the mode: one bad record no longer empties the index.
+      expect(index.recordCount).toBe(1);
+    });
+
+    test("a 'fail' abort carries what the attempt had established on the detail", async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      let calls: number = 0;
+      const flaky = (): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> => {
+        calls += 1;
+        return Promise.resolve(calls === 1 ? succeed([frag(0, 5, [1, 1])]) : fail('no model'));
+      };
+      const source = new FakeSource(succeed([scoped('knowledge', 'a'), scoped('conv-a', 'turn-1')]));
+      const result = await index.rebuild(source, flaky);
+      expect(result.isFailure()).toBe(true);
+      // The report describes the ATTEMPT, not the surviving index — which is empty,
+      // because 'fail' still rolls back.
+      expect(result.detail?.indexed.get('knowledge' as Kind)).toBe(1);
+      expect(index.recordCount).toBe(0);
+    });
+
+    test("onRecordError 'skip' also survives an ADD failure, not just an embed failure", async () => {
+      // Distinct path from the embed failure above: the embedder succeeded and the
+      // index rejected what it produced (here, an empty vector). Under 'fail' this
+      // empties the index; under 'skip' it must cost only that one record.
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      let calls: number = 0;
+      const embedThenBad = (): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> => {
+        calls += 1;
+        return Promise.resolve(calls === 1 ? succeed([frag(0, 5, [])]) : succeed([frag(0, 5, [1, 1])]));
+      };
+      const source = new FakeSource(succeed([scoped('conv-a', 'turn-1'), scoped('knowledge', 'a')]));
+      expect(await index.rebuild(source, embedThenBad, { onRecordError: 'skip' })).toSucceedAndSatisfy(
+        (report: IFragmentVectorRebuildReport) => {
+          expect(report.skipped).toHaveLength(1);
+          expect(report.skipped[0].error).toMatch(/empty fragment vector/i);
+          expect(report.indexed.get('knowledge' as Kind)).toBe(1);
+        }
+      );
+      expect(index.recordCount).toBe(1);
+    });
+
+    test('a list failure carries no detail — nothing was attempted', async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      const result = await index.rebuild(new FakeSource(fail('disk gone')), embed);
+      expect(result.isFailure()).toBe(true);
+      expect(result.detail).toBeUndefined();
+    });
+
+    test('propagates the source listing excluded tally rather than dropping it', async () => {
+      // Before this contract existed the fragment path dropped `excluded` on the
+      // floor, having a bare count and nowhere honest to put it.
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      const excluded = new Map<Kind, number>([['bookkeeping' as Kind, 3]]);
+      const source = new FakeSource(succeed([scoped('knowledge', 'a')]), excluded);
+      expect(await index.rebuild(source, embed)).toSucceedAndSatisfy(
+        (report: IFragmentVectorRebuildReport) => {
+          expect(report.excluded?.get('bookkeeping' as Kind)).toBe(3);
+        }
+      );
+    });
+
+    test('a source that reports no exclusions leaves excluded absent, not empty', async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      expect(
+        await index.rebuild(new FakeSource(succeed([scoped('knowledge', 'a')])), embed)
+      ).toSucceedAndSatisfy((report: IFragmentVectorRebuildReport) => {
+        expect(report.excluded).toBeUndefined();
+      });
+    });
+
+    test('captures a rejecting embedder rather than letting it escape mid-rebuild', async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      const rejecting = (): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> =>
+        Promise.reject(new Error('socket hangup'));
+      const source = new FakeSource(succeed([scoped('knowledge', 'a')]));
+      expect(await index.rebuild(source, rejecting)).toFailWith(/socket hangup/i);
     });
   });
 

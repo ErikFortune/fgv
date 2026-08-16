@@ -19,8 +19,7 @@ import {
   IRetrieverCreateParams,
   guardRetrieverCapabilities,
   indexedRecordMatchesQuery,
-  limitEntries,
-  materializeEntries,
+  materializePage,
   recencyCompare
 } from './retriever';
 
@@ -100,7 +99,7 @@ export class CurrentValidRetriever implements IMemoryRetriever {
           }
         }
         selected.sort(recencyCompare);
-        return materializeEntries(limitEntries(selected, query.limit, query.offset), this._resolver);
+        return materializePage(selected, query, this._resolver);
       })
     );
   }
@@ -149,7 +148,7 @@ export class AsOfRetriever implements IMemoryRetriever {
           }
         }
         selected.sort(recencyCompare);
-        return materializeEntries(limitEntries(selected, query.limit, query.offset), this._resolver);
+        return materializePage(selected, query, this._resolver);
       })
     );
   }
@@ -196,7 +195,7 @@ export class HistoryRetriever implements IMemoryRetriever {
           history.push(...versions);
         }
         history.sort(HistoryRetriever._byValidAtAscending);
-        return materializeEntries(limitEntries(history, query.limit, query.offset), this._resolver);
+        return materializePage(history, query, this._resolver);
       })
     );
   }

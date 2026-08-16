@@ -158,7 +158,7 @@ export interface IMemoryEnvelope {
    * below every subsequently-written one regardless of what the projector would
    * have scored them, so the result is not a partial ordering but one inverted
    * with respect to the projector's intent, with nothing failing to say so. Call
-   * `IMemoryStore.reconcileRank` after registering a projector against a
+   * `IMemoryStore.reconcile(kind, 'rank')` after registering a projector against a
    * populated store.
    */
   readonly rank?: number;
@@ -201,7 +201,7 @@ export interface IMemoryRecord<TBody = unknown> {
  * for this record" (logged at `warn`), never failing the write.
  *
  * Runs on writes only. To apply a newly-registered projector to records that
- * already exist, call `IMemoryStore.reconcileRank`.
+ * already exist, call `IMemoryStore.reconcile(kind, 'rank')`.
  * @public
  */
 export type RankProjector = (record: IMemoryRecord<unknown>) => number;

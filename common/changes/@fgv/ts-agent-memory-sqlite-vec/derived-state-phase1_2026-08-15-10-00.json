@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory-sqlite-vec",
+      "comment": "SqliteVecVectorIndex gains has(target); SqliteVecFragmentIndex gains has(target) and a real rebuild(source, embed, options?) — it previously had no backfill in any form, so a persistent fragment index could not be reconciled. Semantics are kept observably identical to the in-memory siblings: a list failure is fatal and leaves the durable table untouched, a genuine rebuild clears first, onRecordError defaults to 'fail', and a failure carries what the attempt established on the detail. A rollback that itself fails is composed into the error rather than swallowed, since on a durable table a botched rollback survives the process.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory-sqlite-vec"
+}

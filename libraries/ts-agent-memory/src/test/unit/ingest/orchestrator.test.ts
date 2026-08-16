@@ -55,7 +55,8 @@ import {
   TemporalIdentityCodec,
   TemporalVersionedPolicy,
   serializeMemoryFile,
-  scanEveryRecord
+  scanEveryRecord,
+  IDerivedStateCoverage
 } from '../../../index';
 
 // --- kinds --------------------------------------------------------------------
@@ -529,11 +530,16 @@ function mockStore(overrides: Partial<IMemoryStore>): IMemoryStore {
       ((): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> => Promise.resolve(succeed([]))),
     resolveRecord:
       overrides.resolveRecord ?? ((): Result<IMemoryRecord<unknown> | undefined> => succeed(undefined)),
+    coverage:
+      overrides.coverage ??
+      ((): Promise<Result<IDerivedStateCoverage>> =>
+        Promise.resolve(succeed({ records: new Map<Kind, number>() }))),
     // Mirrors the store's default policy (KnowledgeLwwPolicy → 'content'), so a
     // mock store keeps the pre-accessor layer-1 behavior unless a test overrides it.
     dedupScopeFor: overrides.dedupScopeFor ?? ((): DedupScope => 'content'),
     embedsKind: () => true,
-    reconcileRank: () => Promise.resolve(succeed(0)),
+    reconcile: (kind: Kind) =>
+      Promise.resolve(succeed({ artifact: 'rank' as const, kind, examined: 0, repaired: 0, failed: [] })),
     asRecordSource:
       overrides.asRecordSource ??
       ((): IMemoryRecordSource => ({
@@ -708,6 +714,7 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
     const ghostIndex: IVectorIndex = {
       add: (t) => Promise.resolve(succeed(t.id as string)),
       remove: (t) => Promise.resolve(succeed(t)),
+      has: () => Promise.resolve(succeed(false)),
       size: 0,
       rebuild: () =>
         Promise.resolve(
@@ -749,6 +756,7 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
     const failingIndex: IVectorIndex = {
       add: (t) => Promise.resolve(succeed(t.id as string)),
       remove: (t) => Promise.resolve(succeed(t)),
+      has: () => Promise.resolve(succeed(false)),
       size: 0,
       rebuild: () =>
         Promise.resolve(

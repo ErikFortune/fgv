@@ -9,12 +9,14 @@ import BetterSqlite3 from 'better-sqlite3';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { DetailedResult, Result, fail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import type {
   IEdgeTarget,
   IEmbeddedFragment,
   IFragmentVectorIndex,
+  IFragmentVectorRebuildReport,
   IVectorQueryHit,
+  Kind,
   MemoryId,
   MemoryScopeKey
 } from '@fgv/ts-agent-memory';
@@ -76,7 +78,21 @@ function fakeIndex(overrides: Partial<IFragmentVectorIndex>): IFragmentVectorInd
       (async (__t: IEdgeTarget, f: ReadonlyArray<IEmbeddedFragment>): Promise<Result<number>> =>
         succeed(f.length)),
     remove: overrides.remove ?? (async (t: IEdgeTarget): Promise<Result<IEdgeTarget>> => succeed(t)),
-    query: overrides.query ?? (async (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> => succeed([]))
+    query: overrides.query ?? (async (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> => succeed([])),
+    has: overrides.has ?? (async (): Promise<Result<boolean>> => succeed(false)),
+    recordCount: overrides.recordCount ?? 0,
+    fragmentCount: overrides.fragmentCount ?? 0,
+    // A list failure must leave an already-populated index intact, so the fake
+    // reports nothing rather than pretending to have rebuilt anything.
+    rebuild:
+      overrides.rebuild ??
+      (async (): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>> =>
+        succeedWithDetail({
+          indexed: new Map<Kind, number>(),
+          fragments: new Map<Kind, number>(),
+          declined: new Map<Kind, number>(),
+          skipped: []
+        }))
   };
 }
 

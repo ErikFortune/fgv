@@ -13,8 +13,7 @@ import {
   IRetrieverCreateParams,
   guardRetrieverCapabilities,
   indexedRecordMatchesQuery,
-  limitEntries,
-  materializeEntries,
+  materializePage,
   orderingCompare
 } from './retriever';
 
@@ -124,7 +123,7 @@ export class LinkTraversalRetriever implements IMemoryRetriever {
     const ordered: ReadonlyArray<IIndexedMemoryEntry> = entries
       .filter((entry) => indexedRecordMatchesQuery(entry, query))
       .sort(orderingCompare(query.orderBy));
-    return materializeEntries(limitEntries(ordered, query.limit, query.offset), this._resolver);
+    return materializePage(ordered, query, this._resolver);
   }
 
   /** Outbound neighbors: the scope-qualified targets of every edge on the record at `node`. */

@@ -35,6 +35,10 @@ import {
   splitFrontmatter
 } from '../converters';
 import { VectorMaintenance } from './vectorMaintenance';
+import { IDerivedStateCoverage } from './coverage';
+import { computeCoverage } from './storeCoverage';
+import { DerivedArtifact, ReconcileReport } from './reconcile';
+import { reconcileVectors } from './storeReconcile';
 import { IIndexedMemoryEntry, IMemoryIndex, MemoryIndex } from '../index';
 import {
   IMemoryObservationRecord,
@@ -554,6 +558,20 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return this._materialize(projected);
   }
 
+  /** {@inheritDoc IMemoryStore.coverage} */
+  public coverage(): Promise<Result<IDerivedStateCoverage>> {
+    return Promise.resolve(
+      computeCoverage({
+        entries: this._index.entries(),
+        hasRankProjector: (kind) => this._rankProjectors.has(kind),
+        anyRankProjector: this._rankProjectors.size > 0,
+        embedsKind: (kind) => this.embedsKind(kind),
+        vectorIndex: this._vectors.vectorIndex,
+        fragmentIndex: this._vectors.fragmentIndex
+      })
+    );
+  }
+
   /** {@inheritDoc IMemoryStore.listEntries} */
   public async listEntries(): Promise<Result<ReadonlyArray<IIndexedMemoryEntry>>> {
     return succeed(this._index.entries());
@@ -684,9 +702,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return result;
   }
 
-  /** {@inheritDoc IMemoryStore.reconcileRank} */
-  public async reconcileRank(kind: Kind): Promise<Result<number>> {
-    return this._enqueue(() => this._reconcileRankLocked(kind));
+  /** {@inheritDoc IMemoryStore.reconcile} */
+  public async reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>> {
+    return this._enqueue(() => this._reconcileLocked(kind, artifact));
   }
 
   /** {@inheritDoc IMemoryStore.put} */
@@ -1137,7 +1155,18 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * written, or fully invalidated / soft-deleted).
    */
   private _readVersionedCurrent(scope: MemoryScopeKey): Result<IMemoryRecord<unknown> | undefined> {
-    return this._versionsForEntity(scope).onSuccess((versions) => succeed(selectCurrentVersion(versions)));
+    // Select over ENVELOPES, then materialize the one winner — which is what
+    // `IMemoryStore.get`'s docstring promises and what `selectCurrentVersion`
+    // being generic over `IEnvelopeCarrier` exists for. Materializing every
+    // version first (as this did) cost N file reads and N body validations to
+    // return one record, and made that docstring false.
+    const current: IIndexedMemoryEntry | undefined = selectCurrentVersion(
+      this._index.entries().filter((entry) => entry.scope === scope)
+    );
+    if (current === undefined) {
+      return succeed(undefined);
+    }
+    return this._resolveRequired(current);
   }
 
   /**
@@ -1510,7 +1539,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
   }
 
   /**
-   * The locked body of {@link FileTreeMemoryStore.reconcileRank}.
+   * The rank branch of {@link FileTreeMemoryStore.reconcile}, under the write lock.
    *
    * @remarks
    * Re-reads each record's file rather than trusting the in-memory index, for
@@ -1539,27 +1568,54 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * another on a reconcile. `_stampRank` itself is reused verbatim, which also
    * inherits its throw semantics (logged at `warn`, `rank` cleared).
    */
-  private async _reconcileRankLocked(kind: Kind): Promise<Result<number>> {
-    if (!this._rankProjectors.has(kind)) {
-      return fail(`memory reconcileRank '${kind}': no rank projector is registered for this kind`);
-    }
-    // No materialization at all: `_restampOne` re-reads each record itself, so
-    // this only ever needed `(scope, id)`. Before the projection it held every
-    // record of the kind for nothing.
+  private async _reconcileLocked(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>> {
+    // Envelope-only selection: the walk needs `(scope, id)` and the kind, and
+    // each branch materializes only the records it decides to repair.
     const targets: ReadonlyArray<IIndexedMemoryEntry> = this._index
       .entries()
       .filter((entry) => entry.envelope.kind === kind);
-    let restamped: number = 0;
+    if (artifact === 'rank') {
+      return this._reconcileRankLocked(kind, targets);
+    }
+    return reconcileVectors({
+      kind,
+      artifact,
+      targets,
+      maintenance: this._vectors,
+      embedsKind: (k) => this.embedsKind(k),
+      resolve: (scope, id) => this._readRecord(scope, id),
+      stampRef: (scope, id, ref) =>
+        this._rewriteEnvelope(scope, id, (r) =>
+          r.envelope.embeddingRef === ref
+            ? undefined
+            : { envelope: { ...r.envelope, embeddingRef: ref }, body: r.body }
+        )
+    });
+  }
+
+  /** The rank branch of {@link FileTreeMemoryStore._reconcileLocked}. */
+  private async _reconcileRankLocked(
+    kind: Kind,
+    targets: ReadonlyArray<IIndexedMemoryEntry>
+  ): Promise<Result<ReconcileReport>> {
+    if (!this._rankProjectors.has(kind)) {
+      return fail(`memory reconcile '${kind}' rank: no rank projector is registered for this kind`);
+    }
+    // No materialization at all: `_rewriteEnvelope` re-reads each record itself.
+    let repaired: number = 0;
     for (const target of targets) {
-      const applied: Result<boolean> = this._restampOne(target.scope, target.envelope.id);
+      const applied: Result<boolean> = this._rewriteEnvelope(target.scope, target.envelope.id, (r) => {
+        const stamped: IMemoryRecord<string> = this._stampRank(r);
+        return stamped.envelope.rank === r.envelope.rank ? undefined : stamped;
+      });
       if (applied.isFailure()) {
-        return fail(`memory reconcileRank '${kind}': ${applied.message}`);
+        return fail(`memory reconcile '${kind}' rank: ${applied.message}`);
       }
       if (applied.value) {
-        restamped++;
+        repaired++;
       }
     }
-    return succeed(restamped);
+    return succeed({ artifact: 'rank', kind, examined: targets.length, repaired, failed: [] });
   }
 
   /**
@@ -1567,7 +1623,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * actually changed — an unchanged rank writes nothing, so a reconcile over an
    * already-consistent store touches no files.
    */
-  private _restampOne(scope: MemoryScopeKey, id: MemoryId): Result<boolean> {
+  private _rewriteEnvelope(
+    scope: MemoryScopeKey,
+    id: MemoryId,
+    mutate: (record: IMemoryRecord<string>) => IMemoryRecord<string> | undefined
+  ): Result<boolean> {
     return this._resolveScopeDir(scope).onSuccess((scopeDir) => {
       /* c8 ignore next 3 - defensive: the scope dir exists for any indexed record */
       if (scopeDir === undefined) {
@@ -1598,12 +1658,16 @@ export class FileTreeMemoryStore implements IMemoryStore {
               splitFrontmatter(raw)
                 .withErrorFormat((msg) => `'${id}': ${msg}`)
                 .onSuccess((parts) => {
-                  const before: number | undefined = parsed.envelope.rank;
-                  const stamped: IMemoryRecord<string> = this._stampRank({
+                  // The mutator says "nothing to change" with `undefined` rather
+                  // than by returning an equal record: persisting unconditionally
+                  // would bump `updated` on every record of the kind, trading a
+                  // wrong value for a wrong timestamp, and a deep comparison here
+                  // would have to know which fields each caller touches.
+                  const stamped: IMemoryRecord<string> | undefined = mutate({
                     envelope: parsed.envelope,
                     body: parts.body
                   });
-                  if (stamped.envelope.rank === before) {
+                  if (stamped === undefined) {
                     return succeed(false);
                   }
                   return this._persist(stamped, scope, id).onSuccess(() => succeed(true));

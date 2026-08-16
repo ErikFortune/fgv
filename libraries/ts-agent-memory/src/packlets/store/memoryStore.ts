@@ -16,6 +16,8 @@ import {
 import { IIndexedMemoryEntry } from '../index';
 import { IMemoryRecordSource, IScopedMemoryRecord } from '../vector';
 import { MemoryListSelection } from './listSelection';
+import { IDerivedStateCoverage } from './coverage';
+import { DerivedArtifact, ReconcileReport } from './reconcile';
 
 /**
  * The writable, FileTree-backed, content-hash-deduped memory store.
@@ -63,6 +65,45 @@ export interface IMemoryStore extends IMemoryRecordResolver {
    * selection, no file reads.
    */
   list(selection: MemoryListSelection): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+
+  /**
+   * How much of the store's **derived state** exists, resolved by {@link Kind}.
+   *
+   * @remarks
+   * Answers *"is my derived state consistent with my records, and if not by how
+   * much?"* for every artifact the store derives — `rank`, record vectors, and
+   * fragment vectors — in one call.
+   *
+   * **Cheap and total, by contract rather than by implementation.** Every input is
+   * an envelope field or an index-side count: it reads **no record bodies** and
+   * calls **no embedder**, and the walk over the vault's own state touches the
+   * filesystem not at all. That is why it takes no selection, unlike
+   * {@link IMemoryStore.list} — the guard there exists because an unnarrowed list
+   * reads the vault, and putting one here would decorate a free operation and make
+   * that guard mean less.
+   *
+   * **The index-side counts are the one exception, and it is the caller's own
+   * index that spends it.** A persistent index answers `size` / `recordCount` /
+   * `fragmentCount` with a query — `SqliteVecVectorIndex` runs a prepared `COUNT`
+   * — so on a durable backend this call does I/O and can **fail**. It is bounded
+   * (one count per wired index, never per record) and it is why the return is a
+   * `Result` rather than a bare value.
+   *
+   * *If a future addition to the report would require reading a record body, it
+   * does not belong on this report.*
+   *
+   * The counterpart is {@link IMemoryStore.reconcile}: coverage says **how big**
+   * the gap is, cheaply; reconcile says **what it was** and closes what it can, at
+   * the cost of re-running the embedder. Neither substitutes for the other.
+   *
+   * **A lane is reported here whenever its *index* is wired**, which is weaker
+   * than what reconcile requires (index **and** embedder). That is intended: an
+   * index without an embedder still holds vectors and still answers queries, so
+   * its coverage is a real number worth reporting. The consequence to expect is a
+   * half-wired store that reports a gap `reconcile` will refuse to close, naming
+   * the missing embedder.
+   */
+  coverage(): Promise<Result<IDerivedStateCoverage>>;
 
   /**
    * Every entry in the vault — scope and envelope, **no bodies**. Reads no files
@@ -172,35 +213,42 @@ export interface IMemoryStore extends IMemoryRecordResolver {
   put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
 
   /**
-   * Re-apply the kind's {@link RankProjector} to every record of `kind` already
-   * in the store, restamping {@link IMemoryEnvelope.rank}. Returns the number of
-   * records whose `rank` actually changed.
+   * Repair one derived artifact for one {@link Kind} — **targeted and
+   * non-destructive**, unlike `IVectorIndex.rebuild`, which resets the index and
+   * re-embeds everything.
    *
    * @remarks
-   * **This exists because `rank` is otherwise new-store-only, and fails in a way
-   * that looks like it works.** The projector runs on the write path only, so
-   * registering one against a populated store ranks nothing already written —
-   * and because an absent `rank` sorts *last*, every pre-registration record
-   * lands below every post-registration one no matter what the projector would
-   * have scored it. The ordering is not merely partial; it is **inverted with
-   * respect to the projector's own intent**, with no failure anywhere to say so.
+   * The counterpart to {@link IMemoryStore.coverage}: coverage says **how big**
+   * the gap is and costs nothing; reconcile says **what it was** and closes what
+   * it can, at the cost of reading bodies and re-running the embedder. Neither
+   * substitutes for the other — in particular, only reconcile can distinguish a
+   * *declined* record from a *failed* one, because learning that requires calling
+   * the embedder again.
    *
-   * Deliberately **does not** touch `created` / `updated` / `seq`, and fires no
-   * `'write'` observation. Routing a reconcile through {@link IMemoryStore.put}
-   * would bump transaction time on every record — trading a wrong `rank` order
-   * for a wrong recency order, and flooding any wired observer with writes that
-   * are not writes. The body is re-serialized verbatim from the file's own
-   * bytes; only the envelope's `rank` moves.
+   * **It only touches what is missing.** For the vector lanes it asks
+   * `has(target)` per record and skips the ones already held, so a repair after a
+   * brief outage costs a handful of embedder calls rather than a whole vault.
+   * That check is also the only way to see a record whose vector the index holds
+   * but whose envelope lost its `embeddingRef` — which needs a restamp and no
+   * embedder call at all, and which an `embeddingRef`-only repair cannot detect.
    *
-   * Fails loudly if `kind` has no registered projector: asking to reconcile a
-   * kind you never configured is a caller error, not a no-op.
+   * **`artifact` is required and names one lane.** See {@link DerivedArtifact}
+   * for why an operation repairing "everything wired" would be the wrong shape.
    *
-   * **Not atomic, and safe for it.** A failure part-way leaves earlier records
-   * restamped. That is benign because restamping is idempotent — re-running
-   * converges — which is also why no report shape is offered here. A count is
-   * enough.
+   * **A vector lane must be wired on BOTH halves — index *and* embedder — or this
+   * fails, and it is deliberately stricter than {@link IMemoryStore.coverage}.**
+   * The two ask different questions of the same wiring. Coverage asks *what does
+   * the index hold*, which an index alone can answer: an index wired without an
+   * embedder is a legal store (queries work; writes simply do not embed), so
+   * coverage reports that lane rather than pretending it is absent. Reconcile
+   * asks to *produce* vectors, which needs the embedder. So a half-wired store
+   * legitimately reports a coverage gap it cannot repair, and reconcile names the
+   * missing half rather than returning a cheerful success with every record in
+   * `failed`.
+   *
+   * Runs under the store's write lock, like any other mutation.
    */
-  reconcileRank(kind: Kind): Promise<Result<number>>;
+  reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>>;
 
   /**
    * Delete a record by `(kind, entityId)`. Non-temporal kinds physically delete

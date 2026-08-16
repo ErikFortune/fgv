@@ -333,19 +333,53 @@ export function resolveQuery(
   query: IMemoryQuery,
   resolver: IMemoryRecordResolver
 ): Result<ReadonlyArray<IMemoryRecord<unknown>>> {
-  const selected: IIndexedMemoryEntry[] = selectByQuery(entries, query);
+  return materializePage(selectByQuery(entries, query), query, resolver, (candidates) =>
+    [...candidates].sort(orderingCompare(query.orderBy))
+  );
+}
+
+/**
+ * Materialize a selected, ordered page — **applying `query.filter` and paging in
+ * the right order**, which is the whole reason this is shared rather than
+ * open-coded per retriever.
+ *
+ * @remarks
+ * Two paths, and the choice is forced by where the predicate can run:
+ *
+ * - **No `filter`** — order and page over *envelopes*, then read only the page.
+ *   `limit` bounds the READ, not just the result.
+ * - **With `filter`** — the predicate takes a whole record, so every
+ *   envelope-survivor must be read first, then filtered, then paged. Paging
+ *   before filtering would return fewer than `limit` rows for no reason a caller
+ *   could see.
+ *
+ * **Every retriever must route through this.** `indexedRecordMatchesQuery`
+ * structurally *cannot* apply `filter` — it is handed an envelope — so a
+ * retriever that pre-filters with it and then materializes on its own silently
+ * ignores the predicate. That regression shipped once, in the stream that moved
+ * `filter` out of the pre-filter; this function exists so it cannot recur.
+ *
+ * @param selected - Entries surviving the envelope pre-filter.
+ * @param query - The query whose `filter` / `orderBy` / `limit` / `offset` apply.
+ * @param resolver - Body resolver.
+ * @param order - Applied to whichever collection is paged; identity is legal for
+ * a retriever whose ordering is intrinsic (semantic score, traversal order).
+ * @public
+ */
+export function materializePage<T extends IIndexedMemoryEntry>(
+  selected: ReadonlyArray<T>,
+  query: IMemoryQuery,
+  resolver: IMemoryRecordResolver,
+  order?: (candidates: ReadonlyArray<T>) => ReadonlyArray<T>
+): Result<ReadonlyArray<IMemoryRecord<unknown>>> {
+  const ordered: ReadonlyArray<T> = order === undefined ? selected : order(selected);
   if (query.filter === undefined) {
-    const page: ReadonlyArray<IIndexedMemoryEntry> = limitEntries(
-      [...selected].sort(orderingCompare(query.orderBy)),
-      query.limit,
-      query.offset
-    );
-    return materializeEntries(page, resolver);
+    return materializeEntries(limitEntries(ordered, query.limit, query.offset), resolver);
   }
-  return materializeEntries(selected, resolver).onSuccess((records) => {
-    const filtered: IMemoryRecord<unknown>[] = records.filter((record) => query.filter!(record));
-    return succeed(limitRecords(filtered.sort(orderingCompare(query.orderBy)), query.limit, query.offset));
-  });
+  const predicate: (record: IMemoryRecord<unknown>) => boolean = query.filter;
+  return materializeEntries(ordered, resolver).onSuccess((records) =>
+    succeed(limitRecords(records.filter(predicate), query.limit, query.offset))
+  );
 }
 
 /**

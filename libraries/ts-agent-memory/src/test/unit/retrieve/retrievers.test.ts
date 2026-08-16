@@ -4,6 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { InMemoryRecordResolver } from '../../helpers/inMemoryRecordResolver';
 import { DetailedResult, Result, fail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import {
   HybridRetriever,
@@ -32,7 +33,9 @@ import {
   limitRecords,
   orderingCompare,
   rankCompare,
-  recencyCompare
+  recencyCompare,
+  edgeTargetKey,
+  materializePage
 } from '../../../index';
 
 /** A scope-qualified link-traversal seed for the retriever tests. */
@@ -420,6 +423,7 @@ describe('orderBy: rank axis', () => {
     const vectorIndex: IVectorIndex = {
       add: (t: IEdgeTarget) => Promise.resolve(succeed(`ref-${t.id}`)),
       remove: (t: IEdgeTarget) => Promise.resolve(succeed(t)),
+      has: () => Promise.resolve(succeed(false)),
       size: 0,
       rebuild: () =>
         Promise.resolve(
@@ -764,6 +768,12 @@ class FakeVectorIndex implements IVectorIndex {
     this.lastTopK = topK;
     return Promise.resolve(this._failQuery ? fail('vector backend down') : succeed(this._hits));
   }
+  public has(target: IEdgeTarget): Promise<Result<boolean>> {
+    return Promise.resolve(
+      succeed(this._hits.some((h) => edgeTargetKey(h.target) === edgeTargetKey(target)))
+    );
+  }
+
   public get size(): number {
     return this._hits.length;
   }
@@ -885,6 +895,32 @@ describe('SemanticRetriever', () => {
     );
   });
 
+  test('query.filter reaches SemanticRetriever', async () => {
+    // REGRESSION. The test above is titled "applies query filters" but narrows by
+    // `tag` — an ENVELOPE axis the pre-filter handles. `query.filter` is a
+    // predicate over the whole RECORD, applied only after materialization, and it
+    // is the one the five direct callers of `indexedRecordMatchesQuery` silently
+    // stopped applying. Testing `materializePage` in isolation does not catch a
+    // retriever that stops calling it.
+    const index = buildIndex([{ id: 'a' }, { id: 'b' }]);
+    const r = SemanticRetriever.create({
+      ...backed(index),
+      backend: {
+        vectorIndex: new FakeVectorIndex([
+          { target: et('a'), score: 0.9 },
+          { target: et('b'), score: 0.8 }
+        ]),
+        embedQuery: okEmbed
+      }
+    }).orThrow();
+    expect(await r.retrieve({ semantic: 'q' })).toSucceedAndSatisfy(
+      (all: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(all.length).toBeGreaterThan(0);
+      }
+    );
+    expect(await r.retrieve({ semantic: 'q', filter: () => false })).toSucceedWith([]);
+  });
+
   test('resolves a hit to the correctly-scoped record when two records share an id stem across scopes', async () => {
     // Two records with the identical stem `turn-3` under different scopes — the
     // exact same-stem-across-scopes collision the scope-qualified hit fixes. The
@@ -978,6 +1014,7 @@ describe('SemanticRetriever', () => {
     const rejectingIndex: IVectorIndex = {
       add: (t: IEdgeTarget) => Promise.resolve(succeed(`ref-${t.id}`)),
       remove: (t: IEdgeTarget) => Promise.resolve(succeed(t)),
+      has: () => Promise.resolve(succeed(false)),
       size: 0,
       rebuild: () =>
         Promise.resolve(
@@ -1232,5 +1269,43 @@ describe('HybridRetriever', () => {
     const hybrid = HybridRetriever.create([child], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
     expect(await hybrid.retrieve({ kinds: ['knowledge'] as unknown as ReadonlyArray<Kind> })).toSucceed();
     expect(child.lastQuery?.kinds).toEqual(['knowledge']);
+  });
+});
+
+describe('materializePage — the single route that applies query.filter', () => {
+  // REGRESSION. `query.filter` was moved out of `indexedRecordMatchesQuery` when
+  // the index was projected to envelopes — correctly, since the predicate takes a
+  // whole record and the pre-filter is handed an envelope. But five retrievers
+  // call that pre-filter DIRECTLY and then materialized on their own, so they
+  // silently stopped applying the predicate. Nothing failed; every test passed.
+  // They now all route through `materializePage`, and these pin what it owes them.
+  const entries: ReadonlyArray<IIndexedMemoryEntry> = ['a', 'b', 'c'].map((id) => {
+    const e = makeEntry({ id });
+    return { scope: e.scope, envelope: e.record.envelope };
+  });
+  const resolver = new InMemoryRecordResolver(['a', 'b', 'c'].map((id) => makeEntry({ id })));
+
+  test('applies the predicate', () => {
+    expect(
+      materializePage(entries, { filter: (r) => r.envelope.id !== ('b' as MemoryId) }, resolver)
+    ).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+      expect(records.map((r) => r.envelope.id)).toEqual(['a', 'c']);
+    });
+  });
+
+  test('pages AFTER filtering, so limit means what a caller expects', () => {
+    // Paging first would return one row here, not two — fewer than `limit` for no
+    // reason the caller could see.
+    expect(
+      materializePage(entries, { filter: (r) => r.envelope.id !== ('a' as MemoryId), limit: 2 }, resolver)
+    ).toSucceedAndSatisfy((records: ReadonlyArray<IMemoryRecord<unknown>>) => {
+      expect(records.map((r) => r.envelope.id)).toEqual(['b', 'c']);
+    });
+  });
+
+  test('with no filter it pages over ENVELOPES, so limit bounds the READ', () => {
+    const counting = new InMemoryRecordResolver(['a', 'b', 'c'].map((id) => makeEntry({ id })));
+    expect(materializePage(entries, { limit: 1 }, counting)).toSucceed();
+    expect(counting.resolvedCount).toBe(1);
   });
 });

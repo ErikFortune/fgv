@@ -14,8 +14,7 @@ import {
   IRetrieverCreateParams,
   SEMANTIC_UNWIRED_MESSAGE,
   indexedRecordMatchesQuery,
-  limitEntries,
-  materializeEntries,
+  materializePage,
   temporalUnwiredMessage
 } from './retriever';
 
@@ -133,7 +132,7 @@ export class SemanticRetriever implements IMemoryRetriever {
     }
     // Hit order IS the ranking, so the page is taken before materializing and
     // only the returned records are read.
-    return materializeEntries(limitEntries(selected, query.limit, query.offset), this._resolver);
+    return materializePage(selected, query, this._resolver);
   }
 
   /**

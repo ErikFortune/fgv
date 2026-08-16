@@ -667,6 +667,20 @@ red check is `rush change` has not been reviewed for anything yet; fix it before
 
 ### Widening a shared interface needs a repo-wide build, not a per-package one
 
+**This is now an acceptance-criteria checkbox, because four consecutive streams proved advice was
+not enough.** `samples/testbed` broke on the `IVectorIndex` / `IFragmentVectorIndex` /
+`IMemoryIndex` family in four streams running — #614, `vector-rebuild-report-by-kind`,
+`agent-memory-index-partial-read`, and `derived-state-phase1` — each time caught only by the
+repo-wide build, after the per-package gates were green and the implementer reasonably believed they
+were done. The rule below was **written from that very file** after the first break and did not
+prevent the second, third or fourth.
+
+The instructive part is what the casualties were. Two were hand-rolled test doubles, which a shared
+exported double would have fixed. One was `scenarios/memoryToolsGate/index.ts` — **a source file**,
+which it would not. So the shared-double remedy covers half the observed cases and the checkbox
+covers all of them, which is why the checkbox is what got adopted.
+
+
 `rushx build` / `rushx test` in the packages you edited cannot see a consumer you did not edit. When a
 change makes an **interface member required** — or renames/removes one — every implementation in the
 monorepo has to be found, including test doubles in `samples/` and `tools/`.
@@ -698,6 +712,7 @@ Every stream's acceptance criteria list must include:
 - [ ] `rushx test` passes with 100% coverage in every modified package
 - [ ] **`rushx fixlint` was run before the final commit** *(catches the mechanical class)*
 - [ ] **Every package the branch touches has a change file** — verify with `rush change --verify --target-branch origin/release` *(CI's first gate, and invisible to the entire local build/test suite)*
+- [ ] **If the stream changes a shared contract (an interface others implement), `node common/scripts/install-run-rush.js rebuild` passes** *(not a remembered practice — a checked box; see below)*
 - [ ] No `any` types; all fallible operations return `Result<T>`
 - [ ] **`code-reviewer` agent run on the final diff; findings resolved or dispositioned** *(see "Review-loop discipline" below)*
 - [ ] **Copilot review loop driven by implementer; stopped on diminishing returns or 10-round cap** *(see "Review-loop discipline" below)*

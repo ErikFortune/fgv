@@ -23,6 +23,66 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## A restamped `embeddingRef` synthesizes the scoped key rather than recovering the index's
+
+`IMemoryStore.reconcile(kind, 'record-vector')` repairs the case where the index holds a vector but
+the envelope lost its `embeddingRef` — a swallowed failure after the vector was committed. That
+branch's whole value is that it needs **no embedder call**: `has(target)` already proved the vector
+exists.
+
+But there is no contract member that returns *the reference the index minted for that vector*.
+`IVectorIndex` is `add` / `remove` / `query` / `has` / `size` / `rebuild`; only `add` returns a
+reference, and calling it would require the embedding this branch exists to avoid. So the restamp
+writes `edgeTargetKey(target)`.
+
+That is correct for both shipped indexes, whose reference **is** the scoped key. A third-party index
+that mints something else gets the scoped key stamped by a restamp and its own reference stamped by
+`put` — a divergence that is invisible until something reads `embeddingRef` expecting the index's
+form.
+
+**Options, none obviously right:** widen `has` to return `Result<string | undefined>` (the reference
+or absent), which makes the member less pleasant for the common case; add a separate
+`referenceFor(target)`; or drop the restamp optimization and re-embed, which is always correct and
+costs the round trip. Not decided here because no consumer has a non-key reference, and picking
+under that condition would be guessing.
+
+**Trigger**: the first `IVectorIndex` implementation whose `add` returns something other than
+`edgeTargetKey(target)`.
+
+**Reference**: `storeReconcile.ts`, the restamp branch — the assumption is stated at the call site.
+
+---
+
+## `reconcile` reports no progress, and `coverage` cannot split a shortfall into declined vs failed
+
+Both deferred by `agent-memory-derived-state-reconciliation` (2026-08-15) as its design's OQ-1 and
+OQ-2. Recorded here because a deferral that lives only in a stream's `result.md` is a deferral
+nobody will find.
+
+**OQ-1 — no progress callback on `IMemoryStore.reconcile`.** A repair over a large kind can run for
+minutes of embedder time behind one unresolved promise. An `onProgress` hook is the obvious
+addition and is purely additive whenever it lands. Deferred because designing a progress vocabulary
+— per record? per batch? what does it carry? — with no caller to check it against would be
+speculative, and the shape of the first real caller's progress UI is the thing that decides it.
+**Trigger**: the first consumer that runs `reconcile` over a kind large enough to want a progress
+bar, or that reports a reconcile appearing to hang.
+
+**OQ-2 — `coverage()` does not cross-reference the observation store.** Coverage reports a
+shortfall but not *why*: the missing records could be embedder declines (intentional, healthy) or
+embed failures (needs repair). The `'write'` observation's `embed` outcome carries exactly that
+split, so a coverage surface *could* join against `MemoryObservationStore` and report it. Deferred
+for two reasons that are still true: `coverage()` must work with **no observers wired** at all, so
+the split can never be more than an optional enrichment; and `reconcile` learns the same split
+**authoritatively** by re-running the embedder, where the observation store only reports what was
+seen at write time. **Trigger**: a consumer that needs the declined-vs-failed split *without* paying
+for a reconcile — i.e. wants it on a dashboard rather than in a repair.
+
+**Explicitly still out of scope, per the stream's brief**: automatic/scheduled repair, and
+persisting coverage snapshots over time. Both are deployment concerns; the library gives the
+measurement and the repair, and the policy for when to run them belongs to the consumer.
+
+---
+
 ## `listScoped` can fail on a concurrent eviction, and the loss is not countable
 
 `FileTreeMemoryStore.listScoped()` is the sole feed for `asRecordSource()`, and therefore for
@@ -70,66 +130,17 @@ documents with opposite answers is a question that belongs in this file.
 
 ---
 
-## `IFragmentVectorIndex` has no `rebuild` and no `size` — E4, unfixed on the fragment lane
+## `IFragmentVectorIndex` had no `rebuild` and no `size` — **RESOLVED 2026-08-15**
 
-**Corrected 2026-08-15.** This entry previously read *"rebuild has no coverage report"*, which
-understates it by a whole level. The contract is:
-
-```ts
-IFragmentVectorIndex = addFragments | remove | query
-```
-
-**No `rebuild`. No `size`.** `InMemoryFragmentCosineIndex.rebuild` exists on the **concrete class
-only** (`:242`), returning a bare `Result<number>`; **`SqliteVecFragmentIndex` has no `rebuild` at
-all**. So the missing report is a symptom — the operation is not on the contract, and the persistent
-implementation does not have it in any form.
-
-**This is E4.** PersonAIlity raised exactly this for the record lane on 2026-08-11 — *"the store
-accepts `vectorIndex?: IVectorIndex`, so a host can inject a persistent index, and then has no
-contract-level way to backfill it"* — and `-48` fixed it by promoting `rebuild` onto `IVectorIndex`
-alongside `size`. The fragment lane never got the same treatment, and it is **worse off than the
-record lane was**: there, the persistent index existed and merely lacked the method, so promoting it
-gave `SqliteVecVectorIndex` a contract to satisfy. Here `SqliteVecFragmentIndex` has nothing to
-promote, so a persistent fragment index cannot be backfilled by any route, contractual or concrete.
-Records written while it was unwired, a re-embed after a dimension change, and reconciliation after a
-swallowed fragment-embed failure are all unreachable — the same three consequences E4 enumerated.
-
-**Consequence for the queued `agent-memory-index-coverage-accessor` stream**: an unnamed
-`reconcileEmbeddings(kind)` has nothing to call on the fragment half, which is the decisive argument
-for the operation naming its lane. See that stream's entry in `docs/WORKSTREAMS.md`.
-
-The original coverage-report content follows, and still applies once the operation exists.
-
-### The report shape, once `rebuild` is on the contract
-
-`InMemoryFragmentCosineIndex.rebuild(source, embed)` returns a bare `Result<number>` — the total
-fragment count — while the record-granular `IVectorIndex.rebuild` returns a per-kind
-`IVectorRebuildReport` on a `DetailedResult` that survives a failure. Since
-`vector-rebuild-report-by-kind` (2026-08-15) the asymmetry is wider than it was: the fragment path
-now *reads* the new `IMemoryRecordListing` and **discards its `excluded` tally on the floor**,
-because a bare count has nowhere honest to put it.
-
-The shape, when it is done, is not a design question — the rule is already written on
-`IVectorRebuildReport`'s docstring and applies verbatim: every count resolved by `Kind`, `excluded`
-optional because only the source can know it, and the report carried on the failure as well as the
-success. The interesting part is what a *fragment* report should count that a record report does
-not: fragments-per-record is the number a caller actually wants when asking "is my sub-document
-coverage what I intended?", and neither `indexed` nor a record count answers it.
-
-**Why deferred**: `vector-rebuild-report-by-kind` scoped it out explicitly and the code says so at
-`inMemoryFragmentCosineIndex.ts` — *"the fragment path is tracked separately and gains the same
-treatment when the `IVectorIndex`/`IFragmentVectorIndex` contracts are revisited together"*. No
-consumer has asked; the fragment path is newer and less exercised than the record path.
-
-**Dependencies**: none technical. It is breaking on `IFragmentVectorIndex` and on
-`SqliteVecFragmentIndex`, so it wants the same consumer coordination the record-side change got —
-cheapest bundled with the next breaking change to either fragment contract rather than alone.
-
-**Reference**: `.ai/tasks/completed/2026-08/vector-rebuild-report-by-kind/` — brief's "Explicitly
-NOT in scope", and the `listed.value.excluded` drop site in
-`libraries/ts-agent-memory/src/packlets/vector/inMemoryFragmentCosineIndex.ts`. Filed here on
-2026-08-15 because it survived only in a code comment and a completed stream's README, and stream
-migration is the event that buries that class of item.
+> **Resolved by `agent-memory-derived-state-reconciliation`.** `IFragmentVectorIndex` now carries
+> `has`, `recordCount`, `fragmentCount` and `rebuild`, and `SqliteVecFragmentIndex` implements all
+> four — so a persistent fragment index can be backfilled through the contract, which was E4's whole
+> complaint on that lane. The rebuild returns `IFragmentVectorRebuildReport`, which applies
+> `IVectorRebuildReport`'s per-kind rule verbatim and adds `fragments` (the fan-out), so the
+> `excluded` tally the fragment path used to drop on the floor is now propagated.
+>
+> Kept rather than deleted because the *reasoning* — why a coverage report needs the fan-out that
+> neither `indexed` nor a record count expresses — is what a future fragment-lane change should read.
 
 ## `ts-prompt-assist` — cache parsed store records in the resolve path
 

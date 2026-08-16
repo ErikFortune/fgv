@@ -5,17 +5,33 @@
 
 import type BetterSqlite3 from 'better-sqlite3';
 import { load as loadSqliteVec } from 'sqlite-vec';
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import {
+  DetailedResult,
+  Result,
+  captureResult,
+  fail,
+  failWithDetail,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
+import {
+  FragmentEmbedder,
   IEdgeTarget,
   IEmbeddedFragment,
   IFragmentLocator,
   IFragmentVectorIndex,
+  IFragmentVectorRebuildReport,
+  IMemoryRecordListing,
+  IMemoryRecordSource,
+  ISkippedVectorRecord,
   IVectorQueryHit,
+  IVectorRebuildOptions,
+  Kind,
   MemoryId,
   MemoryScopeKey,
   edgeTargetKey
 } from '@fgv/ts-agent-memory';
+import { invokeHook, tally, withRollbackNote } from './rebuildHelpers';
 import { ISqliteVecFragmentIndexCreateParams } from './model';
 
 /** Default name for the fragment `vec0` virtual table. */
@@ -265,6 +281,106 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     );
   }
 
+  /** {@inheritDoc IFragmentVectorIndex.has} */
+  public has(target: IEdgeTarget): Promise<Result<boolean>> {
+    return Promise.resolve(
+      captureResult(() => {
+        // Before any add has created the table there is nothing held — a truthful
+        // `false`, matching `remove`'s idempotence and the zero counts.
+        if (this._stmts === undefined) {
+          return false;
+        }
+        return this._stmts.has.get(edgeTargetKey(target)) !== undefined;
+      }).withErrorFormat((e) => `fragment index: cannot check '${edgeTargetKey(target)}': ${e}`)
+    );
+  }
+
+  /** {@inheritDoc IFragmentVectorIndex.rebuild} */
+  public async rebuild(
+    source: IMemoryRecordSource,
+    embed: FragmentEmbedder,
+    options?: IVectorRebuildOptions
+  ): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>> {
+    const lenient: boolean = (options?.onRecordError ?? 'fail') === 'skip';
+    // `source` is consumer-supplied, so a throw or rejection becomes a `Failure`
+    // here rather than escaping as an exception.
+    const listed: Result<IMemoryRecordListing> = await invokeHook(() => source.list());
+    if (listed.isFailure()) {
+      // Deliberately BEFORE any clear, matching both siblings: a failed list is no
+      // evidence about the fragments already held, and clearing here would destroy
+      // a healthy PERSISTED index over a transient read error. No detail — there is
+      // nothing this call disturbed to describe.
+      return failWithDetail(`fragment index rebuild: failed to list records: ${listed.message}`);
+    }
+    const cleared: Result<true> = this._clear();
+    if (cleared.isFailure()) {
+      // Also nothing established: the table still holds whatever it held.
+      return failWithDetail(`fragment index rebuild: failed to clear the index: ${cleared.message}`);
+    }
+    const indexed: Map<Kind, number> = new Map<Kind, number>();
+    const fragments: Map<Kind, number> = new Map<Kind, number>();
+    const declined: Map<Kind, number> = new Map<Kind, number>();
+    const skipped: ISkippedVectorRecord[] = [];
+    // Absent stays absent — only the source knows whether it filtered anything.
+    const report = (): IFragmentVectorRebuildReport => ({
+      indexed,
+      fragments,
+      declined,
+      excluded: listed.value.excluded,
+      skipped
+    });
+    for (const scoped of listed.value.records) {
+      const kind: Kind = scoped.record.envelope.kind;
+      // Capture-wrapped: an embedder that throws mid-loop would otherwise escape
+      // past the `'fail'` rollback below, leaving this DURABLE table holding a
+      // partial index that survives the process.
+      const embedded: Result<ReadonlyArray<IEmbeddedFragment>> = await invokeHook(() => embed(scoped.record));
+      if (embedded.isFailure()) {
+        const error: string = `fragment index rebuild: embedding '${edgeTargetKey(scoped.target)}' failed: ${
+          embedded.message
+        }`;
+        if (!lenient) {
+          // A rollback that also fails is said out loud: the `'fail'` path
+          // promises an empty index, and on a DURABLE table a botched rollback
+          // survives the process.
+          return failWithDetail(withRollbackNote(error, this._clear()), report());
+        }
+        skipped.push({ target: scoped.target, error });
+        continue;
+      }
+      // An empty array is this lane's decline, and it is still WRITTEN — the
+      // whole-record-replace is what clears any stale fragments.
+      const added: Result<number> = await this.addFragments(scoped.target, embedded.value);
+      if (added.isFailure()) {
+        const error: string = `fragment index rebuild: ${added.message}`;
+        if (!lenient) {
+          return failWithDetail(withRollbackNote(error, this._clear()), report());
+        }
+        skipped.push({ target: scoped.target, error });
+        continue;
+      }
+      if (added.value === 0) {
+        tally(declined, kind);
+        continue;
+      }
+      tally(indexed, kind);
+      tally(fragments, kind, added.value);
+    }
+    return succeedWithDetail(report());
+  }
+
+  /** Empty the table, tolerating a table that does not exist yet. */
+  private _clear(): Result<true> {
+    if (this._stmts === undefined) {
+      return succeed(true);
+    }
+    // Capture-wrapped like every other statement path: a closed connection or an
+    // I/O error is a `Failure`, not an exception out of a `Result`-returning method.
+    return captureResult(() => this._db.prepare(`DELETE FROM "${this._table}"`).run()).onSuccess(() =>
+      succeed(true)
+    );
+  }
+
   /** {@inheritDoc IFragmentVectorIndex.query} */
   public query(
     vector: Float32Array,
@@ -376,7 +492,9 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
           `WHERE embedding MATCH ? AND k = ?`
       ),
       fragmentCount: this._db.prepare(`SELECT count(*) AS c FROM "${this._table}"`),
-      recordCount: this._db.prepare(`SELECT count(DISTINCT target_key) AS c FROM "${this._table}"`)
+      recordCount: this._db.prepare(`SELECT count(DISTINCT target_key) AS c FROM "${this._table}"`),
+      // `LIMIT 1`: membership needs existence, not cardinality.
+      has: this._db.prepare(`SELECT 1 FROM "${this._table}" WHERE target_key = ? LIMIT 1`)
     };
   }
 
@@ -537,4 +655,5 @@ interface IFragmentStatements {
   readonly query: BetterSqlite3.Statement;
   readonly fragmentCount: BetterSqlite3.Statement;
   readonly recordCount: BetterSqlite3.Statement;
+  readonly has: BetterSqlite3.Statement;
 }

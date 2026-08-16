@@ -47,6 +47,10 @@ class StubVectorIndex implements IVectorIndex {
     return Promise.resolve(succeed(hits));
   }
 
+  public has(t: IEdgeTarget): Promise<Result<boolean>> {
+    return Promise.resolve(succeed(this._vectors.has(edgeTargetKey(t))));
+  }
+
   public get size(): number {
     return this._vectors.size;
   }

@@ -95,6 +95,9 @@ export const DEFAULT_SIMILARITY_TOP_K: number;
 export function defaultMemoryScopeEncoding(scope: MemoryScopeKey): Result<string>;
 
 // @public
+export type DerivedArtifact = 'rank' | 'record-vector' | 'fragment-vector';
+
+// @public
 export const edgeConverter: Converter<IEdge>;
 
 // @public
@@ -118,6 +121,7 @@ export const envelopeYamlConverter: Converter<IMemoryEnvelope>;
 // @public
 export class FileTreeMemoryStore implements IMemoryStore {
     asRecordSource(): IMemoryRecordSource;
+    coverage(): Promise<Result<IDerivedStateCoverage>>;
     static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore>;
     dedupScopeFor(kind: Kind): DedupScope;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
@@ -128,7 +132,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     listEntries(): Promise<Result<ReadonlyArray<IIndexedMemoryEntry>>>;
     listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
     put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
-    reconcileRank(kind: Kind): Promise<Result<number>>;
+    reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>>;
     resolveRecord(scope: MemoryScopeKey, id: MemoryId): Result<IMemoryRecord<unknown> | undefined>;
     get skippedRecords(): ReadonlyArray<ISkippedRecord>;
 }
@@ -169,6 +173,12 @@ export class HybridRetriever implements IMemoryRetriever {
     get capabilities(): IMemoryRetrieverCapabilities;
     static create(retrievers: ReadonlyArray<IMemoryRetriever>, mergeStrategy: IMergeStrategy): Result<HybridRetriever>;
     retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+}
+
+// @public
+export interface IArtifactCoverage {
+    readonly covered: number;
+    readonly expected: number;
 }
 
 // @public
@@ -213,6 +223,14 @@ export interface ICycleGuardEdge {
     readonly target: IEdgeTarget;
     // (undocumented)
     readonly type: LinkType;
+}
+
+// @public
+export interface IDerivedStateCoverage {
+    readonly fragmentVectors?: IFragmentIndexCoverage;
+    readonly rank?: ReadonlyMap<Kind, IArtifactCoverage>;
+    readonly records: ReadonlyMap<Kind, number>;
+    readonly recordVectors?: IIndexCoverage;
 }
 
 // @public
@@ -282,6 +300,12 @@ export interface IFileTreeMemoryStoreCreateParams {
 }
 
 // @public
+export interface IFragmentIndexCoverage {
+    readonly indexFragmentCount: number;
+    readonly indexRecordCount: number;
+}
+
+// @public
 export interface IFragmentLocator {
     readonly end: number;
     readonly start: number;
@@ -292,6 +316,15 @@ export interface IFragmentQuery {
     readonly maxPerRecord?: number;
     readonly semantic: string;
     readonly topK?: number;
+}
+
+// @public
+export interface IFragmentReconcileReport extends IReconcileReportBase {
+    readonly alreadyIndexed: number;
+    // (undocumented)
+    readonly artifact: 'fragment-vector';
+    readonly declined: number;
+    readonly fragments: number;
 }
 
 // @public
@@ -308,8 +341,21 @@ export interface IFragmentSemanticBackend {
 // @public
 export interface IFragmentVectorIndex {
     addFragments(target: IEdgeTarget, fragments: ReadonlyArray<IEmbeddedFragment>): Promise<Result<number>>;
+    readonly fragmentCount: number;
+    has(target: IEdgeTarget): Promise<Result<boolean>>;
     query(vector: Float32Array, topK: number, maxPerRecord?: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>>;
+    readonly recordCount: number;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
+}
+
+// @public
+export interface IFragmentVectorRebuildReport {
+    readonly declined: ReadonlyMap<Kind, number>;
+    readonly excluded?: ReadonlyMap<Kind, number>;
+    readonly fragments: ReadonlyMap<Kind, number>;
+    readonly indexed: ReadonlyMap<Kind, number>;
+    readonly skipped: ReadonlyArray<ISkippedVectorRecord>;
 }
 
 // @public
@@ -324,6 +370,12 @@ export interface IIdentityCodecResult {
     readonly idStem: string;
     readonly isVersioned: boolean;
     readonly scope: MemoryScopeKey;
+}
+
+// @public
+export interface IIndexCoverage {
+    readonly indexSize: number;
+    readonly perKind: ReadonlyMap<Kind, IArtifactCoverage>;
 }
 
 // @public
@@ -538,6 +590,7 @@ export interface IMemoryRetrieverCapabilities {
 // @public
 export interface IMemoryStore extends IMemoryRecordResolver {
     asRecordSource(): IMemoryRecordSource;
+    coverage(): Promise<Result<IDerivedStateCoverage>>;
     dedupScopeFor(kind: Kind): DedupScope;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
     embedsKind(kind: Kind): boolean;
@@ -547,7 +600,7 @@ export interface IMemoryStore extends IMemoryRecordResolver {
     listEntries(): Promise<Result<ReadonlyArray<IIndexedMemoryEntry>>>;
     listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
     put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
-    reconcileRank(kind: Kind): Promise<Result<number>>;
+    reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>>;
 }
 
 // @public
@@ -590,6 +643,7 @@ export type IngestDisposition = 'written' | 'deduped' | 'merged';
 export class InMemoryCosineIndex implements IVectorIndex {
     add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
     static create(): Result<InMemoryCosineIndex>;
+    has(target: IEdgeTarget): Promise<Result<boolean>>;
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
     rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>>;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
@@ -601,8 +655,9 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
     addFragments(target: IEdgeTarget, fragments: ReadonlyArray<IEmbeddedFragment>): Promise<Result<number>>;
     static create(): Result<InMemoryFragmentCosineIndex>;
     get fragmentCount(): number;
+    has(target: IEdgeTarget): Promise<Result<boolean>>;
     query(vector: Float32Array, topK: number, maxPerRecord?: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
-    rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder): Promise<Result<number>>;
+    rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>>;
     get recordCount(): number;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
 }
@@ -615,6 +670,20 @@ export interface IProvenance {
     readonly derivedFrom?: IEdgeTarget;
     readonly model?: string;
     readonly source: ProvenanceSource;
+}
+
+// @public
+export interface IRankReconcileReport extends IReconcileReportBase {
+    // (undocumented)
+    readonly artifact: 'rank';
+}
+
+// @public
+export interface IReconcileReportBase {
+    readonly examined: number;
+    readonly failed: ReadonlyArray<ISkippedVectorRecord>;
+    readonly kind: Kind;
+    readonly repaired: number;
 }
 
 // @public
@@ -706,6 +775,7 @@ export interface ITemporalVersionAddress {
 // @public
 export interface IVectorIndex {
     add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
+    has(target: IEdgeTarget): Promise<Result<boolean>>;
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
     rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>>;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
@@ -731,6 +801,15 @@ export interface IVectorRebuildReport {
     readonly excluded?: ReadonlyMap<Kind, number>;
     readonly indexed: ReadonlyMap<Kind, number>;
     readonly skipped: ReadonlyArray<ISkippedVectorRecord>;
+}
+
+// @public
+export interface IVectorReconcileReport extends IReconcileReportBase {
+    readonly alreadyIndexed: number;
+    // (undocumented)
+    readonly artifact: 'record-vector';
+    readonly declined: number;
+    readonly restamped: number;
 }
 
 // @public
@@ -802,6 +881,9 @@ export class LtmIdentityCodec implements IIdentityCodec {
 
 // @public
 export function materializeEntries(entries: ReadonlyArray<IIndexedMemoryEntry>, resolver: IMemoryRecordResolver): Result<ReadonlyArray<IMemoryRecord<unknown>>>;
+
+// @public
+export function materializePage<T extends IIndexedMemoryEntry>(selected: ReadonlyArray<T>, query: IMemoryQuery, resolver: IMemoryRecordResolver, order?: (candidates: ReadonlyArray<T>) => ReadonlyArray<T>): Result<ReadonlyArray<IMemoryRecord<unknown>>>;
 
 // @public
 export class MemoryCapCullPolicy implements IWritePolicy {
@@ -921,6 +1003,9 @@ export class RecencyRetriever implements IMemoryRetriever {
     static create(params: IRetrieverCreateParams): Result<RecencyRetriever>;
     retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
 }
+
+// @public
+export type ReconcileReport = IRankReconcileReport | IVectorReconcileReport | IFragmentReconcileReport;
 
 // @public
 export type ResolutionVerdict = {
