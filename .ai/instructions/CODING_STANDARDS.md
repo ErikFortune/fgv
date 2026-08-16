@@ -525,6 +525,63 @@ If you find yourself reaching for one of these, **stop**. Either the primitive n
 
 ---
 
+## We Build General Capabilities; a Driving Consumer Shapes Priorities, Not Designs
+
+Every `@fgv/*` library exists to be **useful to applications in general**. Most of them acquire a
+first or dominant consumer early, and that consumer is genuinely valuable: they exercise the surface,
+they report real bugs, and they produce measurements nobody else will. What they are **not** is the
+design authority.
+
+The failure mode is subtle because it looks like diligence. You have a design question, the consumer
+is right there and is clearly invested, so you ask them — and their answer arrives, and you build it.
+Nothing about that feels like a mistake. But you have just let one deployment's preference decide a
+published contract, and you have added a round trip to your own critical path to obtain an answer you
+already had.
+
+### The test, before any question goes to a consumer
+
+> **How will their answer change what we build?**
+
+If you cannot name a concrete fork — *"answer A gives us this signature, answer B gives us that
+one"* — **do not send it**. Decide it from the design, and tell them what you decided and why.
+
+There are exactly two legitimate reasons to ask:
+
+1. **We lack usage information a correct design depends on.** Not preferences — *facts about how the
+   thing is used* that we cannot observe from inside this repo. "How many kinds does a typical vault
+   carry?" is usage information. "Would you rather have counts or a list?" is a preference.
+2. **The proper solution is too large to implement in one go**, and their needs can sequence it. Note
+   what this does and does not license: it lets a consumer choose **which correct piece ships first**.
+   It never lets them choose a smaller design.
+
+### The tell that you got it wrong
+
+**You asked a question whose answer was derivable from a principle already written down in this
+repo.** When a consumer's reply arrives and your reaction is *"yes, that is what we would have said"*,
+that is not agreement — that is evidence the question should not have been sent.
+
+Worked example, 2026-08-15, the `agent-memory-index-coverage-accessor` exchange. Three questions went
+to the driving consumer, and all three failed the test:
+
+| question sent | already answerable from |
+|---|---|
+| Should the accessor persist across restarts? | our own index-conformance rule — a derived value that can disagree with its source is a second source of truth |
+| Counts, or an enumeration of stale records? | the same principle — a list the consumer holds is a second source of truth about *our* index |
+| Should the repair operation name its lane? | the record and fragment lanes are independently wirable, have incommensurable units, and are siblings-not-subtypes by explicit design |
+
+The consumer answered all three correctly, by the same reasoning we would have used. That cost a
+round trip and produced nothing. Meanwhile the three things of real value in the same exchange were
+all **volunteered**, not asked for: a bug report, a measurement (68 fragments and ~69 embedding
+round-trips for one 56 KB record), and a correction to a lazy premise we had stated.
+
+### What to send instead
+
+State the decision and its reasoning, and name the one thing their evidence could still change.
+A consumer who disagrees with a *stated* design will say so — and that disagreement is worth more
+than an answer to a question, because it comes with the reason attached.
+
+---
+
 ## Code Style
 
 ### Avoid Over-Engineering

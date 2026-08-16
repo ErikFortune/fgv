@@ -128,56 +128,39 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-memory-index-coverage-accessor` 🟢 (queued 2026-08-15 — additive, consumer-asked)
+### `agent-memory-derived-state-reconciliation` 🟢 (queued 2026-08-15 — design-first)
 
-**Status:** 🟢 ready to start, but **queue behind #633** — both streams on it touch these exact seams and both are breaking; a third breaking alpha against the same types would make PersonAIlity migrate three times.
-**Package surface (expected):** `@fgv/ts-agent-memory` (`IMemoryStore`, `FileTreeMemoryStore`'s write path, `vectorMaintenance`), `.ai/instructions/LIBRARY_CAPABILITIES.md`. Expected **additive**.
-**Origin:** **E2's preference-2 from the embedding-lane ask package (2026-08-11), never fully landed** — re-raised 2026-08-15, then converged over two rounds. Triage: `…/personaility-reply-2026-08-15-embed-failure-channel.md`; agreed shape: `…/personaility-reply-2026-08-15-coverage-accessor-shape.md`.
+**Status:** 🟢 ready to design, **queue behind #633**. Was filed as `agent-memory-index-coverage-accessor`; **renamed and rescoped 2026-08-15** after applying `CODING_STANDARDS.md` § "We Build General Capabilities" — the narrow framing was an artifact of taking a consumer's ask as the unit of work rather than deriving the capability.
+**Package surface (expected):** `@fgv/ts-agent-memory` (`IMemoryStore`, `IVectorIndex`, `IFragmentVectorIndex`, `FileTreeMemoryStore`), `@fgv/ts-agent-memory-sqlite-vec` (both index classes). **Breaking** on two contracts.
+**Notes:** `.ai/notes/cross-repo-handoffs/personaility-reply-2026-08-15-embed-failure-channel.md`, `…-coverage-accessor-shape.md`.
 
-**Mission.** Give a **live** store a per-kind index-coverage accessor, so a health read mid-session can distinguish "my vector index is complete" from "my vector index has been quietly drifting since 03:00".
+**Mission.** Every artifact the store derives from its records gets **a coverage query and a targeted repair**, in one consistent shape. Applications need to answer two questions about any derived state: *is it consistent with the source of truth*, and *how do I fix it* — today the store answers them differently, or not at all, for each of three artifacts.
 
-**Half the ask was already shipped, and verifying that is what sharpened the other half.** They asked for "a failure channel out of the embed-on-write hook", citing a `.d.ts` line showing warn-and-continue. That channel exists — `MemoryEmbedOutcome` (`'embedded'|'declined'|'excluded'|'failed'`) rides every successful write observation, with a matching `embed` query axis, shipped by Stream A item 5 for exactly this ambiguity. It is not on the hook's return value, which is why a `.d.ts` read misses it, and it is deliberately not on the return value: a vault record is the source of truth and a vector is derived, so an embedder outage must not start rejecting memories.
+**The state of the matrix, which is the argument for the stream.** Not three separate gaps — one missing abstraction, showing as holes in a pattern:
 
-**What survives is E2's preference-2, and it is half-landed rather than new.** Their original ask: *"a coverage accessor on the index contract — enough for a host to answer 'is this index populated, **and is it complete**?' […] Even a pair of counts (vectors held / records seen at last reconcile) would do it."* `size` shipped the numerator in `-48`. The denominator never shipped as a live surface.
-
-**Both counts exist today; neither is live.** That is the precise gap:
-
-| surface | answers | maintained |
+| derived artifact | coverage query | repair |
 |---|---|---|
-| `IVectorIndex.size` | vectors held — the **numerator** | **live**, but a bare scalar: no kinds |
-| `IVectorRebuildReport` | `indexed` / `declined` / `excluded` / `skipped` — the **denominator**, per kind | a **snapshot at reconcile**, and reconcile resets and re-embeds the whole vault |
-| `MemoryObservationStore.query({ embed })` | per-record outcome, attributed | **live**, but a **bounded ring** that evicts |
+| `rank` | **none** | `reconcileRank(kind)` ✅ — targeted, non-destructive |
+| record vectors | `IVectorIndex.size` — a **scalar**, no kinds, no denominator | `rebuild(source, embed)` — **destructive**: resets and re-embeds the whole vault |
+| fragment vectors | **none** | **not on the contract at all** — `IFragmentVectorIndex` is `addFragments`/`remove`/`query`; the concrete in-memory class has `rebuild`, `SqliteVecFragmentIndex` has nothing |
 
-So the pair is obtainable immediately after a rebuild and nothing maintains it afterward. The general form worth keeping: **a health surface that only reports at initialization cannot distinguish healthy from drifting**, and the fix is a standing accessor maintained by the path that already knows, not a log the caller replays.
+Read across: `rank` has the repair we want and no coverage; record vectors have partial coverage and the *wrong kind* of repair; fragment vectors have neither, which is **E4 unfixed on that lane** (see `docs/FUTURE.md`). No two rows agree on anything. `reconcileRank` is the shape to generalize, not a precedent to copy once more.
 
-**Their E1 case is why the denominator cannot be replaced by "expect zero failures".** A ~37 KB document against a 4096-token context always fails to embed, so that vault's coverage is permanently below 100% by a known amount and a drift detector without a denominator would alert forever.
+**The consumer's own note called this on 2026-08-11** and we did not hear it: *"These are the same shape and the same fix twice — a derived value (vector, rank) that only the write path maintains, with no contract-level way to reconcile it afterward. If a general 'reconcile derived state for kind K' seam is on the table, it answers both, and answering both together is cheaper than answering either alone."* We shipped `reconcileRank` alone in `-49`. Filed here as the design, not as a consumer preference — it is right on the merits and would be right with no consumer at all.
 
-**Shape sketch** (not designed — the reply asks two questions first): a standing per-kind coverage accessor on the store, maintained incrementally by the write path that already computes `MemoryEmbedOutcome`, so it is exact rather than sampled and needs no ring; unbounded in the only dimension that matters (counts per kind, not per record); almost certainly carrying a **denominator**, since `indexed: 500` is unreadable without knowing whether the vault holds 500 or 50,000 of that kind.
+**Design decisions, settled from principle rather than asked.** Each was previously sent to the consumer as a question; each was already answerable from something written down, which is the worked example now in `CODING_STANDARDS.md`:
 
-**Settled over two rounds with the consumer — the design questions are closed:**
+- **Coverage is per kind, with a denominator.** A bare total cannot answer "is my coverage what I intended?" — the rule already on `IVectorRebuildReport`'s docstring, applied one level up. A permanently-unembeddable record (an oversized body against a bounded context) means coverage sits below 100% by a known amount forever, so a shortfall without a denominator is unreadable.
+- **Not persisted.** A derived count that can disagree with its source is a second source of truth — the same principle as the index-conformance rule.
+- **Counts, not an enumeration.** A list of stale targets handed to a caller is a second source of truth about our index, and what the caller does with it is hand it straight back. The repair belongs where the state lives.
+- **Repair names its lane.** The record and fragment lanes are independently wirable, their units are incommensurable (one vector per record vs. N), their costs differ by ~70× on a measured case, and they are siblings-not-subtypes by explicit design. An unnamed operation also has nothing to call on the fragment half.
+- **`declined` / `excluded` stay distinct from `failed`**, so an intentional non-embed reads as a known shortfall rather than as drift.
 
-- **Counts per kind, not an enumeration.** Both sides. They named what is underneath: *"an enumeration would just be handed back as 're-embed these', so the real want is targeted repair, not a list we hold — a list we hold is a second source of truth about their index."*
-- **Not persisted.** Their reasoning, adopted: *"a stored count that disagrees with the store is worse than none"* — the same principle as our own index-conformance rule.
-- **`declined` / `excluded` stay distinct from `failed`**, so a permanently-unembeddable record reads as a known shortfall rather than as drift.
-- **The opening value comes from a walk, not a rebuild.** They challenged our "a fresh open establishes it for free" premise and we withdrew it: the only per-kind surface is `IVectorRebuildReport`, from an operation that resets and re-embeds everything. They measured the cost — **a 56 KB seed is 68 fragments and ~69 embedding round-trips, blocking an HTTP response past 30 s**.
+**The opening value comes from a walk, not a rebuild** — and the partial-read stream is what makes it cheap. `listEntries()` is `succeed(this._index.entries())`: no file reads, no selection, so the per-kind denominator is a `Map` walk. The numerator's honesty depends on the index: with a **persistent** index the vectors survive, so `envelope.embeddingRef` is truthful and coverage costs one walk and zero embeds; with the **in-memory** index the envelopes still claim refs from previous sessions while the index is empty, so `embeddingRef` **lies in the confident direction** — which is why `size` exists, and why `size` disagreeing with the count of envelopes claiming a ref is itself a free staleness signal. **The smallest additive member that upgrades this from "the store believes" to "the index confirms" is `has(target)` on `IVectorIndex`.**
 
-**The partial-read dividend makes their counter-proposal nearly free, and verifying it produced the sharpest result of the exchange.** They asked whether opening coverage could come from comparing store records against index contents *without embedding*. Checked:
+**Sequencing is where the driving consumer legitimately shapes this** (`CODING_STANDARDS.md` criterion 2 — too large for one go, so their needs order the correct pieces; never a smaller design). Breaking on two contracts plus two persistent implementations is more than one stream. Proposed order: (1) coverage + `has` + targeted record-lane repair; (2) fragment-lane E4 — `rebuild` and `size` onto `IFragmentVectorIndex` and a real implementation on `SqliteVecFragmentIndex` — plus its coverage; (3) rank coverage, closing the matrix. Their measured cost centre is the fragment lane, which argues for pulling (2) forward; that is the one thing worth putting to them, and as a sequencing question, not a design one.
 
-- **The denominator is already free on this branch** — `listEntries()` is `succeed(this._index.entries())`, no file reads, no selection; filter by `embedsKind(kind)`. Before this week that call materialized every body.
-- **The numerator's honesty depends on the index.** With `SqliteVecVectorIndex` the vectors survive, so `envelope.embeddingRef` is truthful and opening coverage is one `Map` walk at zero embedding cost. With the **in-memory** index the envelopes still carry `embeddingRef` from previous sessions while the index is empty — so `embeddingRef` **lies, in the confident direction**. That is why `size` exists.
-- **The disagreement is itself a free signal available today**: `size` against the count of envelopes claiming an `embeddingRef`. Diverge sharply at open and the index is fresh or stale. Aggregate rather than per-kind, one scalar read plus one walk, and it distinguishes the two deployment modes without asking which one the caller is in.
-
-**The smallest additive contract member this needs is a membership check** — `has(target)` on `IVectorIndex`. The surface is `add` / `remove` / `query` / `size` / `rebuild`; there is no way to ask *"do you hold a vector for this target?"*. O(1) on both implementations, no embedder, and it upgrades the walk from *"the store believes"* to *"the index confirms"*.
-
-**The stream's shape is settled, and their own note called it four days early.** Not just a coverage accessor — **a coverage accessor plus `reconcileEmbeddings(kind)`, sibling to the shipped `reconcileRank(kind)`**. Their E5 note of 2026-08-11 said: *"These are the same shape and the same fix twice — a derived value (vector, rank) that only the write path maintains, with no contract-level way to reconcile it afterward. If a general 'reconcile derived state for kind K' seam is on the table, it answers both, and answering both together is cheaper than answering either alone."* **We shipped the rank half in `-49` and did not generalize.** They have now re-derived the vector half independently, from a health-surface question rather than an adoption blocker. That convergence is the strongest evidence available that the seam is right.
-
-**One question back to them, and it is a real gap in our own framing:** `reconcileRank` is record-granular, but their 68-fragments measurement is the **fragment** lane. A repair that reconciles only record-granular vectors leaves their actual cost centre untouched. Does the coverage question span both lanes? If so the accessor needs two numerators and `reconcileEmbeddings` has to say which lane it repairs.
-
-**Interim answer given to them, and it is genuine rather than a fig leaf:** wire `observers` and query `{ embed: 'failed' }`. No coverage ratio, but it stops a mid-session outage being *silent*, which is the acute half. They have accepted this and are wiring `ActorMemoryVault`, which they note closes their half **without waiting on us**.
-
-**They took two fixes on their own side**, worth recording because one is the more dangerous class: a lift condition on a barrel-exported public interface (`model.ts:307`) named this channel as missing, which a consumer reads as a reason to wait for something that already shipped. Landed in `1edd50f`.
-
-**A process lesson from how this arrived, worth more than the stream.** Their ask file's `-48` resolution table marks E2 *"PARTIALLY LANDED […] the original ask shape is not what shipped"*, and eleven lines later the same file says *"Every ask in this lane is now closed."* The partial silently converted to closed, and the unlanded half re-surfaced four days later as a *new* ask that did not recognize itself — costing a round trip in which we reconstructed a pattern (`size` as a first instance) that does not exist. **A resolution table with a partial row needs a carry-forward line, not a closing line.** Our `finalize-task` ritual has the same exposure on the `diverged` field; this is the failure it exists to catch, observed from the other side.
+**Interim, and genuine:** wire `observers` and query `{ embed: 'failed' }`. No coverage ratio, but a mid-session outage stops being silent. The consumer has accepted this and is wiring it, which unblocks them without waiting on us.
 
 ### `agent-memory-index-partial-read` 🔵 (code complete 2026-08-15 — breaking, coordinated)
 

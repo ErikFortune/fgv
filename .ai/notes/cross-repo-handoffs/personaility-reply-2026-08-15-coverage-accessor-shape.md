@@ -118,6 +118,45 @@ Behind `vector-rebuild-report-by-kind` and `agent-memory-index-partial-read` (fg
 breaking against the same types. Agreed you are not blocked once `ActorMemoryVault` wires
 `observers`.
 
+## Addendum, 2026-08-15 — we were asking you the wrong kind of question
+
+Written after this note went out, and it supersedes how three things above are framed.
+
+`@fgv/ts-agent-memory` exists to be useful to applications in general. You are our driving consumer,
+which legitimately shapes our **priorities** — it does not make you the design authority, and we had
+started treating it as though it did. The test we should have applied to each question, and have now
+written into our coding standards, is: **how will your answer change what we build?**
+
+Applied to the three we sent you, honestly:
+
+| we asked | could your answer have changed the build? |
+|---|---|
+| persist across restarts? | **No** — a derived count that can disagree with its source is a second source of truth, which is our own index-conformance rule one level up |
+| counts or an enumeration? | **No** — a list you hold is a second source of truth about our index, and you'd hand it straight back |
+| should the repair name its lane? | **No** — the lanes are independently wirable, incommensurable, and siblings-not-subtypes by design |
+
+You answered all three correctly and by the same reasoning we would have used. That is not agreement,
+it is evidence the questions should not have been sent. **The three things of real value in this
+exchange were all volunteered, not asked for:** the `model.ts:307` bug, your 68-fragments/30 s
+measurement, and your challenge to our "a fresh open establishes it for free" premise. Usage
+information and corrections to stated designs — exactly the two things we cannot get from inside our
+own repo.
+
+**One consequence you should see:** applying the frame properly made the stream **bigger**, not
+smaller. It is no longer "a coverage accessor for embeddings" — it is **derived-state reconciliation
+across all three artifacts the store derives** (rank, record vectors, fragment vectors), because the
+current state is one missing abstraction showing as holes in a pattern: `rank` has the repair shape
+we want and no coverage; record vectors have partial coverage and a *destructive* repair; fragment
+vectors have neither and are **E4 unfixed** on that lane. Your E5 note said this on 2026-08-11 and we
+shipped `reconcileRank` alone anyway.
+
+**Where your input is still load-bearing, and it is not smaller for being narrower:** the whole thing
+is breaking on two contracts plus two persistent implementations, which is more than one stream. So
+your needs **sequence** it. Our proposed order is coverage + `has(target)` + record-lane repair
+first, then the fragment lane's E4, then rank coverage. Your measured cost centre is the fragment
+lane, which argues for pulling it forward. **That is a sequencing question and we are asking it as
+one** — it cannot make the design smaller, only reorder which correct piece ships first.
+
 ## One process note, offered rather than aimed
 
 Your retroactive filing names the gap exactly: an ask hand-carried without a ticket has no state to
