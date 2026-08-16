@@ -3,9 +3,36 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
-import { IEdgeTarget, IMemoryRecord, Kind, MemoryScopeKey, ProvenanceSource, Tag } from '../types';
-import { IIndexedMemoryRecord } from '../index';
+import { Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+import {
+  IEdgeTarget,
+  IEnvelopeCarrier,
+  IMemoryRecord,
+  IMemoryRecordResolver,
+  Kind,
+  MemoryScopeKey,
+  ProvenanceSource,
+  Tag
+} from '../types';
+import { IIndexedMemoryEntry, IMemoryIndex } from '../index';
+
+/**
+ * What every index-backed retriever needs: the index it selects over, and the
+ * resolver it materializes survivors through.
+ *
+ * @remarks
+ * The resolver is the whole of the partial-read migration for a caller that
+ * constructs retrievers directly — the index projection itself is invisible to
+ * anyone who only consumes `retrieve()`. `FileTreeMemoryStore` implements
+ * {@link IMemoryRecordResolver}, so wiring is `{ index, resolver: store }`.
+ * @public
+ */
+export interface IRetrieverCreateParams {
+  /** The derived index to select over. */
+  readonly index: IMemoryIndex;
+  /** Materializes the selected entries' bodies. */
+  readonly resolver: IMemoryRecordResolver;
+}
 
 /**
  * The capabilities a retriever exposes. A consumer probes these before
@@ -200,7 +227,7 @@ export function guardRetrieverCapabilities(
  * equal-`updated` records sort deterministically. Mirrors the B1 index ordering.
  * @public
  */
-export function recencyCompare(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number {
+export function recencyCompare(a: IEnvelopeCarrier, b: IEnvelopeCarrier): number {
   const byUpdated: number = b.envelope.updated - a.envelope.updated;
   return byUpdated !== 0 ? byUpdated : b.envelope.seq - a.envelope.seq;
 }
@@ -212,7 +239,7 @@ export function recencyCompare(a: IMemoryRecord<unknown>, b: IMemoryRecord<unkno
  * index's rank-view ordering.
  * @public
  */
-export function rankCompare(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number {
+export function rankCompare(a: IEnvelopeCarrier, b: IEnvelopeCarrier): number {
   const ra: number | undefined = a.envelope.rank;
   const rb: number | undefined = b.envelope.rank;
   if (ra === undefined && rb !== undefined) {
@@ -235,7 +262,7 @@ export function rankCompare(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>
  */
 export function orderingCompare(
   orderBy?: IMemoryQuery['orderBy']
-): (a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>) => number {
+): (a: IEnvelopeCarrier, b: IEnvelopeCarrier) => number {
   return orderBy === 'rank' ? rankCompare : recencyCompare;
 }
 
@@ -246,28 +273,25 @@ export function orderingCompare(
  * are each retriever's own concern.
  * @public
  */
-export function indexedRecordMatchesQuery(entry: IIndexedMemoryRecord, query: IMemoryQuery): boolean {
+export function indexedRecordMatchesQuery(entry: IIndexedMemoryEntry, query: IMemoryQuery): boolean {
   if (query.scope !== undefined && entry.scope !== query.scope) {
     return false;
   }
-  if (query.kind !== undefined && entry.record.envelope.kind !== query.kind) {
+  if (query.kind !== undefined && entry.envelope.kind !== query.kind) {
     return false;
   }
-  if (query.kinds !== undefined && !query.kinds.includes(entry.record.envelope.kind)) {
+  if (query.kinds !== undefined && !query.kinds.includes(entry.envelope.kind)) {
     return false;
   }
-  if (query.tag !== undefined && !entry.record.envelope.tags.includes(query.tag)) {
+  if (query.tag !== undefined && !entry.envelope.tags.includes(query.tag)) {
     return false;
   }
-  if (
-    query.provenanceSource !== undefined &&
-    entry.record.envelope.provenance.source !== query.provenanceSource
-  ) {
+  if (query.provenanceSource !== undefined && entry.envelope.provenance.source !== query.provenanceSource) {
     return false;
   }
-  if (query.filter !== undefined && !query.filter(entry.record)) {
-    return false;
-  }
+  // `query.filter` is deliberately NOT applied here — it is a predicate over the
+  // whole record, and the index holds envelopes. It runs after materialization;
+  // see `resolveQuery`.
   return true;
 }
 
@@ -278,10 +302,118 @@ export function indexedRecordMatchesQuery(entry: IIndexedMemoryRecord, query: IM
  * @public
  */
 export function selectByQuery(
-  entries: ReadonlyArray<IIndexedMemoryRecord>,
+  entries: ReadonlyArray<IIndexedMemoryEntry>,
   query: IMemoryQuery
-): IMemoryRecord<unknown>[] {
-  return entries.filter((entry) => indexedRecordMatchesQuery(entry, query)).map((entry) => entry.record);
+): IIndexedMemoryEntry[] {
+  return entries.filter((entry) => indexedRecordMatchesQuery(entry, query));
+}
+
+/**
+ * The shared select → order → page → materialize pipeline every non-semantic
+ * retriever runs, and the one place the body-vs-envelope ordering decision lives.
+ *
+ * @public
+ * @remarks
+ * **Without `query.filter`, ordering and paging happen over envelopes and only
+ * the page is materialized** — so `limit` genuinely bounds the number of records
+ * read, not merely the number returned. That is what makes `limit` a legitimate
+ * narrowing axis rather than a loophole, and it is conditional on the ordering
+ * key being an envelope field: both shipped comparators (`recencyCompare`,
+ * `rankCompare`) read `updated` / `seq` / `rank` and qualify. **An ordering that
+ * keyed on a body field could not use this path** and would have to sort after
+ * materialization, at which point `limit` bounds the result and not the read.
+ *
+ * **With `query.filter`, every envelope-survivor must be materialized first**,
+ * because the predicate takes a whole record. Semantics are preserved exactly;
+ * the cost is not. Pair `filter` with an envelope axis when the read cost
+ * matters.
+ */
+export function resolveQuery(
+  entries: ReadonlyArray<IIndexedMemoryEntry>,
+  query: IMemoryQuery,
+  resolver: IMemoryRecordResolver
+): Result<ReadonlyArray<IMemoryRecord<unknown>>> {
+  return materializePage(selectByQuery(entries, query), query, resolver, (candidates) =>
+    [...candidates].sort(orderingCompare(query.orderBy))
+  );
+}
+
+/**
+ * Materialize a selected, ordered page — **applying `query.filter` and paging in
+ * the right order**, which is the whole reason this is shared rather than
+ * open-coded per retriever.
+ *
+ * @remarks
+ * Two paths, and the choice is forced by where the predicate can run:
+ *
+ * - **No `filter`** — order and page over *envelopes*, then read only the page.
+ *   `limit` bounds the READ, not just the result.
+ * - **With `filter`** — the predicate takes a whole record, so every
+ *   envelope-survivor must be read first, then filtered, then paged. Paging
+ *   before filtering would return fewer than `limit` rows for no reason a caller
+ *   could see.
+ *
+ * **Every retriever must route through this.** `indexedRecordMatchesQuery`
+ * structurally *cannot* apply `filter` — it is handed an envelope — so a
+ * retriever that pre-filters with it and then materializes on its own silently
+ * ignores the predicate. That regression shipped once, in the stream that moved
+ * `filter` out of the pre-filter; this function exists so it cannot recur.
+ *
+ * @param selected - Entries surviving the envelope pre-filter.
+ * @param query - The query whose `filter` / `orderBy` / `limit` / `offset` apply.
+ * @param resolver - Body resolver.
+ * @param order - Applied to whichever collection is paged; identity is legal for
+ * a retriever whose ordering is intrinsic (semantic score, traversal order).
+ * @public
+ */
+export function materializePage<T extends IIndexedMemoryEntry>(
+  selected: ReadonlyArray<T>,
+  query: IMemoryQuery,
+  resolver: IMemoryRecordResolver,
+  order?: (candidates: ReadonlyArray<T>) => ReadonlyArray<T>
+): Result<ReadonlyArray<IMemoryRecord<unknown>>> {
+  const ordered: ReadonlyArray<T> = order === undefined ? selected : order(selected);
+  if (query.filter === undefined) {
+    return materializeEntries(limitEntries(ordered, query.limit, query.offset), resolver);
+  }
+  const predicate: (record: IMemoryRecord<unknown>) => boolean = query.filter;
+  return materializeEntries(ordered, resolver).onSuccess((records) =>
+    succeed(limitRecords(records.filter(predicate), query.limit, query.offset))
+  );
+}
+
+/**
+ * Materialize entries through the resolver, dropping any that have vanished
+ * since selection — a concurrent delete between selecting an envelope and
+ * reading its body is a legitimate race and yields a shorter list, not an error.
+ * A read that FAILS is a real fault and propagates.
+ * @public
+ */
+export function materializeEntries(
+  entries: ReadonlyArray<IIndexedMemoryEntry>,
+  resolver: IMemoryRecordResolver
+): Result<ReadonlyArray<IMemoryRecord<unknown>>> {
+  return mapResults(entries.map((e) => resolver.resolveRecord(e.scope, e.envelope.id))).onSuccess((records) =>
+    succeed(records.filter((r): r is IMemoryRecord<unknown> => r !== undefined))
+  );
+}
+
+/**
+ * The {@link limitRecords} window, applied to entries — used on the
+ * no-body-filter path so paging happens before anything is read.
+ * @public
+ */
+export function limitEntries(
+  entries: ReadonlyArray<IIndexedMemoryEntry>,
+  limit?: number,
+  offset?: number
+): ReadonlyArray<IIndexedMemoryEntry> {
+  const skip: number = offset !== undefined && offset > 0 ? offset : 0;
+  const windowed: ReadonlyArray<IIndexedMemoryEntry> = skip > 0 ? entries.slice(skip) : entries;
+  if (limit === undefined) {
+    return windowed;
+  }
+  return limit > 0 ? windowed.slice(0, limit) : [];
 }
 
 /**

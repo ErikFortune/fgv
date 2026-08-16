@@ -128,6 +128,123 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-memory-derived-state-reconciliation` 🔵 (code complete 2026-08-15 — breaking, design-first)
+
+**Status:** 🔵 in flight — code complete, every gate green (build / lint / test at 100% / repo-wide `rush rebuild` / four change files), on `integration/agent-memory-derived-state`, squashed onto `feat/vector-rebuild-report-by-kind` and riding **#633**. Deliberately **not** ✅, per this ledger's legend. **Breaking** on `IVectorIndex`, `IFragmentVectorIndex` and `IMemoryStore`, all pre-1.0.
+**Package surface:** `@fgv/ts-agent-memory` (`IMemoryStore`, `IVectorIndex`, `IFragmentVectorIndex`, `FileTreeMemoryStore`, three retrievers), `@fgv/ts-agent-memory-sqlite-vec` (both index classes), `.ai/instructions/LIBRARY_CAPABILITIES.md`.
+**Artifacts:** `.ai/tasks/completed/2026-08/agent-memory-derived-state-reconciliation/` (`brief.md`, `design.md`, `result.md`, `README.md` + Appendix A, `meta.yaml`)
+**Origin:** filed as `agent-memory-index-coverage-accessor`; **renamed and rescoped 2026-08-15** after applying `CODING_STANDARDS.md` § "We Build General Capabilities" — the narrow framing was an artifact of taking a consumer's ask as the unit of work rather than deriving the capability. The rescope made the stream *larger*, and that is the point of the correction.
+
+**Mission, and it closed.** `IMemoryStore.coverage()` and `IMemoryStore.reconcile(kind, artifact)`: every artifact the store derives from its records now has a coverage query and a targeted repair, in one shape. The matrix the brief was written against:
+
+| derived artifact | coverage — before → after | repair — before → after |
+|---|---|---|
+| `rank` | none → per-kind | `reconcileRank(kind)` → `reconcile(kind, 'rank')`, behaviour unchanged |
+| record vectors | `size`, a scalar → per-kind with a denominator | destructive `rebuild` → targeted `reconcile` |
+| fragment vectors | none → aggregate | **nothing on the contract** → `rebuild` + targeted `reconcile` |
+
+Fragment vectors closes **E4 on that lane** — the defect fixed for the record lane in `-48` and left open here, worse because `SqliteVecFragmentIndex` had no `rebuild` to promote.
+
+**The one idea everything falls out of: coverage is cheap and total; repair is expensive and targeted.** `coverage()` takes no argument because its inputs are an envelope walk plus one count per wired index. `reconcile` names both its kind **and** its artifact because the lanes are independently wirable, their units are incommensurable (one vector per record vs. N), and their costs differ by orders of magnitude — a measured case put 68 fragments behind a single 56 KB record.
+
+**`has(target)` is the load-bearing addition, and building it produced a better argument than the design had.** The design justified it as upgrading the numerator from *"the store believes"* to *"the index confirms"*. The implementation found the sharper reason: **it makes a state detectable that is otherwise invisible** — the index holds the vector, the envelope lost its `embeddingRef` (a failure swallowed after the vector was committed). From the envelope, that record is indistinguishable from a never-embedded one, and repairing it needs a restamp and **no embedder call at all**. That is also what makes `reconcile` targeted rather than a rebuild; a test counts embedder calls to pin it.
+
+**Two things the report refuses to collapse.** `covered` is a **belief** (envelopes carrying an `embeddingRef`) and `indexSize` is a **fact** (vectors held). With a persistent index they agree; with an in-memory index at open they do not, and `covered` lies in the confident direction. Collapsing them into one percentage would destroy the only free signal distinguishing the two deployment modes. And **absent is never zero**: each artifact member is optional, `undefined` meaning *not derived here at all* — the same three-way-ambiguity defect as `embeddingRef`, one level up.
+
+**Four refinements came from building rather than designing.** `recordCount`/`fragmentCount` rather than the designed `size`, because a one-to-many index makes `size` two-ways readable and a reader arriving from `IVectorIndex.size` takes the wrong one silently. Fragment coverage is **aggregate-only** for a structural reason the design missed — the fragment lane has no per-record envelope marker, so a per-kind numerator would cost one index query per record, which coverage is contractually not allowed to spend. The lane guard must check the **embedder** as well as the index, since an index wired without one is a legal store and the first implementation reported a cheerful success with every record in `failed`. And two package-internal extractions (`storeCoverage.ts`, `storeReconcile.ts`) the brief did not anticipate, forced by the 2000-line `max-lines` cap — the third consecutive `ts-agent-memory` stream to pay that toll.
+
+**The most important thing this stream produced is a bug it did not write.** A `/code-review` pass at high effort over the whole diff returned six findings, and **the two serious ones predate the stream**:
+
+- **`query.filter` was being silently ignored by five retrievers.** The predecessor moved the predicate out of the shared `indexedRecordMatchesQuery` pre-filter — correctly, since that helper takes an envelope and the predicate takes a whole record — and re-applied it in `resolveQuery`. But five retrievers call the pre-filter **directly** and materialize on their own. They stopped applying the predicate and returned records that had been excluded. **Nothing failed. Every test passed. Coverage was 100% throughout**, because the lines were covered and the behaviour was not. That surface had had a `code-reviewer` pass *and* an independent antagonist pass two days earlier. Fixed with `materializePage` as the single route, carrying the ordering rule the five sites were open-coding wrong (no filter → order and page over envelopes, read only the page; with a filter → read the survivors, filter, **then** page), and their `materializeEntries` / `limitEntries` imports removed so the old shape is not reachable by habit. **Codified in `TESTING_GUIDELINES.md` § "100% coverage cannot see a predicate that is never called"**: when you move a behaviour out of a shared helper, enumerate the callers and pin the behaviour at each one — and verify each test by reverting its call site and watching it go red.
+- **`get()` on a temporal kind read N files while its docstring promised one** — and that docstring had been written in this same stack as the fix for a *different* stale claim. One wrong assertion replaced by another.
+
+**The antagonist pass then returned seventeen findings over the closure record, two of them blocking.** The more serious: `docs/FUTURE.md`'s fragment entry was marked resolved in four places across the ritual's output and **had not been edited** (`git diff` +30/−0), with the title-correction credit misattributed to this stream rather than to commit `e16db5d61` in the predecessor. The other: the `query.filter` fix above was pinned by no per-retriever test — five were added and negatively verified. The remainder were doc-accuracy defects, all actioned; `README.md` carries them in Appendix A with each original quoted verbatim, and `design.md` is left uncorrected where implementation improved on it.
+
+**The `samples/testbed` recurrence is resolved rather than recorded a fourth time.** Fourth consecutive stream on this contract family; the documented remedy was applied instead of firing again — **`rush rebuild` is now an acceptance-criteria checkbox** in `CODING_STANDARDS.md` for any shared-contract change. The choice between the two candidate remedies is settled by evidence: of the four casualties three were test doubles but one was a *source* file, so the shared-double remedy covers half the observed cases and the checkbox covers all of them. The shared double is downgraded to P3. Ten hand-rolled index doubles across six files were widened by hand here rather than replaced — that is a chore, and mixing a six-file test refactor into a breaking contract diff would make it materially harder to review.
+
+**Deferred, and filed rather than lost** (`docs/FUTURE.md`): a restamped `embeddingRef` synthesizes the scoped key rather than recovering the reference the index minted, because no contract member returns it — correct for both shipped indexes, undecided for a third-party one because no consumer has a non-key reference and picking under that condition would be guessing. Plus the design's two open questions: no progress callback on `reconcile` (OQ-1), and `coverage()` does not cross-reference the observation store to split a shortfall into declined-vs-failed (OQ-2, and `reconcile` learns that split authoritatively anyway).
+
+**The CodeRabbit pass then found three more real bugs, and the best of them was a *value*, not a branch.** `IMemoryEnvelope.embeddingRef` is `string | null | undefined` where `null` is the **documented** "not embedded" sentinel — so both obvious presence checks are wrong, in opposite directions, and all three in-repo call sites had one of them: `coverage` counted a `null` as covered (inflating health in the confident direction), `reconcile` read a `null` as a reference and skipped the restamp, and `declineEmbedding` spent an index round trip the comment beside it says it avoids. Neither mistake is a type error, and neither is visible to a coverage gate, for exactly the reason codified two findings earlier: **the sentinel is a value rather than a branch.** Collapsed onto one exported `embeddingRefOf(envelope)`, which returns the reference rather than a boolean so a caller needing the string gets the check for free.
+
+Also from that pass: the repair path called all four **consumer-supplied** hooks bare, so an embedder that *throws* rather than fails escaped as a rejected promise out of `IMemoryStore.reconcile` — a Result-contract break at a public boundary, forty lines from the write path that had always captured the identical calls. And `MemoryListSelection`'s two members were not mutually exclusive, so `{ scanEveryRecord: true, kind }` type-checked and `list` took the scan branch and **silently discarded the narrowing** — a whole-vault read wearing a narrowed call's clothes, on the surface whose entire purpose is that whole-vault reads be deliberate. Fixed with `never` markers and pinned by a `@ts-expect-error` that becomes the build failure if they are removed.
+
+Three of the five findings were ours to have caught; the third `embeddingRef` site was one CodeRabbit itself missed and the verification pass found. Every fix is pinned by a test that was **watched failing** against the reverted code first.
+
+**Outstanding:** the cross-repo note.
+
+### `agent-memory-index-partial-read` 🔵 (code complete 2026-08-15 — breaking, coordinated)
+
+**Status:** 🔵 in flight — code complete, every mechanical gate green (build / lint / test at 100% / repo-wide rebuild / change files), on `feat/agent-memory-index-partial-read` stacked over `feat/vector-rebuild-report-by-kind`, awaiting merge to `release`. Deliberately **not** ✅, per this ledger's legend. **Two gates did not close and "all gates green" overstated it** (corrected 2026-08-15): the Copilot review loop never ran, and — the substantive one — this stream shipped a **live regression that every gate it passed was structurally unable to see**, found later by the successor stream's review and fixed there. See "the regression it could not see" below. **Breaking** on a pre-1.0 surface — and unusually, **reviewed and accepted by the consumer before implementation started**, which is what a design-first stream is for.
+**Package surface:** `@fgv/ts-agent-memory` (`IMemoryIndex`, `MemoryIndex`, `IMemoryStore`, `FileTreeMemoryStore`, every retriever, `memory_search`), `samples/testbed`, `.ai/instructions/LIBRARY_CAPABILITIES.md`.
+**Artifacts:** `.ai/tasks/completed/2026-08/agent-memory-index-partial-read/` (`brief.md`, `design.md`, `result.md`, `README.md`, `meta.yaml`)
+**Predecessor:** `agent-memory-index-injection-seam` (#582), which shipped the injection point and named this as the sequel.
+
+**Mission.** Lower `FileTreeMemoryStore`'s resident-memory ceiling — for real, rather than making it measurable.
+
+**What shipped.** Every `IMemoryIndex` read projects to `IIndexedMemoryEntry` (scope + envelope, **no body**); `rebuild` takes projected entries while `patch` keeps whole records; a new O(1) `get(target)` replaces the two full-index scans `SemanticRetriever` and `LinkTraversalRetriever` were doing per query; bodies resolve on demand through a one-method `IMemoryRecordResolver`. The "only a faithful delegating decorator is safe" rule is replaced by a **completeness-and-faithfulness** invariant — an implementation may change where entries live and how they are found, never which exist or what an envelope says, *because the write path reads it too*.
+
+**The second break is the one that will bite, and it was not in the brief** (it entered at design revision 3; the consumer's adopt verdict is revision 4, so they did see it). `IMemoryStore.list` now requires a selection that **narrows**: `list()` is a compile error, `list({})` and `list({ asOf })` fail (`asOf` projects, it does not narrow), and a whole-vault read is spelled `scanEveryRecord()`. This came out of the design review as the answer to "how do we absorb the read-latency cost of materializing on demand" — the accepted answer being not to absorb it but to make it unincurrable by accident. It is `safer-fetch`'s `addressGuard` / `allowAnyAddress()` idiom on a second surface. It buys **explicitness, not a cost bound**, and the docs say so rather than claiming more. `listEntries()` is the free escape hatch for the callers that only need envelopes.
+
+**Two reversals worth not re-deriving**, both kept in `design.md` rather than tidied away:
+
+- **Draft 1 recommended DELETING four `@public` accessors** on an in-repo census showing zero callers. That is not a meaningful measure in a **published utility library** — a `@public` method with no internal callers is the normal shape of API that exists *for* consumers, and this repo cannot see them. The census measures whether the internal refactor is *blocked*, nothing more. Projection preserves every capability and lifts the ceiling just as completely. The consumer's later census happened to confirm they call none of the four, which does **not** vindicate the argument: it was wrong independent of the answer.
+- **`rebuild` had been classified as a write** because it sits beside `patch`. The consumer caught it, and source made it worse than their case: `_initialIndex` collected every record in the vault, **whole, into one array**, so the store's own open path held N whole records at peak no matter what the index retained. *That peak was the resident-memory moment the stream existed for.* Now one record — parse, fully validate, project, discard.
+
+**It is measured, which was a gate rather than a nicety.** The brief demanded a metric and a harness stated *before* implementing, or "the stream will end with a plausible-sounding claim nobody checked". Result: what the index retains falls **9.0 MiB → 1.1 MiB (88.3%)**, and a store open costs **17.3%** of body volume, inside the design's own `< 25%` bar. **The harness printed confident meaningless numbers twice first**, and both failure modes generalize past this stream: a corpus shared between the two A/B passes retains every body itself, so the whole-record side costs one pointer per entry and the comparison reports no difference for the wrong reason; and `padEnd`-built bodies are **not resident at all** — 2000 4-KiB strings measured 1.15 MiB of their 8.2 MiB of characters and freed 0.04 MiB, because V8 shares the padding's backing store. Codified as a lesson: any memory harness must sanity-check that its fixture frees what it claims to hold before a single number it prints is believed.
+
+**One delivery-form deviation:** the measurement shipped as `perf/residentMemory.js`, a script run on demand under `--expose-gc`, not the `src/test/perf/*.test.ts` the design proposed. A test that must be excluded from the coverage gate is a signal it does not belong in the suite — it would put a machine-dependent number behind CI and make CI's runtime a function of N.
+
+**Coordination is written and, again, not acknowledged.** `.ai/notes/cross-repo-handoffs/personaility-reply-2026-08-15-index-partial-read-shipped.md` leads with the migration — retriever construction widens from `(index)` to `({ index, resolver: store })`, and that is the whole of it — and flags separately the three breaks their `IMemoryIndex` census could not have caught: `list`'s required selection, `IMemoryStore` gaining a required `listEntries()` **and** extending `IMemoryRecordResolver`, and the two `@public` free functions `indexedRecordMatchesQuery` / `selectByQuery` (the latter's *return* type changed). Their bump tooling takes the whole `@fgv` set at once. **Confirm they have read it before the alpha publishes.**
+
+**The regression it could not see** *(added 2026-08-15, found by the successor stream)*. This stream moved `query.filter` out of the shared `indexedRecordMatchesQuery` pre-filter — correctly, since that helper is handed an envelope and the predicate takes a whole record — and re-applied it in `resolveQuery`. But **five retrievers call the pre-filter directly** and materialize on their own. They silently stopped applying the predicate and began returning records that had been excluded. Nothing failed; every test passed; **coverage was 100% before and after**, because every line still ran. A `code-reviewer` pass *and* an independent antagonist pass had both been run on this surface days earlier and neither caught it, because neither was looking for a caller that had gone quiet. Fixed in `agent-memory-derived-state-reconciliation` with a single `materializePage` route and one negatively-verified regression test per call site. Codified in `TESTING_GUIDELINES.md` § "100% coverage cannot see a predicate that is never called" — **when you move a behaviour out of a shared helper, enumerate its callers and pin the behaviour at each one.**
+
+**An independent antagonist pass over the closure record produced thirteen findings, all actioned** — and one was a live regression rather than a documentation defect. (Thirteen was the count *that pass* produced; it is not a claim that thirteen was all there was — the `query.filter` break above survived it.) The layer-1 reviewer's `listScoped` finding had been fixed by making it **drop-tolerant**, and a dropped record lands in none of `records` / `excluded` / `indexed` / `declined` / `skipped`, so coverage undercounts *in the direction of looking healthier* — verbatim the failure the predecessor stream shipped, that same week, to close. Reverted to fail-loud; the underlying eviction race is filed in `FUTURE.md` rather than improvised. The general form is worth keeping: **a robustness fix that converts a failure into a silence is not a robustness fix** unless something downstream can still count what was lost. The pass also caught a whole date cohort a day in the future, an `IMemoryQuery`-was-reshaped claim that the API diff shows is empty, a line-count pair matching no commit in the range, and this entry's own omission of the free-function breaks.
+
+**This is the third consecutive stream to break `samples/testbed`**, and it widened the class: the casualty was a *source* file (`scenarios/memoryToolsGate/index.ts`), not a test double, so the shared-test-double remedy in `TECH_DEBT.md` would not have caught it. Only the repo-wide `rush rebuild` did — reweighting that entry toward putting the repo-wide build on the acceptance-criteria list.
+
+**The predecessor's carried-forward item is dispositioned, not dropped.** #582's self-review-only pass: **declined**, because this stream rewrote that seam's entire read surface and re-derived every write-path read, which is where a #582 defect would have lived — a retroactive pass would review code that no longer exists in that shape. The independent pass that *was* commissioned covers the superseding surface.
+
+### `vector-rebuild-report-by-kind` 🔵 (code complete 2026-08-15 — breaking, coordinated)
+
+**Status:** 🔵 in flight — code complete, all gates green, **#633** open against `integration/sweep-followups`, awaiting merge to `release`. Deliberately **not** ✅: this ledger's own legend defines that as *merged to `release`*, and nothing is merged. **Breaking** on a pre-1.0 surface, by agreement with the consumer. Delivery must be coordinated — see below.
+**Package surface:** `@fgv/ts-agent-memory` (`IVectorRebuildReport`, `IMemoryRecordSource`, `InMemoryCosineIndex`), `@fgv/ts-agent-memory-sqlite-vec` (contract follower), `.ai/instructions/LIBRARY_CAPABILITIES.md`.
+**Artifacts:** `.ai/tasks/completed/2026-08/vector-rebuild-report-by-kind/` (`brief.md`, `result.md`, `README.md`, `meta.yaml`)
+**Origin:** four-round exchange with PersonAIlity, 2026-08-15, out of their ask 1 of 9 — which had already shipped in `5.1.0-48`.
+
+**Mission.** Resolve every count in `IVectorRebuildReport` by kind, add `excluded` (which needs `IMemoryRecordSource.list()` to report what it filtered), and decouple coverage reporting from the error-handling mode.
+
+**The rule the stream exists to install**, and the reason it is worth a stream rather than a patch: *every count in a coverage report is resolved by kind, because such a report exists to answer "is my coverage what I intended?", and no bare total can answer that in either direction.* The tempting exception — that `indexed` is the positive case and recoverable from the index — was tested against the API report and is **false**: hits carry `target`, not `kind`; `query` needs a probe vector and a `topK`; there is no enumeration. `indexed` is in fact the more dangerous count to leave bare, being the one a coverage surface renders.
+
+**How it got here is the justification.** The consumer's first proposed fix was in the wrong layer and they conceded it; their counter caught us about to reproduce the thread's own defect one layer down; and their final question — *what is the rule, so the next person is not deciding a fourth field by re-running this argument?* — inverted the answer we were about to give. The brief carries the rejected alternatives with their reasons so they are not re-litigated.
+
+**Coordination is not optional.** Their bump tooling takes the whole `@fgv` set at once, so a breaking seam change would otherwise arrive with everything else and be discovered by a red build rather than by reading. Flag the alpha that carries it. The flag is written: `.ai/notes/cross-repo-handoffs/personaility-reply-2026-08-15-rebuild-report-shipped.md`, naming both breaks, the migration, and the rollback-report trap.
+
+**What shipped, and where it differs from the brief.** All four deliverables landed in one change rather than the staged pair the consumer left open — staging meant two breaking releases against the same three fields, the second breaking every reader the first had just made them fix. Three things the brief did not anticipate:
+
+- **`indexed` stopped being read back off the index.** Both implementations tally per successful `add` instead — the in-memory one used `_vectors.size`, the SQLite one a `COUNT(*)`. Forced (neither knows kinds) and better twice over: `indexed` becomes a per-record tally consistent with its siblings so the sum-of-buckets invariant holds exactly, and the SQLite side lost the one fallible step in assembling a report.
+- **`asRecordSource()`'s filter moved to a new package-internal `store/vectorRecordSource.ts`.** `fileTreeMemoryStore.ts` was at 1995 lines against a 2000-line `max-lines` cap and the inline tally took it to 2012. The extraction leaves it at 1991 — **4 lines bought, 9 of headroom left**, neither of which is a solution. This file has crossed the line before: `CODING_STANDARDS.md` § "A local warning is a CI failure" is written from it. Filed as a P2 in `TECH_DEBT.md` by this stream, since the ledger carried no standing entry — the only max-lines entry was `apiClient.ts`, retired 2026-08-14.
+- **The fragment index was modified despite being explicitly out of scope**, forced by the seam change — and editing it surfaced that `InMemoryFragmentCosineIndex.rebuild` reset **before** listing, so a transient list failure emptied a healthy index. That is the exact data-loss ordering the record-granular sibling documents as already corrected, and on the durable sibling it had been real loss. Fixed here along with the test that was pinning it.
+
+The repo-wide `rush rebuild` earned its place: it caught exactly the casualty the brief predicted — a fake `IVectorIndex` in `samples/testbed` that neither library's own suite can see. **That is the second consecutive stream against this contract to break that same file** (the first broke #614), with the rule codified in `CODING_STANDARDS.md` in between and written from that very fake. The recurrence is filed as tech debt proposing a mechanical gate; a third restatement of the rule would not have helped.
+
+**Open, and not discharged by the close:** the coordination flag is **written but not acknowledged**. The brief called coordination "required and not optional" because a silent arrival is the failure mode, and writing the note is only half of it. Confirm PersonAIlity has read it before the alpha carrying this publishes.
+
+An independent antagonist pass over the closure record produced eleven findings, all actioned — including this entry's own stale `TECH_DEBT.md` citation and a premature ✅. Dispositions in the stream's `result.md`; the substantive ones in its README's Appendix A.
+
+
+### `sqlite-vec-path-open` 🟢 (queued 2026-08-15 — small, additive)
+
+**Status:** 🟢 ready to start. Additive; nothing existing changes or goes away.
+**Package surface:** `@fgv/ts-agent-memory-sqlite-vec` (both index classes + `model.ts`), `.ai/instructions/LIBRARY_CAPABILITIES.md`.
+**Brief:** `.ai/tasks/active/sqlite-vec-path-open/brief.md`
+**Origin:** PersonAIlity ask, 2026-08-14, against `5.1.0-49`. Consumer-marked **low** priority with a shipped workaround and an explicit "a won't-do is a fine answer".
+
+**Mission.** Add a path-based factory beside the existing bring-your-own-`Database` one, so the single-index case needs neither a consumer value-import of `better-sqlite3` nor a hand-rolled `captureResult` around a constructor that throws.
+
+**Why it is worth doing at all.** All four of the ask's claims re-verified against source, and one is sharper than the ask states: our three source files import `better-sqlite3` as `import type` **only**. The consumer's value-import is not shared discomfort — it exists solely because our factory signature forces it. This really is the one place the wrapper leaks its own dependency into consumer source.
+
+**Two corrections to the ask, both in the brief.** It names one class; `SqliteVecFragmentIndex.create` has the same shape and the same leak, so a fragment-only consumer is unhelped — do both or neither. And `close()` cannot just be a method: `create()`-made instances hold a consumer-owned handle and must stay incapable of closing it, so the disposer should travel with `open()`'s return rather than sit on the class. That second one changes their call site, so it is worth telling them before we build.
+
 ### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
 
 **Status:** 🟢 **shipped to `release`** — all five units merged 2026-08-12, plus one unplanned refactor that unblocked them. Nothing published yet; the alpha still has to go out. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md`, `…-reply-2026-08-11-ask-package.md`, `…-status-2026-08-12-stream-a.md`, `…-status-2026-08-12-shipped.md`.
@@ -197,6 +314,147 @@ Three items from their post-`-48` sweep, **tracked here with verdicts so "deferr
 
 ---
 
+
+### `task-corpus-index` 🔵 → `agent-memory-mcp-server` 🔵 (a conditional pair)
+
+**Status:** 🔵 both **proposed, neither started**. Briefs at
+`.ai/tasks/active/task-corpus-index/brief.md` and
+`.ai/tasks/active/agent-memory-mcp-server/brief.md`.
+**Ordering is a hard dependency and the second is conditional on the first's outcome.**
+
+**Scope moved during drafting.** It began as an index; it is now **two skills and the metadata
+contract between them** — `/finalize-task` (write side) and `/task-corpus` (read side).
+**If only one half ships, ship the write side**, because the index is only as good as the metadata
+under it.
+
+**Why `/finalize-task`, and why the evidence is unusually strong.** Closing a stream is a
+multi-part ritual — generate metadata, migrate `active/` → `completed/`, write the polished
+README, update this ledger, update `LIBRARY_CAPABILITIES.md`, verify change files. The rule is
+already written down and unambiguous (`artifact-protocol.md`: *"the migration ships in the same PR
+as the work"*), and it **already failed twice**: the protocol names its own recurrence on the
+`ai-assist-client-tools` cluster close (#451 → #452), where *"the codified rule existed; the
+failure was the orchestrator's pre-promotion checklist not gating on it"* — and the fix applied
+then was *another checklist gate*. The result today is **68 stream directories against 43 ledger
+entries**. Writing it down did not work; adding a gate did not work. The remaining move is to make
+it **one invocation** rather than a list a tired agent is asked to remember at the end of a long
+stream.
+
+**And an antagonist pass before anything is handed over.** Every artifact the ritual produces is a
+claim about what happened, written by whoever just spent a long stream forming a view of what
+happened — the exact condition under which a confidently wrong claim goes unnoticed. `STATUS.md`
+already measured this: *"Independent layer-1 passes earn their cost … commissioning independent
+`code-reviewer` passes retroactively found: a real P2 on #582."* So the pass is independent where a
+reviewer can be spawned, refute-first by framing, and required to state what it checked — *"looks
+right"* is not an output. It targets **inaccuracies** (every claim traces to a quotable line;
+`sourceLine` appears verbatim; PR numbers belong to this stream) and, harder and more valuable,
+**omissions** — the highest-yield being *"`diverged` is empty: true, or unexamined?"*, since an
+empty `diverged` on a stream that visibly changed shape is the characteristic failure of the whole
+ritual. It is **not optional in retroactive mode** — more important there, not less, since you are
+reconstructing a stream you did not run.
+
+**The design line: script what cannot be wrong, prompt what needs judgment.** Directory moves,
+bucket derivation, index regeneration and `rush change --verify` get automated. The
+`WORKSTREAMS.md` entry is **drafted for review**, and `LIBRARY_CAPABILITIES.md` is **prompted, not
+written** — auto-generated prose would degrade two artifacts whose whole value is that they are
+curated. Must run **retroactively** — and in that mode it **moves nothing**, since those streams already
+sit in `completed/`; it backfills metadata and ledger entries in place, skipping the migration and
+the change-file gate. And it should close *itself*: if `/finalize-task` cannot finalize its own
+stream, it is not finished.
+
+**The skill is written and usable now** — `.claude/skills/finalize-task/SKILL.md`, authored ahead
+of the tooling because every step is doable by hand. The generator would make some steps cheaper;
+it was never a prerequisite. So the retroactive backfill can start immediately, and what remains
+in this stream is tooling that accelerates a ritual already running.
+
+**Origin.** Erik, 2026-08-14: *"Can you suggest a memory tool to index our task files so you can
+read them? Prefer to just adopt if there's something that meets our needs but we can build if
+needed."*
+
+**The problem, stated precisely.** `.ai/tasks/` is **269 markdown files / 3.1 MB** across 14
+active and 52 completed streams, and it is the repo's institutional memory. An agent picking up
+cold cannot use most of it — but **not because retrieval is hard**. 3 MB is instantly greppable
+and every agent already has `Grep`/`Glob`/`Read`. The failure is **discovery**: you cannot grep
+for a stream whose existence you do not suspect. Demonstrated in the same session — the
+branch-migration plan existed, complete and current, and took four searches across three wrong
+guesses to find. One search less and it would have been re-derived.
+
+**Why two streams and not one.** The corpus already has strong file conventions (`brief.md` 59,
+`state.md` 47, `result.md` 32, `README.md` 28, `design.md` 16) and a documented two-tree layout —
+but **no frontmatter and no index**. So the cheap hypothesis is that discovery is a *metadata*
+problem, not a *search* problem, and `task-corpus-index` tests it: frontmatter plus a generated
+`INDEX.md` plus a generator that fails loudly rather than emitting a partial index.
+
+`agent-memory-mcp-server` is the expensive half, and it is **deliberately gated on evidence**.
+It builds `@fgv/ts-agent-memory-mcp` — a Result-integration boundary over the MCP SDK's *server*
+side — and ingests the corpus into a vault. Worth doing if the index falls short; a large build
+in search of a justification if it doesn't. **Start it only on a recorded instance of a real
+question the index failed to surface.**
+
+**The adopt-vs-build finding.** Surveyed before proposing a build, per the ask:
+- **Off-the-shelf MCP memory servers** are knowledge-graph shaped (entities/relations for
+  conversational recall), not corpus indexers for an existing markdown tree. Adopting one still
+  leaves the ingest pass — which is the actual work. Poor fit. *(Not exhaustively surveyed;
+  worth a second look before committing to the build.)*
+- **Our own `@fgv/ts-agent-memory` is the right substrate** and is unreachable for one specific,
+  verified reason: `createMemoryTools` returns `AiAssist.IAiClientTool[]` for ai-assist loops
+  (`memoryTools.ts:693`), and `@fgv/ts-extras-mcp` is an MCP **client** that adapts the other
+  direction and puts a server explicitly out of scope. **The missing piece is a server, not a
+  capability.**
+
+**Invocation decided (2026-08-14): on demand, not pre-commit.** A `rush index-tasks` custom
+command, and a `/task-corpus` skill that **regenerates before reading**. The hook was declined on
+evidence: `common/git-hooks/pre-commit` already exists, and it was bypassed repeatedly in the very
+session that motivated this — agents committing from bare worktrees where the rush autoinstaller
+was never installed, so the hook would have failed the commit. It does not run in exactly the
+bulk-work sessions where freshness matters, and it would conflict across parallel worktrees on one
+shared generated file. Because the skill regenerates first, no agent depends on the committed copy
+being fresh, which removes the need for a CI verify gate too — consistent with the change-file
+lesson about gates invisible to the local suite.
+
+**Metadata is a per-stream `meta.yaml`, built once at stream completion (decided 2026-08-14).**
+Not hand-authored frontmatter across 269 files. It hooks the completion transition that already
+exists, lands in the stream-closing PR where a human still has context to review it, and — because
+each stream writes only its own directory — **removes the shared-file conflict class entirely**.
+**`summary` is a generated synthesis** across `brief.md` and `result.md` — because the most useful
+fact about a closed stream is the delta between what it was asked to do and what it actually did,
+including what got cut, and no authored line contains that (it spans two files). An extraction-only
+draft was considered and **rejected as over-cautious**: it yields the outcome while silently
+dropping that the outcome changed shape, which is exactly where `orchestrator.md` says drift
+lives. The risk was never generation but *unreviewed* generation, and building at completion
+already puts it in the closing PR in front of someone with full context. Made auditable by
+structuring it (`intended` / `shipped` / `diverged` as named fields, so a wrong claim is visible
+rather than buried) and by carrying the extracted authored line verbatim as `sourceLine`, a
+free check a reader can compare against without opening the stream. **`keywords` are generated**
+too — that is where a model adds recall, and a bad keyword costs one wasted grep rather than a
+false belief. Blank beats fabricated wherever `result.md` is thin. A `sourceHash` makes
+post-close edits detectably stale rather than quietly wrong.
+
+**`INDEX.md` is gitignored (decided 2026-08-14).** The question was whether it is useful to
+someone browsing from outside the repo — and that audience is already served, better, by *this
+file*: 803 lines, 41 curated stream entries, Active and Completed. The generated index would
+duplicate that for humans while being worse at it. Its unique value is **completeness for
+machines**: **68 stream directories exist on disk against 41 narrated entries here**, and
+**31 of those directories have no entry under their own name — 20 of them are not mentioned
+anywhere in this file, even in passing.** Agents need all 68; humans want the curated 41.
+Different audiences, different artifacts, no reason to commit the machine one — which also
+removes the merge-conflict class and the risk of an agent hand-merging a generated file into
+something corrupt that reads as authoritative. **Side benefit taken:** the generator also reports
+stream dirs missing a ledger entry, turning that 31-stream gap into a worklist.
+
+*(Counts measured 2026-08-14. An earlier draft of this section said "43 narrated entries" and
+"~25 streams" — both wrong. The 43 counted this file's two prose section headings as if they
+were streams, and the 25 was a subtraction of two totals rather than a set difference, which
+silently nets naming mismatches against genuine gaps. Four ledger entries name a stream with no
+matching directory (`ai-assist-thinking-events`, `fetch-primitive-threat-model`,
+`personaility-asks-2026-08`, `ts-prompt-assist-features`); some of those are the same stream as
+a differently-named directory, which is exactly the reconciliation a set difference surfaces and
+a subtraction hides.)*
+
+**The open question that sizes the second stream** — resolve it before anything else there:
+does `ISchemaValidator.toJson()` drop straight into MCP tool registration? If yes the adapter is
+small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the estimate moves.
+
+---
 
 ### `module-resolution-upgrade` 🟢
 
@@ -294,7 +552,7 @@ Three items from their post-`-48` sweep, **tracked here with verdicts so "deferr
 **Status:** 🟢 ready to commission (substrate prep in flight)
 **Branch base:** `release`
 **Workflow shape:** single-PR breaking-change feature
-**Substrate:** `.ai/tasks/active/prompt-assist-screeners/{brief.md, state.md}`
+**Substrate:** `.ai/tasks/completed/2026-05/prompt-assist-screeners/{brief.md, state.md}`
 **Package surface:** `@fgv/ts-prompt-assist` (safety packlet) + `.ai/instructions/LIBRARY_CAPABILITIES.md` + in-repo consumers of the dropped fields
 **Out-of-scope:** the local-classifier screener itself (B-3 of `local-ai-exploration`); LLM-based screening; screener caching; parallel execution; whole-prompt/post-render screening hook.
 
@@ -532,7 +790,7 @@ So **R2 is not the safe, independent one-liner §4 called it** — it converts a
 **Substrate:** `.ai/tasks/completed/2026-06/json-schema-derives-t/{state.md, README.md}` + `.ai/tasks/completed/2026-06/json-schema-converter-alignment/{brief.md, state.md, research.md, derives-t-feasibility-brief.md, derives-t-feasibility.md, README.md}` (alignment spike rides with this stream's squash)
 **Package surface:** `@fgv/ts-json-base` (new `json-schema-builder` packlet, consumer-facing `JsonSchema` namespace) — ~505 lines impl + ~620 lines tests; no surface change to existing exports.
 
-**Mission.** Typed JSON Schema with derived static types for the LLM-tool subset. **Schema IS the validator.** Each factory returns an `ISchemaValidator<T>` that extends `Validator<T>`, carries the phantom `static: T` for `Static<typeof schema>` extraction, and exposes `validate()` / `convert()` / `toJson()` as methods. `fromJson(rawJsonObject)` parses incoming JSON Schema (e.g. from MCP) into an `ISchemaValidator<JsonValue>` via `Converters.discriminatedObject` with arms recursing through `self` (enabled by PR #442's discriminatedObject self-fix). Consumer authors a single typed value and gets verified-not-asserted type safety end-to-end.
+**Mission.** Typed JSON Schema with derived static types for the LLM-tool subset. **Schema IS the validator.** Each factory returns an `ISchemaValidator<T>` that extends `Validator<T>`, carries the phantom `__staticType?: T` for `Static<typeof schema>` extraction, and exposes `validate()` / `convert()` / `toJson()` as methods. *(Field name corrected 2026-08-14 — this line read `static: T`, which is not what shipped and is not a legal property name to write in TypeScript source.)* `fromJson(rawJsonObject)` parses incoming JSON Schema (e.g. from MCP) into an `ISchemaValidator<JsonValue>` via `Converters.discriminatedObject` with arms recursing through `self` (enabled by PR #442's discriminatedObject self-fix). Consumer authors a single typed value and gets verified-not-asserted type safety end-to-end.
 
 **Origin.** Surfaced during `ai-assist-client-tools` Phase A review: a consumer authoring both JSON Schema (wire) and Converter/Validator (runtime) over the same shape is error-prone. Two-phase spike (`json-schema-converter-alignment`) tested feasibility; phase-1 broad survey + phase-2 schema-derives-T feasibility verdict, both shipped as substrate artifacts. Erik chose Option 1 (commission alignment now, hold ai-assist-client-tools Phase B/C). Four Copilot review rounds + structural pivots; round 3 surfaced a load-bearing validator/convert symmetry bug; loop converged on diminishing returns at round 4 (4 of 10 used per L33).
 
@@ -602,7 +860,8 @@ So **R2 is not the safe, independent one-liner §4 called it** — it converts a
 
 ### `ts-prompt-assist-features` ✅ (cluster)
 
-**Status:** ✅ shipped — cluster integration branch `claude/ts-prompt-assist-features` ready for promotion to `release`
+**Status:** ✅ shipped — cluster integration branch `claude/ts-prompt-assist-features` promoted to `release` via [#397](https://github.com/ErikFortune/fgv/pull/397) (`88545a5dc`). *(Corrected 2026-08-14: this line read "ready for promotion to `release`" long after the promotion landed, and four later prompt-assist streams — #407, #460, #490, #538 — had already built on top of it.)*
+**Directory:** `.ai/tasks/completed/2026-05/ts-prompt-assist/` — note the directory name differs from this entry's id, so id-matching tools report this stream as un-narrated; `meta.yaml` carries a `ledgerEntry:` field recording the mapping.
 **Cluster scope:** `@fgv/ts-prompt-assist` v0.1 (new library) + `@fgv/ts-extras/mustache` additive extension + `@fgv/ts-res` typed-conditions support (sub-stream below) + sample-app demonstration in `samples/ai-image-gen-sample`
 **Sub-stream:** [`ts-res-typed-conditions`](#ts-res-typed-conditions-) (below)
 

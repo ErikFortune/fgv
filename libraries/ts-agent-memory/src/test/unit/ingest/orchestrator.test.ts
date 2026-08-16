@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converters, Logging, Result, fail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   BodyConverterRegistry,
@@ -27,9 +27,11 @@ import {
   IIngestItemResult,
   InMemoryCosineIndex,
   IMemoryClassification,
+  IIndexedMemoryEntry,
   IMemoryClassifier,
   IMemoryEnvelope,
   IMemoryRecord,
+  IMemoryRecordListing,
   IMemoryRecordSource,
   IMemoryStore,
   IProvenance,
@@ -52,7 +54,9 @@ import {
   Tag,
   TemporalIdentityCodec,
   TemporalVersionedPolicy,
-  serializeMemoryFile
+  serializeMemoryFile,
+  scanEveryRecord,
+  IDerivedStateCoverage
 } from '../../../index';
 
 // --- kinds --------------------------------------------------------------------
@@ -518,18 +522,29 @@ function mockStore(overrides: Partial<IMemoryStore>): IMemoryStore {
     list:
       overrides.list ??
       ((): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>> => Promise.resolve(succeed([]))),
+    listEntries:
+      overrides.listEntries ??
+      ((): Promise<Result<ReadonlyArray<IIndexedMemoryEntry>>> => Promise.resolve(succeed([]))),
     listScoped:
       overrides.listScoped ??
       ((): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> => Promise.resolve(succeed([]))),
+    resolveRecord:
+      overrides.resolveRecord ?? ((): Result<IMemoryRecord<unknown> | undefined> => succeed(undefined)),
+    coverage:
+      overrides.coverage ??
+      ((): Promise<Result<IDerivedStateCoverage>> =>
+        Promise.resolve(succeed({ records: new Map<Kind, number>() }))),
     // Mirrors the store's default policy (KnowledgeLwwPolicy → 'content'), so a
     // mock store keeps the pre-accessor layer-1 behavior unless a test overrides it.
     dedupScopeFor: overrides.dedupScopeFor ?? ((): DedupScope => 'content'),
     embedsKind: () => true,
-    reconcileRank: () => Promise.resolve(succeed(0)),
+    reconcile: (kind: Kind) =>
+      Promise.resolve(succeed({ artifact: 'rank' as const, kind, examined: 0, repaired: 0, failed: [] })),
     asRecordSource:
       overrides.asRecordSource ??
       ((): IMemoryRecordSource => ({
-        list: (): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> => Promise.resolve(succeed([]))
+        list: (): Promise<Result<IMemoryRecordListing>> =>
+          Promise.resolve(succeed({ records: [], excluded: new Map<Kind, number>() }))
       })),
     put: overrides.put ?? ((r): Promise<Result<IMemoryRecord<unknown>>> => Promise.resolve(succeed(r))),
     delete: overrides.delete ?? ((): Promise<Result<MemoryId>> => Promise.resolve(fail('n/a')))
@@ -699,8 +714,16 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
     const ghostIndex: IVectorIndex = {
       add: (t) => Promise.resolve(succeed(t.id as string)),
       remove: (t) => Promise.resolve(succeed(t)),
+      has: () => Promise.resolve(succeed(false)),
       size: 0,
-      rebuild: () => Promise.resolve(succeed({ indexed: 0, declined: 0, skipped: [] })),
+      rebuild: () =>
+        Promise.resolve(
+          succeedWithDetail({
+            indexed: new Map<Kind, number>(),
+            declined: new Map<Kind, number>(),
+            skipped: []
+          })
+        ),
 
       query: (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> =>
         Promise.resolve(succeed([{ target: kt('ghost'), score: 0.99 }]))
@@ -733,8 +756,16 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
     const failingIndex: IVectorIndex = {
       add: (t) => Promise.resolve(succeed(t.id as string)),
       remove: (t) => Promise.resolve(succeed(t)),
+      has: () => Promise.resolve(succeed(false)),
       size: 0,
-      rebuild: () => Promise.resolve(succeed({ indexed: 0, declined: 0, skipped: [] })),
+      rebuild: () =>
+        Promise.resolve(
+          succeedWithDetail({
+            indexed: new Map<Kind, number>(),
+            declined: new Map<Kind, number>(),
+            skipped: []
+          })
+        ),
 
       query: (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> => Promise.resolve(fail('query kaput'))
     };
@@ -1051,10 +1082,12 @@ describe('MemoryIngestOrchestrator — contradicts→temporal interlock', () => 
       (rec: IMemoryRecord<unknown> | undefined) => expect(rec?.body).toBe('the sky is grey')
     );
     // The prior version is invalidated (invalidate-don't-delete).
-    expect(await store.list()).toSucceedAndSatisfy((all: ReadonlyArray<IMemoryRecord<unknown>>) => {
-      const v1 = all.find((rec) => rec.envelope.id === v1Id);
-      expect(v1?.envelope.temporal?.invalid_at).toBe(2000);
-    });
+    expect(await store.list(scanEveryRecord())).toSucceedAndSatisfy(
+      (all: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        const v1 = all.find((rec) => rec.envelope.id === v1Id);
+        expect(v1?.envelope.temporal?.invalid_at).toBe(2000);
+      }
+    );
   });
 
   test('an invalidated version does not exact-dedup a later candidate that repeats its body', async () => {

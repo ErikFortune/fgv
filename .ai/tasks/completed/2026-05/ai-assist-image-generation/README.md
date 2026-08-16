@@ -3,6 +3,8 @@
 **Stream ID:** ai-assist-image-generation
 **Bucket:** 2026-05
 **PR:** [#329](https://github.com/ErikFortune/fgv/pull/329) — `feat(ai-assist): layered image generation options architecture (Phase B)`
+**Phase A signoff PR:** [#327](https://github.com/ErikFortune/fgv/pull/327) — `docs(ai-assist-image-generation): phase A signoff + phase B brief`
+**Landed on `release`:** via cluster-merge [#336](https://github.com/ErikFortune/fgv/pull/336) (`bffa7b690`), same day
 **Merge commit:** `e936fd15f` (into `claude/ai-assist-features` integration branch)
 **Phase B branch:** `claude/implement-image-generation-m7xMi`
 **Cross-repo consumer:** the consumer project surfaced the originating bugs; published once `claude/ai-assist-features` lands on `release` (cluster close) and is mirrored to `prerelease` for the next alpha cut
@@ -20,7 +22,7 @@ Complete reshape of the image-generation feature across all four providers (Open
 3. Model-specific blocks (`models` array includes the resolved model)
 4. Other-blocks (escape hatch via `IOtherModelOptions`, raw `JsonObject` passthrough)
 
-Later tier wins; within tier, declaration order wins. Provider/family-mismatch blocks silently skipped during filtering. The merge function returns `Result<IResolvedImageOptions>` for caller-side Result-chaining.
+Later tier wins; within tier, declaration order wins. Provider/family-mismatch blocks silently skipped during filtering. The merge function `resolveImageOptions` returns a bare `IResolvedImageOptions`; the separate `validateResolvedOptions` returns `Result<IResolvedImageOptions>` for caller-side Result-chaining. *(Corrected 2026-08-14 — see [Appendix A.1](#a1--the-merge-functions-return-type-was-misstated).)*
 
 ### Per-family config types
 
@@ -44,10 +46,16 @@ Later tier wins; within tier, declaration order wins. Provider/family-mismatch b
 
 ### Deprecated models dropped (D3)
 
+Three models, plus one obsolete field:
+
 - `imagen-3.*` — slated for shutdown June 24-30, 2026
 - `grok-2-image-1212` — already deprecated Feb 28, 2026
 - `grok-imagine-image-pro` — deprecated May 15, 2026
-- `imagen.negativePrompt` field — obsolete with Imagen 3 retirement
+- *(not a model)* `imagen.negativePrompt` field — obsolete with Imagen 3 retirement
+
+Dropped outright with **no migration path**, per D3. Note `design.md` §8.7/§8.10 had
+recommended migrate-with-notice ("notify consumers to switch to `imagen-4.0-generate-001`");
+D3 overrode that with unconditional removal and no deprecation shim.
 
 xAI `defaultModel.image` updated `grok-2-image-1212` → `grok-imagine-image-quality` (the previous default was already broken).
 
@@ -70,7 +78,7 @@ xAI `defaultModel.image` updated `grok-2-image-1212` → `grok-imagine-image-qua
 - [x] Layered options types compile, pass api-extractor
 - [x] 4-tier merge precedence: 57 tests in `imageOptionsResolver.test.ts`
 - [x] Runtime validator rejects per-model invalid values with contextual messages
-- [x] Wire encoders for all active models × supported endpoints (43 tests in `apiClient.imageGeneration.test.ts`)
+- [x] Wire encoders for all active models × supported endpoints (44 tests in `apiClient.imageGeneration.test.ts` — originally written here as 43; counted at the merge commit 2026-08-14)
 - [x] xAI reference-image edits adapter produces correct JSON body shape
 - [x] `gpt-image-1` no longer 400s on `response_format`
 - [x] Gemini Flash does NOT include `responseModalities` (per D5)
@@ -84,10 +92,10 @@ xAI `defaultModel.image` updated `grok-2-image-1212` → `grok-imagine-image-qua
 
 Reviewer pass on PR #329 absolved pre-existing patterns from this stream's scope but recorded them for future cleanup:
 
-- **P2**: `try/catch` + `instanceof-Error` boilerplate at apiClient.ts lines ~158, 217, 272, 316. Each carries a `c8 ignore` directive suppressing untestable catch branches. `captureAsyncResult()` is the right replacement; the `c8 ignore` becomes unnecessary. **Trigger**: next time apiClient.ts is open for substantive changes.
-- **P3**: `resolveImageCapability` in `registry.ts:328-339` returns `| undefined` instead of `Result<IAiImageModelCapability>`. Returning Result with a contextual error would let callers chain off failure cleanly. **Trigger**: next substantive change to the provider registry or capability resolution path.
+- **P2** ✅ **paid off**: `try/catch` + `instanceof-Error` boilerplate at apiClient.ts lines ~158, 217, 272, 316. Each carries a `c8 ignore` directive suppressing untestable catch branches. `captureAsyncResult()` is the right replacement; the `c8 ignore` becomes unnecessary. **Trigger**: next time apiClient.ts is open for substantive changes. — *Resolved by [#619](https://github.com/ErikFortune/fgv/pull/619), which collapsed three of the four catch blocks and retired the fourth via `captureAsyncResult`; the `TECH_DEBT.md` entry was removed with it. Its absence there today means paid, not lost.*
+- **P3** ⚠️ **still open, trigger fired**: `resolveImageCapability` in `registry.ts:328-339` returns `| undefined` instead of `Result<IAiImageModelCapability>`. Returning Result with a contextual error would let callers chain off failure cleanly. **Trigger**: next substantive change to the provider registry or capability resolution path. — *That trigger fired: [#516](https://github.com/ErikFortune/fgv/pull/516) changed this very function to resolve `@aliases` before prefix-matching, and the debt was not paid. Still returns `| undefined`; the entry's line reference is now stale (the function sits at `registry.ts:428-433`).*
 
-Both entries landed as part of cluster-close prep, alongside this README.
+Both entries landed as part of cluster-close prep, alongside this README. *(Dispositions above added 2026-08-14.)*
 
 ## Followups / lessons for orchestration
 
@@ -101,3 +109,81 @@ Both entries landed as part of cluster-close prep, alongside this README.
 - [`brief-phase-b.md`](./brief-phase-b.md) — phase B binding contract (post-signoff)
 - [`design.md`](./design.md) — phase A research and design inventory
 - [`state.md`](./state.md) — implementing agent terminal state
+- [`meta.yaml`](./meta.yaml) — structured record (added 2026-08-14)
+
+---
+
+## Appendix A — corrections (2026-08-14)
+
+Produced by a `/finalize-task retroactive` run whose antagonist pass commissioned an
+independent reviewer against this stream's artifacts and the shipped source. Original
+wording preserved verbatim so the amendment can be audited rather than trusted.
+`brief.md`, `brief-phase-b.md`, `design.md` and `state.md` are authored-in-flight records
+and are left untouched; this README is a synthesis written after the fact and read by
+later agents as a statement of what shipped.
+
+### A.1 — the merge function's return type was misstated
+
+> **Original:** "The merge function returns `Result<IResolvedImageOptions>` for
+> caller-side Result-chaining."
+
+`resolveImageOptions` — the 4-tier merge function — returns a bare `IResolvedImageOptions`.
+Only the separate `validateResolvedOptions` (runtime registry validation) returns a
+`Result`. This was already wrong at authorship, not later drift: verified against the
+cluster-merge blob `bffa7b690`, where `resolveImageOptions` returns the bare interface and
+`Result<IResolvedImageOptions>` appears only on the other function.
+
+### A.2 — "deprecated models" counted a field as a model
+
+> **Original (heading + list):** "Deprecated models dropped (D3)" listing four bullets,
+> the fourth being "`imagen.negativePrompt` field — obsolete with Imagen 3 retirement".
+
+Three models plus one field. A first pass at `meta.yaml` inherited the error and wrote
+"four deprecated models" twice.
+
+### A.3 — a test count was off by one at authorship, and is a snapshot regardless
+
+> **Original:** "43 tests in `apiClient.imageGeneration.test.ts`"
+
+44 at the merge commit. Both test files have since been touched by four later streams
+(#508, #516, #520, #568) and the pair now runs 94 rather than the 101 the corrected
+figures would imply. A test count in a completed-stream record is a snapshot of a moving
+number; treat it as such.
+
+### A.4 — the PR list was incomplete and the landing state understated
+
+The header named only #329. #327 (phase A signoff + phase B brief) is this stream's other
+PR, and the `claude/ai-assist-features` integration branch landed on `release` the same
+day via cluster-merge #336 (`bffa7b690`) — so the original "merged into the integration
+branch" framing, read today, understates it as still unlanded.
+
+### A.5 — a surfaced lesson was never filed
+
+The "Followups / lessons for orchestration" section below lists three lessons. Two reached
+`.ai/notes/orchestrator/lessons-pending.md` (branch auto-suffixing as L2, partially
+codified; "don't trust docs over observed behavior" as L4). The third — that signoff can
+substantially override a polished design, so trust the review gate — appeared nowhere. It
+recurred on the parallel `ai-assist-thinking-config` stream, whose phase A independently
+landed on the same rejected shape. Filed 2026-08-14 as **L32**.
+
+### Open thread this stream closed over
+
+`design.md` Q9 asks for a specific action before the breaking `quality: 'high'` → `'hd'`
+change could be called zero-cost: "grep `personaility` and `ts-app-shell` for any usage of
+`quality`... verify quality field usage in consumer repos before accepting the migration
+path as zero-cost." No artifact records that this was done — not `brief-phase-b.md`, not
+this README, not the ledger — while `state.md` reports open questions as "(none)". The
+blanket "none" is what buried it. Still unverified as of 2026-08-14.
+
+### Checked and unchanged
+
+Verified accurate, listed so the scope of this pass is known: the phase-A-recommended
+"Approach A" and its explicit rejection in D1; the `responseModalities` ghost finding and
+D5's reversal; the six per-family config types at the merge commit (current source has
+four, later model-rotation streams having dropped DallE and Imagen — evolution, not an
+error here); the xAI `aspect_ratio` and JSON-edits-body encoders; PR #329's title, merge
+commit and base branch. One framing was checked and found *defensible*: the third
+root-cause fix (`dall-e-3` quality `'hd'` vs `'high'`) is absent from this README's "two
+concrete bugs" opening but is real, is recorded in `WORKSTREAMS.md`, and is corroborated
+by `state.md` — the two-bug framing traces to the brief, so it is an omission here rather
+than a false statement.

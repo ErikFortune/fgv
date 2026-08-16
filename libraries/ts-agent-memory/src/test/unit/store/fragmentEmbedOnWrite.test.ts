@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converters, Logging, Result, fail, succeed, DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   BodyConverterRegistry,
@@ -26,7 +26,11 @@ import {
   MemoryScopeKey,
   MtmIdentityCodec,
   IWritePolicy,
-  envelopeConverter
+  envelopeConverter,
+  IMemoryRecordSource,
+  FragmentEmbedder,
+  IVectorRebuildOptions,
+  IFragmentVectorRebuildReport
 } from '../../../index';
 
 const knowledgeKind: Kind = 'knowledge' as Kind;
@@ -118,6 +122,23 @@ class SpyFragmentIndex implements IFragmentVectorIndex {
   public async remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>> {
     this.calls.push(`remove:${target.id}`);
     return this.failRemove ? fail('remove boom') : this._inner.remove(target);
+  }
+  public async has(target: IEdgeTarget): Promise<Result<boolean>> {
+    this.calls.push(`has:${target.id}`);
+    return this._inner.has(target);
+  }
+  public get recordCount(): number {
+    return this._inner.recordCount;
+  }
+  public get fragmentCount(): number {
+    return this._inner.fragmentCount;
+  }
+  public rebuild(
+    source: IMemoryRecordSource,
+    embed: FragmentEmbedder,
+    options?: IVectorRebuildOptions
+  ): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>> {
+    return this._inner.rebuild(source, embed, options);
   }
   public query(
     vector: Float32Array,

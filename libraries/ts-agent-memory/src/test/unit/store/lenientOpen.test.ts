@@ -17,7 +17,8 @@ import {
   ISkippedRecord,
   Kind,
   MemoryScopeKey,
-  joinFrontmatter
+  joinFrontmatter,
+  scanEveryRecord
 } from '../../../index';
 
 /**
@@ -128,9 +129,11 @@ describe('FileTreeMemoryStore lenient open (onRecordError)', () => {
       onRecordError: 'skip'
     }).orThrow();
 
-    expect(await store.list()).toSucceedAndSatisfy((listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
-      expect(listed.map((r) => r.envelope.id).sort()).toEqual(['doc-a', 'summary', 'turn-1']);
-    });
+    expect(await store.list(scanEveryRecord())).toSucceedAndSatisfy(
+      (listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(listed.map((r) => r.envelope.id).sort()).toEqual(['doc-a', 'summary', 'turn-1']);
+      }
+    );
     expect(store.skippedRecords).toHaveLength(1);
     const skip: ISkippedRecord = store.skippedRecords[0];
     expect(skip.path).toBe('claim/claim-1.md');
@@ -172,9 +175,11 @@ describe('FileTreeMemoryStore lenient open (onRecordError)', () => {
       onRecordError: 'skip'
     }).orThrow();
 
-    expect(await store.list()).toSucceedAndSatisfy((listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
-      expect(listed.map((r) => r.envelope.id).sort()).toEqual(['ok-1', 'ok-2']);
-    });
+    expect(await store.list(scanEveryRecord())).toSucceedAndSatisfy(
+      (listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(listed.map((r) => r.envelope.id).sort()).toEqual(['ok-1', 'ok-2']);
+      }
+    );
     expect(store.skippedRecords.map((s) => s.path)).toEqual(['alpha/beta/bad-1.md']);
     expect(store.skippedRecords[0].scope).toBe('alpha/beta');
   });
@@ -193,9 +198,11 @@ describe('FileTreeMemoryStore lenient open (onRecordError)', () => {
       onRecordError: 'skip'
     }).orThrow();
 
-    expect(await store.list()).toSucceedAndSatisfy((listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
-      expect(listed.map((r) => r.envelope.id).sort()).toEqual(['good-a', 'good-b']);
-    });
+    expect(await store.list(scanEveryRecord())).toSucceedAndSatisfy(
+      (listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(listed.map((r) => r.envelope.id).sort()).toEqual(['good-a', 'good-b']);
+      }
+    );
     expect(store.skippedRecords.map((s) => s.path).sort()).toEqual(['scope-a/bad-a.md', 'scope-b/bad-b.md']);
   });
 
@@ -212,9 +219,11 @@ describe('FileTreeMemoryStore lenient open (onRecordError)', () => {
       onRecordError: 'skip'
     }).orThrow();
 
-    expect(await store.list()).toSucceedAndSatisfy((listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
-      expect(listed.map((r) => r.envelope.id)).toEqual(['z']);
-    });
+    expect(await store.list(scanEveryRecord())).toSucceedAndSatisfy(
+      (listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(listed.map((r) => r.envelope.id)).toEqual(['z']);
+      }
+    );
     expect(store.skippedRecords.map((s) => s.path).sort()).toEqual(['bad-scope/x.md', 'bad-scope/y.md']);
   });
 
@@ -225,7 +234,7 @@ describe('FileTreeMemoryStore lenient open (onRecordError)', () => {
       codecs,
       onRecordError: 'skip'
     }).orThrow();
-    expect(await skip.list()).toSucceedWith([]);
+    expect(await skip.list(scanEveryRecord())).toSucceedWith([]);
     expect(skip.skippedRecords).toEqual([]);
 
     const strict = FileTreeMemoryStore.create({
@@ -272,9 +281,11 @@ describe('FileTreeMemoryStore lenient open (onRecordError)', () => {
       onRecordError: 'skip'
     }).orThrow();
     expect(before.skippedRecords).toHaveLength(1);
-    expect(await before.list()).toSucceedAndSatisfy((listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
-      expect(listed.map((r) => r.envelope.id)).toEqual(['good']);
-    });
+    expect(await before.list(scanEveryRecord())).toSucceedAndSatisfy(
+      (listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(listed.map((r) => r.envelope.id)).toEqual(['good']);
+      }
+    );
 
     // The file was never deleted or mutated, so a fresh open with the fixed
     // (accept-all) converter re-indexes it — quarantine is non-destructive.
@@ -285,8 +296,10 @@ describe('FileTreeMemoryStore lenient open (onRecordError)', () => {
       onRecordError: 'skip'
     }).orThrow();
     expect(after.skippedRecords).toEqual([]);
-    expect(await after.list()).toSucceedAndSatisfy((listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
-      expect(listed.map((r) => r.envelope.id).sort()).toEqual(['good', 'later']);
-    });
+    expect(await after.list(scanEveryRecord())).toSucceedAndSatisfy(
+      (listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        expect(listed.map((r) => r.envelope.id).sort()).toEqual(['good', 'later']);
+      }
+    );
   });
 });

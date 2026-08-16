@@ -1,0 +1,89 @@
+id: agent-memory-index-partial-read
+status: in-flight
+packages:
+  - '@fgv/ts-agent-memory'
+  - 'samples/testbed'
+# Squashed onto feat/vector-rebuild-report-by-kind, so it rides #633 rather than
+# carrying a PR of its own. #633's body describes only the predecessor stream
+# until it is rewritten to cover both. No `closed` date while status is in-flight.
+prs: []
+openPrs: [633]
+opened: 2026-08-15
+summary:
+  intended: >
+    Lower FileTreeMemoryStore's resident-memory ceiling for real rather than
+    making it measurable. The brief's central claim: the ceiling is structural,
+    not an implementation choice — every IMemoryIndex read returns
+    IMemoryRecord<unknown>, which carries body, so a conforming index that wanted
+    to hold less could not. Design-first: a design doc, a decision on it, then
+    code, scoped to IMemoryIndex.
+  shipped: >
+    Every IMemoryIndex read projects to IIndexedMemoryEntry (scope + envelope, no
+    body); rebuild takes projected entries while patch keeps whole records; a new
+    O(1) get(target) replaces two full-index scans per query; bodies resolve on
+    demand through a one-method IMemoryRecordResolver the store implements and the
+    retrievers take. The "faithful delegating decorator only" rule is replaced by
+    a completeness-and-faithfulness invariant, with its ordering clause called out
+    as a behavioural break the compiler cannot find. Measured: 88.3% reduction in
+    what the index retains; a store open costs 17.3% of body volume, inside the
+    design's own < 25% bar.
+  diverged: >
+    Five additions the brief did not scope. (1) IMemoryStore.list was reshaped —
+    NOT IMemoryQuery, whose shape is unchanged; what moved there is that
+    query.filter now runs after materialization. A selection is required and must
+    narrow, an empty one fails, and a whole-vault read is
+    spelled scanEveryRecord() — safer-fetch's addressGuard/allowAnyAddress idiom
+    on a second surface. This is the change most likely to break a consumer,
+    because it bites code an index census would not flag. (2) rebuild moved to the
+    read side after the consumer caught that it had been classified as a write
+    because it sits beside patch; checking against source showed the store's own
+    open path held N whole records at peak, which WAS the resident-memory moment
+    the stream existed for. (3) listEntries() was added — envelopes, no selection,
+    no file reads — for the whole-vault callers that only need to select.
+    (4) listScoped, and therefore IVectorIndex.rebuild's feed, changed cost and
+    failure mode: it used to read nothing and be infallible because the index held
+    the records, and now reads a file per record and can fail. The vector seam's
+    CONTRACT is untouched as the brief required; its feed's behaviour is not, and
+    the brief's out-of-scope list did not anticipate that. (5) IMemoryStore now
+    extends IMemoryRecordResolver, without which the documented one-line migration
+    would not compile for the interface handle the consumer actually holds —
+    itself a break for any implementer, as is the new required listEntries().
+    One delivery-form deviation: §7's measurement shipped as a perf/ script rather
+    than the proposed jest test, since a test that must be excluded from the
+    coverage gate does not belong in the suite.
+    Two reversals kept visible rather than tidied away: draft 1 recommended
+    DELETING four @public accessors on an in-repo zero-caller census, which is not
+    a meaningful measure in a published utility library; and the memory harness
+    printed confident meaningless numbers twice (a corpus shared between passes
+    retains every body itself; padEnd-built bodies are not resident at all,
+    measuring 1/8th of their length and freeing nothing, because V8 shares the
+    padding's backing store).
+    One near-miss worth carrying: the layer-1 fix for a listScoped finding made it
+    drop-tolerant, and the antagonist pass caught that a dropped record lands in
+    none of records/excluded/indexed/declined/skipped, so coverage undercounts in
+    the direction of looking healthier — the exact failure the predecessor stream
+    shipped to close, reintroduced one layer down. Reverted to fail-loud; the
+    underlying eviction race is filed in FUTURE.md rather than improvised.
+  sourceLine: >
+    **Shipped:** the partial-read `IMemoryIndex` — every read returns
+    `IIndexedMemoryEntry` (scope + envelope, no body), `rebuild` takes projected
+    entries, `get(target)` is new, bodies are resolved on demand through a
+    one-method `IMemoryRecordResolver`, and `IMemoryStore.list` now **requires a
+    selection that narrows**.
+keywords:
+  - resident memory
+  - projection
+  - derived index
+  - envelope-only read
+  - required selection
+  - whole-vault read
+  - addressGuard idiom
+  - published-library call-site census
+  - breaking change
+  - pre-1.0 no-shim
+  - heap measurement methodology
+  - V8 string backing store
+relatedStreams:
+  - agent-memory-index-injection-seam
+  - vector-rebuild-report-by-kind
+  - personaility-asks-2026-08

@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converters, DetailedResult, Logging, Result, fail, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   BodyConverterRegistry,
@@ -12,6 +12,7 @@ import {
   IBodyConverterRegistry,
   IEdgeTarget,
   IIdentityCodec,
+  IIndexedMemoryEntry,
   IIndexedMemoryRecord,
   IMemoryIndex,
   IMemoryRecord,
@@ -36,7 +37,9 @@ import {
   SemanticRetriever,
   TemporalIdentityCodec,
   TemporalVersionedPolicy,
-  envelopeConverter
+  envelopeConverter,
+  scanEveryRecord,
+  edgeTargetKey
 } from '../../../index';
 
 const knowledgeKind: Kind = 'knowledge' as Kind;
@@ -112,7 +115,7 @@ class CommitRecordingIndex implements IMemoryIndex {
   public constructor(order: string[]) {
     this._order = order;
   }
-  public rebuild(entries: ReadonlyArray<IIndexedMemoryRecord>): Result<number> {
+  public rebuild(entries: ReadonlyArray<IIndexedMemoryEntry>): Result<number> {
     return this._inner.rebuild(entries);
   }
   public patch(op: MemoryIndexPatchOp, entry: IIndexedMemoryRecord): Result<IIndexedMemoryRecord> {
@@ -123,19 +126,23 @@ class CommitRecordingIndex implements IMemoryIndex {
       return succeed(applied);
     });
   }
-  public entries(): ReadonlyArray<IIndexedMemoryRecord> {
+  public get(target: IEdgeTarget): IIndexedMemoryEntry | undefined {
+    return this._inner.get(target);
+  }
+
+  public entries(): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.entries();
   }
-  public byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byKind(kind: Kind): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byKind(kind);
   }
-  public byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byTag(tag: Tag): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byTag(tag);
   }
-  public byRecency(): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byRecency(): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byRecency();
   }
-  public byRank(): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byRank(): ReadonlyArray<IIndexedMemoryEntry> {
     return this._inner.byRank();
   }
   public backlinks(target: IEdgeTarget): ReadonlyArray<IEdgeTarget> {
@@ -165,6 +172,11 @@ class SpyVectorIndex implements IVectorIndex {
   public query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
     return this._inner.query(vector, topK);
   }
+  public has(target: IEdgeTarget): Promise<Result<boolean>> {
+    this.calls.push(`has:${edgeTargetKey(target)}`);
+    return this._inner.has(target);
+  }
+
   public get size(): number {
     return this._inner.size;
   }
@@ -172,7 +184,7 @@ class SpyVectorIndex implements IVectorIndex {
     source: IMemoryRecordSource,
     embed: MemoryEmbedder,
     options?: IVectorRebuildOptions
-  ): Promise<Result<IVectorRebuildReport>> {
+  ): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>> {
     return this._inner.rebuild(source, embed, options);
   }
 }
@@ -390,16 +402,22 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       // store's derived index is private and the two are intentionally
       // decoupled), so build a record index mirroring the store — keyed by the
       // shared vectorIndex instance — for hit hydration.
-      const listed: ReadonlyArray<IMemoryRecord<unknown>> = (await store.list()).orThrow();
+      const listed: ReadonlyArray<IMemoryRecord<unknown>> = (await store.list(scanEveryRecord())).orThrow();
       const recordIndex = MemoryIndex.create().orThrow();
       recordIndex
         .rebuild(
-          listed.map((record): IIndexedMemoryRecord => ({ scope: 'knowledge' as MemoryScopeKey, record }))
+          listed.map(
+            (record): IIndexedMemoryEntry => ({
+              scope: 'knowledge' as MemoryScopeKey,
+              envelope: record.envelope
+            })
+          )
         )
         .orThrow();
 
       const retriever = SemanticRetriever.create({
         index: recordIndex,
+        resolver: store,
         backend: { vectorIndex: index, embedQuery: queryEmbed }
       }).orThrow();
       expect(retriever.capabilities.supportsSemanticRecall).toBe(true);
@@ -812,12 +830,39 @@ describe('FileTreeMemoryStore embed-on-write', () => {
         seen.push(r.envelope.kind as string);
         return recordEmbed(r);
       };
-      expect(await fresh.rebuild(store.asRecordSource(), countingEmbed)).toSucceedWith({
-        indexed: 1,
-        declined: 0,
-        skipped: []
-      });
+      expect(await fresh.rebuild(store.asRecordSource(), countingEmbed)).toSucceedAndSatisfy(
+        (report: IVectorRebuildReport) => {
+          expect(report.indexed).toEqual(new Map([['knowledge', 1]]));
+          // The excluded kind is COUNTED rather than silently absent — this is the
+          // arithmetic that previously did not add up: the 'fact' record appeared
+          // in none of indexed / declined / skipped, so a caller computing coverage
+          // undercounted, and undercounted in the direction of looking healthier.
+          expect(report.excluded!).toEqual(new Map([['fact', 1]]));
+        }
+      );
       expect(seen).toEqual(['knowledge']);
+    });
+
+    test('accumulates the exclusion count across records of the same kind', async () => {
+      // Two of one excluded kind, one of another, so the tally is exercised past
+      // its first occurrence — a per-kind count that only ever reads 1 would be
+      // indistinguishable from a presence flag.
+      const store = twoKindStore(
+        InMemoryCosineIndex.create().orThrow(),
+        recordEmbed,
+        new Set<Kind>([knowledgeKind])
+      );
+      expect(await store.put(makeRecord('doc-a', 'cat', 'knowledge'))).toSucceed();
+      expect(await store.put(makeRecord('fact-a', 'cat', 'fact'))).toSucceed();
+      expect(await store.put(makeRecord('fact-b', 'dog', 'fact'))).toSucceed();
+
+      const fresh = InMemoryCosineIndex.create().orThrow();
+      expect(await fresh.rebuild(store.asRecordSource(), recordEmbed)).toSucceedAndSatisfy(
+        (report: IVectorRebuildReport) => {
+          expect(report.indexed).toEqual(new Map([['knowledge', 1]]));
+          expect(report.excluded!).toEqual(new Map([['fact', 2]]));
+        }
+      );
     });
 
     test('listScoped still returns every record — only the vector source is filtered', async () => {

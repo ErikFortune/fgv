@@ -3,7 +3,28 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { IMemoryRecord } from './envelope';
+import { IMemoryEnvelope } from './envelope';
+
+/**
+ * The minimum a temporal helper needs: something carrying an envelope.
+ *
+ * @remarks
+ * Every predicate and selector in this module reads `envelope.temporal`,
+ * `envelope.created` and `envelope.seq` and **nothing else** — no body has ever
+ * been consulted. Taking the structural shape rather than `IMemoryRecord` lets
+ * the same helpers serve both an `IMemoryRecord<unknown>` (which satisfies it)
+ * and an `IIndexedMemoryEntry` from the index's projected read surface, so the
+ * temporal `asOf` projection can run over envelopes and materialize only the
+ * versions that survive it.
+ *
+ * The selectors are generic in this shape so they return exactly what they were
+ * given rather than widening to the constraint.
+ * @public
+ */
+export interface IEnvelopeCarrier {
+  /** The envelope the temporal predicates read. */
+  readonly envelope: IMemoryEnvelope;
+}
 
 /**
  * Whether a record participates in the versioned (temporal) layout. A temporal
@@ -13,7 +34,7 @@ import { IMemoryRecord } from './envelope';
  * divergence (MTM is flat yet has `entityId !== id`).
  * @public
  */
-export function isTemporalRecord(record: IMemoryRecord<unknown>): boolean {
+export function isTemporalRecord(record: IEnvelopeCarrier): boolean {
   return record.envelope.temporal !== undefined;
 }
 
@@ -23,8 +44,8 @@ export function isTemporalRecord(record: IMemoryRecord<unknown>): boolean {
  * current in this sense (returns `false`).
  * @public
  */
-export function isVersionCurrent(record: IMemoryRecord<unknown>): boolean {
-  const temporal: IMemoryRecord<unknown>['envelope']['temporal'] = record.envelope.temporal;
+export function isVersionCurrent(record: IEnvelopeCarrier): boolean {
+  const temporal: IMemoryEnvelope['temporal'] = record.envelope.temporal;
   if (temporal === undefined) {
     return false;
   }
@@ -38,8 +59,8 @@ export function isVersionCurrent(record: IMemoryRecord<unknown>): boolean {
  * record is never "valid at" a point (returns `false`).
  * @public
  */
-export function isVersionValidAt(record: IMemoryRecord<unknown>, asOf: number): boolean {
-  const temporal: IMemoryRecord<unknown>['envelope']['temporal'] = record.envelope.temporal;
+export function isVersionValidAt(record: IEnvelopeCarrier, asOf: number): boolean {
+  const temporal: IMemoryEnvelope['temporal'] = record.envelope.temporal;
   if (temporal === undefined) {
     return false;
   }
@@ -60,8 +81,8 @@ export function isVersionValidAt(record: IMemoryRecord<unknown>, asOf: number): 
  * version. Shared tiebreak for {@link selectCurrentVersion} /
  * {@link selectVersionAsOf}.
  */
-function highestSeq(candidates: ReadonlyArray<IMemoryRecord<unknown>>): IMemoryRecord<unknown> | undefined {
-  let best: IMemoryRecord<unknown> | undefined;
+function highestSeq<T extends IEnvelopeCarrier>(candidates: ReadonlyArray<T>): T | undefined {
+  let best: T | undefined;
   for (const candidate of candidates) {
     if (best === undefined || candidate.envelope.seq > best.envelope.seq) {
       best = candidate;
@@ -76,9 +97,7 @@ function highestSeq(candidates: ReadonlyArray<IMemoryRecord<unknown>>): IMemoryR
  * entity has no current version (fully invalidated / soft-deleted, or empty).
  * @public
  */
-export function selectCurrentVersion(
-  versions: ReadonlyArray<IMemoryRecord<unknown>>
-): IMemoryRecord<unknown> | undefined {
+export function selectCurrentVersion<T extends IEnvelopeCarrier>(versions: ReadonlyArray<T>): T | undefined {
   return highestSeq(versions.filter(isVersionCurrent));
 }
 
@@ -88,9 +107,9 @@ export function selectCurrentVersion(
  * when no version was valid at that instant.
  * @public
  */
-export function selectVersionAsOf(
-  versions: ReadonlyArray<IMemoryRecord<unknown>>,
+export function selectVersionAsOf<T extends IEnvelopeCarrier>(
+  versions: ReadonlyArray<T>,
   asOf: number
-): IMemoryRecord<unknown> | undefined {
+): T | undefined {
   return highestSeq(versions.filter((version) => isVersionValidAt(version, asOf)));
 }

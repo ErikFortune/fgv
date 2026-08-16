@@ -139,7 +139,14 @@ function buildMemory(): Result<{
     const codecs = new Map<Kind, IIdentityCodec>([[KNOWLEDGE_KIND, new KnowledgeIdentityCodec()]]);
     const store = FileTreeMemoryStore.create({ root, registry, codecs }).orThrow();
     const retriever = HybridRetriever.create(
-      [StructuredFilterRetriever.create(MemoryIndex.create().orThrow()).orThrow()],
+      [
+        StructuredFilterRetriever.create({
+          index: MemoryIndex.create().orThrow(),
+          // The store is the record resolver — retrievers select over envelopes
+          // and materialize survivors through this seam.
+          resolver: store
+        }).orThrow()
+      ],
       ScoreUnionMergeStrategy.create().orThrow()
     ).orThrow();
     const tools = createMemoryTools({

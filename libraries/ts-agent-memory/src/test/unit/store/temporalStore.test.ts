@@ -22,7 +22,8 @@ import {
   MemoryScopeKey,
   TemporalIdentityCodec,
   TemporalVersionedPolicy,
-  serializeMemoryFile
+  serializeMemoryFile,
+  scanEveryRecord
 } from '../../../index';
 
 const factKind: Kind = 'fact' as Kind;
@@ -297,7 +298,9 @@ describe('FileTreeMemoryStore — temporal (versioned) path', () => {
       expect(await store.put(knowledgeRecord('doc-a', 'flat body'))).toSucceed();
       expect(await store.put(factRecord('fact-1', 'blue'))).toSucceed();
       // asOf at an instant before the flat doc's created still includes it (timeless).
-      expect(await store.list({ asOf: 500 })).toSucceedAndSatisfy((snap) => {
+      // `asOf` alone does NOT narrow — it collapses versions, it does not exclude
+      // entities — so a whole-vault as-of snapshot has to say so.
+      expect(await store.list(scanEveryRecord({ asOf: 500 }))).toSucceedAndSatisfy((snap) => {
         expect(snap.map((r) => r.envelope.id).sort()).toEqual(['doc-a']);
       });
     });

@@ -26,5 +26,5 @@ export function encodeSecret(value: string, encoding: Encoding): string {
   if (encoding === 'base64') {
     return CryptoUtils.toBase64(bytes);
   }
-  return Buffer.from(bytes).toString('hex');
+  return CryptoUtils.hexEncode(bytes);
 }

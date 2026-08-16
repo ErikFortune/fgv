@@ -1,0 +1,86 @@
+id: ai-assist-client-tool-id-fix
+status: shipped
+packages: ['@fgv/ts-extras']
+prs: [504]
+closed: 2026-06
+relatedStreams:
+  - id: ai-assist-client-tools
+    relationship: >
+      Parent. This stream is a field-reported bug fix against the client-tool
+      surface `ai-assist-client-tools` shipped (Phase C, promoted via #451,
+      cluster-closed via #452). It is NOT one of the "3 fixes" bundled into that
+      promotion, and it is not one of the coverage-gap-sequencing defects that
+      TESTING_GUIDELINES.md § "Coverage Gap Resolution" cites from that stream
+      (client tools never merged into the request `tools` array; the three
+      `call*Stream` adapter signatures never widened) — those were caught and
+      fixed inside the parent. This defect survived the parent's PR, its
+      100% coverage gate, and its live testbed run, and was reported 26 days
+      later (parent cluster-closed 2026-06-04 via #452; this fix merged
+      2026-06-30) by the consumer (PersonAIlity) as intermittent Anthropic
+      "malformed identifier" errors on client-tool turns. Same package, same
+      files (`clientToolContinuationBuilder.ts`, `streamingAdapters/anthropic.ts`);
+      the parent's own code review had touched the continuation builder without
+      surfacing the id-correlation hole.
+summary:
+  intended: >
+    Diagnose and fix the intermittent Anthropic `invalid Prompt - malformed
+    identifier` error the consumer (PersonAIlity) saw only on turns where the
+    model called a client tool, growing more frequent with more tools offered.
+    Root-cause rather than patch: the per-provider continuation builders keyed
+    `tool_result.tool_use_id` / `function_call_output.call_id` off the tool-result
+    record as `r.callId ?? r.toolName`, so a nullish id emitted the tool *name*
+    (never a valid `toolu_*` / `call_*` id) and an empty-string id passed straight
+    through, `??` not treating `''` as missing.
+  shipped: >
+    Single-source-of-truth id correlation. `buildAnthropicContinuation` and
+    `buildOpenAiContinuation` now return `Result<IAiClientToolContinuation>` and
+    require each tool result's `callId` to be non-empty AND a member of the set of
+    assistant `tool_use.id`s actually present in the accumulation buffer, failing
+    loud with the tool name and offending id otherwise; the name fallback is gone
+    entirely. New `isUsableId(id)` predicate replaces every `??`-based id check.
+    A buffered `tool_use` block carrying an empty id also fails loud. The silent
+    orphaned-block drop in `anthropic.ts` (a `tool_use` `content_block_start`
+    failing the id/name guard vanished with no buffer entry, no event, and no log,
+    taking its `input_json_delta` chunks with it) now emits a `logger.warn` under
+    the new stable `MALFORMED_TOOL_USE_WARN_TAG = 'ai-assist:malformed-tool-use'`
+    in `common.ts`. `executeClientToolTurn` handles the Result-returning builders,
+    fails `nextTurn` loud, and yields an inline `{ type: 'error' }` stream event
+    (a code-reviewer P2, fixed). Both builders log the outgoing
+    `tool_use.id ↔ tool_result.tool_use_id` pairing at `detail` level so a live
+    failing turn is field-confirmable. Gemini's builder is unchanged (correlates
+    by name by design — no call ids) and is wrapped in `succeed()` at the call
+    site. No public API surface change; api-extractor report unchanged.
+  diverged: >
+    Not establishable as a brief-vs-result delta: the stream left exactly one
+    artifact (`state.md`) — no `brief.md`, no `result.md`, no `README.md` — so
+    there is no authored statement of intent to compare a result against. Two
+    shape notes are recorded in the artifact itself and are worth carrying:
+    (1) the investigation could NOT pin the live trigger — within a single
+    well-formed Anthropic stream the adapter's own guard means `callId` always
+    equals a buffered id, so the pure single-turn path cannot fire the bug. Rather
+    than assert a speculative trigger, the stream generalized: make every upstream
+    id-loss loud and impossible to mis-key, and add a field-confirmable diagnostic
+    so the consumer could corroborate on a live failing turn. The one
+    end-to-end-reproducible divergence found and tested is buffer-index reuse (two
+    `tool_use` blocks sharing an SSE `index`, which the payload type already marks
+    optional and defaults to `0`). (2) Scope was explicitly held: the Gemini
+    builder and the model-alias refactor were both left out, the latter to a
+    separate stream.
+  sourceLine: '**Type:** bug-fix + hardening + root-cause. No public API surface change (api-extractor report unchanged).'
+keywords:
+  - malformed identifier
+  - tool_use_id
+  - call_id correlation
+  - continuation builder
+  - nullish coalescing empty string
+  - isUsableId
+  - silent drop
+  - orphaned content_block_start
+  - SSE index reuse
+  - fail-loud
+  - ai-assist:malformed-tool-use
+  - Anthropic streaming adapter
+  - OpenAI Responses parity
+  - consumer-reported regression
+  - PersonAIlity
+sourceHash: 18f06aae1477f32b
