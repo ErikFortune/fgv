@@ -172,7 +172,7 @@ review.
 
 - **`LIBRARY_CAPABILITIES.md` is drafted, not committed** — the ritual does not auto-commit it.
 - **No cross-repo note yet.**
-- **The Copilot loop has not run** on this stream or the two beneath it on `#633`.
+- **External review ran as CodeRabbit rather than Copilot**, on `#633` covering all three stacked streams. Rounds 1–2 are addressed (see A.7); the pass over `materializePage`, the SQLite native boundary, and the coverage invariant had not yet run at close.
 
 ---
 
@@ -252,6 +252,48 @@ plus `derived-state-phase2` and `derived-state-phase3` on `ts-agent-memory` alon
 seven change files in total; the other three belong to the two predecessor streams stacked beneath.
 The gate itself passed — `rush change --verify --target-branch origin/release` is green — so only the
 count was wrong. `result.md` is left as authored.
+
+### A.7 — note: an external review after this record was written found three more real bugs
+
+The section above calls the `/code-review` pass *"the most important thing here"*. That was true when
+written and is now incomplete: a CodeRabbit pass over the whole delta on `#633`, run after this record
+was finalized, returned five findings of which **three were real bugs this stream shipped** and one
+was a real contract divergence. None of them is a correction to a claim in this file — they are
+defects the file's own review section did not know about. Recorded here because a closure record
+asserting a review was thorough, with no note that a later review disagreed, is the same defect this
+appendix exists to catch.
+
+**The `embeddingRef` null sentinel (three call sites).** The field is `string | null | undefined` and
+`null` is the *documented* "not embedded" sentinel, so both obvious presence checks are wrong in
+opposite directions. `storeCoverage` used `!== undefined` and counted a `null` as covered — inflating
+health in the confident direction, which is the one direction the "belief vs fact" section above
+argues a coverage surface must not be wrong in. `storeReconcile` used `=== undefined` and read a
+`null` as a real reference, skipping the restamp. `declineEmbedding` had the same bug and spent an
+index round trip the comment directly beside it claims it avoids. **The third site is one the
+external review missed and the verification pass found**, which is the argument for verifying
+findings rather than applying them. Collapsed onto an exported `embeddingRefOf(envelope)`.
+
+Worth stating plainly: this is **the same failure mode as the `query.filter` regression** described
+above, in code this stream had just edited, missed by the same review that caught the other one.
+The sentinel is a *value*, not a branch — so it is invisible to the coverage gate, exactly as
+`TESTING_GUIDELINES.md` § "100% coverage cannot see a predicate that is never called" says. The
+lesson generalized correctly; the application of it did not reach one file over.
+
+**Consumer hooks unwrapped on the repair path.** `reembedRecord` / `reembedFragments` called all four
+consumer-supplied hooks bare, so a hook that *throws* rather than fails escaped as a rejected promise
+out of `IMemoryStore.reconcile` — a Result-contract break at a public boundary, forty lines from the
+write path that had always captured the identical calls through `_tryVectorOp`.
+
+**`MemoryListSelection` was not mutually exclusive.** `{ scanEveryRecord: true, kind }` type-checked
+(TypeScript's excess-property check on a union admits any property declared by *any* member), and
+`list` took the scan branch and silently discarded the narrowing — a whole-vault read wearing a
+narrowed call's clothes, on the predecessor stream's headline surface. Fixed with `never` markers,
+pinned by a `@ts-expect-error` that becomes the build failure if they are removed.
+
+Every fix is pinned by a test **watched failing** against the reverted code first. Two process facts
+worth carrying forward: CodeRabbit **does not auto-review PRs whose base is not the default branch**,
+so every push to a `release`-targeted PR needs an explicit request; and pushing while a review is in
+flight aborts it and consumes the rate-limit slot.
 
 ### Checked and unchanged
 
