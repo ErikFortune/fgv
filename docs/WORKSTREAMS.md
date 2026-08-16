@@ -128,9 +128,9 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-memory-derived-state-reconciliation` 🔵 (code complete 2026-08-15 — breaking, design-first)
+### `agent-memory-derived-state-reconciliation` ✅ (shipped 2026-08-16 — breaking, design-first)
 
-**Status:** 🔵 in flight — code complete, every gate green (build / lint / test at 100% / repo-wide `rush rebuild` / four change files), on `integration/agent-memory-derived-state`, squashed onto `feat/vector-rebuild-report-by-kind` and riding **#633**. Deliberately **not** ✅, per this ledger's legend. **Breaking** on `IVectorIndex`, `IFragmentVectorIndex` and `IMemoryStore`, all pre-1.0.
+**Status:** ✅ shipped to `release` via **#633** (`23a9f96`, 2026-08-16), squashed onto `feat/vector-rebuild-report-by-kind` from `integration/agent-memory-derived-state`. Every gate green (build / lint / test at 100% / repo-wide `rush rebuild` / four change files). **Breaking** on `IVectorIndex`, `IFragmentVectorIndex` and `IMemoryStore`, all pre-1.0. Consumer notified and **acknowledged** — `.ai/notes/cross-repo-handoffs/personaility-reply-2026-08-16-derived-state-shipped.md` (leads with the `reconcileRank` → `reconcile(kind, 'rank')` removal, the one break in a method the consumer already calls).
 **Package surface:** `@fgv/ts-agent-memory` (`IMemoryStore`, `IVectorIndex`, `IFragmentVectorIndex`, `FileTreeMemoryStore`, three retrievers), `@fgv/ts-agent-memory-sqlite-vec` (both index classes), `.ai/instructions/LIBRARY_CAPABILITIES.md`.
 **Artifacts:** `.ai/tasks/completed/2026-08/agent-memory-derived-state-reconciliation/` (`brief.md`, `design.md`, `result.md`, `README.md` + Appendix A, `meta.yaml`)
 **Origin:** filed as `agent-memory-index-coverage-accessor`; **renamed and rescoped 2026-08-15** after applying `CODING_STANDARDS.md` § "We Build General Capabilities" — the narrow framing was an artifact of taking a consumer's ask as the unit of work rather than deriving the capability. The rescope made the stream *larger*, and that is the point of the correction.
@@ -172,9 +172,9 @@ Three of the five findings were ours to have caught; the third `embeddingRef` si
 
 **Outstanding:** the cross-repo note.
 
-### `agent-memory-index-partial-read` 🔵 (code complete 2026-08-15 — breaking, coordinated)
+### `agent-memory-index-partial-read` ✅ (shipped 2026-08-16 — breaking, coordinated)
 
-**Status:** 🔵 in flight — code complete, every mechanical gate green (build / lint / test at 100% / repo-wide rebuild / change files), on `feat/agent-memory-index-partial-read` stacked over `feat/vector-rebuild-report-by-kind`, awaiting merge to `release`. Deliberately **not** ✅, per this ledger's legend. **Two gates did not close and "all gates green" overstated it** (corrected 2026-08-15): the Copilot review loop never ran, and — the substantive one — this stream shipped a **live regression that every gate it passed was structurally unable to see**, found later by the successor stream's review and fixed there. See "the regression it could not see" below. **Breaking** on a pre-1.0 surface — and unusually, **reviewed and accepted by the consumer before implementation started**, which is what a design-first stream is for.
+**Status:** ✅ shipped to `release` via **#633** (`23a9f96`, 2026-08-16), from `feat/agent-memory-index-partial-read` stacked over `feat/vector-rebuild-report-by-kind`. Every mechanical gate green (build / lint / test at 100% / repo-wide rebuild / change files). **Two gates did not close at stream close and "all gates green" overstated it** (corrected 2026-08-15): the Copilot review loop never ran, and — the substantive one — this stream shipped a **live regression that every gate it passed was structurally unable to see**, found later by the successor stream's review and fixed there. See "the regression it could not see" below. *(Closed 2026-08-16: external review ran at PR level on #633 — five CodeRabbit rounds over the combined diff, five further real defects, two of them inside fixes to earlier rounds' findings. Rounds 1–3 never reached `materializePage` or the sqlite-vec boundary, both unchanged against the squash base and so deduped as "similar to previous changes"; a requested non-incremental read in round 4 is what reached them. Full account in the derived-state stream's `README.md` Appendix B.)* **Breaking** on a pre-1.0 surface — and unusually, **reviewed and accepted by the consumer before implementation started**, which is what a design-first stream is for.
 **Package surface:** `@fgv/ts-agent-memory` (`IMemoryIndex`, `MemoryIndex`, `IMemoryStore`, `FileTreeMemoryStore`, every retriever, `memory_search`), `samples/testbed`, `.ai/instructions/LIBRARY_CAPABILITIES.md`.
 **Artifacts:** `.ai/tasks/completed/2026-08/agent-memory-index-partial-read/` (`brief.md`, `design.md`, `result.md`, `README.md`, `meta.yaml`)
 **Predecessor:** `agent-memory-index-injection-seam` (#582), which shipped the injection point and named this as the sequel.
@@ -204,9 +204,9 @@ Three of the five findings were ours to have caught; the third `embeddingRef` si
 
 **The predecessor's carried-forward item is dispositioned, not dropped.** #582's self-review-only pass: **declined**, because this stream rewrote that seam's entire read surface and re-derived every write-path read, which is where a #582 defect would have lived — a retroactive pass would review code that no longer exists in that shape. The independent pass that *was* commissioned covers the superseding surface.
 
-### `vector-rebuild-report-by-kind` 🔵 (code complete 2026-08-15 — breaking, coordinated)
+### `vector-rebuild-report-by-kind` ✅ (shipped 2026-08-16 — breaking, coordinated)
 
-**Status:** 🔵 in flight — code complete, all gates green, **#633** open against `integration/sweep-followups`, awaiting merge to `release`. Deliberately **not** ✅: this ledger's own legend defines that as *merged to `release`*, and nothing is merged. **Breaking** on a pre-1.0 surface, by agreement with the consumer. Delivery must be coordinated — see below.
+**Status:** ✅ shipped to `release` via **#633** (`23a9f96`, 2026-08-16). All gates green. **Breaking** on a pre-1.0 surface, by agreement with the consumer. Delivery coordination closed: all three notes on this alpha are **acknowledged** by the consumer (2026-08-16) — see below.
 **Package surface:** `@fgv/ts-agent-memory` (`IVectorRebuildReport`, `IMemoryRecordSource`, `InMemoryCosineIndex`), `@fgv/ts-agent-memory-sqlite-vec` (contract follower), `.ai/instructions/LIBRARY_CAPABILITIES.md`.
 **Artifacts:** `.ai/tasks/completed/2026-08/vector-rebuild-report-by-kind/` (`brief.md`, `result.md`, `README.md`, `meta.yaml`)
 **Origin:** four-round exchange with PersonAIlity, 2026-08-15, out of their ask 1 of 9 — which had already shipped in `5.1.0-48`.
