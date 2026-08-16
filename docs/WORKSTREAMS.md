@@ -132,29 +132,35 @@ substrate. Don't queue streams against them here.
 
 **Status:** 🟢 ready to start, but **queue behind #633** — both streams on it touch these exact seams and both are breaking; a third breaking alpha against the same types would make PersonAIlity migrate three times.
 **Package surface (expected):** `@fgv/ts-agent-memory` (`IMemoryStore`, `FileTreeMemoryStore`'s write path, `vectorMaintenance`), `.ai/instructions/LIBRARY_CAPABILITIES.md`. Expected **additive**.
-**Origin:** PersonAIlity ask, 2026-08-15, relayed verbally (no issue on their side — bookkeeping gap they flagged themselves). Triage + reply: `.ai/notes/cross-repo-handoffs/personaility-reply-2026-08-15-embed-failure-channel.md`.
+**Origin:** **E2's preference-2 from the embedding-lane ask package (2026-08-11), never fully landed** — re-raised verbally 2026-08-15. Triage + reply: `.ai/notes/cross-repo-handoffs/personaility-reply-2026-08-15-embed-failure-channel.md`.
 
 **Mission.** Give a **live** store a per-kind index-coverage accessor, so a health read mid-session can distinguish "my vector index is complete" from "my vector index has been quietly drifting since 03:00".
 
 **Half the ask was already shipped, and verifying that is what sharpened the other half.** They asked for "a failure channel out of the embed-on-write hook", citing a `.d.ts` line showing warn-and-continue. That channel exists — `MemoryEmbedOutcome` (`'embedded'|'declined'|'excluded'|'failed'`) rides every successful write observation, with a matching `embed` query axis, shipped by Stream A item 5 for exactly this ambiguity. It is not on the hook's return value, which is why a `.d.ts` read misses it, and it is deliberately not on the return value: a vault record is the source of truth and a vector is derived, so an embedder outage must not start rejecting memories.
 
-**What survives is the aggregate, and it is a real gap.** Three surfaces, none of which answers *"is this live store's index complete right now?"*:
+**What survives is E2's preference-2, and it is half-landed rather than new.** Their original ask: *"a coverage accessor on the index contract — enough for a host to answer 'is this index populated, **and is it complete**?' […] Even a pair of counts (vectors held / records seen at last reconcile) would do it."* `size` shipped the numerator in `-48`. The denominator never shipped as a live surface.
 
-| surface | answers | limit |
+**Both counts exist today; neither is live.** That is the precise gap:
+
+| surface | answers | maintained |
 |---|---|---|
-| `IVectorIndex.size` | vectors held | a **scalar** — no kinds, no denominator |
-| `IVectorIndex.rebuild` → `IVectorRebuildReport` | per-kind `indexed` / `declined` / `excluded` / `skipped` | only from a **rebuild**, which resets and re-embeds the whole vault |
-| `MemoryObservationStore.query({ embed })` | per-record, attributed, queryable | **bounded ring** — evicts, so a long session cannot answer for its own history |
+| `IVectorIndex.size` | vectors held — the **numerator** | **live**, but a bare scalar: no kinds |
+| `IVectorRebuildReport` | `indexed` / `declined` / `excluded` / `skipped` — the **denominator**, per kind | a **snapshot at reconcile**, and reconcile resets and re-embeds the whole vault |
+| `MemoryObservationStore.query({ embed })` | per-record outcome, attributed | **live**, but a **bounded ring** that evicts |
 
-Their framing — *"index health is recorded only at vault open"* — is exactly right about the only surface that reports per kind with a denominator.
+So the pair is obtainable immediately after a rebuild and nothing maintains it afterward. The general form worth keeping: **a health surface that only reports at initialization cannot distinguish healthy from drifting**, and the fix is a standing accessor maintained by the path that already knows, not a log the caller replays.
 
-**This is the coverage-accessor pattern, second instance, and it is worth naming as a pattern.** The first was `size` itself, added because a caller could not tell *"the index is empty"* from *"nothing matched"* (`query` answers an empty index with `succeed([])`). This is the same defect one level up. The general form: **a health surface that only reports at initialization cannot distinguish healthy from drifting**, and the fix is a standing accessor maintained by the path that already knows, not a log the caller replays.
+**Their E1 case is why the denominator cannot be replaced by "expect zero failures".** A ~37 KB document against a 4096-token context always fails to embed, so that vault's coverage is permanently below 100% by a known amount and a drift detector without a denominator would alert forever.
 
 **Shape sketch** (not designed — the reply asks two questions first): a standing per-kind coverage accessor on the store, maintained incrementally by the write path that already computes `MemoryEmbedOutcome`, so it is exact rather than sampled and needs no ring; unbounded in the only dimension that matters (counts per kind, not per record); almost certainly carrying a **denominator**, since `indexed: 500` is unreadable without knowing whether the vault holds 500 or 50,000 of that kind.
 
-**Two open questions put to the consumer before design starts**, because they change the shape: does it need to survive a restart (our instinct: no — it is derived, and a fresh open establishes it), and is *"which records are stale"* needed or only *"how many"* (counts are cheap and exact; an enumeration is a different structure with a retention question attached, and we would rather not build it speculatively).
+**One open question, and their own E4 sharpens it.** Must the accessor survive a restart? The instinct is no — it is derived and a fresh open re-establishes it. **E4 breaks that instinct**: the whole point of `SqliteVecVectorIndex` is that a reopened vault answers with *no re-embed*, so there is no reconcile at open, so a snapshot denominator is stale from the process's first moment and `size` is back to being a scalar with nothing to compare against. Either the accessor persists alongside the vectors, or the persistent index has worse coverage reporting than the ephemeral one. (The second question we had — counts vs. an enumeration of stale targets — is **answered in their original ask**: *"Even a pair of counts […] would do it."*)
+
+**One thing we will decide unless they object:** keep `declined` / `excluded` distinct from `failed` rather than folding them into one shortfall, so a host that classifies a permanently-unembeddable record as an intentional decline gets a number reading 100% of what it *meant* to index.
 
 **Interim answer given to them, and it is genuine rather than a fig leaf:** wire `observers` and query `{ embed: 'failed' }`. No coverage ratio, but it stops a mid-session outage being *silent*, which is the acute half.
+
+**A process lesson from how this arrived, worth more than the stream.** Their ask file's `-48` resolution table marks E2 *"PARTIALLY LANDED […] the original ask shape is not what shipped"*, and eleven lines later the same file says *"Every ask in this lane is now closed."* The partial silently converted to closed, and the unlanded half re-surfaced four days later as a *new* ask that did not recognize itself — costing a round trip in which we reconstructed a pattern (`size` as a first instance) that does not exist. **A resolution table with a partial row needs a carry-forward line, not a closing line.** Our `finalize-task` ritual has the same exposure on the `diverged` field; this is the failure it exists to catch, observed from the other side.
 
 ### `agent-memory-index-partial-read` 🔵 (code complete 2026-08-15 — breaking, coordinated)
 
