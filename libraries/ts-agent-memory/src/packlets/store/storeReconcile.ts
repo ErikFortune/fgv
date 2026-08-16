@@ -16,7 +16,7 @@ import {
 import { IIndexedMemoryEntry } from '../index';
 import { ISkippedVectorRecord } from '../vector';
 import { DerivedArtifact, ReconcileReport } from './reconcile';
-import { IReembedOutcome, VectorMaintenance } from './vectorMaintenance';
+import { IReembedOutcome, VectorMaintenance, captureVectorHook } from './vectorMaintenance';
 
 /**
  * Everything the vector reconcile branches need, supplied by the store.
@@ -88,7 +88,14 @@ export async function reconcileVectors(params: IReconcileVectorsParams): Promise
 
   for (const entry of params.targets) {
     const target: IEdgeTarget = { scope: entry.scope, id: entry.envelope.id };
-    const held: Result<boolean> = await index.has(target);
+    // Captured like every other consumer hook: `has` belongs to the injected
+    // index and may throw rather than fail. Unwrapped it would reject the whole
+    // `IMemoryStore.reconcile` call on one bad record, which is both a Result-
+    // contract break and the opposite of this loop's collect-and-continue intent.
+    const held: Result<boolean> = await captureVectorHook(
+      () => index.has(target),
+      `membership check for '${entry.envelope.id}'`
+    );
     if (held.isFailure()) {
       failed.push({ target, error: `membership check failed: ${held.message}` });
       continue;

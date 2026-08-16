@@ -13,6 +13,7 @@ import {
   IFragmentReconcileReport,
   IIdentityCodec,
   IMemoryRecord,
+  IVectorIndex,
   IVectorReconcileReport,
   InMemoryCosineIndex,
   InMemoryFragmentCosineIndex,
@@ -287,6 +288,56 @@ describe('IMemoryStore.reconcile — record-vector', () => {
         expect(report.repaired).toBe(0);
       }
     );
+  });
+
+  test('returns a Failure when a consumer index has() THROWS rather than failing', async () => {
+    // The FIFTH consumer hook, and the one missed when the other four were
+    // wrapped: `has` belongs to the injected index. Unwrapped, one throwing
+    // membership check rejects the entire reconcile rather than landing in
+    // `failed` alongside the records that were fine.
+    const index = InMemoryCosineIndex.create().orThrow();
+    const store = FileTreeMemoryStore.create({
+      root: mutableRoot(),
+      registry: registry(),
+      codecs: codecs(),
+      vectorIndex: index,
+      embed: okEmbed
+    }).orThrow();
+    (await store.put(record('a'))).orThrow();
+
+    // Replace `has` with a throwing one, leaving the rest of the index intact.
+    const throwingHas: IVectorIndex = Object.create(index, {
+      has: {
+        value: (): Promise<Result<boolean>> => {
+          throw new Error('index exploded');
+        }
+      }
+    }) as IVectorIndex;
+
+    const maintenance = new VectorMaintenance({
+      vectorIndex: throwingHas,
+      embed: okEmbed,
+      warn: () => undefined,
+      embedsKind: () => true
+    });
+
+    const entries = (await store.listEntries()).orThrow();
+    expect(
+      await reconcileVectors({
+        kind: knowledgeKind,
+        artifact: 'record-vector',
+        targets: entries,
+        maintenance,
+        embedsKind: () => true,
+        resolve: (scope, id) => store.resolveRecord(scope, id),
+        stampRef: () => succeed(true)
+      })
+    ).toSucceedAndSatisfy((r: ReconcileReport) => {
+      const report = r as IVectorReconcileReport;
+      expect(report.failed).toHaveLength(1);
+      expect(report.failed[0].error).toMatch(/membership check.*threw.*index exploded/i);
+      expect(report.repaired).toBe(0);
+    });
   });
 
   test('counts a decline rather than treating it as a gap or a fault', async () => {
