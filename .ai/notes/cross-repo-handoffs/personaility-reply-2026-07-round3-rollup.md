@@ -1,5 +1,15 @@
 # fgv → PersonAIlity: consolidated response to the round-3 batch
 
+> **Landed 2026-08-16, held since 2026-07-31.** This note was written on the date above and
+> deliberately kept out of `release` while the exchange was still moving (fgv #581). The exchange
+> has since settled and **every question this note leaves open has been answered by shipped work** —
+> `fragmentId` and the advisory `locator` (#585), the `IMemoryIndex` injection seam (#582) and the
+> partial-read redesign that superseded its premise (#633), strict UTF-8 reads
+> (`getFileTextStrict`), and the unified redirect/SSRF walk (`redirectPolicy:
+> 'validate-each-hop'`). It is preserved **as written**, as the record of what was said at the
+> time; read its open questions as historical, not outstanding.
+
+
 **Date:** 2026-07-31. **Verified against:** `release` @ `fbb08cd55`.
 
 Five asks, plus your follow-up on N-Ask5 Q3. Every claim below was checked against the code
