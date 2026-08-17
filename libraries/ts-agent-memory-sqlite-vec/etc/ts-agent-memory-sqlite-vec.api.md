@@ -26,8 +26,32 @@ export interface ISqliteVecFragmentIndexCreateParams {
 }
 
 // @public
+export interface ISqliteVecFragmentIndexHandle {
+    close(): Result<true>;
+    readonly index: SqliteVecFragmentIndex;
+}
+
+// @public
+export interface ISqliteVecFragmentIndexOpenParams {
+    readonly path: string;
+    readonly tableName?: string;
+}
+
+// @public
 export interface ISqliteVecVectorIndexCreateParams {
     readonly database: BetterSqlite3.Database;
+    readonly tableName?: string;
+}
+
+// @public
+export interface ISqliteVecVectorIndexHandle {
+    close(): Result<true>;
+    readonly index: SqliteVecVectorIndex;
+}
+
+// @public
+export interface ISqliteVecVectorIndexOpenParams {
+    readonly path: string;
     readonly tableName?: string;
 }
 
@@ -43,6 +67,7 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     //
     // (undocumented)
     has(target: IEdgeTarget): Promise<Result<boolean>>;
+    static open(params: ISqliteVecFragmentIndexOpenParams): Promise<Result<ISqliteVecFragmentIndexHandle>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
     //
     // (undocumented)
@@ -69,6 +94,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     //
     // (undocumented)
     has(target: IEdgeTarget): Promise<Result<boolean>>;
+    static open(params: ISqliteVecVectorIndexOpenParams): Promise<Result<ISqliteVecVectorIndexHandle>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IVectorIndex"
     //
     // (undocumented)

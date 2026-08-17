@@ -232,12 +232,15 @@ The repo-wide `rush rebuild` earned its place: it caught exactly the casualty th
 An independent antagonist pass over the closure record produced eleven findings, all actioned — including this entry's own stale `TECH_DEBT.md` citation and a premature ✅. Dispositions in the stream's `result.md`; the substantive ones in its README's Appendix A.
 
 
-### `sqlite-vec-path-open` 🟢 (queued 2026-08-15 — small, additive)
+### `sqlite-vec-path-open` ✅
 
-**Status:** 🟢 ready to start. Additive; nothing existing changes or goes away.
-**Package surface:** `@fgv/ts-agent-memory-sqlite-vec` (both index classes + `model.ts`), `.ai/instructions/LIBRARY_CAPABILITIES.md`.
-**Brief:** `.ai/tasks/active/sqlite-vec-path-open/brief.md`
-**Origin:** PersonAIlity ask, 2026-08-14, against `5.1.0-49`. Consumer-marked **low** priority with a shipped workaround and an explicit "a won't-do is a fine answer".
+**Status:** ✅ shipped to `release` 2026-08-16. Additive — `create()` untouched on both index classes. Artifacts at `.ai/tasks/completed/2026-08/sqlite-vec-path-open/`.
+**Package surface:** `@fgv/ts-agent-memory-sqlite-vec` (both index classes + `model.ts` + new `connection.ts`), `.ai/instructions/LIBRARY_CAPABILITIES.md`, the package README.
+**Origin:** PersonAIlity ask, 2026-08-14, against `5.1.0-49`. Consumer-marked **low** priority with a shipped workaround — picked up when the consumer turned out to have a fix waiting on it.
+
+**What shipped.** `open({ path })` beside `create({ database })` on **both** classes, returning a handle `{ index, close() }`. The disposer travels on the handle rather than on the class because a `create()`-made index holds a connection the consumer owns and must stay incapable of closing it. The driver's only value import is isolated to a lazy `connection.ts`, so merely importing the package still does not load the native binding. A failed `open` closes what it opened — and says so if that close itself fails, folded via the package's own `withRollbackNote`.
+
+**Two findings worth carrying forward.** The first leak test **pinned nothing**: it reopened the path and wrote to it, which succeeds just as happily against a leaked connection, since SQLite permits many connections to one file. Caught only by reverting the fix and watching it stay green; replaced with an open-descriptor count that fails without the cleanup. And **`rushx coverage` and `heft test` disagreed** on the same tree (85.71% vs 100% on `connection.ts`) — both honest, different scripts, CI gates on the latter; the substance held either way and two untested error formatters were covered. `rushx coverage` is not currently usable as a gate in this package: it globs `src/**/*.ts` and `dist/**/*.js` alongside `lib/`, and the raw TypeScript suites fail to parse.
 
 **Mission.** Add a path-based factory beside the existing bring-your-own-`Database` one, so the single-index case needs neither a consumer value-import of `better-sqlite3` nor a hand-rolled `captureResult` around a constructor that throws.
 

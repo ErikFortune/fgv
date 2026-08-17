@@ -32,10 +32,18 @@ import {
   edgeTargetKey
 } from '@fgv/ts-agent-memory';
 import { invokeHook, tally, withRollbackNote } from './rebuildHelpers';
-import { ISqliteVecFragmentIndexCreateParams } from './model';
+import { closeOwnedConnection, openOwnedConnection } from './connection';
+import {
+  ISqliteVecFragmentIndexCreateParams,
+  ISqliteVecFragmentIndexHandle,
+  ISqliteVecFragmentIndexOpenParams
+} from './model';
 
 /** Default name for the fragment `vec0` virtual table. */
 const DEFAULT_TABLE_NAME: string = 'memory_fragments';
+
+/** Package-facing prefix for this class's failure messages. */
+const LABEL: string = 'sqlite-vec fragment index';
 
 /** A simple SQL identifier — the only shape allowed for the table name (it is interpolated into DDL). */
 const IDENTIFIER_RE: RegExp = /^[A-Za-z_][A-Za-z0-9_]*$/;
@@ -122,9 +130,13 @@ type FragmentIdentity = Pick<IVectorQueryHit, 'locator' | 'fragmentId'>;
  * cosine (`score = 1 - cosineDistance`), byte-identical to the in-memory index.
  * Large-N ANN indexing is explicitly out of scope, same regime as the record index.
  *
- * The `better-sqlite3` `Database` is consumer-owned (bring-your-own): this index
- * loads the `sqlite-vec` extension onto it and reads/writes the table, but never
- * opens or closes the connection.
+ * **Connection ownership depends on which factory you use.** With
+ * {@link SqliteVecFragmentIndex.create} the `Database` is consumer-owned
+ * (bring-your-own): this index loads the `sqlite-vec` extension onto it and
+ * reads/writes the table, but never opens or closes the connection — and that is
+ * the seam for backing this index and a record index with one connection. With
+ * {@link SqliteVecFragmentIndex.open} this package opens the file itself and hands
+ * back a handle carrying the disposer for the connection it created.
  * @public
  */
 export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
@@ -189,6 +201,56 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
         );
         return new SqliteVecFragmentIndex(params.database, table, dimension);
       }).withErrorFormat((e) => `sqlite-vec fragment index: failed to initialize: ${e}`)
+    );
+  }
+
+  /**
+   * Path-based factory. Opens the database file itself and returns the index
+   * together with a disposer for the connection it created.
+   *
+   * @remarks
+   * The fragment-granular sibling of {@link SqliteVecVectorIndex.open}, and present
+   * for the same reason: a consumer doing sub-document retrieval only would
+   * otherwise still value-import `better-sqlite3` and hand-roll a `captureResult`
+   * around a constructor that throws.
+   *
+   * **Use `create` instead when one connection must back both a fragment index and
+   * a record index** — the intended shared-handle case. Two `open` calls on one path
+   * give two independent connections, not a shared one.
+   *
+   * If initialization fails after the file is opened, the connection is closed
+   * before returning, so a failed `open` does not leak the descriptor it created.
+   * Should that close *itself* fail — the connection is then genuinely leaked — the
+   * returned message says so rather than hiding it. That includes the
+   * auxiliary-column mismatch failure, which is reported by `create` only after the
+   * file is open.
+   *
+   * @param params - See {@link ISqliteVecFragmentIndexOpenParams}.
+   * @returns `Success` with a {@link ISqliteVecFragmentIndexHandle}, or `Failure` if
+   * the driver could not be loaded, the file could not be opened, the table name is
+   * not a simple identifier, the extension fails to load, or the existing table was
+   * written by a version with a different auxiliary-column set.
+   */
+  public static async open(
+    params: ISqliteVecFragmentIndexOpenParams
+  ): Promise<Result<ISqliteVecFragmentIndexHandle>> {
+    return (await openOwnedConnection(params.path, LABEL)).thenOnSuccess(async (database) =>
+      (await SqliteVecFragmentIndex.create({ database, tableName: params.tableName }))
+        .onFailure((message) =>
+          // This call opened the connection, so a failure to initialize on top of it
+          // must not leave the file handle behind. A close that ALSO fails is said out
+          // loud rather than swallowed — the same reasoning, and the same helper, as
+          // `withRollbackNote`: silently discarding it would make the "a failed open
+          // leaks nothing" guarantee untrue exactly when it stopped holding, with no
+          // way for a caller to detect it.
+          fail(withRollbackNote(message, closeOwnedConnection(database, LABEL)))
+        )
+        .onSuccess((index) =>
+          succeed({
+            index,
+            close: () => closeOwnedConnection(database, LABEL)
+          })
+        )
     );
   }
 

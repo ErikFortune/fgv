@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory-sqlite-vec",
+      "comment": "Add path-based open() beside create() on both index classes, returning a handle that carries the disposer for the connection it opened. Additive; create() is unchanged.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory-sqlite-vec"
+}
