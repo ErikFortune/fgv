@@ -1,0 +1,35 @@
+id: sqlite-vec-path-open
+status: shipped
+packages: ['@fgv/ts-agent-memory-sqlite-vec']
+prs: []
+opened: 2026-08-15
+closed: 2026-08-16
+summary:
+  intended: >
+    Add a path-based factory beside the bring-your-own-Database one, so the single-index
+    case needs neither a consumer value-import of better-sqlite3 nor a hand-rolled
+    captureResult around a constructor that throws.
+  shipped: >
+    open({ path, tableName? }) on BOTH index classes, returning a handle carrying the
+    disposer for the connection it opened; the driver's only value import isolated to a
+    lazy connection.ts; a failed open closes what it opened and says so if that close
+    itself fails.
+  diverged: >
+    Two additions the brief did not name, both from review rather than from the brief: the
+    failed-open cleanup path (a failure after the file is open would otherwise leak a
+    descriptor per call), and the package README, whose "Not in scope" claimed connection
+    lifecycle was entirely the consumer's. The brief's own two corrections to the
+    consumer's ask — both classes, and disposer-on-the-handle — were implemented as
+    specified.
+  sourceLine: '**Outcome:** delivered. Additive; `create()` is untouched on both classes.'
+keywords:
+  [
+    'path-based factory',
+    'connection ownership',
+    'lazy native import',
+    'descriptor leak',
+    'disposer on handle',
+    'false pin',
+    'consumer ask'
+  ]
+sourceHash: 80411282d7843e25
