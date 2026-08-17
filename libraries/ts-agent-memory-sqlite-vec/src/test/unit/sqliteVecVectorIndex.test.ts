@@ -22,13 +22,37 @@ import {
   MemoryId,
   MemoryScopeKey
 } from '@fgv/ts-agent-memory';
-import { SqliteVecVectorIndex } from '../../index';
+import { ISqliteVecVectorIndexHandle, SqliteVecVectorIndex } from '../../index';
 
 function target(scope: string, id: string): IEdgeTarget {
   return { scope: scope as unknown as MemoryScopeKey, id: id as unknown as MemoryId };
 }
 function vec(...values: number[]): Float32Array {
   return Float32Array.from(values);
+}
+
+/**
+ * How many of this process's open descriptors point at `file`, or `undefined` on a
+ * platform without `/proc/self/fd` (i.e. not Linux), where the caller should skip
+ * the assertion. CI is Linux, so the leak gate is real there; on a macOS dev box the
+ * test degrades to running the code path without checking the descriptor.
+ */
+function openFdCountFor(file: string): number | undefined {
+  const fdDir: string = '/proc/self/fd';
+  if (!fs.existsSync(fdDir)) {
+    return undefined;
+  }
+  let n: number = 0;
+  for (const fd of fs.readdirSync(fdDir)) {
+    try {
+      if (fs.readlinkSync(path.join(fdDir, fd)) === file) {
+        n++;
+      }
+    } catch {
+      // the descriptor closed between readdir and readlink; it is not ours to count
+    }
+  }
+  return n;
 }
 
 describe('SqliteVecVectorIndex', () => {
@@ -277,6 +301,114 @@ describe('SqliteVecVectorIndex', () => {
       (await a.add(target('s', 'one'), vec(1, 0))).orThrow();
       expect(a.size).toBe(1);
       expect(b.size).toBe(0);
+    });
+  });
+
+  describe('open (path-based factory)', () => {
+    let dir: string;
+    let dbPath: string;
+
+    beforeEach(() => {
+      dir = fs.mkdtempSync(path.join(os.tmpdir(), 'svopen-'));
+      dbPath = path.join(dir, 'vectors.db');
+    });
+    afterEach(() => {
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+
+    test('opens the file itself and returns a usable index', async () => {
+      const opened = await SqliteVecVectorIndex.open({ path: dbPath });
+      expect(opened).toSucceed();
+      const handle: ISqliteVecVectorIndexHandle = opened.orThrow();
+      expect(await handle.index.add(target('knowledge', 'a'), vec(1, 0, 0))).toSucceed();
+      expect(handle.index.size).toBe(1);
+      expect(handle.close()).toSucceedWith(true);
+    });
+
+    test('persists across an open + close + open cycle, dimension recovered', async () => {
+      const first = (await SqliteVecVectorIndex.open({ path: dbPath })).orThrow();
+      (await first.index.add(target('knowledge', 'x'), vec(1, 0, 0))).orThrow();
+      expect(first.close()).toSucceedWith(true);
+
+      const second = (await SqliteVecVectorIndex.open({ path: dbPath })).orThrow();
+      expect(second.index.size).toBe(1);
+      expect(await second.index.has(target('knowledge', 'x'))).toSucceedWith(true);
+      // The dimension came back from the table schema, so a mismatched add still fails.
+      expect(await second.index.add(target('knowledge', 'y'), vec(1, 0))).toFailWith(
+        /does not match index dimension/i
+      );
+      expect(second.close()).toSucceedWith(true);
+    });
+
+    test('honors tableName', async () => {
+      const handle = (await SqliteVecVectorIndex.open({ path: dbPath, tableName: 'custom_vecs' })).orThrow();
+      (await handle.index.add(target('knowledge', 'a'), vec(1, 0))).orThrow();
+      expect(handle.close()).toSucceedWith(true);
+
+      // A default-named index over the same file sees nothing — the rows are in the custom table.
+      const other = (await SqliteVecVectorIndex.open({ path: dbPath })).orThrow();
+      expect(other.index.size).toBe(0);
+      expect(other.close()).toSucceedWith(true);
+    });
+
+    test('the handle close is idempotent', async () => {
+      const handle = (await SqliteVecVectorIndex.open({ path: dbPath })).orThrow();
+      expect(handle.close()).toSucceedWith(true);
+      expect(handle.close()).toSucceedWith(true);
+    });
+
+    test('the index is unusable after its handle is closed', async () => {
+      const handle = (await SqliteVecVectorIndex.open({ path: dbPath })).orThrow();
+      (await handle.index.add(target('knowledge', 'a'), vec(1, 0))).orThrow();
+      expect(handle.close()).toSucceedWith(true);
+      expect(await handle.index.add(target('knowledge', 'b'), vec(0, 1))).toFail();
+    });
+
+    test('a create()-made index exposes no way to close the consumer connection', async () => {
+      // The gate this shape exists for: `close` travels on the handle `open` returns,
+      // so an index built over a consumer-owned handle is structurally incapable of
+      // closing it. Asserted at runtime here; the type carries no `close` either,
+      // which is the half a test cannot state.
+      const index = await makeIndex();
+      expect((index as unknown as { close?: unknown }).close).toBeUndefined();
+      // ...and the consumer's connection is still open and usable afterwards.
+      expect(await index.add(target('knowledge', 'a'), vec(1, 0))).toSucceed();
+      expect(db.open).toBe(true);
+    });
+
+    test('fails without leaking the connection when initialization fails after the file is opened', async () => {
+      // A bad table name fails inside create(), i.e. AFTER open() has already created
+      // the file. The connection open() made must be closed before it returns, or a
+      // failed open leaks a file handle per call.
+      //
+      // This asserts on the process's open descriptors, NOT on "can I open the file
+      // again" — SQLite permits many connections to one file, so a reopen-and-write
+      // succeeds just as happily when the first connection was leaked. That weaker
+      // form was written first and verified to pass against the un-cleaned-up code,
+      // i.e. it pinned nothing.
+      const before = openFdCountFor(dbPath);
+      expect(
+        await SqliteVecVectorIndex.open({ path: dbPath, tableName: 'bad name; DROP TABLE x' })
+      ).toFailWith(/not a simple SQL identifier/i);
+      const after = openFdCountFor(dbPath);
+      if (before !== undefined && after !== undefined) {
+        expect(after).toBe(before);
+      }
+    });
+
+    test("accepts ':memory:' and yields an owned ephemeral connection", async () => {
+      // Documented on ISqliteVecVectorIndexOpenParams.path, so it is pinned here
+      // rather than left as an untested claim.
+      const handle = (await SqliteVecVectorIndex.open({ path: ':memory:' })).orThrow();
+      expect(await handle.index.add(target('knowledge', 'a'), vec(1, 0))).toSucceed();
+      expect(handle.index.size).toBe(1);
+      expect(handle.close()).toSucceedWith(true);
+    });
+
+    test('fails when the path cannot be opened', async () => {
+      expect(
+        await SqliteVecVectorIndex.open({ path: path.join(dir, 'no', 'such', 'dir', 'x.db') })
+      ).toFailWith(/failed to open/i);
     });
   });
 

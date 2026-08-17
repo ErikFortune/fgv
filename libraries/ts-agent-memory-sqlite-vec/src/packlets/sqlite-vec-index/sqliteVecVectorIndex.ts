@@ -30,10 +30,18 @@ import {
   edgeTargetKey
 } from '@fgv/ts-agent-memory';
 import { invokeHook, tally, withRollbackNote } from './rebuildHelpers';
-import { ISqliteVecVectorIndexCreateParams } from './model';
+import { closeOwnedConnection, openOwnedConnection } from './connection';
+import {
+  ISqliteVecVectorIndexCreateParams,
+  ISqliteVecVectorIndexHandle,
+  ISqliteVecVectorIndexOpenParams
+} from './model';
 
 /** Default name for the `vec0` virtual table. */
 const DEFAULT_TABLE_NAME: string = 'memory_vectors';
+
+/** Package-facing prefix for this class's failure messages. */
+const LABEL: string = 'sqlite-vec index';
 
 /** A simple SQL identifier — the only shape allowed for the table name (it is interpolated into DDL). */
 const IDENTIFIER_RE: RegExp = /^[A-Za-z_][A-Za-z0-9_]*$/;
@@ -70,9 +78,13 @@ interface IKnnRow {
  * durable, appropriate for the same "thousands of records" regime the in-memory
  * index targets. Large-N ANN indexing is explicitly out of scope — see the README.
  *
- * The `better-sqlite3` `Database` is consumer-owned (bring-your-own): this index
- * loads the `sqlite-vec` extension onto it and reads/writes the table, but never
- * opens or closes the connection.
+ * **Connection ownership depends on which factory you use.** With
+ * {@link SqliteVecVectorIndex.create} the `Database` is consumer-owned
+ * (bring-your-own): this index loads the `sqlite-vec` extension onto it and
+ * reads/writes the table, but never opens or closes the connection — and that is
+ * the seam for backing a record index and a fragment index with one connection.
+ * With {@link SqliteVecVectorIndex.open} this package opens the file itself and
+ * hands back a handle carrying the disposer for the connection it created.
  * @public
  */
 export class SqliteVecVectorIndex implements IVectorIndex {
@@ -129,6 +141,52 @@ export class SqliteVecVectorIndex implements IVectorIndex {
         );
         return new SqliteVecVectorIndex(params.database, table, dimension);
       }).withErrorFormat((e) => `sqlite-vec index: failed to initialize: ${e}`)
+    );
+  }
+
+  /**
+   * Path-based factory. Opens the database file itself and returns the index
+   * together with a disposer for the connection it created.
+   *
+   * @remarks
+   * The convenience over {@link SqliteVecVectorIndex.create} is that the consumer
+   * neither value-imports `better-sqlite3` nor re-establishes `Result` discipline
+   * around a constructor that throws — this is the one place the package leaked its
+   * own dependency into consumer source.
+   *
+   * **Use `create` instead when one connection must back more than one index** (a
+   * record index and a fragment index in the same file, the intended shared-handle
+   * case). Two `open` calls on one path give two independent connections, not a
+   * shared one.
+   *
+   * If initialization fails after the file is opened, the connection is closed
+   * before returning — a failed `open` leaks nothing.
+   *
+   * @param params - See {@link ISqliteVecVectorIndexOpenParams}.
+   * @returns `Success` with a {@link ISqliteVecVectorIndexHandle}, or `Failure` if
+   * the driver could not be loaded, the file could not be opened, the table name is
+   * not a simple identifier, or the extension fails to load.
+   */
+  public static async open(
+    params: ISqliteVecVectorIndexOpenParams
+  ): Promise<Result<ISqliteVecVectorIndexHandle>> {
+    return (await openOwnedConnection(params.path, LABEL)).thenOnSuccess(async (database) =>
+      (await SqliteVecVectorIndex.create({ database, tableName: params.tableName }))
+        .onFailure((message) => {
+          // Best-effort cleanup: this call opened the connection, so a failure to
+          // initialize on top of it must not leave the file handle behind. The close
+          // result is deliberately not folded into the message — the initialization
+          // failure is what the caller needs, and a close failure here would be
+          // secondary noise on an already-failing path.
+          closeOwnedConnection(database, LABEL);
+          return fail(message);
+        })
+        .onSuccess((index) =>
+          succeed({
+            index,
+            close: () => closeOwnedConnection(database, LABEL)
+          })
+        )
     );
   }
 
