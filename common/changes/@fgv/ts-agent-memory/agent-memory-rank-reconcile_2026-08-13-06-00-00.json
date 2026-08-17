@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Adds `IMemoryStore.reconcileRank(kind)`, which re-applies a kind's `RankProjector` to records already in the store and returns how many were restamped. Without it `rank` was effectively new-store-only and failed misleadingly: the projector runs on the write path only, and because an absent `rank` sorts last, pre-registration records ranked below every later write regardless of score - an ordering inverted with respect to the projector's intent, with no failure to indicate it. Deliberately does not touch `created`/`updated`/`seq` and fires no write observation. BREAKING on the active surface: `IMemoryStore` gains a required member, so external implementations must add it.",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

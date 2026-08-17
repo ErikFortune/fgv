@@ -152,6 +152,14 @@ export interface IMemoryEnvelope {
    * Absent when the kind has no registered projector (or the projector threw on
    * this record). Ordered retrieval (`orderBy: 'rank'`) and the index's rank view
    * sort by this value descending, placing records with an absent `rank` last.
+   *
+   * **The projector runs on the write path only — registering one does not rank
+   * records already in the store.** Because absent sorts last, those records land
+   * below every subsequently-written one regardless of what the projector would
+   * have scored them, so the result is not a partial ordering but one inverted
+   * with respect to the projector's intent, with nothing failing to say so. Call
+   * `IMemoryStore.reconcile(kind, 'rank')` after registering a projector against a
+   * populated store.
    */
   readonly rank?: number;
   /** Structured provenance (never a flat enum). */
@@ -184,6 +192,31 @@ export interface IMemoryRecord<TBody = unknown> {
 }
 
 /**
+ * The envelope's embedding reference if it carries a usable one, `undefined`
+ * otherwise — **the one place `null`-vs-absent is collapsed.**
+ *
+ * @remarks
+ * {@link IMemoryEnvelope.embeddingRef} is `string | null | undefined`, where
+ * `null` and absent both mean *not embedded* (`null` is the explicit sentinel;
+ * absent is the backwards-compat seam). That makes the obvious presence check
+ * wrong in **both** directions, and both mistakes were shipped before this
+ * accessor existed: `!== undefined` counts a `null` as an embedding that is not
+ * there, and `=== undefined` misses a `null` when looking for one that is
+ * missing. Neither is a type error, and neither is visible to a coverage gate,
+ * because the sentinel is a *value* rather than a branch.
+ *
+ * Returning the reference rather than a boolean is deliberate: a caller that
+ * needs the string gets the check for free, so there is no second, weaker way
+ * to ask.
+ *
+ * **Do not test `embeddingRef` for presence directly — call this.**
+ * @public
+ */
+export function embeddingRefOf(envelope: IMemoryEnvelope): string | undefined {
+  return envelope.embeddingRef ?? undefined;
+}
+
+/**
  * A per-kind host projection from a fully-resolved (post-merge) memory record
  * to a numeric ordering value. Registered per kind at store construction (see
  * `rankProjectors`); the store runs it on every put/update over the same
@@ -191,6 +224,9 @@ export interface IMemoryRecord<TBody = unknown> {
  * {@link IMemoryEnvelope.rank}. The store never interprets the body — the host
  * owns what the number means. A projector that throws is treated as "no rank
  * for this record" (logged at `warn`), never failing the write.
+ *
+ * Runs on writes only. To apply a newly-registered projector to records that
+ * already exist, call `IMemoryStore.reconcile(kind, 'rank')`.
  * @public
  */
 export type RankProjector = (record: IMemoryRecord<unknown>) => number;

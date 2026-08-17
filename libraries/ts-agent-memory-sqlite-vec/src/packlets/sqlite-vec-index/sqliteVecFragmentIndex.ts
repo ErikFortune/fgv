@@ -5,16 +5,33 @@
 
 import type BetterSqlite3 from 'better-sqlite3';
 import { load as loadSqliteVec } from 'sqlite-vec';
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import {
+  DetailedResult,
+  Result,
+  captureResult,
+  fail,
+  failWithDetail,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
+import {
+  FragmentEmbedder,
   IEdgeTarget,
   IEmbeddedFragment,
+  IFragmentLocator,
   IFragmentVectorIndex,
+  IFragmentVectorRebuildReport,
+  IMemoryRecordListing,
+  IMemoryRecordSource,
+  ISkippedVectorRecord,
   IVectorQueryHit,
+  IVectorRebuildOptions,
+  Kind,
   MemoryId,
   MemoryScopeKey,
   edgeTargetKey
 } from '@fgv/ts-agent-memory';
+import { invokeHook, tally, withRollbackNote } from './rebuildHelpers';
 import { ISqliteVecFragmentIndexCreateParams } from './model';
 
 /** Default name for the fragment `vec0` virtual table. */
@@ -24,18 +41,47 @@ const DEFAULT_TABLE_NAME: string = 'memory_fragments';
 const IDENTIFIER_RE: RegExp = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 /**
+ * The auxiliary (`+`-prefixed) columns this version of the index writes. A table
+ * created by an earlier version carries a different set; see
+ * {@link SqliteVecFragmentIndex._readExistingDimension} for why that has to be
+ * detected explicitly rather than migrated.
+ */
+const AUXILIARY_COLUMNS: ReadonlyArray<string> = ['start_off', 'end_off', 'fragment_id'];
+
+/**
+ * Matches one `+name` auxiliary-column declaration in a `vec0` `CREATE VIRTUAL TABLE`
+ * statement. Only ever consumed via `String.matchAll`, which iterates a clone rather
+ * than advancing this instance's `lastIndex`, so the shared `/g` regex is reusable.
+ */
+const AUXILIARY_COLUMN_RE: RegExp = /\+\s*([A-Za-z_][A-Za-z0-9_]*)/g;
+
+/**
  * One KNN row as returned by the fragment `vec0` MATCH query. The offset columns are
  * typed `number | bigint` because `better-sqlite3` returns integer columns as
  * `bigint` when a consumer enables its safe-integer mode (`defaultSafeIntegers`);
  * {@link SqliteVecFragmentIndex._toOffset} coerces them to a plain `number` (and
  * fails loudly on an out-of-safe-range value) before they reach the public locator.
+ * All three identity columns are nullable: a fragment stored without a locator has
+ * `NULL` offsets, and one stored without a `fragmentId` has a `NULL` `fragment_id`.
  */
 interface IKnnRow {
   readonly target_key: string;
-  readonly start_off: number | bigint;
-  readonly end_off: number | bigint;
+  // eslint-disable-next-line @rushstack/no-new-null -- SQLite returns NULL (not undefined) for an absent locator offset
+  readonly start_off: number | bigint | null;
+  // eslint-disable-next-line @rushstack/no-new-null -- SQLite returns NULL (not undefined) for an absent locator offset
+  readonly end_off: number | bigint | null;
+  // eslint-disable-next-line @rushstack/no-new-null -- SQLite returns NULL (not undefined) for an absent fragment id
+  readonly fragment_id: string | null;
   readonly distance: number;
 }
+
+/**
+ * The identity fields of a fragment hit, in `IVectorQueryHit` shape: a field the
+ * stored fragment did not carry is *absent*, never present-but-`undefined`, so a hit
+ * for a fragment stored without a `fragmentId` is structurally identical to one this
+ * index produced before `fragment_id` existed.
+ */
+type FragmentIdentity = Pick<IVectorQueryHit, 'locator' | 'fragmentId'>;
 
 /**
  * A persistent, `sqlite-vec`-backed `IFragmentVectorIndex` (from
@@ -46,12 +92,25 @@ interface IKnnRow {
  * @remarks
  * Where {@link SqliteVecVectorIndex} keys one vector per record on a
  * `target_key` primary key, this index holds **many** vectors per record — one per
- * in-record `[start, end)` span — so it keys the `vec0` table on `target_key` as a
- * **`PARTITION KEY`** (many rows may share it) and stores each fragment's locator
- * offsets in two auxiliary columns (`+start_off`, `+end_off`) that ride alongside
- * the vector and are returned on query but never filtered. A query is a brute-force
- * `vec0` KNN scan across all partitions returning per-fragment hits, each carrying
- * its record `target` and the matched `locator`.
+ * fragment — so it keys the `vec0` table on `target_key` as a **`PARTITION KEY`**
+ * (many rows may share it) and stores each fragment's identity in three auxiliary
+ * columns (`+start_off`, `+end_off`, `+fragment_id`) that ride alongside the vector
+ * and are returned on query but never filtered — in particular `fragment_id` is
+ * stored and returned verbatim, never parsed and never part of the query path. A
+ * query is a brute-force `vec0` KNN scan across all partitions returning per-fragment
+ * hits, each carrying its record `target` plus whichever identity fields the stored
+ * fragment was added with (a fragment must carry at least one).
+ *
+ * **`vec0` schema changes require a drop-and-re-index.** A
+ * `CREATE VIRTUAL TABLE IF NOT EXISTS` is a no-op against an existing table (SQLite
+ * does not compare schemas) and `vec0` has no `ALTER TABLE ADD COLUMN`, so a database written by an
+ * earlier version of this package keeps its old auxiliary columns. `create` detects
+ * that by parsing the stored `CREATE VIRTUAL TABLE` SQL and fails with an actionable
+ * message naming the expected and found columns, rather than letting a widened
+ * `INSERT` surface an opaque `no such column` at statement-prepare time. There are no
+ * in-place migrations: drop the table (or use a fresh `tableName`) and re-index.
+ * Fragment vectors are re-derivable from the records, so this costs embedding time,
+ * never data.
  *
  * Semantics match `InMemoryFragmentCosineIndex` exactly: `addFragments` is
  * whole-record-replace (a single transaction deletes every prior fragment of the
@@ -104,12 +163,15 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
   /**
    * Family-convention factory. Loads the `sqlite-vec` extension onto the supplied
    * `better-sqlite3` connection and, if the fragment table already exists (a
-   * reopened persistent file), recovers its established dimension so no
-   * re-embedding is needed on open.
+   * reopened persistent file), verifies its auxiliary-column set matches this
+   * version's and recovers its established dimension so no re-embedding is needed on
+   * open.
    *
    * @param params - See {@link ISqliteVecFragmentIndexCreateParams}.
    * @returns `Success` with the index, or `Failure` if the table name is not a
-   * simple identifier or the extension fails to load.
+   * simple identifier, the extension fails to load, or the existing table was
+   * written by a version with a different auxiliary-column set (which requires a
+   * drop-and-re-index — `vec0` cannot be altered in place).
    */
   public static create(params: ISqliteVecFragmentIndexCreateParams): Promise<Result<SqliteVecFragmentIndex>> {
     const table: string = params.tableName ?? DEFAULT_TABLE_NAME;
@@ -146,11 +208,25 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
       if (fragment.vector.length === 0) {
         return Promise.resolve(fail(`fragment index: cannot add '${key}': empty fragment vector`));
       }
+      // A fragment carrying neither identity cannot be resolved back to anything by a
+      // consumer holding the hit — the same invariant `embeddedFragmentConverter`
+      // enforces at the untyped boundary, re-checked here at the index seam.
+      if (fragment.locator === undefined && fragment.fragmentId === undefined) {
+        return Promise.resolve(
+          fail(
+            `fragment index: cannot add '${key}': fragment requires at least one of 'locator' or 'fragmentId'`
+          )
+        );
+      }
       // Locator offsets are persisted as SQLite integers (bound via BigInt). Reject a
       // non-safe-integer offset up front with a clear message, rather than letting
       // `BigInt(nonInteger)` throw cryptically inside the write transaction OR storing
       // a value the read-side `_toOffset` guard would later reject on every query.
-      if (!Number.isSafeInteger(fragment.locator.start) || !Number.isSafeInteger(fragment.locator.end)) {
+      // An absent locator persists as a NULL offset pair and skips the check.
+      if (
+        fragment.locator !== undefined &&
+        (!Number.isSafeInteger(fragment.locator.start) || !Number.isSafeInteger(fragment.locator.end))
+      ) {
         return Promise.resolve(
           fail(
             `fragment index: cannot add '${key}': locator [${fragment.locator.start}, ${fragment.locator.end}) offsets must be safe integers`
@@ -205,6 +281,113 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     );
   }
 
+  /** {@inheritDoc IFragmentVectorIndex.has} */
+  public has(target: IEdgeTarget): Promise<Result<boolean>> {
+    return Promise.resolve(
+      captureResult(() => {
+        // Before any add has created the table there is nothing held — a truthful
+        // `false`, matching `remove`'s idempotence and the zero counts.
+        if (this._stmts === undefined) {
+          return false;
+        }
+        return this._stmts.has.get(edgeTargetKey(target)) !== undefined;
+      }).withErrorFormat((e) => `fragment index: cannot check '${edgeTargetKey(target)}': ${e}`)
+    );
+  }
+
+  /** {@inheritDoc IFragmentVectorIndex.rebuild} */
+  public async rebuild(
+    source: IMemoryRecordSource,
+    embed: FragmentEmbedder,
+    options?: IVectorRebuildOptions
+  ): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>> {
+    const lenient: boolean = (options?.onRecordError ?? 'fail') === 'skip';
+    // `source` is consumer-supplied, so a throw or rejection becomes a `Failure`
+    // here rather than escaping as an exception.
+    const listed: Result<IMemoryRecordListing> = await invokeHook(() => source.list());
+    if (listed.isFailure()) {
+      // Deliberately BEFORE any clear, matching both siblings: a failed list is no
+      // evidence about the fragments already held, and clearing here would destroy
+      // a healthy PERSISTED index over a transient read error. No detail — there is
+      // nothing this call disturbed to describe.
+      return failWithDetail(`fragment index rebuild: failed to list records: ${listed.message}`);
+    }
+    const cleared: Result<true> = this._clear();
+    if (cleared.isFailure()) {
+      // Also nothing established: the table still holds whatever it held.
+      return failWithDetail(`fragment index rebuild: failed to clear the index: ${cleared.message}`);
+    }
+    const indexed: Map<Kind, number> = new Map<Kind, number>();
+    const fragments: Map<Kind, number> = new Map<Kind, number>();
+    const declined: Map<Kind, number> = new Map<Kind, number>();
+    const skipped: ISkippedVectorRecord[] = [];
+    // Absent stays absent — only the source knows whether it filtered anything.
+    const report = (): IFragmentVectorRebuildReport => ({
+      indexed,
+      fragments,
+      declined,
+      excluded: listed.value.excluded,
+      skipped
+    });
+    for (const scoped of listed.value.records) {
+      const kind: Kind = scoped.record.envelope.kind;
+      // Capture-wrapped: an embedder that throws mid-loop would otherwise escape
+      // past the `'fail'` rollback below, leaving this DURABLE table holding a
+      // partial index that survives the process.
+      const embedded: Result<ReadonlyArray<IEmbeddedFragment>> = await invokeHook(() => embed(scoped.record));
+      if (embedded.isFailure()) {
+        const error: string = `fragment index rebuild: embedding '${edgeTargetKey(scoped.target)}' failed: ${
+          embedded.message
+        }`;
+        if (!lenient) {
+          // A rollback that also fails is said out loud: the `'fail'` path
+          // promises an empty index, and on a DURABLE table a botched rollback
+          // survives the process.
+          return failWithDetail(withRollbackNote(error, this._clear()), report());
+        }
+        skipped.push({ target: scoped.target, error });
+        continue;
+      }
+      // An empty array is this lane's decline, and it is still WRITTEN — the
+      // whole-record-replace is what clears any stale fragments.
+      const added: Result<number> = await this.addFragments(scoped.target, embedded.value);
+      if (added.isFailure()) {
+        const error: string = `fragment index rebuild: ${added.message}`;
+        if (!lenient) {
+          return failWithDetail(withRollbackNote(error, this._clear()), report());
+        }
+        skipped.push({ target: scoped.target, error });
+        continue;
+      }
+      if (added.value === 0) {
+        tally(declined, kind);
+        continue;
+      }
+      tally(indexed, kind);
+      tally(fragments, kind, added.value);
+    }
+    return succeedWithDetail(report());
+  }
+
+  /**
+   * **Empties the rows; does NOT release the table's declared dimension.** That
+   * is a `vec0` constraint rather than a choice — the dimension is schema, and
+   * there is no `ALTER TABLE` for it — so a rebuild at a new dimension fails
+   * here where it would succeed on the in-memory sibling, which forgets its
+   * dimension on reset. Changing dimension needs a drop-and-re-index; see the
+   * note on `IVectorIndex.rebuild`. Tolerates a table that does not exist yet.
+   */
+  private _clear(): Result<true> {
+    if (this._stmts === undefined) {
+      return succeed(true);
+    }
+    // Capture-wrapped like every other statement path: a closed connection or an
+    // I/O error is a `Failure`, not an exception out of a `Result`-returning method.
+    return captureResult(() => this._db.prepare(`DELETE FROM "${this._table}"`).run()).onSuccess(() =>
+      succeed(true)
+    );
+  }
+
   /** {@inheritDoc IFragmentVectorIndex.query} */
   public query(
     vector: Float32Array,
@@ -256,10 +439,7 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
           hits.push({
             target: SqliteVecFragmentIndex._parseKey(key),
             score: 1 - row.distance,
-            locator: {
-              start: SqliteVecFragmentIndex._toOffset(row.start_off, key),
-              end: SqliteVecFragmentIndex._toOffset(row.end_off, key)
-            }
+            ...SqliteVecFragmentIndex._toIdentity(row, key)
           });
         }
         return hits;
@@ -267,12 +447,16 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     );
   }
 
-  /** Create the fragment `vec0` virtual table with the established dimension. */
+  /**
+   * Create the fragment `vec0` virtual table with the established dimension. The
+   * auxiliary columns must stay in sync with `AUXILIARY_COLUMNS`, which
+   * `create` compares against an existing table's stored DDL.
+   */
   private _createTable(dimension: number): void {
     this._db.exec(
       `CREATE VIRTUAL TABLE IF NOT EXISTS "${this._table}" USING vec0(` +
         `target_key TEXT PARTITION KEY, embedding float[${dimension}] distance_metric=cosine, ` +
-        `+start_off integer, +end_off integer)`
+        `+start_off integer, +end_off integer, +fragment_id text)`
     );
   }
 
@@ -282,7 +466,8 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
       `DELETE FROM "${this._table}" WHERE target_key = ?`
     );
     const ins: BetterSqlite3.Statement = this._db.prepare(
-      `INSERT INTO "${this._table}"(target_key, embedding, start_off, end_off) VALUES (?, ?, ?, ?)`
+      `INSERT INTO "${this._table}"(target_key, embedding, start_off, end_off, fragment_id) ` +
+        `VALUES (?, ?, ?, ?, ?)`
     );
     // Whole-record replace: drop every prior fragment of the target, then insert the
     // new set, atomically. An empty set collapses to a pure delete.
@@ -294,9 +479,13 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
         ins.run(
           key,
           SqliteVecFragmentIndex._toBlob(fragment.vector),
-          // vec0 typed columns reject a JS float; bind the offsets as integers.
-          BigInt(fragment.locator.start),
-          BigInt(fragment.locator.end)
+          // vec0 typed columns reject a JS float; bind the offsets as integers. An
+          // absent locator binds the pair as NULL — never a partial pair, so the read
+          // side can treat a half-NULL pair as corruption rather than a legal shape.
+          fragment.locator === undefined ? null : BigInt(fragment.locator.start),
+          fragment.locator === undefined ? null : BigInt(fragment.locator.end),
+          // Stored verbatim and never parsed; absent binds as NULL.
+          fragment.fragmentId ?? null
         );
       }
     });
@@ -306,17 +495,27 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
         replaceTxn(key, fragments);
       },
       query: this._db.prepare(
-        `SELECT target_key, start_off, end_off, distance FROM "${this._table}" WHERE embedding MATCH ? AND k = ?`
+        `SELECT target_key, start_off, end_off, fragment_id, distance FROM "${this._table}" ` +
+          `WHERE embedding MATCH ? AND k = ?`
       ),
       fragmentCount: this._db.prepare(`SELECT count(*) AS c FROM "${this._table}"`),
-      recordCount: this._db.prepare(`SELECT count(DISTINCT target_key) AS c FROM "${this._table}"`)
+      recordCount: this._db.prepare(`SELECT count(DISTINCT target_key) AS c FROM "${this._table}"`),
+      // `LIMIT 1`: membership needs existence, not cardinality.
+      has: this._db.prepare(`SELECT 1 FROM "${this._table}" WHERE target_key = ? LIMIT 1`)
     };
   }
 
   /**
    * Recover the established dimension of an existing fragment `vec0` table from its
-   * stored `CREATE VIRTUAL TABLE` SQL (`float[<n>]`). Returns `undefined` when the
+   * stored `CREATE VIRTUAL TABLE` SQL (`float[<n>]`), after checking that the table's
+   * auxiliary columns match `AUXILIARY_COLUMNS`. Returns `undefined` when the
    * table does not exist yet (a fresh database — dimension is set by the first add).
+   *
+   * Throws when a table of that name exists but is not a usable fragment index (a
+   * mismatched auxiliary-column set, or no `vec0` embedding column); the caller runs
+   * this inside `captureResult`, so it surfaces as a loud `Failure` from `create`.
+   * The same stored DDL answers every one of those questions, so the checks cost
+   * nothing extra.
    */
   private static _readExistingDimension(db: BetterSqlite3.Database, table: string): number | undefined {
     const row: { sql: string } | undefined = db
@@ -325,8 +524,93 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     if (row === undefined) {
       return undefined;
     }
+    SqliteVecFragmentIndex._verifyAuxiliaryColumns(row.sql, table);
     const match: RegExpMatchArray | null = row.sql.match(/float\[(\d+)\]/);
-    return match === null ? undefined : Number(match[1]);
+    if (match === null) {
+      // The auxiliary columns matched but there is no `float[<n>]` embedding column,
+      // so this is not a usable fragment index table. Same remedy as a column
+      // mismatch — and failing here beats handing back a dimensionless index whose
+      // first add would `CREATE VIRTUAL TABLE IF NOT EXISTS` into a no-op.
+      throw new Error(
+        `existing table '${table}' has no vec0 embedding column, so it is not a usable fragment ` +
+          `index table. Drop it (or pass a fresh tableName) and re-add every fragment.`
+      );
+    }
+    return Number(match[1]);
+  }
+
+  /**
+   * Compare an existing table's auxiliary columns against `AUXILIARY_COLUMNS`.
+   *
+   * `CREATE VIRTUAL TABLE IF NOT EXISTS` is a no-op against an existing table (SQLite
+   * never compares schemas) and `vec0` has no `ALTER TABLE ADD COLUMN`, so a table
+   * written by an earlier version of this package silently keeps its old columns and
+   * only fails later — as an opaque `no such column` when the widened `INSERT` is
+   * prepared. Detect it here instead and say what to do about it. Order is not
+   * compared: every statement names its columns explicitly, so only the set matters.
+   */
+  private static _verifyAuxiliaryColumns(sql: string, table: string): void {
+    const found: string[] = Array.from(sql.matchAll(AUXILIARY_COLUMN_RE), (m) => m[1]);
+    const expected: ReadonlyArray<string> = AUXILIARY_COLUMNS;
+    const matches: boolean =
+      found.length === expected.length && expected.every((column) => found.includes(column));
+    if (!matches) {
+      throw new Error(
+        `existing table '${table}' has auxiliary columns [${found.join(', ')}] but this index ` +
+          `requires [${expected.join(', ')}] — it was written by a different version of ` +
+          `@fgv/ts-agent-memory-sqlite-vec, or it is not a fragment index table at all. vec0 virtual ` +
+          `tables cannot be altered in place, so this requires a drop-and-re-index: DROP TABLE ` +
+          `"${table}" (or pass a fresh tableName) and re-add every fragment. Fragment vectors are ` +
+          `re-derivable from the records, so this costs embedding time, never data.`
+      );
+    }
+  }
+
+  /**
+   * Rebuild the identity fields of a hit from a persisted row, omitting each field
+   * the stored fragment did not carry (so a hit is structurally identical to one this
+   * index produced before `fragment_id` existed).
+   *
+   * A row carrying neither identity violates the write-side invariant and could not
+   * be resolved by the caller, so it fails loudly instead of yielding an anonymous
+   * hit.
+   */
+  private static _toIdentity(row: IKnnRow, key: string): FragmentIdentity {
+    const locator: IFragmentLocator | undefined = SqliteVecFragmentIndex._toLocator(row, key);
+    if (locator === undefined && row.fragment_id === null) {
+      throw new Error(
+        `fragment '${key}': row carries neither a locator nor a fragment id (corrupt persisted data)`
+      );
+    }
+    return {
+      ...(locator !== undefined ? { locator } : {}),
+      ...(row.fragment_id !== null ? { fragmentId: row.fragment_id } : {})
+    };
+  }
+
+  /**
+   * Rebuild a fragment's locator from its persisted offsets, or `undefined` when the
+   * fragment was stored without one (both offsets `NULL`).
+   *
+   * The pair is written all-or-nothing, so a half-`NULL` pair can only come from
+   * corrupt / externally-edited data. Throw rather than coerce — `Number(null)` is
+   * `0`, which would silently fabricate a span starting at the top of the body.
+   */
+  private static _toLocator(row: IKnnRow, key: string): IFragmentLocator | undefined {
+    const start: number | bigint | null = row.start_off;
+    const end: number | bigint | null = row.end_off;
+    if (start === null && end === null) {
+      return undefined;
+    }
+    if (start === null || end === null) {
+      throw new Error(
+        `fragment '${key}': locator has only one of its start/end offsets (corrupt persisted data)`
+      );
+    }
+    return {
+      start: SqliteVecFragmentIndex._toOffset(start, key),
+      end: SqliteVecFragmentIndex._toOffset(end, key)
+    };
   }
 
   /** Pack a `Float32Array` as the little-endian byte blob `vec0` stores. Copies, so the caller may reuse its buffer. */
@@ -378,4 +662,5 @@ interface IFragmentStatements {
   readonly query: BetterSqlite3.Statement;
   readonly fragmentCount: BetterSqlite3.Statement;
   readonly recordCount: BetterSqlite3.Statement;
+  readonly has: BetterSqlite3.Statement;
 }

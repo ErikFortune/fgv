@@ -6,6 +6,7 @@
 import '@fgv/ts-utils-jest';
 import {
   IEdgeTarget,
+  IIndexedMemoryEntry,
   IIndexedMemoryRecord,
   IMemoryRecord,
   Kind,
@@ -45,7 +46,12 @@ interface IRecordSpec {
   readonly rank?: number;
 }
 
-function makeEntry(spec: IRecordSpec): IIndexedMemoryRecord {
+/**
+ * The WHOLE-record form, which `patch` takes. `rebuild` and every read take the
+ * projected {@link IIndexedMemoryEntry} — see {@link makeEntry}. Having both in
+ * the fixtures is the asymmetry the contract states: patch writes, rebuild reads.
+ */
+function makeRecord(spec: IRecordSpec): IIndexedMemoryRecord {
   const record: IMemoryRecord<unknown> = {
     envelope: envelopeConverter
       .convert({
@@ -70,8 +76,14 @@ function makeEntry(spec: IRecordSpec): IIndexedMemoryRecord {
   return { scope: (spec.scope ?? 'knowledge') as MemoryScopeKey, record };
 }
 
-function ids(records: ReadonlyArray<IMemoryRecord<unknown>>): ReadonlyArray<string> {
-  return records.map((r) => r.envelope.id as string);
+/** The projected form, which `rebuild` takes and every read returns. */
+function makeEntry(spec: IRecordSpec): IIndexedMemoryEntry {
+  const { scope, record } = makeRecord(spec);
+  return { scope, envelope: record.envelope };
+}
+
+function ids(entries: ReadonlyArray<IIndexedMemoryEntry>): ReadonlyArray<string> {
+  return entries.map((e) => e.envelope.id as string);
 }
 
 describe('MemoryIndex', () => {
@@ -108,22 +120,22 @@ describe('MemoryIndex', () => {
     test('clears prior state', () => {
       index.rebuild([makeEntry({ id: 'a', tags: ['x'] })]).orThrow();
       expect(index.rebuild([makeEntry({ id: 'c', tags: ['z'] })])).toSucceedWith(1);
-      expect(ids(index.entries().map((e) => e.record))).toEqual(['c']);
+      expect(ids(index.entries())).toEqual(['c']);
       expect(index.byTag('x' as Tag)).toHaveLength(0);
     });
   });
 
   describe('patch', () => {
     test('put inserts a new entry and returns it', () => {
-      const entry = makeEntry({ id: 'a', tags: ['x'], links: ['b'] });
+      const entry = makeRecord({ id: 'a', tags: ['x'], links: ['b'] });
       expect(index.patch('put', entry)).toSucceedWith(entry);
       expect(ids(index.byKind('knowledge' as Kind))).toEqual(['a']);
       expect(targetIds(index.backlinks(bt('b')))).toEqual(['a']);
     });
 
     test('put on an existing key replaces stale associations', () => {
-      index.patch('put', makeEntry({ id: 'a', kind: 'knowledge', tags: ['old'], links: ['b'] })).orThrow();
-      index.patch('put', makeEntry({ id: 'a', kind: 'note', tags: ['new'], links: ['c'] })).orThrow();
+      index.patch('put', makeRecord({ id: 'a', kind: 'knowledge', tags: ['old'], links: ['b'] })).orThrow();
+      index.patch('put', makeRecord({ id: 'a', kind: 'note', tags: ['new'], links: ['c'] })).orThrow();
       expect(index.entries()).toHaveLength(1);
       expect(index.byTag('old' as Tag)).toHaveLength(0);
       expect(ids(index.byTag('new' as Tag))).toEqual(['a']);
@@ -134,7 +146,7 @@ describe('MemoryIndex', () => {
     });
 
     test('delete removes the entry and its associations', () => {
-      const entry = makeEntry({ id: 'a', tags: ['x'], links: ['b'] });
+      const entry = makeRecord({ id: 'a', tags: ['x'], links: ['b'] });
       index.patch('put', entry).orThrow();
       expect(index.patch('delete', entry)).toSucceedWith(entry);
       expect(index.entries()).toHaveLength(0);
@@ -143,15 +155,48 @@ describe('MemoryIndex', () => {
     });
 
     test('delete of an absent key is a no-op that still succeeds', () => {
-      const entry = makeEntry({ id: 'ghost' });
+      const entry = makeRecord({ id: 'ghost' });
       expect(index.patch('delete', entry)).toSucceedWith(entry);
       expect(index.entries()).toHaveLength(0);
     });
 
     test('distinguishes entries with the same id across scopes', () => {
-      index.patch('put', makeEntry({ id: 'turn-0', scope: 'conversations/c1' })).orThrow();
-      index.patch('put', makeEntry({ id: 'turn-0', scope: 'conversations/c2' })).orThrow();
+      index.patch('put', makeRecord({ id: 'turn-0', scope: 'conversations/c1' })).orThrow();
+      index.patch('put', makeRecord({ id: 'turn-0', scope: 'conversations/c2' })).orThrow();
       expect(index.entries()).toHaveLength(2);
+    });
+  });
+
+  describe('get', () => {
+    test('answers a keyed lookup with the projected entry', () => {
+      index.rebuild([makeEntry({ id: 'a', tags: ['x'] }), makeEntry({ id: 'b' })]).orThrow();
+      const found: IIndexedMemoryEntry | undefined = index.get(bt('a'));
+      expect(found?.envelope.id).toBe('a');
+      expect(found?.scope).toBe('knowledge');
+      // The projection, not the record — there is no body to reach for.
+      expect(Object.keys(found ?? {}).sort()).toEqual(['envelope', 'scope']);
+    });
+
+    test('answers an absent key with undefined', () => {
+      index.rebuild([makeEntry({ id: 'a' })]).orThrow();
+      expect(index.get(bt('nope'))).toBeUndefined();
+    });
+
+    test('keys on scope as well as id', () => {
+      index.patch('put', makeRecord({ id: 'turn-0', scope: 'conversations/c1' })).orThrow();
+      expect(
+        index.get({ scope: 'conversations/c1' as MemoryScopeKey, id: 'turn-0' as MemoryId })
+      ).toBeDefined();
+      expect(
+        index.get({ scope: 'conversations/c2' as MemoryScopeKey, id: 'turn-0' as MemoryId })
+      ).toBeUndefined();
+    });
+
+    test('reflects a delete', () => {
+      const entry = makeRecord({ id: 'a' });
+      index.patch('put', entry).orThrow();
+      index.patch('delete', entry).orThrow();
+      expect(index.get(bt('a'))).toBeUndefined();
     });
   });
 
@@ -223,7 +268,7 @@ describe('MemoryIndex', () => {
       ];
       index.rebuild(fixture).orThrow();
       const viaIndex = ids(index.byRank());
-      const viaRankCompare = ids(fixture.map((e) => e.record).sort(rankCompare));
+      const viaRankCompare = ids([...fixture].sort(rankCompare));
       expect(viaIndex).toEqual(viaRankCompare);
       // And the shared expected ordering is what both must produce.
       expect(viaIndex).toEqual(['r-top', 'r-mid', 'r-tie-b', 'r-tie-a', 'absent-new', 'absent-old']);
@@ -239,7 +284,7 @@ describe('MemoryIndex', () => {
     });
 
     test('drops the target set once the last source is removed', () => {
-      const a = makeEntry({ id: 'a', links: ['target'] });
+      const a = makeRecord({ id: 'a', links: ['target'] });
       index.patch('put', a).orThrow();
       index.patch('delete', a).orThrow();
       expect(index.backlinks(bt('target'))).toHaveLength(0);
@@ -248,8 +293,8 @@ describe('MemoryIndex', () => {
     test('tracks same-id sources across scopes independently', () => {
       // Two distinct records that share the id 'a' under different scopes, both
       // linking 'target'. Removing one must NOT drop the other's inbound edge.
-      const a1 = makeEntry({ id: 'a', scope: 'conversations/c1', links: ['target'] });
-      const a2 = makeEntry({ id: 'a', scope: 'conversations/c2', links: ['target'] });
+      const a1 = makeRecord({ id: 'a', scope: 'conversations/c1', links: ['target'] });
+      const a2 = makeRecord({ id: 'a', scope: 'conversations/c2', links: ['target'] });
       index.patch('put', a1).orThrow();
       index.patch('put', a2).orThrow();
       expect(targetIds(index.backlinks(bt('target')))).toEqual(['a', 'a']);
@@ -260,7 +305,7 @@ describe('MemoryIndex', () => {
 
   describe('duplicate associations', () => {
     test('a record with duplicate tags and links is cleaned up exactly once on delete', () => {
-      const entry = makeEntry({ id: 'a', tags: ['dup', 'dup'], links: ['t', 't'] });
+      const entry = makeRecord({ id: 'a', tags: ['dup', 'dup'], links: ['t', 't'] });
       index.patch('put', entry).orThrow();
       expect(ids(index.byTag('dup' as Tag))).toEqual(['a']);
       expect(targetIds(index.backlinks(bt('t')))).toEqual(['a']);

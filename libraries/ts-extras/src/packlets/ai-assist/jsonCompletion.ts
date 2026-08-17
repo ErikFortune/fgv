@@ -29,7 +29,7 @@
 
 import { type Converter, fail, Result, succeed, type Validator } from '@fgv/ts-utils';
 
-import { callProviderCompletion, type IProviderCompletionParams } from './apiClient';
+import { callProviderCompletion, type IProviderCompletionParams } from './completionClient';
 import { fencedStringifiedJson } from './jsonResponse';
 import { type IAiCompletionResponse } from './model';
 

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "HttpTreeAccessors and LocalStorageTreeAccessors inherit the optional strict-text capability and refuse every file, since neither holds the original bytes. Corrects the HttpTreeAccessors docstring, which claimed getFileBytes() avoided a lenient UTF-8 decode.",
+      "type": "none",
+      "packageName": "@fgv/ts-web-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras"
+}

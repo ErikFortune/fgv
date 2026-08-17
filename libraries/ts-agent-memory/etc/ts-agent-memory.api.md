@@ -7,6 +7,7 @@
 import { AiAssist } from '@fgv/ts-extras';
 import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonSchema } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
@@ -26,7 +27,7 @@ export type AdmissionDecision = {
 // @public
 export class AsOfRetriever implements IMemoryRetriever {
     get capabilities(): IMemoryRetrieverCapabilities;
-    static create(index: IMemoryIndex): Result<AsOfRetriever>;
+    static create(params: IRetrieverCreateParams): Result<AsOfRetriever>;
     retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
 }
 
@@ -68,7 +69,7 @@ export function createMemoryTools(params: ICreateMemoryToolsParams): ReadonlyArr
 // @public
 export class CurrentValidRetriever implements IMemoryRetriever {
     get capabilities(): IMemoryRetrieverCapabilities;
-    static create(index: IMemoryIndex): Result<CurrentValidRetriever>;
+    static create(params: IRetrieverCreateParams): Result<CurrentValidRetriever>;
     retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
 }
 
@@ -94,6 +95,9 @@ export const DEFAULT_SIMILARITY_TOP_K: number;
 export function defaultMemoryScopeEncoding(scope: MemoryScopeKey): Result<string>;
 
 // @public
+export type DerivedArtifact = 'rank' | 'record-vector' | 'fragment-vector';
+
+// @public
 export const edgeConverter: Converter<IEdge>;
 
 // @public
@@ -101,6 +105,12 @@ export const edgeTargetConverter: Converter<IEdgeTarget>;
 
 // @public
 export function edgeTargetKey(target: IEdgeTarget): string;
+
+// @public
+export const embeddedFragmentConverter: Converter<IEmbeddedFragment>;
+
+// @public
+export function embeddingRefOf(envelope: IMemoryEnvelope): string | undefined;
 
 // @public
 export type EntityId = Brand<string, 'EntityId'>;
@@ -114,13 +124,19 @@ export const envelopeYamlConverter: Converter<IMemoryEnvelope>;
 // @public
 export class FileTreeMemoryStore implements IMemoryStore {
     asRecordSource(): IMemoryRecordSource;
+    coverage(): Promise<Result<IDerivedStateCoverage>>;
     static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore>;
+    dedupScopeFor(kind: Kind): DedupScope;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+    embedsKind(kind: Kind): boolean;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
-    list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+    list(selection: MemoryListSelection): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+    listEntries(): Promise<Result<ReadonlyArray<IIndexedMemoryEntry>>>;
     listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
     put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
+    reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>>;
+    resolveRecord(scope: MemoryScopeKey, id: MemoryId): Result<IMemoryRecord<unknown> | undefined>;
     get skippedRecords(): ReadonlyArray<ISkippedRecord>;
 }
 
@@ -129,6 +145,9 @@ export const FRAGMENT_SEMANTIC_UNWIRED_MESSAGE: string;
 
 // @public
 export type FragmentEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<ReadonlyArray<IEmbeddedFragment>>>;
+
+// @public
+export const fragmentLocatorConverter: Converter<IFragmentLocator>;
 
 // @public
 export class FragmentSemanticRetriever {
@@ -145,7 +164,7 @@ export function guardRetrieverCapabilities(query: IMemoryQuery, capabilities: IM
 // @public
 export class HistoryRetriever implements IMemoryRetriever {
     get capabilities(): IMemoryRetrieverCapabilities;
-    static create(index: IMemoryIndex): Result<HistoryRetriever>;
+    static create(params: IRetrieverCreateParams): Result<HistoryRetriever>;
     retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
 }
 
@@ -157,6 +176,12 @@ export class HybridRetriever implements IMemoryRetriever {
     get capabilities(): IMemoryRetrieverCapabilities;
     static create(retrievers: ReadonlyArray<IMemoryRetriever>, mergeStrategy: IMergeStrategy): Result<HybridRetriever>;
     retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+}
+
+// @public
+export interface IArtifactCoverage {
+    readonly covered: number;
+    readonly expected: number;
 }
 
 // @public
@@ -204,6 +229,14 @@ export interface ICycleGuardEdge {
 }
 
 // @public
+export interface IDerivedStateCoverage {
+    readonly fragmentVectors?: IFragmentIndexCoverage;
+    readonly rank?: ReadonlyMap<Kind, IArtifactCoverage>;
+    readonly records: ReadonlyMap<Kind, number>;
+    readonly recordVectors?: IIndexCoverage;
+}
+
+// @public
 export interface IEdge {
     readonly confidence?: number;
     readonly invalid_at?: number | null;
@@ -221,7 +254,8 @@ export interface IEdgeTarget {
 
 // @public
 export interface IEmbeddedFragment {
-    readonly locator: IFragmentLocator;
+    readonly fragmentId?: string;
+    readonly locator?: IFragmentLocator;
     readonly vector: Float32Array;
 }
 
@@ -238,6 +272,11 @@ export interface IEntityResolver {
 }
 
 // @public
+export interface IEnvelopeCarrier {
+    readonly envelope: IMemoryEnvelope;
+}
+
+// @public
 export interface IFactExtractor {
     extract(item: IIngestItem, classification: IMemoryClassification): Promise<Result<ReadonlyArray<ICandidateRecord>>>;
 }
@@ -248,8 +287,10 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
     readonly defaultCodec?: IIdentityCodec;
     readonly embed?: MemoryEmbedder;
+    readonly embedKinds?: ReadonlySet<Kind>;
     readonly fragmentEmbedder?: FragmentEmbedder;
     readonly fragmentIndex?: IFragmentVectorIndex;
+    readonly index?: IMemoryIndex;
     readonly logger?: Logging.ILogger;
     readonly observers?: ReadonlyArray<IMemoryObserver>;
     readonly onRecordError?: MemoryRecordErrorMode;
@@ -259,6 +300,12 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly scopeEncoding?: (scope: MemoryScopeKey) => Result<string>;
     readonly vectorIndex?: IVectorIndex;
     readonly writePolicies?: ReadonlyMap<Kind, IWritePolicy>;
+}
+
+// @public
+export interface IFragmentIndexCoverage {
+    readonly indexFragmentCount: number;
+    readonly indexRecordCount: number;
 }
 
 // @public
@@ -275,6 +322,15 @@ export interface IFragmentQuery {
 }
 
 // @public
+export interface IFragmentReconcileReport extends IReconcileReportBase {
+    readonly alreadyIndexed: number;
+    // (undocumented)
+    readonly artifact: 'fragment-vector';
+    readonly declined: number;
+    readonly fragments: number;
+}
+
+// @public
 export interface IFragmentRetrieverCapabilities {
     readonly supportsFragmentRecall: boolean;
 }
@@ -288,8 +344,21 @@ export interface IFragmentSemanticBackend {
 // @public
 export interface IFragmentVectorIndex {
     addFragments(target: IEdgeTarget, fragments: ReadonlyArray<IEmbeddedFragment>): Promise<Result<number>>;
+    readonly fragmentCount: number;
+    has(target: IEdgeTarget): Promise<Result<boolean>>;
     query(vector: Float32Array, topK: number, maxPerRecord?: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>>;
+    readonly recordCount: number;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
+}
+
+// @public
+export interface IFragmentVectorRebuildReport {
+    readonly declined: ReadonlyMap<Kind, number>;
+    readonly excluded?: ReadonlyMap<Kind, number>;
+    readonly fragments: ReadonlyMap<Kind, number>;
+    readonly indexed: ReadonlyMap<Kind, number>;
+    readonly skipped: ReadonlyArray<ISkippedVectorRecord>;
 }
 
 // @public
@@ -303,6 +372,18 @@ export interface IIdentityCodec {
 export interface IIdentityCodecResult {
     readonly idStem: string;
     readonly isVersioned: boolean;
+    readonly scope: MemoryScopeKey;
+}
+
+// @public
+export interface IIndexCoverage {
+    readonly indexSize: number;
+    readonly perKind: ReadonlyMap<Kind, IArtifactCoverage>;
+}
+
+// @public
+export interface IIndexedMemoryEntry {
+    readonly envelope: IMemoryEnvelope;
     readonly scope: MemoryScopeKey;
 }
 
@@ -382,13 +463,14 @@ export interface IMemoryFileParts {
 // @public
 export interface IMemoryIndex {
     backlinks(target: IEdgeTarget): ReadonlyArray<IEdgeTarget>;
-    byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>>;
-    byRank(): ReadonlyArray<IMemoryRecord<unknown>>;
-    byRecency(): ReadonlyArray<IMemoryRecord<unknown>>;
-    byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>>;
-    entries(): ReadonlyArray<IIndexedMemoryRecord>;
+    byKind(kind: Kind): ReadonlyArray<IIndexedMemoryEntry>;
+    byRank(): ReadonlyArray<IIndexedMemoryEntry>;
+    byRecency(): ReadonlyArray<IIndexedMemoryEntry>;
+    byTag(tag: Tag): ReadonlyArray<IIndexedMemoryEntry>;
+    entries(): ReadonlyArray<IIndexedMemoryEntry>;
+    get(target: IEdgeTarget): IIndexedMemoryEntry | undefined;
     patch(op: MemoryIndexPatchOp, entry: IIndexedMemoryRecord): Result<IIndexedMemoryRecord>;
-    rebuild(entries: ReadonlyArray<IIndexedMemoryRecord>): Result<number>;
+    rebuild(entries: ReadonlyArray<IIndexedMemoryEntry>): Result<number>;
 }
 
 // @public
@@ -417,6 +499,7 @@ export interface IMemoryIngestOrchestratorCreateParams {
 
 // @public
 export interface IMemoryObservationQuery {
+    readonly embed?: MemoryEmbedOutcome;
     readonly kind?: Kind;
     readonly limit?: number;
     readonly outcome?: MemoryObservationOutcome;
@@ -429,6 +512,7 @@ export interface IMemoryObservationQuery {
 
 // @public
 export interface IMemoryObservationRecord {
+    readonly embed?: MemoryEmbedOutcome;
     readonly error?: string;
     readonly id?: MemoryId;
     readonly kind?: Kind;
@@ -464,6 +548,7 @@ export interface IMemoryQuery {
     readonly linkedTo?: IEdgeTarget;
     readonly offset?: number;
     readonly orderBy?: 'recency' | 'rank';
+    readonly provenanceSource?: ProvenanceSource;
     readonly scope?: MemoryScopeKey;
     readonly semantic?: string;
     readonly tag?: Tag;
@@ -477,8 +562,19 @@ export interface IMemoryRecord<TBody = unknown> {
 }
 
 // @public
+export interface IMemoryRecordListing {
+    readonly excluded?: ReadonlyMap<Kind, number>;
+    readonly records: ReadonlyArray<IScopedMemoryRecord>;
+}
+
+// @public
+export interface IMemoryRecordResolver {
+    resolveRecord(scope: MemoryScopeKey, id: MemoryId): Result<IMemoryRecord<unknown> | undefined>;
+}
+
+// @public
 export interface IMemoryRecordSource {
-    list(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
+    list(): Promise<Result<IMemoryRecordListing>>;
 }
 
 // @public
@@ -495,20 +591,26 @@ export interface IMemoryRetrieverCapabilities {
 }
 
 // @public
-export interface IMemoryStore {
+export interface IMemoryStore extends IMemoryRecordResolver {
     asRecordSource(): IMemoryRecordSource;
+    coverage(): Promise<Result<IDerivedStateCoverage>>;
+    dedupScopeFor(kind: Kind): DedupScope;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+    embedsKind(kind: Kind): boolean;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
-    list(filter?: IMemoryStoreListFilter): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+    list(selection: MemoryListSelection): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
+    listEntries(): Promise<Result<ReadonlyArray<IIndexedMemoryEntry>>>;
     listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
     put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
+    reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>>;
 }
 
 // @public
 export interface IMemoryStoreListFilter {
     readonly asOf?: number;
     readonly kind?: Kind;
+    readonly scanEveryRecord?: never;
     readonly scope?: MemoryScopeKey;
     readonly tag?: Tag;
 }
@@ -536,7 +638,7 @@ export interface IMergeStrategy {
 }
 
 // @public
-export function indexedRecordMatchesQuery(entry: IIndexedMemoryRecord, query: IMemoryQuery): boolean;
+export function indexedRecordMatchesQuery(entry: IIndexedMemoryEntry, query: IMemoryQuery): boolean;
 
 // @public
 export type IngestDisposition = 'written' | 'deduped' | 'merged';
@@ -545,8 +647,9 @@ export type IngestDisposition = 'written' | 'deduped' | 'merged';
 export class InMemoryCosineIndex implements IVectorIndex {
     add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
     static create(): Result<InMemoryCosineIndex>;
+    has(target: IEdgeTarget): Promise<Result<boolean>>;
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
-    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder): Promise<Result<number>>;
+    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>>;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
     get size(): number;
 }
@@ -556,8 +659,9 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
     addFragments(target: IEdgeTarget, fragments: ReadonlyArray<IEmbeddedFragment>): Promise<Result<number>>;
     static create(): Result<InMemoryFragmentCosineIndex>;
     get fragmentCount(): number;
+    has(target: IEdgeTarget): Promise<Result<boolean>>;
     query(vector: Float32Array, topK: number, maxPerRecord?: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
-    rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder): Promise<Result<number>>;
+    rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>>;
     get recordCount(): number;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
 }
@@ -570,6 +674,20 @@ export interface IProvenance {
     readonly derivedFrom?: IEdgeTarget;
     readonly model?: string;
     readonly source: ProvenanceSource;
+}
+
+// @public
+export interface IRankReconcileReport extends IReconcileReportBase {
+    // (undocumented)
+    readonly artifact: 'rank';
+}
+
+// @public
+export interface IReconcileReportBase {
+    readonly examined: number;
+    readonly failed: ReadonlyArray<ISkippedVectorRecord>;
+    readonly kind: Kind;
+    readonly repaired: number;
 }
 
 // @public
@@ -590,6 +708,12 @@ export interface IRelationExtractor {
 }
 
 // @public
+export interface IRetrieverCreateParams {
+    readonly index: IMemoryIndex;
+    readonly resolver: IMemoryRecordResolver;
+}
+
+// @public
 export interface IScopedMemoryRecord {
     readonly record: IMemoryRecord<unknown>;
     readonly target: IEdgeTarget;
@@ -602,9 +726,8 @@ export interface ISemanticBackend {
 }
 
 // @public
-export interface ISemanticRetrieverCreateParams {
+export interface ISemanticRetrieverCreateParams extends IRetrieverCreateParams {
     readonly backend?: ISemanticBackend;
-    readonly index: IMemoryIndex;
 }
 
 // @public
@@ -615,16 +738,25 @@ export interface ISkippedRecord {
 }
 
 // @public
+export interface ISkippedVectorRecord {
+    readonly error: string;
+    readonly target: IEdgeTarget;
+}
+
+// @public
 export function isTemporalIdentityCodec(codec: IIdentityCodec): codec is ITemporalIdentityCodec;
 
 // @public
-export function isTemporalRecord(record: IMemoryRecord<unknown>): boolean;
+export function isTemporalRecord(record: IEnvelopeCarrier): boolean;
 
 // @public
-export function isVersionCurrent(record: IMemoryRecord<unknown>): boolean;
+export function isVersionCurrent(record: IEnvelopeCarrier): boolean;
 
 // @public
-export function isVersionValidAt(record: IMemoryRecord<unknown>, asOf: number): boolean;
+export function isVersionValidAt(record: IEnvelopeCarrier, asOf: number): boolean;
+
+// @public
+export function isWholeVaultScan(selection: MemoryListSelection): selection is IWholeVaultScan;
 
 // @public
 export interface ITemporalBlock {
@@ -647,15 +779,50 @@ export interface ITemporalVersionAddress {
 // @public
 export interface IVectorIndex {
     add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
+    has(target: IEdgeTarget): Promise<Result<boolean>>;
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>>;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
+    readonly size: number;
 }
 
 // @public
 export interface IVectorQueryHit {
+    readonly fragmentId?: string;
     readonly locator?: IFragmentLocator;
     readonly score: number;
     readonly target: IEdgeTarget;
+}
+
+// @public
+export interface IVectorRebuildOptions {
+    readonly onRecordError?: VectorRebuildErrorMode;
+}
+
+// @public
+export interface IVectorRebuildReport {
+    readonly declined: ReadonlyMap<Kind, number>;
+    readonly excluded?: ReadonlyMap<Kind, number>;
+    readonly indexed: ReadonlyMap<Kind, number>;
+    readonly skipped: ReadonlyArray<ISkippedVectorRecord>;
+}
+
+// @public
+export interface IVectorReconcileReport extends IReconcileReportBase {
+    readonly alreadyIndexed: number;
+    // (undocumented)
+    readonly artifact: 'record-vector';
+    readonly declined: number;
+    readonly restamped: number;
+}
+
+// @public
+export interface IWholeVaultScan {
+    readonly asOf?: number;
+    readonly kind?: never;
+    readonly scanEveryRecord: true;
+    readonly scope?: never;
+    readonly tag?: never;
 }
 
 // @public
@@ -690,6 +857,9 @@ export class KnowledgeLwwPolicy implements IWritePolicy {
 }
 
 // @public
+export function limitEntries(entries: ReadonlyArray<IIndexedMemoryEntry>, limit?: number, offset?: number): ReadonlyArray<IIndexedMemoryEntry>;
+
+// @public
 export function limitRecords(records: ReadonlyArray<IMemoryRecord<unknown>>, limit?: number, offset?: number): ReadonlyArray<IMemoryRecord<unknown>>;
 
 // @public
@@ -701,7 +871,7 @@ export const LINK_TRAVERSAL_UNWIRED_MESSAGE: string;
 // @public
 export class LinkTraversalRetriever implements IMemoryRetriever {
     get capabilities(): IMemoryRetrieverCapabilities;
-    static create(index: IMemoryIndex): Result<LinkTraversalRetriever>;
+    static create(params: IRetrieverCreateParams): Result<LinkTraversalRetriever>;
     retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
 }
 
@@ -717,6 +887,12 @@ export class LtmIdentityCodec implements IIdentityCodec {
 }
 
 // @public
+export function materializeEntries(entries: ReadonlyArray<IIndexedMemoryEntry>, resolver: IMemoryRecordResolver): Result<ReadonlyArray<IMemoryRecord<unknown>>>;
+
+// @public
+export function materializePage<T extends IIndexedMemoryEntry>(selected: ReadonlyArray<T>, query: IMemoryQuery, resolver: IMemoryRecordResolver, order?: (candidates: ReadonlyArray<T>) => ReadonlyArray<T>): Result<ReadonlyArray<IMemoryRecord<unknown>>>;
+
+// @public
 export class MemoryCapCullPolicy implements IWritePolicy {
     admit(__incoming: IMemoryRecord<unknown>, existing: ReadonlyArray<IMemoryRecord<unknown>>): Result<AdmissionDecision>;
     applyUpdate(existing: IMemoryRecord<unknown>, patch: Record<string, unknown>): Result<IMemoryRecord<unknown>>;
@@ -729,7 +905,10 @@ export class MemoryCapCullPolicy implements IWritePolicy {
 export type MemoryDetailTier = 'gist' | 'full';
 
 // @public
-export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array>>;
+export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array | undefined>>;
+
+// @public
+export type MemoryEmbedOutcome = 'embedded' | 'declined' | 'excluded' | 'failed';
 
 // @public
 export type MemoryId = Brand<string, 'MemoryId'>;
@@ -737,14 +916,15 @@ export type MemoryId = Brand<string, 'MemoryId'>;
 // @public
 export class MemoryIndex implements IMemoryIndex {
     backlinks(target: IEdgeTarget): ReadonlyArray<IEdgeTarget>;
-    byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>>;
-    byRank(): ReadonlyArray<IMemoryRecord<unknown>>;
-    byRecency(): ReadonlyArray<IMemoryRecord<unknown>>;
-    byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>>;
+    byKind(kind: Kind): ReadonlyArray<IIndexedMemoryEntry>;
+    byRank(): ReadonlyArray<IIndexedMemoryEntry>;
+    byRecency(): ReadonlyArray<IIndexedMemoryEntry>;
+    byTag(tag: Tag): ReadonlyArray<IIndexedMemoryEntry>;
     static create(): Result<MemoryIndex>;
-    entries(): ReadonlyArray<IIndexedMemoryRecord>;
+    entries(): ReadonlyArray<IIndexedMemoryEntry>;
+    get(target: IEdgeTarget): IIndexedMemoryEntry | undefined;
     patch(op: MemoryIndexPatchOp, entry: IIndexedMemoryRecord): Result<IIndexedMemoryRecord>;
-    rebuild(entries: ReadonlyArray<IIndexedMemoryRecord>): Result<number>;
+    rebuild(entries: ReadonlyArray<IIndexedMemoryEntry>): Result<number>;
 }
 
 // @public
@@ -756,6 +936,9 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     ingestBatch(items: ReadonlyArray<IIngestItem>): Promise<Result<ReadonlyArray<IIngestItemResult>>>;
     ingestItem(item: IIngestItem): Promise<Result<IIngestItemResult>>;
 }
+
+// @public
+export type MemoryListSelection = IMemoryStoreListFilter | IWholeVaultScan;
 
 // @public
 export type MemoryObservationOutcome = 'success' | 'failure';
@@ -798,7 +981,7 @@ export class MtmIdentityCodec implements IIdentityCodec {
 export const NON_SEMANTIC_CAPABILITIES: IMemoryRetrieverCapabilities;
 
 // @public
-export function orderingCompare(orderBy?: IMemoryQuery['orderBy']): (a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>) => number;
+export function orderingCompare(orderBy?: IMemoryQuery['orderBy']): (a: IEnvelopeCarrier, b: IEnvelopeCarrier) => number;
 
 // @public
 export function parseMemoryFile(raw: string, registry: IBodyConverterRegistry): Result<IMemoryRecord<unknown>>;
@@ -813,20 +996,23 @@ export type ProvenanceSource = 'agent' | 'host-ingest' | 'human' | (string & {})
 export type QueryEmbedder = (text: string) => Promise<Result<Float32Array>>;
 
 // @public
-export function rankCompare(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number;
+export function rankCompare(a: IEnvelopeCarrier, b: IEnvelopeCarrier): number;
 
 // @public
 export type RankProjector = (record: IMemoryRecord<unknown>) => number;
 
 // @public
-export function recencyCompare(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number;
+export function recencyCompare(a: IEnvelopeCarrier, b: IEnvelopeCarrier): number;
 
 // @public
 export class RecencyRetriever implements IMemoryRetriever {
     get capabilities(): IMemoryRetrieverCapabilities;
-    static create(index: IMemoryIndex): Result<RecencyRetriever>;
+    static create(params: IRetrieverCreateParams): Result<RecencyRetriever>;
     retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
 }
+
+// @public
+export type ReconcileReport = IRankReconcileReport | IVectorReconcileReport | IFragmentReconcileReport;
 
 // @public
 export type ResolutionVerdict = {
@@ -843,19 +1029,27 @@ export type ResolutionVerdict = {
 };
 
 // @public
+export function resolveQuery(entries: ReadonlyArray<IIndexedMemoryEntry>, query: IMemoryQuery, resolver: IMemoryRecordResolver): Result<ReadonlyArray<IMemoryRecord<unknown>>>;
+
+// @public
+export function scanEveryRecord(options?: {
+    readonly asOf?: number;
+}): IWholeVaultScan;
+
+// @public
 export class ScoreUnionMergeStrategy implements IMergeStrategy {
     static create(): Result<ScoreUnionMergeStrategy>;
     merge(resultSets: ReadonlyArray<ReadonlyArray<IMemoryRecord<unknown>>>): Result<ReadonlyArray<IMemoryRecord<unknown>>>;
 }
 
 // @public
-export function selectByQuery(entries: ReadonlyArray<IIndexedMemoryRecord>, query: IMemoryQuery): IMemoryRecord<unknown>[];
+export function selectByQuery(entries: ReadonlyArray<IIndexedMemoryEntry>, query: IMemoryQuery): IIndexedMemoryEntry[];
 
 // @public
-export function selectCurrentVersion(versions: ReadonlyArray<IMemoryRecord<unknown>>): IMemoryRecord<unknown> | undefined;
+export function selectCurrentVersion<T extends IEnvelopeCarrier>(versions: ReadonlyArray<T>): T | undefined;
 
 // @public
-export function selectVersionAsOf(versions: ReadonlyArray<IMemoryRecord<unknown>>, asOf: number): IMemoryRecord<unknown> | undefined;
+export function selectVersionAsOf<T extends IEnvelopeCarrier>(versions: ReadonlyArray<T>, asOf: number): T | undefined;
 
 // @public
 export const SEMANTIC_UNWIRED_MESSAGE: string;
@@ -879,7 +1073,7 @@ export type StoreStampedEnvelopeField = 'id' | 'seq' | 'contentHash' | 'created'
 // @public
 export class StructuredFilterRetriever implements IMemoryRetriever {
     get capabilities(): IMemoryRetrieverCapabilities;
-    static create(index: IMemoryIndex): Result<StructuredFilterRetriever>;
+    static create(params: IRetrieverCreateParams): Result<StructuredFilterRetriever>;
     retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
 }
 
@@ -889,7 +1083,7 @@ export type Tag = Brand<string, 'Tag'>;
 // @public
 export class TagRetriever implements IMemoryRetriever {
     get capabilities(): IMemoryRetrieverCapabilities;
-    static create(index: IMemoryIndex): Result<TagRetriever>;
+    static create(params: IRetrieverCreateParams): Result<TagRetriever>;
     retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
 }
 
@@ -923,6 +1117,9 @@ export class TemporalVersionedPolicy implements IWritePolicy {
     readonly dedupScope: DedupScope;
     readonly mutableFields: ReadonlyArray<string>;
 }
+
+// @public
+export type VectorRebuildErrorMode = 'skip' | 'fail';
 
 // (No @packageDocumentation comment for this package)
 

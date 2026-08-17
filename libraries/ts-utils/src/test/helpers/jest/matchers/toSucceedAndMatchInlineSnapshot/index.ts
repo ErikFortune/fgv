@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { matcherHint } from 'jest-matcher-utils';
+import type { Context } from 'jest-snapshot';
 import { toMatchInlineSnapshot } from 'jest-snapshot';
-import { Context } from 'jest-snapshot/build';
 import { Result } from '../../../../../index';
 import { printReceivedResult } from '../../utils/matcherHelpers';
 

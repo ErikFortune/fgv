@@ -42,6 +42,37 @@ export function bearerAuthHeader(apiKey: string): Record<string, string> {
 }
 
 /**
+ * The Anthropic Messages API auth + protocol headers.
+ *
+ * @remarks
+ * `anthropic-version` is a **wire-protocol pin**, and single-sourcing it here is
+ * the point of this helper: it was previously replicated across the completion
+ * client, the list-models client and the streaming adapter, so bumping it was a
+ * three-file edit with nothing to catch a miss.
+ *
+ * `anthropic-dangerous-direct-browser-access` is required for browser callers;
+ * it is sent unconditionally because the same client code serves both runtimes.
+ *
+ * @internal
+ */
+export function anthropicAuthHeaders(apiKey: string): Record<string, string> {
+  return {
+    'x-api-key': apiKey,
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true'
+  };
+}
+
+/**
+ * The Gemini API auth header. Gemini keys ride in `x-goog-api-key` rather than
+ * an `Authorization` bearer.
+ * @internal
+ */
+export function geminiAuthHeader(apiKey: string): Record<string, string> {
+  return { 'x-goog-api-key': apiKey };
+}
+
+/**
  * Resolves the effective base URL for a request, validating the optional
  * `endpoint` override when present. Returns the URL with any trailing slash
  * stripped so per-route suffix concatenation (e.g. `/chat/completions`)

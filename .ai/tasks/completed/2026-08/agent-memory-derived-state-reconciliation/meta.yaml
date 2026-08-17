@@ -1,0 +1,101 @@
+id: agent-memory-derived-state-reconciliation
+status: in-flight
+# Published packages only. `samples/testbed` was also edited (two index doubles
+# widened, caught by the repo-wide rebuild) but `shouldPublish: false`, so it
+# carries no change file and does not belong in a package list an index reads.
+packages:
+  - '@fgv/ts-agent-memory'
+  - '@fgv/ts-agent-memory-sqlite-vec'
+# No PR of its own yet: three phase branches merged into
+# integration/agent-memory-derived-state, to be squashed onto
+# feat/vector-rebuild-report-by-kind and ride #633.
+prs: []
+openPrs: [633]
+opened: 2026-08-15
+summary:
+  intended: >
+    Give every artifact the store derives from its records a coverage query and a
+    targeted repair, in one consistent shape. The brief's argument was a matrix
+    with holes in a pattern rather than three unrelated gaps: `rank` had the
+    repair shape we wanted and no coverage; record vectors had a scalar coverage
+    (`size`) and a DESTRUCTIVE repair (`rebuild` resets and re-embeds
+    everything); fragment vectors had neither, `rebuild` living only on the
+    bundled in-memory class with SqliteVecFragmentIndex having none at all.
+    Design-first, breaking on two index contracts plus IMemoryStore.
+  shipped: >
+    All of it, in three phases. `has(target)` on IVectorIndex and
+    IFragmentVectorIndex; recordCount / fragmentCount / rebuild on
+    IFragmentVectorIndex with a real SqliteVecFragmentIndex implementation
+    (closing E4 on that lane); IMemoryStore.coverage() reporting all three
+    artifacts per kind from an envelope-only walk; IMemoryStore.reconcile(kind,
+    artifact) replacing reconcileRank, targeted rather than destructive.
+    Coverage is per-kind for `rank` and record vectors and AGGREGATE-ONLY for
+    fragment vectors (see `diverged` (2) — the fragment lane has no per-record
+    envelope marker, so a per-kind numerator is not affordable within coverage's
+    cost contract). Coverage keeps `covered` (the store's belief, from embeddingRef) separate
+    from `indexSize` (what the index holds) rather than collapsing them into a
+    percentage, because their divergence is the only free signal distinguishing a
+    persistent index from a freshly-opened in-memory one where embeddingRef lies
+    in the confident direction. Every artifact member is optional and absent
+    means "not derived here", never 0%.
+  diverged: >
+    Four refinements came from building rather than from the design, and one is
+    load-bearing. (1) recordCount/fragmentCount rather than the designed `size`:
+    a one-to-many index makes `size` two-ways readable and a reader arriving from
+    IVectorIndex.size takes the wrong one silently. (2) Fragment coverage is
+    AGGREGATE-ONLY for a structural reason the design missed — the fragment lane
+    has no per-record envelope marker, so a per-kind numerator would cost one
+    index query per record, which coverage is contractually not allowed to spend.
+    (3) `has` earns a sharper argument than the design gave it: it makes
+    detectable a state otherwise invisible — index holds the vector, envelope
+    lost its reference — repaired by a restamp with no embedder call. (4) The
+    lane guard must check the embedder too; an index wired without one is a legal
+    store and the first implementation reported success with every record failed.
+    Two package-internal extractions (storeCoverage.ts, storeReconcile.ts) the
+    brief did not anticipate, forced by the 2000-line max-lines cap.
+    The FUTURE.md fragment entry was RESOLVED rather than re-scoped (its title
+    had been corrected earlier, in the predecessor stream's commit e16db5d61, not
+    here).
+    GATES: build / lint / test at 100% and the repo-wide `rush rebuild` all green
+    on both packages, with four change files. Three gates did NOT close and are
+    deliberate carry-outs rather than oversights — the Copilot review loop has not
+    run on this stream OR on the two beneath it on #633; the
+    LIBRARY_CAPABILITIES.md entry is drafted and held for review per the
+    finalize-task ritual; and no cross-repo note has gone out. A `/code-review`
+    high-effort pass over the whole diff (six findings, all fixed) stands in for
+    the per-phase code-reviewer passes, and a subsequent antagonist pass returned
+    seventeen findings, two of them blocking — both fixed, the more serious being
+    a `query.filter` regression that no test pinned.
+  sourceLine: >
+    **Shipped:** every artifact the store derives from its records now has **a
+    coverage query and a targeted repair**, in one consistent shape —
+    `IMemoryStore.coverage()` and `IMemoryStore.reconcile(kind, artifact)` — plus
+    the contract members that make a targeted repair possible at all:
+    `has(target)` on both index seams, and `recordCount` / `fragmentCount` /
+    `rebuild` on `IFragmentVectorIndex`, which had none of them.
+keywords:
+  - derived state
+  - reconciliation
+  - coverage accessor
+  - targeted repair
+  - membership check
+  - belief vs fact
+  - absent is not zero
+  - E4 fragment lane
+  - breaking pre-1.0
+  - max-lines extraction
+  - coverage-cannot-see-an-uncalled-predicate
+relatedStreams:
+  - id: agent-memory-index-partial-read
+    relationship: >
+      predecessor; its listEntries() projection is what makes this stream's
+      coverage walk free, and its query.filter regression was found by this
+      stream's review and fixed here
+  - id: vector-rebuild-report-by-kind
+    relationship: >
+      predecessor; IVectorRebuildReport's per-kind rule is applied verbatim to
+      the new IFragmentVectorRebuildReport
+  - id: personaility-asks-2026-08
+    relationship: >
+      origin; E2's preference-2 (a coverage accessor) and E5's "reconcile derived
+      state for kind K" both land here

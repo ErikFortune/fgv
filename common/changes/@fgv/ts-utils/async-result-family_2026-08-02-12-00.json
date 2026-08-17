@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add the async Result family to the base packlet: five bounded-parallel collectors (mapResultsAsync, mapDetailedResultsAsync, mapSuccessAsync, mapFailuresAsync, allSucceedAsync) sharing one scheduler, plus the transitively-async, serial-by-contract populateObjectAsync and firstSuccessAsync. Each collector mirrors its synchronous sibling's name, parameter order and fold, takes deferred work (AsyncDeferredResult<T> = () => Promise<Result<T>>) in either a thunk form or an (items, fn) form, returns results in input order, and bounds in-flight operations via IAsyncResultOptions.concurrency (default DEFAULT_RESULT_CONCURRENCY). Materialized promises are deliberately not accepted - a promise that already exists has already started, so nothing can be bounded. A work function that throws or rejects becomes a Failure, never an escaped exception.",
+      "type": "minor",
+      "packageName": "@fgv/ts-utils"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

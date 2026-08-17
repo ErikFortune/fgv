@@ -525,6 +525,63 @@ If you find yourself reaching for one of these, **stop**. Either the primitive n
 
 ---
 
+## We Build General Capabilities; a Driving Consumer Shapes Priorities, Not Designs
+
+Every `@fgv/*` library exists to be **useful to applications in general**. Most of them acquire a
+first or dominant consumer early, and that consumer is genuinely valuable: they exercise the surface,
+they report real bugs, and they produce measurements nobody else will. What they are **not** is the
+design authority.
+
+The failure mode is subtle because it looks like diligence. You have a design question, the consumer
+is right there and is clearly invested, so you ask them — and their answer arrives, and you build it.
+Nothing about that feels like a mistake. But you have just let one deployment's preference decide a
+published contract, and you have added a round trip to your own critical path to obtain an answer you
+already had.
+
+### The test, before any question goes to a consumer
+
+> **How will their answer change what we build?**
+
+If you cannot name a concrete fork — *"answer A gives us this signature, answer B gives us that
+one"* — **do not send it**. Decide it from the design, and tell them what you decided and why.
+
+There are exactly two legitimate reasons to ask:
+
+1. **We lack usage information a correct design depends on.** Not preferences — *facts about how the
+   thing is used* that we cannot observe from inside this repo. "How many kinds does a typical vault
+   carry?" is usage information. "Would you rather have counts or a list?" is a preference.
+2. **The proper solution is too large to implement in one go**, and their needs can sequence it. Note
+   what this does and does not license: it lets a consumer choose **which correct piece ships first**.
+   It never lets them choose a smaller design.
+
+### The tell that you got it wrong
+
+**You asked a question whose answer was derivable from a principle already written down in this
+repo.** When a consumer's reply arrives and your reaction is *"yes, that is what we would have said"*,
+that is not agreement — that is evidence the question should not have been sent.
+
+Worked example, 2026-08-15, the `agent-memory-index-coverage-accessor` exchange. Three questions went
+to the driving consumer, and all three failed the test:
+
+| question sent | already answerable from |
+|---|---|
+| Should the accessor persist across restarts? | our own index-conformance rule — a derived value that can disagree with its source is a second source of truth |
+| Counts, or an enumeration of stale records? | the same principle — a list the consumer holds is a second source of truth about *our* index |
+| Should the repair operation name its lane? | the record and fragment lanes are independently wirable, have incommensurable units, and are siblings-not-subtypes by explicit design |
+
+The consumer answered all three correctly, by the same reasoning we would have used. That cost a
+round trip and produced nothing. Meanwhile the three things of real value in the same exchange were
+all **volunteered**, not asked for: a bug report, a measurement (68 fragments and ~69 embedding
+round-trips for one 56 KB record), and a correction to a lazy premise we had stated.
+
+### What to send instead
+
+State the decision and its reasoning, and name the one thing their evidence could still change.
+A consumer who disagrees with a *stated* design will say so — and that disagreement is worth more
+than an answer to a question, because it comes with the reason attached.
+
+---
+
 ## Code Style
 
 ### Avoid Over-Engineering
@@ -571,6 +628,73 @@ rushx test     # Jest with coverage gates
 
 All three must pass. CI catches what's left, but the local feedback loop is faster and catches issues before reviewers see them.
 
+### A local warning is a CI failure — `rushx build` exit 0 is not the gate
+
+CI runs `rush rebuild`, which exits **non-zero on "SUCCESS WITH WARNINGS"**. A per-project
+`rushx build` (Heft) exits **0** on the same warning and prints it as a passing build. So a warning
+you can see and shrug at locally is a red X on the PR.
+
+Observed on the PersonAIlity Stream A stack: `fileTreeMemoryStore.ts` crossed the 2000-line
+`max-lines` limit. Local `heft build` said `Finished` with `Encountered 1 warning`, exit 0; the same
+tree failed CI outright. The warning had been dispositioned as advisory tech debt on that basis — a
+disposition that was simply wrong about the facts.
+
+**Rule:** treat *every* warning in `rushx build` / `rushx lint` output as blocking. There is no
+advisory tier in this repo's CI. When you catch yourself writing "warning, not error, so no gate is
+red", verify it by running `rush rebuild` (or reading the PR's check) before believing it.
+
+### Every touched package needs a change file — CI's first gate, before any build
+
+CI's `build` job runs `rush change --verify --target-branch origin/release` **before it compiles
+anything**. Touch a file in a package and ship no `common/changes/@fgv/<pkg>/*.json` entry for it and
+the job fails in ~30 seconds, having built nothing. The failure names only the package, so it reads
+like an infrastructure problem rather than a missing artifact.
+
+Two things make this easy to miss. It is invisible to the whole local suite — `rushx build`, `rushx
+lint`, `rushx test` and even a full `rush rebuild` all pass, because none of them consults the change
+files. And **the gate keys off files touched, not surface changed**: a docstring correction, a
+move-only refactor, and a comment-only edit each need one, even when the change file's own `type` is
+`"none"` and the `.api.md` is byte-identical.
+
+Observed 2026-08-13, three PRs at once: #619 (an internal ai-assist refactor, `@fgv/ts-extras`) and
+#617 (a docstring correction, `@fgv/ts-web-extras`) both red on this and nothing else, and #620 was
+carrying the same latent defect behind a branch base that suppressed its checks.
+
+**Rule:** the last step before opening a PR is `git diff --name-only origin/release... | cut -d/ -f2`
+against the change files you are shipping — or just run `rush change --verify --target-branch
+origin/release` locally, which is the same check CI runs and takes about a second. A PR whose only
+red check is `rush change` has not been reviewed for anything yet; fix it before reading further.
+
+### Widening a shared interface needs a repo-wide build, not a per-package one
+
+**This is now an acceptance-criteria checkbox, because four consecutive streams proved advice was
+not enough.** `samples/testbed` broke on the `IVectorIndex` / `IFragmentVectorIndex` /
+`IMemoryIndex` family in four streams running — #614, `vector-rebuild-report-by-kind`,
+`agent-memory-index-partial-read`, and `derived-state-phase1` — each time caught only by the
+repo-wide build, after the per-package gates were green and the implementer reasonably believed they
+were done. The rule below was **written from that very file** after the first break and did not
+prevent the second, third or fourth.
+
+The instructive part is what the casualties were. Two were hand-rolled test doubles, which a shared
+exported double would have fixed. One was `scenarios/memoryToolsGate/index.ts` — **a source file**,
+which it would not. So the shared-double remedy covers half the observed cases and the checkbox
+covers all of them, which is why the checkbox is what got adopted.
+
+
+`rushx build` / `rushx test` in the packages you edited cannot see a consumer you did not edit. When a
+change makes an **interface member required** — or renames/removes one — every implementation in the
+monorepo has to be found, including test doubles in `samples/` and `tools/`.
+
+Observed on the PersonAIlity Stream A stack: promoting `size` and `rebuild` onto `IVectorIndex` was
+verified green in `ts-agent-memory` and `ts-agent-memory-sqlite-vec`, and failed CI on a fake index
+in `samples/testbed` that nothing in either package references.
+
+**Rule:** for any change that widens or narrows a shared contract, before pushing either
+(a) run `node common/scripts/install-run-rush.js rebuild` (optionally `--to <a downstream project>`),
+or (b) `grep -rl '<TheInterface>' --include=*.ts libraries/ tools/ samples/` and check every hit.
+Test doubles are the usual casualty: they implement the interface structurally and are invisible to
+the package's own suite.
+
 ### `rushx lint` is a first-class gate
 
 `rushx build` does **not** transitively run lint in this monorepo's Heft config. Lint is a separate gate. PRs have repeatedly merged with passing build + tests but failing lint, blocking downstream cluster merges. Treat lint as mandatory, not optional.
@@ -587,11 +711,36 @@ Every stream's acceptance criteria list must include:
 - [ ] **`rushx lint` passes in every modified package** *(load-bearing — not transitively run by build)*
 - [ ] `rushx test` passes with 100% coverage in every modified package
 - [ ] **`rushx fixlint` was run before the final commit** *(catches the mechanical class)*
+- [ ] **Every package the branch touches has a change file** — verify with `rush change --verify --target-branch origin/release` *(CI's first gate, and invisible to the entire local build/test suite)*
+- [ ] **If the stream changes a shared contract (an interface others implement), `node common/scripts/install-run-rush.js rebuild` passes** *(not a remembered practice — a checked box; see below)*
 - [ ] No `any` types; all fallible operations return `Result<T>`
 - [ ] **`code-reviewer` agent run on the final diff; findings resolved or dispositioned** *(see "Review-loop discipline" below)*
 - [ ] **Copilot review loop driven by implementer; stopped on diminishing returns or 10-round cap** *(see "Review-loop discipline" below)*
+- [ ] **Every doc whose accuracy this stream changes is updated in the same PR** — design docs, READMEs, `LIBRARY_CAPABILITIES.md`, the streams ledger. Docs ship with the code that makes them true, never as a follow-up *(see "Docs ship with the code" below)*
 
 The bolded items above are the gap recently codified — multiple recent streams had lint failures escape into PR-open state, blocking cluster merges, and multi-round Copilot ping-pong on PRs that hadn't been internally reviewed first.
+
+### Docs ship with the code
+
+A stream that implements a design **updates that design's status in its own PR**. A stream that adds
+a public surface **adds its `LIBRARY_CAPABILITIES.md` entry in its own PR**. Never as a follow-up,
+never as a separate docs PR.
+
+**Why this is load-bearing.** The failure is not that the doc is briefly stale — it is that the
+correction becomes its own commit on `release`, and the repo accumulates doc-only commits that
+carry no code. Worse, the stale doc is *read as input by the next stream*: the safer-fetch threat
+model still opened with "design only — no implementation" while S1, S2a and S2b had shipped, and
+that same file was on the next stream's required-reading list. A fresh agent would have started
+from a document asserting that nothing had been built.
+
+The tell that this rule was skipped is a PR whose diff is only `.md` files correcting status lines.
+When you find yourself opening one, the question to ask is not "is this worth merging" but "which
+stream should have carried this, and is that stream still open?" If it is, fold it in and close the
+docs PR. Deferring is what created the cleanup in the first place.
+
+This applies to the streams ledger too: a stream that ships changes `docs/WORKSTREAMS.md`'s entry
+for itself. A ledger describing a shipped stream as "in flight — do not merge" is the same defect
+in a different file.
 
 ### Why this gate is load-bearing
 

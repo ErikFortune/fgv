@@ -4,12 +4,16 @@
 
 ```ts
 
+import { Converter } from '@fgv/ts-utils';
 import { CryptoUtils as CryptoUtils_2 } from '@fgv/ts-extras';
 import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import type { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { SaferFetch as SaferFetch_2 } from '@fgv/ts-extras';
 import { Uuid } from '@fgv/ts-utils';
+import { Validator } from '@fgv/ts-utils';
 
 // @public
 class BrowserCryptoProvider implements CryptoUtils_2.ICryptoProvider {
@@ -54,6 +58,18 @@ class BrowserHashProvider {
     static hashParts(parts: string[], algorithm?: string, separator?: string): Promise<Result<string>>;
     static hashString(data: string, algorithm?: string): Promise<Result<string>>;
 }
+
+// @public
+function browserSaferFetchBytes(url: string | URL, options: IBrowserSaferFetchOptions): Promise<DetailedResult<SaferFetch_2.ISaferFetchResponse<Uint8Array>, SaferFetch_2.FetchFailureReason>>;
+
+// @public
+function browserSaferFetchJson(url: string | URL, options: IBrowserSaferFetchOptions): Promise<DetailedResult<SaferFetch_2.ISaferFetchResponse<JsonValue>, SaferFetch_2.FetchFailureReason>>;
+
+// @public
+function browserSaferFetchJson<T>(url: string | URL, options: IBrowserSaferFetchJsonOptions<T>): Promise<DetailedResult<SaferFetch_2.ISaferFetchResponse<T>, SaferFetch_2.FetchFailureReason>>;
+
+// @public
+function browserSaferFetchText(url: string | URL, options: IBrowserSaferFetchOptions): Promise<DetailedResult<SaferFetch_2.ISaferFetchResponse<string>, SaferFetch_2.FetchFailureReason>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -132,7 +148,7 @@ export interface FilePickerAcceptType {
 }
 
 // @public
-export class FileSystemAccessTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+export class FileSystemAccessTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT>, FileTree.IBinaryFileTreeAccessors<TCT> {
     protected constructor(files: FileTree.IInMemoryFile<TCT>[], rootDir: FileSystemDirectoryHandle_2, handles: Map<string, FileSystemFileHandle_2>, params: IFileSystemAccessTreeParams<TCT> | undefined, hasWritePermission: boolean);
     deleteFile(path: string): Result<boolean>;
     fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
@@ -264,7 +280,10 @@ function getOriginalFile(fileList: FileList, path: string): Result<File>;
 const HpkeProvider: typeof CryptoUtils_2.HpkeProvider;
 
 // @public
-export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+export type HttpContentEncoding = 'utf8' | 'base64';
+
+// @public
+export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT>, FileTree.IBinaryFileTreeAccessors<TCT> {
     // (undocumented)
     deleteFile(path: string): Result<boolean>;
     fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
@@ -274,6 +293,14 @@ export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InM
     saveFileContents(path: string, contents: string): Result<string>;
     syncToDisk(): Promise<Result<void>>;
 }
+
+// @public
+interface IBrowserSaferFetchJsonOptions<T> extends IBrowserSaferFetchOptions {
+    readonly converter: Converter<T> | Validator<T>;
+}
+
+// @public
+type IBrowserSaferFetchOptions = SaferFetch_2.ISaferFetchOptions;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -354,6 +381,7 @@ export interface IHttpTreeParams<TCT extends string = string> extends FileTree.I
     readonly autoSync?: boolean;
     // (undocumented)
     readonly baseUrl: string;
+    readonly contentEncoding?: HttpContentEncoding;
     // (undocumented)
     readonly fetchImpl?: typeof fetch;
     // (undocumented)
@@ -407,7 +435,7 @@ export interface IUrlConfigOptions {
 }
 
 // @public
-export class LocalStorageTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+export class LocalStorageTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT>, FileTree.IBinaryFileTreeAccessors<TCT> {
     deleteFile(path: string): Result<boolean>;
     fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
     static fromStorage<TCT extends string = string>(params: ILocalStorageTreeParams<TCT>): Result<LocalStorageTreeAccessors<TCT>>;
@@ -428,6 +456,17 @@ export function parseResourceTypes(resourceTypes: string): string[];
 
 // @public
 export function parseUrlParameters(): IUrlConfigOptions;
+
+declare namespace SaferFetch {
+    export {
+        browserSaferFetchBytes,
+        browserSaferFetchJson,
+        browserSaferFetchText,
+        IBrowserSaferFetchJsonOptions,
+        IBrowserSaferFetchOptions
+    }
+}
+export { SaferFetch }
 
 // @public
 export function safeShowDirectoryPicker(window: Window, options?: ShowDirectoryPickerOptions): Promise<FileSystemDirectoryHandle_2 | null>;

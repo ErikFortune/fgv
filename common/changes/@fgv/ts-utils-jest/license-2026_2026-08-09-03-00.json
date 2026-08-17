@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils-jest",
+      "comment": "Ship the MIT licence text. The package declared \"license\": \"MIT\" in its manifest but shipped no LICENSE file, so the notice the licence requires was not distributed. Copyright year normalized to 2026 across all published packages.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-utils-jest"
+}

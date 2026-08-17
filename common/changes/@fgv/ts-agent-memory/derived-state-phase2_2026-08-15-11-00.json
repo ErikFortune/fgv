@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "BREAKING (implementers only): IMemoryStore gains coverage(): Promise<Result<IDerivedStateCoverage>> — how much of the store's derived state exists, resolved by Kind, for all three artifacts (rank, record vectors, fragment vectors) in one call. Cheap and total BY CONTRACT: every input is an envelope field or an index-side count, so it reads no record bodies, calls no embedder and touches no filesystem — which is why it takes no selection where list() requires one. The report keeps `covered` (what the store BELIEVES, from embeddingRef) separate from `indexSize` (what the index HOLDS) rather than collapsing them into a percentage, because their divergence is the only free signal distinguishing a persistent index from a freshly-opened in-memory one, where embeddingRef lies in the confident direction. Every artifact member is optional and absent means the artifact is not derived here at all — never 0%. Fragment coverage is aggregate-only and says why: there is no per-record fragment marker on the envelope, so a per-kind numerator would cost one index query per record.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}

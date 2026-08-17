@@ -23,6 +23,154 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## A restamped `embeddingRef` synthesizes the scoped key rather than recovering the index's
+
+`IMemoryStore.reconcile(kind, 'record-vector')` repairs the case where the index holds a vector but
+the envelope lost its `embeddingRef` — a swallowed failure after the vector was committed. That
+branch's whole value is that it needs **no embedder call**: `has(target)` already proved the vector
+exists.
+
+But there is no contract member that returns *the reference the index minted for that vector*.
+`IVectorIndex` is `add` / `remove` / `query` / `has` / `size` / `rebuild`; only `add` returns a
+reference, and calling it would require the embedding this branch exists to avoid. So the restamp
+writes `edgeTargetKey(target)`.
+
+That is correct for both shipped indexes, whose reference **is** the scoped key. A third-party index
+that mints something else gets the scoped key stamped by a restamp and its own reference stamped by
+`put` — a divergence that is invisible until something reads `embeddingRef` expecting the index's
+form.
+
+**Options, none obviously right:** widen `has` to return `Result<string | undefined>` (the reference
+or absent), which makes the member less pleasant for the common case; add a separate
+`referenceFor(target)`; or drop the restamp optimization and re-embed, which is always correct and
+costs the round trip. Not decided here because no consumer has a non-key reference, and picking
+under that condition would be guessing.
+
+**Trigger**: the first `IVectorIndex` implementation whose `add` returns something other than
+`edgeTargetKey(target)`.
+
+**Reference**: `storeReconcile.ts`, the restamp branch — the assumption is stated at the call site.
+
+---
+
+## A `vec0` rebuild at a new dimension fails with a raw SQLite error instead of an actionable one
+
+Raised by the CodeRabbit pass on #633 and **filed rather than fixed**, because it is a message-quality
+improvement rather than a correctness one and #633 was already large.
+
+**The behaviour today.** `SqliteVecVectorIndex._clear` / `SqliteVecFragmentIndex._clear` empty the rows
+but cannot release the table's declared dimension — it is `vec0` schema and there is no `ALTER TABLE`.
+The in-memory siblings forget their dimension on reset. So a `rebuild` with a different-dimension
+embedder **succeeds in memory and fails on SQLite**, which is the one place the two shipped
+implementations of these contracts genuinely diverge. Both `rebuild` contracts and both `_clear`s now
+say so. It does fail loudly — `add` is capture-wrapped, so the column-width mismatch surfaces as a
+`Failure` and the default `onRecordError: 'fail'` aborts — but the message is SQLite's, not ours, and
+it does not name the remedy.
+
+**The proposed improvement, and the distinction that makes it work.** Check at **`rebuild`** time, not
+at `create`: at `create` there is no dimension to compare against when the table does not yet exist,
+but at `rebuild` the embedder's **first returned vector reveals the new dimension before any row is
+written**. Comparing it to the established `_dimension` there and failing with a message naming the
+drop-and-re-index remedy converts a documented footgun into an enforced one. That framing is
+CodeRabbit's and is better than the version this stream had considered.
+
+**Cost is embedding time, never data** — vectors are derived and the vault records remain
+authoritative. Applies to both index classes.
+
+**Trigger**: the first consumer to change embedding model or dimension against a persistent index —
+or any report of a rebuild failing with an opaque `vec0` error.
+
+---
+
+## `reconcile` reports no progress, and `coverage` cannot split a shortfall into declined vs failed
+
+Both deferred by `agent-memory-derived-state-reconciliation` (2026-08-15) as its design's OQ-1 and
+OQ-2. Recorded here because a deferral that lives only in a stream's `result.md` is a deferral
+nobody will find.
+
+**OQ-1 — no progress callback on `IMemoryStore.reconcile`.** A repair over a large kind can run for
+minutes of embedder time behind one unresolved promise. An `onProgress` hook is the obvious
+addition and is purely additive whenever it lands. Deferred because designing a progress vocabulary
+— per record? per batch? what does it carry? — with no caller to check it against would be
+speculative, and the shape of the first real caller's progress UI is the thing that decides it.
+**Trigger**: the first consumer that runs `reconcile` over a kind large enough to want a progress
+bar, or that reports a reconcile appearing to hang.
+
+**OQ-2 — `coverage()` does not cross-reference the observation store.** Coverage reports a
+shortfall but not *why*: the missing records could be embedder declines (intentional, healthy) or
+embed failures (needs repair). The `'write'` observation's `embed` outcome carries exactly that
+split, so a coverage surface *could* join against `MemoryObservationStore` and report it. Deferred
+for two reasons that are still true: `coverage()` must work with **no observers wired** at all, so
+the split can never be more than an optional enrichment; and `reconcile` learns the same split
+**authoritatively** by re-running the embedder, where the observation store only reports what was
+seen at write time. **Trigger**: a consumer that needs the declined-vs-failed split *without* paying
+for a reconcile — i.e. wants it on a dashboard rather than in a repair.
+
+**Explicitly still out of scope, per the stream's brief**: automatic/scheduled repair, and
+persisting coverage snapshots over time. Both are deployment concerns; the library gives the
+measurement and the repair, and the policy for when to run them belongs to the consumer.
+
+---
+
+## `listScoped` can fail on a concurrent eviction, and the loss is not countable
+
+`FileTreeMemoryStore.listScoped()` is the sole feed for `asRecordSource()`, and therefore for
+`IVectorIndex.rebuild`. Since `agent-memory-index-partial-read` (2026-08-15) the index holds
+envelopes rather than records, so `listScoped` reads a file per record — and it does **not** hold the
+write lock. A concurrent `put` whose cap-cull physically evicts a record between the envelope
+snapshot and the read makes the whole call fail, which fails a live rebuild over an entirely ordinary
+write.
+
+**The obvious fix is wrong and was tried.** Dropping the vanished record instead lands it in none of
+the listing's `records` / `excluded`, nor the report's `indexed` / `declined` / `skipped` — so a
+caller computing coverage undercounts *in the direction of looking healthier*. That is verbatim the
+failure `vectorRecordSource`'s own tally exists to prevent, reintroduced one layer down. It was
+caught by that stream's antagonist pass and reverted to fail-loud, which is recoverable where a
+silent undercount is not.
+
+**What a real fix needs**: make the loss *countable*. Either extend `IMemoryRecordListing` with a
+third tally beside `excluded` (a record that vanished mid-read is neither excluded nor a fault of the
+embedder, so it is a genuinely new category), or take a read lock for the duration of the walk and
+pay the write-latency instead. Both are contract or concurrency decisions that should not be made
+inside an unrelated stream.
+
+**Trigger**: the next `IMemoryRecordSource` / `IVectorRebuildReport` change, or the first report of a
+rebuild failing under write load.
+
+**Reference**: `.ai/tasks/completed/2026-08/agent-memory-index-partial-read/` § "The one that nearly
+shipped wrong".
+
+---
+
+## Whether on-demand body reads want a cache
+
+`agent-memory-index-partial-read` made every `list` / retrieve materialize bodies from storage on
+demand. Its brief put a cache policy explicitly out of scope, and the design argued (OQ-3) that the
+required-narrowing selection makes caching moot by removing the accidental whole-vault read.
+
+That argument covers the *accidental* case, not the deliberate one: a caller with a genuinely hot
+working set now re-reads the same files on every query, and nothing measures how often. **Open, and
+deliberately not answered by symmetry** — if it is worth doing, it should be driven by a measured
+consumer workload, with the eviction policy chosen from what that workload shows. Recording it here
+because the stream's `result.md` re-opened it after the design closed it, and a question live in two
+documents with opposite answers is a question that belongs in this file.
+
+**Trigger**: a consumer reporting read amplification, or the first workload measurement.
+
+---
+
+## `IFragmentVectorIndex` had no `rebuild` and no `size` — **RESOLVED 2026-08-15**
+
+> **Resolved by `agent-memory-derived-state-reconciliation`.** `IFragmentVectorIndex` now carries
+> `has`, `recordCount`, `fragmentCount` and `rebuild`, and `SqliteVecFragmentIndex` implements all
+> four — so a persistent fragment index can be backfilled through the contract, which was E4's whole
+> complaint on that lane. The rebuild returns `IFragmentVectorRebuildReport`, which applies
+> `IVectorRebuildReport`'s per-kind rule verbatim and adds `fragments` (the fan-out), so the
+> `excluded` tally the fragment path used to drop on the floor is now propagated.
+>
+> Kept rather than deleted because the *reasoning* — why a coverage report needs the fan-out that
+> neither `indexed` nor a record count expresses — is what a future fragment-lane change should read.
+
 ## `ts-prompt-assist` — cache parsed store records in the resolve path
 
 `PromptLibrary.resolve` re-reads and **re-parses YAML from the store on every call**. The resolve path (`resolve/promptLibrary.ts:622`) calls `walkScopeChain(this._store, …)` unconditionally first, and `FileTreePromptStore` has no record cache — `store.get` → `_readPromptFile` → `yamlConverter.convert(text)` (`store/fileTreePromptStore.ts:160/239/254`) parses on every read. Per resolve this is **O(scope-chain depth) for the requested prompt only** — the `<id>.yaml` in each scope of *that resolve's* chain (`chainWalker.ts:44`) + the per-scope `_bindings.yaml` (`:67`) + recursively the inner-prompt files for any `kind: 'resource'` slots. It is NOT a re-parse of the whole library.
@@ -88,13 +236,13 @@ Arguments against: every consumer's scope hierarchy is bespoke; editor screens t
 
 **Dependencies**: `ts-prompt-assist` v0.1 ships and stabilizes; consumer's in-app editor lands; second consumer surfaces (or doesn't). If a second consumer wants the same editor shape, that's strong evidence for genericizing.
 
-**Reference**: `.ai/tasks/active/ts-prompt-assist/brief.md` (stream commission discussion).
+**Reference**: `.ai/tasks/completed/2026-05/ts-prompt-assist/brief.md` (stream commission discussion).
 
 ---
 
 ## Samples app for `@fgv/ts-prompt-assist`
 
-**Status: superseded by `samples/testbed` (2026-05-22).** Absorbed into the general-purpose `samples/testbed` sample-browser being built under the `local-ai-exploration` cluster. The testbed will demonstrate `@fgv/ts-prompt-assist` scenarios alongside scenarios for other fgv capabilities (ai-assist, ts-res, bcp-47, crypto, etc.) — one general showcase that grows scenarios over time beats two parallel demo apps. See `.ai/tasks/active/local-ai-exploration/brief.md`.
+**Status: superseded by `samples/testbed` (2026-05-22).** Absorbed into the general-purpose `samples/testbed` sample-browser being built under the `local-ai-exploration` cluster. The testbed will demonstrate `@fgv/ts-prompt-assist` scenarios alongside scenarios for other fgv capabilities (ai-assist, ts-res, bcp-47, crypto, etc.) — one general showcase that grows scenarios over time beats two parallel demo apps. See `.ai/tasks/completed/2026-05/local-ai-exploration/brief.md`.
 
 ---
 
@@ -120,11 +268,53 @@ Layer 1 (harness-supplied tools) shipped: `IAiClientTool`, `executeClientToolTur
 
 **Remaining future work:**
 
-**MCP tools (layer 2).** **Slice 1 shipped 2026-06-06 via the `ts-extras-mcp` stream** — the new `@fgv/ts-extras-mcp` (Node) package wraps `@modelcontextprotocol/sdk`, discovers a server's tools, and adapts each into an `AiAssist.IAiClientTool` (`adaptMcpTools`) that drops directly into `executeClientToolTurn`. Graceful degradation: tools whose `inputSchema` is outside the `JsonSchema.fromJson` subset are excluded, surfaced on `skipped`, and NOISY-warned with the raw schema. Compatibility probe: the `samples/testbed` `mcp-probe` scenario. See `.ai/tasks/active/ts-extras-mcp/`.
+**MCP tools (layer 2).** **Slice 1 shipped 2026-06-06 via the `ts-extras-mcp` stream** — the new `@fgv/ts-extras-mcp` (Node) package wraps `@modelcontextprotocol/sdk`, discovers a server's tools, and adapts each into an `AiAssist.IAiClientTool` (`adaptMcpTools`) that drops directly into `executeClientToolTurn`. Graceful degradation: tools whose `inputSchema` is outside the `JsonSchema.fromJson` subset are excluded, surfaced on `skipped`, and NOISY-warned with the raw schema. Compatibility probe: the `samples/testbed` `mcp-probe` scenario. See `.ai/tasks/completed/2026-06/ts-extras-mcp/`.
+
+**`runToolUseConversation` — the multi-turn orchestration helper (re-queued 2026-08-14).**
+`executeClientToolTurn` is deliberately a **per-turn** primitive: the consumer drives the outer
+loop. The higher-level helper that owns the loop — round cap, termination on a no-tool round,
+cumulative continuation threading — was scoped out of `ai-assist-client-tools` at v0.1 and has
+never been built.
+
+*Why this paragraph exists.* It was deferred by **two** streams (`ai-assist-client-tools` and
+`ai-assist-cross-provider-continuation`), each recording it as out-of-scope and each believing it
+was captured here. It was not — a grep across `docs/` and `.ai/instructions/` on 2026-08-14
+returned nothing outside completed-stream artifacts. Re-queued by the retroactive `finalize-task`
+sweep. Two independent deferrals landing in the same hole is the argument for the deferral itself
+being the thing that needs a durable home, not the item.
+
+*Preconditions now met that were not at v0.1:* continuation forwarding reaches all four providers
+(`ai-assist-cross-provider-continuation`, #454) and `continuation.messages` is cumulative across
+rounds (`ai-assist-tool-continuation`, #488), so a loop helper can now be written provider-agnostically
+against a replace-not-concat contract. **Note the one gap it would inherit:** every `*ClientTools`
+testbed scenario is still two-turn, the degenerate case where replace and accumulate coincide — the
+exact blind spot that hid the original per-round bug. A multi-round live scenario should land with
+or before the helper.
+
+**`runToolUseConversation` — the multi-turn orchestration helper (re-queued 2026-08-14).**
+`executeClientToolTurn` is deliberately a **per-turn** primitive: the consumer drives the outer
+loop. The higher-level helper that owns the loop — round cap, termination on a no-tool round,
+cumulative continuation threading — was scoped out of `ai-assist-client-tools` at v0.1 and has
+never been built.
+
+*Why this paragraph exists.* It was deferred by **two** streams (`ai-assist-client-tools` and
+`ai-assist-cross-provider-continuation`), each recording it as out-of-scope and each believing it
+was captured here. It was not — a grep across `docs/` and `.ai/instructions/` on 2026-08-14
+returned nothing outside completed-stream artifacts. Re-queued by the retroactive `finalize-task`
+sweep. Two independent deferrals landing in the same hole is the argument for the deferral itself
+being the thing that needs a durable home, not the item.
+
+*Preconditions now met that were not at v0.1:* continuation forwarding reaches all four providers
+(`ai-assist-cross-provider-continuation`, #454) and `continuation.messages` is cumulative across
+rounds (`ai-assist-tool-continuation`, #488), so a loop helper can now be written provider-agnostically
+against a replace-not-concat contract. **Note the one gap it would inherit:** every `*ClientTools`
+testbed scenario is still two-turn, the degenerate case where replace and accumulate coincide — the
+exact blind spot that hid the original per-round bug. A multi-round live scenario should land with
+or before the helper.
 
 **Dependencies**: ai-assist-client-tools cluster closed to release (done 2026-06-04).
 
-**Reference**: 2026-05-30 conversation (Erik watching personaility's roadmap); `.ai/tasks/active/ai-assist-client-tools/`; PR #447; `.ai/tasks/active/ts-extras-mcp/`.
+**Reference**: 2026-05-30 conversation (Erik watching personaility's roadmap); `.ai/tasks/completed/2026-06/ai-assist-client-tools/`; PR #447; `.ai/tasks/completed/2026-06/ts-extras-mcp/`.
 
 ---
 
@@ -141,7 +331,7 @@ Deferred from the `ts-extras-mcp` slice-1 stream (2026-06-06). Each is additive 
 
 **Headline follow-on lever — additively widen `JsonSchema.fromJson`'s supported subset** (in `@fgv/ts-json-base`). The single biggest real-world risk is schema-subset mismatch: real MCP servers advertise `$ref`/`$defs`, `oneOf`, `pattern`, union `type` arrays, etc. that `fromJson` rejects, so those tools land in `adaptMcpTools`' `skipped` set. `$ref`/`$defs` resolution and `pattern` passthrough are the highest-value additions. This is a separate small `ts-json-base` stream, commissioned based on what the `mcp-probe` scenario surfaces against real servers — NOT done in the `ts-extras-mcp` stream.
 
-**Reference**: `.ai/tasks/active/ts-extras-mcp/brief.md` + `design.md`.
+**Reference**: `.ai/tasks/completed/2026-06/ts-extras-mcp/brief.md` + `design.md`.
 
 
 ---
@@ -169,7 +359,20 @@ Design space:
 
 **Remaining future scope (carried forward):**
 
-### Generic-version-alias library surface (companion concern)
+### ~~Generic-version-alias library surface (companion concern)~~ ✅ SUBSTANTIALLY DELIVERED
+
+**Superseded 2026-08-15.** The `@<provider>:<role>` alias layer shipped in
+`ai-assist-model-aliases` (#505–#508) and the quality-tier axis followed it, so the "resolve a
+stable name to the current concrete id via a registry-maintained mapping" concern this entry
+describes is built. The text below is retained for the two axes the alias layer deliberately did
+**not** cover — capability-detection `idPattern` rules and the typed `*ModelNames` unions — which
+remain manual on a provider rotation and are tracked as a live entry in `docs/TECH_DEBT.md`
+rather than here.
+
+Note the example below is now doubly stale: it cites `gpt-4o` as OpenAI's default, which it has
+not been for two model generations (the line is currently `gpt-5.6-*`, selected by tier).
+
+*Original entry:*
 
 `<provider>:<family>-<major>-<minor>`-style canonical aliases resolving to the current dated snapshot via a registry-maintained mapping. The exact alias syntax should match the underlying SDK / API conventions per provider (e.g. Anthropic accepts `'claude-sonnet-4-6'` directly per the latest SDK; OpenAI / Gemini / xAI use different conventions). Provider-specific subaliases stay. The registry's `defaultModel` per provider currently pins a specific dated snapshot that goes stale (e.g. `gpt-4o` is not reasoning-capable but is the OpenAI default, so the new OpenAI testbed scenario had to explicitly pin `gpt-5.1`). Roughly 1-2 days of implementation work.
 
@@ -187,13 +390,25 @@ The closeout sub-stream (PR #458) shipped warn-on-unrecognized-event drift instr
 
 ### Library default `max_output_tokens` for reasoning models
 
+**Still open, but its stated workaround is superseded (2026-08-15 note).** The entry advises the
+consumer to pass `max_output_tokens` through the `otherParams` escape hatch; a first-class
+`maxTokens` request param has since shipped (#573), so the workaround is now just "set
+`maxTokens`". That makes the case for a library default weaker, not stronger — the ergonomic gap
+this was filed against has mostly closed on its own.
+
 OpenAI Responses + reasoning models can silently truncate when the consumer doesn't set `max_output_tokens` and the model's reasoning + tool-use steps consume the default output budget before emitting visible text. The cluster's empirical loop surfaced this as the leading hypothesis on round 3 (ruled out via `incompleteReason` capture in round 4). Real root cause was the `item_id ↔ call_id` adapter bug, not budget exhaustion, but the usability gap is real: naive consumers calling with `reasoning.effort: 'low'` on a simple question can still hit budget exhaustion under realistic prompts.
 
 **Proposed fix:** the OpenAI Responses adapter applies a sane default `max_output_tokens` for reasoning models when the consumer doesn't supply one. Consumer can override via the existing `otherParams` mechanism.
 
 **Why deferred:** usability call, not a bug. The current behavior (consumer must supply `max_output_tokens` for reasoning workloads OR set `incompleteReason: 'max_output_tokens'` is the diagnostic) is correct but easy to miss.
 
-### Provider-side request validation (fail-fast on impossible combinations)
+### Provider-side request validation (fail-fast on impossible combinations) — ⚠️ NARROWED
+
+**The motivating case has shipped (2026-08-15 note).** The Gemini grounding + client-tools
+combination this entry was filed for now **fails fast with a named `Result.fail` before any wire
+call** (`ai-assist-antagonist`, #529). What remains open is the generalized version — a registry
+of impossible per-provider combinations, checked uniformly — rather than the specific one. Read
+the text below as describing the general shape, not an unfixed bug.
 
 Gemini's API forbids combining built-in grounding (`web_search`) with function calling in the same request — surfaces as HTTP 400 with `INVALID_ARGUMENT`. The cluster's per-provider-testbed-scenarios round 2 hit this; the resolution was a scenario-side fix (drop `web_search` from the Gemini scenario), but a library-side improvement could fail-fast at request-build time with a clearer error pointing to the mutual-exclusion constraint.
 
@@ -244,7 +459,20 @@ Erik's framing (2026-06-05): "consider using ts-res instead of hardcoding custom
 
 **Reference:** PR #460 review thread on `promptObservationStore.ts:195`; the `_resolveCandidates` path in `promptLibrary.ts` is the reference for what a ts-res-equivalent resolver needs to do.
 
-### Composer-emitted composed-observation record (nesting contributor records)
+### ~~Composer-emitted composed-observation record (nesting contributor records)~~ ✅ SHIPPED via #538
+
+**Verified 2026-08-14:** `PromptObservationPhase` in `libraries/ts-prompt-assist/src/packlets/observe/types.ts:35` is
+`'resolve' | 'json-output' | 'free-text-output' | 'compose'` — four members — and
+`horizontalComposer.ts` carries the observation seam. The text below described the
+pre-#538 state and read as unbuilt for roughly two months after it shipped.
+
+**Knock-on, not yet fixed:** `.ai/instructions/LIBRARY_CAPABILITIES.md`'s ts-prompt-assist
+observability paragraph still enumerates **three** phases and omits `'compose'`. That one is a
+public-surface documentation gap, not just a stale plan — a consumer writing an
+`IPromptObserver` from the guide would not know a fourth phase can arrive. Raised in
+`docs/FINALIZE-SWEEP-FINDINGS.md`.
+
+*Original entry, retained for the design reasoning:*
 
 Observation fan-out today fires only at `PromptLibrary`'s three public boundaries (`resolve` / `resolveJsonOutput` / `resolveFreeTextOutput`). `HorizontalComposer.compose()` — which takes several already-resolved contributor prompts and merges them into one `IComposedPrompt` — emits **no** observation. So an audit trail sees the N individual contributor `resolve` records but nothing tying them to the composed output, and no record of the merge itself (per-logical-slot strategy, provenance ordering, safeguard findings from `applySafeguards` over the merged slot map).
 
@@ -786,3 +1014,251 @@ format-visible fields exist before that persistence format freezes; D3 parked; D
 that path is in the consumer repo); grounding in this repo at
 `libraries/ts-extras/src/packlets/crypto-utils/keystore/model.ts`; format-superset precedent =
 the `keystore-v2` optional `escrowedPrivateKeyJwk` escrow field.
+
+---
+
+## R4 — stop emitting `dist` JS for packages nothing routes at it
+
+`@fgv/heft-dual-rig` emits an `esnext` build into `dist` for all 21 of its packages. Exactly
+**four** point at that emit (`ts-utils`, `ts-bcp47`, `ts-random`, `ts-utils-jest`, via
+`import`/`module`). The other 17 build, package, and publish a full parallel ESM tree that no
+`exports` key, no `module` field, and no consumer path resolves to.
+
+**This became more attractive, not less, after `esm-emit-impl`.** That stream tried to claim the
+unreferenced emit's value via R3 and found the emit cannot be pointed at by webpack at all until it
+carries explicit specifiers (Option B). So the 17 are not "nearly useful" — they are unusable as
+shipped, and stay that way until a much larger change lands.
+
+The clean lever is per-package rather than a rig flag: move a package to
+`@rushstack/heft-node-rig` (already used by the CLIs) so it stops emitting `dist` JS at all. Note
+`dist` itself must survive — API Extractor's `.d.ts` rollup lands there too; only the JS emit
+within it is unreferenced.
+
+**Two are measured not worth routing even after Option B**: `ts-json` (0.92–0.95×) and
+`ts-web-extras` (0.96–1.01×) bundle *larger* as ESM than the CJS build bundlers get today, so they
+will not be claimed by a future R3 pass and are the strongest R4 candidates.
+
+**Why deferred**: the design that produced it called this "low value, near-zero risk, and entirely
+optional", and explicitly preferred recording it here over blocking R2/R3 on it. The waste is build
+time and tarball size, not correctness.
+
+**Dependencies**: none, but it interacts with `module`. Four packages carry a `module` field
+pointing at `dist/index.js`. **`module` must be removed in the same commit that stops emitting what
+it points at**, or it becomes a dangling pointer that pre-`exports` bundlers (webpack 4, old
+rollup) will follow into nothing.
+
+**Reference**: `.claude/project/esm-emit-design.md` R4 and OQ-2/OQ-3;
+`.ai/tasks/active/esm-emit-impl/result.md` for the per-package routing decisions and the
+measurements behind the `ts-json` / `ts-web-extras` calls.
+
+---
+
+## Tarball gate — verify each packed entry *loads*, not merely that it is present
+
+**Status:** deferred follow-up from the `publish-tarball-gate` stream. Existence shipped; loading
+did not.
+
+`common/scripts/verify-tarball-exports.mjs` asserts that every path a manifest names — every
+`exports` condition, every subpath, plus `main` / `types` / `module` / `browser` — is present in the
+file list npm would pack. The consumer's ask was two-part: that each path "exists in the tarball
+**and loads** under its declared condition". Only the first half shipped.
+
+**Why the first half was enough to ship on its own.** It catches all three defects that motivated
+the gate, including the one no other check could see (5.1.0-27 packing no build output at all), and
+it costs ~1.5 s across 25 packages — cheap enough to run per-PR *and* at publish time. The second
+half needs `npm pack` (or an equivalent tar write), extraction to a temp root, an install of each
+package's dependencies so its imports resolve, and then an import per condition. That is a
+different order of cost and a different failure surface, and pairing it with a same-PR existence
+check would have delayed the half that closes the known instances.
+
+**What the missing half would add.** Existence proves a path is *in* the tarball; it does not prove
+the extracted file evaluates. `verify-esm-entrypoints.mjs` covers loadability for the one condition
+Node resolves, **against the working tree** — so the residual uncovered case is narrow but real: an
+artifact that packs, and that loads from the tree, but would fail to load from an extracted tarball
+because something it reaches at runtime was *not* packed. A relative `require` of a JSON data file
+excluded by `.npmignore` is the concrete shape.
+
+**Prerequisite before this is worth building:** the findings filed by that stream should be resolved
+first. Several packages currently pack their full `src/` tree and Rush internals; an extract-and-load
+check over tarballs that large pays for the noise before it pays for the signal.
+
+**Reference:** `.ai/tasks/active/publish-tarball-gate/result.md` (OQ-3), and the script header's
+"WHAT THIS GATE DOES NOT TELL YOU".
+
+## Gate `exports`-condition **reachability**, not just existence
+
+All three packaging gates (`verify-esm-entrypoints`, `verify-bundler-resolution`,
+`verify-tarball-exports`) ask the same question of an `exports` map: *does each named file exist?*
+None asks the prior question: *can any resolver actually select this condition?*
+
+**21 of 25 published packages currently fail that second question.** They declare `types` after
+`default`, and `default` matches unconditionally, so the `types` entry — which names the curated
+API-Extractor rollup in `dist/` — is dead in every consumer under every resolution mode. Consumers
+get `lib/index.d.ts` (the raw per-file emit) instead, via TypeScript's fallback to the `.d.ts` beside
+the resolved `.js`. `@fgv/ts-bcp47` shows the correct shape: per-branch `types`, first in each
+condition block.
+
+**The obvious fix is a trap, but the real one is still manifest-only.** There is exactly **one**
+API-Extractor rollup per package and it describes the **Node** entry, so hoisting a single `types`
+key above the branches would hand browser consumers the Node surface — advertising members like
+`convertJsonFileSync` that the browser build does not have. But the browser branch **needs no `types`
+key at all**: it already resolves `lib/index.browser.d.ts` by adjacency to the `.js` it selects, which
+is correct (verified). So `types` goes first **inside the `node` block only**, and no browser rollup
+has to exist.
+
+Two parts, and **the second is the one worth doing first**:
+
+1. **`exports`**: `types` first within the `node` block, across 21 packages. Manifest-only — no build
+   change, nothing unsized.
+2. **Gate**: assert *reachability* — walk each `exports` object in key order and fail when a condition
+   sits behind one that matches unconditionally. Independent of 1, cheap, and the check none of the
+   three existing gates makes.
+
+**What it costs consumers today**: less than the heading suggests. node10 consumers — the
+overwhelming majority, and this repo itself — never read `exports`; they resolve the top-level
+`"types": "dist/<pkg>.d.ts"` and get the rollup, unaffected. Exports-aware consumers resolve the
+per-file `lib/**/*.d.ts` tree instead: same symbols, uncurated rather than the curated rollup, still
+type-checks. So this is a contract-vs-delivery defect and a **gate blind spot**, not a live breakage.
+
+**Why deferred**: nothing is broken today, and the `module-resolution-upgrade` brief scoped `exports`
+blocks as findings rather than edits. **Not** because it is large — an earlier draft said part 1 was
+"a build change of unknown size", which was retracted when the browser-rollup requirement turned out
+not to exist. Both parts are small and fully sized.
+
+**Why it still matters**: it is the same *shape* as the `@fgv/ts-web-extras-webauthn` defect — a
+condition no resolver can reach — and that shape is exactly what our existence-only gates are blind
+to. `@fgv/ts-bcp47` is closest to correct (per-branch `types`, first in each block) but points all
+three branches at the same Node rollup.
+
+**Dependencies**: none. Independent of the `module`/emit decision below.
+
+**Reference**: `module-resolution-upgrade` stream, 2026-08-10 — surfaced while diagnosing why a
+`bundler`-mode sweep resolved every dual-entry package to its browser build. Finding at
+`.ai/tasks/active/module-resolution-upgrade/findings/inbox/2026-08-10-twenty-one-packages-declare-an-unreachable-types-condition.md`.
+
+## Type-check the three webpack apps
+
+`apps/sudoku`, `tools/ts-res-browser`, and `tools/ts-res-ui-playground` compile via `babel-loader`,
+which strips types without checking them, and their `build` script is bare `webpack --mode
+production` — Heft's TypeScript plugin never runs. **Nothing in `rush build` or `rush test` type-checks
+them.** Running `tsc --noEmit` by hand: `ts-res-browser` 0 errors, `ts-res-ui-playground` **22**,
+`apps/sudoku` **13** — ordinary API drift (`IConfigInitFactory` no longer exported by `@fgv/ts-res`,
+`ViewStateTools.Message` → `IMessage`, `GridTools.GridViewInitParams` → `IGridViewInitParams`),
+unused locals, and two test-only deps missing from `apps/sudoku`.
+
+Add a type-check step (a `tsc --noEmit` pre-step or `fork-ts-checker-webpack-plugin`) **and** fix the
+35 errors in the same change — adding the step first turns `rush build` red.
+
+**Why deferred**: out of scope for the stream that found it, which was reconciling `moduleResolution`
+across these three projects. Note the interaction: that reconciliation is correct and currently buys
+nothing, because whatever these tsconfigs declare, no compiler reads them.
+
+**Dependencies**: none.
+
+**Reference**: `module-resolution-upgrade` stream, 2026-08-10. Finding at
+`.ai/tasks/active/module-resolution-upgrade/findings/inbox/2026-08-10-three-webpack-apps-are-never-type-checked.md`.
+
+## Decide the module emit — the single gate on moving off node10
+
+The repo resolves modules under node10, which is why TypeScript does not read the `exports` map at
+all, which is why a broken condition is invisible to the compiler. Moving off it is **one decision,
+not a ladder**: `moduleResolution` `bundler`, `node16`, and `nodenext` are each illegal with
+`module: commonjs` (TS5095 / TS5110), and every one of the 29 rig-inheriting projects is
+`module: commonjs`. **`node10` is the only legal value there**, so any move changes `module`, and
+changing `module` changes the emit.
+
+That collapses the graded plan in `.claude/project/esm-emit-design.md`'s first amendment: its step 3
+(`bundler` repo-wide) was costed as cheap *because* it left the emit alone, and that is not
+available. Steps 3 and 4 share one prerequisite — the dual-emit question from design § 2 Option D:
+one source tree emitting `commonjs` to `lib` and `esnext` to `dist` is what `node16` is least happy
+with, since it derives module format from `package.json` `type` and file extension rather than an
+emit flag.
+
+**Consumers are not on the ESM path at all** — 25 of 25 packages route `node.import` at the
+CommonJS `lib/`, so both "stop shipping `dist`" and "fix and activate it" are non-breaking for them.
+**Measured, not assumed**: an external `"type": "module"` package installed from real `npm pack`
+tarballs gets 79 named exports via `cjs-module-lexer`, and a TypeScript `node16` consumer
+type-checks, emits and runs clean end-to-end. The only sharp edge is importing a *type* by name from
+JavaScript, which `verbatimModuleSyntax` catches at compile time (`TS1484`). The upside of activating
+ESM is ~5% bundle on `ts-bcp47` (the only package shipping both entries, and a data-heavy low-end
+data point) plus statically-checkable named exports — CJS silently binds `undefined` for a
+mistyped named import where ESM fails the build.
+The ~3,520-specifier change is the price of having a working ESM emit, not of `node16`. Ordering
+trap: adding `dist/package.json` `{"type":"module"}` before fixing specifiers is what would break the
+bundler path that works today, by engaging webpack's `fullySpecified`.
+
+**Do not** substitute a type-check-only `bundler` overlay as a CI gate. It was built and swept: 73
+errors, 70 of them because `bundler` does not set the `node` condition and every dual-entry package
+resolves to its browser build; `customConditions: ["node"]` takes it to 3 but blinds the pass to
+`default` — the webauthn class. Both passes are weaker than the existing scripts.
+
+**Cost, measured by doing it and reverting** (not estimated) — see the
+`cost-of-activating-the-esm-emit-measured-by-doing-it` finding:
+
+| item | size | |
+|---|---|---|
+| specifier rewrite | codemod over **3,697** sites in 1,374 files; **2** needed hands | measured |
+| does it build on today's config? | **yes** — 32 of 35 projects clean, no resolution change needed | measured |
+| the 3 webpack apps | one line of `resolve.extensionAlias` each | measured |
+| **packlet lint conflict** | **1,830 violations** — `@rushstack/eslint-plugin-packlets` compares the entry point by exact path equality, so `../base/index.js` is never the entry point. No rule option. | measured |
+| `dist/package.json` `{"type":"module"}` | per-package build step | small, unwritten |
+| per-branch `types` + a browser `.d.ts` rollup | second API-Extractor pass per dual-entry package | **not sized** |
+
+**The de-risking fact**: extensions build fine under today's `node10`/`commonjs`, so the specifier
+work lands **incrementally, package by package, with no flag day** — it does not require the
+resolution or emit change to go first.
+
+**The blocker is the lint rule, not the specifiers — and the fix is five lines, verified.** The
+same-packlet branch of `PackletAnalyzer` already strips an explicit `index` segment (its comment
+names `"../index.js"` verbatim); the cross-packlet branch twenty lines below compares the path raw.
+Applying the same normalization there took `ts-utils` from 282 warnings to **0**, and a genuine
+bypass (`'../base/result.js'`) is **still flagged** — so it is strictly a relaxation in the correct
+direction. Plan **if and only if this stream is ever commissioned**: patch locally to unblock (five lines, one
+file), upstream the same diff in parallel, drop the patch when it releases. Disabling
+`packlets/mechanics` is now clearly wrong. **Start here, not by flipping `moduleResolution`.**
+
+**Nothing currently decided needs the Rushstack change.** It is a prerequisite of the ESM specifier
+work and of nothing else — not of PR #609, not of the reachability item above, not of the gates. If
+the emit decision lands on "stop shipping `dist`", the Rushstack change is never needed at all.
+
+**Why deferred**: needs the emit answered first, and the reachability item above delivers more
+defect-prevention for far less.
+
+**Dependencies**: design § 2 Option D. The one real defect a move would otherwise have forced fixing
+- `@fgv/ts-utils` importing `jest-snapshot/build`, a subpath that package does not export - was
+fixed in the `module-resolution-upgrade` stream, so it is no longer a prerequisite.
+
+**Reference**: `module-resolution-upgrade` stream, 2026-08-10;
+`.claude/project/esm-emit-design.md` § "Amendment 2 — what the graded steps actually cost, measured".
+
+---
+
+## Considered and closed — deferrals found by the 2026-08-14 finalize sweep
+
+The sweep found deferrals living only inside completed-stream artifacts, where no ledger reader
+would ever meet them. Two were genuinely lost and were re-queued (`runToolUseConversation`
+above; the safer-fetch browser coverage gap, filed to `TECH_DEBT.md`). One was actioned
+directly: `ks`'s hand-rolled hex, swapped onto `CryptoUtils.hexEncode`.
+
+**The rest are recorded here as closed, with reasoning, so they are not re-found and
+re-litigated by the next sweep.** That is the whole point of this section — a deferral with no
+home gets rediscovered forever, and silence about a decision is indistinguishable from having
+never made one. If any of these acquires a consumer, reopen it by moving it up into a real entry
+rather than arguing from this list.
+
+| deferral | origin | why closed |
+|---|---|---|
+| **>2-round live testbed scenario** | `ai-assist-tool-continuation` | Not closed so much as **rehomed**: it is attached to the `runToolUseConversation` entry above, because a multi-round loop helper shipped without a multi-round live test would inherit exactly the two-turn blind spot that hid the original per-round bug. It belongs to that work, not beside it. |
+| **`generateStructured`** (`/api/generate` one-shot structured output) | `ollama-native` OQ-2 | No consumer has asked. `@fgv/ts-extras-ollama` is a deliberately small Result-integration boundary whose value is its cut list; speculatively widening it works against the package's design. `chatStructured` already covers the structured-output need. |
+| **`AbortSignal` on the fast metadata ops** (`listModels` / `showModel` / `listRunning` / `deleteModel`) | `ollama-native` OQ-3 | Same reasoning, plus these are sub-second local calls against a sidecar — the cancellation that mattered (`pullModel`, `chatStructured`) shipped. |
+| **Additive cross-provider `responseFormat?` on the completion path** | `ollama-native`, the rejected Option C's consolation prize | Would have served OpenAI/Groq/Mistral too, which is what makes it tempting — but it is an `ai-assist` design question wearing an Ollama costume. If it comes back it should come back as an `ai-assist` proposal with those providers named, not as an Ollama leftover. |
+| **YAML `compositionConverter` for `ILogicalSlotConfig[]`** | `prompt-assist-horizontal-composition` OQ-3 | Already documented on the public surface: `LIBRARY_CAPABILITIES.md` states the config is "code-authored at v0.1 — no YAML converter yet". A stated limitation on the surface consumers actually read is a better home than a backlog entry they do not. |
+| **`composedBody` vs resolving from the composed descriptor's candidates** | `prompt-assist-horizontal-composition` | A consumer-adoption question, not a library one. It cannot be answered before a consumer composes in anger; PersonAIlity is the only candidate and has not. Reopen when it does. |
+| **Expose the token scanner as a utility** | `prompt-assist-horizontal-composition` design §5 | Speculative generalization with no second caller. The repo's own published-primitives discipline cuts both ways: extract when a second consumer appears, not in anticipation of one. |
+| **`ks` non-UTF-8 secret auto-detect** (default `get`/`export` to base64) | `ks-encoding` | Was moot when deferred — `importApiKey` took only `string`, so every stored secret was UTF-8 by construction. Still effectively moot: `KeyStore` has since gained `'opaque'` + `importSecretBytes`/`getSecretBytes`, but **`@fgv/ks` exposes none of it**, so there is still no way to get non-UTF-8 bytes into a keystore through the CLI. Reopen if and when the CLI grows an opaque-secret path — that is the real precondition, and it is a cleaner trigger than the original. |
+
+**One correction to the sweep's own findings.** It reported that `ts-prompt-assist`'s README
+claimed typed-qualifier-VALUES was "queued in `docs/FUTURE.md`" when it was not. **That was
+wrong.** The README lists typed qualifier values as a plain out-of-scope bullet with no queued
+claim; the two adjacent bullets that *do* carry that phrasing — editor UX and the samples app —
+are both accurate, and both entries exist above. Nothing needed fixing there, and nothing was.

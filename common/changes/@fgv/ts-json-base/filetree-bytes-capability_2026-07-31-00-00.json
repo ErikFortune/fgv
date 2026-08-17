@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add an optional binary (raw bytes) capability to the FileTree packlet as additive capability interfaces with their own type guards, mirroring the existing mutable/persistent capability shape. New interfaces IBinaryFileTreeAccessors (getFileBytes) / IMutableBinaryFileTreeAccessors (saveFileBytes) / IBinaryFileTreeFileItem (getRawBytes) / IMutableBinaryFileTreeFileItem (setRawBytes), and new guards isBinaryAccessors / isMutableBinaryAccessors / isBinaryFileItem / isMutableBinaryFileItem. No existing interface or guard probe list changes, so existing implementations keep reporting the same capabilities. FsFileTreeAccessors implements the full read+write binary capability (getFileBytes copies out of Node's Buffer pool and returns a plain Uint8Array; saveFileBytes writes bytes verbatim after the usual fileIsMutable check). InMemoryTreeAccessors implements the read half: IInMemoryFile.contents may now be a Uint8Array, which is held verbatim for getFileBytes and UTF-8-decoded for getFileContents (previously such contents were JSON.stringify'd into a nonsense object literal); string and other contents encode to UTF-8 bytes. Byte writes are deliberately omitted from the in-memory tree because its persistent subclasses persist text. FileItem implements the binary capability by delegating to its accessors, reporting an accessor that lacks the capability as a Failure. The text accessors (getFileContents / getRawContents) gain TSDoc pointing at the byte pair and documenting the strict-decode recipe new TextDecoder('utf-8', { fatal: true }).decode(bytes), which lets callers detect malformed UTF-8 instead of silently receiving U+FFFD.",
+      "type": "minor",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "noreply@anthropic.com"
+}

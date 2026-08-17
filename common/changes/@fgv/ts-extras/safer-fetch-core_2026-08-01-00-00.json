@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add the safer-fetch packlet: an HTTP fetch primitive with an explicit threat model — required address guard, request/response guard seams, injectable transport with a pinned-address interlock, overall and headers deadlines, a streaming response size cap enforced during the read, and a structured failure taxonomy carried as DetailedResult detail. Redirects are rejected in this release.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

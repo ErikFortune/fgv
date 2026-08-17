@@ -6,7 +6,9 @@ import type {
   StartRegistrationOpts,
   RegistrationResponseJSON,
   StartAuthenticationOpts,
-  AuthenticationResponseJSON
+  AuthenticationResponseJSON,
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON
 } from '@simplewebauthn/browser';
 import { captureAsyncResult, type Result } from '@fgv/ts-utils';
 
@@ -14,7 +16,15 @@ export type {
   StartRegistrationOpts,
   RegistrationResponseJSON,
   StartAuthenticationOpts,
-  AuthenticationResponseJSON
+  AuthenticationResponseJSON,
+  /**
+   * The options objects a caller passes in. Re-exported so consumers can name the type they mean
+   * rather than dereferencing to it via indexed access off `StartRegistrationOpts` — which works,
+   * and which a consumer was doing because these two were simply omitted here rather than
+   * deliberately withheld.
+   */
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON
 };
 
 /**

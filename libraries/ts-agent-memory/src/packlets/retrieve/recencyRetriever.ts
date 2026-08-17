@@ -4,30 +4,31 @@
  */
 
 import { Result, succeed } from '@fgv/ts-utils';
-import { IMemoryRecord } from '../types';
+import { IMemoryRecord, IMemoryRecordResolver } from '../types';
 import { IMemoryIndex } from '../index';
 import {
   IMemoryQuery,
   IMemoryRetriever,
   IMemoryRetrieverCapabilities,
+  IRetrieverCreateParams,
   NON_SEMANTIC_CAPABILITIES,
   guardRetrieverCapabilities,
-  limitRecords,
-  orderingCompare,
-  selectByQuery
+  resolveQuery
 } from './retriever';
 
 /**
- * Returns records matching the query's scope / kind / tag / predicate filters,
+ * Returns records matching the query's scope / kind / tag / provenance-source / predicate filters,
  * ordered most-recently-updated first. The universal v1 retriever — an empty
  * query returns the whole vault in recency order.
  * @public
  */
 export class RecencyRetriever implements IMemoryRetriever {
   private readonly _index: IMemoryIndex;
+  private readonly _resolver: IMemoryRecordResolver;
 
-  private constructor(index: IMemoryIndex) {
-    this._index = index;
+  private constructor(params: IRetrieverCreateParams) {
+    this._index = params.index;
+    this._resolver = params.resolver;
   }
 
   /** {@inheritDoc IMemoryRetriever.capabilities} */
@@ -36,18 +37,15 @@ export class RecencyRetriever implements IMemoryRetriever {
   }
 
   /** Family-convention factory. */
-  public static create(index: IMemoryIndex): Result<RecencyRetriever> {
-    return succeed(new RecencyRetriever(index));
+  public static create(params: IRetrieverCreateParams): Result<RecencyRetriever> {
+    return succeed(new RecencyRetriever(params));
   }
 
   /** {@inheritDoc IMemoryRetriever.retrieve} */
   public retrieve(query: IMemoryQuery): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>> {
     return Promise.resolve(
       guardRetrieverCapabilities(query, this.capabilities).onSuccess(() => {
-        const ordered: IMemoryRecord<unknown>[] = selectByQuery(this._index.entries(), query).sort(
-          orderingCompare(query.orderBy)
-        );
-        return succeed(limitRecords(ordered, query.limit, query.offset));
+        return resolveQuery(this._index.entries(), query, this._resolver);
       })
     );
   }

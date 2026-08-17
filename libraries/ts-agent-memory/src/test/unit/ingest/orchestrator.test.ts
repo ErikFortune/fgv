@@ -4,13 +4,14 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converters, Logging, Result, fail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   BodyConverterRegistry,
   CONTRADICTS_LINK_TYPE,
   DEFAULT_SIMILARITY_THRESHOLD,
   DEFAULT_SIMILARITY_TOP_K,
+  DedupScope,
   EntityId,
   FileTreeMemoryStore,
   HOST_INGEST_PROVENANCE_SOURCE,
@@ -26,9 +27,11 @@ import {
   IIngestItemResult,
   InMemoryCosineIndex,
   IMemoryClassification,
+  IIndexedMemoryEntry,
   IMemoryClassifier,
   IMemoryEnvelope,
   IMemoryRecord,
+  IMemoryRecordListing,
   IMemoryRecordSource,
   IMemoryStore,
   IProvenance,
@@ -51,7 +54,9 @@ import {
   Tag,
   TemporalIdentityCodec,
   TemporalVersionedPolicy,
-  serializeMemoryFile
+  serializeMemoryFile,
+  scanEveryRecord,
+  IDerivedStateCoverage
 } from '../../../index';
 
 // --- kinds --------------------------------------------------------------------
@@ -517,13 +522,29 @@ function mockStore(overrides: Partial<IMemoryStore>): IMemoryStore {
     list:
       overrides.list ??
       ((): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>> => Promise.resolve(succeed([]))),
+    listEntries:
+      overrides.listEntries ??
+      ((): Promise<Result<ReadonlyArray<IIndexedMemoryEntry>>> => Promise.resolve(succeed([]))),
     listScoped:
       overrides.listScoped ??
       ((): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> => Promise.resolve(succeed([]))),
+    resolveRecord:
+      overrides.resolveRecord ?? ((): Result<IMemoryRecord<unknown> | undefined> => succeed(undefined)),
+    coverage:
+      overrides.coverage ??
+      ((): Promise<Result<IDerivedStateCoverage>> =>
+        Promise.resolve(succeed({ records: new Map<Kind, number>() }))),
+    // Mirrors the store's default policy (KnowledgeLwwPolicy → 'content'), so a
+    // mock store keeps the pre-accessor layer-1 behavior unless a test overrides it.
+    dedupScopeFor: overrides.dedupScopeFor ?? ((): DedupScope => 'content'),
+    embedsKind: () => true,
+    reconcile: (kind: Kind) =>
+      Promise.resolve(succeed({ artifact: 'rank' as const, kind, examined: 0, repaired: 0, failed: [] })),
     asRecordSource:
       overrides.asRecordSource ??
       ((): IMemoryRecordSource => ({
-        list: (): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> => Promise.resolve(succeed([]))
+        list: (): Promise<Result<IMemoryRecordListing>> =>
+          Promise.resolve(succeed({ records: [], excluded: new Map<Kind, number>() }))
       })),
     put: overrides.put ?? ((r): Promise<Result<IMemoryRecord<unknown>>> => Promise.resolve(succeed(r))),
     delete: overrides.delete ?? ((): Promise<Result<MemoryId>> => Promise.resolve(fail('n/a')))
@@ -540,6 +561,29 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
       vectorIndex,
       embed,
       entityResolver: resolver(() => succeed({ verdict: 'new' })),
+      extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
+    });
+    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
+      expect(r.records[0].disposition).toBe('written');
+      expect(r.records[0].resolution.verdict).toBe('new');
+    });
+  });
+
+  test('a declined candidate is written as new without consulting the resolver', async () => {
+    // An embedder that declines this kind has no vector to search with, so layer-2
+    // similarity dedup cannot run. That is the same position as "found nothing
+    // similar" — `'new'` — and must NOT be an error: declining to embed a kind
+    // must not make that kind un-ingestable.
+    const vectorIndex = InMemoryCosineIndex.create().orThrow();
+    const store = buildStore({ vectorIndex, embed });
+    await putNote(store, 'doc-a', 'apple pie');
+    const declining: MemoryEmbedder = (record) =>
+      record.body === 'apple tart' ? Promise.resolve(succeed(undefined)) : embed(record);
+    const orch = buildOrchestrator({
+      store,
+      vectorIndex,
+      embed: declining,
+      entityResolver: resolver(() => fail('resolver must not be called for a declined candidate')),
       extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
@@ -670,6 +714,17 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
     const ghostIndex: IVectorIndex = {
       add: (t) => Promise.resolve(succeed(t.id as string)),
       remove: (t) => Promise.resolve(succeed(t)),
+      has: () => Promise.resolve(succeed(false)),
+      size: 0,
+      rebuild: () =>
+        Promise.resolve(
+          succeedWithDetail({
+            indexed: new Map<Kind, number>(),
+            declined: new Map<Kind, number>(),
+            skipped: []
+          })
+        ),
+
       query: (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> =>
         Promise.resolve(succeed([{ target: kt('ghost'), score: 0.99 }]))
     };
@@ -701,6 +756,17 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
     const failingIndex: IVectorIndex = {
       add: (t) => Promise.resolve(succeed(t.id as string)),
       remove: (t) => Promise.resolve(succeed(t)),
+      has: () => Promise.resolve(succeed(false)),
+      size: 0,
+      rebuild: () =>
+        Promise.resolve(
+          succeedWithDetail({
+            indexed: new Map<Kind, number>(),
+            declined: new Map<Kind, number>(),
+            skipped: []
+          })
+        ),
+
       query: (): Promise<Result<ReadonlyArray<IVectorQueryHit>>> => Promise.resolve(fail('query kaput'))
     };
     const orch = buildOrchestrator({
@@ -1016,10 +1082,12 @@ describe('MemoryIngestOrchestrator — contradicts→temporal interlock', () => 
       (rec: IMemoryRecord<unknown> | undefined) => expect(rec?.body).toBe('the sky is grey')
     );
     // The prior version is invalidated (invalidate-don't-delete).
-    expect(await store.list()).toSucceedAndSatisfy((all: ReadonlyArray<IMemoryRecord<unknown>>) => {
-      const v1 = all.find((rec) => rec.envelope.id === v1Id);
-      expect(v1?.envelope.temporal?.invalid_at).toBe(2000);
-    });
+    expect(await store.list(scanEveryRecord())).toSucceedAndSatisfy(
+      (all: ReadonlyArray<IMemoryRecord<unknown>>) => {
+        const v1 = all.find((rec) => rec.envelope.id === v1Id);
+        expect(v1?.envelope.temporal?.invalid_at).toBe(2000);
+      }
+    );
   });
 
   test('an invalidated version does not exact-dedup a later candidate that repeats its body', async () => {

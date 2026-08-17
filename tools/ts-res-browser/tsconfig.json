@@ -9,7 +9,10 @@
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
+    // `bundler`: this project is bundled by webpack and never loaded by Node, so the compiler
+    // should model what webpack does — including honouring the `exports` map, which node10
+    // resolution ignores entirely. Matches `apps/sudoku`, the repo's other webpack app.
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,

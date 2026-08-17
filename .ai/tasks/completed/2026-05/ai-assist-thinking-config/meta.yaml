@@ -1,0 +1,137 @@
+id: ai-assist-thinking-config
+status: shipped
+packages:
+  - '@fgv/ts-extras'
+prs: [330, 332, 333, 334]
+closed: 2026-05
+summary:
+  intended: >
+    Make `@fgv/ts-extras/ai-assist` usable against reasoning models. The concrete
+    symptom was that ai-assist unconditionally sends `temperature`, which every
+    provider's thinking models reject — so pointing a caller at one produced an HTTP
+    400. The brief explicitly refused the narrow fix ("drop temperature for thinking
+    models") and framed this as feature work: design a coherent `IThinkingConfig`
+    abstraction mapping cleanly onto all four providers' reasoning surfaces, decide how
+    it interacts with sampling params, and give callers one consistent way to opt in
+    with budget controls. Phase A was research and design only, writing nothing but
+    `design.md` and `state.md`; phase B implemented against nine binding decisions.
+  shipped: >
+    Thinking support on both `callProviderCompletion` and `callProviderCompletionStream`
+    across Anthropic, OpenAI, Gemini and xAI, built on the layered-options pattern the
+    image-generation stream had just crystallised. `IThinkingConfig` carries a
+    cross-provider `effort?: 'low' | 'medium' | 'high'` shorthand plus an optional
+    `providers[]` array of per-provider blocks with `models[]` narrowing and an `'other'`
+    escape hatch, merged under three precedence tiers. Temperature conflicts fail loudly
+    as `Result.fail` on Anthropic/OpenAI/xAI and pass through on Gemini. Wire encoding
+    landed per provider (Anthropic `thinking` + `output_config`, OpenAI chat
+    `reasoning_effort`, OpenAI Responses `reasoning.effort`, Gemini
+    `thinkingConfig.thinkingBudget`, xAI `reasoning_effort`) plus proxy passthrough, and
+    `extractAnthropicText` became unconditional so thinking blocks are filtered out
+    cleanly in the non-streaming path. Merged to `claude/ai-assist-features` at 100%
+    coverage.
+  diverged: >
+    The defining divergence is that phase A was rejected at signoff and re-run. V1's
+    design recommended a unified type with hard-coded silent translation tables — the
+    exact shape the parallel image-generation stream had explicitly rejected — so a
+    `brief-phase-a-v2.md` re-commissioned the design against nine now-non-negotiable
+    decisions, preserving v1's provider research (which was sound) and discarding its
+    architecture. `design-v1.md` is archived alongside for the record. The brief-v2
+    names the process lesson directly: running the two streams' phase A in parallel was
+    justified on the grounds that their research outputs were disjoint, but their
+    *pattern-extraction* outputs feed each other, so disjointness at the research level
+    was the wrong test. Second, three decisions shipped on unverified defaults because
+    no API key was available at implementation time — the xAI temperature-rejection
+    policy (D8, conservatively copied from Anthropic/OpenAI), Gemini's integer thinking
+    budgets (A3, taken from the design doc rather than live docs), and the Anthropic
+    thinking wire format (A2). A2 is the one that bit, and it was worse than merely
+    unverified — see the wire-shape note below. Third, the xAI D7 registry-staleness fix
+    shipped as real production scope (retired models removed, `grok-4.3` made the
+    default) that the ORIGINAL brief never framed; `design-v1.md` Q5 had explicitly
+    called it "out of scope for the thinking-config stream" and deferred the call, and
+    the v2 revision folded it in as a binding decision by analogy with the sibling
+    image-gen stream's D3. It has a clean paper trail, but it is the same in-flight
+    scope-widening pattern both streams show and it is invisible from the original brief.
+    Fourth, thinking-event surfacing was cut to a followup stream under D9 rather than
+    shipped. Two review findings were explicitly declined:
+    `validateResolvedThinkingConfig` (needs a model capability registry that did not
+    exist) and a `modelNameMatches` suffix tightening — the latter's "no known false
+    positive" still holds, since the model line has rotated to `gpt-5.6-luna` / `-terra`
+    / `-sol` / `gpt-5.4-nano`, none of which collide the way `gpt-5-pro` vs `gpt-5`
+    would have. The review loop ran substantially longer than the stream's own summary
+    admits — see the accuracy note below.
+  sourceLine: '**PR:** [#334](https://github.com/ErikFortune/fgv/pull/334) — `feat(ai-assist): thinking-config Phase B — layered options for extended thinking/reasoning`'
+notes:
+  - >
+    README internal inconsistency (found during the retroactive antagonist pass, not
+    corrected in place): the "PR review fixes" heading says the items were addressed
+    "across five rounds of Copilot review" and the acceptance box ticks "All 5 rounds of
+    Copilot review feedback addressed", but the table immediately below lists rounds
+    R1 through R7. Seven is consistent with the described work — R6 and R7 both carry
+    substantive `hasThinkingConfig` fixes plus a deferral each. Treat seven as the real
+    count; the "five" reads as a figure written before the last two rounds and never
+    updated. Under the review-loop discipline in `CODING_STANDARDS.md` a seven-round
+    loop is itself a signal worth noting rather than a detail. The seven-round count is
+    corroborated independently against PR #334 itself, not just the README's own table.
+  - >
+    A2 SHIPPED A WIRE SHAPE THAT MATCHED NEITHER ANTHROPIC MODE, and calling it an
+    "unverified default" undersells it. The two real modes are legacy
+    (`thinking: { type: 'enabled', budget_tokens: N }`) and adaptive
+    (`thinking: { type: 'adaptive' }` + top-level `output_config.effort`). `design.md`
+    specified adaptive and flagged that Sonnet 4.5 might not accept it, asking phase B to
+    verify. Phase B could not verify (no API key) and shipped a hybrid — `type: 'enabled'`
+    with `output_config` and no `budget_tokens` — which is the legacy discriminator
+    carrying the adaptive payload. That is a design-vs-implementation divergence, not a
+    conservative default, and the stream's own design doc is the thing it diverged from.
+    It was corrected 2.5 months later under live validation by `14574e45c`, after the
+    Claude 5 family began rejecting the legacy shape with HTTP 400; the fix branches on
+    `useAdaptiveThinking` and emits each mode correctly. None of that reversal is recorded
+    in this stream's artifacts — the README's B.0 only speculates a possible future fix
+    path. The generalizable point: an unverifiable decision should ship as ONE of the
+    documented shapes, not a blend of two, because a blend cannot be right anywhere.
+  - >
+    A SURFACED LESSON WAS LOST. `state.md` lists four lessons-codification candidates;
+    three reached `.ai/notes/orchestrator/lessons-pending.md` as L1–L3. The fourth did
+    not: "D5 (unconditional Anthropic `extractAnthropicText`) had test collateral damage —
+    existing tests used `{content: [{text}]}` without `type: 'text'`. When changing
+    response-parsing logic, audit all response fixtures immediately." Filed to
+    lessons-pending on 2026-08-14 as part of this pass.
+  - >
+    THREE OF FOUR FOLLOWUPS LIVE NOWHERE DURABLE. Checked each against `docs/FUTURE.md`,
+    `docs/TECH_DEBT.md` and `docs/WORKSTREAMS.md`: (a) `ai-assist-thinking-events` IS
+    durably tracked — a live entry in `WORKSTREAMS.md`, still unshipped, and
+    `LIBRARY_CAPABILITIES.md`'s claim that thinking-event surfacing remains that stream's
+    scope is accurate, not stale. But (b) the xAI live temperature verification, (c)
+    `validateResolvedThinkingConfig`, and (d) the `modelNameMatches` tightening appear in
+    no ledger. (b) is confirmed still unresolved in source — `thinkingOptionsResolver.ts`
+    still carries the comment "Conservative default ... live verification pending" — with
+    no follow-up commit since the original merge. A followup recorded only inside a
+    `completed/` README is invisible to any later orchestrator scanning the ledgers.
+  - >
+    The parallel-phase-A lesson this stream surfaced is captured as L1 in
+    `lessons-pending.md` but remains UNCODIFIED roughly three months and dozens of streams
+    later; the most recent sweep took L38/L39/L40 and did not reach it. Not lost, but not
+    resolved either.
+  - >
+    `WORKSTREAMS.md`'s entry for this stream says "4-tier merge logic". The source and
+    `design.md` both describe four numbered rules where rule 4 shares rule 3's precedence
+    — three effective tiers, which is what this record says. The sibling
+    `imageOptionsResolver` uses the identical "same precedence as model-specific" phrasing,
+    so both streams are three-effective-tier despite four numbered steps.
+keywords:
+  - extended-thinking
+  - reasoning-effort
+  - thinking-budget
+  - temperature-conflict
+  - layered-options
+  - merge-precedence
+  - provider-escape-hatch
+  - model-context-selection
+  - anthropic-output-config
+  - openai-responses-reasoning
+  - gemini-thinking-budget
+  - grok-reasoning
+  - design-rejected-at-signoff
+  - parallel-phase-a
+  - unverified-defaults
+  - copilot-review-loop
+sourceHash: 206cc46b23c6ed67

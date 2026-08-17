@@ -4,6 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { InMemoryRecordResolver } from '../../helpers/inMemoryRecordResolver';
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import { AiAssist } from '@fgv/ts-extras';
@@ -19,6 +20,7 @@ import {
   IIdentityCodec,
   IIndexedMemoryRecord,
   IMemoryRecord,
+  IMemoryRecordResolver,
   IMemoryStore,
   IMemoryToolResultItem,
   IMemoryWriteResult,
@@ -129,9 +131,14 @@ function makeEntry(spec: IEntrySpec): IIndexedMemoryRecord {
   return { scope: (spec.scope ?? 'knowledge') as MemoryScopeKey, record };
 }
 
+/** A resolver over the same fixture specs the index was built from. */
+function resolverFor(specs: ReadonlyArray<IEntrySpec>): IMemoryRecordResolver {
+  return new InMemoryRecordResolver(specs.map(makeEntry));
+}
+
 function makeIndex(specs: ReadonlyArray<IEntrySpec>): MemoryIndex {
   const index = MemoryIndex.create().orThrow();
-  index.rebuild(specs.map(makeEntry)).orThrow();
+  index.rebuild(specs.map(makeEntry).map((e) => ({ scope: e.scope, envelope: e.record.envelope }))).orThrow();
   return index;
 }
 
@@ -143,11 +150,12 @@ function makeIndex(specs: ReadonlyArray<IEntrySpec>): MemoryIndex {
  */
 function makeRetriever(specs: ReadonlyArray<IEntrySpec>): HybridRetriever {
   const index = makeIndex(specs);
+  const store = resolverFor(specs);
   return HybridRetriever.create(
     [
-      RecencyRetriever.create(index).orThrow(),
-      StructuredFilterRetriever.create(index).orThrow(),
-      TagRetriever.create(index).orThrow()
+      RecencyRetriever.create({ index: index, resolver: store }).orThrow(),
+      StructuredFilterRetriever.create({ index: index, resolver: store }).orThrow(),
+      TagRetriever.create({ index: index, resolver: store }).orThrow()
     ],
     ScoreUnionMergeStrategy.create().orThrow()
   ).orThrow();
@@ -155,7 +163,7 @@ function makeRetriever(specs: ReadonlyArray<IEntrySpec>): HybridRetriever {
 
 /** A LinkTraversalRetriever over the given entries — the `memory_context` backing. */
 function makeLinkRetriever(specs: ReadonlyArray<IEntrySpec>): LinkTraversalRetriever {
-  return LinkTraversalRetriever.create(makeIndex(specs)).orThrow();
+  return LinkTraversalRetriever.create({ index: makeIndex(specs), resolver: resolverFor(specs) }).orThrow();
 }
 
 /** Build the full five-tool suite for structural / annotation inspection. */
@@ -556,8 +564,15 @@ describe('createMemoryTools', () => {
         get: async () => fail('disk fault'),
         getById: async () => fail('unused'),
         list: async () => succeed([]),
+        listEntries: async () => succeed([]),
         listScoped: async () => succeed([]),
-        asRecordSource: () => ({ list: async () => succeed([]) }),
+        resolveRecord: () => succeed(undefined),
+        coverage: async () => succeed({ records: new Map<Kind, number>() }),
+        asRecordSource: () => ({ list: async () => succeed({ records: [] }) }),
+        dedupScopeFor: () => 'content',
+        embedsKind: () => true,
+        reconcile: async (kind: Kind) =>
+          succeed({ artifact: 'rank' as const, kind, examined: 0, repaired: 0, failed: [] }),
         put: async (record) => succeed(record),
         delete: async () => fail('unused')
       };
@@ -636,6 +651,47 @@ describe('createMemoryTools', () => {
   });
 
   describe('memory_search', () => {
+    test('refuses a search with no axis at all, naming what would satisfy it', async () => {
+      // Since the index holds envelopes only, an unrestricted search materializes
+      // every body in the vault to answer. A model asking for "everything" is
+      // nearly always under-specified rather than intending a full scan, so the
+      // tool refuses and lets it retry with an axis.
+      const tool = toolByName(
+        createMemoryTools({
+          store: makeStore(),
+          retriever: makeRetriever([{ id: 'doc-1', tags: ['topic'] }]),
+          registry: registryWith([{ kind: knowledgeKind }])
+        }),
+        'memory_search'
+      );
+      expect(await tool.execute({})).toFailWith(
+        /at least one of kind, tag, semantic or limit[\s\S]*reads every record/
+      );
+    });
+
+    test.each([['kind'], ['tag'], ['semantic'], ['limit']])(
+      'accepts a search narrowed by %s alone',
+      async (axis) => {
+        // `limit` counts because an ordered top-N materializes N records rather
+        // than the vault — the same reason it is a narrowing axis on the query.
+        const tool = toolByName(
+          createMemoryTools({
+            store: makeStore(),
+            retriever: makeRetriever([{ id: 'doc-1', tags: ['topic'] }]),
+            registry: registryWith([{ kind: knowledgeKind }])
+          }),
+          'memory_search'
+        );
+        const args: Record<string, unknown> =
+          axis === 'limit' ? { limit: 5 } : axis === 'kind' ? { kind: 'knowledge' } : { [axis]: 'topic' };
+        // Asserted as "got past the gate" rather than "succeeded": `semantic`
+        // legitimately loud-degrades on a retriever with no vector index wired,
+        // and that failure is evidence the axis was accepted, not rejected.
+        const result = await tool.execute(args);
+        expect(result.isSuccess() || !/at least one of kind, tag/.test(result.message ?? '')).toBe(true);
+      }
+    );
+
     test('returns projected results keyed by raw MemoryId when no handleFor is supplied', async () => {
       const retriever = makeRetriever([
         { id: 'doc-1', tags: ['topic'] },

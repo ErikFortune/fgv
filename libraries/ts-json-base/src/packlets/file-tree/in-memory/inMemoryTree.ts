@@ -33,6 +33,7 @@ import { DirectoryItem } from '../directoryItem';
 import { FileItem } from '../fileItem';
 import {
   FileTreeItem,
+  IBinaryFileTreeAccessors,
   IFileTreeInitParams,
   IFilterSpec,
   IMutableFileTreeAccessors,
@@ -52,7 +53,12 @@ export interface IInMemoryFile<TCT extends string = string> {
   readonly path: string;
 
   /**
-   * The contents of the file
+   * The contents of the file.
+   *
+   * @remarks
+   * A `string` is stored verbatim. A `Uint8Array` is stored verbatim as bytes and is
+   * decoded as UTF-8 on text reads. Any other value is serialized with `JSON.stringify`
+   * on read.
    */
   readonly contents: unknown;
 
@@ -158,9 +164,18 @@ class MutableInMemoryDirectory<TCT extends string = string> {
 /**
  * Implementation of {@link FileTree.IMutableFileTreeAccessors} that uses an in-memory
  * tree to access and modify files and directories.
+ *
+ * @remarks
+ * Also implements the read half of the optional binary capability
+ * ({@link FileTree.IBinaryFileTreeAccessors}). Byte *writes* are deliberately not
+ * supported: subclasses that persist this tree (`localStorage`, HTTP JSON transport,
+ * File System Access) persist text, so a byte write could not round-trip through them.
+ * Seed a tree with `Uint8Array` contents to hold bytes verbatim.
  * @public
  */
-export class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFileTreeAccessors<TCT> {
+export class InMemoryTreeAccessors<TCT extends string = string>
+  implements IMutableFileTreeAccessors<TCT>, IBinaryFileTreeAccessors<TCT>
+{
   private readonly _tree: TreeBuilder<TCT>;
   private readonly _inferContentType: (filePath: string) => Result<TCT | undefined>;
   private readonly _mutable: boolean | IFilterSpec;
@@ -300,6 +315,75 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
    * @returns The contents of the file.
    */
   public getFileContents(path: string): Result<string> {
+    return this._getFile(path).onSuccess((file) => {
+      if (typeof file.contents === 'string') {
+        return succeed(file.contents);
+      }
+      if (file.contents instanceof Uint8Array) {
+        return succeed(new TextDecoder().decode(file.contents));
+      }
+      return captureResult(() => JSON.stringify(file.contents));
+    });
+  }
+
+  /**
+   * {@inheritDoc FileTree.IBinaryFileTreeAccessors.getFileBytes}
+   */
+  public getFileBytes(path: string): Result<Uint8Array> {
+    // Mirrors `getFileContents`' three-way shape over the file already in hand,
+    // rather than delegating to it — delegating would re-resolve the path a second
+    // time. Byte-seeded contents are returned verbatim (no decode/encode round
+    // trip, which is the whole point of the capability); the string and JSON cases
+    // encode the same text `getFileContents` would have produced.
+    return this._getFile(path).onSuccess((file) => {
+      if (file.contents instanceof Uint8Array) {
+        return succeed(file.contents);
+      }
+      if (typeof file.contents === 'string') {
+        return succeed(new TextEncoder().encode(file.contents));
+      }
+      return captureResult(() => new TextEncoder().encode(JSON.stringify(file.contents)));
+    });
+  }
+
+  /**
+   * Reads a file's contents, decoding UTF-8 strictly.
+   *
+   * @remarks
+   * Decidable **per file**, not per store: only a byte-seeded file still has the
+   * original bytes to judge. A `string`- or JSON-seeded file was decoded before
+   * this tree received it, so the substitution — if any — already happened
+   * upstream and re-encoding would produce well-formed UTF-8. Those fail rather
+   * than reporting a success this store cannot stand behind.
+   *
+   * This is also what makes the derived string-backed stores correct for free:
+   * an HTTP tree seeded from a JSON `contents` field, or a `localStorage` tree,
+   * holds only strings and so refuses every file — structurally, not by a
+   * hand-written special case.
+   * @param path - Absolute path of the file.
+   * @returns `Success` with the decoded text; `Failure` if the bytes are not
+   * valid UTF-8, or if this store no longer holds the original bytes to judge.
+   */
+  public getFileTextStrict(path: string): Result<string> {
+    return this._getFile(path).onSuccess((file) => {
+      const { contents } = file;
+      if (!(contents instanceof Uint8Array)) {
+        return fail(
+          `${this.resolveAbsolutePath(
+            path
+          )}: cannot decode strictly - this store holds already-decoded text, not the original bytes`
+        );
+      }
+      return captureResult(() => new TextDecoder('utf-8', { fatal: true }).decode(contents));
+    });
+  }
+
+  /**
+   * Looks up the mutable-layer file at a path.
+   * @param path - Path of the file to look up.
+   * @returns `Success` with the file, or `Failure` if it is missing or is a directory.
+   */
+  private _getFile(path: string): Result<MutableInMemoryFile<TCT>> {
     const absolutePath = this.resolveAbsolutePath(path);
     const item = this._mutableByPath.get(absolutePath);
     if (item === undefined) {
@@ -308,10 +392,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
     if (!(item instanceof MutableInMemoryFile)) {
       return fail(`${absolutePath}: not a file`);
     }
-    if (typeof item.contents === 'string') {
-      return succeed(item.contents);
-    }
-    return captureResult(() => JSON.stringify(item.contents));
+    return succeed(item);
   }
 
   /**

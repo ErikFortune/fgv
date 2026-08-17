@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "SaferFetch: join the core to the address classifier and make the guard load-bearing. Adds blockPrivateNetworks() — a Node-only, DNS-resolving IAddressGuard that classifies url.hostname (resolving it only when it is not already an IP literal) and delegates every resolved address to the reject-if-any policy, with an injectable HostResolver seam so no test touches the network; a rejected lookup becomes a Failure, never a throw. Adds redirectPolicy: 'validate-each-hop', which walks redirects with redirect: 'manual' and runs the full address guard on every hop before any connection, resolving Location against the hop that sent it; plus maxRedirects (default 5), whole-chain loop detection, Fetch-standard method/body rewriting (301/302 convert POST to GET and drop the body, 303 converts any non-GET/HEAD, 307/308 preserve both), and monotonic credential stripping on cross-origin hops (authorization/cookie/proxy-authorization plus the new sensitiveHeaders option, matched case-insensitively) so an A -> B -> A chain never re-attaches the credential. IRequestHop.status is now populated, and connectedAddress is recorded once a guard pins and the transport accepts it. BREAKING (unreleased surface): the policy-layer factory blockPrivateNetworks is renamed blockPrivateNetworksPolicy, freeing the unsuffixed name for the guard callers actually pass to saferFetch* — unsuffixed factories now uniformly return an IAddressGuard and Policy-suffixed ones an IAddressPolicy. Also fixes a defect the walk exposed: headersTimeoutMs is documented as per-attempt but was retired for the whole call by the first hop's headers, so later hops had no headers deadline; it is now re-armed per attempt. Default redirect policy remains 'reject'. DNS rebinding remains an open, documented limit — IGuardVerdict.pinnedAddress stays undefined and platformFetchTransport still fails rather than ignore a pin.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

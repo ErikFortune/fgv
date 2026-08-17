@@ -182,8 +182,14 @@ function enumeratedValue_2<T>(values: ReadonlyArray<T>, message?: string): Valid
 // @public
 function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-class FileItem<TCT extends string = string> implements IMutableFileTreeFileItem<TCT> {
+class FileItem<TCT extends string = string> implements IMutableBinaryFileTreeFileItem<TCT>, IStrictTextFileTreeFileItem<TCT> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(path: string, hal: IFileTreeAccessors<TCT>);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -222,7 +228,15 @@ class FileItem<TCT extends string = string> implements IMutableFileTreeFileItem<
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
+    getRawBytes(): Result<Uint8Array>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
     getRawContents(): Result<string>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getTextStrict(): Result<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected readonly _hal: IFileTreeAccessors<TCT>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -231,6 +245,10 @@ class FileItem<TCT extends string = string> implements IMutableFileTreeFileItem<
     get name(): string;
     setContents(json: JsonValue): Result<JsonValue>;
     setContentType(contentType: TCT | undefined): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    setRawBytes(bytes: Uint8Array): Result<Uint8Array>;
     setRawContents(contents: string): Result<string>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -243,6 +261,12 @@ declare namespace FileTree {
         inMemory,
         isMutableAccessors,
         isPersistentAccessors,
+        isBinaryAccessors,
+        isStrictTextAccessors,
+        isMutableBinaryAccessors,
+        isBinaryFileItem,
+        isStrictTextFileItem,
+        isMutableBinaryFileItem,
         isMutableFileItem,
         isMutableDirectoryItem,
         SaveCapability,
@@ -254,7 +278,10 @@ declare namespace FileTree {
         IFileTreeInitParams,
         IDeleteChildOptions,
         IFileTreeFileItem,
+        IStrictTextFileTreeFileItem,
+        IBinaryFileTreeFileItem,
         IMutableFileTreeFileItem,
+        IMutableBinaryFileTreeFileItem,
         IFileTreeDirectoryItem,
         IMutableFileTreeDirectoryItem,
         FileTreeItem,
@@ -263,7 +290,10 @@ declare namespace FileTree {
         AnyFileTreeDirectoryItem,
         IFileTreeAccessors,
         IMutableFileTreeAccessors,
+        IBinaryFileTreeAccessors,
+        IMutableBinaryFileTreeAccessors,
         IPersistentFileTreeAccessors,
+        IStrictTextFileTreeAccessors,
         FileTree_2 as FileTree,
         DirectoryItem,
         FileItem,
@@ -317,7 +347,7 @@ function fromJson(json: JsonObject): Result<ISchemaValidator<JsonValue>>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class FsFileTreeAccessors<TCT extends string = string> implements IMutableFileTreeAccessors<TCT> {
+class FsFileTreeAccessors<TCT extends string = string> implements IMutableBinaryFileTreeAccessors<TCT> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(params?: IFileTreeInitParams<TCT>);
@@ -330,14 +360,42 @@ class FsFileTreeAccessors<TCT extends string = string> implements IMutableFileTr
     getBaseName(itemPath: string, suffix?: string): string;
     getChildren(dirPath: string): Result<ReadonlyArray<FileTreeItem<TCT>>>;
     getExtension(itemPath: string): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getFileBytes(filePath: string): Result<Uint8Array>;
     getFileContents(filePath: string): Result<string>;
     getFileContentType(filePath: string, provided?: string): Result<TCT | undefined>;
+    getFileTextStrict(filePath: string): Result<string>;
     getItem(itemPath: string): Result<FileTreeItem<TCT>>;
     protected readonly _inferContentType: (filePath: string) => Result<TCT | undefined>;
     joinPaths(...paths: string[]): string;
     readonly prefix: string | undefined;
     resolveAbsolutePath(...paths: string[]): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    saveFileBytes(path: string, bytes: Uint8Array): Result<Uint8Array>;
     saveFileContents(path: string, contents: string): Result<string>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IBinaryFileTreeAccessors<TCT extends string = string> extends IFileTreeAccessors<TCT> {
+    getFileBytes(path: string): Result<Uint8Array>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IBinaryFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
+    getRawBytes(): Result<Uint8Array>;
 }
 
 // @public
@@ -350,6 +408,9 @@ interface IFileTreeAccessors<TCT extends string = string> {
     getBaseName(path: string, suffix?: string): string;
     getChildren(path: string): Result<ReadonlyArray<FileTreeItem<TCT>>>;
     getExtension(path: string): string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getFileContents(path: string): Result<string>;
     getFileContentType(path: string, provided?: string): Result<TCT | undefined>;
     getItem(path: string): Result<FileTreeItem<TCT>>;
@@ -374,6 +435,9 @@ interface IFileTreeFileItem<TCT extends string = string> {
     readonly extension: string;
     getContents(): Result<JsonValue>;
     getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getRawContents(): Result<string>;
     readonly name: string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -476,6 +540,24 @@ type ILlmSchema<T> = ISchemaValidator<T>;
 type ILlmStringSchema = ISchemaValidator<string>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IMutableBinaryFileTreeAccessors<TCT extends string = string> extends IBinaryFileTreeAccessors<TCT>, IMutableFileTreeAccessors<TCT> {
+    saveFileBytes(path: string, bytes: Uint8Array): Result<Uint8Array>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IMutableBinaryFileTreeFileItem<TCT extends string = string> extends IBinaryFileTreeFileItem<TCT>, IMutableFileTreeFileItem<TCT> {
+    setRawBytes(bytes: Uint8Array): Result<Uint8Array>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface IMutableFileTreeAccessors<TCT extends string = string> extends IFileTreeAccessors<TCT> {
@@ -485,6 +567,8 @@ interface IMutableFileTreeAccessors<TCT extends string = string> extends IFileTr
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     fileIsMutable(path: string): DetailedResult<boolean, SaveDetail>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     saveFileContents(path: string, contents: string): Result<string>;
 }
 
@@ -508,6 +592,8 @@ interface IMutableFileTreeFileItem<TCT extends string = string> extends IFileTre
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getIsMutable(): DetailedResult<boolean, SaveDetail>;
     setContents(json: JsonValue): Result<JsonValue>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     setRawContents(contents: string): Result<string>;
 }
 
@@ -527,9 +613,10 @@ function inMemory<TCT extends string = string>(files: IInMemoryFile<TCT>[], pref
 function inMemory<TCT extends string = string>(files: IInMemoryFile<TCT>[], params?: IFileTreeInitParams<TCT>): Result<FileTree_2<TCT>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFileTreeAccessors<TCT> {
+class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFileTreeAccessors<TCT>, IBinaryFileTreeAccessors<TCT> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(files: IInMemoryFile<TCT>[], params?: IFileTreeInitParams<TCT>);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -547,8 +634,13 @@ class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFile
     getBaseName(path: string, suffix?: string): string;
     getChildren(path: string): Result<ReadonlyArray<FileTreeItem<TCT>>>;
     getExtension(path: string): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getFileBytes(path: string): Result<Uint8Array>;
     getFileContents(path: string): Result<string>;
     getFileContentType(path: string, provided?: string): Result<TCT | undefined>;
+    getFileTextStrict(path: string): Result<string>;
     getItem(itemPath: string): Result<FileTreeItem<TCT>>;
     joinPaths(...paths: string[]): string;
     resolveAbsolutePath(...paths: string[]): string;
@@ -581,6 +673,19 @@ interface IReadDirectoryItem<T> {
     item: T;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isBinaryAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IBinaryFileTreeAccessors<TCT>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isBinaryFileItem<TCT extends string = string>(item: AnyFileTreeFileItem<TCT> | FileTreeItem<TCT>): item is IBinaryFileTreeFileItem<TCT>;
+
 // @public
 interface ISchemaOptions {
     description?: string;
@@ -611,6 +716,19 @@ function isMutableAccessors<TCT extends string = string>(accessors: IFileTreeAcc
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+function isMutableBinaryAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IMutableBinaryFileTreeAccessors<TCT>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isMutableBinaryFileItem<TCT extends string = string>(item: AnyFileTreeFileItem<TCT> | FileTreeItem<TCT>): item is IMutableBinaryFileTreeFileItem<TCT>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 function isMutableDirectoryItem<TCT extends string = string>(item: AnyFileTreeDirectoryItem<TCT> | FileTreeItem<TCT>): item is IMutableFileTreeDirectoryItem<TCT>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -625,6 +743,34 @@ function isPathMutable(path: string, mutable: boolean | IFilterSpec | undefined)
 //
 // @public
 function isPersistentAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IPersistentFileTreeAccessors<TCT>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isStrictTextAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IStrictTextFileTreeAccessors<TCT>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isStrictTextFileItem<TCT extends string = string>(item: AnyFileTreeFileItem<TCT> | FileTreeItem<TCT>): item is IStrictTextFileTreeFileItem<TCT>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IStrictTextFileTreeAccessors<TCT extends string = string> extends IFileTreeAccessors<TCT> {
+    getFileTextStrict(path: string): Result<string>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IStrictTextFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
+    getTextStrict(): Result<string>;
+}
 
 // @public
 type ItemNameTransformFunction<T> = (name: string, item: T) => Result<string>;

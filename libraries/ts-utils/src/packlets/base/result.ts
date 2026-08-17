@@ -1061,6 +1061,78 @@ export class DetailedSuccess<out T, out TD> extends Success<T> {
   }
 
   /**
+   * Invokes the supplied {@link AsyncDetailedSuccessContinuation | async success callback},
+   * bridging into an {@link AsyncDetailedResult} chain which preserves the detail type.
+   * @remarks
+   * Overrides {@link Success.thenOnSuccess}, which returns a plain
+   * {@link AsyncResult | AsyncResult<TN>} and would drop `<TD>` silently.
+   *
+   * A callback which throws synchronously or returns a rejected promise yields a
+   * {@link DetailedFailure} with no detail rather than escaping as an exception.
+   * @param cb - The {@link AsyncDetailedSuccessContinuation | async success callback} to be invoked.
+   * @returns An {@link AsyncDetailedResult | AsyncDetailedResult<TN, TD>} wrapping the callback's
+   * result.
+   */
+  public thenOnSuccess<TN>(cb: AsyncDetailedSuccessContinuation<T, TD, TN>): AsyncDetailedResult<TN, TD>;
+
+  /**
+   * Back-compatible form of the overload above, for a callback which returns a plain
+   * {@link Result} rather than a {@link DetailedResult}.
+   * @remarks
+   * Declared so such a callback keeps compiling, and keeps yielding a plain {@link AsyncResult},
+   * exactly as it did when this class inherited {@link Success.thenOnSuccess}. Without it the override
+   * would *narrow* the inherited parameter type, which is a source-breaking change even though it
+   * only adds API surface - and therefore one an additive-looking API report cannot detect.
+   * @param cb - The async success callback to be invoked.
+   * @returns An {@link AsyncResult} wrapping the callback's result, with no detail.
+   */
+  public thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
+  public thenOnSuccess<TN>(
+    cb: AsyncDetailedSuccessContinuation<T, TD, TN> | AsyncSuccessContinuation<T, TN>
+  ): AsyncDetailedResult<TN, TD> {
+    try {
+      // The cast inherent to an overload implementation, contained here. A plain-`Result`
+      // callback's value is passed through **unchanged**, preserving object identity as the
+      // inherited implementation did; that overload returns `AsyncResult`, which has no `detail`.
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return new AsyncDetailedResult(cb(this._value, this._detail) as PromiseLike<DetailedResult<TN, TD>>);
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return AsyncDetailedResult.fromDetailed(failWithDetail<TN, TD>(_errorMessage(err)));
+    }
+  }
+
+  /**
+   * Propagates this {@link DetailedSuccess} into an {@link AsyncDetailedResult} chain without
+   * invoking the callback.
+   * @remarks
+   * Overrides {@link Success.thenOnFailure} to preserve the detail type.
+   * @param __cb - The {@link AsyncDetailedFailureContinuation | async failure callback} to be
+   * called in case of failure (ignored).
+   * @returns An {@link AsyncDetailedResult | AsyncDetailedResult<T, TD>} wrapping `this`.
+   */
+  public thenOnFailure(__cb: AsyncDetailedFailureContinuation<T, TD>): AsyncDetailedResult<T, TD>;
+
+  /**
+   * Back-compatible form of the overload above, for a callback which returns a plain
+   * {@link Result} rather than a {@link DetailedResult}.
+   * @remarks
+   * Declared so such a callback keeps compiling, and keeps yielding a plain {@link AsyncResult},
+   * exactly as it did when this class inherited {@link Success.thenOnFailure}. Without it the override
+   * would *narrow* the inherited parameter type, which is a source-breaking change even though it
+   * only adds API surface - and therefore one an additive-looking API report cannot detect.
+   * @param cb - The async failure callback to be invoked.
+   * @returns An {@link AsyncResult} wrapping the callback's result, with no detail.
+   */
+  public thenOnFailure(__cb: AsyncFailureContinuation<T>): AsyncResult<T>;
+  public thenOnFailure(
+    __cb: AsyncDetailedFailureContinuation<T, TD> | AsyncFailureContinuation<T>
+  ): AsyncDetailedResult<T, TD> {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    return AsyncDetailedResult.fromDetailed<T, TD>(this);
+  }
+
+  /**
    * {@inheritDoc IResult.report}
    */
   public report(
@@ -1165,6 +1237,81 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
   }
 
   /**
+   * Propagates this failure's message **and detail** into an {@link AsyncDetailedResult} chain
+   * without invoking the callback.
+   * @remarks
+   * Overrides {@link Failure.thenOnSuccess}, which returns a plain
+   * {@link AsyncResult | AsyncResult<TN>} and would drop `<TD>` silently. Mutates the success
+   * type as the success callback would have, exactly as {@link DetailedFailure.onSuccess} does.
+   * @param __cb - The {@link AsyncDetailedSuccessContinuation | async success callback} to be
+   * called in case of success (ignored).
+   * @returns An {@link AsyncDetailedResult | AsyncDetailedResult<TN, TD>} carrying this failure's
+   * message and detail.
+   */
+  public thenOnSuccess<TN>(__cb: AsyncDetailedSuccessContinuation<T, TD, TN>): AsyncDetailedResult<TN, TD>;
+
+  /**
+   * Back-compatible form of the overload above, for a callback which returns a plain
+   * {@link Result} rather than a {@link DetailedResult}.
+   * @remarks
+   * Declared so such a callback keeps compiling, and keeps yielding a plain {@link AsyncResult},
+   * exactly as it did when this class inherited {@link Failure.thenOnSuccess}. Without it the override
+   * would *narrow* the inherited parameter type, which is a source-breaking change even though it
+   * only adds API surface - and therefore one an additive-looking API report cannot detect.
+   * @param cb - The async success callback to be invoked.
+   * @returns An {@link AsyncResult} wrapping the callback's result, with no detail.
+   */
+  public thenOnSuccess<TN>(__cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
+  public thenOnSuccess<TN>(
+    __cb: AsyncDetailedSuccessContinuation<T, TD, TN> | AsyncSuccessContinuation<T, TN>
+  ): AsyncDetailedResult<TN, TD> {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    return AsyncDetailedResult.fromDetailed(failWithDetail<TN, TD>(this._message, this._detail));
+  }
+
+  /**
+   * Invokes the supplied {@link AsyncDetailedFailureContinuation | async failure callback},
+   * bridging into an {@link AsyncDetailedResult} chain which preserves the detail type.
+   * @remarks
+   * Overrides {@link Failure.thenOnFailure} to preserve the detail type. The callback receives
+   * this failure's detail alongside its message.
+   *
+   * A callback which throws synchronously or returns a rejected promise yields a
+   * {@link DetailedFailure} with no detail rather than escaping as an exception.
+   * @param cb - The {@link AsyncDetailedFailureContinuation | async failure callback} to be invoked.
+   * @returns An {@link AsyncDetailedResult | AsyncDetailedResult<T, TD>} wrapping the callback's
+   * result.
+   */
+  public thenOnFailure(cb: AsyncDetailedFailureContinuation<T, TD>): AsyncDetailedResult<T, TD>;
+
+  /**
+   * Back-compatible form of the overload above, for a callback which returns a plain
+   * {@link Result} rather than a {@link DetailedResult}.
+   * @remarks
+   * Declared so such a callback keeps compiling, and keeps yielding a plain {@link AsyncResult},
+   * exactly as it did when this class inherited {@link Failure.thenOnFailure}. Without it the override
+   * would *narrow* the inherited parameter type, which is a source-breaking change even though it
+   * only adds API surface - and therefore one an additive-looking API report cannot detect.
+   * @param cb - The async failure callback to be invoked.
+   * @returns An {@link AsyncResult} wrapping the callback's result, with no detail.
+   */
+  public thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
+  public thenOnFailure(
+    cb: AsyncDetailedFailureContinuation<T, TD> | AsyncFailureContinuation<T>
+  ): AsyncDetailedResult<T, TD> {
+    try {
+      // The cast inherent to an overload implementation, contained here. A plain-`Result`
+      // callback's value is passed through **unchanged**, preserving object identity as the
+      // inherited implementation did; that overload returns `AsyncResult`, which has no `detail`.
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return new AsyncDetailedResult(cb(this._message, this._detail) as PromiseLike<DetailedResult<T, TD>>);
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return AsyncDetailedResult.fromDetailed(failWithDetail<T, TD>(_errorMessage(err)));
+    }
+  }
+
+  /**
    * {@inheritDoc IResult.aggregateError}
    */
   public aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter<TD>): this {
@@ -1228,7 +1375,7 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
 
 /**
  * Represents a result with additional detail.
- * @beta
+ * @public
  */
 export type DetailedResult<T, TD> = DetailedSuccess<T, TD> | DetailedFailure<T, TD>;
 
@@ -1367,6 +1514,42 @@ export type AsyncSuccessContinuation<T, TN> = (value: T) => PromiseLike<Result<T
  * @public
  */
 export type AsyncFailureContinuation<T> = (message: string) => PromiseLike<Result<T>>;
+
+/**
+ * Async continuation callback to be called in the event that a
+ * {@link DetailedResult} is successful, returning a `PromiseLike` of a new
+ * {@link DetailedResult}.
+ * @remarks
+ * The detail-preserving sibling of {@link AsyncSuccessContinuation}. Like its
+ * synchronous counterpart {@link DetailedSuccessContinuation}, it receives the
+ * detail alongside the value and may mutate the success type from `<T>` to
+ * `<TN>`, but it cannot change the detail type `<TD>` — that is what makes the
+ * detail survive an arbitrarily long chain.
+ *
+ * Typed as `PromiseLike` for the same reason as
+ * {@link AsyncSuccessContinuation}: so a callback can return an
+ * {@link AsyncDetailedResult} directly without an `async` wrapper.
+ * @public
+ */
+export type AsyncDetailedSuccessContinuation<T, TD, TN> = (
+  value: T,
+  detail?: TD
+) => PromiseLike<DetailedResult<TN, TD>>;
+
+/**
+ * Async continuation callback to be called in the event that a
+ * {@link DetailedResult} fails, returning a `PromiseLike` of a new
+ * {@link DetailedResult}.
+ * @remarks
+ * The detail-preserving sibling of {@link AsyncFailureContinuation}. As with
+ * {@link DetailedFailureContinuation}, the callback may recover to a success or
+ * embellish the failure, but it cannot change the success type.
+ * @public
+ */
+export type AsyncDetailedFailureContinuation<T, TD> = (
+  message: string,
+  detail?: TD
+) => PromiseLike<DetailedResult<T, TD>>;
 
 /**
  * Wraps a `Promise` of a {@link Result} to enable fluent chaining of both
@@ -1546,6 +1729,236 @@ export class AsyncResult<T> implements PromiseLike<Result<T>> {
    */
   public static from<T>(result: Result<T>): AsyncResult<T> {
     return new AsyncResult(Promise.resolve(result));
+  }
+}
+
+/**
+ * Wraps a `Promise` of a {@link DetailedResult} to enable fluent chaining of both synchronous
+ * and asynchronous operations **without losing the detail type `<TD>`**.
+ *
+ * @remarks
+ * `AsyncDetailedResult<T, TD>` is to {@link DetailedResult} exactly what {@link AsyncResult}
+ * is to {@link Result}, and it **extends {@link AsyncResult | AsyncResult<T>}** for the same
+ * reason {@link DetailedSuccess} extends {@link Success}: a detailed result *is* a result, so
+ * the detailed async ladder must be usable anywhere the plain one is. That inheritance is also
+ * what lets {@link DetailedSuccess.thenOnSuccess} and {@link DetailedFailure.thenOnSuccess}
+ * override their base declarations while returning the narrower type.
+ *
+ * Before this type existed, `someDetailedResult.thenOnSuccess(async (v) => ...)` inherited
+ * `Success.thenOnSuccess` and returned a plain `AsyncResult<TN>` — it type-checked, and `TD`
+ * was silently gone. Nothing failed at the chain site; the loss surfaced later (or never, if
+ * the caller happened to widen anyway), which is what made it worth closing in the primitive
+ * rather than working around per consumer.
+ *
+ * **Rejections and synchronous throws carry no detail.** A callback that throws or returns a
+ * rejected promise becomes a {@link DetailedFailure} whose `detail` is `undefined` — never an
+ * escaped exception. There is no honest alternative: the thrown error supplies no `TD`, and
+ * carrying the *upstream* detail forward would pair this failure's message with a previous
+ * operation's detail. This matches `mapDetailedResultsAsync`, whose capture failures likewise
+ * have no detail for `ignore` to match.
+ *
+ * @example
+ * ```typescript
+ * const result: DetailedResult<Final, FailureReason> = await parse(input)
+ *   .thenOnSuccess(async (parsed) => fetchData(parsed))
+ *   .onSuccess((data) => transform(data))
+ *   .withErrorFormat((msg, detail) => `pipeline failed (${detail?.kind}): ${msg}`);
+ * ```
+ *
+ * @public
+ */
+export class AsyncDetailedResult<T, TD> extends AsyncResult<T> implements PromiseLike<DetailedResult<T, TD>> {
+  /**
+   * The detail-typed view of the wrapped promise.
+   * @remarks
+   * Held separately from the base class's plain-`Result` promise because the two differ in how
+   * a rejection is converted: the base produces {@link Failure}, this produces
+   * {@link DetailedFailure}. Both fields observe the *same* settled values — the promise handed
+   * to `super()` below is this one, already guarded — so the two views can never disagree.
+   */
+  private readonly _detailed: Promise<DetailedResult<T, TD>>;
+
+  /**
+   * Constructs an {@link AsyncDetailedResult} wrapping the supplied promise (or any
+   * `PromiseLike` that resolves to a {@link DetailedResult}, such as another
+   * {@link AsyncDetailedResult}).
+   * @remarks
+   * If the supplied promise rejects, the rejection is caught and converted to a
+   * {@link DetailedFailure} with no detail, ensuring that awaiting an
+   * {@link AsyncDetailedResult} always yields a {@link DetailedResult}.
+   * @param promise - A `Promise` (or `PromiseLike`) that resolves to a {@link DetailedResult}.
+   */
+  public constructor(promise: PromiseLike<DetailedResult<T, TD>>) {
+    // Guarded before `super()` rather than after, so the base class receives a promise that can
+    // no longer reject. The base's own `.catch` would otherwise convert a rejection to a plain
+    // `Failure`, and the two views of the same promise would then disagree about the detail.
+    const detailed: Promise<DetailedResult<T, TD>> = Promise.resolve(promise).catch((err: unknown) =>
+      failWithDetail<T, TD>(_errorMessage(err))
+    );
+    super(detailed);
+    this._detailed = detailed;
+  }
+
+  /**
+   * Calls a supplied {@link DetailedSuccessContinuation | success continuation} if the wrapped
+   * result is successful.
+   * @param cb - The synchronous {@link DetailedSuccessContinuation | success continuation} to be
+   * called in the event of success.
+   * @returns A new {@link AsyncDetailedResult} wrapping the continuation result.
+   */
+  public onSuccess<TN>(cb: DetailedSuccessContinuation<T, TD, TN>): AsyncDetailedResult<TN, TD> {
+    return new AsyncDetailedResult(this._detailed.then((r) => r.onSuccess(cb)));
+  }
+
+  /**
+   * Calls a supplied {@link AsyncDetailedSuccessContinuation | async success continuation} if the
+   * wrapped result is successful.
+   * @remarks
+   * Both synchronous throws and async rejections from the callback are caught and converted to a
+   * {@link DetailedFailure} with no detail.
+   * @param cb - The {@link AsyncDetailedSuccessContinuation | async success continuation} to be
+   * called in the event of success.
+   * @returns A new {@link AsyncDetailedResult} wrapping the async continuation result.
+   */
+  public thenOnSuccess<TN>(cb: AsyncDetailedSuccessContinuation<T, TD, TN>): AsyncDetailedResult<TN, TD> {
+    return new AsyncDetailedResult(
+      this._detailed.then(async (r) => {
+        if (r.isFailure()) {
+          return failWithDetail<TN, TD>(r.message, r.detail);
+        }
+        try {
+          return await cb(r.value, r.detail);
+        } catch (err: unknown) {
+          return failWithDetail<TN, TD>(_errorMessage(err));
+        }
+      })
+    );
+  }
+
+  /**
+   * Calls a supplied {@link DetailedFailureContinuation | failure continuation} if the wrapped
+   * result is a failure.
+   * @param cb - The synchronous {@link DetailedFailureContinuation | failure continuation} to be
+   * called in the event of failure.
+   * @returns A new {@link AsyncDetailedResult} wrapping the continuation result.
+   */
+  public onFailure(cb: DetailedFailureContinuation<T, TD>): AsyncDetailedResult<T, TD> {
+    return new AsyncDetailedResult(this._detailed.then((r) => r.onFailure(cb)));
+  }
+
+  /**
+   * Calls a supplied {@link AsyncDetailedFailureContinuation | async failure continuation} if the
+   * wrapped result is a failure.
+   * @remarks
+   * Both synchronous throws and async rejections from the callback are caught and converted to a
+   * {@link DetailedFailure} with no detail.
+   * @param cb - The {@link AsyncDetailedFailureContinuation | async failure continuation} to be
+   * called in the event of failure.
+   * @returns A new {@link AsyncDetailedResult} wrapping the async continuation result.
+   */
+  public thenOnFailure(cb: AsyncDetailedFailureContinuation<T, TD>): AsyncDetailedResult<T, TD> {
+    return new AsyncDetailedResult(
+      this._detailed.then(async (r) => {
+        if (r.isSuccess()) {
+          return r;
+        }
+        try {
+          return await cb(r.message, r.detail);
+        } catch (err: unknown) {
+          return failWithDetail<T, TD>(_errorMessage(err));
+        }
+      })
+    );
+  }
+
+  /**
+   * Calls a supplied {@link ErrorFormatter | error formatter} if the wrapped result is a failure.
+   * @remarks
+   * The formatter receives the detail as well as the message, matching
+   * {@link DetailedFailure.withErrorFormat}. The reformatted failure keeps its detail.
+   * @param cb - The {@link ErrorFormatter | error formatter} to be called in the event of failure.
+   * @returns A new {@link AsyncDetailedResult} with the formatted error message, or the original
+   * success result.
+   */
+  public withErrorFormat(cb: ErrorFormatter<TD>): AsyncDetailedResult<T, TD> {
+    // Branched rather than called on the union: only the failure arm's `withErrorFormat` accepts
+    // an `ErrorFormatter<TD>`, and the success arm is a no-op anyway.
+    return new AsyncDetailedResult(this._detailed.then((r) => (r.isFailure() ? r.withErrorFormat(cb) : r)));
+  }
+
+  /**
+   * Propagates the wrapped result, appending any error message to the supplied errors aggregator.
+   * @param errors - {@link IMessageAggregator | Error aggregator} in which errors will be
+   * aggregated.
+   * @param formatter - An optional {@link ErrorFormatter | error formatter} to be used to format
+   * the error message.  Receives the detail alongside the message.
+   * @returns A new {@link AsyncDetailedResult} wrapping the result after aggregation.
+   */
+  public aggregateError(
+    errors: IMessageAggregator,
+    formatter?: ErrorFormatter<TD>
+  ): AsyncDetailedResult<T, TD> {
+    return new AsyncDetailedResult(
+      this._detailed.then((r) => {
+        // Branched for the same reason as `withErrorFormat`: the detail-typed formatter is only
+        // accepted by the failure arm, and only the failure arm aggregates anything.
+        if (r.isFailure()) {
+          r.aggregateError(errors, formatter);
+        }
+        return r;
+      })
+    );
+  }
+
+  /**
+   * Reports the wrapped result to the supplied reporter.
+   * @param reporter - The {@link IResultReporter | reporter} to which the result will be reported.
+   * @param options - The {@link IResultReportOptions | options} for reporting the result.
+   * @returns A new {@link AsyncDetailedResult} wrapping the result after reporting.
+   */
+  public report(
+    reporter?: IResultReporter<T>,
+    options?: IResultReportOptions<unknown>
+  ): AsyncDetailedResult<T, TD> {
+    return new AsyncDetailedResult(
+      this._detailed.then((r) => {
+        r.report(reporter, options);
+        return r;
+      })
+    );
+  }
+
+  /**
+   * Implementation of `PromiseLike.then` enabling `await` on {@link AsyncDetailedResult}.
+   * @remarks
+   * Narrows the base class's `Result<T>` to `DetailedResult<T, TD>`, so `await`ing a detailed
+   * chain yields a value whose `detail` is typed.
+   * @param onfulfilled - Callback invoked when the promise resolves.
+   * @param onrejected - Callback invoked when the promise rejects.
+   * @returns A `Promise` resolving to the callback result.
+   */
+  /* eslint-disable @rushstack/no-new-null */
+  public then<TResult1 = DetailedResult<T, TD>, TResult2 = never>(
+    onfulfilled?: ((value: DetailedResult<T, TD>) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
+  ): Promise<TResult1 | TResult2> {
+    /* eslint-enable @rushstack/no-new-null */
+    return this._detailed.then(onfulfilled, onrejected);
+  }
+
+  /**
+   * Creates an {@link AsyncDetailedResult} from a {@link DetailedResult}.
+   * @remarks
+   * Named `fromDetailed` rather than overloading the inherited `from`: a static member which
+   * narrowed its parameter from {@link Result} to {@link DetailedResult} would be unsound on the
+   * static side, since `AsyncDetailedResult.from` is reachable through
+   * {@link AsyncResult | AsyncResult}'s static type.  The inherited `AsyncResult.from` remains
+   * available and still returns a plain {@link AsyncResult}.
+   * @param result - The {@link DetailedResult} to wrap.
+   * @returns A new {@link AsyncDetailedResult} wrapping the supplied result.
+   */
+  public static fromDetailed<T, TD>(result: DetailedResult<T, TD>): AsyncDetailedResult<T, TD> {
+    return new AsyncDetailedResult(Promise.resolve(result));
   }
 }
 

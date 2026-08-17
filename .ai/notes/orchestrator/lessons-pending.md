@@ -444,6 +444,34 @@ The cost: an extra review round whose entire finding-set was about description f
 
 ---
 
+### L31. Changing response-parsing logic requires an immediate audit of every response fixture
+
+**Observed:** `ai-assist-thinking-config`'s D5 made `extractAnthropicText` unconditional in the non-streaming path, so it filters to `type: 'text'` blocks. Existing tests had been written against `{ content: [{ text }] }` fixtures with no `type` field — legal for the old permissive reader, invisible to the new one. The fixtures broke as collateral damage, and the failures surfaced as test breakage during implementation rather than as a planned step.
+
+The general shape: a parser that becomes *stricter* silently invalidates every fixture that was relying on the old leniency. The fixtures are not part of the diff being reasoned about, so nothing prompts the author to look at them until the suite goes red.
+
+**Rule:** When a change makes response parsing stricter — adding a discriminator filter, requiring a previously-optional field, narrowing an accepted shape — audit every response fixture in the same pass, before running the suite. Treat "which fixtures did the old reader accept that the new one won't?" as a question with an answer you go and get, not one the test run tells you.
+
+**Codification candidate:** `.ai/instructions/TESTING_GUIDELINES.md`, alongside the existing "Never Paper Over Failures" material — the adjacent risk is that a fixture broken this way gets "fixed" by loosening the assertion rather than by updating the fixture to the shape the parser now requires.
+
+**Reference:** `ai-assist-thinking-config` `state.md` lessons-candidate 4 (PR #334, D5). Surfaced in the stream's own exit artifact and never filed — recovered 2026-08-14 by the retroactive `finalize-task` antagonist pass, which is itself the second-order finding: three of that stream's four candidates reached this file and the fourth did not, with nothing to catch the drop.
+
+---
+
+### L32. A polished design can be correct on inventory and wrong on architecture — the signoff gate is what catches it
+
+**Observed:** `ai-assist-image-generation`'s phase A produced excellent provider research and then recommended "Approach A", a single unified type with registry-driven validation. Signoff rejected it outright in favour of a layered-options architecture, and `brief-phase-b.md` D1 says so explicitly. The parallel `ai-assist-thinking-config` phase A independently landed on the same wrong shape (its "Approach C", a unified type with hard-coded translation tables) and had to be re-commissioned wholesale as a v2 design.
+
+Two streams, same gate, same class of miss. The research was sound in both cases; the architecture recommendation was not. A design that reads as finished — thorough inventory, cited docs, clear tradeoff tables — offers no signal about whether its central architectural call is right, and the polish actively argues against scrutiny.
+
+**Rule:** Review a design's architectural recommendation independently of its research quality, and treat the two as separately falsifiable. The orchestrator+user signoff gate is load-bearing precisely when the design looks most finished — that is when it is least likely to be questioned and no less likely to be wrong. Substantial signoff modification is a normal outcome, not evidence the design phase failed.
+
+**Codification candidate:** `.claude/agents/orchestrator.md`, in the design-triage-implement shape — an explicit prompt at the signoff step to state the architectural call in one sentence and ask whether a different shape would serve better, separately from accepting the inventory.
+
+**Reference:** `ai-assist-image-generation` README "Followups / lessons for orchestration" (PR #329); the parallel recurrence in `ai-assist-thinking-config` (`brief-phase-a-v2.md` § "Why a revision", PR #330). The image-gen lesson was surfaced in its README and filed nowhere — recovered 2026-08-14 by the retroactive `finalize-task` antagonist pass. Note L1 is adjacent but distinct: L1 is about serializing parallel phase-A work so the pattern can propagate; this is about the gate catching architecture drift regardless of sequencing.
+
+---
+
 ## Sweep history
 
 ### 2026-05-30 — Review-loop discipline triad (L31, L32, L33) codified

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "State `moduleResolution: \"node10\"` explicitly in the project's tsconfig rather than inheriting TypeScript's silent default. Build output is byte-identical, verified across 8,836 emitted artifacts and every checked-in `etc/*.api.md`.",
+      "type": "none",
+      "packageName": "@fgv/ts-web-extras-webauthn"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras-webauthn",
+  "email": "noreply@anthropic.com"
+}

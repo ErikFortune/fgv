@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Fix: AiAssist.resolveImageCapability and resolveEmbeddingCapability now resolve an fgv model alias (@provider:role) before prefix-matching, so the alias form and the concrete id it names select the same capability. Previously an alias fell through to the modelPrefix:'' catch-all every provider declares and returned a confidently wrong capability (on xai-grok it flipped the wire format from xai-images-edits to xai-images and acceptsImageReferenceInput from true to false; on openai embeddings it dropped supportsDimensions and the maxBatchSize guard). An unresolvable alias (unregistered or cyclic) now yields undefined rather than the catch-all. Behavior for concrete provider model ids is unchanged and the public signatures are unchanged. Also documents on ModelSpecKey and resolveProviderModel that tools and thinking are deliberately not model selectors.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

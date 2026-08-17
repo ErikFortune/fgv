@@ -4,7 +4,16 @@
  */
 
 import { Result, succeed } from '@fgv/ts-utils';
-import { IEdgeTarget, IMemoryRecord, Kind, MemoryId, MemoryScopeKey, Tag, edgeTargetKey } from '../types';
+import {
+  IEdgeTarget,
+  IMemoryEnvelope,
+  IMemoryRecord,
+  Kind,
+  MemoryId,
+  MemoryScopeKey,
+  Tag,
+  edgeTargetKey
+} from '../types';
 
 /**
  * The mutation a {@link IMemoryIndex.patch | patch} applies: a record was
@@ -33,52 +42,143 @@ export interface IIndexedMemoryRecord {
 }
 
 /**
+ * What the index HOLDS and what every index read returns: a record's scope and
+ * its {@link IMemoryEnvelope}, and **no body**.
+ *
+ * @remarks
+ * The index is a derived *selection* structure, and selection has never needed a
+ * body — every filter the store and the retrievers apply reads envelope fields
+ * (`scope` / `kind` / `tags` / `contentHash` / `provenance` / `links` /
+ * `temporal` / `updated` / `seq` / `rank`). Returning whole records made every
+ * conforming index hold every body by construction, which was the store's
+ * resident-memory ceiling; returning envelopes removes it from the contract
+ * rather than from one implementation.
+ *
+ * A caller that needs the body **materializes it explicitly** — through
+ * {@link IMemoryStore.getById}, or an `IMemoryRecordResolver` where one is
+ * wired. That is deliberately visible: a lazy `body` getter would have kept
+ * every call site compiling while turning a memory read into a file read behind
+ * an unchanged type, which is a silent performance cliff rather than a migration.
+ * @public
+ */
+export interface IIndexedMemoryEntry {
+  /** The scope the record is stored under. */
+  readonly scope: MemoryScopeKey;
+  /** The record's envelope. No body — see the remarks. */
+  readonly envelope: IMemoryEnvelope;
+}
+
+/** Project the write-side whole-record form onto the held/read entry form. */
+function toEntry(entry: IIndexedMemoryRecord): IIndexedMemoryEntry {
+  return { scope: entry.scope, envelope: entry.record.envelope };
+}
+
+/**
  * The derived, in-memory secondary indexes the store maintains over its
  * records. Never the source of truth — the FileTree is. The index is fully
  * rebuildable from a walk of the store ({@link IMemoryIndex.rebuild}) and is
  * patched incrementally on every write ({@link IMemoryIndex.patch}).
  *
  * @remarks
- * B1 builds the maps; link-traversal BFS over {@link IMemoryIndex.backlinks}
- * is B2. The accessors return records (not bare ids) so the B2 retrievers can
- * consume them directly.
+ * Every read returns the projected {@link IIndexedMemoryEntry} — scope and
+ * envelope, no body. See that type for why.
+ *
+ * **The conformance rule: an index is a derived, COMPLETE, FAITHFUL projection
+ * of the vault.** An implementation may change *where* entries are stored and
+ * *how* they are looked up; it may not change *which* entries exist or *what any
+ * envelope says*. Concretely, {@link IMemoryIndex.entries} must return exactly
+ * one entry per record the store has written and not deleted, and each entry's
+ * envelope must be the one the store patched in.
+ *
+ * An index that filters, truncates, deduplicates, or synthesizes entries is not
+ * a conforming implementation, and the reason is not tidiness: **the store's
+ * write path derives from these reads** — content-hash dedup, write-policy
+ * admission cohorts, and temporal version histories all read the index. An index
+ * that hides an entry does not merely hide it from queries; it changes what the
+ * next write does. That is why the previous guidance said only a faithful
+ * delegating decorator was safe to inject. This invariant is what that guidance
+ * was reaching for, stated so that a genuinely different implementation (a
+ * SQLite-backed index, a lazily-paged one) is permitted while the reshaping that
+ * was the actual hazard stays out.
+ *
+ * **Ordering is NOT part of the contract.** {@link IMemoryIndex.entries} may
+ * return entries in any order and callers that need one sort explicitly. Note
+ * this is a *behavioural* freedom the compiler cannot police: the bundled
+ * {@link MemoryIndex} iterates a `Map` and so returns insertion order, which is
+ * stable and observable, so code that came to rely on it keeps compiling and
+ * changes results. The ordered accessors ({@link IMemoryIndex.byRecency},
+ * {@link IMemoryIndex.byRank}, and the recency-ordered `byKind` / `byTag`) are
+ * the supported way to ask for an order.
  * @public
  */
 export interface IMemoryIndex {
   /**
-   * Replace the entire index from a full set of records (a store walk).
-   * @returns The number of records indexed.
+   * Replace the entire index from a full set of entries (a store walk).
+   *
+   * @remarks
+   * Takes the **projected** {@link IIndexedMemoryEntry} form, not whole records,
+   * and the distinction is load-bearing rather than cosmetic: **`patch` writes,
+   * `rebuild` reads.** A rebuild is a whole-vault read that happens to terminate
+   * in the index, so requiring whole records here would force every caller — the
+   * store's own open path included — to materialize N bodies purely to feed a
+   * structure that projects the envelope back out and discards them. `patch`
+   * keeps whole records because it carries exactly one, which its caller already
+   * holds.
+   *
+   * @returns The number of entries indexed.
    */
-  rebuild(entries: ReadonlyArray<IIndexedMemoryRecord>): Result<number>;
+  rebuild(entries: ReadonlyArray<IIndexedMemoryEntry>): Result<number>;
 
   /**
    * Apply a single incremental change. `'put'` inserts or replaces the entry
    * at its `(scope, id)` key (removing any prior associations first); `'delete'`
    * removes it.
+   *
+   * @remarks
+   * Takes the whole record — see {@link IMemoryIndex.rebuild} for why this one
+   * does and that one does not. It costs nothing (the caller is mid-write and
+   * holds the record already) and it is the single point at which an index
+   * maintaining a body-derived view could observe content without a re-read.
+   * What is *held* is still only the projection.
+   *
    * @returns The entry that was applied.
    */
   patch(op: MemoryIndexPatchOp, entry: IIndexedMemoryRecord): Result<IIndexedMemoryRecord>;
 
-  /** Every indexed entry (scope + record). Primary read surface for the store. */
-  entries(): ReadonlyArray<IIndexedMemoryRecord>;
-
-  /** Records of the given kind, in recency order (most-recently-updated first). */
-  byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>>;
-
-  /** Records carrying the given tag, in recency order. */
-  byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>>;
-
-  /** All records in recency order (most-recently-updated first). */
-  byRecency(): ReadonlyArray<IMemoryRecord<unknown>>;
+  /** Every indexed entry (scope + envelope). Primary read surface for the store. */
+  entries(): ReadonlyArray<IIndexedMemoryEntry>;
 
   /**
-   * All records ordered by store-computed {@link IMemoryEnvelope.rank} descending,
-   * with recency (most-recently-updated, then `seq`) as a tiebreak. Records with
-   * an absent `rank` sort LAST (after every ranked record), then by recency among
-   * themselves. Serves a bounded top-M ({@link IMemoryEnvelope.rank}-ordered) page
-   * from the in-memory index with no full-vault (filesystem) scan.
+   * The entry at a scope-qualified address, or `undefined` if none.
+   *
+   * @remarks
+   * On the contract because its absence made every caller that wanted **one**
+   * entry rebuild a map of **all** of them: both `SemanticRetriever` (resolving
+   * at most `topK` hits) and `LinkTraversalRetriever` (resolving a BFS frontier)
+   * built a full-index `Map` per query for want of this. The index already keys
+   * on `(scope, id)` internally, so this exposes a lookup it was doing anyway.
    */
-  byRank(): ReadonlyArray<IMemoryRecord<unknown>>;
+  get(target: IEdgeTarget): IIndexedMemoryEntry | undefined;
+
+  /** Entries of the given kind, in recency order (most-recently-updated first). */
+  byKind(kind: Kind): ReadonlyArray<IIndexedMemoryEntry>;
+
+  /** Entries carrying the given tag, in recency order. */
+  byTag(tag: Tag): ReadonlyArray<IIndexedMemoryEntry>;
+
+  /** All entries in recency order (most-recently-updated first). */
+  byRecency(): ReadonlyArray<IIndexedMemoryEntry>;
+
+  /**
+   * All entries ordered by store-computed {@link IMemoryEnvelope.rank} descending,
+   * with recency (most-recently-updated, then `seq`) as a tiebreak. Entries with
+   * an absent `rank` sort LAST (after every ranked entry), then by recency among
+   * themselves. Serves a bounded top-M ({@link IMemoryEnvelope.rank}-ordered) page
+   * from the in-memory index with no full-vault (filesystem) scan — and since the
+   * page is envelope-only, a caller taking the top M materializes M bodies rather
+   * than the vault.
+   */
+  byRank(): ReadonlyArray<IIndexedMemoryEntry>;
 
   /**
    * The scope-qualified sources of records whose `links` point AT `target`
@@ -97,8 +197,11 @@ export interface IMemoryIndex {
  * @public
  */
 export class MemoryIndex implements IMemoryIndex {
-  /** Primary store: `(scope, id)` composite key → indexed entry. */
-  private readonly _byKey: Map<string, IIndexedMemoryRecord>;
+  /**
+   * Primary store: `(scope, id)` composite key → indexed entry. Holds the
+   * PROJECTED form, so the index never retains a body.
+   */
+  private readonly _byKey: Map<string, IIndexedMemoryEntry>;
   /** kind → set of composite keys. */
   private readonly _byKind: Map<Kind, Set<string>>;
   /** tag → set of composite keys. */
@@ -115,7 +218,7 @@ export class MemoryIndex implements IMemoryIndex {
   private readonly _backlinks: Map<string, Map<string, IEdgeTarget>>;
 
   private constructor() {
-    this._byKey = new Map<string, IIndexedMemoryRecord>();
+    this._byKey = new Map<string, IIndexedMemoryEntry>();
     this._byKind = new Map<Kind, Set<string>>();
     this._byTag = new Map<Tag, Set<string>>();
     this._backlinks = new Map<string, Map<string, IEdgeTarget>>();
@@ -137,7 +240,7 @@ export class MemoryIndex implements IMemoryIndex {
   }
 
   /** {@inheritDoc IMemoryIndex.rebuild} */
-  public rebuild(entries: ReadonlyArray<IIndexedMemoryRecord>): Result<number> {
+  public rebuild(entries: ReadonlyArray<IIndexedMemoryEntry>): Result<number> {
     this._byKey.clear();
     this._byKind.clear();
     this._byTag.clear();
@@ -155,33 +258,40 @@ export class MemoryIndex implements IMemoryIndex {
     // changes kind/tags/links cannot strand a stale reference.
     this._remove(key);
     if (op === 'put') {
-      this._add(entry);
+      // Projected on the way in: the caller's record is used for its envelope and
+      // the body is not retained.
+      this._add(toEntry(entry));
     }
     return succeed(entry);
   }
 
   /** {@inheritDoc IMemoryIndex.entries} */
-  public entries(): ReadonlyArray<IIndexedMemoryRecord> {
+  public entries(): ReadonlyArray<IIndexedMemoryEntry> {
     return Array.from(this._byKey.values());
   }
 
+  /** {@inheritDoc IMemoryIndex.get} */
+  public get(target: IEdgeTarget): IIndexedMemoryEntry | undefined {
+    return this._byKey.get(edgeTargetKey(target));
+  }
+
   /** {@inheritDoc IMemoryIndex.byKind} */
-  public byKind(kind: Kind): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byKind(kind: Kind): ReadonlyArray<IIndexedMemoryEntry> {
     return this._recencyOrdered(this._byKind.get(kind) ?? EMPTY_KEY_SET);
   }
 
   /** {@inheritDoc IMemoryIndex.byTag} */
-  public byTag(tag: Tag): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byTag(tag: Tag): ReadonlyArray<IIndexedMemoryEntry> {
     return this._recencyOrdered(this._byTag.get(tag) ?? EMPTY_KEY_SET);
   }
 
   /** {@inheritDoc IMemoryIndex.byRecency} */
-  public byRecency(): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byRecency(): ReadonlyArray<IIndexedMemoryEntry> {
     return this._recencyOrdered(this._byKey.keys());
   }
 
   /** {@inheritDoc IMemoryIndex.byRank} */
-  public byRank(): ReadonlyArray<IMemoryRecord<unknown>> {
+  public byRank(): ReadonlyArray<IIndexedMemoryEntry> {
     return this._rankOrdered(this._byKey.keys());
   }
 
@@ -196,15 +306,8 @@ export class MemoryIndex implements IMemoryIndex {
    * most-recently-updated first (with a `seq` tiebreak so equal-`updated`
    * records sort deterministically).
    */
-  private _recencyOrdered(keys: Iterable<string>): ReadonlyArray<IMemoryRecord<unknown>> {
-    const records: IMemoryRecord<unknown>[] = [];
-    for (const key of keys) {
-      const entry: IIndexedMemoryRecord | undefined = this._byKey.get(key);
-      if (entry !== undefined) {
-        records.push(entry.record);
-      }
-    }
-    return records.sort((a, b) => {
+  private _recencyOrdered(keys: Iterable<string>): ReadonlyArray<IIndexedMemoryEntry> {
+    return MemoryIndex._resolve(this._byKey, keys).sort((a, b) => {
       const byUpdated: number = b.envelope.updated - a.envelope.updated;
       return byUpdated !== 0 ? byUpdated : b.envelope.seq - a.envelope.seq;
     });
@@ -218,15 +321,23 @@ export class MemoryIndex implements IMemoryIndex {
    * no incremental rank-ordered view is maintained, matching the recency view's
    * approach; the sort is over the in-memory index, never a filesystem walk.
    */
-  private _rankOrdered(keys: Iterable<string>): ReadonlyArray<IMemoryRecord<unknown>> {
-    const records: IMemoryRecord<unknown>[] = [];
+  private _rankOrdered(keys: Iterable<string>): ReadonlyArray<IIndexedMemoryEntry> {
+    return MemoryIndex._resolve(this._byKey, keys).sort(MemoryIndex._compareByRank);
+  }
+
+  /** Resolve composite keys to their entries, skipping any that are absent. */
+  private static _resolve(
+    byKey: ReadonlyMap<string, IIndexedMemoryEntry>,
+    keys: Iterable<string>
+  ): IIndexedMemoryEntry[] {
+    const entries: IIndexedMemoryEntry[] = [];
     for (const key of keys) {
-      const entry: IIndexedMemoryRecord | undefined = this._byKey.get(key);
+      const entry: IIndexedMemoryEntry | undefined = byKey.get(key);
       if (entry !== undefined) {
-        records.push(entry.record);
+        entries.push(entry);
       }
     }
-    return records.sort(MemoryIndex._compareByRank);
+    return entries;
   }
 
   /**
@@ -236,7 +347,7 @@ export class MemoryIndex implements IMemoryIndex {
    * package depends on the index), mirroring how `_recencyOrdered` inlines the
    * recency ordering rather than importing `recencyCompare`.
    */
-  private static _compareByRank(a: IMemoryRecord<unknown>, b: IMemoryRecord<unknown>): number {
+  private static _compareByRank(a: IIndexedMemoryEntry, b: IIndexedMemoryEntry): number {
     const ra: number | undefined = a.envelope.rank;
     const rb: number | undefined = b.envelope.rank;
     // Absent rank sorts last; two absent ranks fall through to the recency tiebreak.
@@ -254,9 +365,9 @@ export class MemoryIndex implements IMemoryIndex {
   }
 
   /** Insert an entry and register all its derived associations. */
-  private _add(entry: IIndexedMemoryRecord): void {
-    const key: string = MemoryIndex._keyOf(entry.scope, entry.record.envelope.id);
-    const envelope: IMemoryRecord<unknown>['envelope'] = entry.record.envelope;
+  private _add(entry: IIndexedMemoryEntry): void {
+    const key: string = MemoryIndex._keyOf(entry.scope, entry.envelope.id);
+    const envelope: IMemoryEnvelope = entry.envelope;
     this._byKey.set(key, entry);
     this._addToSetMap(this._byKind, envelope.kind, key);
     for (const tag of envelope.tags) {
@@ -269,11 +380,11 @@ export class MemoryIndex implements IMemoryIndex {
 
   /** Remove the entry at `key` (if present) and all its derived associations. */
   private _remove(key: string): void {
-    const entry: IIndexedMemoryRecord | undefined = this._byKey.get(key);
+    const entry: IIndexedMemoryEntry | undefined = this._byKey.get(key);
     if (entry === undefined) {
       return;
     }
-    const envelope: IMemoryRecord<unknown>['envelope'] = entry.record.envelope;
+    const envelope: IMemoryEnvelope = entry.envelope;
     this._byKey.delete(key);
     this._removeFromSetMap(this._byKind, envelope.kind, key);
     for (const tag of envelope.tags) {

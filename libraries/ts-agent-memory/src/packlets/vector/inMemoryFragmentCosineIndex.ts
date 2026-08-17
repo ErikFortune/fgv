@@ -3,21 +3,40 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
-import { IEdgeTarget, edgeTargetKey } from '../types';
+import { DetailedResult, Result, fail, failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
+import { IEdgeTarget, Kind, edgeTargetKey } from '../types';
 import {
   FragmentEmbedder,
   IEmbeddedFragment,
-  IFragmentLocator,
   IFragmentVectorIndex,
+  IFragmentVectorRebuildReport,
+  IMemoryRecordListing,
   IMemoryRecordSource,
-  IScopedMemoryRecord,
-  IVectorQueryHit
+  ISkippedVectorRecord,
+  IVectorQueryHit,
+  IVectorRebuildOptions
 } from './vectorIndex';
+import { invokeHook, tally } from './rebuildHelpers';
 
-/** One stored fragment: its in-record locator plus the vector for that span. */
+/**
+ * The identity fields a fragment was added with, already in query-hit shape: a field
+ * the fragment did not carry is *absent*, never present-but-`undefined`, so a hit
+ * for a fragment added without a `fragmentId` is structurally identical to one
+ * produced before `fragmentId` existed.
+ */
+type FragmentIdentity = Pick<IVectorQueryHit, 'locator' | 'fragmentId'>;
+
+/** Project an incoming fragment's identity fields, dropping the ones it did not carry. */
+function fragmentIdentity(fragment: IEmbeddedFragment): FragmentIdentity {
+  return {
+    ...(fragment.locator !== undefined ? { locator: fragment.locator } : {}),
+    ...(fragment.fragmentId !== undefined ? { fragmentId: fragment.fragmentId } : {})
+  };
+}
+
+/** One stored fragment: the identity it was added with plus its vector. */
 interface IStoredFragment {
-  readonly locator: IFragmentLocator;
+  readonly identity: FragmentIdentity;
   readonly vector: Float32Array;
 }
 
@@ -36,9 +55,11 @@ interface IScoredFragment {
 /**
  * The brute-force, in-memory cosine {@link IFragmentVectorIndex} — the
  * fragment-granular sibling of {@link InMemoryCosineIndex}. Stores many
- * `Float32Array`s per record (one per in-record {@link IFragmentLocator | span})
- * and answers a query by computing cosine similarity against every stored
- * fragment, returning the top-k fragment hits by descending score.
+ * `Float32Array`s per record (one per {@link IEmbeddedFragment | fragment}) and
+ * answers a query by computing cosine similarity against every stored fragment,
+ * returning the top-k fragment hits by descending score. Each hit carries back
+ * whichever of {@link IFragmentLocator | locator} / `fragmentId` its fragment was
+ * added with; a fragment must carry at least one of the two.
  *
  * @remarks
  * Same regime and same non-goals as {@link InMemoryCosineIndex}: no external
@@ -108,6 +129,16 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
       if (fragment.vector.length === 0) {
         return Promise.resolve(fail(`fragment index: cannot add '${key}': empty fragment vector`));
       }
+      // A fragment carrying neither identity cannot be resolved back to anything by a
+      // consumer holding the hit — the same invariant `embeddedFragmentConverter`
+      // enforces at the untyped boundary, re-checked here at the index seam.
+      if (fragment.locator === undefined && fragment.fragmentId === undefined) {
+        return Promise.resolve(
+          fail(
+            `fragment index: cannot add '${key}': fragment requires at least one of 'locator' or 'fragmentId'`
+          )
+        );
+      }
       if (dimension === undefined) {
         dimension = fragment.vector.length;
       } else if (fragment.vector.length !== dimension) {
@@ -118,7 +149,7 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
         );
       }
       // Defensive copy: the caller may reuse or mutate the buffer after `addFragments`.
-      stored.push({ locator: fragment.locator, vector: Float32Array.from(fragment.vector) });
+      stored.push({ identity: fragmentIdentity(fragment), vector: Float32Array.from(fragment.vector) });
     }
     // Whole-record replace: an empty `fragments` array drops the record entirely
     // rather than leaving an empty shell behind. Commit the (possibly newly-derived)
@@ -130,6 +161,11 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
       this._records.set(key, { target, fragments: stored });
     }
     return Promise.resolve(succeed(stored.length));
+  }
+
+  /** {@inheritDoc IFragmentVectorIndex.has} */
+  public has(target: IEdgeTarget): Promise<Result<boolean>> {
+    return Promise.resolve(succeed(this._records.has(edgeTargetKey(target))));
   }
 
   /** {@inheritDoc IFragmentVectorIndex.remove} */
@@ -163,7 +199,7 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
           hit: {
             target: record.target,
             score: InMemoryFragmentCosineIndex._cosine(vector, queryMagnitude, fragment.vector),
-            locator: fragment.locator
+            ...fragment.identity
           }
         });
       }
@@ -202,30 +238,90 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
    * On any failure (list, embed, or add) the index is rolled back to empty rather
    * than left in a partially-rebuilt state.
    *
+   * @remarks
+   * **Deliberately still returns a bare count**, unlike the record-granular
+   * {@link InMemoryCosineIndex.rebuild}, which reports an
+   * {@link IVectorRebuildReport}. The asymmetry is scope, not oversight: the
+   * fragment path is tracked separately and gains the same treatment when the
+   * `IVectorIndex`/`IFragmentVectorIndex` contracts are revisited together.
+   *
    * @param source - The scope-qualified record source to re-embed.
    * @param embed - The fragment embedder applied to each record.
    */
-  public async rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder): Promise<Result<number>> {
-    this._reset();
-    const listed: Result<ReadonlyArray<IScopedMemoryRecord>> = await source.list();
+  /** {@inheritDoc IFragmentVectorIndex.rebuild} */
+  public async rebuild(
+    source: IMemoryRecordSource,
+    embed: FragmentEmbedder,
+    options?: IVectorRebuildOptions
+  ): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>> {
+    const lenient: boolean = (options?.onRecordError ?? 'fail') === 'skip';
+    const listed: Result<IMemoryRecordListing> = await invokeHook(() => source.list());
     if (listed.isFailure()) {
-      return fail(`fragment index rebuild: failed to list records: ${listed.message}`);
+      // Deliberately BEFORE the reset, matching the record-granular sibling: a
+      // failed list is no evidence about the fragments already held, and nothing
+      // has been re-embedded yet, so there is no half-rebuilt state to guard
+      // against. Discarding a healthy index over a transient read error is data
+      // loss, not caution. No detail either — an all-zero report would describe
+      // an index this call never touched.
+      return failWithDetail(`fragment index rebuild: failed to list records: ${listed.message}`);
     }
-    for (const scoped of listed.value) {
-      const embedded: Result<ReadonlyArray<IEmbeddedFragment>> = await embed(scoped.record);
+    // From here a rebuild is genuinely starting, so clear. A mid-loop failure
+    // under `'fail'` still resets, which is what keeps that contract honest.
+    this._reset();
+    const indexed: Map<Kind, number> = new Map<Kind, number>();
+    const fragments: Map<Kind, number> = new Map<Kind, number>();
+    const declined: Map<Kind, number> = new Map<Kind, number>();
+    const skipped: ISkippedVectorRecord[] = [];
+    // Only the source knows what it filtered, so an absent `excluded` propagates
+    // as absent rather than becoming an empty map. Before this contract existed
+    // the fragment path dropped this tally on the floor, having nowhere honest to
+    // put it.
+    const report = (): IFragmentVectorRebuildReport => ({
+      indexed,
+      fragments,
+      declined,
+      excluded: listed.value.excluded,
+      skipped
+    });
+    for (const scoped of listed.value.records) {
+      const kind: Kind = scoped.record.envelope.kind;
+      // Consumer-supplied, so a throw or rejection is captured rather than
+      // escaping mid-loop and leaving the index half-populated.
+      const embedded: Result<ReadonlyArray<IEmbeddedFragment>> = await invokeHook(() => embed(scoped.record));
       if (embedded.isFailure()) {
-        this._reset();
-        return fail(
-          `fragment index rebuild: embedding '${edgeTargetKey(scoped.target)}' failed: ${embedded.message}`
-        );
+        const error: string = `fragment index rebuild: embedding '${edgeTargetKey(scoped.target)}' failed: ${
+          embedded.message
+        }`;
+        if (!lenient) {
+          this._reset();
+          return failWithDetail(error, report());
+        }
+        skipped.push({ target: scoped.target, error });
+        continue;
       }
+      // An empty array is this lane's decline. It still performs a real
+      // whole-record-replace — which is what clears any stale fragments — so it
+      // is written, then counted as declined rather than indexed.
       const added: Result<number> = await this.addFragments(scoped.target, embedded.value);
       if (added.isFailure()) {
-        this._reset();
-        return fail(`fragment index rebuild: ${added.message}`);
+        const error: string = `fragment index rebuild: ${added.message}`;
+        if (!lenient) {
+          this._reset();
+          return failWithDetail(error, report());
+        }
+        skipped.push({ target: scoped.target, error });
+        continue;
       }
+      if (added.value === 0) {
+        tally(declined, kind);
+        continue;
+      }
+      // Tallied per successful add rather than read back off the counts at the
+      // end, so the per-kind buckets line up with their siblings.
+      tally(indexed, kind);
+      tally(fragments, kind, added.value);
     }
-    return succeed(this.fragmentCount);
+    return succeedWithDetail(report());
   }
 
   /** Empty the index and forget the established dimension. */

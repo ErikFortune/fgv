@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-bcp47",
+      "comment": "Keep node `fs` and `path` off the browser entry's reachable graph. `index.browser` already excluded the filesystem registry loader, but every other packlet imports the `iana` barrel as `../iana`, and that barrel re-exported it — so bundling the browser entry for a browser target failed to resolve `fs` and `path`. The shared `packlets/iana` barrel no longer re-exports `languageRegistriesFileLoader`; the node-only surface moved to `packlets/iana/index.node`, which the node entry point uses. The public API of both entry points is unchanged: `Iana.loadLanguageRegistries` and `Iana.loadLanguageRegistriesFromZip` remain available to Node consumers, and remain absent from the browser entry as before.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-bcp47"
+}

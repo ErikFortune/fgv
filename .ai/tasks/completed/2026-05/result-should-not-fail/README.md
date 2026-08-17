@@ -25,12 +25,16 @@ and WebKit (`<fn>@<file>:<line>:<col>`) formats inline — no new dependency.
 ## Files touched
 
 - `libraries/ts-utils/src/packlets/base/result.ts` — method on `IResult` /
-  `Success<T>` / `Failure<T>`, plus four `@internal` helpers exported with
-  underscore prefixes for direct test coverage.
+  `Success<T>` / `Failure<T>`.
+- `libraries/ts-utils/src/packlets/base/shouldNotFail.ts` — the four `@internal`
+  helpers plus `_IShouldNotFailFrame`, exported with underscore prefixes for
+  direct test coverage. *(Extracted here on review in `774a384d`; this list
+  originally placed them in `result.ts`. Corrected 2026-08-14.)*
 - `libraries/ts-utils/src/test/unit/shouldNotFail.test.ts` — new test file,
-  31 tests, 100% coverage of the new code paths including synthesized V8 +
+  32 tests, 100% coverage of the new code paths including synthesized V8 +
   WebKit stack strings and a runtime test that nulls out
-  `Error.captureStackTrace`.
+  `Error.captureStackTrace`. *(31 at first write; 32 after the follow-up
+  regression tests — `state.md` has the higher count.)*
 - `libraries/ts-utils/etc/ts-utils.api.md` — api-extractor regen.
 - `common/changes/@fgv/ts-utils/result-should-not-fail_2026-05-21-12-00.json`
   — minor bump.

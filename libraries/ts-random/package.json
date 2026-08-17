@@ -4,6 +4,7 @@
   "description": "",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "sideEffects": false,
   "scripts": {
     "build": "heft build --clean",
     "clean": "heft clean",
@@ -41,6 +42,10 @@
   "exports": {
     ".": {
       "types": "./lib/index.d.ts",
+      "node": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
       "import": "./dist/index.js",
       "require": "./lib/index.js",
       "default": "./lib/index.js"

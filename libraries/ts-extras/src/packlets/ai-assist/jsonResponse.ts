@@ -510,6 +510,15 @@ function scanForParseFailure(text: string, from: number, base: number): JsonPars
  * @public
  */
 export function classifyJsonParseFailure(text: string): JsonParseFailureReason {
+  // Defensive, and load-bearing for the documented totality: the signature says
+  // `string`, but a JS consumer — or a TS caller coming through an `unknown` /
+  // `any` escape hatch — can still hand us a non-string, and `locateJsonCandidate`
+  // would throw on it. `extractJsonText` already guards the same way; this keeps
+  // the pair consistent and keeps "never fails" true in practice rather than only
+  // under a well-typed caller.
+  if (typeof text !== 'string') {
+    return UNKNOWN_PARSE_FAILURE;
+  }
   const candidate = locateJsonCandidate(text);
   const scan = findBalancedJsonSubstring(candidate.text);
   if (scan.kind === 'none') {

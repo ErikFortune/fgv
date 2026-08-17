@@ -51,7 +51,9 @@ Extended thinking/reasoning support on `callProviderCompletion` and `callProvide
 
 ## PR review fixes (post-merge convergence)
 
-The following items were addressed across five rounds of Copilot review on PR #334:
+The following items were addressed across **seven** rounds of Copilot review on PR #334
+(originally written here as "five"; corrected 2026-08-14 against the PR itself, and
+consistent with the R1–R7 table below):
 
 | Round | Fix |
 |---|---|
@@ -80,7 +82,7 @@ The following items were addressed across five rounds of Copilot review on PR #3
 - [x] Anthropic D5 fix applied (tests updated for new response shape)
 - [x] LIBRARY_CAPABILITIES.md updated (thinking section; D9 deferral noted correctly)
 - [x] PR opened with A4 proxy note
-- [x] All 5 rounds of Copilot review feedback addressed; no open threads
+- [x] All 7 rounds of Copilot review feedback addressed; no open threads *(was "5"; see Appendix A.1)*
 
 ## Followup
 
@@ -97,3 +99,97 @@ The following items were addressed across five rounds of Copilot review on PR #3
 - [`design.md`](./design.md) — v2 design (signed off in PR #332)
 - [`design-v1.md`](./design-v1.md) — archived v1 design (rejected at signoff; research preserved)
 - [`state.md`](./state.md) — terminal stream state
+- [`meta.yaml`](./meta.yaml) — structured record (added 2026-08-14)
+
+---
+
+## Appendix A — corrections (2026-08-14)
+
+Produced by a `/finalize-task retroactive` run whose antagonist pass commissioned an
+independent reviewer against this stream's artifacts, the shipped source, and PR #334
+itself. Original wording preserved verbatim. The briefs, designs and `state.md` are
+authored-in-flight records and are left untouched; this README is a synthesis read by
+later agents as a statement of what shipped.
+
+### A.1 — the Copilot round count contradicted its own table
+
+> **Original:** "The following items were addressed across five rounds of Copilot review
+> on PR #334" / "- [x] All 5 rounds of Copilot review feedback addressed; no open threads"
+
+Seven. The table immediately below both statements lists R1 through R7, and PR #334 itself
+shows seven rounds — checked directly, not merely inferred from the table. R6 and R7 each
+carry a substantive `hasThinkingConfig` fix plus a deferral, so they are real rounds, not
+bookkeeping. "Five" reads as a figure written before the last two rounds and never updated.
+Worth stating plainly rather than quietly fixing: under `CODING_STANDARDS.md` §
+"Review-loop discipline", a seven-round loop is itself a signal — the guidance treats
+round 5+ as grounds to ask whether layer 1 was run thoroughly or the change was too large
+for the loop.
+
+### A.2 — A2 shipped a wire shape that matched neither Anthropic mode
+
+The "B.0 live verification results" section below frames the Anthropic wire format as an
+unverified default with a possible future fix path. It was worse than that. Anthropic has
+two modes: legacy (`thinking: { type: 'enabled', budget_tokens: N }`) and adaptive
+(`thinking: { type: 'adaptive' }` + top-level `output_config.effort`). `design.md`
+specified **adaptive**, flagged that Sonnet 4.5 might not accept it, and asked phase B to
+verify. Phase B could not verify — no API key — and shipped `type: 'enabled'` with
+`output_config` and no `budget_tokens`: the legacy discriminator carrying the adaptive
+payload, which is neither mode. That is a divergence from this stream's own design doc,
+not a conservative default.
+
+It was corrected two and a half months later under live validation by `14574e45c`, after
+the Claude 5 family began rejecting the legacy shape with HTTP 400; the fix branches on
+`useAdaptiveThinking` and emits each mode correctly. None of that reversal is recorded in
+this stream's artifacts. The generalizable lesson: when a decision cannot be verified,
+ship one of the documented shapes — a blend of two cannot be right anywhere, and it
+forfeits the diagnostic value of a clean failure.
+
+### A.3 — three of four followups live nowhere durable
+
+Of the four items in "Followup" below, only `ai-assist-thinking-events` is durably tracked
+(a live entry in `docs/WORKSTREAMS.md`, still unshipped — and `LIBRARY_CAPABILITIES.md`'s
+statement that thinking-event surfacing remains that stream's scope is accurate, not
+stale). The other three — xAI live temperature verification, `validateResolvedThinkingConfig`,
+and the `modelNameMatches` date-suffix tightening — appear in no ledger. The xAI item is
+confirmed still unresolved in source: `thinkingOptionsResolver.ts` still carries the
+comment "Conservative default ... live verification pending", with no follow-up commit
+since the original merge. A followup recorded only inside a `completed/` README is
+invisible to any later orchestrator scanning `FUTURE.md` / `TECH_DEBT.md` for open work.
+
+*(The `modelNameMatches` item's "no known false positive" still holds: the OpenAI line has
+rotated to `gpt-5.6-luna` / `-terra` / `-sol` / `gpt-5.4-nano`, none of which collide the
+way `gpt-5-pro` vs `gpt-5` would have.)*
+
+### A.4 — a surfaced lesson was never filed
+
+`state.md` lists four lessons-codification candidates. Three reached
+`.ai/notes/orchestrator/lessons-pending.md` as L1–L3. The fourth did not: that D5's
+unconditional `extractAnthropicText` broke existing test fixtures which used
+`{content: [{text}]}` without `type: 'text'`, and that response-parsing changes should
+trigger an immediate fixture audit. Filed 2026-08-14 as **L31**. The second-order finding
+is the interesting one — three of four candidates made it and nothing caught the drop.
+
+*(L1, the parallel-phase-A lesson this stream surfaced, is in `lessons-pending.md` but
+remains uncodified some three months and dozens of streams later; the most recent sweep
+took L38–L40 and did not reach it.)*
+
+### A.5 — the ledger and this README disagree on tier count
+
+`docs/WORKSTREAMS.md` describes `thinkingOptionsResolver.ts` as "4-tier merge logic". The
+source and `design.md` both give four numbered rules where rule 4 shares rule 3's
+precedence — three *effective* tiers. The sibling `imageOptionsResolver` uses identical
+phrasing, so both streams are three-effective-tier despite four numbered steps. Not a
+defect in either document so much as a count that means different things depending on
+whether you are counting rules or precedence levels.
+
+### Checked and unchanged
+
+Verified accurate: the v1-rejected-at-signoff account (`design-v1.md`'s recommendation is
+literally titled "Approach C — Capability-driven optional (recommended)", and its §3.2 is
+the hard-coded translation table `brief-phase-a-v2.md` characterizes); the unconditional
+`extractAnthropicText` (D5) in both current source and the original ship commit; the
+Gemini integer budgets (1024/4096/8192, unchanged, still design-doc-sourced); PR #332 and
+#334 belonging to this stream rather than the sibling image-gen stream; and the three
+effective precedence tiers. Two PRs the header omitted — #330 (phase A v2 commission) and
+#333 (v2 signoff + phase B brief) — were confirmed to belong to this stream and are named
+in the `WORKSTREAMS.md` entry and `state.md`.

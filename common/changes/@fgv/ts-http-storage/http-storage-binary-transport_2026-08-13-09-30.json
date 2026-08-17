@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Add an optional base64 content encoding to the storage wire format: StorageContentEncoding, IStorageFileResponse.encoding, IStorageReadFileRequest, and an encoding query parameter on GET /file. FsStorageProvider reads raw bytes and base64-encodes when asked. The default path is unchanged and omits the field, so existing responses stay byte-identical; an unrecognized encoding is a 400 rather than a silent downgrade.",
+      "type": "minor",
+      "packageName": "@fgv/ts-http-storage"
+    }
+  ],
+  "packageName": "@fgv/ts-http-storage"
+}

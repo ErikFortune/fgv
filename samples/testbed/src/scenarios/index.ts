@@ -29,6 +29,7 @@ import {
   xaiModelTiersScenario
 } from './modelTiers';
 import { openaiClientToolsScenario } from './openaiClientTools';
+import { saferFetchGuardScenario } from './saferFetchGuard';
 import { streamingChatScenario } from './streamingChat';
 import { xaiClientToolsScenario } from './xaiClientTools';
 
@@ -44,6 +45,7 @@ export const scenarios: readonly IScenario[] = [
   gateDenyClientToolsScenario,
   imageGenerationScenario,
   streamingChatScenario,
+  saferFetchGuardScenario,
   localClassifierSafetyScenario,
   localEmbeddingSearchScenario,
   localSummarizationScenario,

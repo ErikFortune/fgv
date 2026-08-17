@@ -14,6 +14,7 @@ import {
   IMemoryRecord,
   IScopedMemoryRecord,
   IVectorQueryHit,
+  IVectorRebuildReport,
   InMemoryCosineIndex,
   Kind,
   MemoryScopeKey,
@@ -118,7 +119,16 @@ describe('FileTreeMemoryStore.asRecordSource — drives an IVectorIndex rebuild'
     const index = InMemoryCosineIndex.create().orThrow();
     // The store satisfies IMemoryRecordSource via asRecordSource(); rebuild
     // re-embeds every record and keys each vector on the scoped (scope, id).
-    expect(await index.rebuild(store.asRecordSource(), recordEmbed)).toSucceedWith(2);
+    expect(await index.rebuild(store.asRecordSource(), recordEmbed)).toSucceedAndSatisfy(
+      (report: IVectorRebuildReport) => {
+        expect(report.indexed).toEqual(new Map([[mtmKind, 2]]));
+        expect(report.declined.size).toBe(0);
+        // The store-backed source always tracks exclusions, so an empty map here
+        // says "nothing was excluded" rather than "cannot say".
+        expect(report.excluded).toBeDefined();
+        expect(report.excluded!.size).toBe(0);
+      }
+    );
     expect(index.size).toBe(2);
 
     // The two same-stem records occupy DISTINCT vector entries: a query for 'cat'

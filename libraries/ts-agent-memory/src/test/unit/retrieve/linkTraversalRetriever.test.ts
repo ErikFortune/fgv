@@ -4,9 +4,11 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { Result, succeed } from '@fgv/ts-utils';
 import {
   IEdgeTarget,
-  IIndexedMemoryRecord,
+  IIndexedMemoryEntry,
+  IRetrieverCreateParams,
   IMemoryRecord,
   Kind,
   LinkTraversalRetriever,
@@ -32,6 +34,7 @@ interface IEntrySpec {
   readonly seq?: number;
   readonly links?: ReadonlyArray<LinkSpec>;
   readonly rank?: number;
+  readonly source?: string;
 }
 
 /** A scope-qualified traversal seed (defaults to the fixture's default scope). */
@@ -39,7 +42,7 @@ function seed(id: string, scope: string = DEFAULT_SCOPE): IEdgeTarget {
   return { scope: scope as MemoryScopeKey, id: id as MemoryId };
 }
 
-function makeEntry(spec: IEntrySpec): IIndexedMemoryRecord {
+function makeEntry(spec: IEntrySpec): { scope: MemoryScopeKey; record: IMemoryRecord<unknown> } {
   const scope: string = spec.scope ?? DEFAULT_SCOPE;
   const record: IMemoryRecord<unknown> = {
     envelope: envelopeConverter
@@ -60,7 +63,7 @@ function makeEntry(spec: IEntrySpec): IIndexedMemoryRecord {
         seq: spec.seq ?? 0,
         contentHash: 'h',
         ...(spec.rank !== undefined ? { rank: spec.rank } : {}),
-        provenance: { source: 'agent' }
+        provenance: { source: spec.source ?? 'agent' }
       })
       .orThrow(),
     body: `body-${spec.id}`
@@ -68,9 +71,22 @@ function makeEntry(spec: IEntrySpec): IIndexedMemoryRecord {
   return { scope: scope as MemoryScopeKey, record };
 }
 
+/** Index + a resolver that reconstitutes this suite's synthetic marker bodies. */
+function backed(index: MemoryIndex): IRetrieverCreateParams {
+  return {
+    index,
+    resolver: {
+      resolveRecord: (scope: MemoryScopeKey, id: MemoryId): Result<IMemoryRecord<unknown> | undefined> => {
+        const entry: IIndexedMemoryEntry | undefined = index.get({ scope, id });
+        return succeed(entry === undefined ? undefined : { envelope: entry.envelope, body: `body-${id}` });
+      }
+    }
+  };
+}
+
 function buildIndex(specs: ReadonlyArray<IEntrySpec>): MemoryIndex {
   const index = MemoryIndex.create().orThrow();
-  index.rebuild(specs.map(makeEntry)).orThrow();
+  index.rebuild(specs.map(makeEntry).map((e) => ({ scope: e.scope, envelope: e.record.envelope }))).orThrow();
   return index;
 }
 
@@ -79,9 +95,19 @@ function ids(records: ReadonlyArray<IMemoryRecord<unknown>>): string[] {
 }
 
 describe('LinkTraversalRetriever', () => {
+  // REGRESSION — see the note in temporalRetrievers.test.ts. Testing
+  // `materializePage` directly does not catch a retriever that stops calling it.
+  test('query.filter reaches LinkTraversalRetriever', async () => {
+    const index = buildIndex([{ id: 'a', links: ['b'] }, { id: 'b' }]);
+    const r = LinkTraversalRetriever.create(backed(index)).orThrow();
+    expect(await r.retrieve({ linkedFrom: seed('a') })).toSucceedAndSatisfy((all) => {
+      expect(all.length).toBeGreaterThan(0);
+    });
+    expect(await r.retrieve({ linkedFrom: seed('a'), filter: () => false })).toSucceedWith([]);
+  });
   test('reports the link-traversal capability', () => {
     const index = buildIndex([]);
-    const retriever = LinkTraversalRetriever.create(index).orThrow();
+    const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
     expect(retriever.capabilities).toEqual({
       supportsSemanticRecall: false,
       supportsTemporalQuery: false,
@@ -96,7 +122,7 @@ describe('LinkTraversalRetriever', () => {
         { id: 'b', updated: 20 },
         { id: 'c', updated: 10 }
       ]);
-      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
       expect(await retriever.retrieve({ linkedFrom: seed('a') })).toSucceedAndSatisfy((records) => {
         // Recency-ordered: b (updated 20) before c (updated 10). 'a' (the seed) excluded.
         expect(ids(records)).toEqual(['b', 'c']);
@@ -105,7 +131,7 @@ describe('LinkTraversalRetriever', () => {
 
     test('stops at the default single hop (does not reach 2-hop neighbors)', async () => {
       const index = buildIndex([{ id: 'a', links: ['b'] }, { id: 'b', links: ['c'] }, { id: 'c' }]);
-      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
       expect(await retriever.retrieve({ linkedFrom: seed('a') })).toSucceedAndSatisfy((records) => {
         expect(ids(records)).toEqual(['b']);
       });
@@ -113,7 +139,7 @@ describe('LinkTraversalRetriever', () => {
 
     test('follows multiple hops when hops is raised', async () => {
       const index = buildIndex([{ id: 'a', links: ['b'] }, { id: 'b', links: ['c'] }, { id: 'c' }]);
-      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
       expect(await retriever.retrieve({ linkedFrom: seed('a'), hops: 2 })).toSucceedAndSatisfy((records) => {
         expect(ids(records).sort()).toEqual(['b', 'c']);
       });
@@ -134,7 +160,7 @@ describe('LinkTraversalRetriever', () => {
     }
 
     test("orderBy 'rank' orders reached records by rank descending", async () => {
-      const retriever = LinkTraversalRetriever.create(seedIndex()).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(seedIndex())).orThrow();
       expect(await retriever.retrieve({ linkedFrom: seed('a'), orderBy: 'rank' })).toSucceedAndSatisfy(
         (records) => {
           expect(ids(records)).toEqual(['n3', 'n2', 'n1']);
@@ -143,7 +169,7 @@ describe('LinkTraversalRetriever', () => {
     });
 
     test('orderBy absent is unchanged recency order', async () => {
-      const retriever = LinkTraversalRetriever.create(seedIndex()).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(seedIndex())).orThrow();
       expect(await retriever.retrieve({ linkedFrom: seed('a') })).toSucceedAndSatisfy((records) => {
         // Recency: most-recently-updated first → n1(300), n2(200), n3(100).
         expect(ids(records)).toEqual(['n1', 'n2', 'n3']);
@@ -151,7 +177,7 @@ describe('LinkTraversalRetriever', () => {
     });
 
     test("orderBy 'rank' composes with { limit, offset }", async () => {
-      const retriever = LinkTraversalRetriever.create(seedIndex()).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(seedIndex())).orThrow();
       expect(
         await retriever.retrieve({ linkedFrom: seed('a'), orderBy: 'rank', limit: 1, offset: 1 })
       ).toSucceedAndSatisfy((records) => {
@@ -167,7 +193,7 @@ describe('LinkTraversalRetriever', () => {
         { id: 'b', links: ['target'], updated: 10 },
         { id: 'target' }
       ]);
-      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
       expect(await retriever.retrieve({ linkedTo: seed('target') })).toSucceedAndSatisfy((records) => {
         expect(ids(records)).toEqual(['a', 'b']);
       });
@@ -183,7 +209,7 @@ describe('LinkTraversalRetriever', () => {
         { id: 'shared', scope: 'a' },
         { id: 'shared', scope: 'b' }
       ]);
-      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
       expect(await retriever.retrieve({ linkedTo: seed('shared', 'a') })).toSucceedAndSatisfy((records) => {
         expect(records).toHaveLength(1);
         expect(records[0].envelope.tags).toEqual(['src-a']);
@@ -199,7 +225,7 @@ describe('LinkTraversalRetriever', () => {
   describe('cycle safety', () => {
     test('terminates on a self-loop and excludes the seed', async () => {
       const index = buildIndex([{ id: 'a', links: ['a'] }]);
-      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
       expect(await retriever.retrieve({ linkedFrom: seed('a'), hops: 5 })).toSucceedAndSatisfy((records) => {
         expect(records).toHaveLength(0);
       });
@@ -211,7 +237,7 @@ describe('LinkTraversalRetriever', () => {
         { id: 'b', links: ['c'] },
         { id: 'c', links: ['a'] }
       ]);
-      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
       expect(await retriever.retrieve({ linkedFrom: seed('a'), hops: 10 })).toSucceedAndSatisfy((records) => {
         // a→b→c→a: reaches b and c, then the edge back to the seed is pruned.
         expect(ids(records).sort()).toEqual(['b', 'c']);
@@ -229,7 +255,7 @@ describe('LinkTraversalRetriever', () => {
       },
       { id: 'doc-1', scope: 'knowledge', kind: 'knowledge' }
     ]);
-    const retriever = LinkTraversalRetriever.create(index).orThrow();
+    const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
     expect(
       await retriever.retrieve({ linkedFrom: seed('turn-5', 'conversations/conv-1') })
     ).toSucceedAndSatisfy((records) => {
@@ -245,9 +271,23 @@ describe('LinkTraversalRetriever', () => {
         { id: 'b', kind: 'keep' },
         { id: 'c', kind: 'drop' }
       ]);
-      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
       expect(
         await retriever.retrieve({ linkedFrom: seed('a'), kind: 'keep' as unknown as Kind })
+      ).toSucceedAndSatisfy((records) => {
+        expect(ids(records)).toEqual(['b']);
+      });
+    });
+
+    test('applies the provenance-source pre-filter to the reached records', async () => {
+      const index = buildIndex([
+        { id: 'a', links: ['b', 'c'] },
+        { id: 'b', source: 'bad-run' },
+        { id: 'c', source: 'agent' }
+      ]);
+      const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
+      expect(
+        await retriever.retrieve({ linkedFrom: seed('a'), provenanceSource: 'bad-run' })
       ).toSucceedAndSatisfy((records) => {
         expect(ids(records)).toEqual(['b']);
       });
@@ -260,7 +300,7 @@ describe('LinkTraversalRetriever', () => {
         { id: 'c', updated: 20 },
         { id: 'd', updated: 10 }
       ]);
-      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
       expect(await retriever.retrieve({ linkedFrom: seed('a'), limit: 2 })).toSucceedAndSatisfy((records) => {
         expect(ids(records)).toEqual(['b', 'c']);
       });
@@ -268,7 +308,7 @@ describe('LinkTraversalRetriever', () => {
 
     test('returns empty when the seed is not in the index', async () => {
       const index = buildIndex([{ id: 'a', links: ['b'] }, { id: 'b' }]);
-      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
       expect(await retriever.retrieve({ linkedFrom: seed('missing') })).toSucceedWith([]);
     });
 
@@ -281,7 +321,7 @@ describe('LinkTraversalRetriever', () => {
         { id: 'dup', scope: 'a', tags: ['in-a'] },
         { id: 'dup', scope: 'b', tags: ['in-b'] }
       ]);
-      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
       expect(await retriever.retrieve({ linkedFrom: seed('seed', 'a') })).toSucceedAndSatisfy((records) => {
         expect(records).toHaveLength(1);
         expect(records[0].envelope.tags).toEqual(['in-a']);
@@ -296,7 +336,7 @@ describe('LinkTraversalRetriever', () => {
         { id: 'dup', scope: 'a', tags: ['in-a'] },
         { id: 'dup', scope: 'b', tags: ['in-b'] }
       ]);
-      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
       expect(await retriever.retrieve({ linkedFrom: seed('seed', 'a') })).toSucceedAndSatisfy((records) => {
         expect(records).toHaveLength(1);
         expect(records[0].envelope.tags).toEqual(['in-b']);
@@ -307,7 +347,7 @@ describe('LinkTraversalRetriever', () => {
   describe('loud degradation', () => {
     test('fails when no seed (linkedFrom / linkedTo) is supplied', async () => {
       const index = buildIndex([{ id: 'a' }]);
-      const retriever = LinkTraversalRetriever.create(index).orThrow();
+      const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
       expect(await retriever.retrieve({ hops: 2 })).toFailWith(LINK_TRAVERSAL_NO_SEED_MESSAGE);
     });
   });
@@ -323,7 +363,7 @@ describe('LINK_TRAVERSAL_UNWIRED_MESSAGE constant', () => {
 
   test('a link query against the link-capable retriever still succeeds', async () => {
     const index = buildIndex([{ id: 'a', links: ['b'] }, { id: 'b' }]);
-    const retriever = LinkTraversalRetriever.create(index).orThrow();
+    const retriever = LinkTraversalRetriever.create(backed(index)).orThrow();
     expect(await retriever.retrieve({ linkedFrom: seed('a') })).toSucceed();
   });
 });

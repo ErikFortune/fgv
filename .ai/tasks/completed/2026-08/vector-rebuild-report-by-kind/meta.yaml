@@ -1,0 +1,88 @@
+id: vector-rebuild-report-by-kind
+status: in-flight
+# Publishable packages only — the convention this field follows, stated because
+# `result.md` lists a third, `@fgv/testbed`, whose test double was updated in the
+# same diff. It is `shouldPublish: false` with no version policy, so it carries no
+# change file and no version; listing it here would imply both.
+packages:
+  - '@fgv/ts-agent-memory'
+  - '@fgv/ts-agent-memory-sqlite-vec'
+# Open, not merged — this list asserts merged PRs, so it stays empty until #633 lands.
+# See `notes`.
+prs: []
+openPrs: [633]
+opened: 2026-08-15
+closed: 2026-08-15
+summary:
+  intended: >
+    Resolve every count in `IVectorRebuildReport` by `Kind`; add an `excluded` count, which
+    requires `IMemoryRecordSource.list()` to report what it filtered because the rebuild never
+    sees an excluded record; decouple coverage from the `onRecordError` mode so a `'fail'`
+    failure still yields a report; and land a docstring whose closing clause makes kind-resolution
+    the default for any future count. Breaking on a pre-1.0 surface, by agreement with the
+    consumer, with delivery coordination named as non-optional.
+  shipped: >
+    All four, in one change rather than the staged pair the consumer left open. `indexed` and
+    `declined` became `ReadonlyMap<Kind, number>`, `excluded?` joined them, `skipped` stayed
+    per-record with its reason stated on the field. `IMemoryRecordSource.list()` returns a new
+    `IMemoryRecordListing`, with `undefined` (source cannot say) never collapsed into an empty
+    map (source excluded nothing). `IVectorIndex.rebuild` returns
+    `DetailedResult<IVectorRebuildReport, IVectorRebuildReport>`; the `'fail'` contract is
+    otherwise untouched. Both shipped indexes kept observably identical, testbed test double
+    updated, coordination flag written.
+  diverged: >
+    Two things the brief did not anticipate, both structural. (1) `indexed` stopped being read
+    back off the index — `_vectors.size` in-memory, `COUNT(*)` in SQLite — and is now tallied per
+    successful `add`. Forced, since neither a Map nor a vec0 table knows kinds; it makes the
+    sum-of-buckets invariant exact and removed the SQLite path's one fallible step, but it gives
+    up a self-correcting property against a duplicate-target source, which is now documented on
+    the field. (2) `asRecordSource()`'s filter moved into a new package-internal
+    `store/vectorRecordSource.ts` because `fileTreeMemoryStore.ts` was at 1995 lines against a
+    2000-line `max-lines` cap and the inline tally took it to 2012 — measured, and a `max-lines`
+    warning is a CI failure in this repo. The extraction bought 4 lines (1995 → 1991), leaving 9 of
+    headroom under the cap. Neither number is a solution. (3) The brief put the fragment index
+    explicitly out of scope, and the stream modified it anyway — the seam change to
+    `IMemoryRecordSource.list()` forced `InMemoryFragmentCosineIndex.rebuild` to follow. A forced
+    mechanical follow is still a crossing of a declared boundary. `result.md` initially restated
+    the out-of-scope item more narrowly than the brief had, and concluded nothing else diverged;
+    the antagonist pass caught that. Editing that function is also what surfaced its
+    reset-before-list data-loss ordering, fixed here.
+  sourceLine: '**Shipped:** every count in `IVectorRebuildReport` is now resolved by `Kind`, the exclusion count originates in the layer that decides it, and a failed rebuild carries its partial report — one change rather than the staged pair the consumer left open.'
+keywords:
+  - vector index coverage
+  - semantic recall backfill
+  - reconcile reporting
+  - per-kind breakdown
+  - bare total ambiguity
+  - DetailedResult failure payload
+  - partial report on abort
+  - embedKinds exclusion tally
+  - IMemoryRecordSource seam change
+  - pre-1.0 breaking change
+  - cross-repo consumer negotiation
+  - max-lines cap pressure
+relatedStreams:
+  - id: personaility-asks-2026-08
+    relationship: >
+      predecessor stream (Stream A) — shipped the three pieces this one re-shapes: `size` +
+      `rebuild` promoted onto the `IVectorIndex` contract (#614), the bare `IVectorRebuildReport`
+      with `onRecordError` (#613), and `embedKinds` / `embedsKind` (#612), whose upstream filter is
+      why `excluded` had to originate in the record source rather than the rebuild. Named by stream
+      id rather than by the change-file basenames `agent-memory-vector-backfill` /
+      `agent-memory-partial-rebuild` / `agent-memory-embed-kinds`, which are not streams and
+      resolve to no directory or ledger entry.
+  - id: agent-memory-index-injection-seam
+    relationship: >
+      sibling on the same package — its sequel `agent-memory-index-partial-read` was queued by this
+      stream's close
+notes: >
+  On its own branch stacked on `integration/sweep-followups`. `status` stays `in-flight` and the
+  ledger marker stays blue until the PR merges to `release` — the ledger's own legend defines
+  green-tick as "merged to `release`", and marking it earlier asserts a merge that has not
+  happened. #633 (→ `integration/sweep-followups`) carries it; `prs` stays empty until that merges to
+  `release`, since the field asserts merged PRs. It is tracked meanwhile on `openPrs`.
+  Open and not yet discharged: the coordination flag has been WRITTEN but not acknowledged. The
+  brief called coordination "required and not optional" because a silent arrival is the failure
+  mode, and writing the note is only half of that. Confirm PersonAIlity has read
+  `.ai/notes/cross-repo-handoffs/personaility-reply-2026-08-15-rebuild-report-shipped.md` before
+  the alpha carrying this publishes.

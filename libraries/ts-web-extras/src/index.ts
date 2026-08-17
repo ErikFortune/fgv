@@ -34,6 +34,12 @@
 import * as CryptoUtils from './packlets/crypto-utils';
 export { CryptoUtils };
 
+// Namespaced rather than star-exported, following `CryptoUtils`: the entry-point names are
+// deliberately close to their `@fgv/ts-extras` counterparts, and a namespace keeps which runtime
+// a call site reached for legible at the import.
+import * as SaferFetch from './packlets/safer-fetch';
+export { SaferFetch };
+
 // Export file tree functionality
 export * from './packlets/file-tree';
 

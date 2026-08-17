@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ks",
+      "comment": "Use CryptoUtils.hexEncode instead of a hand-rolled Buffer hex conversion. Behaviour-identical (both emit lowercase unprefixed hex); the file already used CryptoUtils.toBase64 on the adjacent line. The primitive did not exist when this shipped and landed later in #554.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ks"
+}

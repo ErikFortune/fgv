@@ -81,6 +81,31 @@ merge**, not as a post-merge follow-up.
 
 *(No active batch.)*
 
+### Queued — unbatched
+
+#### `mutableFsTree` permission test cannot pass as root
+
+`libraries/ts-json-base/src/test/unit/file-tree/mutableFsTree.test.ts:89` —
+`FsFileTreeAccessors > fileIsMutable > returns permission-denied for read-only file` `chmod`s a file
+to `0444` and asserts it is not writable. **Root ignores permission bits**, so the write succeeds,
+`fileIsMutable` correctly reports `true`, and the assertion fails. It passes in CI, which runs as
+the non-root `runner` user.
+
+**Why it is worth fixing rather than tolerating.** Agent and cloud containers routinely run as uid
+0, and the repo's own guidance is to reproduce CI locally before blaming CI — advice that quietly
+assumes a non-root environment. The failure surfaces in a package the reader has usually not
+touched, and its message (`expected "permission denied", received "persistent"`) gives no hint of
+the cause. It has now cost investigation time on at least three separate occasions.
+
+**Preferred fix**, from the finding that first recorded it
+(`.ai/tasks/completed/2026-08/ts-utils-async-detailed-result/findings/inbox/2026-08-06-root-sensitive-fstree-test.md`):
+skip when `process.getuid?.() === 0`, with a message naming root as the reason — keeps the assertion
+honest where it means something and removes the false signal where it does not. The stronger
+alternative is to assert on the accessor's permission logic with an injected stat result, testing
+the code rather than the kernel.
+
+**Not a defect in the test's correctness** — it is correct for the environment it assumes.
+
 ---
 
 ## Completed batches

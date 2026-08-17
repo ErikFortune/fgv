@@ -240,7 +240,12 @@ const searchSchema = JsonSchema.object({
   semantic: JsonSchema.optional(
     JsonSchema.string({ description: 'Semantic query text (requires a semantic-capable retriever).' })
   ),
-  limit: JsonSchema.optional(JsonSchema.integer({ description: 'Maximum number of results to return.' })),
+  limit: JsonSchema.optional(
+    JsonSchema.integer({
+      description:
+        'Maximum number of results to return. At least one of kind, tag, semantic or limit is required.'
+    })
+  ),
   offset: JsonSchema.optional(
     JsonSchema.integer({ description: 'Number of results to skip after ordering, before limit. Default 0.' })
   ),
@@ -544,7 +549,9 @@ function buildSearchTool(ctx: IToolContext): AiAssist.IAiClientTool {
     config: {
       type: 'client_tool',
       name: 'memory_search',
-      description: 'Search memories by tag, kind, or semantic text. Returns ranked results.',
+      description:
+        'Search memories by tag, kind, or semantic text. Returns ranked results. ' +
+        'At least one of kind, tag, semantic or limit must be supplied.',
       parametersSchema: searchSchema,
       annotations: READ_ONLY_ANNOTATIONS
     },
@@ -557,6 +564,30 @@ function buildSearchTool(ctx: IToolContext): AiAssist.IAiClientTool {
             resolveOptionalTag(typed.tag).onSuccess((tag) => succeed({ typed, kind, tag }))
           )
         )
+        .onSuccess(({ typed, kind, tag }) => {
+          // A search with no axis at all is a whole-vault read issued by a model,
+          // and since the index holds envelopes only it materializes every body
+          // to answer. An LLM asking for "everything" is nearly always an
+          // under-specified query rather than an intended full scan, so this
+          // refuses instead of serving it — the model can retry with an axis,
+          // which is the outcome we want anyway.
+          //
+          // `limit` counts: an ordered top-N materializes N records rather than
+          // the vault (see `resolveQuery`), so it bounds the read as genuinely as
+          // `kind` or `tag` does.
+          if (
+            kind === undefined &&
+            tag === undefined &&
+            typed.semantic === undefined &&
+            typed.limit === undefined
+          ) {
+            return fail<{ typed: typeof typed; kind: typeof kind; tag: typeof tag }>(
+              'memory_search: supply at least one of kind, tag, semantic or limit — ' +
+                'an unrestricted search reads every record in the vault'
+            );
+          }
+          return succeed({ typed, kind, tag });
+        })
         .thenOnSuccess(async ({ typed, kind, tag }) => {
           const detail: MemoryDetailTier = resolveDetail(typed.detail);
           const query: IMemoryQuery = {

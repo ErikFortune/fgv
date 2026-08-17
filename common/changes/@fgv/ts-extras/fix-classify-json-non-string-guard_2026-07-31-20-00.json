@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "classifyJsonParseFailure now returns the 'unknown' reason for a non-string input instead of throwing, matching extractJsonText's existing guard and making its documented 'never fails' totality true for JS callers and unknown/any escape hatches.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

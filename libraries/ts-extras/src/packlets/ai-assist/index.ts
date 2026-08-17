@@ -122,14 +122,20 @@ export {
 export {
   callProviderCompletion,
   callProxiedCompletion,
+  type IProviderCompletionParams
+} from './completionClient';
+
+export {
   callProviderImageGeneration,
   callProxiedImageGeneration,
+  type IProviderImageGenerationParams
+} from './imageGenerationClient';
+
+export {
   callProviderListModels,
   callProxiedListModels,
-  type IProviderCompletionParams,
-  type IProviderImageGenerationParams,
   type IProviderListModelsParams
-} from './apiClient';
+} from './listModelsClient';
 
 export {
   callProviderEmbedding,

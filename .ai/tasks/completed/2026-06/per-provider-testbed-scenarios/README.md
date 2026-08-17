@@ -17,7 +17,7 @@
 - **`IAiStreamDone.incompleteReason?: string`** (PR #457): the OpenAI/xAI Responses adapter now captures `incomplete_details.reason` from the `response.completed` payload and surfaces it on the done event when `truncated === true`. Made the "completed but empty" failure mode self-explaining instead of requiring source inspection — directly enabled the diagnostic step that ruled out the truncation hypothesis on PR #458's empty-completion investigation.
 - **OpenAI Responses `item_id ↔ call_id` correlation** (PR #458): the streaming adapter now correlates the `item_id` carried by `response.function_call_arguments.{delta,done}` events with the `call_id` populated only at `response.output_item.added`. Live captures (2026-06-05) confirmed the SSE wire — the adapter previously looked up by `call_id`, found nothing, and silently no-op'd, so client-tool-call-done events never fired on reasoning models. This was the **L37 reference-observation pattern playing out exactly**: tests passed on a wire shape that did not match the live API.
 - **`buildOpenAiContinuation` call_id correctness** (PR #458): the continuation now emits the **required** `call_id` field on function_call input items (was `id`, the optional field). OpenAI's Responses API rejects the prior shape with HTTP 400 (`Missing required parameter: 'input[2].call_id'`) — the 400 surfaced the moment the adapter fix made function-call events flow through. Both bugs had to land together to make OpenAI/xAI scenarios reach PASS.
-- **Provider-drift instrumentation** (PR #458): `openaiResponses.ts` and `anthropic.ts` now maintain `RECOGNIZED_OPENAI_RESPONSES_EVENTS` / `RECOGNIZED_ANTHROPIC_EVENTS` allowlists and emit a one-time `logger?.warn(...)` per stream per unrecognized event name. The warning starts with a stable `ai-assist:unrecognized-event` tag (shared `UNRECOGNIZED_EVENT_WARN_TAG` in `common.ts`), includes a length-capped payload preview (200 chars, `<no payload>` for empty data), and names the allowlist constant for triage. **Self-diagnosing adapter**: the next wire-shape gap surfaces as a warn in consumer logs the moment it appears, rather than as silent-drop requiring an empirical-detective process. Symmetry across all three adapters where it makes sense — see Gemini drift instrumentation deferral below.
+- **Provider-drift instrumentation** (PR #458): `openaiResponses.ts` and `anthropic.ts` now maintain `RECOGNIZED_OPENAI_RESPONSES_EVENTS` / `RECOGNIZED_ANTHROPIC_EVENTS` allowlists and emit a one-time `logger?.warn(...)` per stream per unrecognized event name. The warning starts with a stable `ai-assist:unrecognized-event` tag (shared `UNRECOGNIZED_EVENT_WARN_TAG` in `common.ts`), includes a length-capped **structural** payload preview (top-level JSON keys + byte length, never field values; raw form opt-in via `AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD`), and names the allowlist constant for triage. *(This sentence originally read "a length-capped payload preview (200 chars, `<no payload>` for empty data)" — true when written; a PII fix taken on the promotion PR #459 itself made the default structural-only. Corrected 2026-08-14; see Appendix A.)* **Self-diagnosing adapter**: the next wire-shape gap surfaces as a warn in consumer logs the moment it appears, rather than as silent-drop requiring an empirical-detective process. Symmetry across all three adapters where it makes sense — see Gemini drift instrumentation deferral below.
 
 **`@fgv/ts-json-base`:**
 
@@ -140,3 +140,55 @@ All four sub-streams' substrates live in `.ai/tasks/completed/2026-06/`:
 - `README.md` — this file (the polished archive entry per L5 codification)
 
 The three companion sub-streams (`ai-assist-cross-provider-continuation/`, `ai-assist-cross-provider-fixes/`, `ai-assist-responses-reasoning-events/`) carry their own briefs/state/results, plus the closeout stream carries the two 2026-06-05 findings.
+
+---
+
+## Appendix A — corrections (2026-08-14)
+
+From the retroactive `finalize-task` sweep. Original wording preserved so the amendment can be
+audited. `brief.md`, `state.md` and `result.md` are authored-in-flight records and are left
+untouched; this README is a synthesis later readers treat as a statement of what shipped.
+
+### A.1 — the drift-warning payload preview is structural, not raw
+
+> **Original:** "includes a length-capped payload preview (200 chars, `<no payload>` for empty
+> data)"
+
+The shipped default emits **top-level JSON keys plus byte length, never field values**; the raw
+preview is opt-in behind `AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD`. The change was a PII fix
+taken on the promotion PR (#459) itself, after this prose was written — SSE payloads can carry
+tool arguments and user conversation text, so a 200-char raw slice in consumer logs was a leak.
+`LIBRARY_CAPABILITIES.md` already documents the shipped behaviour. The "Architectural decisions"
+table below carries the same original phrasing and is stale in the same way.
+
+### A.2 — the promotion PR is #459, not #458
+
+The header attributes the ship to "PR #458 (closeout)". #458 is the fourth sub-stream's PR onto
+the integration branch; **#459** (`202c9f6be`) is the squash that carried the whole cluster to
+`release`.
+
+### A.3 — `result.md` is superseded, correctly, and is left alone
+
+It asserts "No library changes… no `@fgv/ts-extras/ai-assist` modification was needed or made."
+That was true on 2026-06-04 when the parent stream's own work closed, and false of the cluster,
+which went on to commission three library sub-streams. Left uncorrected on purpose: it is an
+in-flight record of what was true at its own moment, and the inversion — a stream briefed to
+touch no library code spawning three library fixes — is the cluster's most interesting fact,
+not an error to tidy away.
+
+### Checked and unchanged
+
+All three `findings/inbox/` dispositions verified accurate today (one of them, the Gemini
+schema finding, was corrected from `OPEN` earlier in this same sweep). The four live-PASS
+claims, the sub-stream PR attributions, and the `toGeminiParameterSchema` /
+`itemIdToCallId` / `incompleteReason` implementations were all verified present in current
+source.
+
+**Adjacent, not fixed here — three `docs/FUTURE.md` entries have gone stale in the opposite
+direction**, describing work that has since shipped: *provider-side request validation* (the
+Gemini grounding + client-tools case now fails fast, #529), the *generic-version-alias library
+surface* (substantially delivered by #505–#508 and the model-tiers work, yet the entry still
+cites `gpt-4o` as OpenAI's default), and the *default `max_output_tokens`* entry, still open but
+whose stated `otherParams` workaround is superseded by the first-class `maxTokens` (#573). Raised
+in `docs/FINALIZE-SWEEP-FINDINGS.md` rather than edited — narrowing a FUTURE entry is a scoping
+judgment, not a fact correction.

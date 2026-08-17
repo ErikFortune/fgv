@@ -3,6 +3,7 @@
   "coveragePathIgnorePatterns": [
     "index.js",
     "index.browser.js",
+    "index.node.js",
     "public.js",
     "internal.js",
     "overrides/model.js"
