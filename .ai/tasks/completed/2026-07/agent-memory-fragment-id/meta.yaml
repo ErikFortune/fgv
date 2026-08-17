@@ -1,0 +1,15 @@
+id: agent-memory-fragment-id
+status: shipped
+packages: ['@fgv/ts-agent-memory', '@fgv/ts-agent-memory-sqlite-vec']
+prs: [585]
+closed: 2026-07-31
+summary:
+  intended: >
+    Give a fragment a durable, opaque identity so a consumer can correlate a hit back to its own chunk across re-embeds.
+  shipped: >
+    Added optional `fragmentId` (opaque, stored and returned verbatim, never parsed) alongside the advisory `locator` on `IEmbeddedFragment` / `IVectorQueryHit`, with "at least one of the two" enforced by the converter and re-checked by both index implementations.
+  diverged: >
+    result.md records PR #585 as "not merged"; it merged as 67e128480 on 2026-07-31. The artifact was written before the merge and never updated — recorded in the README appendix rather than edited in place.
+  sourceLine: 'Branch `agent-memory-fragment-id` (from `origin/release`) → **PR #585** against `release` (not merged).'
+keywords: ['fragment identity', 'opaque id', 'advisory locator', 're-embed stability', 'discriminator']
+sourceHash: 3ffa474a425e8250

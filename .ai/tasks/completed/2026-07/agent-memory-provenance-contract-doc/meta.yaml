@@ -1,0 +1,16 @@
+id: agent-memory-provenance-contract-doc
+status: shipped
+packages: ['@fgv/ts-agent-memory']
+prs: []
+closed: 2026-07-31
+summary:
+  intended: >
+    Answer a consumer's question about how RFC-7386 merge-patch treats the required `provenance` block, and document the contract.
+  shipped: >
+    Documentation + tests only, no behaviour change: README + `writePolicy.ts` TSDoc state the merge-patch contract, and the four-row evidence table was independently re-executed against built output and end-to-end through the store rather than taken on faith.
+  diverged: >
+
+  sourceLine: '**Outcome:** delivered. Documentation + tests only; **no behavior change.**'
+keywords:
+  ['merge patch', 'rfc 7386', 'required field deletion', 'consumer question', 'verification not assertion']
+sourceHash: d31296cc7fddcf6d
