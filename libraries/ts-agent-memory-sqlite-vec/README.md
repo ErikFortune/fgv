@@ -25,6 +25,31 @@ rush add -p @fgv/ts-agent-memory-sqlite-vec   # or npm/pnpm add
 
 ## Quick start
 
+Two factories, differing only in **who owns the connection**. If this index is the only
+thing on the file, `open` is the shorter path and needs no `better-sqlite3` import of
+your own:
+
+```ts
+import { SqliteVecVectorIndex } from '@fgv/ts-agent-memory-sqlite-vec';
+import { FileTreeMemoryStore } from '@fgv/ts-agent-memory';
+
+// We open the file and hand back a disposer for the connection we created.
+const handle = (await SqliteVecVectorIndex.open({ path: '/path/to/vault/vectors.db' })).orThrow();
+
+const store = (
+  await FileTreeMemoryStore.create({ root, registry, vectorIndex: handle.index, embed })
+).orThrow();
+
+// ...use the store; embeddings are written to vectors.db on every put.
+handle.close(); // closes the connection THIS open() created; idempotent.
+```
+
+`SqliteVecFragmentIndex.open({ path })` is the identical shape for the fragment lane.
+
+**Two `open` calls on one path give two independent connections, not a shared one.** To
+back a record index *and* a fragment index with a single connection, own it yourself and
+pass it to both `create` methods:
+
 ```ts
 import Database from 'better-sqlite3';
 import { SqliteVecVectorIndex } from '@fgv/ts-agent-memory-sqlite-vec';
@@ -108,7 +133,7 @@ Known instance: the release that added `IEmbeddedFragment.fragmentId` added a `+
 Deliberately excluded — reach for the upstream libraries (or a different backend) directly if you need these:
 
 - **ANN / large-N indexing.** Query is a brute-force `vec0` KNN scan — correct and durable for the same "thousands of records" regime the in-memory index targets. An approximate-nearest-neighbor structure for very large N is a different backend behind the same `IVectorIndex` / `IFragmentVectorIndex` seam. (This applies to both indexes, including `SqliteVecFragmentIndex`, whose capped query fetches the full ranked set.)
-- **Connection lifecycle.** You open and close the `better-sqlite3` `Database`; this index never does. Pooling, WAL/pragma tuning, backups, and multi-process coordination are yours.
+- **Connection lifecycle beyond plain open/close.** With `create({ database })` you open and close the `better-sqlite3` `Database` and this index never does; with `open({ path })` this package opens the file and the returned handle's `close()` disposes of exactly what it opened. Either way, pooling, WAL/pragma tuning, backups, and multi-process coordination are yours.
 - **Embedding.** This is a vector *index*, not an embedder — the store's consumer-wired `MemoryEmbedder` produces the vectors (`@fgv/ts-extras/ai-assist` `callProviderEmbedding`, `@fgv/ts-extras-transformers`, etc.).
 - **A browser sibling.** `better-sqlite3` is Node-only. A WASM-SQLite browser variant, if ever needed, is a separate package.
 - **Schema migration of any kind.** Re-embedding with a different-dimension model against an existing table fails loudly, and a package release that changes a `vec0` table's columns requires a drop-and-re-index — see [Upgrading](#upgrading-vec0-schema-changes-require-a-drop-and-re-index). Drop the table (or use a new `tableName`) to re-index; `vec0` cannot be altered in place.

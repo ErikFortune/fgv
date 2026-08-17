@@ -219,7 +219,9 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
    * give two independent connections, not a shared one.
    *
    * If initialization fails after the file is opened, the connection is closed
-   * before returning — a failed `open` leaks nothing. That includes the
+   * before returning, so a failed `open` does not leak the descriptor it created.
+   * Should that close *itself* fail — the connection is then genuinely leaked — the
+   * returned message says so rather than hiding it. That includes the
    * auxiliary-column mismatch failure, which is reported by `create` only after the
    * file is open.
    *
@@ -234,14 +236,15 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
   ): Promise<Result<ISqliteVecFragmentIndexHandle>> {
     return (await openOwnedConnection(params.path, LABEL)).thenOnSuccess(async (database) =>
       (await SqliteVecFragmentIndex.create({ database, tableName: params.tableName }))
-        .onFailure((message) => {
-          // Best-effort cleanup: this call opened the connection, so a failure to
-          // initialize on top of it must not leave the file handle behind. See the
-          // sibling in SqliteVecVectorIndex.open for why the close result is not
-          // folded into the message.
-          closeOwnedConnection(database, LABEL);
-          return fail(message);
-        })
+        .onFailure((message) =>
+          // This call opened the connection, so a failure to initialize on top of it
+          // must not leave the file handle behind. A close that ALSO fails is said out
+          // loud rather than swallowed — the same reasoning, and the same helper, as
+          // `withRollbackNote`: silently discarding it would make the "a failed open
+          // leaks nothing" guarantee untrue exactly when it stopped holding, with no
+          // way for a caller to detect it.
+          fail(withRollbackNote(message, closeOwnedConnection(database, LABEL)))
+        )
         .onSuccess((index) =>
           succeed({
             index,

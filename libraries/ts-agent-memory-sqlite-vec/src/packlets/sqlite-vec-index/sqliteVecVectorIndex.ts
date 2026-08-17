@@ -160,7 +160,9 @@ export class SqliteVecVectorIndex implements IVectorIndex {
    * shared one.
    *
    * If initialization fails after the file is opened, the connection is closed
-   * before returning — a failed `open` leaks nothing.
+   * before returning, so a failed `open` does not leak the descriptor it created.
+   * Should that close *itself* fail — the connection is then genuinely leaked — the
+   * returned message says so rather than hiding it.
    *
    * @param params - See {@link ISqliteVecVectorIndexOpenParams}.
    * @returns `Success` with a {@link ISqliteVecVectorIndexHandle}, or `Failure` if
@@ -172,15 +174,15 @@ export class SqliteVecVectorIndex implements IVectorIndex {
   ): Promise<Result<ISqliteVecVectorIndexHandle>> {
     return (await openOwnedConnection(params.path, LABEL)).thenOnSuccess(async (database) =>
       (await SqliteVecVectorIndex.create({ database, tableName: params.tableName }))
-        .onFailure((message) => {
-          // Best-effort cleanup: this call opened the connection, so a failure to
-          // initialize on top of it must not leave the file handle behind. The close
-          // result is deliberately not folded into the message — the initialization
-          // failure is what the caller needs, and a close failure here would be
-          // secondary noise on an already-failing path.
-          closeOwnedConnection(database, LABEL);
-          return fail(message);
-        })
+        .onFailure((message) =>
+          // This call opened the connection, so a failure to initialize on top of it
+          // must not leave the file handle behind. A close that ALSO fails is said out
+          // loud rather than swallowed — the same reasoning, and the same helper, as
+          // `withRollbackNote`: silently discarding it would make the "a failed open
+          // leaks nothing" guarantee untrue exactly when it stopped holding, with no
+          // way for a caller to detect it.
+          fail(withRollbackNote(message, closeOwnedConnection(database, LABEL)))
+        )
         .onSuccess((index) =>
           succeed({
             index,

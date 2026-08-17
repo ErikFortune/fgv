@@ -40,6 +40,10 @@ function vec(...values: number[]): Float32Array {
 function openFdCountFor(file: string): number | undefined {
   const fdDir: string = '/proc/self/fd';
   if (!fs.existsSync(fdDir)) {
+    // Say so out loud. A silent `undefined` here turns the leak assertion into a
+    // no-op, and a pin that has quietly stopped pinning looks exactly like a pin
+    // that passes.
+    console.warn(`openFdCountFor: ${fdDir} unavailable — the connection-leak assertion is NOT running`);
     return undefined;
   }
   let n: number = 0;

@@ -44,6 +44,10 @@ function frag(start: number, end: number, ...values: number[]): IEmbeddedFragmen
 function openFdCountFor(file: string): number | undefined {
   const fdDir: string = '/proc/self/fd';
   if (!fs.existsSync(fdDir)) {
+    // Say so out loud. A silent `undefined` here turns the leak assertion into a
+    // no-op, and a pin that has quietly stopped pinning looks exactly like a pin
+    // that passes.
+    console.warn(`openFdCountFor: ${fdDir} unavailable — the connection-leak assertion is NOT running`);
     return undefined;
   }
   let n: number = 0;
@@ -140,6 +144,38 @@ describe('SqliteVecFragmentIndex', () => {
       if (before !== undefined && after !== undefined) {
         expect(after).toBe(before);
       }
+    });
+
+    test('honors tableName', async () => {
+      const handle = (
+        await SqliteVecFragmentIndex.open({ path: dbPath, tableName: 'custom_frags' })
+      ).orThrow();
+      (await handle.index.addFragments(target('knowledge', 'doc-a'), [frag(0, 5, 1, 0)])).orThrow();
+      expect(handle.close()).toSucceedWith(true);
+
+      // A default-named index over the same file sees nothing — the rows are in the
+      // custom table.
+      const other = (await SqliteVecFragmentIndex.open({ path: dbPath })).orThrow();
+      expect(other.index.recordCount).toBe(0);
+      expect(other.close()).toSucceedWith(true);
+    });
+
+    test("accepts ':memory:' and yields an owned ephemeral connection", async () => {
+      // Documented on ISqliteVecFragmentIndexOpenParams.path, so it is pinned here
+      // rather than left as an untested claim — the vector sibling has the same test.
+      const handle = (await SqliteVecFragmentIndex.open({ path: ':memory:' })).orThrow();
+      expect(await handle.index.addFragments(target('knowledge', 'doc-a'), [frag(0, 5, 1, 0)])).toSucceedWith(
+        1
+      );
+      expect(handle.index.fragmentCount).toBe(1);
+      expect(handle.close()).toSucceedWith(true);
+    });
+
+    test('the index is unusable after its handle is closed', async () => {
+      const handle = (await SqliteVecFragmentIndex.open({ path: dbPath })).orThrow();
+      (await handle.index.addFragments(target('knowledge', 'doc-a'), [frag(0, 5, 1, 0)])).orThrow();
+      expect(handle.close()).toSucceedWith(true);
+      expect(await handle.index.addFragments(target('knowledge', 'doc-b'), [frag(0, 5, 0, 1)])).toFail();
     });
 
     test('fails when the path cannot be opened', async () => {
