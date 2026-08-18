@@ -1,0 +1,18 @@
+id: async-result-family
+status: shipped
+packages: ['@fgv/ts-utils']
+prs: [596]
+closed: 2026-08-02
+summary:
+  intended: >
+    Give the sync `Result` collectors async siblings with a concurrency bound.
+  shipped: >
+    Five bounded-parallel collectors (`mapResultsAsync` / `mapDetailedResultsAsync` / `mapSuccessAsync` / `mapFailuresAsync` / `allSucceedAsync`) plus the two serial-by-contract members (`populateObjectAsync`, `firstSuccessAsync`), each mirroring its sync sibling's name, parameter order and fold, and taking *deferred* work rather than materialized promises so already-started work is structurally inexpressible.
+  diverged: >
+  sourceLine: ''
+keywords: ['async result', 'bounded concurrency', 'deferred work', 'input-order results', 'collectors']
+sourceHash: 60ecad0d8019fa5c
+artifactLoss: >
+  No result.md was ever written. Surviving artifacts: `brief.md` only. The summary
+  above is reconstructed from git history; diverged and sourceLine are blank because
+  the evidence to fill them does not exist.

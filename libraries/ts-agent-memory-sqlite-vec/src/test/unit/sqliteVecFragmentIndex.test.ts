@@ -25,7 +25,7 @@ import {
   MemoryId,
   MemoryScopeKey
 } from '@fgv/ts-agent-memory';
-import { SqliteVecFragmentIndex } from '../../index';
+import { ISqliteVecFragmentIndexHandle, SqliteVecFragmentIndex } from '../../index';
 
 function target(scope: string, id: string): IEdgeTarget {
   return { scope: scope as unknown as MemoryScopeKey, id: id as unknown as MemoryId };
@@ -35,6 +35,32 @@ function loc(start: number, end: number): IFragmentLocator {
 }
 function frag(start: number, end: number, ...values: number[]): IEmbeddedFragment {
   return { locator: loc(start, end), vector: Float32Array.from(values) };
+}
+
+/**
+ * How many of this process's open descriptors point at `file`, or `undefined` on a
+ * platform without `/proc/self/fd`, where the caller should skip the assertion.
+ */
+function openFdCountFor(file: string): number | undefined {
+  const fdDir: string = '/proc/self/fd';
+  if (!fs.existsSync(fdDir)) {
+    // Say so out loud. A silent `undefined` here turns the leak assertion into a
+    // no-op, and a pin that has quietly stopped pinning looks exactly like a pin
+    // that passes.
+    console.warn(`openFdCountFor: ${fdDir} unavailable — the connection-leak assertion is NOT running`);
+    return undefined;
+  }
+  let n: number = 0;
+  for (const fd of fs.readdirSync(fdDir)) {
+    try {
+      if (fs.readlinkSync(path.join(fdDir, fd)) === file) {
+        n++;
+      }
+    } catch {
+      // the descriptor closed between readdir and readlink; it is not ours to count
+    }
+  }
+  return n;
 }
 
 describe('SqliteVecFragmentIndex', () => {
@@ -53,6 +79,111 @@ describe('SqliteVecFragmentIndex', () => {
   async function makeIndex(): Promise<SqliteVecFragmentIndex> {
     return (await SqliteVecFragmentIndex.create({ database: db })).orThrow();
   }
+
+  describe('open (path-based factory)', () => {
+    let dir: string;
+    let dbPath: string;
+
+    beforeEach(() => {
+      dir = fs.mkdtempSync(path.join(os.tmpdir(), 'svfragopen-'));
+      dbPath = path.join(dir, 'fragments.db');
+    });
+    afterEach(() => {
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+
+    test('opens the file itself and returns a usable index', async () => {
+      const opened = await SqliteVecFragmentIndex.open({ path: dbPath });
+      expect(opened).toSucceed();
+      const handle: ISqliteVecFragmentIndexHandle = opened.orThrow();
+      expect(await handle.index.addFragments(target('knowledge', 'doc-a'), [frag(0, 5, 1, 0)])).toSucceedWith(
+        1
+      );
+      expect(handle.index.recordCount).toBe(1);
+      expect(handle.index.fragmentCount).toBe(1);
+      expect(handle.close()).toSucceedWith(true);
+    });
+
+    test('persists across an open + close + open cycle', async () => {
+      const first = (await SqliteVecFragmentIndex.open({ path: dbPath })).orThrow();
+      (
+        await first.index.addFragments(target('knowledge', 'doc-a'), [frag(0, 5, 1, 0), frag(5, 10, 0, 1)])
+      ).orThrow();
+      expect(first.close()).toSucceedWith(true);
+
+      const second = (await SqliteVecFragmentIndex.open({ path: dbPath })).orThrow();
+      expect(second.index.recordCount).toBe(1);
+      expect(second.index.fragmentCount).toBe(2);
+      expect(await second.index.has(target('knowledge', 'doc-a'))).toSucceedWith(true);
+      expect(second.close()).toSucceedWith(true);
+    });
+
+    test('the handle close is idempotent', async () => {
+      const handle = (await SqliteVecFragmentIndex.open({ path: dbPath })).orThrow();
+      expect(handle.close()).toSucceedWith(true);
+      expect(handle.close()).toSucceedWith(true);
+    });
+
+    test('a create()-made index exposes no way to close the consumer connection', async () => {
+      const index = (await SqliteVecFragmentIndex.create({ database: db })).orThrow();
+      expect((index as unknown as { close?: unknown }).close).toBeUndefined();
+      expect(await index.addFragments(target('knowledge', 'doc-a'), [frag(0, 5, 1, 0)])).toSucceed();
+      expect(db.open).toBe(true);
+    });
+
+    test('fails without leaking the connection when initialization fails after the file is opened', async () => {
+      // Asserts on the process's open descriptors rather than on "can I reopen the
+      // file" — SQLite permits many connections to one file, so the reopen form
+      // passes just as happily against a leak. See the sibling test in
+      // sqliteVecVectorIndex.test.ts.
+      const before = openFdCountFor(dbPath);
+      expect(
+        await SqliteVecFragmentIndex.open({ path: dbPath, tableName: 'bad name; DROP TABLE x' })
+      ).toFailWith(/not a simple SQL identifier/i);
+      const after = openFdCountFor(dbPath);
+      if (before !== undefined && after !== undefined) {
+        expect(after).toBe(before);
+      }
+    });
+
+    test('honors tableName', async () => {
+      const handle = (
+        await SqliteVecFragmentIndex.open({ path: dbPath, tableName: 'custom_frags' })
+      ).orThrow();
+      (await handle.index.addFragments(target('knowledge', 'doc-a'), [frag(0, 5, 1, 0)])).orThrow();
+      expect(handle.close()).toSucceedWith(true);
+
+      // A default-named index over the same file sees nothing — the rows are in the
+      // custom table.
+      const other = (await SqliteVecFragmentIndex.open({ path: dbPath })).orThrow();
+      expect(other.index.recordCount).toBe(0);
+      expect(other.close()).toSucceedWith(true);
+    });
+
+    test("accepts ':memory:' and yields an owned ephemeral connection", async () => {
+      // Documented on ISqliteVecFragmentIndexOpenParams.path, so it is pinned here
+      // rather than left as an untested claim — the vector sibling has the same test.
+      const handle = (await SqliteVecFragmentIndex.open({ path: ':memory:' })).orThrow();
+      expect(await handle.index.addFragments(target('knowledge', 'doc-a'), [frag(0, 5, 1, 0)])).toSucceedWith(
+        1
+      );
+      expect(handle.index.fragmentCount).toBe(1);
+      expect(handle.close()).toSucceedWith(true);
+    });
+
+    test('the index is unusable after its handle is closed', async () => {
+      const handle = (await SqliteVecFragmentIndex.open({ path: dbPath })).orThrow();
+      (await handle.index.addFragments(target('knowledge', 'doc-a'), [frag(0, 5, 1, 0)])).orThrow();
+      expect(handle.close()).toSucceedWith(true);
+      expect(await handle.index.addFragments(target('knowledge', 'doc-b'), [frag(0, 5, 0, 1)])).toFail();
+    });
+
+    test('fails when the path cannot be opened', async () => {
+      expect(
+        await SqliteVecFragmentIndex.open({ path: path.join(dir, 'no', 'such', 'dir', 'x.db') })
+      ).toFailWith(/failed to open/i);
+    });
+  });
 
   describe('create', () => {
     test('succeeds over a fresh database with an empty index', async () => {
@@ -258,6 +389,130 @@ describe('SqliteVecFragmentIndex', () => {
     });
   });
 
+  describe('query narrowing (scope / id)', () => {
+    /** Decoys that outscore the target, so a post-filter would return nothing. */
+    async function seededWithDecoys(): Promise<SqliteVecFragmentIndex> {
+      const index = await makeIndex();
+      (
+        await index.addFragments(target('knowledge', 'decoy-a'), [frag(0, 5, 1, 0), frag(5, 10, 1, 0)])
+      ).orThrow();
+      (
+        await index.addFragments(target('knowledge', 'decoy-b'), [frag(0, 5, 1, 0), frag(5, 10, 1, 0)])
+      ).orThrow();
+      (
+        await index.addFragments(target('knowledge', 'doc-a'), [
+          frag(0, 5, 0.6, 0.8),
+          frag(5, 10, 0.5, 0.86),
+          frag(10, 15, 0.4, 0.92)
+        ])
+      ).orThrow();
+      return index;
+    }
+
+    test('applies the record narrowing BEFORE the topK cut, not after', async () => {
+      // Byte-identical semantics to InMemoryFragmentCosineIndex's sibling test: the
+      // two implementations must not diverge on the property this stream exists for.
+      const index = await seededWithDecoys();
+      const q = Float32Array.from([1, 0]);
+
+      expect(await index.query(q, 2)).toSucceedAndSatisfy((hits: ReadonlyArray<IVectorQueryHit>) => {
+        expect(hits).toHaveLength(2);
+        expect(hits.every((h) => h.target.id !== 'doc-a')).toBe(true);
+      });
+
+      expect(
+        await index.query(q, 2, { scope: 'knowledge' as MemoryScopeKey, id: 'doc-a' as MemoryId })
+      ).toSucceedAndSatisfy((hits: ReadonlyArray<IVectorQueryHit>) => {
+        expect(hits).toHaveLength(2);
+        expect(hits.every((h) => h.target.id === 'doc-a')).toBe(true);
+      });
+    });
+
+    test('narrows to a whole scope when no id is supplied (the versioned-kind case)', async () => {
+      const index = await makeIndex();
+      (await index.addFragments(target('mem/entities/e1', 'e1-v0'), [frag(0, 5, 1, 0)])).orThrow();
+      (await index.addFragments(target('mem/entities/e1', 'e1-v1'), [frag(0, 5, 0.9, 0.1)])).orThrow();
+      (await index.addFragments(target('knowledge', 'other'), [frag(0, 5, 1, 0)])).orThrow();
+
+      expect(
+        await index.query(Float32Array.from([1, 0]), 10, { scope: 'mem/entities/e1' as MemoryScopeKey })
+      ).toSucceedAndSatisfy((hits: ReadonlyArray<IVectorQueryHit>) => {
+        expect(hits).toHaveLength(2);
+        expect(hits.map((h) => h.target.id).sort()).toEqual(['e1-v0', 'e1-v1']);
+      });
+    });
+
+    test('a scope prefix does not leak into a longer scope that starts the same way', async () => {
+      const index = await makeIndex();
+      (await index.addFragments(target('mem', 'a'), [frag(0, 5, 1, 0)])).orThrow();
+      (await index.addFragments(target('mem/entities/e1', 'b'), [frag(0, 5, 1, 0)])).orThrow();
+
+      expect(
+        await index.query(Float32Array.from([1, 0]), 10, { scope: 'mem' as MemoryScopeKey })
+      ).toSucceedAndSatisfy((hits: ReadonlyArray<IVectorQueryHit>) => {
+        expect(hits).toHaveLength(1);
+        expect(hits[0].target.id).toBe('a');
+      });
+    });
+
+    test('an unmatched narrowing is an empty success, not a failure', async () => {
+      const index = await seededWithDecoys();
+      expect(
+        await index.query(Float32Array.from([1, 0]), 5, {
+          scope: 'knowledge' as MemoryScopeKey,
+          id: 'no-such-record' as MemoryId
+        })
+      ).toSucceedWith([]);
+    });
+
+    test('composes with maxPerRecord', async () => {
+      const index = await seededWithDecoys();
+      expect(
+        await index.query(Float32Array.from([1, 0]), 5, {
+          scope: 'knowledge' as MemoryScopeKey,
+          id: 'doc-a' as MemoryId,
+          maxPerRecord: 1
+        })
+      ).toSucceedAndSatisfy((hits: ReadonlyArray<IVectorQueryHit>) => {
+        expect(hits).toHaveLength(1);
+        expect(hits[0].target.id).toBe('doc-a');
+      });
+    });
+
+    test('a single-record narrowing with maxPerRecord fetches only topK, and still ranks correctly', async () => {
+      // Guards the `wholeSet` narrowing: `maxPerRecord` forces the full ranked set
+      // ONLY when other records can fill from behind a capped one. Under a
+      // single-record narrowing every row is that record's, so the result is exactly
+      // `min(topK, maxPerRecord, fragmentCount)` and those are the first rows KNN
+      // returns — `k = topK` suffices. Both directions of the min are pinned here,
+      // with the ordering, so a wrong `k` would show up as a short or misordered
+      // result rather than only as a latency difference nothing measures.
+      const index = await seededWithDecoys();
+      const q = Float32Array.from([1, 0]);
+      const scoped = { scope: 'knowledge' as MemoryScopeKey, id: 'doc-a' as MemoryId };
+
+      // topK binds (2 < 3 fragments), the cap does not.
+      expect(await index.query(q, 2, { ...scoped, maxPerRecord: 5 })).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          expect(hits.map((h) => h.locator)).toEqual([
+            { start: 0, end: 5 },
+            { start: 5, end: 10 }
+          ]);
+        }
+      );
+
+      // The cap binds (2 < 3 fragments), topK does not.
+      expect(await index.query(q, 5, { ...scoped, maxPerRecord: 2 })).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          expect(hits.map((h) => h.locator)).toEqual([
+            { start: 0, end: 5 },
+            { start: 5, end: 10 }
+          ]);
+        }
+      );
+    });
+  });
+
   describe('query', () => {
     async function seeded(): Promise<SqliteVecFragmentIndex> {
       const index = await makeIndex();
@@ -305,7 +560,7 @@ describe('SqliteVecFragmentIndex', () => {
       ).orThrow();
       (await index.addFragments(target('knowledge', 'doc-b'), [frag(0, 5, 0.7, 0.3)])).orThrow();
       // Without a cap the top-2 would be doc-a twice; maxPerRecord=1 surfaces doc-b.
-      expect(await index.query(Float32Array.from([1, 0]), 2, 1)).toSucceedAndSatisfy(
+      expect(await index.query(Float32Array.from([1, 0]), 2, { maxPerRecord: 1 })).toSucceedAndSatisfy(
         (hits: ReadonlyArray<IVectorQueryHit>) => {
           expect(hits).toHaveLength(2);
           expect(hits.map((h) => h.target.id)).toEqual(['doc-a', 'doc-b']);
@@ -316,12 +571,12 @@ describe('SqliteVecFragmentIndex', () => {
 
     test('maxPerRecord=0 yields no hits', async () => {
       const index = await seeded();
-      expect(await index.query(Float32Array.from([1, 0]), 5, 0)).toSucceedWith([]);
+      expect(await index.query(Float32Array.from([1, 0]), 5, { maxPerRecord: 0 })).toSucceedWith([]);
     });
 
     test('maxPerRecord larger than any record leaves the ranking unchanged', async () => {
       const index = await seeded();
-      expect(await index.query(Float32Array.from([1, 0]), 5, 10)).toSucceedAndSatisfy(
+      expect(await index.query(Float32Array.from([1, 0]), 5, { maxPerRecord: 10 })).toSucceedAndSatisfy(
         (hits: ReadonlyArray<IVectorQueryHit>) => {
           expect(hits).toHaveLength(3);
           expect(hits[0].target.id).toBe('doc-a');
@@ -346,7 +601,7 @@ describe('SqliteVecFragmentIndex', () => {
       (await index.addFragments(t, [frag(0, 5, 1, 0)])).orThrow();
       (await index.addFragments(t, [])).orThrow(); // table now exists but holds 0 rows
       // fetchK derives from the (zero) fragment count under a cap → short-circuits to [].
-      expect(await index.query(Float32Array.from([1, 0]), 5, 2)).toSucceedWith([]);
+      expect(await index.query(Float32Array.from([1, 0]), 5, { maxPerRecord: 2 })).toSucceedWith([]);
     });
 
     test('rejects a query vector of the wrong dimension', async () => {
@@ -360,7 +615,7 @@ describe('SqliteVecFragmentIndex', () => {
       // maxPerRecord makes the fetch span the full ranked set (3 fragments), but
       // topK=1 must return exactly one hit — the top row — and stop.
       const index = await seeded();
-      expect(await index.query(Float32Array.from([1, 0]), 1, 5)).toSucceedAndSatisfy(
+      expect(await index.query(Float32Array.from([1, 0]), 1, { maxPerRecord: 5 })).toSucceedAndSatisfy(
         (hits: ReadonlyArray<IVectorQueryHit>) => {
           expect(hits).toHaveLength(1);
           expect(hits[0].target.id).toBe('doc-a');

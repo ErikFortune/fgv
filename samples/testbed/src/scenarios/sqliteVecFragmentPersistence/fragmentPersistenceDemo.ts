@@ -125,7 +125,7 @@ async function queryFragmentHits(
   topK: number,
   maxPerRecord: number | undefined
 ): Promise<Result<ReadonlyArray<IDemoFragmentHit>>> {
-  return (await index.query(queryVector, topK, maxPerRecord)).onSuccess((hits) =>
+  return (await index.query(queryVector, topK, { maxPerRecord })).onSuccess((hits) =>
     mapResults(hits.map(toDemoHit))
   );
 }

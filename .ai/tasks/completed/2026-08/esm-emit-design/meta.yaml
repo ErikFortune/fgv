@@ -1,0 +1,15 @@
+id: esm-emit-design
+status: shipped
+packages: ['(design only)']
+prs: []
+closed: 2026-08-09
+summary:
+  intended: >
+    Design a Node-loadable ESM emit for the packages whose `import` condition resolved to something Node could not load.
+  shipped: >
+    A design, whose central recommendation the implementing stream then falsified.
+  diverged: >
+    The design's central recommendation does not work — see `esm-emit-impl`. The design doc is deliberately left uncorrected: that a signed-off design was wrong, and that step-zero verification caught it, is the most valuable thing this pair records.
+  sourceLine: ''
+keywords: ['esm emit', 'design falsified', 'extensionless directory imports', 'node loader']
+sourceHash: a5ddc4d0dffc231c

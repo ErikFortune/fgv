@@ -136,9 +136,16 @@ export class FileTreeMemoryStore implements IMemoryStore {
     listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
     put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
     reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>>;
+    resolveIdentity(kind: Kind, entityId: EntityId): Result<IIdentityCodecResult>;
     resolveRecord(scope: MemoryScopeKey, id: MemoryId): Result<IMemoryRecord<unknown> | undefined>;
     get skippedRecords(): ReadonlyArray<ISkippedRecord>;
 }
+
+// @public
+export const FRAGMENT_NARROWING_INCOMPLETE_MESSAGE: string;
+
+// @public
+export const FRAGMENT_NARROWING_UNRESOLVABLE_MESSAGE: string;
 
 // @public
 export const FRAGMENT_SEMANTIC_UNWIRED_MESSAGE: string;
@@ -154,6 +161,7 @@ export class FragmentSemanticRetriever {
     get capabilities(): IFragmentRetrieverCapabilities;
     static create(params: {
         readonly backend?: IFragmentSemanticBackend;
+        readonly identityResolver?: IIdentityResolver;
     }): Result<FragmentSemanticRetriever>;
     retrieve(query: IFragmentQuery): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
 }
@@ -316,9 +324,18 @@ export interface IFragmentLocator {
 
 // @public
 export interface IFragmentQuery {
+    readonly entityId?: EntityId;
+    readonly kind?: Kind;
     readonly maxPerRecord?: number;
     readonly semantic: string;
     readonly topK?: number;
+}
+
+// @public
+export interface IFragmentQueryOptions {
+    readonly id?: MemoryId;
+    readonly maxPerRecord?: number;
+    readonly scope?: MemoryScopeKey;
 }
 
 // @public
@@ -346,7 +363,7 @@ export interface IFragmentVectorIndex {
     addFragments(target: IEdgeTarget, fragments: ReadonlyArray<IEmbeddedFragment>): Promise<Result<number>>;
     readonly fragmentCount: number;
     has(target: IEdgeTarget): Promise<Result<boolean>>;
-    query(vector: Float32Array, topK: number, maxPerRecord?: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    query(vector: Float32Array, topK: number, options?: IFragmentQueryOptions): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
     rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>>;
     readonly recordCount: number;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;
@@ -373,6 +390,11 @@ export interface IIdentityCodecResult {
     readonly idStem: string;
     readonly isVersioned: boolean;
     readonly scope: MemoryScopeKey;
+}
+
+// @public
+export interface IIdentityResolver {
+    resolveIdentity(kind: Kind, entityId: EntityId): Result<IIdentityCodecResult>;
 }
 
 // @public
@@ -591,7 +613,7 @@ export interface IMemoryRetrieverCapabilities {
 }
 
 // @public
-export interface IMemoryStore extends IMemoryRecordResolver {
+export interface IMemoryStore extends IMemoryRecordResolver, IIdentityResolver {
     asRecordSource(): IMemoryRecordSource;
     coverage(): Promise<Result<IDerivedStateCoverage>>;
     dedupScopeFor(kind: Kind): DedupScope;
@@ -660,7 +682,7 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
     static create(): Result<InMemoryFragmentCosineIndex>;
     get fragmentCount(): number;
     has(target: IEdgeTarget): Promise<Result<boolean>>;
-    query(vector: Float32Array, topK: number, maxPerRecord?: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    query(vector: Float32Array, topK: number, options?: IFragmentQueryOptions): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
     rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>>;
     get recordCount(): number;
     remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>>;

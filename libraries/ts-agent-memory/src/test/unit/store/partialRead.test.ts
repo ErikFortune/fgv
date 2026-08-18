@@ -9,6 +9,7 @@ import { FileTree } from '@fgv/ts-json-base';
 import {
   BodyConverterRegistry,
   EntityId,
+  IIdentityCodecResult,
   FileTreeMemoryStore,
   IIdentityCodec,
   IIndexedMemoryEntry,
@@ -303,6 +304,25 @@ describe('partial-read store surface', () => {
       });
       // All three read despite `limit: 1` — the filter could not be applied sooner.
       expect(counting.reads).toBe(3);
+    });
+
+    test('resolveIdentity returns the codec address without reading the record', async () => {
+      // The resolution `get` performs before it reads anything, exposed on its own.
+      const store = makeStore();
+      expect(store.resolveIdentity('knowledge' as Kind, 'doc-a' as EntityId)).toSucceedAndSatisfy(
+        (address: IIdentityCodecResult) => {
+          expect(address.scope).toBeDefined();
+          expect(address.idStem).toBe('doc-a');
+          expect(address.isVersioned).toBe(false);
+        }
+      );
+    });
+
+    test('resolveIdentity fails loudly for a kind with no codec', async () => {
+      const store = makeStore();
+      expect(store.resolveIdentity('no-such-kind' as Kind, 'doc-a' as EntityId)).toFailWith(
+        /no identity codec registered/i
+      );
     });
 
     test('resolveRecord answers an unknown address with undefined, not a failure', async () => {

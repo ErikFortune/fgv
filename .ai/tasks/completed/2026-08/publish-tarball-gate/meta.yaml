@@ -1,0 +1,15 @@
+id: publish-tarball-gate
+status: shipped
+packages: ['(common/scripts, workflows)']
+prs: []
+closed: 2026-08-09
+summary:
+  intended: >
+    Verify that every path named in a published package's `exports` map exists in the tarball that ships, not merely in the working tree.
+  shipped: >
+    `common/scripts/verify-tarball-exports.mjs` — every `exports` condition and subpath plus `main`/`types`/`module`/`browser`, wired per-PR and into all six publish workflows; an absent artifact always fails rather than skipping.
+  diverged: >
+    PR #606 was **closed unmerged**; the content reached `release` inside #607. The ledger's standing '⚠️ rebase still owed' note was made obsolete by that route and is no longer true.
+  sourceLine: ''
+keywords: ['tarball gate', 'npm-packlist', 'exports conditions', 'publish pipeline', 'closed-not-merged']
+sourceHash: a25f3b48a44c8340

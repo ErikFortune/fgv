@@ -27,15 +27,24 @@ import {
   IVectorQueryHit,
   IVectorRebuildOptions,
   Kind,
+  IFragmentQueryOptions,
   MemoryId,
   MemoryScopeKey,
   edgeTargetKey
 } from '@fgv/ts-agent-memory';
 import { invokeHook, tally, withRollbackNote } from './rebuildHelpers';
-import { ISqliteVecFragmentIndexCreateParams } from './model';
+import { closeOwnedConnection, openOwnedConnection } from './connection';
+import {
+  ISqliteVecFragmentIndexCreateParams,
+  ISqliteVecFragmentIndexHandle,
+  ISqliteVecFragmentIndexOpenParams
+} from './model';
 
 /** Default name for the fragment `vec0` virtual table. */
 const DEFAULT_TABLE_NAME: string = 'memory_fragments';
+
+/** Package-facing prefix for this class's failure messages. */
+const LABEL: string = 'sqlite-vec fragment index';
 
 /** A simple SQL identifier — the only shape allowed for the table name (it is interpolated into DDL). */
 const IDENTIFIER_RE: RegExp = /^[A-Za-z_][A-Za-z0-9_]*$/;
@@ -122,9 +131,13 @@ type FragmentIdentity = Pick<IVectorQueryHit, 'locator' | 'fragmentId'>;
  * cosine (`score = 1 - cosineDistance`), byte-identical to the in-memory index.
  * Large-N ANN indexing is explicitly out of scope, same regime as the record index.
  *
- * The `better-sqlite3` `Database` is consumer-owned (bring-your-own): this index
- * loads the `sqlite-vec` extension onto it and reads/writes the table, but never
- * opens or closes the connection.
+ * **Connection ownership depends on which factory you use.** With
+ * {@link SqliteVecFragmentIndex.create} the `Database` is consumer-owned
+ * (bring-your-own): this index loads the `sqlite-vec` extension onto it and
+ * reads/writes the table, but never opens or closes the connection — and that is
+ * the seam for backing this index and a record index with one connection. With
+ * {@link SqliteVecFragmentIndex.open} this package opens the file itself and hands
+ * back a handle carrying the disposer for the connection it created.
  * @public
  */
 export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
@@ -189,6 +202,56 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
         );
         return new SqliteVecFragmentIndex(params.database, table, dimension);
       }).withErrorFormat((e) => `sqlite-vec fragment index: failed to initialize: ${e}`)
+    );
+  }
+
+  /**
+   * Path-based factory. Opens the database file itself and returns the index
+   * together with a disposer for the connection it created.
+   *
+   * @remarks
+   * The fragment-granular sibling of {@link SqliteVecVectorIndex.open}, and present
+   * for the same reason: a consumer doing sub-document retrieval only would
+   * otherwise still value-import `better-sqlite3` and hand-roll a `captureResult`
+   * around a constructor that throws.
+   *
+   * **Use `create` instead when one connection must back both a fragment index and
+   * a record index** — the intended shared-handle case. Two `open` calls on one path
+   * give two independent connections, not a shared one.
+   *
+   * If initialization fails after the file is opened, the connection is closed
+   * before returning, so a failed `open` does not leak the descriptor it created.
+   * Should that close *itself* fail — the connection is then genuinely leaked — the
+   * returned message says so rather than hiding it. That includes the
+   * auxiliary-column mismatch failure, which is reported by `create` only after the
+   * file is open.
+   *
+   * @param params - See {@link ISqliteVecFragmentIndexOpenParams}.
+   * @returns `Success` with a {@link ISqliteVecFragmentIndexHandle}, or `Failure` if
+   * the driver could not be loaded, the file could not be opened, the table name is
+   * not a simple identifier, the extension fails to load, or the existing table was
+   * written by a version with a different auxiliary-column set.
+   */
+  public static async open(
+    params: ISqliteVecFragmentIndexOpenParams
+  ): Promise<Result<ISqliteVecFragmentIndexHandle>> {
+    return (await openOwnedConnection(params.path, LABEL)).thenOnSuccess(async (database) =>
+      (await SqliteVecFragmentIndex.create({ database, tableName: params.tableName }))
+        .onFailure((message) =>
+          // This call opened the connection, so a failure to initialize on top of it
+          // must not leave the file handle behind. A close that ALSO fails is said out
+          // loud rather than swallowed — the same reasoning, and the same helper, as
+          // `withRollbackNote`: silently discarding it would make the "a failed open
+          // leaks nothing" guarantee untrue exactly when it stopped holding, with no
+          // way for a caller to detect it.
+          fail(withRollbackNote(message, closeOwnedConnection(database, LABEL)))
+        )
+        .onSuccess((index) =>
+          succeed({
+            index,
+            close: () => closeOwnedConnection(database, LABEL)
+          })
+        )
     );
   }
 
@@ -392,8 +455,11 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
   public query(
     vector: Float32Array,
     topK: number,
-    maxPerRecord?: number
+    options?: IFragmentQueryOptions
   ): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
+    const maxPerRecord: number | undefined = options?.maxPerRecord;
+    const scope: MemoryScopeKey | undefined = options?.scope;
+    const id: MemoryId | undefined = options?.id;
     if (topK <= 0 || this._stmts === undefined) {
       return Promise.resolve(succeed([]));
     }
@@ -411,15 +477,38 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
         // capped record's later fragments are skipped), so fetch the full ranked set
         // and apply the cap + topK cut here — exactly as the in-memory index does.
         // Uncapped, KNN's own `k = topK` is already the answer.
-        const fetchK: number =
-          maxPerRecord === undefined ? topK : Number((stmts.fragmentCount.get() as { c: number | bigint }).c);
+        // A scope-only narrowing (a versioned kind's per-entity subtree) spans several
+        // records, and `target_key` equality cannot express a prefix, so it is applied
+        // over the full ranked set below. Correct either way — the caller's `topK` is
+        // applied to the NARROWED set, which is the property that matters — but only
+        // the single-record case gets the partition push-down.
+        const recordKey: string | undefined =
+          scope !== undefined && id !== undefined ? edgeTargetKey({ scope, id }) : undefined;
+        // The cap forces the full ranked set ONLY when other records can fill from
+        // behind a capped one. Under a single-record narrowing every row belongs to
+        // that record, so the result is exactly `min(topK, maxPerRecord, fragments)`
+        // and those are the first rows KNN returns — `k = topK` suffices, and
+        // expanding to the table-wide `fragmentCount` would ask an
+        // already-partition-restricted query for far more rows than it can use.
+        const wholeSet: boolean =
+          recordKey === undefined && (maxPerRecord !== undefined || scope !== undefined);
+        const fetchK: number = wholeSet
+          ? Number((stmts.fragmentCount.get() as { c: number | bigint }).c)
+          : topK;
         if (fetchK <= 0) {
           return [];
         }
-        const rows: ReadonlyArray<IKnnRow> = stmts.query.all(
-          SqliteVecFragmentIndex._toBlob(vector),
-          fetchK
+        const blob: Uint8Array = SqliteVecFragmentIndex._toBlob(vector);
+        const rows: ReadonlyArray<IKnnRow> = (
+          recordKey !== undefined
+            ? stmts.queryScopedToRecord.all(blob, fetchK, recordKey)
+            : stmts.query.all(blob, fetchK)
         ) as ReadonlyArray<IKnnRow>;
+        // The scope prefix every record in `scope` shares. `edgeTargetKey` joins with
+        // a NUL, so this cannot collide with a longer scope that merely starts the
+        // same way.
+        const scopePrefix: string | undefined =
+          scope !== undefined && recordKey === undefined ? `${scope}\0` : undefined;
         // sqlite-vec returns rows ascending by distance (nearest first); score is
         // `1 - cosineDistance`, so this order is already descending score.
         const hits: IVectorQueryHit[] = [];
@@ -427,6 +516,9 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
         for (const row of rows) {
           if (hits.length >= topK) {
             break;
+          }
+          if (scopePrefix !== undefined && !row.target_key.startsWith(scopePrefix)) {
+            continue;
           }
           if (maxPerRecord !== undefined) {
             const used: number = perRecord.get(row.target_key) ?? 0;
@@ -497,6 +589,14 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
       query: this._db.prepare(
         `SELECT target_key, start_off, end_off, fragment_id, distance FROM "${this._table}" ` +
           `WHERE embedding MATCH ? AND k = ?`
+      ),
+      // The single-record narrowing constrains `target_key`, which is the table's
+      // PARTITION KEY — so this is a partition-restricted KNN rather than a scan
+      // plus a filter. That is the performance reason this narrowing belongs in the
+      // library instead of in a bigger over-fetch on the caller's side.
+      queryScopedToRecord: this._db.prepare(
+        `SELECT target_key, start_off, end_off, fragment_id, distance FROM "${this._table}" ` +
+          `WHERE embedding MATCH ? AND k = ? AND target_key = ?`
       ),
       fragmentCount: this._db.prepare(`SELECT count(*) AS c FROM "${this._table}"`),
       recordCount: this._db.prepare(`SELECT count(DISTINCT target_key) AS c FROM "${this._table}"`),
@@ -657,6 +757,8 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
 
 /** The prepared statements / helpers the fragment index reuses once its table exists. */
 interface IFragmentStatements {
+  /** KNN restricted to one record's partition; see `queryScopedToRecord` above. */
+  readonly queryScopedToRecord: BetterSqlite3.Statement;
   readonly deleteByTarget: BetterSqlite3.Statement;
   readonly replace: (key: string, fragments: ReadonlyArray<IEmbeddedFragment>) => void;
   readonly query: BetterSqlite3.Statement;
