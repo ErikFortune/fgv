@@ -11,7 +11,8 @@ import {
   IMemoryRecordResolver,
   Kind,
   MemoryId,
-  MemoryScopeKey
+  MemoryScopeKey,
+  IIdentityResolver
 } from '../types';
 import { IIndexedMemoryEntry } from '../index';
 import { IMemoryRecordSource, IScopedMemoryRecord } from '../vector';
@@ -29,7 +30,7 @@ import { DerivedArtifact, ReconcileReport } from './reconcile';
  * a consumer actually holds, not only for the concrete `FileTreeMemoryStore`.
  * @public
  */
-export interface IMemoryStore extends IMemoryRecordResolver {
+export interface IMemoryStore extends IMemoryRecordResolver, IIdentityResolver {
   /**
    * Keyed read by entity id. Resolves `entityId` to a storage address via the
    * registered {@link IIdentityCodec} for `kind`. Returns `undefined` when no

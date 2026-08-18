@@ -10,6 +10,7 @@ import {
   DEFAULT_DEDUP_SCOPE,
   DedupScope,
   EntityId,
+  IIdentityCodecResult,
   IEdgeTarget,
   IIdentityCodec,
   IMemoryEnvelope,
@@ -37,6 +38,7 @@ import {
 import { VectorMaintenance } from './vectorMaintenance';
 import { IDerivedStateCoverage } from './coverage';
 import { computeCoverage } from './storeCoverage';
+import { codecFor, resolveIdentity, verifyLoadedIdentity } from './storeIdentity';
 import { DerivedArtifact, ReconcileReport } from './reconcile';
 import { reconcileVectors } from './storeReconcile';
 import { IIndexedMemoryEntry, IMemoryIndex, MemoryIndex } from '../index';
@@ -490,7 +492,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   /** {@inheritDoc IMemoryStore.get} */
   public async get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>> {
-    const result: Result<IMemoryRecord<unknown> | undefined> = this._codecFor(kind).onSuccess((codec) =>
+    const result: Result<IMemoryRecord<unknown> | undefined> = codecFor(
+      this._codecs,
+      this._defaultCodec,
+      kind
+    ).onSuccess((codec) =>
       codec.encode(entityId).onSuccess((addr) => {
         if (addr.isVersioned) {
           if (!isTemporalIdentityCodec(codec)) {
@@ -615,6 +621,15 @@ export class FileTreeMemoryStore implements IMemoryStore {
   /** {@inheritDoc IMemoryRecordResolver.resolveRecord} */
   public resolveRecord(scope: MemoryScopeKey, id: MemoryId): Result<IMemoryRecord<unknown> | undefined> {
     return this._readRecord(scope, id);
+  }
+
+  private _codec(kind: Kind): Result<IIdentityCodec> {
+    return codecFor(this._codecs, this._defaultCodec, kind);
+  }
+
+  /** {@inheritDoc IIdentityResolver.resolveIdentity} */
+  public resolveIdentity(kind: Kind, entityId: EntityId): Result<IIdentityCodecResult> {
+    return resolveIdentity(this._codecs, this._defaultCodec, kind, entityId);
   }
 
   /**
@@ -836,7 +851,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   /** Resolve a scope for an observation, best-effort (undefined when unresolvable). */
   private _scopeBestEffort(kind: Kind, entityId: EntityId): MemoryScopeKey | undefined {
-    return this._codecFor(kind)
+    return this._codec(kind)
       .onSuccess((codec) => codec.encode(entityId))
       .onSuccess((addr) => succeed(addr.scope))
       .orDefault();
@@ -857,7 +872,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return this._registry
       .convert(envelope.kind, body)
       .withErrorFormat((msg) => `memory put '${envelope.id}': invalid body: ${msg}`)
-      .onSuccess(() => this._codecFor(envelope.kind))
+      .onSuccess(() => this._codec(envelope.kind))
       .thenOnSuccess((codec) =>
         codec.encode(envelope.entityId).thenOnSuccess((addr) => {
           if (addr.isVersioned) {
@@ -1109,7 +1124,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
   }
 
   private async _deleteLocked(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>> {
-    return this._codecFor(kind).thenOnSuccess((codec) =>
+    return this._codec(kind).thenOnSuccess((codec) =>
       codec.encode(entityId).thenOnSuccess((addr) => {
         if (addr.isVersioned) {
           if (!isTemporalIdentityCodec(codec)) {
@@ -1715,14 +1730,6 @@ export class FileTreeMemoryStore implements IMemoryStore {
     }
   }
 
-  private _codecFor(kind: Kind): Result<IIdentityCodec> {
-    const codec: IIdentityCodec | undefined = this._codecs.get(kind) ?? this._defaultCodec;
-    if (codec === undefined) {
-      return fail(`no identity codec registered for kind '${kind}'`);
-    }
-    return succeed(codec);
-  }
-
   private _policyFor(kind: Kind): IWritePolicy {
     return this._writePolicies.get(kind) ?? this._defaultPolicy;
   }
@@ -1779,24 +1786,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     file: FileTree.IFileTreeFileItem,
     record: IMemoryRecord<unknown>
   ): Result<IMemoryRecord<unknown>> {
-    if (record.envelope.id !== file.baseName) {
-      return fail(
-        `memory file '${file.absolutePath}': envelope id '${record.envelope.id}' does not match filename stem '${file.baseName}'`
-      );
-    }
-    return this._codecFor(record.envelope.kind)
-      .onSuccess((codec) =>
-        codec.verifyRoundTrip(scope, file.baseName).onSuccess(() => codec.decode(scope, file.baseName))
-      )
-      .withErrorFormat((msg) => `memory file '${file.absolutePath}': ${msg}`)
-      .onSuccess((decodedEntityId) => {
-        if (decodedEntityId !== record.envelope.entityId) {
-          return fail(
-            `memory file '${file.absolutePath}': envelope entityId '${record.envelope.entityId}' does not match scope-derived entityId '${decodedEntityId}'`
-          );
-        }
-        return succeed(record);
-      });
+    return verifyLoadedIdentity(this._codec(record.envelope.kind), scope, file, record);
   }
 
   /**

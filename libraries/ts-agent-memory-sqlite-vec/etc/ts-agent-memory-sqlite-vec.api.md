@@ -9,6 +9,7 @@ import { DetailedResult } from '@fgv/ts-utils';
 import { FragmentEmbedder } from '@fgv/ts-agent-memory';
 import { IEdgeTarget } from '@fgv/ts-agent-memory';
 import { IEmbeddedFragment } from '@fgv/ts-agent-memory';
+import { IFragmentQueryOptions } from '@fgv/ts-agent-memory';
 import { IFragmentVectorIndex } from '@fgv/ts-agent-memory';
 import { IFragmentVectorRebuildReport } from '@fgv/ts-agent-memory';
 import { IMemoryRecordSource } from '@fgv/ts-agent-memory';
@@ -71,7 +72,7 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
     //
     // (undocumented)
-    query(vector: Float32Array, topK: number, maxPerRecord?: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
+    query(vector: Float32Array, topK: number, options?: IFragmentQueryOptions): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
     //
     // (undocumented)

@@ -118,8 +118,24 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   observed that its README had closed the same observation with "nothing new to codify" while the
   *other* recurrence it hit — this file's line cap — was correctly escalated.
 
-- **[P2] `fileTreeMemoryStore.ts` is 5 lines under the 2000-line `max-lines` cap.**
-  **1995 lines as of `agent-memory-derived-state-reconciliation` (2026-08-15)** — the headroom
+- **[P1] `fileTreeMemoryStore.ts` is 11 lines under the 2000-line `max-lines` cap — PROMOTED 2026-08-18.**
+  **The fourth consecutive stream paid the toll, which is exactly the promotion condition this entry
+  wrote for itself.** `fragment-query-scoping` (2026-08-18) needed `IMemoryStore` to implement
+  `IIdentityResolver`, found the file already at **1999** with no room at all, and extracted
+  `libraries/ts-agent-memory/src/packlets/store/storeIdentity.ts` (codec lookup, identity resolution,
+  loaded-identity verification) to get under it — landing at **1989**. Four extractions in four
+  streams is not debt being deferred; it is a per-stream toll being collected, and every one of them
+  was discovered mid-implementation rather than planned.
+
+  **What P1 changes**: the split is no longer something to fold into the next feature stream. It is
+  its own piece of work, to be scheduled before the next `ts-agent-memory` feature rather than
+  alongside it — because folding it in is precisely what the last four streams did, and each one
+  chose its extraction under time pressure to clear a cap rather than on the seam that belonged
+  there. The `storeIdentity` / `storeCoverage` / `vectorRecordSource` boundaries are all defensible,
+  but none of them was chosen; they were the smallest thing that fit.
+
+  *(Superseded framing, kept for the measurement trail:)* **1995 lines as of
+  `agent-memory-derived-state-reconciliation` (2026-08-15)** — the headroom
   narrowed again, and by the mechanism this entry predicted. It was 1991 after
   `vector-rebuild-report-by-kind` (2026-08-15), which spent most of its own headroom: that stream's
   inline version measured 2012, and the `asRecordSource()` filter-and-tally had to be extracted to
@@ -147,17 +163,20 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   and take the store structurally rather than importing it. Neither is a public-surface change, so
   both ship as `"type": "none"`.
 
-  **Not a P3, and the evidence is now three streams deep**: P3 is opportunistic, and 5 lines of
+  **Not a P3, and the evidence is now four streams deep**: P3 is opportunistic, and single-digit
   headroom means the trigger is not "if someone touches this" but "the next time anyone does" —
   which has now been *every* consecutive `ts-agent-memory` stream, each of which discovered the cap
   mid-implementation and paid an unplanned extraction to get under it. The failure mode is also
-  invisible locally, which is what makes it cost a review cycle rather than a minute. **Consider
-  promoting to P1 if a fourth stream pays this tax**: at that point the extraction is not debt being
-  deferred, it is a per-stream toll being collected.
+  invisible locally, which is what makes it cost a review cycle rather than a minute. The
+  "consider promoting to P1 if a fourth stream pays this tax" condition written here fired on
+  2026-08-18; the promotion is recorded above.
 
   **Reference**: `vector-rebuild-report-by-kind` (2026-08-15) — its `result.md` records the first
-  extraction as a deviation from its brief, with the measured 2012 / 1995 / 1991 numbers — and
-  `agent-memory-derived-state-reconciliation` (2026-08-15) for the 2009 → 1995 repeat.
+  extraction as a deviation from its brief, with the measured 2012 / 1995 / 1991 numbers —
+  `agent-memory-derived-state-reconciliation` (2026-08-15) for the 2009 → 1995 repeat, and
+  `fragment-query-scoping` (2026-08-18) for the fourth — which started from **1999** (the file had
+  drifted up 4 lines since the 1995 measurement above) with *no* room for the identity resolution it
+  needed, and landed at 1989 after extracting `storeIdentity.ts`.
 
 - **[P2] `ts-prompt-assist` needs a *member-level* TSDoc pass — 66 undocumented members, plus one thrice-repeated inline union.**
   **Re-scoped 2026-08-14. The top-level half of this entry is DONE and the original framing is now

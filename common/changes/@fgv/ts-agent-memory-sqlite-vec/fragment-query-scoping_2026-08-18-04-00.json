@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory-sqlite-vec",
+      "comment": "BREAKING: SqliteVecFragmentIndex.query takes an IFragmentQueryOptions bag; a single-record narrowing becomes a partition-restricted KNN.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory-sqlite-vec"
+}

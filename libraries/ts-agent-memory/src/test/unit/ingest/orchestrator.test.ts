@@ -7,6 +7,7 @@ import '@fgv/ts-utils-jest';
 import { Converters, Logging, Result, fail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
+  IIdentityCodecResult,
   BodyConverterRegistry,
   CONTRADICTS_LINK_TYPE,
   DEFAULT_SIMILARITY_THRESHOLD,
@@ -513,6 +514,10 @@ async function putNote(store: FileTreeMemoryStore, id: string, body: string): Pr
 
 function mockStore(overrides: Partial<IMemoryStore>): IMemoryStore {
   return {
+    resolveIdentity:
+      overrides.resolveIdentity ??
+      ((): Result<IIdentityCodecResult> =>
+        fail('mockStore: resolveIdentity is not used by the ingest orchestrator')),
     get:
       overrides.get ??
       ((): Promise<Result<IMemoryRecord<unknown> | undefined>> => Promise.resolve(succeed(undefined))),
