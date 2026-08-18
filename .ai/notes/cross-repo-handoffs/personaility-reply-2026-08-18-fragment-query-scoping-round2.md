@@ -72,10 +72,29 @@ entity" meaning which version? — except that it answers itself:
 | non-versioned | `{ scope, idStem }` | `{ scope, id }` | exactly that record |
 | versioned | `{ scope: <base>/entities/<entityId>, isVersioned: true }` | `{ scope }` | every version of that entity |
 
-No `asOf` axis, no version-selection semantics bolted onto a search query, no special case in
-the index — the entity subtree *is* the narrowing. We would not have found this by reasoning
-about the API; it came from reading `identityCodec.ts` after your reply pointed at the
-one-kind-many-scopes case.
+No version-selection semantics bolted onto a search query, no special case in the index — the
+entity subtree *is* the narrowing. We would not have found this by reasoning about the API; it
+came from reading `identityCodec.ts` after your reply pointed at the one-kind-many-scopes case.
+
+**Correction to an earlier draft of this note, and please read it before you wire this up.**
+That draft said "no `asOf` axis" as though the layout had made currency filtering unnecessary.
+It has not, and we were wrong to imply it. `TemporalVersionedPolicy` invalidates by stamping
+`invalid_at` on the superseded version — it never deletes the version file and it never removes
+that version's fragments from the index. So a versioned narrowing returns **every** version's
+fragments, current and superseded alike, and **nothing on an `IVectorQueryHit` tells you which
+is which**: a hit carries `target` + `score` + whichever of `locator` / `fragmentId` was
+indexed, and no temporal field at all.
+
+What the layout actually removed is the *ambiguity* — "fragments of this entity" has one
+well-defined meaning rather than needing a version selector to disambiguate it. It did not
+remove the need to filter, if filtering is what you want.
+
+This matches the record-granular vector lane exactly (`IVectorIndex` has the same property), so
+it is consistent rather than surprising — but it is a real thing to handle on your read side.
+Concretely: if you narrow to a versioned entity and care only about what is currently true,
+resolve each hit's `target` through `getById` and check `temporal.invalid_at`. If a currency
+filter on the query itself turns out to be what you want, say so and we will size it — that is
+a real ask, not one the layout already answered.
 
 ## Settled design
 
