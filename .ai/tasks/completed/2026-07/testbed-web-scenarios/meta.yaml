@@ -1,0 +1,18 @@
+id: testbed-web-scenarios
+status: shipped
+packages: ['samples/testbed']
+prs: [569, 570]
+closed: 2026-07-27
+summary:
+  intended: >
+    Let browser-clean CLI scenarios run from the testbed web UI without a bespoke React component each.
+  shipped: >
+    Phase B: an additive `ICliScenarioImpl.webRunnable?: boolean` opt-in plus a shell-generic `ScenarioRunnerPanel` (#570, over Phase A #569).
+  diverged: >
+  sourceLine: ''
+keywords: ['testbed', 'web runner', 'scenario shell', 'opt-in flag']
+sourceHash: 6a5204a266b3c2a0
+artifactLoss: >
+  No result.md was ever written. Surviving artifacts: `brief.md`, `brief-phase-b.md` and `state.md`. The summary
+  above is reconstructed from git history; diverged and sourceLine are blank because
+  the evidence to fill them does not exist.

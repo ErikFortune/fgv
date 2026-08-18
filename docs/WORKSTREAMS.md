@@ -459,9 +459,9 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 
 ---
 
-### `module-resolution-upgrade` 🟢
+### `module-resolution-upgrade` ✅
 
-**Status:** 🟢 implemented — deliverables 1 and 2 landed; **3 is not available and 4 was deliberately not attempted**. Branch `module-resolution-upgrade` from `release` @ `af2178cde` (after #608). Artifacts at `.ai/tasks/active/module-resolution-upgrade/{brief.md, state.md, result.md, findings/inbox/}`; outcomes recorded in `.claude/project/esm-emit-design.md` § "Amendment 2".
+**Status:** ✅ shipped to `release` via **#608** (`af2178cde`) and **#609** (`74523fa29`), 2026-08-09/10 — `moduleResolution` stated explicitly through an fgv-owned tsconfig layer, the freestanding overrides reconciled, plus a files allowlist and audited node-only declarations. **Still open:** the `node16`/`nodenext` evaluation remains gated behind a dual-emit decision this stream did not take. Artifacts at `.ai/tasks/completed/2026-08/module-resolution-upgrade/`.
 
 **Mission.** The repo resolves modules under **node10 and nobody chose it** — the rig never sets `moduleResolution`, so `module: commonjs` defaults it. Under node10 **TypeScript does not read the `exports` map at all**, which is the structural reason `ts-web-extras-webauthn`'s `default` condition could name a file that never existed for the package's entire life with every build green.
 
@@ -479,10 +479,10 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 
 ---
 
-### `publish-tarball-gate` 🔵
+### `publish-tarball-gate` ✅
 
-**Status:** 🟢 implemented — gate built, both neutralizations demonstrated, wired per-PR **and** into all six publish workflows. Branch `claude/publish-tarball-gate-omgb9e`; artifacts at `.ai/tasks/active/publish-tarball-gate/{brief.md, state.md, result.md, findings/inbox/}`.
-**⚠️ Rebase still owed.** #603 and #605 were **still open** when this ran, so the hard dependency the brief states was not met. The branch remains based on `esm-emit-impl` @ `29d07bcba` (which carries #603's content), and **must be rebased onto `release` once both land** — nothing here conflicts with them by construction, but the base is unmerged. See `result.md` § Deviations.
+**Status:** ✅ shipped to `release` — the content reached `release` inside **#607** (`71787e798`, 2026-08-09) together with the ESM-entry-point and browser gates. **Its own PR #606 was closed unmerged**, which reads like lost work and is not: `common/scripts/verify-tarball-exports.mjs` is on `release` and wired into CI and all six publish workflows. The previously-recorded *"⚠️ rebase still owed"* is obsolete — that dependency was discharged by the #607 route, not by a rebase. Artifacts at `.ai/tasks/completed/2026-08/publish-tarball-gate/`.
+
 **Origin:** direct consumer ask from PersonAIlity, 2026-08-09.
 
 **Mission.** Verify that every path named in a published package's `exports` map exists **in the tarball that ships**, not merely in the working tree. Three defects of one class shipped in a single week — `ts-utils`'s unloadable ESM entry, `ts-web-extras-webauthn`'s `default` naming a file that has never existed, and 5.1.0-27 publishing only `src/` with no build output at all. The gate on #603 checks the working tree, which covers the first two and **cannot** cover the third: `lib/` existed locally and never entered the tarball. **This stream builds a detector, not fixes**; anything it flags is a finding.
@@ -625,9 +625,9 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ---
 
-### `ai-assist-alias-capability-guard` 🔵
+### `ai-assist-alias-capability-guard` ✅
 
-**Status:** 🔵 in flight (overnight 2026-07-28). Branches from `release` @ `b689c99ca`. Consumer: PersonAIlity (round-2 ask B + A).
+**Status:** ✅ shipped to `release` (2026-07-31); both capability resolvers resolve the alias before prefix-matching, so an unresolved `@alias` no longer falls through to the catch-all `modelPrefix: ''` rule and returns a confidently wrong capability. Artifacts at `.ai/tasks/completed/2026-07/ai-assist-alias-capability-guard/`. Consumer: PersonAIlity (round-2 ask B + A).
 **Package surface:** `@fgv/ts-extras/ai-assist` (`registry.ts`, `model.ts` TSDoc only), `samples/testbed` (`scenarios/imageGeneration/`).
 **Out-of-scope:** `packlets/ai-assist/jsonResponse.ts` (owned by `ai-assist-fenced-json-diagnostics`), all of `@fgv/ts-agent-memory`, `docs/WORKSTREAMS.md` (orchestrator-owned).
 **Brief:** `.ai/tasks/active/ai-assist-alias-capability-guard/brief.md`.
@@ -636,9 +636,9 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ---
 
-### `ai-assist-fenced-json-diagnostics` 🔵
+### `ai-assist-fenced-json-diagnostics` ✅
 
-**Status:** 🔵 in flight (overnight 2026-07-28). Branches from `release` @ `b689c99ca`. Consumer: PersonAIlity (round-2 P3).
+**Status:** ✅ shipped to `release` via **#579** (`26c38a484`, 2026-07-31) — `classifyJsonParseFailure`, a structural classifier that never regex-matches the engine's `JSON.parse` message. Artifacts at `.ai/tasks/completed/2026-07/ai-assist-fenced-json-diagnostics/`. Consumer: PersonAIlity (round-2 P3).
 **Package surface:** `@fgv/ts-extras/ai-assist` (`jsonResponse.ts` + its tests).
 **Out-of-scope:** `registry.ts`, `model.ts`, `apiClient.ts`, `samples/testbed`, `docs/WORKSTREAMS.md`.
 **Brief:** `.ai/tasks/active/ai-assist-fenced-json-diagnostics/brief.md`.
@@ -647,9 +647,9 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ---
 
-### `agent-memory-provenance-contract-doc` 🔵
+### `agent-memory-provenance-contract-doc` ✅
 
-**Status:** 🔵 in flight (overnight 2026-07-28). Branches from `release` @ `b689c99ca`. Consumer: PersonAIlity (round-2 P0, doc-only outcome).
+**Status:** ✅ shipped to `release` (2026-07-31). Documentation + tests only, **no behaviour change** — and the four-row evidence table was independently re-executed against built output rather than taken on faith. Artifacts at `.ai/tasks/completed/2026-07/agent-memory-provenance-contract-doc/`. Consumer: PersonAIlity (round-2 P0, doc-only outcome).
 **Package surface:** `@fgv/ts-agent-memory` (README + `writePolicy.ts` TSDoc).
 **Out-of-scope:** all of `@fgv/ts-extras`, any behavior change to the merge path, `docs/WORKSTREAMS.md`.
 **Brief:** `.ai/tasks/active/agent-memory-provenance-contract-doc/brief.md`.
