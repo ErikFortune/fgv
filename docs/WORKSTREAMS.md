@@ -687,8 +687,9 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ### `esm-emit-impl` ⚠️
 
-**Status:** ⚠️ implemented, and it found that the design's central recommendation does not work — branch `esm-emit-impl`, based on `fix/esm-node-entry-points` @ `cebf10bae` (not on `release` directly). **PR #603 was deliberately not shipped on its own** — this branch contains all of it and supersedes it. **R2 and R3 were implemented, measured, and then reverted: both break the repo's own webpack build.** What ships is R5, two real defect fixes it found, and the evidence. Full monorepo build + test green; both entry-point gates green.
-**Substrate:** `.ai/tasks/active/esm-emit-impl/{brief.md, state.md, result.md, findings/inbox/}`
+**Status:** ⚠️ **shipped to `release` 2026-08-09 inside #607** (`71787e798`) — implemented, and it found that the design's central recommendation does not work. Branch `esm-emit-impl`, based on `fix/esm-node-entry-points` @ `cebf10bae`. **PR #603 was deliberately not shipped on its own** — this branch contains all of it and supersedes it, and #603 has no commit on any ref. **R2 and R3 were implemented, measured, and then reverted: both break the repo's own webpack build.** What ships is R5, two real defect fixes it found, and the evidence. Full monorepo build + test green; both entry-point gates green.
+**Paired with `esm-emit-design`** (`.ai/tasks/completed/2026-08/esm-emit-design/`), which is **deliberately left uncorrected**: that a signed-off design was wrong and step-zero verification caught it is the most valuable thing the pair records, and editing it would make the divergence read as an oversight.
+**Substrate:** `.ai/tasks/completed/2026-08/esm-emit-impl/{brief.md, state.md, result.md, findings/inbox/}`
 **Package surface:** `libraries/ts-bcp47/src` + config, `libraries/ts-web-extras-webauthn/package.json` (`exports` only), `common/scripts`, `common/autoinstallers/rush-bundler-check`, `.github/workflows/ci.yml`.
 
 **The headline.** The `dist` ESM emit contains extensionless directory imports — which is *why* Node could not load it, and is the bug that started all this. The design assumed bundlers were fine with that ("bundlers resolve extensionless directory imports happily") and built R2 and R3 on it. **That is true of esbuild and false of webpack 5**, which applies `fullySpecified` to anything it treats as ESM. Bisected on an otherwise identical tree: `tools/ts-res-ui-playground` goes **0 webpack errors → 6** with R2, and back to **0** when the single generated `dist/package.json` is deleted. R3 fails the same way on whatever it routes.
@@ -1030,3 +1031,241 @@ So **R2 is not the safe, independent one-liner §4 called it** — it converts a
 4. `LIBRARY_CAPABILITIES.md` cryptography + canonicalization sections
 
 **Artifacts:** `.ai/tasks/completed/2026-05/auth-primitives-batch1/` ([README](../.ai/tasks/completed/2026-05/auth-primitives-batch1/README.md))
+
+---
+
+## Backfilled entries — streams that shipped without a ledger entry
+
+**Added 2026-08-18.** These 23 streams shipped between 2026-05-20 and 2026-08-09 and had complete
+artifacts under `.ai/tasks/completed/` but **no entry here under their own name**. They are grouped
+rather than interleaved so the backfill stays reviewable as a unit; each is otherwise an ordinary
+entry.
+
+**Every PR number, SHA and date below was re-verified against `origin/release` commit *titles*** —
+not artifact claims, and not full commit messages. That distinction is load-bearing: grepping whole
+messages matches a later commit that merely *cites* a PR, which is how an earlier pass briefly
+"confirmed" wrong dates for #585 and #582. The verification pass corrected **eight** of the drafted
+entries, listed at the end of this section, and recovered two PR numbers previously written off as
+unrecoverable.
+
+Two drafted entries were **discarded** rather than added: `json-schema-converter-alignment` and
+`ts-agent-memory-vector` are already narrated under `json-schema-derives-t` and `ts-agent-memory`
+via `ledgerEntry:` pointers in their `meta.yaml`. Adding them would have given the ledger two
+accounts of one stream.
+
+---
+
+### `ai-assist-client-tools` ✅ (cluster parent)
+
+**Status:** ✅ shipped to `release` 2026-06-04 via **#451** (`12ab4613e`, cluster promotion), cluster-closed via **#452** (`ff3a08591`).
+**Artifacts:** `.ai/tasks/completed/2026-06/ai-assist-client-tools/`
+**Package surface:** `@fgv/ts-extras/ai-assist` (additive), plus a browser-barrel fix.
+
+The harness-supplied (Layer 1) half of tool use: `executeClientToolTurn` and the `IAiClientTool` / `IAiClientToolConfig` surface, so a caller can implement tools the provider then calls, across providers.
+
+**Why it is worth reading.** This is the stream `TESTING_GUIDELINES.md` § "Coverage Gap Resolution" cites as its canonical reference observation. Its exit artifact claimed a live testbed run had succeeded while `executeClientToolTurn` never merged client tools into the request `tools` array and three `call*Stream` signatures had never been widened — the model could not have called a client tool. **All three were fixed inside #451 itself**; what shipped broken was the *claim*, not the code. The lesson codified from it is the sequencing one: run `code-reviewer` **before** chasing measured coverage.
+
+### `ai-assist-client-tool-id-fix` ✅
+
+**Status:** ✅ shipped to `release` 2026-06-30 via **#504** (`b946a3bda`).
+**Artifacts:** `.ai/tasks/completed/2026-06/ai-assist-client-tool-id-fix/`
+**Parent:** `ai-assist-client-tools`.
+
+A field-reported bug fix, and the reason it deserves its own line rather than a mention: **this defect survived its parent's PR, its 100% coverage gate, and its live testbed run**, and was reported 26 days later by PersonAIlity as intermittent Anthropic "malformed identifier" errors on client-tool turns. Same package, same files the parent's own review had touched. It is *not* one of the three fixes bundled into #451, and not one of the coverage-sequencing defects `TESTING_GUIDELINES.md` cites — those were caught inside the parent. This one got past everything.
+
+### `ai-assist-cross-provider-continuation` ✅
+
+**Status:** ✅ shipped to `release` 2026-06-04, carried by the `ai-assist-client-tools` cluster promotion (**#451**). The stream's own PR **#453** targeted the integration branch and has no commit on `release`.
+**Artifacts:** `.ai/tasks/completed/2026-06/ai-assist-cross-provider-continuation/`
+
+Extended client-tool continuation wire-forwarding from Anthropic-only to **all four providers**. The per-provider fidelity difference is the durable fact: OpenAI Responses and xAI pass entries through verbatim, while Anthropic and Gemini project to `{role, content}` / `{role, parts}` and drop extra fields — so a consumer must not assume arbitrary fields round-trip everywhere.
+
+### `ai-assist-tool-continuation` ✅
+
+**Status:** ✅ shipped to `release` 2026-06-09 via **#488** (`5cc4b76ff`).
+**Artifacts:** `.ai/tasks/completed/2026-06/ai-assist-tool-continuation/`
+
+Made `IAiClientToolContinuation.messages` **cumulative** across `executeClientToolTurn` rounds, so the natural consumer pattern — replace `continuationMessages` each round — is the correct one. Before this, the natural-looking call was wrong in a way that only showed up on multi-round conversations.
+
+### `ai-assist-message-ordering` ✅
+
+**Status:** ✅ shipped to `release` 2026-06-06 via **#480** (`7b614ff32`).
+**Artifacts:** `.ai/tasks/completed/2026-06/ai-assist-message-ordering/`
+
+**The two turn entry points put conversation history on opposite sides of the current user turn** — completion used `tail:`, the client-tool turn prepended. Unified on `{ system?, messages }`, where the last entry is the current turn and everything before it is history, and the proxy wire body changed to match. A breaking wire change, deliberately taken rather than preserving two orderings.
+
+### `per-provider-testbed-scenarios` ✅ (cluster parent)
+
+**Status:** ✅ shipped to `release` 2026-06-05 via **#459** (`202c9f6be`, cluster promotion). The cluster closeout **#458** targeted the integration branch and has no commit on `release`.
+**Artifacts:** `.ai/tasks/completed/2026-06/per-provider-testbed-scenarios/`
+
+Stood up live-wire-verification testbed scenarios for **OpenAI Responses**, **Gemini** and **xAI grok**, paralleling the existing Anthropic one. The point of the cluster is that these scenarios hit the real APIs, which is how several of the library fixes below were found.
+
+### `ai-assist-cross-provider-fixes` ✅
+
+**Status:** ✅ shipped to `release` 2026-06-05, carried by the `per-provider-testbed-scenarios` cluster promotion (**#459**). The stream's own PR **#457** targeted the integration branch.
+**Artifacts:** `.ai/tasks/completed/2026-06/ai-assist-cross-provider-fixes/`
+**Parent:** `per-provider-testbed-scenarios`.
+
+The library fixes the live scenarios surfaced — the class of defect that only appears when you call the real API.
+
+### `ai-assist-responses-reasoning-events` ✅
+
+**Status:** ✅ shipped to `release` 2026-06-05, carried by **#459**. Its own PR **#458** (the cluster closeout) targeted the integration branch.
+**Artifacts:** `.ai/tasks/completed/2026-06/ai-assist-responses-reasoning-events/`
+**Parent:** `per-provider-testbed-scenarios`.
+
+Bundled a library fix, a Gemini scenario fix, **provider-drift instrumentation**, and the live-run verification. The drift instrumentation is the piece with ongoing value: the `ai-assist:unrecognized-event` warn prefix that lets a deployment alert when a provider's SSE wire shape changes.
+
+### `ai-assist-gemini-image-refusal` ✅
+
+**Status:** ✅ shipped to `release` 2026-07-07 via **#520** (`e824d57d8`).
+**Artifacts:** `.ai/tasks/completed/2026-07/ai-assist-gemini-image-refusal/`
+
+Gemini's API forbids combining built-in grounding (`web_search`) with function calling in one request. This turns the provider's opaque `INVALID_ARGUMENT` 400 into a named `Result.fail` **before any wire call**. Among the first streams to ship under the newly enforced coverage gate (#517/#518, landed the day before) — its artifact notes 100% coverage was real and had to be hit for real.
+
+### `ai-assist-openai-frontier-responses` ✅
+
+**Status:** ✅ shipped to `release` 2026-07-07 via **#522** (`3a2234249`).
+**Artifacts:** `.ai/tasks/completed/2026-07/ai-assist-openai-frontier-responses/`
+
+OpenAI frontier-model routing over the Responses API, including the `responsesOnlyModelPrefixes` routing that keeps Responses-only models reachable via `modelOverride` without making them a tier default. Also shipped under the enforced coverage gate.
+
+### `ollama-native` ✅
+
+**Status:** ✅ shipped to `release` 2026-06-06 via **#477** (`c750e3b82`).
+**Artifacts:** `.ai/tasks/completed/2026-06/ollama-native/`
+
+First-class Ollama support across two activities: the `/v1`-compat completion path owned by `ai-assist`, and `@fgv/ts-extras-ollama` for the native-only surface (model management, streamed pull, grammar-constrained `chatStructured`). **Native `embed` was CUT** (OQ-1, resolved by `ai-assist-embeddings`): Ollama embeddings are owned by `AiAssist.callProviderEmbedding` via `/v1`, and a parallel native path would have added only marginal diagnostics.
+
+### `ts-extras-mcp` ✅
+
+**Status:** ✅ shipped to `release` 2026-06-06 via **#479** (`7a8f19f90`, promotion); the stream's own **#469** and **#471** targeted the integration branch.
+**Artifacts:** `.ai/tasks/completed/2026-06/ts-extras-mcp/`
+
+`@fgv/ts-extras-mcp` — the MCP → ai-assist client-tools bridge, so any MCP server's tools become callable across all four providers with no per-provider work. The load-bearing behaviour is **graceful degradation**: a tool whose `inputSchema` is outside the `JsonSchema.fromJson` subset is excluded from `tools`, surfaced structurally on `skipped`, and NOISY-warned — the model is never offered a tool whose arguments cannot be validated.
+
+### `agent-memory-fragment-id` ✅
+
+**Status:** ✅ shipped to `release` 2026-07-31 via **#585** (`67e128480`).
+**Artifacts:** `.ai/tasks/completed/2026-07/agent-memory-fragment-id/`
+
+Durable, opaque fragment identity: optional `fragmentId` (stored and returned verbatim, never parsed) alongside the **advisory** `locator`, with at-least-one-of enforced by the converter and both index implementations. **Neither field discriminates a fragment hit from a record hit** — that is determined by which index produced it — and the consumer's own proposed fix (discriminate on `fragmentId`) has the same flaw one level down.
+
+> Its `result.md` says PR #585 "not merged"; it merged. Corrected in the stream's README appendix, with `result.md` left unedited per the artifact protocol.
+
+### `agent-memory-index-injection-seam` ✅
+
+**Status:** ✅ shipped to `release` 2026-07-31 via **#582** (`6593668ad`).
+**Artifacts:** `.ai/tasks/completed/2026-07/agent-memory-index-injection-seam/`
+
+One additive optional `index?: IMemoryIndex` param on the store factory; omitting it is byte-identical to before. **Its premise was later found wrong** and is worth recording as such: the seam was read as the resident-memory fix, but the ceiling was in the read *contract* — every read returned whole records by construction — which `agent-memory-index-partial-read` then corrected.
+
+### `async-result-family` ✅
+
+**Status:** ✅ shipped to `release` 2026-08-02 via **#596** (`1220dae50`); design **#595** (`3afbd5bd6`, 2026-08-01).
+**Artifacts:** `.ai/tasks/completed/2026-08/async-result-family/`
+
+Five bounded-parallel collectors plus two serial-by-contract members, each mirroring its sync sibling's name, parameter order and fold. **They take deferred work, never materialized promises** — a promise that already exists has already started, so a collector handed one has nothing left to bound. That constraint is the design, not an ergonomic detail.
+
+> Reconstructed from git history; no `result.md` was ever written, so there is no record of what diverged during implementation.
+
+### `testbed-web-scenarios` ✅
+
+**Status:** ✅ shipped to `release` 2026-07-27 via **#570** (`9af7826bd`, Phase B) over **#569** (`f9ba07975`, Phase A, 2026-07-26).
+**Artifacts:** `.ai/tasks/completed/2026-07/testbed-web-scenarios/`
+
+An additive `ICliScenarioImpl.webRunnable?: boolean` opt-in plus a shell-generic `ScenarioRunnerPanel`, so browser-clean CLI scenarios run from the testbed web UI without a bespoke React component each. Absent/false preserves CLI-only behaviour.
+
+> Reconstructed from git history; no `result.md` survives.
+
+### `heft-rig-coverage-gate` ✅
+
+**Status:** ✅ shipped to `release` 2026-07-07 via **#518** (`8e84cf0e6`), with **#517** (`e0300c1c4`, 2026-07-06) enforcing jest coverage-threshold misses as build failures.
+**Artifacts:** `.ai/tasks/completed/2026-07/heft-rig-coverage-gate/`
+
+Made the coverage gate **actually enforced in CI** rather than nominally required — CI now runs `rush test`. Several later streams' artifacts note they were the first to ship "under the enforced gate", which is how you can tell it changed behaviour.
+
+> Reconstructed from git history; no `result.md` survives.
+
+### `crypto-utils-base64url-hardening` ✅
+
+**Status:** ✅ shipped to `release` 2026-07-07 via **#519** (`479e20bd3`).
+**Artifacts:** `.ai/tasks/completed/2026-07/crypto-utils-base64url-hardening/`
+
+base64url-no-pad helpers and a branded `MultibaseSpkiPublicKey`. Two PersonAIlity V2 identity asks (RFC 9421 signatures + WebAuthn), bundled because both are additive on `crypto-utils` and tightly coupled. This is the stream behind the guidance that `fromBase64Strict` — not `fromBase64`, and not `Buffer.from(s, 'base64')` — is what you reach for when the base64 came from somewhere you do not control.
+
+### `ks-encoding` ✅
+
+**Status:** ✅ shipped to `release` 2026-05-27 via **#425** (`a587495c4`).
+**Artifacts:** `.ai/tasks/completed/2026-05/ks-encoding/`
+
+A top-level `--encoding <text|base64|hex>` flag on `ks get` / `ks export`; default `text` preserves prior behaviour exactly. Enables binary-safe secret retrieval.
+
+**Left open deliberately:** whether `ks get` / `ks export` should ever *auto-detect* non-UTF-8 secret bytes and default to base64. Recorded rather than decided — and see `docs/FUTURE.md`, which closed it as moot on a sharper precondition: `@fgv/ks` still exposes no way to get non-UTF-8 bytes *into* a keystore.
+
+### `prompt-assist-horizontal-composition` ✅
+
+**Status:** ✅ shipped to `release` 2026-06-19 via **#490** (`1daac07c5`) — design + Phase A (`IResolvedPrompt.slots`) + Phase B (`HorizontalComposer`) in one promotion.
+**Artifacts:** `.ai/tasks/completed/2026-06/prompt-assist-horizontal-composition/`
+
+`HorizontalComposer` — provenance-ordered, directive-aware merge of N peer contributors into one composed prompt. The load-bearing rule: **`constraint`-directive contributions are always concatenated first and never dropped, regardless of strategy**. It closes the safety gap of the consumer-side external-composer path, which read `IResolvedPrompt.slots` directly and had to self-screen.
+
+Four open questions were resolved in-stream (composed descriptor YAML-authored; `ILogicalSlotConfig` code-first; `'\n\n'` separator, per-slot overridable), and the phase-B implementation forked from the ratified design in named ways — both recorded in the artifact.
+
+### `ts-prompt-assist-observability` ✅
+
+**Status:** ✅ shipped to `release` 2026-06-05 via **#460** (`c9211811c`, cluster promotion). Phases ran on a dedicated integration branch — Phase A **#455**, Phase B (`34ef9443`), Phase C **#456** — none of which has a commit on `release` under its own number.
+**Artifacts:** `.ai/tasks/completed/2026-06/ts-prompt-assist-observability/`
+**Workflow:** `design-triage-implement`.
+
+`PromptObservationStore` and the `IPromptObserver` fan-out, plus **`RetainingRingBuffer` in `@fgv/ts-utils`** — the generic bounded most-recent-N ring underneath it. The ring is the piece with reach beyond this package: it is the answer for any retain-and-page surface, and exists because this stream declined to hand-roll one.
+
+### `retaining-logger-ring-buffer-refactor` ✅
+
+**Status:** ✅ shipped to `release` 2026-06-05 via **#461** (`8f4bf5e6c`).
+**Artifacts:** `.ai/tasks/completed/2026-06/retaining-logger-ring-buffer-refactor/`
+
+Moved `RetainingLogger` onto the shared `RetainingRingBuffer` rather than its own circular buffer — the follow-through that made the primitive above actually shared instead of merely available. Also carved out the `logging-interface` packlet.
+
+> Its artifact records **PR: TBD (see commit SHA)** and the SHA is not in the file, so the backfill's first pass left this blank as unrecoverable. It is recoverable: a title search of `release` finds `refactor(ts-utils): RetainingLogger composes RetainingRingBuffer; logging-interface packlet (#461)`.
+
+### `result-should-not-fail` ✅
+
+**Status:** ✅ shipped to `release` 2026-05-21 via **#400** (`d1e4e2fb1`), over substrate-prep **#399** (`534fede82`, 2026-05-20).
+**Artifacts:** `.ai/tasks/completed/2026-05/result-should-not-fail/`
+
+`Result.shouldNotFail()` for declaration-time invariants — the case where a failure means the program is wrong rather than the input is.
+
+---
+
+### Corrections the verification pass made to the drafts
+
+Recorded because the drafting pass was careful and still got eight of twenty-three wrong in ways
+only a title-level check against `release` would catch. **The general shape of the error is citing
+the stream's own PR — the one it authored into an integration branch — as though it were the commit
+that reached `release`.** `finalize-task` says a sub-stream's PRs are the ones it authored rather
+than the one that carried it; the ledger wants both, and must not conflate them.
+
+| stream | drafted | verified |
+|---|---|---|
+| `ai-assist-message-ordering` | shipped via #478 | **#480** (`7b614ff32`); #478 has no commit on any ref |
+| `prompt-assist-horizontal-composition` | #490 / #491 / #492 | **#490** only; #491 and #492 have no commit on any ref |
+| `ts-prompt-assist-observability` | no promotion named; dated 2026-06-04 | **#460** (`c9211811c`), **2026-06-05** |
+| `retaining-logger-ring-buffer-refactor` | "PR number not recoverable"; 2026-06-06 | **#461** (`8f4bf5e6c`), **2026-06-05** |
+| `ollama-native` | "2026-06" | **#477** (`c750e3b82`), 2026-06-06 |
+| `ai-assist-gemini-image-refusal` | "2026-07, off `release` directly" | **#520** (`e824d57d8`), 2026-07-07 |
+| `ai-assist-openai-frontier-responses` | "2026-07" | **#522** (`3a2234249`), 2026-07-07 |
+| `ks-encoding` | "2026-05" | **#425** (`a587495c4`), 2026-05-27 |
+
+Two further drafted claims were checked and found **already satisfied**, needing no action:
+`safer-fetch-s3` already carries its `ledgerEntry: fetch-primitive-threat-model` pointer, and
+`ai-assist-thinking-events` — flagged as "a ledger entry with no directory, worth a look" — is
+correct as it stands: it is a 🟡 *queued* stream that was never commissioned, and its own entry says
+artifacts are "TBD when stream is commissioned".
+
+**One residue item is left open deliberately.** `finalize-task` § 8's reconciliation compares
+directory names to heading names and does not read `meta.yaml`'s `ledgerEntry:`, so the five
+pointer-resolved streams are reported as gaps on every run — and this backfill re-derived entries
+for two of them before catching it. Teaching the reconciliation to honour the pointer is a small
+change to the skill, and it is what stops this being re-done.
