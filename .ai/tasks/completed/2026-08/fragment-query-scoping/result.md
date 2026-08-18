@@ -119,7 +119,31 @@ Restored and re-verified green afterward.
 4. **P3 — the scope-only scan cost was undocumented.** Filed to `docs/FUTURE.md` with what a real fix
    would need.
 
-**Layer 2 (Copilot)** — requested on #639.
+**Layer 2 (Copilot on #639)** — round 1 returned **three findings, all real**, and none of them a
+nitpick. That is a useful data point on its own: layer 1 had passed clean on this diff, so the
+substantive round-1 profile matches `CODING_STANDARDS.md`'s note that a native-boundary package
+(here `SqliteVecFragmentIndex` over `better-sqlite3` / `vec0`) under-covers the runtime-edge class at
+layer 1 — but the two *other* findings were pure-TS and layer 1 should have caught them.
+
+1. **A throwing `identityResolver` escaped `retrieve()`.** `resolveIdentity` was called bare while
+   the two backend hooks were normalized through `_callBackend`. `IIdentityResolver` is exactly as
+   consumer-injectable as they are, so a throw broke the `Promise<Result<...>>` contract. Wrapped in
+   `captureResult`; pinned by a test with a throwing resolver.
+2. **`address.idStem as MemoryId` asserted a brand the library validates.** `idStem` is a plain
+   `string` on the codec result, but `MemoryId` **is** the filename stem by contract and
+   `Convert.memoryId` is what enforces the portable-stem rule. The assertion is now a validation, so
+   a resolver returning `nested/stem` fails loudly rather than querying the index with an id that
+   matches nothing and reads as an ordinary empty result. Pinned.
+3. **`SqliteVecFragmentIndex` over-fetched an already-partition-restricted query.** `fetchK` expanded
+   to the table-wide `fragmentCount` whenever `maxPerRecord` was set — including under a
+   single-record narrowing, where the query is already restricted to one partition. The cap forces
+   the full ranked set *only* when other records can fill from behind a capped one; with one record
+   the result is exactly `min(topK, maxPerRecord, fragments)` and those are the first rows KNN
+   returns, so `k = topK` suffices. Fixed, and the guard test was **verified discriminating** by
+   sabotaging `k` to 1 on the single-record path and watching exactly it (and the sibling
+   before-the-cut test) go red.
+
+Gates re-run green after the fixes, repo-wide `rush rebuild` included.
 
 ## Costs recorded rather than paid
 
