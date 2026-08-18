@@ -1,6 +1,7 @@
 # Stream brief — `fragment-query-scoping`
 
-**Status: QUEUED 🟢 — ready to start.** Filed 2026-08-18 from a PersonAIlity ask.
+**Status: QUEUED 🟢 — design settled, ready to implement.** Filed 2026-08-18 from a
+PersonAIlity ask; design closed 2026-08-18 after one round with them.
 **Shape:** breaking, on a pre-1.0 surface, across two contracts and two implementations.
 
 ## The ask, verified
@@ -71,23 +72,28 @@ record that does not know.
 
 So: **the narrowing goes on the query, and is pushed into the index.**
 
-### The crux the ask does not resolve
+### Resolution — through the codec, not through the index
 
-If the filter takes an `IEdgeTarget`, the caller still cannot construct one — that is the
-complaint restated, not answered. If it takes an `EntityId`, the *index* cannot apply it,
-because the index is keyed on `edgeTargetKey` and knows nothing about entity ids.
+`kind` selects an `IIdentityCodec`; `encode(entityId)` computes `{ scope, idStem, isVersioned }`.
+`FragmentSemanticRetriever` resolves once through that, then passes a **`{ scope, id? }`**
+narrowing into `IFragmentVectorIndex.query`, applied during selection, before `topK`.
 
-**Resolve it at the retriever, push a target at the index.** `FragmentSemanticRetriever`
-resolves the caller's identifier to a target **once**, then passes a real target narrowing
-down to `IFragmentVectorIndex.query`. That keeps the index seam honest (it deals in the keys
-it actually holds) and lets the caller speak the identifier they actually have.
+**Versioning falls out of the layout rather than needing a version axis** — a finding from
+`identityCodec.ts` that neither side had:
 
-The cost is that `FragmentSemanticRetriever.create({ backend? })` (`:155`) currently takes
-**no index and no resolver**, so it gains one — which is the same shape as the
-`IRetrieverCreateParams` `{ index, resolver }` the record-granular retrievers already take,
-so the family stays consistent rather than acquiring a second convention.
+| kind | codec yields | narrowing | meaning |
+|---|---|---|---|
+| non-versioned | `{ scope, idStem }` | `{ scope, id }` | exactly that record |
+| versioned | `scope = <base>/entities/<entityId>`, `isVersioned: true` | `{ scope }` | every version of that entity |
 
-### Surface sketch, to be confirmed in design
+`TemporalIdentityCodec` puts every version of an entity in its own per-entity subtree, so the
+entity subtree **is** the narrowing. No `asOf` on `IFragmentQuery`, no version-selection
+semantics on a search query, no special case in either index.
+
+`FragmentSemanticRetriever.create({ backend? })` gains what it needs to reach the codecs,
+matching the `{ index, resolver }` shape the record-granular retrievers already take.
+
+### Settled surface
 
 ```ts
 interface IFragmentQuery {
@@ -95,36 +101,45 @@ interface IFragmentQuery {
   readonly topK?: number;
   readonly maxPerRecord?: number;
   readonly entityId?: EntityId;   // NEW — narrowing, applied before topK
-  readonly kind?: Kind;           // NEW — disambiguator; see OQ-1, which is answered
+  readonly kind?: Kind;           // NEW — required WITH entityId; selects the codec
 }
 
 interface IFragmentVectorIndex {
   query(vector: Float32Array, topK: number, options?: {
     readonly maxPerRecord?: number;
-    readonly target?: IEdgeTarget;   // NEW — applied during selection
+    readonly scope?: MemoryScopeKey;   // NEW — narrowing, applied during selection
+    readonly id?: MemoryId;            // NEW — with scope, narrows to one record
   }): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
 }
 ```
 
-Note the `query` signature is shown collapsing `maxPerRecord` into an options bag rather than
-growing a fourth positional parameter. That is a **breaking** change to a seam with two
-implementations; see OQ-3.
+`entityId` without `kind` (or vice versa) is a `Failure`, not a best-effort.
+
+The `query` signature collapses `maxPerRecord` into an options bag rather than growing more
+positional parameters — **breaking** on a seam with two implementations; see OQ-3.
 
 ## Open questions
 
-1. **~~Is `entityId` alone unambiguous?~~ Answered: no, and nothing promises it is.**
-   `EntityId` is *"Consumer-supplied domain key… the package never mints identity"*
-   (`ids.ts:17`). **No stated uniqueness beyond a scope**, and a vault has many scopes — so
-   two scopes may legitimately carry the same `entityId`, and the resolution
-   `entityId → IEdgeTarget` is **one-to-many in the general case**.
+1. **~~Is `entityId` alone unambiguous?~~ SETTLED — and the answer arrived from two
+   directions, neither of which was the one this brief anticipated.**
 
-   This decides the signature rather than leaving it open: the narrowing **cannot** be
-   `entityId` alone. Either it carries a disambiguator (`kind`, or the scope itself), or the
-   retriever resolves and **fails loudly on ambiguity** rather than silently picking one —
-   silently picking is the failure mode this whole ask exists to remove, reintroduced one
-   level down. The design must pick; the brief's recommendation is *fail loudly*, because a
-   consumer with a genuinely ambiguous id needs to know that, and a disambiguator they cannot
-   supply is no better than the target they cannot construct today.
+   **From the consumer (2026-08-18):** collisions are **the normal case, not the rare one.**
+   Their doc ids and entity ids share a namespace and shape — a document titled "Acme Corp"
+   is `acme-corp` in scope `knowledge` while the entity it is about is `acme-corp` in scope
+   `entities`, and ingestion produces both by design. **This inverted this brief's stated
+   default**: fail-loudly-on-ambiguity would have fired on the primary path.
+
+   **From our own source, checked after their reply:** the question then dissolves.
+   `codecs` is a `ReadonlyMap<Kind, IIdentityCodec>` and `encode(entityId)` returns
+   `{ scope, idStem, isVersioned }` — so **`(kind, entityId) → target` is a deterministic
+   function**, and once `kind` is supplied ambiguity is *structurally impossible* rather than
+   merely unlikely. It is the same resolution `IMemoryStore.get(kind, entityId)` already does.
+
+   **Settled: `entityId` and `kind` travel together, resolved through the kind's codec.** No
+   index walk, no ambiguity guard, no `listEntries()` map. The retriever-resolves-via-index
+   design earlier in this brief is superseded — it was solving a problem the codec had already
+   solved.
+
 2. **What does a narrowing that matches nothing return?** An empty success is the obvious
    answer and is probably wrong: *"this record has no fragments"* and *"no such record"* are
    different, and the second is a caller bug. Consider a `Failure` for an unresolvable
