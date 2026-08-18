@@ -286,8 +286,16 @@ export interface IEmbeddedFragment {
  * `TemporalIdentityCodec` files every version of an entity in its own per-entity
  * subtree, so for a versioned kind the entity's subtree *is* the narrowing and
  * `{ scope }` means "every version of this entity". A non-versioned kind resolves to
- * a single record and supplies `{ scope, id }`. That is why fragment search needs no
- * `asOf` axis and neither index needs a version special case.
+ * a single record and supplies `{ scope, id }`.
+ *
+ * **"Every version" is literal, and includes superseded ones.** Invalidation stamps
+ * `invalid_at` on an envelope; it does not prune that version's fragments from the
+ * index. So a scope-narrowed query returns current and historical fragments alike,
+ * and a hit carries nothing that distinguishes them — `IVectorQueryHit` has no
+ * temporal fields. This is the record-granular vector lane's existing behaviour
+ * rather than something this narrowing introduces, but do not read the subtree
+ * narrowing as currency filtering: it is not, and there is no `asOf` axis here to
+ * make it so.
  * @public
  */
 export interface IFragmentQueryOptions {

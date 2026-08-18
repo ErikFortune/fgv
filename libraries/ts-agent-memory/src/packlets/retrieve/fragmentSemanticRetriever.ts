@@ -83,9 +83,11 @@ export interface IFragmentQuery {
    * search would come back short whenever other records outscored this one's
    * fragments.
    *
-   * For a versioned kind this narrows to **every version of the entity**, because
-   * `TemporalIdentityCodec` files an entity's versions in their own subtree and that
-   * subtree is what the id resolves to.
+   * For a versioned kind this narrows to **every version of the entity** — literally
+   * every version, superseded ones included, because invalidation stamps `invalid_at`
+   * without pruning that version's fragments. Nothing on a hit distinguishes a
+   * current fragment from a historical one. That matches the record-granular vector
+   * lane; it is not currency filtering.
    */
   readonly entityId?: EntityId;
 
@@ -179,6 +181,13 @@ export class FragmentSemanticRetriever {
       return fail(FRAGMENT_SEMANTIC_UNWIRED_MESSAGE);
     }
     const backend: IFragmentSemanticBackend = this._backend;
+    // Resolve the narrowing FIRST. It is synchronous, local, and cheap, while
+    // `embedQuery` is typically a paid network round trip — so a typo'd `kind`, a
+    // missing resolver, or a half-supplied narrowing should cost nothing.
+    const options: Result<IFragmentQueryOptions> = this._resolveOptions(query);
+    if (options.isFailure()) {
+      return fail(options.message);
+    }
     // Consumer-supplied hooks may throw; normalize both a returned `fail` and a
     // rejection into a single `fragment recall: <label> failed` Failure so
     // `retrieve` always honors its `Promise<Result<...>>` contract.
@@ -188,10 +197,6 @@ export class FragmentSemanticRetriever {
     );
     if (embedded.isFailure()) {
       return fail(embedded.message);
-    }
-    const options: Result<IFragmentQueryOptions> = this._resolveOptions(query);
-    if (options.isFailure()) {
-      return fail(options.message);
     }
     return FragmentSemanticRetriever._callBackend('fragment query', () =>
       backend.fragmentIndex.query(embedded.value, query.topK ?? 10, options.value)
@@ -208,7 +213,8 @@ export class FragmentSemanticRetriever {
    * which is what makes a colliding `entityId` across kinds a non-issue.
    *
    * A **versioned** kind resolves to the entity's own subtree scope and deliberately
-   * carries no `id`, so the narrowing covers every version of the entity. A
+   * carries no `id`, so the narrowing covers every version of the entity — including
+   * superseded ones, which are invalidated but never pruned from the index. A
    * non-versioned kind resolves to exactly one record.
    */
   private _resolveOptions(query: IFragmentQuery): Result<IFragmentQueryOptions> {

@@ -142,6 +142,39 @@ shipped wrong".
 
 ---
 
+## A scope-only fragment narrowing costs a full ranked scan on `SqliteVecFragmentIndex`
+
+`IFragmentQueryOptions` carries `scope` and an optional `id`. The **`scope` + `id`** case — a
+non-versioned kind, one record — pushes down into the `vec0` partition (`AND target_key = ?`), so
+KNN never leaves that record's rows. The **scope-only** case — a versioned kind, whose every version
+is a separate record under the entity's subtree — does not: `target_key` equality cannot express a
+prefix, so the implementation fetches the *whole* ranked set (`fetchK = fragmentCount`) and applies
+the `scope\0` prefix filter in JS before the `topK` cut.
+
+**It is correct, and the property that matters holds** — `topK` is applied to the narrowed set, so a
+scoped query never comes back short. The cost is that a narrowing to one entity scans every fragment
+in the index, which is the opposite of the cost profile a narrowing implies. On a vault where the
+fragment index is small this is invisible; on a large one it makes the versioned-kind narrowing the
+expensive case precisely because it is the more structured one. `InMemoryFragmentCosineIndex` has no
+such asymmetry (it iterates the record map either way, with an O(1) lookup for the single-record
+case), so the two implementations diverge in cost while staying identical in result — which is how
+this stays easy to miss.
+
+**What a real fix needs**: a stored scope column to filter on (a `+scope` auxiliary column is
+readable but not filterable in `vec0`; a real filter wants a partition or a shadow table), or
+resolving a versioned entity's versions to explicit `target_key`s up front and issuing N
+partition-restricted queries. The first is a `vec0` schema change, and this package's schema changes
+require a drop-and-re-index — so it should ride along with the next one rather than force its own.
+
+**Trigger**: a consumer reporting fragment-query latency on a versioned kind, or the next
+`SqliteVecFragmentIndex` schema change (fold it in then).
+
+**Reference**: `fragment-query-scoping` stream, 2026-08-18;
+`libraries/ts-agent-memory-sqlite-vec/src/packlets/sqlite-vec-index/sqliteVecFragmentIndex.ts`
+`query()`.
+
+---
+
 ## Whether on-demand body reads want a cache
 
 `agent-memory-index-partial-read` made every `list` / retrieve materialize bodies from storage on

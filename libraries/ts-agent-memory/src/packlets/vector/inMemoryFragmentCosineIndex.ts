@@ -247,12 +247,16 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
    * meaningful.
    */
   private *_selectRecords(options: IFragmentQueryOptions | undefined): Generator<IStoredRecordFragments> {
-    const scope: MemoryScopeKey | undefined = options?.scope;
-    if (scope === undefined) {
+    // Narrowed once, deliberately: re-deriving through `options?.` a second time
+    // after an early return that already implies `options !== undefined` creates an
+    // optional-chain arm that cannot fire, which is a dead branch rather than an
+    // untested one.
+    if (options === undefined || options.scope === undefined) {
       yield* this._records.values();
       return;
     }
-    const id: MemoryId | undefined = options?.id;
+    const scope: MemoryScopeKey = options.scope;
+    const id: MemoryId | undefined = options.id;
     if (id !== undefined) {
       const record: IStoredRecordFragments | undefined = this._records.get(edgeTargetKey({ scope, id }));
       if (record !== undefined) {

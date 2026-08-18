@@ -258,6 +258,30 @@ describe('FragmentSemanticRetriever', () => {
       expect(fragmentIndex.lastOptions).toBeUndefined();
     });
 
+    test('a bad narrowing costs no embed call — validated before the paid step', async () => {
+      // embedQuery is typically a network round trip; the narrowing check is a local
+      // Map lookup. A typo'd kind should not bill the caller for an embedding.
+      let embedCalls = 0;
+      const countingEmbed = (): Promise<Result<Float32Array>> => {
+        embedCalls += 1;
+        return Promise.resolve(succeed(Float32Array.from([1, 0])));
+      };
+      const fragmentIndex = new FakeFragmentIndex([]);
+      const r = FragmentSemanticRetriever.create({
+        backend: { fragmentIndex, embedQuery: countingEmbed },
+        identityResolver: resolver({})
+      }).orThrow();
+
+      expect(
+        await r.retrieve({ semantic: 'q', entityId: 'ghost' as EntityId, kind: 'nope' as Kind })
+      ).toFail();
+      expect(embedCalls).toBe(0);
+
+      // ...while a well-formed query still embeds exactly once.
+      expect(await r.retrieve({ semantic: 'q' })).toSucceed();
+      expect(embedCalls).toBe(1);
+    });
+
     test('an unscoped query still passes no scope, and needs no resolver', async () => {
       const fragmentIndex = new FakeFragmentIndex([]);
       const r = FragmentSemanticRetriever.create({

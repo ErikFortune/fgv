@@ -31,11 +31,14 @@ import {
   IMemoryRecordSource,
   FragmentEmbedder,
   IVectorRebuildOptions,
-  IFragmentVectorRebuildReport
+  IFragmentVectorRebuildReport,
+  TemporalIdentityCodec,
+  TemporalVersionedPolicy
 } from '../../../index';
 
 const knowledgeKind: Kind = 'knowledge' as Kind;
 const mtmKind: Kind = 'mtm' as Kind;
+const factKind: Kind = 'fact' as Kind;
 
 function mutableRoot(): FileTree.IMutableFileTreeDirectoryItem {
   const tree = FileTree.inMemory([], { mutable: true }).orThrow();
@@ -366,6 +369,128 @@ describe('FileTreeMemoryStore fragment-embed-on-write', () => {
           expect(perRecord).toHaveLength(1);
         }
       );
+    });
+  });
+
+  describe('record narrowing end-to-end (real store, real index, real retriever)', () => {
+    /**
+     * A store carrying BOTH a versioned kind (`fact`, `TemporalIdentityCodec` +
+     * `TemporalVersionedPolicy`) and a non-versioned one (`knowledge`), with fragment
+     * embed-on-write actually wired. The two kinds deliberately host the same
+     * `entityId` — that collision is the ordinary case a narrowing has to survive,
+     * not a pathological one.
+     */
+    function narrowingStore(index: IFragmentVectorIndex): FileTreeMemoryStore {
+      const reg: IBodyConverterRegistry = BodyConverterRegistry.create().orThrow();
+      reg.register(knowledgeKind, Converters.string);
+      reg.register(factKind, Converters.string);
+      return FileTreeMemoryStore.create({
+        root: mutableRoot(),
+        registry: reg,
+        codecs: new Map<Kind, IIdentityCodec>([
+          [knowledgeKind, new KnowledgeIdentityCodec()],
+          [factKind, TemporalIdentityCodec.create('facts').orThrow()]
+        ]),
+        writePolicies: new Map<Kind, IWritePolicy>([[factKind, TemporalVersionedPolicy.create().orThrow()]]),
+        fragmentIndex: index,
+        fragmentEmbedder: fragmentEmbed
+      }).orThrow();
+    }
+
+    /**
+     * Seeds two versions of the fact `shared-id` plus a knowledge record under the
+     * SAME `entityId`. The knowledge body's five bare `cat` words each score a
+     * perfect 1 against a `cat` query, while the facts' `catfish` words score
+     * `1/sqrt(2)` — so an unnarrowed top-5 is entirely knowledge, deterministically.
+     */
+    async function seed(store: FileTreeMemoryStore): Promise<void> {
+      (await store.put(makeRecord('shared-id', 'catfish swims', 'fact'))).orThrow();
+      (await store.put(makeRecord('shared-id', 'catfish naps', 'fact'))).orThrow();
+      (await store.put(makeRecord('shared-id', 'cat cat cat cat cat', 'knowledge'))).orThrow();
+    }
+
+    function retrieverFor(
+      index: IFragmentVectorIndex,
+      store: FileTreeMemoryStore
+    ): FragmentSemanticRetriever {
+      return FragmentSemanticRetriever.create({
+        backend: { fragmentIndex: index, embedQuery: queryEmbed },
+        identityResolver: store
+      }).orThrow();
+    }
+
+    test('narrowing to a versioned entity returns fragments from every version', async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      const store = narrowingStore(index);
+      await seed(store);
+      // Both versions persist (invalidate-don't-delete) and both were fragment-indexed.
+      expect(index.recordCount).toBe(3);
+
+      expect(
+        await retrieverFor(index, store).retrieve({
+          semantic: 'cat',
+          topK: 10,
+          entityId: 'shared-id' as EntityId,
+          kind: factKind
+        })
+      ).toSucceedAndSatisfy((hits: ReadonlyArray<IVectorQueryHit>) => {
+        // Every hit is under the entity's own subtree — the knowledge record sharing
+        // the id contributed nothing.
+        expect(hits.every((h) => h.target.scope === 'facts/entities/shared-id')).toBe(true);
+        // ...and BOTH versions are represented: v2 is current, v1 is invalidated but
+        // never pruned, so its fragments are still in the index and still answer.
+        expect(new Set(hits.map((h) => h.target.id))).toEqual(new Set(['shared-id-v1', 'shared-id-v2']));
+      });
+    });
+
+    test('narrowing to the same id under a different kind selects the other record', async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      const store = narrowingStore(index);
+      await seed(store);
+
+      expect(
+        await retrieverFor(index, store).retrieve({
+          semantic: 'cat',
+          topK: 10,
+          entityId: 'shared-id' as EntityId,
+          kind: knowledgeKind
+        })
+      ).toSucceedAndSatisfy((hits: ReadonlyArray<IVectorQueryHit>) => {
+        expect(hits.every((h) => h.target.scope === 'knowledge')).toBe(true);
+        expect(hits.every((h) => h.target.id === 'shared-id')).toBe(true);
+        expect(hits).toHaveLength(5);
+      });
+    });
+
+    test('the narrowing is applied before the topK cut, not after it', async () => {
+      const index = InMemoryFragmentCosineIndex.create().orThrow();
+      const store = narrowingStore(index);
+      await seed(store);
+      const retriever = retrieverFor(index, store);
+
+      // Unnarrowed, the knowledge record owns the whole top-2 — its bare `cat` words
+      // score 1 against the facts' `catfish` at 1/sqrt(2).
+      expect(await retriever.retrieve({ semantic: 'cat', topK: 2 })).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          expect(hits.map((h) => h.target.scope)).toEqual(['knowledge', 'knowledge']);
+        }
+      );
+
+      // Narrowed to the fact entity, the same topK: 2 comes back full of that
+      // entity's best fragments. A post-filter of the global top-2 would have
+      // returned nothing at all.
+      expect(
+        await retriever.retrieve({
+          semantic: 'cat',
+          topK: 2,
+          entityId: 'shared-id' as EntityId,
+          kind: factKind
+        })
+      ).toSucceedAndSatisfy((hits: ReadonlyArray<IVectorQueryHit>) => {
+        expect(hits).toHaveLength(2);
+        expect(new Set(hits.map((h) => h.target.id))).toEqual(new Set(['shared-id-v1', 'shared-id-v2']));
+        hits.forEach((h) => expect(h.score).toBeCloseTo(1 / Math.sqrt(2)));
+      });
     });
   });
 });
