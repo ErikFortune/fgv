@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "BREAKING: IFragmentVectorIndex.query takes an IFragmentQueryOptions bag instead of a positional maxPerRecord, and gains scope/id narrowing applied before the topK cut. IFragmentQuery gains entityId + kind. IMemoryStore gains resolveIdentity (IIdentityResolver).",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}

@@ -4,7 +4,8 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { IFragmentVectorIndex, IVectorQueryHit } from '../vector';
+import { EntityId, IIdentityCodecResult, IIdentityResolver, Kind, MemoryId } from '../types';
+import { IFragmentQueryOptions, IFragmentVectorIndex, IVectorQueryHit } from '../vector';
 import { QueryEmbedder } from './semanticRetriever';
 
 /**
@@ -15,6 +16,30 @@ import { QueryEmbedder } from './semanticRetriever';
  */
 export const FRAGMENT_SEMANTIC_UNWIRED_MESSAGE: string =
   'fragment recall: no fragment index is wired; wire an IFragmentSemanticBackend to enable sub-document search';
+
+/**
+ * The loud-degradation message returned when a query carries a record narrowing but
+ * no {@link IIdentityResolver} is wired to resolve it.
+ *
+ * @remarks
+ * Deliberately a `Failure` rather than a silently-global search: answering a scoped
+ * question with an unscoped result is the failure this narrowing exists to remove.
+ * @public
+ */
+export const FRAGMENT_NARROWING_UNRESOLVABLE_MESSAGE: string =
+  'fragment recall: a record narrowing was supplied but no identity resolver is wired; pass one to FragmentSemanticRetriever.create';
+
+/**
+ * The message returned when exactly one of `entityId` / `kind` is supplied.
+ *
+ * @remarks
+ * They travel together because `kind` is what selects the identity codec, and the
+ * codec is what makes the resolution unambiguous. One without the other is not a
+ * partial narrowing that could be honored best-effort — it is not a narrowing at all.
+ * @public
+ */
+export const FRAGMENT_NARROWING_INCOMPLETE_MESSAGE: string =
+  'fragment recall: `entityId` and `kind` must be supplied together — `kind` selects the identity codec that resolves the narrowing';
 
 /**
  * The fragment backend wired into a {@link FragmentSemanticRetriever}: the fragment
@@ -45,6 +70,37 @@ export interface IFragmentQuery {
    * Applied during selection (before the `topK` cut). Omit for uncapped.
    */
   readonly maxPerRecord?: number;
+
+  /**
+   * Narrow the search to one record's fragments: the consumer-supplied domain key
+   * of the record to search within. **Must be supplied with
+   * {@link IFragmentQuery.kind}.**
+   *
+   * @remarks
+   * The narrowing is applied **during selection, before the `topK` cut**, so the
+   * `topK` you ask for is the `topK` you get. Filtering a global result afterwards
+   * is not equivalent: it truncates to `topK` across every record first, so a scoped
+   * search would come back short whenever other records outscored this one's
+   * fragments.
+   *
+   * For a versioned kind this narrows to **every version of the entity**, because
+   * `TemporalIdentityCodec` files an entity's versions in their own subtree and that
+   * subtree is what the id resolves to.
+   */
+  readonly entityId?: EntityId;
+
+  /**
+   * The kind of the record named by {@link IFragmentQuery.entityId}. **Must be
+   * supplied with it.**
+   *
+   * @remarks
+   * This is not decoration and not a filter: `kind` **selects the identity codec**,
+   * and the codec computes the storage address. An `EntityId` promises no uniqueness
+   * beyond a scope — the same id under two kinds is the ordinary case, not a
+   * pathological one — so without `kind` the resolution is ambiguous, and with it
+   * ambiguity is structurally impossible.
+   */
+  readonly kind?: Kind;
 }
 
 /**
@@ -82,9 +138,14 @@ export interface IFragmentRetrieverCapabilities {
  */
 export class FragmentSemanticRetriever {
   private readonly _backend: IFragmentSemanticBackend | undefined;
+  private readonly _identityResolver: IIdentityResolver | undefined;
 
-  private constructor(backend: IFragmentSemanticBackend | undefined) {
+  private constructor(
+    backend: IFragmentSemanticBackend | undefined,
+    identityResolver: IIdentityResolver | undefined
+  ) {
     this._backend = backend;
+    this._identityResolver = identityResolver;
   }
 
   /** What this retriever can do given its wiring. */
@@ -92,11 +153,21 @@ export class FragmentSemanticRetriever {
     return { supportsFragmentRecall: this._backend !== undefined };
   }
 
-  /** Family-convention factory. */
+  /**
+   * Family-convention factory.
+   *
+   * @param params - `backend` wires fragment recall itself. `identityResolver`
+   * resolves a query's `(kind, entityId)` narrowing to a storage address;
+   * `IMemoryStore` implements it, so the usual wiring is
+   * `{ backend, identityResolver: store }`. It is optional because an unscoped
+   * fragment search needs nothing to resolve — but a query that *does* carry a
+   * narrowing fails loudly without it rather than quietly searching everything.
+   */
   public static create(params: {
     readonly backend?: IFragmentSemanticBackend;
+    readonly identityResolver?: IIdentityResolver;
   }): Result<FragmentSemanticRetriever> {
-    return succeed(new FragmentSemanticRetriever(params.backend));
+    return succeed(new FragmentSemanticRetriever(params.backend, params.identityResolver));
   }
 
   /**
@@ -118,9 +189,52 @@ export class FragmentSemanticRetriever {
     if (embedded.isFailure()) {
       return fail(embedded.message);
     }
+    const options: Result<IFragmentQueryOptions> = this._resolveOptions(query);
+    if (options.isFailure()) {
+      return fail(options.message);
+    }
     return FragmentSemanticRetriever._callBackend('fragment query', () =>
-      backend.fragmentIndex.query(embedded.value, query.topK ?? 10, query.maxPerRecord)
+      backend.fragmentIndex.query(embedded.value, query.topK ?? 10, options.value)
     );
+  }
+
+  /**
+   * Turn the query's consumer-facing narrowing into the storage-address narrowing
+   * the index understands.
+   *
+   * @remarks
+   * `kind` selects the identity codec and the codec computes the record's storage
+   * address, so this is a deterministic resolution rather than a search —
+   * which is what makes a colliding `entityId` across kinds a non-issue.
+   *
+   * A **versioned** kind resolves to the entity's own subtree scope and deliberately
+   * carries no `id`, so the narrowing covers every version of the entity. A
+   * non-versioned kind resolves to exactly one record.
+   */
+  private _resolveOptions(query: IFragmentQuery): Result<IFragmentQueryOptions> {
+    const { entityId, kind, maxPerRecord } = query;
+    if (entityId === undefined && kind === undefined) {
+      return succeed({ maxPerRecord });
+    }
+    if (entityId === undefined || kind === undefined) {
+      return fail(FRAGMENT_NARROWING_INCOMPLETE_MESSAGE);
+    }
+    if (this._identityResolver === undefined) {
+      return fail(FRAGMENT_NARROWING_UNRESOLVABLE_MESSAGE);
+    }
+    return this._identityResolver
+      .resolveIdentity(kind, entityId)
+      .withErrorFormat((msg) => `fragment recall: cannot resolve '${kind}'/'${entityId}': ${msg}`)
+      .onSuccess((address: IIdentityCodecResult) =>
+        succeed({
+          maxPerRecord,
+          scope: address.scope,
+          // A versioned kind's every version lives under the entity subtree the
+          // codec returned, so omitting `id` is what makes the narrowing mean
+          // "this entity" rather than "one of its versions".
+          id: address.isVersioned ? undefined : (address.idStem as MemoryId)
+        })
+      );
   }
 
   /**

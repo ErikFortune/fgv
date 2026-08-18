@@ -7,6 +7,7 @@ import '@fgv/ts-utils-jest';
 import { Converters, Logging, Result, fail, succeed, DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
+  IFragmentQueryOptions,
   BodyConverterRegistry,
   EntityId,
   FileTreeMemoryStore,
@@ -143,9 +144,9 @@ class SpyFragmentIndex implements IFragmentVectorIndex {
   public query(
     vector: Float32Array,
     topK: number,
-    maxPerRecord?: number
+    options?: IFragmentQueryOptions
   ): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
-    return this._inner.query(vector, topK, maxPerRecord);
+    return this._inner.query(vector, topK, options);
   }
 }
 

@@ -6,6 +6,11 @@
 import '@fgv/ts-utils-jest';
 import { Result, fail, succeed, DetailedResult, failWithDetail } from '@fgv/ts-utils';
 import {
+  EntityId,
+  IFragmentQueryOptions,
+  IIdentityCodecResult,
+  IIdentityResolver,
+  Kind,
   FRAGMENT_SEMANTIC_UNWIRED_MESSAGE,
   FragmentSemanticRetriever,
   IEdgeTarget,
@@ -36,6 +41,7 @@ const okEmbed = (): Promise<Result<Float32Array>> => Promise.resolve(succeed(Flo
 class FakeFragmentIndex implements IFragmentVectorIndex {
   public lastTopK: number | undefined;
   public lastMaxPerRecord: number | undefined;
+  public lastOptions: IFragmentQueryOptions | undefined;
   private readonly _hits: ReadonlyArray<IVectorQueryHit>;
   private readonly _fail: boolean;
   public constructor(hits: ReadonlyArray<IVectorQueryHit>, shouldFail: boolean = false) {
@@ -66,10 +72,11 @@ class FakeFragmentIndex implements IFragmentVectorIndex {
   public query(
     __vector: Float32Array,
     topK: number,
-    maxPerRecord?: number
+    options?: IFragmentQueryOptions
   ): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
     this.lastTopK = topK;
-    this.lastMaxPerRecord = maxPerRecord;
+    this.lastMaxPerRecord = options?.maxPerRecord;
+    this.lastOptions = options;
     return Promise.resolve(this._fail ? fail('fragment backend down') : succeed(this._hits));
   }
 }
@@ -114,6 +121,152 @@ describe('FragmentSemanticRetriever', () => {
     expect(await r.retrieve({ semantic: 'q', topK: 3, maxPerRecord: 1 })).toSucceed();
     expect(fragmentIndex.lastTopK).toBe(3);
     expect(fragmentIndex.lastMaxPerRecord).toBe(1);
+  });
+
+  describe('record narrowing', () => {
+    /** A resolver that answers from a fixed table; anything else is a codec miss. */
+    function resolver(table: Record<string, IIdentityCodecResult>): IIdentityResolver {
+      return {
+        resolveIdentity: (kind: Kind, entityId: EntityId): Result<IIdentityCodecResult> => {
+          const found = table[`${kind}/${entityId}`];
+          return found !== undefined
+            ? succeed(found)
+            : fail(`no identity codec registered for kind '${kind}'`);
+        }
+      };
+    }
+
+    test('resolves (kind, entityId) through the codec and pushes scope + id at the index', async () => {
+      const fragmentIndex = new FakeFragmentIndex([hit('knowledge', 'doc-a', 0, 5, 0.9)]);
+      const r = FragmentSemanticRetriever.create({
+        backend: { fragmentIndex, embedQuery: okEmbed },
+        identityResolver: resolver({
+          'knowledge/acme-corp': {
+            scope: 'knowledge' as MemoryScopeKey,
+            idStem: 'acme-corp',
+            isVersioned: false
+          }
+        })
+      }).orThrow();
+
+      expect(
+        await r.retrieve({
+          semantic: 'q',
+          entityId: 'acme-corp' as EntityId,
+          kind: 'knowledge' as Kind
+        })
+      ).toSucceed();
+      expect(fragmentIndex.lastOptions?.scope).toBe('knowledge');
+      expect(fragmentIndex.lastOptions?.id).toBe('acme-corp');
+    });
+
+    test('the same entityId under a different kind resolves to a different scope', async () => {
+      // The collision the consumer reported as their NORMAL case: a document named
+      // acme-corp and the entity acme-corp coexist. `kind` selects the codec, so the
+      // resolution is a function and there is nothing to disambiguate.
+      const fragmentIndex = new FakeFragmentIndex([]);
+      const r = FragmentSemanticRetriever.create({
+        backend: { fragmentIndex, embedQuery: okEmbed },
+        identityResolver: resolver({
+          'knowledge/acme-corp': {
+            scope: 'knowledge' as MemoryScopeKey,
+            idStem: 'acme-corp',
+            isVersioned: false
+          },
+          'entity/acme-corp': {
+            scope: 'entities' as MemoryScopeKey,
+            idStem: 'acme-corp',
+            isVersioned: false
+          }
+        })
+      }).orThrow();
+
+      expect(
+        await r.retrieve({ semantic: 'q', entityId: 'acme-corp' as EntityId, kind: 'knowledge' as Kind })
+      ).toSucceed();
+      expect(fragmentIndex.lastOptions?.scope).toBe('knowledge');
+
+      expect(
+        await r.retrieve({ semantic: 'q', entityId: 'acme-corp' as EntityId, kind: 'entity' as Kind })
+      ).toSucceed();
+      expect(fragmentIndex.lastOptions?.scope).toBe('entities');
+    });
+
+    test('a versioned kind narrows to the entity subtree and carries NO id', async () => {
+      // Every version lives under the entity's own subtree, so omitting `id` is what
+      // makes the narrowing mean "this entity" rather than "one of its versions".
+      const fragmentIndex = new FakeFragmentIndex([]);
+      const r = FragmentSemanticRetriever.create({
+        backend: { fragmentIndex, embedQuery: okEmbed },
+        identityResolver: resolver({
+          'fact/e1': {
+            scope: 'mem/entities/e1' as MemoryScopeKey,
+            idStem: 'e1',
+            isVersioned: true
+          }
+        })
+      }).orThrow();
+
+      expect(
+        await r.retrieve({ semantic: 'q', entityId: 'e1' as EntityId, kind: 'fact' as Kind })
+      ).toSucceed();
+      expect(fragmentIndex.lastOptions?.scope).toBe('mem/entities/e1');
+      expect(fragmentIndex.lastOptions?.id).toBeUndefined();
+    });
+
+    test('entityId without kind fails loudly rather than searching everything', async () => {
+      const fragmentIndex = new FakeFragmentIndex([]);
+      const r = FragmentSemanticRetriever.create({
+        backend: { fragmentIndex, embedQuery: okEmbed },
+        identityResolver: resolver({})
+      }).orThrow();
+      expect(await r.retrieve({ semantic: 'q', entityId: 'acme-corp' as EntityId })).toFailWith(
+        /must be supplied together/i
+      );
+    });
+
+    test('kind without entityId fails loudly too', async () => {
+      const fragmentIndex = new FakeFragmentIndex([]);
+      const r = FragmentSemanticRetriever.create({
+        backend: { fragmentIndex, embedQuery: okEmbed },
+        identityResolver: resolver({})
+      }).orThrow();
+      expect(await r.retrieve({ semantic: 'q', kind: 'knowledge' as Kind })).toFailWith(
+        /must be supplied together/i
+      );
+    });
+
+    test('a narrowing with no resolver wired fails rather than silently searching globally', async () => {
+      const fragmentIndex = new FakeFragmentIndex([]);
+      const r = FragmentSemanticRetriever.create({
+        backend: { fragmentIndex, embedQuery: okEmbed }
+      }).orThrow();
+      expect(
+        await r.retrieve({ semantic: 'q', entityId: 'acme-corp' as EntityId, kind: 'knowledge' as Kind })
+      ).toFailWith(/no identity resolver is wired/i);
+    });
+
+    test('an unresolvable identifier fails loudly and never reaches the index', async () => {
+      const fragmentIndex = new FakeFragmentIndex([]);
+      const r = FragmentSemanticRetriever.create({
+        backend: { fragmentIndex, embedQuery: okEmbed },
+        identityResolver: resolver({})
+      }).orThrow();
+      expect(
+        await r.retrieve({ semantic: 'q', entityId: 'ghost' as EntityId, kind: 'nope' as Kind })
+      ).toFailWith(/cannot resolve 'nope'\/'ghost'.*no identity codec/i);
+      expect(fragmentIndex.lastOptions).toBeUndefined();
+    });
+
+    test('an unscoped query still passes no scope, and needs no resolver', async () => {
+      const fragmentIndex = new FakeFragmentIndex([]);
+      const r = FragmentSemanticRetriever.create({
+        backend: { fragmentIndex, embedQuery: okEmbed }
+      }).orThrow();
+      expect(await r.retrieve({ semantic: 'q', maxPerRecord: 2 })).toSucceed();
+      expect(fragmentIndex.lastOptions?.scope).toBeUndefined();
+      expect(fragmentIndex.lastOptions?.maxPerRecord).toBe(2);
+    });
   });
 
   test('defaults topK to 10 and leaves maxPerRecord undefined when the query omits them', async () => {
