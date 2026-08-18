@@ -145,6 +145,17 @@ layer 1 — but the two *other* findings were pure-TS and layer 1 should have ca
 
 Gates re-run green after the fixes, repo-wide `rush rebuild` included.
 
+**Round 2 returned nothing** — no new threads, no new comments. **Stopped there on diminishing
+returns**, at 2 rounds: round 1 was entirely substantive and every finding was fixed with a test,
+round 2 found nothing to add. Per `CODING_STANDARDS.md` the stop criterion is the finding profile
+rather than the round count, and a round that surfaces zero findings after a round that surfaced
+three real ones is the clearest version of that signal.
+
+**One thing layer 1 should have caught and did not**, worth naming rather than filing under
+"native-boundary packages are a known blind spot": findings 1 and 2 are pure-TS repo-pattern issues
+— an un-normalized consumer hook next to two normalized ones, and a brand asserted where the library
+ships a validator for it. The native-boundary allowance covers finding 3, not those two.
+
 ## Costs recorded rather than paid
 
 `SqliteVecFragmentIndex` pushes a `scope` + `id` narrowing into the `vec0` partition
@@ -170,5 +181,6 @@ drop-and-re-index, so it should not force its own).
 | a test proving the narrowing precedes `topK`, **watched failing** first | ✅ see above |
 | both index implementations behave identically under the narrowing | ✅ |
 | `code-reviewer` on the final diff before first push | ✅ |
+| Copilot loop driven by implementer, stopped on diminishing returns | ✅ 2 rounds (3 findings → 0) |
 | `LIBRARY_CAPABILITIES.md` updated | ✅ |
 | consumer note | ✅ round-2 note, plus the correction above |
