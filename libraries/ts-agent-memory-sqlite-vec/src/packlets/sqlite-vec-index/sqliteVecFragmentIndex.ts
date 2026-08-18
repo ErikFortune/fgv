@@ -484,8 +484,14 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
         // the single-record case gets the partition push-down.
         const recordKey: string | undefined =
           scope !== undefined && id !== undefined ? edgeTargetKey({ scope, id }) : undefined;
+        // The cap forces the full ranked set ONLY when other records can fill from
+        // behind a capped one. Under a single-record narrowing every row belongs to
+        // that record, so the result is exactly `min(topK, maxPerRecord, fragments)`
+        // and those are the first rows KNN returns — `k = topK` suffices, and
+        // expanding to the table-wide `fragmentCount` would ask an
+        // already-partition-restricted query for far more rows than it can use.
         const wholeSet: boolean =
-          maxPerRecord !== undefined || (scope !== undefined && recordKey === undefined);
+          recordKey === undefined && (maxPerRecord !== undefined || scope !== undefined);
         const fetchK: number = wholeSet
           ? Number((stmts.fragmentCount.get() as { c: number | bigint }).c)
           : topK;

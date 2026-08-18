@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
-import { EntityId, IIdentityCodecResult, IIdentityResolver, Kind, MemoryId } from '../types';
+import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { Convert, EntityId, IIdentityCodecResult, IIdentityResolver, Kind, MemoryId } from '../types';
 import { IFragmentQueryOptions, IFragmentVectorIndex, IVectorQueryHit } from '../vector';
 import { QueryEmbedder } from './semanticRetriever';
 
@@ -228,19 +228,33 @@ export class FragmentSemanticRetriever {
     if (this._identityResolver === undefined) {
       return fail(FRAGMENT_NARROWING_UNRESOLVABLE_MESSAGE);
     }
-    return this._identityResolver
-      .resolveIdentity(kind, entityId)
+    const resolver: IIdentityResolver = this._identityResolver;
+    // `identityResolver` is a consumer-injectable seam like the two backend hooks,
+    // so a throw has to become a `Failure` here rather than escaping `retrieve()`
+    // and breaking its `Promise<Result<...>>` contract. `captureResult` yields a
+    // nested `Result`, which the identity `onSuccess` flattens.
+    return captureResult(() => resolver.resolveIdentity(kind, entityId))
+      .onSuccess((resolved: Result<IIdentityCodecResult>) => resolved)
       .withErrorFormat((msg) => `fragment recall: cannot resolve '${kind}'/'${entityId}': ${msg}`)
-      .onSuccess((address: IIdentityCodecResult) =>
-        succeed({
-          maxPerRecord,
-          scope: address.scope,
-          // A versioned kind's every version lives under the entity subtree the
-          // codec returned, so omitting `id` is what makes the narrowing mean
-          // "this entity" rather than "one of its versions".
-          id: address.isVersioned ? undefined : (address.idStem as MemoryId)
-        })
-      );
+      .onSuccess((address: IIdentityCodecResult) => {
+        // A versioned kind's every version lives under the entity subtree the
+        // codec returned, so omitting `id` is what makes the narrowing mean
+        // "this entity" rather than "one of its versions".
+        if (address.isVersioned) {
+          return succeed({ maxPerRecord, scope: address.scope });
+        }
+        // `idStem` is a plain `string` on the codec result, but a `MemoryId` IS the
+        // filename stem by contract and `Convert.memoryId` is what enforces that —
+        // so validate rather than assert. A resolver that returned a path-unsafe
+        // stem could otherwise smuggle it into the index query, where it would
+        // match nothing and look like an empty result rather than a caller bug.
+        return Convert.memoryId
+          .convert(address.idStem)
+          .withErrorFormat(
+            (msg) => `fragment recall: '${kind}'/'${entityId}' resolved to an unusable record id: ${msg}`
+          )
+          .onSuccess((id: MemoryId) => succeed({ maxPerRecord, scope: address.scope, id }));
+      });
   }
 
   /**

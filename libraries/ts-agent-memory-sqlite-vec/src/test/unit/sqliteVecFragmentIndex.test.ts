@@ -478,6 +478,39 @@ describe('SqliteVecFragmentIndex', () => {
         expect(hits[0].target.id).toBe('doc-a');
       });
     });
+
+    test('a single-record narrowing with maxPerRecord fetches only topK, and still ranks correctly', async () => {
+      // Guards the `wholeSet` narrowing: `maxPerRecord` forces the full ranked set
+      // ONLY when other records can fill from behind a capped one. Under a
+      // single-record narrowing every row is that record's, so the result is exactly
+      // `min(topK, maxPerRecord, fragmentCount)` and those are the first rows KNN
+      // returns — `k = topK` suffices. Both directions of the min are pinned here,
+      // with the ordering, so a wrong `k` would show up as a short or misordered
+      // result rather than only as a latency difference nothing measures.
+      const index = await seededWithDecoys();
+      const q = Float32Array.from([1, 0]);
+      const scoped = { scope: 'knowledge' as MemoryScopeKey, id: 'doc-a' as MemoryId };
+
+      // topK binds (2 < 3 fragments), the cap does not.
+      expect(await index.query(q, 2, { ...scoped, maxPerRecord: 5 })).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          expect(hits.map((h) => h.locator)).toEqual([
+            { start: 0, end: 5 },
+            { start: 5, end: 10 }
+          ]);
+        }
+      );
+
+      // The cap binds (2 < 3 fragments), topK does not.
+      expect(await index.query(q, 5, { ...scoped, maxPerRecord: 2 })).toSucceedAndSatisfy(
+        (hits: ReadonlyArray<IVectorQueryHit>) => {
+          expect(hits.map((h) => h.locator)).toEqual([
+            { start: 0, end: 5 },
+            { start: 5, end: 10 }
+          ]);
+        }
+      );
+    });
   });
 
   describe('query', () => {

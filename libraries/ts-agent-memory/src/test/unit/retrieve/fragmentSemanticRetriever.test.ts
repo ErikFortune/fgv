@@ -282,6 +282,49 @@ describe('FragmentSemanticRetriever', () => {
       expect(embedCalls).toBe(1);
     });
 
+    test('a throwing resolver becomes a Failure rather than escaping retrieve()', async () => {
+      // `identityResolver` is a consumer-injectable seam like the two backend hooks,
+      // so it gets the same treatment: a throw must not break the
+      // `Promise<Result<...>>` contract by propagating out of `retrieve`.
+      const fragmentIndex = new FakeFragmentIndex([]);
+      const r = FragmentSemanticRetriever.create({
+        backend: { fragmentIndex, embedQuery: okEmbed },
+        identityResolver: {
+          resolveIdentity: (): Result<IIdentityCodecResult> => {
+            throw new Error('resolver kaboom');
+          }
+        }
+      }).orThrow();
+
+      expect(
+        await r.retrieve({ semantic: 'q', entityId: 'acme-corp' as EntityId, kind: 'knowledge' as Kind })
+      ).toFailWith(/cannot resolve 'knowledge'\/'acme-corp'.*resolver kaboom/i);
+      expect(fragmentIndex.lastOptions).toBeUndefined();
+    });
+
+    test('a resolver returning a path-unsafe idStem fails loudly instead of querying with it', async () => {
+      // `idStem` is a plain string on the codec result, but a MemoryId IS the
+      // filename stem by contract. Asserting the brand rather than validating it
+      // would push an unusable id into the index, where it matches nothing and looks
+      // like an ordinary empty result rather than the caller bug it is.
+      const fragmentIndex = new FakeFragmentIndex([]);
+      const r = FragmentSemanticRetriever.create({
+        backend: { fragmentIndex, embedQuery: okEmbed },
+        identityResolver: resolver({
+          'knowledge/acme-corp': {
+            scope: 'knowledge' as MemoryScopeKey,
+            idStem: 'nested/stem',
+            isVersioned: false
+          }
+        })
+      }).orThrow();
+
+      expect(
+        await r.retrieve({ semantic: 'q', entityId: 'acme-corp' as EntityId, kind: 'knowledge' as Kind })
+      ).toFailWith(/resolved to an unusable record id/i);
+      expect(fragmentIndex.lastOptions).toBeUndefined();
+    });
+
     test('an unscoped query still passes no scope, and needs no resolver', async () => {
       const fragmentIndex = new FakeFragmentIndex([]);
       const r = FragmentSemanticRetriever.create({
