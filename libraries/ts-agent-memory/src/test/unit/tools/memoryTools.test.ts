@@ -561,6 +561,7 @@ describe('createMemoryTools', () => {
 
     test('propagates a store.get failure (does not mask a real fault as a fresh write)', async () => {
       const failingStore: IMemoryStore = {
+        resolveIdentity: () => fail('not used by these tool tests'),
         get: async () => fail('disk fault'),
         getById: async () => fail('unused'),
         list: async () => succeed([]),

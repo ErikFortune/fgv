@@ -4,10 +4,11 @@
  */
 
 import { DetailedResult, Result, fail, failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
-import { IEdgeTarget, Kind, edgeTargetKey } from '../types';
+import { IEdgeTarget, Kind, MemoryId, MemoryScopeKey, edgeTargetKey } from '../types';
 import {
   FragmentEmbedder,
   IEmbeddedFragment,
+  IFragmentQueryOptions,
   IFragmentVectorIndex,
   IFragmentVectorRebuildReport,
   IMemoryRecordListing,
@@ -178,8 +179,9 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
   public query(
     vector: Float32Array,
     topK: number,
-    maxPerRecord?: number
+    options?: IFragmentQueryOptions
   ): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
+    const maxPerRecord: number | undefined = options?.maxPerRecord;
     if (topK <= 0 || this._records.size === 0) {
       return Promise.resolve(succeed([]));
     }
@@ -192,7 +194,12 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
     }
     const queryMagnitude: number = InMemoryFragmentCosineIndex._magnitude(vector);
     const scored: IScoredFragment[] = [];
-    for (const record of this._records.values()) {
+    // The narrowing is applied HERE — choosing which records are scored at all —
+    // rather than by filtering hits afterwards. That is the whole point: a
+    // post-filter would leave `topK` applied to the global set, so a scoped search
+    // would silently return fewer than `topK` whenever other records outscored the
+    // target's fragments.
+    for (const record of this._selectRecords(options)) {
       for (const fragment of record.fragments) {
         scored.push({
           key: edgeTargetKey(record.target),
@@ -227,6 +234,41 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
       hits.push(candidate.hit);
     }
     return Promise.resolve(succeed(hits));
+  }
+
+  /**
+   * The records a query is allowed to score, honoring the `scope` / `id` narrowing.
+   *
+   * @remarks
+   * The single-record case is an O(1) map lookup rather than a scan, because the
+   * record map is keyed by `edgeTargetKey`. The scope-only case (a versioned kind's
+   * per-entity subtree) is a filtered walk — still bounded by the vault, but it
+   * scores only the entity's own fragments, which is what makes the caller's `topK`
+   * meaningful.
+   */
+  private *_selectRecords(options: IFragmentQueryOptions | undefined): Generator<IStoredRecordFragments> {
+    // Narrowed once, deliberately: re-deriving through `options?.` a second time
+    // after an early return that already implies `options !== undefined` creates an
+    // optional-chain arm that cannot fire, which is a dead branch rather than an
+    // untested one.
+    if (options === undefined || options.scope === undefined) {
+      yield* this._records.values();
+      return;
+    }
+    const scope: MemoryScopeKey = options.scope;
+    const id: MemoryId | undefined = options.id;
+    if (id !== undefined) {
+      const record: IStoredRecordFragments | undefined = this._records.get(edgeTargetKey({ scope, id }));
+      if (record !== undefined) {
+        yield record;
+      }
+      return;
+    }
+    for (const record of this._records.values()) {
+      if (record.target.scope === scope) {
+        yield record;
+      }
+    }
   }
 
   /**

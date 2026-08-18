@@ -4,7 +4,7 @@
  */
 
 import { DetailedResult, Result } from '@fgv/ts-utils';
-import { IEdgeTarget, IMemoryRecord, Kind } from '../types';
+import { IEdgeTarget, IMemoryRecord, Kind, MemoryId, MemoryScopeKey } from '../types';
 
 /**
  * A half-open `[start, end)` span into a record's body — the in-record locator a
@@ -272,6 +272,56 @@ export interface IEmbeddedFragment {
 }
 
 /**
+ * Selection-time narrowing for {@link IFragmentVectorIndex.query}. Every member is
+ * applied **before** the `topK` cut.
+ *
+ * @remarks
+ * `scope` (optionally with `id`) is the record narrowing. It is expressed as a
+ * storage address rather than as a consumer-facing `(kind, entityId)` because that
+ * is what the index is keyed by; resolving one to the other is
+ * `IIdentityResolver.resolveIdentity`'s job, and doing it above the index keeps the
+ * index dealing only in the keys it actually holds.
+ *
+ * **`scope` alone is not a coarser accident — it is what a versioned kind needs.**
+ * `TemporalIdentityCodec` files every version of an entity in its own per-entity
+ * subtree, so for a versioned kind the entity's subtree *is* the narrowing and
+ * `{ scope }` means "every version of this entity". A non-versioned kind resolves to
+ * a single record and supplies `{ scope, id }`.
+ *
+ * **"Every version" is literal, and includes superseded ones.** Invalidation stamps
+ * `invalid_at` on an envelope; it does not prune that version's fragments from the
+ * index. So a scope-narrowed query returns current and historical fragments alike,
+ * and a hit carries nothing that distinguishes them — `IVectorQueryHit` has no
+ * temporal fields. This is the record-granular vector lane's existing behaviour
+ * rather than something this narrowing introduces, but do not read the subtree
+ * narrowing as currency filtering: it is not, and there is no `asOf` axis here to
+ * make it so.
+ * @public
+ */
+export interface IFragmentQueryOptions {
+  /**
+   * Maximum number of fragments any single record may contribute. Omit for
+   * uncapped. With a single-record narrowing (`scope` + `id`) this caps the one
+   * record's contribution, which is a second cap on the same axis rather than a
+   * cross-record fairness knob — usually you want one or the other, not both.
+   */
+  readonly maxPerRecord?: number;
+
+  /**
+   * Restrict the search to fragments of records in this scope. Omit to search every
+   * record.
+   */
+  readonly scope?: MemoryScopeKey;
+
+  /**
+   * With {@link IFragmentQueryOptions.scope}, restrict further to the single record
+   * at `(scope, id)`. Ignored — and meaningless — without `scope`, since a bare `id`
+   * does not address a record.
+   */
+  readonly id?: MemoryId;
+}
+
+/**
  * The fragment-granular sibling of {@link IVectorIndex}: instead of one vector per
  * record it holds many vectors per record, each tagged with the identity its
  * {@link IEmbeddedFragment} carried, and its `query` returns per-fragment hits
@@ -309,15 +359,19 @@ export interface IFragmentVectorIndex {
   /**
    * Return the `topK` nearest fragments to `vector`, in descending score order,
    * each hit carrying its record `target` plus whichever of `locator` /
-   * `fragmentId` the stored fragment was added with. When
-   * `maxPerRecord` is supplied, no more than that many fragments of any single
-   * record appear in the result — the cap is applied during selection (before the
-   * `topK` cut) so one long document cannot crowd out others.
+   * `fragmentId` the stored fragment was added with.
+   *
+   * @remarks
+   * **Every member of `options` is applied during selection, before the `topK`
+   * cut.** That ordering is the contract, not an implementation detail: a narrowing
+   * applied afterwards would mean the caller's `topK` is not the `topK` that reached
+   * the index, so a scoped search would be exact only when a global over-fetch
+   * happened to be generous enough. See {@link IFragmentQueryOptions}.
    */
   query(
     vector: Float32Array,
     topK: number,
-    maxPerRecord?: number
+    options?: IFragmentQueryOptions
   ): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
 
   /**

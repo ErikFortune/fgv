@@ -27,6 +27,7 @@ import {
   IVectorQueryHit,
   IVectorRebuildOptions,
   Kind,
+  IFragmentQueryOptions,
   MemoryId,
   MemoryScopeKey,
   edgeTargetKey
@@ -454,8 +455,11 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
   public query(
     vector: Float32Array,
     topK: number,
-    maxPerRecord?: number
+    options?: IFragmentQueryOptions
   ): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
+    const maxPerRecord: number | undefined = options?.maxPerRecord;
+    const scope: MemoryScopeKey | undefined = options?.scope;
+    const id: MemoryId | undefined = options?.id;
     if (topK <= 0 || this._stmts === undefined) {
       return Promise.resolve(succeed([]));
     }
@@ -473,15 +477,38 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
         // capped record's later fragments are skipped), so fetch the full ranked set
         // and apply the cap + topK cut here — exactly as the in-memory index does.
         // Uncapped, KNN's own `k = topK` is already the answer.
-        const fetchK: number =
-          maxPerRecord === undefined ? topK : Number((stmts.fragmentCount.get() as { c: number | bigint }).c);
+        // A scope-only narrowing (a versioned kind's per-entity subtree) spans several
+        // records, and `target_key` equality cannot express a prefix, so it is applied
+        // over the full ranked set below. Correct either way — the caller's `topK` is
+        // applied to the NARROWED set, which is the property that matters — but only
+        // the single-record case gets the partition push-down.
+        const recordKey: string | undefined =
+          scope !== undefined && id !== undefined ? edgeTargetKey({ scope, id }) : undefined;
+        // The cap forces the full ranked set ONLY when other records can fill from
+        // behind a capped one. Under a single-record narrowing every row belongs to
+        // that record, so the result is exactly `min(topK, maxPerRecord, fragments)`
+        // and those are the first rows KNN returns — `k = topK` suffices, and
+        // expanding to the table-wide `fragmentCount` would ask an
+        // already-partition-restricted query for far more rows than it can use.
+        const wholeSet: boolean =
+          recordKey === undefined && (maxPerRecord !== undefined || scope !== undefined);
+        const fetchK: number = wholeSet
+          ? Number((stmts.fragmentCount.get() as { c: number | bigint }).c)
+          : topK;
         if (fetchK <= 0) {
           return [];
         }
-        const rows: ReadonlyArray<IKnnRow> = stmts.query.all(
-          SqliteVecFragmentIndex._toBlob(vector),
-          fetchK
+        const blob: Uint8Array = SqliteVecFragmentIndex._toBlob(vector);
+        const rows: ReadonlyArray<IKnnRow> = (
+          recordKey !== undefined
+            ? stmts.queryScopedToRecord.all(blob, fetchK, recordKey)
+            : stmts.query.all(blob, fetchK)
         ) as ReadonlyArray<IKnnRow>;
+        // The scope prefix every record in `scope` shares. `edgeTargetKey` joins with
+        // a NUL, so this cannot collide with a longer scope that merely starts the
+        // same way.
+        const scopePrefix: string | undefined =
+          scope !== undefined && recordKey === undefined ? `${scope}\0` : undefined;
         // sqlite-vec returns rows ascending by distance (nearest first); score is
         // `1 - cosineDistance`, so this order is already descending score.
         const hits: IVectorQueryHit[] = [];
@@ -489,6 +516,9 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
         for (const row of rows) {
           if (hits.length >= topK) {
             break;
+          }
+          if (scopePrefix !== undefined && !row.target_key.startsWith(scopePrefix)) {
+            continue;
           }
           if (maxPerRecord !== undefined) {
             const used: number = perRecord.get(row.target_key) ?? 0;
@@ -559,6 +589,14 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
       query: this._db.prepare(
         `SELECT target_key, start_off, end_off, fragment_id, distance FROM "${this._table}" ` +
           `WHERE embedding MATCH ? AND k = ?`
+      ),
+      // The single-record narrowing constrains `target_key`, which is the table's
+      // PARTITION KEY — so this is a partition-restricted KNN rather than a scan
+      // plus a filter. That is the performance reason this narrowing belongs in the
+      // library instead of in a bigger over-fetch on the caller's side.
+      queryScopedToRecord: this._db.prepare(
+        `SELECT target_key, start_off, end_off, fragment_id, distance FROM "${this._table}" ` +
+          `WHERE embedding MATCH ? AND k = ? AND target_key = ?`
       ),
       fragmentCount: this._db.prepare(`SELECT count(*) AS c FROM "${this._table}"`),
       recordCount: this._db.prepare(`SELECT count(DISTINCT target_key) AS c FROM "${this._table}"`),
@@ -719,6 +757,8 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
 
 /** The prepared statements / helpers the fragment index reuses once its table exists. */
 interface IFragmentStatements {
+  /** KNN restricted to one record's partition; see `queryScopedToRecord` above. */
+  readonly queryScopedToRecord: BetterSqlite3.Statement;
   readonly deleteByTarget: BetterSqlite3.Statement;
   readonly replace: (key: string, fragments: ReadonlyArray<IEmbeddedFragment>) => void;
   readonly query: BetterSqlite3.Statement;

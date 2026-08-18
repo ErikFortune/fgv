@@ -67,6 +67,35 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] A `safer-fetch` retry test asserts a probabilistic outcome, and flakes CI for every
+  unrelated PR at roughly 1 run in 170.**
+  `libraries/ts-extras/src/test/unit/safer-fetch/saferFetchRetry.test.ts` §
+  *"an exhausted deadline fails with the attempt's own failure"* drives
+  `{ timeoutMs: 30, retry: { attempts: 5, baseDelayMs: 10_000 } }` and asserts
+  `expect(transport.calls).toHaveLength(1)` — i.e. that the backoff outlasts the 30 ms overall
+  deadline so no second attempt is made.
+
+  **The implementation is correct; the test is over-specified.** `computeRetryDelayMs` applies
+  **full jitter** — the delay is uniform on `[0, cap)` where `cap = min(baseDelayMs * 2^attempt,
+  maxDelayMs)`. With `DEFAULT_RETRY_MAX_DELAY_MS = 5_000` the cap is 5 000 ms, so the delay lands
+  under the 30 ms deadline about **0.6% of the time**, and a second attempt is then both legal and
+  correct. Observed 2026-08-18 on #640 — a promotion PR touching only `ts-agent-memory`,
+  `ts-agent-memory-sqlite-vec` and docs — where it failed `rush test`, blocked 18 downstream
+  projects as `BLOCKED: operations failed`, and cost a full re-run. The same suite passed 5/5
+  locally immediately after.
+
+  **The fix is small and the seam already exists.** `IRetryDelayParams.random` is documented
+  *"Injected for determinism in tests; the call path passes `Math.random`"* — and `grep -n random`
+  in that test file returns **nothing**. The test should inject a `random` that returns a value
+  putting the delay safely past the deadline (or the deadline/base pair should be chosen so the
+  assertion holds for every point in `[0, cap)`). Worth a sweep of the sibling retry tests for the
+  same shape while in there.
+
+  **Why P2 rather than P3**: it is not this package's own gate that suffers, it is *everyone's* — a
+  flake in a widely-depended-on package fails `rush test` for PRs that never touched it, and the
+  failure reads as "your change broke `ts-extras`" to whoever is looking. That is a tax on unrelated
+  work plus an erosion of the one gate this repo trusts most.
+
 - **[P2] The `samples/testbed` fake `IVectorIndex` has broken on two consecutive `ts-agent-memory`
   contract changes, with the rule codified in between.**
   `samples/testbed/src/test/unit/scenarios/sqliteVecMemoryPersistence.test.ts` hand-implements
@@ -118,8 +147,24 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   observed that its README had closed the same observation with "nothing new to codify" while the
   *other* recurrence it hit — this file's line cap — was correctly escalated.
 
-- **[P2] `fileTreeMemoryStore.ts` is 5 lines under the 2000-line `max-lines` cap.**
-  **1995 lines as of `agent-memory-derived-state-reconciliation` (2026-08-15)** — the headroom
+- **[P1] `fileTreeMemoryStore.ts` is 11 lines under the 2000-line `max-lines` cap — PROMOTED 2026-08-18.**
+  **The fourth consecutive stream paid the toll, which is exactly the promotion condition this entry
+  wrote for itself.** `fragment-query-scoping` (2026-08-18) needed `IMemoryStore` to implement
+  `IIdentityResolver`, found the file already at **1999** with no room at all, and extracted
+  `libraries/ts-agent-memory/src/packlets/store/storeIdentity.ts` (codec lookup, identity resolution,
+  loaded-identity verification) to get under it — landing at **1989**. Four extractions in four
+  streams is not debt being deferred; it is a per-stream toll being collected, and every one of them
+  was discovered mid-implementation rather than planned.
+
+  **What P1 changes**: the split is no longer something to fold into the next feature stream. It is
+  its own piece of work, to be scheduled before the next `ts-agent-memory` feature rather than
+  alongside it — because folding it in is precisely what the last four streams did, and each one
+  chose its extraction under time pressure to clear a cap rather than on the seam that belonged
+  there. The `storeIdentity` / `storeCoverage` / `vectorRecordSource` boundaries are all defensible,
+  but none of them was chosen; they were the smallest thing that fit.
+
+  *(Superseded framing, kept for the measurement trail:)* **1995 lines as of
+  `agent-memory-derived-state-reconciliation` (2026-08-15)** — the headroom
   narrowed again, and by the mechanism this entry predicted. It was 1991 after
   `vector-rebuild-report-by-kind` (2026-08-15), which spent most of its own headroom: that stream's
   inline version measured 2012, and the `asRecordSource()` filter-and-tally had to be extracted to
@@ -147,17 +192,20 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   and take the store structurally rather than importing it. Neither is a public-surface change, so
   both ship as `"type": "none"`.
 
-  **Not a P3, and the evidence is now three streams deep**: P3 is opportunistic, and 5 lines of
+  **Not a P3, and the evidence is now four streams deep**: P3 is opportunistic, and single-digit
   headroom means the trigger is not "if someone touches this" but "the next time anyone does" —
   which has now been *every* consecutive `ts-agent-memory` stream, each of which discovered the cap
   mid-implementation and paid an unplanned extraction to get under it. The failure mode is also
-  invisible locally, which is what makes it cost a review cycle rather than a minute. **Consider
-  promoting to P1 if a fourth stream pays this tax**: at that point the extraction is not debt being
-  deferred, it is a per-stream toll being collected.
+  invisible locally, which is what makes it cost a review cycle rather than a minute. The
+  "consider promoting to P1 if a fourth stream pays this tax" condition written here fired on
+  2026-08-18; the promotion is recorded above.
 
   **Reference**: `vector-rebuild-report-by-kind` (2026-08-15) — its `result.md` records the first
-  extraction as a deviation from its brief, with the measured 2012 / 1995 / 1991 numbers — and
-  `agent-memory-derived-state-reconciliation` (2026-08-15) for the 2009 → 1995 repeat.
+  extraction as a deviation from its brief, with the measured 2012 / 1995 / 1991 numbers —
+  `agent-memory-derived-state-reconciliation` (2026-08-15) for the 2009 → 1995 repeat, and
+  `fragment-query-scoping` (2026-08-18) for the fourth — which started from **1999** (the file had
+  drifted up 4 lines since the 1995 measurement above) with *no* room for the identity resolution it
+  needed, and landed at 1989 after extracting `storeIdentity.ts`.
 
 - **[P2] `ts-prompt-assist` needs a *member-level* TSDoc pass — 66 undocumented members, plus one thrice-repeated inline union.**
   **Re-scoped 2026-08-14. The top-level half of this entry is DONE and the original framing is now
