@@ -151,6 +151,28 @@ round 2 found nothing to add. Per `CODING_STANDARDS.md` the stop criterion is th
 rather than the round count, and a round that surfaces zero findings after a round that surfaced
 three real ones is the clearest version of that signal.
 
+**CodeRabbit, 1 round on the promotion PR (#640), stopped there.** Auto-review is disabled for a
+`release` base, so it was triggered by hand. It returned **two 🟡 Minor findings and nothing else**:
+
+- **Accepted.** The `LIBRARY_CAPABILITIES.md` decision shortcut opened with "To search within ONE
+  record", which a reader could stop at — a versioned narrowing covers one *entity* across every one
+  of its versions. The caveat a few clauses later already said so; the lead-in now does too. This is
+  the same imprecision the stream had already been correcting elsewhere, found in the one place the
+  sweep missed.
+- **Declined, with reasoning posted on the thread.** It asked for `'fact' as unknown as Kind` in
+  place of `'fact' as Kind`, citing the branded-type guideline. The guideline is real, but its
+  purpose is to make a cast *possible* where the direct form will not compile (`999 as unknown as
+  TypeIndex` — number to a string brand); `string` → `string & {…}` compiles directly and is exactly
+  as safe. The prevailing pattern decides it and is not close: **97 vs 1** for `Kind` in this
+  package's tests (109 vs 1 repo-wide), **118 vs 6** for `EntityId`. Changing six sites would leave
+  the file inconsistent with ~215 siblings, and two of the six predate this PR. If the standard is
+  meant literally the fix is one mechanical repo-wide sweep, not six sites in a feature branch.
+
+**Stopped the CodeRabbit loop at round 1 on diminishing returns** — a round that produces one doc
+wording nit and one declined style preference is in nitpick territory regardless of round count, and
+the substantive findings had already been extracted by Copilot's two rounds on the same code. Its
+rate limit also makes a re-request over a one-line doc change a poor trade.
+
 **One thing layer 1 should have caught and did not**, worth naming rather than filing under
 "native-boundary packages are a known blind spot": findings 1 and 2 are pure-TS repo-pattern issues
 — an un-normalized consumer hook next to two normalized ones, and a brand asserted where the library
