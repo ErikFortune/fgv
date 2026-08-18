@@ -67,6 +67,35 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] A `safer-fetch` retry test asserts a probabilistic outcome, and flakes CI for every
+  unrelated PR at roughly 1 run in 170.**
+  `libraries/ts-extras/src/test/unit/safer-fetch/saferFetchRetry.test.ts` §
+  *"an exhausted deadline fails with the attempt's own failure"* drives
+  `{ timeoutMs: 30, retry: { attempts: 5, baseDelayMs: 10_000 } }` and asserts
+  `expect(transport.calls).toHaveLength(1)` — i.e. that the backoff outlasts the 30 ms overall
+  deadline so no second attempt is made.
+
+  **The implementation is correct; the test is over-specified.** `computeRetryDelayMs` applies
+  **full jitter** — the delay is uniform on `[0, cap)` where `cap = min(baseDelayMs * 2^attempt,
+  maxDelayMs)`. With `DEFAULT_RETRY_MAX_DELAY_MS = 5_000` the cap is 5 000 ms, so the delay lands
+  under the 30 ms deadline about **0.6% of the time**, and a second attempt is then both legal and
+  correct. Observed 2026-08-18 on #640 — a promotion PR touching only `ts-agent-memory`,
+  `ts-agent-memory-sqlite-vec` and docs — where it failed `rush test`, blocked 18 downstream
+  projects as `BLOCKED: operations failed`, and cost a full re-run. The same suite passed 5/5
+  locally immediately after.
+
+  **The fix is small and the seam already exists.** `IRetryDelayParams.random` is documented
+  *"Injected for determinism in tests; the call path passes `Math.random`"* — and `grep -n random`
+  in that test file returns **nothing**. The test should inject a `random` that returns a value
+  putting the delay safely past the deadline (or the deadline/base pair should be chosen so the
+  assertion holds for every point in `[0, cap)`). Worth a sweep of the sibling retry tests for the
+  same shape while in there.
+
+  **Why P2 rather than P3**: it is not this package's own gate that suffers, it is *everyone's* — a
+  flake in a widely-depended-on package fails `rush test` for PRs that never touched it, and the
+  failure reads as "your change broke `ts-extras`" to whoever is looking. That is a tax on unrelated
+  work plus an erosion of the one gate this repo trusts most.
+
 - **[P2] The `samples/testbed` fake `IVectorIndex` has broken on two consecutive `ts-agent-memory`
   contract changes, with the rule codified in between.**
   `samples/testbed/src/test/unit/scenarios/sqliteVecMemoryPersistence.test.ts` hand-implements
