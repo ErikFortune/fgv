@@ -1,5 +1,12 @@
 id: esm-emit-design
 status: shipped
+
+# `docs/WORKSTREAMS.md` narrates this stream inside the `esm-emit-impl` entry, which carries
+# both halves: the design and the implementation that falsified its central recommendation.
+# Without this pointer every future reconciliation reports `esm-emit-design` as un-narrated
+# and someone re-drafts an entry that already exists. The design doc itself is deliberately
+# left uncorrected — see the entry.
+ledgerEntry: esm-emit-impl
 packages: ['(design only)']
 prs: []
 closed: 2026-08-09
