@@ -39,6 +39,7 @@ import { VectorMaintenance } from './vectorMaintenance';
 import { IDerivedStateCoverage } from './coverage';
 import { computeCoverage } from './storeCoverage';
 import { codecFor, resolveIdentity, verifyLoadedIdentity } from './storeIdentity';
+import { deleteRecordFile, resolveScopeDir, writeRecordFile } from './storeFileAccess';
 import { DerivedArtifact, ReconcileReport } from './reconcile';
 import { reconcileVectors } from './storeReconcile';
 import { IIndexedMemoryEntry, IMemoryIndex, MemoryIndex } from '../index';
@@ -1118,7 +1119,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     idStem: string
   ): Result<IMemoryRecord<unknown>> {
     return serializeMemoryFile(record.envelope, record.body)
-      .onSuccess((raw) => this._writeFile(scope, idStem, raw))
+      .onSuccess((raw) => writeRecordFile(this._root, this._scopeEncoding, scope, idStem, raw))
       .onSuccess(() => this._index.patch('put', { scope, record }))
       .onSuccess(() => succeed(record));
   }
@@ -1158,7 +1159,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       // Delete the record file + index entry (authoritative), then prune the
       // vector best-effort: a committed delete must not fail because the
       // derived index could not be pruned.
-      return this._deleteFile(scope, idStem)
+      return deleteRecordFile(this._root, this._scopeEncoding, scope, idStem)
         .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
         .thenOnSuccess(async () => {
           await this._vectors.removeAll({ scope, id: existing.envelope.id });
@@ -1456,7 +1457,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       if (existing === undefined) {
         return fail(`memory put: cannot evict '${id}' in scope '${scope}': not found`);
       }
-      return this._deleteFile(scope, id)
+      return deleteRecordFile(this._root, this._scopeEncoding, scope, id)
         .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
         .onSuccess(() => succeed(id));
     });
@@ -1647,7 +1648,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     id: MemoryId,
     mutate: (record: IMemoryRecord<string>) => IMemoryRecord<string> | undefined
   ): Result<boolean> {
-    return this._resolveScopeDir(scope).onSuccess((scopeDir) => {
+    return resolveScopeDir(this._root, this._scopeEncoding, scope).onSuccess((scopeDir) => {
       /* c8 ignore next 3 - defensive: the scope dir exists for any indexed record */
       if (scopeDir === undefined) {
         return fail(`'${id}': scope '${scope}' not found`);
@@ -1752,7 +1753,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * filename round-trip on every load.
    */
   private _readRecord(scope: MemoryScopeKey, idStem: string): Result<IMemoryRecord<unknown> | undefined> {
-    return this._resolveScopeDir(scope).onSuccess((scopeDir) => {
+    return resolveScopeDir(this._root, this._scopeEncoding, scope).onSuccess((scopeDir) => {
       if (scopeDir === undefined) {
         return succeed(undefined);
       }
@@ -1787,111 +1788,6 @@ export class FileTreeMemoryStore implements IMemoryStore {
     record: IMemoryRecord<unknown>
   ): Result<IMemoryRecord<unknown>> {
     return verifyLoadedIdentity(this._codec(record.envelope.kind), scope, file, record);
-  }
-
-  /**
-   * Resolve the directory for a scope, returning `undefined` when it does not
-   * exist. Navigation only — does not create. Folds the path segments through
-   * `getChildren` so an absent segment short-circuits to `undefined`.
-   */
-  private _resolveScopeDir(scope: MemoryScopeKey): Result<FileTree.IFileTreeDirectoryItem | undefined> {
-    return this._scopeEncoding(scope).onSuccess((encoded) => {
-      const segments: string[] = encoded.split('/').filter((s) => s.length > 0);
-      return segments.reduce<Result<FileTree.IFileTreeDirectoryItem | undefined>>(
-        (acc, segment) =>
-          acc.onSuccess((current) => {
-            if (current === undefined) {
-              return succeed(undefined);
-            }
-            return current
-              .getChildren()
-              .onSuccess((children) =>
-                succeed(
-                  children.find(
-                    (c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory' && c.name === segment
-                  )
-                )
-              );
-          }),
-        succeed(this._root)
-      );
-    });
-  }
-
-  /** Ensure the scope directory exists, creating segments as needed. */
-  private _ensureScopeDir(scope: MemoryScopeKey): Result<FileTree.IMutableFileTreeDirectoryItem> {
-    return this._scopeEncoding(scope).onSuccess((encoded) => {
-      const segments: string[] = encoded.split('/').filter((s) => s.length > 0);
-      return segments.reduce<Result<FileTree.IMutableFileTreeDirectoryItem>>(
-        (acc, segment) =>
-          acc.onSuccess((current) =>
-            current.getChildren().onSuccess((children) => {
-              const existing: FileTree.FileTreeItem | undefined = children.find(
-                (c) => c.type === 'directory' && c.name === segment
-              );
-              if (existing === undefined) {
-                return current.createChildDirectory(segment);
-              }
-              /* c8 ignore next 3 -- defensive: a child of a mutable in-memory/fs tree is itself mutable; the guard protects against a read-only adapter handed in as root */
-              if (!FileTree.isMutableDirectoryItem(existing)) {
-                return fail(`${existing.absolutePath}: directory is not mutable`);
-              }
-              return succeed(existing);
-            })
-          ),
-        succeed(this._root)
-      );
-    });
-  }
-
-  /** Write (create or overwrite) `<scope>/<idStem>.md` with `raw`. */
-  private _writeFile(scope: MemoryScopeKey, idStem: string, raw: string): Result<true> {
-    return this._ensureScopeDir(scope).onSuccess((scopeDir) =>
-      scopeDir.getChildren().onSuccess((children) => {
-        const fileName: string = `${idStem}${MEMORY_FILE_EXTENSION}`;
-        const existing: FileTree.FileTreeItem | undefined = children.find(
-          (c) => c.type === 'file' && c.name === fileName
-        );
-        if (existing === undefined) {
-          return scopeDir.createChildFile(fileName, raw).onSuccess(() => succeed(true));
-        }
-        /* c8 ignore next 3 -- defensive: a file in a mutable tree is mutable; guards a read-only adapter */
-        if (!FileTree.isMutableFileItem(existing)) {
-          return fail(`${existing.absolutePath}: file is not mutable`);
-        }
-        return existing.setRawContents(raw).onSuccess(() => succeed(true));
-      })
-    );
-  }
-
-  /**
-   * Physically delete `<scope>/<idStem>.md`. The scope-missing and file-missing
-   * guards are unreachable through the callers (`delete` / `_evict` both read the
-   * record first, so the directory and file exist) but are kept so a future
-   * direct caller degrades loudly rather than silently.
-   */
-  private _deleteFile(scope: MemoryScopeKey, idStem: string): Result<true> {
-    return this._resolveScopeDir(scope).onSuccess((scopeDir) => {
-      /* c8 ignore next 3 -- unreachable: callers read the record (hence the scope dir) first */
-      if (scopeDir === undefined) {
-        return fail(`memory delete: scope '${scope}' not found`);
-      }
-      const fileName: string = `${idStem}${MEMORY_FILE_EXTENSION}`;
-      return scopeDir.getChildren().onSuccess((children) => {
-        const file: FileTree.FileTreeItem | undefined = children.find(
-          (c) => c.type === 'file' && c.name === fileName
-        );
-        /* c8 ignore next 3 -- unreachable: callers read the record (hence the file) first */
-        if (file === undefined) {
-          return fail(`memory delete: file '${fileName}' not found in scope '${scope}'`);
-        }
-        /* c8 ignore next 3 -- defensive: a file in a mutable tree is mutable; guards a read-only adapter */
-        if (!FileTree.isMutableFileItem(file)) {
-          return fail(`${file.absolutePath}: file is not mutable`);
-        }
-        return file.delete().onSuccess(() => succeed(true));
-      });
-    });
   }
 
   /**
