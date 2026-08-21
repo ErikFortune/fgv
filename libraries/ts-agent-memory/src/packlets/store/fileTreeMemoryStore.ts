@@ -1190,7 +1190,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
     if (current === undefined) {
       return succeed(undefined);
     }
-    return this._resolveRequired(current);
+    return this._resolveRequired(current).onSuccess((materialized) =>
+      verifyOccupantKind(expectedKind, scope, materialized.envelope.id, materialized)
+    );
   }
 
   /**

@@ -191,6 +191,19 @@ describe('FileTreeMemoryStore — two kinds colliding on one address', () => {
       );
     });
 
+    test('a versioned read through the wrong kind fails', async () => {
+      // The flat-path sibling of this test existed from the start; this one did
+      // not, which is why `_readVersionedCurrent` accepted an expected kind and
+      // never consumed it. Every line still ran, so coverage stayed at 100% and
+      // said nothing — see TESTING_GUIDELINES § "100% coverage cannot see a
+      // predicate that is never called".
+      const store = collidingTemporalStore();
+      (await store.put(record('fact-1', kindA, 'v1 body'))).orThrow();
+      expect(await store.get(kindB, 'fact-1' as EntityId)).toFailWith(
+        /occupied by a record of kind 'kind-a', not 'kind-b'/i
+      );
+    });
+
     test('a versioned delete through the wrong kind fails', async () => {
       const store = collidingTemporalStore();
       (await store.put(record('fact-1', kindA, 'v1 body'))).orThrow();
