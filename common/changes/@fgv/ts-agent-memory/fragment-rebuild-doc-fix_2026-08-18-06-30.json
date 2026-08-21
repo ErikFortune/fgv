@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "Remove a stale orphaned TSDoc block above InMemoryFragmentCosineIndex.rebuild that claimed it 'deliberately still returns a bare count' and justified an asymmetry that no longer exists. The {@inheritDoc IFragmentVectorIndex.rebuild} line below it already delegates to an accurate interface doc. Documentation only; no API change.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}

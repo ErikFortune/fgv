@@ -280,6 +280,52 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `etc/*.api.md` is not a faithful proxy for what a consumer's editor shows, and a stale doc comment used that gap to ship.**
+  A member can carry **two** stacked doc comments — an older prose block, then a
+  `/** {@inheritDoc Other.member} */` line immediately above the declaration. TSDoc binds the
+  *second*, so the first documents nothing and **never appears in `etc/*.api.md`** — but
+  API Extractor's rollup emits both, and `"types"` points at the rollup
+  (`dist/<pkg>.d.ts`). So the orphaned text is **invisible to the api.md review gate and fully
+  visible on IDE hover** for every consumer.
+
+  Found 2026-08-18 when PersonAIlity reported that
+  `InMemoryFragmentCosineIndex.rebuild`'s `@remarks` still said it "deliberately still returns a
+  bare count" long after it began returning a `DetailedResult<IFragmentVectorRebuildReport>`.
+  Their report was right and the diagnosis on our side was initially wrong: a first pass checked
+  `api.md`, found nothing, and nearly concluded the text had never shipped. It had — twice over
+  in `dist/ts-agent-memory.d.ts`. Fixed by deleting the orphaned block; the `{@inheritDoc}` line
+  below it already delegated to an accurate interface doc, so rewording would have re-created the
+  second drift-prone account that `{@inheritDoc}` exists to prevent.
+
+  **Why it matters beyond the one instance.** `CODE_REVIEW_CHECKLIST.md` § "PR description and
+  docs accurately frame the change" asks that TSDoc claims be walked back to the implementation
+  before merge — and a reviewer doing exactly that, against the artifact the repo treats as the
+  API record, would not have seen this. The stale claim also did not merely misdescribe the
+  return: it *justified an asymmetry that no longer exists*, so a reader who trusted it would
+  conclude the fragment path is less observable than it is and never look for the report.
+
+  **The sweep was run 2026-08-18** — a doc block immediately followed by another doc block, over
+  every non-test `libraries/*/src` and `tools/*/src` file. **33 sites, of which one is a genuine
+  instance of this defect and the rest are not**, so this is a small cleanup rather than a
+  contagion:
+
+  | shape | count | verdict |
+  |---|---|---|
+  | column-0 file-level block above the first member | 23 | **benign** — an intentional file-header note (e.g. `ts-utils/base/shouldNotFail.ts`) |
+  | indented section-header comment inside an interface (`/** Visibility options */`) | 9 | **cosmetic** — all in `ts-res-ui-components`; should be `//`, since `/** */` silently orphans, but nothing is misdescribed |
+  | indented orphaned member doc carrying `@param`/`@returns` | **1** | **the real one** |
+
+  The real one is `libraries/ts-res/src/packlets/resources/resourceManagerBuilder.ts:837`: an
+  orphaned block documenting a condition-set-token helper sits directly above
+  `_applyEditsToResourceDeclaration`, so a reader hovering gets `@param`/`@returns` for **a
+  different method entirely**. It is `@internal`, so unlike the `ts-agent-memory` case it never
+  reached a published rollup — which is exactly why it is P3 and not higher.
+
+  **No lint rule proposed.** One genuine instance across the repo does not earn one, and the
+  discriminator that matters (is the first block orphaned, or a deliberate section header?) is
+  not mechanically decidable — the 9 cosmetic hits would all be false positives. Re-run the sweep
+  opportunistically instead.
+
 - **[P3] `@fgv/ts-web-extras`'s safer-fetch suite cannot exercise a successful response — jsdom ships no Fetch globals.**
   `libraries/ts-web-extras/src/test/unit/browserSaferFetch.test.ts` drives only a *failing*
   scripted transport, because the jsdom test environment provides no `Response` constructor, so
