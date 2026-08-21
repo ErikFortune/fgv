@@ -1,6 +1,6 @@
 # Stream brief — `ai-assist-structured-output`
 
-**Status: QUEUED 🟢 — accepted, surface to be agreed with the consumer before implementing.**
+**Status: READY 🟢 — accepted, surface settled with the consumer 2026-08-21. Nothing blocks implementation.**
 Filed 2026-08-21 from a PersonAIlity ask.
 **Shape:** additive on `@fgv/ts-extras/ai-assist`, across four completion paths, with a capability
 axis on the provider descriptors.
@@ -82,21 +82,66 @@ usable rather than a nice-to-have.
 catch-all `modelPrefix: ''` for an unresolved alias and returned a confidently wrong capability. The
 structured-output resolver must resolve the alias **first** and fail loudly on an unknown one.
 
-## Open questions — to agree with the consumer BEFORE implementing
+## Settled — answered by the consumer 2026-08-21
 
-1. **The report's home.** On the existing completion response, or a discriminated wrapper? Additive
-   on the response is likely right, but it is the shape worth agreeing in advance rather than
-   discovering after.
-2. **Degradation posture when the resolved model cannot honour a supplied schema.** Send nothing and
-   report `'none'`, or fail the call? A silent downgrade is the failure mode this whole ask exists to
-   remove — but so is a call that fails where today it would have succeeded. Probably caller-chosen,
-   with the strict option not the default.
-3. **Does `generateJsonCompletion` adopt it?** It is the current prompt-and-parse path and the one
-   whose consumers most want this. Adopting it changes behaviour for existing callers; leaving it
-   means two ways to ask for JSON.
-4. **Two OpenAI shapes.** Chat Completions and the Responses API express structured output
-   differently. Both paths exist here, so both wire shapes must be verified against current provider
-   documentation at implementation time rather than assumed.
+**1. The report's home: additive on the existing response, and REQUIRED rather than optional.**
+Additive because a wrapper would make every existing caller unwrap to pay for a feature only some
+use, and the type-level payoff a wrapper buys is not the payoff wanted — the caller validates
+through its converter regardless. What it needs is metadata about the call, beside the call's other
+metadata.
+
+**Required, not optional, and their argument is the repo's own.** An optional field makes absence
+three-ways ambiguous — no capability / not requested / a build predating the feature — and
+disambiguating exactly that is why the report was asked for. `'none'` already expresses "no
+constraint sent", so always-present costs nothing and removes the ambiguity by construction. This
+is precisely the `embeddingRef` lesson in `LIBRARY_CAPABILITIES.md`, where a three-ways-ambiguous
+absence was fixed by `MemoryEmbedOutcome` naming each case explicitly. Same shape, same remedy.
+
+*Implementation note:* a required field is breaking for anyone **constructing** an
+`IAiCompletionResponse` — test doubles, not readers. `ai-assist` is on the active-development
+surface so that is sanctioned, and the repo-wide `rush rebuild` gate is what finds the doubles.
+
+**2. Degradation posture: caller-chosen, lenient default — and the two answers are coupled.**
+Their concrete case: brain slots are operator-repointable, so a hub can point a high-quality slot
+at a local model with no schema support. A strict default would silently convert a working curator
+into a hard failure on paths **designed** to degrade (segmenter floors to a mechanical chunker,
+extractor returns no facts) — making the library less safe than the code it replaces. Strict must
+still exist: for output that is persisted or put on a wire, an unconstrained generation that parses
+is worse than an error, because it is wrong quietly.
+
+**The interlock is load-bearing and belongs in the docstring:** lenient-by-default is only safe
+*because the report is required*. Degrade-and-tell-me is safe; degrade-silently is the failure this
+whole ask exists to remove. Q1's answer is a precondition for Q2's, not an independent choice.
+
+**3. `generateJsonCompletion` adoption: yes — and the mechanism is cleaner than the false binary.**
+The consumer explicitly abstained (they call `PromptLibrary.resolveJsonOutput` over a raw
+completion) and asked that actual callers be weighted higher, while noting the dilemma looked like a
+false binary: adopt as an optional parameter, no schema ⇒ today's behaviour byte-for-byte.
+
+They are right that it is a false binary, and the resolution is better than an added parameter —
+**which would reintroduce drift between converter and schema, the exact defect `JsonSchema` exists
+to remove.** The relevant facts, verified:
+
+- `IGenerateJsonCompletionParams.converter` is typed `Converter<T> | Validator<T>`.
+- **`ISchemaValidator<T> extends Validator<T>`**, and carries a **runtime discriminant**.
+
+So a caller can **already pass `JsonSchema.object({...})` as `converter` today** and it type-checks;
+the library simply does not look. Adoption is therefore: *when the supplied validator is an
+`ISchemaValidator`, use its `toJson()` for the wire.* That yields **no new parameter, no possible
+drift** (one object is both wire schema and validator), and **existing callers unchanged
+byte-for-byte** — a plain `Converter` carries no schema, so nothing is sent and the report reads
+`'none'`. Opting in is "author the shape with `JsonSchema`", which `LIBRARY_CAPABILITIES.md` already
+instructs callers to do.
+
+**4. Two OpenAI shapes.** Still open as an implementation detail rather than a design question:
+Chat Completions and the Responses API express structured output differently, and both paths exist
+here. Verify both against current provider documentation at implementation time rather than
+assuming.
+
+**Confirmed asymmetry, deliberate on both sides.** The request accepts a schema without the caller
+needing to know whether it will be honoured: **the caller supplies intent, the response reports
+outcome.** That is exactly the design, and it follows from call-time alias/tier resolution — the
+caller cannot know the concrete model up front, so requiring it to would be unsound.
 
 ## Explicitly NOT in scope
 
@@ -122,4 +167,5 @@ set of provider constraints).
       one proving an unresolved alias fails loudly rather than prefix-matching a catch-all
 - [ ] Live testbed verification per provider: the wire shapes are the class of thing unit tests
       cannot confirm, and this package's history says so
-- [ ] Consumer note: the agreed surface, before implementation starts
+- [x] Consumer note: the agreed surface — settled in round 2, see
+      `.ai/notes/cross-repo-handoffs/personaility-reply-2026-08-21-structured-output-round2.md`
