@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "Fail a read or write whose kind-derived address is occupied by a record of a different kind, instead of silently applying it as an update to that record. Two kinds whose identity codecs mint the same (scope, idStem) previously named one file: the second write was applied as an update, and because kind is immutable to every write policy the victim kept its own kind and took the intruder's body, while the intruder's own list returned nothing. Guards put (flat and versioned), delete (flat and versioned), and get; getById stays address-first and unguarded.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}

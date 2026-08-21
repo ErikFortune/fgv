@@ -38,7 +38,7 @@ import {
 import { VectorMaintenance } from './vectorMaintenance';
 import { IDerivedStateCoverage } from './coverage';
 import { computeCoverage } from './storeCoverage';
-import { codecFor, resolveIdentity, verifyLoadedIdentity } from './storeIdentity';
+import { codecFor, resolveIdentity, verifyLoadedIdentity, verifyOccupantKind } from './storeIdentity';
 import { deleteRecordFile, resolveScopeDir, writeRecordFile } from './storeFileAccess';
 import { DerivedArtifact, ReconcileReport } from './reconcile';
 import { reconcileVectors } from './storeReconcile';
@@ -509,9 +509,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
           // version whose `invalid_at` is null/absent) from the entity subtree,
           // read off the derived index. `asOf` resolution is via `list({ asOf })`
           // and the temporal retrievers.
-          return this._readVersionedCurrent(addr.scope);
+          return this._readVersionedCurrent(addr.scope, kind);
         }
-        return this._readRecord(addr.scope, addr.idStem);
+        return this._readRecord(addr.scope, addr.idStem, kind);
       })
     );
     await this._fireObservation('read', kind, entityId, {
@@ -946,7 +946,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
         return succeed({ record: duplicate.value, evicted: [] });
       }
     }
-    return this._readRecord(scope, idStem).thenOnSuccess((existing) => {
+    return this._readRecord(scope, idStem, record.envelope.kind).thenOnSuccess((existing) => {
       // Same-id re-put is a no-op ONLY when the content hash matches AND the
       // mutable metadata is also unchanged. The content hash covers
       // { kind, body, links }; a matching hash with revised tags/provenance is a
@@ -1135,9 +1135,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
               )
             );
           }
-          return this._deleteVersioned(entityId, addr.scope);
+          return this._deleteVersioned(entityId, addr.scope, kind);
         }
-        return this._deleteFlat(entityId, addr.scope, addr.idStem);
+        return this._deleteFlat(entityId, addr.scope, addr.idStem, kind);
       })
     );
   }
@@ -1150,9 +1150,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
   private async _deleteFlat(
     entityId: EntityId,
     scope: MemoryScopeKey,
-    idStem: string
+    idStem: string,
+    kind: Kind
   ): Promise<Result<MemoryId>> {
-    return this._readRecord(scope, idStem).thenOnSuccess((existing) => {
+    return this._readRecord(scope, idStem, kind).thenOnSuccess((existing) => {
       if (existing === undefined) {
         return Promise.resolve(fail<MemoryId>(`memory delete '${entityId}': no record found`));
       }
@@ -1174,7 +1175,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * null/absent. `undefined` when the entity has no current version (never
    * written, or fully invalidated / soft-deleted).
    */
-  private _readVersionedCurrent(scope: MemoryScopeKey): Result<IMemoryRecord<unknown> | undefined> {
+  private _readVersionedCurrent(
+    scope: MemoryScopeKey,
+    expectedKind?: Kind
+  ): Result<IMemoryRecord<unknown> | undefined> {
     // Select over ENVELOPES, then materialize the one winner — which is what
     // `IMemoryStore.get`'s docstring promises and what `selectCurrentVersion`
     // being generic over `IEnvelopeCarrier` exists for. Materializing every
@@ -1194,7 +1198,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * files for one entity live under exactly that scope (which encodes the
    * entityId), so a scope filter over the index isolates one entity's versions.
    */
-  private _versionsForEntity(scope: MemoryScopeKey): Result<ReadonlyArray<IMemoryRecord<unknown>>> {
+  private _versionsForEntity(
+    scope: MemoryScopeKey,
+    expectedKind?: Kind
+  ): Result<ReadonlyArray<IMemoryRecord<unknown>>> {
     // Selected on the envelope (scope), materialized after — so a versioned write
     // reads only that entity's versions, never the vault. Bounded by the entity's
     // version count.
@@ -1202,7 +1209,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
       this._index
         .entries()
         .filter((entry) => entry.scope === scope)
-        .map((entry) => this._resolveRequired(entry))
+        .map((entry) =>
+          this._resolveRequired(entry).onSuccess((r) =>
+            verifyOccupantKind(expectedKind, scope, r.envelope.id, r)
+          )
+        )
     );
   }
 
@@ -1231,7 +1242,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     // still-current version at snapshot time — normally one, but two-or-more if a
     // prior invalidation partially failed; invalidating all of them lets the write
     // self-heal a stuck state (P2-7).
-    const snapshot: Result<ReadonlyArray<IMemoryRecord<unknown>>> = this._versionsForEntity(scope);
+    const snapshot: Result<ReadonlyArray<IMemoryRecord<unknown>>> = this._versionsForEntity(scope, kind);
     if (snapshot.isFailure()) {
       return fail(snapshot.message);
     }
@@ -1432,8 +1443,12 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * kinds exist to preserve the audit trail (and the L3 `contradicts` interlock
    * builds on it), so a hard delete would defeat the purpose.
    */
-  private async _deleteVersioned(entityId: EntityId, scope: MemoryScopeKey): Promise<Result<MemoryId>> {
-    const snapshot: Result<ReadonlyArray<IMemoryRecord<unknown>>> = this._versionsForEntity(scope);
+  private async _deleteVersioned(
+    entityId: EntityId,
+    scope: MemoryScopeKey,
+    kind: Kind
+  ): Promise<Result<MemoryId>> {
+    const snapshot: Result<ReadonlyArray<IMemoryRecord<unknown>>> = this._versionsForEntity(scope, kind);
     if (snapshot.isFailure()) {
       return fail(snapshot.message);
     }
@@ -1752,7 +1767,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * when the scope directory or file is absent. Verifies the on-disk id ↔
    * filename round-trip on every load.
    */
-  private _readRecord(scope: MemoryScopeKey, idStem: string): Result<IMemoryRecord<unknown> | undefined> {
+  private _readRecord(
+    scope: MemoryScopeKey,
+    idStem: string,
+    expectedKind?: Kind
+  ): Result<IMemoryRecord<unknown> | undefined> {
     return resolveScopeDir(this._root, this._scopeEncoding, scope).onSuccess((scopeDir) => {
       if (scopeDir === undefined) {
         return succeed(undefined);
@@ -1768,7 +1787,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
         return file
           .getRawContents()
           .onSuccess((raw) => parseMemoryFile(raw, this._registry))
-          .onSuccess((parsedRecord) => this._verifyLoaded(scope, file, parsedRecord));
+          .onSuccess((parsedRecord) => this._verifyLoaded(scope, file, parsedRecord))
+          .onSuccess((loaded) => verifyOccupantKind(expectedKind, scope, idStem, loaded));
       });
     });
   }
