@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Add IResult.orDefaultWith(cb) — the deferring sibling of orDefault(value). The callback runs only on failure, so an expensive default costs nothing on the success path. Behaviourally identical to orDefault(cb()) for every input, including a Success carrying undefined; only when the default is computed differs. Also splits the Result contract (types and interfaces) out of result.ts into resultTypes.ts, which result.ts re-exports, so no import path or public surface changes.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

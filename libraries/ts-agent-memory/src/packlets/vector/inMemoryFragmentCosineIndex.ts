@@ -271,25 +271,6 @@ export class InMemoryFragmentCosineIndex implements IFragmentVectorIndex {
     }
   }
 
-  /**
-   * Re-embed every record from `source` and rebuild the fragment index from
-   * scratch. Clears the current contents (and the established dimension) first, so
-   * a re-embed with a different model is supported. Returns the total number of
-   * fragments indexed.
-   *
-   * On any failure (list, embed, or add) the index is rolled back to empty rather
-   * than left in a partially-rebuilt state.
-   *
-   * @remarks
-   * **Deliberately still returns a bare count**, unlike the record-granular
-   * {@link InMemoryCosineIndex.rebuild}, which reports an
-   * {@link IVectorRebuildReport}. The asymmetry is scope, not oversight: the
-   * fragment path is tracked separately and gains the same treatment when the
-   * `IVectorIndex`/`IFragmentVectorIndex` contracts are revisited together.
-   *
-   * @param source - The scope-qualified record source to re-embed.
-   * @param embed - The fragment embedder applied to each record.
-   */
   /** {@inheritDoc IFragmentVectorIndex.rebuild} */
   public async rebuild(
     source: IMemoryRecordSource,

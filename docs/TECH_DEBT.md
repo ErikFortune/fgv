@@ -147,14 +147,55 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   observed that its README had closed the same observation with "nothing new to codify" while the
   *other* recurrence it hit — this file's line cap — was correctly escalated.
 
-- **[P1] `fileTreeMemoryStore.ts` is 11 lines under the 2000-line `max-lines` cap — PROMOTED 2026-08-18.**
-  **The fourth consecutive stream paid the toll, which is exactly the promotion condition this entry
-  wrote for itself.** `fragment-query-scoping` (2026-08-18) needed `IMemoryStore` to implement
-  `IIdentityResolver`, found the file already at **1999** with no room at all, and extracted
+- **[P1] The 2000-line `max-lines` cap is collected as a per-stream toll — PROMOTED 2026-08-18,
+  widened from one file to the pattern 2026-08-22.**
+
+  **`fileTreeMemoryStore.ts`** is the origin instance and paid the toll in four consecutive streams,
+  which is exactly the promotion condition this entry wrote for itself. `fragment-query-scoping`
+  (2026-08-18) needed `IMemoryStore` to implement `IIdentityResolver`, found the file already at
+  **1999** with no room at all, and extracted
   `libraries/ts-agent-memory/src/packlets/store/storeIdentity.ts` (codec lookup, identity resolution,
-  loaded-identity verification) to get under it — landing at **1989**. Four extractions in four
-  streams is not debt being deferred; it is a per-stream toll being collected, and every one of them
-  was discovered mid-implementation rather than planned.
+  loaded-identity verification) to get under it — landing at **1989**. Then a fifth: the
+  kind-collision fix (#648) needed a `verifyOccupantKind` guard threaded through the read paths, and
+  extracted `storeFileAccess.ts` (scope-directory resolution, record file write/delete) to make room
+  — **1907** as of that merge. Five extractions in five streams is not debt being deferred; it is a
+  toll being collected, and every one of them was discovered mid-implementation rather than planned.
+
+  **The second file arrived 2026-08-22, which is what widens this entry.** `orDefaultWith` (#649) —
+  a *four-line* addition to `libraries/ts-utils/src/packlets/base/result.ts` — took that file from
+  1992 to 2000 and turned a green `rushx build` into a repo-wide `rush rebuild` failure, and its test
+  file (`result.test.ts`, 1989) has the same one stream of headroom left. The seam was chosen under
+  the same pressure the four `ts-agent-memory` extractions were: the first candidate
+  (moving `AsyncResult` / `AsyncDetailedResult`) had to be abandoned after finding `new AsyncResult(…)`
+  constructed at runtime in ten places, which would have introduced a circular import into ts-utils'
+  foundation file. The types-only cut that shipped (`resultTypes.ts`, re-exported from `result.ts`,
+  516 lines) is defensible and leaves the public surface byte-identical — but it was not *designed*,
+  it was the seam that fit.
+
+  **What this means for the entry:** the problem is not that one store class grew large. It is that
+  the repo has no mechanism that notices a file approaching the cap, so the discovery is always a red
+  check on a PR whose actual change is unrelated and often tiny, and the remedy is always chosen in
+  the worst possible frame of mind.
+
+  **The sweep nobody had run, run 2026-08-22** (`find libraries tools -name '*.ts' -not -path
+  '*/node_modules/*' -not -path '*/lib/*' -not -path '*/dist/*' -exec wc -l {} + | sort -rn`):
+
+  | lines | file | headroom |
+  |---|---|---|
+  | **2000** | `ts-extras/src/test/unit/ai-assist/streamingAdapters.test.ts` | **none** |
+  | **2000** | `ts-extras/src/test/unit/ai-assist/clientToolContinuationBuilder.test.ts` | **none** |
+  | 1997 | `ts-extras/src/test/unit/ai-assist/apiClient.test.ts` | 3 |
+  | 1989 | `ts-utils/src/test/unit/result.test.ts` | 11 |
+  | 1982 | `ts-json-base/src/test/unit/jsonCompatible.test.ts` | 18 |
+  | 1957 | `ts-extras/src/packlets/ai-assist/model.ts` | 43 |
+  | 1945 | `ts-extras/src/test/unit/crypto/keystore/keyStore.test.ts` | 55 |
+  | 1907 | `ts-agent-memory/src/packlets/store/fileTreeMemoryStore.ts` | 93 |
+
+  **Three of the top four are `ai-assist` test files with 0–3 lines between them, and
+  `ai-assist-structured-output` is the next stream queued.** That stream adds a capability-reporting
+  surface and a structured-output path — work that lands tests in exactly those files. It will hit
+  this wall on its first commit unless the splits are done first, which is the whole point of the
+  promotion: this is now a **prerequisite of that stream**, not something to discover inside it.
 
   **What P1 changes**: the split is no longer something to fold into the next feature stream. It is
   its own piece of work, to be scheduled before the next `ts-agent-memory` feature rather than
@@ -181,11 +222,14 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   retired 2026-08-14 when #620 split it.
 
   **Trigger**: the next stream that adds a public member, a create param, or a write-path branch to
-  `FileTreeMemoryStore` — i.e. almost any `ts-agent-memory` feature. Do the split first, not after
-  the red check.
+  `FileTreeMemoryStore` — i.e. almost any `ts-agent-memory` feature — or the next one that adds a
+  member to `IResult`, since `result.test.ts` will need the corresponding test. Do the split first,
+  not after the red check. The cheap prophylactic, which nothing currently runs:
+  `find libraries tools -name '*.ts' -exec wc -l {} + | sort -rn | head -20` before starting a stream
+  that will touch any file it names.
 
-  **Scope sketch**: the collaborator-extraction pattern already used three times on this file is the
-  answer — `VectorMaintenance` (`agent-memory-store-vector-slice`), `vectorRecordSource`
+  **Scope sketch**: the collaborator-extraction pattern already used four times on
+  `fileTreeMemoryStore.ts` is the answer there — `VectorMaintenance` (`agent-memory-store-vector-slice`), `vectorRecordSource`
   (`vector-rebuild-report-by-kind`), and `storeCoverage` / `storeReconcile`
   (`agent-memory-derived-state-reconciliation`). The next candidates are the temporal projection
   helpers (`_projectAsOf` and friends) and the observation fan-out, both of which are self-contained
@@ -279,6 +323,52 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   **Reference**: PR #377 (ts-extras Yaml fix + micro-test pattern landed); original L13 lessons-pending entry; earlier ts-extras `Crypto` bug.
 
 ## P3 — Opportunistic cleanup
+
+- **[P3] `etc/*.api.md` is not a faithful proxy for what a consumer's editor shows, and a stale doc comment used that gap to ship.**
+  A member can carry **two** stacked doc comments — an older prose block, then a
+  `/** {@inheritDoc Other.member} */` line immediately above the declaration. TSDoc binds the
+  *second*, so the first documents nothing and **never appears in `etc/*.api.md`** — but
+  API Extractor's rollup emits both, and `"types"` points at the rollup
+  (`dist/<pkg>.d.ts`). So the orphaned text is **invisible to the api.md review gate and fully
+  visible on IDE hover** for every consumer.
+
+  Found 2026-08-18 when PersonAIlity reported that
+  `InMemoryFragmentCosineIndex.rebuild`'s `@remarks` still said it "deliberately still returns a
+  bare count" long after it began returning a `DetailedResult<IFragmentVectorRebuildReport>`.
+  Their report was right and the diagnosis on our side was initially wrong: a first pass checked
+  `api.md`, found nothing, and nearly concluded the text had never shipped. It had — twice over
+  in `dist/ts-agent-memory.d.ts`. Fixed by deleting the orphaned block; the `{@inheritDoc}` line
+  below it already delegated to an accurate interface doc, so rewording would have re-created the
+  second drift-prone account that `{@inheritDoc}` exists to prevent.
+
+  **Why it matters beyond the one instance.** `CODE_REVIEW_CHECKLIST.md` § "PR description and
+  docs accurately frame the change" asks that TSDoc claims be walked back to the implementation
+  before merge — and a reviewer doing exactly that, against the artifact the repo treats as the
+  API record, would not have seen this. The stale claim also did not merely misdescribe the
+  return: it *justified an asymmetry that no longer exists*, so a reader who trusted it would
+  conclude the fragment path is less observable than it is and never look for the report.
+
+  **The sweep was run 2026-08-18** — a doc block immediately followed by another doc block, over
+  every non-test `libraries/*/src` and `tools/*/src` file. **33 sites, of which one is a genuine
+  instance of this defect and the rest are not**, so this is a small cleanup rather than a
+  contagion:
+
+  | shape | count | verdict |
+  |---|---|---|
+  | column-0 file-level block above the first member | 23 | **benign** — an intentional file-header note (e.g. `ts-utils/base/shouldNotFail.ts`) |
+  | indented section-header comment inside an interface (`/** Visibility options */`) | 9 | **cosmetic** — all in `ts-res-ui-components`; should be `//`, since `/** */` silently orphans, but nothing is misdescribed |
+  | indented orphaned member doc carrying `@param`/`@returns` | **1** | **the real one** |
+
+  The real one is `libraries/ts-res/src/packlets/resources/resourceManagerBuilder.ts:837`: an
+  orphaned block documenting a condition-set-token helper sits directly above
+  `_applyEditsToResourceDeclaration`, so a reader hovering gets `@param`/`@returns` for **a
+  different method entirely**. It is `@internal`, so unlike the `ts-agent-memory` case it never
+  reached a published rollup — which is exactly why it is P3 and not higher.
+
+  **No lint rule proposed.** One genuine instance across the repo does not earn one, and the
+  discriminator that matters (is the first block orphaned, or a deliberate section header?) is
+  not mechanically decidable — the 9 cosmetic hits would all be false positives. Re-run the sweep
+  opportunistically instead.
 
 - **[P3] `@fgv/ts-web-extras`'s safer-fetch suite cannot exercise a successful response — jsdom ships no Fetch globals.**
   `libraries/ts-web-extras/src/test/unit/browserSaferFetch.test.ts` drives only a *failing*

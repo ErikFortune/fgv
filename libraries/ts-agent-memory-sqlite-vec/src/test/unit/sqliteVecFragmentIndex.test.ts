@@ -76,9 +76,67 @@ describe('SqliteVecFragmentIndex', () => {
     }
   });
 
-  async function makeIndex(): Promise<SqliteVecFragmentIndex> {
-    return (await SqliteVecFragmentIndex.create({ database: db })).orThrow();
+  async function makeIndex(tableName?: string): Promise<SqliteVecFragmentIndex> {
+    return (await SqliteVecFragmentIndex.create({ database: db, tableName })).orThrow();
   }
+
+  describe('release', () => {
+    // The record index's `release` suite states the reasoning; this lane carries the
+    // same shape plus one aggravation — a shared-connection deployment holds a record
+    // index AND a fragment index over one connection, so it has two instances of it.
+
+    test('a released index throws on both counts rather than answering zero', async () => {
+      const index = await makeIndex();
+      (await index.addFragments(target('knowledge', 'doc-a'), [frag(0, 5, 1, 0)])).orThrow();
+      expect(index.recordCount).toBe(1);
+      expect(index.fragmentCount).toBe(1);
+
+      index.release();
+      // NOT `toBe(0)` — that is exactly the regression this pins.
+      expect(() => index.recordCount).toThrow(/has been released/i);
+      expect(() => index.fragmentCount).toThrow(/has been released/i);
+    });
+
+    test('a released index fails every fallible member with a message naming the cause', async () => {
+      const index = await makeIndex();
+      const t = target('knowledge', 'doc-a');
+      (await index.addFragments(t, [frag(0, 5, 1, 0)])).orThrow();
+      index.release();
+
+      expect(await index.addFragments(t, [frag(0, 5, 0, 1)])).toFailWith(/has been released/i);
+      expect(await index.has(t)).toFailWith(/has been released/i);
+      expect(await index.remove(t)).toFailWith(/has been released/i);
+      expect(await index.query(Float32Array.from([1, 0]), 5)).toFailWith(/has been released/i);
+    });
+
+    test('release is idempotent', async () => {
+      const index = await makeIndex();
+      index.release();
+      expect(() => index.release()).not.toThrow();
+      expect(() => index.recordCount).toThrow(/has been released/i);
+    });
+
+    test('a released create()-made index leaves the consumer connection open and usable', async () => {
+      const index = await makeIndex();
+      (await index.addFragments(target('knowledge', 'doc-a'), [frag(0, 5, 1, 0)])).orThrow();
+      index.release();
+
+      expect(db.open).toBe(true);
+      const other = await makeIndex('still_usable_frags');
+      expect(await other.addFragments(target('knowledge', 'doc-b'), [frag(0, 5, 0, 1)])).toSucceed();
+    });
+
+    test('a released index is distinguishable from one that has never had an add', async () => {
+      const fresh = await makeIndex('fresh_frags');
+      expect(fresh.recordCount).toBe(0);
+      expect(await fresh.has(target('knowledge', 'doc-a'))).toSucceedWith(false);
+
+      const released = await makeIndex('released_frags');
+      released.release();
+      expect(() => released.recordCount).toThrow(/has been released/i);
+      expect(await released.has(target('knowledge', 'doc-a'))).toFail();
+    });
+  });
 
   describe('open (path-based factory)', () => {
     let dir: string;
@@ -961,6 +1019,17 @@ describe('SqliteVecFragmentIndex', () => {
       );
       expect(index.recordCount).toBe(2);
       expect(index.fragmentCount).toBe(4);
+    });
+
+    test('a released index fails rather than silently emptying itself', async () => {
+      // `_clear` runs before the re-embed loop, so a released index must refuse there
+      // rather than reporting a rebuild it did not perform.
+      const index = await makeIndex();
+      (await index.addFragments(target('knowledge', 'a'), [frag(0, 5, 1, 0)])).orThrow();
+      index.release();
+      const result = await index.rebuild(new FakeSource(succeed([scoped('knowledge', 'a')])), embed);
+      expect(result.isFailure()).toBe(true);
+      expect(result.message).toMatch(/has been released/i);
     });
 
     test('clears prior contents first', async () => {

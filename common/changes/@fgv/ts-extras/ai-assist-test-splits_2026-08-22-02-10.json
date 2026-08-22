@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Split three ai-assist test files that were at 0-3 lines of the 2000-line max-lines cap. Test-only; no source or public surface change, and the suite's test count is unchanged at 2690.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
