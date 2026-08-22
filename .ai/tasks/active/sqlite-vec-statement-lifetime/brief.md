@@ -88,6 +88,21 @@ the **combination** — or something in the reporter's image that neither enviro
 runs on. If it is Node 22, the arm64 row says nothing about Node 24 and the combination is untested
 by us as well as by them.
 
+### What our suite does and does not exercise — checked, and it qualifies the arm64 row
+
+**The shape: yes.** 38 `.close()` calls across 20 `open()` tests, each leaving a closed `Database`
+whose prepared statements are still referenced by an index object that then falls out of scope. The
+defective shape is created constantly.
+
+**The failure: no.** There is **no forced GC anywhere in the package** — zero `global.gc()`, no
+`--expose-gc`. Whether those `Statement` destructors run before the worker exits, and when, is
+entirely V8's choice; and the abort specifically needs the destructor to run **after** environment
+teardown, which nothing in the suite forces or asserts.
+
+**So a green arm64 run means "we did not happen to hit the ordering", not "the ordering is safe".**
+Routine arm64 testing is real evidence the package works there generally and much weaker evidence
+about this defect than it looks. Any claim made from it should be scoped accordingly.
+
 **Do not claim in the release note that the lifetime fix cures the abort.** It removes the shape
 that produces the reported stack; whether that is the cause is unestablished until someone runs the
 repro on Node 24 + arm64.
@@ -102,4 +117,12 @@ repro on Node 24 + arm64.
       than returning 0 — watched failing against the naive `_stmts = undefined` fix first, since
       that is the shape a future contributor will reach for
 - [ ] Both index classes fixed, not just the reported one
+- [ ] **A test that deterministically creates the shape and forces collection** — closed connection,
+      statements abandoned, `global.gc()` — so the suite asserts the ordering is safe instead of
+      happening not to hit it. Needs `--expose-gc` on the jest invocation, which is a config change
+      worth deciding rather than sneaking in; if it does not belong in the coverage-gated suite it
+      belongs under `perf/` per `TESTING_GUIDELINES` § "Measurement Harnesses", run on demand and
+      its output pasted into `result.md`
+- [ ] Run that test (and the existing suite) under **Node 24 on arm64** before claiming the defect is
+      resolved for the reporter
 - [ ] Consumer note: what the fix does and does not guarantee about the arm64 abort
