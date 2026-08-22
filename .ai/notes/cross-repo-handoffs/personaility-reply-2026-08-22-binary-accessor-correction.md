@@ -89,6 +89,17 @@ explicitly, matching the `onRecordError` idiom `IVectorIndex.rebuild` already us
 skips a file it could not carry is arguably worse for you than one that fails loudly, and you are the
 one who knows which. That is the one thing here where your evidence changes what we build.
 
+> **Answered same day — `'fail'` confirmed.** They agreed on the ground we expected ("a snapshot that
+> silently omits a file is a backup nobody can trust, and the omission surfaces at restore, when the
+> original is gone") **and added the better argument**: in their case a loud failure catches a
+> *modelling* error, not a capability mismatch. The file that broke them is the derived record index —
+> reconstructible, already flagged as dead weight in the snapshot, and not something they should be
+> snapshotting at all. So they fix the inclusion rather than reaching for `'skip'`.
+>
+> Two implementation consequences, carried into the brief: the failure must **name the path** (the
+> diagnosis is worthless otherwise), and `'skip'` should stay deliberately explicit — if it is the
+> one-word fix, the modelling error it masks stays masked.
+
 ## One thing we are not doing
 
 You asked us not to weaken `isBinaryAccessors`, on the grounds that narrowing-without-promising is

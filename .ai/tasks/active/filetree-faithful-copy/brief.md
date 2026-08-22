@@ -1,6 +1,9 @@
 # Stream brief — `filetree-faithful-copy`
 
-**Status: READY 🟢 — ask verified against source, one premise corrected.**
+**Status: READY 🟢 — ask verified against source, one premise corrected, design question answered.**
+The one open decision (destination-cannot-hold-bytes → fail / skip / encode) is **closed: `'fail'`
+by default, `'skip'` explicit-only**, confirmed by the consumer 2026-08-22. No design work remains
+before implementation; the sequencing gate below is the only thing holding it.
 Filed 2026-08-22 from PersonAIlity's long-form note § 1, which reached us late (§ 2 of the same
 note was the structured-output ask, shipped as **#652**).
 **Shape:** additive on `@fgv/ts-json-base`'s `file-tree` packlet. Touches the capability model,
@@ -62,11 +65,11 @@ create-with-a-placeholder-then-set-bytes, and every consumer still writes it.
    they were actually thinking of is a different one — worth telling them, but the instruction stands
    for both.)
 
-## The design question this stream must answer first
+## The design question — **answered 2026-08-22, decision is `'fail'`**
 
-**What does a copy do when the destination cannot hold bytes?** Fail, skip, or encode. This is the
+**What does a copy do when the destination cannot hold bytes?** Fail, skip, or encode. This was the
 whole ask — they said outright that the four-combination decision "belongs with the people who own
-the capability model", and they are right.
+the capability model", and they were right.
 
 The repo's own precedent points hard at one answer. `getFileTextStrict` refuses on a store that
 cannot answer honestly rather than returning a plausible value; `HttpTreeAccessors` refuses **every**
@@ -77,6 +80,39 @@ already established, whose default is `'fail'`.
 
 That symmetry is worth carrying deliberately rather than re-deriving: same two words, same default,
 same reason.
+
+### The consumer confirmed it, and their reasoning is stronger than ours
+
+We put the one question back to them (the correction note's closing section) because they own the
+snapshot codec and we do not. Their answer, verbatim in substance:
+
+> Loud failure by default; `'skip'` explicit-only. **A snapshot that silently omits a file is a
+> backup nobody can trust, and the omission surfaces at restore, when the original is gone.**
+
+That alone settles the default. But the second half of their reply is the part to carry into the
+implementation, because it is an argument we did not make:
+
+> A loud failure would have caught a **modelling error**, not a capability mismatch. The file that
+> broke us is the derived record index — reconstructible, and our own durable-index work already
+> flagged it as dead weight in the snapshot. **We shouldn't be snapshotting it at all.** So we'll fix
+> the inclusion, not reach for `'skip'`.
+
+**This changes what `'fail'` is for.** Our argument was about honesty at the boundary — don't return a
+plausible value you cannot stand behind. Theirs is that the failure is *diagnostic*: the file that
+could not be carried was a file that should never have been in the set. A `'skip'` default would have
+absorbed a modelling error into a silent omission and left it absorbed. `'fail'` surfaced it at the
+point where the wrong answer was "why is this here at all?".
+
+**Implementation consequence, and it is not just tone:** the failure message must name the file, not
+merely report that the copy could not complete. The whole value of the diagnosis depends on the
+consumer being able to look at the named path and recognise that it does not belong. A message of the
+form *"destination cannot hold bytes"* is useless for that; *"`<path>`: destination store persists
+text and cannot hold bytes"* is the finding. Same reasoning that makes `IMemoryStore.reconcile` name
+its kind and its artifact.
+
+**And it argues against a per-call `'skip'` being convenient.** If reaching for `'skip'` is the
+one-word fix, the modelling error stays. Keep it explicit and slightly inconvenient — an option a
+caller passes deliberately, never a mode that a copy falls into.
 
 ## Sequencing note
 
@@ -93,7 +129,10 @@ library depends on, and the alpha now in flight already carries two breaking cha
       cannot hold bytes — those are the ones the behaviour decision is about
 - [ ] A test proving a **byte-native round trip** through the copy (the consumer's SQLite case in
       miniature: bytes that are not valid UTF-8, copied and compared byte-for-byte)
+- [ ] **A test asserting the failure message names the offending path**, not just the condition —
+      the diagnostic value the consumer is relying on lives entirely in that string
 - [ ] `LIBRARY_CAPABILITIES.md` entry, including the destination-cannot-hold-bytes behaviour — a
       consumer choosing between copy and hand-rolling needs it stated
-- [ ] Consumer note: the `isBinaryAccessors` correction (useful to them **before** this ships), and
-      the behaviour decision
+- [x] Consumer note: the `isBinaryAccessors` correction (useful to them **before** this ships) —
+      sent 2026-08-22, `.ai/notes/cross-repo-handoffs/personaility-reply-2026-08-22-binary-accessor-correction.md`
+- [x] Behaviour decision settled with the consumer — `'fail'` default confirmed, see above
