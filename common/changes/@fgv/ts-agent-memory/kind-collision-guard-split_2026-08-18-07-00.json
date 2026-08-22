@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "Internal: extract the FileTree access layer (scope-directory resolution/creation, record file write/delete) out of FileTreeMemoryStore into storeFileAccess.ts. Move-only; no public surface change.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}
