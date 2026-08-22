@@ -409,12 +409,19 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     if (this._stmts === undefined) {
       return succeed(true);
     }
+    // `exec`, not `prepare(...).run()`, and the reason is lifetime rather than
+    // style. A prepared statement here would be referenced by nothing the moment
+    // it returned, so `release()` could not drop it — it is not in `_stmts` —
+    // and its native destructor would run whenever GC reached it, possibly
+    // during environment teardown, which is the frame the reported
+    // `Statement::~Statement()` abort fires in. `exec` creates no `Statement` at
+    // all, so there is no destructor and no cleanup hook to outlive anything.
+    // Safe here because this runs outside any transaction: `rebuild` is async
+    // and explicitly not transactional, and `add`'s transaction is its own.
     // Capture-wrapped like `add` / `remove` / `query`: a closed connection or an
     // I/O error here is a `Failure`, not an exception thrown out of a method
     // whose signature promises a `Result`.
-    return captureResult(() => this._db.prepare(`DELETE FROM "${this._table}"`).run()).onSuccess(() =>
-      succeed(true)
-    );
+    return captureResult(() => this._db.exec(`DELETE FROM "${this._table}"`)).onSuccess(() => succeed(true));
   }
 
   /** {@inheritDoc IVectorIndex.query} */

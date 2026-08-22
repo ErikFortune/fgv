@@ -23,7 +23,17 @@
  * GC, and the probe is built to force exactly that: statements from closed
  * connections are held at module scope until the process ends.
  *
- * Three passes:
+ * Every pass drives `add`, `query` AND a rebuild — the last one because
+ * `rebuild` is the only caller of `_clear`, and until 2026-08-22 this probe
+ * never ran it. It therefore exercised the CACHED statements in `_stmts` and
+ * nothing else, and could not have observed the throwaway statement `_clear`
+ * used to prepare: the one `release()` never held and so never dropped. A
+ * consumer whose boot path runs a rebuild was in a lane this probe did not
+ * cover, which is exactly the false green a measurement harness exists to
+ * prevent. Reported by the driving consumer, who read the source rather than
+ * trusting the probe.
+ *
+ * Four passes:
  *
  *   1. UNRELEASED — indexes closed via `handle.close()` with `release()`
  *      neutered, statements retained to exit. This is the shape the package had
@@ -31,6 +41,10 @@
  *      hand-rolled imitation of it.
  *   2. RELEASED — the same, through the real disposer, which now releases.
  *   3. ABANDONED — indexes never closed at all, references dropped, GC forced.
+ *   4. THROWAWAY-CLEAR — released and closed as in pass 2, but with `_clear`
+ *      restored to the pre-2026-08-22 shape that prepares a statement per call.
+ *      This is the lane `release()` cannot reach by construction, so it is the
+ *      pass that isolates the throwaway statement's own contribution.
  *
  * WHAT A RESULT MEANS — state this before running it, not after.
  *
@@ -43,6 +57,12 @@
  * 2026-08-21, is linux/arm64 and nowhere else we have tested (linux-x64 under
  * Node 22 and 24, and darwin-arm64 under Node 24, all survive pass 1).
  *
+ * Pass 4 is read the same way and answers a different question: if pass 4
+ * aborts where pass 2 survives, the throwaway `_clear` statement is implicated
+ * and the `exec` change addresses it. If pass 4 also survives, the throwaway
+ * statement is exonerated and the search moves on — which is just as useful and
+ * is why the pass exists at all.
+ *
  * So on x64 this script is a regression guard, not evidence. Run it on
  * linux/arm64 under Node 24 for the measurement that decides the question.
  */
@@ -50,6 +70,7 @@
 const os = require('os');
 const path = require('path');
 const fs = require('fs');
+const { succeed, fail } = require('@fgv/ts-utils');
 const { SqliteVecVectorIndex, SqliteVecFragmentIndex } = require('../lib/index');
 
 // Held at module scope on purpose: these must still be reachable when the
@@ -60,7 +81,72 @@ function vec(a, b) {
   return Float32Array.from([a, b]);
 }
 
-async function pass(label, { release, close }) {
+/** A scripted `IMemoryRecordSource` over two records of one kind. */
+function source() {
+  return {
+    list: () =>
+      Promise.resolve(
+        succeed({
+          records: ['a', 'b'].map((id) => ({
+            target: { scope: 'knowledge', id },
+            record: { envelope: { id, kind: 'note' }, body: `body-${id}` }
+          }))
+        })
+      )
+  };
+}
+
+/**
+ * Drive both rebuild lanes, which is where `_clear()` runs.
+ *
+ * @remarks
+ * A rebuild that SUCCEEDS clears once, at the top. A rebuild that FAILS under
+ * the default `'fail'` mode clears a second time, on the rollback path — so the
+ * failing case is not redundant with the passing one, it is the only way to
+ * reach `withRollbackNote(error, this._clear())`. The embedder rejects the
+ * second record to get there.
+ */
+async function driveRebuilds(rec, frag) {
+  // The embedders are async by contract (`MemoryEmbedder` / `FragmentEmbedder`),
+  // so they must return a promise — the rebuild loop awaits them.
+  (
+    await rec.rebuild(source(), async (record) => succeed(vec(record.envelope.id.charCodeAt(0), 1)))
+  ).orThrow();
+  (
+    await frag.rebuild(source(), async (record) =>
+      succeed([{ locator: { start: 0, end: 4 }, vector: vec(record.envelope.id.charCodeAt(0), 1) }])
+    )
+  ).orThrow();
+
+  // Rollback lane. Both are expected to fail; `.orThrow()` would defeat the point.
+  await rec.rebuild(source(), async (record) =>
+    record.envelope.id === 'b' ? fail('scripted embed failure') : succeed(vec(1, 1))
+  );
+  await frag.rebuild(source(), async (record) =>
+    record.envelope.id === 'b'
+      ? fail('scripted embed failure')
+      : succeed([{ locator: { start: 0, end: 4 }, vector: vec(1, 1) }])
+  );
+}
+
+/**
+ * Restore the pre-2026-08-22 `_clear`: prepare a statement per call, referenced
+ * by nothing once it returns. An own-property override shadows the prototype
+ * method, so `this._clear()` inside `rebuild` resolves to this — the same trick
+ * pass 1 uses to neuter `release`, and the only way to reproduce a shape that no
+ * longer exists in source.
+ */
+function restoreThrowawayClear(index) {
+  index._clear = function () {
+    if (this._stmts === undefined) {
+      return succeed(true);
+    }
+    this._db.prepare(`DELETE FROM "${this._table}"`).run();
+    return succeed(true);
+  };
+}
+
+async function pass(label, { release, close, throwawayClear }) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'svteardown-'));
   let indexes = 0;
   for (let i = 0; i < 10; i++) {
@@ -77,6 +163,13 @@ async function pass(label, { release, close }) {
       ])
     ).orThrow();
     (await rec.index.query(vec(i, 1), 1)).orThrow();
+
+    if (throwawayClear) {
+      restoreThrowawayClear(rec.index);
+      restoreThrowawayClear(frag.index);
+    }
+    // The `_clear()` lane — see the header. This is what the probe was missing.
+    await driveRebuilds(rec.index, frag.index);
 
     if (!release) {
       // Reproduce the pre-fix shape through the real adapter: close the
@@ -106,6 +199,11 @@ async function main() {
   await pass('UNRELEASED (pre-fix shape, closed)', { release: false, close: true });
   await pass('RELEASED   (post-fix, closed)', { release: true, close: true });
   await pass('ABANDONED  (never closed)', { release: false, close: false });
+  await pass('THROWAWAY-CLEAR (pre-exec _clear, released, closed)', {
+    release: true,
+    close: true,
+    throwawayClear: true
+  });
   console.log(`holding ${held.length} index objects through teardown; exiting`);
 }
 

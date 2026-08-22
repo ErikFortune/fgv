@@ -103,6 +103,18 @@ platform where pass 1 does not abort, the script is a regression guard and *not 
 outcome that would establish causation is **pass 1 aborting where pass 2 survives**, and only
 a platform that reproduces the abort can produce it.
 
+> **Correction — 2026-08-22.** Those three passes drove `add`, `addFragments` and `query`, and
+> nothing else. So they exercised only the **cached** statements in `_stmts`: the probe never
+> ran a `rebuild`, and `rebuild` is the sole caller of `_clear`, which was the one place in
+> either class that prepared a statement `release()` could not drop. Everything above is true
+> of the lane it drove and **silent about the lane it did not** — the more dangerous shape for
+> a harness, because a green run on arm64 would have read as "the fix holds" while the
+> consumer's boot path (which rebuilds on start) went untested.
+>
+> Found by the driving consumer reading source, not by running this. Widened in
+> `sqlite-vec-throwaway-clear-statement`, which adds a rebuild and a *failing* rebuild to every
+> pass plus a fourth pass that restores the old `_clear` to isolate its contribution.
+
 | platform | Node | result | source |
 |---|---|---|---|
 | linux-x64 | 22.22.2 | all three passes exit 0 | this stream |

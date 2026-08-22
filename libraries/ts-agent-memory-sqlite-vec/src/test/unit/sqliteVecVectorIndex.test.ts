@@ -860,4 +860,65 @@ describe('SqliteVecVectorIndex', () => {
       });
     });
   });
+
+  describe('_clear prepares no statement — the throwaway `release()` could never drop', () => {
+    /**
+     * A statement prepared inside `_clear()` is referenced by nothing the moment it
+     * returns, so it is not in `_stmts` and `release()` cannot drop it. Its native
+     * destructor then runs whenever GC reaches it, possibly during environment
+     * teardown — the frame the reported `Statement::~Statement()` abort fires in.
+     * `exec` creates no `Statement` at all, so the property to pin is that a rebuild
+     * reaches only statements prepared before it started.
+     *
+     * This is invisible to the teardown probe under `perf/`, which drove `add` and
+     * `query` and never a rebuild, and invisible to a coverage gate, which sees the
+     * line run either way.
+     */
+    function listing(ids: ReadonlyArray<string>): IMemoryRecordListing {
+      return {
+        records: ids.map((id) => ({
+          target: target('knowledge', id),
+          record: {
+            envelope: {
+              id: id as unknown as MemoryId,
+              kind: 'note' as Kind
+            } as IMemoryRecord<unknown>['envelope'],
+            body: `body-${id}`
+          }
+        }))
+      };
+    }
+
+    async function primed(): Promise<SqliteVecVectorIndex> {
+      const index = await makeIndex();
+      // Establishes the dimension, so every statement the index reuses exists.
+      (await index.add(target('knowledge', 'seed'), vec(1, 0))).orThrow();
+      return index;
+    }
+
+    test('a successful rebuild prepares nothing', async () => {
+      const index = await primed();
+      const spy = jest.spyOn(db, 'prepare');
+      const source: IMemoryRecordSource = { list: () => Promise.resolve(succeed(listing(['a', 'b']))) };
+      const embed: MemoryEmbedder = () => Promise.resolve(succeed(vec(1, 0)));
+
+      expect((await index.rebuild(source, embed)).isSuccess()).toBe(true);
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
+    });
+
+    test('a failing rebuild prepares nothing on the rollback clear either', async () => {
+      // The rollback path calls `_clear()` a SECOND time, and is the only way to
+      // reach it — a passing rebuild clears once, at the top.
+      const index = await primed();
+      const spy = jest.spyOn(db, 'prepare');
+      const source: IMemoryRecordSource = { list: () => Promise.resolve(succeed(listing(['a']))) };
+      const embed: MemoryEmbedder = () => Promise.resolve(fail('scripted embed failure'));
+
+      const rebuilt = await index.rebuild(source, embed);
+      expect(rebuilt.isFailure()).toBe(true);
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
+    });
+  });
 });

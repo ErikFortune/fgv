@@ -1246,4 +1246,58 @@ describe('SqliteVecFragmentIndex', () => {
       }
     });
   });
+
+  describe('_clear prepares no statement — the throwaway `release()` could never drop', () => {
+    /**
+     * The record index's suite states the reasoning; this lane carries the identical
+     * shape, and a shared-connection deployment holds both indexes over one
+     * connection, so it has two instances of it.
+     */
+    function listing(ids: ReadonlyArray<string>): IMemoryRecordListing {
+      return {
+        records: ids.map((id) => ({
+          target: target('knowledge', id),
+          record: {
+            envelope: {
+              id: id as unknown as MemoryId,
+              kind: 'note' as Kind
+            } as IMemoryRecord<unknown>['envelope'],
+            body: `body-${id}`
+          }
+        }))
+      };
+    }
+
+    async function primed(): Promise<SqliteVecFragmentIndex> {
+      const index = await makeIndex();
+      (await index.addFragments(target('knowledge', 'seed'), [frag(0, 4, 1, 0)])).orThrow();
+      return index;
+    }
+
+    test('a successful rebuild prepares nothing', async () => {
+      const index = await primed();
+      const spy = jest.spyOn(db, 'prepare');
+      const source: IMemoryRecordSource = { list: () => Promise.resolve(succeed(listing(['a', 'b']))) };
+
+      const rebuilt = await index.rebuild(source, () =>
+        Promise.resolve(succeed<ReadonlyArray<IEmbeddedFragment>>([frag(0, 4, 1, 0)]))
+      );
+      expect(rebuilt.isSuccess()).toBe(true);
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
+    });
+
+    test('a failing rebuild prepares nothing on the rollback clear either', async () => {
+      const index = await primed();
+      const spy = jest.spyOn(db, 'prepare');
+      const source: IMemoryRecordSource = { list: () => Promise.resolve(succeed(listing(['a']))) };
+
+      const rebuilt = await index.rebuild(source, () =>
+        Promise.resolve(fail<ReadonlyArray<IEmbeddedFragment>>('scripted embed failure'))
+      );
+      expect(rebuilt.isFailure()).toBe(true);
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
+    });
+  });
 });
