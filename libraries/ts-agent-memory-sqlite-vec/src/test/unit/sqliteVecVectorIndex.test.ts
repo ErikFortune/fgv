@@ -69,8 +69,8 @@ describe('SqliteVecVectorIndex', () => {
     db.close();
   });
 
-  async function makeIndex(): Promise<SqliteVecVectorIndex> {
-    return (await SqliteVecVectorIndex.create({ database: db })).orThrow();
+  async function makeIndex(tableName?: string): Promise<SqliteVecVectorIndex> {
+    return (await SqliteVecVectorIndex.create({ database: db, tableName })).orThrow();
   }
 
   describe('create', () => {
@@ -226,6 +226,95 @@ describe('SqliteVecVectorIndex', () => {
 
       expect(typeof index.size).toBe('number');
       expect(index.size).toBe(2);
+    });
+  });
+
+  describe('release', () => {
+    // `_stmts === undefined` was already the sentinel for "no dimension established
+    // yet", so the tempting one-line fix — clearing `_stmts` on close — would make a
+    // released index answer `size === 0` and `has → false`: a confident lie
+    // indistinguishable from an empty index. These tests are written to fail against
+    // that shape, which is the one a future contributor will reach for.
+
+    test('a released index throws on size rather than answering zero', async () => {
+      const index = await makeIndex();
+      (await index.add(target('knowledge', 'a'), vec(1, 0))).orThrow();
+      expect(index.size).toBe(1);
+
+      index.release();
+      // NOT `toBe(0)` — that is exactly the regression this pins.
+      expect(() => index.size).toThrow(/has been released/i);
+    });
+
+    test('a released index fails every fallible member with a message naming the cause', async () => {
+      const index = await makeIndex();
+      (await index.add(target('knowledge', 'a'), vec(1, 0))).orThrow();
+      index.release();
+
+      expect(await index.add(target('knowledge', 'b'), vec(0, 1))).toFailWith(/has been released/i);
+      expect(await index.has(target('knowledge', 'a'))).toFailWith(/has been released/i);
+      expect(await index.remove(target('knowledge', 'a'))).toFailWith(/has been released/i);
+      expect(await index.query(vec(1, 0), 5)).toFailWith(/has been released/i);
+    });
+
+    test('a released index fails rebuild rather than silently emptying itself', async () => {
+      // `_clear` runs before the re-embed loop, so a released index must refuse there
+      // rather than reporting a rebuild it did not perform.
+      const index = await makeIndex();
+      (await index.add(target('knowledge', 'a'), vec(1, 0))).orThrow();
+      index.release();
+
+      const listing: IMemoryRecordListing = {
+        records: [
+          {
+            target: target('knowledge', 'a'),
+            record: {
+              envelope: {
+                id: 'a' as unknown as MemoryId,
+                kind: 'note' as Kind
+              } as IMemoryRecord<unknown>['envelope'],
+              body: 'body-a'
+            }
+          }
+        ]
+      };
+      const rebuilt = await index.rebuild({ list: () => Promise.resolve(succeed(listing)) }, () =>
+        Promise.resolve(succeed(vec(1, 0)))
+      );
+      expect(rebuilt.isFailure()).toBe(true);
+      expect(rebuilt.message).toMatch(/has been released/i);
+    });
+
+    test('release is idempotent', async () => {
+      const index = await makeIndex();
+      index.release();
+      expect(() => index.release()).not.toThrow();
+      expect(() => index.size).toThrow(/has been released/i);
+    });
+
+    test('a released create()-made index leaves the consumer connection open and usable', async () => {
+      // `release` drops only what the index itself allocated. It must stay incapable
+      // of closing a connection it does not own — the property `create` exists for.
+      const index = await makeIndex();
+      (await index.add(target('knowledge', 'a'), vec(1, 0))).orThrow();
+      index.release();
+
+      expect(db.open).toBe(true);
+      const other = await makeIndex('still_usable');
+      expect(await other.add(target('knowledge', 'b'), vec(0, 1))).toSucceed();
+    });
+
+    test('a released index is distinguishable from one that has never had an add', async () => {
+      // The whole point of the explicit released state: both have no prepared
+      // statements, and they must not answer alike.
+      const fresh = await makeIndex('fresh_idx');
+      expect(fresh.size).toBe(0);
+      expect(await fresh.has(target('knowledge', 'a'))).toSucceedWith(false);
+
+      const released = await makeIndex('released_idx');
+      released.release();
+      expect(() => released.size).toThrow(/has been released/i);
+      expect(await released.has(target('knowledge', 'a'))).toFail();
     });
   });
 

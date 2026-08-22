@@ -94,16 +94,33 @@ export class SqliteVecVectorIndex implements IVectorIndex {
   private _dimension: number | undefined;
   /** Prepared statements; created once the table exists (established or recovered). */
   private _stmts: ISqliteVecStatements | undefined;
+  /**
+   * Set by {@link SqliteVecVectorIndex.release}. Distinct from `_stmts === undefined`,
+   * which means *no dimension established yet* — see the remarks on `release`.
+   */
+  private _released: boolean;
 
   private constructor(db: BetterSqlite3.Database, table: string, dimension: number | undefined) {
     this._db = db;
     this._table = table;
     this._dimension = dimension;
+    this._released = false;
     this._stmts = dimension === undefined ? undefined : this._prepare();
   }
 
-  /** The number of vectors currently held. Zero before the first `add`. */
+  /**
+   * The number of vectors currently held. Zero before the first `add`.
+   *
+   * @remarks
+   * **Throws on a released index**, where every other member returns a `Failure` —
+   * because `IVectorIndex` declares this a synchronous `number` and there is no
+   * `Result` to fail into. Throwing preserves the behaviour a released index had
+   * before it had an explicit released state (the underlying statement threw
+   * against the closed connection); the alternative, answering `0`, would be a
+   * confident lie indistinguishable from an empty index.
+   */
   public get size(): number {
+    this._assertUsable('read size');
     if (this._stmts === undefined) {
       return 0;
     }
@@ -186,15 +203,61 @@ export class SqliteVecVectorIndex implements IVectorIndex {
         .onSuccess((index) =>
           succeed({
             index,
-            close: () => closeOwnedConnection(database, LABEL)
+            close: () => {
+              // Drop the statements BEFORE closing, so there is never a moment where
+              // a closed connection has live `Statement` objects pointing at it —
+              // see `release`.
+              index.release();
+              return closeOwnedConnection(database, LABEL);
+            }
           })
         )
     );
   }
 
+  /**
+   * Drops this index's prepared statements and marks it unusable. Does **not**
+   * touch the connection.
+   *
+   * @remarks
+   * `better-sqlite3` exposes no public `finalize()`, so releasing the last
+   * reference to a `Statement` does not finalize it — it makes it collectable
+   * *earlier*, while the environment is alive, rather than surviving to process
+   * teardown. That narrows the window in which `Statement::~Statement()` runs
+   * against a torn-down environment; it is not a proof against it.
+   *
+   * **Call this before closing a connection you own.** {@link
+   * SqliteVecVectorIndex.open}'s handle does it for you. A `create()`-made index
+   * holds a connection it does not own and stays structurally incapable of
+   * closing it — this method drops only what the index itself allocated, which is
+   * why it is safe to expose there.
+   *
+   * Idempotent. After it, every member fails (or, for `size`, throws) rather than
+   * answering: a released index is deliberately distinguishable from one that has
+   * simply never had an `add`, whose `_stmts` are also absent but which answers
+   * `size === 0` truthfully.
+   */
+  public release(): void {
+    this._released = true;
+    this._stmts = undefined;
+  }
+
+  /**
+   * Throw if this index has been released. The one member that calls it and cannot
+   * return a `Result` is `size`; the rest convert the throw via `captureResult`.
+   */
+  private _assertUsable(what: string): void {
+    if (this._released) {
+      throw new Error(`vector index: cannot ${what}: the index has been released`);
+    }
+  }
+
   /** {@inheritDoc IVectorIndex.add} */
   public add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>> {
     const key: string = edgeTargetKey(target);
+    if (this._released) {
+      return Promise.resolve(fail(`vector index: cannot add '${key}': the index has been released`));
+    }
     if (vector.length === 0) {
       return Promise.resolve(fail(`vector index: cannot add '${key}': empty vector`));
     }
@@ -222,6 +285,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
   public has(target: IEdgeTarget): Promise<Result<boolean>> {
     return Promise.resolve(
       captureResult(() => {
+        this._assertUsable(`check '${edgeTargetKey(target)}'`);
         // Before any add has created the table there is nothing held, which is a
         // truthful `false` rather than an error — same posture as `remove`'s
         // idempotence and `size`'s zero.
@@ -237,6 +301,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
   public remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>> {
     return Promise.resolve(
       captureResult(() => {
+        this._assertUsable(`remove '${edgeTargetKey(target)}'`);
         // Idempotent: removing a target with no embedding (or before any `add`
         // created the table) still succeeds.
         if (this._stmts !== undefined) {
@@ -338,6 +403,9 @@ export class SqliteVecVectorIndex implements IVectorIndex {
    * note on `IVectorIndex.rebuild`.
    */
   private _clear(): Result<true> {
+    if (this._released) {
+      return fail('vector index: cannot clear: the index has been released');
+    }
     if (this._stmts === undefined) {
       return succeed(true);
     }
@@ -351,6 +419,9 @@ export class SqliteVecVectorIndex implements IVectorIndex {
 
   /** {@inheritDoc IVectorIndex.query} */
   public query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
+    if (this._released) {
+      return Promise.resolve(fail('vector index: cannot query: the index has been released'));
+    }
     if (topK <= 0 || this._stmts === undefined) {
       return Promise.resolve(succeed([]));
     }

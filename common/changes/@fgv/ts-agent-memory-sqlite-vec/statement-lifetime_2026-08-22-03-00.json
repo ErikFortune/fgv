@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory-sqlite-vec",
+      "comment": "Add release() to SqliteVecVectorIndex and SqliteVecFragmentIndex, which drops the index's prepared statements and marks it unusable without touching the connection. The handle returned by open() now calls it before closing, so a closed connection never has live Statement objects pointing at it. A released index fails (or, for the synchronous counts, throws) rather than answering as an empty one.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory-sqlite-vec"
+}
