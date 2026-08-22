@@ -55,9 +55,13 @@ failure the whole ask exists to remove.
 `onUnsupported: 'fail'` for output that is persisted or put on a wire.
 
 One thing that is **not** a degradation and does not obey `onUnsupported`: Anthropic and
-Gemini express structured output *through the tools channel*, so combining it with
-server-side tools (`web_search`) asks for two things the provider cannot both do. That
-fails. `onUnsupported` speaks to capability, not to a caller asking for a contradiction.
+Gemini both refuse structured output alongside server-side tools (`web_search`) — for
+**different reasons**, which matters if you are reasoning about either. Anthropic's mechanism
+*is* `tools` + `tool_choice`, so it is a genuine wire-level clash. Gemini's
+`responseMimeType` / `responseSchema` sit in `generationConfig`, nowhere near `tools`; the
+exclusion is one Gemini's API enforces, the same restriction the client-tool path already
+pre-empts. Either way it fails. `onUnsupported` speaks to capability, not to a caller asking
+for a contradiction.
 
 ## `generateJsonCompletion` — you were right that it was a false binary
 

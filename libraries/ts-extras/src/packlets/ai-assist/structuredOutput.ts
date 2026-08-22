@@ -143,6 +143,78 @@ function jsonObjectWire(
 }
 
 /**
+ * Whether `raw` declares any object property that is absent from that object's
+ * `required` list — at any depth.
+ *
+ * @remarks
+ * **This is a hard constraint of OpenAI's strict structured output, not a style
+ * preference.** `response_format: { type: 'json_schema', json_schema: { strict: true } }`
+ * requires *every* key in `properties` to appear in `required`; a schema that omits
+ * one is rejected with a 400 before the model ever runs. `JsonSchema.optional(...)`
+ * produces exactly that shape, so an authored schema with one optional field is
+ * unsendable to the two OpenAI strict formats.
+ *
+ * The three obvious repairs are all worse than refusing. Rewriting optional to
+ * required-and-nullable changes what the model must emit (`null` rather than
+ * omission), so the reply would no longer satisfy the caller's own validator —
+ * breaking the one-object-cannot-drift property this whole surface exists for.
+ * Dropping `strict` silently downgrades the guarantee while still reporting
+ * `'schema'`, which is the lie the required report exists to prevent. And sending
+ * it anyway just relocates the failure to an opaque provider 400.
+ *
+ * So this is treated as a **capability mismatch** and routed through the caller's
+ * existing `onUnsupported` choice — degrade to unconstrained by default, fail loudly
+ * on request. Gemini and Anthropic have no such rule and are unaffected.
+ * @internal
+ */
+export function hasOptionalProperties(raw: JsonValue): boolean {
+  if (Array.isArray(raw)) {
+    return raw.some(hasOptionalProperties);
+  }
+  if (raw === null || typeof raw !== 'object') {
+    return false;
+  }
+  const node: Record<string, JsonValue | undefined> = raw as Record<string, JsonValue | undefined>;
+  const properties = node.properties;
+  if (properties !== null && typeof properties === 'object' && !Array.isArray(properties)) {
+    const required: ReadonlyArray<JsonValue> = Array.isArray(node.required) ? node.required : [];
+    for (const name of Object.keys(properties)) {
+      if (!required.includes(name)) {
+        return true;
+      }
+    }
+  }
+  return Object.values(node).some((v) => v !== undefined && hasOptionalProperties(v));
+}
+
+/** The two formats that carry OpenAI's all-properties-required strict rule. @internal */
+function isOpenAiStrictFormat(format: IAiStructuredOutputCapability['format']): boolean {
+  return format === 'openai-json-schema' || format === 'openai-responses-format';
+}
+
+/**
+ * Whether a resolved wire claims the provider's tools channel, and therefore
+ * genuinely conflicts with server-side tools.
+ *
+ * @remarks
+ * Asked of the **resolved wire** rather than the declared format, because a format
+ * that *would* claim the channel does not claim it when the request degraded to
+ * sending nothing. Anthropic + `json-object` is exactly that case: the mode has no
+ * expression there, so the wire is empty and there is nothing to conflict with —
+ * rejecting it would refuse a request that was about to become harmless.
+ * @internal
+ */
+function conflictsWithServerTools(
+  format: IAiStructuredOutputCapability['format'],
+  resolved: IResolvedStructuredOutput
+): boolean {
+  return (
+    resolved.enforcement !== 'none' &&
+    (format === 'anthropic-tool-forced' || format === 'gemini-response-schema')
+  );
+}
+
+/**
  * The wire format actually in force, given which OpenAI endpoint the dispatcher
  * will use.
  *
@@ -217,6 +289,38 @@ export function resolveStructuredOutput(
       : succeed(NO_STRUCTURED_OUTPUT);
   }
 
+  const format = effectiveFormat(capability.format, usesResponsesApi);
+
+  // Resolve the wire FIRST, then judge conflicts against what it actually is.
+  // Ordering matters: a format that would claim the tools channel does not claim
+  // it when the request degraded to sending nothing.
+  let resolved: IResolvedStructuredOutput | undefined;
+  let unsupported: string | undefined;
+  if (request.mode === 'schema') {
+    const raw: JsonValue = request.schema.toJson();
+    if (isOpenAiStrictFormat(format) && hasOptionalProperties(raw)) {
+      // See `hasOptionalProperties` — a hard provider constraint, treated as a
+      // capability mismatch rather than relocated into an opaque 400.
+      unsupported =
+        `the supplied schema declares optional properties, and OpenAI strict structured output ` +
+        `requires every property to be required; author them as required, or pass ` +
+        `onUnsupported: 'degrade' to send the request unconstrained`;
+    } else {
+      resolved = schemaWire(format, raw);
+    }
+  } else {
+    resolved = jsonObjectWire(format);
+    if (resolved === undefined) {
+      // Today this is only `'json-object'` on Anthropic, whose mechanism needs a
+      // schema to force a tool to.
+      unsupported = `provider '${descriptor.id}' model '${model}' cannot enforce '${request.mode}' structured output`;
+    }
+  }
+
+  if (resolved === undefined) {
+    return fallback === 'fail' ? fail(`${unsupported}`) : succeed(NO_STRUCTURED_OUTPUT);
+  }
+
   // Two formats cannot carry structured output and server-side tools at once, for
   // DIFFERENT reasons — worth separating, because a reader who assumes one
   // mechanism will reason wrongly about the other.
@@ -232,55 +336,45 @@ export function resolveStructuredOutput(
   // Neither is degradable: silently dropping either half would give the caller
   // something they did not ask for, and `onUnsupported` speaks to what a model can
   // enforce, not to a caller asking for two incompatible things.
-  if (serverTools !== undefined && serverTools.length > 0) {
-    if (capability.format === 'anthropic-tool-forced') {
-      return fail(
-        `Anthropic enforces structured output by forcing a tool, so it cannot be combined with ` +
-          `server-side tools (${serverTools.map((t) => t.type).join(', ')}) in the same request; ` +
-          `send one or the other`
-      );
-    }
-    if (capability.format === 'gemini-response-schema') {
-      return fail(
-        `Gemini cannot combine a response schema with server-side tools ` +
-          `(${serverTools.map((t) => t.type).join(', ')}) in the same request; send one or the other`
-      );
-    }
-  }
-
-  const format = effectiveFormat(capability.format, usesResponsesApi);
-  if (request.mode === 'schema') {
-    return succeed(schemaWire(format, request.schema.toJson()));
-  }
-  const jsonObject = jsonObjectWire(format);
-  if (jsonObject !== undefined) {
-    return succeed(jsonObject);
-  }
-
-  // The requested mode has no expression on this format. Today that is only
-  // `'json-object'` on Anthropic.
-  if (fallback === 'fail') {
+  if (serverTools !== undefined && serverTools.length > 0 && conflictsWithServerTools(format, resolved)) {
+    const why =
+      format === 'anthropic-tool-forced'
+        ? 'Anthropic enforces structured output by forcing a tool, so it cannot be combined with'
+        : 'Gemini cannot combine a response schema with';
     return fail(
-      `provider '${descriptor.id}' model '${model}' cannot enforce '${request.mode}' structured output; ` +
-        `pass onUnsupported: 'degrade' to send the request unconstrained`
+      `${why} server-side tools (${serverTools.map((t) => t.type).join(', ')}) in the same request; ` +
+        `send one or the other`
     );
   }
-  return succeed(NO_STRUCTURED_OUTPUT);
+
+  return succeed(resolved);
 }
 
-/** Every valid {@link StructuredOutputEnforcement}, for the wire-shape guard below. @internal */
-const ENFORCEMENTS: ReadonlySet<string> = new Set<StructuredOutputEnforcement>([
-  'none',
-  'json-mode',
-  'schema',
-  'tool-forced'
-]);
+/**
+ * Every valid `StructuredOutputEnforcement`, for the wire-shape guard below.
+ *
+ * @remarks
+ * A **total** `Record`, not a `Set` built from an array literal — the same reasoning
+ * as `SCHEMA_NODE_TYPES` in `@fgv/ts-json-base`. A `Set` catches a removed or
+ * misspelled member but not an *added* one, so a new enforcement value would compile
+ * fine here while this guard silently began rejecting it off a proxy response. The
+ * `Record` makes that addition a compile error at this line.
+ * @internal
+ */
+const ENFORCEMENTS: Readonly<Record<StructuredOutputEnforcement, true>> = {
+  none: true,
+  'json-mode': true,
+  schema: true,
+  'tool-forced': true
+};
 
 /**
  * Whether an untyped value off a proxy response is a valid
- * {@link StructuredOutputEnforcement}.
+ * `StructuredOutputEnforcement`.
  * @internal
  */
 export function isStructuredOutputEnforcement(value: unknown): value is StructuredOutputEnforcement {
-  return typeof value === 'string' && ENFORCEMENTS.has(value);
+  // Indexed read compared to `true`, NOT `in` — `in` walks the prototype chain, so a
+  // proxy answering `structuredOutput: 'constructor'` would pass it.
+  return typeof value === 'string' && ENFORCEMENTS[value as StructuredOutputEnforcement] === true;
 }

@@ -107,7 +107,7 @@ export type StructuredOutputEnforcement = 'none' | 'json-mode' | 'schema' | 'too
  *
  * @remarks
  * `'degrade'` is the default, and it is only safe **because
- * {@link IAiCompletionResponse.structuredOutput} is required** rather than
+ * `IAiCompletionResponse.structuredOutput` is required** rather than
  * optional. Degrade-and-tell-me is safe; degrade-silently is the failure this
  * whole surface exists to remove — so the two decisions are one decision, not
  * two independent ones.

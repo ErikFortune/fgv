@@ -52,6 +52,22 @@ import {
 
 const fooSchema = JsonSchema.object({ foo: JsonSchema.string() });
 
+/** Top-level optional property — the direct case `hasOptionalProperties` exists for. */
+const optionalPropSchema = JsonSchema.object({
+  a: JsonSchema.string(),
+  b: JsonSchema.optional(JsonSchema.string())
+});
+
+/** The optional property is nested inside another object schema, not at the top level. */
+const nestedOptionalSchema = JsonSchema.object({
+  outer: JsonSchema.object({ inner: JsonSchema.optional(JsonSchema.string()) })
+});
+
+/** The optional property lives inside an array's item schema. */
+const arrayItemOptionalSchema = JsonSchema.object({
+  items: JsonSchema.array(JsonSchema.object({ x: JsonSchema.optional(JsonSchema.string()) }))
+});
+
 function lastRequestBody(): Record<string, unknown> {
   const fetchMock = global.fetch as jest.Mock;
   const calls = fetchMock.mock.calls;

@@ -3157,8 +3157,6 @@ function spkiToRawX25519(spki: Uint8Array): Result<Uint8Array>;
 // @public
 type StructuredOutputEnforcement = 'none' | 'json-mode' | 'schema' | 'tool-forced';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiCompletionResponse"
-//
 // @public
 type StructuredOutputFallback = 'degrade' | 'fail';
 

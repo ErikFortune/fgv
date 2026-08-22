@@ -757,6 +757,25 @@ export async function callProviderCompletion(
   }
   const resolvedStructured = structuredResult.value;
 
+  // OpenAI rejects `response_format: { type: 'json_object' }` with a 400 unless the
+  // conversation mentions JSON somewhere — a documented API rule, and one a caller
+  // has no way to discover from a schema-mode request that worked. Pre-empted with a
+  // named failure before the wire call, the same treatment the Gemini
+  // grounding-plus-function-calling conflict already gets. `generateJsonCompletion`
+  // satisfies it for free via its prompt hint; a direct caller may not.
+  if (resolvedStructured.enforcement === 'json-mode' && descriptor.apiFormat === 'openai') {
+    const mentionsJson: boolean =
+      (system ?? '').toLowerCase().includes('json') ||
+      messages.some((m) => m.content.toLowerCase().includes('json'));
+    if (!mentionsJson) {
+      return fail(
+        `provider '${descriptor.id}': json-object structured output requires the word 'json' to ` +
+          `appear in the system prompt or a message — OpenAI rejects the request otherwise. Mention ` +
+          `it, or use structuredOutput: { mode: 'schema', schema } which carries no such rule`
+      );
+    }
+  }
+
   const config: IAiApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,

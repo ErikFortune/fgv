@@ -171,8 +171,9 @@ model-line-semantic rather than tier-named — one role can back multiple slots 
 
 ## Structured output
 
-Every completion request takes an optional `structuredOutput`, which asks the
-**provider** to constrain its output rather than only asking the model in the prompt.
+Every **non-streaming** completion request takes an optional `structuredOutput`, which asks
+the **provider** to constrain its output rather than only asking the model in the prompt. The
+streaming paths deliberately do not support it — see "Not in scope" below.
 
 ```ts
 const schema = JsonSchema.object({ name: JsonSchema.string(), age: JsonSchema.integer() });
@@ -238,9 +239,12 @@ wrong quietly. Leave it at `'degrade'` on paths *designed* to degrade — an ext
 that may return nothing, a segmenter that floors to a mechanical chunker — where a
 hard failure would make this library less safe than the code it replaces.
 
-A **conflict** is not a degradation and does not obey `onUnsupported`: Anthropic and
-Gemini express structured output through the tools channel, so combining it with
-server-side tools asks for two things the provider cannot both do, and that fails.
+A **conflict** is not a degradation and does not obey `onUnsupported`. Anthropic and Gemini
+each refuse structured output alongside server-side tools, for **different reasons** — worth
+separating, because a reader who assumes one mechanism will reason wrongly about the other.
+Anthropic's mechanism *is* `tools` + `tool_choice`, so it is a wire-level clash. Gemini's
+`responseMimeType` / `responseSchema` live in `generationConfig`, nowhere near `tools`; the
+exclusion is one the API enforces. Either way it fails rather than degrading.
 
 ### Four wire formats, declared per model family
 
