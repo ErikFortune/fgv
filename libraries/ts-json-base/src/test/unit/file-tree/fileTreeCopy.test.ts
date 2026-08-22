@@ -307,6 +307,18 @@ describe('FileTree copy', () => {
         });
       });
 
+      it('does not swallow an unrelated write failure under skip', () => {
+        // `skip` concerns unfaithful bytes and nothing else. A write that fails for its own
+        // reasons must still fail, or the mode would quietly widen into "ignore problems".
+        const source = fsDirectory('src');
+        const destination = inMemoryDirectory([], false);
+        fs.writeFileSync(path.join(source.absolutePath, 'a.txt'), PLAIN_TEXT);
+
+        expect(
+          copyItemInto(source.getChildren().orThrow()[0], destination, { onUnfaithfulFile: 'skip' })
+        ).toFailWith(/a\.txt:.*not mutable|mutability is disabled/i);
+      });
+
       it('treats an options bag that omits the behavior as the fail default', () => {
         const source = fsDirectory('src');
         const destination = inMemoryDirectory();

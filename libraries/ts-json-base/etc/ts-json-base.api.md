@@ -123,6 +123,7 @@ function copyContentsInto<TCT extends string = string>(source: IFileTreeDirector
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function copyItemInto<TCT extends string = string>(source: FileTreeItem<TCT>, destination: IMutableFileTreeDirectoryItem<TCT>, options?: ICopyOptions): Result<ICopyReport>;
@@ -617,6 +618,8 @@ interface IMutableBinaryFileTreeAccessors<TCT extends string = string> extends I
 //
 // @public
 interface IMutableBinaryFileTreeDirectoryItem<TCT extends string = string> extends IMutableFileTreeDirectoryItem<TCT> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     canCreateChildFileBytes(): boolean;
     createChildFileBytes(name: string, bytes: Uint8Array): Result<IMutableFileTreeFileItem<TCT>>;

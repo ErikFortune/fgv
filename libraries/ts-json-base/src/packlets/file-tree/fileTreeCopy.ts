@@ -173,6 +173,15 @@ const MAX_COPY_DEPTH: number = 128;
  * produce them would yield a file whose faithfulness nothing had established, so a source
  * store with no byte capability is a `Failure` rather than a quiet text copy.
  *
+ * **"Its source" means what the source item's `getRawBytes` reports**, which is only as
+ * faithful as that store's own custody of the original bytes — the same line
+ * {@link FileTree.IStrictTextFileTreeAccessors | the strict-text capability} draws. A store
+ * whose transport already decoded the bytes (an `HttpTreeAccessors` under its default
+ * encoding, a `localStorage` tree, an in-memory tree seeded with a `string`) hands back a
+ * re-encode, and a copy reproduces that faithfully and reports success. This copy cannot
+ * improve on the custody its source has; what it will not do is *downgrade* a source that
+ * has custody into a text write.
+ *
  * Existing destination files of the same name are overwritten, matching
  * {@link FileTree.IMutableFileTreeDirectoryItem.createChildFile | createChildFile}.
  *

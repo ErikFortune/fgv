@@ -113,15 +113,7 @@ export class DirectoryItem<TCT extends string = string> implements IMutableBinar
     }
 
     const filePath = hal.joinPaths(this.absolutePath, name);
-    return hal.saveFileContents(filePath, contents).onSuccess(() =>
-      hal.getItem(filePath).onSuccess((item) => {
-        /* c8 ignore next 3 - defensive: verifies accessor returned correct item type after save */
-        if (!isMutableFileItem(item)) {
-          return fail(`${filePath}: expected mutable file but got ${item.type}`);
-        }
-        return succeed(item);
-      })
-    );
+    return this._createdChildFile(filePath, () => hal.saveFileContents(filePath, contents));
   }
 
   /**
@@ -137,19 +129,14 @@ export class DirectoryItem<TCT extends string = string> implements IMutableBinar
   public createChildFileBytes(name: string, bytes: Uint8Array): Result<IMutableFileTreeFileItem<TCT>> {
     const hal = this._hal;
     if (!isMutableBinaryAccessors(hal)) {
+      // Names the file, unlike its `createChildFile` sibling: that guard is defensive
+      // (no shipped accessor lacks the mutation interface) while this one is reachable
+      // from any text-persisting store, so the diagnosis needs to say which file.
       return fail(`${this.absolutePath}/${name}: raw byte writes not supported`);
     }
 
     const filePath = hal.joinPaths(this.absolutePath, name);
-    return hal.saveFileBytes(filePath, bytes).onSuccess(() =>
-      hal.getItem(filePath).onSuccess((item) => {
-        /* c8 ignore next 3 - defensive: verifies accessor returned correct item type after save */
-        if (!isMutableFileItem(item)) {
-          return fail(`${filePath}: expected mutable file but got ${item.type}`);
-        }
-        return succeed(item);
-      })
-    );
+    return this._createdChildFile(filePath, () => hal.saveFileBytes(filePath, bytes));
   }
 
   /**
@@ -199,6 +186,34 @@ export class DirectoryItem<TCT extends string = string> implements IMutableBinar
       return fail(`${this.absolutePath}: mutation not supported`);
     }
     return hal.deleteDirectory(this.absolutePath);
+  }
+
+  /**
+   * Runs a child-file write and resolves the item it produced.
+   *
+   * @remarks
+   * The tail shared by every `createChildFile*` method: the two differ only in their
+   * capability guard and which accessor method they call, and the re-fetch-and-narrow
+   * that follows is identical. Factored so a third writer inherits it rather than
+   * copying it — the two copies had already drifted apart before this existed.
+   * @param filePath - The absolute path being written.
+   * @param write - The accessor call that performs the write.
+   * @returns `Success` with the new file item, or `Failure` with an error message.
+   * @internal
+   */
+  private _createdChildFile(
+    filePath: string,
+    write: () => Result<unknown>
+  ): Result<IMutableFileTreeFileItem<TCT>> {
+    return write().onSuccess(() =>
+      this._hal.getItem(filePath).onSuccess((item) => {
+        /* c8 ignore next 3 - defensive: verifies accessor returned correct item type after save */
+        if (!isMutableFileItem(item)) {
+          return fail(`${filePath}: expected mutable file but got ${item.type}`);
+        }
+        return succeed(item);
+      })
+    );
   }
 
   /**

@@ -164,17 +164,59 @@ Verified by stashing the whole change and re-running: 29 passed, 1 failed, ident
 
 ## Review
 
-**Layer 1 was run inline rather than via the `code-reviewer` agent**, on an explicit session
-constraint against spawning subagents. Recorded here rather than left silent, because an
-unnamed skipped gate is the failure the review-loop section exists to prevent.
+Layer 1 ran in two passes. An **inline** pass first (a session constraint against spawning
+subagents, since lifted on request), then the **`code-reviewer` agent** on the final diff.
 
-Three things it found, all fixed:
+The inline pass found three things, all fixed before the first push:
 
 1. `EMPTY_REPORT.skipped` was a plain `[]` spread into every per-file report, so every report
    aliased one array. Now `Object.freeze([])`.
 2. `_mergeReports` propagated that alias into its result whenever no file was skipped. Now
    builds a fresh array via `flatMap`.
 3. No bound on the recursion — the copy-into-a-descendant hang above.
+
+The agent pass returned **no P1s**. It independently attacked the guarantee — BOM stripping,
+JSON-seeded lone surrogates, overlong and invalid UTF-8, empty files, byte-array aliasing —
+and could not construct an input where a file lands changed and the copy reports success. It
+also re-traced every path that constructs an `ICopyReport` and confirmed none share a mutable
+array, i.e. verified the inline fixes rather than taking `result.md`'s word for them.
+
+**Adopted (2 P2, 2 P3):**
+
+- **The two `createChildFile*` methods were near-duplicate boilerplate.** Extracted the shared
+  tail as `DirectoryItem._createdChildFile(filePath, write)`. The reviewer's evidence for
+  acting rather than tolerating two copies was that *they had already drifted* — which is the
+  finding below.
+- **`canCreateChildFileBytes` reads like a stronger promise than it makes.** It reports the
+  store's **mechanism**, not its current mutability policy: a byte-persisting store with
+  mutation switched off answers `true`. That is deliberate and now says so in the TSDoc —
+  answering `false` there would route the copy down the *text* path to be refused for a
+  different reason, so a byte-capable-but-immutable destination would report "destination
+  persists text" instead of "mutability is disabled". The current behaviour gives the true
+  diagnosis; the docstring was what needed fixing.
+- **The one-sentence guarantee was under-scoped.** "Byte-identical to its source" is really
+  "byte-identical to what the source's `getRawBytes` reports". A store whose transport already
+  decoded the bytes hands back a re-encode, and the copy reproduces *that* faithfully. The
+  packlet already draws this line carefully for the strict-text capability; the TSDoc now
+  draws it here too rather than leaving it only in this file.
+- **A missing test combination**: `'skip'` together with an unrelated write failure, pinning
+  that skip mode does not widen into "ignore problems". Added.
+
+**Dispositioned, with reasons:**
+
+- **P2 — the two methods' capability-absent messages disagree** (`createChildFile` names the
+  directory, `createChildFileBytes` names the file). Kept, and the asymmetry is now a comment
+  rather than an accident: `createChildFile`'s guard is **defensive and `c8`-ignored** — no
+  shipped accessor lacks the mutation interface — while the byte guard is **reachable from
+  any text-persisting store**, so its diagnosis has to say which file. Churning a dead branch
+  to match a live one would trade a justified difference for a cosmetic one.
+- **P3 — a path appears twice in one failure message** (`/a.txt: cannot copy to …: /a.txt:
+  raw byte access not supported`). Real, and only on the `getRawBytes` wrapper: the other
+  three wrappers add the *source* path to an inner message that names the *destination*, so
+  they are not redundant. Removing the prefix from that one would make this file's message
+  correctness depend on `FileItem`'s and every accessor's message format continuing to name
+  the source. The stream's requirement — the failure names the path — holds either way, so
+  the coupling is not worth buying legibility with.
 
 ## Not in scope
 

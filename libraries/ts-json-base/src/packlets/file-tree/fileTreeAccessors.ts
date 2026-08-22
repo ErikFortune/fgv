@@ -423,13 +423,22 @@ export interface IMutableBinaryFileTreeDirectoryItem<TCT extends string = string
    * Reports whether the backing store can persist bytes verbatim.
    *
    * @remarks
-   * Total and synchronous, and **this one is a success guarantee**: it answers from the
-   * accessors, which the item's own guard cannot see. `false` means
+   * Total and synchronous, and **this one is a success guarantee in the direction that
+   * matters**: it answers from the accessors, which the item's own guard cannot see.
+   * `false` means
    * {@link FileTree.IMutableBinaryFileTreeDirectoryItem.createChildFileBytes | createChildFileBytes}
    * will fail for every name, because the store persists text and a byte write could not
    * round-trip.
    *
-   * @returns `true` if byte-native child creation is supported.
+   * **It reports the store's mechanism, not its current mutability policy** — the same
+   * axis {@link FileTree.isMutableAccessors | isMutableAccessors} reports, and for the same
+   * reason. A byte-persisting store with mutation switched off still answers `true`, and
+   * the write then fails with the real reason. That is deliberate: answering `false` there
+   * would send a caller down a text path to be refused for a *different* reason, which is
+   * a worse diagnosis than the true one. Ask
+   * {@link FileTree.IMutableFileTreeFileItem.getIsMutable | getIsMutable} for the policy.
+   *
+   * @returns `true` if the backing store persists bytes verbatim.
    */
   canCreateChildFileBytes(): boolean;
 
