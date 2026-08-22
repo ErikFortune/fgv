@@ -393,6 +393,61 @@ export interface IMutableFileTreeDirectoryItem<TCT extends string = string>
   delete(): Result<boolean>;
 }
 
+/**
+ * Extended directory item interface for directories that can create a child file
+ * directly from raw bytes.
+ *
+ * @remarks
+ * This is an *optional capability* — use
+ * {@link FileTree.isMutableBinaryDirectoryItem | isMutableBinaryDirectoryItem} to narrow.
+ * It exists because
+ * {@link FileTree.IMutableFileTreeDirectoryItem.createChildFile | createChildFile} is
+ * string-only: without it, writing a byte-native file into a directory means creating a
+ * placeholder and then calling
+ * {@link FileTree.IMutableBinaryFileTreeFileItem.setRawBytes | setRawBytes}, which leaves
+ * an empty file behind when the byte write turns out not to be supported.
+ *
+ * **As with the other item-level guards, `isMutableBinaryDirectoryItem` narrows the type
+ * and is not a success guarantee** — {@link FileTree.DirectoryItem} implements this
+ * interface unconditionally and delegates to its accessors. Unlike the file-item case,
+ * however, the answer *is* reachable from the item: call
+ * {@link FileTree.IMutableBinaryFileTreeDirectoryItem.canCreateChildFileBytes | canCreateChildFileBytes},
+ * which reports what the backing store will actually do. That mirrors
+ * {@link FileTree.IMutableFileTreeFileItem.getIsMutable | getIsMutable}, which exists for
+ * the same reason.
+ * @public
+ */
+export interface IMutableBinaryFileTreeDirectoryItem<TCT extends string = string>
+  extends IMutableFileTreeDirectoryItem<TCT> {
+  /**
+   * Reports whether the backing store can persist bytes verbatim.
+   *
+   * @remarks
+   * Total and synchronous, and **this one is a success guarantee**: it answers from the
+   * accessors, which the item's own guard cannot see. `false` means
+   * {@link FileTree.IMutableBinaryFileTreeDirectoryItem.createChildFileBytes | createChildFileBytes}
+   * will fail for every name, because the store persists text and a byte write could not
+   * round-trip.
+   *
+   * @returns `true` if byte-native child creation is supported.
+   */
+  canCreateChildFileBytes(): boolean;
+
+  /**
+   * Creates a new file as a child of this directory from raw bytes, with no text
+   * encoding applied.
+   *
+   * @remarks
+   * Nothing is written when the capability is absent — the check happens before the
+   * create, so a failure leaves no placeholder behind.
+   *
+   * @param name - The file name to create.
+   * @param bytes - The bytes to write.
+   * @returns `Success` with the new file item, or `Failure` with an error message.
+   */
+  createChildFileBytes(name: string, bytes: Uint8Array): Result<IMutableFileTreeFileItem<TCT>>;
+}
+
 // ============================================================================
 // Union Types
 // ============================================================================
@@ -862,5 +917,30 @@ export function isMutableDirectoryItem<TCT extends string = string>(
     typeof mutable.createChildDirectory === 'function' &&
     typeof mutable.deleteChild === 'function' &&
     typeof mutable.delete === 'function'
+  );
+}
+
+/**
+ * Type guard narrowing a directory item to
+ * {@link FileTree.IMutableBinaryFileTreeDirectoryItem}.
+ *
+ * @remarks
+ * Narrows the type; does **not** promise `createChildFileBytes()` will succeed — see that
+ * interface's remarks. Follow a successful narrowing with
+ * {@link FileTree.IMutableBinaryFileTreeDirectoryItem.canCreateChildFileBytes | canCreateChildFileBytes},
+ * which does answer for the backing store.
+ * @param item - The directory item to check.
+ * @returns `true` if the item implements
+ * {@link FileTree.IMutableBinaryFileTreeDirectoryItem}.
+ * @public
+ */
+export function isMutableBinaryDirectoryItem<TCT extends string = string>(
+  item: AnyFileTreeDirectoryItem<TCT> | FileTreeItem<TCT>
+): item is IMutableBinaryFileTreeDirectoryItem<TCT> {
+  const binary = item as IMutableBinaryFileTreeDirectoryItem<TCT>;
+  return (
+    isMutableDirectoryItem(item) &&
+    typeof binary.canCreateChildFileBytes === 'function' &&
+    typeof binary.createChildFileBytes === 'function'
   );
 }

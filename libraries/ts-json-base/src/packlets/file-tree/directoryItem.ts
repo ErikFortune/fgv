@@ -25,17 +25,26 @@ import {
   FileTreeItem,
   IDeleteChildOptions,
   IFileTreeAccessors,
+  IMutableBinaryFileTreeDirectoryItem,
   IMutableFileTreeDirectoryItem,
   IMutableFileTreeFileItem,
   isMutableAccessors,
+  isMutableBinaryAccessors,
   isMutableFileItem
 } from './fileTreeAccessors';
 
 /**
  * Class representing a directory in a file tree.
+ *
+ * @remarks
+ * Implements the optional byte-native create capability
+ * ({@link FileTree.IMutableBinaryFileTreeDirectoryItem}) by delegating to the underlying
+ * accessors, so the guard is true regardless of what backs it. Ask
+ * {@link FileTree.DirectoryItem.canCreateChildFileBytes | canCreateChildFileBytes} for the
+ * store's actual answer.
  * @public
  */
-export class DirectoryItem<TCT extends string = string> implements IMutableFileTreeDirectoryItem<TCT> {
+export class DirectoryItem<TCT extends string = string> implements IMutableBinaryFileTreeDirectoryItem<TCT> {
   /**
    * {@inheritDoc FileTree.IFileTreeDirectoryItem."type"}
    */
@@ -105,6 +114,34 @@ export class DirectoryItem<TCT extends string = string> implements IMutableFileT
 
     const filePath = hal.joinPaths(this.absolutePath, name);
     return hal.saveFileContents(filePath, contents).onSuccess(() =>
+      hal.getItem(filePath).onSuccess((item) => {
+        /* c8 ignore next 3 - defensive: verifies accessor returned correct item type after save */
+        if (!isMutableFileItem(item)) {
+          return fail(`${filePath}: expected mutable file but got ${item.type}`);
+        }
+        return succeed(item);
+      })
+    );
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableBinaryFileTreeDirectoryItem.canCreateChildFileBytes}
+   */
+  public canCreateChildFileBytes(): boolean {
+    return isMutableBinaryAccessors(this._hal);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableBinaryFileTreeDirectoryItem.createChildFileBytes}
+   */
+  public createChildFileBytes(name: string, bytes: Uint8Array): Result<IMutableFileTreeFileItem<TCT>> {
+    const hal = this._hal;
+    if (!isMutableBinaryAccessors(hal)) {
+      return fail(`${this.absolutePath}/${name}: raw byte writes not supported`);
+    }
+
+    const filePath = hal.joinPaths(this.absolutePath, name);
+    return hal.saveFileBytes(filePath, bytes).onSuccess(() =>
       hal.getItem(filePath).onSuccess((item) => {
         /* c8 ignore next 3 - defensive: verifies accessor returned correct item type after save */
         if (!isMutableFileItem(item)) {

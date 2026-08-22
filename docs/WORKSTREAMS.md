@@ -128,9 +128,40 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `ai-assist-structured-output` 🟡 (**#652 open, not merged** — breaking for constructors, additive for readers)
+### `filetree-faithful-copy` 🟡 (**#653 open, not merged** — additive)
 
-**Status:** 🟡 **#652 is open and not yet merged**; flip to ✅ on merge. Gates green — build / lint / test at **100%** in `@fgv/ts-extras`, `@fgv/ts-json-base` and `samples/testbed`, repo-wide `rush rebuild` at exit 0 with zero warnings, change files for all three published packages. **The live gate is CLOSED**: four testbed scenarios were written for this stream and run against the real APIs, every schema path green on all four providers.
+**Status:** 🟡 **#653 is open and not yet merged**; flip to ✅ on merge. Gates green — build / lint / test at **100%** in `@fgv/ts-json-base`, repo-wide `rush rebuild`, change file present.
+**Package surface:** `@fgv/ts-json-base` (`copyItemInto` / `copyContentsInto` and their option/report types; `IMutableBinaryFileTreeDirectoryItem` + `isMutableBinaryDirectoryItem`; `DirectoryItem.canCreateChildFileBytes` / `createChildFileBytes`), plus `.ai/instructions/LIBRARY_CAPABILITIES.md`.
+**Artifacts:** `.ai/tasks/completed/2026-08/filetree-faithful-copy/`
+**Origin:** a PersonAIlity ask (§ 1 of the 2026-08-22 note), filed with one premise corrected and the one open design question answered by the consumer before implementation.
+
+**Shipped:** a capability-aware copy — `copyItemInto(source, destinationDir)` for one item by name, `copyContentsInto(sourceDir, destinationDir)` for a directory's contents — with a single guarantee: **every file that lands is byte-identical to its source, or the copy says so.**
+
+**The consumer's bug was a text read feeding a text write.** `getRawContents()` → `createChildFile(name, contents)` in two places, lossless right up until a SQLite file entered the tree, at which point snapshot-then-restore produced a mangled database. Both ends were byte-native the whole time; nothing in the API made the downgrade visible.
+
+**The premise in the ask was misattributed, and correcting it made their position better than they thought.** They cited `isBinaryAccessors` as documenting "narrows but does not promise success" — that caveat belongs to the **file-item** guards. The accessor guards *are* real capability checks, so the "four combinations each with a live failure path" they described are decidable up front. That correction went to them before any code, since it was actionable on their side immediately.
+
+**`'fail'` is the default, and the consumer's argument for it is stronger than ours was.** We argued honesty at the boundary (the `getFileTextStrict` precedent: refuse rather than return a plausible value). They argued the failure is **diagnostic** — the file that broke them was their derived record index, reconstructible and already flagged as dead weight, so it should never have been in the snapshot set. A `'skip'` default would have absorbed a modelling error into a silent omission. Two implementation consequences follow and are pinned by tests: the failure **names the path**, and `'skip'` stays a deliberate opt-in rather than the convenient one-word fix.
+
+**A strict decode is not sufficient, which is the finding this stream would not have had without writing the check.** The obvious implementation of "carry as text when the bytes are text" is a `fatal: true` decode. That is wrong: `TextDecoder` **strips a leading BOM** and `TextEncoder` does not put it back, so a BOM-prefixed file decodes without error and arrives three bytes shorter. The copy therefore verifies by construction — decode, re-encode, compare — rather than reasoning about which files are "just text". Paired tests copy the same BOM file to a byte destination (preserved) and a text destination (refused).
+
+**The copy reads bytes and only bytes.** Falling back to a text read when a source cannot produce bytes would yield a file whose faithfulness nothing had established — the outcome the surface exists to prevent — so that is a `Failure`, not a quiet text copy. Every shipped adapter implements `getFileBytes`, so this costs no real consumer anything.
+
+**The byte-native create is the narrower half of the ask and is load-bearing for the wider one.** `createChildFile` is string-only, so a faithful write was create-a-placeholder-then-`setRawBytes`, which leaves an **empty file behind** when the byte write turns out to be unsupported. `createChildFileBytes` checks the capability before creating anything; a test asserts the directory is untouched after a refusal. Its companion `canCreateChildFileBytes()` exists because the item-level guard cannot promise success and `FileItem._hal` is protected — so unlike the file-item case, the answer *is* reachable from the item, in the same spirit as `getIsMutable()`.
+
+**Additive, not a widening.** The capability is a new optional interface plus guard, mirroring the existing binary/strict-text convention, rather than a new required member on `IMutableFileTreeDirectoryItem` — so no implementation outside this packlet has to change, on a package every other library depends on.
+
+**The report splits by mechanism, not outcome.** `filesCopiedAsBytes` and `filesCopiedAsText` are both byte-faithful; the split is there because `filesCopied: 500` reads the same whether a snapshot took the verbatim route or a text round trip. That is the `IVectorRebuildReport` rule applied on a second surface: totals are derivable by summing, the breakdown is derivable from nothing else.
+
+**Two properties documented because they are surprising, both pinned by tests.** A copy is **not atomic and does not roll back** — every file is attempted, so a failure names *every* offending path (the useful form when the answer is "these files should not be in this set") and the destination keeps whatever succeeded. And a copy into a location beneath its own source cannot be detected from the items alone — two different stores can present the same absolute path, so a path-prefix test would refuse legitimate copies — so it surfaces as a **depth-bounded failure** instead of a hang.
+
+**One branch removed rather than covered.** The byte comparison was first written as an indexed loop whose "same length, different bytes" arm is unreachable through the public API, since a strict decode plus re-encode can only differ by the stripped BOM and that changes the length. Rewritten as `length === length && every(...)`, which is the same check with no uncoverable line — per `TESTING_GUIDELINES.md`, the question is whether the branch should exist, not how to reach it.
+
+**Layer 1 was run inline rather than via the `code-reviewer` agent**, on an explicit session constraint against spawning subagents. Three things it found and fixed: a shared frozen `skipped: []` aliased into every per-file report, the merge reducer carrying that alias into results, and the missing depth bound. Disclosed here because a skipped gate that nobody names is the failure mode the review-loop section exists to prevent.
+
+### `ai-assist-structured-output` ✅ (shipped 2026-08-22 via #652 — breaking for constructors, additive for readers)
+
+**Status:** ✅ shipped to `release` (#652, squashed as `0765a206`). Gates green — build / lint / test at **100%** in `@fgv/ts-extras`, `@fgv/ts-json-base` and `samples/testbed`, repo-wide `rush rebuild` at exit 0 with zero warnings, change files for all three published packages. **The live gate is CLOSED**: four testbed scenarios were written for this stream and run against the real APIs, every schema path green on all four providers.
 **Package surface:** `@fgv/ts-extras` (`IProviderCompletionParams.structuredOutput`, `IAiCompletionResponse.structuredOutput`, `IAiProviderDescriptor.structuredOutput`, `resolveStructuredOutputCapability` / `supportsStructuredOutput`, the new `structuredOutputTypes` module), `@fgv/ts-json-base` (`JsonSchema.isSchemaValidator`), `@fgv/ts-app-shell` and `samples/testbed` (test doubles).
 **Artifacts:** `.ai/tasks/completed/2026-08/ai-assist-structured-output/`
 **Origin:** a PersonAIlity ask, surface settled with the consumer over two rounds before implementation.
