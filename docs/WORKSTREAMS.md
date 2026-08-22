@@ -128,6 +128,27 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `sqlite-vec-statement-lifetime` ✅ (shipped 2026-08-22 — additive)
+
+**Status:** ✅ shipped to `release`. Gates green — build / lint / test at **100%** in `@fgv/ts-agent-memory-sqlite-vec`, repo-wide `rush rebuild` at exit 0 with zero warnings, change file present.
+**Package surface:** `@fgv/ts-agent-memory-sqlite-vec` (`SqliteVecVectorIndex.release`, `SqliteVecFragmentIndex.release`), plus `.ai/instructions/LIBRARY_CAPABILITIES.md` and the package README.
+**Artifacts:** `.ai/tasks/completed/2026-08/sqlite-vec-statement-lifetime/`
+**Origin:** a PersonAIlity report, whose code half was confirmed and found to be **one class wider** than reported.
+
+**Shipped:** `release()` on both index classes — it drops the index's prepared statements and marks it unusable, and **never touches the connection**. `open()`'s handle calls it before closing, so a closed connection never has live `Statement` objects pointing at it. A `create()`-made index (which owns no connection) can call it too, which matters because a shared-connection deployment holds a record index *and* a fragment index over one connection and therefore carries **two** instances of the shape.
+
+**The reporter found it on the record index only; the fragment index had the identical wiring.** Same disposer, same absence of statement cleanup.
+
+**The naive fix is wrong, and the tests are written to prove it.** `_stmts === undefined` was already the sentinel for *"no dimension established yet"*, so clearing `_stmts` on close would make a released index answer `size === 0` and `has → false` — a confident lie indistinguishable from an empty index — where today it fails. The fix needs an explicit released state alongside the dimensionless one. Nine tests pin that distinction, and they were **watched failing** against the naive shape first: 5 of 6 red on the record index, 4 of 5 on the fragment index. The one that stays green either way is the "leaves the consumer connection open" test, which does not depend on the flag.
+
+**`size` throws where everything else fails**, because `IVectorIndex` declares it a synchronous `number` with no `Result` to fail into. That is not new behaviour — verified by probe that a `count` statement against a closed `better-sqlite3` connection throws `TypeError: The database connection is not open` — so the explicit state preserves it rather than introducing it. Answering `0` was the alternative and is the thing being prevented.
+
+**What the fix does NOT establish, stated in the release note and the consumer reply.** `better-sqlite3` exposes no public `finalize()`, so dropping the last reference does not finalize a statement — it makes it collectable *earlier*, while the environment is alive, rather than surviving to teardown. That narrows the window producing the reporter's `Statement::~Statement()` → `RemoveEnvironmentCleanupHook` with `env == nullptr` abort. **It is not a proof against it**, and the platform question is still open.
+
+**The platform half, and why a green suite could not settle it.** `perf/statementTeardown.js` drives the real adapter — not a hand-rolled imitation of its shape — through three passes (pre-fix shape closed, post-fix closed, never closed), holding every index at module scope to process exit so the destructors *must* run during teardown. Exit 0 on **linux-x64 under both Node 22.22.2 and Node 24.19.0** (the latter with `better-sqlite3@12.11.1` rebuilt from source against Node 24's own headers). Combined with the maintainer's green suite on **darwin-arm64 / Node 24.18.0**, that clears Node 24, arm64, and the two together — **the suspect is linux/arm64 specifically**. It lives under `perf/` rather than in the suite because it needs `--expose-gc`, which is a rig-level change, and because what it asserts is a process outcome rather than a value: a green check would carry no information about the thing at issue. The prediction was written down before the first run, per `TESTING_GUIDELINES.md` § "Measurement Harnesses" — on x64 it is a regression guard, not evidence; the deciding measurement is pass 1 aborting where pass 2 survives, and only linux/arm64 can produce it.
+
+**Coverage cannot see this class at all.** `Statement::~Statement()` is a native destructor invoked by V8's GC; `c8`/`istanbul` instrument JavaScript statements and have no visibility into it. 100% is fully compatible with the defect being present and firing — the extension of `TESTING_GUIDELINES.md` § "100% coverage cannot see a predicate that is never called" to a predicate that is not JavaScript.
+
 ### `fragment-query-scoping` ✅ (shipped 2026-08-18 — breaking, pre-1.0)
 
 **Status:** ✅ shipped to `release` from `integration/fragment-query-scoping` (docs **#638**, implementation **#639**), promoted as one squash. Every gate green — build / lint / test at 100% in both packages, repo-wide `rush rebuild` at exit 0 with **zero** warnings, change files for both packages.

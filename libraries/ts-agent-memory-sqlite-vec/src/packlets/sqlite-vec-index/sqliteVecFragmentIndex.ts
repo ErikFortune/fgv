@@ -147,16 +147,33 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
   private _dimension: number | undefined;
   /** Prepared statements; created once the table exists (established or recovered). */
   private _stmts: IFragmentStatements | undefined;
+  /**
+   * Set by {@link SqliteVecFragmentIndex.release}. Distinct from `_stmts === undefined`,
+   * which means *no dimension established yet* — see the remarks on `release`.
+   */
+  private _released: boolean;
 
   private constructor(db: BetterSqlite3.Database, table: string, dimension: number | undefined) {
     this._db = db;
     this._table = table;
     this._dimension = dimension;
+    this._released = false;
     this._stmts = dimension === undefined ? undefined : this._prepare();
   }
 
-  /** The number of records that currently have at least one stored fragment. Zero before the first add. */
+  /**
+   * The number of records that currently have at least one stored fragment. Zero
+   * before the first add.
+   *
+   * @remarks
+   * **Throws on a released index**, where every other member returns a `Failure` —
+   * `IFragmentVectorIndex` declares this a synchronous `number`, so there is no
+   * `Result` to fail into, and answering `0` would be a confident lie
+   * indistinguishable from an empty index. Same reasoning as
+   * {@link SqliteVecFragmentIndex.fragmentCount} and `SqliteVecVectorIndex.size`.
+   */
   public get recordCount(): number {
+    this._assertUsable('read recordCount');
     if (this._stmts === undefined) {
       return 0;
     }
@@ -165,8 +182,13 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     return Number((this._stmts.recordCount.get() as { c: number | bigint }).c);
   }
 
-  /** The total number of fragments currently held across all records. Zero before the first add. */
+  /**
+   * The total number of fragments currently held across all records. Zero before
+   * the first add. **Throws on a released index** — see
+   * {@link SqliteVecFragmentIndex.recordCount}.
+   */
   public get fragmentCount(): number {
+    this._assertUsable('read fragmentCount');
     if (this._stmts === undefined) {
       return 0;
     }
@@ -249,10 +271,55 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
         .onSuccess((index) =>
           succeed({
             index,
-            close: () => closeOwnedConnection(database, LABEL)
+            close: () => {
+              // Drop the statements BEFORE closing, so there is never a moment where
+              // a closed connection has live `Statement` objects pointing at it —
+              // see `release`.
+              index.release();
+              return closeOwnedConnection(database, LABEL);
+            }
           })
         )
     );
+  }
+
+  /**
+   * Drops this index's prepared statements and marks it unusable. Does **not**
+   * touch the connection.
+   *
+   * @remarks
+   * The fragment-lane counterpart of `SqliteVecVectorIndex.release`, and it
+   * matters here for the same reason plus one more: a shared-connection
+   * deployment — the case `create({ database })` exists for — holds a record index
+   * *and* a fragment index over one connection, so it carries two instances of the
+   * statement-lifetime shape rather than one. Both must be released.
+   *
+   * `better-sqlite3` exposes no public `finalize()`, so dropping the last
+   * reference does not finalize a statement — it makes it collectable *earlier*,
+   * while the environment is alive, rather than surviving to process teardown.
+   * That narrows the window in which `Statement::~Statement()` runs against a
+   * torn-down environment; it is not a proof against it.
+   *
+   * **Call this before closing a connection you own.**
+   * {@link SqliteVecFragmentIndex.open}'s handle does it for you.
+   *
+   * Idempotent. After it, every member fails (or, for the two counts, throws)
+   * rather than answering.
+   */
+  public release(): void {
+    this._released = true;
+    this._stmts = undefined;
+  }
+
+  /**
+   * Throw if this index has been released. The members that call it and cannot
+   * return a `Result` are the two counts; the rest convert the throw via
+   * `captureResult`.
+   */
+  private _assertUsable(what: string): void {
+    if (this._released) {
+      throw new Error(`fragment index: cannot ${what}: the index has been released`);
+    }
   }
 
   /** {@inheritDoc IFragmentVectorIndex.addFragments} */
@@ -261,6 +328,11 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     fragments: ReadonlyArray<IEmbeddedFragment>
   ): Promise<Result<number>> {
     const key: string = edgeTargetKey(target);
+    if (this._released) {
+      return Promise.resolve(
+        fail(`fragment index: cannot add fragments for '${key}': the index has been released`)
+      );
+    }
     // Validate every fragment before touching the database, so a bad fragment never
     // leaves the record half-replaced or the dimension half-established (whole-record
     // replace is all-or-nothing). The effective dimension is the established one, or —
@@ -334,6 +406,7 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
   public remove(target: IEdgeTarget): Promise<Result<IEdgeTarget>> {
     return Promise.resolve(
       captureResult(() => {
+        this._assertUsable(`remove '${edgeTargetKey(target)}'`);
         // Idempotent: removing a target with no fragments (or before any add created
         // the table) still succeeds.
         if (this._stmts !== undefined) {
@@ -348,6 +421,7 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
   public has(target: IEdgeTarget): Promise<Result<boolean>> {
     return Promise.resolve(
       captureResult(() => {
+        this._assertUsable(`check '${edgeTargetKey(target)}'`);
         // Before any add has created the table there is nothing held — a truthful
         // `false`, matching `remove`'s idempotence and the zero counts.
         if (this._stmts === undefined) {
@@ -441,6 +515,9 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
    * note on `IVectorIndex.rebuild`. Tolerates a table that does not exist yet.
    */
   private _clear(): Result<true> {
+    if (this._released) {
+      return fail('fragment index: cannot clear: the index has been released');
+    }
     if (this._stmts === undefined) {
       return succeed(true);
     }
@@ -460,6 +537,9 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     const maxPerRecord: number | undefined = options?.maxPerRecord;
     const scope: MemoryScopeKey | undefined = options?.scope;
     const id: MemoryId | undefined = options?.id;
+    if (this._released) {
+      return Promise.resolve(fail('fragment index: cannot query: the index has been released'));
+    }
     if (topK <= 0 || this._stmts === undefined) {
       return Promise.resolve(succeed([]));
     }

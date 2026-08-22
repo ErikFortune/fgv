@@ -78,6 +78,7 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     // (undocumented)
     rebuild(source: IMemoryRecordSource, embed: FragmentEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IFragmentVectorRebuildReport, IFragmentVectorRebuildReport>>;
     get recordCount(): number;
+    release(): void;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
     //
     // (undocumented)
@@ -101,6 +102,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     // (undocumented)
     query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>>;
     rebuild(source: IMemoryRecordSource, embed: MemoryEmbedder, options?: IVectorRebuildOptions): Promise<DetailedResult<IVectorRebuildReport, IVectorRebuildReport>>;
+    release(): void;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IVectorIndex"
     //
     // (undocumented)

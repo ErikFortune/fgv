@@ -67,8 +67,31 @@ const store = (
 ).orThrow();
 
 // ...use the store; embeddings are written to vectors.db on every put.
+vectorIndex.release(); // drop this index's prepared statements — see below
 db.close(); // you own the lifecycle — this index never closes your connection.
 ```
+
+### Releasing an index over a connection you own
+
+An index caches prepared `Statement` objects. Those hold a reference to the
+connection, so if you close a connection you own while an index over it is still
+reachable, its statements outlive the connection and their native destructors run
+whenever GC reaches them — potentially during process teardown.
+
+**`release()` drops those statements and marks the index unusable. It never touches
+the connection**, which is why it is safe to expose on a `create()`-made index that
+does not own one. `open()`'s handle calls it for you before closing; with `create()`
+you own the ordering, and it is `release()` then `close()`.
+
+A released index **fails** (or, for the synchronous counts `size` / `recordCount` /
+`fragmentCount`, **throws**) rather than answering. That is deliberate: an index that
+has simply never had an `add` also holds no statements, and answering `0` from a
+released one would be indistinguishable from an empty one.
+
+Note the limit honestly: `better-sqlite3` exposes no public `finalize()`, so dropping
+the last reference does not finalize a statement — it makes it collectable *earlier*,
+while the environment is alive, instead of surviving to teardown. That narrows the
+window; it is not a proof against it.
 
 `SqliteVecVectorIndex` implements the full `IVectorIndex` contract — `add(target, vector)`, `remove(target)`, `query(vector, topK)` — with the **same semantics as `InMemoryCosineIndex`**:
 
