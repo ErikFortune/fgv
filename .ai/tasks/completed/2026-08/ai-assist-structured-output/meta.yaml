@@ -1,9 +1,13 @@
 id: ai-assist-structured-output
-status: shipped
+status: in-flight # #652 is OPEN; flip to `shipped` on merge
 packages:
   - '@fgv/ts-extras'
   - '@fgv/ts-json-base'
   - '@fgv/ts-app-shell'
+  # Not published, but it carries a real surface from this stream (four scenarios,
+  # a probe module, 28 tests) and its own coverage gate — and the ledger's
+  # "Package surface" line already names it.
+  - 'samples/testbed'
 prs: []
 # #652 is OPEN at the time of writing, so it is deliberately NOT in `prs` — that
 # list asserts a merge. Move it across when it lands.
@@ -72,10 +76,9 @@ summary:
     that promises arbitrary shape. Fixed by making the assertion follow the mode.
     The same run hung, so probes now carry an AbortSignal.timeout.
   sourceLine: >
-    **Shipped:** a caller can now tell the provider what shape it wants --
-    `structuredOutput: { mode: 'schema', schema }` carrying the same
-    `ISchemaValidator` it validates the reply with -- and every response reports
-    which constraint was actually applied, on a **required** field.
+    A caller that has already declared the shape it wants can now **tell the
+    provider**, and learn **which enforcement was actually applied** — on all four
+    providers plus the proxy.
 keywords:
   - structured output
   - the caller supplies intent the response reports outcome

@@ -166,6 +166,47 @@ no unit test could tell us, because a wrong field name there is accepted and ign
 **The Anthropic pass confirms the forced-tool round trip**, the highest-risk shape in the
 feature, including re-serializing `tool_use.input` back into `content`.
 
+### The evidence, since a pass table is otherwise just an assertion
+
+An antagonist pass on these artifacts correctly noted that the table above rests on
+self-report with nothing attached. The captured output is therefore recorded here. First
+OpenAI run (2 of 3, before the probe fix):
+
+```
+openai schema (chat completions): enforcement=schema content={"city":"Paris","countryCode":"FR","populationMillions":2.1}
+openai schema (responses API, via server tool): enforcement=schema content={"city":"Paris","countryCode":"FR","populationMillions":2.084894}
+openai json-object: enforcement=json-mode content={ "city": "Paris", "country": "France", … "funFact": "…" }
+  PASS    openai schema (chat completions) — enforcement=schema
+  PASS    openai schema (responses API, via server tool) — enforcement=schema
+  FAIL    openai json-object — reply parsed but does not match the schema that was sent
+```
+
+Note what the two passes actually show. The schema-constrained replies contain **exactly the
+three declared fields and nothing else**, against a prompt that explicitly asked for prose
+framing, a markdown code fence, and a `funFact` field. That is the constraint working, not the
+model being agreeable — and the `json-object` reply in the same run is the control: same prompt,
+no schema, and the model produced all the extra fields the prompt invited while still returning
+**unfenced** JSON.
+
+Gemini (first run, before the parts fix):
+
+```
+gemini schema: enforcement=schema content={ "city": "Paris", "countryCode": "FR", "populationMillions": 2.16 }
+gemini json-object: enforcement=json-mode content={ … "funFact": "…" }
+}
+  PASS    gemini schema — enforcement=schema
+  FAIL    gemini json-object — reply did not parse as JSON (Unexpected non-whitespace character
+          after JSON at position 592 (line 15 column 1))
+```
+
+The stray `}` on its own line is the malformation discussed below. Anthropic and xAI passed on
+first run. After the probe fix and the parts fix, OpenAI and Gemini both pass in full.
+
+**What this evidence does and does not establish.** It is a maintainer-run transcript, not a CI
+artifact — these scenarios need live API keys and cannot run in CI, which is the whole reason
+they live in `samples/testbed` behind an explicit invocation. So it is reproducible rather than
+attested: `node bin/testbed.js --scenario <provider>-structured-output` with the provider key set.
+
 ### The probe was wrong before the library was
 
 The first OpenAI run failed `json-object`, and the failure was the **probe's**. That mode
