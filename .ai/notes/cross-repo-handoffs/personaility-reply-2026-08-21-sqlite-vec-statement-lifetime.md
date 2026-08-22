@@ -1,8 +1,8 @@
 # `SqliteVecVectorIndex` statement lifetime, and the Node 24 / linux-x64 cell
 
 **2026-08-21.** Both halves answered. The certain finding is confirmed **and is one class wider
-than you reported**; the matrix gap is **filled**, and the result narrows the suspect to the
-*combination* of Node 24 and arm64 rather than to either one.
+than you reported**; the matrix gap is **filled**, and the result narrows the suspect to
+**linux/arm64 specifically** — not to Node 24, not to arm64, and not to the two together.
 
 ---
 
@@ -54,8 +54,8 @@ We have a linux-x64 runner and installed Node 24 to test it.
 | **Node 24.19.0 / linux-x64** | **survives — exit 0** |
 | Node 24 / linux-arm64 | aborts (yours) |
 
-**So Node 24 alone does not do it.** See § 3 — arm64 alone does not either, which is what leaves
-the combination.
+**So Node 24 alone does not do it.** See § 3 — nor does arm64 alone, nor Node 24 + arm64 together
+on darwin, which is what leaves the OS.
 
 Conditions were matched to yours as closely as we can from x64: `better-sqlite3@12.11.1` **built
 from source** against Node 24.19.0's own headers (`node-gyp rebuild --release`, fresh
@@ -109,34 +109,42 @@ console.log('held', held.length * 3, 'statements to exit');
 
 ## 3. Is `SqliteVecVectorIndex` expected to work on Node 24 / linux-arm64?
 
-**arm64 is expected to work and is regularly exercised — our maintainer develops and tests on
-arm64.** So "does this package work on arm64" is not the open question; it is routinely green
-there.
+**arm64 is expected to work and is regularly exercised** — our maintainer develops and tests on
+arm64, and has now confirmed a full green suite at 100% coverage **on Node 24.18.0 / darwin-arm64**.
 
-**That sharpens the matrix rather than closing it**, because it means neither variable reproduces
-your crash on its own:
+That is worth stating carefully, because it clears more variables than you had and leaves a
+narrower suspect than either of us started with:
 
-| platform | result | source |
-|---|---|---|
-| Node 22 / linux-x64 | works | yours and ours |
-| Node 24.19.0 / linux-x64 | survives | our probe, this reply |
-| arm64 (maintainer's routine Node) | works | our regular development + test runs |
-| **Node 24 + arm64 together** | **your abort** | yours |
+| platform | Node | result | source |
+|---|---|---|---|
+| linux-x64 | 22.22.2 | works | yours and ours |
+| linux-x64 | 24.19.0 | survives, incl. teardown-forced probe | our probe, this reply |
+| **darwin-arm64** | **24.18.0** | **full suite green, 100%** | our maintainer |
+| **linux-arm64** | **24** | **aborts, deterministically** | **yours** |
 
-So the suspicion moves off "arm64" and off "Node 24" separately, and onto **the combination** — or
-onto something else in your image that neither of our environments has.
+**So Node 24 is cleared, arm64 is cleared, and even Node 24 + arm64 together is cleared — on
+darwin.** What remains unique to your environment is **linux/arm64 specifically**: the OS rather
+than the architecture, the `bookworm-slim` userland, or the Docker-on-Apple-Silicon layer, in some
+combination.
 
-**The cheapest next measurement is yours, and it is small.** Run the repro below on your arm64
-machine **under Node 24**, and tell us which way it goes:
+**One honest limit on our own evidence.** A green suite — even at 100% coverage — cannot settle this
+class, and we would rather say so than let the number carry weight it has not earned. `Statement::
+~Statement()` is a **native destructor** invoked by V8's GC; `c8`/`istanbul` instrument JavaScript
+statements and have no visibility into it at all. So 100% is *fully compatible* with the defect
+being present and firing. What our suite establishes is that the package is functionally healthy on
+darwin-arm64 under Node 24 and that the leaked statements cause no behavioural failure there — real,
+and not the same as proving the teardown ordering is safe.
 
-- **aborts** → the shape alone is sufficient on Node 24 + arm64. The lifetime defect is then not
-  merely latent for you, it is the cause, and fixing it is the fix.
-- **survives** → the shape is not sufficient, something in the adapter beyond it is involved, and we
-  would want your adapter-level repro next.
+**The one measurement that would settle it is still yours**, and it is now more clearly worth the
+five minutes: run the repro below on **linux/arm64 under Node 24**. It holds statements to process
+exit, so the destructors *must* run during environment teardown — the frame your stack aborts in.
 
-We also want to know **which Node version our own arm64 testing runs on**, since if it is Node 22
-then the third row above says nothing about Node 24 and the combination is entirely untested by us.
-We are checking that on our side rather than assuming it.
+- **aborts** → the shape alone is sufficient on linux/arm64, the lifetime defect is the cause, and
+  fixing it fixes you.
+- **survives** → the shape is not sufficient even there, something in the adapter or your image
+  beyond it is involved, and we would want your adapter-level repro next.
+
+Either answer is decisive, which is what makes it the right next step rather than more code reading.
 
 ## Thanks for what you ruled out
 

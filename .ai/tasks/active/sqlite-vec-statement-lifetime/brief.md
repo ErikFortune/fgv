@@ -84,9 +84,10 @@ The correction *sharpens* the diagnosis instead of closing it. Neither variable 
 alone: arm64 works under our routine testing, Node 24 works on x64 under our probe. The suspect is
 the **combination** — or something in the reporter's image that neither environment has.
 
-**Open and worth resolving before the stream starts:** which Node version our arm64 testing actually
-runs on. If it is Node 22, the arm64 row says nothing about Node 24 and the combination is untested
-by us as well as by them.
+**Resolved 2026-08-21:** our arm64 testing runs **Node 24.18.0 on darwin-arm64**, full suite green
+at 100%. So Node 24, arm64, and Node 24 + arm64 together are all cleared — on darwin. **The suspect
+narrows to linux/arm64 specifically**: the OS rather than the architecture, the `bookworm-slim`
+userland, or the Docker-on-Apple-Silicon layer.
 
 ### What our suite does and does not exercise — checked, and it qualifies the arm64 row
 
