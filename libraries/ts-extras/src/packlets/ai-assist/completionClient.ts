@@ -652,7 +652,13 @@ async function callGeminiCompletion(
     .onSuccess((response) => {
       const candidate = response.candidates[0];
       return succeed({
-        content: candidate.content.parts[0].text,
+        // ALL parts, not `parts[0]`. Gemini may split one reply across several
+        // text parts, and reading only the first silently discards the rest —
+        // yielding a truncated document that often still parses, which is the
+        // worst way to be wrong. The streaming adapter has always concatenated
+        // (`fullText += part.text`); this path did not, so the same response gave
+        // different text depending on which one you called.
+        content: candidate.content.parts.map((part) => part.text).join(''),
         truncated: candidate.finishReason === 'MAX_TOKENS',
         structuredOutput: structured.enforcement
       });

@@ -585,6 +585,38 @@ describe('callProviderCompletion', () => {
       });
     });
 
+    test('concatenates every text part rather than reading only the first', async () => {
+      // Gemini may split one reply across several text parts. Reading `parts[0]`
+      // silently discarded the rest — a truncated document that often still
+      // PARSES, which is the worst way to be wrong. The streaming adapter has
+      // always concatenated (`fullText += part.text`), so the same response gave
+      // different text depending on which path you called.
+      //
+      // Split across a JSON value on purpose: with only `parts[0]` this yields
+      // `{"city":"Paris"` — invalid, and invisible to any test that asserts on a
+      // prefix rather than the whole string.
+      mockFetchResponse({
+        candidates: [
+          {
+            content: {
+              parts: [{ text: '{"city":"Paris"' }, { text: ',"countryCode":"FR"' }, { text: '}' }]
+            },
+            finishReason: 'STOP'
+          }
+        ]
+      });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest()
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.content).toBe('{"city":"Paris","countryCode":"FR"}');
+      });
+    });
+
     test('detects truncation via finishReason=MAX_TOKENS', async () => {
       mockFetchResponse(geminiResponse('partial...', 'MAX_TOKENS'));
 
