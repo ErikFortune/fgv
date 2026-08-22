@@ -91,8 +91,13 @@ const config = loadConfig().orThrow(); // OK in constructor/setup
 const port = getPort().orDefault(3000);
 const name = getName().orDefault(undefined);
 
-// ✅ Use orDefaultLazy() for expensive defaults
-const data = loadData().orDefaultLazy(() => computeExpensiveDefault());
+// ✅ Use orDefaultWith() for expensive defaults — the callback runs only on failure
+const data = loadData().orDefaultWith(() => computeExpensiveDefault());
+
+// ❌ AVOID - orDefault evaluates its argument before the call, so this pays the
+// cost on every success too. The two forms are one `() =>` apart and the defect
+// lives in the ARGUMENT, which is what makes it easy to miss in review.
+const bad = loadData().orDefault(computeExpensiveDefault());
 ```
 
 ### Result Chaining
