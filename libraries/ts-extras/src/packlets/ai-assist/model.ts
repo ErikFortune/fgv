@@ -25,6 +25,7 @@
 
 import { fail, type Result, succeed } from '@fgv/ts-utils';
 import { type JsonObject, type JsonSchema } from '@fgv/ts-json-base';
+import type { IAiStructuredOutputCapability, StructuredOutputEnforcement } from './structuredOutputTypes';
 
 // ============================================================================
 // Image Data
@@ -923,6 +924,24 @@ export interface IAiCompletionResponse {
   readonly content: string;
   /** Whether the response was truncated due to token limits */
   readonly truncated: boolean;
+  /**
+   * Which structured-output constraint the provider was **asked** to apply.
+   *
+   * @remarks
+   * **Required, not optional, and that is the point.** An optional field would
+   * make absence three-ways ambiguous — no capability / not requested / a build
+   * predating the feature — and disambiguating exactly that is what this field
+   * exists for. `'none'` already expresses *"no constraint sent"*, so
+   * always-present costs nothing and removes the ambiguity by construction. The
+   * same remedy as `MemoryEmbedOutcome` in `@fgv/ts-agent-memory`, applied to the
+   * same defect.
+   *
+   * It reports what was *sent*, never whether **this** response conforms — that
+   * is the caller's converter's answer and re-deriving it here would be a second
+   * source of truth. See `StructuredOutputEnforcement` for the three-question
+   * split.
+   */
+  readonly structuredOutput: StructuredOutputEnforcement;
 }
 
 /**
@@ -1143,6 +1162,23 @@ export interface IAiProviderDescriptor {
    */
   readonly embedding?: ReadonlyArray<IAiEmbeddingModelCapability>;
   /**
+   * Per-model-family structured-output capability, longest-prefix matched against
+   * the **resolved** completion model id. Absent (or no matching entry) means the
+   * model can enforce nothing, and a request against it reports `'none'`.
+   *
+   * @remarks
+   * Same declaration idiom as `imageGeneration` and
+   * `embedding`, resolved through the same
+   * alias-first helper — a capability lookup on an unresolved alias is the defect
+   * `resolveImageCapability` once had, where a catch-all `modelPrefix: ''` turned
+   * an unknown alias into a confidently wrong answer.
+   *
+   * Note this declares which wire format a model *family* supports, not which
+   * OpenAI endpoint a given call will take — that also depends on whether the
+   * call carries server tools, so the dispatcher supplies it.
+   */
+  readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
+  /**
    * Concrete model ids (prefix-matched) that must be invoked via the OpenAI
    * Responses API rather than chat completions — e.g. `gpt-5.5-pro`. Non-OpenAI
    * `apiFormat`s ignore this.
@@ -1183,7 +1219,7 @@ export interface IAiProviderDescriptor {
 
 /**
  * Image-generation capability for a model family within a provider. Used as
- * an entry in {@link IAiProviderDescriptor.imageGeneration}.
+ * an entry in `imageGeneration`.
  *
  * @public
  */
@@ -1228,7 +1264,7 @@ export interface IAiImageModelCapability {
 
 /**
  * Embedding capability for a model family within a provider. Used as an entry
- * in {@link IAiProviderDescriptor.embedding}.
+ * in `embedding`.
  *
  * @public
  */

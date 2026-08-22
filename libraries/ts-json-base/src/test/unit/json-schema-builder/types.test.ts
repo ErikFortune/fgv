@@ -21,7 +21,9 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { Converters, Validators } from '@fgv/ts-utils';
 import { JsonSchema } from '../../..';
+import type { JsonObject, JsonValue } from '../../..';
 
 /**
  * Compile-time helper: only accepts `true` when `T` and `U` are mutually assignable (the same
@@ -75,6 +77,87 @@ describe('JsonSchema phantom types', () => {
       { action: 'run' | 'stop'; config: { timeout?: number; tags: string[] } }
     >(true);
     expect(schema._type).toBe('object');
+  });
+
+  describe('isSchemaValidator', () => {
+    test('accepts every factory-produced schema node', () => {
+      // One per SchemaNodeType, since the guard checks `_type` against that set.
+      const nodes: ReadonlyArray<unknown> = [
+        JsonSchema.string(),
+        JsonSchema.number(),
+        JsonSchema.integer(),
+        JsonSchema.boolean(),
+        JsonSchema.enumOf(['a', 'b']),
+        JsonSchema.optional(JsonSchema.string()),
+        JsonSchema.array(JsonSchema.string()),
+        JsonSchema.object({ x: JsonSchema.string() })
+      ];
+      for (const node of nodes) {
+        expect(JsonSchema.isSchemaValidator(node)).toBe(true);
+      }
+    });
+
+    test('accepts a schema parsed from raw JSON', () => {
+      const parsed = JsonSchema.fromJson({ type: 'object', properties: { x: { type: 'string' } } });
+      expect(parsed).toSucceedAndSatisfy((schema: JsonSchema.ISchemaValidator<JsonValue>) => {
+        expect(JsonSchema.isSchemaValidator(schema)).toBe(true);
+      });
+    });
+
+    test('rejects a plain Converter or Validator', () => {
+      // The whole point: `ISchemaValidator<T> extends Validator<T>`, so these are
+      // assignable wherever a schema is and the guard is what tells them apart.
+      expect(JsonSchema.isSchemaValidator(Converters.string)).toBe(false);
+      expect(JsonSchema.isSchemaValidator(Validators.string)).toBe(false);
+      expect(JsonSchema.isSchemaValidator(Converters.object({ x: Converters.string }))).toBe(false);
+    });
+
+    test('rejects a prototype-chain key masquerading as a node type', () => {
+      // The membership check is an indexed read compared to `true`, not `in` —
+      // `in` walks the prototype chain, so these would otherwise pass.
+      for (const stolen of ['constructor', 'toString', 'hasOwnProperty', 'valueOf']) {
+        expect(
+          JsonSchema.isSchemaValidator({
+            _type: stolen,
+            toJson: () => ({}),
+            validate: () => undefined
+          })
+        ).toBe(false);
+      }
+    });
+
+    test('rejects non-objects', () => {
+      for (const value of [undefined, null, 'object', 42, true, Symbol('s')]) {
+        expect(JsonSchema.isSchemaValidator(value)).toBe(false);
+      }
+    });
+
+    test('rejects a look-alike missing any one of the three checked members', () => {
+      const complete = {
+        _type: 'object',
+        toJson: () => ({}),
+        validate: () => undefined
+      };
+      expect(JsonSchema.isSchemaValidator(complete)).toBe(true);
+      expect(JsonSchema.isSchemaValidator({ ...complete, _type: 'not-a-node-type' })).toBe(false);
+      expect(JsonSchema.isSchemaValidator({ ...complete, _type: 7 })).toBe(false);
+      expect(JsonSchema.isSchemaValidator({ ...complete, toJson: 'nope' })).toBe(false);
+      expect(JsonSchema.isSchemaValidator({ ...complete, validate: 'nope' })).toBe(false);
+    });
+
+    test('narrows to ISchemaValidator<unknown>, not to a caller-chosen T', () => {
+      // Deliberate: `_type` is a node-KIND discriminant and carries no evidence
+      // about T, which lives only in the erased `__staticType` phantom. A guard
+      // claiming otherwise would be asserting rather than checking.
+      const value: unknown = JsonSchema.object({ x: JsonSchema.string() });
+      if (JsonSchema.isSchemaValidator(value)) {
+        assertExact<ReturnType<typeof value.toJson>, JsonObject>(true);
+        // @ts-expect-error - the narrowed T is `unknown`, so a typed read is not offered
+        const typed: { x: string } = value.__staticType;
+        expect(typed).toBeUndefined();
+      }
+      expect(JsonSchema.isSchemaValidator(value)).toBe(true);
+    });
   });
 
   test('factories reject non-schema arguments at compile time', () => {

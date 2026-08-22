@@ -22,6 +22,7 @@ import '@fgv/ts-utils-jest';
 
 import { Conversion, Converters as BaseConverters, fail, succeed } from '@fgv/ts-utils';
 import type { Converter, Result } from '@fgv/ts-utils';
+import { Converters as JsonConverters, JsonSchema } from '@fgv/ts-json-base';
 
 import { AiAssist } from '../../..';
 // eslint-disable-next-line @rushstack/packlets/mechanics
@@ -229,5 +230,134 @@ describe('generateJsonCompletion', () => {
       converter: shapeConverter
     });
     expect(result).toFailWith(/^generateJsonCompletion:/);
+  });
+
+  // ==========================================================================
+  // Automatic structured-output inference (I): a `JsonSchema.object(...)`
+  // converter is both the reply validator AND (when the resolved model can
+  // enforce it) the wire schema — no separate `structuredOutput` param needed.
+  // A plain `Converters.object(...)` converter carries no schema, so nothing
+  // is sent and existing callers are unaffected.
+  // ==========================================================================
+
+  describe('automatic structured-output inference from a JsonSchema converter', () => {
+    function makeStructuredDescriptor(): IAiProviderDescriptor {
+      return {
+        ...makeDescriptor(),
+        id: 'openai',
+        apiFormat: 'openai',
+        baseUrl: 'https://api.openai.com/v1',
+        structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }]
+      };
+    }
+
+    const jsonSchemaConverter = JsonSchema.object({ name: JsonSchema.string(), value: JsonSchema.number() });
+
+    test('a JsonSchema.object converter automatically constrains the request to its own schema', async () => {
+      mockOpenAiContent('{"name":"x","value":1}');
+
+      const result = await AiAssist.generateJsonCompletion({
+        descriptor: makeStructuredDescriptor(),
+        apiKey: 'k',
+        ...new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant').toRequest(),
+        converter: jsonSchemaConverter
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.value).toEqual({ name: 'x', value: 1 });
+        expect(r.response.structuredOutput).toBe('schema');
+      });
+      const body = lastRequestBody() as unknown as { response_format?: unknown };
+      expect(body.response_format).toEqual({
+        type: 'json_schema',
+        json_schema: { name: 'response', strict: true, schema: jsonSchemaConverter.toJson() }
+      });
+    });
+
+    test('a plain Converters.object converter sends nothing and reports "none" (unchanged)', async () => {
+      mockOpenAiContent('{"name":"x","value":1}');
+
+      const result = await AiAssist.generateJsonCompletion({
+        descriptor: makeStructuredDescriptor(),
+        apiKey: 'k',
+        ...new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant').toRequest(),
+        converter: shapeConverter
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.value).toEqual({ name: 'x', value: 1 });
+        expect(r.response.structuredOutput).toBe('none');
+      });
+      const body = lastRequestBody() as unknown as { response_format?: unknown };
+      expect(body.response_format).toBeUndefined();
+      expect('response_format' in (body as object)).toBe(false);
+    });
+
+    test('a jsonConverter suppresses inference — the request is never constrained to a schema that does not validate the reply', async () => {
+      // `pipeline` prefers `jsonConverter` and ignores `converter` entirely when
+      // both are supplied. Inferring from `converter` anyway would constrain the
+      // REQUEST to a schema unrelated to what validates the REPLY — reintroducing
+      // the exact drift this design exists to remove, in the one place two
+      // validation paths coexist.
+      mockOpenAiContent('{"name":"x","value":1}');
+
+      const result = await AiAssist.generateJsonCompletion({
+        descriptor: makeStructuredDescriptor(),
+        apiKey: 'k',
+        ...new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant').toRequest(),
+        converter: jsonSchemaConverter,
+        jsonConverter: JsonConverters.stringifiedJson(shapeConverter)
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.value).toEqual({ name: 'x', value: 1 });
+        expect(r.response.structuredOutput).toBe('none');
+      });
+      const body = lastRequestBody() as unknown as { response_format?: unknown };
+      expect('response_format' in (body as object)).toBe(false);
+    });
+
+    test('an explicit structuredOutput still applies alongside a jsonConverter', async () => {
+      // Suppressing INFERENCE is not suppressing the feature: a caller who wants a
+      // constraint alongside a jsonConverter states it, and gets it.
+      mockOpenAiContent('{"name":"x","value":1}');
+
+      const result = await AiAssist.generateJsonCompletion({
+        descriptor: makeStructuredDescriptor(),
+        apiKey: 'k',
+        ...new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant').toRequest(),
+        converter: jsonSchemaConverter,
+        jsonConverter: JsonConverters.stringifiedJson(shapeConverter),
+        structuredOutput: { mode: 'json-object' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.response.structuredOutput).toBe('json-mode');
+      });
+      const body = lastRequestBody() as unknown as { response_format?: unknown };
+      expect(body.response_format).toEqual({ type: 'json_object' });
+    });
+
+    test('an explicit structuredOutput param overrides the inferred one', async () => {
+      // Content still validates against `jsonSchemaConverter` (the reply validator
+      // half of its job is unaffected by which wire request was sent).
+      mockOpenAiContent('{"name":"x","value":1}');
+
+      const result = await AiAssist.generateJsonCompletion({
+        descriptor: makeStructuredDescriptor(),
+        apiKey: 'k',
+        ...new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant').toRequest(),
+        converter: jsonSchemaConverter,
+        structuredOutput: { mode: 'json-object' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.response.structuredOutput).toBe('json-mode');
+      });
+      const body = lastRequestBody() as unknown as { response_format?: unknown };
+      // The explicit json-object request wins over the schema that would
+      // otherwise have been inferred from `jsonSchemaConverter`.
+      expect(body.response_format).toEqual({ type: 'json_object' });
+    });
   });
 });

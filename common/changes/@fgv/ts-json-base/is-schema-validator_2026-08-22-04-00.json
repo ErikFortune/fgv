@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "Add JsonSchema.isSchemaValidator(value) — narrows an unknown Converter/Validator to ISchemaValidator<unknown>, so a callee that accepts a Validator can detect an authored schema and emit its toJson() onto a wire. Narrows to unknown deliberately: `_type` is a node-kind discriminant and carries no evidence about T.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

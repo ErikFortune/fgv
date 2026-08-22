@@ -28,7 +28,15 @@
  */
 
 import { type JsonObject } from '@fgv/ts-json-base';
-import { fail, type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import {
+  captureResult,
+  fail,
+  type Logging,
+  Result,
+  succeed,
+  type Validator,
+  Validators
+} from '@fgv/ts-utils';
 
 import {
   AiPrompt,
@@ -70,6 +78,15 @@ import {
 } from './endpoint';
 import { type IAiApiConfig, fetchJson } from './http';
 import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolFormats';
+import {
+  ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
+  type IResolvedStructuredOutput,
+  NO_STRUCTURED_OUTPUT,
+  isStructuredOutputEnforcement,
+  resolveStructuredOutput
+} from './structuredOutput';
+import { resolveStructuredOutputCapability } from './registry';
+import type { StructuredOutputRequest } from './structuredOutputTypes';
 
 // ============================================================================
 // Types
@@ -127,6 +144,18 @@ export interface IProviderCompletionParams extends IChatRequest {
    * Messages API requires the field, so it falls back to `DEFAULT_ANTHROPIC_MAX_TOKENS`.
    */
   readonly maxTokens?: number;
+  /**
+   * Ask the provider to constrain its output — to a schema, or to syntactically
+   * valid JSON of arbitrary shape.
+   *
+   * @remarks
+   * **The caller supplies intent; the response reports outcome.** A caller cannot
+   * know up front which concrete model will serve the request (a `tier` request
+   * cascades, and aliases resolve at call time), so it never has to: whatever was
+   * actually enforced comes back on
+   * `IAiCompletionResponse.structuredOutput`.
+   */
+  readonly structuredOutput?: StructuredOutputRequest;
 }
 
 // ============================================================================
@@ -251,7 +280,8 @@ async function callOpenAiCompletion(
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
   maxTokens?: number,
-  useMaxCompletionTokensField: boolean = false
+  useMaxCompletionTokensField: boolean = false,
+  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/chat/completions`;
   const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
@@ -275,6 +305,7 @@ async function callOpenAiCompletion(
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
   }
+  Object.assign(body, structured.wire);
 
   const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
 
@@ -291,7 +322,8 @@ async function callOpenAiCompletion(
       const choice = response.choices[0];
       return succeed({
         content: choice.message.content,
-        truncated: choice.finish_reason === 'length'
+        truncated: choice.finish_reason === 'length',
+        structuredOutput: structured.enforcement
       });
     });
 }
@@ -331,7 +363,8 @@ async function callOpenAiResponsesCompletion(
   logger?: Logging.ILogger,
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
-  maxTokens?: number
+  maxTokens?: number,
+  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/responses`;
   const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
@@ -355,6 +388,7 @@ async function callOpenAiResponsesCompletion(
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
   }
+  Object.assign(body, structured.wire);
 
   const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
 
@@ -371,7 +405,8 @@ async function callOpenAiResponsesCompletion(
       return extractResponsesApiText(response.output).onSuccess((text) =>
         succeed({
           content: text,
-          truncated: response.status === 'incomplete'
+          truncated: response.status === 'incomplete',
+          structuredOutput: structured.enforcement
         })
       );
     });
@@ -404,6 +439,52 @@ function extractAnthropicText(content: unknown[]): Result<string> {
   return succeed(textParts.join(''));
 }
 
+/**
+ * Extracts the forced structured-output tool's input from Anthropic response
+ * content blocks and re-serializes it.
+ *
+ * @remarks
+ * Under `'tool-forced'` enforcement the model's answer arrives as a `tool_use`
+ * block's `input` — a parsed object — rather than as text. Re-serializing it here
+ * keeps `IAiCompletionResponse.content` a JSON **string** on every provider, so a
+ * caller's converter is written once and does not branch on which enforcement it
+ * got. A useful side effect: the string is produced by `JSON.stringify` rather
+ * than by the model, so under this enforcement it is syntactically valid by
+ * construction.
+ * @internal
+ */
+function extractAnthropicStructuredOutput(content: unknown[]): Result<string> {
+  for (const block of content) {
+    if (typeof block === 'object' && block !== null && 'type' in block) {
+      const typed = block as Record<string, unknown>;
+      if (typed.type === 'tool_use' && typed.name === ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME) {
+        // `JSON.stringify` returns `undefined` — not a string, and not a throw —
+        // for `undefined` and for a function or symbol. `captureResult` would wrap
+        // that as a Success, putting `undefined` behind a `content: string`
+        // contract with nothing to catch it downstream. A `tool_use` block with no
+        // `input` is exactly that case.
+        return captureResult(() => JSON.stringify(typed.input))
+          .withErrorFormat(
+            (msg) => `Anthropic API response: structured output could not be serialized: ${msg}`
+          )
+          .onSuccess((json) =>
+            typeof json === 'string'
+              ? succeed(json)
+              : fail(
+                  `Anthropic API response: forced tool '${ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME}' returned no serializable input`
+                )
+          );
+      }
+    }
+  }
+  // Loud rather than a silent fall back to text: we forced the tool, so its
+  // absence means the request did not do what the response is about to claim it
+  // did — and `structuredOutput: 'tool-forced'` would then be a lie.
+  return fail(
+    `Anthropic API response: structured output was forced but no '${ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME}' tool_use block was returned`
+  );
+}
+
 /** Calls the Anthropic Messages API with optional tool support. @internal */
 async function callAnthropicCompletion(
   config: IAiApiConfig,
@@ -415,7 +496,8 @@ async function callAnthropicCompletion(
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
   useAdaptiveThinking: boolean = false,
-  maxTokens?: number
+  maxTokens?: number,
+  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, { head });
@@ -447,6 +529,25 @@ async function callAnthropicCompletion(
     Object.assign(body, resolvedThinking.otherParams);
   }
 
+  // The structured-output wire carries `tools` + `tool_choice` of its own, so the
+  // server-tool assignment below would clobber it. `resolveStructuredOutput`
+  // refuses that combination up front, which is what makes the two mutually
+  // exclusive — but that is an invariant held in a DIFFERENT FILE, and a future
+  // second Anthropic capability entry (or a relaxed conflict guard) would
+  // reintroduce silent clobbering with nothing failing at this line. So assert it
+  // here rather than trusting a comment across a file boundary.
+  // Unreachable through the public API — resolveStructuredOutput refuses this
+  // combination before dispatch — and unreachable BY DESIGN: it cannot be
+  // exercised without first breaking the very thing it guards against.
+  /* c8 ignore next 6 - defensive: internal consistency check, see above */
+  if (structured.enforcement === 'tool-forced' && tools !== undefined && tools.length > 0) {
+    return fail(
+      `Anthropic completion: structured output and server-side tools both claim the tools channel; ` +
+        `this combination must be refused before reaching the adapter`
+    );
+  }
+  Object.assign(body, structured.wire);
+
   if (tools && tools.length > 0) {
     body.tools = toAnthropicTools(tools);
     /* c8 ignore next 3 - optional logger diagnostic output */
@@ -471,10 +572,15 @@ async function callAnthropicCompletion(
   if (typeof stopReason !== 'string') {
     return fail('Anthropic API response: stop_reason is missing or not a string');
   }
-  return extractAnthropicText(rawContent).onSuccess((text) =>
+  const extracted =
+    structured.enforcement === 'tool-forced'
+      ? extractAnthropicStructuredOutput(rawContent)
+      : extractAnthropicText(rawContent);
+  return extracted.onSuccess((text) =>
     succeed({
       content: text,
-      truncated: stopReason === 'max_tokens'
+      truncated: stopReason === 'max_tokens',
+      structuredOutput: structured.enforcement
     })
   );
 }
@@ -497,7 +603,8 @@ async function callGeminiCompletion(
   tools?: ReadonlyArray<AiServerToolConfig>,
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
-  maxTokens?: number
+  maxTokens?: number,
+  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
   const contents = buildGeminiContents(prompt, { head });
@@ -516,6 +623,8 @@ async function callGeminiCompletion(
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(generationConfig, resolvedThinking.otherParams);
   }
+  // Gemini nests the constraint INSIDE generationConfig, not on the body.
+  Object.assign(generationConfig, structured.wire);
   const body: Record<string, unknown> = {
     systemInstruction: { parts: [{ text: prompt.system }] },
     contents,
@@ -543,8 +652,15 @@ async function callGeminiCompletion(
     .onSuccess((response) => {
       const candidate = response.candidates[0];
       return succeed({
-        content: candidate.content.parts[0].text,
-        truncated: candidate.finishReason === 'MAX_TOKENS'
+        // ALL parts, not `parts[0]`. Gemini may split one reply across several
+        // text parts, and reading only the first silently discards the rest —
+        // yielding a truncated document that often still parses, which is the
+        // worst way to be wrong. The streaming adapter has always concatenated
+        // (`fullText += part.text`); this path did not, so the same response gave
+        // different text depending on which one you called.
+        content: candidate.content.parts.map((part) => part.text).join(''),
+        truncated: candidate.finishReason === 'MAX_TOKENS',
+        structuredOutput: structured.enforcement
       });
     });
 }
@@ -575,7 +691,8 @@ export async function callProviderCompletion(
     signal,
     endpoint,
     thinking,
-    maxTokens
+    maxTokens,
+    structuredOutput
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -620,6 +737,45 @@ export async function callProviderCompletion(
     }
   }
 
+  // Resolved against the CONCRETE model, after resolveProviderModel — passing an
+  // alias here is the defect resolveImageCapability once had.
+  // The OpenAI route depends on tools AND the model, so it is computed here (once,
+  // beside the switch that uses it) and handed to the resolver — a capability keyed
+  // on the model alone cannot know which of the two OpenAI wire shapes applies.
+  const usesResponsesApi: boolean =
+    descriptor.apiFormat === 'openai' && (hasTools || isResponsesOnlyModel(descriptor, model));
+  const structuredResult = resolveStructuredOutput(
+    descriptor,
+    model,
+    structuredOutput,
+    tools,
+    usesResponsesApi,
+    resolveStructuredOutputCapability
+  );
+  if (structuredResult.isFailure()) {
+    return fail(structuredResult.message);
+  }
+  const resolvedStructured = structuredResult.value;
+
+  // OpenAI rejects `response_format: { type: 'json_object' }` with a 400 unless the
+  // conversation mentions JSON somewhere — a documented API rule, and one a caller
+  // has no way to discover from a schema-mode request that worked. Pre-empted with a
+  // named failure before the wire call, the same treatment the Gemini
+  // grounding-plus-function-calling conflict already gets. `generateJsonCompletion`
+  // satisfies it for free via its prompt hint; a direct caller may not.
+  if (resolvedStructured.enforcement === 'json-mode' && descriptor.apiFormat === 'openai') {
+    const mentionsJson: boolean =
+      (system ?? '').toLowerCase().includes('json') ||
+      messages.some((m) => m.content.toLowerCase().includes('json'));
+    if (!mentionsJson) {
+      return fail(
+        `provider '${descriptor.id}': json-object structured output requires the word 'json' to ` +
+          `appear in the system prompt or a message — OpenAI rejects the request otherwise. Mention ` +
+          `it, or use structuredOutput: { mode: 'schema', schema } which carries no such rule`
+      );
+    }
+  }
+
   const config: IAiApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
@@ -639,7 +795,7 @@ export async function callProviderCompletion(
     case 'openai':
       // Responses-API-only models (e.g. gpt-5.5-pro) 400 on /chat/completions, so they route
       // to the Responses path even with no tools requested — same path the tools case uses.
-      if (hasTools || isResponsesOnlyModel(descriptor, config.model)) {
+      if (usesResponsesApi) {
         return callOpenAiResponsesCompletion(
           config,
           prompt,
@@ -649,7 +805,8 @@ export async function callProviderCompletion(
           logger,
           signal,
           resolvedThinking,
-          maxTokens
+          maxTokens,
+          resolvedStructured
         );
       }
       return callOpenAiCompletion(
@@ -661,7 +818,8 @@ export async function callProviderCompletion(
         signal,
         resolvedThinking,
         maxTokens,
-        usesMaxCompletionTokensField(descriptor)
+        usesMaxCompletionTokensField(descriptor),
+        resolvedStructured
       );
     case 'anthropic':
       return callAnthropicCompletion(
@@ -674,7 +832,8 @@ export async function callProviderCompletion(
         signal,
         resolvedThinking,
         isAdaptiveThinkingModel(descriptor, config.model),
-        maxTokens
+        maxTokens,
+        resolvedStructured
       );
     case 'gemini':
       return callGeminiCompletion(
@@ -686,7 +845,8 @@ export async function callProviderCompletion(
         tools,
         signal,
         resolvedThinking,
-        maxTokens
+        maxTokens,
+        resolvedStructured
       );
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
@@ -725,7 +885,8 @@ export async function callProxiedCompletion(
     tools,
     signal,
     thinking,
-    maxTokens
+    maxTokens,
+    structuredOutput
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -763,6 +924,26 @@ export async function callProxiedCompletion(
   if (maxTokens !== undefined) {
     body.maxTokens = maxTokens;
   }
+  if (structuredOutput !== undefined) {
+    // The schema travels as its draft-07 wire form, not as the validator object —
+    // an `ISchemaValidator` is not JSON-serializable. A proxy reconstitutes it with
+    // `JsonSchema.fromJson(raw)` before calling `callProviderCompletion`.
+    body.structuredOutput =
+      structuredOutput.mode === 'schema'
+        ? {
+            mode: 'schema',
+            schema: structuredOutput.schema.toJson(),
+            ...(structuredOutput.onUnsupported !== undefined
+              ? { onUnsupported: structuredOutput.onUnsupported }
+              : {})
+          }
+        : {
+            mode: 'json-object',
+            ...(structuredOutput.onUnsupported !== undefined
+              ? { onUnsupported: structuredOutput.onUnsupported }
+              : {})
+          };
+  }
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`AI proxy request: provider=${descriptor.id}, proxy=${proxyUrl}`);
@@ -781,8 +962,28 @@ export async function callProxiedCompletion(
     return fail('proxy returned invalid response: missing content');
   }
 
+  // A caller who asked for nothing gets `'none'` without the proxy having to say
+  // so. A caller who DID ask gets a loud failure when the proxy cannot report,
+  // rather than a response claiming an enforcement nobody verified — a proxy
+  // predating this feature drops the constraint silently, which is the exact
+  // failure this surface exists to remove.
+  if (structuredOutput === undefined) {
+    return succeed({
+      content: response.content,
+      truncated: response.truncated === true,
+      structuredOutput: 'none'
+    });
+  }
+  if (!isStructuredOutputEnforcement(response.structuredOutput)) {
+    return fail(
+      `proxy did not report which structured-output constraint it applied ` +
+        `(got ${JSON.stringify(response.structuredOutput)}); it may predate the feature and have ` +
+        `dropped the request silently`
+    );
+  }
   return succeed({
     content: response.content,
-    truncated: response.truncated === true
+    truncated: response.truncated === true,
+    structuredOutput: response.structuredOutput
   });
 }

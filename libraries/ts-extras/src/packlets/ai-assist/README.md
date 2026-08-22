@@ -168,3 +168,134 @@ consumers reference the role alias and never see these numbers. OpenAI and Anthr
 the scheme with the same tier vocabulary (see the cross-provider tier table above). Note the `pro` role
 serves both the `advanced` slot and (via the cascade) `frontier`, which is exactly why alias roles are
 model-line-semantic rather than tier-named — one role can back multiple slots without duplication.
+
+## Structured output
+
+Every **non-streaming** completion request takes an optional `structuredOutput`, which asks
+the **provider** to constrain its output rather than only asking the model in the prompt. The
+streaming paths deliberately do not support it — see "Not in scope" below.
+
+```ts
+const schema = JsonSchema.object({ name: JsonSchema.string(), age: JsonSchema.integer() });
+
+const result = await callProviderCompletion({
+  descriptor, apiKey,
+  messages: [{ role: 'user', content: 'Describe the subject.' }],
+  structuredOutput: { mode: 'schema', schema }
+});
+
+result.onSuccess((r) => {
+  r.structuredOutput; // 'schema' | 'json-mode' | 'tool-forced' | 'none'
+  return schema.validate(JSON.parse(r.content));
+});
+```
+
+Two modes. `{ mode: 'schema', schema }` constrains generation to the schema;
+`{ mode: 'json-object' }` asks only for syntactically valid JSON of arbitrary shape.
+The weaker one is worth having on its own — the failure that motivated this surface
+(`Expected ',' or '}' after property value`, an unescaped quote closing a string
+early) is **syntactic**, so JSON mode removes it. Schema constraint is what
+additionally buys shape.
+
+**The schema is the same object you validate with**, so the wire schema and the
+check cannot drift. This is the cloud sibling of `@fgv/ts-extras-ollama`'s
+`chatStructured`.
+
+### The report is required, and that is the design
+
+`IAiCompletionResponse.structuredOutput` is **not optional**. Three questions hide
+inside *"did it honour my schema"*, and they have different owners:
+
+| question | answerable by |
+|---|---|
+| did we send a constraint? | this client, at request-build time |
+| which constraint did the provider apply? | this client, from the resolved model's capability |
+| does **this response** conform to my shape? | your converter, and nothing else |
+
+The library answers the first two and deliberately not the third — reporting
+conformance would mean re-validating against your own schema to re-derive an answer
+you already hold.
+
+It has to ride on the **response** rather than be a lookup you do yourself, because
+`resolveProviderModel` resolves aliases and tiers at *call* time and a `tier` request
+can cascade. The concrete model that will serve a request is not knowable to a caller
+up front, so requiring one to compute capability from its own side would be unsound.
+**You supply intent; the response reports outcome.**
+
+And it is required rather than optional because an optional field makes absence
+three-ways ambiguous — no capability / not requested / a build predating the feature
+— which is the exact thing the report exists to disambiguate. `'none'` already says
+*"no constraint sent"*, so always-present costs nothing.
+
+### Degradation is caller-chosen, lenient by default
+
+`onUnsupported` defaults to `'degrade'`. **That is only safe because the report is
+required** — degrade-and-tell-me is safe; degrade-silently is the failure this whole
+surface exists to remove. The two are one decision, not two independent ones.
+
+Pass `onUnsupported: 'fail'` when the output is persisted or put on a wire, where an
+unconstrained generation that happens to parse is worse than an error because it is
+wrong quietly. Leave it at `'degrade'` on paths *designed* to degrade — an extractor
+that may return nothing, a segmenter that floors to a mechanical chunker — where a
+hard failure would make this library less safe than the code it replaces.
+
+A **conflict** is not a degradation and does not obey `onUnsupported`. Anthropic and Gemini
+each refuse structured output alongside server-side tools, for **different reasons** — worth
+separating, because a reader who assumes one mechanism will reason wrongly about the other.
+Anthropic's mechanism *is* `tools` + `tool_choice`, so it is a wire-level clash. Gemini's
+`responseMimeType` / `responseSchema` live in `generationConfig`, nowhere near `tools`; the
+exclusion is one the API enforces. Either way it fails rather than degrading.
+
+### Four wire formats, declared per model family
+
+`IAiProviderDescriptor.structuredOutput` is longest-prefix matched **after** alias
+resolution, exactly like `imageGeneration` and `embedding`.
+
+| format | where the constraint goes |
+|---|---|
+| `openai-json-schema` | `body.response_format` |
+| `openai-responses-format` | `body.text.format` |
+| `gemini-response-schema` | `generationConfig.responseMimeType` + `responseSchema` |
+| `anthropic-tool-forced` | a forced synthetic tool + `tool_choice` |
+
+Gemini's schema is an OpenAPI-3.0 subset that **rejects** draft-07 keywords rather
+than ignoring them, so the schema goes through the same sanitizer the Gemini tool
+path uses.
+
+Anthropic has no response-format field at all. Its mechanism is forced tool use —
+which is why `'tool-forced'` is a distinct enforcement value and not a spelling of
+`'schema'`: **the reply arrives in a `tool_use` block, not as text.** The library
+re-serializes that block's `input` into `content`, so `content` stays a JSON string
+on every provider and your converter is written once. A useful side effect: under
+this enforcement the string comes from `JSON.stringify`, not from the model, so it is
+syntactically valid by construction.
+
+`groq`, `ollama` and `openai-compat` declare **no** capability on purpose. Any model
+can sit behind a self-hosted endpoint, and a confidently wrong capability claim is
+worse than none — they report `'none'`, and the report is what makes that visible.
+
+### `generateJsonCompletion` adopts it for free
+
+`ISchemaValidator<T> extends Validator<T>`, so a caller could always pass
+`JsonSchema.object({...})` as `converter` — the library simply did not look. It does
+now: when the supplied validator is a schema, its `toJson()` goes on the wire.
+
+There is deliberately **no new parameter**, which would have reintroduced exactly the
+converter/schema drift `JsonSchema` exists to remove. A plain `Converter` carries no
+schema, so nothing is sent, the report reads `'none'`, and existing callers are
+byte-for-byte unchanged.
+
+### Not in scope
+
+`structuredOutput` is wired into `callProviderCompletion`, `callProxiedCompletion`
+and `generateJsonCompletion` only. **The streaming paths do not support it** —
+`callProviderCompletionStream`, the streaming adapters, and `executeClientToolTurn`
+ignore it, and `IAiStreamDone` carries no enforcement report.
+
+That is a decision, not an oversight, and worth stating because the neighbouring
+request surface (`tools`, `thinking`, `maxTokens`) *is* shared across both paths, so
+parity is the reasonable expectation. Streaming structured output is a different
+problem: the providers impose their own constraints on combining it with incremental
+delivery, and a per-chunk report has no obvious meaning. Also out: repair (the
+`jsonResponse` boundary stays — with `'json-mode'` or better the syntactic-repair
+question stops arising), injectable validation, and retry inside the client.

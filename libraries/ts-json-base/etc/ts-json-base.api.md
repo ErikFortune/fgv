@@ -744,6 +744,9 @@ function isPathMutable(path: string, mutable: boolean | IFilterSpec | undefined)
 // @public
 function isPersistentAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IPersistentFileTreeAccessors<TCT>;
 
+// @public
+function isSchemaValidator(value: unknown): value is ISchemaValidator<unknown>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -904,6 +907,7 @@ type JsonReviver = (key: string, value: JsonValue) => JsonValue;
 
 declare namespace JsonSchema {
     export {
+        isSchemaValidator,
         SchemaNodeType,
         ISchemaValidator,
         Static,

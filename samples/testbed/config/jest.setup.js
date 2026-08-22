@@ -34,5 +34,20 @@ if (typeof Blob !== 'undefined' && typeof Blob.prototype.text !== 'function') {
   };
 }
 
+// jsdom's `AbortSignal` lacks the static `.timeout()` factory (real browsers and
+// Node both have it). The structured-output probe scenario uses it to bound a live
+// provider call, so tests that exercise `runProbe` need it available.
+if (typeof AbortSignal.timeout !== 'function') {
+  AbortSignal.timeout = function timeout(milliseconds) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      controller.abort(new DOMException('The operation timed out.', 'TimeoutError'));
+    }, milliseconds);
+    // Never let a pending timeout keep the test process alive.
+    timer.unref?.();
+    return controller.signal;
+  };
+}
+
 // jest-dom matchers (toBeInTheDocument, etc.)
 require('@testing-library/jest-dom');

@@ -182,7 +182,7 @@ describe('callProviderCompletion — endpoint override', () => {
       modelOverride: 'qwen2.5-coder'
     });
 
-    expect(result).toSucceedWith({ content: 'lan response', truncated: false });
+    expect(result).toSucceedWith({ content: 'lan response', truncated: false, structuredOutput: 'none' });
     const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
     expect(fetchCall[0]).toBe('http://192.168.1.42:1234/v1/chat/completions');
     const body = JSON.parse(fetchCall[1].body);

@@ -48,7 +48,7 @@ const xai = AiAssist.getProviderDescriptor('xai-grok').shouldNotFail('xai-grok d
 
 /** A completion result with visible text — the live-pass shape. */
 function pong(): Result<AiAssist.IAiCompletionResponse> {
-  return succeed({ content: 'pong', truncated: false });
+  return succeed({ content: 'pong', truncated: false, structuredOutput: 'none' });
 }
 
 /**
@@ -370,7 +370,7 @@ describe('runTierCanary (live — injected completion)', () => {
 
   test('an HTTP-200-but-empty-body response is an error failure', async () => {
     const deps: ITierCanaryDeps = {
-      complete: async () => succeed({ content: '   ', truncated: false })
+      complete: async () => succeed({ content: '   ', truncated: false, structuredOutput: 'none' })
     };
     const result = await runTierCanary(
       { providerId: 'google-gemini', descriptor: gemini, tiers: ['base'] },
