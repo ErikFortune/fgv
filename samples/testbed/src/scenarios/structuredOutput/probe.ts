@@ -79,6 +79,9 @@ export type ProbeComplete = (
   params: AiAssist.IProviderCompletionParams
 ) => Promise<Result<AiAssist.IAiCompletionResponse>>;
 
+/** How long a single probe waits before giving up. @public */
+export const DEFAULT_PROBE_TIMEOUT_MS: number = 90_000;
+
 /** Everything one probe run needs. @public */
 export interface IProbeSpec {
   readonly label: string;
@@ -90,6 +93,8 @@ export interface IProbeSpec {
   readonly request: AiAssist.StructuredOutputRequest;
   /** The enforcement this provider/model pair is expected to report. */
   readonly expect: AiAssist.StructuredOutputEnforcement;
+  /** Overrides {@link DEFAULT_PROBE_TIMEOUT_MS} for this probe. */
+  readonly timeoutMs?: number;
 }
 
 /**
@@ -106,6 +111,10 @@ export async function runProbe(
     return { label: spec.label, verdict: 'skipped', detail: 'no API key resolved' };
   }
   const completion = await complete({
+    // A hung provider call blocked the first live run of this scenario with no
+    // output and no way to tell "slow" from "wedged". A probe that can hang is not
+    // a gate — it is a thing you have to babysit.
+    signal: AbortSignal.timeout(spec.timeoutMs ?? DEFAULT_PROBE_TIMEOUT_MS),
     descriptor: spec.descriptor,
     apiKey: spec.apiKey,
     messages: [{ role: 'user', content: PROBE_PROMPT }],
@@ -130,12 +139,42 @@ export async function runProbe(
     };
   }
   const parsed: Result<unknown> = captureResult(() => JSON.parse(content) as unknown).withErrorFormat(
-    (m) => `reply did not parse as JSON (${m}) — the constraint did not reach the wire`
+    (m) =>
+      `reply did not parse as JSON (${m}). Either the constraint never reached the wire, or the ` +
+      `provider applied it and still emitted a malformed document — check whether the content is ` +
+      `fenced/prose (constraint missing) or nearly-valid JSON (provider defect)`
   );
   if (parsed.isFailure()) {
     return { label: spec.label, verdict: 'fail', detail: parsed.message };
   }
-  // The load-bearing assertion: validated against the SAME object that was sent.
+  // **What is checked next follows from the MODE, because the two modes promise
+  // different things and asserting the stronger one everywhere tests a guarantee
+  // the library never made.**
+  //
+  // `json-object` promises syntactic validity and *arbitrary shape*. So the parse
+  // above IS its guarantee — and against this deliberately hostile prompt it is a
+  // real one, since the prompt asks for a markdown code fence and a successful
+  // parse proves the fence was suppressed. Demanding schema conformance here
+  // failed a live run against OpenAI on 2026-08-22 where every party behaved
+  // correctly: the model added the `funFact` field the prompt asked for, which
+  // nothing in this mode forbids.
+  if (spec.request.mode === 'json-object') {
+    if (typeof parsed.value !== 'object' || parsed.value === null || Array.isArray(parsed.value)) {
+      return {
+        label: spec.label,
+        verdict: 'fail',
+        detail: `json-object mode returned valid JSON that is not an object: ${content}`
+      };
+    }
+    return {
+      label: spec.label,
+      verdict: 'pass',
+      detail: `enforcement=${structuredOutput}, parsed as an object`
+    };
+  }
+
+  // `schema` and `tool-forced` DO promise shape, so validate against the very
+  // object that was sent — the assertion an accepted-and-ignored field would fail.
   const validated = PROBE_SCHEMA.validate(parsed.value);
   if (validated.isFailure()) {
     return {
@@ -144,7 +183,11 @@ export async function runProbe(
       detail: `reply parsed but does not match the schema that was sent: ${validated.message}`
     };
   }
-  return { label: spec.label, verdict: 'pass', detail: `enforcement=${structuredOutput}` };
+  return {
+    label: spec.label,
+    verdict: 'pass',
+    detail: `enforcement=${structuredOutput}, matched the schema`
+  };
 }
 
 /**

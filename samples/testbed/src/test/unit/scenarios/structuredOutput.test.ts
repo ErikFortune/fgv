@@ -25,6 +25,7 @@ import { Logging, type Result, fail, succeed } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
 
 import {
+  DEFAULT_PROBE_TIMEOUT_MS,
   PROBE_SCHEMA,
   type IProbeOutcome,
   type IProbeSpec,
@@ -114,13 +115,16 @@ describe('runProbe', () => {
     expect(outcome.detail).toMatch(/expected 'schema'/);
   });
 
-  test('reports fail saying the constraint did not reach the wire when content is not valid JSON', async () => {
+  test('reports fail naming both possible explanations when content is not valid JSON', async () => {
     const complete: ProbeComplete = async () =>
       succeed({ content: 'not json at all', truncated: false, structuredOutput: 'schema' });
     const outcome = await runProbe(BASE_SPEC, new Logging.InMemoryLogger(), complete);
     expect(outcome.verdict).toBe('fail');
     expect(outcome.detail).toMatch(/did not parse as JSON/i);
-    expect(outcome.detail).toMatch(/did not reach the wire/i);
+    // Reworded: the message no longer asserts "the constraint did not reach the wire" as the
+    // only explanation — it names both possibilities and lets the caller triage.
+    expect(outcome.detail).toMatch(/constraint never reached the wire/i);
+    expect(outcome.detail).toMatch(/emitted a malformed document/i);
   });
 
   test.each([
@@ -137,13 +141,13 @@ describe('runProbe', () => {
     expect(outcome.detail).toMatch(/does not match the schema that was sent/i);
   });
 
-  test('reports pass when the reply reports the expected enforcement and validates', async () => {
+  test('reports pass with a schema-matched detail when the reply reports the expected enforcement and validates', async () => {
     const complete: ProbeComplete = async () => validReply('schema');
     const outcome = await runProbe(BASE_SPEC, new Logging.InMemoryLogger(), complete);
     expect(outcome).toEqual<IProbeOutcome>({
       label: 'test probe',
       verdict: 'pass',
-      detail: 'enforcement=schema'
+      detail: 'enforcement=schema, matched the schema'
     });
   });
 
@@ -173,6 +177,88 @@ describe('runProbe', () => {
     expect(seen).toBeDefined();
     expect('tools' in (seen as AiAssist.IProviderCompletionParams)).toBe(false);
     expect('modelOverride' in (seen as AiAssist.IProviderCompletionParams)).toBe(false);
+  });
+
+  describe('timeout signal', () => {
+    test('forwards an AbortSignal built from the spec-supplied timeoutMs', async () => {
+      const spec: IProbeSpec = { ...BASE_SPEC, timeoutMs: 5_000 };
+      let seen: AiAssist.IProviderCompletionParams | undefined;
+      const complete: ProbeComplete = async (params) => {
+        seen = params;
+        return validReply('schema');
+      };
+      await runProbe(spec, new Logging.InMemoryLogger(), complete);
+      // The exact millisecond value isn't readable off a `signal`, so the meaningful
+      // assertion is that a live, not-yet-aborted `AbortSignal` reached the completion
+      // params — proof the timeout was wired at all.
+      expect(seen?.signal).toBeInstanceOf(AbortSignal);
+      expect(seen?.signal?.aborted).toBe(false);
+    });
+
+    test('forwards an AbortSignal built from DEFAULT_PROBE_TIMEOUT_MS when the spec omits timeoutMs', async () => {
+      expect(BASE_SPEC.timeoutMs).toBeUndefined();
+      let seen: AiAssist.IProviderCompletionParams | undefined;
+      const complete: ProbeComplete = async (params) => {
+        seen = params;
+        return validReply('schema');
+      };
+      await runProbe(BASE_SPEC, new Logging.InMemoryLogger(), complete);
+      expect(seen?.signal).toBeInstanceOf(AbortSignal);
+      expect(seen?.signal?.aborted).toBe(false);
+      // DEFAULT_PROBE_TIMEOUT_MS itself isn't readable off the signal either; assert it's
+      // exported and positive so the fallback value stays meaningful and reachable.
+      expect(DEFAULT_PROBE_TIMEOUT_MS).toBeGreaterThan(0);
+    });
+  });
+
+  describe('json-object mode', () => {
+    const JSON_OBJECT_SPEC: IProbeSpec = {
+      ...BASE_SPEC,
+      request: { mode: 'json-object', onUnsupported: 'fail' },
+      expect: 'json-mode'
+    };
+
+    const replyWith =
+      (content: string): ProbeComplete =>
+      async () =>
+        succeed({ content, truncated: false, structuredOutput: 'json-mode' });
+
+    test('fails saying the reply is not an object when it parses as a JSON array', async () => {
+      const complete = replyWith(JSON.stringify(['Paris', 'FR']));
+      const outcome = await runProbe(JSON_OBJECT_SPEC, new Logging.InMemoryLogger(), complete);
+      expect(outcome.verdict).toBe('fail');
+      expect(outcome.detail).toMatch(/not an object/i);
+    });
+
+    test('fails saying the reply is not an object when it parses as null', async () => {
+      const complete = replyWith('null');
+      const outcome = await runProbe(JSON_OBJECT_SPEC, new Logging.InMemoryLogger(), complete);
+      expect(outcome.verdict).toBe('fail');
+      expect(outcome.detail).toMatch(/not an object/i);
+    });
+
+    test.each([
+      ['a bare number', '42'],
+      ['a bare string', JSON.stringify('text')]
+    ])('fails saying the reply is not an object when it parses as %s', async (description, content) => {
+      const complete = replyWith(content);
+      const outcome = await runProbe(JSON_OBJECT_SPEC, new Logging.InMemoryLogger(), complete);
+      expect(outcome.verdict).toBe('fail');
+      expect(outcome.detail).toMatch(/not an object/i);
+    });
+
+    // The live case that motivated the mode-following assertion: `json-object` promises
+    // syntactic validity and *arbitrary shape*, so an object bearing no resemblance to
+    // PROBE_SCHEMA still passes — schema conformance is never checked in this mode.
+    test('passes on a well-formed object whose shape is nothing like PROBE_SCHEMA', async () => {
+      const complete = replyWith(JSON.stringify({ unrelatedField: true, nested: { a: 1 } }));
+      const outcome = await runProbe(JSON_OBJECT_SPEC, new Logging.InMemoryLogger(), complete);
+      expect(outcome).toEqual<IProbeOutcome>({
+        label: 'test probe',
+        verdict: 'pass',
+        detail: 'enforcement=json-mode, parsed as an object'
+      });
+    });
   });
 });
 
