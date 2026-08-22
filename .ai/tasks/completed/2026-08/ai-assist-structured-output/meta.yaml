@@ -1,0 +1,87 @@
+id: ai-assist-structured-output
+status: shipped
+packages:
+  - '@fgv/ts-extras'
+  - '@fgv/ts-json-base'
+  - '@fgv/ts-app-shell'
+prs: [652]
+openPrs: []
+opened: 2026-08-21
+summary:
+  intended: >
+    Let a caller that has already declared the shape it wants tell the PROVIDER,
+    rather than only asking the model in the prompt, and let it learn which
+    enforcement was actually applied so it can decide whether its defensive path
+    is still needed per response. Filed from a PersonAIlity ask whose every
+    load-bearing claim was verified against release before filing, with one
+    correction in their favour: a FOURTH completion path (callGeminiCompletion)
+    also carried no response schema, and Gemini's native structured output lives
+    inside the generationConfig it already builds, so it was the cheapest of the
+    four rather than an extra cost.
+  shipped: >
+    All of it, on four providers plus the proxy path. Request side: an optional
+    structuredOutput on IProviderCompletionParams, a discriminated union of
+    { mode: 'schema', schema } and { mode: 'json-object' }, with an
+    onUnsupported: 'degrade' | 'fail' defaulting to degrade. Report side: a
+    REQUIRED structuredOutput: StructuredOutputEnforcement on
+    IAiCompletionResponse ('none' | 'json-mode' | 'schema' | 'tool-forced').
+    Capability declared per model family on IAiProviderDescriptor.structuredOutput
+    across four wire formats, longest-prefix matched AFTER alias resolution
+    through the same generic helper the image and embedding capabilities use.
+    generateJsonCompletion adopts it with no new parameter, via a new
+    JsonSchema.isSchemaValidator guard added to ts-json-base rather than
+    hand-rolled in ts-extras.
+  diverged: >
+    Nothing diverged from the settled surface. Three things are worth recording.
+    (1) The consumer's two open questions -- where the report lives, and what the
+    degradation posture is -- turned out to be ONE question: lenient-by-default
+    is safe only because the report is required, so the interlock went in the
+    docstring rather than only in the ledger. (2) Their third question (whether
+    generateJsonCompletion should adopt) dissolved rather than being decided:
+    ISchemaValidator<T> extends Validator<T>, so a caller could already pass a
+    JsonSchema as converter and the library simply did not look. Adopting is
+    therefore "look", not "add a parameter" -- and a parameter would have
+    reintroduced exactly the converter/schema drift JsonSchema exists to remove.
+    (3) The max-lines prerequisite fired TWICE. Splitting the three ai-assist
+    test files first (#650) was correct and removed that wall; model.ts then blew
+    the cap anyway, at 2132 lines, which the sweep had not predicted because it
+    listed the file as having 43 lines of headroom. The remedy was a clean cut
+    (the structured-output types depend on nothing in model.ts) rather than one
+    chosen under pressure, but the lesson is that the sweep belongs at the START
+    of every stream, not once.
+  sourceLine: >
+    **Shipped:** a caller can now tell the provider what shape it wants --
+    `structuredOutput: { mode: 'schema', schema }` carrying the same
+    `ISchemaValidator` it validates the reply with -- and every response reports
+    which constraint was actually applied, on a **required** field.
+keywords:
+  - structured output
+  - the caller supplies intent the response reports outcome
+  - required field removes a three-ways-ambiguous absence
+  - lenient default is safe only because the report is required
+  - conflict is not degradation
+  - anthropic forced tool use is not a spelling of schema
+  - re-serialize tool input so content stays a string
+  - no new parameter means no drift
+  - extend the primitive isSchemaValidator
+  - alias-first capability resolution
+  - max-lines fired twice
+relatedStreams:
+  - id: ai-assist-embeddings-phase1
+    relationship: >
+      predecessor; established the per-model-family capability idiom
+      (modelPrefix + format, longest-prefix matched) and the shared
+      resolveCapabilityForModel helper this stream reuses verbatim
+  - id: ai-assist-model-aliases
+    relationship: >
+      predecessor; its alias-first capability-lookup fix (an unresolved alias
+      once fell through to a catch-all modelPrefix and returned a confidently
+      wrong capability) is the lesson this stream's resolver carries forward,
+      and the reason three self-hosted providers declare nothing
+  - id: ai-assist-client-tools
+    relationship: >
+      predecessor; contributed JsonSchema as the tool-parameter authoring surface
+      and the Gemini draft-07 sanitizer this stream reuses for responseSchema
+  - id: personaility-asks-2026-08
+    relationship: >
+      origin; same consumer channel

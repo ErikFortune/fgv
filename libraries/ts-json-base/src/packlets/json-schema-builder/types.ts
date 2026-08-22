@@ -76,6 +76,54 @@ export interface ISchemaValidator<T> extends Validator<T> {
 }
 
 /**
+ * Every {@link SchemaNodeType}, for {@link isSchemaValidator}.
+ * @internal
+ */
+const SCHEMA_NODE_TYPES: ReadonlySet<string> = new Set<SchemaNodeType>([
+  'string',
+  'number',
+  'integer',
+  'boolean',
+  'enum',
+  'optional',
+  'array',
+  'object'
+]);
+
+/**
+ * Whether `value` is an {@link ISchemaValidator} — i.e. a schema authored with the
+ * `JsonSchema` factories, as opposed to a plain `Converter` or `Validator`.
+ *
+ * @remarks
+ * `ISchemaValidator<T> extends Validator<T>`, so a caller can already pass a
+ * schema anywhere a `Validator` is accepted and the callee cannot tell. This guard
+ * is what lets such a callee *look* — and do something more with a schema than it
+ * can with a bare validator, most usefully emitting `toJson()` onto a wire.
+ * `@fgv/ts-extras`' `generateJsonCompletion` uses it exactly that way: one object
+ * is both the wire schema and the reply validator, so the two cannot drift.
+ *
+ * Narrows to `ISchemaValidator<unknown>` rather than `ISchemaValidator<T>` —
+ * `_type` is a *node-kind* discriminant and carries no evidence about `T`, which
+ * lives only in the erased `__staticType` phantom. A guard claiming otherwise
+ * would be asserting, not checking.
+ *
+ * @param value - The value to test.
+ * @public
+ */
+export function isSchemaValidator(value: unknown): value is ISchemaValidator<unknown> {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const candidate: Record<string, unknown> = value as Record<string, unknown>;
+  return (
+    typeof candidate._type === 'string' &&
+    SCHEMA_NODE_TYPES.has(candidate._type) &&
+    typeof candidate.toJson === 'function' &&
+    typeof candidate.validate === 'function'
+  );
+}
+
+/**
  * Recover the derived static type `T` from a schema value.
  *
  * @remarks

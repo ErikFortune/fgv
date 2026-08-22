@@ -169,6 +169,8 @@ declare namespace AiAssist {
         supportsImageGeneration,
         resolveEmbeddingCapability,
         supportsEmbedding,
+        resolveStructuredOutputCapability,
+        supportsStructuredOutput,
         DEFAULT_MODEL_CAPABILITY_CONFIG,
         callProviderCompletion,
         callProxiedCompletion,
@@ -201,6 +203,14 @@ declare namespace AiAssist {
         modelSpecKey,
         modelSpec,
         resolveEffectiveTools,
+        ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
+        AiStructuredOutputFormat,
+        IAiStructuredOutputCapability,
+        IJsonObjectStructuredOutputRequest,
+        ISchemaStructuredOutputRequest,
+        StructuredOutputEnforcement,
+        StructuredOutputFallback,
+        StructuredOutputRequest,
         classifyJsonParseFailure,
         extractJsonText,
         fencedStringifiedJson,
@@ -290,6 +300,11 @@ type AiServerToolType = 'web_search';
 // @public
 const aiServerToolType: Converter<AiServerToolType>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type AiStructuredOutputFormat = 'openai-json-schema' | 'openai-responses-format' | 'gemini-response-schema' | 'anthropic-tool-forced';
+
 // @public
 type AiThinkingMode = 'optional' | 'required' | 'unsupported';
 
@@ -350,6 +365,11 @@ const allProviderIds: ReadonlyArray<AiProviderId>;
 
 // @public
 const ALWAYS_STRIPPED_HEADERS: ReadonlyArray<string>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveStructuredOutput"
+//
+// @public
+const ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME: string;
 
 // @public
 function anthropicEffortToBudgetTokens(effort: NonNullable<IAnthropicThinkingConfig['effort']>): number;
@@ -1173,6 +1193,7 @@ interface IAiClientToolTurnResult {
 // @public
 interface IAiCompletionResponse {
     readonly content: string;
+    readonly structuredOutput: StructuredOutputEnforcement;
     readonly truncated: boolean;
 }
 
@@ -1315,10 +1336,13 @@ interface IAiProviderDescriptor {
     readonly imageGeneration?: ReadonlyArray<IAiImageModelCapability>;
     readonly label: string;
     readonly needsSecret: boolean;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // (undocumented)
     readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     readonly streamingCorsRestricted: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
     readonly supportedTools: ReadonlyArray<AiServerToolType>;
     readonly thinkingMode: AiThinkingMode;
 }
@@ -1384,6 +1408,14 @@ interface IAiStreamToolUseStart {
     readonly toolName: string;
     // (undocumented)
     readonly type: 'client-tool-call-start';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+interface IAiStructuredOutputCapability {
+    readonly format: AiStructuredOutputFormat;
+    readonly modelPrefix: string;
 }
 
 // @public
@@ -1857,6 +1889,14 @@ interface IImportSecretOptions extends IAddSecretOptions {
 }
 
 // @public
+interface IJsonObjectStructuredOutputRequest {
+    // (undocumented)
+    readonly mode: 'json-object';
+    // (undocumented)
+    readonly onUnsupported?: StructuredOutputFallback;
+}
+
+// @public
 type IKeyDerivationParams = IPbkdf2KeyDerivationParams | IArgon2idKeyDerivationParams;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2095,6 +2135,8 @@ interface IProviderCompletionParams extends IChatRequest {
     readonly maxTokens?: number;
     readonly modelOverride?: ModelSpec;
     readonly signal?: AbortSignal;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly structuredOutput?: StructuredOutputRequest;
     readonly temperature?: number;
     readonly thinking?: IThinkingConfig;
     readonly tier?: 'advanced' | 'frontier';
@@ -2335,6 +2377,15 @@ interface ISaferFetchResponseHead {
     readonly status: number;
     // (undocumented)
     readonly statusText: string;
+}
+
+// @public
+interface ISchemaStructuredOutputRequest {
+    // (undocumented)
+    readonly mode: 'schema';
+    // (undocumented)
+    readonly onUnsupported?: StructuredOutputFallback;
+    readonly schema: JsonSchema.ISchemaValidator<unknown>;
 }
 
 // @public
@@ -2968,8 +3019,6 @@ const REDIRECT_STATUSES: ReadonlyArray<number>;
 // @public
 function resolveEffectiveTools(descriptor: IAiProviderDescriptor, settingsTools?: ReadonlyArray<IAiToolEnablement>, perCallTools?: ReadonlyArray<AiServerToolConfig>): ReadonlyArray<AiServerToolConfig>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
-//
 // @public
 function resolveEmbeddingCapability(descriptor: IAiProviderDescriptor, modelId: string): IAiEmbeddingModelCapability | undefined;
 
@@ -2999,6 +3048,9 @@ function resolveModelAlias(descriptor: IAiProviderDescriptor, model: string): Re
 //
 // @public
 function resolveProviderModel(descriptor: IAiProviderDescriptor, modelOverride: ModelSpec | undefined, context?: ModelSpecKey): Result<string>;
+
+// @public
+function resolveStructuredOutputCapability(descriptor: IAiProviderDescriptor, modelId: string): IAiStructuredOutputCapability | undefined;
 
 // @public
 const RETRY_AFTER_STATUSES: ReadonlyArray<number>;
@@ -3112,6 +3164,17 @@ const SMART_JSON_PROMPT_HINT: string;
 function spkiToRawX25519(spki: Uint8Array): Result<Uint8Array>;
 
 // @public
+type StructuredOutputEnforcement = 'none' | 'json-mode' | 'schema' | 'tool-forced';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiCompletionResponse"
+//
+// @public
+type StructuredOutputFallback = 'degrade' | 'fail';
+
+// @public
+type StructuredOutputRequest = ISchemaStructuredOutputRequest | IJsonObjectStructuredOutputRequest;
+
+// @public
 const SUPPORTED_SCHEMES: ReadonlyArray<string>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
@@ -3123,6 +3186,9 @@ function supportsEmbedding(descriptor: IAiProviderDescriptor): boolean;
 //
 // @public
 function supportsImageGeneration(descriptor: IAiProviderDescriptor): boolean;
+
+// @public
+function supportsStructuredOutput(descriptor: IAiProviderDescriptor): boolean;
 
 // @public
 function templateString(defaultContext?: unknown): Conversion.StringConverter<string, unknown>;

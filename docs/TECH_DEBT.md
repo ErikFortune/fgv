@@ -324,6 +324,34 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] A `ts-json-base` file-tree test asserts a permission denial that cannot occur for
+  uid 0, so it fails on any root container and passes in CI.**
+  `libraries/ts-json-base/src/test/unit/file-tree/mutableFsTree.test.ts` §
+  *"returns permission-denied for read-only file"* (line ~83) chmods a file to `0o444` and
+  expects `fileIsMutable` to fail with `'permission-denied'`. **Root bypasses the file mode
+  bits**, so the write succeeds and the assertion fails — verified 2026-08-22 in a root
+  dev container (`id -u` → 0; appending to a fresh `0444` file succeeds).
+
+  The implementation is correct and CI is green, because CI's runner is not root. What is
+  wrong is a test whose verdict is a function of the uid it happens to run under, with no
+  signal saying so — the same defect class as the `openFdCountFor` helper two files over,
+  which *does* say so out loud (`console.warn`: "the connection-leak assertion is NOT
+  running") rather than degrading silently.
+
+  **Trigger**: the next stream that touches `ts-json-base`'s file-tree packlet, or the
+  next time someone loses ten minutes to a red local suite on a clean tree.
+
+  **Scope sketch**: follow the sibling's precedent — detect `process.getuid?.() === 0`,
+  skip the assertion, and `console.warn` that it was skipped. Do **not** delete the test:
+  it is the only coverage of the `'permission-denied'` detail, and it is real on the
+  runner that matters.
+
+  **Not a P2**: it costs local-only confusion, never a red PR.
+
+  **Reference**: surfaced incidentally by the `ai-assist-structured-output` stream, which
+  ran `rushx test` in `ts-json-base` after adding `isSchemaValidator` and had to establish
+  that the one red test predated the change.
+
 - **[P3] `etc/*.api.md` is not a faithful proxy for what a consumer's editor shows, and a stale doc comment used that gap to ship.**
   A member can carry **two** stacked doc comments — an older prose block, then a
   `/** {@inheritDoc Other.member} */` line immediately above the declaration. TSDoc binds the

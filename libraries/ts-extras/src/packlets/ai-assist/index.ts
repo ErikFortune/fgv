@@ -116,6 +116,8 @@ export {
   supportsImageGeneration,
   resolveEmbeddingCapability,
   supportsEmbedding,
+  resolveStructuredOutputCapability,
+  supportsStructuredOutput,
   DEFAULT_MODEL_CAPABILITY_CONFIG
 } from './registry';
 
@@ -168,6 +170,18 @@ export {
 } from './converters';
 
 export { resolveEffectiveTools } from './toolFormats';
+
+export { ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME } from './structuredOutput';
+
+export type {
+  AiStructuredOutputFormat,
+  IAiStructuredOutputCapability,
+  IJsonObjectStructuredOutputRequest,
+  ISchemaStructuredOutputRequest,
+  StructuredOutputEnforcement,
+  StructuredOutputFallback,
+  StructuredOutputRequest
+} from './structuredOutputTypes';
 
 export {
   classifyJsonParseFailure,

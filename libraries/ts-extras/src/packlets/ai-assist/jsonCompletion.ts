@@ -28,10 +28,12 @@
  */
 
 import { type Converter, fail, Result, succeed, type Validator } from '@fgv/ts-utils';
+import { JsonSchema } from '@fgv/ts-json-base';
 
 import { callProviderCompletion, type IProviderCompletionParams } from './completionClient';
 import { fencedStringifiedJson } from './jsonResponse';
 import { type IAiCompletionResponse } from './model';
+import { type StructuredOutputRequest } from './structuredOutputTypes';
 
 /**
  * Default system-prompt suffix appended when {@link AiAssist.IGenerateJsonCompletionParams.promptHint}
@@ -132,7 +134,7 @@ function applyPromptHint(system: string | undefined, hint: JsonPromptHint): stri
 export async function generateJsonCompletion<T>(
   params: IGenerateJsonCompletionParams<T>
 ): Promise<Result<IGenerateJsonCompletionResult<T>>> {
-  const { converter, jsonConverter, promptHint = 'smart', system, ...rest } = params;
+  const { converter, jsonConverter, promptHint = 'smart', system, structuredOutput, ...rest } = params;
 
   if (jsonConverter === undefined && converter === undefined) {
     return fail('generateJsonCompletion: either converter or jsonConverter must be provided.');
@@ -141,7 +143,21 @@ export async function generateJsonCompletion<T>(
   const pipeline: Converter<T> = jsonConverter ?? fencedStringifiedJson<T>({ inner: converter! });
   const augmentedSystem = applyPromptHint(system, promptHint);
 
-  const response = await callProviderCompletion({ ...rest, system: augmentedSystem });
+  // If the caller authored `converter` with `JsonSchema.object({...})`, the same
+  // object is already both the wire schema and the reply validator — so send it,
+  // and there is no second declaration to drift from. A plain Converter carries no
+  // schema, so nothing is sent and the report reads 'none': existing callers are
+  // byte-for-byte unaffected. Deliberately NOT a new parameter, which would
+  // reintroduce exactly the converter/schema drift `JsonSchema` exists to remove.
+  const inferred: StructuredOutputRequest | undefined =
+    structuredOutput ??
+    (JsonSchema.isSchemaValidator(converter) ? { mode: 'schema', schema: converter } : undefined);
+
+  const response = await callProviderCompletion({
+    ...rest,
+    system: augmentedSystem,
+    ...(inferred !== undefined ? { structuredOutput: inferred } : {})
+  });
   if (response.isFailure()) {
     return fail(response.message);
   }

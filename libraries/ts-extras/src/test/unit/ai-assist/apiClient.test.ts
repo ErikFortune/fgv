@@ -934,7 +934,7 @@ describe('callProviderCompletion', () => {
         modelOverride: 'gpt-5.5-pro'
       });
 
-      expect(result).toSucceedWith({ content: 'pro answer', truncated: false });
+      expect(result).toSucceedWith({ content: 'pro answer', truncated: false, structuredOutput: 'none' });
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
       expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
       const body = JSON.parse(fetchCall[1].body);

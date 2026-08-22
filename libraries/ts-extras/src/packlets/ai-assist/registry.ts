@@ -33,6 +33,7 @@ import {
   type IAiProviderDescriptor,
   resolveModelAlias
 } from './model';
+import type { IAiStructuredOutputCapability } from './structuredOutputTypes';
 
 // ============================================================================
 // Built-in providers
@@ -86,7 +87,10 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // Claude 5 family requires the adaptive thinking wire shape (thinking.type: 'adaptive' +
     // output_config.effort) and 400s on the legacy thinking.type: 'enabled' + budget_tokens
     // shape; see AiAssist.isAdaptiveThinkingModel.
-    adaptiveThinkingModelPrefixes: ['claude-sonnet-5', 'claude-opus-5', 'claude-fable-5']
+    adaptiveThinkingModelPrefixes: ['claude-sonnet-5', 'claude-opus-5', 'claude-fable-5'],
+    // Anthropic has no response-format field; forced tool use is the mechanism, and
+    // it is uniform across the family — hence one catch-all entry.
+    structuredOutput: [{ modelPrefix: '', format: 'anthropic-tool-forced' }]
   },
   {
     id: 'google-gemini',
@@ -118,6 +122,9 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     streamingCorsRestricted: false,
     acceptsImageInput: true,
     thinkingMode: 'optional',
+    // Gemini carries the constraint inside `generationConfig`
+    // (responseMimeType + responseSchema), uniform across the family.
+    structuredOutput: [{ modelPrefix: '', format: 'gemini-response-schema' }],
     embedding: [
       {
         modelPrefix: '',
@@ -167,6 +174,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     streamingCorsRestricted: false,
     acceptsImageInput: false,
     thinkingMode: 'unsupported',
+    structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }],
     embedding: [{ modelPrefix: '', format: 'openai-embeddings' }]
   },
   {
@@ -217,6 +225,12 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     acceptsImageInput: true,
     thinkingMode: 'optional',
     responsesOnlyModelPrefixes: ['gpt-5.5-pro'],
+    // Declared once for the whole line. The Chat-Completions-vs-Responses split is
+    // NOT declared here on purpose: the route depends on whether the call carries
+    // server tools as well as on the model, so the same model takes both endpoints
+    // on different calls. The dispatcher supplies that axis; a second declaration
+    // of it here could only ever disagree.
+    structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }],
     embedding: [
       {
         modelPrefix: 'text-embedding-3',
@@ -287,6 +301,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     streamingCorsRestricted: true,
     acceptsImageInput: true,
     thinkingMode: 'optional',
+    structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }],
     imageGeneration: [
       {
         // grok-imagine models use JSON edits with image_url objects (different wire format)
@@ -464,6 +479,47 @@ export function supportsEmbedding(descriptor: IAiProviderDescriptor): boolean {
  * @returns The matching capability, or `undefined` when no rule matches, the
  *   provider declares no embedding capabilities, or `modelId` is an
  *   unresolvable alias.
+ * @public
+ */
+/**
+ * The structured-output capability for `modelId` under `descriptor`, or
+ * `undefined` when the model can enforce nothing.
+ *
+ * @remarks
+ * Alias-first, exactly like its `imageGeneration` / `embedding` siblings — an
+ * unresolved alias returns `undefined` rather than prefix-matching a catch-all
+ * `modelPrefix: ''`, which is the defect this helper was written to prevent.
+ *
+ * @param descriptor - The provider descriptor.
+ * @param modelId - A concrete model id or an `@provider:role` alias.
+ * @public
+ */
+export function resolveStructuredOutputCapability(
+  descriptor: IAiProviderDescriptor,
+  modelId: string
+): IAiStructuredOutputCapability | undefined {
+  return resolveCapabilityForModel(descriptor, modelId, descriptor.structuredOutput);
+}
+
+/**
+ * Whether `descriptor` declares any structured-output capability at all.
+ * @public
+ */
+export function supportsStructuredOutput(descriptor: IAiProviderDescriptor): boolean {
+  return (descriptor.structuredOutput?.length ?? 0) > 0;
+}
+
+/**
+ * The embedding capability for `modelId` under `descriptor`, or `undefined` when
+ * the provider declares none for it.
+ *
+ * @remarks
+ * Alias-first: an `@provider:role` alias is resolved to its concrete id before
+ * prefix matching, and an unresolvable alias returns `undefined` rather than
+ * matching a catch-all `modelPrefix: ''`.
+ *
+ * @param descriptor - The provider descriptor.
+ * @param modelId - A concrete model id or an `@provider:role` alias.
  * @public
  */
 export function resolveEmbeddingCapability(

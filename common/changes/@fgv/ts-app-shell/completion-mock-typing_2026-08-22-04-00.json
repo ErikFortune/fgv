@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "comment": "Test-only: type the completion-response mocks against IAiCompletionResponse. The generic mockSucceed<T> helper meant a mock missing a required member type-checked clean and supplied undefined at runtime; the new mockCompletion wrapper makes that a build failure.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell"
+}

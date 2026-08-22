@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add native structured output to the completion paths: an optional `structuredOutput` request carrying a JsonSchema.ISchemaValidator (or a bare json-object mode), a per-model-family `structuredOutput` capability on IAiProviderDescriptor across four wire formats, and a REQUIRED `structuredOutput: StructuredOutputEnforcement` on IAiCompletionResponse reporting what was actually enforced. Unsupported combinations degrade by default and say so; `onUnsupported: 'fail'` opts into strict. generateJsonCompletion sends the schema automatically when `converter` is a JsonSchema, with no new parameter and no change for plain-Converter callers. BREAKING for anyone constructing an IAiCompletionResponse (test doubles); readers are unaffected.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

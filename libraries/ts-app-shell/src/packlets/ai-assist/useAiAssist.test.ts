@@ -276,6 +276,19 @@ function mockSucceed<T>(spy: jest.SpyInstance, value: T): void {
   spy.mockResolvedValueOnce(succeed(value));
 }
 
+/**
+ * `mockSucceed` for a completion spy, typed against the real response shape.
+ *
+ * @remarks
+ * `mockSucceed` is generic in `T`, so a completion mock missing a required field
+ * type-checks clean and supplies `undefined` at runtime — a defect invisible to
+ * both the compiler and the coverage gate. This overload exists so that adding a
+ * required member to `IAiCompletionResponse` fails the build here instead.
+ */
+function mockCompletion(spy: jest.SpyInstance, value: AiAssist.IAiCompletionResponse): void {
+  mockSucceed(spy, value);
+}
+
 function mockFail<T>(spy: jest.SpyInstance, message: string): void {
   spy.mockResolvedValueOnce(fail<T>(message));
 }
@@ -353,7 +366,7 @@ describe('useAiAssist › generateDirect', () => {
   });
 
   test('returns the validated entity on success', async () => {
-    mockSucceed(directSpy, { content: '{"name":"Alice"}', truncated: false });
+    mockCompletion(directSpy, { content: '{"name":"Alice"}', truncated: false, structuredOutput: 'none' });
     const { result } = renderHook(() => useAiAssist(defaultParams()));
 
     let r: Result<{ entity: { name: string }; source: 'ai' }> | undefined;
@@ -371,7 +384,11 @@ describe('useAiAssist › generateDirect', () => {
   });
 
   test('strips markdown code fences before parsing', async () => {
-    mockSucceed(directSpy, { content: '```json\n{"x":1}\n```', truncated: false });
+    mockCompletion(directSpy, {
+      content: '```json\n{"x":1}\n```',
+      truncated: false,
+      structuredOutput: 'none'
+    });
     const { result } = renderHook(() => useAiAssist(defaultParams()));
 
     let r: Result<{ entity: { x: number }; source: 'ai' }> | undefined;
@@ -383,7 +400,7 @@ describe('useAiAssist › generateDirect', () => {
   });
 
   test('fails fast when the response is truncated (no retry)', async () => {
-    mockSucceed(directSpy, { content: 'partial', truncated: true });
+    mockCompletion(directSpy, { content: 'partial', truncated: true, structuredOutput: 'none' });
     const { result } = renderHook(() => useAiAssist(defaultParams()));
 
     let r: Result<unknown> | undefined;
@@ -396,7 +413,7 @@ describe('useAiAssist › generateDirect', () => {
   });
 
   test('fails when JSON parse fails (no retry)', async () => {
-    mockSucceed(directSpy, { content: 'not json', truncated: false });
+    mockCompletion(directSpy, { content: 'not json', truncated: false, structuredOutput: 'none' });
     const { result } = renderHook(() => useAiAssist(defaultParams()));
 
     let r: Result<unknown> | undefined;
@@ -409,7 +426,11 @@ describe('useAiAssist › generateDirect', () => {
   });
 
   test('surfaces an AI error object as a failure', async () => {
-    mockSucceed(directSpy, { content: '{"error":"refused","term":"sketchy"}', truncated: false });
+    mockCompletion(directSpy, {
+      content: '{"error":"refused","term":"sketchy"}',
+      truncated: false,
+      structuredOutput: 'none'
+    });
     const { result } = renderHook(() => useAiAssist(defaultParams()));
 
     let r: Result<unknown> | undefined;
@@ -421,8 +442,8 @@ describe('useAiAssist › generateDirect', () => {
   });
 
   test('retries when the validator fails and succeeds on the next attempt (logs the retry)', async () => {
-    mockSucceed(directSpy, { content: '{"x":"bad"}', truncated: false });
-    mockSucceed(directSpy, { content: '{"x":1}', truncated: false });
+    mockCompletion(directSpy, { content: '{"x":"bad"}', truncated: false, structuredOutput: 'none' });
+    mockCompletion(directSpy, { content: '{"x":1}', truncated: false, structuredOutput: 'none' });
 
     const warn = jest.fn();
     const params = defaultParams({
@@ -480,9 +501,9 @@ describe('useAiAssist › generateDirect', () => {
   });
 
   test('fails after exceeding max validator attempts', async () => {
-    mockSucceed(directSpy, { content: '{"x":"bad"}', truncated: false });
-    mockSucceed(directSpy, { content: '{"x":"still bad"}', truncated: false });
-    mockSucceed(directSpy, { content: '{"x":"nope"}', truncated: false });
+    mockCompletion(directSpy, { content: '{"x":"bad"}', truncated: false, structuredOutput: 'none' });
+    mockCompletion(directSpy, { content: '{"x":"still bad"}', truncated: false, structuredOutput: 'none' });
+    mockCompletion(directSpy, { content: '{"x":"nope"}', truncated: false, structuredOutput: 'none' });
 
     const { result } = renderHook(() => useAiAssist(defaultParams()));
     const convert = (): Result<unknown> => fail('always fails');
@@ -509,7 +530,7 @@ describe('useAiAssist › generateDirect', () => {
   });
 
   test('routes through the proxy for CORS-restricted providers when proxyUrl is set', async () => {
-    mockSucceed(proxiedSpy, { content: '{"x":1}', truncated: false });
+    mockCompletion(proxiedSpy, { content: '{"x":1}', truncated: false, structuredOutput: 'none' });
     const settings: AiAssist.IAiAssistSettings = {
       ...settingsFor('xai-grok'),
       providers: [{ provider: 'xai-grok', secretName: 'secret.xai-grok' }],
@@ -528,7 +549,7 @@ describe('useAiAssist › generateDirect', () => {
   });
 
   test('routes direct (skips proxy) for non-CORS providers when proxyAllProviders is false', async () => {
-    mockSucceed(directSpy, { content: '{"x":1}', truncated: false });
+    mockCompletion(directSpy, { content: '{"x":1}', truncated: false, structuredOutput: 'none' });
     const settings: AiAssist.IAiAssistSettings = {
       ...settingsFor('openai'),
       proxyUrl: 'http://proxy.local:3001'
@@ -545,7 +566,7 @@ describe('useAiAssist › generateDirect', () => {
   });
 
   test('routes through the proxy when proxyAllProviders is true even for non-CORS providers', async () => {
-    mockSucceed(proxiedSpy, { content: '{"x":1}', truncated: false });
+    mockCompletion(proxiedSpy, { content: '{"x":1}', truncated: false, structuredOutput: 'none' });
     const settings: AiAssist.IAiAssistSettings = {
       ...settingsFor('openai'),
       proxyUrl: 'http://proxy.local:3001',
@@ -562,7 +583,7 @@ describe('useAiAssist › generateDirect', () => {
   });
 
   test('forwards endpoint and uses an empty apiKey for no-secret providers (ollama)', async () => {
-    mockSucceed(directSpy, { content: '{"x":1}', truncated: false });
+    mockCompletion(directSpy, { content: '{"x":1}', truncated: false, structuredOutput: 'none' });
     const settings: AiAssist.IAiAssistSettings = {
       providers: [{ provider: 'ollama', endpoint: 'http://localhost:11434/v1', model: 'llama3.2' }]
     };

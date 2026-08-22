@@ -25,6 +25,7 @@
 
 import { fail, type Result, succeed } from '@fgv/ts-utils';
 import { type JsonObject, type JsonSchema } from '@fgv/ts-json-base';
+import type { IAiStructuredOutputCapability, StructuredOutputEnforcement } from './structuredOutputTypes';
 
 // ============================================================================
 // Image Data
@@ -923,6 +924,24 @@ export interface IAiCompletionResponse {
   readonly content: string;
   /** Whether the response was truncated due to token limits */
   readonly truncated: boolean;
+  /**
+   * Which structured-output constraint the provider was **asked** to apply.
+   *
+   * @remarks
+   * **Required, not optional, and that is the point.** An optional field would
+   * make absence three-ways ambiguous — no capability / not requested / a build
+   * predating the feature — and disambiguating exactly that is what this field
+   * exists for. `'none'` already expresses *"no constraint sent"*, so
+   * always-present costs nothing and removes the ambiguity by construction. The
+   * same remedy as `MemoryEmbedOutcome` in `@fgv/ts-agent-memory`, applied to the
+   * same defect.
+   *
+   * It reports what was *sent*, never whether **this** response conforms — that
+   * is the caller's converter's answer and re-deriving it here would be a second
+   * source of truth. See `StructuredOutputEnforcement` for the three-question
+   * split.
+   */
+  readonly structuredOutput: StructuredOutputEnforcement;
 }
 
 /**
@@ -1157,6 +1176,19 @@ export interface IAiProviderDescriptor {
    * line is a one-entry descriptor edit. Empty or undefined means no model is
    * Responses-only.
    */
+  /**
+   * Per-model-family structured-output capability, longest-prefix matched against
+   * the **resolved** completion model id. Absent (or no matching entry) means the
+   * model can enforce nothing, and a request against it reports `'none'`.
+   *
+   * @remarks
+   * Same declaration idiom as {@link IAiProviderDescriptor.imageGeneration} and
+   * {@link IAiProviderDescriptor.embedding}, resolved through the same
+   * alias-first helper — a capability lookup on an unresolved alias is the defect
+   * `resolveImageCapability` once had, where a catch-all `modelPrefix: ''` turned
+   * an unknown alias into a confidently wrong answer.
+   */
+  readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
   readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
   /**
    * Concrete Anthropic model ids (exact-or-dash-bounded-prefix-matched) that require the
