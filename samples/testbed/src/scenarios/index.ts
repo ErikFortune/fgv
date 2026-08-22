@@ -28,6 +28,12 @@ import {
   openaiModelTiersScenario,
   xaiModelTiersScenario
 } from './modelTiers';
+import {
+  anthropicStructuredOutputScenario,
+  geminiStructuredOutputScenario,
+  openaiStructuredOutputScenario,
+  xaiStructuredOutputScenario
+} from './structuredOutput';
 import { openaiClientToolsScenario } from './openaiClientTools';
 import { saferFetchGuardScenario } from './saferFetchGuard';
 import { streamingChatScenario } from './streamingChat';
@@ -57,5 +63,9 @@ export const scenarios: readonly IScenario[] = [
   openaiModelTiersScenario,
   anthropicModelTiersScenario,
   geminiModelTiersScenario,
-  xaiModelTiersScenario
+  xaiModelTiersScenario,
+  openaiStructuredOutputScenario,
+  anthropicStructuredOutputScenario,
+  geminiStructuredOutputScenario,
+  xaiStructuredOutputScenario
 ];

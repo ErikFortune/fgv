@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add native structured output to the completion paths: an optional `structuredOutput` request carrying a JsonSchema.ISchemaValidator (or a bare json-object mode), a per-model-family `structuredOutput` capability on IAiProviderDescriptor across four wire formats, and a REQUIRED `structuredOutput: StructuredOutputEnforcement` on IAiCompletionResponse reporting what was actually enforced. Unsupported combinations degrade by default and say so; `onUnsupported: 'fail'` opts into strict. generateJsonCompletion sends the schema automatically when `converter` is a JsonSchema, with no new parameter and no change for plain-Converter callers. BREAKING for anyone constructing an IAiCompletionResponse (test doubles); readers are unaffected. BUNDLED LATENT-BUG FIX, disclosed separately: callGeminiCompletion read candidate.content.parts[0].text and silently discarded every other part of a multi-part reply, while the streaming adapter has always concatenated -- so the same Gemini response yielded different text depending on which path the caller used, and a truncated document often still parses. Pre-existing and unrelated to structured output; fixed here because this stream's live testbed found it in a function this stream already touches.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

@@ -324,6 +324,70 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `rushx update-snapshot` writes snapshots with a different Jest config than
+  `rushx test` reads them with — nine packages.**
+  The two halves of the snapshot loop disagree: `"test": "heft test --clean"` runs under
+  Heft, which applies the package's `config/jest.config.json` (test environment, and
+  crucially Heft's **pinned** jest / `pretty-format` version), while
+  `"update-snapshot": "jest --updateSnapshot"` runs plain Jest with none of it.
+
+  Two consequences, and the second is the expensive one. Under jsdom-configured packages
+  the update run also *fails* unrelated DOM-dependent tests, which is noisy but obvious.
+  The quiet one is that the two `pretty-format` versions serialize an array header
+  differently — `Array [` vs `[` — so a freshly "updated" snapshot **does not match** and
+  has to be hand-corrected line by line. Observed 2026-08-22 in `samples/testbed` while
+  adding four scenario ids: the regenerated file differed from the expected one in exactly
+  that header, and nothing about the failure says so.
+
+  **Verified repo-wide** rather than assumed — nine packages carry the plain form:
+  `ts-agent-memory-sqlite-vec`, `ts-extras-mcp`, `ts-extras-ollama`, `ts-extras-transformers`,
+  `ts-extras-webauthn`, `ts-utils-jest`, `ts-web-extras-transformers`,
+  `ts-web-extras-webauthn`, `samples/testbed`. (`ts-utils-jest` — the package that *ships*
+  this repo's Result matchers — is among them, which is the tell that nobody has exercised
+  this path recently.)
+
+  **Trigger**: the next time anyone regenerates a snapshot, in any of the nine.
+
+  **Scope sketch**: point the script at the same config the test run uses — `jest --config
+  config/jest.config.json --updateSnapshot`, or better a Heft-native equivalent so the
+  pinned toolchain is used by construction rather than by a path that can drift again.
+  One-line edit per package; worth doing all nine at once since the fix is mechanical and
+  the diagnosis is not.
+
+  **Not a P2**: it never reddens CI — the checked-in snapshots are correct. It costs a
+  confusing half-hour to whoever next updates one.
+
+  **Reference**: surfaced by the `ai-assist-structured-output` stream's testbed scenarios,
+  which added four registry ids and had to hand-fix the regenerated snapshot's header.
+
+- **[P3] A `ts-json-base` file-tree test asserts a permission denial that cannot occur for
+  uid 0, so it fails on any root container and passes in CI.**
+  `libraries/ts-json-base/src/test/unit/file-tree/mutableFsTree.test.ts` §
+  *"returns permission-denied for read-only file"* (line ~83) chmods a file to `0o444` and
+  expects `fileIsMutable` to fail with `'permission-denied'`. **Root bypasses the file mode
+  bits**, so the write succeeds and the assertion fails — verified 2026-08-22 in a root
+  dev container (`id -u` → 0; appending to a fresh `0444` file succeeds).
+
+  The implementation is correct and CI is green, because CI's runner is not root. What is
+  wrong is a test whose verdict is a function of the uid it happens to run under, with no
+  signal saying so — the same defect class as the `openFdCountFor` helper two files over,
+  which *does* say so out loud (`console.warn`: "the connection-leak assertion is NOT
+  running") rather than degrading silently.
+
+  **Trigger**: the next stream that touches `ts-json-base`'s file-tree packlet, or the
+  next time someone loses ten minutes to a red local suite on a clean tree.
+
+  **Scope sketch**: follow the sibling's precedent — detect `process.getuid?.() === 0`,
+  skip the assertion, and `console.warn` that it was skipped. Do **not** delete the test:
+  it is the only coverage of the `'permission-denied'` detail, and it is real on the
+  runner that matters.
+
+  **Not a P2**: it costs local-only confusion, never a red PR.
+
+  **Reference**: surfaced incidentally by the `ai-assist-structured-output` stream, which
+  ran `rushx test` in `ts-json-base` after adding `isSchemaValidator` and had to establish
+  that the one red test predated the change.
+
 - **[P3] `etc/*.api.md` is not a faithful proxy for what a consumer's editor shows, and a stale doc comment used that gap to ship.**
   A member can carry **two** stacked doc comments — an older prose block, then a
   `/** {@inheritDoc Other.member} */` line immediately above the declaration. TSDoc binds the
