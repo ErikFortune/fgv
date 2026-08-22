@@ -367,6 +367,28 @@ export interface IResult<T> {
   orDefault(): T | undefined;
 
   /**
+   * Gets the value associated with a successful {@link IResult | result}, or a
+   * default produced by the supplied callback if the corresponding operation
+   * failed.
+   *
+   * @remarks
+   * The deferring sibling of {@link IResult.orDefault | orDefault(T)}. The
+   * callback runs **only on failure**, so an expensive default — a computation, a
+   * file read, an allocation — costs nothing on the success path. Reach for this
+   * whenever the default is anything more than a literal or an already-held
+   * value; `orDefault(expensive())` evaluates its argument before the call and
+   * pays that cost every time, which is a defect a reader has to look at the
+   * *argument* to spot.
+   *
+   * The name follows this library's `with*` convention for a method that takes a
+   * callback (see {@link IResult.withErrorFormat | withErrorFormat}).
+   * @param cb - Produces the default. Invoked only when the operation failed.
+   * @returns The result value if the operation succeeded, otherwise the value
+   * returned by `cb`.
+   */
+  orDefaultWith(cb: () => T): T;
+
+  /**
    * Calls a supplied {@link SuccessContinuation | success continuation} if
    * the operation was a success.
    * @remarks
@@ -549,6 +571,19 @@ export class Success<out T> implements IResult<T> {
   public orDefault(): T | undefined;
   public orDefault(dflt?: T): T | undefined {
     return this._value ?? dflt;
+  }
+
+  /**
+   * {@inheritDoc IResult.orDefaultWith}
+   */
+  public orDefaultWith(cb: () => T): T {
+    // `??` rather than a plain return, so this is behaviourally identical to
+    // `orDefault(cb())` for every input — including a Success carrying
+    // `undefined`, which `orDefault` also treats as absent. Switching a call site
+    // from `orDefault(x)` to `orDefaultWith(() => x)` must change only WHEN the
+    // default is computed, never WHICH value comes back. `??` short-circuits, so
+    // `cb` still runs only when the value is actually absent.
+    return this._value ?? cb();
   }
 
   /**
@@ -757,6 +792,13 @@ export class Failure<out T> implements IResult<T> {
   public orDefault(): T | undefined;
   public orDefault(dflt?: T): T | undefined {
     return dflt;
+  }
+
+  /**
+   * {@inheritDoc IResult.orDefaultWith}
+   */
+  public orDefaultWith(cb: () => T): T {
+    return cb();
   }
 
   /**

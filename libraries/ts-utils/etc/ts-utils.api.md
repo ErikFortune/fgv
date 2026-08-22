@@ -1033,6 +1033,8 @@ export class Failure<out T> implements IResult<T> {
     //
     // (undocumented)
     orDefault(): T | undefined;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    orDefaultWith(cb: () => T): T;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
     //
     // (undocumented)
@@ -1649,6 +1651,8 @@ export interface IResult<T> {
     onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN>;
     orDefault(dflt: T): T;
     orDefault(): T | undefined;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    orDefaultWith(cb: () => T): T;
     orThrow(logger?: IResultLogger): T;
     orThrow(cb: ErrorFormatter): T;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Result<T>;
@@ -2746,6 +2750,8 @@ export class Success<out T> implements IResult<T> {
     //
     // (undocumented)
     orDefault(): T | undefined;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    orDefaultWith(cb: () => T): T;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
     //
     // (undocumented)
