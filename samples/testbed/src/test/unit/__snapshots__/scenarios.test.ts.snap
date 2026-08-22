@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`@fgv/testbed scenario registry registry exposes the expected scenario ids (snapshot) 1`] = `
-Array [
+[
   "anthropic-client-tools",
   "openai-client-tools",
   "gemini-client-tools",
@@ -22,5 +22,9 @@ Array [
   "anthropic-model-tiers",
   "google-gemini-model-tiers",
   "xai-grok-model-tiers",
+  "openai-structured-output",
+  "anthropic-structured-output",
+  "google-gemini-structured-output",
+  "xai-grok-structured-output",
 ]
 `;
