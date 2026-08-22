@@ -78,9 +78,17 @@ Fixed in three ways:
 2. **A fourth pass, `THROWAWAY-CLEAR`**, restores the pre-`exec` `_clear` via an own-property
    override (the same trick pass 1 uses to neuter `release`) — the only way to reproduce a
    shape that no longer exists in source. It isolates the throwaway statement's own
-   contribution: if pass 4 aborts where pass 2 survives, this change is implicated; if pass 4
-   also survives, the throwaway statement is exonerated and the search moves on. **Both
-   outcomes are useful, which is why the pass exists.**
+   contribution — and **the two outcomes are not symmetric.** If pass 4 aborts where pass 2
+   survives, this change is implicated. **A surviving pass 4 exonerates nothing:** the
+   statement is unreferenced by construction, so whether it is still alive at teardown is the
+   collector's choice, and if V8 reaped it mid-run the pass never posed the question. Pass 4
+   therefore skips the forced `global.gc()` the other passes do — forcing a collection is the
+   one thing guaranteed to defeat it — but that removes a certainty without creating one.
+
+   **This was wrong in the first draft**, which claimed the two outcomes were equally
+   informative, and it was CodeRabbit that caught it. The correction matters more than the
+   pass: a harness whose green result is written up as a clean bill of health is the same
+   defect this stream exists to fix, one level up.
 3. The prior stream's `result.md` and its ledger entry now say what the probe did *not* cover.
 
 Four passes, exit 0 on linux-x64 / Node 22.22.2 — which, as the file has always said, makes it

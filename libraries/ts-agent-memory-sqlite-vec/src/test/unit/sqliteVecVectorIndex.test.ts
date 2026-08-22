@@ -902,7 +902,7 @@ describe('SqliteVecVectorIndex', () => {
       const source: IMemoryRecordSource = { list: () => Promise.resolve(succeed(listing(['a', 'b']))) };
       const embed: MemoryEmbedder = () => Promise.resolve(succeed(vec(1, 0)));
 
-      expect((await index.rebuild(source, embed)).isSuccess()).toBe(true);
+      expect(await index.rebuild(source, embed)).toSucceed();
       expect(spy).not.toHaveBeenCalled();
       spy.mockRestore();
     });
@@ -915,8 +915,7 @@ describe('SqliteVecVectorIndex', () => {
       const source: IMemoryRecordSource = { list: () => Promise.resolve(succeed(listing(['a']))) };
       const embed: MemoryEmbedder = () => Promise.resolve(fail('scripted embed failure'));
 
-      const rebuilt = await index.rebuild(source, embed);
-      expect(rebuilt.isFailure()).toBe(true);
+      expect(await index.rebuild(source, embed)).toFail();
       expect(spy).not.toHaveBeenCalled();
       spy.mockRestore();
     });

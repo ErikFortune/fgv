@@ -1282,7 +1282,7 @@ describe('SqliteVecFragmentIndex', () => {
       const rebuilt = await index.rebuild(source, () =>
         Promise.resolve(succeed<ReadonlyArray<IEmbeddedFragment>>([frag(0, 4, 1, 0)]))
       );
-      expect(rebuilt.isSuccess()).toBe(true);
+      expect(rebuilt).toSucceed();
       expect(spy).not.toHaveBeenCalled();
       spy.mockRestore();
     });
@@ -1295,7 +1295,7 @@ describe('SqliteVecFragmentIndex', () => {
       const rebuilt = await index.rebuild(source, () =>
         Promise.resolve(fail<ReadonlyArray<IEmbeddedFragment>>('scripted embed failure'))
       );
-      expect(rebuilt.isFailure()).toBe(true);
+      expect(rebuilt).toFail();
       expect(spy).not.toHaveBeenCalled();
       spy.mockRestore();
     });

@@ -60,10 +60,14 @@ Fixed three ways:
    clears once at the top, and the rollback `_clear()` is reachable no other way.
 2. **A fourth pass, `THROWAWAY-CLEAR`**, restores the pre-`exec` `_clear` through an
    own-property override — the same trick pass 1 uses to neuter `release`, and the only way to
-   reproduce a shape that no longer exists in source. **If pass 4 aborts where pass 2 survives,
-   the throwaway statement is implicated and this change addresses your crash. If pass 4 also
-   survives, the throwaway statement is exonerated and you should look elsewhere.** Both
-   outcomes are useful, which is the whole reason the pass exists.
+   reproduce a shape that no longer exists in source. **Read it asymmetrically.** If pass 4
+   aborts where pass 2 survives, the throwaway statement is implicated and this change
+   addresses your crash. **A surviving pass 4 exonerates nothing** — the statement is
+   unreferenced by construction, so whether it is still alive at teardown is the collector's
+   choice, and if V8 reaped it mid-run the pass never posed the question. Pass 4 therefore
+   skips the forced GC the other passes do, which removes a certainty without creating one.
+   An earlier draft of this note called the two outcomes equally informative; they are not,
+   and you should not plan around a green pass 4.
 3. The previous stream's write-up and the streams ledger now say what the probe did *not*
    cover, rather than leaving a claim that was true of one lane and silent about the other.
 

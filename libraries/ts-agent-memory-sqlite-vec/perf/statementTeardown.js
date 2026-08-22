@@ -57,11 +57,20 @@
  * 2026-08-21, is linux/arm64 and nowhere else we have tested (linux-x64 under
  * Node 22 and 24, and darwin-arm64 under Node 24, all survive pass 1).
  *
- * Pass 4 is read the same way and answers a different question: if pass 4
+ * Pass 4 answers a different question, and **it is not symmetric**. If pass 4
  * aborts where pass 2 survives, the throwaway `_clear` statement is implicated
- * and the `exec` change addresses it. If pass 4 also survives, the throwaway
- * statement is exonerated and the search moves on — which is just as useful and
- * is why the pass exists at all.
+ * and the `exec` change addresses it. **A surviving pass 4 exonerates nothing.**
+ * The statement it creates is unreferenced the moment `.run()` returns, so
+ * whether it is still alive at teardown is up to the collector: if V8 reaped it
+ * mid-run the destructor already ran safely, and the pass never posed the
+ * question. Pass 4 therefore skips the forced `global.gc()` the other passes do
+ * — forcing a collection is the one thing guaranteed to defeat it — but that
+ * only removes a certainty, it does not create one.
+ *
+ * So: pass 4 aborting is strong evidence; pass 4 surviving is weak evidence and
+ * must not be written up as a clean bill of health. An earlier draft of this
+ * file claimed the two outcomes were equally informative. They are not, and the
+ * asymmetry is the whole reason to state it here rather than after the run.
  *
  * So on x64 this script is a regression guard, not evidence. Run it on
  * linux/arm64 under Node 24 for the measurement that decides the question.
@@ -106,6 +115,15 @@ function source() {
  * reach `withRollbackNote(error, this._clear())`. The embedder rejects the
  * second record to get there.
  */
+function mustFail(label, result) {
+  // A rollback rebuild that quietly SUCCEEDS never reaches `_clear()` on the
+  // rollback path, and the pass would then cover a lane it reports covering —
+  // the same defect this whole stream is about, one level up.
+  if (!result.isFailure()) {
+    throw new Error(`${label}: expected the scripted embed failure to fail the rebuild`);
+  }
+}
+
 async function driveRebuilds(rec, frag) {
   // The embedders are async by contract (`MemoryEmbedder` / `FragmentEmbedder`),
   // so they must return a promise — the rebuild loop awaits them.
@@ -118,14 +136,21 @@ async function driveRebuilds(rec, frag) {
     )
   ).orThrow();
 
-  // Rollback lane. Both are expected to fail; `.orThrow()` would defeat the point.
-  await rec.rebuild(source(), async (record) =>
-    record.envelope.id === 'b' ? fail('scripted embed failure') : succeed(vec(1, 1))
+  // Rollback lane. Both must FAIL — `.orThrow()` would defeat the point, but so
+  // would discarding the result.
+  mustFail(
+    'record rollback rebuild',
+    await rec.rebuild(source(), async (record) =>
+      record.envelope.id === 'b' ? fail('scripted embed failure') : succeed(vec(1, 1))
+    )
   );
-  await frag.rebuild(source(), async (record) =>
-    record.envelope.id === 'b'
-      ? fail('scripted embed failure')
-      : succeed([{ locator: { start: 0, end: 4 }, vector: vec(1, 1) }])
+  mustFail(
+    'fragment rollback rebuild',
+    await frag.rebuild(source(), async (record) =>
+      record.envelope.id === 'b'
+        ? fail('scripted embed failure')
+        : succeed([{ locator: { start: 0, end: 4 }, vector: vec(1, 1) }])
+    )
   );
 }
 
@@ -184,9 +209,16 @@ async function pass(label, { release, close, throwawayClear }) {
     held.push(rec.index, frag.index);
     indexes += 2;
   }
-  global.gc();
-  global.gc();
-  console.log(`  ${label}: ${indexes} indexes retained to exit`);
+  if (!throwawayClear) {
+    // Deliberately skipped for pass 4: its statements are unreferenced by design,
+    // so forcing a collection here is exactly what would reap them while the
+    // environment is still alive — destroying the condition the pass exists to
+    // create. The other passes retain their statements, so a forced GC cannot
+    // touch those and is what makes the ABANDONED pass mean anything.
+    global.gc();
+    global.gc();
+  }
+  console.log(`  ${label}: ${indexes} indexes retained to exit${throwawayClear ? ' (no forced GC)' : ''}`);
 }
 
 async function main() {
