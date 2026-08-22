@@ -75,10 +75,22 @@ and we need their adapter-level repro.
 
 ## Platform support posture
 
-`SqliteVecVectorIndex` on arm64 is **supported in intent, unverified in fact**. The package declares
-no platform restriction beyond Node and nothing in it is architecture-aware, but CI is x64-only, so
-arm64 has never been exercised. The stream should say so rather than claim support it cannot
-demonstrate — and the release note must not imply the lifetime fix is a cure for the abort.
+**Corrected 2026-08-21 mid-thread.** An earlier draft of this brief said arm64 was "supported in
+intent, unverified in fact". **That was wrong** — the maintainer develops and tests on arm64
+regularly, so the package is routinely exercised there. The claim came from reasoning about CI
+(x64-only) and forgetting that CI is not the only place this gets run.
+
+The correction *sharpens* the diagnosis instead of closing it. Neither variable reproduces the abort
+alone: arm64 works under our routine testing, Node 24 works on x64 under our probe. The suspect is
+the **combination** — or something in the reporter's image that neither environment has.
+
+**Open and worth resolving before the stream starts:** which Node version our arm64 testing actually
+runs on. If it is Node 22, the arm64 row says nothing about Node 24 and the combination is untested
+by us as well as by them.
+
+**Do not claim in the release note that the lifetime fix cures the abort.** It removes the shape
+that produces the reported stack; whether that is the cause is unestablished until someone runs the
+repro on Node 24 + arm64.
 
 ## Gates
 

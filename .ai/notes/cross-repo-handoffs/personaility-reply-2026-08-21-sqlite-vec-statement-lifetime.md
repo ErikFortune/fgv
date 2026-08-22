@@ -1,7 +1,8 @@
 # `SqliteVecVectorIndex` statement lifetime, and the Node 24 / linux-x64 cell
 
 **2026-08-21.** Both halves answered. The certain finding is confirmed **and is one class wider
-than you reported**; the matrix gap is **filled**, and it points away from Node 24.
+than you reported**; the matrix gap is **filled**, and the result narrows the suspect to the
+*combination* of Node 24 and arm64 rather than to either one.
 
 ---
 
@@ -53,7 +54,8 @@ We have a linux-x64 runner and installed Node 24 to test it.
 | **Node 24.19.0 / linux-x64** | **survives — exit 0** |
 | Node 24 / linux-arm64 | aborts (yours) |
 
-**So the crash correlates with arm64, not with Node 24.**
+**So Node 24 alone does not do it.** See § 3 — arm64 alone does not either, which is what leaves
+the combination.
 
 Conditions were matched to yours as closely as we can from x64: `better-sqlite3@12.11.1` **built
 from source** against Node 24.19.0's own headers (`node-gyp rebuild --release`, fresh
@@ -75,13 +77,12 @@ run during environment teardown. Exit 0, no abort.
 It does **not** prove the adapter is safe on x64 Node 24 — the probe reproduces the adapter's
 *shape* (statements cached on an object, `db.close()`, references abandoned) rather than running the
 adapter itself. What it establishes is that **the shape alone does not abort on Node 24 / x64**,
-which is the variable your matrix was missing. Combined with your green x64 / Node 22 suite, the
-remaining difference is the architecture.
+which is the variable your matrix was missing.
 
-The repro is below so you can run the same file on arm64 and get a directly comparable result. If it
-**aborts** there, the shape is sufficient and the defect is ours to fix regardless of platform. If it
-**survives** there, something in the adapter beyond the shape is involved and we would want your full
-adapter-level repro next.
+The repro is below. Run it on your arm64 machine **under Node 24** — that is the one cell nobody has
+filled, and § 3 explains why it is now the interesting one. If it **aborts**, the shape is sufficient
+and the defect is the cause. If it **survives**, something in the adapter beyond the shape is
+involved and we would want your adapter-level repro next.
 
 ```js
 // node --expose-gc teardown.mjs   (better-sqlite3@12.11.1 built from source)
@@ -108,13 +109,34 @@ console.log('held', held.length * 3, 'statements to exit');
 
 ## 3. Is `SqliteVecVectorIndex` expected to work on Node 24 / linux-arm64?
 
-**Supported in intent, unverified in fact, and now knowingly so.** The package declares no platform
-restriction beyond Node, and nothing in it is architecture-aware — but our CI runs x64 only, so
-arm64 has never been exercised. We are not going to claim support we cannot demonstrate.
+**arm64 is expected to work and is regularly exercised — our maintainer develops and tests on
+arm64.** So "does this package work on arm64" is not the open question; it is routinely green
+there.
 
-Concretely: the statement-lifetime defect gets fixed because it is a defect. Whether that resolves
-your abort is a question we can only answer by having you re-run on arm64 afterwards, and we will
-say so in the release note rather than implying the fix is a cure.
+**That sharpens the matrix rather than closing it**, because it means neither variable reproduces
+your crash on its own:
+
+| platform | result | source |
+|---|---|---|
+| Node 22 / linux-x64 | works | yours and ours |
+| Node 24.19.0 / linux-x64 | survives | our probe, this reply |
+| arm64 (maintainer's routine Node) | works | our regular development + test runs |
+| **Node 24 + arm64 together** | **your abort** | yours |
+
+So the suspicion moves off "arm64" and off "Node 24" separately, and onto **the combination** — or
+onto something else in your image that neither of our environments has.
+
+**The cheapest next measurement is yours, and it is small.** Run the repro below on your arm64
+machine **under Node 24**, and tell us which way it goes:
+
+- **aborts** → the shape alone is sufficient on Node 24 + arm64. The lifetime defect is then not
+  merely latent for you, it is the cause, and fixing it is the fix.
+- **survives** → the shape is not sufficient, something in the adapter beyond it is involved, and we
+  would want your adapter-level repro next.
+
+We also want to know **which Node version our own arm64 testing runs on**, since if it is Node 22
+then the third row above says nothing about Node 24 and the combination is entirely untested by us.
+We are checking that on our side rather than assuming it.
 
 ## Thanks for what you ruled out
 
