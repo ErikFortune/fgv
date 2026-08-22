@@ -128,9 +128,32 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `sqlite-vec-throwaway-clear-statement` 🟡 (**#654 open, not merged** — behaviour-neutral)
+### `json-schema-nullable` 🟡 (**#655 open, not merged** — additive)
 
-**Status:** 🟡 **#654 is open and not yet merged**; flip to ✅ on merge. Gates green — build / lint / test at **100%** in `@fgv/ts-agent-memory-sqlite-vec` (153 → 157 tests), repo-wide `rush rebuild` at exit 0 with zero warnings, change file present, teardown probe green on linux-x64 / Node 22.22.2.
+**Status:** 🟡 **#655 is open and not yet merged**; flip to ✅ on merge. Gates green — build / lint / test at **100%** in `@fgv/ts-json-base` and `@fgv/ts-extras`, repo-wide `rush rebuild`, change files for both.
+**Package surface:** `@fgv/ts-json-base` (`ISchemaOptions.nullable` and an overload on every factory; `fromJson`'s nullable union), `@fgv/ts-extras` (`toGeminiParameterSchema` dialect translation), `@fgv/ts-extras-mcp` (behaviour only — a nullable-schema tool now adapts), plus `.ai/instructions/LIBRARY_CAPABILITIES.md`.
+**Artifacts:** `.ai/tasks/completed/2026-08/json-schema-nullable/`
+**Origin:** a PersonAIlity ask. Brief, implementation and finalized artifacts land in one commit at the maintainer's instruction.
+
+**Shipped:** `nullable: true` on every `JsonSchema` factory — `Static<S>` widens to `T | null`, the validator accepts `null`, and the wire emits the draft-07 union `type: ['string', 'null']`.
+
+**It unblocks a provider rather than polishing a surface.** `mode: 'schema'` is the **only** structured-output mode that reaches Anthropic — its only lane is forced tool use, and a forced tool needs a schema to force to. The consumer was on `json-object`, which works on four providers and not that one. The blocker was that OpenAI strict mode requires *every* property in `required`, so `optional(...)` is unsendable there; the remaining route was to make everything required and fake absence with an empty-string sentinel the converter maps back — **the schema-and-check drift the one-object design exists to remove, reintroduced one layer down.**
+
+**We asked them to let us verify their OpenAI premise, and it paid.** It holds, and turned up what they did not have: **OpenAI ignores the OpenAPI-style `nullable: true`**; only the union array works. So the option's *name* and its *emission* are different dialects on purpose — stated on the option's own TSDoc and pinned by a test asserting the emitted keys never contain `nullable`.
+
+**Three consequences the ask did not have, all in our code.** (1) `fromJson` **rejected union `type` arrays**, and `callProxiedCompletion` reconstitutes forwarded schemas with it — shipping the emitter without the parser would have been our own code refusing our own output on the path the consumer already uses. It now admits exactly `[<type>, 'null']` and still refuses every other union. (2) `toGeminiParameterSchema` passed `type` through verbatim, and the two dialects are **mutually exclusive** — OpenAI ignores the keyword, Gemini rejects the union — so unblocking the fifth provider would have broken one of the four that work today. (3) `enum` nullability is a different emission, and `fromJson` now requires the two halves to **agree**, since a node nullable in one and not the other describes two schemas with no honest way to pick.
+
+**Both consequences were watched failing.** Reverting the parser's acceptance turns exactly the 7 round-trip tests red and leaves the 15 emission/validation tests green — which is what shows the round-trip suite pins the parser half rather than the emitter. Neutering the Gemini translation turns exactly its 4 red.
+
+**A fourth consequence surfaced only in CI, and the gate that found it is the lesson.** `@fgv/ts-extras-mcp` pinned a nullable-union tool as un-adaptable; widening `fromJson` moved it from `skipped` to `tools`, which is correct and desirable — an MCP server offering a nullable field is now usable. The repo-wide **`rush rebuild` passed with zero warnings** and could not have caught it: `fromJson` kept its signature and every consumer kept compiling. What changed was *what it returns for an input it used to reject*. **`rush rebuild` covers a widened type; only a repo-wide `rush test` covers a widened behaviour** — the existing acceptance criterion was written from a case where an interface member became required, which a build does catch.
+
+**A flag, not a wrapper node, and we agreed with the consumer for a different reason.** A `nullable(inner)` wrapper would have been one generic function instead of seven overloads and sibling-consistent with `optional`/`array`. It loses because the object factory builds `required` by reading `prop._type !== 'optional'`: `nullable(optional(x))` would present the wrong discriminant, the key would land in `required`, and the field would **silently stop being optional** — no error, no failing test, wrong schema.
+
+**`hasOptionalProperties` is untouched, and that is the point.** Its docstring rejects "rewriting optional to required-and-nullable" because *the library* doing it silently would break the caller's validator. That objection **evaporates when the caller authors it**, since the validator and the wire schema are then the same object. This stream is not a reversal of that refusal — it is what makes keeping it affordable, and there is now a test asserting a nullable-and-required schema reaches OpenAI as `'schema'` directly beside the suite asserting an optional one degrades.
+
+### `sqlite-vec-throwaway-clear-statement` ✅ (shipped 2026-08-22 via #654 — behaviour-neutral)
+
+**Status:** ✅ shipped to `release` (#654, squashed as `a50009f3`). Gates green — build / lint / test at **100%** in `@fgv/ts-agent-memory-sqlite-vec` (153 → 157 tests), repo-wide `rush rebuild` at exit 0 with zero warnings, change file present, teardown probe green on linux-x64 / Node 22.22.2.
 **Package surface:** `@fgv/ts-agent-memory-sqlite-vec` (`_clear` on both index classes; `perf/statementTeardown.js`), plus `.ai/instructions/LIBRARY_CAPABILITIES.md` and corrections to `sqlite-vec-statement-lifetime`'s artifacts.
 **Artifacts:** `.ai/tasks/completed/2026-08/sqlite-vec-throwaway-clear-statement/`
 **Origin:** a PersonAIlity report sent deliberately **before** either side spent a test cycle on the linux-arm64 measurement `sqlite-vec-statement-lifetime` was waiting on.

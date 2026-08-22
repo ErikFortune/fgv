@@ -631,4 +631,72 @@ describe('client-tool annotations are host-advisory-only (never serialized to th
       expect(serialized).not.toContain(key);
     }
   });
+
+  describe('nullable — the two dialects are mutually exclusive', () => {
+    // OpenAI strict mode wants `type: ['string', 'null']` and ignores `nullable: true`;
+    // Gemini's OpenAPI 3.0 subset wants the opposite and rejects the union array. The
+    // sanitizer is where that translation belongs, exactly as for `additionalProperties`.
+
+    test('translates a nullable union into the OpenAPI keyword', () => {
+      expect(toGeminiParameterSchema(JsonSchema.string({ nullable: true }).toJson())).toEqual({
+        type: 'string',
+        nullable: true
+      });
+    });
+
+    test('drops the null member of a nullable enum, which OpenAPI expresses via `nullable`', () => {
+      expect(toGeminiParameterSchema(JsonSchema.enumOf(['a', 'b'], { nullable: true }).toJson())).toEqual({
+        type: 'string',
+        nullable: true,
+        enum: ['a', 'b']
+      });
+    });
+
+    test('translates nested nullable properties and preserves the rest', () => {
+      const schema = JsonSchema.object({
+        name: JsonSchema.string(),
+        note: JsonSchema.string({ nullable: true, description: 'why' }),
+        tags: JsonSchema.array(JsonSchema.integer({ nullable: true }))
+      });
+      expect(toGeminiParameterSchema(schema.toJson())).toEqual({
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          note: { type: 'string', nullable: true, description: 'why' },
+          tags: { type: 'array', items: { type: 'integer', nullable: true } }
+        },
+        required: ['name', 'note', 'tags']
+      });
+    });
+
+    test('leaves a NON-nullable schema untouched', () => {
+      // The translation must not fire on everything — a sanitizer that rewrote every node
+      // would be indistinguishable from one that rewrote the right ones.
+      const clean = JsonSchema.object({ a: JsonSchema.string(), b: JsonSchema.enumOf(['x']) }).toJson();
+      const sanitized = toGeminiParameterSchema(clean) as Record<string, unknown>;
+      expect(JSON.stringify(sanitized)).not.toContain('nullable');
+      expect(sanitized.properties).toEqual({ a: { type: 'string' }, b: { type: 'string', enum: ['x'] } });
+    });
+
+    test('passes a general union through rather than inventing a meaning for it', () => {
+      // No OpenAPI equivalent exists, so Gemini refusing it is the honest outcome.
+      const input: JsonValue = { type: ['string', 'number'] };
+      expect(toGeminiParameterSchema(input)).toEqual(input);
+      expect(toGeminiParameterSchema({ type: ['null', 'null'] })).toEqual({ type: ['null', 'null'] });
+      expect(toGeminiParameterSchema({ type: [1, 'null'] })).toEqual({ type: [1, 'null'] });
+    });
+
+    test('a property literally named `type` is still not a keyword', () => {
+      expect(
+        toGeminiParameterSchema({
+          type: ['object', 'null'],
+          properties: { type: { type: ['string', 'null'] } }
+        })
+      ).toEqual({
+        type: 'object',
+        nullable: true,
+        properties: { type: { type: 'string', nullable: true } }
+      });
+    });
+  });
 });

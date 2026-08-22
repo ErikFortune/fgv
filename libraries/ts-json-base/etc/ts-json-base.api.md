@@ -28,6 +28,11 @@ type AnyFileTreeDirectoryItem<TCT extends string = string> = IFileTreeDirectoryI
 type AnyFileTreeFileItem<TCT extends string = string> = IFileTreeFileItem<TCT> | IMutableFileTreeFileItem<TCT>;
 
 // @public
+function array<S extends ISchemaValidator<unknown>>(items: S, opts: ISchemaOptions & {
+    nullable: true;
+}): ISchemaValidator<Static<S>[] | null>;
+
+// @public
 function array<S extends ISchemaValidator<unknown>>(items: S, opts?: ISchemaOptions): ISchemaValidator<Static<S>[]>;
 
 // @public
@@ -53,6 +58,11 @@ type ArrayValidator<T, TC = unknown> = Validation.Classes.ArrayValidator<JsonCom
 
 // @public
 const boolean: Converter<boolean, IJsonConverterContext>;
+
+// @public
+function boolean_2(opts: ISchemaOptions & {
+    nullable: true;
+}): ISchemaValidator<boolean | null>;
 
 // @public
 function boolean_2(opts?: ISchemaOptions): ISchemaValidator<boolean>;
@@ -213,6 +223,11 @@ function enumeratedValue<T>(values: ReadonlyArray<T>, message?: string): Convert
 
 // @public
 function enumeratedValue_2<T>(values: ReadonlyArray<T>, message?: string): Validator<T, IJsonValidatorContext | ReadonlyArray<T>>;
+
+// @public
+function enumOf<T extends string>(values: readonly T[], opts: ISchemaOptions & {
+    nullable: true;
+}): ISchemaValidator<T | null>;
 
 // @public
 function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T>;
@@ -726,6 +741,11 @@ class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFile
 }
 
 // @public
+function integer(opts: INumberSchemaOptions & {
+    nullable: true;
+}): ISchemaValidator<number | null>;
+
+// @public
 function integer(opts?: INumberSchemaOptions): ISchemaValidator<number>;
 
 // @public
@@ -767,6 +787,8 @@ function isBinaryFileItem<TCT extends string = string>(item: AnyFileTreeFileItem
 // @public
 interface ISchemaOptions {
     description?: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    nullable?: boolean;
 }
 
 // @public
@@ -1077,6 +1099,11 @@ type MutableFileTreeItem<TCT extends string = string> = IMutableFileTreeFileItem
 const number: Converter<number, IJsonConverterContext>;
 
 // @public
+function number_2(opts: INumberSchemaOptions & {
+    nullable: true;
+}): ISchemaValidator<number | null>;
+
+// @public
 function number_2(opts?: INumberSchemaOptions): ISchemaValidator<number>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1095,6 +1122,11 @@ function object<T, TC = unknown>(properties: Conversion.FieldConverters<JsonComp
 //
 // @public
 function object_2<T, TC = unknown>(properties: Validation.Classes.FieldValidators<JsonCompatibleType<T>, TC>, params?: Omit<Validation.Classes.ObjectValidatorConstructorParams<JsonCompatibleType<T>, TC>, 'fields'>): JsonCompatible_2.ObjectValidator<T, TC>;
+
+// @public
+function object_3<P extends ILlmProperties>(properties: P, opts: IObjectSchemaOptions & {
+    nullable: true;
+}): ISchemaValidator<ObjectStatic<P> | null>;
 
 // @public
 function object_3<P extends ILlmProperties>(properties: P, opts?: IObjectSchemaOptions): ISchemaValidator<ObjectStatic<P>>;
@@ -1192,6 +1224,11 @@ function strictObject<T, TC = unknown>(properties: Conversion.FieldConverters<Js
 
 // @public
 const string: StringConverter<string, IJsonConverterContext>;
+
+// @public
+function string_2(opts: ISchemaOptions & {
+    nullable: true;
+}): ISchemaValidator<string | null>;
 
 // @public
 function string_2(opts?: ISchemaOptions): ISchemaValidator<string>;

@@ -129,9 +129,20 @@ describe('JsonSchema.fromJson', () => {
       );
     });
 
-    test('rejects a union type array', () => {
-      expect(JsonSchema.fromJson({ type: ['string', 'null'] } as unknown as JsonObject)).toFailWith(
-        /union 'type' arrays are not supported/i
+    test('rejects a union type array that is not the nullable spelling', () => {
+      // `[<type>, 'null']` is admitted (see the nullable suite); every other union is not,
+      // because the rest of the subset has no way to represent one.
+      expect(JsonSchema.fromJson({ type: ['string', 'number'] } as unknown as JsonObject)).toFailWith(
+        /union 'type' arrays are supported only as \[<type>, 'null'\]/i
+      );
+      expect(JsonSchema.fromJson({ type: ['string', 'null', 'number'] } as unknown as JsonObject)).toFailWith(
+        /union 'type' arrays are supported only as \[<type>, 'null'\]/i
+      );
+      expect(JsonSchema.fromJson({ type: ['null', 'null'] } as unknown as JsonObject)).toFailWith(
+        /union 'type' arrays are supported only as \[<type>, 'null'\]/i
+      );
+      expect(JsonSchema.fromJson({ type: [1, 'null'] } as unknown as JsonObject)).toFailWith(
+        /union 'type' arrays are supported only as \[<type>, 'null'\]/i
       );
     });
 
