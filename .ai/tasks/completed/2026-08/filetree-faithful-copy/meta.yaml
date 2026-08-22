@@ -1,9 +1,9 @@
 id: filetree-faithful-copy
-status: in-flight # #653 is OPEN; flip to `shipped` on merge
+status: shipped
 packages:
   - '@fgv/ts-json-base'
 prs: [653]
-openPrs: [653]
+openPrs: []
 opened: 2026-08-22
 summary:
   intended: >

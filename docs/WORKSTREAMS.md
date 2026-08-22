@@ -128,9 +128,30 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `filetree-faithful-copy` 🟡 (**#653 open, not merged** — additive)
+### `sqlite-vec-throwaway-clear-statement` 🟡 (**#654 open, not merged** — behaviour-neutral)
 
-**Status:** 🟡 **#653 is open and not yet merged**; flip to ✅ on merge. Gates green — build / lint / test at **100%** in `@fgv/ts-json-base`, repo-wide `rush rebuild`, change file present.
+**Status:** 🟡 **#654 is open and not yet merged**; flip to ✅ on merge. Gates green — build / lint / test at **100%** in `@fgv/ts-agent-memory-sqlite-vec` (153 → 157 tests), repo-wide `rush rebuild` at exit 0 with zero warnings, change file present, teardown probe green on linux-x64 / Node 22.22.2.
+**Package surface:** `@fgv/ts-agent-memory-sqlite-vec` (`_clear` on both index classes; `perf/statementTeardown.js`), plus `.ai/instructions/LIBRARY_CAPABILITIES.md` and corrections to `sqlite-vec-statement-lifetime`'s artifacts.
+**Artifacts:** `.ai/tasks/completed/2026-08/sqlite-vec-throwaway-clear-statement/`
+**Origin:** a PersonAIlity report sent deliberately **before** either side spent a test cycle on the linux-arm64 measurement `sqlite-vec-statement-lifetime` was waiting on.
+
+**Shipped:** `_clear()` runs `Database.exec` rather than `prepare(...).run()`, on both index classes. Same SQL, same (absent) transaction context, same `Result` shape — the change is **lifetime, not semantics**.
+
+**A statement nobody holds is the dangerous kind.** `release()` drops `_stmts`; this one was never *in* `_stmts`, because nothing referenced it the moment `.run()` returned. So `release()` could not drop it, could not have, and **no amount of correct `release()` usage on a consumer's side would have helped** — its native destructor ran whenever GC reached it, which may be during environment teardown, the frame the reported `Statement::~Statement()` abort fires in.
+
+**The remedy is stronger than the one proposed, and the difference is the lesson.** The reporter suggested caching it so `release()` drops it. `exec` creates **no `Statement` at all** — nothing to destruct, no cleanup hook. Caching would only have moved it into the same narrowed-window-no-guarantee bucket as everything else, since `release()` makes a statement collectable *earlier* and `better-sqlite3` exposes no public `finalize()`. **Eliminate the object rather than lengthen its life.**
+
+**One of their three cited sites was wrong; a fourth they missed is real.** `del` / `ins` in `_prepare()` are locals but are *captured* — `delete: del` is returned and `replaceTxn` closes over both — so they live exactly as long as `_stmts` and `release()` does drop them. `_readExistingDimension` prepares a throwaway `sqlite_master` probe on every `create()` / `open()` and **cannot** become `exec` (bound parameter, returned row). So one `Statement` per construction survives: the residue shrinks from *every rebuild plus every construction* to *every construction*, and the platform question is **not** closed by this. Said in the consumer note rather than left to be discovered.
+
+**The larger finding was a defect in *our* artifact.** `perf/statementTeardown.js` drove `add` / `addFragments` / `query` and **never a `rebuild`** — and `rebuild` is the sole caller of `_clear`. The probe therefore exercised only the cached statements and was structurally blind to the one statement `release()` could not reach. **A green arm64 run of it would have read as "the fix holds" while the consumer's boot path — which rebuilds on start — went untested.** That is `TESTING_GUIDELINES.md` § "Measurement Harnesses" in its worst form: not a harness reporting a wrong number, but one reporting a *right number about the wrong lane*. Found by the consumer reading source, not by anyone running the probe.
+
+**Widened three ways.** Every pass now drives a rebuild **and a failing rebuild** — not redundant, since a passing rebuild clears once at the top and the rollback `_clear()` is reachable no other way. A fourth pass, `THROWAWAY-CLEAR`, restores the pre-`exec` `_clear` by own-property override (the trick pass 1 already uses to neuter `release`) so arm64 can isolate the throwaway statement's contribution — **and exoneration there is as useful an outcome as implication**, which is why the pass exists. And `sqlite-vec-statement-lifetime`'s `result.md` and ledger entry now state what the probe did not drive.
+
+**Four tests, watched failing first.** `jest.spyOn(db, 'prepare')` around a rebuild asserting **zero** calls — everything the index reuses is prepared before the rebuild starts, so a rebuild reaching only cached statements prepares nothing. Reverting both `_clear` bodies turned exactly those four red, two per class, one per lane, and nothing else. A coverage gate cannot see this class: the line ran before and runs now.
+
+### `filetree-faithful-copy` ✅ (shipped 2026-08-22 via #653 — additive)
+
+**Status:** ✅ shipped to `release` (#653, squashed as `cc204066`). Gates green — build / lint / test at **100%** in `@fgv/ts-json-base`, repo-wide `rush rebuild`, change file present.
 **Package surface:** `@fgv/ts-json-base` (`copyItemInto` / `copyContentsInto` and their option/report types; `IMutableBinaryFileTreeDirectoryItem` + `isMutableBinaryDirectoryItem`; `DirectoryItem.canCreateChildFileBytes` / `createChildFileBytes`), plus `.ai/instructions/LIBRARY_CAPABILITIES.md`.
 **Artifacts:** `.ai/tasks/completed/2026-08/filetree-faithful-copy/`
 **Origin:** a PersonAIlity ask (§ 1 of the 2026-08-22 note), filed with one premise corrected and the one open design question answered by the consumer before implementation.
