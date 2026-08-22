@@ -79,6 +79,20 @@ function anthropicToolForcedResponse(input: unknown, stopReason: string = 'tool_
   };
 }
 
+/** A forced tool_use block with NO `input` property at all (not even `undefined`). */
+function anthropicToolForcedResponseMissingInputProperty(stopReason: string = 'tool_use'): unknown {
+  return {
+    content: [
+      {
+        type: 'tool_use',
+        id: 'tu_1',
+        name: AiAssist.ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME
+      }
+    ],
+    stop_reason: stopReason
+  };
+}
+
 // ============================================================================
 // Tests
 // ============================================================================
@@ -434,6 +448,39 @@ describe('structured output', () => {
       // this file cross-checks it against `AiAssist.ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME`,
       // so a rename would already break those and surface here too.
       expect(result).toFailWith(/no 'fgv_structured_output' tool_use block/i);
+    });
+
+    test('fails (not succeeds with undefined content) when the forced tool_use block has no input property at all', async () => {
+      mockFetchResponse(anthropicToolForcedResponseMissingInputProperty());
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: fooSchema }
+      });
+
+      // `JSON.stringify(undefined)` returns `undefined` (not a string, not a
+      // throw) — asserting `isFailure()` explicitly rather than just checking
+      // `content` is falsy, since `toSucceedWith({ content: undefined, ... })`
+      // would also pass against the broken version that let `undefined` through
+      // as a "successful" string.
+      expect(result.isFailure()).toBe(true);
+      expect(result).toFailWith(/returned no serializable input/i);
+    });
+
+    test('fails (not succeeds with undefined content) when the forced tool_use block has input: undefined', async () => {
+      mockFetchResponse(anthropicToolForcedResponse(undefined));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: fooSchema }
+      });
+
+      expect(result.isFailure()).toBe(true);
+      expect(result).toFailWith(/returned no serializable input/i);
     });
 
     test('without structured output, plain text extraction is unchanged', async () => {
