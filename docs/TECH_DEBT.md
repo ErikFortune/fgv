@@ -324,6 +324,42 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `rushx update-snapshot` writes snapshots with a different Jest config than
+  `rushx test` reads them with — nine packages.**
+  The two halves of the snapshot loop disagree: `"test": "heft test --clean"` runs under
+  Heft, which applies the package's `config/jest.config.json` (test environment, and
+  crucially Heft's **pinned** jest / `pretty-format` version), while
+  `"update-snapshot": "jest --updateSnapshot"` runs plain Jest with none of it.
+
+  Two consequences, and the second is the expensive one. Under jsdom-configured packages
+  the update run also *fails* unrelated DOM-dependent tests, which is noisy but obvious.
+  The quiet one is that the two `pretty-format` versions serialize an array header
+  differently — `Array [` vs `[` — so a freshly "updated" snapshot **does not match** and
+  has to be hand-corrected line by line. Observed 2026-08-22 in `samples/testbed` while
+  adding four scenario ids: the regenerated file differed from the expected one in exactly
+  that header, and nothing about the failure says so.
+
+  **Verified repo-wide** rather than assumed — nine packages carry the plain form:
+  `ts-agent-memory-sqlite-vec`, `ts-extras-mcp`, `ts-extras-ollama`, `ts-extras-transformers`,
+  `ts-extras-webauthn`, `ts-utils-jest`, `ts-web-extras-transformers`,
+  `ts-web-extras-webauthn`, `samples/testbed`. (`ts-utils-jest` — the package that *ships*
+  this repo's Result matchers — is among them, which is the tell that nobody has exercised
+  this path recently.)
+
+  **Trigger**: the next time anyone regenerates a snapshot, in any of the nine.
+
+  **Scope sketch**: point the script at the same config the test run uses — `jest --config
+  config/jest.config.json --updateSnapshot`, or better a Heft-native equivalent so the
+  pinned toolchain is used by construction rather than by a path that can drift again.
+  One-line edit per package; worth doing all nine at once since the fix is mechanical and
+  the diagnosis is not.
+
+  **Not a P2**: it never reddens CI — the checked-in snapshots are correct. It costs a
+  confusing half-hour to whoever next updates one.
+
+  **Reference**: surfaced by the `ai-assist-structured-output` stream's testbed scenarios,
+  which added four registry ids and had to hand-fix the regenerated snapshot's header.
+
 - **[P3] A `ts-json-base` file-tree test asserts a permission denial that cannot occur for
   uid 0, so it fails on any root container and passes in CI.**
   `libraries/ts-json-base/src/test/unit/file-tree/mutableFsTree.test.ts` §
