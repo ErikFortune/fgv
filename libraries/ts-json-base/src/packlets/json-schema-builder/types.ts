@@ -101,7 +101,7 @@ const SCHEMA_NODE_TYPES: Readonly<Record<SchemaNodeType, true>> = {
 };
 
 /**
- * Whether `value` is an {@link ISchemaValidator} — i.e. a schema authored with the
+ * Whether `value` is an `ISchemaValidator` — i.e. a schema authored with the
  * `JsonSchema` factories, as opposed to a plain `Converter` or `Validator`.
  *
  * @remarks

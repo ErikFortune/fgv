@@ -111,6 +111,28 @@ predating this feature drops the constraint silently, which is precisely the fai
 surface exists to remove, so we would rather be loud. If you make no request, the proxy
 need say nothing and you get `'none'`.
 
+## Verified live, and one thing we found doing it
+
+Four testbed scenarios (`<provider>-structured-output`) run against the real APIs.
+**Every schema path passed on all four providers** — including the Anthropic forced-tool round
+trip and the OpenAI `/responses` route, which is the one no unit test could confirm because a
+wrong field name there is accepted and ignored.
+
+Doing that surfaced a **pre-existing bug you may already be hitting**, unrelated to structured
+output: `callGeminiCompletion` read `candidate.content.parts[0].text` and silently discarded
+every other part of a multi-part reply, while the streaming adapter has always concatenated. The
+same Gemini response therefore gave you different text depending on which path you called — and
+the failure mode is the quiet one, since a truncated JSON document often still parses. **If you
+have seen unexplained short or malformed Gemini completions, this is a candidate.** Fixed in the
+same PR.
+
+**One thing we are NOT claiming.** Gemini's `json-object` probe first failed on a malformed
+reply (a stray trailing brace) and passed after that fix — but we predicted the fix would *not*
+change it, and we were wrong, so we do not know the mechanism. One passing re-run cannot
+distinguish "the fix cured it" from "Gemini's schema-less JSON mode is nondeterministic". If you
+rely on `json-object` on Gemini, treat it as unproven and prefer `mode: 'schema'`, which is
+green and constrained.
+
 ## Still not in scope, per your own exclusions
 
 Repair (the `jsonResponse` boundary stays — and note that with `'json-mode'` or better the

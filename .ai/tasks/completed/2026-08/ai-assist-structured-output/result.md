@@ -145,6 +145,57 @@ nothing in `model.ts`, so they became `structuredOutputTypes.ts` — but the hon
 that **the sweep belongs at the start of every stream, not once**, since a stream that adds
 types to a shared model file will consume more headroom than a `wc -l` snapshot suggests.
 
+## The live run — the gate that actually settles it
+
+Four testbed scenarios (`<provider>-structured-output`) were written for this and run by the
+maintainer against the real APIs, 2026-08-22. **Every schema path passed on every provider.**
+
+| provider | route / mode | result |
+|---|---|---|
+| OpenAI | `/chat/completions` — `response_format` schema | ✅ |
+| OpenAI | `/responses` — `text.format` schema | ✅ |
+| OpenAI | `json-object` | ✅ *(after the probe fix below)* |
+| Gemini | `generationConfig.responseSchema` | ✅ |
+| Gemini | `json-object` | ✅ *(after the parts fix below)* |
+| Anthropic | `tool-forced` | ✅ |
+| xAI | both routes, schema | ✅ |
+
+Two are worth naming. **The OpenAI `/responses` pass is the live confirmation of the
+route-coercion fix** — it establishes `text.format` as the right field for that endpoint, which
+no unit test could tell us, because a wrong field name there is accepted and ignored.
+**The Anthropic pass confirms the forced-tool round trip**, the highest-risk shape in the
+feature, including re-serializing `tool_use.input` back into `content`.
+
+### The probe was wrong before the library was
+
+The first OpenAI run failed `json-object`, and the failure was the **probe's**. That mode
+promises syntactic validity and **arbitrary shape**; the probe was demanding conformance to
+`PROBE_SCHEMA`. The model added the field the (deliberately hostile) prompt asked for — which
+nothing in that mode forbids — while the reply came back **unfenced** despite the prompt asking
+for a code fence, i.e. the guarantee working exactly as documented. The assertion now follows
+the mode. Also from that run: a **hang**, with no output and no way to tell slow from wedged.
+Probes now carry an `AbortSignal.timeout`; a probe that can hang is not a gate.
+
+### What the Gemini run found, and a correction to this document's own prediction
+
+Gemini's `json-object` probe first failed on a **malformed** reply — a complete object followed
+by a stray `}`. Investigating surfaced a **pre-existing library defect unrelated to this
+stream**: `callGeminiCompletion` read `candidate.content.parts[0].text` and silently discarded
+every other part, while the streaming adapter has always concatenated. The same response
+therefore yielded different text depending on which path a caller used, and the failure mode is
+the bad kind — a truncated document that often still *parses*, so a consumer gets a plausible
+wrong answer rather than an error. Fixed, with a test that splits a JSON value across three
+parts and fails as `{"city":"Paris"` against the old code.
+
+**The correction.** An earlier draft of this file, and the message sent to the maintainer, both
+predicted the parts fix would **not** change the Gemini outcome — reasoning that a stray *extra*
+brace is more content, which dropping parts cannot produce. The re-run passed. The prediction
+was wrong and **the mechanism is not established**: one passing re-run cannot distinguish "the
+fix cured it" from "Gemini's schema-less JSON mode is nondeterministic and this draw was clean",
+and the second is not obviously less likely. **Do not write this up as "the parts fix cured the
+Gemini malformation."** If schema-less JSON mode proves flaky under repetition, that belongs in
+the capability docs, because it bears on choosing between the two modes.
+
 ## Gates
 
 - [x] `rushx build` / `lint` / `test` at **100%** coverage in `@fgv/ts-extras` — **2733 tests**
@@ -155,8 +206,4 @@ types to a shared model file will consume more headroom than a `wc -l` snapshot 
 - [x] A test proving the reported enforcement matches what was sent, per mode; plus one proving
       an unresolved alias does not prefix-match a catch-all
 - [x] `code-reviewer` on the final diff; all findings resolved (3 P2, 4 P3), none dispositioned away
-- [ ] **Live testbed verification per provider.** Not run — no API keys in this environment.
-      The wire shapes are exactly the class of thing unit tests cannot confirm, and this
-      package's history says so explicitly. **This box stays open**: the four request bodies are
-      pinned by tests against the shapes as documented, which is evidence the code does what it
-      intends and *not* evidence the providers accept it.
+- [x] **Live testbed verification per provider — RUN, green on all four.** See § "The live run".

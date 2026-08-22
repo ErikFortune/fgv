@@ -153,7 +153,7 @@ export interface IProviderCompletionParams extends IChatRequest {
    * know up front which concrete model will serve the request (a `tier` request
    * cascades, and aliases resolve at call time), so it never has to: whatever was
    * actually enforced comes back on
-   * {@link AiAssist.IAiCompletionResponse.structuredOutput}.
+   * `IAiCompletionResponse.structuredOutput`.
    */
   readonly structuredOutput?: StructuredOutputRequest;
 }

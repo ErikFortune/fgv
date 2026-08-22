@@ -744,8 +744,6 @@ function isPathMutable(path: string, mutable: boolean | IFilterSpec | undefined)
 // @public
 function isPersistentAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IPersistentFileTreeAccessors<TCT>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
-//
 // @public
 function isSchemaValidator(value: unknown): value is ISchemaValidator<unknown>;
 

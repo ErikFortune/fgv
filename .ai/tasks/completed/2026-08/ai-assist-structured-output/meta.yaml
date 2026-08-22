@@ -4,9 +4,12 @@ packages:
   - '@fgv/ts-extras'
   - '@fgv/ts-json-base'
   - '@fgv/ts-app-shell'
-prs: [652]
-openPrs: []
+prs: []
+# #652 is OPEN at the time of writing, so it is deliberately NOT in `prs` — that
+# list asserts a merge. Move it across when it lands.
+openPrs: [652]
 opened: 2026-08-21
+closed: 2026-08-22
 summary:
   intended: >
     Let a caller that has already declared the shape it wants tell the PROVIDER,
@@ -49,6 +52,25 @@ summary:
     (the structured-output types depend on nothing in model.ts) rather than one
     chosen under pressure, but the lesson is that the sweep belongs at the START
     of every stream, not once.
+
+    (4) The live run added a fifth defect and one correction. The four testbed
+    scenarios this stream wrote surfaced a PRE-EXISTING library defect unrelated
+    to structured output: callGeminiCompletion read candidate.content.parts[0].text
+    and silently discarded every other part, while the streaming adapter has
+    always concatenated -- so the same Gemini response yielded different text
+    depending on the path. Bundled and fixed here because this stream's own
+    testbed found it and it sits in a function this stream already touches;
+    disclosed as a bundled latent-bug fix per CODE_REVIEW_CHECKLIST.
+    The correction: this stream PREDICTED that fix would not change the Gemini
+    json-object outcome (a stray EXTRA brace is more content, which dropping
+    parts cannot produce). The re-run passed. The prediction was wrong and the
+    mechanism is NOT established -- one passing re-run cannot distinguish "the
+    fix cured it" from "Gemini's schema-less JSON mode is nondeterministic and
+    this draw was clean". Recorded as an open question rather than a cure.
+    (5) The probe was wrong before the library was: the first live OpenAI run
+    failed json-object because the probe demanded schema conformance in a mode
+    that promises arbitrary shape. Fixed by making the assertion follow the mode.
+    The same run hung, so probes now carry an AbortSignal.timeout.
   sourceLine: >
     **Shipped:** a caller can now tell the provider what shape it wants --
     `structuredOutput: { mode: 'schema', schema }` carrying the same

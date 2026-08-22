@@ -366,8 +366,6 @@ const allProviderIds: ReadonlyArray<AiProviderId>;
 // @public
 const ALWAYS_STRIPPED_HEADERS: ReadonlyArray<string>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveStructuredOutput"
-//
 // @public
 const ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME: string;
 
@@ -1197,8 +1195,6 @@ interface IAiCompletionResponse {
     readonly truncated: boolean;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
-//
 // @public
 interface IAiEmbeddingModelCapability {
     readonly defaultDimensions?: number;
@@ -1273,8 +1269,6 @@ interface IAiImageGenerationResponse {
     readonly images: ReadonlyArray<IAiGeneratedImage>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
-//
 // @public
 interface IAiImageModelCapability {
     readonly acceptedQualities?: ReadonlyArray<string>;
@@ -1340,8 +1334,6 @@ interface IAiProviderDescriptor {
     readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     readonly streamingCorsRestricted: boolean;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
     readonly supportedTools: ReadonlyArray<AiServerToolType>;
     readonly thinkingMode: AiThinkingMode;
@@ -1410,8 +1402,6 @@ interface IAiStreamToolUseStart {
     readonly type: 'client-tool-call-start';
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
-//
 // @public
 interface IAiStructuredOutputCapability {
     readonly format: AiStructuredOutputFormat;
@@ -2135,7 +2125,6 @@ interface IProviderCompletionParams extends IChatRequest {
     readonly maxTokens?: number;
     readonly modelOverride?: ModelSpec;
     readonly signal?: AbortSignal;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly structuredOutput?: StructuredOutputRequest;
     readonly temperature?: number;
     readonly thinking?: IThinkingConfig;

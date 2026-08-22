@@ -20,7 +20,7 @@ import { toGeminiParameterSchema } from './toolFormats';
  * @remarks
  * Anthropic has no `response_format`; its structured-output mechanism is forced
  * tool use, so a tool must exist to be forced. The name is fgv-owned and never
- * reaches the caller — {@link resolveStructuredOutput} re-serializes the tool's
+ * reaches the caller — the structured-output resolver re-serializes the tool's
  * `input` back into `IAiCompletionResponse.content`, so a caller's converter sees
  * a JSON string exactly as it does on every other provider.
  * @public

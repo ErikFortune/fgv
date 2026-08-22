@@ -1167,8 +1167,8 @@ export interface IAiProviderDescriptor {
    * model can enforce nothing, and a request against it reports `'none'`.
    *
    * @remarks
-   * Same declaration idiom as {@link IAiProviderDescriptor.imageGeneration} and
-   * {@link IAiProviderDescriptor.embedding}, resolved through the same
+   * Same declaration idiom as `imageGeneration` and
+   * `embedding`, resolved through the same
    * alias-first helper — a capability lookup on an unresolved alias is the defect
    * `resolveImageCapability` once had, where a catch-all `modelPrefix: ''` turned
    * an unknown alias into a confidently wrong answer.
@@ -1219,7 +1219,7 @@ export interface IAiProviderDescriptor {
 
 /**
  * Image-generation capability for a model family within a provider. Used as
- * an entry in {@link IAiProviderDescriptor.imageGeneration}.
+ * an entry in `imageGeneration`.
  *
  * @public
  */
@@ -1264,7 +1264,7 @@ export interface IAiImageModelCapability {
 
 /**
  * Embedding capability for a model family within a provider. Used as an entry
- * in {@link IAiProviderDescriptor.embedding}.
+ * in `embedding`.
  *
  * @public
  */

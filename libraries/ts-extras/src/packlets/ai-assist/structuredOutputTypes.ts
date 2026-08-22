@@ -56,7 +56,7 @@ export type AiStructuredOutputFormat =
 
 /**
  * Structured-output capability for a model family within a provider. Used as an
- * entry in {@link IAiProviderDescriptor.structuredOutput}.
+ * entry in `IAiProviderDescriptor.structuredOutput`.
  *
  * @remarks
  * Deliberately thinner than its `imageGeneration` / `embedding` siblings: it
