@@ -38,6 +38,7 @@ import { JsonSchema } from '@fgv/ts-json-base';
 import { AiAssist } from '../../..';
 import {
   anthropicResponse,
+  anthropicWithToolsResponse,
   geminiResponse,
   makeDescriptor,
   mockFetchResponse,
@@ -169,7 +170,11 @@ describe('structured output', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
+        // OpenAI's json-object pre-flight (see section K below) requires the word
+        // "json" somewhere in the conversation, so the system prompt names it —
+        // this test is about the wire shape, not the pre-flight rule itself.
         ...testPrompt.toRequest(),
+        system: 'You are a helpful assistant. Respond with JSON only.',
         structuredOutput: { mode: 'json-object' }
       });
 
@@ -230,7 +235,11 @@ describe('structured output', () => {
       const result = await AiAssist.callProviderCompletion({
         descriptor,
         apiKey: 'test-key',
+        // OpenAI's json-object pre-flight (see section K below) requires the word
+        // "json" somewhere in the conversation, so the system prompt names it —
+        // this test is about the wire shape, not the pre-flight rule itself.
         ...testPrompt.toRequest(),
+        system: 'You are a helpful assistant. Respond with JSON only.',
         structuredOutput: { mode: 'json-object' }
       });
 
@@ -893,6 +902,441 @@ describe('structured output', () => {
         expect(r.content).toBe('plain text');
       });
       expect('structuredOutput' in lastRequestBody()).toBe(false);
+    });
+  });
+
+  // ==========================================================================
+  // I. OpenAI strict mode rejects schemas with optional properties
+  // ==========================================================================
+  //
+  // `JsonSchema.optional(...)` emits a property absent from `required`. OpenAI's
+  // `strict: true` requires EVERY property in `required`, so such a schema is a
+  // hard 400 on both OpenAI wire formats. This is a capability mismatch routed
+  // through `onUnsupported`, not relocated into an opaque provider error.
+
+  describe('OpenAI strict mode: schemas with optional properties', () => {
+    const chatDescriptor = makeDescriptor({
+      id: 'openai',
+      apiFormat: 'openai',
+      baseUrl: 'https://api.openai.com/v1',
+      defaultModel: 'gpt-5.6-luna',
+      structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }]
+    });
+
+    test('Chat Completions: degrades to "none" by default, sending no response_format', async () => {
+      mockFetchResponse(openAiResponse('plain text'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: chatDescriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: optionalPropSchema }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('none');
+      });
+      expect('response_format' in lastRequestBody()).toBe(false);
+    });
+
+    test('Chat Completions: onUnsupported: "fail" fails, naming the strict requirement', async () => {
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: chatDescriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: optionalPropSchema, onUnsupported: 'fail' }
+      });
+
+      expect(result).toFailWith(
+        /optional properties[\s\S]*strict structured output requires every property to be required/i
+      );
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('Responses API route: the SAME rule applies — degrades to "none" by default, no text.format', async () => {
+      const descriptor = makeDescriptor({
+        id: 'openai',
+        apiFormat: 'openai',
+        baseUrl: 'https://api.openai.com/v1',
+        defaultModel: 'gpt-5.6-luna',
+        supportedTools: ['web_search'],
+        structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }]
+      });
+      mockFetchResponse(responsesApiResponse('plain text'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools: [{ type: 'web_search' }],
+        structuredOutput: { mode: 'schema', schema: optionalPropSchema }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('none');
+      });
+      expect(lastRequestUrl()).toBe('https://api.openai.com/v1/responses');
+      expect('text' in lastRequestBody()).toBe(false);
+    });
+
+    test('Responses API route: the SAME rule applies — onUnsupported: "fail" fails, naming the strict requirement', async () => {
+      const descriptor = makeDescriptor({
+        id: 'openai',
+        apiFormat: 'openai',
+        baseUrl: 'https://api.openai.com/v1',
+        defaultModel: 'gpt-5.6-luna',
+        supportedTools: ['web_search'],
+        structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }]
+      });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools: [{ type: 'web_search' }],
+        structuredOutput: { mode: 'schema', schema: optionalPropSchema, onUnsupported: 'fail' }
+      });
+
+      expect(result).toFailWith(
+        /optional properties[\s\S]*strict structured output requires every property to be required/i
+      );
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('a fully-required schema is unaffected: still sends response_format and reports "schema"', async () => {
+      mockFetchResponse(openAiResponse('{"foo":"bar"}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: chatDescriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: fooSchema }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('schema');
+      });
+      expect(lastRequestBody().response_format).toEqual({
+        type: 'json_schema',
+        json_schema: { name: 'response', strict: true, schema: fooSchema.toJson() }
+      });
+    });
+
+    test('Gemini is unaffected: an optional-property schema still sends responseSchema and reports "schema"', async () => {
+      const descriptor = makeDescriptor({
+        id: 'google-gemini',
+        apiFormat: 'gemini',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        defaultModel: 'gemini-3.5-flash',
+        structuredOutput: [{ modelPrefix: '', format: 'gemini-response-schema' }]
+      });
+      mockFetchResponse(geminiResponse('{"a":"x"}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: optionalPropSchema }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('schema');
+      });
+      const generationConfig = lastRequestBody().generationConfig as Record<string, unknown>;
+      expect(generationConfig.responseSchema).toBeDefined();
+    });
+
+    test('Anthropic is unaffected: an optional-property schema still forces the tool and reports "tool-forced"', async () => {
+      const descriptor = makeDescriptor({
+        id: 'anthropic',
+        apiFormat: 'anthropic',
+        baseUrl: 'https://api.anthropic.com/v1',
+        defaultModel: 'claude-sonnet-5',
+        structuredOutput: [{ modelPrefix: '', format: 'anthropic-tool-forced' }]
+      });
+      mockFetchResponse(anthropicToolForcedResponse({ a: 'x' }));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: optionalPropSchema }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('tool-forced');
+      });
+      const tools = lastRequestBody().tools as ReadonlyArray<Record<string, unknown>>;
+      expect(tools[0].input_schema).toEqual(optionalPropSchema.toJson());
+    });
+
+    test('the check is recursive: an optional property nested INSIDE another object is caught', async () => {
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: chatDescriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: nestedOptionalSchema, onUnsupported: 'fail' }
+      });
+
+      expect(result).toFailWith(/optional properties/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('the check is recursive: an optional property nested inside an ARRAY ITEM schema is caught', async () => {
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: chatDescriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: arrayItemOptionalSchema, onUnsupported: 'fail' }
+      });
+
+      expect(result).toFailWith(/optional properties/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
+
+  // ==========================================================================
+  // J. Server-tools conflict keys off the RESOLVED wire, not the declared format
+  // ==========================================================================
+  //
+  // Anthropic + json-object has no expression on the wire (the forced-tool
+  // mechanism needs a schema to force a tool to), so the request degrades to
+  // sending nothing — and there is no tools-channel conflict to reject. Gemini
+  // CAN express json-object (`responseMimeType` alone), so its conflict is real.
+
+  describe('server-tools conflict resolved against the wire, not the declared format', () => {
+    test('Anthropic + json-object + server tools: degrades to "none" (regression fix — the wire is empty, so there is nothing to conflict with)', async () => {
+      const descriptor = makeDescriptor({
+        id: 'anthropic',
+        apiFormat: 'anthropic',
+        baseUrl: 'https://api.anthropic.com/v1',
+        defaultModel: 'claude-sonnet-5',
+        supportedTools: ['web_search'],
+        structuredOutput: [{ modelPrefix: '', format: 'anthropic-tool-forced' }]
+      });
+      mockFetchResponse(anthropicWithToolsResponse('a plain-text answer'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools: [{ type: 'web_search' }],
+        structuredOutput: { mode: 'json-object' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('none');
+      });
+      const body = lastRequestBody();
+      // `tools` carries the CALLER's server tool, never clobbered by an empty
+      // structured-output wire.
+      expect((body.tools as ReadonlyArray<Record<string, unknown>>)[0].name).toBe('web_search');
+      expect('tool_choice' in body).toBe(false);
+    });
+
+    test('Anthropic + json-object + server tools + onUnsupported: "fail": fails on enforceability, NOT on a tools conflict', async () => {
+      const descriptor = makeDescriptor({
+        id: 'anthropic',
+        apiFormat: 'anthropic',
+        baseUrl: 'https://api.anthropic.com/v1',
+        defaultModel: 'claude-sonnet-5',
+        supportedTools: ['web_search'],
+        structuredOutput: [{ modelPrefix: '', format: 'anthropic-tool-forced' }]
+      });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools: [{ type: 'web_search' }],
+        structuredOutput: { mode: 'json-object', onUnsupported: 'fail' }
+      });
+
+      expect(result).toFailWith(/cannot enforce 'json-object'/i);
+      if (result.isFailure()) {
+        expect(result.message).not.toMatch(/server-side tools/i);
+      }
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('Gemini + json-object + server tools: still fails — Gemini CAN express json-object, so the conflict is real (asymmetry with Anthropic)', async () => {
+      const descriptor = makeDescriptor({
+        id: 'google-gemini',
+        apiFormat: 'gemini',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        defaultModel: 'gemini-3.5-flash',
+        supportedTools: ['web_search'],
+        structuredOutput: [{ modelPrefix: '', format: 'gemini-response-schema' }]
+      });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools: [{ type: 'web_search' }],
+        structuredOutput: { mode: 'json-object', onUnsupported: 'degrade' }
+      });
+
+      expect(result).toFailWith(/cannot combine a response schema with server-side tools/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('OpenAI + schema + server tools: succeeds — no conflict on that format', async () => {
+      const descriptor = makeDescriptor({
+        id: 'openai',
+        apiFormat: 'openai',
+        baseUrl: 'https://api.openai.com/v1',
+        defaultModel: 'gpt-5.6-luna',
+        supportedTools: ['web_search'],
+        structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }]
+      });
+      mockFetchResponse(responsesApiResponse('{"foo":"bar"}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools: [{ type: 'web_search' }],
+        structuredOutput: { mode: 'schema', schema: fooSchema }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('schema');
+      });
+      expect(lastRequestUrl()).toBe('https://api.openai.com/v1/responses');
+      expect(lastRequestBody().text).toEqual({
+        format: { type: 'json_schema', name: 'response', strict: true, schema: fooSchema.toJson() }
+      });
+    });
+  });
+
+  // ==========================================================================
+  // K. OpenAI json-object mode requires "json" somewhere in the conversation
+  // ==========================================================================
+  //
+  // OpenAI 400s on `response_format: { type: 'json_object' }` unless a message
+  // mentions JSON. `callProviderCompletion` pre-empts this with a named failure
+  // before the wire call, the same treatment the Gemini grounding-plus-tools
+  // conflict already gets.
+
+  describe('OpenAI json-object mode pre-flight: requires the word "json"', () => {
+    const descriptor = makeDescriptor({
+      id: 'openai',
+      apiFormat: 'openai',
+      baseUrl: 'https://api.openai.com/v1',
+      defaultModel: 'gpt-5.6-luna',
+      structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }]
+    });
+
+    test('fails, naming the requirement, when no message mentions json anywhere — and makes no wire call', async () => {
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'json-object' }
+      });
+
+      expect(result).toFailWith(/json/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('the word in the system prompt satisfies the requirement', async () => {
+      mockFetchResponse(openAiResponse('{"anything":true}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        system: 'Respond using json only.',
+        messages: [{ role: 'user', content: 'Generate a recipe' }],
+        structuredOutput: { mode: 'json-object' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('json-mode');
+      });
+    });
+
+    test('the word in a message satisfies the requirement', async () => {
+      mockFetchResponse(openAiResponse('{"anything":true}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        messages: [{ role: 'user', content: 'Generate a recipe and reply with json.' }],
+        structuredOutput: { mode: 'json-object' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('json-mode');
+      });
+    });
+
+    test('the check is case-insensitive: uppercase JSON in the system prompt satisfies it', async () => {
+      mockFetchResponse(openAiResponse('{"anything":true}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        system: 'Respond using JSON only.',
+        messages: [{ role: 'user', content: 'Generate a recipe' }],
+        structuredOutput: { mode: 'json-object' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('json-mode');
+      });
+    });
+
+    test('the check is case-insensitive: mixed-case Json in a message satisfies it', async () => {
+      mockFetchResponse(openAiResponse('{"anything":true}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        messages: [{ role: 'user', content: 'Reply with Json please.' }],
+        structuredOutput: { mode: 'json-object' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('json-mode');
+      });
+    });
+
+    test('Gemini has no such rule: succeeds with no mention of json anywhere', async () => {
+      const geminiDescriptor = makeDescriptor({
+        id: 'google-gemini',
+        apiFormat: 'gemini',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        defaultModel: 'gemini-3.5-flash',
+        structuredOutput: [{ modelPrefix: '', format: 'gemini-response-schema' }]
+      });
+      mockFetchResponse(geminiResponse('{"anything":true}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: geminiDescriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'json-object' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('json-mode');
+      });
+    });
+
+    test('OpenAI + schema mode is unaffected: succeeds with no mention of json anywhere (the rule is json-object only)', async () => {
+      mockFetchResponse(openAiResponse('{"foo":"bar"}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: fooSchema }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('schema');
+      });
     });
   });
 });
