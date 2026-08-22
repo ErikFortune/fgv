@@ -152,17 +152,17 @@ describe('structured output', () => {
     test('OpenAI Responses API + schema nests the constraint under text.format', async () => {
       // gpt-5.5-pro is Responses-only, so it routes through /responses even with
       // no tools requested — the same path a `responsesOnlyModelPrefixes` entry
-      // always takes.
+      // always takes. The descriptor declares only the single `openai-json-schema`
+      // capability (matching the shipped registry shape) — the Responses-API wire
+      // shape is reached via `effectiveFormat`'s route-based coercion, not via a
+      // second declared capability entry.
       const descriptor = makeDescriptor({
         id: 'openai',
         apiFormat: 'openai',
         baseUrl: 'https://api.openai.com/v1',
         defaultModel: 'gpt-5.5-pro',
         responsesOnlyModelPrefixes: ['gpt-5.5-pro'],
-        structuredOutput: [
-          { modelPrefix: 'gpt-5.5-pro', format: 'openai-responses-format' },
-          { modelPrefix: '', format: 'openai-json-schema' }
-        ]
+        structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }]
       });
       mockFetchResponse(responsesApiResponse('{"foo":"bar"}'));
 
@@ -193,10 +193,7 @@ describe('structured output', () => {
         baseUrl: 'https://api.openai.com/v1',
         defaultModel: 'gpt-5.5-pro',
         responsesOnlyModelPrefixes: ['gpt-5.5-pro'],
-        structuredOutput: [
-          { modelPrefix: 'gpt-5.5-pro', format: 'openai-responses-format' },
-          { modelPrefix: '', format: 'openai-json-schema' }
-        ]
+        structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }]
       });
       mockFetchResponse(responsesApiResponse('{"anything":true}'));
 
@@ -213,6 +210,61 @@ describe('structured output', () => {
       const body = lastRequestBody();
       expect(body.response_format).toBeUndefined();
       expect(body.text).toEqual({ format: { type: 'json_object' } });
+    });
+
+    test('the SAME OpenAI model spells the constraint differently depending on the route', async () => {
+      // Regression pin for `effectiveFormat`'s route-based coercion: the OpenAI
+      // wire shape is NOT a function of the model alone. The same model takes
+      // /chat/completions when the call carries no tools and /responses when it
+      // does, and those two endpoints spell structured output differently
+      // (`response_format` vs `text.format`). A single declared capability
+      // (`openai-json-schema`) must resolve to the right one on each call.
+      const descriptor = makeDescriptor({
+        id: 'openai',
+        apiFormat: 'openai',
+        baseUrl: 'https://api.openai.com/v1',
+        defaultModel: 'gpt-5.6-luna',
+        supportedTools: ['web_search'],
+        structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }]
+      });
+
+      // Call 1: no tools — routes to /chat/completions.
+      mockFetchResponse(openAiResponse('{"foo":"bar"}'));
+      const withoutTools = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: fooSchema }
+      });
+      expect(withoutTools).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('schema');
+      });
+      expect(lastRequestUrl()).toBe('https://api.openai.com/v1/chat/completions');
+      const chatBody = lastRequestBody();
+      expect(chatBody.response_format).toEqual({
+        type: 'json_schema',
+        json_schema: { name: 'response', strict: true, schema: fooSchema.toJson() }
+      });
+      expect('text' in chatBody).toBe(false);
+
+      // Call 2: SAME model, WITH tools — routes to /responses.
+      mockFetchResponse(responsesApiResponse('{"foo":"bar"}'));
+      const withTools = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools: [{ type: 'web_search' }],
+        structuredOutput: { mode: 'schema', schema: fooSchema }
+      });
+      expect(withTools).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('schema');
+      });
+      expect(lastRequestUrl()).toBe('https://api.openai.com/v1/responses');
+      const responsesBody = lastRequestBody();
+      expect(responsesBody.response_format).toBeUndefined();
+      expect(responsesBody.text).toEqual({
+        format: { type: 'json_schema', name: 'response', strict: true, schema: fooSchema.toJson() }
+      });
     });
 
     test('Gemini + schema sets responseMimeType and a SANITIZED responseSchema', async () => {
@@ -538,39 +590,44 @@ describe('structured output', () => {
   // ==========================================================================
 
   describe('alias resolution', () => {
+    // No shipped descriptor declares more than one `structuredOutput` entry any
+    // more (the OpenAI Chat-vs-Responses split moved into `effectiveFormat`'s
+    // route-based coercion — see the coercion test above) — so a hand-built
+    // descriptor with a specific-prefix entry plus a catch-all is what exercises
+    // the alias-vs-catch-all guard, mirroring the pattern already established for
+    // `resolveImageCapability` / `resolveEmbeddingCapability` in registry.test.ts.
     const descriptor = makeDescriptor({
       id: 'openai',
       apiFormat: 'openai',
-      baseUrl: 'https://api.openai.com/v1',
       defaultModel: 'gpt-5.6-luna',
       aliases: { '@openai:special': 'gpt-9-special' },
-      responsesOnlyModelPrefixes: ['gpt-9-special'],
       structuredOutput: [
-        { modelPrefix: 'gpt-9-special', format: 'openai-responses-format' },
+        { modelPrefix: 'gpt-9-special', format: 'anthropic-tool-forced' },
         { modelPrefix: '', format: 'openai-json-schema' }
       ]
     });
 
-    test('an @alias resolves to its concrete id and matches the specific entry, not the catch-all', async () => {
-      mockFetchResponse(responsesApiResponse('{"foo":"bar"}'));
-
-      const result = await AiAssist.callProviderCompletion({
-        descriptor,
-        apiKey: 'test-key',
-        ...testPrompt.toRequest(),
-        modelOverride: '@openai:special',
-        structuredOutput: { mode: 'schema', schema: fooSchema }
+    test('an @alias resolves to its concrete id and matches the specific entry, not the catch-all', () => {
+      expect(AiAssist.resolveStructuredOutputCapability(descriptor, '@openai:special')).toEqual({
+        modelPrefix: 'gpt-9-special',
+        format: 'anthropic-tool-forced'
       });
+    });
 
-      expect(result).toSucceed();
-      // If the alias had fallen through to the catch-all, the wire shape would be
-      // `response_format` on /chat/completions rather than `text.format` on
-      // /responses.
-      expect(lastRequestUrl()).toBe('https://api.openai.com/v1/responses');
-      const body = lastRequestBody();
-      expect(body.response_format).toBeUndefined();
-      expect(body.text).toEqual({
-        format: { type: 'json_schema', name: 'response', strict: true, schema: fooSchema.toJson() }
+    test('the alias and the concrete id it names resolve to the same capability', () => {
+      expect(AiAssist.resolveStructuredOutputCapability(descriptor, '@openai:special')).toEqual(
+        AiAssist.resolveStructuredOutputCapability(descriptor, 'gpt-9-special')
+      );
+    });
+
+    test('an unresolvable alias yields undefined rather than falling through to the catch-all', () => {
+      expect(AiAssist.resolveStructuredOutputCapability(descriptor, '@openai:no-such-role')).toBeUndefined();
+    });
+
+    test('a concrete id not matching the specific prefix falls through to the catch-all', () => {
+      expect(AiAssist.resolveStructuredOutputCapability(descriptor, 'gpt-5.6-luna')).toEqual({
+        modelPrefix: '',
+        format: 'openai-json-schema'
       });
     });
 
@@ -586,6 +643,35 @@ describe('structured output', () => {
       // resolveProviderModel (called before resolveStructuredOutput) is what fails.
       expect(result).toFailWith(/unknown model alias "@openai:no-such-role"/i);
       expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('end-to-end: an @alias resolving to a Responses-only model still coerces to text.format', async () => {
+      const responsesOnlyDescriptor = makeDescriptor({
+        id: 'openai',
+        apiFormat: 'openai',
+        baseUrl: 'https://api.openai.com/v1',
+        defaultModel: 'gpt-5.6-luna',
+        aliases: { '@openai:special': 'gpt-9-special' },
+        responsesOnlyModelPrefixes: ['gpt-9-special'],
+        structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }]
+      });
+      mockFetchResponse(responsesApiResponse('{"foo":"bar"}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: responsesOnlyDescriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        modelOverride: '@openai:special',
+        structuredOutput: { mode: 'schema', schema: fooSchema }
+      });
+
+      expect(result).toSucceed();
+      expect(lastRequestUrl()).toBe('https://api.openai.com/v1/responses');
+      const body = lastRequestBody();
+      expect(body.response_format).toBeUndefined();
+      expect(body.text).toEqual({
+        format: { type: 'json_schema', name: 'response', strict: true, schema: fooSchema.toJson() }
+      });
     });
   });
 
@@ -685,6 +771,20 @@ describe('structured output', () => {
 
       const body = lastRequestBody();
       expect(body.structuredOutput).toEqual({ mode: 'json-object' });
+    });
+
+    test('forwards a json-object mode request WITH an onUnsupported field when set', async () => {
+      mockFetchResponse({ content: '{"anything":true}', structuredOutput: 'json-mode' });
+
+      await AiAssist.callProxiedCompletion('http://localhost:3001', {
+        descriptor: makeDescriptor(),
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'json-object', onUnsupported: 'fail' }
+      });
+
+      const body = lastRequestBody();
+      expect(body.structuredOutput).toEqual({ mode: 'json-object', onUnsupported: 'fail' });
     });
 
     test('passes through a proxy response that reports the enforcement it applied', async () => {

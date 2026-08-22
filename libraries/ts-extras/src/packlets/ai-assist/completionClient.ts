@@ -458,9 +458,22 @@ function extractAnthropicStructuredOutput(content: unknown[]): Result<string> {
     if (typeof block === 'object' && block !== null && 'type' in block) {
       const typed = block as Record<string, unknown>;
       if (typed.type === 'tool_use' && typed.name === ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME) {
-        return captureResult(() => JSON.stringify(typed.input)).withErrorFormat(
-          (msg) => `Anthropic API response: structured output could not be serialized: ${msg}`
-        );
+        // `JSON.stringify` returns `undefined` — not a string, and not a throw —
+        // for `undefined` and for a function or symbol. `captureResult` would wrap
+        // that as a Success, putting `undefined` behind a `content: string`
+        // contract with nothing to catch it downstream. A `tool_use` block with no
+        // `input` is exactly that case.
+        return captureResult(() => JSON.stringify(typed.input))
+          .withErrorFormat(
+            (msg) => `Anthropic API response: structured output could not be serialized: ${msg}`
+          )
+          .onSuccess((json) =>
+            typeof json === 'string'
+              ? succeed(json)
+              : fail(
+                  `Anthropic API response: forced tool '${ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME}' returned no serializable input`
+                )
+          );
       }
     }
   }
