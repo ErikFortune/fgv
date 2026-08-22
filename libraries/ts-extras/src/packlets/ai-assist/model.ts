@@ -1162,6 +1162,23 @@ export interface IAiProviderDescriptor {
    */
   readonly embedding?: ReadonlyArray<IAiEmbeddingModelCapability>;
   /**
+   * Per-model-family structured-output capability, longest-prefix matched against
+   * the **resolved** completion model id. Absent (or no matching entry) means the
+   * model can enforce nothing, and a request against it reports `'none'`.
+   *
+   * @remarks
+   * Same declaration idiom as {@link IAiProviderDescriptor.imageGeneration} and
+   * {@link IAiProviderDescriptor.embedding}, resolved through the same
+   * alias-first helper — a capability lookup on an unresolved alias is the defect
+   * `resolveImageCapability` once had, where a catch-all `modelPrefix: ''` turned
+   * an unknown alias into a confidently wrong answer.
+   *
+   * Note this declares which wire format a model *family* supports, not which
+   * OpenAI endpoint a given call will take — that also depends on whether the
+   * call carries server tools, so the dispatcher supplies it.
+   */
+  readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
+  /**
    * Concrete model ids (prefix-matched) that must be invoked via the OpenAI
    * Responses API rather than chat completions — e.g. `gpt-5.5-pro`. Non-OpenAI
    * `apiFormat`s ignore this.
@@ -1176,19 +1193,6 @@ export interface IAiProviderDescriptor {
    * line is a one-entry descriptor edit. Empty or undefined means no model is
    * Responses-only.
    */
-  /**
-   * Per-model-family structured-output capability, longest-prefix matched against
-   * the **resolved** completion model id. Absent (or no matching entry) means the
-   * model can enforce nothing, and a request against it reports `'none'`.
-   *
-   * @remarks
-   * Same declaration idiom as {@link IAiProviderDescriptor.imageGeneration} and
-   * {@link IAiProviderDescriptor.embedding}, resolved through the same
-   * alias-first helper — a capability lookup on an unresolved alias is the defect
-   * `resolveImageCapability` once had, where a catch-all `modelPrefix: ''` turned
-   * an unknown alias into a confidently wrong answer.
-   */
-  readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
   readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
   /**
    * Concrete Anthropic model ids (exact-or-dash-bounded-prefix-matched) that require the

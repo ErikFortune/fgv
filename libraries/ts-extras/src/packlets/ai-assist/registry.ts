@@ -460,28 +460,6 @@ export function supportsEmbedding(descriptor: IAiProviderDescriptor): boolean {
 }
 
 /**
- * Resolve the embedding capability that applies to a given model id for a
- * provider. Returns the entry from {@link IAiProviderDescriptor.embedding} whose
- * `modelPrefix` is the longest prefix of `modelId`. Ties are broken by
- * first-encountered.
- *
- * @remarks
- * `modelId` may be either a concrete provider model id or an fgv model alias
- * (`@<provider>:<role>`, see `MODEL_ALIAS_SIGIL`) — it is resolved via
- * `resolveModelAlias` against `descriptor.aliases` before prefix matching,
- * so both forms select the same capability. A raw provider id passes through
- * unchanged. An alias that is not registered on `descriptor` (or is cyclic)
- * names no model and yields `undefined` rather than falling through to the
- * `modelPrefix: ''` catch-all.
- *
- * @param descriptor - The provider descriptor
- * @param modelId - The embedding model id — concrete or an fgv alias
- * @returns The matching capability, or `undefined` when no rule matches, the
- *   provider declares no embedding capabilities, or `modelId` is an
- *   unresolvable alias.
- * @public
- */
-/**
  * The structured-output capability for `modelId` under `descriptor`, or
  * `undefined` when the model can enforce nothing.
  *
@@ -510,16 +488,25 @@ export function supportsStructuredOutput(descriptor: IAiProviderDescriptor): boo
 }
 
 /**
- * The embedding capability for `modelId` under `descriptor`, or `undefined` when
- * the provider declares none for it.
+ * Resolve the embedding capability that applies to a given model id for a
+ * provider. Returns the entry from {@link IAiProviderDescriptor.embedding} whose
+ * `modelPrefix` is the longest prefix of `modelId`. Ties are broken by
+ * first-encountered.
  *
  * @remarks
- * Alias-first: an `@provider:role` alias is resolved to its concrete id before
- * prefix matching, and an unresolvable alias returns `undefined` rather than
- * matching a catch-all `modelPrefix: ''`.
+ * `modelId` may be either a concrete provider model id or an fgv model alias
+ * (`@<provider>:<role>`, see `MODEL_ALIAS_SIGIL`) — it is resolved via
+ * `resolveModelAlias` against `descriptor.aliases` before prefix matching,
+ * so both forms select the same capability. A raw provider id passes through
+ * unchanged. An alias that is not registered on `descriptor` (or is cyclic)
+ * names no model and yields `undefined` rather than falling through to the
+ * `modelPrefix: ''` catch-all.
  *
- * @param descriptor - The provider descriptor.
- * @param modelId - A concrete model id or an `@provider:role` alias.
+ * @param descriptor - The provider descriptor
+ * @param modelId - The embedding model id — concrete or an fgv alias
+ * @returns The matching capability, or `undefined` when no rule matches, the
+ *   provider declares no embedding capabilities, or `modelId` is an
+ *   unresolvable alias.
  * @public
  */
 export function resolveEmbeddingCapability(

@@ -112,6 +112,20 @@ describe('JsonSchema phantom types', () => {
       expect(JsonSchema.isSchemaValidator(Converters.object({ x: Converters.string }))).toBe(false);
     });
 
+    test('rejects a prototype-chain key masquerading as a node type', () => {
+      // The membership check is an indexed read compared to `true`, not `in` —
+      // `in` walks the prototype chain, so these would otherwise pass.
+      for (const stolen of ['constructor', 'toString', 'hasOwnProperty', 'valueOf']) {
+        expect(
+          JsonSchema.isSchemaValidator({
+            _type: stolen,
+            toJson: () => ({}),
+            validate: () => undefined
+          })
+        ).toBe(false);
+      }
+    });
+
     test('rejects non-objects', () => {
       for (const value of [undefined, null, 'object', 42, true, Symbol('s')]) {
         expect(JsonSchema.isSchemaValidator(value)).toBe(false);

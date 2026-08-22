@@ -217,10 +217,21 @@ export function resolveStructuredOutput(
       : succeed(NO_STRUCTURED_OUTPUT);
   }
 
-  // Two formats express structured output THROUGH the tools channel, so a request
-  // that also carries server-side tools is asking for two incompatible things.
-  // Not degradable: silently dropping either half would give the caller something
-  // they did not ask for, and `onUnsupported` speaks to capability, not conflict.
+  // Two formats cannot carry structured output and server-side tools at once, for
+  // DIFFERENT reasons — worth separating, because a reader who assumes one
+  // mechanism will reason wrongly about the other.
+  //
+  //   anthropic-tool-forced: a wire-level clash. The constraint IS `tools` +
+  //     `tool_choice`, so server tools would be overwritten (and `tool_choice`
+  //     forces ours, which disables theirs anyway).
+  //   gemini-response-schema: NOT a wire clash — `responseMimeType` /
+  //     `responseSchema` live in `generationConfig`, nowhere near `tools`. It is
+  //     an API-level mutual exclusivity Gemini enforces, the same restriction the
+  //     client-tool path already pre-empts.
+  //
+  // Neither is degradable: silently dropping either half would give the caller
+  // something they did not ask for, and `onUnsupported` speaks to what a model can
+  // enforce, not to a caller asking for two incompatible things.
   if (serverTools !== undefined && serverTools.length > 0) {
     if (capability.format === 'anthropic-tool-forced') {
       return fail(

@@ -529,9 +529,23 @@ async function callAnthropicCompletion(
     Object.assign(body, resolvedThinking.otherParams);
   }
 
-  // The structured-output wire carries `tools` + `tool_choice` of its own, and
-  // resolveStructuredOutput already refused the combination with server tools, so
-  // the two assignments below can never both run.
+  // The structured-output wire carries `tools` + `tool_choice` of its own, so the
+  // server-tool assignment below would clobber it. `resolveStructuredOutput`
+  // refuses that combination up front, which is what makes the two mutually
+  // exclusive — but that is an invariant held in a DIFFERENT FILE, and a future
+  // second Anthropic capability entry (or a relaxed conflict guard) would
+  // reintroduce silent clobbering with nothing failing at this line. So assert it
+  // here rather than trusting a comment across a file boundary.
+  // Unreachable through the public API — resolveStructuredOutput refuses this
+  // combination before dispatch — and unreachable BY DESIGN: it cannot be
+  // exercised without first breaking the very thing it guards against.
+  /* c8 ignore next 6 - defensive: internal consistency check, see above */
+  if (structured.enforcement === 'tool-forced' && tools !== undefined && tools.length > 0) {
+    return fail(
+      `Anthropic completion: structured output and server-side tools both claim the tools channel; ` +
+        `this combination must be refused before reaching the adapter`
+    );
+  }
   Object.assign(body, structured.wire);
 
   if (tools && tools.length > 0) {

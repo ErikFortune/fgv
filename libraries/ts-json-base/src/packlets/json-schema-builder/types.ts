@@ -77,18 +77,28 @@ export interface ISchemaValidator<T> extends Validator<T> {
 
 /**
  * Every {@link SchemaNodeType}, for {@link isSchemaValidator}.
+ *
+ * @remarks
+ * A **total** `Record<SchemaNodeType, true>` rather than a `Set<SchemaNodeType>`,
+ * and the difference is which way it catches drift. A `Set` built from an array
+ * literal catches a *removed* or misspelled member (a compile error) but not an
+ * *added* one — an incomplete `SchemaNodeType[]` is still a valid
+ * `SchemaNodeType[]`, so a new schema kind would compile fine here and
+ * `isSchemaValidator` would silently start rejecting valid validators of that
+ * kind. A total `Record` makes the addition a compile error at this line, which
+ * is the direction the risk actually runs.
  * @internal
  */
-const SCHEMA_NODE_TYPES: ReadonlySet<string> = new Set<SchemaNodeType>([
-  'string',
-  'number',
-  'integer',
-  'boolean',
-  'enum',
-  'optional',
-  'array',
-  'object'
-]);
+const SCHEMA_NODE_TYPES: Readonly<Record<SchemaNodeType, true>> = {
+  string: true,
+  number: true,
+  integer: true,
+  boolean: true,
+  enum: true,
+  optional: true,
+  array: true,
+  object: true
+};
 
 /**
  * Whether `value` is an {@link ISchemaValidator} — i.e. a schema authored with the
@@ -117,7 +127,9 @@ export function isSchemaValidator(value: unknown): value is ISchemaValidator<unk
   const candidate: Record<string, unknown> = value as Record<string, unknown>;
   return (
     typeof candidate._type === 'string' &&
-    SCHEMA_NODE_TYPES.has(candidate._type) &&
+    // An indexed read compared to `true`, NOT `in` — `in` walks the prototype
+    // chain, so `_type: 'constructor'` or `'toString'` would pass it.
+    SCHEMA_NODE_TYPES[candidate._type as SchemaNodeType] === true &&
     typeof candidate.toJson === 'function' &&
     typeof candidate.validate === 'function'
   );

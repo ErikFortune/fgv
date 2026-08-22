@@ -280,3 +280,18 @@ There is deliberately **no new parameter**, which would have reintroduced exactl
 converter/schema drift `JsonSchema` exists to remove. A plain `Converter` carries no
 schema, so nothing is sent, the report reads `'none'`, and existing callers are
 byte-for-byte unchanged.
+
+### Not in scope
+
+`structuredOutput` is wired into `callProviderCompletion`, `callProxiedCompletion`
+and `generateJsonCompletion` only. **The streaming paths do not support it** —
+`callProviderCompletionStream`, the streaming adapters, and `executeClientToolTurn`
+ignore it, and `IAiStreamDone` carries no enforcement report.
+
+That is a decision, not an oversight, and worth stating because the neighbouring
+request surface (`tools`, `thinking`, `maxTokens`) *is* shared across both paths, so
+parity is the reasonable expectation. Streaming structured output is a different
+problem: the providers impose their own constraints on combining it with incremental
+delivery, and a per-chunk report has no obvious meaning. Also out: repair (the
+`jsonResponse` boundary stays — with `'json-mode'` or better the syntactic-repair
+question stops arising), injectable validation, and retry inside the client.

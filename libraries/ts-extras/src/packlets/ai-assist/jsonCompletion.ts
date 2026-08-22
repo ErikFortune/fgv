@@ -149,9 +149,19 @@ export async function generateJsonCompletion<T>(
   // schema, so nothing is sent and the report reads 'none': existing callers are
   // byte-for-byte unaffected. Deliberately NOT a new parameter, which would
   // reintroduce exactly the converter/schema drift `JsonSchema` exists to remove.
+  //
+  // The inference is gated on `jsonConverter === undefined` for that same reason.
+  // `pipeline` above prefers `jsonConverter` and ignores `converter` entirely when
+  // both are supplied, so inferring from `converter` regardless would constrain the
+  // REQUEST to a schema that has nothing to do with what validates the REPLY —
+  // reintroducing the exact drift this design exists to remove, in the one place
+  // two validation paths coexist. A caller who wants a constraint alongside a
+  // `jsonConverter` states it explicitly via `structuredOutput`.
   const inferred: StructuredOutputRequest | undefined =
     structuredOutput ??
-    (JsonSchema.isSchemaValidator(converter) ? { mode: 'schema', schema: converter } : undefined);
+    (jsonConverter === undefined && JsonSchema.isSchemaValidator(converter)
+      ? { mode: 'schema', schema: converter }
+      : undefined);
 
   const response = await callProviderCompletion({
     ...rest,
