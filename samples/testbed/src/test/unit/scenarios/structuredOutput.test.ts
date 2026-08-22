@@ -222,7 +222,7 @@ describe('structured-output scenarios', () => {
   const scenariosById: ReadonlyArray<[string, IScenario, string]> = [
     ['openai-structured-output', openaiStructuredOutputScenario, 'OPENAI_API_KEY'],
     ['anthropic-structured-output', anthropicStructuredOutputScenario, 'ANTHROPIC_API_KEY'],
-    ['google-gemini-structured-output', geminiStructuredOutputScenario, 'GOOGLE_GEMINI_API_KEY'],
+    ['google-gemini-structured-output', geminiStructuredOutputScenario, 'GEMINI_API_KEY'],
     ['xai-grok-structured-output', xaiStructuredOutputScenario, 'XAI_API_KEY']
   ];
 

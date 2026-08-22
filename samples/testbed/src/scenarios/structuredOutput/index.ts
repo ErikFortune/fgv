@@ -187,12 +187,12 @@ export const geminiStructuredOutputScenario: IScenario = makeStructuredScenario(
   description:
     'Live-verifies Gemini structured output via generationConfig.responseSchema — the path that ' +
     'depends on the draft-07 sanitizer, since Gemini REJECTS the keywords JsonSchema emits by ' +
-    'default rather than ignoring them. Requires GOOGLE_GEMINI_API_KEY. Web-runnable.',
+    'default rather than ignoring them. Requires GEMINI_API_KEY. Web-runnable.',
   tags: ['gemini'],
   requiredSecrets: [
     {
       id: AiAssist.providerApiKeySecretName('google-gemini'),
-      envVarName: 'GOOGLE_GEMINI_API_KEY',
+      envVarName: 'GEMINI_API_KEY',
       description: 'Gemini API key for the live structured-output probe'
     }
   ],
