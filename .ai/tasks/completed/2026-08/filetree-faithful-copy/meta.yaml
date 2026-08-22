@@ -1,0 +1,88 @@
+id: filetree-faithful-copy
+status: in-flight # #653 is OPEN; flip to `shipped` on merge
+packages:
+  - '@fgv/ts-json-base'
+prs: [653]
+openPrs: [653]
+opened: 2026-08-22
+summary:
+  intended: >
+    Close a PersonAIlity ask: the file-tree packlet has no copy helper, so every
+    consumer writes its own, and the obvious shape — getRawContents() then
+    createChildFile(name, contents) — is a text read feeding a text write. That
+    was lossless for their Markdown and JSON vault right up until a SQLite file
+    entered it, at which point snapshot-then-restore produced a mangled
+    database. Ship a capability-aware copy with one defined behaviour where the
+    destination cannot hold bytes, plus the byte-native directory create it
+    needs. One premise in the ask was misattributed and was corrected back to
+    them before implementation: the "narrows but does not promise success"
+    caveat belongs to the file-item guards, not the accessor guards, so their
+    four combinations were decidable up front already.
+  shipped: >
+    copyItemInto / copyContentsInto, with the guarantee that every file that
+    lands is byte-identical to its source or the copy says so — bytes carried
+    verbatim to a byte-native destination, carried as text to a text-persisting
+    one only after verifying the text re-encodes to exactly the source bytes,
+    and failed (default) or skipped otherwise. Plus the optional
+    IMutableBinaryFileTreeDirectoryItem capability — createChildFileBytes and
+    the total canCreateChildFileBytes accessor — added as a new interface and
+    guard rather than as required members, so nothing outside the packlet
+    changes on a package everything depends on. 29 tests at 100% coverage.
+  diverged: >
+    The design question the brief existed to answer (fail / skip / encode) was
+    settled by the consumer before implementation, and their argument was
+    stronger than the brief's: a loud failure catches a MODELLING error, not a
+    capability mismatch — the file that broke them was their derived record
+    index, reconstructible and already flagged as dead weight, which should
+    never have been in the snapshot set. That is why the failure names the path
+    and why 'skip' stays deliberately inconvenient.
+    What the brief did NOT anticipate, and the implementation found, is that a
+    strict UTF-8 decode is necessary but not sufficient: TextDecoder strips a
+    leading BOM and TextEncoder does not restore it, so a BOM-prefixed file
+    decodes without error and arrives three bytes shorter. The check is
+    therefore decode-re-encode-compare by construction rather than an argument
+    about which files are "just text".
+    Two draft decisions were reversed while building. A text-read fallback for
+    sources that cannot produce bytes was removed — it yields a file whose
+    faithfulness nothing established, the exact outcome the surface prevents —
+    so those are failures now, and the CopySkipReason union collapsed to a
+    single member and was dropped with it.
+    The consumer's own names (copyInto / copyChild) were not used: "into" reads
+    as contents-into for a directory source and as-a-child for a file source,
+    so the shipped pair disambiguates in the name.
+  sourceLine: >
+    **Shipped:** a capability-aware copy with a single guarantee — every file
+    that lands is byte-identical to its source, or the copy says so.
+keywords:
+  - byte-faithful copy
+  - strict decode is not sufficient
+  - BOM survives a decode but not a re-encode
+  - verify by construction, not by argument
+  - loud failure as diagnosis, not just honesty
+  - fail default, skip explicit-only
+  - optional capability interface over required widening
+  - capability accessor the item guard cannot promise
+  - no placeholder on a refused byte create
+  - report split by mechanism not outcome
+  - not atomic, names every offending path
+  - depth bound instead of an undetectable cycle
+  - remove the branch rather than cover it
+relatedStreams:
+  - id: personaility-asks-2026-08
+    relationship: >
+      origin; same consumer channel, and the note whose section 2 shipped as
+      ai-assist-structured-output carried this ask as section 1
+  - id: ai-assist-structured-output
+    relationship: >
+      sibling from the same consumer note; both turn a silent degradation into
+      something the caller can see, and both landed on a required-or-loud
+      answer over an optional one
+  - id: vector-rebuild-report-by-kind
+    relationship: >
+      precedent for the report shape — a coverage report exists to answer "is
+      this what I intended?", and a bare total cannot, so ICopyReport splits
+      bytes from text by mechanism
+  - id: sqlite-vec-statement-lifetime
+    relationship: >
+      precedent for refusing to answer as an empty/benign state rather than
+      failing; same reasoning behind fail-over-skip here

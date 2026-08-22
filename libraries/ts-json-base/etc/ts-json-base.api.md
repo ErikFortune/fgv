@@ -110,6 +110,30 @@ function convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options
 // @public
 function convertJsonFileSync<T, TC = unknown>(srcPath: string, converter: Converter<T, TC>): Result<T>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function copyContentsInto<TCT extends string = string>(source: IFileTreeDirectoryItem<TCT>, destination: IMutableFileTreeDirectoryItem<TCT>, options?: ICopyOptions): Result<ICopyReport>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function copyItemInto<TCT extends string = string>(source: FileTreeItem<TCT>, destination: IMutableFileTreeDirectoryItem<TCT>, options?: ICopyOptions): Result<ICopyReport>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type CopyUnfaithfulFileBehavior = 'fail' | 'skip';
+
 // @public (undocumented)
 const DefaultJsonFsHelper: JsonFsHelper;
 
@@ -124,14 +148,21 @@ const DefaultJsonLike: IJsonLike;
 // @public (undocumented)
 const DefaultJsonTreeHelper: JsonTreeHelper;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-class DirectoryItem<TCT extends string = string> implements IMutableFileTreeDirectoryItem<TCT> {
+class DirectoryItem<TCT extends string = string> implements IMutableBinaryFileTreeDirectoryItem<TCT> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(path: string, hal: IFileTreeAccessors<TCT>);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     readonly absolutePath: string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    canCreateChildFileBytes(): boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create<TCT extends string = string>(path: string, hal: IFileTreeAccessors<TCT>): Result<DirectoryItem<TCT>>;
@@ -143,6 +174,10 @@ class DirectoryItem<TCT extends string = string> implements IMutableFileTreeDire
     //
     // (undocumented)
     createChildFile(name: string, contents: string): Result<IMutableFileTreeFileItem<TCT>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    createChildFileBytes(name: string, bytes: Uint8Array): Result<IMutableFileTreeFileItem<TCT>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -269,6 +304,7 @@ declare namespace FileTree {
         isMutableBinaryFileItem,
         isMutableFileItem,
         isMutableDirectoryItem,
+        isMutableBinaryDirectoryItem,
         SaveCapability,
         SaveFailureReason,
         SaveDetail,
@@ -284,6 +320,7 @@ declare namespace FileTree {
         IMutableBinaryFileTreeFileItem,
         IFileTreeDirectoryItem,
         IMutableFileTreeDirectoryItem,
+        IMutableBinaryFileTreeDirectoryItem,
         FileTreeItem,
         MutableFileTreeItem,
         AnyFileTreeFileItem,
@@ -297,6 +334,12 @@ declare namespace FileTree {
         FileTree_2 as FileTree,
         DirectoryItem,
         FileItem,
+        copyItemInto,
+        copyContentsInto,
+        CopyUnfaithfulFileBehavior,
+        ICopyOptions,
+        ISkippedCopyFile,
+        ICopyReport,
         isPathMutable,
         forFilesystem,
         IInMemoryFile,
@@ -396,6 +439,25 @@ interface IBinaryFileTreeAccessors<TCT extends string = string> extends IFileTre
 // @public
 interface IBinaryFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
     getRawBytes(): Result<Uint8Array>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ICopyOptions {
+    onUnfaithfulFile?: CopyUnfaithfulFileBehavior;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ICopyReport {
+    readonly directoriesCreated: number;
+    readonly filesCopiedAsBytes: number;
+    readonly filesCopiedAsText: number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly skipped: ReadonlyArray<ISkippedCopyFile>;
 }
 
 // @public
@@ -545,6 +607,22 @@ type ILlmStringSchema = ISchemaValidator<string>;
 // @public
 interface IMutableBinaryFileTreeAccessors<TCT extends string = string> extends IBinaryFileTreeAccessors<TCT>, IMutableFileTreeAccessors<TCT> {
     saveFileBytes(path: string, bytes: Uint8Array): Result<Uint8Array>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IMutableBinaryFileTreeDirectoryItem<TCT extends string = string> extends IMutableFileTreeDirectoryItem<TCT> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    canCreateChildFileBytes(): boolean;
+    createChildFileBytes(name: string, bytes: Uint8Array): Result<IMutableFileTreeFileItem<TCT>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -711,12 +789,28 @@ export function isJsonPrimitive(from: unknown): from is JsonPrimitive;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface ISkippedCopyFile {
+    readonly destinationPath: string;
+    readonly message: string;
+    readonly sourcePath: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 function isMutableAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IMutableFileTreeAccessors<TCT>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function isMutableBinaryAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IMutableBinaryFileTreeAccessors<TCT>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isMutableBinaryDirectoryItem<TCT extends string = string>(item: AnyFileTreeDirectoryItem<TCT> | FileTreeItem<TCT>): item is IMutableBinaryFileTreeDirectoryItem<TCT>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
