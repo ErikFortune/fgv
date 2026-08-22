@@ -58,28 +58,33 @@ Fixed three ways:
 
 1. **Every pass now drives a rebuild, and a failing rebuild.** Not redundant: a passing rebuild
    clears once at the top, and the rollback `_clear()` is reachable no other way.
-2. **A fourth pass, `THROWAWAY-CLEAR`**, restores the pre-`exec` `_clear` through an
+2. **A matched pair, passes 4 and 5.** Pass 5 restores the pre-`exec` `_clear` through an
    own-property override — the same trick pass 1 uses to neuter `release`, and the only way to
-   reproduce a shape that no longer exists in source. **Read it asymmetrically.** If pass 4
-   aborts where pass 2 survives, the throwaway statement is implicated and this change
-   addresses your crash. **A surviving pass 4 exonerates nothing** — the statement is
-   unreferenced by construction, so whether it is still alive at teardown is the collector's
-   choice, and if V8 reaped it mid-run the pass never posed the question. Pass 4 therefore
-   skips the forced GC the other passes do, which removes a certainty without creating one.
-   An earlier draft of this note called the two outcomes equally informative; they are not,
-   and you should not plan around a green pass 4.
+   reproduce a shape that no longer exists in source. Pass 4 is its control: same `release`,
+   same `close`, same GC policy, current `_clear`. **Compare 5 against 4, never 5 against 2.**
+   Passes 2 and 5 differ in two axes, so an abort there is equally explained by a
+   released-but-uncollected cached statement — an earlier draft of this note told you to make
+   exactly that comparison, and it would have pointed you at the wrong variable.
+
+   **Read it asymmetrically.** Pass 5 aborting where pass 4 survives implicates the throwaway
+   statement and means this change addresses your crash. **A surviving pass 5 exonerates
+   nothing** — the statement is unreferenced by construction, so whether it is alive at
+   teardown is the collector's choice. Do not plan around a green pass 5.
 3. The previous stream's write-up and the streams ledger now say what the probe did *not*
    cover, rather than leaving a claim that was true of one lane and silent about the other.
 
-Four passes, exit 0 on linux-x64 / Node 22.22.2 — which, as that file has always said, makes
+Five passes, exit 0 on linux-x64 / Node 22.22.2 — which, as that file has always said, makes
 x64 a regression guard and not evidence.
 
 ## Sequence from here — unchanged from yours, with one addition
 
 1. You land handle retention, so `release()` actually runs.
 2. This ships (**#654**).
-3. **Then** linux-arm64 / Node 24. Run all four passes and report them separately: pass 1 vs
-   pass 2 answers the original question, and pass 4 vs pass 2 answers yours.
+3. **Then** linux-arm64 / Node 24. Run all five passes and report them separately. **Pass 1 vs
+   pass 2** answers the original `release()` question. **Pass 5 vs pass 4** answers yours —
+   and it is the only pair that does, because those two differ in `_clear` alone. Pass 4 vs
+   pass 2 is worth reporting on its own account: an abort there says a released statement can
+   reach teardown when nothing forces a collection.
 
 Your standing mitigation — durable index opt-in, default-off — means nothing is blocked
 meanwhile, and we are not asking you to change that.

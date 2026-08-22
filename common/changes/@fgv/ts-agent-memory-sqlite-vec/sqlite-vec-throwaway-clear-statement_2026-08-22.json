@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-agent-memory-sqlite-vec",
-      "comment": "Run the rebuild-path table clear through Database.exec instead of a prepared statement, on both SqliteVecVectorIndex and SqliteVecFragmentIndex. The statement _clear() prepared was retained by nothing, so it was not in _stmts and release() could not drop it — its native destructor ran whenever GC reached it, which is the frame the reported Statement::~Statement() teardown abort fires in. exec creates no Statement at all. Behaviour is unchanged; the teardown probe under perf/ now drives a rebuild (and a failing rebuild, for the rollback clear), which it previously never did.",
+      "comment": "Run the rebuild-path table clear through Database.exec instead of a prepared statement, on both SqliteVecVectorIndex and SqliteVecFragmentIndex. The statement _clear() prepared was retained by nothing, so it was not in _stmts and release() could not drop it — its native destructor ran whenever GC reached it, which is the frame the reported Statement::~Statement() teardown abort fires in. exec creates no Statement at all. Behaviour is unchanged; the teardown probe under perf/ now drives a rebuild (and a failing rebuild, for the rollback clear), which it previously never did, and carries a matched pair of passes differing in _clear alone.",
       "type": "patch"
     }
   ],

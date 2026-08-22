@@ -33,18 +33,23 @@
  * prevent. Reported by the driving consumer, who read the source rather than
  * trusting the probe.
  *
- * Four passes:
+ * Five passes, over three independent axes — `release`, `close`, `forceGc` —
+ * plus `throwawayClear`. **Passes are only comparable when they differ in one
+ * axis**, which is the discipline the pass list below is built around.
  *
  *   1. UNRELEASED — indexes closed via `handle.close()` with `release()`
- *      neutered, statements retained to exit. This is the shape the package had
- *      before the fix, reproduced through the real adapter rather than a
- *      hand-rolled imitation of it.
+ *      neutered, statements retained to exit, GC forced. This is the shape the
+ *      package had before the fix, reproduced through the real adapter rather
+ *      than a hand-rolled imitation of it.
  *   2. RELEASED — the same, through the real disposer, which now releases.
+ *      Differs from pass 1 in `release` alone.
  *   3. ABANDONED — indexes never closed at all, references dropped, GC forced.
- *   4. THROWAWAY-CLEAR — released and closed as in pass 2, but with `_clear`
- *      restored to the pre-2026-08-22 shape that prepares a statement per call.
- *      This is the lane `release()` cannot reach by construction, so it is the
- *      pass that isolates the throwaway statement's own contribution.
+ *   4. NO-GC CONTROL — released and closed as in pass 2, with the forced GC
+ *      **off**. Differs from pass 2 in `forceGc` alone, and exists to hold that
+ *      axis fixed for pass 5.
+ *   5. THROWAWAY-CLEAR — pass 4 with `_clear` restored to the pre-2026-08-22
+ *      shape that prepares a statement per call. **Differs from pass 4 in
+ *      `_clear` alone**, which is what makes it able to isolate anything.
  *
  * WHAT A RESULT MEANS — state this before running it, not after.
  *
@@ -57,20 +62,28 @@
  * 2026-08-21, is linux/arm64 and nowhere else we have tested (linux-x64 under
  * Node 22 and 24, and darwin-arm64 under Node 24, all survive pass 1).
  *
- * Pass 4 answers a different question, and **it is not symmetric**. If pass 4
- * aborts where pass 2 survives, the throwaway `_clear` statement is implicated
- * and the `exec` change addresses it. **A surviving pass 4 exonerates nothing.**
- * The statement it creates is unreferenced the moment `.run()` returns, so
- * whether it is still alive at teardown is up to the collector: if V8 reaped it
- * mid-run the destructor already ran safely, and the pass never posed the
- * question. Pass 4 therefore skips the forced `global.gc()` the other passes do
- * — forcing a collection is the one thing guaranteed to defeat it — but that
- * only removes a certainty, it does not create one.
+ * **Pass 5 against pass 4** answers the `_clear` question, and only that pair
+ * can. Both release, both close, neither forces a collection; they differ in
+ * `_clear` and nothing else. If pass 5 aborts where pass 4 survives, the
+ * throwaway `_clear` statement is implicated and the `exec` change addresses
+ * it.
  *
- * So: pass 4 aborting is strong evidence; pass 4 surviving is weak evidence and
- * must not be written up as a clean bill of health. An earlier draft of this
- * file claimed the two outcomes were equally informative. They are not, and the
- * asymmetry is the whole reason to state it here rather than after the run.
+ * **It is still not symmetric.** A surviving pass 5 exonerates nothing: the
+ * statement it creates is unreferenced the moment `.run()` returns, so whether
+ * it is still alive at teardown is up to the collector, and if V8 reaped it
+ * mid-run the pass never posed the question. Skipping the forced GC removes a
+ * *guaranteed* defeat; it does not create a guarantee.
+ *
+ * **Do not compare pass 5 to pass 2.** They differ in two axes — `_clear` and
+ * `forceGc` — so an abort there is equally explained by a released-but-uncollected
+ * cached statement reaching teardown, which is what pass 4 is for. An earlier
+ * draft of this file made exactly that comparison and called it isolation. It
+ * was not, and the confound was introduced by the edit that fixed a *different*
+ * overclaim in the same file — which is the argument for stating the
+ * one-axis rule at the top rather than reasoning about each pair ad hoc.
+ *
+ * Pass 4 against pass 2 is informative in its own right: an abort there says a
+ * released statement can survive to teardown when nothing forces a collection.
  *
  * So on x64 this script is a regression guard, not evidence. Run it on
  * linux/arm64 under Node 24 for the measurement that decides the question.
@@ -171,7 +184,7 @@ function restoreThrowawayClear(index) {
   };
 }
 
-async function pass(label, { release, close, throwawayClear }) {
+async function pass(label, { release, close, forceGc, throwawayClear }) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'svteardown-'));
   let indexes = 0;
   for (let i = 0; i < 10; i++) {
@@ -209,16 +222,11 @@ async function pass(label, { release, close, throwawayClear }) {
     held.push(rec.index, frag.index);
     indexes += 2;
   }
-  if (!throwawayClear) {
-    // Deliberately skipped for pass 4: its statements are unreferenced by design,
-    // so forcing a collection here is exactly what would reap them while the
-    // environment is still alive — destroying the condition the pass exists to
-    // create. The other passes retain their statements, so a forced GC cannot
-    // touch those and is what makes the ABANDONED pass mean anything.
+  if (forceGc) {
     global.gc();
     global.gc();
   }
-  console.log(`  ${label}: ${indexes} indexes retained to exit${throwawayClear ? ' (no forced GC)' : ''}`);
+  console.log(`  ${label}: ${indexes} indexes retained to exit${forceGc ? '' : ' (no forced GC)'}`);
 }
 
 async function main() {
@@ -228,12 +236,19 @@ async function main() {
     console.error('FATAL: run with --expose-gc, or the collection this probe forces never happens.');
     process.exit(2);
   }
-  await pass('UNRELEASED (pre-fix shape, closed)', { release: false, close: true });
-  await pass('RELEASED   (post-fix, closed)', { release: true, close: true });
-  await pass('ABANDONED  (never closed)', { release: false, close: false });
-  await pass('THROWAWAY-CLEAR (pre-exec _clear, released, closed)', {
+  await pass('UNRELEASED (pre-fix shape, closed)', { release: false, close: true, forceGc: true });
+  await pass('RELEASED   (post-fix, closed)', { release: true, close: true, forceGc: true });
+  await pass('ABANDONED  (never closed)', { release: false, close: false, forceGc: true });
+  // Passes 4 and 5 are a matched pair: identical in every axis but `_clear`.
+  await pass('NO-GC CONTROL   (exec _clear, released, closed)', {
     release: true,
     close: true,
+    forceGc: false
+  });
+  await pass('THROWAWAY-CLEAR (old  _clear, released, closed)', {
+    release: true,
+    close: true,
+    forceGc: false,
     throwawayClear: true
   });
   console.log(`holding ${held.length} index objects through teardown; exiting`);

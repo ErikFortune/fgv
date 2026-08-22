@@ -113,9 +113,10 @@ a platform that reproduces the abort can produce it.
 >
 > Found by the driving consumer reading source, not by running this. Widened in
 > `sqlite-vec-throwaway-clear-statement`, which adds a rebuild and a *failing* rebuild to every
-> pass plus a fourth pass that restores the old `_clear` to isolate its contribution — a pass
-> whose outcomes are **asymmetric**: aborting implicates the throwaway statement, surviving
-> exonerates nothing, since an unreferenced statement may simply have been collected mid-run.
+> pass plus a **matched pair** of passes that differ in `_clear` alone, isolating its
+> contribution — and whose outcomes are **asymmetric**: aborting implicates the throwaway
+> statement, surviving exonerates nothing, since an unreferenced statement may simply have
+> been collected mid-run.
 
 | platform | Node | result | source |
 |---|---|---|---|

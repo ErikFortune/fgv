@@ -66,8 +66,8 @@ stays open.
 - [x] `rushx build` / `lint` / `test` at 100% coverage in `@fgv/ts-agent-memory-sqlite-vec`
 - [x] Four new tests, **watched failing** against the pre-`exec` shape first
 - [x] The teardown probe drives a rebuild and a failing rebuild in every pass
-- [x] A fourth probe pass that restores the old `_clear`, so arm64 can isolate its contribution
-      — read asymmetrically: an abort implicates, a survival exonerates nothing
+- [x] A matched pair of probe passes differing in `_clear` alone, so arm64 can isolate its
+      contribution — read asymmetrically: an abort implicates, a survival exonerates nothing
 - [x] Repo-wide `rush rebuild`
 - [x] Change file
 - [x] The prior stream's `result.md` and ledger entry corrected about what the probe covered

@@ -75,23 +75,30 @@ Fixed in three ways:
 1. **Every pass now drives a rebuild** — and a **failing** rebuild, which is not redundant: a
    passing rebuild clears once at the top, and the rollback `_clear()` is reachable no other
    way.
-2. **A fourth pass, `THROWAWAY-CLEAR`**, restores the pre-`exec` `_clear` via an own-property
-   override (the same trick pass 1 uses to neuter `release`) — the only way to reproduce a
-   shape that no longer exists in source. It isolates the throwaway statement's own
-   contribution — and **the two outcomes are not symmetric.** If pass 4 aborts where pass 2
-   survives, this change is implicated. **A surviving pass 4 exonerates nothing:** the
-   statement is unreferenced by construction, so whether it is still alive at teardown is the
-   collector's choice, and if V8 reaped it mid-run the pass never posed the question. Pass 4
-   therefore skips the forced `global.gc()` the other passes do — forcing a collection is the
-   one thing guaranteed to defeat it — but that removes a certainty without creating one.
+2. **A matched pair of passes, 4 and 5**, isolates the throwaway statement. Pass 5 restores
+   the pre-`exec` `_clear` via an own-property override (the trick pass 1 uses to neuter
+   `release`) — the only way to reproduce a shape that no longer exists in source. Pass 4 is
+   the control: same `release`, same `close`, same GC policy, current `_clear`. **They differ
+   in one axis, which is what lets either of them mean anything.** `forceGc` is now an
+   explicit pass option rather than being derived from `throwawayClear`.
 
-   **This was wrong in the first draft**, which claimed the two outcomes were equally
-   informative, and it was CodeRabbit that caught it. The correction matters more than the
-   pass: a harness whose green result is written up as a clean bill of health is the same
-   defect this stream exists to fix, one level up.
+   **The outcomes are still not symmetric.** Pass 5 aborting where pass 4 survives implicates
+   the throwaway statement. A **surviving pass 5 exonerates nothing** — the statement is
+   unreferenced by construction, so whether it is alive at teardown is the collector's choice,
+   and if V8 reaped it mid-run the pass never posed the question. Skipping the forced GC
+   removes a guaranteed defeat without creating a guarantee.
+
+   **Both of those corrections came from review, and the second is the more instructive.**
+   The first draft claimed a green pass 4 exonerated the statement; CodeRabbit caught it. The
+   fix for *that* introduced a second confound in the same file — pass 4 skipped the forced
+   GC while pass 2 did not, so the pair differed in two axes and an abort was equally
+   explained by a released-but-uncollected cached statement. CodeRabbit caught that too. A
+   harness whose green result reads as a clean bill of health is this stream's own defect one
+   level up; a harness whose *red* result is attributed to the wrong variable is the same
+   defect wearing the opposite sign.
 3. The prior stream's `result.md` and its ledger entry now say what the probe did *not* cover.
 
-Four passes, exit 0 on linux-x64 / Node 22.22.2 — which, as the file has always said, makes it
+Five passes, exit 0 on linux-x64 / Node 22.22.2 — which, as the file has always said, makes it
 a regression guard on x64 and not evidence.
 
 ## Tests
@@ -122,11 +129,11 @@ A coverage gate cannot see this class either: the line ran before and runs now.
 | `rushx fixlint` | no changes |
 | repo-wide `rush rebuild` | pass |
 | change file | present |
-| `perf/statementTeardown.js` | 4 passes, exit 0 on linux-x64 / Node 22.22.2 |
+| `perf/statementTeardown.js` | 5 passes, exit 0 on linux-x64 / Node 22.22.2 |
 
 ## Sequencing from here
 
 1. The consumer lands handle retention (theirs, in flight) so `release()` actually runs.
 2. This ships.
 3. **Then** linux-arm64 / Node 24, where a pass or a failure finally means something — and
-   where pass 4 can say whether the throwaway statement was the trigger.
+   where pass 5 against pass 4 can say whether the throwaway statement was the trigger.

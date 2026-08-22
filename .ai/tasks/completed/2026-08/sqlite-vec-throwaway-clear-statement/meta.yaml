@@ -40,9 +40,15 @@ summary:
     only the cached statements and was structurally blind to the one statement
     release() could not reach. A green arm64 run of the old probe would have
     read as "the fix holds" while their boot path went untested. Widened to
-    drive a rebuild and a failing rebuild in every pass, plus a fourth pass that
-    restores the old _clear so arm64 can isolate its contribution — where
-    exoneration is as useful an outcome as implication.
+    drive a rebuild and a failing rebuild in every pass, plus a matched PAIR of
+    passes that differ in _clear alone so arm64 can isolate its contribution.
+    Two review rounds landed on that pair and the second is the instructive one:
+    the first draft claimed a green pass exonerated the statement, and the fix
+    for that introduced a second confound in the same edit — the new pass
+    skipped the forced GC while the pass it was compared against did not, so an
+    abort was equally explained by a released-but-uncollected cached statement.
+    Hence forceGc is now an explicit axis and the one-axis-per-comparison rule
+    is stated at the top of the harness rather than re-derived per pair.
   sourceLine: >
     **Shipped:** the rebuild-path table clear runs through `exec`, so the one
     statement `release()` could never reach no longer exists.
@@ -54,7 +60,9 @@ keywords:
   - harness blind to the lane that mattered
   - right number about the wrong lane
   - watched-it-fail gate
-  - a pass whose exoneration is as useful as its implication
+  - compare passes that differ in one axis
+  - a confound introduced by the fix for an overclaim
+  - an abort attributed to the wrong variable
   - report arrived before the test cycle
   - residue stated rather than glossed
 relatedStreams:
