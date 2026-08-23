@@ -11,7 +11,7 @@ jobs:
       id-token: write
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 2
 
@@ -21,7 +21,7 @@ jobs:
           name: ${{ secrets.GH_USER_NAME }}
           email: ${{ secrets.GH_USER_EMAIL }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24.15.0
           registry-url: 'https://registry.npmjs.org'
