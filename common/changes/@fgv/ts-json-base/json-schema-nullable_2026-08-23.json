@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "Add `nullable` to the JsonSchema LLM-tool subset: every factory accepts `nullable: true`, which widens `Static<S>` to `T | null`, accepts `null`, and emits the draft-07 union `type: [<type>, 'null']` (a nullable enum also carries `null` in its `enum` list). This is the spelling OpenAI strict structured output accepts for an absent-able field, where `optional(...)` is unsendable because every property must be in `required`. `fromJson` learns the same union shape so an emitted schema survives the round trip through the proxy path; every other union `type` is still refused.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

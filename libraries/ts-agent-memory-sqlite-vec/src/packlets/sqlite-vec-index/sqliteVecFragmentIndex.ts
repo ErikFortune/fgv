@@ -521,11 +521,14 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     if (this._stmts === undefined) {
       return succeed(true);
     }
+    // `exec`, not `prepare(...).run()` — see the note on the record index's
+    // `_clear`. A statement prepared here is retained by nothing, so `release()`
+    // cannot drop it and its native destructor runs whenever GC reaches it;
+    // `exec` creates no `Statement` at all. Safe outside a transaction, which is
+    // the only place `_clear` runs.
     // Capture-wrapped like every other statement path: a closed connection or an
     // I/O error is a `Failure`, not an exception out of a `Result`-returning method.
-    return captureResult(() => this._db.prepare(`DELETE FROM "${this._table}"`).run()).onSuccess(() =>
-      succeed(true)
-    );
+    return captureResult(() => this._db.exec(`DELETE FROM "${this._table}"`)).onSuccess(() => succeed(true));
   }
 
   /** {@inheritDoc IFragmentVectorIndex.query} */

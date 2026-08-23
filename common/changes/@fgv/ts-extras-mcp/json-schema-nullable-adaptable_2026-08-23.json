@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-mcp",
+      "comment": "An MCP tool whose inputSchema declares a nullable field (`type: [<type>, 'null']`) is now adapted rather than skipped, because that spelling entered the JsonSchema subset with @fgv/ts-json-base's nullable support. No code change in this package — the behaviour follows from the widened parser. General unions are still outside the subset and still skipped.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp"
+}

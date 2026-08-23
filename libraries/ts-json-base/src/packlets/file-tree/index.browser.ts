@@ -27,6 +27,7 @@ export * from './fileTreeAccessors';
 export * from './fileTree';
 export * from './directoryItem';
 export * from './fileItem';
+export * from './fileTreeCopy';
 export * from './filterSpec';
 
 // Export in-memory implementations for web compatibility

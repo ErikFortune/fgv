@@ -1,0 +1,80 @@
+id: json-schema-nullable
+status: in-flight # #655 is OPEN; flip to `shipped` on merge
+packages:
+  - '@fgv/ts-json-base'
+  - '@fgv/ts-extras'
+  - '@fgv/ts-extras-mcp'
+prs: [655]
+openPrs: [655]
+opened: 2026-08-22
+summary:
+  intended: >
+    Close a PersonAIlity ask: the JsonSchema LLM-tool subset has no way to say
+    required-and-nullable, so an absent-able field has exactly one spelling —
+    optional(...) — and hasOptionalProperties correctly refuses that for the two
+    OpenAI strict formats. That left the consumer three routes, all worse than
+    staying on json-object, the worst being to make every field required and
+    fake absence with an empty-string sentinel the converter maps back, which
+    reintroduces schema-and-check drift one layer down. It blocks a provider
+    rather than polishing a surface: mode 'schema' is the ONLY structured-output
+    mode that reaches Anthropic, whose only lane is forced tool use.
+  shipped: >
+    nullable: true on every factory — Static<S> widens to T | null via one
+    overload each, the validator accepts null through a single _orNull on the
+    base class, and the wire emits the draft-07 union type: [<type>, 'null'].
+    A nullable enumOf carries null in its enum list too, since a reader
+    consulting enum alone would otherwise reject the value type allows.
+    fromJson learns exactly that union shape and still refuses every other one.
+    toGeminiParameterSchema translates it into the OpenAPI dialect.
+  diverged: >
+    The consumer asked us to verify their OpenAI premise rather than take it
+    from them, and it turned up something they did not have: OpenAI IGNORES the
+    OpenAPI-style nullable: true keyword, so only the union array works. The
+    option's name and its emission are therefore different dialects on purpose,
+    which is now on the option's own TSDoc and pinned by a test asserting the
+    emitted keys never contain 'nullable'.
+    Three consequences the ask did not have, all in our code. fromJson rejected
+    union type arrays, and the proxy path reconstitutes forwarded schemas with
+    it — shipping the emitter without the parser would have meant our own code
+    refusing our own output. The Gemini sanitizer passed `type` through
+    verbatim, and the two dialects are mutually exclusive, so unblocking the
+    fifth provider would have broken one of the four that already work. And
+    enum nullability is a different emission, with fromJson requiring the two
+    halves to agree.
+    On design we agreed with the consumer for a different reason: a wrapper node
+    would have been less typing surface, but the object factory builds `required`
+    by reading prop._type !== 'optional', so nullable(optional(x)) would have
+    silently dropped the optionality with no error and no failing test.
+    A FOURTH consequence surfaced only in CI: ts-extras-mcp's end-to-end suite
+    pinned a nullable-union tool as un-adaptable, and widening fromJson moved it
+    from skipped to tools — correct and desirable, but invisible to the
+    repo-wide rush rebuild the acceptance criteria call for, because nothing
+    about it was a type error. rush rebuild covers a widened TYPE; only a
+    repo-wide rush test covers a widened BEHAVIOUR.
+  sourceLine: >
+    **Shipped:** `nullable: true` on every factory — the spelling OpenAI strict
+    mode accepts for an absent-able field, where `optional(...)` is unsendable.
+keywords:
+  - required-and-nullable
+  - the option name is not the wire spelling
+  - two dialects that are mutually exclusive
+  - our own parser refusing our own emitter
+  - a sentinel is drift one layer down
+  - both halves of a node must agree
+  - flag over wrapper to remove an ordering hazard
+  - watched-it-fail on both consequences
+  - verify the consumer's external premise
+  - a rule's own carve-out is not a rule dodge
+  - rush rebuild covers a widened type, not a widened behaviour
+relatedStreams:
+  - id: ai-assist-structured-output
+    relationship: >
+      direct predecessor; shipped structuredOutput and hasOptionalProperties,
+      whose refusal this stream makes affordable to keep rather than reversing
+  - id: personaility-asks-2026-08
+    relationship: >
+      origin; same consumer channel
+  - id: filetree-faithful-copy
+    relationship: >
+      sibling from the same consumer channel; both land on a spelling that
+      makes the honest answer expressible rather than relaxing a check

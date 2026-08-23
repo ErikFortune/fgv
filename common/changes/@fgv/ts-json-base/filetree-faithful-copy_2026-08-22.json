@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "Add capability-aware FileTree copy helpers (copyItemInto / copyContentsInto) that carry bytes verbatim where the destination store is byte-native and as verified round-trippable text where it is not, failing by default (onUnfaithfulFile: 'fail' | 'skip') on any file that would change; adds the byte-native child create capability (IMutableBinaryFileTreeDirectoryItem, isMutableBinaryDirectoryItem, DirectoryItem.canCreateChildFileBytes / createChildFileBytes) it is built on",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}
