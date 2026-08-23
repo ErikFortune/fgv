@@ -69,6 +69,15 @@ const arrayItemOptionalSchema = JsonSchema.object({
   items: JsonSchema.array(JsonSchema.object({ x: JsonSchema.optional(JsonSchema.string()) }))
 });
 
+/**
+ * The same absent-able field, spelled required-and-nullable — the spelling OpenAI strict
+ * mode actually accepts, and the reason `nullable` was added to `JsonSchema`.
+ */
+const nullablePropSchema = JsonSchema.object({
+  a: JsonSchema.string(),
+  b: JsonSchema.string({ nullable: true })
+});
+
 function lastRequestBody(): Record<string, unknown> {
   const fetchMock = global.fetch as jest.Mock;
   const calls = fetchMock.mock.calls;
@@ -913,6 +922,53 @@ describe('structured output', () => {
   // `strict: true` requires EVERY property in `required`, so such a schema is a
   // hard 400 on both OpenAI wire formats. This is a capability mismatch routed
   // through `onUnsupported`, not relocated into an opaque provider error.
+
+  describe('OpenAI strict mode: a required-and-nullable property is accepted', () => {
+    // The counterpart to the suite below, and the point of `nullable`: the same
+    // absent-able field, spelled so that every property stays in `required`. If this ever
+    // starts degrading, the feature has silently stopped delivering what it exists for.
+    const chatDescriptor = makeDescriptor({
+      id: 'openai',
+      apiFormat: 'openai',
+      baseUrl: 'https://api.openai.com/v1',
+      defaultModel: 'gpt-5.6-luna',
+      structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }]
+    });
+
+    test('sends the schema and reports "schema" rather than degrading', async () => {
+      mockFetchResponse(openAiResponse('{}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: chatDescriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: nullablePropSchema }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('schema');
+      });
+      const body = lastRequestBody();
+      const format = (body.response_format as Record<string, unknown>).json_schema as Record<string, unknown>;
+      const schema = format.schema as Record<string, unknown>;
+      // Both properties required — that is the whole constraint — and `b` nullable.
+      expect(schema.required).toEqual(['a', 'b']);
+      expect((schema.properties as Record<string, unknown>).b).toEqual({ type: ['string', 'null'] });
+    });
+
+    test('does not degrade under onUnsupported: fail either', async () => {
+      mockFetchResponse(openAiResponse('{}'));
+
+      expect(
+        await AiAssist.callProviderCompletion({
+          descriptor: chatDescriptor,
+          apiKey: 'test-key',
+          ...testPrompt.toRequest(),
+          structuredOutput: { mode: 'schema', schema: nullablePropSchema, onUnsupported: 'fail' }
+        })
+      ).toSucceed();
+    });
+  });
 
   describe('OpenAI strict mode: schemas with optional properties', () => {
     const chatDescriptor = makeDescriptor({

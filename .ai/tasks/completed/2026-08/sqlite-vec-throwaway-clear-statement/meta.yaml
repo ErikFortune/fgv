@@ -1,9 +1,9 @@
 id: sqlite-vec-throwaway-clear-statement
-status: in-flight # #654 is OPEN; flip to `shipped` on merge
+status: shipped
 packages:
   - '@fgv/ts-agent-memory-sqlite-vec'
 prs: [654]
-openPrs: [654]
+openPrs: []
 opened: 2026-08-22
 summary:
   intended: >

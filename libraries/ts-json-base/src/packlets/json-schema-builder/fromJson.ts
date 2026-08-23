@@ -81,11 +81,22 @@ const _enumValuesField: Converter<string[]> = Converters.field(
 );
 
 /**
- * Extracts an optional `type` field as a raw string. Used by the enum arm to detect
- * conflicting type declarations; the pre-flight in `jsonSchemaConverter` validates type
- * values for non-enum nodes.
+ * Extracts an `enum` list that may carry `null` among its string members.
+ *
+ * @remarks
+ * A nullable enum emitted by this package carries `null` in **both** `type` and `enum`,
+ * because a reader consulting only one of them would otherwise disagree with a reader
+ * consulting the other. This converter is what lets the `null` member through so the
+ * enum arm can strip it and set nullability; `_enumValuesField` still governs the
+ * remaining values.
  */
-const _typeOptionalField: Converter<string | undefined> = Converters.optionalField('type', Converters.string);
+// `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+// `JsonPrimitive` takes in this package's `json` packlet.
+// eslint-disable-next-line @rushstack/no-new-null
+const _enumRawValuesField: Converter<(string | null)[]> = Converters.field(
+  'enum',
+  Converters.arrayOf(Converters.oneOf<string | null>([Converters.string, Converters.literal(null)]))
+);
 
 /**
  * Checks that the input is a non-null, non-array object and returns it as
@@ -118,9 +129,46 @@ function _checkForbidden(raw: Record<string, unknown>): Result<true> {
   return succeed(true as const);
 }
 
-/** Converts an optional description string to `ISchemaOptions` form. */
-function _descriptionOpts(description: string | undefined): { description?: string } {
-  return description !== undefined ? { description } : {};
+/** Converts a description and nullability into `ISchemaOptions` form. */
+function _nodeOpts(
+  description: string | undefined,
+  nullable: boolean
+): { description?: string; nullable?: true } {
+  return {
+    ...(description !== undefined && { description }),
+    ...(nullable && { nullable: true as const })
+  };
+}
+
+/** A `type` field split into its scalar type and whether `null` was part of a union. */
+interface ISplitType {
+  readonly type: string | undefined;
+  readonly nullable: boolean;
+}
+
+/**
+ * Splits a raw `type` field into a scalar type plus nullability.
+ *
+ * @remarks
+ * The subset admits exactly one union shape — `[<type>, 'null']`, in either order —
+ * because that is the shape this package emits for a nullable node and the shape OpenAI
+ * strict mode requires. **Every other union is still refused**: widening the parser to
+ * general unions would let it accept schemas the rest of the subset cannot represent.
+ *
+ * This exists because `toJson()` can emit that union, and `callProxiedCompletion`
+ * reconstitutes a forwarded schema through this converter. A parser that refused what the
+ * emitter produces would break every nullable schema on the proxy path — our own code
+ * refusing our own output.
+ */
+function _splitNullableType(rawType: unknown): Result<ISplitType> {
+  if (!Array.isArray(rawType)) {
+    return succeed({ type: typeof rawType === 'string' ? rawType : undefined, nullable: false });
+  }
+  const withoutNull: unknown[] = rawType.filter((member) => member !== 'null');
+  if (rawType.length !== 2 || withoutNull.length !== 1 || typeof withoutNull[0] !== 'string') {
+    return fail("union 'type' arrays are supported only as [<type>, 'null']");
+  }
+  return succeed({ type: withoutNull[0], nullable: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -136,66 +184,50 @@ function _descriptionOpts(description: string | undefined): { description?: stri
 // ---------------------------------------------------------------------------
 
 /** String arm: extracts `description?` and delegates to the `string` factory. */
-function _convertString(
-  from: unknown,
-  __self: Converter<ISchemaValidator<JsonValue>, string>,
-  context?: string
-): Result<ISchemaValidator<JsonValue>> {
-  /* c8 ignore next 1 - defensive default; jsonSchemaConverter always supplies the path */
-  const path = context ?? '#';
+function _convertString(from: unknown, path: string, nullable: boolean): Result<ISchemaValidator<JsonValue>> {
   return _descriptionField
     .convert(from)
     .withErrorFormat((msg) => `${path}: ${msg}`)
     .onSuccess((description) =>
-      succeed(string(_descriptionOpts(description)) as unknown as ISchemaValidator<JsonValue>)
+      succeed(string(_nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
     );
 }
 
 /** Number arm: extracts `description?` and delegates to the `number` factory. */
-function _convertNumber(
-  from: unknown,
-  __self: Converter<ISchemaValidator<JsonValue>, string>,
-  context?: string
-): Result<ISchemaValidator<JsonValue>> {
-  /* c8 ignore next 1 - defensive default; jsonSchemaConverter always supplies the path */
-  const path = context ?? '#';
+function _convertNumber(from: unknown, path: string, nullable: boolean): Result<ISchemaValidator<JsonValue>> {
   return _descriptionField
     .convert(from)
     .withErrorFormat((msg) => `${path}: ${msg}`)
     .onSuccess((description) =>
-      succeed(number(_descriptionOpts(description)) as unknown as ISchemaValidator<JsonValue>)
+      succeed(number(_nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
     );
 }
 
 /** Integer arm: extracts `description?` and delegates to the `integer` factory. */
 function _convertInteger(
   from: unknown,
-  __self: Converter<ISchemaValidator<JsonValue>, string>,
-  context?: string
+  path: string,
+  nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
-  /* c8 ignore next 1 - defensive default; jsonSchemaConverter always supplies the path */
-  const path = context ?? '#';
   return _descriptionField
     .convert(from)
     .withErrorFormat((msg) => `${path}: ${msg}`)
     .onSuccess((description) =>
-      succeed(integer(_descriptionOpts(description)) as unknown as ISchemaValidator<JsonValue>)
+      succeed(integer(_nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
     );
 }
 
 /** Boolean arm: extracts `description?` and delegates to the `boolean` factory. */
 function _convertBoolean(
   from: unknown,
-  __self: Converter<ISchemaValidator<JsonValue>, string>,
-  context?: string
+  path: string,
+  nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
-  /* c8 ignore next 1 - defensive default; jsonSchemaConverter always supplies the path */
-  const path = context ?? '#';
   return _descriptionField
     .convert(from)
     .withErrorFormat((msg) => `${path}: ${msg}`)
     .onSuccess((description) =>
-      succeed(boolean(_descriptionOpts(description)) as unknown as ISchemaValidator<JsonValue>)
+      succeed(boolean(_nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
     );
 }
 
@@ -204,14 +236,7 @@ function _convertBoolean(
  * then recurses for the `items` sub-schema via `jsonSchemaConverter`.
  * Receives the current JSON Pointer path via `context`.
  */
-function _convertArray(
-  from: unknown,
-  __self: Converter<ISchemaValidator<JsonValue>, string>,
-  context?: string
-): Result<ISchemaValidator<JsonValue>> {
-  /* c8 ignore next 1 - defensive default; jsonSchemaConverter always supplies the path */
-  const path = context ?? '#';
-
+function _convertArray(from: unknown, path: string, nullable: boolean): Result<ISchemaValidator<JsonValue>> {
   // Extract `items` as an opaque unknown value — the field extractor verifies only that
   // the key exists and that `from` is an object; type validation happens via jsonSchemaConverter.
   const itemsResult = Converters.field(
@@ -235,7 +260,7 @@ function _convertArray(
       jsonSchemaConverter
         .convert(items, `${path}/items`)
         .onSuccess((inner) =>
-          succeed(array(inner, _descriptionOpts(description)) as unknown as ISchemaValidator<JsonValue>)
+          succeed(array(inner, _nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
         )
     );
 }
@@ -244,13 +269,8 @@ function _convertArray(
  * Object arm — delegates to `_parseObjectBody` for recursive property processing.
  * Receives the current JSON Pointer path via `context`.
  */
-function _convertObject(
-  from: unknown,
-  __self: Converter<ISchemaValidator<JsonValue>, string>,
-  context?: string
-): Result<ISchemaValidator<JsonValue>> {
-  /* c8 ignore next 1 - defensive default; jsonSchemaConverter always supplies the path */
-  return _parseObjectBody(from, context ?? '#');
+function _convertObject(from: unknown, path: string, nullable: boolean): Result<ISchemaValidator<JsonValue>> {
+  return _parseObjectBody(from, path, nullable);
 }
 
 /**
@@ -263,39 +283,61 @@ function _convertObject(
  *
  * Receives the current JSON Pointer path via `context`.
  */
-function _convertEnum(
-  from: unknown,
-  __self: Converter<ISchemaValidator<JsonValue>, string>,
-  context?: string
-): Result<ISchemaValidator<JsonValue>> {
-  /* c8 ignore next 1 - defensive default; jsonSchemaConverter always supplies the path */
-  const path = context ?? '#';
-
-  // Extract enum values declaratively — fails if not an array, not all strings, or empty.
-  const enumResult = _enumValuesField.convert(from);
-  if (enumResult.isFailure()) {
-    return fail(`${path}: ${enumResult.message}`);
+function _convertEnum(from: unknown, path: string): Result<ISchemaValidator<JsonValue>> {
+  // An enum node carries its nullability in TWO places — `null` among the values and
+  // `'null'` in the type union — so this arm reads both and requires them to agree,
+  // rather than taking whichever it happens to look at first.
+  const rawValuesResult = _enumRawValuesField.convert(from);
+  if (rawValuesResult.isFailure()) {
+    // Fall back to the strings-only extractor for its sharper message (non-array, wrong
+    // member type, and so on); it fails on exactly the inputs this one does, minus `null`.
+    return fail(`${path}: ${_enumValuesField.convert(from).message}`);
   }
-  const values = enumResult.value;
+  const nullInValues: boolean = rawValuesResult.value.includes(null);
 
-  // L1: reject conflicting `type`. For enum nodes, `jsonSchemaConverter`'s union-type pre-flight
+  // L1: reject conflicting `type`. For enum nodes, `jsonSchemaConverter`'s type pre-flight
   // is skipped (the `!('enum' in raw)` gate). Validate here instead.
-  const typeResult = _typeOptionalField.convert(from);
-  if (typeResult.isFailure()) {
-    // e.g. type: 123 — the field exists but is not a string.
+  const rawType: unknown = (from as Record<string, unknown>).type;
+  const split = _splitNullableType(rawType);
+  if (split.isFailure()) {
+    return fail(`${path}: ${split.message}`);
+  }
+  if (rawType !== undefined && split.value.type === undefined) {
+    // e.g. type: 123 — the field exists but is not a string or a supported union.
     return fail(`${path}: enum schema 'type' field must be a string or absent`);
   }
-  if (typeResult.value !== undefined && typeResult.value !== 'string') {
+  if (split.value.type !== undefined && split.value.type !== 'string') {
     return fail(
-      `${path}: enum schema declares conflicting 'type' '${typeResult.value}' (must be 'string' or absent)`
+      `${path}: enum schema declares conflicting 'type' '${split.value.type}' (must be 'string' or absent)`
     );
+  }
+  if (split.value.nullable !== nullInValues) {
+    return fail(
+      `${path}: enum schema is nullable in its '${split.value.nullable ? 'type' : 'enum'}' but not its ` +
+        `'${split.value.nullable ? 'enum' : 'type'}'`
+    );
+  }
+
+  // Now that `null` has been accounted for, the strings-only extractor governs the rest —
+  // including the non-empty constraint, which a list of just `[null]` must still fail.
+  const valuesResult = _enumValuesField.convert({
+    ...(from as Record<string, unknown>),
+    enum: rawValuesResult.value.filter((v): v is string => v !== null)
+  });
+  if (valuesResult.isFailure()) {
+    return fail(`${path}: ${valuesResult.message}`);
   }
 
   return _descriptionField
     .convert(from)
     .withErrorFormat((msg) => `${path}: ${msg}`)
     .onSuccess((description) =>
-      succeed(enumOf(values, _descriptionOpts(description)) as unknown as ISchemaValidator<JsonValue>)
+      succeed(
+        enumOf(
+          valuesResult.value,
+          _nodeOpts(description, nullInValues)
+        ) as unknown as ISchemaValidator<JsonValue>
+      )
     );
 }
 
@@ -304,7 +346,11 @@ function _convertEnum(
  * property sub-schemas via `jsonSchemaConverter`.
  * Called after pre-flight guarantees `from` is a non-null, non-array object.
  */
-function _parseObjectBody(from: unknown, path: string): Result<ISchemaValidator<JsonValue>> {
+function _parseObjectBody(
+  from: unknown,
+  path: string,
+  nullable: boolean
+): Result<ISchemaValidator<JsonValue>> {
   // Extract `properties` — must be a non-array object if present.
   const propsResult = Converters.optionalField('properties', _plainObjectField).convert(from);
   if (propsResult.isFailure()) {
@@ -367,7 +413,7 @@ function _parseObjectBody(from: unknown, path: string): Result<ISchemaValidator<
         // JSON Schema's default (absent additionalProperties) permits extra fields;
         // only an explicit `false` produces a strict validator.
         additionalProperties: additionalProperties !== false,
-        ..._descriptionOpts(description)
+        ..._nodeOpts(description, nullable)
       }) as unknown as ISchemaValidator<JsonValue>
     );
   });
@@ -379,29 +425,50 @@ function _parseObjectBody(from: unknown, path: string): Result<ISchemaValidator<
 // context flows from jsonSchemaConverter through oneOf/discriminatedObject to each arm.
 // ---------------------------------------------------------------------------
 
-const _stringArm: Converter<ISchemaValidator<JsonValue>, string> = Converters.generic(_convertString);
-const _numberArm: Converter<ISchemaValidator<JsonValue>, string> = Converters.generic(_convertNumber);
-const _integerArm: Converter<ISchemaValidator<JsonValue>, string> = Converters.generic(_convertInteger);
-const _booleanArm: Converter<ISchemaValidator<JsonValue>, string> = Converters.generic(_convertBoolean);
-const _arrayArm: Converter<ISchemaValidator<JsonValue>, string> = Converters.generic(_convertArray);
-const _objectArm: Converter<ISchemaValidator<JsonValue>, string> = Converters.generic(_convertObject);
-const _enumArm: Converter<ISchemaValidator<JsonValue>, string> = Converters.generic(_convertEnum);
+/** Arm body: the raw node, its JSON Pointer path, and whether its `type` union carried `null`. */
+type ArmBody = (from: unknown, path: string, nullable: boolean) => Result<ISchemaValidator<JsonValue>>;
+
+/**
+ * Binds an arm body to a nullability, since `Converters.generic` has no channel for it —
+ * its context slot already carries the path. Hence two dispatch tables rather than one:
+ * `jsonSchemaConverter` decides nullability from the `type` union and picks the table.
+ */
+function _arm(body: ArmBody, nullable: boolean): Converter<ISchemaValidator<JsonValue>, string> {
+  return Converters.generic(
+    (
+      from: unknown,
+      __self: Converter<ISchemaValidator<JsonValue>, string>,
+      context?: string
+      /* c8 ignore next 1 - defensive default; jsonSchemaConverter always supplies the path */
+    ): Result<ISchemaValidator<JsonValue>> => body(from, context ?? '#', nullable)
+  );
+}
+
+const _enumArm: Converter<ISchemaValidator<JsonValue>, string> = Converters.generic(
+  (
+    from: unknown,
+    __self: Converter<ISchemaValidator<JsonValue>, string>,
+    context?: string
+    /* c8 ignore next 1 - defensive default; jsonSchemaConverter always supplies the path */
+  ): Result<ISchemaValidator<JsonValue>> => _convertEnum(from, context ?? '#')
+);
 
 // ---------------------------------------------------------------------------
 // Type-dispatched converter (non-enum nodes only).
 // ---------------------------------------------------------------------------
-const _typeDispatchConverter: Converter<ISchemaValidator<JsonValue>, string> = Converters.discriminatedObject<
-  ISchemaValidator<JsonValue>,
-  string,
-  string
->('type', {
-  string: _stringArm,
-  number: _numberArm,
-  integer: _integerArm,
-  boolean: _booleanArm,
-  array: _arrayArm,
-  object: _objectArm
-});
+function _typeDispatch(nullable: boolean): Converter<ISchemaValidator<JsonValue>, string> {
+  return Converters.discriminatedObject<ISchemaValidator<JsonValue>, string, string>('type', {
+    string: _arm(_convertString, nullable),
+    number: _arm(_convertNumber, nullable),
+    integer: _arm(_convertInteger, nullable),
+    boolean: _arm(_convertBoolean, nullable),
+    array: _arm(_convertArray, nullable),
+    object: _arm(_convertObject, nullable)
+  });
+}
+
+const _typeDispatchConverter: Converter<ISchemaValidator<JsonValue>, string> = _typeDispatch(false);
+const _nullableTypeDispatchConverter: Converter<ISchemaValidator<JsonValue>, string> = _typeDispatch(true);
 
 /**
  * The main converter. Parses a raw JSON Schema object into a typed schema validator
@@ -437,11 +504,6 @@ export const jsonSchemaConverter: Converter<ISchemaValidator<JsonValue>, string>
     }
     const raw = from as Record<string, unknown>;
 
-    // Union type arrays: give a better error than discriminatedObject's generic message.
-    if (Array.isArray(raw.type)) {
-      return fail(`${path}: union 'type' arrays are not supported`);
-    }
-
     // Forbidden keywords: check before dispatching so inputs with no `type` (e.g. just
     // `{ $ref: '...' }`) get a specific error rather than a generic "no matching converter".
     const forbidden = _checkForbidden(raw);
@@ -449,16 +511,31 @@ export const jsonSchemaConverter: Converter<ISchemaValidator<JsonValue>, string>
       return fail(`${path}: ${forbidden.message}`);
     }
 
-    // Missing/unknown type (not enum): give a better error than a generic "no matching converter".
-    if (!('enum' in raw) && (typeof raw.type !== 'string' || !_SUPPORTED_TYPES.has(raw.type))) {
+    // Enum nodes route directly to the enum arm so that validation failures (invalid enum values,
+    // conflicting type) propagate immediately — not through oneOf, which would silently try the
+    // type-dispatched arm and produce a confusing "no matching converter" message. That arm owns
+    // enum type validation entirely, including the union rule, because an enum's nullability is
+    // declared in two places and only it can check that they agree.
+    if ('enum' in raw) {
+      return _enumArm.convert(from, path);
+    }
+
+    // Union type arrays: `[<type>, 'null']` is the nullable spelling and is admitted;
+    // anything else gets a better error than discriminatedObject's generic message.
+    const split = _splitNullableType(raw.type);
+    if (split.isFailure()) {
+      return fail(`${path}: ${split.message}`);
+    }
+
+    // Missing/unknown type: give a better error than a generic "no matching converter".
+    if (split.value.type === undefined || !_SUPPORTED_TYPES.has(split.value.type)) {
       return fail(`${path}: unsupported or missing 'type'`);
     }
 
-    // Enum nodes route directly to the enum arm so that validation failures (invalid enum values,
-    // conflicting type) propagate immediately — not through oneOf, which would silently try the
-    // type-dispatched arm and produce a confusing "no matching converter" message.
-    if ('enum' in raw) {
-      return _enumArm.convert(from, path);
+    if (split.value.nullable) {
+      // `discriminatedObject` dispatches on a scalar `type`, so the union is collapsed for
+      // the lookup and the nullability travels in the table choice instead.
+      return _nullableTypeDispatchConverter.convert({ ...raw, type: split.value.type }, path);
     }
     return _typeDispatchConverter.convert(from, path);
   }

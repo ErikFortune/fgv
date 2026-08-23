@@ -59,7 +59,7 @@ import { McpTransport } from '../../packlets/mcp/transports';
 // Fixture server — a real SDK Server advertising a mix of adaptable + un-adaptable tools.
 // ---------------------------------------------------------------------------
 
-/** The two adaptable tools (in the supported JSON Schema subset). */
+/** The adaptable tools (in the supported JSON Schema subset). */
 const ADAPTABLE_TOOLS = [
   {
     name: 'echo',
@@ -74,6 +74,14 @@ const ADAPTABLE_TOOLS = [
     name: 'ping',
     description: 'Health check with no required args.',
     inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    // Nullable — `[<type>, 'null']` entered the subset with `JsonSchema`'s `nullable`
+    // support, so a server offering a nullable field is now usable rather than skipped.
+    // It was in UNADAPTABLE_TOOLS until then, and the repo-wide test run is what caught it.
+    name: 'nullable_tool',
+    description: 'Takes a value that may be null.',
+    inputSchema: { type: 'object', properties: { x: { type: ['string', 'null'] } } }
   }
 ];
 
@@ -101,8 +109,11 @@ const UNADAPTABLE_TOOLS = [
     inputSchema: { type: 'object', properties: { code: { type: 'string', pattern: '^[A-Z]+$' } } }
   },
   {
+    // A GENERAL union, which stays out of the subset. Only the nullable spelling
+    // `[<type>, 'null']` was admitted — widening to arbitrary unions would let the parser
+    // accept schemas the rest of the subset cannot represent.
     name: 'union_tool',
-    inputSchema: { type: 'object', properties: { x: { type: ['string', 'null'] } } }
+    inputSchema: { type: 'object', properties: { x: { type: ['string', 'number'] } } }
   }
 ];
 
@@ -174,7 +185,16 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
   test('listMcpTools returns the full catalog over the real transport', async () => {
     expect(await listMcpTools(session)).toSucceedAndSatisfy((tools) => {
       expect(tools.map((t) => t.name).sort()).toEqual(
-        ['anyof_tool', 'echo', 'oneof_tool', 'pattern_tool', 'ping', 'ref_tool', 'union_tool'].sort()
+        [
+          'anyof_tool',
+          'echo',
+          'nullable_tool',
+          'oneof_tool',
+          'pattern_tool',
+          'ping',
+          'ref_tool',
+          'union_tool'
+        ].sort()
       );
     });
   });
@@ -202,7 +222,7 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
 
       expect(await adaptMcpTools(session, { logger })).toSucceedAndSatisfy((result) => {
         // (a) Only the adaptable tools are offered to the model; none of the rejected ones leak.
-        expect(result.tools.map((t) => t.config.name).sort()).toEqual(['echo', 'ping']);
+        expect(result.tools.map((t) => t.config.name).sort()).toEqual(['echo', 'nullable_tool', 'ping']);
         const offeredNames = new Set(result.tools.map((t) => t.config.name));
         for (const t of UNADAPTABLE_TOOLS) {
           expect(offeredNames.has(t.name)).toBe(false);

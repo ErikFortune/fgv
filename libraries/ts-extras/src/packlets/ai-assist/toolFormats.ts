@@ -225,14 +225,51 @@ export function toAnthropicTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyAr
  *
  * @internal
  */
+/**
+ * The non-`null` member of a draft-07 nullable `type` union, or `undefined` when `type` is
+ * not one.
+ *
+ * @remarks
+ * Deliberately narrow: only the two-member `[<type>, 'null']` shape `JsonSchema` emits is
+ * recognised. A general union has no OpenAPI equivalent, so translating one would be
+ * inventing a meaning — it is passed through unchanged and Gemini refuses it, which is the
+ * honest outcome.
+ * @internal
+ */
+function _nullableUnionMember(type: JsonValue | undefined): string | undefined {
+  if (!Array.isArray(type) || type.length !== 2 || !type.includes('null')) {
+    return undefined;
+  }
+  const other: JsonValue | undefined = type.find((member) => member !== 'null');
+  return typeof other === 'string' ? other : undefined;
+}
+
 export function toGeminiParameterSchema(schema: JsonValue): JsonValue {
   if (Array.isArray(schema)) {
     return schema.map(toGeminiParameterSchema);
   }
   if (schema !== null && typeof schema === 'object') {
     const out: JsonObject = {};
+    // Nullability is spelled differently in the two dialects and they are mutually
+    // exclusive: draft-07 (and OpenAI strict mode) wants `type: ['string', 'null']`,
+    // OpenAPI 3.0 (and Gemini) wants `type: 'string'` + `nullable: true` and rejects the
+    // union array. This is the same class of translation as the `additionalProperties`
+    // strip above — a dialect difference the consumer should not have to know about.
+    const nullableType: string | undefined = _nullableUnionMember(schema.type);
     for (const [key, value] of Object.entries(schema)) {
       if (key === 'additionalProperties' || key === '$schema') {
+        continue;
+      }
+      if (nullableType !== undefined && key === 'type') {
+        out.type = nullableType;
+        out.nullable = true;
+        continue;
+      }
+      if (nullableType !== undefined && key === 'enum' && Array.isArray(value)) {
+        // A nullable enum carries `null` among its values in draft-07. OpenAPI expresses
+        // that with `nullable` alone, so the member is dropped rather than sent as a value
+        // Gemini would reject.
+        out.enum = value.filter((member) => member !== null);
         continue;
       }
       if (key === 'properties' && value !== null && typeof value === 'object' && !Array.isArray(value)) {

@@ -43,6 +43,31 @@ export interface ISchemaOptions {
    * Optional human-readable description emitted into the wire JSON Schema.
    */
   description?: string;
+
+  /**
+   * When `true`, the value may also be `null`: the derived static type widens to
+   * `T | null`, the validator accepts `null`, and the wire schema declares a union
+   * `type` (`['string', 'null']`).
+   *
+   * @remarks
+   * **This is how you express an absent-able field to a provider that requires every
+   * property to be required.** OpenAI's strict structured output rejects a schema with
+   * any property missing from `required`, so `optional(...)` is unsendable there —
+   * see `hasOptionalProperties` in `@fgv/ts-extras`, which refuses rather than
+   * relocating the failure into a provider 400. A required-and-nullable property is
+   * the sanctioned spelling, and because the schema *is* the validator, the wire
+   * shape and the check cannot disagree about it.
+   *
+   * **The option's name is not the wire spelling.** It emits the draft-07 union
+   * `type: ['string', 'null']`, **not** the OpenAPI-3.0 keyword `nullable: true` —
+   * which OpenAI ignores. Gemini wants the other one, and the Gemini adapter in
+   * `@fgv/ts-extras` translates; nothing here emits `nullable` as a keyword.
+   *
+   * Distinct from {@link JsonSchema.optional | optional}, which is about a key being
+   * **absent**. The two compose as `optional(string({ nullable: true }))` — absent,
+   * or present and null, or present and a string.
+   */
+  nullable?: boolean;
 }
 
 /**
@@ -90,20 +115,57 @@ abstract class SchemaValidatorBase<T>
   public readonly __staticType?: T;
   public readonly _type: SchemaNodeType;
   public readonly description?: string;
+  /** Whether `null` is an accepted value — see {@link JsonSchema.ISchemaOptions.nullable}. */
+  public readonly nullable: boolean;
 
   protected constructor(
     type: SchemaNodeType,
     validator: Validation.ValidatorFunc<T, unknown>,
-    description?: string
+    opts?: ISchemaOptions
   ) {
     super({ validator });
     this._type = type;
-    if (description !== undefined) {
-      this.description = description;
+    this.nullable = opts?.nullable === true;
+    if (opts?.description !== undefined) {
+      this.description = opts.description;
     }
   }
 
   public abstract toJson(): JsonObject;
+
+  /**
+   * Accepts `null` on a nullable node, and otherwise defers to the node's own check.
+   *
+   * @remarks
+   * The **one** place nullability is honoured at validation time, so a node cannot
+   * accept `null` in `validate` and reject it in `convert`, or vice versa. Each
+   * concrete node wraps both of its methods in this rather than testing `nullable`
+   * itself.
+   *
+   * The cast is where the runtime meets the types: `T` includes `null` exactly when
+   * `nullable` is set, and it is the factory overloads — not this class — that
+   * establish the correspondence.
+   * @internal
+   */
+  protected _orNull<U>(from: unknown, check: () => Result<U>): Result<U> {
+    if (this.nullable && from === null) {
+      return succeed(null as unknown as U);
+    }
+    return check();
+  }
+
+  /**
+   * The `type` field for this node's wire schema, widened to a union when nullable.
+   *
+   * @remarks
+   * Emits draft-07's `type: [t, 'null']`, which is what OpenAI strict mode requires.
+   * It deliberately does **not** emit OpenAPI's `nullable: true` keyword, which OpenAI
+   * ignores; the Gemini adapter translates to that dialect at its own boundary.
+   * @internal
+   */
+  protected _typeField(type: string): { type: string | [string, 'null'] } {
+    return { type: this.nullable ? [type, 'null'] : type };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -116,20 +178,20 @@ class StringSchemaValidator extends SchemaValidatorBase<string> {
   public constructor(opts?: ISchemaOptions) {
     const inner = Validators.string;
     /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
-    super('string', (__from: unknown): boolean | Failure<string> => true, opts?.description);
+    super('string', (__from: unknown): boolean | Failure<string> => true, opts);
     this._inner = inner;
   }
 
   public override validate(from: unknown): Result<string> {
-    return this._inner.validate(from);
+    return this._orNull(from, () => this._inner.validate(from));
   }
 
   public override convert(from: unknown): Result<string> {
-    return this._inner.validate(from);
+    return this._orNull(from, () => this._inner.validate(from));
   }
 
   public toJson(): JsonObject {
-    return { type: 'string', ..._descriptionField(this) };
+    return { ...this._typeField('string'), ..._descriptionField(this) };
   }
 }
 
@@ -158,14 +220,14 @@ class NumberSchemaValidator extends SchemaValidatorBase<number> {
         ? Validators.isA('integer', (v): v is number => typeof v === 'number' && Number.isInteger(v))
         : Validators.isA('number', (v): v is number => typeof v === 'number' && !Number.isNaN(v));
       /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
-      super(type, (__from: unknown): boolean | Failure<number> => true, opts?.description);
+      super(type, (__from: unknown): boolean | Failure<number> => true, opts);
       this._strictValidator = strictValidator;
       this._nonStrictConverter = undefined;
     } else {
       // Non-strict: the ValidatorFunc is a placeholder — validate() and convert() are both
       // overridden below to use the coercing Converter, so this lambda is never invoked.
       /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
-      super(type, (__from: unknown): boolean | Failure<number> => true, opts?.description);
+      super(type, (__from: unknown): boolean | Failure<number> => true, opts);
       this._strictValidator = undefined;
       this._nonStrictConverter = isInteger
         ? Converters.number.withConstraint((n) => Number.isInteger(n) || fail(`${n}: not an integer`))
@@ -176,6 +238,17 @@ class NumberSchemaValidator extends SchemaValidatorBase<number> {
   }
 
   public override validate(from: unknown): Result<number> {
+    return this._orNull(from, () => this._check(from));
+  }
+
+  public override convert(from: unknown): Result<number> {
+    // Symmetric with validate(): both paths route through the same underlying logic.
+    // This ensures correctness when used as a field validator inside Converters.object
+    // or Converters.arrayOf (which call convert(), not validate()).
+    return this._orNull(from, () => this._check(from));
+  }
+
+  private _check(from: unknown): Result<number> {
     if (this._nonStrictConverter !== undefined) {
       // Non-strict path: delegate to the coercing Converter so that '42' -> 42.
       return this._nonStrictConverter.convert(from);
@@ -184,18 +257,8 @@ class NumberSchemaValidator extends SchemaValidatorBase<number> {
     return this._strictValidator!.validate(from);
   }
 
-  public override convert(from: unknown): Result<number> {
-    // Symmetric with validate(): both paths route through the same underlying logic.
-    // This ensures correctness when used as a field validator inside Converters.object
-    // or Converters.arrayOf (which call convert(), not validate()).
-    if (this._nonStrictConverter !== undefined) {
-      return this._nonStrictConverter.convert(from);
-    }
-    return this._strictValidator!.validate(from);
-  }
-
   public toJson(): JsonObject {
-    return { type: this._type, ..._descriptionField(this) };
+    return { ...this._typeField(this._type), ..._descriptionField(this) };
   }
 }
 
@@ -205,20 +268,20 @@ class BooleanSchemaValidator extends SchemaValidatorBase<boolean> {
   public constructor(opts?: ISchemaOptions) {
     const inner = Validators.boolean;
     /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
-    super('boolean', (__from: unknown): boolean | Failure<boolean> => true, opts?.description);
+    super('boolean', (__from: unknown): boolean | Failure<boolean> => true, opts);
     this._inner = inner;
   }
 
   public override validate(from: unknown): Result<boolean> {
-    return this._inner.validate(from);
+    return this._orNull(from, () => this._inner.validate(from));
   }
 
   public override convert(from: unknown): Result<boolean> {
-    return this._inner.validate(from);
+    return this._orNull(from, () => this._inner.validate(from));
   }
 
   public toJson(): JsonObject {
-    return { type: 'boolean', ..._descriptionField(this) };
+    return { ...this._typeField('boolean'), ..._descriptionField(this) };
   }
 }
 
@@ -229,21 +292,28 @@ class EnumSchemaValidator<T extends string> extends SchemaValidatorBase<T> {
   public constructor(values: ReadonlyArray<T>, opts?: ISchemaOptions) {
     const inner = Validators.enumeratedValue(values);
     /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
-    super('enum', (__from: unknown): boolean | Failure<T> => true, opts?.description);
+    super('enum', (__from: unknown): boolean | Failure<T> => true, opts);
     this.enum = values;
     this._inner = inner;
   }
 
   public override validate(from: unknown): Result<T> {
-    return this._inner.validate(from);
+    return this._orNull(from, () => this._inner.validate(from));
   }
 
   public override convert(from: unknown): Result<T> {
-    return this._inner.validate(from);
+    return this._orNull(from, () => this._inner.validate(from));
   }
 
   public toJson(): JsonObject {
-    return { type: 'string', enum: [...this.enum], ..._descriptionField(this) };
+    // `null` has to join the value list as well as the type union: a validator reading
+    // `enum` alone would otherwise reject the very value `type` says is allowed, and
+    // the two halves of one node disagreeing is what this package exists to prevent.
+    return {
+      ...this._typeField('string'),
+      enum: this.nullable ? [...this.enum, null] : [...this.enum],
+      ..._descriptionField(this)
+    };
   }
 }
 
@@ -292,22 +362,22 @@ class ArraySchemaValidator<S extends ISchemaValidator<unknown>> extends SchemaVa
     const converter = Converters.arrayOf(items as unknown as Converter<Static<S>>);
     // ValidatorFunc placeholder — validate() and convert() are both overridden below.
     /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
-    super('array', (__from: unknown): boolean | Failure<Static<S>[]> => true, opts?.description);
+    super('array', (__from: unknown): boolean | Failure<Static<S>[]> => true, opts);
     this._items = items;
     this._converter = converter;
   }
 
   public override validate(from: unknown): Result<Static<S>[]> {
     // Route through convert() so that element coercions from the item schema propagate.
-    return this._converter.convert(from);
+    return this._orNull(from, () => this._converter.convert(from));
   }
 
   public override convert(from: unknown): Result<Static<S>[]> {
-    return this._converter.convert(from);
+    return this._orNull(from, () => this._converter.convert(from));
   }
 
   public toJson(): JsonObject {
-    return { type: 'array', items: this._items.toJson(), ..._descriptionField(this) };
+    return { ...this._typeField('array'), items: this._items.toJson(), ..._descriptionField(this) };
   }
 }
 
@@ -325,18 +395,18 @@ class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBas
     const converter = _buildObjectConverter(properties, additionalProperties);
     // ValidatorFunc placeholder — validate() and convert() are both overridden below.
     /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
-    super('object', (__from: unknown): boolean | Failure<ObjectStatic<P>> => true, opts?.description);
+    super('object', (__from: unknown): boolean | Failure<ObjectStatic<P>> => true, opts);
     this._properties = properties;
     this.additionalProperties = additionalProperties;
     this._converter = converter;
   }
 
   public override validate(from: unknown): Result<ObjectStatic<P>> {
-    return this._converter.convert(from);
+    return this._orNull(from, () => this._converter.convert(from));
   }
 
   public override convert(from: unknown): Result<ObjectStatic<P>> {
-    return this._converter.convert(from);
+    return this._orNull(from, () => this._converter.convert(from));
   }
 
   public toJson(): JsonObject {
@@ -353,7 +423,7 @@ class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBas
     }
 
     return {
-      type: 'object',
+      ...this._typeField('object'),
       properties,
       ...(required.length > 0 && { required }),
       ...(!this.additionalProperties && { additionalProperties: false }),
@@ -412,6 +482,17 @@ function _descriptionField(schema: ISchemaValidator<unknown>): { description?: s
  * @returns An `ISchemaValidator` whose `Static` type is `string`.
  * @public
  */
+// `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+// `JsonPrimitive` takes in this package's `json` packlet.
+// eslint-disable-next-line @rushstack/no-new-null
+export function string(opts: ISchemaOptions & { nullable: true }): ISchemaValidator<string | null>;
+/**
+ * Creates a schema node for a JSON `string`.
+ * @param opts - Optional description and nullability.
+ * @returns An `ISchemaValidator` whose `Static` type is `string`.
+ * @public
+ */
+export function string(opts?: ISchemaOptions): ISchemaValidator<string>;
 export function string(opts?: ISchemaOptions): ISchemaValidator<string> {
   return new StringSchemaValidator(opts);
 }
@@ -422,6 +503,19 @@ export function string(opts?: ISchemaOptions): ISchemaValidator<string> {
  * @returns An `ISchemaValidator` whose `Static` type is `number`.
  * @public
  */
+export function number(
+  opts: INumberSchemaOptions & { nullable: true }
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<number | null>;
+/**
+ * Creates a schema node for a JSON `number`.
+ * @param opts - Optional description, nullability and strict mode (see `INumberSchemaOptions`).
+ * @returns An `ISchemaValidator` whose `Static` type is `number`.
+ * @public
+ */
+export function number(opts?: INumberSchemaOptions): ISchemaValidator<number>;
 export function number(opts?: INumberSchemaOptions): ISchemaValidator<number> {
   return new NumberSchemaValidator('number', opts);
 }
@@ -432,6 +526,19 @@ export function number(opts?: INumberSchemaOptions): ISchemaValidator<number> {
  * @returns An `ISchemaValidator` (tagged `integer`) whose `Static` type is `number`.
  * @public
  */
+export function integer(
+  opts: INumberSchemaOptions & { nullable: true }
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<number | null>;
+/**
+ * Creates a schema node for a JSON `integer`.
+ * @param opts - Optional description, nullability and strict mode (see `INumberSchemaOptions`).
+ * @returns An `ISchemaValidator` (tagged `integer`) whose `Static` type is `number`.
+ * @public
+ */
+export function integer(opts?: INumberSchemaOptions): ISchemaValidator<number>;
 export function integer(opts?: INumberSchemaOptions): ISchemaValidator<number> {
   return new NumberSchemaValidator('integer', opts);
 }
@@ -442,6 +549,17 @@ export function integer(opts?: INumberSchemaOptions): ISchemaValidator<number> {
  * @returns An `ISchemaValidator` whose `Static` type is `boolean`.
  * @public
  */
+// `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+// `JsonPrimitive` takes in this package's `json` packlet.
+// eslint-disable-next-line @rushstack/no-new-null
+export function boolean(opts: ISchemaOptions & { nullable: true }): ISchemaValidator<boolean | null>;
+/**
+ * Creates a schema node for a JSON `boolean`.
+ * @param opts - Optional description and nullability.
+ * @returns An `ISchemaValidator` whose `Static` type is `boolean`.
+ * @public
+ */
+export function boolean(opts?: ISchemaOptions): ISchemaValidator<boolean>;
 export function boolean(opts?: ISchemaOptions): ISchemaValidator<boolean> {
   return new BooleanSchemaValidator(opts);
 }
@@ -453,6 +571,22 @@ export function boolean(opts?: ISchemaOptions): ISchemaValidator<boolean> {
  * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
  * @public
  */
+export function enumOf<T extends string>(
+  values: readonly T[],
+  opts: ISchemaOptions & { nullable: true }
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<T | null>;
+/**
+ * Creates a schema node for a closed set of string literals.
+ * @param values - The allowed string values.
+ * @param opts - Optional description and nullability. A nullable enum also carries `null` in
+ * its emitted `enum` list, so the two halves of the node cannot disagree.
+ * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
+ * @public
+ */
+export function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T>;
 export function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T> {
   return new EnumSchemaValidator(values, opts);
 }
@@ -478,6 +612,24 @@ export function optional<S extends ISchemaValidator<unknown>>(
  */
 export function array<S extends ISchemaValidator<unknown>>(
   items: S,
+  opts: ISchemaOptions & { nullable: true }
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<Static<S>[] | null>;
+/**
+ * Creates a schema node for a JSON `array` whose elements all match `items`.
+ * @param items - The schema applied to every element.
+ * @param opts - Optional description and nullability.
+ * @returns An `ISchemaValidator` whose `Static` type is `Array<Static<S>>`.
+ * @public
+ */
+export function array<S extends ISchemaValidator<unknown>>(
+  items: S,
+  opts?: ISchemaOptions
+): ISchemaValidator<Static<S>[]>;
+export function array<S extends ISchemaValidator<unknown>>(
+  items: S,
   opts?: ISchemaOptions
 ): ISchemaValidator<Static<S>[]> {
   return new ArraySchemaValidator(items, opts);
@@ -491,6 +643,26 @@ export function array<S extends ISchemaValidator<unknown>>(
  * @returns An `ISchemaValidator` whose `Static` type derives the required/optional split.
  * @public
  */
+export function object<P extends ILlmProperties>(
+  properties: P,
+  opts: IObjectSchemaOptions & { nullable: true }
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<ObjectStatic<P> | null>;
+/**
+ * Creates a schema node for a JSON `object` with a fixed set of typed properties.
+ * @param properties - A record mapping property names to their schemas. Wrap a property with
+ * `optional` to make it optional, or author it `nullable` when the provider requires every
+ * property to be required.
+ * @param opts - Optional description, nullability and `additionalProperties` flag.
+ * @returns An `ISchemaValidator` whose `Static` type derives the required/optional split.
+ * @public
+ */
+export function object<P extends ILlmProperties>(
+  properties: P,
+  opts?: IObjectSchemaOptions
+): ISchemaValidator<ObjectStatic<P>>;
 export function object<P extends ILlmProperties>(
   properties: P,
   opts?: IObjectSchemaOptions

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Translate a nullable JsonSchema node into Gemini's OpenAPI 3.0 dialect in toGeminiParameterSchema: `type: [<type>, 'null']` becomes `type: <type>` plus `nullable: true`, and a nullable enum's `null` member is dropped. The two dialects are mutually exclusive — OpenAI ignores the `nullable` keyword, Gemini rejects the union array — so without this a nullable schema would break Gemini, which is the provider it works on today. A general union has no OpenAPI equivalent and passes through unchanged.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
