@@ -700,6 +700,41 @@ or (b) `grep -rl '<TheInterface>' --include=*.ts libraries/ tools/ samples/` and
 Test doubles are the usual casualty: they implement the interface structurally and are invisible to
 the package's own suite.
 
+### `rush rebuild` covers a widened *type*. Only a repo-wide `rush test` covers a widened *behaviour*
+
+The rule above sends you to `rush rebuild`, and for the case it describes — a member becomes
+required, an export is renamed — that is exactly right: the casualty is a **compile** error, and a
+repo-wide compile finds every one of them.
+
+**A widened *accepted set* is invisible to it.** When a change makes a function *accept more* than
+it used to — a validator admitting a new shape, a parser admitting a new keyword, a guard returning
+`true` where it used to return `false` — no signature moves. Every consumer still compiles, because
+nothing about the types changed. What changed is which branch a consumer takes at runtime, and the
+only thing that can see that is **that consumer's tests**.
+
+Observed 2026-08-23 on `json-schema-nullable` (#655). Widening `JsonSchema.fromJson` to admit the
+`['string', 'null']` union made a tool schema that `@fgv/ts-extras-mcp` had always classified as
+**unadaptable** become adaptable. That package has a fixture pinning exactly that classification, and
+it went red. The repo-wide `rush rebuild` for this stream passed **exit 0 with zero warnings** — and
+could not have done otherwise, since it is a compiler and no type had moved. The break was found by
+CI running the suite.
+
+Note this is the *desirable* direction of the change — a tool the model previously could not be
+offered now can be. The defect was never the behaviour; it was shipping it while a downstream
+assertion still described the old world.
+
+**Rule:** if a change widens or narrows what a function *accepts, returns, or classifies* — as
+opposed to what it is *typed* as — `rush rebuild` is not the gate. Run `node
+common/scripts/install-run-rush.js test` (or at minimum `--to` each package that consumes the
+symbol). The tell that you are in this case: **your diff touched no signature, and you cannot name a
+line that would fail to compile.** That is precisely when the compiler has nothing to say and the
+suites do.
+
+The usual casualty is a test that pins the *old* boundary — a fixture list of "things we reject", a
+snapshot of a capability report, a count of skipped items. Those assertions are correct until the
+day the boundary moves, they live in a package you never opened, and they are invisible to every
+gate except running them.
+
 ### `rushx lint` is a first-class gate
 
 `rushx build` does **not** transitively run lint in this monorepo's Heft config. Lint is a separate gate. PRs have repeatedly merged with passing build + tests but failing lint, blocking downstream cluster merges. Treat lint as mandatory, not optional.
@@ -718,6 +753,7 @@ Every stream's acceptance criteria list must include:
 - [ ] **`rushx fixlint` was run before the final commit** *(catches the mechanical class)*
 - [ ] **Every package the branch touches has a change file** — verify with `rush change --verify --target-branch origin/release` *(CI's first gate, and invisible to the entire local build/test suite)*
 - [ ] **If the stream changes a shared contract (an interface others implement), `node common/scripts/install-run-rush.js rebuild` passes** *(not a remembered practice — a checked box; see below)*
+- [ ] **If the stream widens or narrows what a function accepts / returns / classifies — as opposed to how it is typed — `node common/scripts/install-run-rush.js test` passes** *(a rebuild is a compiler and cannot see this class; see below)*
 - [ ] No `any` types; all fallible operations return `Result<T>`
 - [ ] **`code-reviewer` agent run on the final diff; findings resolved or dispositioned** *(see "Review-loop discipline" below)*
 - [ ] **Copilot review loop driven by implementer; stopped on diminishing returns or 10-round cap** *(see "Review-loop discipline" below)*
