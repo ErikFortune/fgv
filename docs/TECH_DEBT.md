@@ -68,7 +68,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 ## P2 — Fix before next major feature in affected area
 
 - **[P2] `as Record<string, …>` after a `typeof` guard — a P1 anti-pattern, 32 sites in
-  production source across 10 packages.**
+  production source across 11 packages.**
   `CODE_REVIEW_CHECKLIST.md` lists "manual type checking with unsafe casts" as **P1 CRITICAL** and
   names `as Record<string, unknown>` in its own quick-detection greps. The recurring shape is:
 
@@ -79,9 +79,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
   **Measured, not assumed.** `grep -rn "as Record<string" --include=*.ts libraries/*/src tools/*/src`
   excluding tests returns 33 lines, one of which is a comment (`fromJson.ts:58`) — so **32 code
-  sites** across 10 packages (`ts-extras` 12, `ts-json-base` 5, `ts-res-ui-components` 4,
-  `ts-web-extras` / `ts-utils` / `ts-app-shell` 2 each, one each in `ts-res`, `ts-prompt-assist`,
-  `ts-agent-memory`, `repo-template`).
+  sites** across 11 packages (`ts-extras` 12, `ts-json-base` 5, `ts-res-ui-components` 4, `ts-web-extras` / `ts-utils` / `ts-app-shell` 2 each, and one each in `ts-res`, `ts-prompt-assist`, `ts-agent-memory`, `repo-template`, `ks`).
 
   **Triaged and queued as a chore batch** — see `CHORES.md` § *"`as Record<string, …>` after a type
   guard"*, which splits the sites into mechanically-removable (≈8), missing-Converter (≈16, design

@@ -127,7 +127,7 @@ const node = raw as Record<string, JsonValue | undefined>;   // ← the violatio
 
 **Measured, not estimated.** `grep -rn "as Record<string" --include=*.ts libraries/*/src tools/*/src`
 excluding tests returns 33 lines, **one of which is a comment** (`fromJson.ts:58`) — so **32 code
-sites** across 10 packages.
+sites** across 11 packages.
 
 **Why it belongs in a batch rather than being left to opportunistic cleanup:** it spreads by
 imitation. `schema-optional-translation` introduced three fresh instances in August 2026 by
