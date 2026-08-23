@@ -21,6 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { Result, succeed } from '@fgv/ts-utils';
 import { JsonObject } from '../../../packlets/json';
 import { JsonSchema } from '../../..';
 
@@ -159,9 +160,8 @@ describe('JsonSchema nullable', () => {
      * output. These are the tests that pin that, and they fail against a `fromJson` that
      * rejects union `type` arrays outright.
      */
-    function roundTrip(schema: { toJson(): JsonObject }): JsonObject {
-      const reparsed = JsonSchema.fromJson(schema.toJson()).orThrow();
-      return reparsed.toJson();
+    function roundTrip(schema: { toJson(): JsonObject }): Result<JsonObject> {
+      return JsonSchema.fromJson(schema.toJson()).onSuccess((reparsed) => succeed(reparsed.toJson()));
     }
 
     test('every nullable node survives emit → parse → emit unchanged', () => {
@@ -173,16 +173,19 @@ describe('JsonSchema nullable', () => {
         JsonSchema.array(JsonSchema.string(), { nullable: true }),
         JsonSchema.enumOf(['a', 'b'], { nullable: true })
       ]) {
-        expect(roundTrip(schema)).toEqual(schema.toJson());
+        expect(roundTrip(schema)).toSucceedWith(schema.toJson());
       }
     });
 
     test('a reparsed node accepts null, not just the shape', () => {
       // Emitting the right JSON is not the same as reconstituting the right validator.
-      const reparsed = JsonSchema.fromJson(JsonSchema.string({ nullable: true }).toJson()).orThrow();
-      expect(reparsed.validate(null)).toSucceedWith(null);
-      expect(reparsed.validate('x')).toSucceedWith('x');
-      expect(reparsed.validate(1)).toFail();
+      expect(JsonSchema.fromJson(JsonSchema.string({ nullable: true }).toJson())).toSucceedAndSatisfy(
+        (reparsed) => {
+          expect(reparsed.validate(null)).toSucceedWith(null);
+          expect(reparsed.validate('x')).toSucceedWith('x');
+          expect(reparsed.validate(1)).toFail();
+        }
+      );
     });
 
     test('a nested object of mixed nullability round-trips', () => {
@@ -192,7 +195,7 @@ describe('JsonSchema nullable', () => {
         tags: JsonSchema.array(JsonSchema.enumOf(['x', 'y'], { nullable: true })),
         inner: JsonSchema.object({ n: JsonSchema.integer({ nullable: true }) }, { nullable: true })
       });
-      expect(roundTrip(schema)).toEqual(schema.toJson());
+      expect(roundTrip(schema)).toSucceedWith(schema.toJson());
     });
 
     test('order within the union does not matter', () => {
