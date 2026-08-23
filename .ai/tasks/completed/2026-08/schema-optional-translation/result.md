@@ -114,8 +114,10 @@ Result: **no cast of any kind in the file**, no signature change, no behaviour c
 2773 tests, coverage still 100% on all four metrics. The dead `v !== undefined` guard went with the
 cast that had made it look necessary.
 
-The wider finding is filed as **P2** in `TECH_DEBT.md`: **33 instances of this shape in production
-source across 10 packages**, measured rather than estimated. The `JsonValue`-narrowing subset is
+The wider finding is filed as **P2** in `TECH_DEBT.md` and queued as a chore batch in `CHORES.md`:
+**32 code sites of this shape in production source across 10 packages** (the grep returns 33 lines,
+one of which is a comment), measured rather than estimated and triaged into mechanically-removable,
+missing-Converter, and benign groups. The `JsonValue`-narrowing subset is
 provably removable; the rest needs triage, since some cast a genuinely-`unknown` value where a
 Converter is the right answer.
 
