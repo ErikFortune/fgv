@@ -128,6 +128,23 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `schema-optional-translation` 🟡 (**PR open, not merged** — additive)
+
+**Status:** 🟡 PR open; flip to ✅ on merge. Gates green — build / lint / test at **100%** in `@fgv/ts-extras` (2773 tests) and `@fgv/ts-json-base`, repo-wide `rush rebuild` at exit 0 with zero warnings, change files for both.
+**Package surface:** `@fgv/ts-extras` (`ISchemaStructuredOutputRequest.adaptOptionalToNullable`, `hoistNullableOptionals`), `@fgv/ts-json-base` (`factories.ts` docstring only).
+**Artifacts:** `.ai/tasks/completed/2026-08/schema-optional-translation/`
+**Origin:** a PersonAIlity ask (personaility#644) asking us to revisit a decision we documented and declined. Stated priority **low** — nothing of theirs is blocked; the ask is about where a piece of provider knowledge lives.
+
+**Shipped:** `adaptOptionalToNullable`, defaulting off. On a format requiring every property to be `required`, it lists an optional property in `required` when that property's node **already admits `null`** — instead of refusing the whole schema.
+
+**We gave them the spelling they asked for and refused the semantics.** Their ask framed the flag as the caller *"asserting something about its own validator, which is the fact only the caller has."* **It is not a fact only the caller has — it is written on the schema.** `OptionalSchemaValidator.toJson()` delegates to its inner schema, so optionality lives only in the parent's `required` array; hoisting a nullable optional narrows the permitted replies from *absent-or-null-or-value* to *null-or-value*, a strict **subset** of what the supplied schema already accepts. The distinction is load-bearing rather than pedantic, because **an assertion can be false**: a caller with `optional(string())` could have set the proposed boolean and received a wire schema their own validator rejects at runtime — the precise drift `hasOptionalProperties` exists to prevent, reintroduced by the flag meant to work around it. Reading the condition off the schema makes the hazard *unsayable* rather than merely discouraged, which is the same discipline as `resolveJsonOutput`'s runtime-evidenced `expectedKind`. Their underlying complaint was right and is fixed: they now author `optional(x({ nullable: true }))`, which states what their converter does rather than what one provider demands.
+
+**The verification is the original check, re-run.** The rewrite runs first and `hasOptionalProperties` then judges its output, so there is **no second notion of correctness to keep in sync** — a non-nullable optional survives the rewrite untouched, trips the guard, and routes through `onUnsupported` exactly as before. A partly-hoistable schema degrades or fails **whole**; it never sends a half-adapted schema.
+
+**Our own tests caught the same class of error in our implementation.** The first cut gated the hoist on the flag alone rather than the format, and the test asserting the flag is *inert on Gemini* went red — it narrowed a reply on a provider with no all-required rule. That is this stream's own subject one level up: a rewrite justified by one provider's constraint, applied where that constraint does not exist. The test existed only because "inert where the rule does not apply" was written into the brief as a criterion rather than discovered afterwards.
+
+**It could not satisfy the gate promoted one PR earlier, and that is filed rather than glossed.** #656's repo-wide `rush test` checkbox is unsatisfiable today: `@fgv/ts-json-base` fails a pre-existing root/`chmod` test and **Rush blocks every dependent**, so the run never reaches `@fgv/ts-extras` or anything downstream. Substituted an explicit run over all eight consuming packages (including `samples/testbed`); filed as **P2** in `TECH_DEBT.md`, because the failure mode is a box ticked for a run that tested nothing the rule protects.
+
 ### `json-schema-nullable` ✅ (shipped 2026-08-23 via #655 — additive)
 
 **Status:** ✅ shipped to `release` via **#655** (`6c4b9125`, 2026-08-23). Gates green — build / lint / test at **100%** in `@fgv/ts-json-base` and `@fgv/ts-extras`, repo-wide `rush rebuild`, repo-wide `rush test`, change files for all three packages. CodeRabbit loop stopped at **1 round on diminishing returns**: two findings, both non-substantive (a GFM table-cell split on a pipe inside a code span; two `.orThrow()` calls in test bodies where the parse succeeding was itself the assertion), both fixed in `dd4d6caa`.

@@ -58,6 +58,16 @@ export interface ISchemaOptions {
    * the sanctioned spelling, and because the schema *is* the validator, the wire
    * shape and the check cannot disagree about it.
    *
+   * **If the field is genuinely absent-able *and* `null`-able, say both:**
+   * `optional(string({ nullable: true }))` accepts absent, `null`, or a value.
+   * That composition is what `@fgv/ts-extras`' `adaptOptionalToNullable` looks for —
+   * on a format requiring every property to be required, it drops the optionality
+   * for the wire, which is safe precisely because the authored schema already
+   * accepts the `null` the model will then have to send. Reach for it in preference
+   * to a bare `nullable` when absence is genuinely meaningful to you elsewhere;
+   * the schema then states what your validator does rather than what one provider
+   * demands.
+   *
    * **The option's name is not the wire spelling.** It emits the draft-07 union
    * `type: ['string', 'null']`, **not** the OpenAPI-3.0 keyword `nullable: true` —
    * which OpenAI ignores. Gemini wants the other one, and the Gemini adapter in

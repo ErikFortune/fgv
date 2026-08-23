@@ -67,6 +67,28 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] The repo-wide `rush test` acceptance gate cannot complete, so it silently covers nothing
+  downstream of `@fgv/ts-json-base`.**
+  `libraries/ts-json-base/src/test/unit/file-tree/mutableFsTree.test.ts` §
+  *"returns permission-denied for read-only file"* fails whenever the suite runs as **root**, because
+  `chmod 0444` does not stop root from writing. That alone would be a nuisance; the consequence is
+  not. **Rush blocks every dependent of a failed project**, so `rush test` stops after
+  `@fgv/ts-json-base` and never runs `@fgv/ts-extras` or anything downstream of it.
+
+  This matters because `CODING_STANDARDS.md` § *"`rush rebuild` covers a widened type. Only a
+  repo-wide `rush test` covers a widened behaviour"* was promoted to an acceptance-criteria checkbox
+  in #656 — and the very next stream to need it (`schema-optional-translation`) found it unsatisfiable.
+  The failure mode is the dangerous kind: the command exits non-zero for a reason unrelated to the
+  change, an implementer sees a familiar known-failure and moves on, and **the box gets ticked for a
+  run that tested none of the packages the rule exists to protect.**
+
+  Interim practice, used by that stream: run `rush test --only <pkg>` over each package consuming the
+  changed surface, and say in the PR which ones. That is strictly weaker — it depends on the author
+  enumerating consumers correctly, which is the work the repo-wide run exists to remove.
+
+  **Fix:** make the test detect that it is running as root and assert the honest thing (root *can*
+  write a `0444` file), rather than skipping it. Restores the gate for every future stream.
+
 - **[P2] A `safer-fetch` retry test asserts a probabilistic outcome, and flakes CI for every
   unrelated PR at roughly 1 run in 170.**
   `libraries/ts-extras/src/test/unit/safer-fetch/saferFetchRetry.test.ts` §

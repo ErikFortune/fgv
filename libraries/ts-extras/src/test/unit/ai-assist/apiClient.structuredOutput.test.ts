@@ -34,6 +34,11 @@
 import '@fgv/ts-utils-jest';
 
 import { JsonSchema } from '@fgv/ts-json-base';
+import type { JsonValue } from '@fgv/ts-json-base';
+// The rewrite is @internal and deliberately not on the packlet's entry point; imported
+// directly so its recursion contract can be pinned without widening the public surface.
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { hoistNullableOptionals } from '../../../packlets/ai-assist/structuredOutput';
 
 import { AiAssist } from '../../..';
 import {
@@ -1148,6 +1153,228 @@ describe('structured output', () => {
 
       expect(result).toFailWith(/optional properties/i);
       expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
+
+  // ==========================================================================
+  // I2. adaptOptionalToNullable — hoisting the optionals that already admit null
+  // ==========================================================================
+  //
+  // The refusal above is correct for `optional(string())`, whose validator rejects
+  // `null`. It is over-broad for `optional(string({ nullable: true }))`: that node
+  // is ALREADY `['string','null']` on the wire, so it differs from a required
+  // sibling only by absence from `required`. Listing it there narrows the permitted
+  // replies from absent-or-null-or-value to null-or-value — a strict SUBSET of what
+  // the supplied schema accepts. The safety condition is read off the schema rather
+  // than asserted by the caller, which is why the flag cannot be set wrongly.
+
+  // The rewrite is exported, so its recursion contract is pinned directly as well as
+  // through the wire. A property value that is not an object cannot come from
+  // `ISchemaValidator.toJson()`, but `hoistNullableOptionals` is a total function over
+  // `JsonValue` and reading `.type` off `null` would throw — so the guard is real and
+  // is tested rather than assumed.
+  describe('hoistNullableOptionals: malformed and exotic nodes', () => {
+    test('leaves primitives, null and arrays of them untouched', () => {
+      expect(hoistNullableOptionals('text')).toBe('text');
+      expect(hoistNullableOptionals(7)).toBe(7);
+      expect(hoistNullableOptionals(null)).toBeNull();
+      expect(hoistNullableOptionals([1, 'a', null])).toEqual([1, 'a', null]);
+    });
+
+    test('a property whose value is not an object is never hoisted', () => {
+      const malformed = {
+        type: 'object',
+        properties: { a: null, b: 'junk', c: [1, 2], d: { type: ['string', 'null'] } }
+      } as unknown as JsonValue;
+      // Only `d` — the one node that actually declares a nullable type — is hoisted.
+      expect(hoistNullableOptionals(malformed)).toEqual({
+        type: 'object',
+        properties: { a: null, b: 'junk', c: [1, 2], d: { type: ['string', 'null'] } },
+        required: ['d']
+      });
+    });
+
+    test('an object with no properties map is returned structurally unchanged', () => {
+      const node = { type: 'string', description: 'x' } as unknown as JsonValue;
+      expect(hoistNullableOptionals(node)).toEqual(node);
+    });
+
+    test('an already-required nullable property is not duplicated in required', () => {
+      const node = {
+        type: 'object',
+        properties: { a: { type: ['string', 'null'] } },
+        required: ['a']
+      } as unknown as JsonValue;
+      expect(hoistNullableOptionals(node)).toEqual(node);
+    });
+  });
+
+  describe('OpenAI strict mode: adaptOptionalToNullable', () => {
+    const chatDescriptor = makeDescriptor({
+      id: 'openai',
+      apiFormat: 'openai',
+      baseUrl: 'https://api.openai.com/v1',
+      defaultModel: 'gpt-5.6-luna',
+      structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }]
+    });
+
+    /** Every optional is nullable — fully hoistable. */
+    const hoistableSchema = JsonSchema.object({
+      a: JsonSchema.string(),
+      b: JsonSchema.optional(JsonSchema.string({ nullable: true }))
+    });
+
+    /** One nullable optional and one plain one — hoisting cannot rescue this schema. */
+    const partlyHoistableSchema = JsonSchema.object({
+      ok: JsonSchema.optional(JsonSchema.string({ nullable: true })),
+      bad: JsonSchema.optional(JsonSchema.string())
+    });
+
+    /** Hoistable, but only reachable by recursing into an object and an array. */
+    const deepHoistableSchema = JsonSchema.object({
+      outer: JsonSchema.object({ inner: JsonSchema.optional(JsonSchema.integer({ nullable: true })) }),
+      items: JsonSchema.array(
+        JsonSchema.object({ x: JsonSchema.optional(JsonSchema.string({ nullable: true })) })
+      )
+    });
+
+    test('THE SAFETY PROPERTY: every reply the hoisted schema permits, the supplied schema accepts', () => {
+      // This is the whole justification for the flag, so it is pinned directly rather
+      // than inferred from the wire tests below. Hoisting removes the caller's option
+      // to omit the key; it never admits a value the caller would reject.
+      expect(hoistableSchema.validate({ a: 'x', b: null })).toSucceedWith({ a: 'x', b: null });
+      expect(hoistableSchema.validate({ a: 'x', b: 'y' })).toSucceedWith({ a: 'x', b: 'y' });
+      // And the converse — the property that makes the NON-hoistable case a real refusal
+      // rather than a conservative one.
+      expect(optionalPropSchema.validate({ a: 'x', b: null })).toFail();
+    });
+
+    test('hoists the nullable optional into required and sends the schema, reporting "schema"', async () => {
+      mockFetchResponse(openAiResponse('{"a":"x","b":null}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: chatDescriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: hoistableSchema, adaptOptionalToNullable: true }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('schema');
+      });
+      const sent = (lastRequestBody().response_format as Record<string, unknown>).json_schema as Record<
+        string,
+        unknown
+      >;
+      const schema = sent.schema as Record<string, unknown>;
+      expect(schema.required).toEqual(['a', 'b']);
+      // The node itself is untouched — only its membership in `required` changed.
+      expect((schema.properties as Record<string, unknown>).b).toEqual({ type: ['string', 'null'] });
+    });
+
+    test('without the flag the SAME schema still refuses — the default is unchanged', async () => {
+      mockFetchResponse(openAiResponse('plain text'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: chatDescriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: hoistableSchema }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('none');
+      });
+      expect('response_format' in lastRequestBody()).toBe(false);
+    });
+
+    test('a non-nullable optional is NOT hoisted: the schema still refuses, and nothing is sent', async () => {
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: chatDescriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: {
+          mode: 'schema',
+          schema: partlyHoistableSchema,
+          adaptOptionalToNullable: true,
+          onUnsupported: 'fail'
+        }
+      });
+
+      // The error names the adapt-specific situation rather than repeating the
+      // generic advice, because the caller has already taken the generic advice.
+      expect(result).toFailWith(/hoisted the ones that admit null, but at least one does not/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('a partly-hoistable schema degrades whole — it never sends a half-adapted schema', async () => {
+      mockFetchResponse(openAiResponse('plain text'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: chatDescriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: {
+          mode: 'schema',
+          schema: partlyHoistableSchema,
+          adaptOptionalToNullable: true
+        }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('none');
+      });
+      expect('response_format' in lastRequestBody()).toBe(false);
+    });
+
+    test('hoisting is recursive: it reaches nested objects and array item schemas', async () => {
+      mockFetchResponse(openAiResponse('{"outer":{"inner":null},"items":[]}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: chatDescriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: deepHoistableSchema, adaptOptionalToNullable: true }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('schema');
+      });
+      const sent = (lastRequestBody().response_format as Record<string, unknown>).json_schema as Record<
+        string,
+        unknown
+      >;
+      const schema = sent.schema as Record<string, unknown>;
+      const props = schema.properties as Record<string, Record<string, unknown>>;
+      expect(props.outer.required).toEqual(['inner']);
+      expect((props.items.items as Record<string, unknown>).required).toEqual(['x']);
+    });
+
+    test('the flag is inert where the rule does not apply: Gemini still sends the schema unhoisted', async () => {
+      const descriptor = makeDescriptor({
+        id: 'google-gemini',
+        apiFormat: 'gemini',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        defaultModel: 'gemini-3.5-flash',
+        structuredOutput: [{ modelPrefix: '', format: 'gemini-response-schema' }]
+      });
+      mockFetchResponse(geminiResponse('{"a":"x"}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        structuredOutput: { mode: 'schema', schema: hoistableSchema, adaptOptionalToNullable: true }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('schema');
+      });
+      // Gemini has no all-required rule, so `b` keeps its optionality: the flag must
+      // not narrow a reply on a provider that never needed it narrowed.
+      const generationConfig = lastRequestBody().generationConfig as Record<string, unknown>;
+      const schema = generationConfig.responseSchema as Record<string, unknown>;
+      expect(schema.required).toEqual(['a']);
     });
   });
 
