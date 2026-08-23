@@ -1,11 +1,11 @@
 id: json-schema-nullable
-status: in-flight # #655 is OPEN; flip to `shipped` on merge
+status: shipped
 packages:
   - '@fgv/ts-json-base'
   - '@fgv/ts-extras'
   - '@fgv/ts-extras-mcp'
 prs: [655]
-openPrs: [655]
+openPrs: []
 opened: 2026-08-22
 summary:
   intended: >

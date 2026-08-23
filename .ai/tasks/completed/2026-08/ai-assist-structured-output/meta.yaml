@@ -1,5 +1,5 @@
 id: ai-assist-structured-output
-status: in-flight # #652 is OPEN; flip to `shipped` on merge
+status: shipped
 packages:
   - '@fgv/ts-extras'
   - '@fgv/ts-json-base'
@@ -8,10 +8,10 @@ packages:
   # a probe module, 28 tests) and its own coverage gate — and the ledger's
   # "Package surface" line already names it.
   - 'samples/testbed'
-prs: []
+prs: [652]
 # #652 is OPEN at the time of writing, so it is deliberately NOT in `prs` — that
 # list asserts a merge. Move it across when it lands.
-openPrs: [652]
+openPrs: []
 opened: 2026-08-21
 closed: 2026-08-22
 summary:

@@ -1,5 +1,5 @@
 id: vector-rebuild-report-by-kind
-status: in-flight
+status: shipped
 # Publishable packages only — the convention this field follows, stated because
 # `result.md` lists a third, `@fgv/testbed`, whose test double was updated in the
 # same diff. It is `shouldPublish: false` with no version policy, so it carries no
@@ -9,8 +9,8 @@ packages:
   - '@fgv/ts-agent-memory-sqlite-vec'
 # Open, not merged — this list asserts merged PRs, so it stays empty until #633 lands.
 # See `notes`.
-prs: []
-openPrs: [633]
+prs: [633]
+openPrs: []
 opened: 2026-08-15
 closed: 2026-08-15
 summary:
