@@ -185,17 +185,16 @@ export function hasOptionalProperties(raw: JsonValue): boolean {
   if (raw === null || typeof raw !== 'object') {
     return false;
   }
-  const node: Record<string, JsonValue | undefined> = raw as Record<string, JsonValue | undefined>;
-  const properties = node.properties;
+  const properties = raw.properties;
   if (properties !== null && typeof properties === 'object' && !Array.isArray(properties)) {
-    const required: ReadonlyArray<JsonValue> = Array.isArray(node.required) ? node.required : [];
+    const required: ReadonlyArray<JsonValue> = Array.isArray(raw.required) ? raw.required : [];
     for (const name of Object.keys(properties)) {
       if (!required.includes(name)) {
         return true;
       }
     }
   }
-  return Object.values(node).some((v) => v !== undefined && hasOptionalProperties(v));
+  return Object.values(raw).some(hasOptionalProperties);
 }
 
 /** Whether a wire node's `type` admits `null` — either spelling. @internal */
@@ -203,8 +202,7 @@ function admitsNull(node: JsonValue): boolean {
   if (node === null || typeof node !== 'object' || Array.isArray(node)) {
     return false;
   }
-  const type: JsonValue | undefined = (node as Record<string, JsonValue | undefined>).type;
-  return Array.isArray(type) && type.includes('null');
+  return Array.isArray(node.type) && node.type.includes('null');
 }
 
 /**
@@ -234,12 +232,9 @@ export function hoistNullableOptionals(raw: JsonValue): JsonValue {
   if (raw === null || typeof raw !== 'object') {
     return raw;
   }
-  const node: Record<string, JsonValue | undefined> = raw as Record<string, JsonValue | undefined>;
-  const out: Record<string, JsonValue> = {};
-  for (const [key, value] of Object.entries(node)) {
-    if (value !== undefined) {
-      out[key] = hoistNullableOptionals(value);
-    }
+  const out: JsonObject = {};
+  for (const [key, value] of Object.entries(raw)) {
+    out[key] = hoistNullableOptionals(value);
   }
 
   const properties = out.properties;

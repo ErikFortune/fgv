@@ -34,7 +34,6 @@
 import '@fgv/ts-utils-jest';
 
 import { JsonSchema } from '@fgv/ts-json-base';
-import type { JsonValue } from '@fgv/ts-json-base';
 // The rewrite is @internal and deliberately not on the packlet's entry point; imported
 // directly so its recursion contract can be pinned without widening the public surface.
 // eslint-disable-next-line @rushstack/packlets/mechanics
@@ -1185,7 +1184,7 @@ describe('structured output', () => {
       const malformed = {
         type: 'object',
         properties: { a: null, b: 'junk', c: [1, 2], d: { type: ['string', 'null'] } }
-      } as unknown as JsonValue;
+      };
       // Only `d` — the one node that actually declares a nullable type — is hoisted.
       expect(hoistNullableOptionals(malformed)).toEqual({
         type: 'object',
@@ -1195,7 +1194,7 @@ describe('structured output', () => {
     });
 
     test('an object with no properties map is returned structurally unchanged', () => {
-      const node = { type: 'string', description: 'x' } as unknown as JsonValue;
+      const node = { type: 'string', description: 'x' };
       expect(hoistNullableOptionals(node)).toEqual(node);
     });
 
@@ -1204,7 +1203,7 @@ describe('structured output', () => {
         type: 'object',
         properties: { a: { type: ['string', 'null'] } },
         required: ['a']
-      } as unknown as JsonValue;
+      };
       expect(hoistNullableOptionals(node)).toEqual(node);
     });
   });

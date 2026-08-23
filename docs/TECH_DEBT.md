@@ -67,6 +67,34 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] `as Record<string, …>` after a `typeof` guard — a P1 anti-pattern, 33 instances in
+  production source across 10 packages.**
+  `CODE_REVIEW_CHECKLIST.md` lists "manual type checking with unsafe casts" as **P1 CRITICAL** and
+  names `as Record<string, unknown>` in its own quick-detection greps. The recurring shape is:
+
+  ```ts
+  if (raw === null || typeof raw !== 'object') { return false; }
+  const node = raw as Record<string, JsonValue | undefined>;   // ← the violation
+  ```
+
+  **Measured, not assumed: `grep -rn "as Record<string" --include=*.ts libraries/*/src tools/*/src`
+  excluding tests returns 33** — `ts-extras` 12, `ts-json-base` 6, `ts-res-ui-components` 4,
+  `ts-web-extras` / `ts-utils` / `ts-app-shell` 2 each, and one each in `ts-res`, `ts-prompt-assist`,
+  `ts-agent-memory`, `repo-template`.
+
+  **At least the `JsonValue` family of them is unnecessary, proven by construction.** `JsonObject` is
+  `{ [key: string]: JsonValue }`, so once the `typeof` / `null` / `Array.isArray` guard has run,
+  TypeScript has already narrowed to `JsonObject` and the property is directly accessible. Three such
+  casts were removed from `structuredOutput.ts` in the `schema-optional-translation` stream with **no
+  signature change, no behaviour change, lint clean and coverage still 100%** — including one in
+  `hasOptionalProperties` that had shipped, and which a later stream copied *because it was there*.
+  That copy is the whole reason this entry exists: the checklist calls the pattern blocking, and it
+  still propagated, because the nearest example in the file was a violation.
+
+  Not every instance will be the same shape — some cast a genuinely-`unknown` value where a Converter
+  is the right answer instead. **Triage before bulk-editing**; the `JsonValue`-narrowing ones are the
+  cheap and provably-safe subset.
+
 - **[P2] The repo-wide `rush test` acceptance gate cannot complete, so it silently covers nothing
   downstream of `@fgv/ts-json-base`.**
   `libraries/ts-json-base/src/test/unit/file-tree/mutableFsTree.test.ts` §

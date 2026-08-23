@@ -91,6 +91,34 @@ expect(optionalPropSchema.validate({ a: 'x', b: null })).toFail();   // the conv
 the packlet entry point — imported with the `@rushstack/packlets/mechanics` disable this repo already
 uses in five other test files, rather than widening the public surface for a test.
 
+## Zero casts, after review caught that the first cut had three
+
+The first implementation guarded with `typeof` and then cast — `(node as Record<string, JsonValue |
+undefined>).type` — in both new functions, and used `as unknown as JsonValue` on three well-typed
+test literals. **That is the P1 anti-pattern `CODE_REVIEW_CHECKLIST.md` names explicitly**, down to
+the `as Record<string, unknown>` spelling in its own detection greps.
+
+It got there by mirroring `hasOptionalProperties`, which had shipped with the same cast on its line
+177. **Following the nearest example is exactly how a P1 propagates**, and the checklist's status did
+not prevent it.
+
+None of them were load-bearing. `JsonObject` is `{ [key: string]: JsonValue }`, so the existing
+`null` / `typeof` / `Array.isArray` guard already narrows to `JsonObject` and the property is
+directly accessible; the test literals were valid `JsonValue` to begin with, so the cast was hiding
+well-typed data rather than enabling anything. All removed — plus the pre-existing one in
+`hasOptionalProperties`, disclosed here rather than smuggled, since this stream re-runs that exact
+function as its verifier and shipping a fix built on an uncorrected P1 would have been the
+propagation again.
+
+Result: **no cast of any kind in the file**, no signature change, no behaviour change, lint clean,
+2773 tests, coverage still 100% on all four metrics. The dead `v !== undefined` guard went with the
+cast that had made it look necessary.
+
+The wider finding is filed as **P2** in `TECH_DEBT.md`: **33 instances of this shape in production
+source across 10 packages**, measured rather than estimated. The `JsonValue`-narrowing subset is
+provably removable; the rest needs triage, since some cast a genuinely-`unknown` value where a
+Converter is the right answer.
+
 ## Gates
 
 | gate | result |
