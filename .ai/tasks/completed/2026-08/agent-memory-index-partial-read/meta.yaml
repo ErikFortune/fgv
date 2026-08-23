@@ -1,13 +1,13 @@
 id: agent-memory-index-partial-read
-status: in-flight
+status: shipped
 packages:
   - '@fgv/ts-agent-memory'
   - 'samples/testbed'
 # Squashed onto feat/vector-rebuild-report-by-kind, so it rides #633 rather than
 # carrying a PR of its own. #633's body describes only the predecessor stream
 # until it is rewritten to cover both. No `closed` date while status is in-flight.
-prs: []
-openPrs: [633]
+prs: [633]
+openPrs: []
 opened: 2026-08-15
 summary:
   intended: >
