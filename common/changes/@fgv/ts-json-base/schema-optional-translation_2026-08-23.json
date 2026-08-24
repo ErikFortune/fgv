@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "JsonSchema: document that optional(x({ nullable: true })) is the composition ai-assist's adaptOptionalToNullable hoists, and why it is preferable to a bare nullable when absence is meaningful to the caller. Docs only.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

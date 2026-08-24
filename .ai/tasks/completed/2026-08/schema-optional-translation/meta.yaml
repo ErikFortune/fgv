@@ -1,0 +1,68 @@
+id: schema-optional-translation
+status: in-flight # #659 is OPEN; flip to `shipped` on merge
+packages:
+  - '@fgv/ts-extras'
+  - '@fgv/ts-json-base'
+prs: []
+openPrs: [659]
+opened: 2026-08-23
+summary:
+  intended: >
+    Answer a PersonAIlity ask to revisit a decision we documented and declined:
+    that resolveStructuredOutput should be able to translate optional properties
+    to required-and-nullable for the OpenAI strict formats rather than refusing
+    the schema. They proposed an opt-in boolean documented as the caller
+    asserting a fact about its own reply validator that only the caller has.
+  shipped: >
+    adaptOptionalToNullable on ISchemaStructuredOutputRequest, defaulting off.
+    Their spelling, narrower semantics: it hoists only those optional properties
+    whose node ALREADY admits null, because that condition is written on the
+    schema rather than being a fact only the caller holds. Verification is
+    hasOptionalProperties re-run on the rewritten schema, so there is no second
+    notion of correctness and a non-nullable optional still refuses exactly as
+    before. Gated on the format as well as the flag. Eleven tests, watched
+    failing first; the safety property is pinned by its own test rather than
+    inferred from the wire.
+  diverged: >
+    We accepted their premise and rejected their shape, for a reason their own
+    framing supplied: an assertion can be false. A caller with optional(string())
+    could have set the proposed boolean and received a wire schema their
+    validator rejects at runtime — the precise drift hasOptionalProperties
+    exists to prevent, reintroduced by the flag meant to work around it. Reading
+    the condition off the schema makes the hazard unsayable rather than merely
+    discouraged. Their underlying complaint was right and is fixed: they now
+    author optional(x({nullable:true})), which states what their converter does
+    rather than what one provider demands. Our own tests then caught the same
+    class of error in our implementation — the first cut gated the hoist on the
+    flag alone and narrowed replies on Gemini, which has no all-required rule.
+    Separately, the repo-wide `rush test` gate promoted one PR earlier could not
+    be satisfied: ts-json-base fails a pre-existing root/chmod test and Rush
+    blocks every dependent, so the gate covered nothing downstream. Substituted
+    an explicit run over all eight consuming packages and filed the gap.
+  sourceLine: >
+    **Shipped:** an opt-in that hoists the optionals a schema already proves
+    safe to hoist, rather than a boolean asserting they are.
+keywords:
+  - the caller asserting versus the schema proving
+  - an assertion can be false
+  - make the hazard unsayable, not discouraged
+  - a strict subset of what the schema already accepts
+  - the verification is the original check re-run
+  - no second notion of correctness
+  - gate on the format, not only the flag
+  - inert where the rule does not apply
+  - watched-it-fail gate
+  - a gate blocked by a pre-existing failure covers nothing
+  - consumer right about the problem, wrong about the shape
+relatedStreams:
+  - id: json-schema-nullable
+    relationship: >
+      direct predecessor; shipped the nullable option this ask says it should
+      not have needed to reach for, and whose composition with optional is what
+      makes this stream's hoist provably safe
+  - id: ai-assist-structured-output
+    relationship: >
+      origin of hasOptionalProperties and the refusal this stream narrows
+  - id: personaility-asks-2026-08
+    relationship: >
+      origin; same consumer channel
