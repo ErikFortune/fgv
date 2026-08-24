@@ -1,5 +1,5 @@
 id: agent-memory-derived-state-reconciliation
-status: in-flight
+status: shipped
 # Published packages only. `samples/testbed` was also edited (two index doubles
 # widened, caught by the repo-wide rebuild) but `shouldPublish: false`, so it
 # carries no change file and does not belong in a package list an index reads.
@@ -9,8 +9,8 @@ packages:
 # No PR of its own yet: three phase branches merged into
 # integration/agent-memory-derived-state, to be squashed onto
 # feat/vector-rebuild-report-by-kind and ride #633.
-prs: []
-openPrs: [633]
+prs: [633]
+openPrs: []
 opened: 2026-08-15
 summary:
   intended: >

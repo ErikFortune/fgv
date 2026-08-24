@@ -139,6 +139,36 @@ export interface ISchemaStructuredOutputRequest {
    */
   readonly schema: JsonSchema.ISchemaValidator<unknown>;
   readonly onUnsupported?: StructuredOutputFallback;
+  /**
+   * On a format that requires every property to be `required`, send an optional
+   * property as required when its node **already admits `null`**, instead of
+   * refusing the whole schema.
+   *
+   * @remarks
+   * `JsonSchema.optional(...)` emits its inner node verbatim — optionality lives
+   * only in the parent's `required` array — so for a property authored as
+   * `optional(string({ nullable: true }))` the wire node is already
+   * `['string', 'null']`, and adding the key to `required` narrows what the model
+   * may send from *absent-or-null-or-value* to *null-or-value*. **Every reply the
+   * narrowed schema permits, the original schema already accepted**, so the
+   * one-object-cannot-drift property is preserved rather than traded away.
+   *
+   * That is why this is not the caller asserting its validator tolerates `null`.
+   * An assertion could be false; this is read off the schema. A property authored
+   * as plain `optional(string())` rejects `null`, is therefore **not** hoistable,
+   * and the schema still refuses through `onUnsupported` exactly as before — with
+   * an error naming the properties that blocked it. Setting this flag can never
+   * produce a wire schema the supplied schema would reject.
+   *
+   * Opt-in because it is still a **semantic** change to the reply: the model must
+   * now emit `null` where it could previously omit the key. A caller that
+   * distinguishes those two — rather than treating them alike, as
+   * `optional(nullable)` says it does — should leave this off.
+   *
+   * Defaults to `false`. The enforcement report is unaffected: a schema that goes
+   * out reports `'schema'` whether or not any property was hoisted.
+   */
+  readonly adaptOptionalToNullable?: boolean;
 }
 
 /**

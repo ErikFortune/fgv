@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: add ISchemaStructuredOutputRequest.adaptOptionalToNullable, which sends an optional property as required on the OpenAI strict formats when its node already admits null, instead of refusing the whole schema. The hoist is verified by re-running hasOptionalProperties on the rewritten schema, so a property that does not admit null still refuses through onUnsupported. Default behaviour is unchanged.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

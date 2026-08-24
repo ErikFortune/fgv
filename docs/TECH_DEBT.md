@@ -67,6 +67,59 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] `as Record<string, …>` after a `typeof` guard — a P1 anti-pattern, 32 sites in
+  production source across 11 packages.**
+  `CODE_REVIEW_CHECKLIST.md` lists "manual type checking with unsafe casts" as **P1 CRITICAL** and
+  names `as Record<string, unknown>` in its own quick-detection greps. The recurring shape is:
+
+  ```ts
+  if (raw === null || typeof raw !== 'object') { return false; }
+  const node = raw as Record<string, JsonValue | undefined>;   // ← the violation
+  ```
+
+  **Measured, not assumed.** `grep -rn "as Record<string" --include=*.ts libraries/*/src tools/*/src`
+  excluding tests returns 33 lines, one of which is a comment (`fromJson.ts:58`) — so **32 code
+  sites** across 11 packages (`ts-extras` 12, `ts-json-base` 5, `ts-res-ui-components` 4, `ts-web-extras` / `ts-utils` / `ts-app-shell` 2 each, and one each in `ts-res`, `ts-prompt-assist`, `ts-agent-memory`, `repo-template`, `ks`).
+
+  **Triaged and queued as a chore batch** — see `CHORES.md` § *"`as Record<string, …>` after a type
+  guard"*, which splits the sites into mechanically-removable (≈8), missing-Converter (≈16, design
+  work, do not batch with the rest) and benign (≈8).
+
+  **At least the `JsonValue` family of them is unnecessary, proven by construction.** `JsonObject` is
+  `{ [key: string]: JsonValue }`, so once the `typeof` / `null` / `Array.isArray` guard has run,
+  TypeScript has already narrowed to `JsonObject` and the property is directly accessible. Three such
+  casts were removed from `structuredOutput.ts` in the `schema-optional-translation` stream with **no
+  signature change, no behaviour change, lint clean and coverage still 100%** — including one in
+  `hasOptionalProperties` that had shipped, and which a later stream copied *because it was there*.
+  That copy is the whole reason this entry exists: the checklist calls the pattern blocking, and it
+  still propagated, because the nearest example in the file was a violation.
+
+  Not every instance will be the same shape — some cast a genuinely-`unknown` value where a Converter
+  is the right answer instead. **Triage before bulk-editing**; the `JsonValue`-narrowing ones are the
+  cheap and provably-safe subset.
+
+- **[P2] The repo-wide `rush test` acceptance gate cannot complete, so it silently covers nothing
+  downstream of `@fgv/ts-json-base`.**
+  `libraries/ts-json-base/src/test/unit/file-tree/mutableFsTree.test.ts` §
+  *"returns permission-denied for read-only file"* fails whenever the suite runs as **root**, because
+  `chmod 0444` does not stop root from writing. That alone would be a nuisance; the consequence is
+  not. **Rush blocks every dependent of a failed project**, so `rush test` stops after
+  `@fgv/ts-json-base` and never runs `@fgv/ts-extras` or anything downstream of it.
+
+  This matters because `CODING_STANDARDS.md` § *"`rush rebuild` covers a widened type. Only a
+  repo-wide `rush test` covers a widened behaviour"* was promoted to an acceptance-criteria checkbox
+  in #656 — and the very next stream to need it (`schema-optional-translation`) found it unsatisfiable.
+  The failure mode is the dangerous kind: the command exits non-zero for a reason unrelated to the
+  change, an implementer sees a familiar known-failure and moves on, and **the box gets ticked for a
+  run that tested none of the packages the rule exists to protect.**
+
+  Interim practice, used by that stream: run `rush test --only <pkg>` over each package consuming the
+  changed surface, and say in the PR which ones. That is strictly weaker — it depends on the author
+  enumerating consumers correctly, which is the work the repo-wide run exists to remove.
+
+  **Fix:** make the test detect that it is running as root and assert the honest thing (root *can*
+  write a `0444` file), rather than skipping it. Restores the gate for every future stream.
+
 - **[P2] A `safer-fetch` retry test asserts a probabilistic outcome, and flakes CI for every
   unrelated PR at roughly 1 run in 170.**
   `libraries/ts-extras/src/test/unit/safer-fetch/saferFetchRetry.test.ts` §

@@ -2370,6 +2370,7 @@ interface ISaferFetchResponseHead {
 
 // @public
 interface ISchemaStructuredOutputRequest {
+    readonly adaptOptionalToNullable?: boolean;
     // (undocumented)
     readonly mode: 'schema';
     // (undocumented)
