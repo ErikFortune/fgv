@@ -129,6 +129,44 @@ close, which is where hand-maintained lists die.
 - Backfill the 25 streams missing `sourceLine` only if it is cheap; otherwise start the feed from
   what exists and say so.
 
+## Phase 0 — DONE (2026-08-24), landed ahead of the split
+
+Three items pulled forward at the owner's request, because they are independently correct and
+unblock the rest.
+
+**`@fgv/ts-random` now has a `CAPABILITIES.md`.** Written against source and **verified by running
+every claim** — which was not ceremony: four assertions were wrong on the first draft.
+`nextInRange` is *inclusive* of both bounds and tolerates `min > max`; `nextInt` with a negative
+extent draws `(extent, 0]`; `nextString`'s alphabet is optional with an alphanumeric default; and
+`candidates` on the pick methods is an array of **pools**, not of items, so `pickSequential` walks
+the pools cyclically drawing one from each. The documented example returned an **empty string** until
+it was run — `Words` exports are **capitalized** (`Words.Adjectives`), and `jobs` is the lone
+lowercase sibling. A capabilities doc that misdescribes the surface is worse than none, so *run the
+examples* is a rule for the rest of the split, not a one-off.
+
+**Publishing audit — the answer is "mostly fine, one real leak".**
+
+| posture | count | packages |
+|---|---|---|
+| allowlist (`files`) | 12 | the newer boundary packages, one uniform pattern |
+| denylist (`.npmignore`) | 18 | the core: `ts-utils`, `ts-extras`, `ts-json-base`, `ts-res`, `ts-bcp47` … |
+| **neither** | **1** | **`@fgv/ks`** |
+
+Checked with `npm pack --dry-run` across the core no-allowlist packages: **no `src/`, no tests** in
+any of them — the `.npmignore` files are doing their job. Two strays ship repo-wide and are
+harmless but pointless: `eslint.config.js` and `tsconfig.tsbuildinfo` (a build cache).
+
+**`@fgv/ks` was the real one** — neither allowlist nor `.npmignore`, so it shipped its entire
+`src/`. Given the canonical allowlist it goes **76 files / 338 KiB → 36 files / 134 KiB**, with
+`bin/ks.js` and `lib/` intact.
+
+**`CAPABILITIES.md` added to all 12 existing allowlists**, ready for the files to land.
+
+**Left deliberately undone:** converting the 18 denylist packages to allowlists. It is the better
+posture — a denylist ships a new file type by default unless someone remembers to ignore it, whereas
+an allowlist fails safe — but it changes what 18 published packages contain, and that deserves its
+own verification pass rather than riding a docs stream. Filed as a follow-up, not done here.
+
 ## Phase 3 — publish `CAPABILITIES.md` in the tarball (all 26)
 
 **The win is version accuracy, and it is bigger than convenience.** Today the single release-branch

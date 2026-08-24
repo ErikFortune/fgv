@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ks",
+      "comment": "Publishing: add a files allowlist. The package previously had neither an allowlist nor an .npmignore and was shipping its src/ directory plus eslint.config.js \u2014 76 files / 338 KiB, now 36 files / 134 KiB. bin/ks.js and lib/ are unaffected.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ks"
+}

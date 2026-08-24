@@ -12,6 +12,7 @@
     "dist/**/*",
     "lib/**/*",
     "README.md",
+    "CAPABILITIES.md",
     "package.json"
   ],
   "scripts": {
