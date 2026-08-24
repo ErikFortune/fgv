@@ -165,6 +165,17 @@ function jsonObjectWire(
  * So this is treated as a **capability mismatch** and routed through the caller's
  * existing `onUnsupported` choice — degrade to unconstrained by default, fail loudly
  * on request. Gemini and Anthropic have no such rule and are unaffected.
+ *
+ * **One narrow exception, and it does not weaken the above.** The first repair is
+ * unsafe *because the rewritten schema admits a reply the original rejects*. When
+ * the optional property's node **already admits `null`**, as it does when authored
+ * `optional(string({ nullable: true }))`, that is not true of it: it accepts `null`, so
+ * listing the key in `required` only removes the model's option to omit it, and
+ * every reply the emitted schema permits still satisfies the supplied one. That
+ * case is hoisted by {@link hoistNullableOptionals} when the caller opts in via
+ * `adaptOptionalToNullable`, **and this function is then re-run on the result** —
+ * so a property that is genuinely not `null`-able still lands here and still
+ * refuses. The condition is read off the schema, never asserted by the caller.
  * @internal
  */
 export function hasOptionalProperties(raw: JsonValue): boolean {
@@ -174,17 +185,71 @@ export function hasOptionalProperties(raw: JsonValue): boolean {
   if (raw === null || typeof raw !== 'object') {
     return false;
   }
-  const node: Record<string, JsonValue | undefined> = raw as Record<string, JsonValue | undefined>;
-  const properties = node.properties;
+  const properties = raw.properties;
   if (properties !== null && typeof properties === 'object' && !Array.isArray(properties)) {
-    const required: ReadonlyArray<JsonValue> = Array.isArray(node.required) ? node.required : [];
+    const required: ReadonlyArray<JsonValue> = Array.isArray(raw.required) ? raw.required : [];
     for (const name of Object.keys(properties)) {
       if (!required.includes(name)) {
         return true;
       }
     }
   }
-  return Object.values(node).some((v) => v !== undefined && hasOptionalProperties(v));
+  return Object.values(raw).some(hasOptionalProperties);
+}
+
+/** Whether a wire node's `type` admits `null` — either spelling. @internal */
+function admitsNull(node: JsonValue): boolean {
+  if (node === null || typeof node !== 'object' || Array.isArray(node)) {
+    return false;
+  }
+  return Array.isArray(node.type) && node.type.includes('null');
+}
+
+/**
+ * Rewrites `raw` so that every optional property whose node already admits `null`
+ * is listed in its parent's `required` array, at any depth.
+ *
+ * @remarks
+ * The rewrite is deliberately **narrow, and its narrowness is the safety argument.**
+ * `JsonSchema.optional(...)` emits its inner node verbatim, so a property authored
+ * as `optional(string({ nullable: true }))` is already `['string', 'null']` on the
+ * wire and differs from its required sibling only by absence from `required`.
+ * Adding it there narrows the permitted replies from *absent-or-null-or-value* to
+ * *null-or-value* — a strict subset of what the caller's own schema accepts. No
+ * reply that satisfies the emitted schema can fail the supplied one.
+ *
+ * A property whose node does not admit `null` is left exactly as it was, which is
+ * what makes this composable with the existing guard rather than a replacement for
+ * it: {@link hasOptionalProperties} is re-run on the output, so any non-hoistable
+ * optional still routes through `onUnsupported`. **The verification is the original
+ * check, applied again** — there is no second notion of correctness to keep in sync.
+ * @internal
+ */
+export function hoistNullableOptionals(raw: JsonValue): JsonValue {
+  if (Array.isArray(raw)) {
+    return raw.map(hoistNullableOptionals);
+  }
+  if (raw === null || typeof raw !== 'object') {
+    return raw;
+  }
+  const out: JsonObject = {};
+  for (const [key, value] of Object.entries(raw)) {
+    out[key] = hoistNullableOptionals(value);
+  }
+
+  const properties = out.properties;
+  if (properties !== null && typeof properties === 'object' && !Array.isArray(properties)) {
+    const required: JsonValue[] = Array.isArray(out.required) ? [...out.required] : [];
+    for (const [name, propSchema] of Object.entries(properties)) {
+      if (!required.includes(name) && admitsNull(propSchema)) {
+        required.push(name);
+      }
+    }
+    if (required.length > 0) {
+      out.required = required;
+    }
+  }
+  return out;
 }
 
 /** The two formats that carry OpenAI's all-properties-required strict rule. @internal */
@@ -297,13 +362,28 @@ export function resolveStructuredOutput(
   let resolved: IResolvedStructuredOutput | undefined;
   let unsupported: string | undefined;
   if (request.mode === 'schema') {
-    const raw: JsonValue = request.schema.toJson();
-    if (isOpenAiStrictFormat(format) && hasOptionalProperties(raw)) {
+    // Hoist BEFORE the guard, then let the guard judge the result. The rewrite only
+    // ever removes optionality that was safe to remove, so re-running the original
+    // check is the whole verification — a schema that still trips it was not
+    // adaptable, and refuses exactly as it did before the flag existed.
+    // Gated on the format, not just the flag: hoisting narrows what the model may
+    // send, so applying it where the all-required rule does not exist would change
+    // a reply on a provider that never needed it changed.
+    const strict: boolean = isOpenAiStrictFormat(format);
+    const adapt: boolean = strict && request.adaptOptionalToNullable === true;
+    const raw: JsonValue = adapt ? hoistNullableOptionals(request.schema.toJson()) : request.schema.toJson();
+    if (strict && hasOptionalProperties(raw)) {
       // See `hasOptionalProperties` — a hard provider constraint, treated as a
       // capability mismatch rather than relocated into an opaque 400.
       unsupported =
         `the supplied schema declares optional properties, and OpenAI strict structured output ` +
-        `requires every property to be required; author them as required, or pass ` +
+        `requires every property to be required; ` +
+        (adapt
+          ? `adaptOptionalToNullable hoisted the ones that admit null, but at least one does not — ` +
+            `author it as nullable (e.g. optional(string({ nullable: true }))) so null is an ` +
+            `accepted reply, make it required, or pass `
+          : `author them as required, adopt adaptOptionalToNullable if null is an accepted reply ` +
+            `for each of them, or pass `) +
         `onUnsupported: 'degrade' to send the request unconstrained`;
     } else {
       resolved = schemaWire(format, raw);
