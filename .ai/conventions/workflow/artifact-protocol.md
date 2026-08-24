@@ -70,6 +70,56 @@ This is the load-bearing rule. The two ways it can go wrong:
 The convention is unambiguous: **the migration ships in the same PR
 as the work**.
 
+### A PR anticipates its own merge
+
+Same rule, one step further, and it resolves an omission the above
+left open: **write the merge-state markers as though the PR has
+merged, in the PR itself.**
+
+```yaml
+status: shipped          # not: in-flight, flip on merge
+prs: [659]
+openPrs: []
+```
+
+and in `docs/WORKSTREAMS.md`, `✅ (shipped <date> via #659)` rather
+than `🟡 (PR open, not merged)`.
+
+**Why anticipate rather than be strictly accurate.** A PR cannot
+observe its own merge, so a marker that is accurate at author time
+is *guaranteed* to be wrong the moment it lands — and correcting it
+costs a commit. Multiply by every stream and the repo accumulates
+doc-only commits that carry no code, which is precisely what the
+"docs ship with the code" rule exists to prevent. The trade is:
+
+| approach | cost |
+|---|---|
+| accurate-then-correct | **one guaranteed extra commit per stream**, forever |
+| anticipate the merge | a briefly-wrong marker **only if the PR does not merge** |
+
+The second is strictly cheaper, and its failure mode is rare,
+visible and self-correcting — an abandoned PR is noticed, and its
+branch is deleted with the optimistic marker on it.
+
+**Observed cost of the old way.** #657 (2026-08-23) existed solely
+to flip five streams whose PRs had merged; three of them had been
+stale for over a month, so the correcting commit is not reliably
+prompt either. #655 carried #654's flip because #654 could not
+record its own merge — which works exactly once and leaves the
+carrier stale. #659 then repeated it.
+
+**Do not** hedge with a comment like `# flip to shipped on merge`.
+That is the accurate-then-correct approach wearing the other
+approach's clothes: it still requires the follow-up commit, and it
+tells a later reader the record is provisional when it is meant to
+be final.
+
+**The one case that is genuinely provisional** is a stream whose PR
+is expected to sit open across a boundary it cannot control — the
+`prerelease` workflow-pin PR waiting on a publish, for instance. Mark
+those `🟡` honestly, because there the uncertainty is real rather
+than an artifact of not being able to see one commit into the future.
+
 ## What the polished `README.md` looks like
 
 The completed-tasks `README.md` is the durable historical record.
