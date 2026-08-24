@@ -128,9 +128,9 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `schema-optional-translation` 🟡 (**PR open, not merged** — additive)
+### `schema-optional-translation` ✅ (shipped 2026-08-23 via #659 — additive)
 
-**Status:** 🟡 PR open; flip to ✅ on merge. Gates green — build / lint / test at **100%** in `@fgv/ts-extras` (2773 tests) and `@fgv/ts-json-base`, repo-wide `rush rebuild` at exit 0 with zero warnings, change files for both.
+**Status:** ✅ shipped to `release` via **#659** (`022dbf19`, 2026-08-23). Gates green — build / lint / test at **100%** in `@fgv/ts-extras` (2773 tests) and `@fgv/ts-json-base`, repo-wide `rush rebuild` at exit 0 with zero warnings, change files for both.
 **Package surface:** `@fgv/ts-extras` (`ISchemaStructuredOutputRequest.adaptOptionalToNullable`, `hoistNullableOptionals`), `@fgv/ts-json-base` (`factories.ts` docstring only).
 **Artifacts:** `.ai/tasks/completed/2026-08/schema-optional-translation/`
 **Origin:** a PersonAIlity ask (personaility#644) asking us to revisit a decision we documented and declined. Stated priority **low** — nothing of theirs is blocked; the ask is about where a piece of provider knowledge lives.

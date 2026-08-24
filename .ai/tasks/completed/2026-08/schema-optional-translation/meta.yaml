@@ -1,10 +1,10 @@
 id: schema-optional-translation
-status: in-flight # #659 is OPEN; flip to `shipped` on merge
+status: shipped
 packages:
   - '@fgv/ts-extras'
   - '@fgv/ts-json-base'
-prs: []
-openPrs: [659]
+prs: [659]
+openPrs: []
 opened: 2026-08-23
 summary:
   intended: >

@@ -783,6 +783,15 @@ This applies to the streams ledger too: a stream that ships changes `docs/WORKST
 for itself. A ledger describing a shipped stream as "in flight — do not merge" is the same defect
 in a different file.
 
+**And a PR anticipates its own merge.** Write `status: shipped` / `prs: [<n>]` / `openPrs: []` and
+the `✅ (shipped <date> via #<n>)` ledger marker **in the PR itself** — not `in-flight` with a
+"flip on merge" comment. A PR cannot observe its own merge, so an author-time-accurate marker is
+*guaranteed* to be wrong on landing, and correcting it costs a commit; anticipating is wrong only
+in the rare case the PR never merges, which is visible and self-correcting. #657 existed solely to
+flip five such markers, three stale for over a month. Full reasoning, and the one genuinely
+provisional case, in `.ai/conventions/workflow/artifact-protocol.md` § *"A PR anticipates its own
+merge"*.
+
 ### Why this gate is load-bearing
 
 Lint errors break CI. When a cluster integration branch tries to merge to `release`, a single per-stream lint failure blocks the whole cluster. The cost compounds: the cluster-close prep PR can't merge, the integration-to-release PR can't merge, and any downstream consumer waiting for the alpha gets delayed.
