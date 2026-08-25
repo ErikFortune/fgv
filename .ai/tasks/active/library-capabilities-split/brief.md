@@ -1,7 +1,12 @@
 # Stream brief — `library-capabilities-split`
 
-**Status: READY — planned with the repo owner 2026-08-24. Phase 1 is the stream; phases 2 and 3 are
-scoped here but ship separately.**
+**Status: PHASE 0 + PHASE 1 DONE (2026-08-24). Phases 2 and 3 scoped here, shipping separately.**
+
+**Result: 171,693 → 15,225 chars, a 91% cut**, with all five gates passing and content preservation
+verified at 98.7% of distinctive sentences found verbatim (the misses are the deliberately-rewritten
+preamble plus two sentence-splitter artifacts whose reflexes were confirmed individually). One real
+casualty was caught by that check and fixed: compressing the cross-runtime table had dropped its
+notes column, so the full table is preserved whole in `.ai/conventions/`.
 
 ## The problem, measured
 
