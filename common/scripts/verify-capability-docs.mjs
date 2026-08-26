@@ -49,7 +49,17 @@ const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const VERBOSE = process.argv.includes('--verbose');
 
 const ROUTER = '.ai/instructions/LIBRARY_CAPABILITIES.md';
-const ROUTER_MAX_CHARS = 16000;
+// 18,000 — revised once, from 16,000, and the reason is recorded rather than the number quietly
+// edited. The original cap was set in phase 1 before the generated recent-additions feed existed;
+// the feed then landed at ~2.4k and put the router at 17,637. Squeezing a genuinely useful,
+// BOUNDED section down to nothing to preserve a number picked before it existed would be
+// optimising for the number. 18,000 is still an 89.5% cut from the 171,693 this replaced.
+//
+// This is the only sanctioned reason to move it: a new bounded section the cap predates. "The
+// router grew" is NOT a reason — that is the thing being prevented, and the fix is to move detail
+// into a package file. If you are reading this while considering another bump, the feed is capped
+// at ROUTER_LIMIT entries in generate-capability-feed.mjs and cannot be what grew.
+const ROUTER_MAX_CHARS = 18000;
 const PACKAGE_DIRS = ['libraries'];
 
 // Slated to move to their own monorepo; `.ai/instructions/ACTIVE_DEVELOPMENT.md` says not to

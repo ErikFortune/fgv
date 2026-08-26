@@ -35,4 +35,14 @@
 
 ## Recent additions
 
-*Newest first. Populated from each stream's `summary.sourceLine` — see the split brief's phase 2.*
+*Newest first. **Generated** — see the repo index; do not hand-edit inside the markers.*
+
+<!-- BEGIN GENERATED: recent-additions -->
+
+- **2026-08-23** — **Shipped:** an opt-in that hoists the optionals a schema already proves safe to hoist, rather than a boolean asserting they are. ([#659](https://github.com/ErikFortune/fgv/pull/659))
+- **2026-08-22** — **Shipped:** a capability-aware copy with a single guarantee — every file that lands is byte-identical to its source, or the copy says so. ([#653](https://github.com/ErikFortune/fgv/pull/653))
+- **2026-08-22** — **Shipped:** `nullable: true` on every factory — the spelling OpenAI strict mode accepts for an absent-able field, where `optional(...)` is unsendable. ([#655](https://github.com/ErikFortune/fgv/pull/655))
+- **2026-08-21** — A caller that has already declared the shape it wants can now **tell the provider**, and learn **which enforcement was actually applied** — on all four providers plus the proxy. ([#652](https://github.com/ErikFortune/fgv/pull/652))
+- **2026-06** — **Status:** Complete — all gates green, PR open. ([#436](https://github.com/ErikFortune/fgv/pull/436))
+
+<!-- END GENERATED: recent-additions -->

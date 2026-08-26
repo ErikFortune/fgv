@@ -63,4 +63,20 @@
 
 ## Recent additions
 
-*Newest first. Populated from each stream's `summary.sourceLine` — see the split brief's phase 2.*
+*Newest first. **Generated** — see the repo index; do not hand-edit inside the markers.*
+
+<!-- BEGIN GENERATED: recent-additions -->
+
+- **2026-08-23** — **Shipped:** an opt-in that hoists the optionals a schema already proves safe to hoist, rather than a boolean asserting they are. ([#659](https://github.com/ErikFortune/fgv/pull/659))
+- **2026-08-22** — **Shipped:** `nullable: true` on every factory — the spelling OpenAI strict mode accepts for an absent-able field, where `optional(...)` is unsendable. ([#655](https://github.com/ErikFortune/fgv/pull/655))
+- **2026-08-21** — A caller that has already declared the shape it wants can now **tell the provider**, and learn **which enforcement was actually applied** — on all four providers plus the proxy. ([#652](https://github.com/ErikFortune/fgv/pull/652))
+- **2026-08** — Closed out the safer-fetch series. ([#601](https://github.com/ErikFortune/fgv/pull/601))
+- **2026-06-06** — **Status:** complete, gates green, Copilot loop converged. Awaiting merge of PR #478 into the `ai-assist-message-ordering` integration branch. ([#478](https://github.com/ErikFortune/fgv/pull/478))
+- **2026-06** — **Status:** Complete — all gates green, PR open. ([#436](https://github.com/ErikFortune/fgv/pull/436))
+- **2026-05** — **PR:** [#329](https://github.com/ErikFortune/fgv/pull/329) — `feat(ai-assist): layered image generation options architecture (Phase B)` ([#327](https://github.com/ErikFortune/fgv/pull/327))
+- **2026-05** — **PR:** [#334](https://github.com/ErikFortune/fgv/pull/334) — `feat(ai-assist): thinking-config Phase B — layered options for extended thinking/reasoning` ([#330](https://github.com/ErikFortune/fgv/pull/330))
+- **2026-05** — **PR:** [#322](https://github.com/ErikFortune/fgv/pull/322) — `feat(auth-primitives-batch1): X25519 keypair, SPKI helpers, RFC 8785 canonicalize` ([#322](https://github.com/ErikFortune/fgv/pull/322))
+- **2026-05** — Both implement `CryptoUtils.IArgon2idProvider` from `@fgv/ts-extras`. Output is byte-identical for the same inputs, verified by RFC 9106 §B.3 parameter set test vector and a 7-case parameter sweep. ([#344](https://github.com/ErikFortune/fgv/pull/344))
+- **2026-05** — **Status:** Completed 2026-05 ([#343](https://github.com/ErikFortune/fgv/pull/343))
+
+<!-- END GENERATED: recent-additions -->

@@ -22,4 +22,10 @@
 
 ## Recent additions
 
-*Newest first. Populated from each stream's `summary.sourceLine` — see the split brief's phase 2.*
+*Newest first. **Generated** — see the repo index; do not hand-edit inside the markers.*
+
+<!-- BEGIN GENERATED: recent-additions -->
+
+- **2026-05** — Both implement `CryptoUtils.IArgon2idProvider` from `@fgv/ts-extras`. Output is byte-identical for the same inputs, verified by RFC 9106 §B.3 parameter set test vector and a 7-case parameter sweep. ([#344](https://github.com/ErikFortune/fgv/pull/344))
+
+<!-- END GENERATED: recent-additions -->

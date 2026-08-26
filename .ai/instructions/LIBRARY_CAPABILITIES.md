@@ -171,5 +171,23 @@ control the version or instance, direct otherwise. Full convention:
 
 ## Recent additions
 
-*Newest first, bounded. Generated from each stream's `summary.sourceLine` — phase 2 of the
-`library-capabilities-split` stream. Until that lands, see `docs/WORKSTREAMS.md`.*
+*Newest first, bounded. **Generated** from each completed stream's `summary.sourceLine` by
+`common/scripts/generate-capability-feed.mjs`; CI fails if it is stale. Do not hand-edit inside the
+markers.*
+
+<!-- BEGIN GENERATED: recent-additions -->
+
+- **2026-08-23** — Shipped: an opt-in that hoists the optionals a schema already proves safe to hoist, rather than a boolean asserting they are. ([#659](https://github.com/ErikFortune/fgv/pull/659)) · `ts-extras` `ts-json-base`
+- **2026-08-22** — Shipped: a capability-aware copy with a single guarantee — every file that lands is byte-identical to its source, or the copy says… ([#653](https://github.com/ErikFortune/fgv/pull/653)) · `ts-json-base`
+- **2026-08-22** — Shipped: `nullable: true` on every factory — the spelling OpenAI strict mode accepts for an absent-able field, where… ([#655](https://github.com/ErikFortune/fgv/pull/655)) · `ts-json-base` `ts-extras` `ts-extras-mcp`
+- **2026-08-22** — Shipped: the rebuild-path table clear runs through `exec`, so the one statement `release()` could never reach no longer exists. ([#654](https://github.com/ErikFortune/fgv/pull/654)) · `ts-agent-memory-sqlite-vec`
+- **2026-08-21** — A caller that has already declared the shape it wants can now tell the provider, and learn which enforcement was actually applied… ([#652](https://github.com/ErikFortune/fgv/pull/652)) · `ts-extras` `ts-json-base` `ts-app-shell`
+- **2026-08-21** — Shipped: `release()` on both index classes — it drops the index's prepared statements and marks it unusable, and never touches the… ([#651](https://github.com/ErikFortune/fgv/pull/651)) · `ts-agent-memory-sqlite-vec`
+- **2026-08-18** — Shipped: one invariant, enforced at the one layer that sees both sides — a record loaded from an address derived from kind K is a… ([#648](https://github.com/ErikFortune/fgv/pull/648)) · `ts-agent-memory`
+- **2026-08-15** — Shipped: the partial-read `IMemoryIndex` — every read returns `IIndexedMemoryEntry` (scope + envelope, no body), `rebuild` takes… ([#633](https://github.com/ErikFortune/fgv/pull/633)) · `ts-agent-memory` `samples/testbed`
+- **2026-08-15** — Outcome: delivered. Additive; `create()` is untouched on both classes.
+- **2026-08-15** — Shipped: every count in `IVectorRebuildReport` is now resolved by `Kind`, the exclusion count originates in the layer that decides… ([#633](https://github.com/ErikFortune/fgv/pull/633)) · `ts-agent-memory` `ts-agent-memory-sqlite-vec`
+
+*Showing the 10 most recent of 36. Per-package history is in each `CAPABILITIES.md`.*
+
+<!-- END GENERATED: recent-additions -->

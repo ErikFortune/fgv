@@ -38,4 +38,11 @@ A Result-integration boundary over [`@modelcontextprotocol/sdk`](https://github.
 
 ## Recent additions
 
-*Newest first. Populated from each stream's `summary.sourceLine` — see the split brief's phase 2.*
+*Newest first. **Generated** — see the repo index; do not hand-edit inside the markers.*
+
+<!-- BEGIN GENERATED: recent-additions -->
+
+- **2026-08-22** — **Shipped:** `nullable: true` on every factory — the spelling OpenAI strict mode accepts for an absent-able field, where `optional(...)` is unsendable. ([#655](https://github.com/ErikFortune/fgv/pull/655))
+- **2026-06-06** — Shipped `@fgv/ts-extras-mcp` (Node) — the MCP → ai-assist client-tools bridge: connect to an MCP server, discover its tools, and `adaptMcpTools` each into an `AiAssist.IAiClientTool` that drops into `executeClientToolTurn`. ([#469](https://github.com/ErikFortune/fgv/pull/469))
+
+<!-- END GENERATED: recent-additions -->

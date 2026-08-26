@@ -274,6 +274,7 @@ async function collectPackages() {
 const packlist = loadPacklist();
 const packages = await collectPackages();
 const failures = [];
+const capabilityGaps = [];
 let checked = 0;
 let declared = 0;
 let conditionsChecked = 0;
@@ -351,6 +352,19 @@ for (const pkg of packages) {
   if (TIMING) {
     console.log(`  time  ${pkg.name} — ${packMs.toFixed(0)} ms, ${packed.size} files packed`);
   }
+
+  // CAPABILITIES.md must ship, and the tarball is the only place that can prove it.
+  //
+  // The point of a per-package capability doc is that it is VERSION-ACCURATE: a consumer on
+  // 5.1.0-54 should read what 5.1.0-54 does, not what `release` does today. That property only
+  // holds if the file is in the tarball, and whether it is depends on two mechanisms that
+  // disagree by default — the `files` allowlist (12 packages, which must name it) and the
+  // `.npmignore` denylist (18 packages, whose `*.md` rule excluded it until a `!CAPABILITIES.md`
+  // negation was added). Neither is visible to the build, the tests, or a file listing of the
+  // working tree, which is exactly why this is asserted against the packed set.
+  if (existsSync(join(pkg.dir, 'CAPABILITIES.md')) && !packed.has('CAPABILITIES.md')) {
+    capabilityGaps.push(pkg.name);
+  }
   if (missing.length > 0) {
     // A tarball carrying little or no build output is the 5.1.0-27 shape, and it produces one
     // failure per condition — noise, unless the shared cause is named once on the package.
@@ -403,6 +417,18 @@ if (failures.length > 0) {
     'A condition naming a path the tarball does not contain resolves correctly for types, builds\n' +
       "clean, tests clean, and fails at the consumer's install or first import. Point the condition\n" +
       'at an artifact that ships, or make the artifact ship.\n'
+  );
+  process.exit(1);
+}
+
+if (capabilityGaps.length > 0) {
+  console.error('\nThese packages have a CAPABILITIES.md that does NOT ship in their tarball:\n');
+  for (const n of capabilityGaps) console.error(`  ${n}`);
+  console.error(
+    '\nThe file exists in the working tree, so the repo-wide capability gate is satisfied and a\n' +
+      'reader browsing GitHub sees it — but a consumer who installed the package does not, which\n' +
+      'defeats the version-accuracy the per-package split exists for. Add CAPABILITIES.md to the\n' +
+      "package's `files` allowlist, or `!CAPABILITIES.md` to its .npmignore.\n"
   );
   process.exit(1);
 }

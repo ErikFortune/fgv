@@ -44,6 +44,13 @@ jobs:
       - name: Verify capability docs
         run: node common/scripts/verify-capability-docs.mjs --verbose
 
+      # The recent-additions feed is DERIVED from each completed stream's summary.sourceLine, so
+      # there is one copy of that sentence rather than two to keep in step. This is what stops the
+      # derived form drifting from its source — a hand-maintained changelog is exactly the kind of
+      # stream-close discipline this repo has watched lapse.
+      - name: Verify the capability feed is not stale
+        run: node common/scripts/generate-capability-feed.mjs --check --verbose
+
       - name: Verify ESM entry points are loadable
         run: node common/scripts/verify-esm-entrypoints.mjs --verbose
       # The sibling check, one row down the consumer table. The step above asks whether Node can

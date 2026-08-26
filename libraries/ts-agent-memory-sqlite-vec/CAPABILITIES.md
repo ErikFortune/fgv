@@ -28,4 +28,12 @@
 
 ## Recent additions
 
-*Newest first. Populated from each stream's `summary.sourceLine` — see the split brief's phase 2.*
+*Newest first. **Generated** — see the repo index; do not hand-edit inside the markers.*
+
+<!-- BEGIN GENERATED: recent-additions -->
+
+- **2026-08-22** — **Shipped:** the rebuild-path table clear runs through `exec`, so the one statement `release()` could never reach no longer exists. ([#654](https://github.com/ErikFortune/fgv/pull/654))
+- **2026-08-21** — **Shipped:** `release()` on both index classes — it drops the index's prepared statements and marks it unusable, and **never touches the connection**. A released index fails, or for the synchronous counts throws, rather than answering as an empty one. ([#651](https://github.com/ErikFortune/fgv/pull/651))
+- **2026-08-15** — **Shipped:** every count in `IVectorRebuildReport` is now resolved by `Kind`, the exclusion count originates in the layer that decides it, and a failed rebuild carries its partial report — one change rather than the staged pair the consumer left open. ([#633](https://github.com/ErikFortune/fgv/pull/633))
+
+<!-- END GENERATED: recent-additions -->

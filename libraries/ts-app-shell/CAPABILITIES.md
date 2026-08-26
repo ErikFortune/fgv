@@ -28,4 +28,11 @@ Create messages level-first: **`createMessage(level, text, options?)`** / **`add
 
 ## Recent additions
 
-*Newest first. Populated from each stream's `summary.sourceLine` — see the split brief's phase 2.*
+*Newest first. **Generated** — see the repo index; do not hand-edit inside the markers.*
+
+<!-- BEGIN GENERATED: recent-additions -->
+
+- **2026-08-21** — A caller that has already declared the shape it wants can now **tell the provider**, and learn **which enforcement was actually applied** — on all four providers plus the proxy. ([#652](https://github.com/ErikFortune/fgv/pull/652))
+- **2026-06-06** — **Status:** complete, gates green, Copilot loop converged. Awaiting merge of PR #478 into the `ai-assist-message-ordering` integration branch. ([#478](https://github.com/ErikFortune/fgv/pull/478))
+
+<!-- END GENERATED: recent-additions -->

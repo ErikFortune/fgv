@@ -141,5 +141,10 @@ build it on `nextFloat()` rather than adding a second generator.
 
 ## Recent additions
 
-*Newest first. Nothing recorded yet — this file was created when `@fgv/ts-random` was found to have
-no capability entry at all. Entries accumulate here as streams touch the package.*
+*Newest first. **Generated** — see the repo index; do not hand-edit inside the markers.*
+
+<!-- BEGIN GENERATED: recent-additions -->
+
+*No stream has recorded a `sourceLine` against this package yet.*
+
+<!-- END GENERATED: recent-additions -->

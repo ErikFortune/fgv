@@ -56,4 +56,12 @@ App-agnostic **storage + retrieval substrate** for agent memory and knowledge �
 
 ## Recent additions
 
-*Newest first. Populated from each stream's `summary.sourceLine` — see the split brief's phase 2.*
+*Newest first. **Generated** — see the repo index; do not hand-edit inside the markers.*
+
+<!-- BEGIN GENERATED: recent-additions -->
+
+- **2026-08-18** — **Shipped:** one invariant, enforced at the one layer that sees both sides — a record loaded from an address derived from kind K is a record of kind K. ([#648](https://github.com/ErikFortune/fgv/pull/648))
+- **2026-08-15** — **Shipped:** the partial-read `IMemoryIndex` — every read returns `IIndexedMemoryEntry` (scope + envelope, no body), `rebuild` takes projected entries, `get(target)` is new, bodies are resolved on demand through a one-method `IMemoryRecordResolver`, and `IMemoryStore.list` now **requires a selection that narrows**. ([#633](https://github.com/ErikFortune/fgv/pull/633))
+- **2026-08-15** — **Shipped:** every count in `IVectorRebuildReport` is now resolved by `Kind`, the exclusion count originates in the layer that decides it, and a failed rebuild carries its partial report — one change rather than the staged pair the consumer left open. ([#633](https://github.com/ErikFortune/fgv/pull/633))
+
+<!-- END GENERATED: recent-additions -->
