@@ -1,6 +1,15 @@
 # Stream brief — `library-capabilities-split`
 
-**Status: PHASE 0 + PHASE 1 DONE (2026-08-24). Phases 2 and 3 scoped here, shipping separately.**
+**Status: ALL PHASES DONE (2026-08-24).**
+
+**171,693 → 17,637 chars, an 89.7% cut**, with three CI gates holding the shape, a generated feed
+that cannot drift from its source, and `CAPABILITIES.md` shipping in every tarball.
+
+Two things worth carrying forward. **`summary.sourceLine` is inconsistently populated** — 36 of 51
+usable; the rest hold an entire brief where one line belongs, and are reported by the generator so
+they can be fixed. And **the router cap moved once, 16,000 → 18,000**, because it was set before the
+feed existed; the reason is in the script, along with a note that "the router grew" is not a
+sanctioned reason for a future bump.
 
 **Result: 171,693 → 15,225 chars, a 91% cut**, with all five gates passing and content preservation
 verified at 98.7% of distinctive sentences found verbatim (the misses are the deliberately-rewritten
