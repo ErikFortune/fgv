@@ -63,5 +63,8 @@ App-agnostic **storage + retrieval substrate** for agent memory and knowledge �
 - **2026-08-18** — **Shipped:** one invariant, enforced at the one layer that sees both sides — a record loaded from an address derived from kind K is a record of kind K. ([#648](https://github.com/ErikFortune/fgv/pull/648))
 - **2026-08-15** — **Shipped:** the partial-read `IMemoryIndex` — every read returns `IIndexedMemoryEntry` (scope + envelope, no body), `rebuild` takes projected entries, `get(target)` is new, bodies are resolved on demand through a one-method `IMemoryRecordResolver`, and `IMemoryStore.list` now **requires a selection that narrows**. ([#633](https://github.com/ErikFortune/fgv/pull/633))
 - **2026-08-15** — **Shipped:** every count in `IVectorRebuildReport` is now resolved by `Kind`, the exclusion count originates in the layer that decides it, and a failed rebuild carries its partial report — one change rather than the staged pair the consumer left open. ([#633](https://github.com/ErikFortune/fgv/pull/633))
+- **2026-07** — Branch `agent-memory-fragment-id` (from `origin/release`) → **PR #585** against `release` (not merged). ([#585](https://github.com/ErikFortune/fgv/pull/585))
+- **2026-07** — **Outcome:** delivered. Documentation + tests only; **no behavior change.**
+- **2026-06-26** — Made semantic recall operational end-to-end: ([#502](https://github.com/ErikFortune/fgv/pull/502))
 
 <!-- END GENERATED: recent-additions -->

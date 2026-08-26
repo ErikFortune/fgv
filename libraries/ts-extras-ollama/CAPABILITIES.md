@@ -47,6 +47,6 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-*No stream has recorded a `sourceLine` against this package yet.*
+- **2026-06-06** — Shipped first-class Ollama support across two activities. ([#468](https://github.com/ErikFortune/fgv/pull/468))
 
 <!-- END GENERATED: recent-additions -->

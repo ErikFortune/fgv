@@ -44,6 +44,9 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-06-05** — **Status:** COMPLETE ([#461](https://github.com/ErikFortune/fgv/pull/461))
+- **2026-06-04** — **Shipped:** 2026-06-04. Phase A #455 + Phase B (commit `34ef9443`) + Phase C #456 on the `ts-prompt-assist-observability` integration branch; cluster-close squash → `release` opened by the orchestrator. ([#455](https://github.com/ErikFortune/fgv/pull/455))
+- **2026-05-21** — Added `Result<T>.shouldNotFail(label?, frameDepth?)` on `@fgv/ts-utils`. ([#400](https://github.com/ErikFortune/fgv/pull/400))
 - **2026-05** — **PR:** [#322](https://github.com/ErikFortune/fgv/pull/322) — `feat(auth-primitives-batch1): X25519 keypair, SPKI helpers, RFC 8785 canonicalize` ([#322](https://github.com/ErikFortune/fgv/pull/322))
 
 <!-- END GENERATED: recent-additions -->

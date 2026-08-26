@@ -17,12 +17,23 @@
 //         **Shipped:** an opt-in that hoists the optionals a schema already proves safe to
 //         hoist, rather than a boolean asserting they are.
 //
-// `sourceLine` was introduced to be a one-line "what shipped". Hand-maintaining a second copy of
-// it would mean writing the same sentence twice and keeping them in step at stream close — which
-// is precisely where this repo's hand-maintained lists have died before. `docs/TECH_DEBT.md`'s
-// disposition pass found four "next time someone touches X" triggers that had fired with nobody
-// acting. Deriving the feed removes the discipline requirement entirely: there is one copy, and
-// it is the one the stream already had to write.
+// TWO FIELDS, BECAUSE THEY ARE TWO JOBS
+//
+// `headline` is the feed's field: a curated one-liner a reader can scan.
+//
+// `sourceLine` is NOT that, and an earlier draft of this script wrongly assumed it was. Per
+// `.claude/skills/finalize-task/SKILL.md` it is the finalizer's **audit trail** — "copy the
+// authored opening claim verbatim… If you cannot find one, leave it blank." A verbatim quote and
+// a curated summary want opposite things, so streams that produced `# Brief — …` or a 429-char
+// paragraph were *conforming*, and the first version of this script reported them as defects.
+//
+// (That was the same two-jobs-one-artifact error the capabilities split itself was created to
+// fix — committed inside the stream that fixes it. Recorded rather than quietly corrected.)
+//
+// So: read `headline` when present. Fall back to `sourceLine` only when it happens to be usable,
+// which for many streams it is — a good verbatim opener often IS a good headline. A stream with
+// neither simply does not appear in the feed, which is honest; hand-maintaining a separate
+// changelog is the thing being avoided, and fabricating a summary is worse than a gap.
 //
 // TWO MODES
 //
@@ -61,10 +72,24 @@ function readMeta(text, bucket) {
   const opened = one(/^opened:\s*(\S+)/m);
   const prs = (one(/^prs:\s*\[([^\]]*)\]/m) ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 
+  // Both YAML list spellings appear in the corpus and neither is preferred — an inline
+  // `packages: ['@fgv/ts-extras']` on 31 streams, a block list on 21. Reading only the block form
+  // silently attributed more than half of them to no package at all, which is the quiet-failure
+  // shape this whole exercise keeps running into: the feed rendered, nothing errored, and the
+  // entries simply were not there.
+  const pkgInline = text.match(/^packages:\s*\[([^\]]*)\]/m);
   const pkgBlock = text.match(/^packages:\s*\n((?:\s+- .+\n)+)/m);
-  const packages = pkgBlock
-    ? [...pkgBlock[1].matchAll(/- '?([@a-z0-9/-]+)'?/g)].map((m) => m[1])
-    : [];
+  const pkgSrc = pkgInline ? pkgInline[1] : pkgBlock ? pkgBlock[1] : '';
+  const packages = [...pkgSrc.matchAll(/['"]?(@fgv\/[a-z0-9-]+)['"]?/g)].map((m) => m[1]);
+
+  // `headline` — the purpose-built field. Same two spellings are accepted as `sourceLine`.
+  const hBlock = text.match(/^\s+headline:\s*>\s*\n((?:\s{4,}.*\n)+)/m);
+  const hQuote = text.match(/^\s+headline:\s*(['"])([\s\S]*?)\1\s*$/m);
+  const headline = hBlock
+    ? hBlock[1].split('\n').map((l) => l.trim()).filter(Boolean).join(' ')
+    : hQuote
+      ? hQuote[2].split('\n').map((l) => l.trim()).filter(Boolean).join(' ')
+      : undefined;
 
   // `sourceLine` is written two ways across the corpus — a block scalar on the streams that
   // adopted the convention later, and a quoted single-line string on the earlier ones. Both are
@@ -80,13 +105,26 @@ function readMeta(text, bucket) {
   // Some early streams put an entire brief or result document in this field rather than one
   // line. Emitting those would produce a feed nobody can scan, and silently dropping them would
   // hide that the metadata needs fixing — so they are surfaced as `unusable` and reported.
+  // A stream that records `artifactLoss` has already explained why it has no one-liner — e.g.
+  // safer-fetch, whose meta says the result.md was never written and the evidence to reconstruct
+  // it does not exist. That is an honest gap, not a defect, and nagging about it would invite
+  // someone to fabricate a summary, which is strictly worse than the gap.
+  const documentedGap = /^artifactLoss:/m.test(text);
+
+  if (headline) {
+    return { id, status, opened: opened ?? bucket, prs, packages, sourceLine: headline, bucket };
+  }
+
   let unusable;
   if (sourceLine !== undefined) {
     if (sourceLine.length === 0) {
-      unusable = 'empty';
+      unusable = documentedGap ? undefined : 'empty, and no artifactLoss explains why';
       sourceLine = undefined;
     } else if (sourceLine.length > 400 || /(^|\s)#{1,4}\s/.test(sourceLine)) {
-      unusable = sourceLine.length > 400 ? `${sourceLine.length} chars` : 'contains headings';
+      unusable =
+        sourceLine.length > 400
+          ? `${sourceLine.length} chars — a paragraph where a line belongs`
+          : 'a document heading, not a summary';
       sourceLine = undefined;
     }
   }
@@ -192,9 +230,13 @@ console.log(
 // already shipped, and failing CI over it would block unrelated work. Naming them is what gets
 // them fixed.
 if (unusable.length > 0 && VERBOSE) {
-  console.log(`\n  ${unusable.length} streams have a sourceLine the feed cannot use:`);
-  for (const u of unusable) console.log(`    ${u.id} (${u.unusable})`);
-  console.log('  Rewrite these as one line — see .ai/conventions/workflow/artifact-protocol.md.\n');
+  console.log(`\n  ${unusable.length} streams are absent from the feed:`);
+  for (const u of unusable) console.log(`    ${u.id} — sourceLine is ${u.unusable}`);
+  console.log(
+    '  These are mostly NOT defects: sourceLine is an audit-trail field and a verbatim opener is\n' +
+      '  often a heading or a paragraph. To put one of these in the feed, add a `headline` beside\n' +
+      '  it — do NOT rewrite sourceLine, which would break the verbatim property it exists for.\n'
+  );
 }
 if (VERBOSE) {
   for (const t of targets) {

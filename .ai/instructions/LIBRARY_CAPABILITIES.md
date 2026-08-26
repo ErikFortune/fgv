@@ -184,10 +184,10 @@ markers.*
 - **2026-08-21** — A caller that has already declared the shape it wants can now tell the provider, and learn which enforcement was actually applied… ([#652](https://github.com/ErikFortune/fgv/pull/652)) · `ts-extras` `ts-json-base` `ts-app-shell`
 - **2026-08-21** — Shipped: `release()` on both index classes — it drops the index's prepared statements and marks it unusable, and never touches the… ([#651](https://github.com/ErikFortune/fgv/pull/651)) · `ts-agent-memory-sqlite-vec`
 - **2026-08-18** — Shipped: one invariant, enforced at the one layer that sees both sides — a record loaded from an address derived from kind K is a… ([#648](https://github.com/ErikFortune/fgv/pull/648)) · `ts-agent-memory`
-- **2026-08-15** — Shipped: the partial-read `IMemoryIndex` — every read returns `IIndexedMemoryEntry` (scope + envelope, no body), `rebuild` takes… ([#633](https://github.com/ErikFortune/fgv/pull/633)) · `ts-agent-memory` `samples/testbed`
-- **2026-08-15** — Outcome: delivered. Additive; `create()` is untouched on both classes.
+- **2026-08-15** — Shipped: the partial-read `IMemoryIndex` — every read returns `IIndexedMemoryEntry` (scope + envelope, no body), `rebuild` takes… ([#633](https://github.com/ErikFortune/fgv/pull/633)) · `ts-agent-memory`
+- **2026-08-15** — Outcome: delivered. Additive; `create()` is untouched on both classes. · `ts-agent-memory-sqlite-vec`
 - **2026-08-15** — Shipped: every count in `IVectorRebuildReport` is now resolved by `Kind`, the exclusion count originates in the layer that decides… ([#633](https://github.com/ErikFortune/fgv/pull/633)) · `ts-agent-memory` `ts-agent-memory-sqlite-vec`
 
-*Showing the 10 most recent of 36. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 37. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

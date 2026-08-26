@@ -85,6 +85,7 @@ summary:
   shipped: >                 # from result.md — what actually landed
   diverged: >                # the delta: scope cut, approach changed, verdict reversed
   sourceLine: '…'            # VERBATIM authored opener from result.md / README.md
+  headline: '…'              # CURATED one-liner for the capability feed (optional)
 keywords: [ … ]              # generated; concepts a literal grep would miss
 sourceHash: <hash>           # over the artifacts this was derived from
 ```
@@ -108,6 +109,30 @@ for these, which recur:
 verbatim — `**Shipped:** …`, `## Outcome`, `## Delivered`, `**Status:** …`. It costs
 nothing and lets a later reader check your synthesis against its source without
 opening the stream. If you cannot find one, leave it blank.
+
+**`headline` is a different field for a different reader, and the two are easy to
+conflate.** It is a **curated** one-line "what shipped" — under ~200 chars, no Markdown
+heading, scannable in a list — and it feeds the generated *Recent additions* list in
+`LIBRARY_CAPABILITIES.md` and each package's `CAPABILITIES.md`, which is how consumers
+answer *"what changed in fgv since I last looked?"*.
+
+```yaml
+summary:
+  sourceLine: '# Brief — crypto-utils base64url + branded multibase SPKI hardening'  # verbatim
+  headline: >                                                                        # curated
+    base64url decoding now rejects what it cannot round-trip, and a public key
+    carries its encoding in its type rather than in a comment.
+```
+
+**Do not "fix" a `sourceLine` to serve the feed.** Its value is that it is verbatim; a
+stream whose only authored opener was a `# Brief — …` heading recorded that correctly,
+and rewriting it destroys the property it exists for. Add a `headline` beside it instead.
+
+`headline` may be omitted. `common/scripts/generate-capability-feed.mjs` falls back to
+`sourceLine` when it happens to be usable — a good verbatim opener often *is* a good
+headline — and a stream with neither is simply absent from the feed. That is the right
+outcome: a fabricated summary is worse than a gap, which is why the streams carrying
+`artifactLoss` are left alone rather than backfilled.
 
 **`keywords` earn their place by adding recall.** Include concepts a literal grep for
 the stream id would miss — the problem class, the primitives touched, the failure mode
@@ -213,6 +238,7 @@ not a maybe.
 - Does every assertion in `summary.intended` / `shipped` trace to a specific line in `brief.md` /
   `result.md`? Quote the line or drop the claim.
 - Does `sourceLine` actually appear verbatim in the source file?
+- If `sourceLine` is a heading, a paragraph, or blank, is there a `headline` beside it?
 - Do the `prs` numbers belong to *this* stream, and are they in the state claimed (merged vs
   open)? Check, do not assume.
 - Does the drafted ledger entry's status marker match reality?

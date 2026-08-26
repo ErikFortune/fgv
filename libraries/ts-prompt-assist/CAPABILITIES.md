@@ -31,6 +31,7 @@ ts-res-driven prompt authoring, organisation, and resolution for LLM workflows. 
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-*No stream has recorded a `sourceLine` against this package yet.*
+- **2026-06-07** — Horizontal (multi-contributor) prompt-slot composition for `@fgv/ts-prompt-assist` — provenance-ordered, directive-aware merge of N peer contributors into one prompt (the message-role generalization). PersonAIlity consumer request; design accepted **A-Now / B-Committed**. ([#490](https://github.com/ErikFortune/fgv/pull/490))
+- **2026-06-04** — **Shipped:** 2026-06-04. Phase A #455 + Phase B (commit `34ef9443`) + Phase C #456 on the `ts-prompt-assist-observability` integration branch; cluster-close squash → `release` opened by the orchestrator. ([#455](https://github.com/ErikFortune/fgv/pull/455))
 
 <!-- END GENERATED: recent-additions -->
