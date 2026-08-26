@@ -11,11 +11,12 @@ they can be fixed. And **the router cap moved once, 16,000 → 18,000**, because
 feed existed; the reason is in the script, along with a note that "the router grew" is not a
 sanctioned reason for a future bump.
 
-**Result: 171,693 → 15,225 chars, a 91% cut**, with all five gates passing and content preservation
-verified at 98.7% of distinctive sentences found verbatim (the misses are the deliberately-rewritten
-preamble plus two sentence-splitter artifacts whose reflexes were confirmed individually). One real
-casualty was caught by that check and fixed: compressing the cross-runtime table had dropped its
-notes column, so the full table is preserved whole in `.ai/conventions/`.
+Phase 1 landed the split at 15,225 chars; phase 2's generated feed took it to the 17,637 above.
+Content preservation was **verified, not assumed** — 98.7% of 537 distinctive sentences found
+verbatim, the misses being the deliberately-rewritten preamble plus two sentence-splitter artifacts
+whose reflexes were confirmed individually. **One real casualty was caught that way and fixed:**
+compressing the cross-runtime table had dropped its notes column, so the full table is now preserved
+whole in `.ai/conventions/`.
 
 ## The problem, measured
 
@@ -91,11 +92,14 @@ fail: `TECH_DEBT.md`'s disposition pass found **four triggers phrased as "next t
 X" that fired without anyone acting**, and concluded the fix is to *replace recall with a mechanical
 gate*. So:
 
-1. **Router byte cap — 16,000 chars.** Currently 172,821. Fails CI above the cap.
+1. **Router byte cap.** Set at 16,000 in phase 1; **revised once to 18,000** when phase 2's
+   bounded feed landed, with the reason recorded in the script. Fails CI above the cap.
 2. **Every library has `CAPABILITIES.md`**, except the carve-out below.
 3. **Every `CAPABILITIES.md` is linked from the router; no orphans, no dead links.**
-4. **All 59 reflex phrases present in the router** after the split — grep-asserted, since this is the
-   class of loss that would be invisible on review.
+4. **All reflex anchors present in the router** after the split — grep-asserted, since this is the
+   class of loss that would be invisible on review. The contract landed as **71 symbol anchors** in
+   `common/config/capability-reflexes.txt`; symbols rather than sentences, because a router entry
+   gets reworded when compressed and a gate that breaks on rewording is a gate someone deletes.
 5. **No content lost.** The split is a move, not a rewrite: assert total chars across router +
    package files is within a small delta of 172,821 minus the deduplication the split makes possible.
 
