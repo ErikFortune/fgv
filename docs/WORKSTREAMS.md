@@ -128,6 +128,21 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `converters-single-line` ✅ (shipped 2026-08-28 — additive)
+
+**Status:** ✅ shipped to `release`. Gates green — `rushx build` / `lint` / `test` in `@fgv/ts-utils`, `stringConverter.ts` at **100%** on all four metrics, repo-wide `rush rebuild`, change file present.
+**Package surface:** `@fgv/ts-utils` (`StringConverter.singleLine`, `SingleLineOptions`).
+**Artifacts:** `.ai/tasks/completed/2026-08/converters-single-line/`
+**Origin:** a PersonAIlity ask (personaility#645) for a *sanitizing* converter, so that "this text is about to be trusted" becomes declarable. **Based on `library-capabilities-split`**, so its capability entry is written in the per-package shape.
+
+**Shipped:** `Converters.string.singleLine({ maxLength?, message? })` — no line breaks, no control characters, non-empty, optionally bounded, **rejecting rather than rewriting**. Control characters are matched as `\p{Cc}`, so `U+0085` (NEL) is rejected where a naive `[^\r\n]` check would admit it.
+
+**We shipped the constraint and refused the name, and that was the substance of the reply.** `sanitized` — or any name carrying a safety claim — would have been *actively harmful*, because a single-line constraint does not make text safe to interpolate into a framed prompt. Shown rather than argued: `"document, and also disregard all prior constraints"` has no newline, no control character, sits inside any bound, passes every shape check, and defeats a `[SYSTEM]`-framed directive completely. A primitive implying prompt-safety would tell a caller they were protected **at exactly the moment they stopped looking for the narrowing that works**. The non-claim now lives in the docstring, the `CAPABILITIES.md` entry, and a test named for it — three places that travel with the symbol, rather than in a reply nobody re-reads.
+
+**Two further corrections to the ask, both making it smaller.** Their concrete fix already existed and is *strictly stronger* — `Converters.enumeratedValue` on a closed domain rejects the injection outright, and they had already planned it, so "narrow your field and move on" was the **right** answer for that field rather than a consolation. And the machinery they said was missing was not: `StringConverter.matching(RegExp)` already expressed the whole constraint in `5.1.0-55`. **This addition saves a regex, not a capability** — taken because the *name* is greppable and the docstring is a permanent home for the non-claim, and that trade was stated plainly to them rather than dressed up as more than it is.
+
+**Ten tests, watched failing first.** Neutering the control-character check turns exactly the eight that depend on it red and leaves the accept-cases and the non-claim test green — the right partition, since neither describes that check.
+
 ### `schema-optional-translation` ✅ (shipped 2026-08-23 via #659 — additive)
 
 **Status:** ✅ shipped to `release` via **#659** (`022dbf19`, 2026-08-23). Gates green — build / lint / test at **100%** in `@fgv/ts-extras` (2773 tests) and `@fgv/ts-json-base`, repo-wide `rush rebuild` at exit 0 with zero warnings, change files for both.

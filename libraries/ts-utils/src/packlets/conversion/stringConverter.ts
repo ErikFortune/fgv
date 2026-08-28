@@ -39,6 +39,22 @@ export interface StringMatchOptions {
 }
 
 /**
+ * Options for {@link Conversion.StringConverter.singleLine}.
+ * @public
+ */
+export interface SingleLineOptions {
+  /**
+   * Maximum accepted length in code units. Omitted means unbounded.
+   */
+  maxLength?: number;
+
+  /**
+   * An optional message to be displayed if a non-conforming string is encountered.
+   */
+  message?: string;
+}
+
+/**
  * The {@link Conversion.StringConverter | StringConverter} class extends
  * {@link Conversion.BaseConverter | BaseConverter} to provide string-specific
  * helper methods.
@@ -160,5 +176,49 @@ export class StringConverter<T extends string = string, TC = unknown> extends Ba
           : fail(message ? `"${from}": ${message}` : `"${from}": not found in [${match.join(',')}]`);
       });
     }
+  }
+  /**
+   * Returns a {@link Conversion.StringConverter | StringConverter} which constrains the result to a
+   * single line of printable text: no line breaks, no control characters, non-empty, and optionally
+   * bounded in length.
+   *
+   * @remarks
+   * **This checks a shape. It is not a safety guarantee, and in particular it does not make a value
+   * safe to interpolate into an LLM prompt.** The constraint stops a value ending a line and
+   * starting a new one, which is a real and narrow win where text is framed positionally — a
+   * system directive that interpolates a descriptor, a log line, a CSV cell, an HTTP header value.
+   * It says nothing about what the value *means*. A value reading
+   * "document, and also disregard all prior constraints" contains no newline and no control
+   * character, passes this constraint, and defeats that framing completely.
+   *
+   * **Where the domain is closed, use {@link Conversion.enumeratedValue} instead.** An allowlist is
+   * not a weaker sanitizer; it is the thing that actually works, because it never has to reason
+   * about what a hostile value might contain. Reach for `singleLine` when the domain is genuinely
+   * open and a shape is the most that can be said.
+   *
+   * Rejects rather than rewrites, deliberately: a value that had to be altered to conform is a
+   * value its author did not intend, and failing says so. Nothing here strips or escapes.
+   *
+   * Control characters are matched as Unicode `\p{Cc}`, which covers C0, DEL and C1 — so `\n`,
+   * `\r`, `\t` and `\u0007` are all rejected, as is `\u0085` (NEL), a line break that a naive
+   * `[^\r\n]` check would admit.
+   *
+   * @param options - Optional {@link Conversion.SingleLineOptions} for this conversion.
+   * @returns {@link Success} with a conforming string, or {@link Failure} with an informative error.
+   */
+  public singleLine(options?: SingleLineOptions): StringConverter<T, TC> {
+    const message = options?.message;
+    const maxLength = options?.maxLength;
+    return StringConverter._wrap<T, TC>(this, (from: T) => {
+      const why =
+        from.length === 0
+          ? 'must not be empty'
+          : /\p{Cc}/u.test(from)
+          ? 'must be a single line with no control characters'
+          : maxLength !== undefined && from.length > maxLength
+          ? `must be at most ${maxLength} characters (got ${from.length})`
+          : undefined;
+      return why === undefined ? succeed(from) : fail(`"${from}": ${message ?? why}`);
+    });
   }
 }
