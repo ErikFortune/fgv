@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "version bump",
+      "type": "none",
+      "packageName": "@fgv/repo-template"
+    }
+  ],
+  "packageName": "@fgv/repo-template",
+  "email": "ErikFortune@outlook.com"
+}

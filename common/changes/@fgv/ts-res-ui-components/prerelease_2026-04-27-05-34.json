@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "bump prerelease version",
+      "type": "none",
+      "packageName": "@fgv/ts-res-ui-components"
+    }
+  ],
+  "packageName": "@fgv/ts-res-ui-components",
+  "email": "ErikFortune@outlook.com"
+}

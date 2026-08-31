@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "bump prerelease version",
+      "type": "none",
+      "packageName": "@fgv/ts-random"
+    }
+  ],
+  "packageName": "@fgv/ts-random",
+  "email": "ErikFortune@outlook.com"
+}
