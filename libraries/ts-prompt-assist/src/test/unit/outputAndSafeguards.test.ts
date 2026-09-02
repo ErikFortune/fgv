@@ -11,6 +11,7 @@ import {
   IScreener,
   IScreenerContext,
   ISafeguardFinding,
+  IScopeSlotBindingsRecord,
   IStoredPromptRecord,
   PromptId,
   PromptLibrary,
@@ -128,9 +129,13 @@ async function buildLib(
   options?: {
     readonly registry?: PromptRegistry<Responses>;
     readonly safetyPolicy?: IPromptSafetyPolicy;
+    readonly bindings?: ReadonlyArray<IScopeSlotBindingsRecord>;
   }
 ): Promise<PromptLibrary<Responses>> {
-  const store = await buildStore({ records: [...records] });
+  const store = await buildStore({
+    records: [...records],
+    ...(options?.bindings === undefined ? {} : { bindings: options.bindings })
+  });
   return (
     await PromptLibrary.create<Responses>({
       store,
@@ -1199,6 +1204,195 @@ describe('B-4: input safeguards', () => {
     expect(result).toSucceedAndSatisfy((r) => {
       const finding = r.trace.safeguardFindings.find((f) => f.kind === 'suspicious-pattern');
       expect(finding?.screener).toBe('injection-guard');
+    });
+  });
+});
+
+describe('composition metadata', () => {
+  // The body is `preface + Mustache.render(template)`. These pin that the section map describes
+  // the body it ships with — order, absolute size, and provenance — rather than approximating it.
+
+  const gapless = (r: {
+    body: string;
+    composition?: { sections: ReadonlyArray<{ start: number; chars: number }> };
+  }): string =>
+    (r.composition?.sections ?? []).map((sec) => r.body.slice(sec.start, sec.start + sec.chars)).join('');
+
+  test('is absent unless the request asks for it', async () => {
+    const lib = await buildLib([buildFreeTextRecord({ slots: [], body: 'hello' })]);
+    const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {} });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.composition).toBeUndefined();
+    });
+  });
+
+  test('sections are ordered, gapless, and reproduce the body exactly', async () => {
+    const record = buildFreeTextRecord({
+      slots: [
+        {
+          name: 'topic',
+          defaultBinding: { kind: 'literal', value: 'otters', directive: 'prose' } as SlotBinding
+        }
+      ],
+      body: 'Tell me about {{{topic}}} now.'
+    });
+    const lib = await buildLib([record]);
+    const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {}, composition: {} });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.composition).toBeDefined();
+      expect(r.composition!.totalChars).toBe(r.body.length);
+      expect(gapless(r)).toBe(r.body);
+      expect(r.composition!.sections.map((sec) => sec.kind)).toEqual(['template', 'slot', 'template']);
+      const slot = r.composition!.sections.find((sec) => sec.kind === 'slot')!;
+      expect(slot.slot).toBe('topic');
+      expect(slot.chars).toBe('otters'.length);
+      expect(r.body.slice(slot.start, slot.start + slot.chars)).toBe('otters');
+    });
+  });
+
+  test('a slot section carries the provenance of its winning binding', async () => {
+    // This is what makes it more than a byte counter: a large section is attributable to the
+    // binding that produced it, without a second lookup into the trace.
+    const record = buildFreeTextRecord({
+      slots: [
+        {
+          name: 'topic',
+          defaultBinding: { kind: 'literal', value: 'otters', directive: 'prose' } as SlotBinding
+        }
+      ],
+      body: '{{{topic}}}'
+    });
+    const lib = await buildLib([record]);
+    const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {}, composition: {} });
+    expect(result).toSucceedAndSatisfy((r) => {
+      const slot = r.composition!.sections.find((sec) => sec.kind === 'slot')!;
+      const fromSlots = r.slots.get(slot.slot!)!;
+      expect(slot.source).toBe(fromSlots.source);
+      expect(slot.directive).toBe(fromSlots.directive);
+      expect(slot.wasEnforced).toBe(fromSlots.wasEnforced);
+    });
+  });
+
+  test('a scope-supplied binding contributes its winning scope to the section', async () => {
+    const record = buildFreeTextRecord({ slots: [{ name: 'topic' }], body: 'about {{{topic}}}' });
+    const bindings: ReadonlyArray<IScopeSlotBindingsRecord> = [
+      {
+        scope: SCOPE,
+        bindings: new Map([
+          [
+            'topic' as unknown as SlotName,
+            { kind: 'literal', value: 'otters', directive: 'prose' } as SlotBinding
+          ]
+        ])
+      }
+    ];
+    const lib = await buildLib([record], { bindings });
+    const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {}, composition: {} });
+    expect(result).toSucceedAndSatisfy((r) => {
+      const slot = r.composition!.sections.find((sec) => sec.kind === 'slot')!;
+      expect(slot.source).toBe('binding');
+      expect(slot.winningScope).toBe(SCOPE);
+    });
+  });
+
+  test('a token that is not a declared slot is still attributed, without provenance', async () => {
+    // `{{{.}}}` interpolates the whole render context and is not a slot, so there is no binding
+    // to attribute it to. It is still reported as a section: the guarantee is that every code
+    // unit is accounted for, which a section omitted for want of provenance would break.
+    const record = buildFreeTextRecord({ slots: [], body: 'ctx={{{.}}}' });
+    const lib = await buildLib([record]);
+    const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {}, composition: {} });
+    expect(result).toSucceedAndSatisfy((r) => {
+      const slot = r.composition!.sections.find((sec) => sec.kind === 'slot')!;
+      expect(slot.slot).toBe('.');
+      expect(slot.source).toBeUndefined();
+      expect(slot.directive).toBeUndefined();
+      expect(gapless(r)).toBe(r.body);
+    });
+  });
+
+  test('the preface is its own section at offset 0', async () => {
+    const record = buildFreeTextRecord({ slots: [], body: 'hello world' });
+    const policy: IPromptSafetyPolicy = {
+      antiJailbreakPreface: (): Result<string> => succeed('SYSTEM: framing.')
+    };
+    const lib = await buildLib([record], { safetyPolicy: policy });
+    const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {}, composition: {} });
+    expect(result).toSucceedAndSatisfy((r) => {
+      const first = r.composition!.sections[0];
+      expect(first.kind).toBe('preface');
+      expect(first.start).toBe(0);
+      // 'SYSTEM: framing.' plus the newline the preface path joins with.
+      expect(first.chars).toBe('SYSTEM: framing.'.length + 1);
+      expect(gapless(r)).toBe(r.body);
+    });
+  });
+
+  test('an empty preface contributes no section', async () => {
+    const record = buildFreeTextRecord({ slots: [], body: 'hello' });
+    const policy: IPromptSafetyPolicy = { antiJailbreakPreface: (): Result<string> => succeed('') };
+    const lib = await buildLib([record], { safetyPolicy: policy });
+    const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {}, composition: {} });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.composition!.sections.every((sec) => sec.kind !== 'preface')).toBe(true);
+      expect(gapless(r)).toBe(r.body);
+    });
+  });
+
+  test('a supplied measure adds a second unit, and the total is its sum', async () => {
+    // Segmentation is ours; measurement is the caller's. A word count stands in for a tokenizer.
+    const record = buildFreeTextRecord({
+      slots: [
+        {
+          name: 'topic',
+          defaultBinding: { kind: 'literal', value: 'sea otters', directive: 'prose' } as SlotBinding
+        }
+      ],
+      body: 'about {{{topic}}} please'
+    });
+    const lib = await buildLib([record]);
+    const words = (text: string): number => text.split(/\s+/).filter(Boolean).length;
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      composition: { measure: words }
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.composition!.sections.every((sec) => sec.measured !== undefined)).toBe(true);
+      expect(r.composition!.totalMeasured).toBe(
+        r.composition!.sections.reduce((sum, sec) => sum + sec.measured!, 0)
+      );
+      const slot = r.composition!.sections.find((sec) => sec.kind === 'slot')!;
+      expect(slot.measured).toBe(2); // 'sea otters'
+    });
+  });
+
+  test('chars are reported even with no measure supplied', async () => {
+    const lib = await buildLib([buildFreeTextRecord({ slots: [], body: 'hello' })]);
+    const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {}, composition: {} });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.composition!.totalMeasured).toBeUndefined();
+      expect(r.composition!.sections.every((sec) => sec.measured === undefined)).toBe(true);
+      expect(r.composition!.totalChars).toBe(5);
+    });
+  });
+
+  test('a template that cannot be segmented reports why, and does NOT fail the resolve', async () => {
+    // A diagnostic must not be able to break the thing it observes.
+    const record = buildFreeTextRecord({
+      slots: [
+        { name: 's', defaultBinding: { kind: 'literal', value: 'x', directive: 'prose' } as SlotBinding }
+      ],
+      body: 'a{{#s}}b{{/s}}c'
+    });
+    const lib = await buildLib([record]);
+    const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {}, composition: {} });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.body).toBe('abc');
+      expect(r.composition!.unavailable).toMatch(/does not support '#' tokens/);
+      expect(r.composition!.sections).toHaveLength(0);
+      expect(r.composition!.totalChars).toBe(3);
     });
   });
 });
