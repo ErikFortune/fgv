@@ -68,6 +68,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-09-02** — Shipped: a rendered template, and a resolved prompt, can now say what they are made of — order, absolute size and binding provenance per section, with offsets computed during the render because recovering them by search is silently wrong. ([#663](https://github.com/ErikFortune/fgv/pull/663))
 - **2026-08-23** — **Shipped:** an opt-in that hoists the optionals a schema already proves safe to hoist, rather than a boolean asserting they are. ([#659](https://github.com/ErikFortune/fgv/pull/659))
 - **2026-08-22** — **Shipped:** `nullable: true` on every factory — the spelling OpenAI strict mode accepts for an absent-able field, where `optional(...)` is unsendable. ([#655](https://github.com/ErikFortune/fgv/pull/655))
 - **2026-08-21** — A caller that has already declared the shape it wants can now **tell the provider**, and learn **which enforcement was actually applied** — on all four providers plus the proxy. ([#652](https://github.com/ErikFortune/fgv/pull/652))

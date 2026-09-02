@@ -1,0 +1,75 @@
+id: prompt-composition-metadata
+status: shipped
+packages:
+  - '@fgv/ts-extras'
+  - '@fgv/ts-prompt-assist'
+# Anticipating the merge, per `.ai/conventions/workflow/artifact-protocol.md`
+# § "A PR anticipates its own merge" — a PR cannot observe its own merge, so an
+# author-time-accurate marker is guaranteed to need a correcting commit.
+prs: [663]
+openPrs: []
+opened: 2026-09-02
+closed: 2026-09-02
+summary:
+  intended: >
+    Explore what it would look like to emit a metadata object alongside each generated prompt,
+    naming the order and absolute size of each section that composes it. Framed by the user as a
+    nice-to-have for consideration, theirs rather than a consumer's, then escalated to "let's build
+    the real thing — I usually regret shortcuts."
+  shipped: >
+    Two surfaces, because the sound version needs a primitive one layer down.
+    `MustacheTemplate.renderWithSegments` in `@fgv/ts-extras` returns the text `render()` produces
+    plus a document-ordered, contiguous, gapless attribution of every code unit to literal template
+    text or a named interpolation. `IPromptComposition` in `@fgv/ts-prompt-assist` is opt-in on
+    `PromptLibrary.resolve` and layers the preface and per-slot binding provenance on top, with an
+    optional caller-supplied `measure` for a second unit. Both additive; `render()` and the existing
+    resolve contract are untouched.
+  diverged: >
+    Three things the exploration did not anticipate. (1) The work could not stay in
+    `ts-prompt-assist`: recovering offsets by searching the finished text is unsound in four ways
+    (a value used twice, one that renders empty, one that is a substring of the literal text, one
+    that escaping alters) and fails *silently* with plausible offsets, so the offsets must be
+    computed during the render — which only `MustacheTemplate` can do. Extending the sibling library
+    rather than working around it, per CODING_STANDARDS § "Extending Core Libraries Over Working
+    Around Them". (2) The identity self-check, written expecting to be unreachable, turned out to be
+    load-bearing: a set-delimiter tag followed by an interpolation genuinely reaches it, because each
+    interpolation is rendered from its own template slice and the writer reads that slice with the
+    default delimiters. That made the surface's TSDoc claim ("set-delimiter tags are simply skipped")
+    wrong, and the test named after it had only ever exercised a comment; both corrected. (3) None of
+    the three initially-uncovered branches wanted a `c8 ignore` — one was dead and was removed, two
+    were reachable and are now tested. Asking "should this branch exist?" before "how do I cover it?"
+    paid three times in one stream.
+  sourceLine: 'Two related surfaces answering the same question — what is in this output, in what order, and how much of it is each part — with offsets computed during the render rather than recovered by searching it, because searching is silently wrong four different ways.'
+  headline: 'Shipped: a rendered template, and a resolved prompt, can now say what they are made of — order, absolute size and binding provenance per section, with offsets computed during the render because recovering them by search is silently wrong.'
+keywords:
+  - prompt composition metadata
+  - section size attribution
+  - rendered template segments
+  - mustache token walk
+  - offset recovery is unsound
+  - duplicate substitution offsets
+  - escaping changes rendered length
+  - opt-in diagnostic
+  - diagnostic must not break its subject
+  - set-delimiter tag limitation
+  - identity self-check earns its place
+  - watched-it-fail no-op neuter
+  - coverage branch should not exist
+relatedStreams:
+  - id: library-capabilities-split
+    relationship: >
+      base branch — this stream is stacked on #661 and carries its eight commits. The two router
+      shortcuts this stream adds are what put the router at 17,895 of its 18,000-char cap.
+  - id: ts-prompt-assist
+    relationship: >
+      the library this extends; `PromptLibrary.resolve`'s render chain was restructured (not
+      changed in behaviour) to keep the template, the rendered body and the final body available
+      for segmentation
+notes: >
+  Gates: build, lint and test at 100% coverage in both packages; `rush rebuild` repo-wide clean with
+  zero warnings; change files verify against `origin/release`; `@fgv/testbed`, the one downstream
+  consumer, green. No coverage directives added.
+  Twelve neuters were run one at a time. One of them — the first `indexOf` simulation — was a no-op
+  that produced zero red tests because a `Math.max` collapsed it back to the correct value. It is
+  recorded in `README.md` because reading that result as "the tests do not bite" would have been
+  exactly backwards: when a watched-it-fail run turns nothing red, suspect the harness first.
