@@ -32,6 +32,7 @@ ts-res-driven prompt authoring, organisation, and resolution for LLM workflows. 
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-09-02** — Shipped: a rendered template, and a resolved prompt, can now say what they are made of — order, absolute size and binding provenance per section, with offsets computed during the render because recovering them by search is silently wrong. ([#663](https://github.com/ErikFortune/fgv/pull/663))
 - **2026-06-07** — Horizontal (multi-contributor) prompt-slot composition for `@fgv/ts-prompt-assist` — provenance-ordered, directive-aware merge of N peer contributors into one prompt (the message-role generalization). PersonAIlity consumer request; design accepted **A-Now / B-Committed**. ([#490](https://github.com/ErikFortune/fgv/pull/490))
 - **2026-06-04** — **Shipped:** 2026-06-04. Phase A #455 + Phase B (commit `34ef9443`) + Phase C #456 on the `ts-prompt-assist-observability` integration branch; cluster-close squash → `release` opened by the orchestrator. ([#455](https://github.com/ErikFortune/fgv/pull/455))
 
