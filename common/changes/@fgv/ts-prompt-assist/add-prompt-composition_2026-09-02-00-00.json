@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-prompt-assist",
+      "comment": "Add opt-in composition metadata to PromptLibrary.resolve: pass composition on the request to get IPromptComposition on the result — the order, absolute size and binding provenance of every section of the resolved body, with an optional caller-supplied measure for a second unit",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist"
+}

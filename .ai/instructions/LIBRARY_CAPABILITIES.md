@@ -135,7 +135,9 @@ detail. `· pkg` names the owning package.*
 - **Observing every prompt resolution as it flows?** → `RetainingRingBuffer` `PromptLibrary` `PromptObservationStore` `resolveJsonOutput` · `ts-prompt-assist`
 - **Validating a JSON-shaped LLM response against a typed `Converter<T>` + validator…?** → `fencedStringifiedJson` `PromptLibrary` `resolveJsonOutput` · `ts-prompt-assist`
 - **Enforcing safety policies on a resolved prompt?** → `PromptLibrary` · `ts-prompt-assist`
+- **The order and absolute size of each section of a resolved prompt?** → `IPromptComposition` · `ts-prompt-assist`
 - **Mustache rendering for LLM prompts?** → `MustacheTemplate` · `ts-extras`
+- **Which part of a rendered template came from which interpolation, and how big is each?** → `renderWithSegments` · `ts-extras`
 - **Jest matchers for `Result<T>`?** → `toSucceedAndSatisfy` `toFailWith` · `ts-utils-jest`
 - **CSV / record-jar?** → `csv` · `ts-extras`
 - **Numeric / date / orderable range?** → `RangeOf<T>` · `ts-extras`

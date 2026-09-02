@@ -30,7 +30,9 @@ import {
   IRequiredMustacheTemplateOptions,
   IVariableRef,
   MustacheEscapeStrategy,
-  MustacheTokenType
+  MustacheTokenType,
+  IRenderedSegment,
+  IRenderedTemplate
 } from './interfaces';
 
 /**
@@ -225,6 +227,94 @@ export class MustacheTemplate {
     return captureResult(() =>
       this._writer.render(this.template, context, undefined, { escape: this._escapeFn })
     );
+  }
+
+  /**
+   * Renders the template and reports which part of the output came from where.
+   *
+   * @remarks
+   * The rendered `text` is identical to `render`'s. What is added is
+   * `segments`: a document-ordered, contiguous, gapless attribution of every code unit to either
+   * template literal text or a named interpolation. It answers "what is in this output, in what
+   * order, and how much of it is each part" — a prompt's composition, a generated document's
+   * section sizes, a diff-free view of where a template's bulk actually goes.
+   *
+   * **Offsets are computed during the render, never recovered afterwards.** Recovering them by
+   * searching the output for each substituted value is the obvious shortcut and it is unsound: a
+   * value can occur more than once, can render empty, can be a substring of the surrounding
+   * literal text, and can be altered by escaping between input and output. That failure is silent
+   * and produces plausible offsets, which is the worst property a diagnostic can have.
+   *
+   * **Sections, inverted sections and partials are refused, not approximated.** Their rendered
+   * output is not a linear image of the token order — a section may repeat its body, or omit it —
+   * so a segment list walked from the template would mis-describe the result. Failing names the
+   * construct. Comments emit nothing and are skipped.
+   *
+   * The rendered text is **compared against `render()` before returning**, so a mismatch fails
+   * loudly rather than handing back a map that does not describe its own output. This is not
+   * merely defensive: a set-delimiter tag changes the delimiters for the tags that follow it, and
+   * each interpolation here is rendered from its own slice of the template — which the writer
+   * reads with the *default* delimiters. A template that interpolates after changing its
+   * delimiters is therefore refused by this check rather than silently under-rendered.
+   *
+   * @param context - The context object for template rendering.
+   * @returns Success with the rendered text and its segment map, or Failure if the
+   * template contains a construct this cannot describe
+   */
+  public renderWithSegments(context: unknown): Result<IRenderedTemplate> {
+    return captureResult((): IRenderedTemplate => {
+      const segments: IRenderedSegment[] = [];
+      let text = '';
+
+      for (const token of this._tokens) {
+        const type = token[0] as MustacheTokenType;
+        if (type === '!' || type === '=') {
+          continue; // emits nothing
+        }
+        if (type !== 'text' && type !== 'name' && type !== '&') {
+          throw new Error(
+            `renderWithSegments does not support '${type}' tokens (sections, inverted sections ` +
+              `and partials render non-linearly, so a segment map walked from the template would ` +
+              `misdescribe the output). Use render() for this template.`
+          );
+        }
+
+        const rendered =
+          type === 'text'
+            ? String(token[1])
+            : this._writer.render(
+                this.template.slice(Number(token[2]), Number(token[3])),
+                context,
+                undefined,
+                {
+                  escape: this._escapeFn
+                }
+              );
+
+        segments.push({
+          kind: type === 'text' ? 'literal' : 'substitution',
+          ...(type === 'text' ? {} : { name: String(token[1]) }),
+          start: text.length,
+          length: rendered.length,
+          escaped: type === 'name'
+        });
+        text += rendered;
+      }
+
+      // The identity this whole surface rests on. Cheap next to a render, and it converts
+      // "should hold by construction" into "did hold, for this input" — which matters because it
+      // does not always hold: see the set-delimiter case named in the message below.
+      const authoritative = this.render(context).orThrow();
+      if (text !== authoritative) {
+        throw new Error(
+          'renderWithSegments produced output differing from render(); refusing to return a ' +
+            'segment map that does not describe its own text. A set-delimiter tag followed by an ' +
+            'interpolation is the known way to reach this: each interpolation is rendered from ' +
+            'its own slice of the template, which is read with the default delimiters.'
+        );
+      }
+      return { text, segments };
+    });
   }
 
   /**

@@ -598,4 +598,111 @@ describe('MustacheTemplate', () => {
       expect(template.validateAndRender({ value: '<safe>' })).toSucceedWith('<safe>');
     });
   });
+
+  describe('renderWithSegments', () => {
+    const segmentsOf = (tpl: string, ctx: unknown): ReadonlyArray<Mustache.IRenderedSegment> =>
+      MustacheTemplate.create(tpl).orThrow().renderWithSegments(ctx).orThrow().segments;
+
+    // The property the whole surface rests on. Asserted for every shape below rather than once,
+    // because a segment map that does not reproduce its own text is worse than no map at all.
+    const expectGapless = (tpl: string, ctx: unknown): void => {
+      const rendered = MustacheTemplate.create(tpl).orThrow().renderWithSegments(ctx).orThrow();
+      const joined = rendered.segments
+        .map((seg) => rendered.text.slice(seg.start, seg.start + seg.length))
+        .join('');
+      expect(joined).toBe(rendered.text);
+      expect(rendered.text).toBe(MustacheTemplate.create(tpl).orThrow().render(ctx).orThrow());
+    };
+
+    test('attributes literal text and substitutions in document order', () => {
+      expect(segmentsOf('A {{v}} B', { v: 'XX' })).toEqual([
+        { kind: 'literal', start: 0, length: 2, escaped: false },
+        { kind: 'substitution', name: 'v', start: 2, length: 2, escaped: true },
+        { kind: 'literal', start: 4, length: 2, escaped: false }
+      ]);
+      expectGapless('A {{v}} B', { v: 'XX' });
+    });
+
+    // ---- the four cases that defeat recovering offsets by searching the output ----------------
+
+    test('a variable used twice gets distinct offsets', () => {
+      // `indexOf` would report the first occurrence for both.
+      const segs = segmentsOf('A {{v}} B {{v}} C', { v: 'ZZ' });
+      const subs = segs.filter((s) => s.kind === 'substitution');
+      expect(subs.map((s) => s.start)).toEqual([2, 7]);
+      expectGapless('A {{v}} B {{v}} C', { v: 'ZZ' });
+    });
+
+    test('a value that is also a substring of the literal text is located correctly', () => {
+      // `indexOf('the')` in "the the the" would report 0; the substitution is at 4.
+      const subs = segmentsOf('the {{w}} the', { w: 'the' }).filter((s) => s.kind === 'substitution');
+      expect(subs).toEqual([{ kind: 'substitution', name: 'w', start: 4, length: 3, escaped: true }]);
+      expectGapless('the {{w}} the', { w: 'the' });
+    });
+
+    test('a variable that renders empty is still present, with zero length', () => {
+      // There is nothing to search for, so recovery cannot represent this at all.
+      expect(segmentsOf('X{{gone}}Y', { gone: '' })).toEqual([
+        { kind: 'literal', start: 0, length: 1, escaped: false },
+        { kind: 'substitution', name: 'gone', start: 1, length: 0, escaped: true },
+        { kind: 'literal', start: 1, length: 1, escaped: false }
+      ]);
+      expectGapless('X{{gone}}Y', { gone: '' });
+    });
+
+    test('escaping changes the rendered length, and the segment reports the rendered one', () => {
+      // The input value appears nowhere in the escaped output, so searching for it finds nothing.
+      const subs = segmentsOf('{{h}} vs {{{h}}}', { h: '<b>&</b>' }).filter((s) => s.kind === 'substitution');
+      expect(subs.map((s) => ({ escaped: s.escaped, length: s.length }))).toEqual([
+        { escaped: true, length: 29 },
+        { escaped: false, length: 8 }
+      ]);
+      expectGapless('{{h}} vs {{{h}}}', { h: '<b>&</b>' });
+    });
+
+    // ---- refusals, and what is simply skipped ------------------------------------------------
+
+    test.each([
+      ['a section', 'X{{#s}}in{{/s}}Y', /does not support '#' tokens/],
+      ['an inverted section', 'X{{^s}}in{{/s}}Y', /does not support '\^' tokens/],
+      ['a partial', 'X{{>p}}Y', /does not support '>' tokens/]
+    ])('refuses %s rather than approximating it', (__desc, tpl, expected) => {
+      expect(MustacheTemplate.create(tpl).orThrow().renderWithSegments({ s: true })).toFailWith(expected);
+    });
+
+    test('comments emit nothing and are skipped', () => {
+      expectGapless('A{{! note }}B', {});
+      expect(segmentsOf('A{{! note }}B', {}).filter((s) => s.kind === 'substitution')).toHaveLength(0);
+    });
+
+    test('a set-delimiter tag with nothing interpolated after it is harmless', () => {
+      expectGapless('A{{=<% %>=}}B', {});
+      expect(segmentsOf('A{{=<% %>=}}B', {}).filter((s) => s.kind === 'substitution')).toHaveLength(0);
+    });
+
+    test('interpolating after a set-delimiter tag is refused, not silently under-rendered', () => {
+      // Each interpolation is rendered from its own slice of the template, and the writer reads
+      // that slice with the DEFAULT delimiters — so `<%v%>` would come back verbatim and the map
+      // would describe text that render() never produced. The identity check is what catches it.
+      const template = MustacheTemplate.create('A{{=<% %>=}}<%v%>B').orThrow();
+      expect(template.render({ v: 'X' })).toSucceedWith('AXB');
+      expect(template.renderWithSegments({ v: 'X' })).toFailWith(/differing from render\(\)/);
+    });
+
+    test('an empty template yields no segments and empty text', () => {
+      const r = MustacheTemplate.create('').orThrow().renderWithSegments({}).orThrow();
+      expect(r).toEqual({ text: '', segments: [] });
+    });
+
+    test('a missing variable renders empty rather than failing, and is still attributed', () => {
+      const subs = segmentsOf('a{{nope}}b', {}).filter((s) => s.kind === 'substitution');
+      expect(subs).toEqual([{ kind: 'substitution', name: 'nope', start: 1, length: 0, escaped: true }]);
+    });
+
+    test('dotted paths resolve the same way render does', () => {
+      expectGapless('{{a.b}}', { a: { b: 'deep' } });
+      const subs = segmentsOf('{{a.b}}', { a: { b: 'deep' } });
+      expect(subs).toEqual([{ kind: 'substitution', name: 'a.b', start: 0, length: 4, escaped: true }]);
+    });
+  });
 });
