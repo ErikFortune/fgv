@@ -21,7 +21,7 @@
  */
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import Mustache, { EscapeFunction, TemplateSpans, Writer } from 'mustache';
+import Mustache, { Context, EscapeFunction, TemplateSpans, Writer } from 'mustache';
 
 import {
   IContextValidationResult,
@@ -248,14 +248,12 @@ export class MustacheTemplate {
    * **Sections, inverted sections and partials are refused, not approximated.** Their rendered
    * output is not a linear image of the token order — a section may repeat its body, or omit it —
    * so a segment list walked from the template would mis-describe the result. Failing names the
-   * construct. Comments emit nothing and are skipped.
+   * construct. Comments and set-delimiter tags emit nothing and are skipped; because each
+   * interpolation is rendered from its already-parsed token rather than from a re-parsed slice of
+   * the template, a set-delimiter tag has no effect on what this produces.
    *
    * The rendered text is **compared against `render()` before returning**, so a mismatch fails
-   * loudly rather than handing back a map that does not describe its own output. This is not
-   * merely defensive: a set-delimiter tag changes the delimiters for the tags that follow it, and
-   * each interpolation here is rendered from its own slice of the template — which the writer
-   * reads with the *default* delimiters. A template that interpolates after changing its
-   * delimiters is therefore refused by this check rather than silently under-rendered.
+   * loudly rather than handing back a map that does not describe its own output.
    *
    * @param context - The context object for template rendering.
    * @returns Success with the rendered text and its segment map, or Failure if the
@@ -264,6 +262,7 @@ export class MustacheTemplate {
   public renderWithSegments(context: unknown): Result<IRenderedTemplate> {
     return captureResult((): IRenderedTemplate => {
       const segments: IRenderedSegment[] = [];
+      const lookup = new Mustache.Context(context);
       let text = '';
 
       for (const token of this._tokens) {
@@ -280,16 +279,7 @@ export class MustacheTemplate {
         }
 
         const rendered =
-          type === 'text'
-            ? String(token[1])
-            : this._writer.render(
-                this.template.slice(Number(token[2]), Number(token[3])),
-                context,
-                undefined,
-                {
-                  escape: this._escapeFn
-                }
-              );
+          type === 'text' ? String(token[1]) : this._renderInterpolation(type, String(token[1]), lookup);
 
         segments.push({
           kind: type === 'text' ? 'literal' : 'substitution',
@@ -302,19 +292,52 @@ export class MustacheTemplate {
       }
 
       // The identity this whole surface rests on. Cheap next to a render, and it converts
-      // "should hold by construction" into "did hold, for this input" — which matters because it
-      // does not always hold: see the set-delimiter case named in the message below.
+      // "holds by construction" into "did hold, for this input" — worth keeping because the
+      // construction argument rests on mustache.js's per-token semantics, which are upstream and
+      // could move under us.
       const authoritative = this.render(context).orThrow();
+      /* c8 ignore start - unreachable by construction: this walk delegates each token to the same
+         Writer primitives render() reaches through renderTokens, so a divergence needs an upstream
+         change rather than an input. Kept anyway — it is the check that caught the
+         slice-and-reparse defect this implementation replaced. */
       if (text !== authoritative) {
         throw new Error(
           'renderWithSegments produced output differing from render(); refusing to return a ' +
-            'segment map that does not describe its own text. A set-delimiter tag followed by an ' +
-            'interpolation is the known way to reach this: each interpolation is rendered from ' +
-            'its own slice of the template, which is read with the default delimiters.'
+            'segment map that does not describe its own text.'
         );
       }
+      /* c8 ignore stop */
       return { text, segments };
     });
+  }
+
+  /**
+   * Renders one interpolation token against a prepared lookup context.
+   *
+   * @remarks
+   * Delegates to the same `Writer` primitives `render()` reaches through `renderTokens`, so the
+   * value semantics — dotted paths, lambdas, `null` and `undefined` rendering empty, non-string
+   * coercion — are mustache.js's rather than a reimplementation of them.
+   *
+   * The token is passed as a freshly built `[type, name]` array rather than the parsed span. Both
+   * primitives read only the name, and `@types/mustache` declares the parameter as `string[]`
+   * while a parsed span carries its source offsets as numbers — so handing over the span would
+   * need a cast to work around the typings. Building the pair the primitives actually read needs
+   * none.
+   *
+   * @param type - `'name'` for an escaped interpolation, `'&'` for an unescaped one.
+   * @param name - The interpolation's name (may be a dotted path).
+   * @param lookup - The context to resolve the name against.
+   * @returns The rendered value; empty when the name resolves to `null` or `undefined`.
+   */
+  private _renderInterpolation(type: 'name' | '&', name: string, lookup: Context): string {
+    const token: string[] = [type, name];
+    const value =
+      type === 'name'
+        ? this._writer.escapedValue(token, lookup, { escape: this._escapeFn })
+        : this._writer.unescapedValue(token, lookup);
+    // `renderTokens` appends nothing for an absent value and string-coerces everything else.
+    return value === undefined || value === null ? '' : String(value);
   }
 
   /**

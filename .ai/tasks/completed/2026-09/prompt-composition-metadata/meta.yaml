@@ -31,11 +31,17 @@ summary:
     that escaping alters) and fails *silently* with plausible offsets, so the offsets must be
     computed during the render — which only `MustacheTemplate` can do. Extending the sibling library
     rather than working around it, per CODING_STANDARDS § "Extending Core Libraries Over Working
-    Around Them". (2) The identity self-check, written expecting to be unreachable, turned out to be
-    load-bearing: a set-delimiter tag followed by an interpolation genuinely reaches it, because each
-    interpolation is rendered from its own template slice and the writer reads that slice with the
-    default delimiters. That made the surface's TSDoc claim ("set-delimiter tags are simply skipped")
-    wrong, and the test named after it had only ever exercised a comment; both corrected. (3) None of
+    Around Them". (2) The identity self-check, written expecting to be unreachable, fired: the
+    first implementation rendered each interpolation from a re-parsed slice of the raw template, which
+    the writer reads with the DEFAULT delimiters, so a set-delimiter tag mis-mapped the output. The
+    first response was to refuse such templates — and that was a shortcut, filed alongside the
+    refusal of sections and partials as though the four were alike. They are not: a section has no
+    correct linear map, while a set-delimiter template has one the implementation merely could not
+    compute. Fixed at the cause instead — each interpolation now renders from its already-parsed
+    token via the same Writer primitives render() reaches through renderTokens, so delimiters are
+    invisible here and value semantics (dotted paths, lambdas, null, coercion) are delegated rather
+    than reimplemented. The check is kept, now genuinely unreachable, carrying the stream's sole
+    c8 ignore. (3) None of
     the three initially-uncovered branches wanted a `c8 ignore` — one was dead and was removed, two
     were reachable and are now tested. Asking "should this branch exist?" before "how do I cover it?"
     paid three times in one stream.
@@ -51,7 +57,8 @@ keywords:
   - escaping changes rendered length
   - opt-in diagnostic
   - diagnostic must not break its subject
-  - set-delimiter tag limitation
+  - set-delimiter delimiters are parse-time
+  - refusing what you could compute
   - identity self-check earns its place
   - watched-it-fail no-op neuter
   - coverage branch should not exist
@@ -59,7 +66,7 @@ relatedStreams:
   - id: library-capabilities-split
     relationship: >
       base branch — this stream is stacked on #661 and carries its eight commits. The two router
-      shortcuts this stream adds are what put the router at 17,895 of its 18,000-char cap.
+      shortcuts this stream adds are what put the router at 17,870 of its 18,000-char cap.
   - id: ts-prompt-assist
     relationship: >
       the library this extends; `PromptLibrary.resolve`'s render chain was restructured (not
@@ -68,8 +75,12 @@ relatedStreams:
 notes: >
   Gates: build, lint and test at 100% coverage in both packages; `rush rebuild` repo-wide clean with
   zero warnings; change files verify against `origin/release`; `@fgv/testbed`, the one downstream
-  consumer, green. No coverage directives added.
-  Twelve neuters were run one at a time. One of them — the first `indexOf` simulation — was a no-op
+  consumer, green.
+  One coverage directive in the whole stream: the identity check in `renderWithSegments`, unreachable by construction
+  once the interpolation path delegates per-token, kept because it already caught one real defect.
+  Needs sign-off per TESTING_GUIDELINES.
+  Sixteen neuters were run one at a time, including one that reinstates the slice-and-reparse and
+  turns exactly the two set-delimiter tests red. One of them — the first `indexOf` simulation — was a no-op
   that produced zero red tests because a `Math.max` collapsed it back to the correct value. It is
   recorded in `README.md` because reading that result as "the tests do not bite" would have been
   exactly backwards: when a watched-it-fail run turns nothing red, suspect the harness first.

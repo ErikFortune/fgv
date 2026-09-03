@@ -42,26 +42,49 @@ This is also the reason the work did not stay inside `ts-prompt-assist`. Per
 limitation in a sibling `@fgv/*` library extends the sibling. `renderWithSegments` is purely
 additive; `render()` is untouched.
 
-## What the self-check caught
+## What the self-check caught — and why the first fix was a shortcut
 
 `renderWithSegments` compares its accumulated text against `render()` before returning. That was
-written as a belt-and-braces invariant — "converts *should hold by construction* into *did hold,
-for this input*" — and the expectation was that it would be unreachable.
+written as a belt-and-braces invariant, expected to be unreachable.
 
-It is not. A **set-delimiter tag** changes the delimiters for every tag that follows it, and each
-interpolation here is rendered from its own slice of the template, which the writer reads with the
-*default* delimiters. `A{{=<% %>=}}<%v%>B` renders `AXB` but would have been mapped as `A<%v%>B`.
+It was not. The first implementation rendered each interpolation by slicing the raw template and
+handing the slice back to the writer — which **re-parses it with the default delimiters**. A
+**set-delimiter tag** changes the delimiters for every tag that follows it, so
+`A{{=<% %>=}}<%v%>B` renders `AXB` but was being mapped as `A<%v%>B`. The check caught it.
 
-Two consequences, both in the PR:
+**The first response to that was to refuse such templates, and that was the shortcut.** It was
+filed alongside the refusal of sections, inverted sections and partials, as though the four were
+alike. They are not:
 
-1. The check is load-bearing, not defensive — so it needed no coverage directive, only a test.
-2. The TSDoc's claim that "comments and set-delimiter tags emit nothing and are simply skipped" was
-   **wrong**, and so was the test named after it (which only ever exercised a comment). Both
-   corrected.
+| construct | why it is refused |
+|---|---|
+| section / inverted section / partial | **no correct answer exists** — a section may repeat its body or omit it, so the output is not a linear image of the token order |
+| set-delimiter | there *is* a correct answer; the implementation could not compute it |
+
+Refusing a case with a well-defined answer because of how one chose to render is a property of the
+implementation dressed up as a property of the problem. The fix removes the cause instead:
+
+**Each interpolation is now rendered from its already-parsed token**, via `Writer.escapedValue` /
+`Writer.unescapedValue` — the same primitives `render()` reaches through `renderTokens`. Delimiters
+are a *parse-time* concern, so once a token exists, what the delimiters were is invisible. The
+whole hazard class disappears rather than being documented.
+
+It also stops reimplementing value semantics. Dotted paths, lambdas, `null`/`undefined` rendering
+empty, and non-string coercion are now mustache.js's behaviour by delegation rather than by care —
+verified across eleven shapes against `render()` before the change was written.
+
+One typings wrinkle, handled without a cast: `@types/mustache` declares both primitives'
+`token` parameter as `string[]`, while a parsed span carries its source offsets as numbers. Since
+both read only `token[1]`, the helper builds the `[type, name]` pair they actually read. The repo
+forbids casting around the type system; constructing the value the callee needs is not a cast.
+
+The check itself is kept, now genuinely unreachable, with the sole `c8 ignore` in this stream and
+its reason stated: the construction argument rests on mustache.js's per-token semantics, which are
+upstream and could move. **It has already earned its keep once** — it is what caught the defect
+above.
 
 The general form: *an invariant check you expected to be unreachable is worth probing before you
-ignore it.* The probe cost one `node -e` line and turned a would-be `c8 ignore` into a documented
-limitation with a named cause.
+ignore it* — and when it fires, *fixing the cause beats documenting the symptom.*
 
 ## Coverage: three branches, three different right answers
 
@@ -83,8 +106,10 @@ it?", per `TESTING_GUIDELINES.md` § *Coverage Gap Resolution*.
 
 ## Watched-it-fail: the neuter that proved nothing
 
-Twelve neutering edits, applied one at a time so each red test is red for its own reason rather
-than for a neighbour's.
+Sixteen neutering edits, applied one at a time so each red test is red for its own reason rather
+than for a neighbour's. The four covering the rewritten interpolation path include **reinstating
+the slice-and-reparse**, which turns exactly the two new set-delimiter tests red — so the fix is
+pinned by tests that fail against the code it replaced.
 
 The instructive failure is the first `indexOf` neuter, which was meant to simulate the unsound
 implementation and produced **zero** red tests. It computed
@@ -106,6 +131,8 @@ the tests.
 
 - One lint **warning** fixed rather than tolerated (`no-unsafe-regexp`, a runtime-built `RegExp` in
   a `test.each` table). A warning is a CI failure in this repo.
+- One `c8 ignore` — the identity check described above. The only coverage directive in the stream,
+  and it needs sign-off per `TESTING_GUIDELINES.md`.
 - Six `ae-unresolved-link` warnings that the new TSDoc baked into `etc/ts-extras.api.md` — the
   committed `MustacheTemplate` class had zero, so all six were new. Rewritten as prose and code
   spans to match its siblings.

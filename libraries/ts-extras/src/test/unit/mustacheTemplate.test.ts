@@ -675,18 +675,48 @@ describe('MustacheTemplate', () => {
       expect(segmentsOf('A{{! note }}B', {}).filter((s) => s.kind === 'substitution')).toHaveLength(0);
     });
 
-    test('a set-delimiter tag with nothing interpolated after it is harmless', () => {
+    test('a set-delimiter tag emits nothing and is skipped', () => {
       expectGapless('A{{=<% %>=}}B', {});
       expect(segmentsOf('A{{=<% %>=}}B', {}).filter((s) => s.kind === 'substitution')).toHaveLength(0);
     });
 
-    test('interpolating after a set-delimiter tag is refused, not silently under-rendered', () => {
-      // Each interpolation is rendered from its own slice of the template, and the writer reads
-      // that slice with the DEFAULT delimiters — so `<%v%>` would come back verbatim and the map
-      // would describe text that render() never produced. The identity check is what catches it.
+    test('interpolating after a set-delimiter tag works, and is attributed', () => {
+      // Delimiters are a parse-time concern: each interpolation is rendered from its already-
+      // parsed token, so what the delimiters were is invisible here. An earlier implementation
+      // re-parsed a slice of the raw template with the DEFAULT delimiters and produced
+      // `A<%v%>B` — the identity check refused it, and this is the fix rather than the refusal.
       const template = MustacheTemplate.create('A{{=<% %>=}}<%v%>B').orThrow();
       expect(template.render({ v: 'X' })).toSucceedWith('AXB');
-      expect(template.renderWithSegments({ v: 'X' })).toFailWith(/differing from render\(\)/);
+      expect(template.renderWithSegments({ v: 'X' })).toSucceedAndSatisfy((r) => {
+        expect(r.text).toBe('AXB');
+        expect(r.segments).toEqual([
+          { kind: 'literal', start: 0, length: 1, escaped: false },
+          { kind: 'substitution', name: 'v', start: 1, length: 1, escaped: true },
+          { kind: 'literal', start: 2, length: 1, escaped: false }
+        ]);
+      });
+      expectGapless('A{{=<% %>=}}<%v%>B', { v: 'X' });
+    });
+
+    test('a delimiter change mid-template applies to what follows it and not to what precedes', () => {
+      // The stronger form of the case above: both spellings appear in one template, and only the
+      // one matching the delimiters in force at its position is a token at all.
+      expectGapless('{{a}}{{=[ ]=}}[b] {{c}}', { a: 'A', b: 'B', c: 'C' });
+      const subs = segmentsOf('{{a}}{{=[ ]=}}[b] {{c}}', { a: 'A', b: 'B', c: 'C' }).filter(
+        (s) => s.kind === 'substitution'
+      );
+      expect(subs.map((s) => s.name)).toEqual(['a', 'b']);
+    });
+
+    test('value semantics are mustache.js’s, not a reimplementation', () => {
+      // The interpolation path delegates to the Writer primitives render() reaches through
+      // renderTokens, so these all agree with render() by construction rather than by care.
+      expectGapless('{{n}}', { n: 42 });
+      expectGapless('{{f}}', { f: (): string => 'called' });
+      expectGapless('{{nul}}', { nul: null });
+      expectGapless('{{arr}}', { arr: [1, 2] });
+      expect(segmentsOf('{{nul}}', { nul: null })[0].length).toBe(0);
+      expect(segmentsOf('{{n}}', { n: 42 })[0].length).toBe(2);
     });
 
     test('an empty template yields no segments and empty text', () => {
