@@ -49,11 +49,11 @@ additive; `render()` is untouched.
 ## What the self-check caught — and why the first fix was a shortcut
 
 `renderWithSegments` **originally** compared its accumulated text against `render()` before
-returning — a belt-and-braces invariant, expected to be unreachable. (It no longer does; why is the
-end of this section.)
+returning — a belt-and-braces invariant, expected to be unreachable. It is not in the shipped code;
+this section is why, in two steps.
 
-It was not. The first implementation rendered each interpolation by slicing the raw template and
-handing the slice back to the writer — which **re-parses it with the default delimiters**. A
+It was not unreachable. The first implementation rendered each interpolation by slicing the raw
+template and handing it back to the writer — which **re-parses it with the default delimiters**. A
 **set-delimiter tag** changes the delimiters for every tag that follows it, so
 `A{{=<% %>=}}<%v%>B` renders `AXB` but was being mapped as `A<%v%>B`. The check caught it.
 
