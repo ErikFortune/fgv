@@ -70,8 +70,10 @@ keywords:
 relatedStreams:
   - id: library-capabilities-split
     relationship: >
-      base branch — this stream is stacked on #661 and carries its eight commits. The two router
-      shortcuts this stream adds are what put the router at 17,870 of its 18,000-char cap.
+      authored on top of #661's branch, then rebased onto `release` when #661 merged as a squash —
+      which made its eight commits non-ancestors of `release` and produced a history-shape conflict
+      on byte-identical trees. The two router shortcuts this stream adds are what put the router at
+      17,870 of its 18,000-char cap.
   - id: ts-prompt-assist
     relationship: >
       the library this extends; `PromptLibrary.resolve`'s render chain was restructured (not
@@ -86,8 +88,10 @@ notes: >
   subtraction (this stream's own thesis applied to its own code) and is now returned structurally;
   a dead `value === null` operand was removed after verifying the claim against the vendored
   mustache source rather than taking the reviewer's word for it.
-  Sixteen neuters were run one at a time, including one that reinstates the slice-and-reparse and
-  turns exactly the two set-delimiter tests red. One of them — the first `indexOf` simulation — was a no-op
+  Eighteen neuters were run one at a time. Three pin a fix against the code it replaced: reinstating
+  the slice-and-reparse turns exactly the two set-delimiter tests red, reinstating the self-check
+  turns exactly the two lambda-invocation tests red, and reporting a zero prefaceLength while still
+  prepending turns exactly the preface test red. One of them — the first `indexOf` simulation — was a no-op
   that produced zero red tests because a `Math.max` collapsed it back to the correct value. It is
   recorded in `README.md` because reading that result as "the tests do not bite" would have been
   exactly backwards: when a watched-it-fail run turns nothing red, suspect the harness first.

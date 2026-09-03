@@ -1,7 +1,11 @@
 # prompt-composition-metadata — what a rendered template and a resolved prompt are made of
 
-**Status**: ✅ shipped 2026-09-02 via [#663](https://github.com/ErikFortune/fgv/pull/663) (stacked
-on #661, same pattern as #662).
+**Status**: ✅ shipped 2026-09-02 via [#663](https://github.com/ErikFortune/fgv/pull/663).
+
+Authored stacked on #661; **rebased onto `release` once that merged**, since it landed as a squash
+and the eight commits it contributed stopped being ancestors of `release`. GitHub reported a
+conflict, but the trees were byte-identical — history shape, not content — and the four commits
+replayed cleanly. CI, which cannot run on a feature-branch base, is green on the rebased head.
 
 ## Summary
 
@@ -44,8 +48,9 @@ additive; `render()` is untouched.
 
 ## What the self-check caught — and why the first fix was a shortcut
 
-`renderWithSegments` compares its accumulated text against `render()` before returning. That was
-written as a belt-and-braces invariant, expected to be unreachable.
+`renderWithSegments` **originally** compared its accumulated text against `render()` before
+returning — a belt-and-braces invariant, expected to be unreachable. (It no longer does; why is the
+end of this section.)
 
 It was not. The first implementation rendered each interpolation by slicing the raw template and
 handing the slice back to the writer — which **re-parses it with the default delimiters**. A
@@ -123,10 +128,11 @@ it?", per `TESTING_GUIDELINES.md` § *Coverage Gap Resolution*.
 
 ## Watched-it-fail: the neuter that proved nothing
 
-Sixteen neutering edits, applied one at a time so each red test is red for its own reason rather
-than for a neighbour's. The four covering the rewritten interpolation path include **reinstating
-the slice-and-reparse**, which turns exactly the two new set-delimiter tests red — so the fix is
-pinned by tests that fail against the code it replaced.
+Eighteen neutering edits, applied one at a time so each red test is red for its own reason rather
+than for a neighbour's. Three are load-bearing, and each pins a fix against the code it replaced:
+**reinstating the slice-and-reparse** turns exactly the two set-delimiter tests red; **reinstating
+the self-check** turns exactly the two lambda-invocation tests red; **reporting a zero
+`prefaceLength` while still prepending** turns exactly the preface test red.
 
 The instructive failure is the first `indexOf` neuter, which was meant to simulate the unsound
 implementation and produced **zero** red tests. It computed
