@@ -2204,6 +2204,21 @@ interface IRemoveSecretResult {
 }
 
 // @public
+interface IRenderedSegment {
+    readonly escaped: boolean;
+    readonly kind: 'literal' | 'substitution';
+    readonly length: number;
+    readonly name?: string;
+    readonly start: number;
+}
+
+// @public
+interface IRenderedTemplate {
+    readonly segments: ReadonlyArray<IRenderedSegment>;
+    readonly text: string;
+}
+
+// @public
 interface IRequestGuard {
     // (undocumented)
     check(request: ISaferFetchRequest, chain: ReadonlyArray<IRequestHop>): Promise<Result<ISaferFetchRequest>>;
@@ -2816,6 +2831,8 @@ declare namespace Mustache {
         IContextValidationResult,
         IMissingVariableDetail,
         IMustacheTemplateOptions,
+        IRenderedSegment,
+        IRenderedTemplate,
         IVariableRef,
         MustacheEscapeStrategy,
         MustacheTokenType,
@@ -2835,6 +2852,7 @@ class MustacheTemplate {
     // Warning: (ae-forgotten-export) The symbol "IRequiredMustacheTemplateOptions" needs to be exported by the entry point index.d.ts
     readonly options: Readonly<IRequiredMustacheTemplateOptions>;
     render(context: unknown): Result<string>;
+    renderWithSegments(context: unknown): Result<IRenderedTemplate>;
     readonly template: string;
     static validate(template: string, options?: IMustacheTemplateOptions): Result<true>;
     validate(): Result<true>;

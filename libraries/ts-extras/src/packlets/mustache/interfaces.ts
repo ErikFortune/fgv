@@ -36,6 +36,38 @@ export type MustacheTokenType =
   | '='; // {{= =}} - set delimiter
 
 /**
+ * One contiguous run of the rendered output, attributed to what produced it.
+ * @public
+ */
+export interface IRenderedSegment {
+  /** `'literal'` for template text; `'substitution'` for an interpolated value. */
+  readonly kind: 'literal' | 'substitution';
+  /** Variable name, when `kind` is `'substitution'`. */
+  readonly name?: string;
+  /** Offset into `IRenderedTemplate.text`, in UTF-16 code units. */
+  readonly start: number;
+  /** Length in UTF-16 code units. May be `0` for a variable that rendered empty. */
+  readonly length: number;
+  /** `false` for a triple-stash / `{{&}}` interpolation, which bypasses escaping. */
+  readonly escaped: boolean;
+}
+
+/**
+ * A render plus the map of which part of the output came from where.
+ * @public
+ */
+export interface IRenderedTemplate {
+  /** The rendered output — identical to what `MustacheTemplate.render` returns. */
+  readonly text: string;
+  /**
+   * Document-ordered, contiguous and gapless: every code unit of `text` belongs to exactly one
+   * segment, so concatenating them reproduces `text` exactly. That identity is verified before
+   * this is returned.
+   */
+  readonly segments: ReadonlyArray<IRenderedSegment>;
+}
+
+/**
  * Represents a variable reference extracted from a Mustache template.
  * @public
  */

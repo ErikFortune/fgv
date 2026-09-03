@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add MustacheTemplate.renderWithSegments, returning the rendered text plus a document-ordered, gapless attribution of every code unit to literal template text or a named interpolation (IRenderedTemplate / IRenderedSegment). Offsets are computed during the render rather than recovered by searching the output; sections, inverted sections and partials are refused rather than approximated",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
