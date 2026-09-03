@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-random",
+      "comment": "Docs: add CAPABILITIES.md. @fgv/ts-random had no entry in LIBRARY_CAPABILITIES.md at all, so a consumer scanning for what fgv provides would conclude there was no seeded-random support. Documents the PRNG surface, the word/character corpora, and \u2014 load-bearing \u2014 that this is a mulberry32 PRNG and must never be used for tokens, salts or key material.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-random"
+}

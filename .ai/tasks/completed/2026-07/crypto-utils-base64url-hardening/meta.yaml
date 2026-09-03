@@ -20,6 +20,9 @@ summary:
   # exists. Reconstructing one from source would dress this sweep's inference as the
   # stream's own testimony. See notes.
   sourceLine: '# Brief — crypto-utils base64url + branded multibase SPKI hardening (items 2 + 3)'
+  headline: >
+    base64url decoding now rejects what it cannot round-trip, and a public key carries
+    its encoding in its type rather than in a comment.
   # sourceLine is the opening line of brief.md (the commission), NOT a result/README opener.
 keywords:
   - base64url

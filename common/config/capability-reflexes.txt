@@ -1,0 +1,112 @@
+# Capability reflexes that MUST stay in the always-loaded router.
+#
+# Each line is a symbol an agent needs to be able to reach WITHOUT opening anything, because the
+# reflex attached to it prevents a real defect: "use KeyStore, never roll your own PBKDF2",
+# "read embeddingRefOf, never test embeddingRef for presence", "don't hand-roll a timeout + size
+# cap + redirect loop".
+#
+# These fire for a reader who did not know to look. Behind a load-on-demand boundary they would
+# only reach someone who already knew — the person who did not need them. That is why losing one
+# is a CI failure rather than a review comment: the loss would be invisible in a bulk move.
+#
+# Symbols, not sentences, deliberately. A router entry will be reworded when it is compressed to
+# one line, and a gate that breaks on rewording is a gate someone deletes. The symbol is the
+# stable anchor.
+#
+# Verified by common/scripts/verify-capability-docs.mjs. To remove a line, the capability itself
+# must be gone, and the removal ships in the same commit.
+
+# --- Result pattern -------------------------------------------------------------------------
+mapResults
+MessageAggregator
+mapResultsAsync
+populateObjectAsync
+firstSuccessAsync
+AsyncDetailedResult
+
+# --- collections ----------------------------------------------------------------------------
+RetainingRingBuffer
+ResultMap
+
+# --- FileTree / IO --------------------------------------------------------------------------
+FileTree
+isStrictTextAccessors
+getFileTextStrict
+copyItemInto
+copyContentsInto
+
+# --- hashing / canonical form ---------------------------------------------------------------
+Crc32Normalizer
+Md5Normalizer
+canonicalize
+
+# --- crypto (the highest-consequence group) -------------------------------------------------
+ICryptoProvider
+KeyStore
+addSecretFromPassword
+verifySecretFromPassword
+addSecretFromPasswordArgon2id
+HpkeProvider
+fromBase64Strict
+timingSafeEqual
+hmacSha256
+generateUuid
+NodeArgon2Provider
+BrowserArgon2Provider
+EncryptedFilePrivateKeyStorage
+IdbPrivateKeyStorage
+exportPublicKeyAsMultibaseSpki
+
+# --- safer-fetch ----------------------------------------------------------------------------
+saferFetchJson
+saferFetchBytes
+addressGuard
+blockPrivateNetworks
+allowAnyAddress
+allowContentTypes
+FetchFailureReason
+
+# --- ai-assist ------------------------------------------------------------------------------
+generateJsonCompletion
+extractJsonText
+fencedStringifiedJson
+classifyJsonParseFailure
+executeClientToolTurn
+callProviderEmbedding
+resolveImageCapability
+structuredOutput
+adaptOptionalToNullable
+
+# --- JsonSchema -----------------------------------------------------------------------------
+JsonSchema
+fromJson
+nullable
+isSchemaValidator
+
+# --- agent memory ---------------------------------------------------------------------------
+FileTreeMemoryStore
+embeddingRefOf
+IVectorIndex
+IFragmentVectorIndex
+InMemoryCosineIndex
+SqliteVecVectorIndex
+SqliteVecFragmentIndex
+FragmentSemanticRetriever
+scanEveryRecord
+listEntries
+dedupScopeFor
+embedsKind
+
+# --- prompt-assist --------------------------------------------------------------------------
+PromptLibrary
+HorizontalComposer
+PromptObservationStore
+resolveJsonOutput
+MustacheTemplate
+
+# --- MCP ------------------------------------------------------------------------------------
+adaptMcpTools
+
+# --- random (mulberry32 — never for tokens/salts/keys) --------------------------------------
+SeededRandomSource
+PseudoRandomGenerator

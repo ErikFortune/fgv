@@ -48,6 +48,7 @@ lib-commonjs/
 docs/
 *.md
 !README.md
+!CAPABILITIES.md
 !LICENSE.md
 
 # Exclude IANA data files from package (using embedded compressed data instead)

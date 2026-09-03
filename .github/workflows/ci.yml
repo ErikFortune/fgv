@@ -36,6 +36,21 @@ jobs:
       # Runs after rebuild because it loads built artifacts. Neither the build nor the test step
       # can see this class of defect: TypeScript resolves types either way, and Jest runs in CJS so
       # it never enters the `import` condition. See the script header.
+      # The capabilities index is @-included into every session, so its size is paid on every
+      # task whether or not a library is involved. It reached 43k tokens — 67% of the whole
+      # instruction budget — under a convention that said "keep it short". This is the gate that
+      # replaced the convention; it also refuses to let a reflex ("never roll your own PBKDF2")
+      # be lost in a bulk move, which review would not catch.
+      - name: Verify capability docs
+        run: node common/scripts/verify-capability-docs.mjs --verbose
+
+      # The recent-additions feed is DERIVED from each completed stream's summary.sourceLine, so
+      # there is one copy of that sentence rather than two to keep in step. This is what stops the
+      # derived form drifting from its source — a hand-maintained changelog is exactly the kind of
+      # stream-close discipline this repo has watched lapse.
+      - name: Verify the capability feed is not stale
+        run: node common/scripts/generate-capability-feed.mjs --check --verbose
+
       - name: Verify ESM entry points are loadable
         run: node common/scripts/verify-esm-entrypoints.mjs --verbose
       # The sibling check, one row down the consumer table. The step above asks whether Node can

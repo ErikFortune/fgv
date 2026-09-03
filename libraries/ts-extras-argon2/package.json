@@ -19,6 +19,7 @@
     "dist",
     "CHANGELOG.json",
     "README.md",
+    "CAPABILITIES.md",
     "LICENSE",
     "!lib/test",
     "!dist/test",

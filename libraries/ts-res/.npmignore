@@ -57,5 +57,6 @@ EXAMPLE_*.md
 docs/
 *.md
 !README.md
+!CAPABILITIES.md
 !LICENSE.md
 !CHANGELOG.md
