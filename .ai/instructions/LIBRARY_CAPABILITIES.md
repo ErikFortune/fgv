@@ -136,9 +136,8 @@ detail. `· pkg` names the owning package.*
 - **Observing every prompt resolution as it flows?** → `RetainingRingBuffer` `PromptLibrary` `PromptObservationStore` `resolveJsonOutput` · `ts-prompt-assist`
 - **Validating a JSON-shaped LLM response against a typed `Converter<T>` + validator…?** → `fencedStringifiedJson` `PromptLibrary` `resolveJsonOutput` · `ts-prompt-assist`
 - **Enforcing safety policies on a resolved prompt?** → `PromptLibrary` · `ts-prompt-assist`
-- **The order and absolute size of each section of a resolved prompt?** → `IPromptComposition` · `ts-prompt-assist`
 - **Mustache rendering for LLM prompts?** → `MustacheTemplate` · `ts-extras`
-- **Which part of a rendered template came from which interpolation, and how big is each?** → `renderWithSegments` · `ts-extras`
+- **What is a rendered template or resolved prompt made of?** → `renderWithSegments` `IPromptComposition` · `ts-extras` `ts-prompt-assist`
 - **Jest matchers for `Result<T>`?** → `toSucceedAndSatisfy` `toFailWith` · `ts-utils-jest`
 - **CSV / record-jar?** → `csv` · `ts-extras`
 - **Numeric / date / orderable range?** → `RangeOf<T>` · `ts-extras`
@@ -190,8 +189,7 @@ markers.*
 - **2026-08-21** — Shipped: `release()` on both index classes — it drops the index's prepared statements and marks it unusable, and never touches the… ([#651](https://github.com/ErikFortune/fgv/pull/651)) · `ts-agent-memory-sqlite-vec`
 - **2026-08-18** — Shipped: one invariant, enforced at the one layer that sees both sides — a record loaded from an address derived from kind K is a… ([#648](https://github.com/ErikFortune/fgv/pull/648)) · `ts-agent-memory`
 - **2026-08-15** — Shipped: the partial-read `IMemoryIndex` — every read returns `IIndexedMemoryEntry` (scope + envelope, no body), `rebuild` takes… ([#633](https://github.com/ErikFortune/fgv/pull/633)) · `ts-agent-memory`
-- **2026-08-15** — Outcome: delivered. Additive; `create()` is untouched on both classes. · `ts-agent-memory-sqlite-vec`
 
-*Showing the 10 most recent of 38. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 39. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->
