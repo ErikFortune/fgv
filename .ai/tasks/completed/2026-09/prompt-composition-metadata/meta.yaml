@@ -40,8 +40,12 @@ summary:
     compute. Fixed at the cause instead — each interpolation now renders from its already-parsed
     token via the same Writer primitives render() reaches through renderTokens, so delimiters are
     invisible here and value semantics (dotted paths, lambdas, null, coercion) are delegated rather
-    than reimplemented. The check is kept, now genuinely unreachable, carrying the stream's sole
-    c8 ignore. (3) None of
+    than reimplemented. The check was then removed too, and for the same
+    reason: it costs a second full render, and mustache re-invokes a function-valued lookup on every
+    render — so it doubled a caller's lambda invocations and failed outright on a lambda that answers
+    differently per call, a template render() handles. A code-reviewer probe disproved the
+    "unreachable" claim the c8 ignore rested on. The identity is asserted in the test suite instead;
+    the package carries no coverage directive. (3) None of
     the three initially-uncovered branches wanted a `c8 ignore` — one was dead and was removed, two
     were reachable and are now tested. Asking "should this branch exist?" before "how do I cover it?"
     paid three times in one stream.
@@ -59,7 +63,8 @@ keywords:
   - diagnostic must not break its subject
   - set-delimiter delimiters are parse-time
   - refusing what you could compute
-  - identity self-check earns its place
+  - a check that costs a second render
+  - useful once is not correct
   - watched-it-fail no-op neuter
   - coverage branch should not exist
 relatedStreams:
@@ -76,9 +81,11 @@ notes: >
   Gates: build, lint and test at 100% coverage in both packages; `rush rebuild` repo-wide clean with
   zero warnings; change files verify against `origin/release`; `@fgv/testbed`, the one downstream
   consumer, green.
-  One coverage directive in the whole stream: the identity check in `renderWithSegments`, unreachable by construction
-  once the interpolation path delegates per-token, kept because it already caught one real defect.
-  Needs sign-off per TESTING_GUIDELINES.
+  No coverage directives; the one briefly added went with the branch that needed it.
+  Two further code-reviewer findings acted on: `prefaceLength` was being recovered by length
+  subtraction (this stream's own thesis applied to its own code) and is now returned structurally;
+  a dead `value === null` operand was removed after verifying the claim against the vendored
+  mustache source rather than taking the reviewer's word for it.
   Sixteen neuters were run one at a time, including one that reinstates the slice-and-reparse and
   turns exactly the two set-delimiter tests red. One of them — the first `indexOf` simulation — was a no-op
   that produced zero red tests because a `Math.max` collapsed it back to the correct value. It is

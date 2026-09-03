@@ -1120,11 +1120,11 @@ export class PromptLibrary<
             .onSuccess((rendered) => succeed({ template, rendered }))
         )
         .onSuccess(({ template, rendered }) =>
-          this._applyAntiJailbreakPreface(descriptor, rendered).onSuccess((finalBody) =>
-            succeed({ template, rendered, finalBody })
+          this._applyAntiJailbreakPreface(descriptor, rendered).onSuccess((prefaced) =>
+            succeed({ template, finalBody: prefaced.body, prefaceLength: prefaced.prefaceLength })
           )
         )
-        .onSuccess(({ template, rendered, finalBody }) => {
+        .onSuccess(({ template, finalBody, prefaceLength }) => {
           const candidateMatches: ICandidateMatchTraceEntry[] = matches.map((m) => ({
             candidateIndex: m.index,
             matchType: m.matchType,
@@ -1152,13 +1152,7 @@ export class PromptLibrary<
           const composition =
             req.composition === undefined
               ? undefined
-              : this._buildComposition(
-                  template,
-                  finalMerged,
-                  finalBody,
-                  finalBody.length - rendered.length,
-                  req.composition
-                );
+              : this._buildComposition(template, finalMerged, finalBody, prefaceLength, req.composition);
           return succeed<IResolvedPrompt>({
             id: req.id,
             body: finalBody,
@@ -1253,14 +1247,31 @@ export class PromptLibrary<
     };
   }
 
-  private _applyAntiJailbreakPreface(descriptor: IPromptDescriptor, rendered: string): Result<string> {
+  /**
+   * Applies the safety policy's anti-jailbreak preface to a rendered body.
+   *
+   * @remarks
+   * Returns the length of what it prepended alongside the body, rather than leaving the caller to
+   * recover it as `body.length - rendered.length`. That subtraction is correct only while this
+   * method exclusively *prepends*, and it would keep returning a plausible number if that ever
+   * stopped being true — silently shifting every section offset the composition reports. Naming
+   * the split point here means a future change to this method cannot mis-describe it.
+   * @internal
+   */
+  private _applyAntiJailbreakPreface(
+    descriptor: IPromptDescriptor,
+    rendered: string
+  ): Result<{ body: string; prefaceLength: number }> {
     const preface = this._safetyPolicy?.antiJailbreakPreface;
     if (preface === undefined) {
-      return succeed(rendered);
+      return succeed({ body: rendered, prefaceLength: 0 });
     }
     return preface(descriptor)
       .withErrorFormat((msg) => `prompt '${descriptor.id}': antiJailbreakPreface failed: ${msg}`)
-      .onSuccess((prefaceText) => succeed(prefaceText === '' ? rendered : `${prefaceText}\n${rendered}`));
+      .onSuccess((prefaceText) => {
+        const prefix = prefaceText === '' ? '' : `${prefaceText}\n`;
+        return succeed({ body: `${prefix}${rendered}`, prefaceLength: prefix.length });
+      });
   }
 
   private _buildRenderContext(merged: ReadonlyMap<SlotName, IBindingTraceEntry>): Record<string, string> {
