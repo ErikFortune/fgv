@@ -708,6 +708,45 @@ describe('MustacheTemplate', () => {
       expect(subs.map((s) => s.name)).toEqual(['a', 'b']);
     });
 
+    test('evaluates each context value exactly once, as render() does', () => {
+      // Not a micro-optimisation: an earlier version re-rendered the whole template to check its
+      // own output against render(), which invoked every lambda a SECOND time. A caller cannot be
+      // asked to make its context idempotent to use a diagnostic.
+      const template = MustacheTemplate.create('{{f}}').orThrow();
+      const countInvocations = (run: (ctx: { f: () => string }) => void): number => {
+        let calls = 0;
+        run({
+          f: (): string => {
+            calls += 1;
+            return 'v';
+          }
+        });
+        return calls;
+      };
+      const viaRender = countInvocations((ctx) => {
+        template.render(ctx).orThrow();
+      });
+      const viaSegments = countInvocations((ctx) => {
+        template.renderWithSegments(ctx).orThrow();
+      });
+      expect(viaRender).toBe(1);
+      expect(viaSegments).toBe(viaRender);
+    });
+
+    test('a lambda that answers differently per call is rendered, not rejected', () => {
+      // The guarantee is that `segments` describes `text` — not that `text` is reproducible. The
+      // earlier self-check conflated the two and failed this template, which render() handles.
+      let n = 0;
+      const rendered = MustacheTemplate.create('x{{c}}y')
+        .orThrow()
+        .renderWithSegments({ c: (): string => String((n += 1)) });
+      expect(rendered).toSucceedAndSatisfy((r) => {
+        expect(r.text).toBe('x1y');
+        const joined = r.segments.map((seg) => r.text.slice(seg.start, seg.start + seg.length)).join('');
+        expect(joined).toBe(r.text);
+      });
+    });
+
     test('value semantics are mustache.js’s, not a reimplementation', () => {
       // The interpolation path delegates to the Writer primitives render() reaches through
       // renderTokens, so these all agree with render() by construction rather than by care.

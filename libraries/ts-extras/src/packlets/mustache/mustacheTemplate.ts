@@ -252,8 +252,12 @@ export class MustacheTemplate {
    * interpolation is rendered from its already-parsed token rather than from a re-parsed slice of
    * the template, a set-delimiter tag has no effect on what this produces.
    *
-   * The rendered text is **compared against `render()` before returning**, so a mismatch fails
-   * loudly rather than handing back a map that does not describe its own output.
+   * **Every context value is evaluated exactly once, as `render()` evaluates it.** A lambda in the
+   * context is therefore invoked the same number of times either way, and a context whose lambda
+   * answers differently per call is rendered rather than rejected — the returned `segments` always
+   * describe the returned `text`, whatever that text was. (The concatenation identity is asserted
+   * across every shape in this package's test suite, not re-checked at runtime: re-checking means
+   * a second full render, which is precisely what would double those invocations.)
    *
    * @param context - The context object for template rendering.
    * @returns Success with the rendered text and its segment map, or Failure if the
@@ -291,22 +295,12 @@ export class MustacheTemplate {
         text += rendered;
       }
 
-      // The identity this whole surface rests on. Cheap next to a render, and it converts
-      // "holds by construction" into "did hold, for this input" — worth keeping because the
-      // construction argument rests on mustache.js's per-token semantics, which are upstream and
-      // could move under us.
-      const authoritative = this.render(context).orThrow();
-      /* c8 ignore start - unreachable by construction: this walk delegates each token to the same
-         Writer primitives render() reaches through renderTokens, so a divergence needs an upstream
-         change rather than an input. Kept anyway — it is the check that caught the
-         slice-and-reparse defect this implementation replaced. */
-      if (text !== authoritative) {
-        throw new Error(
-          'renderWithSegments produced output differing from render(); refusing to return a ' +
-            'segment map that does not describe its own text.'
-        );
-      }
-      /* c8 ignore stop */
+      // Deliberately NOT re-rendered and compared against render() here. Such a check did once
+      // catch a real defect, but paying for it means a second full render — which invokes every
+      // lambda in the context a second time, so the check both doubles a caller's side effects
+      // and turns a context whose lambda answers differently per call into a failure on a
+      // template that renders fine. The identity is asserted in the test suite instead, where a
+      // second render costs nobody anything.
       return { text, segments };
     });
   }
@@ -336,8 +330,10 @@ export class MustacheTemplate {
       type === 'name'
         ? this._writer.escapedValue(token, lookup, { escape: this._escapeFn })
         : this._writer.unescapedValue(token, lookup);
-    // `renderTokens` appends nothing for an absent value and string-coerces everything else.
-    return value === undefined || value === null ? '' : String(value);
+    // Both primitives guard with `if (value != null)` and so return `undefined` — never `null` —
+    // for an absent value, which is why only `undefined` is tested here. `renderTokens` appends
+    // nothing in that case and string-coerces everything else.
+    return value === undefined ? '' : String(value);
   }
 
   /**

@@ -1266,6 +1266,13 @@ describe('composition metadata', () => {
     const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {}, composition: {} });
     expect(result).toSucceedAndSatisfy((r) => {
       const slot = r.composition!.sections.find((sec) => sec.kind === 'slot')!;
+      // Concrete expected values, not a comparison against `r.slots` — both are projections of
+      // the same merged map, so agreeing with each other would not catch both being wrong.
+      expect(slot.slot).toBe('topic');
+      expect(slot.source).toBe('default');
+      expect(slot.directive).toBe('prose');
+      expect(slot.wasEnforced).toBe(false);
+      // Agreement with the other public projection is still worth pinning, additionally.
       const fromSlots = r.slots.get(slot.slot!)!;
       expect(slot.source).toBe(fromSlots.source);
       expect(slot.directive).toBe(fromSlots.directive);

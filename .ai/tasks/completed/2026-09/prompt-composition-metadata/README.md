@@ -78,13 +78,30 @@ One typings wrinkle, handled without a cast: `@types/mustache` declares both pri
 both read only `token[1]`, the helper builds the `[type, name]` pair they actually read. The repo
 forbids casting around the type system; constructing the value the callee needs is not a cast.
 
-The check itself is kept, now genuinely unreachable, with the sole `c8 ignore` in this stream and
-its reason stated: the construction argument rests on mustache.js's per-token semantics, which are
-upstream and could move. **It has already earned its keep once** — it is what caught the defect
-above.
+**And then the check itself had to go, for the same reason.** It was kept at first behind the
+stream's only `c8 ignore`, on the argument that it was now unreachable. A `code-reviewer` pass
+disproved that with a probe: the check costs a **second full render**, and mustache's
+`Context.lookup` invokes a function-valued lookup afresh every time — so
+
+| | `render()` | `renderWithSegments` (with the check) |
+|---|---|---|
+| lambda invocations | 1 | **2** |
+| lambda that answers differently per call | renders | **fails** |
+
+A caller cannot be asked to make its context idempotent in order to use a diagnostic, and a
+template `render()` handles must not fail here. So the branch was reachable from ordinary
+documented input, the `c8 ignore`'s stated rationale was false, and paying for the check was itself
+the cause of the bug. **Removed.** The concatenation identity is asserted across every shape in the
+test suite instead, where a second render costs nobody anything — and the package now carries **no
+coverage directive at all**.
+
+Worth noting how thin the margin was: the check had genuinely earned its keep by catching the
+slice-and-reparse defect, which is exactly the argument that nearly kept a real bug in the tree. A
+thing that has proved useful once is not thereby correct.
 
 The general form: *an invariant check you expected to be unreachable is worth probing before you
-ignore it* — and when it fires, *fixing the cause beats documenting the symptom.*
+ignore it* — and *when you find yourself defending a mechanism by what it once caught, price what
+it costs now.*
 
 ## Coverage: three branches, three different right answers
 
@@ -131,8 +148,16 @@ the tests.
 
 - One lint **warning** fixed rather than tolerated (`no-unsafe-regexp`, a runtime-built `RegExp` in
   a `test.each` table). A warning is a CI failure in this repo.
-- One `c8 ignore` — the identity check described above. The only coverage directive in the stream,
-  and it needs sign-off per `TESTING_GUIDELINES.md`.
+- **No coverage directives.** The one that was briefly added is gone with the branch that needed it.
+- Two further `code-reviewer` findings acted on. **P2:** `prefaceLength` was recovered as
+  `finalBody.length - rendered.length` — correct only while the preface method exclusively
+  *prepends*, and it would keep returning a plausible number if that stopped being true, silently
+  shifting every reported offset. That is this stream's own thesis turned on its own code, so the
+  method now *returns* the split point. **P3:** a dead `value === null` operand removed (both
+  mustache primitives guard with `if (value != null)` and return `undefined`, never `null` —
+  verified in the vendored source, not taken on the reviewer's word), and the provenance test now
+  asserts concrete values rather than only agreeing with `r.slots`, which is a projection of the
+  same map and so could be wrong in the same direction.
 - Six `ae-unresolved-link` warnings that the new TSDoc baked into `etc/ts-extras.api.md` — the
   committed `MustacheTemplate` class had zero, so all six were new. Rewritten as prose and code
   spans to match its siblings.
