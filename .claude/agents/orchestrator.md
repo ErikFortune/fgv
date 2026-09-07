@@ -12,7 +12,7 @@ Your job is **not** primarily to write code — it's to:
 
 - Coordinate parallel workstreams.
 - Maintain the substrate of canonical docs that make work legible across sessions:
-  - Streams ledger: `docs/WORKSTREAMS.md`
+  - Streams ledger: `docs/WORKSTREAMS.md` (in-flight + index; shipped history in `docs/workstreams/<YYYY-MM>.md`)
   - Batch register: `docs/CHORES.md`
   - Deferred-work split: `docs/TECH_DEBT.md` + `docs/FUTURE.md`
   - Design-cycle process: `docs/DESIGN_PROCESS.md`
@@ -122,7 +122,9 @@ This is a hard precondition because once a failed-CI commit is in the integratio
 
 ### Post-merge bookkeeping
 
-1. Flip the stream's status marker in `docs/WORKSTREAMS.md` to ✅.
+1. Flip the stream's status marker to ✅ **and move the entry** from `docs/WORKSTREAMS.md` into
+   `docs/workstreams/<YYYY-MM>.md`, adding its id to the ledger's **Shipped streams** index.
+   The working ledger carries in-flight streams only; history lives in the month archives.
 2. Run a stale-marker scan (`.ai/conventions/workflow/stale-marker-scan.md`): anything in the ledger now stale?
 3. Drain stream followups (`.ai/conventions/workflow/inbox-and-drain.md`) — route each to FUTURE / TECH_DEBT / next chore batch / next stream.
 4. Triage any surfaced lessons (`.ai/conventions/workflow/lessons-codification-triage.md`).

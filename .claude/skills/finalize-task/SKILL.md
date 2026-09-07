@@ -186,7 +186,13 @@ like". `brief.md` / `state.md` / `result.md` are archived read-only alongside it
 This ships **in the same PR as the work**. Not after merge, not as a follow-up — both
 failure modes are named in the protocol with the incidents that produced them.
 
-### 4. Draft the `docs/WORKSTREAMS.md` entry — **for review, not for commit**
+### 4. Draft the ledger entry — **for review, not for commit**
+
+**Where it goes.** A stream that is shipping writes its ✅ entry directly into the month
+archive `docs/workstreams/<YYYY-MM>.md` (newest first) and adds its id to the **Shipped
+streams** index in `docs/WORKSTREAMS.md`. The working ledger holds in-flight streams only,
+so that reading it does not mean reading every stream ever run. A stream still in flight
+keeps its entry in `docs/WORKSTREAMS.md` until it ships.
 
 Match the shape of the entries already there (see the ledger's own § "Stream entry
 shape"). They are narrative and opinionated, and that is deliberate — a mechanical row
@@ -322,7 +328,7 @@ two totals. Report the streams with no entry.
 find .ai/tasks/active -mindepth 1 -maxdepth 1 -type d -printf '%f\n'  > /tmp/d.txt
 find .ai/tasks/completed -mindepth 2 -maxdepth 2 -type d -printf '%f\n' >> /tmp/d.txt
 sort -u /tmp/d.txt -o /tmp/d.txt
-grep -o '^### `[^`]*`' docs/WORKSTREAMS.md | sed 's/^### `//;s/`$//' | sort -u > /tmp/l.txt
+grep -oh '^### `[^`]*`' docs/WORKSTREAMS.md docs/workstreams/*.md | sed 's/^### `//;s/`$//' | sort -u > /tmp/l.txt
 comm -23 /tmp/d.txt /tmp/l.txt   # directories with no ledger entry  ← the worklist
 comm -13 /tmp/d.txt /tmp/l.txt   # ledger entries with no directory  ← naming mismatches
 ```
@@ -331,6 +337,9 @@ comm -13 /tmp/d.txt /tmp/l.txt   # ledger entries with no directory  ← naming 
 
 - **`grep -c '^### '` over-counts.** The ledger carries prose section headings at the
   same level as stream entries. Match on the backticked form and nothing else.
+- **The ledger alone is no longer the whole ledger.** Shipped entries live in
+  `docs/workstreams/<YYYY-MM>.md`; `docs/WORKSTREAMS.md` keeps the in-flight ones and an
+  index of ids. Grepping only the working file reports every shipped stream as missing.
 - **`dirs − entries` is not the gap.** Ledger entries naming a stream whose directory
   is absent (or differently named) cancel against real gaps, so the subtraction lands
   low and hides the reconciliation work. Both `comm` directions are the report; the

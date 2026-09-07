@@ -33,7 +33,10 @@ The orchestrator runs the scan as part of post-merge bookkeeping:
    bookkeeping pass.
 2. **For each merged stream's dependency references**, walk the
    streams ledger and find the entries that mention them as
-   dependencies.
+   dependencies. `docs/WORKSTREAMS.md` is the whole search space
+   here: the markers this scan can find stale are 🟡 and 🔴, which
+   only in-flight entries carry, and shipped entries have moved to
+   `docs/workstreams/<YYYY-MM>.md`.
 3. **For each dependency-referenced entry**: does its status marker
    reflect current reality?
    - Was it 🟡 (planned) but actually now eligible to start (or
