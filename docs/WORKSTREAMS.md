@@ -802,9 +802,14 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 
 **Origin / dependency.** Upstream gap-fix for `local-ai-exploration` B-3 (local classifier → `IPromptSafetyPolicy` backend), which can't be built against today's surface. Per the gap-then-fix tenet, fix the primitive here first → ship to `release` → `local-ai-exploration` absorbs (merge `release` → integration) before B-3. Runs parallel to `local-ai-exploration` B-2 (independent surfaces). Independent of the local-ai experiment's outcome — benefits any consumer wanting custom screeners.
 
-### `ai-assist-thinking-anchoring` 🟢
+### `ai-assist-thinking-anchoring` ✅ (shipped via #667)
 
-**Status:** 🟢 ready
+**Status:** ✅ shipped via **#667**. Gates green — build / lint / test at 100% coverage in
+`@fgv/ts-extras` (2795 tests), repo-wide `rush rebuild` at exit 0 with zero warnings across all
+36 packages, change file verified against `origin/release` (`type: major`, breaking). Layer-1
+`code-reviewer` run on the final diff: one P2 (a doc-comment overclaim on Gemini `'none'`'s
+Pro-family safety — fixed by adding the existing `IGeminiThinkingConfig.thinkingBudget` caveat
+to the new effort doc, not by adding model-aware gating), no P1s.
 **Branch base:** `release` HEAD
 **Package surface:** `@fgv/ts-extras/ai-assist` (`model.ts`, `registry.ts`, `thinkingOptionsResolver.ts`, `completionClient.ts`, `streamingClient.ts`, `etc/ts-extras.api.md`, ai-assist tests)
 **Out-of-scope:** `@fgv/ts-app-shell`; the `ai-assist-thinking-events` surface (streaming event shapes, response `thinking` field, token accounting); all other `ts-extras` packlets

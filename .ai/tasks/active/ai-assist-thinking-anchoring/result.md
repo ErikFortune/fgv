@@ -35,8 +35,8 @@ per-provider block.
 - `docs/FUTURE.md`: new entry, "Gate thinking requests on the per-model capability table",
   carrying the brief's out-of-scope reasoning (narrow-by-design listing patterns are right for a
   menu, wrong for a call gate).
-- `docs/WORKSTREAMS.md`: ledger entry flipped to shipped in this PR (see below for the PR
-  number, filled in before push per the repo's "a PR anticipates its own merge" convention).
+- `docs/WORKSTREAMS.md`: ledger entry flipped to shipped via **#667**, in this PR, per the
+  repo's "a PR anticipates its own merge" convention.
 - Change file for `@fgv/ts-extras` (`type: major` — the `thinkingMode` removal is breaking for
   any external descriptor-construction site).
 
