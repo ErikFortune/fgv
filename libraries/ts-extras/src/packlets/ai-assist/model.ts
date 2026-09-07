@@ -1885,8 +1885,8 @@ export interface IThinkingConfig {
    * Cross-provider effort level. Common-subset mapping:
    * - 'none': Anthropic — no thinking param emitted | OpenAI effort:none | Gemini thinkingBudget:0 | xAI reasoning_effort:none
    * - 'low': Anthropic effort:low | OpenAI effort:low | Gemini thinkingBudget:1024 | xAI reasoning_effort:low
-   * - 'medium': effort:medium | effort:medium | thinkingBudget:4096 | reasoning_effort:medium
-   * - 'high': effort:high | effort:high | thinkingBudget:8192 | reasoning_effort:high
+   * - 'medium': Anthropic effort:medium | OpenAI effort:medium | Gemini thinkingBudget:4096 | xAI reasoning_effort:medium
+   * - 'high': Anthropic effort:high | OpenAI effort:high | Gemini thinkingBudget:8192 | xAI reasoning_effort:high
    *
    * @remarks
    * `'none'` is the one cross-provider spelling for "thinking off". Anthropic has no
