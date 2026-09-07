@@ -416,6 +416,35 @@ describe('callProviderImageGeneration — reference images', () => {
       expect(result).toFailWith(/no image parts in response/i);
     });
 
+    test('reports the decline when a candidate comes back with empty content', async () => {
+      // The shape newer models return when the request is refused: `content` present but empty.
+      // This used to fail validation with `"parts": Field not found in "{}"`, which made the
+      // decline handling below it unreachable and told the caller nothing about why.
+      mockFetchResponse({
+        candidates: [{ content: {}, finishReason: 'IMAGE_SAFETY', finishMessage: 'unsafe prompt' }]
+      });
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toFailWith(/Gemini image generation declined: IMAGE_SAFETY — unsafe prompt/);
+    });
+
+    test('empty content with a benign finish reason reports no image, not a decline', async () => {
+      mockFetchResponse({ candidates: [{ content: {}, finishReason: 'STOP' }] });
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toFailWith(/no image parts in response/i);
+    });
+
     test('fails when response is malformed', async () => {
       mockFetchResponse({ candidates: [] });
 
