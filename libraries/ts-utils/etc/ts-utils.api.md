@@ -679,6 +679,7 @@ declare namespace Conversion {
         FieldConverters,
         ObjectConverter,
         StringMatchOptions,
+        SingleLineOptions,
         StringConverter
     }
 }
@@ -2625,6 +2626,14 @@ export class RetainingRingBuffer<T extends IRetainedRecord> {
 function shouldLog(message: MessageLogLevel, reporter: ReporterLogLevel): boolean;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface SingleLineOptions {
+    maxLength?: number;
+    message?: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2678,6 +2687,10 @@ export class StringConverter<T extends string = string, TC = unknown> extends Ba
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     matching(match: RegExp, options?: Partial<StringMatchOptions>): StringConverter<T, TC>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    singleLine(options?: SingleLineOptions): StringConverter<T, TC>;
     // @internal (undocumented)
     protected static _wrap<T extends string, TC>(wrapped: StringConverter<T, TC>, converter: (from: T) => Result<T>, traits?: ConverterTraits): StringConverter<T, TC>;
 }
