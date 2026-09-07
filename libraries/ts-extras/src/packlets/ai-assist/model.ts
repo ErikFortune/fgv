@@ -506,17 +506,15 @@ export interface IAiClientToolTurnResult {
  * `'advanced'` / `'frontier'`) and sets the tools / thinking request params
  * independently. Thinking composes with any tier without a tier-level capability
  * check — but that is a statement about the tier axis, not a claim that every
- * provider supports thinking: several descriptors declare
- * `thinkingMode: 'unsupported'` (e.g. `copy-paste`, `groq`, `mistral`, `ollama`,
- * `openai-compat`).
- *
- * Thinking availability is declared **per provider**, on the descriptor's
- * `thinkingMode`; the descriptor does not encode per-model thinking availability at
- * all, so a provider that declares support may still have individual models its own
- * API rejects thinking on. (`adaptiveThinkingModelPrefixes` is per-model but selects
- * a wire *shape*, not availability.) What the tier axis guarantees is therefore
- * narrow and exact: a tier selects a model within one provider and never changes the
- * provider, so it never changes `thinkingMode`.
+ * provider supports thinking, or that every model of a thinking-capable provider
+ * does: the descriptor itself declares no thinking-availability field at all.
+ * `AiModelCapability`'s `'thinking'` entry (per-model, RegExp-matched on model id
+ * in `DEFAULT_MODEL_CAPABILITY_CONFIG`) is a listing/filtering signal only — the
+ * call path does not gate a thinking request on it, so an unlisted model is not
+ * rejected, merely absent from a capability-filtered menu. (`adaptiveThinkingModelPrefixes`
+ * is per-model but selects a wire *shape*, not availability.) What the tier axis
+ * guarantees is therefore narrow and exact: a tier selects a model within one
+ * provider and never changes the provider.
  *
  * Do not add a `'tools'` or `'thinking'` key here, and do not hand-roll a
  * `resolveModel` + `resolveModelAlias` walk to emulate one — call
@@ -1059,12 +1057,6 @@ export type IAiStreamEvent =
   | IAiStreamError;
 
 /**
- * Thinking/reasoning mode support for a provider.
- * @public
- */
-export type AiThinkingMode = 'optional' | 'required' | 'unsupported';
-
-/**
  * Describes a single AI provider — single source of truth for all metadata.
  * @public
  */
@@ -1117,13 +1109,6 @@ export interface IAiProviderDescriptor {
    * `prompt.attachments` are rejected up front.
    */
   readonly acceptsImageInput: boolean;
-  /**
-   * Whether this provider supports thinking/reasoning mode.
-   * - 'optional': thinking can be enabled but is not required
-   * - 'required': thinking is always active (e.g. o-series models)
-   * - 'unsupported': thinking is not supported
-   */
-  readonly thinkingMode: AiThinkingMode;
   /**
    * Image-generation capabilities, scoped to model id prefixes. Empty or
    * undefined means the provider does not support image generation.
@@ -1898,11 +1883,27 @@ export type IThinkingProviderConfig =
 export interface IThinkingConfig {
   /**
    * Cross-provider effort level. Common-subset mapping:
+   * - 'none': Anthropic — no thinking param emitted | OpenAI effort:none | Gemini thinkingBudget:0 | xAI reasoning_effort:none
    * - 'low': Anthropic effort:low | OpenAI effort:low | Gemini thinkingBudget:1024 | xAI reasoning_effort:low
-   * - 'medium': effort:medium | effort:medium | thinkingBudget:4096 | reasoning_effort:medium
-   * - 'high': effort:high | effort:high | thinkingBudget:8192 | reasoning_effort:high
+   * - 'medium': Anthropic effort:medium | OpenAI effort:medium | Gemini thinkingBudget:4096 | xAI reasoning_effort:medium
+   * - 'high': Anthropic effort:high | OpenAI effort:high | Gemini thinkingBudget:8192 | xAI reasoning_effort:high
+   *
+   * @remarks
+   * `'none'` is the one cross-provider spelling for "thinking off". Anthropic has no
+   * off value in its own effort vocabulary — off there means omitting the `thinking`
+   * wire param entirely — so `'none'` maps to that omission rather than to a value.
+   * Whichever provider is in play, `'none'` also re-enables `temperature`: see
+   * `checkTemperatureConflict` in `thinkingOptionsResolver.ts`.
+   *
+   * The mapping is not model-aware (same posture as every other entry in this table —
+   * see `ModelSpecKey`'s remarks for why thinking availability isn't gated at the call
+   * path). For Gemini specifically, `thinkingBudget: 0` is documented as valid only on
+   * Flash and Flash-Lite and erroring on Pro (see `IGeminiThinkingConfig.thinkingBudget`);
+   * `'none'` on a Pro-family model inherits that same caveat, exactly as an explicit
+   * `providers: [{ provider: 'google', config: { thinkingBudget: 0 } }]` block already did
+   * before this field existed.
    */
-  readonly effort?: 'low' | 'medium' | 'high';
+  readonly effort?: 'none' | 'low' | 'medium' | 'high';
   /**
    * Optional per-provider precision blocks. Blocks for providers that don't
    * match the resolved model's provider are silently skipped.

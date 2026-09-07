@@ -1,0 +1,70 @@
+id: ai-assist-thinking-anchoring
+status: shipped
+packages:
+  - '@fgv/ts-extras'
+# Anticipating the merge, per `.ai/conventions/workflow/artifact-protocol.md`
+# § "A PR anticipates its own merge" — a PR cannot observe its own merge, so an
+# author-time-accurate marker is guaranteed to need a correcting commit.
+prs: [667]
+openPrs: []
+opened: 2026-09-07
+closed: 2026-09-07
+summary:
+  intended: >
+    Fix the two cheap, unambiguous anchoring problems in ai-assist's thinking config. Three
+    concerns travel under the name "thinking" and are anchored at three levels: the effort
+    vocabulary per provider (correct — the vocabularies genuinely do not align), the wire shape
+    per model (correct — prefix-matched on the model id), and *availability* per provider on
+    `IAiProviderDescriptor.thinkingMode` (wrong). Delete the dead field; add `'none'` to the
+    generic effort vocabulary so "thinking off" has a cross-provider spelling. Explicitly not
+    in scope: gating the call path on the per-model capability table.
+  shipped: >
+    Both items in one PR. `IAiProviderDescriptor.thinkingMode` and the `AiThinkingMode` type
+    deleted — from `model.ts`, all 9 registry descriptors, the barrel export, `api.md`, and the
+    25 test files that set it only because it was required to compile. The `ModelSpecKey` doc
+    comment that described the field as the availability mechanism was rewritten rather than
+    left to outlive it. `IThinkingConfig.effort` widened to `'none' | 'low' | 'medium' | 'high'`,
+    mapping to `effort: 'none'` (OpenAI, xAI), `thinkingBudget: 0` (Gemini), and omission of the
+    thinking param entirely (Anthropic, which has no off value of its own). Four end-to-end
+    tests, one per provider, each asserting both the wire shape and that `temperature` survives.
+    `type: major` change file; the removal is breaking for any external descriptor-construction
+    site.
+  diverged: >
+    Two things, in opposite directions. (1) The temperature-compatibility matrix — predicted as
+    the hard part and the likely home of the bugs — needed no new logic at all. The `!== 'none'`
+    guards on OpenAI and xAI already existed in `checkTemperatureConflict`, and Anthropic's
+    branch already gated on `anthropicEffort !== undefined`, so leaving that field unset for
+    `'none'` satisfied the gate for free. `checkTemperatureConflict` was never touched.
+    (2) Against that, the layer-1 `code-reviewer` pass caught a doc-comment overclaim that
+    matters more than its P2 rating suggests: generic `'none'` maps to Gemini `thinkingBudget: 0`,
+    which `IGeminiThinkingConfig.thinkingBudget`'s own doc — one field away — says errors on
+    Gemini's Pro-family models. The fix was to document the caveat rather than add model-aware
+    gating, on the reasoning that the same footgun already existed via an explicit `providers`
+    block. That reasoning is sound but incomplete: the pre-existing door was Gemini-specific,
+    where reading the Gemini field's docs is natural, while the new one is the *generic* field
+    whose whole purpose is provider-obliviousness. Filed to `TECH_DEBT.md` at finalization
+    because neither the code comment nor `FUTURE.md`'s capability-gating entry covers it —
+    Gemini Pro *does* think, it simply cannot express "off" as a budget of zero.
+  sourceLine: '**Shipped.** Both items, as scoped, in one PR:'
+  headline: >
+    Thinking config loses a required provider field that gated nothing, and gains 'none' — the
+    cross-provider spelling for off that every provider had except the generic vocabulary.
+keywords:
+  - dead-field-removal
+  - provider-descriptor
+  - effort-vocabulary
+  - common-subset-api
+  - temperature-conflict-matrix
+  - breaking-change
+  - model-capability-table
+  - watched-fail-verification
+  - reasoning-effort
+relatedStreams:
+  - id: ai-assist-thinking-config
+    relationship: >
+      established the layered thinking-config architecture this stream corrects the anchoring of
+  - id: ai-assist-thinking-events
+    relationship: >
+      sibling, not yet started; shares model.ts and will surface thinking *content* rather than
+      configure it
+sourceHash: 6b743d4ccd30b8e9

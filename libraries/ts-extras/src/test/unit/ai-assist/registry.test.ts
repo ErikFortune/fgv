@@ -370,7 +370,6 @@ describe('AiAssist.registry', () => {
         corsRestricted: false,
         streamingCorsRestricted: false,
         acceptsImageInput: true,
-        thinkingMode: 'optional',
         imageGeneration: [
           { modelPrefix: '', format: 'openai-images' },
           { modelPrefix: 'gpt-image-', format: 'openai-images', acceptsImageReferenceInput: true }
@@ -608,7 +607,6 @@ describe('AiAssist.registry', () => {
           corsRestricted: false,
           streamingCorsRestricted: false,
           acceptsImageInput: true,
-          thinkingMode: 'optional',
           imageGeneration: [{ modelPrefix: '', format: 'openai-images' }],
           embedding: [{ modelPrefix: '', format: 'openai-embeddings' }]
         };
@@ -629,7 +627,6 @@ describe('AiAssist.registry', () => {
           corsRestricted: false,
           streamingCorsRestricted: false,
           acceptsImageInput: true,
-          thinkingMode: 'optional',
           aliases: { '@openai:a': '@openai:b', '@openai:b': '@openai:a' },
           imageGeneration: [{ modelPrefix: '', format: 'openai-images' }],
           embedding: [{ modelPrefix: '', format: 'openai-embeddings' }]
@@ -654,7 +651,6 @@ describe('AiAssist.registry', () => {
         corsRestricted: false,
         streamingCorsRestricted: false,
         acceptsImageInput: false,
-        thinkingMode: 'unsupported',
         embedding: [
           { modelPrefix: 'nomic-embed', format: 'openai-embeddings' },
           { modelPrefix: '', format: 'openai-embeddings' }

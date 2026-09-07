@@ -41,7 +41,6 @@ function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProv
     corsRestricted: true,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
-    thinkingMode: 'optional',
     ...overrides
   };
 }
@@ -59,7 +58,6 @@ function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IA
     corsRestricted: false,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
-    thinkingMode: 'optional',
     imageGeneration: [{ modelPrefix: '', format: 'openai-images' }],
     ...overrides
   };

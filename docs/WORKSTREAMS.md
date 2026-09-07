@@ -802,6 +802,36 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 
 **Origin / dependency.** Upstream gap-fix for `local-ai-exploration` B-3 (local classifier → `IPromptSafetyPolicy` backend), which can't be built against today's surface. Per the gap-then-fix tenet, fix the primitive here first → ship to `release` → `local-ai-exploration` absorbs (merge `release` → integration) before B-3. Runs parallel to `local-ai-exploration` B-2 (independent surfaces). Independent of the local-ai experiment's outcome — benefits any consumer wanting custom screeners.
 
+### `ai-assist-thinking-anchoring` ✅ (shipped via #667)
+
+**Status:** ✅ shipped via **#667**. Gates green — build / lint / test at 100% coverage in
+`@fgv/ts-extras` (2795 tests), repo-wide `rush rebuild` at exit 0 with zero warnings across all
+36 packages, change file verified against `origin/release` (`type: major`, breaking). Layer-1
+`code-reviewer` run on the final diff: one P2 (a doc-comment overclaim on Gemini `'none'`'s
+Pro-family safety — fixed by adding the existing `IGeminiThinkingConfig.thinkingBudget` caveat
+to the new effort doc, not by adding model-aware gating), no P1s.
+**Branch base:** `release` HEAD
+**Package surface:** `@fgv/ts-extras/ai-assist` — as shipped: `model.ts`, `registry.ts`, `thinkingOptionsResolver.ts`, `index.ts`, `etc/ts-extras.api.md`, ai-assist tests. (The brief also declared `completionClient.ts` and `streamingClient.ts` in scope; neither needed a change, because the Anthropic emit site already gated on `anthropicEffort !== undefined`.)
+**Out-of-scope:** `@fgv/ts-app-shell`; the `ai-assist-thinking-events` surface (streaming event shapes, response `thinking` field, token accounting); all other `ts-extras` packlets
+
+**Mission.** Thinking config bundles three separable concerns anchored at three levels — effort *vocabulary* (per provider, correct), wire *shape* (per model, correct), and *availability* (per provider, wrong). Fix the two cheap ones: delete `IAiProviderDescriptor.thinkingMode`, which nothing reads, and add `'none'` to the generic effort vocabulary so "thinking off" has a cross-provider spelling.
+
+**The finding.** `thinkingMode` is set on nine registry descriptors and every test fixture, and consulted nowhere — the real temperature/thinking gating switches on the provider **id** via `providerDiscriminatorForId`. Meanwhile a per-model representation of the same fact already exists and is in use for listing: `AiModelCapability` includes `'thinking'`, and `DEFAULT_MODEL_CAPABILITY_CONFIG` encodes which models think, per provider, by RegExp on the model id. Separately, generic `effort` is `'low' | 'medium' | 'high'` with no `'none'`, so turning thinking off is the one operation that forces a per-provider block — visible in `thinkingParamRejection.antagonist.test.ts`, which reaches for one to say it.
+
+**Deliberately out of scope.** Gating the call path on the per-model capability table. That table is documented as intentionally narrow because "false positives are worse than missing a model" — right for a listing filter, wrong for a call gate, where the same miss rejects a valid request. Reusing it needs a design pass, not a line change; filed to `docs/FUTURE.md` with that reasoning on close.
+
+**Breaking.** `thinkingMode` is a required field, so every external descriptor construction site needs a one-line delete. `ai-assist` is on the active-development list; break cleanly, no ignored-optional shim.
+
+**Origin.** Surfaced while answering a consumer's question about whether the library pins thinking effort (it does not — `resolvedThinking` stays undefined unless the caller passes `thinking`). Independent of that consumer's problem.
+
+**Open question left behind.** Generic `effort: 'none'` maps to Gemini `thinkingBudget: 0`, which `IGeminiThinkingConfig.thinkingBudget`'s own doc says errors on Pro-family models. The stream documented the caveat rather than adding model-aware gating, reasoning that an explicit `providers` block could already request it — sound, but the pre-existing door was Gemini-specific while the new one is the *generic* field whose purpose is provider-obliviousness. Filed as **P3 in `docs/TECH_DEBT.md`** at finalization; note it is *not* covered by the `FUTURE.md` capability-gating entry, since Gemini Pro does think and simply cannot express "off" as a zero budget.
+
+**Prediction scorecard.** The brief called the temperature-compatibility matrix the hard part; it needed **no new logic** — the `!== 'none'` guards on OpenAI and xAI already existed and Anthropic's branch already gated on `anthropicEffort !== undefined`, so `checkTemperatureConflict` was never touched. The brief's predicted Anthropic mapping (omit the thinking param) was exactly right. The surprise came from the item scoped as trivial.
+
+**Artifacts:** `.ai/tasks/completed/2026-09/ai-assist-thinking-anchoring/`
+
+---
+
 ### `ai-assist-thinking-events` 🟡
 
 **Status:** 🟡 ready; sequencing after `ai-assist-thinking-config` phase B lands (now satisfied; ai-assist cluster shipped via #336)
