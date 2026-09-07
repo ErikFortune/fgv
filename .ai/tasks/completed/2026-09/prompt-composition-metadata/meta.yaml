@@ -72,8 +72,10 @@ relatedStreams:
     relationship: >
       authored on top of #661's branch, then rebased onto `release` when #661 merged as a squash —
       which made its eight commits non-ancestors of `release` and produced a history-shape conflict
-      on byte-identical trees. The two router shortcuts this stream adds are what put the router at
-      17,870 of its 18,000-char cap.
+      on byte-identical trees. Rebased a second time over #662, which was a genuine content conflict
+      in the three shared doc files. That merge also put the router 91 chars over its 18,000 cap, so
+      this stream's two shortcuts were merged into one naming both symbols; the router now sits at
+      17,985 with 15 chars of headroom.
   - id: ts-prompt-assist
     relationship: >
       the library this extends; `PromptLibrary.resolve`'s render chain was restructured (not

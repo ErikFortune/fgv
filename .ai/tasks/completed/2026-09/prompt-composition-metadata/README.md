@@ -2,10 +2,16 @@
 
 **Status**: ✅ shipped 2026-09-02 via [#663](https://github.com/ErikFortune/fgv/pull/663).
 
-Authored stacked on #661; **rebased onto `release` once that merged**, since it landed as a squash
-and the eight commits it contributed stopped being ancestors of `release`. GitHub reported a
-conflict, but the trees were byte-identical — history shape, not content — and the four commits
-replayed cleanly. CI, which cannot run on a feature-branch base, is green on the rebased head.
+Authored stacked on #661, and **rebased onto `release` twice, for two different reasons.**
+
+**After #661** — it merged as a squash, so its eight commits stopped being ancestors of `release`.
+GitHub called that a conflict; the trees were byte-identical, so it was history shape rather than
+content, and the replay was clean.
+
+**After #662** — a genuine content conflict. Both streams added a router shortcut, reflex anchors, a
+feed entry and a ledger entry from the same base. Resolved by keeping both ledger entries (newest
+first), regenerating the capability feed with its own tooling rather than hand-merging a generated
+block, and compressing this stream's own router entries — see *The router cap* below.
 
 ## Summary
 
@@ -170,6 +176,16 @@ the tests.
 
 ## Open for whoever goes next
 
-`.ai/instructions/LIBRARY_CAPABILITIES.md` is at **17,870 of its 18,000-char cap** after this
-stream's two shortcuts. The next router entry needs an existing one compressed first. The cap was
-raised once already (16,000 → 18,000) with "the router grew is NOT a reason" recorded alongside it.
+Merging #662 put the router **91 chars over** its 18,000 cap once this stream's shortcuts joined
+#662's. Nothing was raised: the gate's own message says an entry that cannot be said in one line is
+reference material, and *"the router grew"* is explicitly not a reason to move the cap.
+
+The longest entry (safer-fetch, 225 chars) was the obvious target and the wrong one — all six of its
+symbols are protected reflex anchors, and the clause that makes it long is the security warning
+those anchors exist to carry. This stream went over budget, so this stream paid: its **two**
+shortcuts, which asked the same question at two layers, became **one** naming both symbols. That is
+better routing than two near-duplicates, and both anchors survive.
+
+Now **17,985 of 18,000 — 15 chars of headroom**, which is not comfortable. The next stream to add a
+shortcut must compress someone else's, and the structural fix (a larger cap, or moving more into
+per-package files) deserves a deliberate decision rather than another 15 characters.
