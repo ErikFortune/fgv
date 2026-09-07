@@ -802,6 +802,27 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 
 **Origin / dependency.** Upstream gap-fix for `local-ai-exploration` B-3 (local classifier → `IPromptSafetyPolicy` backend), which can't be built against today's surface. Per the gap-then-fix tenet, fix the primitive here first → ship to `release` → `local-ai-exploration` absorbs (merge `release` → integration) before B-3. Runs parallel to `local-ai-exploration` B-2 (independent surfaces). Independent of the local-ai experiment's outcome — benefits any consumer wanting custom screeners.
 
+### `ai-assist-thinking-anchoring` 🟢
+
+**Status:** 🟢 ready
+**Branch base:** `release` HEAD
+**Package surface:** `@fgv/ts-extras/ai-assist` (`model.ts`, `registry.ts`, `thinkingOptionsResolver.ts`, `completionClient.ts`, `streamingClient.ts`, `etc/ts-extras.api.md`, ai-assist tests)
+**Out-of-scope:** `@fgv/ts-app-shell`; the `ai-assist-thinking-events` surface (streaming event shapes, response `thinking` field, token accounting); all other `ts-extras` packlets
+
+**Mission.** Thinking config bundles three separable concerns anchored at three levels — effort *vocabulary* (per provider, correct), wire *shape* (per model, correct), and *availability* (per provider, wrong). Fix the two cheap ones: delete `IAiProviderDescriptor.thinkingMode`, which nothing reads, and add `'none'` to the generic effort vocabulary so "thinking off" has a cross-provider spelling.
+
+**The finding.** `thinkingMode` is set on nine registry descriptors and every test fixture, and consulted nowhere — the real temperature/thinking gating switches on the provider **id** via `providerDiscriminatorForId`. Meanwhile a per-model representation of the same fact already exists and is in use for listing: `AiModelCapability` includes `'thinking'`, and `DEFAULT_MODEL_CAPABILITY_CONFIG` encodes which models think, per provider, by RegExp on the model id. Separately, generic `effort` is `'low' | 'medium' | 'high'` with no `'none'`, so turning thinking off is the one operation that forces a per-provider block — visible in `thinkingParamRejection.antagonist.test.ts`, which reaches for one to say it.
+
+**Deliberately out of scope.** Gating the call path on the per-model capability table. That table is documented as intentionally narrow because "false positives are worse than missing a model" — right for a listing filter, wrong for a call gate, where the same miss rejects a valid request. Reusing it needs a design pass, not a line change; filed to `docs/FUTURE.md` with that reasoning on close.
+
+**Breaking.** `thinkingMode` is a required field, so every external descriptor construction site needs a one-line delete. `ai-assist` is on the active-development list; break cleanly, no ignored-optional shim.
+
+**Origin.** Surfaced while answering a consumer's question about whether the library pins thinking effort (it does not — `resolvedThinking` stays undefined unless the caller passes `thinking`). Independent of that consumer's problem.
+
+**Artifacts:** `.ai/tasks/active/ai-assist-thinking-anchoring/`
+
+---
+
 ### `ai-assist-thinking-events` 🟡
 
 **Status:** 🟡 ready; sequencing after `ai-assist-thinking-config` phase B lands (now satisfied; ai-assist cluster shipped via #336)
