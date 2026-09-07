@@ -49,17 +49,43 @@ const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const VERBOSE = process.argv.includes('--verbose');
 
 const ROUTER = '.ai/instructions/LIBRARY_CAPABILITIES.md';
-// 18,000 — revised once, from 16,000, and the reason is recorded rather than the number quietly
-// edited. The original cap was set in phase 1 before the generated recent-additions feed existed;
-// the feed then landed at ~2.4k and put the router at 17,637. Squeezing a genuinely useful,
-// BOUNDED section down to nothing to preserve a number picked before it existed would be
-// optimising for the number. 18,000 is still an 89.5% cut from the 171,693 this replaced.
+// 24,000 — revised twice. Both reasons are recorded rather than the number quietly edited.
 //
-// This is the only sanctioned reason to move it: a new bounded section the cap predates. "The
-// router grew" is NOT a reason — that is the thing being prevented, and the fix is to move detail
-// into a package file. If you are reading this while considering another bump, the feed is capped
-// at ROUTER_LIMIT entries in generate-capability-feed.mjs and cannot be what grew.
-const ROUTER_MAX_CHARS = 18000;
+// 16,000 → 18,000: the original cap predated the generated recent-additions feed, which landed at
+// ~2.4k and put the router at 17,637. Squeezing a bounded section to preserve a number picked
+// before it existed would be optimising for the number.
+//
+// 18,000 → 24,000: the previous revision left a rule — "the router grew is NOT a reason, move
+// detail into a package file" — which assumed compression is always available. Measured 2026-09-07,
+// it is not. The 84 shortcuts have a median of 104 chars and a mean of 108; a 140-char per-entry
+// cap would reclaim 320 chars in total. There is no detail left to move: what remains IS the
+// one-line form the rule asks for.
+//
+// The rule also had no way to say WHICH entry to cut, and the honest answer is not "the longest".
+// The longest (safer-fetch, 225) is six protected reflex anchors plus the security warning those
+// anchors exist to carry; cutting it damages exactly what the gate protects. Nor is it "the ones
+// with no anchor" — that set includes `Result<T>`, `Converters.object` and `Brand<T>`, which carry
+// no anchor because the reflex list protects HAZARD-bearing symbols, not high-frequency ones, and
+// which are the shortest entries in the file (mean 92 vs 114).
+//
+// So the byte count stopped being the useful invariant. Growth here is intrinsic — roughly one
+// entry per shipped capability, measured at +167 chars/stream over #661→#663 — and it is cheap:
+// the router is ~4.5k tokens against the ~43k that motivated the split. 24,000 is still an 86% cut
+// from the 171,693 this replaced, and buys ~36 streams at the measured rate.
+//
+// What actually prevents reversion is MAX_ENTRY_CHARS below, not this number. Raise this one
+// deliberately, with the growth rate re-measured and written down; do not raise that one.
+const ROUTER_MAX_CHARS = 24000;
+
+// The invariant that replaced the byte count. The pre-split file died of entries that had grown
+// into reference material — 82 shortcuts averaging 615 chars, the longest 3,275. A per-entry
+// ceiling enforces mechanically what the router's own guidance says: if it cannot be said in one
+// line, it is reference material and belongs in libraries/<pkg>/CAPABILITIES.md.
+//
+// 240 is deliberately above the densest legitimate entry (225) rather than tuned to bite today.
+// It is a ratchet-stop, not a diet: it cannot be satisfied by trimming prose off a warning, only
+// by moving detail to the package file where detail belongs.
+const MAX_ENTRY_CHARS = 240;
 const PACKAGE_DIRS = ['libraries'];
 
 // Slated to move to their own monorepo; `.ai/instructions/ACTIVE_DEVELOPMENT.md` says not to
@@ -91,6 +117,29 @@ if (router.length > ROUTER_MAX_CHARS) {
       'The router is @-included into every session. Move the detail into the relevant\n' +
       "    libraries/<pkg>/CAPABILITIES.md and leave a one-line pointer. If an entry genuinely\n" +
       '    cannot be said in one line, it is reference material, not routing.'
+  });
+}
+
+// ---- 1b. no single shortcut has grown back into reference material --------------------------
+// Measured over the "Decision shortcuts" section only: the package index and the generated feed
+// are not one-line-per-question surfaces and are bounded by other means.
+const shortcutLines = (() => {
+  const start = router.indexOf('## Decision shortcuts');
+  if (start < 0) return [];
+  const after = router.indexOf('\n## ', start + 1);
+  const body = after < 0 ? router.slice(start) : router.slice(start, after);
+  return body.split('\n').filter((l) => l.startsWith('- **') && l.includes('→'));
+})();
+
+for (const line of shortcutLines.filter((l) => l.length > MAX_ENTRY_CHARS)) {
+  failures.push({
+    kind: 'entry-too-long',
+    detail: `a shortcut is ${line.length} chars, over the ${MAX_ENTRY_CHARS}-char per-entry limit:\n      ${line.slice(0, 100)}…`,
+    fix:
+      'This is the check that keeps the router a router. Do not satisfy it by trimming the\n' +
+      '    prose that justifies a symbol — that is the part which makes a resident reflex work.\n' +
+      '    Move the detail into libraries/<pkg>/CAPABILITIES.md and leave the question, the\n' +
+      '    symbols, and the one clause a reader needs in order to know they should go look.'
   });
 }
 
@@ -177,8 +226,13 @@ if (!existsSync(reflexPath)) {
 
 // ---- report -----------------------------------------------------------------------------------
 const documented = libraries.filter((l) => l.exists).length;
+// Shortcut count and longest entry are reported every run, not only on failure: the byte count
+// alone cannot distinguish "one more capability shipped" from "an entry is reverting to reference
+// material", and those want opposite responses.
+const longest = shortcutLines.reduce((m, l) => Math.max(m, l.length), 0);
 console.log(
   `verify-capability-docs: router ${router.length.toLocaleString()}/${ROUTER_MAX_CHARS.toLocaleString()} chars, ` +
+    `${shortcutLines.length} shortcuts (longest ${longest}/${MAX_ENTRY_CHARS}), ` +
     `${documented}/${libraries.length} libraries documented, ${reflexCount} reflexes checked, ` +
     `${EXEMPT.size} exempt, ${failures.length} failed`
 );
