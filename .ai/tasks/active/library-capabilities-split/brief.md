@@ -7,9 +7,11 @@ that cannot drift from its source, and `CAPABILITIES.md` shipping in every tarba
 
 Two things worth carrying forward. **`summary.sourceLine` is inconsistently populated** — 36 of 51
 usable; the rest hold an entire brief where one line belongs, and are reported by the generator so
-they can be fixed. And **the router cap moved once, 16,000 → 18,000**, because it was set before the
-feed existed; the reason is in the script, along with a note that "the router grew" is not a
-sanctioned reason for a future bump.
+they can be fixed. And **the router cap has moved twice, 16,000 → 18,000 → 24,000**; both
+reasons are in the script. The second revision also retired that script's own rule that "the router
+grew" is never a sanctioned reason — measurement showed the rule assumed a compression headroom
+that no longer exists (84 shortcuts, median 104 chars), and the byte count was replaced as the
+load-bearing invariant by a per-entry ceiling, `MAX_ENTRY_CHARS`.
 
 Phase 1 landed the split at 15,225 chars; phase 2's generated feed took it to the 17,637 above.
 Content preservation was **verified, not assumed** — 98.7% of 537 distinctive sentences found
@@ -92,8 +94,12 @@ fail: `TECH_DEBT.md`'s disposition pass found **four triggers phrased as "next t
 X" that fired without anyone acting**, and concluded the fix is to *replace recall with a mechanical
 gate*. So:
 
-1. **Router byte cap.** Set at 16,000 in phase 1; **revised once to 18,000** when phase 2's
-   bounded feed landed, with the reason recorded in the script. Fails CI above the cap.
+1. **Router byte cap.** Set at 16,000 in phase 1; **revised to 18,000** when phase 2's bounded
+   feed landed, and to **24,000** in 2026-09 once measurement showed compression was exhausted.
+   Both reasons are recorded in the script. Fails CI above the cap.
+1b. **Per-entry ceiling (`MAX_ENTRY_CHARS`, 240).** The invariant that replaced the byte count as
+   the thing actually preventing reversion: no single shortcut may grow back into reference
+   material. Raise the total cap deliberately; do not raise this one.
 2. **Every library has `CAPABILITIES.md`**, except the carve-out below.
 3. **Every `CAPABILITIES.md` is linked from the router; no orphans, no dead links.**
 4. **All reflex anchors present in the router** after the split — grep-asserted, since this is the
