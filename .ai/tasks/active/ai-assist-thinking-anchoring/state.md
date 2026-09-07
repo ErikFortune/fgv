@@ -46,12 +46,24 @@ add model-aware gating — that's the explicitly out-of-scope item 3). Repo-wide
 `docs/FUTURE.md` entry added. `.ai/tasks/active/ai-assist-thinking-anchoring/result.md`
 written.
 
-## Phase 3 — remaining before PR
+## Phase 3 — PR: DONE
 
-- [ ] Flip `docs/WORKSTREAMS.md` ledger entry to shipped with PR number (needs PR created first
-      to get the number — plan: push branch, open PR, then push a follow-up commit with the
-      ledger flip + result.md PR reference, same PR).
-- [ ] Push, open PR, drive Copilot review loop.
+PR #667 opened, ledger flipped to shipped in the same PR. Copilot review loop: 3 rounds.
+- Round 1: 2 real findings (Gemini 'none'-on-Pro doc overclaim in the resolver's own
+  comment; new `{@link}` targets baking `ae-unresolved-link` warnings into api.md) — both
+  fixed and pushed.
+- Round 2: 🟢 approval recommended; one trivial suppressed nit (missing provider labels on
+  medium/high doc-table rows) — fixed and pushed.
+- Round 3: 🔵 flagged that the checked-in `libraries/ts-extras/docs/` generated docs are
+  stale on this stream's API changes. Investigated: regenerating via `rushx build-docs`
+  touches 287 files / ~3000 lines, almost entirely unrelated pre-existing drift (docs
+  hadn't been regenerated since 2026-08-12, no CI gate requires it). Reverted the
+  regeneration, dispositioned in a PR comment rather than bundling unrelated changes into
+  this stream. Stopped the loop here — diminishing returns (round 3's only finding was
+  out-of-scope, not a defect in the diff).
+
+Build green, `mergeable_state: clean`. Both round-1 review threads resolved. PR is done —
+waiting on human review/merge.
 
 ## Brief accuracy check
 
