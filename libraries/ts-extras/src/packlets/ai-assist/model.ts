@@ -1896,9 +1896,9 @@ export interface IThinkingConfig {
    * `checkTemperatureConflict` in `thinkingOptionsResolver.ts`.
    *
    * The mapping is not model-aware (same posture as every other entry in this table —
-   * see {@link ModelSpecKey} for why thinking availability isn't gated at the call
+   * see `ModelSpecKey`'s remarks for why thinking availability isn't gated at the call
    * path). For Gemini specifically, `thinkingBudget: 0` is documented as valid only on
-   * Flash and Flash-Lite and erroring on Pro (see {@link IGeminiThinkingConfig.thinkingBudget});
+   * Flash and Flash-Lite and erroring on Pro (see `IGeminiThinkingConfig.thinkingBudget`);
    * `'none'` on a Pro-family model inherits that same caveat, exactly as an explicit
    * `providers: [{ provider: 'google', config: { thinkingBudget: 0 } }]` block already did
    * before this field existed.

@@ -140,7 +140,10 @@ function genericEffortToOpenAi(effort: 'none' | 'low' | 'medium' | 'high'): IOpe
 
 /**
  * Maps generic effort to Gemini thinkingBudget. `'none'` maps to `0` — Gemini's own
- * off value on the wire. @internal
+ * off value on the wire, though `IGeminiThinkingConfig.thinkingBudget` documents that `0`
+ * is valid only on Flash/Flash-Lite and errors on Pro; this mapping is not model-aware and
+ * inherits that same caveat (not a new gap — an explicit `providers` block could already
+ * request `thinkingBudget: 0` on any model). @internal
  */
 function genericEffortToGemini(effort: 'none' | 'low' | 'medium' | 'high'): number {
   switch (effort) {

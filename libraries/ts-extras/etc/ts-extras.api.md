@@ -2415,8 +2415,6 @@ function isValidMultibaseSpkiPublicKey(value: unknown): value is MultibaseSpkiPu
 
 // @public
 interface IThinkingConfig {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IGeminiThinkingConfig"
     readonly effort?: 'none' | 'low' | 'medium' | 'high';
     readonly providers?: ReadonlyArray<IThinkingProviderConfig>;
 }
