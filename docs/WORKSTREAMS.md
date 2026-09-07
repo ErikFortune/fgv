@@ -802,6 +802,25 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 
 **Origin / dependency.** Upstream gap-fix for `local-ai-exploration` B-3 (local classifier → `IPromptSafetyPolicy` backend), which can't be built against today's surface. Per the gap-then-fix tenet, fix the primitive here first → ship to `release` → `local-ai-exploration` absorbs (merge `release` → integration) before B-3. Runs parallel to `local-ai-exploration` B-2 (independent surfaces). Independent of the local-ai experiment's outcome — benefits any consumer wanting custom screeners.
 
+### `ai-assist-prompt-caching` 🔵
+
+**Status:** 🔵 phase A (research dispatched); design-triage-implement shape
+**Branch base:** `release` HEAD
+**Package surface (expected):** `@fgv/ts-extras/ai-assist`, `@fgv/ts-prompt-assist` — exact surface is a phase-A/B output, not an input
+**Out-of-scope:** the `ai-assist-thinking-anchoring` and `ai-assist-thinking-events` surfaces; all other `ts-extras` packlets
+
+**Mission.** `ai-assist` has no prompt-caching support of any kind — verified greenfield, the only hits for `cache_control` / `prompt_cache` / `cachedContent` across `ts-extras` and `ts-prompt-assist` are crypto ephemeral-key code. Every provider we call supports caching, two of them without being asked, so we pay full input price on every repeated prefix. Caching is the first cost lever, ahead of effort and model choice, because it is the only one that does not trade quality.
+
+**The finding that shapes it.** The obvious design — cache directives on prompt-assist sections — does not generalize. The providers are three different mechanisms, not variations on one: inline breakpoint (Anthropic, max 4 per request), automatic with no directive at all (OpenAI, xAI, OpenAI-compatible), and an out-of-band `CachedContent` resource with a TTL and hourly storage billing (Gemini explicit). A per-section directive is write-only for two of the three. What *does* generalize is **prefix stability** — every shape rewards stable-first, volatile-last, byte-identical. So the authoring concept survives as **stability annotation** (`frozen` / `per-conversation` / `per-request`), not as a cache directive.
+
+**Why prompt-assist.** `IPromptComposition` (shipped #663) already reports the document order and absolute size of every section composing a resolved prompt — exactly the substrate needed. It enables two diagnostics no provider offers and both of which fail *silently* today: cache-hostile ordering (a volatile section ahead of a stable one costs the whole prefix), and a cacheable prefix below the provider's minimum (512–4096 tokens on Anthropic, model-dependent; ~1024 on OpenAI — neither reports the miss). Those diagnostics may be worth shipping ahead of any emit-side work.
+
+**Coupling to carry into design.** Caches are model-scoped, and a mid-conversation effort change invalidates the message cache on most models — thinking config and caching interact.
+
+**Artifacts:** `.ai/tasks/active/ai-assist-prompt-caching/`
+
+---
+
 ### `ai-assist-thinking-events` 🟡
 
 **Status:** 🟡 ready; sequencing after `ai-assist-thinking-config` phase B lands (now satisfied; ai-assist cluster shipped via #336)
