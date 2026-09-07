@@ -811,7 +811,7 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 Pro-family safety — fixed by adding the existing `IGeminiThinkingConfig.thinkingBudget` caveat
 to the new effort doc, not by adding model-aware gating), no P1s.
 **Branch base:** `release` HEAD
-**Package surface:** `@fgv/ts-extras/ai-assist` (`model.ts`, `registry.ts`, `thinkingOptionsResolver.ts`, `completionClient.ts`, `streamingClient.ts`, `etc/ts-extras.api.md`, ai-assist tests)
+**Package surface:** `@fgv/ts-extras/ai-assist` — as shipped: `model.ts`, `registry.ts`, `thinkingOptionsResolver.ts`, `index.ts`, `etc/ts-extras.api.md`, ai-assist tests. (The brief also declared `completionClient.ts` and `streamingClient.ts` in scope; neither needed a change, because the Anthropic emit site already gated on `anthropicEffort !== undefined`.)
 **Out-of-scope:** `@fgv/ts-app-shell`; the `ai-assist-thinking-events` surface (streaming event shapes, response `thinking` field, token accounting); all other `ts-extras` packlets
 
 **Mission.** Thinking config bundles three separable concerns anchored at three levels — effort *vocabulary* (per provider, correct), wire *shape* (per model, correct), and *availability* (per provider, wrong). Fix the two cheap ones: delete `IAiProviderDescriptor.thinkingMode`, which nothing reads, and add `'none'` to the generic effort vocabulary so "thinking off" has a cross-provider spelling.
