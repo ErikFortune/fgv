@@ -68,6 +68,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-09-07** — Thinking config loses a required provider field that gated nothing, and gains 'none' — the cross-provider spelling for off that every provider had except the generic vocabulary. ([#667](https://github.com/ErikFortune/fgv/pull/667))
 - **2026-09-02** — Shipped: a rendered template, and a resolved prompt, can now say what they are made of — order, absolute size and binding provenance per section, with offsets computed during the render because recovering them by search is silently wrong. ([#663](https://github.com/ErikFortune/fgv/pull/663))
 - **2026-08-23** — **Shipped:** an opt-in that hoists the optionals a schema already proves safe to hoist, rather than a boolean asserting they are. ([#659](https://github.com/ErikFortune/fgv/pull/659))
 - **2026-08-22** — **Shipped:** `nullable: true` on every factory — the spelling OpenAI strict mode accepts for an absent-able field, where `optional(...)` is unsendable. ([#655](https://github.com/ErikFortune/fgv/pull/655))

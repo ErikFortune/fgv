@@ -824,7 +824,11 @@ to the new effort doc, not by adding model-aware gating), no P1s.
 
 **Origin.** Surfaced while answering a consumer's question about whether the library pins thinking effort (it does not — `resolvedThinking` stays undefined unless the caller passes `thinking`). Independent of that consumer's problem.
 
-**Artifacts:** `.ai/tasks/active/ai-assist-thinking-anchoring/`
+**Open question left behind.** Generic `effort: 'none'` maps to Gemini `thinkingBudget: 0`, which `IGeminiThinkingConfig.thinkingBudget`'s own doc says errors on Pro-family models. The stream documented the caveat rather than adding model-aware gating, reasoning that an explicit `providers` block could already request it — sound, but the pre-existing door was Gemini-specific while the new one is the *generic* field whose purpose is provider-obliviousness. Filed as **P3 in `docs/TECH_DEBT.md`** at finalization; note it is *not* covered by the `FUTURE.md` capability-gating entry, since Gemini Pro does think and simply cannot express "off" as a zero budget.
+
+**Prediction scorecard.** The brief called the temperature-compatibility matrix the hard part; it needed **no new logic** — the `!== 'none'` guards on OpenAI and xAI already existed and Anthropic's branch already gated on `anthropicEffort !== undefined`, so `checkTemperatureConflict` was never touched. The brief's predicted Anthropic mapping (omit the thinking param) was exactly right. The surprise came from the item scoped as trivial.
+
+**Artifacts:** `.ai/tasks/completed/2026-09/ai-assist-thinking-anchoring/`
 
 ---
 
