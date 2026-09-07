@@ -137,6 +137,7 @@ detail. `· pkg` names the owning package.*
 - **Validating a JSON-shaped LLM response against a typed `Converter<T>` + validator…?** → `fencedStringifiedJson` `PromptLibrary` `resolveJsonOutput` · `ts-prompt-assist`
 - **Enforcing safety policies on a resolved prompt?** → `PromptLibrary` · `ts-prompt-assist`
 - **Mustache rendering for LLM prompts?** → `MustacheTemplate` · `ts-extras`
+- **What is a rendered template or resolved prompt made of?** → `renderWithSegments` `IPromptComposition` · `ts-extras` `ts-prompt-assist`
 - **Jest matchers for `Result<T>`?** → `toSucceedAndSatisfy` `toFailWith` · `ts-utils-jest`
 - **CSV / record-jar?** → `csv` · `ts-extras`
 - **Numeric / date / orderable range?** → `RangeOf<T>` · `ts-extras`
@@ -178,6 +179,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-09-02** — Shipped: a rendered template, and a resolved prompt, can now say what they are made of — order, absolute size and binding… ([#663](https://github.com/ErikFortune/fgv/pull/663)) · `ts-extras` `ts-prompt-assist`
 - **2026-08-28** — A string can now declare that it must be one printable line — and the name says shape, not safety, because no converter can promise… · `ts-utils`
 - **2026-08-23** — Shipped: an opt-in that hoists the optionals a schema already proves safe to hoist, rather than a boolean asserting they are. ([#659](https://github.com/ErikFortune/fgv/pull/659)) · `ts-extras` `ts-json-base`
 - **2026-08-22** — Shipped: a capability-aware copy with a single guarantee — every file that lands is byte-identical to its source, or the copy says… ([#653](https://github.com/ErikFortune/fgv/pull/653)) · `ts-json-base`
@@ -187,8 +189,7 @@ markers.*
 - **2026-08-21** — Shipped: `release()` on both index classes — it drops the index's prepared statements and marks it unusable, and never touches the… ([#651](https://github.com/ErikFortune/fgv/pull/651)) · `ts-agent-memory-sqlite-vec`
 - **2026-08-18** — Shipped: one invariant, enforced at the one layer that sees both sides — a record loaded from an address derived from kind K is a… ([#648](https://github.com/ErikFortune/fgv/pull/648)) · `ts-agent-memory`
 - **2026-08-15** — Shipped: the partial-read `IMemoryIndex` — every read returns `IIndexedMemoryEntry` (scope + envelope, no body), `rebuild` takes… ([#633](https://github.com/ErikFortune/fgv/pull/633)) · `ts-agent-memory`
-- **2026-08-15** — Outcome: delivered. Additive; `create()` is untouched on both classes. · `ts-agent-memory-sqlite-vec`
 
-*Showing the 10 most recent of 38. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 39. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

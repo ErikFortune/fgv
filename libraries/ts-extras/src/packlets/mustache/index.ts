@@ -24,6 +24,8 @@ export {
   IContextValidationResult,
   IMissingVariableDetail,
   IMustacheTemplateOptions,
+  IRenderedSegment,
+  IRenderedTemplate,
   IVariableRef,
   MustacheEscapeStrategy,
   MustacheTokenType

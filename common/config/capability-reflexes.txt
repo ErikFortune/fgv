@@ -106,6 +106,7 @@ HorizontalComposer
 PromptObservationStore
 resolveJsonOutput
 MustacheTemplate
+renderWithSegments
 
 # --- MCP ------------------------------------------------------------------------------------
 adaptMcpTools
@@ -113,3 +114,6 @@ adaptMcpTools
 # --- random (mulberry32 — never for tokens/salts/keys) --------------------------------------
 SeededRandomSource
 PseudoRandomGenerator
+
+# --- prompt-assist -------------------------------------------------------------------------
+IPromptComposition

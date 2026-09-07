@@ -21,7 +21,7 @@
  */
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import Mustache, { EscapeFunction, TemplateSpans, Writer } from 'mustache';
+import Mustache, { Context, EscapeFunction, TemplateSpans, Writer } from 'mustache';
 
 import {
   IContextValidationResult,
@@ -30,7 +30,9 @@ import {
   IRequiredMustacheTemplateOptions,
   IVariableRef,
   MustacheEscapeStrategy,
-  MustacheTokenType
+  MustacheTokenType,
+  IRenderedSegment,
+  IRenderedTemplate
 } from './interfaces';
 
 /**
@@ -225,6 +227,113 @@ export class MustacheTemplate {
     return captureResult(() =>
       this._writer.render(this.template, context, undefined, { escape: this._escapeFn })
     );
+  }
+
+  /**
+   * Renders the template and reports which part of the output came from where.
+   *
+   * @remarks
+   * The rendered `text` is identical to `render`'s. What is added is
+   * `segments`: a document-ordered, contiguous, gapless attribution of every code unit to either
+   * template literal text or a named interpolation. It answers "what is in this output, in what
+   * order, and how much of it is each part" — a prompt's composition, a generated document's
+   * section sizes, a diff-free view of where a template's bulk actually goes.
+   *
+   * **Offsets are computed during the render, never recovered afterwards.** Recovering them by
+   * searching the output for each substituted value is the obvious shortcut and it is unsound: a
+   * value can occur more than once, can render empty, can be a substring of the surrounding
+   * literal text, and can be altered by escaping between input and output. That failure is silent
+   * and produces plausible offsets, which is the worst property a diagnostic can have.
+   *
+   * **Sections, inverted sections and partials are refused, not approximated.** Their rendered
+   * output is not a linear image of the token order — a section may repeat its body, or omit it —
+   * so a segment list walked from the template would mis-describe the result. Failing names the
+   * construct. Comments and set-delimiter tags emit nothing and are skipped; because each
+   * interpolation is rendered from its already-parsed token rather than from a re-parsed slice of
+   * the template, a set-delimiter tag has no effect on what this produces.
+   *
+   * **Every context value is evaluated exactly once, as `render()` evaluates it.** A lambda in the
+   * context is therefore invoked the same number of times either way, and a context whose lambda
+   * answers differently per call is rendered rather than rejected — the returned `segments` always
+   * describe the returned `text`, whatever that text was. (The concatenation identity is asserted
+   * across every shape in this package's test suite, not re-checked at runtime: re-checking means
+   * a second full render, which is precisely what would double those invocations.)
+   *
+   * @param context - The context object for template rendering.
+   * @returns Success with the rendered text and its segment map, or Failure if the
+   * template contains a construct this cannot describe
+   */
+  public renderWithSegments(context: unknown): Result<IRenderedTemplate> {
+    return captureResult((): IRenderedTemplate => {
+      const segments: IRenderedSegment[] = [];
+      const lookup = new Mustache.Context(context);
+      let text = '';
+
+      for (const token of this._tokens) {
+        const type = token[0] as MustacheTokenType;
+        if (type === '!' || type === '=') {
+          continue; // emits nothing
+        }
+        if (type !== 'text' && type !== 'name' && type !== '&') {
+          throw new Error(
+            `renderWithSegments does not support '${type}' tokens (sections, inverted sections ` +
+              `and partials render non-linearly, so a segment map walked from the template would ` +
+              `misdescribe the output). Use render() for this template.`
+          );
+        }
+
+        const rendered =
+          type === 'text' ? String(token[1]) : this._renderInterpolation(type, String(token[1]), lookup);
+
+        segments.push({
+          kind: type === 'text' ? 'literal' : 'substitution',
+          ...(type === 'text' ? {} : { name: String(token[1]) }),
+          start: text.length,
+          length: rendered.length,
+          escaped: type === 'name'
+        });
+        text += rendered;
+      }
+
+      // Deliberately NOT re-rendered and compared against render() here. Such a check did once
+      // catch a real defect, but paying for it means a second full render — which invokes every
+      // lambda in the context a second time, so the check both doubles a caller's side effects
+      // and turns a context whose lambda answers differently per call into a failure on a
+      // template that renders fine. The identity is asserted in the test suite instead, where a
+      // second render costs nobody anything.
+      return { text, segments };
+    });
+  }
+
+  /**
+   * Renders one interpolation token against a prepared lookup context.
+   *
+   * @remarks
+   * Delegates to the same `Writer` primitives `render()` reaches through `renderTokens`, so the
+   * value semantics — dotted paths, lambdas, `null` and `undefined` rendering empty, non-string
+   * coercion — are mustache.js's rather than a reimplementation of them.
+   *
+   * The token is passed as a freshly built `[type, name]` array rather than the parsed span. Both
+   * primitives read only the name, and `@types/mustache` declares the parameter as `string[]`
+   * while a parsed span carries its source offsets as numbers — so handing over the span would
+   * need a cast to work around the typings. Building the pair the primitives actually read needs
+   * none.
+   *
+   * @param type - `'name'` for an escaped interpolation, `'&'` for an unescaped one.
+   * @param name - The interpolation's name (may be a dotted path).
+   * @param lookup - The context to resolve the name against.
+   * @returns The rendered value; empty when the name resolves to `null` or `undefined`.
+   */
+  private _renderInterpolation(type: 'name' | '&', name: string, lookup: Context): string {
+    const token: string[] = [type, name];
+    const value =
+      type === 'name'
+        ? this._writer.escapedValue(token, lookup, { escape: this._escapeFn })
+        : this._writer.unescapedValue(token, lookup);
+    // Both primitives guard with `if (value != null)` and so return `undefined` — never `null` —
+    // for an absent value, which is why only `undefined` is tested here. `renderTokens` appends
+    // nothing in that case and string-coerces everything else.
+    return value === undefined ? '' : String(value);
   }
 
   /**

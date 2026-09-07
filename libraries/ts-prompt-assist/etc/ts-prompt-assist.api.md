@@ -309,6 +309,19 @@ export interface IPromptComposeObservation extends IPromptObservationCommon {
 }
 
 // @public
+export interface IPromptComposition {
+    readonly sections: ReadonlyArray<IPromptSection>;
+    readonly totalChars: number;
+    readonly totalMeasured?: number;
+    readonly unavailable?: string;
+}
+
+// @public
+export interface IPromptCompositionOptions {
+    readonly measure?: PromptSectionMeasure;
+}
+
+// @public
 export interface IPromptConverterRegistry<TResponse extends IPromptResponseBase> {
     get<K extends TResponse['kind']>(id: ConverterId, kind: K): Result<Converter<Extract<TResponse, {
         kind: K;
@@ -498,6 +511,7 @@ export interface IPromptResolveObservation extends IPromptObservationBase {
 // @public
 export interface IPromptResolveRequest<TQualifierNames extends string = string> {
     readonly chain: ReadonlyArray<ScopeKey>;
+    readonly composition?: IPromptCompositionOptions;
     readonly id: PromptId;
     readonly qualifiers: Readonly<Partial<Record<TQualifierNames, string>>>;
     readonly substitutions?: PromptSubstitutions;
@@ -531,6 +545,19 @@ export interface IPromptSafetyPolicy {
     readonly antiJailbreakPreface?: (descriptor: IPromptDescriptor) => Result<string>;
     readonly defaultMaxLength?: number;
     readonly screeners?: ReadonlyArray<IScreener>;
+}
+
+// @public
+export interface IPromptSection {
+    readonly chars: number;
+    readonly directive?: SlotDirective;
+    readonly kind: 'preface' | 'template' | 'slot';
+    readonly measured?: number;
+    readonly slot?: SlotName;
+    readonly source?: BindingTraceSource;
+    readonly start: number;
+    readonly wasEnforced?: boolean;
+    readonly winningScope?: ScopeKey;
 }
 
 // @public
@@ -632,6 +659,7 @@ export interface IQualifiersFileContents {
 // @public
 export interface IResolvedPrompt {
     readonly body: string;
+    readonly composition?: IPromptComposition;
     readonly descriptor: IPromptDescriptor;
     readonly id: PromptId;
     readonly slots: ReadonlyMap<SlotName, IResolvedPromptSlot>;
@@ -827,6 +855,9 @@ export class PromptRegistry<TResponse extends IPromptResponseBase = IPromptRespo
     // (undocumented)
     readonly slotKinds: IPromptSlotKindRegistry;
 }
+
+// @public
+export type PromptSectionMeasure = (text: string) => number;
 
 // @public
 export type PromptStoreEventKind = 'descriptor-changed' | 'descriptor-removed' | 'bindings-changed' | 'qualifier-axes-changed';
