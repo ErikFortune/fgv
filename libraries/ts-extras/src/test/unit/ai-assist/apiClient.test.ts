@@ -617,6 +617,77 @@ describe('callProviderCompletion', () => {
       });
     });
 
+    // ---- empty / partial candidates ---------------------------------------------------------
+    // These are the shapes newer Gemini models return when a candidate produced nothing. Each
+    // used to fail validation, reporting a missing field of an empty object rather than the
+    // reason the model stopped.
+
+    test('reports the finish reason when a candidate comes back with empty content', async () => {
+      mockFetchResponse({
+        candidates: [{ content: {}, finishReason: 'SAFETY', finishMessage: 'blocked by filter' }]
+      });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest()
+      });
+
+      expect(result).toFailWith(/Gemini completion declined: SAFETY — blocked by filter/);
+    });
+
+    test('reports the finish reason when a candidate omits content entirely', async () => {
+      mockFetchResponse({ candidates: [{ finishReason: 'PROHIBITED_CONTENT' }] });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest()
+      });
+
+      expect(result).toFailWith(/Gemini completion declined: PROHIBITED_CONTENT/);
+    });
+
+    test('an empty reply that finished normally is empty content, not a failure', async () => {
+      // STOP with no text is the model choosing to say nothing. That is a legitimate answer and
+      // must not be reported as a refusal — the distinction is the whole point of the benign set.
+      mockFetchResponse({ candidates: [{ content: { parts: [] }, finishReason: 'STOP' }] });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest()
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.content).toBe('');
+        expect(response.truncated).toBe(false);
+      });
+    });
+
+    test('a part carrying no text contributes nothing rather than the string "undefined"', async () => {
+      // Reasoning parts (`thought`) and tool parts (`functionCall`) arrive with no `text`.
+      // Joining them naively puts the literal "undefined" into the reply.
+      mockFetchResponse({
+        candidates: [
+          {
+            content: { parts: [{ thought: true }, { text: 'visible' }] },
+            finishReason: 'STOP'
+          }
+        ]
+      });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest()
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.content).toBe('visible');
+      });
+    });
+
     test('detects truncation via finishReason=MAX_TOKENS', async () => {
       mockFetchResponse(geminiResponse('partial...', 'MAX_TOKENS'));
 

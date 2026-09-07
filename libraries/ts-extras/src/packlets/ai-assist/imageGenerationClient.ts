@@ -165,7 +165,11 @@ interface IGeminiImageOutPart {
 }
 /** @internal */
 interface IGeminiImageOutContent {
-  parts: IGeminiImageOutPart[];
+  // Optional because Gemini returns `content: {}` — present but empty — when a candidate
+  // produced nothing, which is exactly the case the decline handling below exists to report.
+  // Requiring `parts` made that path unreachable: the response failed validation first, and the
+  // caller saw `"parts": Field not found in "{}"` instead of the reason the model declined.
+  parts?: IGeminiImageOutPart[];
 }
 /** @internal */
 interface IGeminiImageOutCandidate {
@@ -187,7 +191,7 @@ const geminiImageOutPart: Validator<IGeminiImageOutPart> = Validators.object<IGe
   inlineData: geminiImageInlineData.optional()
 });
 const geminiImageOutContent: Validator<IGeminiImageOutContent> = Validators.object<IGeminiImageOutContent>({
-  parts: Validators.arrayOf(geminiImageOutPart)
+  parts: Validators.arrayOf(geminiImageOutPart).optional()
 });
 const geminiImageOutCandidate: Validator<IGeminiImageOutCandidate> =
   Validators.object<IGeminiImageOutCandidate>({

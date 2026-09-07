@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Fix Gemini response validators rejecting a candidate whose content is empty. Newer models return `content: {}` when a candidate produced nothing; both the image-generation and chat-completion validators required `parts`, so the request failed with a schema error naming a field of an empty object instead of the model's finish reason. The image client's decline handling was unreachable as a result. The chat client now reports declines the same way",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
