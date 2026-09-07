@@ -68,7 +68,6 @@ function anthropicDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IA
     corsRestricted: false,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
-    thinkingMode: 'optional',
     ...overrides
   };
 }
@@ -86,7 +85,6 @@ function openAiDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiPr
     corsRestricted: false,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
-    thinkingMode: 'optional',
     ...overrides
   };
 }
@@ -104,7 +102,6 @@ function xaiDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProvi
     corsRestricted: true,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
-    thinkingMode: 'optional',
     ...overrides
   };
 }
@@ -122,7 +119,6 @@ function geminiDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiPr
     corsRestricted: false,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
-    thinkingMode: 'optional',
     ...overrides
   };
 }
@@ -144,7 +140,6 @@ function unknownThinkingProviderDescriptor(
     corsRestricted: false,
     acceptsImageInput: false,
     streamingCorsRestricted: false,
-    thinkingMode: 'unsupported',
     ...overrides
   };
 }
@@ -286,5 +281,94 @@ describe('temperature + thinking rejection matrix — end-to-end via callProvide
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
     expect(body.model).toBe('claude-sonnet-5'); // the base-tier model, not advanced/frontier
     expect(body.thinking).toEqual({ type: 'enabled', budget_tokens: 2048 }); // low-effort budget
+  });
+});
+
+describe('generic effort "none" — cross-provider "thinking off" spelling (antagonist)', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  // Wrong impl this guards: mapping generic 'none' straight to Anthropic's effort
+  // vocabulary (which has no off value) would either emit a bogus `thinking` param or
+  // trip the anthropic temperature-conflict gate, which fires whenever `anthropicEffort`
+  // is set regardless of its value.
+  test('Anthropic: generic effort "none" omits the thinking param and temperature survives', async () => {
+    mockFetchResponse(anthropicResponse('ok'));
+
+    const result = await AiAssist.callProviderCompletion({
+      descriptor: anthropicDescriptor(),
+      apiKey: 'sk',
+      temperature: 0.7,
+      thinking: { effort: 'none' },
+      ...testPrompt.toRequest()
+    });
+
+    expect(result).toSucceed();
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.thinking).toBeUndefined();
+    expect(body.output_config).toBeUndefined();
+    expect(body.temperature).toBe(0.7);
+  });
+
+  // Mirrors the existing per-provider-block OpenAI 'none' case above, but reached via the
+  // generic `effort` field instead of a `providers` block — the whole point of item 2.
+  test('OpenAI: generic effort "none" disables reasoning and temperature survives', async () => {
+    mockFetchResponse(openAiResponse('ok'));
+
+    const result = await AiAssist.callProviderCompletion({
+      descriptor: openAiDescriptor(),
+      apiKey: 'sk',
+      temperature: 0.7,
+      thinking: { effort: 'none' },
+      ...testPrompt.toRequest()
+    });
+
+    expect(result).toSucceed();
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.reasoning_effort).toBe('none');
+    expect(body.temperature).toBe(0.7);
+  });
+
+  test('xAI: generic effort "none" disables reasoning and temperature survives', async () => {
+    mockFetchResponse(openAiResponse('ok'));
+
+    const result = await AiAssist.callProviderCompletion({
+      descriptor: xaiDescriptor(),
+      apiKey: 'sk',
+      temperature: 0.7,
+      thinking: { effort: 'none' },
+      ...testPrompt.toRequest()
+    });
+
+    expect(result).toSucceed();
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.reasoning_effort).toBe('none');
+    expect(body.temperature).toBe(0.7);
+  });
+
+  // Gemini never conflicts thinking with temperature, so this pins the mapping
+  // (thinkingBudget: 0, Gemini's own off value) rather than the conflict gate.
+  test('Gemini: generic effort "none" maps to thinkingBudget 0 and temperature survives', async () => {
+    mockFetchResponse(geminiResponse('ok'));
+
+    const result = await AiAssist.callProviderCompletion({
+      descriptor: geminiDescriptor(),
+      apiKey: 'sk',
+      temperature: 0.7,
+      thinking: { effort: 'none' },
+      ...testPrompt.toRequest()
+    });
+
+    expect(result).toSucceed();
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.generationConfig.thinkingConfig).toEqual({ thinkingBudget: 0 });
+    expect(body.generationConfig.temperature).toBe(0.7);
   });
 });

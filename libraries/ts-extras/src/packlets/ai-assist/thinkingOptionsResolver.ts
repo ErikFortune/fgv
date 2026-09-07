@@ -96,7 +96,10 @@ export interface IResolvedThinkingConfig {
 // ============================================================================
 
 /**
- * Maps generic effort to Anthropic wire effort. @internal
+ * Maps generic effort to Anthropic wire effort. Anthropic has no 'none' value in its
+ * own vocabulary — the caller (tier 1 of `mergeThinkingConfig`) handles `'none'` by
+ * skipping this mapping entirely, so `anthropicEffort` stays unset and the emit site
+ * omits the `thinking` wire param. @internal
  */
 function genericEffortToAnthropic(effort: 'low' | 'medium' | 'high'): IAnthropicThinkingConfig['effort'] {
   return effort; // 1:1 mapping for the common subset
@@ -131,15 +134,18 @@ export function anthropicEffortToBudgetTokens(
 /**
  * Maps generic effort to OpenAI wire effort. @internal
  */
-function genericEffortToOpenAi(effort: 'low' | 'medium' | 'high'): IOpenAiThinkingConfig['effort'] {
+function genericEffortToOpenAi(effort: 'none' | 'low' | 'medium' | 'high'): IOpenAiThinkingConfig['effort'] {
   return effort; // 1:1 mapping for the common subset
 }
 
 /**
- * Maps generic effort to Gemini thinkingBudget. @internal
+ * Maps generic effort to Gemini thinkingBudget. `'none'` maps to `0` — Gemini's own
+ * off value on the wire. @internal
  */
-function genericEffortToGemini(effort: 'low' | 'medium' | 'high'): number {
+function genericEffortToGemini(effort: 'none' | 'low' | 'medium' | 'high'): number {
   switch (effort) {
+    case 'none':
+      return 0;
     case 'low':
       return 1024;
     case 'medium':
@@ -152,7 +158,7 @@ function genericEffortToGemini(effort: 'low' | 'medium' | 'high'): number {
 /**
  * Maps generic effort to xAI reasoning_effort. @internal
  */
-function genericEffortToXai(effort: 'low' | 'medium' | 'high'): IXAiThinkingConfig['effort'] {
+function genericEffortToXai(effort: 'none' | 'low' | 'medium' | 'high'): IXAiThinkingConfig['effort'] {
   return effort; // 1:1 mapping for the common subset
 }
 
@@ -246,7 +252,13 @@ export function mergeThinkingConfig(
   if (config.effort !== undefined) {
     switch (discriminator) {
       case 'anthropic':
-        resolved = { ...resolved, anthropicEffort: genericEffortToAnthropic(config.effort) };
+        // Anthropic has no 'none' value: "off" means no `thinking` wire param at all,
+        // so 'none' leaves `anthropicEffort` unset rather than mapping to a value. That
+        // also satisfies checkTemperatureConflict's anthropic gate (which fails only when
+        // anthropicEffort is set), so temperature survives without any special-casing there.
+        if (config.effort !== 'none') {
+          resolved = { ...resolved, anthropicEffort: genericEffortToAnthropic(config.effort) };
+        }
         break;
       case 'openai':
         resolved = { ...resolved, openAiEffort: genericEffortToOpenAi(config.effort) };

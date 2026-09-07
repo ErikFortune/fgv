@@ -46,7 +46,6 @@ function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProv
     corsRestricted: true,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
-    thinkingMode: 'optional',
     ...overrides
   };
 }
@@ -355,7 +354,6 @@ function makeImageDescriptorWithoutMimeType(
     corsRestricted: false,
     acceptsImageInput: false,
     streamingCorsRestricted: false,
-    thinkingMode: 'unsupported',
     imageGeneration: imgGen('xai-images', { outputParamStyle: 'response-format' }),
     ...overrides
   };

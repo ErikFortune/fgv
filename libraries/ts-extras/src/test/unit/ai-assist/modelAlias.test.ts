@@ -42,7 +42,6 @@ function makeDescriptor(
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: false,
-    thinkingMode: 'unsupported',
     ...overrides
   };
 }

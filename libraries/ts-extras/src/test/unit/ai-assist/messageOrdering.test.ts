@@ -152,7 +152,6 @@ function base(overrides: Partial<IAiProviderDescriptor>): IAiProviderDescriptor 
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: false,
-    thinkingMode: 'optional',
     ...overrides
   };
 }
