@@ -135,13 +135,30 @@ there. A cache-aware prompt-assist can, without any per-provider directive:
 `Crc32Normalizer` in `ts-utils` is the repo's canonical structural hash — use it
 for any prefix hashing rather than hand-rolling one (`/value-hashing`).
 
-### Stability is not derivable — it must be declared. This is why hints exist.
+### Stability is not derivable *today* — so hints are necessary now, and must not foreclose inference later
 
 **Added 2026-09-07.** The section above argues for stability annotation as "the one
 input all three mechanisms can be driven from." That is an elegance argument and it
-undersells the case. The real one is necessity: **nothing in a resolved prompt says
-which sections repeat across requests, so without an author-supplied hint there is
-nothing to drive any of the mechanisms from.**
+undersells the case. The real one is necessity: **nothing a single resolve produces
+says which sections repeat across requests, so without an author-supplied hint there
+is nothing to drive any of the mechanisms from.**
+
+**Stated precisely, because the absolute version is wrong.** Variability *is*
+derivable in principle, with constraints and considerable work — the library knows a
+slot's scope space, so it could statically determine that a binding varies across it;
+resolving the same prompt under N contexts and diffing would show the same thing
+empirically; and even a `caller-sub`'s stability is observable over enough requests.
+None of that exists today and none of it is small. So the operative claim is
+**effectively underivable today, plausibly derivable later** — which is a statement
+about cost and roadmap, not about possibility.
+
+That distinction is a design constraint, not a footnote. **Do not shape the hint
+vocabulary so that a future analyzer is locked out.** Concretely: a hint should carry
+where it came from (authored vs. derived), so an inference pass can later supply hints
+for un-annotated slots and cross-check the annotated ones, rather than the design
+assuming every hint is hand-written forever. And note the refutation check proposed
+below is not merely a guard — it is the cheapest special case of exactly that
+analysis, and therefore the natural beachhead for it.
 
 `IPromptComposition` reports order and size. It does not report stability, and the
 one field that looks like a proxy is unreliable in the direction that costs money
