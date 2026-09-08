@@ -1,6 +1,6 @@
 # Stream brief — `ai-assist-prompt-caching`
 
-**Status:** 🔵 phase A research complete; phase B (design) next
+**Status:** 🔵 phase B design complete; triage next. See `design.md` and `state.md`.
 **Shape:** design-triage-implement — this adds public API to two libraries and the
 right shape is not yet obvious
 **Branch base:** `release` HEAD
