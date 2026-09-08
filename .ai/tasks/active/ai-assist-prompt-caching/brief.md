@@ -135,6 +135,48 @@ there. A cache-aware prompt-assist can, without any per-provider directive:
 `Crc32Normalizer` in `ts-utils` is the repo's canonical structural hash — use it
 for any prefix hashing rather than hand-rolling one (`/value-hashing`).
 
+### Stability is not derivable — it must be declared. This is why hints exist.
+
+**Added 2026-09-07.** The section above argues for stability annotation as "the one
+input all three mechanisms can be driven from." That is an elegance argument and it
+undersells the case. The real one is necessity: **nothing in a resolved prompt says
+which sections repeat across requests, so without an author-supplied hint there is
+nothing to drive any of the mechanisms from.**
+
+`IPromptComposition` reports order and size. It does not report stability, and the
+one field that looks like a proxy is unreliable in the direction that costs money
+silently. `IPromptSection.source` is `'caller-sub' | 'binding' | 'default' | 'empty'`
+(`libraries/ts-prompt-assist/src/packlets/types/trace.ts:15`), which sorts slots into
+library-authored (`binding`, `default` — checked-in files) and supplied-at-resolve
+(`caller-sub`). Both classifications fail:
+
+- **False volatile** — a `caller-sub` that is a frozen constant held by the *app*
+  rather than the library reads as unknown, so the prefix is cut short and cacheable
+  bytes go uncached. Cheap: a discount not taken.
+- **False stable** — a `'binding'` whose winning scope varies with context.
+  `winningScope` names the scope that won *this* resolve; conditional resolution
+  means another context picks another scope and the same slot yields different bytes.
+  A breakpoint placed after it reads back nothing, with no error. Expensive, and
+  invisible.
+
+The second failure is load-bearing, and note what it says: **the library's central
+feature is what makes its own authored bindings unstable.** Conditional-on-context
+resolution is the reason `ts-prompt-assist` exists, so "came from a checked-in file"
+carries no information about whether two requests produce identical bytes. Any design
+that infers stability from provenance is wrong on exactly the path the library is for.
+
+Two consequences for phase B:
+
+- **The vocabulary needs two homes and a precedence rule.** A slot's stability can be
+  declared where the slot is declared, but a `caller-sub`'s stability is knowable only
+  at the call site. Hints must be expressible in both, and where both are present the
+  call site wins — it knows something the library cannot.
+- **The library can refute a hint, and should.** A slot declared `frozen` whose
+  `winningScope` is scope-conditional is a detectable contradiction, checkable from
+  data the resolve already has. It guards the false-stable case above, nothing else in
+  the stack is positioned to check it, and it needs no provider. Strong candidate for
+  the diagnostics-first deliverable.
+
 ## Anthropic specifics — verified, do not re-research
 
 From the bundled Claude API reference. Treat as established:
@@ -149,9 +191,60 @@ From the bundled Claude API reference. Treat as established:
 - Verify hits with `usage.cache_creation_input_tokens` /
   `usage.cache_read_input_tokens`; zero reads across repeated identical-prefix
   requests means a silent invalidator
-- Caches are **model-scoped**
+- Caches are **model-scoped**, and isolated **per workspace** on the Claude API —
+  traffic for one prompt split across workspaces writes separate entries, which is
+  worth ruling out before blaming a low hit rate on the prompt
 - A mid-conversation `effort` change invalidates the message cache on most
   models — caching and thinking config are coupled
+
+### The minimum cacheable prefix is per-model and **non-monotonic**
+
+| model | minimum |
+|---|---:|
+| Opus 5, Fable 5 / 5.1 | 512 |
+| Opus 4.8, Sonnet 5, Sonnet 4.6 / 4.5 | 1024 |
+| Opus 4.7 | 2048 |
+| **Opus 4.6, Opus 4.5, Haiku 4.5** | **4096** |
+
+A 3K-token prompt caches on Opus 5 and silently does not on Opus 4.6 or Haiku 4.5 —
+no error, just `cache_creation_input_tokens: 0`. This **strengthens the
+don't-hard-code-thresholds rule above into something sharper than "we could not
+verify the numbers"**: even where the numbers are known, "newer model, lower floor"
+is a wrong intuition, so a threshold cannot be a per-*provider* constant — it is
+per-model. Note Haiku, the model reached for on cheap high-volume routes where
+caching matters most, carries the highest floor. It also makes the research's
+unverified hint that Gemini's implicit threshold may be non-monotonic considerably
+more plausible; do not treat that as an oddity if it turns up.
+
+### Automatic caching is a *surcharge* on one-shot calls — do not ship it alone
+
+Anthropic's top-level `cache_control` is a one-line change at our Anthropic body
+assembly (`completionClient.ts:504`) and would make the bill **worse** on the
+single-shot path. Automatic places its breakpoint on the last cacheable block; for a
+one-shot completion that is the user's question, so every request pays the ~1.25×
+write premium on bytes never read back. The signature to watch for is
+`cache_creation_input_tokens` on every request while `cache_read_input_tokens` never
+covers the shared prefix.
+
+Automatic *is* right for the multi-turn paths (`executeClientToolTurn`, streaming
+continuations) where a prefix genuinely repeats. The documented robust combination is
+both: an explicit marker on the last block of the static system prefix, plus top-level
+automatic for the growing tail. Note the explicit half is **not** a one-liner for us —
+we pass `system` as a plain string, and a marker must sit on a content block, so
+`system` becomes `[{ type: 'text', text: …, cache_control: … }]`. Also note automatic
+consumes one of the four breakpoint slots, and there are two documented 400s: all four
+slots already taken by explicit markers, and an explicit marker on the last block whose
+TTL differs from the top-level field's.
+
+### Reading usage back is not optional
+
+We surface none of `cache_creation_input_tokens` / `cache_read_input_tokens` /
+`input_tokens` today. Without them there is no way to know caching works, and the
+failure mode is silent by construction: it works when written, then a later change to
+prompt assembly misses on every request and nothing announces it. `input_tokens` is
+only the uncached remainder — total prompt size is the sum of all three. Treat a
+standing assertion (a second identical request shows `cache_read_input_tokens > 0`)
+as part of the deliverable, not a nice-to-have.
 
 ## Phase A — research ✅ complete; see `research.md`
 
