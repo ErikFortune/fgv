@@ -804,9 +804,15 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 
 ### `ai-assist-prompt-caching` 🔵
 
-**Status:** 🔵 phase A research complete; phase B (design) next; design-triage-implement shape
+**Status:** 🔵 phase A research and phase B design complete; **triage next**; design-triage-implement shape. Design at `.ai/tasks/active/ai-assist-prompt-caching/design.md`, with five open questions (OQ-1..5) for the triage pass.
 **Branch base:** `release` HEAD
 **Package surface (expected):** `@fgv/ts-extras/ai-assist`, `@fgv/ts-prompt-assist` — exact surface is a phase-A/B output, not an input
+
+**Phase B outcome.** No falsification this time; the brief's factual claims all held, and the design added four findings of its own. The load-bearing one: mechanism is keyed on `(descriptor, model, **usesResponsesApi**)`, not on the provider/model pair the brief named — nine registry providers share `apiFormat: 'openai'`, and that format splits at runtime into Responses vs Chat Completions on a boolean computed from *whether the caller passed tools*. Since `cache_write_tokens` exists only on Responses, **whether cache writes are observable at all flips on the presence of tools.** Also: xAI is reached over the OpenAI-compat path, so the xAI field names phase A verified are for a wire we never speak (**OQ-1**).
+
+**The central mechanical question dissolved rather than being answered.** Three stability levels admit at most two downward transitions, so the emitted breakpoint count is ≤2 and the shared cap of four is never binding — OpenAI's silent drop-by-recency never engages because we never send more than the cap. The cap only becomes reachable on an interleaved composition, whose real defect is its ordering, which the diagnostics already report.
+
+**Phase B corrected the brief's diagnostics-first case.** The brief nominated the refutation check as the beachhead; a false-stable hint costs nothing until something acts on it, so refutation guards a hazard that does not yet exist. The correct beachhead is **cache-hostile ordering**, which costs money today on every provider — Gemini implicit, xAI and OpenAI's default mode have no directive to send, and byte order is the only lever.
 **Out-of-scope:** the `ai-assist-thinking-anchoring` and `ai-assist-thinking-events` surfaces; all other `ts-extras` packlets
 
 **Mission.** `ai-assist` has no prompt-caching support of any kind — verified greenfield, the only hits for `cache_control` / `prompt_cache` / `cachedContent` across `ts-extras` and `ts-prompt-assist` are crypto ephemeral-key code. Every provider we call supports caching, two of them without being asked, so we pay full input price on every repeated prefix. Caching is the first cost lever, ahead of effort and model choice, because it is the only one that does not trade quality.
