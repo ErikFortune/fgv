@@ -26,5 +26,6 @@ Array [
   "anthropic-structured-output",
   "google-gemini-structured-output",
   "xai-grok-structured-output",
+  "xai-cache-probe",
 ]
 `;

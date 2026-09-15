@@ -17,7 +17,8 @@
     "<rootDir>/lib/scenarios/memoryToolsGate/",
     "<rootDir>/lib/scenarios/sqliteVecMemoryPersistence/index.js",
     "<rootDir>/lib/scenarios/sqliteVecFragmentPersistence/index.js",
-    "<rootDir>/lib/scenarios/saferFetchGuard/index.js"
+    "<rootDir>/lib/scenarios/saferFetchGuard/index.js",
+    "<rootDir>/lib/scenarios/xaiCacheProbe/index.js"
   ],
   "collectCoverage": true,
   "coverageReporters": ["text", "lcov", "html"],

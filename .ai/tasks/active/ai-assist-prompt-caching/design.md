@@ -724,11 +724,27 @@ slice.
 
 ## 12. Open questions for triage
 
-**OQ-1 — xAI's OpenAI-compat cache surface.** F3 establishes that we reach xAI at
-`https://api.x.ai/v1` with `apiFormat: 'openai'`, and that a tools-bearing request routes to
-`/responses`. Unknown: whether that endpoint exists on xAI, and what its usage block calls
-cached tokens. Blocks the `reports` level for `xai-grok` in §8. **Cheap to settle with one
-live request; do it before C1's normalization table is written.**
+**OQ-1 — xAI's OpenAI-compat cache surface. — ⏳ probe built 2026-09-15; awaiting a live run.**
+
+F3 establishes that we reach xAI at `https://api.x.ai/v1` with `apiFormat: 'openai'`, and that
+a tools-bearing request routes to `/responses`. Unknown: whether that endpoint exists on xAI,
+and what its usage block calls cached tokens. Blocks the `reports` level for `xai-grok` in §8.
+
+A testbed scenario now answers it, rather than a one-off `curl` whose output would rot:
+**`samples/testbed` → `xai-cache-probe`** (`rushx cli xai-cache-probe`, needs `XAI_API_KEY`).
+
+It is **differential and name-agnostic**, which matters more than it first appears. Asking
+"is `usage.prompt_tokens_details.cached_tokens` present?" can only ever confirm a guess, and
+reports a false negative if xAI spells it differently. The probe instead sends one
+byte-identical request **twice** on each route and diffs the two usage blocks: a field that is
+absent-or-zero cold and positive warm *is* the cached-token field, whatever it is called. The
+flattened key list is printed either way, so a run with no cache hit still records the usage
+schema — a negative result is a result.
+
+Paste the report into this section when it runs. Note the report distinguishes a genuine "no
+caching" from "prefix under an unverified minimum" by refusing to call it: on no-hit it prints
+the guidance to raise `FILLER_PARAGRAPHS` and re-run, and the size that failed is itself a
+bound worth recording.
 
 **OQ-2 — is a second research pass a gate on C3?** Every OpenAI/Gemini/xAI threshold is
 `[unverified]` because the prose docs are egress-blocked. *Recommendation: not a gate.*
@@ -736,12 +752,23 @@ Caller-supplied is the permanent answer regardless of what a second pass finds (
 verified number only improves a registry table that already handles its own absence
 correctly. A second pass is worth running for its own sake, but nothing waits on it.
 
-**OQ-3 — does `prompt_cache_key` land in C1 or C3?** It needs no vocabulary, no cap, and no
-composition, and it is the one lever that materially improves hit rate on a multi-tenant
-route. That argues C1. Against: it *changes what we send*, so C1 would lose its "cannot make
-anything worse" property, which is the property that justifies shipping C1 first.
-*Recommendation: C1, with the caveat stated in the PR description* — it is a routing hint
-with no failure mode worse than a cache miss.
+**OQ-3 — does `prompt_cache_key` land in C1 or C3? — ✅ RESOLVED 2026-09-15: C3.**
+
+The design recommended C1 with a caveat. Decided the other way, for two reasons.
+
+The argument offered for C1 — that the lever is valuable and low-risk — is an argument about
+the *feature*, not about *sequencing*. C1 earns its place first by being provably inert: it
+reads fields off responses we already receive. A slice whose safety needs a caveat in the PR
+description is no longer the inert slice, and inertness is the whole of C1's claim.
+
+There is also a concrete short-term regression available, which "no failure mode worse than a
+cache miss" understates. Traffic that shares one implicit cache namespace today gets
+**partitioned** the moment a per-tenant key starts being sent. That is correct long-run and a
+hit-rate *drop* immediately after deploy — precisely the shape that would be misread as "C1
+broke caching" on the one slice built to be above suspicion.
+
+C3 changes the wire anyway, and by then C1's usage reporting exists to measure the
+partitioning as it happens.
 
 **OQ-4 — is Anthropic's top-level auto-cache worth exposing?** The brief establishes it is a
 one-line change that makes the bill **worse** on the single-shot path and better on
