@@ -39,10 +39,12 @@ import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } f
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toResponsesApiTools } from '../toolFormats';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
+import { normalizeOpenAiResponsesUsage } from '../usageNormalization';
 import {
   IStreamApiConfig,
   UNRECOGNIZED_EVENT_WARN_TAG,
   formatUnrecognizedEventPayloadPreview,
+  jsonObjectValidator,
   openSseConnection,
   validateEventPayload
 } from './common';
@@ -121,6 +123,7 @@ interface IResponsesCompletedPayload {
   readonly response: {
     readonly status?: string;
     readonly incomplete_details?: { readonly reason?: string };
+    readonly usage?: JsonObject;
   };
 }
 
@@ -174,12 +177,17 @@ const responsesIncompleteDetails: Validator<{ reason?: string }> = Validators.ob
 
 const responsesCompletedPayload: Validator<IResponsesCompletedPayload> =
   Validators.object<IResponsesCompletedPayload>({
-    response: Validators.object<{ status?: string; incomplete_details?: { reason?: string } }>(
+    response: Validators.object<{
+      status?: string;
+      incomplete_details?: { reason?: string };
+      usage?: JsonObject;
+    }>(
       {
         status: Validators.string.optional(),
-        incomplete_details: responsesIncompleteDetails.optional()
+        incomplete_details: responsesIncompleteDetails.optional(),
+        usage: jsonObjectValidator.optional()
       },
-      { options: { optionalFields: ['status', 'incomplete_details'] } }
+      { options: { optionalFields: ['status', 'incomplete_details', 'usage'] } }
     )
   });
 
@@ -297,6 +305,7 @@ async function* translateOpenAiResponsesStream(
   let truncated = false;
   let completed = false;
   let incompleteReason: string | undefined;
+  let usageRaw: JsonObject | undefined;
   // OpenAI / xAI Responses API emits function_call_arguments.{delta,done} events keyed by
   // `item_id` (the fc_* output-item id). The harness and continuation builder key by
   // `call_id` (the call_* id). This map correlates the two — populated when the
@@ -400,6 +409,7 @@ async function* translateOpenAiResponsesStream(
           // event so a stray incomplete_details on a non-incomplete payload never leaks
           // through, and a later (defensive) completed event can't leave a stale reason.
           incompleteReason = truncated ? payload.response.incomplete_details?.reason : undefined;
+          usageRaw = payload.response.usage;
         }
         completed = true;
         /* c8 ignore next 1 - defensive: eventName === 'error' alternative not exercised in tests */
@@ -436,7 +446,8 @@ async function* translateOpenAiResponsesStream(
   } /* c8 ignore stop */
 
   if (completed) {
-    yield { type: 'done', truncated, fullText, incompleteReason };
+    const usage = normalizeOpenAiResponsesUsage(usageRaw);
+    yield { type: 'done', truncated, fullText, incompleteReason, ...(usage !== undefined ? { usage } : {}) };
   } else {
     yield { type: 'error', message: 'Responses API stream ended without a completed event' };
   }

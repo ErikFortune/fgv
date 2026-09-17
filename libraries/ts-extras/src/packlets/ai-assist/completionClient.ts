@@ -27,7 +27,7 @@
  * @packageDocumentation
  */
 
-import { type JsonObject } from '@fgv/ts-json-base';
+import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 import {
   captureResult,
   fail,
@@ -87,6 +87,12 @@ import {
 } from './structuredOutput';
 import { resolveStructuredOutputCapability } from './registry';
 import type { StructuredOutputRequest } from './structuredOutputTypes';
+import {
+  normalizeAnthropicUsage,
+  normalizeGeminiUsage,
+  normalizeOpenAiChatUsage,
+  normalizeOpenAiResponsesUsage
+} from './usageNormalization';
 
 // ============================================================================
 // Types
@@ -329,6 +335,8 @@ async function callOpenAiCompletion(
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
+  const rawUsage = jsonResult.value.usage;
+  const usage = normalizeOpenAiChatUsage(isJsonObject(rawUsage) ? rawUsage : undefined);
   return openAiResponse
     .validate(jsonResult.value)
     .withErrorFormat((msg) => `OpenAI API response: ${msg}`)
@@ -337,7 +345,8 @@ async function callOpenAiCompletion(
       return succeed({
         content: choice.message.content,
         truncated: choice.finish_reason === 'length',
-        structuredOutput: structured.enforcement
+        structuredOutput: structured.enforcement,
+        ...(usage !== undefined ? { usage } : {})
       });
     });
 }
@@ -412,6 +421,10 @@ async function callOpenAiResponsesCompletion(
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
+  const rawResponsesUsage = jsonResult.value.usage;
+  const responsesUsage = normalizeOpenAiResponsesUsage(
+    isJsonObject(rawResponsesUsage) ? rawResponsesUsage : undefined
+  );
   return responsesApiResponse
     .validate(jsonResult.value)
     .withErrorFormat((msg) => `Responses API response: ${msg}`)
@@ -420,7 +433,8 @@ async function callOpenAiResponsesCompletion(
         succeed({
           content: text,
           truncated: response.status === 'incomplete',
-          structuredOutput: structured.enforcement
+          structuredOutput: structured.enforcement,
+          ...(responsesUsage !== undefined ? { usage: responsesUsage } : {})
         })
       );
     });
@@ -580,6 +594,10 @@ async function callAnthropicCompletion(
 
   const rawContent = (jsonResult.value as Record<string, unknown>).content;
   const stopReason = (jsonResult.value as Record<string, unknown>).stop_reason;
+  const rawAnthropicUsage = jsonResult.value.usage;
+  const anthropicUsage = normalizeAnthropicUsage(
+    isJsonObject(rawAnthropicUsage) ? rawAnthropicUsage : undefined
+  );
   if (!Array.isArray(rawContent)) {
     return fail('Anthropic API response: content is not an array');
   }
@@ -594,7 +612,8 @@ async function callAnthropicCompletion(
     succeed({
       content: text,
       truncated: stopReason === 'max_tokens',
-      structuredOutput: structured.enforcement
+      structuredOutput: structured.enforcement,
+      ...(anthropicUsage !== undefined ? { usage: anthropicUsage } : {})
     })
   );
 }
@@ -660,6 +679,8 @@ async function callGeminiCompletion(
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
+  const rawGeminiUsage = jsonResult.value.usageMetadata;
+  const geminiUsage = normalizeGeminiUsage(isJsonObject(rawGeminiUsage) ? rawGeminiUsage : undefined);
   return geminiResponse
     .validate(jsonResult.value)
     .withErrorFormat((msg) => `Gemini API response: ${msg}`)
@@ -688,7 +709,8 @@ async function callGeminiCompletion(
       return succeed({
         content,
         truncated: candidate.finishReason === 'MAX_TOKENS',
-        structuredOutput: structured.enforcement
+        structuredOutput: structured.enforcement,
+        ...(geminiUsage !== undefined ? { usage: geminiUsage } : {})
       });
     });
 }

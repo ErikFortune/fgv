@@ -26,6 +26,7 @@
 import { fail, type Result, succeed } from '@fgv/ts-utils';
 import { type JsonObject, type JsonSchema } from '@fgv/ts-json-base';
 import type { IAiStructuredOutputCapability, StructuredOutputEnforcement } from './structuredOutputTypes';
+import type { IAiCompletionUsage } from './usageTypes';
 
 // ============================================================================
 // Image Data
@@ -940,6 +941,8 @@ export interface IAiCompletionResponse {
    * split.
    */
   readonly structuredOutput: StructuredOutputEnforcement;
+  /** Token usage, when the provider reports it. */
+  readonly usage?: IAiCompletionUsage;
 }
 
 /**
@@ -1018,6 +1021,8 @@ export interface IAiStreamDone {
    * reports truncation without a reason).
    */
   readonly incompleteReason?: string;
+  /** Token usage, when the provider reports it on this stream. */
+  readonly usage?: IAiCompletionUsage;
 }
 
 /**

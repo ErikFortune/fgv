@@ -202,6 +202,8 @@ declare namespace AiAssist {
         modelSpecKey,
         modelSpec,
         resolveEffectiveTools,
+        AiCacheReportingLevel,
+        IAiCompletionUsage,
         ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
         AiStructuredOutputFormat,
         IAiStructuredOutputCapability,
@@ -237,6 +239,11 @@ const aiAssistProviderConfig: Converter<IAiAssistProviderConfig>;
 //
 // @public
 const aiAssistSettings: Converter<IAiAssistSettings>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type AiCacheReportingLevel = 'none' | 'reads' | 'reads-and-writes';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1189,6 +1196,18 @@ interface IAiCompletionResponse {
     readonly content: string;
     readonly structuredOutput: StructuredOutputEnforcement;
     readonly truncated: boolean;
+    readonly usage?: IAiCompletionUsage;
+}
+
+// @public
+interface IAiCompletionUsage {
+    readonly cachedInputTokens?: number;
+    readonly cacheWriteTokens?: number;
+    readonly outputTokens?: number;
+    readonly raw?: JsonObject;
+    readonly reports: AiCacheReportingLevel;
+    readonly totalInputTokens?: number;
+    readonly uncachedInputTokens?: number;
 }
 
 // @public
@@ -1341,6 +1360,7 @@ interface IAiStreamDone {
     readonly truncated: boolean;
     // (undocumented)
     readonly type: 'done';
+    readonly usage?: IAiCompletionUsage;
 }
 
 // @public

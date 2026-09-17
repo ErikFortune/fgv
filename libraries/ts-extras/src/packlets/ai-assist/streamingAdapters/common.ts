@@ -26,7 +26,8 @@
  * @packageDocumentation
  */
 
-import { fail, type Logging, Result, succeed, type Validator } from '@fgv/ts-utils';
+import { fail, type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 
 import {
   type AiServerToolConfig,
@@ -35,6 +36,18 @@ import {
   type IThinkingConfig,
   type ModelSpec
 } from '../model';
+
+/**
+ * Validates that a value is a `JsonObject` — used by the streaming adapters to
+ * accept an SSE payload's opaque `usage` sub-object without committing to its
+ * shape here; each adapter hands the validated object to its
+ * `usageNormalization.ts` counterpart.
+ * @internal
+ */
+export const jsonObjectValidator: Validator<JsonObject> = Validators.isA<JsonObject>(
+  'JsonObject',
+  (v): v is JsonObject => isJsonObject(v)
+);
 
 /**
  * Parameters for a streaming completion request. Structurally identical to

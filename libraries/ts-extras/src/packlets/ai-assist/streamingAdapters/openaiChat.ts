@@ -27,13 +27,15 @@
  */
 
 import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { type JsonObject } from '@fgv/ts-json-base';
 
 import { buildMessages, buildOpenAiChatUserContent } from '../chatRequestBuilders';
 import { bearerAuthHeader } from '../endpoint';
 import { AiPrompt, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
-import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
+import { normalizeOpenAiChatUsage } from '../usageNormalization';
+import { IStreamApiConfig, jsonObjectValidator, openSseConnection, validateEventPayload } from './common';
 
 // ============================================================================
 // Event payload shapes
@@ -62,6 +64,12 @@ interface IOpenAiChatStreamChoice {
  */
 interface IOpenAiChatStreamChunk {
   readonly choices: ReadonlyArray<IOpenAiChatStreamChoice>;
+  /**
+   * Present only on the terminal chunk, and only when the request carries
+   * `stream_options.include_usage: true` — without it OpenAI Chat Completions
+   * never emits a usage block while streaming, unlike every other adapter here.
+   */
+  readonly usage?: JsonObject;
 }
 
 // eslint-disable-next-line @rushstack/no-new-null
@@ -82,9 +90,13 @@ const openAiChatStreamChoice: Validator<IOpenAiChatStreamChoice> = Validators.ob
   { options: { optionalFields: ['delta', 'finish_reason'] } }
 );
 
-const openAiChatStreamChunk: Validator<IOpenAiChatStreamChunk> = Validators.object<IOpenAiChatStreamChunk>({
-  choices: Validators.arrayOf(openAiChatStreamChoice)
-});
+const openAiChatStreamChunk: Validator<IOpenAiChatStreamChunk> = Validators.object<IOpenAiChatStreamChunk>(
+  {
+    choices: Validators.arrayOf(openAiChatStreamChoice),
+    usage: jsonObjectValidator.optional()
+  },
+  { options: { optionalFields: ['usage'] } }
+);
 
 // ============================================================================
 // Stream translator
@@ -99,6 +111,7 @@ async function* translateOpenAiChatStream(response: Response): AsyncGenerator<IA
   let fullText = '';
   let truncated = false;
   let receivedDone = false;
+  let usageRaw: JsonObject | undefined;
 
   try {
     /* c8 ignore next - body is non-null at this point per openSseConnection */
@@ -110,9 +123,13 @@ async function* translateOpenAiChatStream(response: Response): AsyncGenerator<IA
         continue;
       }
       const chunk = validateEventPayload(json, openAiChatStreamChunk);
+      if (chunk?.usage !== undefined) {
+        usageRaw = chunk.usage;
+      }
       /* c8 ignore next 1 - defensive: chunk?.choices optional chain unreachable after validation */
       const choice = chunk?.choices[0];
-      /* c8 ignore next 3 - defensive: SSE events without choices are skipped */
+      // The `stream_options.include_usage` terminal chunk carries `choices: []` and only
+      // `usage` — already captured above, so it is expected (not defensive) to fall through here.
       if (!choice) {
         continue;
       }
@@ -134,7 +151,8 @@ async function* translateOpenAiChatStream(response: Response): AsyncGenerator<IA
   } /* c8 ignore stop */
 
   if (receivedDone) {
-    yield { type: 'done', truncated, fullText };
+    const usage = normalizeOpenAiChatUsage(usageRaw);
+    yield { type: 'done', truncated, fullText, ...(usage !== undefined ? { usage } : {}) };
   } else {
     yield { type: 'error', message: 'OpenAI stream ended without a finish_reason' };
   }
@@ -167,7 +185,15 @@ export async function callOpenAiChatStream(
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
   const supportsReasoning = config.model !== 'grok-4';
-  const body: Record<string, unknown> = { model: config.model, messages, stream: true };
+  // Chat Completions omits the usage block from every streaming response unless asked —
+  // unlike the Responses API and Anthropic, which report it unconditionally. Additive and
+  // ignored by providers that don't recognize it.
+  const body: Record<string, unknown> = {
+    model: config.model,
+    messages,
+    stream: true,
+    stream_options: { include_usage: true }
+  };
   if (effort !== undefined && supportsReasoning) {
     body.reasoning_effort = effort;
   }
