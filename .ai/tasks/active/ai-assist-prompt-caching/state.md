@@ -162,4 +162,21 @@ what `reports: 'reads-and-writes'` + absent `cacheWriteTokens` already means per
 design's own contract — the likely cause was `cacheWriteTokens`'s own TSDoc only
 spelling out the `'reads'` case, now fixed to state both inline. All fixes pushed in
 9ac74080b; full suite re-verified (2829/2829, 100% coverage, clean lint). Round-1
-threads replied to and resolved; round 2 requested.
+threads replied to and resolved.
+
+**Copilot round 2 — also substantive.** Real: the shared Chat Completions streaming
+adapter carries every `apiFormat: 'openai'` descriptor, including arbitrary self-hosted
+`openai-compat` servers whose tolerance for an unrecognized `stream_options` field is
+unverified — a strict one can reject the whole request rather than ignore the field.
+Added `supportsStreamUsageOption(descriptor)` (new `streamUsageCapability.ts`; `model.ts`
+was at the max-lines cap again), mirroring the existing `usesMaxCompletionTokensField`
+gate — `true` only for `descriptor.id === 'openai'`. Every other provider on this path
+now gets exactly the pre-C1 request body; regression test added asserting the field is
+absent for a non-OpenAI descriptor. Also real: the README claimed every completion
+carries `usage`, but proxied completions never forward it (out of scope for this slice;
+the proxy response parser still only returns `content`/`truncated`/`structuredOutput`) —
+qualified the claim and stated the limitation, in both the README and `CAPABILITIES.md`.
+One doc-accuracy fix: this file's harness section still described the retired Anthropic
+version after round 1's retarget to xAI. All fixes pushed in 9b8279892; full suite
+re-verified (2830/2830, 100% coverage, clean lint). Round-2 threads replied to and
+resolved; round 3 requested.
