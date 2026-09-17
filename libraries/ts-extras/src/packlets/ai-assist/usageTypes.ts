@@ -83,9 +83,18 @@ export interface IAiCompletionUsage {
   /** Input tokens served from cache. */
   readonly cachedInputTokens?: number;
   /**
-   * Input tokens written to cache. Meaningful only when `reports` is
-   * `'reads-and-writes'` — structurally unfillable on a `'reads'` response, and
-   * never defaulted to `0` there.
+   * Input tokens written to cache.
+   *
+   * @remarks
+   * Two absence cases, disambiguated by `reports` — never by a `0` this field
+   * itself carries:
+   * - **`reports: 'reads-and-writes'` and this field absent** — the wire
+   *   genuinely reported zero tokens written. Treat absence as `0`, not as
+   *   unknown; this is the actionable "the breakpoint did not take" signal.
+   * - **`reports: 'reads'` and this field absent** — the API cannot report
+   *   writes on this route at all (structurally unfillable, e.g. OpenAI/xAI
+   *   Chat Completions). Never defaulted to `0` here — that would fabricate a
+   *   fact the wire never stated.
    */
   readonly cacheWriteTokens?: number;
   /** Generated output tokens. */

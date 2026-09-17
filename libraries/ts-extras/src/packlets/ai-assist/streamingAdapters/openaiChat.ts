@@ -27,7 +27,7 @@
  */
 
 import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
-import { type JsonObject } from '@fgv/ts-json-base';
+import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 
 import { buildMessages, buildOpenAiChatUserContent } from '../chatRequestBuilders';
 import { bearerAuthHeader } from '../endpoint';
@@ -35,7 +35,7 @@ import { AiPrompt, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { normalizeOpenAiChatUsage } from '../usageNormalization';
-import { IStreamApiConfig, jsonObjectValidator, openSseConnection, validateEventPayload } from './common';
+import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
 
 // ============================================================================
 // Event payload shapes
@@ -65,11 +65,17 @@ interface IOpenAiChatStreamChoice {
 interface IOpenAiChatStreamChunk {
   readonly choices: ReadonlyArray<IOpenAiChatStreamChoice>;
   /**
-   * Present only on the terminal chunk, and only when the request carries
-   * `stream_options.include_usage: true` — without it OpenAI Chat Completions
-   * never emits a usage block while streaming, unlike every other adapter here.
+   * Only present at all when the request carries
+   * `stream_options.include_usage: true` (see `callOpenAiChatStream`) — without
+   * it OpenAI Chat Completions never emits a usage block while streaming,
+   * unlike every other adapter here. When
+   * present, the wire sends literal `null` on every chunk except the terminal
+   * one, which carries the populated object; `null` must validate (not fail the
+   * whole chunk) or every intermediate chunk — including its `delta.content` and
+   * `finish_reason` — is dropped along with it.
    */
-  readonly usage?: JsonObject;
+  // eslint-disable-next-line @rushstack/no-new-null
+  readonly usage?: JsonObject | null;
 }
 
 // eslint-disable-next-line @rushstack/no-new-null
@@ -77,6 +83,13 @@ const stringOrNull: Validator<string | null> = Validators.isA<string | null>(
   'string-or-null',
   // eslint-disable-next-line @rushstack/no-new-null
   (v: unknown): v is string | null => typeof v === 'string' || v === null
+);
+
+// eslint-disable-next-line @rushstack/no-new-null
+const jsonObjectOrNull: Validator<JsonObject | null> = Validators.isA<JsonObject | null>(
+  'JsonObject-or-null',
+  // eslint-disable-next-line @rushstack/no-new-null
+  (v: unknown): v is JsonObject | null => v === null || isJsonObject(v)
 );
 
 const openAiChatStreamChoice: Validator<IOpenAiChatStreamChoice> = Validators.object<IOpenAiChatStreamChoice>(
@@ -90,13 +103,10 @@ const openAiChatStreamChoice: Validator<IOpenAiChatStreamChoice> = Validators.ob
   { options: { optionalFields: ['delta', 'finish_reason'] } }
 );
 
-const openAiChatStreamChunk: Validator<IOpenAiChatStreamChunk> = Validators.object<IOpenAiChatStreamChunk>(
-  {
-    choices: Validators.arrayOf(openAiChatStreamChoice),
-    usage: jsonObjectValidator.optional()
-  },
-  { options: { optionalFields: ['usage'] } }
-);
+const openAiChatStreamChunk: Validator<IOpenAiChatStreamChunk> = Validators.object<IOpenAiChatStreamChunk>({
+  choices: Validators.arrayOf(openAiChatStreamChoice),
+  usage: jsonObjectOrNull.optional()
+});
 
 // ============================================================================
 // Stream translator
@@ -123,7 +133,9 @@ async function* translateOpenAiChatStream(response: Response): AsyncGenerator<IA
         continue;
       }
       const chunk = validateEventPayload(json, openAiChatStreamChunk);
-      if (chunk?.usage !== undefined) {
+      // Every intermediate chunk carries literal `null` once `stream_options.include_usage`
+      // is set; only the terminal chunk's populated object should update the accumulator.
+      if (chunk?.usage !== undefined && chunk.usage !== null) {
         usageRaw = chunk.usage;
       }
       /* c8 ignore next 1 - defensive: chunk?.choices optional chain unreachable after validation */

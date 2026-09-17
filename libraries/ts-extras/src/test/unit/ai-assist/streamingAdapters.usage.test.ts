@@ -130,8 +130,11 @@ describe('streaming adapters — IAiStreamDone.usage', () => {
       // Malformed: missing the required `choices` key entirely, so validation fails and the
       // accumulator is left untouched.
       'data: {}\n\n',
-      `data: ${JSON.stringify({ choices: [{ delta: { content: 'hi' } }] })}\n\n`,
-      `data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: 'stop' }] })}\n\n`,
+      // Real wire behavior once stream_options.include_usage is set: every chunk carries a
+      // `usage` key, literal `null` on all but the terminal one. A regression test on its own —
+      // if the validator ever rejects `null` again, this chunk's delta/finish_reason are lost too.
+      `data: ${JSON.stringify({ choices: [{ delta: { content: 'hi' } }], usage: null })}\n\n`,
+      `data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: 'stop' }], usage: null })}\n\n`,
       `data: ${JSON.stringify({
         choices: [],
         usage: { prompt_tokens: 100, completion_tokens: 20, prompt_tokens_details: { cached_tokens: 40 } }
@@ -152,6 +155,9 @@ describe('streaming adapters — IAiStreamDone.usage', () => {
     const done = collected.find((e) => e.type === 'done');
     expect(done?.type).toBe('done');
     if (done?.type !== 'done') return;
+    // The null-bearing chunks must not be dropped: text and finish_reason survive them.
+    expect(done.fullText).toBe('hi');
+    expect(done.truncated).toBe(false);
     expect(done.usage).toEqual({
       reports: 'reads',
       uncachedInputTokens: 60,

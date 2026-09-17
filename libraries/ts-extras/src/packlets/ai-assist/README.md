@@ -321,15 +321,16 @@ say, and the field is never present at all. There is no `'none'` member — "not
 reported at all" is already `usage` itself being `undefined`, so check for that rather
 than for a `reports` value.
 
-Anthropic Messages and the OpenAI/xAI Responses API report `'reads-and-writes'`; OpenAI/xAI
-Chat Completions and Gemini `generateContent` report `'reads'` only — Chat Completions has
-no `cache_write_tokens` field on any provider reached through it, and Gemini's writes
-happen out-of-band via the explicit `cachedContents` resource (out of scope here). The
-OpenAI/xAI Responses route is one shared code path that answers differently per
-provider: `reports` is derived from whether the wire response's
+Anthropic Messages always reports `'reads-and-writes'`; OpenAI/xAI Chat Completions and
+Gemini `generateContent` always report `'reads'` only — Chat Completions has no
+`cache_write_tokens` field on any provider reached through it, and Gemini's writes happen
+out-of-band via the explicit `cachedContents` resource (out of scope here). The OpenAI/xAI
+Responses route is one shared code path whose answer depends on which provider is on the
+other end: `reports` is derived from whether the wire response's
 `input_tokens_details.cache_write_tokens` is **present** (OpenAI always sends it, even as
-`0`; xAI never does), not from provider identity — so an unverified future
-`apiFormat: 'openai'` provider on that route gets the right answer automatically.
+`0`, so that route is `'reads-and-writes'`; xAI never sends it, so that route is `'reads'`),
+not from provider identity — so an unverified future `apiFormat: 'openai'` provider on that
+route gets the right answer automatically.
 
 Every derived field (`uncachedInputTokens`, `totalInputTokens`) stays `undefined` when an
 input it needs is itself unknown, rather than assuming the missing figure is zero — most

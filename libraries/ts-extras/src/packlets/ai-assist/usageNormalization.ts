@@ -51,19 +51,12 @@ interface IAnthropicRawUsage {
   readonly cache_read_input_tokens?: number;
 }
 
-const anthropicRawUsage: Validator<IAnthropicRawUsage> = Validators.object<IAnthropicRawUsage>(
-  {
-    input_tokens: Validators.number,
-    output_tokens: Validators.number.optional(),
-    cache_creation_input_tokens: Validators.number.optional(),
-    cache_read_input_tokens: Validators.number.optional()
-  },
-  {
-    options: {
-      optionalFields: ['output_tokens', 'cache_creation_input_tokens', 'cache_read_input_tokens']
-    }
-  }
-);
+const anthropicRawUsage: Validator<IAnthropicRawUsage> = Validators.object<IAnthropicRawUsage>({
+  input_tokens: Validators.number,
+  output_tokens: Validators.number.optional(),
+  cache_creation_input_tokens: Validators.number.optional(),
+  cache_read_input_tokens: Validators.number.optional()
+});
 
 /**
  * Normalizes an Anthropic Messages API `usage` block. Anthropic always
@@ -107,10 +100,7 @@ interface IOpenAiChatPromptTokensDetails {
 }
 
 const openAiChatPromptTokensDetails: Validator<IOpenAiChatPromptTokensDetails> =
-  Validators.object<IOpenAiChatPromptTokensDetails>(
-    { cached_tokens: Validators.number.optional() },
-    { options: { optionalFields: ['cached_tokens'] } }
-  );
+  Validators.object<IOpenAiChatPromptTokensDetails>({ cached_tokens: Validators.number.optional() });
 
 /** @internal */
 interface IOpenAiChatRawUsage {
@@ -119,14 +109,11 @@ interface IOpenAiChatRawUsage {
   readonly prompt_tokens_details?: IOpenAiChatPromptTokensDetails;
 }
 
-const openAiChatRawUsage: Validator<IOpenAiChatRawUsage> = Validators.object<IOpenAiChatRawUsage>(
-  {
-    prompt_tokens: Validators.number.optional(),
-    completion_tokens: Validators.number.optional(),
-    prompt_tokens_details: openAiChatPromptTokensDetails.optional()
-  },
-  { options: { optionalFields: ['prompt_tokens', 'completion_tokens', 'prompt_tokens_details'] } }
-);
+const openAiChatRawUsage: Validator<IOpenAiChatRawUsage> = Validators.object<IOpenAiChatRawUsage>({
+  prompt_tokens: Validators.number.optional(),
+  completion_tokens: Validators.number.optional(),
+  prompt_tokens_details: openAiChatPromptTokensDetails.optional()
+});
 
 /**
  * Normalizes an OpenAI/xAI Chat Completions `usage` block. `reports` is
@@ -177,13 +164,10 @@ interface IOpenAiResponsesInputTokensDetails {
 }
 
 const openAiResponsesInputTokensDetails: Validator<IOpenAiResponsesInputTokensDetails> =
-  Validators.object<IOpenAiResponsesInputTokensDetails>(
-    {
-      cached_tokens: Validators.number.optional(),
-      cache_write_tokens: Validators.number.optional()
-    },
-    { options: { optionalFields: ['cached_tokens', 'cache_write_tokens'] } }
-  );
+  Validators.object<IOpenAiResponsesInputTokensDetails>({
+    cached_tokens: Validators.number.optional(),
+    cache_write_tokens: Validators.number.optional()
+  });
 
 /** @internal */
 interface IOpenAiResponsesRawUsage {
@@ -193,14 +177,11 @@ interface IOpenAiResponsesRawUsage {
 }
 
 const openAiResponsesRawUsage: Validator<IOpenAiResponsesRawUsage> =
-  Validators.object<IOpenAiResponsesRawUsage>(
-    {
-      input_tokens: Validators.number.optional(),
-      output_tokens: Validators.number.optional(),
-      input_tokens_details: openAiResponsesInputTokensDetails.optional()
-    },
-    { options: { optionalFields: ['input_tokens', 'output_tokens', 'input_tokens_details'] } }
-  );
+  Validators.object<IOpenAiResponsesRawUsage>({
+    input_tokens: Validators.number.optional(),
+    output_tokens: Validators.number.optional(),
+    input_tokens_details: openAiResponsesInputTokensDetails.optional()
+  });
 
 /**
  * Normalizes an OpenAI/xAI Responses API `usage` block. This route is shared
@@ -252,14 +233,11 @@ interface IGeminiRawUsage {
   readonly cachedContentTokenCount?: number;
 }
 
-const geminiRawUsage: Validator<IGeminiRawUsage> = Validators.object<IGeminiRawUsage>(
-  {
-    promptTokenCount: Validators.number.optional(),
-    candidatesTokenCount: Validators.number.optional(),
-    cachedContentTokenCount: Validators.number.optional()
-  },
-  { options: { optionalFields: ['promptTokenCount', 'candidatesTokenCount', 'cachedContentTokenCount'] } }
-);
+const geminiRawUsage: Validator<IGeminiRawUsage> = Validators.object<IGeminiRawUsage>({
+  promptTokenCount: Validators.number.optional(),
+  candidatesTokenCount: Validators.number.optional(),
+  cachedContentTokenCount: Validators.number.optional()
+});
 
 /**
  * Normalizes a Gemini `usageMetadata` block. `reports` is unconditionally

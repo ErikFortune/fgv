@@ -181,14 +181,11 @@ const responsesCompletedPayload: Validator<IResponsesCompletedPayload> =
       status?: string;
       incomplete_details?: { reason?: string };
       usage?: JsonObject;
-    }>(
-      {
-        status: Validators.string.optional(),
-        incomplete_details: responsesIncompleteDetails.optional(),
-        usage: jsonObjectValidator.optional()
-      },
-      { options: { optionalFields: ['status', 'incomplete_details', 'usage'] } }
-    )
+    }>({
+      status: Validators.string.optional(),
+      incomplete_details: responsesIncompleteDetails.optional(),
+      usage: jsonObjectValidator.optional()
+    })
   });
 
 const responsesErrorInner: Validator<{ message?: string }> = Validators.object<{ message?: string }>(

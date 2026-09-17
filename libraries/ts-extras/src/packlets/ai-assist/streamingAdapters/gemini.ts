@@ -137,13 +137,10 @@ const geminiStreamCandidate: Validator<IGeminiStreamCandidate> = Validators.obje
   { options: { optionalFields: ['content', 'finishReason'] } }
 );
 
-const geminiStreamChunk: Validator<IGeminiStreamChunk> = Validators.object<IGeminiStreamChunk>(
-  {
-    candidates: Validators.arrayOf(geminiStreamCandidate),
-    usageMetadata: jsonObjectValidator.optional()
-  },
-  { options: { optionalFields: ['usageMetadata'] } }
-);
+const geminiStreamChunk: Validator<IGeminiStreamChunk> = Validators.object<IGeminiStreamChunk>({
+  candidates: Validators.arrayOf(geminiStreamCandidate),
+  usageMetadata: jsonObjectValidator.optional()
+});
 
 // ============================================================================
 // Stream translator

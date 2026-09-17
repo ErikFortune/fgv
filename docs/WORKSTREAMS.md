@@ -392,7 +392,7 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 
 ### `ai-assist-prompt-caching` 🟢
 
-**Status:** 🟢 phases A and B complete; **all five open questions closed**; phase C is three slices — **C1 observability implemented** (not yet PR'd), C2 diagnostics + vocabulary and C3 emit (gated on both) not started. Design at `.ai/tasks/active/ai-assist-prompt-caching/design.md`; C1 checkpoint in `.ai/tasks/active/ai-assist-prompt-caching/state.md`.
+**Status:** 🟢 phases A and B complete; **all five open questions closed**; phase C is three slices — **C1 observability implemented, [PR #668](https://github.com/ErikFortune/fgv/pull/668) open**, C2 diagnostics + vocabulary and C3 emit (gated on both) not started. Design at `.ai/tasks/active/ai-assist-prompt-caching/design.md`; C1 checkpoint in `.ai/tasks/active/ai-assist-prompt-caching/state.md`.
 **Branch base:** `release` HEAD (design/research on `claude/ai-assist-prompt-caching`; C1 on `claude/ai-assist-cache-observability`)
 **Package surface (expected):** `@fgv/ts-extras/ai-assist`, `@fgv/ts-prompt-assist` — exact surface is a phase-A/B output, not an input
 

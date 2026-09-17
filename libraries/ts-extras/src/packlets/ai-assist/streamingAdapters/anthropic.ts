@@ -263,20 +263,14 @@ const anthropicMessageDeltaInner: Validator<{ stop_reason?: string }> = Validato
 }>({ stop_reason: Validators.string.optional() }, { options: { optionalFields: ['stop_reason'] } });
 
 const anthropicMessageDeltaPayload: Validator<IAnthropicMessageDeltaPayload> =
-  Validators.object<IAnthropicMessageDeltaPayload>(
-    {
-      delta: anthropicMessageDeltaInner,
-      usage: jsonObjectValidator.optional()
-    },
-    { options: { optionalFields: ['usage'] } }
-  );
+  Validators.object<IAnthropicMessageDeltaPayload>({
+    delta: anthropicMessageDeltaInner,
+    usage: jsonObjectValidator.optional()
+  });
 
 const anthropicMessageStartPayload: Validator<IAnthropicMessageStartPayload> =
   Validators.object<IAnthropicMessageStartPayload>({
-    message: Validators.object<{ usage?: JsonObject }>(
-      { usage: jsonObjectValidator.optional() },
-      { options: { optionalFields: ['usage'] } }
-    )
+    message: Validators.object<{ usage?: JsonObject }>({ usage: jsonObjectValidator.optional() })
   });
 
 const anthropicErrorInner: Validator<{ message?: string }> = Validators.object<{ message?: string }>(
