@@ -81,8 +81,13 @@ Resolved instead by **reading the wire**: OpenAI's Responses `usage.input_tokens
 has `cache_write_tokens` **required** (research §1.5 — present even at `0`); xAI's never
 sends it (confirmed live, design.md §12 OQ-1). So `reports` is derived from whether
 `cache_write_tokens` is present in the actual response, not from provider identity — gets
-OpenAI and xAI right today, and gets a third `apiFormat: 'openai'` provider on this route
-right automatically without a registry entry.
+OpenAI and xAI right today. **Round 4 correction (Copilot):** this field-presence read only
+runs once a descriptor clears `AiAssist.supportsCacheUsageReporting` (`'openai'`/`'xai-grok'`
+only) — the four usage-attaching call sites are shared by every `apiFormat: 'openai'`
+descriptor (Groq, Mistral, Ollama, `openai-compat` too), none of which have any
+cache-reporting concept, so an unconfirmed descriptor (including a third provider added to
+this route later) gets `usage: undefined`, not a guessed answer; extending the gate to a
+newly-confirmed provider is a one-line addition to that function.
 
 **R-c held to the letter everywhere**, including one place the design doesn't spell out:
 Gemini's `uncachedInputTokens` is computed as `promptTokenCount - cachedContentTokenCount`
@@ -116,8 +121,10 @@ wiring, tests, gates) is done and green, but this is the one piece that checks t
 design's actual claim rather
 than the code's internal consistency.
 
-**Gates run and green:** `rushx build`/`lint`/`test` in `@fgv/ts-extras` (2829/2829 tests,
-100% statements/branches/functions/lines), `rushx fixlint` (no changes needed),
+**Gates run and green:** `rushx build`/`lint`/`test` in `@fgv/ts-extras` (2836/2836 tests as
+of round 5's regression-test additions — 2829/2829 at the original open, growing with each
+Copilot round's fixes; see the round-by-round log below for the count at each point),
+100% statements/branches/functions/lines, `rushx fixlint` (no changes needed),
 repo-wide `rush rebuild` (36/36 packages, zero warnings). Repo-wide `rush test` — required
 because C1 widens what `IAiCompletionResponse`/`IAiStreamDone` *carry* with no signature
 moved (`CODING_STANDARDS.md`'s "a rebuild cannot see this class" rule) — was run; see the
