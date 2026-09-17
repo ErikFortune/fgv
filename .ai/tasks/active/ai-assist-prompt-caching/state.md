@@ -292,3 +292,33 @@ rounds now, approaching but still short of the 10-round cap. Worth flagging per 
 repo's diminishing-returns guidance: round 6 was lower-severity than 1-5 (doc
 accuracy, not a runtime defect), which is the kind of signal that should sharpen
 scrutiny of round 7 rather than automatically justify round 8.
+
+**Copilot round 7 — same class as round 6: doc drift from the fix that closed the
+previous round, not a new runtime defect.** Real, same caveat as round 6's entry:
+the "extending the gate is a one-line addition to `supportsCacheUsageReporting`"
+sentence, added while fixing rounds 4-6's doc drift, was itself inaccurate —
+`supportsCacheUsageReporting` and `supportsStreamUsageOption` (round 2) are two
+independent gates, and a provider added only to the former still has no
+Chat-Completions-*streaming* usage (that path also decides whether to send the
+`stream_options` request field, a separate risk-tolerance question from whether the
+provider's usage numbers are trustworthy). Corrected `README.md` and this file to
+name both gates and state when each applies. All fixes pushed in `6cbab180d`; the PR
+description was also rewritten in the same pass to cover rounds 5-7 (it had drifted
+to "round 5 requested" / a stale test count while rounds 5 and 6 landed without a
+description update — the same class of doc-lag, caught by round 7's second finding).
+Docs-only change; gates re-run were `verify-capability-docs.mjs` (0 failed).
+Round-7's two inline threads replied to and resolved; the suppressed README finding
+replied to via a top-level comment.
+
+**Stopping the Copilot loop after round 7 on diminishing returns, not requesting
+round 8.** Per CODING_STANDARDS.md's "round count is not the signal — substantive
+value per round is": rounds 1-5 were all runtime-correctness findings (a rejected
+`usage: null` payload dropping real response data, three separate provider-sharing
+gaps in the new cache-reporting surface, one incomplete threading of round 4's own
+fix). Rounds 6 and 7 were both pure documentation drift — and specifically drift
+*this PR's own prior-round fixes caused*, not anything in the original diff. Two
+consecutive rounds with no runtime/design finding, only wording precision on a
+capability surface that itself hasn't changed since round 5, is the profile the
+repo's guidance describes as nitpick territory regardless of round count. The
+underlying code has been stable (no fixes) since round 5's `7cf03858c`; rounds 6-7
+only ever touched the docs describing it.
