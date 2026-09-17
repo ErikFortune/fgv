@@ -227,8 +227,9 @@ proving an *unprompted* usage chunk from a non-cache-reporting descriptor is sti
 dropped. All four reach the bug through `AiAssist.callProviderCompletion`/
 `callProviderCompletionStream` with real routing (Groq can reach the Responses path
 today — nothing currently validates `tools` against `descriptor.supportedTools` before
-routing), not synthetic direct calls. All fixes pushed in `<pending>`; full suite
+routing), not synthetic direct calls. All fixes pushed in `d67931a39`; full suite
 re-verified (2835/2835, 100% coverage, clean lint, `rushx build` clean including
 API Extractor's `etc/ts-extras.api.md` regen for the new `supportsCacheUsageReporting`
-export). Round-4 threads to be replied to and resolved; round 5 to be requested — four
-consecutive substantive rounds now, still short of the 10-round cap.
+export). Round-4 finding was posted as suppressed (non-inline) comments, replied to via a
+top-level PR comment; round 5 requested — four consecutive substantive rounds now, still
+short of the 10-round cap, continuing per "round count is not the signal."
