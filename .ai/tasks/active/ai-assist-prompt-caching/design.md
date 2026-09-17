@@ -609,6 +609,15 @@ export interface IPromptCacheFinding {
 
 ### The checks
 
+> **Express every cache-effectiveness check as a *ratio*, never as a raw count.** The
+> 2026-09-17 xAI run (OQ-1) reports **128 cached tokens on a genuinely cold call** on both
+> routes, against a prefix the provider had never seen — fixed scaffolding, not our content.
+> So `cachedTokens > 0` is true on effectively every request to that provider and means
+> nothing: 128/4822 is 2.7%, 4800/4822 is 99.5%, and only the second is a working cache. Any
+> check phrased on the raw count reports success unconditionally. Where a provider's floor is
+> unknown, **R-c** applies — report the ratio and decline to judge, rather than assuming the
+> floor is zero.
+
 **D1 — multi-scope binding (refutation, downgrades).** A slot claiming better than
 `'per-request'` whose winning binding is one of **≥2** bindings for that slot across the
 resolve's `chain`. `bindingMerger.ts` already walks every scope's `_bindings.yaml` and
@@ -732,7 +741,7 @@ slice.
 
 ## 12. Open questions for triage
 
-**OQ-1 — xAI's OpenAI-compat cache surface. — ✅ RESOLVED for §8 2026-09-17; one secondary question left open.**
+**OQ-1 — xAI's OpenAI-compat cache surface. — ✅ CLOSED 2026-09-17.**
 
 F3 establishes that we reach xAI at `https://api.x.ai/v1` with `apiFormat: 'openai'`, and that
 a tools-bearing request routes to `/responses`. Unknown: whether that endpoint exists on xAI,
@@ -787,12 +796,42 @@ Two further defects surfaced in the same run, and both are now regression-tested
 - The no-delta branch claimed "no cache hit observed", which is wrong for exactly that reason.
   It now says so and points at the cached-token line instead.
 
-**Still open:** why Chat Completions cached only 128→192 of 4462 tokens while Responses cached
-4416. On the corrected probe those are independent measurements; the first run's numbers cannot
-distinguish a genuinely weaker Chat Completions cache from contamination. **Re-run needed**, and
-note a re-run inside the cache TTL still sees a warm "cold" call — change `FILLER_PARAGRAPHS` or
-wait out the TTL for a truly cold reading. This does not block C1: the field names and the
-`reports` level are settled, and those are what §8 needs.
+### Corrected probe re-run, 2026-09-17 — the remaining question closes, and one new fact
+
+With per-route salting the two routes behave **identically**, which retires the "Chat
+Completions caches weakly" hypothesis the first run suggested. That was contamination plus
+write-propagation lag, not a property of the route.
+
+| route | input tokens | cached cold | cached warm | cost ticks cold → warm |
+|---|---:|---:|---:|---|
+| Chat Completions | 4822 | 128 | **4800** (99.5%) | 62,181,000 → 12,675,000 |
+| Responses | 4582 | 128 | **4544** (99.2%) | 60,981,000 → 12,863,000 |
+
+**Both routes cache a stable prefix effectively.** `reports: 'reads'` on both stands — still no
+write field on either — and the field names are confirmed a second time.
+
+#### The 128-token cached floor — a trap for the C2 diagnostics
+
+**Both routes report exactly 128 cached tokens on a genuinely cold call**, against a prefix
+freshly salted so neither had ever seen it. Whatever those 128 tokens are, they are **not our
+prefix** — most plausibly fixed chat-template scaffolding shared by every request to the model,
+though the cause is `[unverified]` and the design does not depend on it.
+
+The consequence is concrete and belongs in C2: **`cachedTokens > 0` is not evidence that your
+prefix cached.** A diagnostic phrased that way reports success on every request to this
+provider, including ones that cached nothing of yours. The honest signal is cached tokens as a
+**fraction of input tokens**, or materially above a per-provider floor — 128/4822 is 2.7% and
+means nothing; 4800/4822 is 99.5% and means everything. §9's checks must be written in the
+ratio, not the raw count, and R-c applies: where the floor is unknown, say so rather than
+assuming zero.
+
+#### Cost: indicative, not measured
+
+Cost fell ~4.9× on Chat Completions and ~4.7× on Responses for near-identical input. That is
+strong directional evidence the cached-input discount is large, and it is **not a measurement**:
+output tokens varied between the two calls (reasoning 129 → 111, and 202 → 132), so the drop is
+not attributable to caching alone. Treat it as motivation for C1, not as a discount rate; the
+rate stays `[unverified]` per OQ-2.
 
 **OQ-2 — is a second research pass a gate on C3?** Every OpenAI/Gemini/xAI threshold is
 `[unverified]` because the prose docs are egress-blocked. *Recommendation: not a gate.*
