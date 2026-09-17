@@ -331,11 +331,19 @@ Gemini `generateContent` always report `'reads'` only — Chat Completions has n
 `cache_write_tokens` field on any provider reached through it, and Gemini's writes happen
 out-of-band via the explicit `cachedContents` resource (out of scope here). The OpenAI/xAI
 Responses route is one shared code path whose answer depends on which provider is on the
-other end: `reports` is derived from whether the wire response's
-`input_tokens_details.cache_write_tokens` is **present** (OpenAI always sends it, even as
-`0`, so that route is `'reads-and-writes'`; xAI never sends it, so that route is `'reads'`),
-not from provider identity — so an unverified future `apiFormat: 'openai'` provider on that
-route gets the right answer automatically.
+other end: once a descriptor is confirmed to carry cache-relevant usage (see below),
+`reports` is derived from whether the wire response's `input_tokens_details.cache_write_tokens`
+is **present** (OpenAI always sends it, even as `0`, so that route is `'reads-and-writes'`;
+xAI never sends it, so that route is `'reads'`), not from provider identity.
+
+All four call sites above (Chat Completions and Responses, streaming and non-streaming)
+are shared by every `apiFormat: 'openai'` descriptor — Groq, Mistral, Ollama, and
+self-hosted `openai-compat`, not just OpenAI and xAI Grok. Only the latter two are
+confirmed to report cache-relevant `usage`; `AiAssist.supportsCacheUsageReporting(descriptor)`
+gates all four call sites on that before any normalization runs, so an unconfirmed
+`apiFormat: 'openai'` descriptor — including a future one — gets `usage: undefined`
+rather than a guess derived from whatever ordinary usage shape its wire happens to send.
+Extending the gate to a newly-confirmed provider is a one-line addition to that function.
 
 Every derived field (`uncachedInputTokens`, `totalInputTokens`) stays `undefined` when an
 input it needs is itself unknown, rather than assuming the missing figure is zero — most
