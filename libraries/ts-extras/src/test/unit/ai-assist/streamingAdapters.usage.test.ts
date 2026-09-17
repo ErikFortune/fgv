@@ -273,6 +273,41 @@ describe('streaming adapters — IAiStreamDone.usage', () => {
     expect(done.usage?.cacheWriteTokens).toBeUndefined();
   });
 
+  test('OpenAI Responses: response.usage: null does not drop status/incomplete_details', async () => {
+    // response.usage is legitimately `null` (not just absent) when a provider has no usage
+    // block for this response. A JsonObject-only validator would reject the whole
+    // response.completed payload over this one field, losing status/incomplete_details along
+    // with it — an incomplete response would then read back as truncated: false.
+    const events = [
+      `event: response.output_text.delta\ndata: ${JSON.stringify({ delta: 'hi' })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({
+        response: {
+          status: 'incomplete',
+          incomplete_details: { reason: 'max_output_tokens' },
+          usage: null
+        }
+      })}\n\n`
+    ];
+    mockSseResponse(events);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      tools: [{ type: 'web_search' }]
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const collected = await collect(result.value);
+    const done = collected.find((e) => e.type === 'done');
+    expect(done?.type).toBe('done');
+    if (done?.type !== 'done') return;
+    expect(done.truncated).toBe(true);
+    expect(done.incompleteReason).toBe('max_output_tokens');
+    expect(done.usage).toBeUndefined();
+  });
+
   test('Gemini: normalizes the last usageMetadata chunk, subtracting cachedContentTokenCount', async () => {
     const events = [
       // Malformed: missing the required `candidates` key entirely, so validation fails and

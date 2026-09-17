@@ -50,6 +50,24 @@ export const jsonObjectValidator: Validator<JsonObject> = Validators.isA<JsonObj
 );
 
 /**
+ * Validates that a value is a `JsonObject` or literal `null` — some providers'
+ * `usage` field is legitimately `null` rather than absent (OpenAI Chat
+ * Completions on every intermediate `stream_options.include_usage` chunk; the
+ * Responses API's `response.usage` when no usage block applies). Using
+ * {@link jsonObjectValidator} alone on such a field fails the *entire*
+ * enclosing payload the moment the wire sends `null`, which is how a real bug
+ * surfaced in review on PR #668 (Chat Completions dropping `delta.content` and
+ * `finish_reason` along with the rejected `usage: null` chunk).
+ * @internal
+ */
+// eslint-disable-next-line @rushstack/no-new-null
+export const jsonObjectOrNullValidator: Validator<JsonObject | null> = Validators.isA<JsonObject | null>(
+  'JsonObject-or-null',
+  // eslint-disable-next-line @rushstack/no-new-null
+  (v): v is JsonObject | null => v === null || isJsonObject(v)
+);
+
+/**
  * Parameters for a streaming completion request. Structurally identical to
  * the non-streaming `IProviderCompletionParams`; kept as its own interface
  * so callers can be explicit about which path they're invoking.

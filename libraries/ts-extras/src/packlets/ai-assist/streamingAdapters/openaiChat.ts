@@ -27,7 +27,7 @@
  */
 
 import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
-import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
+import { type JsonObject } from '@fgv/ts-json-base';
 
 import { buildMessages, buildOpenAiChatUserContent } from '../chatRequestBuilders';
 import { bearerAuthHeader } from '../endpoint';
@@ -35,7 +35,12 @@ import { AiPrompt, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { normalizeOpenAiChatUsage } from '../usageNormalization';
-import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
+import {
+  IStreamApiConfig,
+  jsonObjectOrNullValidator,
+  openSseConnection,
+  validateEventPayload
+} from './common';
 
 // ============================================================================
 // Event payload shapes
@@ -85,13 +90,6 @@ const stringOrNull: Validator<string | null> = Validators.isA<string | null>(
   (v: unknown): v is string | null => typeof v === 'string' || v === null
 );
 
-// eslint-disable-next-line @rushstack/no-new-null
-const jsonObjectOrNull: Validator<JsonObject | null> = Validators.isA<JsonObject | null>(
-  'JsonObject-or-null',
-  // eslint-disable-next-line @rushstack/no-new-null
-  (v: unknown): v is JsonObject | null => v === null || isJsonObject(v)
-);
-
 const openAiChatStreamChoice: Validator<IOpenAiChatStreamChoice> = Validators.object<IOpenAiChatStreamChoice>(
   {
     delta: Validators.object<{ content?: string }>(
@@ -105,7 +103,7 @@ const openAiChatStreamChoice: Validator<IOpenAiChatStreamChoice> = Validators.ob
 
 const openAiChatStreamChunk: Validator<IOpenAiChatStreamChunk> = Validators.object<IOpenAiChatStreamChunk>({
   choices: Validators.arrayOf(openAiChatStreamChoice),
-  usage: jsonObjectOrNull.optional()
+  usage: jsonObjectOrNullValidator.optional()
 });
 
 // ============================================================================

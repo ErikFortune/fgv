@@ -44,7 +44,7 @@ import {
   IStreamApiConfig,
   UNRECOGNIZED_EVENT_WARN_TAG,
   formatUnrecognizedEventPayloadPreview,
-  jsonObjectValidator,
+  jsonObjectOrNullValidator,
   openSseConnection,
   validateEventPayload
 } from './common';
@@ -123,7 +123,13 @@ interface IResponsesCompletedPayload {
   readonly response: {
     readonly status?: string;
     readonly incomplete_details?: { readonly reason?: string };
-    readonly usage?: JsonObject;
+    /**
+     * `null` when the provider has no usage block for this response (not just
+     * absent) — must validate, or the whole `response.completed` payload is
+     * rejected and `status`/`incomplete_details` are lost along with it.
+     */
+    // eslint-disable-next-line @rushstack/no-new-null
+    readonly usage?: JsonObject | null;
   };
 }
 
@@ -180,11 +186,12 @@ const responsesCompletedPayload: Validator<IResponsesCompletedPayload> =
     response: Validators.object<{
       status?: string;
       incomplete_details?: { reason?: string };
-      usage?: JsonObject;
+      // eslint-disable-next-line @rushstack/no-new-null
+      usage?: JsonObject | null;
     }>({
       status: Validators.string.optional(),
       incomplete_details: responsesIncompleteDetails.optional(),
-      usage: jsonObjectValidator.optional()
+      usage: jsonObjectOrNullValidator.optional()
     })
   });
 
@@ -406,7 +413,7 @@ async function* translateOpenAiResponsesStream(
           // event so a stray incomplete_details on a non-incomplete payload never leaks
           // through, and a later (defensive) completed event can't leave a stale reason.
           incompleteReason = truncated ? payload.response.incomplete_details?.reason : undefined;
-          usageRaw = payload.response.usage;
+          usageRaw = payload.response.usage ?? undefined;
         }
         completed = true;
         /* c8 ignore next 1 - defensive: eventName === 'error' alternative not exercised in tests */
