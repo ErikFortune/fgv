@@ -52,8 +52,7 @@ function makeAnthropicDescriptor(): IAiProviderDescriptor {
     supportedTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: false,
-    thinkingMode: 'optional'
+    acceptsImageInput: false
   };
 }
 

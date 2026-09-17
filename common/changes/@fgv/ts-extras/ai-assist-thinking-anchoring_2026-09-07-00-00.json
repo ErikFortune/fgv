@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "BREAKING: remove IAiProviderDescriptor.thinkingMode and the AiThinkingMode type — the field was required on every descriptor but gated nothing (real temperature/thinking compatibility switches on the provider id via providerDiscriminatorForId); every external descriptor construction site needs a one-line delete. Add 'none' to IThinkingConfig.effort as the cross-provider spelling for 'thinking off' — maps to effort:'none' (OpenAI, xAI), thinkingBudget:0 (Gemini), and omitting the thinking wire param entirely (Anthropic, which has no off value of its own); 'none' also re-enables temperature on every provider.",
+      "type": "major"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

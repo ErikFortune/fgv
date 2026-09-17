@@ -232,16 +232,22 @@ const responsesApiResponse: Validator<IResponsesApiResponse> = Validators.object
 
 /** @internal */
 interface IGeminiPart {
-  text: string;
+  // Optional: a part is not always a text part. Reasoning parts carry `thought`, and tool parts
+  // carry `functionCall`; both arrive with no `text` at all.
+  text?: string;
 }
 /** @internal */
 interface IGeminiContent {
-  parts: IGeminiPart[];
+  parts?: IGeminiPart[];
 }
 /** @internal */
 interface IGeminiCandidate {
-  content: IGeminiContent;
-  finishReason: string;
+  // Every field here is optional because a candidate that produced nothing still comes back —
+  // as `content: {}`, or with no `content` key. Requiring them turned "the model declined, and
+  // here is why" into an opaque validation error naming a field of an empty object.
+  content?: IGeminiContent;
+  finishReason?: string;
+  finishMessage?: string;
 }
 /** @internal */
 interface IGeminiResponse {
@@ -249,15 +255,23 @@ interface IGeminiResponse {
 }
 
 const geminiPart: Validator<IGeminiPart> = Validators.object<IGeminiPart>({
-  text: Validators.string
+  text: Validators.string.optional()
 });
 const geminiContent: Validator<IGeminiContent> = Validators.object<IGeminiContent>({
-  parts: Validators.arrayOf(geminiPart).withConstraint((arr) => arr.length > 0)
+  // No non-empty constraint: `parts: []` is a shape Gemini actually returns, and rejecting it
+  // here reports a schema violation for what is really "the model produced no output".
+  parts: Validators.arrayOf(geminiPart).optional()
 });
 const geminiCandidate: Validator<IGeminiCandidate> = Validators.object<IGeminiCandidate>({
-  content: geminiContent,
-  finishReason: Validators.string
+  content: geminiContent.optional(),
+  finishReason: Validators.string.optional(),
+  finishMessage: Validators.string.optional()
 });
+
+// Terminal reasons that mean "the model finished normally", as distinct from a refusal. Kept in
+// step with the identical set in `imageGenerationClient.ts`; both exist so an empty response can
+// be reported as the decline it is rather than as an empty string or a parse error.
+const benignGeminiFinishReasons: ReadonlySet<string> = new Set(['STOP', 'MAX_TOKENS']);
 const geminiResponse: Validator<IGeminiResponse> = Validators.object<IGeminiResponse>({
   candidates: Validators.arrayOf(geminiCandidate).withConstraint((arr) => arr.length > 0)
 });
@@ -651,14 +665,28 @@ async function callGeminiCompletion(
     .withErrorFormat((msg) => `Gemini API response: ${msg}`)
     .onSuccess((response) => {
       const candidate = response.candidates[0];
+      // ALL parts, not `parts[0]`. Gemini may split one reply across several
+      // text parts, and reading only the first silently discards the rest —
+      // yielding a truncated document that often still parses, which is the
+      // worst way to be wrong. The streaming adapter has always concatenated
+      // (`fullText += part.text`); this path did not, so the same response gave
+      // different text depending on which one you called.
+      //
+      // `part.text ?? ''` rather than `part.text`: a reasoning or tool part contributes no text,
+      // and joining `undefined` would put the literal string "undefined" into the reply.
+      const content = candidate.content?.parts?.map((part) => part.text ?? '').join('') ?? '';
+      if (content.length === 0) {
+        // Nothing came back. If the candidate says why, say so — an empty string handed to a
+        // caller is indistinguishable from a model that legitimately replied with nothing, and
+        // sends them looking in the wrong place.
+        const reason = candidate.finishReason;
+        if (reason !== undefined && !benignGeminiFinishReasons.has(reason)) {
+          const suffix = candidate.finishMessage ? ` — ${candidate.finishMessage}` : '';
+          return fail(`Gemini completion declined: ${reason}${suffix}`);
+        }
+      }
       return succeed({
-        // ALL parts, not `parts[0]`. Gemini may split one reply across several
-        // text parts, and reading only the first silently discards the rest —
-        // yielding a truncated document that often still parses, which is the
-        // worst way to be wrong. The streaming adapter has always concatenated
-        // (`fullText += part.text`); this path did not, so the same response gave
-        // different text depending on which one you called.
-        content: candidate.content.parts.map((part) => part.text).join(''),
+        content,
         truncated: candidate.finishReason === 'MAX_TOKENS',
         structuredOutput: structured.enforcement
       });

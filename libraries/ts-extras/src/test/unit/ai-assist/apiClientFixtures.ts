@@ -53,7 +53,6 @@ export function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): 
     corsRestricted: true,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
-    thinkingMode: 'optional',
     ...overrides
   };
 }

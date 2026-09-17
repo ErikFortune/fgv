@@ -457,6 +457,38 @@ Current ai-assist adapters discard thinking / reasoning content by design — on
 
 **Reference:** 2026-06-04 conversation; PR #447 P1-1 + PR #449 thinking-wire-shape + PR #448 browser-export demonstrate the failure mode; L37 codification (PR #445) is the principle; `samples/testbed/src/scenarios/anthropicClientTools/` is the shape template.
 
+### Gate thinking requests on the per-model capability table
+
+`ai-assist-thinking-anchoring` deleted `IAiProviderDescriptor.thinkingMode` (a required
+per-provider field that gated nothing — `providerDiscriminatorForId` already switches on
+provider **id**, not on that field) and closed the effort-vocabulary hole by adding `'none'`.
+The obvious next move looked like reusing `AiModelCapability`'s `'thinking'` entry —
+already populated per provider via `DEFAULT_MODEL_CAPABILITY_CONFIG`'s RegExp-on-model-id
+rules, and already used for listing/filtering — to have `callProviderCompletion` /
+`callProviderCompletionStream` reject a thinking request up front when the resolved model's
+capability set lacks `'thinking'`.
+
+**Deliberately not done in that stream, and the reasoning is the point of this entry.**
+`DEFAULT_MODEL_CAPABILITY_CONFIG`'s own doc comment states its posture explicitly:
+"Patterns are intentionally narrow — false positives are worse than missing a model." That
+posture is correct for a **listing filter**: a model the patterns miss from a menu is merely
+absent, a one-time annoyance discoverable by browsing. It is wrong for a **call gate**: the
+same miss now rejects a request the provider would have accepted, for a real model a caller
+legitimately passed via `modelOverride` — turning a false negative in the capability table
+into a hard failure on the call path, potentially for a model the table's authors simply
+hadn't added a pattern for yet (new model releases routinely outpace the pattern list).
+
+Reusing the table for gating therefore isn't a line change — it needs a design pass on one of:
+splitting the table into a permissive listing view and a stricter (or explicitly
+unknown-means-allow) gating view; widening the patterns until false negatives are rare enough
+to gate on; or giving the gate an explicit escape hatch for `modelOverride` calls. Each of
+those is a real design decision with tradeoffs, not a "just wire it up" reuse.
+
+**Why deferred:** no consumer has asked for call-path rejection of unsupported thinking
+requests (the actual failure mode today — the provider's own API 400s — isn't silent
+corruption, matching the "provider-side request validation" entry above). Worth a
+design-triage-implement stream if that changes.
+
 ---
 
 ## Prompt observability for `@fgv/ts-prompt-assist`

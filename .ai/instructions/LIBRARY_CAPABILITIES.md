@@ -179,6 +179,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-09-07** — Thinking config loses a required provider field that gated nothing, and gains 'none' — the cross-provider spelling for off that… ([#667](https://github.com/ErikFortune/fgv/pull/667)) · `ts-extras`
 - **2026-09-02** — Shipped: a rendered template, and a resolved prompt, can now say what they are made of — order, absolute size and binding… ([#663](https://github.com/ErikFortune/fgv/pull/663)) · `ts-extras` `ts-prompt-assist`
 - **2026-08-28** — A string can now declare that it must be one printable line — and the name says shape, not safety, because no converter can promise… · `ts-utils`
 - **2026-08-23** — Shipped: an opt-in that hoists the optionals a schema already proves safe to hoist, rather than a boolean asserting they are. ([#659](https://github.com/ErikFortune/fgv/pull/659)) · `ts-extras` `ts-json-base`
@@ -188,8 +189,7 @@ markers.*
 - **2026-08-21** — A caller that has already declared the shape it wants can now tell the provider, and learn which enforcement was actually applied… ([#652](https://github.com/ErikFortune/fgv/pull/652)) · `ts-extras` `ts-json-base` `ts-app-shell`
 - **2026-08-21** — Shipped: `release()` on both index classes — it drops the index's prepared statements and marks it unusable, and never touches the… ([#651](https://github.com/ErikFortune/fgv/pull/651)) · `ts-agent-memory-sqlite-vec`
 - **2026-08-18** — Shipped: one invariant, enforced at the one layer that sees both sides — a record loaded from an address derived from kind K is a… ([#648](https://github.com/ErikFortune/fgv/pull/648)) · `ts-agent-memory`
-- **2026-08-15** — Shipped: the partial-read `IMemoryIndex` — every read returns `IIndexedMemoryEntry` (scope + envelope, no body), `rebuild` takes… ([#633](https://github.com/ErikFortune/fgv/pull/633)) · `ts-agent-memory`
 
-*Showing the 10 most recent of 39. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 40. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

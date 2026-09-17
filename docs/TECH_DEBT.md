@@ -377,6 +377,46 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] Generic `effort: 'none'` maps to a Gemini value that errors on Pro-family models.**
+  `ai-assist-thinking-anchoring` (#667) added `'none'` to `IThinkingConfig.effort` as the
+  cross-provider spelling for "thinking off". On Gemini it maps to `thinkingBudget: 0` in
+  `thinkingOptionsResolver.ts`'s `genericEffortToGemini`. But
+  `IGeminiThinkingConfig.thinkingBudget`'s own doc comment — one field away in `model.ts` —
+  states that `0` is valid on **Flash and Flash-Lite only and errors on Pro**. So a caller who
+  writes `thinking: { effort: 'none' }` and routes to a Gemini Pro model gets a provider-side
+  400.
+
+  The stream's layer-1 `code-reviewer` pass caught the *doc comment* overclaiming this and fixed
+  it by adding the caveat, on the reasoning that the same footgun already existed via an explicit
+  `providers: [{ provider: 'google', config: { thinkingBudget: 0 } }]` block. That reasoning is
+  sound but incomplete, which is why this entry exists: the pre-existing door was **Gemini-
+  specific**, where reading the Gemini field's docs is the natural thing to do, while the new one
+  is the **generic** field whose entire purpose is not having to think about providers. The
+  library's own cross-provider abstraction is where the leak now is.
+
+  **Not covered by the `FUTURE.md` entry it looks adjacent to.** That entry ("Gate thinking
+  requests on the per-model capability table") is about models that cannot think at all. Gemini
+  Pro *does* think — it simply cannot express "off" as a budget of zero. Different problem, and
+  it would survive that entry being implemented.
+
+  **Trigger**: a consumer reports a Gemini Pro 400 on `effort: 'none'`, or any stream that
+  touches `genericEffortToGemini`.
+
+  **Scope sketch**: the resolver already has model-prefix machinery
+  (`isExactOrDashBoundedPrefix`, used by `isAdaptiveThinkingModel`), so the cheap fix is to fail
+  fast in `mergeThinkingConfig` with a message naming the Pro-family constraint, rather than
+  emitting a value the provider will reject. Note the alternatives are both worse: omitting
+  `thinkingConfig` entirely means "model default", which on a thinking-by-default Pro model
+  leaves thinking **on** and silently fails to honour `'none'`; and `-1` is dynamic, not off.
+
+  **Not a P4**: it is a wrong value on the wire reachable from the generic public surface, not a
+  documentation inconsistency. The failure is loud (a provider 400 rather than silent corruption),
+  which is what keeps it out of P2.
+
+  **Reference**: #667; `.ai/tasks/completed/2026-09/ai-assist-thinking-anchoring/` (README
+  § "The easy part hid a real edge", `meta.yaml` `summary.diverged`); surfaced by the
+  `finalize-task` antagonist pass, not by the stream itself.
+
 - **[P3] `rushx update-snapshot` writes snapshots with a different Jest config than
   `rushx test` reads them with — nine packages.**
   The two halves of the snapshot loop disagree: `"test": "heft test --clean"` runs under

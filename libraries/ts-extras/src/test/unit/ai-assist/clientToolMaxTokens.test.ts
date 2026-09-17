@@ -48,8 +48,7 @@ function makeAnthropicDescriptor(): IAiProviderDescriptor {
     supportedTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: false,
-    thinkingMode: 'optional'
+    acceptsImageInput: false
   };
 }
 
@@ -65,8 +64,7 @@ function makeOpenAiDescriptor(): IAiProviderDescriptor {
     supportedTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: false,
-    thinkingMode: 'unsupported'
+    acceptsImageInput: false
   };
 }
 
@@ -82,8 +80,7 @@ function makeGeminiDescriptor(): IAiProviderDescriptor {
     supportedTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: false,
-    thinkingMode: 'optional'
+    acceptsImageInput: false
   };
 }
 

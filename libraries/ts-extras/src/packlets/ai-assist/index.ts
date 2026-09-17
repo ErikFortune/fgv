@@ -84,7 +84,6 @@ export {
   isAdaptiveThinkingModel,
   usesMaxCompletionTokensField,
   toDataUrl,
-  type AiThinkingMode,
   type IThinkingConfig,
   type IThinkingProviderConfig,
   type IAnthropicThinkingOptions,

@@ -143,7 +143,6 @@ declare namespace AiAssist {
         isAdaptiveThinkingModel,
         usesMaxCompletionTokensField,
         toDataUrl,
-        AiThinkingMode,
         IThinkingConfig,
         IThinkingProviderConfig,
         IAnthropicThinkingOptions,
@@ -304,9 +303,6 @@ const aiServerToolType: Converter<AiServerToolType>;
 //
 // @public
 type AiStructuredOutputFormat = 'openai-json-schema' | 'openai-responses-format' | 'gemini-response-schema' | 'anthropic-tool-forced';
-
-// @public
-type AiThinkingMode = 'optional' | 'required' | 'unsupported';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1336,7 +1332,6 @@ interface IAiProviderDescriptor {
     readonly streamingCorsRestricted: boolean;
     readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
     readonly supportedTools: ReadonlyArray<AiServerToolType>;
-    readonly thinkingMode: AiThinkingMode;
 }
 
 // @public
@@ -2420,7 +2415,7 @@ function isValidMultibaseSpkiPublicKey(value: unknown): value is MultibaseSpkiPu
 
 // @public
 interface IThinkingConfig {
-    readonly effort?: 'low' | 'medium' | 'high';
+    readonly effort?: 'none' | 'low' | 'medium' | 'high';
     readonly providers?: ReadonlyArray<IThinkingProviderConfig>;
 }
 

@@ -275,8 +275,7 @@ describe('cross-provider client-tool continuation wire forwarding', () => {
       supportedTools: ['web_search'],
       corsRestricted: false,
       streamingCorsRestricted: false,
-      acceptsImageInput: true,
-      thinkingMode: 'optional'
+      acceptsImageInput: true
     };
 
     const turnResult = AiAssist.executeClientToolTurn({
