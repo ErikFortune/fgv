@@ -86,8 +86,14 @@ runs once a descriptor clears `AiAssist.supportsCacheUsageReporting` (`'openai'`
 only) — the four usage-attaching call sites are shared by every `apiFormat: 'openai'`
 descriptor (Groq, Mistral, Ollama, `openai-compat` too), none of which have any
 cache-reporting concept, so an unconfirmed descriptor (including a third provider added to
-this route later) gets `usage: undefined`, not a guessed answer; extending the gate to a
-newly-confirmed provider is a one-line addition to that function.
+this route later) gets `usage: undefined`, not a guessed answer. **Round 7 correction
+(Copilot):** this is one of *two* independent gates, not the whole story — adding a
+provider to `supportsCacheUsageReporting` enables its non-streaming and
+Responses-streaming usage, but Chat-Completions-*streaming* usage is separately gated by
+`supportsStreamUsageOption` (round 2, `true` only for `'openai'`), since that path also
+decides whether to send the unconfirmed-tolerance-risk `stream_options` request field, not
+just whether to trust a response. Confirming a new provider for Chat-streaming usage means
+updating both functions, not one.
 
 **R-c held to the letter everywhere**, including one place the design doesn't spell out:
 Gemini's `uncachedInputTokens` is computed as `promptTokenCount - cachedContentTokenCount`

@@ -343,7 +343,19 @@ confirmed to report cache-relevant `usage`; `AiAssist.supportsCacheUsageReportin
 gates all four call sites on that before any normalization runs, so an unconfirmed
 `apiFormat: 'openai'` descriptor — including a future one — gets `usage: undefined`
 rather than a guess derived from whatever ordinary usage shape its wire happens to send.
-Extending the gate to a newly-confirmed provider is a one-line addition to that function.
+
+**Two separate gates, not one.** `supportsCacheUsageReporting` is the general
+"does this descriptor report cache-relevant usage at all" gate, checked on Responses
+(streaming and non-streaming) and Chat Completions non-streaming. Chat Completions
+*streaming* has its own narrower gate, `supportsStreamUsageOption` — `true` only for
+`'openai'` — because that path also decides whether to send the unconfirmed-tolerance-risk
+`stream_options: { include_usage: true }` request field (see below), not just whether to
+trust a response. Confirming a new provider's cache reporting means adding it to
+`supportsCacheUsageReporting`; that alone enables its non-streaming and Responses-streaming
+usage. Enabling its Chat-Completions-*streaming* usage additionally requires adding it to
+`supportsStreamUsageOption`, a separate, independent decision (a provider can be confirmed
+to report cache tokens correctly while its tolerance for an unrecognized request field is
+still unverified).
 
 Every derived field (`uncachedInputTokens`, `totalInputTokens`) stays `undefined` when an
 input it needs is itself unknown, rather than assuming the missing figure is zero — most
