@@ -125,5 +125,9 @@ stream updated to record C1 shipped; the stream itself stays open (C2/C3 remain)
 `finalize-task` migration to `completed/` — artifacts stay in `active/` per the kickoff
 brief.
 
-**code-reviewer / Copilot loop:** not yet run as of this checkpoint — next step before
-opening a PR.
+**code-reviewer / Copilot loop:** `code-reviewer` run on the diff before opening the PR —
+one P2 (an unreachable `'none'` member on `AiCacheReportingLevel` with no producer;
+`IAiCompletionResponse.usage === undefined` already is the "nothing reported" signal),
+fixed, and one P3 (a cosmetic object-shape inconsistency between normalizers), dispositioned
+as not worth touching. [PR #668](https://github.com/ErikFortune/fgv/pull/668) opened
+against `claude/ai-assist-prompt-caching`; Copilot review requested, loop in progress.
