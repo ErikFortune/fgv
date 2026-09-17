@@ -87,16 +87,24 @@ const FILLER_PARAGRAPHS: number = 60;
  * prefix; this is sized well above Anthropic's largest known minimum (4096 tokens on Opus
  * 4.6 / Haiku 4.5) because xAI's own minimum is unverified and undershooting it produces a
  * false negative that reads exactly like "no caching".
+ *
+ * @remarks
+ * **`salt` is load-bearing and exists because the first run got this wrong.** The routes are
+ * probed in sequence, so a prefix shared between them leaves the second route's "cold" call
+ * reading a cache the *first* route already warmed — the 2026-09-15 run reported 4416 of 4462
+ * input tokens cached on a call that was, by construction, the first of its pair. Per-route
+ * salt makes each route's cold call genuinely cold. It does **not** protect against a rerun
+ * within the cache TTL; see the report's own note.
  */
-function buildStablePrefix(): string {
+function buildStablePrefix(salt: string): string {
   const paragraphs: string[] = [];
   for (let i = 0; i < FILLER_PARAGRAPHS; i++) {
     paragraphs.push(
-      `Section ${i}. This paragraph exists to occupy prompt tokens in a byte-identical, ` +
+      `Section ${salt}-${i}. This paragraph exists to occupy prompt tokens in a byte-identical, ` +
         `deterministic way across repeated requests, so that a provider-side prompt cache has ` +
         `a stable prefix to match on. It carries no meaning and asks for nothing. The index ` +
-        `${i} makes each paragraph distinct so the text does not compress into a trivial ` +
-        `repetition that a tokenizer might collapse.`
+        `${salt}-${i} makes each paragraph distinct so the text does not compress into a ` +
+        `trivial repetition that a tokenizer might collapse.`
     );
   }
   return paragraphs.join('\n\n');
@@ -156,6 +164,26 @@ function diffUsage(
     }
   }
   return deltas;
+}
+
+/**
+ * Fields whose *name* marks them as cache accounting, with both absolute values.
+ *
+ * @remarks
+ * This exists because the differential signal alone was not enough, and the 2026-09-15 run
+ * proved it twice in one report. Chat Completions moved `prompt_tokens_details.cached_tokens`
+ * from 128 to 192 — a real cached-token field, but non-zero cold, so the 0→positive rule did
+ * not flag it. Responses reported `input_tokens_details.cached_tokens` as 4416 on both calls —
+ * identical, so it never became a delta and vanished from the report entirely. A cache that is
+ * already warm is the normal case against a live API, not an edge case, and a probe that can
+ * only see a cold→warm transition is blind exactly when caching is working best.
+ */
+function cachedCandidates(
+  cold: ReadonlyMap<string, number>,
+  warm: ReadonlyMap<string, number>
+): ReadonlyArray<IUsageDelta> {
+  const paths = [...new Set([...cold.keys(), ...warm.keys()])].filter((path) => /cach/i.test(path)).sort();
+  return paths.map((path) => ({ path, cold: cold.get(path), warm: warm.get(path) }));
 }
 
 /**
@@ -238,6 +266,8 @@ export interface IRouteResult {
   readonly usageKeys: ReadonlyArray<string>;
   readonly deltas: ReadonlyArray<IUsageDelta>;
   readonly cacheReadFields: ReadonlyArray<string>;
+  /** Fields whose name marks them as cache accounting, with both absolute values. */
+  readonly cachedFields: ReadonlyArray<IUsageDelta>;
   readonly rawCold?: JsonValue;
   readonly rawWarm?: JsonValue;
 }
@@ -293,6 +323,7 @@ async function probeRoute(
       unreachable: cold.message,
       usageKeys: [],
       deltas: [],
+      cachedFields: [],
       cacheReadFields: []
     };
   }
@@ -309,6 +340,7 @@ async function probeRoute(
       unreachable: `warm call failed: ${warm.message}`,
       usageKeys: [],
       deltas: [],
+      cachedFields: [],
       cacheReadFields: [],
       rawCold: usageOf(cold.value)
     };
@@ -324,7 +356,8 @@ async function probeRoute(
     label: route.label,
     usageKeys: [...new Set([...coldFlat.keys(), ...warmFlat.keys()])].sort(),
     deltas,
-    cacheReadFields: deltas.filter(looksLikeCacheRead).map((d) => d.path),
+    cachedFields: cachedCandidates(coldFlat, warmFlat),
+    cacheReadFields: cachedCandidates(coldFlat, warmFlat).map((d) => d.path),
     rawCold: coldUsage,
     rawWarm: warmUsage
   };
@@ -360,17 +393,26 @@ export function formatXaiCacheProbeReport(model: string, results: ReadonlyArray<
         : '  usage block absent or carried no numeric fields'
     );
     if (r.deltas.length === 0) {
-      lines.push('  NO FIELDS CHANGED between cold and warm — no cache hit observed.');
-      lines.push('    Ambiguous: xAI may not cache, or the prefix may be under its minimum.');
-      lines.push('    Raise FILLER_PARAGRAPHS and re-run before concluding; record the size that failed.');
+      lines.push('  No numeric field changed between cold and warm.');
+      lines.push('    NOT by itself evidence of no caching: a prefix already cached reports the');
+      lines.push('    same figure twice. Read the cached-token line above, not this one.');
     } else {
       for (const d of r.deltas) {
         const flag = looksLikeCacheRead(d) ? '  <== CACHE READ' : '';
         lines.push(`  ${d.path}: cold=${d.cold ?? '-'} warm=${d.warm ?? '-'}${flag}`);
       }
     }
-    if (r.cacheReadFields.length > 0) {
-      lines.push(`  CACHED-TOKEN FIELD: ${r.cacheReadFields.join(', ')}`);
+    if (r.cachedFields.length > 0) {
+      // The headline. Printed with both absolute values, because "cached on both calls" is a
+      // working cache, not an absent one — and a delta-only view hides exactly that case.
+      for (const c of r.cachedFields) {
+        lines.push(`  CACHED-TOKEN FIELD: ${c.path} (cold=${c.cold ?? '-'} warm=${c.warm ?? '-'})`);
+      }
+      if (r.cachedFields.every((c) => (c.cold ?? 0) === 0 && (c.warm ?? 0) === 0)) {
+        lines.push('    Both calls report zero cached — the field exists but nothing cached.');
+      }
+    } else if (r.usageKeys.length > 0) {
+      lines.push('  No field name matches /cach/ — this route reports no cache accounting.');
     }
     lines.push(`  raw cold usage: ${JSON.stringify(r.rawCold)}`);
     lines.push(`  raw warm usage: ${JSON.stringify(r.rawWarm)}`);
@@ -379,6 +421,10 @@ export function formatXaiCacheProbeReport(model: string, results: ReadonlyArray<
 
   // Deliberately lower-case: 'CACHED-TOKEN FIELD' is the marker a reader greps this report
   // for, so the closing instruction must not collide with it.
+  lines.push('NOTE: each route uses its own salted prefix, so routes do not warm each other.');
+  lines.push('A re-run within the cache TTL still sees a warm cache on its "cold" call — for a');
+  lines.push('genuinely cold reading, change FILLER_PARAGRAPHS or wait out the TTL.');
+  lines.push('');
   lines.push('Record the cached-token field rows (or their absence) in');
   lines.push('.ai/tasks/active/ai-assist-prompt-caching/design.md §8, and close OQ-1.');
   return lines.join('\n');
@@ -417,14 +463,34 @@ export async function runXaiCacheProbe(
   }
   const { descriptor, model } = setup.value;
 
-  const prefix = buildStablePrefix();
   const results: IRouteResult[] = [];
   for (const route of ROUTES) {
-    results.push(await probeRoute(route, descriptor.baseUrl, model, keyResult.value, prefix, context, deps));
+    const salt = route.label.replace(/\s+/g, '-').toLowerCase();
+    results.push(
+      await probeRoute(
+        route,
+        descriptor.baseUrl,
+        model,
+        keyResult.value,
+        buildStablePrefix(salt),
+        context,
+        deps
+      )
+    );
   }
 
   const report = formatXaiCacheProbeReport(model, results);
   context.logger.info(report);
 
-  return captureResult(() => report);
+  // The CLI prints what `run` returns, and the logger has already emitted the report — so
+  // returning the report too printed the whole thing twice. One line, per the ICliScenarioImpl
+  // contract; the report itself is the artifact and it is above.
+  const named = results.flatMap((r) => r.cacheReadFields);
+  return captureResult(
+    () =>
+      `probed ${results.length} route(s) on ${model}; ` +
+      (named.length > 0
+        ? `cached-token field(s): ${named.join(', ')}`
+        : 'no cached-token field identified — see the report above')
+  );
 }

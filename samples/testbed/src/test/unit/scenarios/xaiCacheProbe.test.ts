@@ -36,13 +36,30 @@ import type { IScenarioContext } from '../../../shell';
  * A context whose `resolveSecret` succeeds, so the probe reaches the network seam. The probe
  * reads nothing else off the context but the logger.
  */
+let lastLogger: Logging.InMemoryLogger;
+
 function testContext(secret: Result<string> = succeed('test-key')): IScenarioContext {
+  lastLogger = new Logging.InMemoryLogger();
   return {
-    logger: new Logging.LogReporter({ logger: new Logging.InMemoryLogger() }),
+    logger: new Logging.LogReporter({ logger: lastLogger }),
     keyStore: undefined,
     resolveSecret: async () => secret,
     dataTree: undefined as unknown as IScenarioContext['dataTree']
   };
+}
+
+/**
+ * The report emitted by the last run. `run` returns a one-line summary per the
+ * ICliScenarioImpl contract; the report itself goes to the logger, so that is where an
+ * assertion about its content belongs.
+ */
+function emittedReport(): string {
+  return lastLogger.logged.join('\n');
+}
+
+/** Runs assertions against the report the last run emitted. */
+function withReport(assertions: (report: string) => void): void {
+  assertions(emittedReport());
 }
 
 /**
@@ -126,7 +143,9 @@ describe('xaiCacheProbe', () => {
       ]);
       const result = await runXaiCacheProbe(testContext(), deps);
 
-      expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(result).toSucceed();
+
+      withReport((report: string) => {
         expect(report).toMatch(/CACHED-TOKEN FIELD: prompt_tokens_details\.cached_tokens/);
         expect(report).toMatch(/<== CACHE READ/);
       });
@@ -142,7 +161,8 @@ describe('xaiCacheProbe', () => {
       // produce its report.
       const { deps } = depsReturning([fail('HTTP 404 Not Found')]);
       const result = await runXaiCacheProbe(testContext(), deps);
-      expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(result).toSucceed();
+      withReport((report: string) => {
         expect(report).toMatch(/UNREACHABLE: HTTP 404 Not Found/);
       });
     });
@@ -153,28 +173,61 @@ describe('xaiCacheProbe', () => {
         fail('HTTP 429 rate limited')
       ]);
       const result = await runXaiCacheProbe(testContext(), deps);
-      expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(result).toSucceed();
+      withReport((report: string) => {
         expect(report).toMatch(/warm call failed: HTTP 429 rate limited/);
       });
     });
 
-    test('says so explicitly when no field changed, and does not claim a negative result', async () => {
-      // The ambiguity between "xAI does not cache" and "the prefix was under the minimum" is
-      // the whole reason this branch prints guidance instead of a verdict.
-      const identical = succeed({ usage: usageWithCached(0) } as unknown as JsonValue);
-      const { deps } = depsReturning([identical, identical]);
+    test('names a cached field that is identical on both calls — the 4416/4416 regression', async () => {
+      // The live 2026-09-15 run reported input_tokens_details.cached_tokens as 4416 on BOTH
+      // calls. Identical values are not a delta, so the field vanished from the report
+      // entirely and the run looked like it had found nothing. A warm cache is the normal
+      // case against a live API; the probe must name the field anyway.
+      const same = succeed({ usage: usageWithCached(4416) } as unknown as JsonValue);
+      const { deps } = depsReturning([same, same]);
       const result = await runXaiCacheProbe(testContext(), deps);
-      expect(result).toSucceedAndSatisfy((report: string) => {
-        expect(report).toMatch(/NO FIELDS CHANGED/);
-        expect(report).toMatch(/Raise FILLER_PARAGRAPHS/);
-        expect(report).not.toMatch(/CACHED-TOKEN FIELD/);
+      expect(result).toSucceed();
+      withReport((report: string) => {
+        expect(report).toMatch(
+          /CACHED-TOKEN FIELD: prompt_tokens_details\.cached_tokens \(cold=4416 warm=4416\)/
+        );
+        expect(report).toMatch(/NOT by itself evidence of no caching/);
+      });
+    });
+
+    test('names a cached field that moves between two non-zero values — the 128→192 regression', async () => {
+      // The same run moved prompt_tokens_details.cached_tokens 128 -> 192. Real cache
+      // accounting, but non-zero cold, so the original 0->positive rule did not flag it.
+      const { deps } = depsReturning([
+        succeed({ usage: usageWithCached(128) } as unknown as JsonValue),
+        succeed({ usage: usageWithCached(192) } as unknown as JsonValue)
+      ]);
+      const result = await runXaiCacheProbe(testContext(), deps);
+      expect(result).toSucceed();
+      withReport((report: string) => {
+        expect(report).toMatch(
+          /CACHED-TOKEN FIELD: prompt_tokens_details\.cached_tokens \(cold=128 warm=192\)/
+        );
+      });
+    });
+
+    test('distinguishes "field exists, nothing cached" from "no such field"', async () => {
+      const zero = succeed({ usage: usageWithCached(0) } as unknown as JsonValue);
+      const { deps } = depsReturning([zero, zero]);
+      const result = await runXaiCacheProbe(testContext(), deps);
+      expect(result).toSucceed();
+      withReport((report: string) => {
+        expect(report).toMatch(/CACHED-TOKEN FIELD: prompt_tokens_details\.cached_tokens \(cold=0 warm=0\)/);
+        expect(report).toMatch(/the field exists but nothing cached/);
       });
     });
 
     test('handles a response carrying no usage block at all', async () => {
       const { deps } = depsReturning([succeed({ id: 'x' } as unknown as JsonValue)]);
       const result = await runXaiCacheProbe(testContext(), deps);
-      expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(result).toSucceed();
+      withReport((report: string) => {
         expect(report).toMatch(/usage block absent or carried no numeric fields/);
       });
     });
@@ -197,7 +250,8 @@ describe('xaiCacheProbe', () => {
         succeed({ usage: { [WIRE_COMPLETION]: 7 } } as unknown as JsonValue)
       ]);
       const result = await runXaiCacheProbe(testContext(), deps);
-      expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(result).toSucceed();
+      withReport((report: string) => {
         expect(report).toMatch(/completion_tokens: cold=1 warm=7/);
         expect(report).not.toMatch(/CACHED-TOKEN FIELD/);
       });
@@ -223,6 +277,7 @@ describe('xaiCacheProbe', () => {
           label: 'Route',
           usageKeys: ['a'],
           deltas: [{ path: 'a', cold: undefined, warm: 9 }],
+          cachedFields: [{ path: 'a', cold: undefined, warm: 9 }],
           cacheReadFields: ['a'],
           rawCold: null,
           rawWarm: null
@@ -242,6 +297,10 @@ describe('xaiCacheProbe', () => {
           label: 'Route',
           usageKeys: ['b'],
           deltas: [{ path: 'b', cold: 7, warm: undefined }],
+          cachedFields: [
+            { path: 'c_cached', cold: 0, warm: undefined },
+            { path: 'b_cached', cold: 7, warm: undefined }
+          ],
           cacheReadFields: [],
           rawCold: null,
           rawWarm: null
@@ -249,7 +308,10 @@ describe('xaiCacheProbe', () => {
       ]);
       expect(report).toMatch(/b: cold=7 warm=-/);
       expect(report).not.toMatch(/<== CACHE READ/);
-      expect(report).not.toMatch(/CACHED-TOKEN FIELD/);
+      expect(report).toMatch(/CACHED-TOKEN FIELD: b_cached \(cold=7 warm=-\)/);
+      expect(report).toMatch(/CACHED-TOKEN FIELD: c_cached \(cold=0 warm=-\)/);
+      // Not every field is zero, so the "nothing cached" line must stay off.
+      expect(report).not.toMatch(/nothing cached/);
     });
   });
 });

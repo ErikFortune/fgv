@@ -89,6 +89,13 @@ tools-bearing request sets `usesResponsesApi` and posts to `https://api.x.ai/v1/
 Responses API"*. Whether xAI's usage block on that route carries a cached-token field at
 all is unverified. **OQ-1.**
 
+> **Settled 2026-09-17 by a live run** of the `xai-cache-probe` testbed scenario — see OQ-1
+> in §12 for the full result. Both guesses above were half right. The endpoint **does** exist;
+> the field on that route is `usage.input_tokens_details.cached_tokens`, **not** the
+> `prompt_tokens_details` spelling guessed here (that one is the *Chat Completions* name, and
+> both are real — one per route). Neither route reports a cache **write** field, so xAI is
+> `reports: 'reads'` on both, which is where it parts company with OpenAI.
+
 ### F4 — `IAiStructuredOutputCapability` is the implementation template, and `IAiEmbeddingUsage` is the reporting one
 
 Two existing surfaces solve the two hard shapes this design needs:
@@ -551,7 +558,8 @@ Completions; the required discriminator removes it by construction rather than b
 | OpenAI Responses | `reads-and-writes` | `usage.input_tokens` **minus** `input_tokens_details.cached_tokens` | `input_tokens_details.cached_tokens` | `input_tokens_details.cache_write_tokens` |
 | OpenAI Chat Completions | `reads` | `usage.prompt_tokens` minus cached | `prompt_tokens_details.cached_tokens` | — structurally unfillable |
 | Gemini `generateContent` | `reads` | `promptTokenCount` **minus** `cachedContentTokenCount` | `cachedContentTokenCount` | — no write concept |
-| xAI (OpenAI-compat) | **OQ-1** | presumed as OpenAI Chat/Responses per route | presumed `prompt_tokens_details.cached_tokens` | **OQ-1** |
+| xAI Chat Completions | `reads` | `usage.prompt_tokens` minus cached | `usage.prompt_tokens_details.cached_tokens` | — none reported |
+| xAI Responses | `reads` | `usage.input_tokens` minus cached | `usage.input_tokens_details.cached_tokens` | — none reported |
 
 The Gemini subtraction is the footgun research §6.5 names: cached tokens sit **inside**
 `promptTokenCount` on Gemini and **outside** the total on OpenAI. Normalizing without the
@@ -724,7 +732,7 @@ slice.
 
 ## 12. Open questions for triage
 
-**OQ-1 — xAI's OpenAI-compat cache surface. — ⏳ probe built 2026-09-15; awaiting a live run.**
+**OQ-1 — xAI's OpenAI-compat cache surface. — ✅ RESOLVED for §8 2026-09-17; one secondary question left open.**
 
 F3 establishes that we reach xAI at `https://api.x.ai/v1` with `apiFormat: 'openai'`, and that
 a tools-bearing request routes to `/responses`. Unknown: whether that endpoint exists on xAI,
@@ -741,10 +749,50 @@ absent-or-zero cold and positive warm *is* the cached-token field, whatever it i
 flattened key list is printed either way, so a run with no cache hit still records the usage
 schema — a negative result is a result.
 
-Paste the report into this section when it runs. Note the report distinguishes a genuine "no
-caching" from "prefix under an unverified minimum" by refusing to call it: on no-hit it prints
-the guidance to raise `FILLER_PARAGRAPHS` and re-run, and the size that failed is itself a
-bound worth recording.
+### Ran 2026-09-17 against `grok-4.3`. Settled:
+
+- **`POST https://api.x.ai/v1/responses` exists** and returns a real usage block. The
+  tools-bearing route is live, so F3's "a tools-bearing request routes to `/responses`" has no
+  hole under it.
+- **The cached-token field name differs per route**, splitting exactly as OpenAI's does:
+  `usage.prompt_tokens_details.cached_tokens` on Chat Completions,
+  `usage.input_tokens_details.cached_tokens` on Responses. Direct corroboration of **F2** —
+  this is a per-*endpoint* fact, not a per-provider one, and a lookup keyed on the descriptor
+  alone would get one of the two wrong.
+- **Neither route reports a cache *write* field.** So xAI is `reports: 'reads'` on **both**
+  routes, and §8's table now says so. This qualifies F2 rather than contradicting it: *write*
+  observability flipping on the route is an **OpenAI** property, not a property of the
+  Responses shape. Both providers still need the `(descriptor, model, usesResponsesApi)` key —
+  they simply disagree about what the Responses arm yields.
+- xAI also emits `cost_in_usd_ticks` and `num_sources_used`, which the normalized shape drops.
+  That is what `IAiCompletionUsage.raw` is for; no schema change needed.
+
+### Not settled, and the probe was wrong before it was right
+
+The first run reported `input_tokens_details.cached_tokens` at **4416 of 4462 input tokens on
+the *cold* call** — a call that was by construction the first of its pair. It cannot have been
+cold, and the cause was the probe, not xAI: both routes shared one prefix and ran in sequence,
+so the Chat Completions pair warmed the cache before Responses was ever called. Each route now
+builds a **salted** prefix of its own.
+
+Two further defects surfaced in the same run, and both are now regression-tested:
+
+- The cold→warm *differential* alone could not see either real field. Chat Completions moved
+  `cached_tokens` 128 → 192 — non-zero cold, so the `0 → positive` rule never flagged it.
+  Responses reported 4416 on **both** calls — identical, so it was not even a delta and
+  vanished from the report entirely. **A warm cache is the normal case against a live API**,
+  and a probe that can only see a transition is blind precisely when caching works best. The
+  report now names any field whose *name* matches `/cach/` with both absolute values,
+  regardless of movement.
+- The no-delta branch claimed "no cache hit observed", which is wrong for exactly that reason.
+  It now says so and points at the cached-token line instead.
+
+**Still open:** why Chat Completions cached only 128→192 of 4462 tokens while Responses cached
+4416. On the corrected probe those are independent measurements; the first run's numbers cannot
+distinguish a genuinely weaker Chat Completions cache from contamination. **Re-run needed**, and
+note a re-run inside the cache TTL still sees a warm "cold" call — change `FILLER_PARAGRAPHS` or
+wait out the TTL for a truly cold reading. This does not block C1: the field names and the
+`reports` level are settled, and those are what §8 needs.
 
 **OQ-2 — is a second research pass a gate on C3?** Every OpenAI/Gemini/xAI threshold is
 `[unverified]` because the prose docs are egress-blocked. *Recommendation: not a gate.*
