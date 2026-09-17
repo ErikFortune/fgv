@@ -189,7 +189,8 @@ export async function callOpenAiChatStream(
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
   maxTokens?: number,
-  useMaxCompletionTokensField: boolean = false
+  useMaxCompletionTokensField: boolean = false,
+  includeStreamUsage: boolean = false
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/chat/completions`;
   const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
@@ -197,15 +198,19 @@ export async function callOpenAiChatStream(
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
   const supportsReasoning = config.model !== 'grok-4';
-  // Chat Completions omits the usage block from every streaming response unless asked —
-  // unlike the Responses API and Anthropic, which report it unconditionally. Additive and
-  // ignored by providers that don't recognize it.
   const body: Record<string, unknown> = {
     model: config.model,
     messages,
-    stream: true,
-    stream_options: { include_usage: true }
+    stream: true
   };
+  // Chat Completions omits the usage block from every streaming response unless asked —
+  // unlike the Responses API and Anthropic, which report it unconditionally. Gated per
+  // AiAssist.supportsStreamUsageOption: this adapter also carries providers whose tolerance
+  // for an unrecognized request field is unverified (a strict self-hosted server can reject
+  // the whole request rather than ignore it), so the field is sent only where it's confirmed.
+  if (includeStreamUsage) {
+    body.stream_options = { include_usage: true };
+  }
   if (effort !== undefined && supportsReasoning) {
     body.reasoning_effort = effort;
   }

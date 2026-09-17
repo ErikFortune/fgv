@@ -204,6 +204,7 @@ declare namespace AiAssist {
         resolveEffectiveTools,
         AiCacheReportingLevel,
         IAiCompletionUsage,
+        supportsStreamUsageOption,
         ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
         AiStructuredOutputFormat,
         IAiStructuredOutputCapability,
@@ -3210,6 +3211,9 @@ function supportsEmbedding(descriptor: IAiProviderDescriptor): boolean;
 //
 // @public
 function supportsImageGeneration(descriptor: IAiProviderDescriptor): boolean;
+
+// @public
+function supportsStreamUsageOption(descriptor: IAiProviderDescriptor): boolean;
 
 // @public
 function supportsStructuredOutput(descriptor: IAiProviderDescriptor): boolean;

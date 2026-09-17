@@ -172,6 +172,34 @@ describe('streaming adapters — IAiStreamDone.usage', () => {
     expect(body.stream_options).toEqual({ include_usage: true });
   });
 
+  test('OpenAI Chat Completions: does not send stream_options for a non-OpenAI provider on the shared path', async () => {
+    // stream_options is an unrecognized field to a server that hasn't confirmed it —
+    // a strict self-hosted openai-compat endpoint can reject the whole request rather than
+    // ignore it, so AiAssist.supportsStreamUsageOption gates this to descriptor.id === 'openai'.
+    mockSseResponse([
+      `data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: 'stop' }] })}\n\n`,
+      'data: [DONE]\n\n'
+    ]);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: { ...makeOpenAiResponsesDescriptor(), id: 'xai-grok' },
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest()
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const collected = await collect(result.value);
+    const done = collected.find((e) => e.type === 'done');
+    expect(done?.type).toBe('done');
+    if (done?.type !== 'done') return;
+    expect(done.usage).toBeUndefined();
+
+    const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+    const body = JSON.parse((fetchCall[1] as RequestInit).body as string) as Record<string, unknown>;
+    expect(body.stream_options).toBeUndefined();
+  });
+
   test('OpenAI Responses: cache_write_tokens present reports reads-and-writes', async () => {
     const events = [
       `event: response.output_text.delta\ndata: ${JSON.stringify({ delta: 'hi' })}\n\n`,

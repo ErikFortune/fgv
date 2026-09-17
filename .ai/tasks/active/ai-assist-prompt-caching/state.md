@@ -101,14 +101,19 @@ terminal `choices: []` chunk carries it. OpenAI/xAI Responses reads `response.co
 adapter keeps the last one.
 
 **The standing assertion (§8) is written but not run live.** Harness:
-`libraries/ts-extras/perf/promptCacheObservability.js`, with the prediction recorded in
-its header before any run, per `TESTING_GUIDELINES.md` § "Measurement Harnesses". This
-session had no `ANTHROPIC_API_KEY` and no outbound path to `api.anthropic.com` (the
-sandbox proxies HTTPS through an allowlist), so the harness's wiring was verified
-(descriptor resolution, syntax, guard-on-missing-key) but the live prediction was not
-evaluated. **Running it against a real key is the first thing to do before treating C1 as
-fully validated** — everything else (types, normalization, adapter wiring, tests, gates)
-is done and green, but this is the one piece that checks the design's actual claim rather
+`libraries/ts-extras/perf/promptCacheObservability.js`, targeting **xAI** (retargeted
+from an initial Anthropic version during Copilot round 1 — Anthropic's cache is opt-in
+per content block via `cache_control`, which C1 never sends, so a plain `system` string
+could never have produced a cache hit there regardless of prefix stability; xAI caches
+automatically, already verified live in this stream's design phase, design.md §12/OQ-1),
+with the prediction recorded in its header before any run, per `TESTING_GUIDELINES.md`
+§ "Measurement Harnesses". This session had no `XAI_API_KEY` and no outbound path to
+`api.x.ai` (the sandbox proxies HTTPS through an allowlist), so the harness's wiring was
+verified (descriptor resolution, syntax, guard-on-missing-key) but the live prediction
+was not evaluated. **Running it against a real key is the first thing to do before
+treating C1 as fully validated** — everything else (types, normalization, adapter
+wiring, tests, gates) is done and green, but this is the one piece that checks the
+design's actual claim rather
 than the code's internal consistency.
 
 **Gates run and green:** `rushx build`/`lint`/`test` in `@fgv/ts-extras` (2829/2829 tests,

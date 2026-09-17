@@ -172,6 +172,8 @@ export { resolveEffectiveTools } from './toolFormats';
 
 export type { AiCacheReportingLevel, IAiCompletionUsage } from './usageTypes';
 
+export { supportsStreamUsageOption } from './streamUsageCapability';
+
 export { ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME } from './structuredOutput';
 
 export type {

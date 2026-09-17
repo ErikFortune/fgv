@@ -302,8 +302,13 @@ question stops arising), injectable validation, and retry inside the client.
 
 ## Prompt-cache token usage
 
-Every completion — streaming and non-streaming alike — can carry a normalized
-`usage?: IAiCompletionUsage` on `IAiCompletionResponse` / `IAiStreamDone`:
+Every direct-provider completion — streaming and non-streaming alike, via
+`callProviderCompletion` / `callProviderCompletionStream` — can carry a normalized
+`usage?: IAiCompletionUsage` on `IAiCompletionResponse` / `IAiStreamDone`. **Not**
+`callProxiedCompletion` / `callProxiedCompletionStream`: forwarding usage through the
+proxy wire is out of scope for this slice, so a proxied completion's `usage` is always
+absent regardless of what the upstream provider reported — the same as any caller on an
+older build that predates this field, never a build error:
 
 ```ts
 const result = await AiAssist.callProviderCompletion({ descriptor, apiKey, ...request });
