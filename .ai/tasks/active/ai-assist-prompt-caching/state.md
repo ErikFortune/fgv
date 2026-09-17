@@ -264,3 +264,25 @@ note); round 6 requested — five consecutive substantive rounds now, still shor
 the 10-round cap. Notably this round caught a bug in the *previous* round's own fix
 (an incomplete threading, not a new class of defect) — a useful data point for
 "substantive vs. nitpick" judgment: still real, still worth another round.
+
+**Copilot round 6 — pure doc-drift, but drift round 4 itself caused.** Real, though
+lower-stakes than rounds 1-5: round 4's provider gate made two earlier passages in
+this file (the Phase-C1 resolution note, the "Gates run and green" summary) and one
+in `docs/WORKSTREAMS.md`'s ledger entry factually wrong — all three still described
+the field-presence-derived `reports` on the Responses route as correct
+"automatically" for a future `apiFormat: 'openai'` provider, a claim round 4's own
+gate falsified without those earlier passages being revisited. Also caught: both
+files' "gates green" headline was still the PR-open snapshot (2829/2829), stale
+after round 5's regression-test additions (2836/2836). Corrected all four; this is
+the same doc-lag failure mode CODING_STANDARDS.md's "Docs ship with the code"
+section names, just intra-PR and self-inflicted rather than cross-stream — a
+checkpoint file is itself a doc, and an earlier passage in it needs the same
+revisit-on-contradiction discipline as README/CAPABILITIES when a later passage in
+the same file changes the ground truth. All fixes pushed in `89898dd0e`; docs-only
+change, so gates re-run were `verify-capability-docs.mjs` (still 0 failed) rather
+than the full build/test/lint suite (unaffected by a docs-only diff). Round-6's two
+threads replied to and resolved; round 7 requested — six consecutive substantive
+rounds now, approaching but still short of the 10-round cap. Worth flagging per the
+repo's diminishing-returns guidance: round 6 was lower-severity than 1-5 (doc
+accuracy, not a runtime defect), which is the kind of signal that should sharpen
+scrutiny of round 7 rather than automatically justify round 8.
