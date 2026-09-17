@@ -179,4 +179,24 @@ qualified the claim and stated the limitation, in both the README and `CAPABILIT
 One doc-accuracy fix: this file's harness section still described the retired Anthropic
 version after round 1's retarget to xAI. All fixes pushed in 9b8279892; full suite
 re-verified (2830/2830, 100% coverage, clean lint). Round-2 threads replied to and
-resolved; round 3 requested.
+resolved.
+
+**Copilot round 3 — same bug class as round 1, sibling adapter.** Real: OpenAI/xAI
+Responses' `response.completed` payload can carry `response.usage: null` (not just
+absent) when a provider has no usage block for that response — the same
+JsonObject-only-validator trap as round 1, just on the Responses adapter instead of
+Chat Completions. Rejecting the whole payload over that one field silently lost
+`status`/`incomplete_details` too, so an incomplete response would have read back as
+`truncated: false`. Extracted the null-tolerant validator from `openaiChat.ts` into a
+shared `jsonObjectOrNullValidator` in `common.ts` (now used by both adapters, avoiding
+a second copy of the same fix) and applied it to `response.usage`; regression test
+sends `usage: null` alongside an `incomplete` status and asserts `truncated`/
+`incompleteReason` survive it. Checked whether the same null-vs-absent quirk plausibly
+applies to Anthropic's `message_start`/`message_delta` usage or Gemini's
+`usageMetadata` — no evidence either way (both APIs consistently report populated
+usage objects, and proto3 JSON omits absent fields rather than nulling them), so left
+untouched rather than adding unconfirmed defensive code. All fixes pushed in
+cd3677031; full suite re-verified (2831/2831, 100% coverage, clean lint). Round-3
+thread replied to and resolved; round 4 requested — three consecutive substantive
+rounds, still short of the 10-round cap, continuing per "round count is not the
+signal."
