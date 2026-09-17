@@ -105,7 +105,8 @@ Three workflow shapes:
 | `design-triage-implement` | Feature needing design exploration first — use `/triage-cycle` |
 
 Artifact substrate (maintained by the orchestrator):
-- `docs/WORKSTREAMS.md` — in-flight and completed streams
+- `docs/WORKSTREAMS.md` — in-flight streams + an index of shipped ones
+- `docs/workstreams/<YYYY-MM>.md` — shipped stream entries, archived by month
 - `docs/CHORES.md` — cleanup batches
 - `docs/TECH_DEBT.md` + `docs/FUTURE.md` — deferred work
 - `.ai/tasks/active/<id>/` → `.ai/tasks/completed/<YYYY-MM>/<id>/` — per-stream artifacts
