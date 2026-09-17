@@ -1,9 +1,19 @@
 # Design — `ai-assist-prompt-caching`
 
-**Status:** DRAFT — phase B complete, awaiting triage (`/triage-cycle`).
-**Date:** 2026-09-08
+**Status:** phase B complete; **all five open questions closed** (OQ-1 and OQ-3 on 2026-09-15/17,
+OQ-2/4/5 on 2026-09-17). Ready for phase C implementation.
+
+**Date:** 2026-09-08 (open questions closed 2026-09-17)
 **Inputs:** `brief.md` (three revisions), `research.md` (phase A), the tree at
 `claude/ai-assist-prompt-caching`.
+
+> **Note on process.** This design did **not** go through `/triage-cycle`. That skill and
+> `docs/DESIGN_PROCESS.md` are built for high-fidelity UI-prototype bundles — `design/pages/`,
+> a staging tree, a port/discard packaging recommendation — and this repo has no `design/`
+> directory at all. Three of that process's four triage buckets (visuals, assets, staging) have
+> no referent for a document-shaped library-API design; the fourth (followups) was already
+> discharged to `TECH_DEBT.md` and `FUTURE.md`. The open questions were decided directly
+> instead, each with its reasoning recorded in §12.
 
 This design does not re-derive the brief's three findings. It accepts them, and §0
 records four things the tree says that the brief did not have — one of which
@@ -833,11 +843,20 @@ output tokens varied between the two calls (reasoning 129 → 111, and 202 → 1
 not attributable to caching alone. Treat it as motivation for C1, not as a discount rate; the
 rate stays `[unverified]` per OQ-2.
 
-**OQ-2 — is a second research pass a gate on C3?** Every OpenAI/Gemini/xAI threshold is
-`[unverified]` because the prose docs are egress-blocked. *Recommendation: not a gate.*
-Caller-supplied is the permanent answer regardless of what a second pass finds (§7), and a
-verified number only improves a registry table that already handles its own absence
-correctly. A second pass is worth running for its own sake, but nothing waits on it.
+**OQ-2 — is a second research pass a gate on C3? — ✅ RESOLVED 2026-09-17: not a gate on C3,
+but a wanted input to C2.**
+
+The recommendation stands, on a stronger footing than it was written with. Caller-supplied is
+permanent **not because we lack numbers** but because Anthropic's *verified* minimums are
+non-monotonic (512 on Opus 5, 4096 on Opus 4.6 and Haiku 4.5) — so even perfect knowledge does
+not collapse to a per-provider constant. A second pass cannot change §7's shape.
+
+**One thing changed, and it points at C2 rather than C3.** The xAI run (OQ-1) found a
+**128-token cached floor on a cold call**, which means a cache-effectiveness check must be
+phrased as a ratio against a per-provider floor. Verified floors are therefore a genuine input
+to §9's checks in a way they are not to the emit path. Run the second pass before C2 ships if
+it is cheap; **C3 waits on nothing**, and R-c covers the gap either way — an unknown floor is
+reported as unknown, not assumed to be zero.
 
 **OQ-3 — does `prompt_cache_key` land in C1 or C3? — ✅ RESOLVED 2026-09-15: C3.**
 
@@ -857,17 +876,35 @@ broke caching" on the one slice built to be above suspicion.
 C3 changes the wire anyway, and by then C1's usage reporting exists to measure the
 partitioning as it happens.
 
-**OQ-4 — is Anthropic's top-level auto-cache worth exposing?** The brief establishes it is a
-one-line change that makes the bill **worse** on the single-shot path and better on
-multi-turn. *Recommendation: not in C3.* If it lands later it must be an explicit caller
-opt-in on the multi-turn paths only, never a default — and it consumes one of the four
-breakpoint slots, which reopens §6.2's `reserved` arithmetic.
+**OQ-4 — is Anthropic's top-level auto-cache worth exposing? — ✅ RESOLVED 2026-09-17: not in
+C3.**
 
-**OQ-5 — is C1's per-adapter usage extraction one stream or two?** Five normalization rows
-across four adapters plus the streaming path is not small, and §8's table is the whole of it.
-If triage wants C1 narrower, the natural cut is non-streaming first — but note the brief's
-silent-failure argument applies to streaming continuations at least as strongly, so a cut
-here is a deferral, not a descope.
+The recommendation stands, and the OQ-1 run supplies an argument it did not have. Auto-cache's
+whole selling point is *no breakpoint bookkeeping* — and §5 has us doing that bookkeeping
+anyway, deliberately, because letting a provider choose which breakpoints survive picks the
+worst ones. Meanwhile the xAI run shows explicit placement against a stable prefix caching
+**99.5%** of input. So auto-cache buys nothing on the path this design builds, and costs one
+of the four slots.
+
+If it ever lands it is an explicit caller opt-in on the multi-turn paths only, never a
+default, and it reopens §6.2's `reserved` arithmetic.
+
+**OQ-5 — is C1's per-adapter usage extraction one stream or two? — ✅ RESOLVED 2026-09-17: one
+stream. Do not split.**
+
+Decided against this section's own suggested narrowing, for a reason the section did not reach.
+
+The size argument is weak on inspection: §8's table is now **six** rows (xAI split into its two
+routes once OQ-1 showed they use different field names), but they are six rows of *data
+mapping*, not six pieces of logic. And the streaming path is where the silent failure is
+**worst**, because continuations repeat the prefix most.
+
+The decisive argument is a soundness one. Splitting leaves a window in which
+`IAiCompletionUsage` exists on the non-streaming path and is absent on streaming responses —
+and a caller cannot distinguish *"streaming does not report usage"* from *"not implemented
+yet"*. **That is exactly the three-way ambiguity the required `reports` discriminator exists to
+kill** (F4, §8). A split would reintroduce, at the slice boundary, the defect the type's central
+design decision was made to prevent.
 
 ---
 

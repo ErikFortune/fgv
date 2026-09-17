@@ -1266,6 +1266,45 @@ fixed in the `module-resolution-upgrade` stream, so it is no longer a prerequisi
 
 ---
 
+## The design-triage-implement shape only serves UI-prototype designs
+
+`CLAUDE.md` offers `design-triage-implement` as one of three general workflow shapes and points
+at `/triage-cycle`. That skill and `docs/DESIGN_PROCESS.md` are both written for one specific
+case: a **high-fidelity UI prototype** exported from a design tool, dropped at
+`design/pages/<feature>/`, staged into `design/staging/<feature>/`, and sorted by a
+`PACKAGING.md` into port / revise-and-port / already-canonical / discard.
+
+`ai-assist-prompt-caching` (2026-09) was the first stream to reach the triage step with a
+**document-shaped** design — a library API worked out in prose, no prototype, no assets, no
+visuals. The mismatch was total rather than partial:
+
+- The repo has **no `design/` directory at all**, so the skill's step-1 precondition ("the bundle
+  must already be committed under the drop path") cannot be met — and its own instruction in that
+  case is to stop.
+- Three of the process's four triage buckets — *visuals → component plan*, *assets → package
+  destinations*, *staging tree* — have no referent. Only *emergent capabilities → architectural
+  docs* applies, and the fourth (followups) had already been discharged during design.
+
+That stream's open questions were decided directly instead, with per-question reasoning in its
+`design.md` §12 and the deviation noted at the top of that file. It worked — but it worked by
+abandoning the named process, which is the tell that the process does not cover the case.
+
+**What is actually missing** is a triage shape for document-shaped designs, where the valuable
+work is an adversarial pass over the design's *recommendations* — are the defaults right, what
+did it not consider, which open questions are genuinely open versus already settled by an
+existing principle — rather than sorting prototype artifacts. Any library-API design reaching
+phase C hits this.
+
+**Why deferred:** n=1, and the direct-decision path was cheap. Worth doing when a second
+document-shaped design reaches triage, or if the prototype-shaped process ever actually runs — it
+never has; `.ai/tasks/completed/*/` contains no triage cycle, so both halves of this are
+currently unexercised. Options span renaming the existing skill to scope it honestly, adding a
+sibling shape, or making `DESIGN_PROCESS.md`'s bucket list conditional on the design's form.
+
+**Reference:** `ai-assist-prompt-caching` `design.md` § "Note on process"; 2026-09-17 session.
+
+---
+
 ## Considered and closed — deferrals found by the 2026-08-14 finalize sweep
 
 The sweep found deferrals living only inside completed-stream artifacts, where no ledger reader

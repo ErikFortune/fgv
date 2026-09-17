@@ -802,11 +802,15 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 
 **Origin / dependency.** Upstream gap-fix for `local-ai-exploration` B-3 (local classifier → `IPromptSafetyPolicy` backend), which can't be built against today's surface. Per the gap-then-fix tenet, fix the primitive here first → ship to `release` → `local-ai-exploration` absorbs (merge `release` → integration) before B-3. Runs parallel to `local-ai-exploration` B-2 (independent surfaces). Independent of the local-ai experiment's outcome — benefits any consumer wanting custom screeners.
 
-### `ai-assist-prompt-caching` 🔵
+### `ai-assist-prompt-caching` 🟢
 
-**Status:** 🔵 phase A research and phase B design complete; **triage next**; design-triage-implement shape. Design at `.ai/tasks/active/ai-assist-prompt-caching/design.md`, with five open questions (OQ-1..5) for the triage pass.
+**Status:** 🟢 phases A and B complete; **all five open questions closed**; ready for phase C implementation. Design at `.ai/tasks/active/ai-assist-prompt-caching/design.md`; phase C is three slices — C1 observability, C2 diagnostics + vocabulary, C3 emit (gated on both).
 **Branch base:** `release` HEAD
 **Package surface (expected):** `@fgv/ts-extras/ai-assist`, `@fgv/ts-prompt-assist` — exact surface is a phase-A/B output, not an input
+
+**Open questions, all closed.** OQ-1 (xAI's cache surface) settled by a live `xai-cache-probe` testbed run: both routes cache ~99% of a stable prefix, under *different* field names per route, and neither reports a cache **write** — so xAI is `reads` on both, which is where it parts from OpenAI. The run also found a **128-token cached floor on a cold call**, which makes `cachedTokens > 0` meaningless as a signal and forces every C2 check to be a *ratio*. OQ-3 → C3 (a per-tenant cache key partitions traffic that shares a namespace today, so it must not ride on C1, whose whole claim is inertness). OQ-2 → not a gate on C3, but a wanted input to C2 because of that floor. OQ-4 → auto-cache not in C3; it buys nothing once §5 does the breakpoint bookkeeping deliberately. OQ-5 → one stream, *not* split: a split leaves callers unable to distinguish "streaming does not report usage" from "not implemented yet", reintroducing the exact ambiguity the required `reports` discriminator exists to kill.
+
+**Process note.** This stream did not use `/triage-cycle` — that skill and `docs/DESIGN_PROCESS.md` serve UI-prototype bundles and this repo has no `design/` directory. The questions were decided directly with reasoning recorded per question. The gap is filed in `docs/FUTURE.md`.
 
 **Phase B outcome.** No falsification this time; the brief's factual claims all held, and the design added four findings of its own. The load-bearing one: mechanism is keyed on `(descriptor, model, **usesResponsesApi**)`, not on the provider/model pair the brief named — nine registry providers share `apiFormat: 'openai'`, and that format splits at runtime into Responses vs Chat Completions on a boolean computed from *whether the caller passed tools*. Since `cache_write_tokens` exists only on Responses, **whether cache writes are observable at all flips on the presence of tools.** Also: xAI is reached over the OpenAI-compat path, so the xAI field names phase A verified are for a wire we never speak (**OQ-1**).
 
