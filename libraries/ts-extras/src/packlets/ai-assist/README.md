@@ -299,3 +299,43 @@ problem: the providers impose their own constraints on combining it with increme
 delivery, and a per-chunk report has no obvious meaning. Also out: repair (the
 `jsonResponse` boundary stays — with `'json-mode'` or better the syntactic-repair
 question stops arising), injectable validation, and retry inside the client.
+
+## Prompt-cache token usage
+
+Every completion — streaming and non-streaming alike — can carry a normalized
+`usage?: IAiCompletionUsage` on `IAiCompletionResponse` / `IAiStreamDone`:
+
+```ts
+const result = await AiAssist.callProviderCompletion({ descriptor, apiKey, ...request });
+if (result.isSuccess() && result.value.usage) {
+  const { reports, cachedInputTokens, uncachedInputTokens, cacheWriteTokens } = result.value.usage;
+}
+```
+
+`reports: 'none' | 'reads' | 'reads-and-writes'` is **required, not optional**, for the
+same reason `structuredOutput` is: an absent `cacheWriteTokens` is three-ways ambiguous
+(no write happened / this API cannot report writes / a build predating the field) unless
+something disambiguates it. Under `'reads-and-writes'` an absent `cacheWriteTokens`
+genuinely means zero were written this request; under `'reads'` it means the API cannot
+say, and the field is never present at all.
+
+Anthropic Messages and the OpenAI/xAI Responses API report `'reads-and-writes'`; OpenAI/xAI
+Chat Completions and Gemini `generateContent` report `'reads'` only — Chat Completions has
+no `cache_write_tokens` field on any provider reached through it, and Gemini's writes
+happen out-of-band via the explicit `cachedContents` resource (out of scope here). The
+OpenAI/xAI Responses route is one shared code path that answers differently per
+provider: `reports` is derived from whether the wire response's
+`input_tokens_details.cache_write_tokens` is **present** (OpenAI always sends it, even as
+`0`; xAI never does), not from provider identity — so an unverified future
+`apiFormat: 'openai'` provider on that route gets the right answer automatically.
+
+Every derived field (`uncachedInputTokens`, `totalInputTokens`) stays `undefined` when an
+input it needs is itself unknown, rather than assuming the missing figure is zero — most
+notably on Gemini, where `cachedContentTokenCount` sits **inside** `promptTokenCount`
+(unlike OpenAI, where it sits in a sibling `…_details` object next to a separate total).
+`raw?: JsonObject` on `IAiCompletionUsage` carries the provider's own unnormalized usage
+block for anything this shape drops.
+
+This surface is read-only: it reports fields off responses already received and sends no
+new cache directive of its own — a caching *plan* (breakpoints, `prompt_cache_key`) is a
+separate, wire-changing surface.
