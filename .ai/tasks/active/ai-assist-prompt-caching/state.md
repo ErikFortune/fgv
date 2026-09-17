@@ -233,3 +233,27 @@ API Extractor's `etc/ts-extras.api.md` regen for the new `supportsCacheUsageRepo
 export). Round-4 finding was posted as suppressed (non-inline) comments, replied to via a
 top-level PR comment; round 5 requested — four consecutive substantive rounds now, still
 short of the 10-round cap, continuing per "round count is not the signal."
+
+**Copilot round 5 — round 4's own fix had a gap, plus doc drift from the same change.**
+Real: `executeClientToolTurn` calls `callOpenAiResponsesStream` directly
+(`clientToolContinuationBuilder.ts`) rather than through `streamingClient.ts`'s
+dispatcher, so round 4's new `reportsUsage` param — added with a `false` default —
+was silently unset on this call site. Every client-tool stream, openai/xai-grok
+included, lost usage regardless of provider, a regression round 4 itself introduced
+one call site short of complete. Threaded `supportsCacheUsageReporting(descriptor)`
+through; added a regression test in `clientToolTurn.test.ts` pinning that an openai
+client-tool turn with `response.completed.usage` present now captures it. Also real:
+round 4's gate made two existing doc claims (`README.md`, `CAPABILITIES.md`) false —
+both said an unverified future `apiFormat: 'openai'` provider would get usage
+reporting "automatically" via field presence, true before round 4's gate landed and
+not after. Corrected both to state the gate explicitly, and caught the same stale
+claim in this PR's own description while updating it (the description otherwise still
+named the retired `ANTHROPIC_API_KEY` harness rationale, also fixed — round 5's one
+suppressed finding). All fixes pushed in `7cf03858c`; full suite re-verified
+(2836/2836, 100% coverage, clean lint, clean build). Round-5's three inline threads
+replied to and resolved individually (all real findings this round, no suppressed
+doc-only comments needing a separate top-level reply beyond the harness-citation
+note); round 6 requested — five consecutive substantive rounds now, still short of
+the 10-round cap. Notably this round caught a bug in the *previous* round's own fix
+(an incomplete threading, not a new class of defect) — a useful data point for
+"substantive vs. nitpick" judgment: still real, still worth another round.
