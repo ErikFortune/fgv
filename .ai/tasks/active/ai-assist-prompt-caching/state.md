@@ -130,4 +130,31 @@ one P2 (an unreachable `'none'` member on `AiCacheReportingLevel` with no produc
 `IAiCompletionResponse.usage === undefined` already is the "nothing reported" signal),
 fixed, and one P3 (a cosmetic object-shape inconsistency between normalizers), dispositioned
 as not worth touching. [PR #668](https://github.com/ErikFortune/fgv/pull/668) opened
-against `claude/ai-assist-prompt-caching`; Copilot review requested, loop in progress.
+against `claude/ai-assist-prompt-caching`.
+
+**Copilot round 1 — substantive, not nitpicks.** A real bug: once
+`stream_options.include_usage` is set, OpenAI Chat Completions sends literal `usage: null`
+on every intermediate SSE chunk (only the terminal chunk carries the populated object).
+The chunk validator required `usage` to be a `JsonObject` when present, so every
+intermediate chunk failed validation and was dropped **whole** — losing `delta.content`
+and `finish_reason` along with it, not just `usage`. This would have broken ordinary
+Chat Completions streaming text in production the first time a caller exercised this
+path with the flag set; the pre-existing tests never sent `usage: null` so never caught
+it. Fixed (mirrors the file's existing `finish_reason` `stringOrNull` pattern) with a
+regression test. Also real: the standing-assertion harness targeted Anthropic, whose
+cache is opt-in per content block via `cache_control` — C1 sends no cache directive at
+all, so the harness could never have produced a cache hit regardless of prefix
+stability, a false-miss result that would have validated nothing. Retargeted to xAI,
+already verified live to auto-cache with no opt-in (design.md §12/OQ-1), with the
+prediction calibrated to those recorded numbers. Two doc-accuracy fixes (a stale ledger
+status line, a README sentence describing the shared OpenAI/xAI Responses route as
+uniformly write-reporting) and one style cleanup (redundant `optionalFields` alongside
+`.optional()` — confirmed by reading `ObjectValidator`'s source that the two are simply
+OR'd, so the pair was dead duplication, not a second guard). One suggested change
+declined with reasoning posted on the PR: defaulting Anthropic's `cacheWriteTokens` to
+`0` would violate R-c (never default a missing usage field to a number) and duplicate
+what `reports: 'reads-and-writes'` + absent `cacheWriteTokens` already means per the
+design's own contract — the likely cause was `cacheWriteTokens`'s own TSDoc only
+spelling out the `'reads'` case, now fixed to state both inline. All fixes pushed in
+9ac74080b; full suite re-verified (2829/2829, 100% coverage, clean lint). Round-1
+threads replied to and resolved; round 2 requested.
