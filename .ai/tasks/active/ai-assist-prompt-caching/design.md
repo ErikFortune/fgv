@@ -518,9 +518,18 @@ precedent `IPromptComposition.unavailable` already set for the same class of pro
 One additive optional field on the completion response, sibling to
 `IAiEmbeddingResult.usage` (**F4**):
 
+> **Corrected at C1 implementation, 2026-09-17.** `'none'` is dropped from
+> `AiCacheReportingLevel` below. As specified it had no producer: every C1 normalizer
+> either returns a populated `IAiCompletionUsage` (with `reports` as `'reads'` or
+> `'reads-and-writes'`) or returns nothing at all when the wire response carried no
+> usage block — `IAiCompletionResponse.usage` being `undefined` already **is** the
+> "nothing reported" signal, so a `reports: 'none'` value would have been a second,
+> unreachable-except-by-bug way to say the same thing (caught by `code-reviewer`
+> before this PR opened). The type is `'reads' | 'reads-and-writes'`.
+
 ```ts
 /** What a provider's wire shape is able to report about caching. @public */
-export type AiCacheReportingLevel = 'none' | 'reads' | 'reads-and-writes';
+export type AiCacheReportingLevel = 'reads' | 'reads-and-writes';
 
 /** Token accounting for a completion, normalized across providers. @public */
 export interface IAiCompletionUsage {

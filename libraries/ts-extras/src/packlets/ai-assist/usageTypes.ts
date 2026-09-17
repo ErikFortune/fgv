@@ -32,19 +32,25 @@
 import { type JsonObject } from '@fgv/ts-json-base';
 
 /**
- * What a provider's wire shape is able to report about prompt-cache usage.
+ * What a provider's wire shape is able to report about prompt-cache usage,
+ * given that a usage block was present on the response at all.
  *
  * @remarks
- * `'none'` — the wire response carried no usage block at all.
  * `'reads'` — cache reads are reported; cache writes cannot be (either the API
  * has no write concept, or the field structurally does not exist on this route).
  * `'reads-and-writes'` — both reads and writes are reported.
+ *
+ * There is deliberately no `'none'` member: "no usage was reported at all" is
+ * already expressed by {@link AiAssist.IAiCompletionResponse.usage} itself
+ * being absent, and a third value here would be a second, reachable-only-via-
+ * bug way to say the same thing — check `usage === undefined`, not a `reports`
+ * value, to detect that case.
  *
  * See {@link AiAssist.IAiCompletionUsage.reports} for why this is required
  * rather than optional.
  * @public
  */
-export type AiCacheReportingLevel = 'none' | 'reads' | 'reads-and-writes';
+export type AiCacheReportingLevel = 'reads' | 'reads-and-writes';
 
 /**
  * Token accounting for a completion, normalized across providers.

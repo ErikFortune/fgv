@@ -312,12 +312,14 @@ if (result.isSuccess() && result.value.usage) {
 }
 ```
 
-`reports: 'none' | 'reads' | 'reads-and-writes'` is **required, not optional**, for the
-same reason `structuredOutput` is: an absent `cacheWriteTokens` is three-ways ambiguous
-(no write happened / this API cannot report writes / a build predating the field) unless
+`reports: 'reads' | 'reads-and-writes'` is **required, not optional**, for the same
+reason `structuredOutput` is: an absent `cacheWriteTokens` is three-ways ambiguous (no
+write happened / this API cannot report writes / a build predating the field) unless
 something disambiguates it. Under `'reads-and-writes'` an absent `cacheWriteTokens`
 genuinely means zero were written this request; under `'reads'` it means the API cannot
-say, and the field is never present at all.
+say, and the field is never present at all. There is no `'none'` member — "nothing was
+reported at all" is already `usage` itself being `undefined`, so check for that rather
+than for a `reports` value.
 
 Anthropic Messages and the OpenAI/xAI Responses API report `'reads-and-writes'`; OpenAI/xAI
 Chat Completions and Gemini `generateContent` report `'reads'` only — Chat Completions has

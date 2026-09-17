@@ -241,9 +241,10 @@ const aiAssistProviderConfig: Converter<IAiAssistProviderConfig>;
 const aiAssistSettings: Converter<IAiAssistSettings>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type AiCacheReportingLevel = 'none' | 'reads' | 'reads-and-writes';
+type AiCacheReportingLevel = 'reads' | 'reads-and-writes';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
