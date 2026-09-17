@@ -252,6 +252,50 @@ describe('callProviderCompletion usage reporting', () => {
     });
   });
 
+  describe('non-cache-reporting openai-format descriptors', () => {
+    // Chat Completions and Responses are both shared by every apiFormat: 'openai' descriptor
+    // (Groq, Mistral, Ollama, self-hosted openai-compat), not just OpenAI/xAI Grok. Only the
+    // latter two are confirmed to report cache-relevant usage — an ordinary usage block from
+    // one of the others carries no cache information and must not be normalized (see
+    // AiAssist.supportsCacheUsageReporting).
+    test('Chat Completions: a Groq-shaped usage block is not normalized', async () => {
+      const descriptor = makeDescriptor({ apiFormat: 'openai', id: 'groq' });
+      mockFetchResponse(
+        openAiResponse('ok', 'stop', { usage: { prompt_tokens: 100, completion_tokens: 20 } })
+      );
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest()
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.usage).toBeUndefined();
+      });
+    });
+
+    test('Responses: a non-cache descriptor routed to Responses gets no usage', async () => {
+      const descriptor = makeDescriptor({ apiFormat: 'openai', id: 'groq', supportedTools: ['web_search'] });
+      mockFetchResponse(
+        responsesApiResponse('ok', 'completed', {
+          usage: { input_tokens: 100, output_tokens: 20, input_tokens_details: { cached_tokens: 40 } }
+        })
+      );
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools: [{ type: 'web_search' }]
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.usage).toBeUndefined();
+      });
+    });
+  });
+
   describe('Gemini generateContent', () => {
     const descriptor = makeDescriptor({ apiFormat: 'gemini' });
 

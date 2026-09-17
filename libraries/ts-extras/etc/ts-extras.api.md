@@ -204,6 +204,7 @@ declare namespace AiAssist {
         resolveEffectiveTools,
         AiCacheReportingLevel,
         IAiCompletionUsage,
+        supportsCacheUsageReporting,
         supportsStreamUsageOption,
         ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
         AiStructuredOutputFormat,
@@ -3201,6 +3202,9 @@ type StructuredOutputRequest = ISchemaStructuredOutputRequest | IJsonObjectStruc
 
 // @public
 const SUPPORTED_SCHEMES: ReadonlyArray<string>;
+
+// @public
+function supportsCacheUsageReporting(descriptor: IAiProviderDescriptor): boolean;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //

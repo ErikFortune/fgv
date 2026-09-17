@@ -200,6 +200,34 @@ describe('streaming adapters — IAiStreamDone.usage', () => {
     expect(body.stream_options).toBeUndefined();
   });
 
+  test('OpenAI Chat Completions: an unprompted usage chunk from a non-cache-reporting provider is dropped', async () => {
+    // The adapter is shared by Groq/Mistral/Ollama/openai-compat too — none asked for
+    // stream_options, but nothing stops a server from sending a usage block unprompted. It
+    // must still be discarded rather than normalized as a false cache-reporting signal (see
+    // AiAssist.supportsCacheUsageReporting).
+    mockSseResponse([
+      `data: ${JSON.stringify({
+        choices: [{ delta: {}, finish_reason: 'stop' }],
+        usage: { prompt_tokens: 100, completion_tokens: 20 }
+      })}\n\n`,
+      'data: [DONE]\n\n'
+    ]);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: { ...makeOpenAiResponsesDescriptor(), id: 'groq', supportedTools: [] },
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest()
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const collected = await collect(result.value);
+    const done = collected.find((e) => e.type === 'done');
+    expect(done?.type).toBe('done');
+    if (done?.type !== 'done') return;
+    expect(done.usage).toBeUndefined();
+  });
+
   test('OpenAI Responses: cache_write_tokens present reports reads-and-writes', async () => {
     const events = [
       `event: response.output_text.delta\ndata: ${JSON.stringify({ delta: 'hi' })}\n\n`,
@@ -271,6 +299,37 @@ describe('streaming adapters — IAiStreamDone.usage', () => {
     if (done?.type !== 'done') return;
     expect(done.usage?.reports).toBe('reads');
     expect(done.usage?.cacheWriteTokens).toBeUndefined();
+  });
+
+  test('OpenAI Responses: a non-cache-reporting descriptor routed here gets no usage', async () => {
+    // Same sharing concern as the Chat Completions streaming path above — the Responses
+    // streaming route is reachable by any apiFormat: 'openai' descriptor that carries tools,
+    // not just OpenAI/xAI Grok (see AiAssist.supportsCacheUsageReporting).
+    const events = [
+      `event: response.output_text.delta\ndata: ${JSON.stringify({ delta: 'hi' })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({
+        response: {
+          status: 'completed',
+          usage: { input_tokens: 100, output_tokens: 20, input_tokens_details: { cached_tokens: 40 } }
+        }
+      })}\n\n`
+    ];
+    mockSseResponse(events);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: { ...makeOpenAiResponsesDescriptor(), id: 'groq' },
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      tools: [{ type: 'web_search' }]
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const collected = await collect(result.value);
+    const done = collected.find((e) => e.type === 'done');
+    expect(done?.type).toBe('done');
+    if (done?.type !== 'done') return;
+    expect(done.usage).toBeUndefined();
   });
 
   test('OpenAI Responses: response.usage: null does not drop status/incomplete_details', async () => {

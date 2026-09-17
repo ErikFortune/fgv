@@ -19,8 +19,9 @@
 // SOFTWARE.
 
 /**
- * Whether a provider on the shared Chat Completions streaming path should be
- * asked for a usage block.
+ * Provider-capability gates for `usage` reporting on the shared
+ * `apiFormat: 'openai'` completion paths (Chat Completions and Responses,
+ * streaming and non-streaming).
  *
  * @remarks
  * Its own module rather than part of `model.ts` because `model.ts` was at the
@@ -43,4 +44,29 @@ import type { IAiProviderDescriptor } from './model';
  */
 export function supportsStreamUsageOption(descriptor: IAiProviderDescriptor): boolean {
   return descriptor.id === 'openai';
+}
+
+/**
+ * Whether a provider has confirmed prompt-cache-relevant `usage` reporting on
+ * the shared Chat Completions / Responses completion paths (streaming and
+ * non-streaming alike).
+ *
+ * @remarks
+ * All four call sites (`callOpenAiCompletion`, `callOpenAiResponsesCompletion`,
+ * and their streaming counterparts) are shared by every `apiFormat: 'openai'`
+ * descriptor — xAI Grok, Groq, Mistral, Ollama, and self-hosted
+ * `openai-compat` all route through the same adapter as OpenAI. Only OpenAI
+ * and xAI Grok are confirmed to report cache-relevant `usage` fields; an
+ * ordinary `usage` block from one of the other descriptors (e.g. Groq's plain
+ * `prompt_tokens` / `completion_tokens`, with no cache sub-object at all)
+ * carries no cache information. Normalizing it anyway would stamp
+ * `reports: 'reads'` on a provider that has no prompt-caching concept —
+ * a false cache-reporting signal, not an absent one. So this gate is checked
+ * before every normalize call; when it's `false`, `usage` stays absent
+ * entirely rather than being guessed from whatever shape the wire happens to
+ * send.
+ * @public
+ */
+export function supportsCacheUsageReporting(descriptor: IAiProviderDescriptor): boolean {
+  return descriptor.id === 'openai' || descriptor.id === 'xai-grok';
 }

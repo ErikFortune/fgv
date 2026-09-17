@@ -303,6 +303,7 @@ const RECOGNIZED_OPENAI_RESPONSES_EVENTS: ReadonlySet<string> = new Set<string>(
 async function* translateOpenAiResponsesStream(
   response: Response,
   functionCallMap: Map<string, IAccumulatedFunctionCall>,
+  reportsUsage: boolean,
   logger?: Logging.ILogger
 ): AsyncGenerator<IAiStreamEvent> {
   let fullText = '';
@@ -413,7 +414,10 @@ async function* translateOpenAiResponsesStream(
           // event so a stray incomplete_details on a non-incomplete payload never leaks
           // through, and a later (defensive) completed event can't leave a stale reason.
           incompleteReason = truncated ? payload.response.incomplete_details?.reason : undefined;
-          usageRaw = payload.response.usage ?? undefined;
+          // Gated the same way as the non-streaming Responses path (see
+          // supportsCacheUsageReporting) — this adapter is shared by descriptors with no
+          // confirmed cache-usage reporting.
+          usageRaw = reportsUsage ? payload.response.usage ?? undefined : undefined;
         }
         completed = true;
         /* c8 ignore next 1 - defensive: eventName === 'error' alternative not exercised in tests */
@@ -478,7 +482,8 @@ export async function callOpenAiResponsesStream(
   resolvedThinking?: IResolvedThinkingConfig,
   functionCallMap?: Map<string, IAccumulatedFunctionCall>,
   continuationMessages?: ReadonlyArray<JsonObject>,
-  maxTokens?: number
+  maxTokens?: number,
+  reportsUsage: boolean = false
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/responses`;
   const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
@@ -520,5 +525,7 @@ export async function callOpenAiResponsesStream(
   );
   const callMap = functionCallMap ?? new Map<string, IAccumulatedFunctionCall>();
   const conn = await openSseConnection(url, headers, body, logger, signal);
-  return conn.onSuccess((response) => succeed(translateOpenAiResponsesStream(response, callMap, logger)));
+  return conn.onSuccess((response) =>
+    succeed(translateOpenAiResponsesStream(response, callMap, reportsUsage, logger))
+  );
 }

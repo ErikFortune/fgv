@@ -115,7 +115,10 @@ const openAiChatStreamChunk: Validator<IOpenAiChatStreamChunk> = Validators.obje
  *
  * @internal
  */
-async function* translateOpenAiChatStream(response: Response): AsyncGenerator<IAiStreamEvent> {
+async function* translateOpenAiChatStream(
+  response: Response,
+  reportsUsage: boolean
+): AsyncGenerator<IAiStreamEvent> {
   let fullText = '';
   let truncated = false;
   let receivedDone = false;
@@ -133,7 +136,11 @@ async function* translateOpenAiChatStream(response: Response): AsyncGenerator<IA
       const chunk = validateEventPayload(json, openAiChatStreamChunk);
       // Every intermediate chunk carries literal `null` once `stream_options.include_usage`
       // is set; only the terminal chunk's populated object should update the accumulator.
-      if (chunk?.usage !== undefined && chunk.usage !== null) {
+      // Gated on reportsUsage (same descriptor check that decides whether the request even
+      // asked for it, see callOpenAiChatStream) — this adapter is shared by descriptors with
+      // no confirmed cache-usage reporting, and an unprompted usage block from one of those
+      // carries no cache information (see supportsCacheUsageReporting).
+      if (reportsUsage && chunk?.usage !== undefined && chunk.usage !== null) {
         usageRaw = chunk.usage;
       }
       /* c8 ignore next 1 - defensive: chunk?.choices optional chain unreachable after validation */
@@ -232,5 +239,5 @@ export async function callOpenAiChatStream(
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI streaming completion: model=${config.model}`);
   const conn = await openSseConnection(url, headers, body, logger, signal);
-  return conn.onSuccess((response) => succeed(translateOpenAiChatStream(response)));
+  return conn.onSuccess((response) => succeed(translateOpenAiChatStream(response, includeStreamUsage)));
 }

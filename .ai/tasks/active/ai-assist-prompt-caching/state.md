@@ -200,3 +200,35 @@ cd3677031; full suite re-verified (2831/2831, 100% coverage, clean lint). Round-
 thread replied to and resolved; round 4 requested — three consecutive substantive
 rounds, still short of the 10-round cap, continuing per "round count is not the
 signal."
+
+**Copilot round 4 — real design gap, not just a wire quirk.** All four usage-attaching
+call sites (`callOpenAiCompletion`, `callOpenAiResponsesCompletion`, and their streaming
+counterparts) are shared by every `apiFormat: 'openai'` descriptor — Groq, Mistral,
+Ollama, and self-hosted `openai-compat`, not just OpenAI and xAI Grok — but only the
+latter two are confirmed to report cache-relevant `usage` fields. An ordinary usage
+block from one of the others (e.g. Groq's plain `prompt_tokens`/`completion_tokens`,
+with no cache sub-object at all) was being normalized anyway, stamping `reports: 'reads'`
+on a provider with no prompt-caching concept — a false cache-reporting signal, exactly
+the kind of thing R-c exists to prevent, just one level up (a fabricated capability claim
+rather than a fabricated number). Added `supportsCacheUsageReporting(descriptor)` to
+`streamUsageCapability.ts` (`true` only for `'openai'`/`'xai-grok'`) and threaded it as a
+boolean param into all four call sites, computed at each dispatcher (`completionClient.ts`'s
+`callProviderCompletion` switch, `streamingClient.ts`'s `callProviderCompletionStream`
+switch) where the descriptor is in scope — the per-format functions themselves take
+`IAiApiConfig`/`IStreamApiConfig`, neither of which carries `descriptor`, so threading a
+plain boolean (mirroring the existing `useMaxCompletionTokensField` pattern) was the
+correct shape, not a wider config type. The Chat Completions streaming adapter reuses the
+existing `includeStreamUsage` flag for this rather than a second param, since it's already
+`supportsStreamUsageOption(descriptor)` and a strict subset of the new gate. Four
+regression tests added: non-streaming Chat and Responses through the public
+`callProviderCompletion` API with a `groq`-id descriptor and a present usage block
+(asserting `usage` stays `undefined`), plus streaming siblings for both Chat and Responses
+proving an *unprompted* usage chunk from a non-cache-reporting descriptor is still
+dropped. All four reach the bug through `AiAssist.callProviderCompletion`/
+`callProviderCompletionStream` with real routing (Groq can reach the Responses path
+today — nothing currently validates `tools` against `descriptor.supportedTools` before
+routing), not synthetic direct calls. All fixes pushed in `<pending>`; full suite
+re-verified (2835/2835, 100% coverage, clean lint, `rushx build` clean including
+API Extractor's `etc/ts-extras.api.md` regen for the new `supportsCacheUsageReporting`
+export). Round-4 threads to be replied to and resolved; round 5 to be requested — four
+consecutive substantive rounds now, still short of the 10-round cap.
