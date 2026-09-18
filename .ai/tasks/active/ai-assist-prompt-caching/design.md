@@ -339,6 +339,41 @@ stability level **is** that probability estimate. So:
 > **Rank downward transitions by the stability of the run they close, descending. Break
 > ties by earliest position.**
 
+### 5.1a Empty runs — settled by C2, and **C3 inherits this**
+
+**Added 2026-09-18.** §5.1's fold says nothing about a run whose sections render to zero bytes,
+and §9 said nothing either. C2 (#669) discovered the answer the expensive way: **five
+consecutive Copilot rounds** circled it, round 4 reverting round 3 outright. The rule below is
+what they converged on, recorded here rather than left in a comment in
+`cacheStabilityAnalysis.ts`, because **C3 folds sections into runs in exactly the same way** and
+would otherwise re-derive the whole argument.
+
+| run's level | empty on this resolve → |
+|---|---|
+| `'frozen'` (unrefuted) | **collapse it** — remove from adjacency checks entirely |
+| `'per-conversation'` | **keep it** |
+| `'per-request'` | **keep it** |
+
+**Why `'frozen'` is the exception and the other two are not.** An unrefuted `'frozen'` claim is
+invariant across *every* resolve of the prompt, so empty now means empty forever — there are no
+bytes there to strand or reorder, on this resolve or any other. `'per-conversation'` guarantees
+stability only *within* one conversation, so a different conversation resolving the same prompt
+could render it non-empty; an empty sample here is not evidence it can never contribute bytes.
+`'per-request'` says nothing at all about the next resolve.
+
+**And why collapsing beats merely skipping the run's own bytes.** D4 and D5 both compare a run
+against its **neighbour**. Left in place, an empty frozen run between two non-empty runs absorbs
+the check meant for the pair on either side of it — D4 compares against the empty run instead of
+the real predecessor, and D5 stops its prefix walk there instead of continuing through to
+genuinely cacheable bytes beyond. The same neighbour-comparison structure is what §5.1's
+downward-transition scan does, which is why this is C3's problem too.
+
+**One further trap, from the same rounds.** A zero-length section is **not** excluded from the
+per-section stability walk — only from the run-adjacency checks. A `'per-request'` slot that
+renders empty *this* time can render non-empty next time at the same position, which is exactly
+the byte-instability D4/D5 exist to catch; excluding it would suppress the warning in the case
+that matters most.
+
 ### 5.2 The resulting rule, and its consequence
 
 1. Fold to runs; take the maximal **monotone non-increasing** stability prefix.
