@@ -392,13 +392,86 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 
 ### `ai-assist-prompt-caching` 🟢
 
-**Status:** 🟢 phases A and B complete; **all five open questions closed**; phase C is three slices — **C1 observability implemented, [PR #668](https://github.com/ErikFortune/fgv/pull/668) open**, C2 diagnostics + vocabulary and C3 emit (gated on both) not started. Design at `.ai/tasks/active/ai-assist-prompt-caching/design.md`; C1 checkpoint in `.ai/tasks/active/ai-assist-prompt-caching/state.md`.
-**Branch base:** `release` HEAD (design/research on `claude/ai-assist-prompt-caching`; C1 on `claude/ai-assist-cache-observability`)
+**Status:** 🟢 phases A and B complete; the original five open questions closed, plus OQ-6 (opened and resolved by the pre-C1 verification pass, design.md §14); **OQ-7 opened during C2** (unannotated preface default — `'frozen'` vs. `'per-request'` — a genuine safety-vs-usability tradeoff, not resolved in C2, carried to C3) remains open; phase C is three slices — **C1 observability shipped via [PR #668](https://github.com/ErikFortune/fgv/pull/668), C2 diagnostics + vocabulary implemented, [PR #669](https://github.com/ErikFortune/fgv/pull/669) open against `release`**, C3 emit (gated on both) not started. Design at `.ai/tasks/active/ai-assist-prompt-caching/design.md`; checkpoints in `.ai/tasks/active/ai-assist-prompt-caching/state.md`.
+**Branch base:** `release` HEAD (design/research on `claude/ai-assist-prompt-caching`; C1 on `claude/ai-assist-cache-observability`; C2 on `claude/ai-assist-cache-diagnostics`, based directly on `release` per the branching lesson C1 left — a slice stacked on the design branch got no CI for its entire life since `ci.yml` only fires for PRs targeting `release`)
 **Package surface (expected):** `@fgv/ts-extras/ai-assist`, `@fgv/ts-prompt-assist` — exact surface is a phase-A/B output, not an input
 
-**C1 implemented — [PR #668](https://github.com/ErikFortune/fgv/pull/668) open against `claude/ai-assist-prompt-caching`, not yet merged.** `AiCacheReportingLevel` / `IAiCompletionUsage` (new `usageTypes.ts`, sibling to `structuredOutputTypes.ts`), `IAiCompletionResponse.usage?` and `IAiStreamDone.usage?` (streaming in scope per OQ-5, not split out), and per-wire-shape normalization (`usageNormalization.ts`) filling design.md §8's six-row table for both the completion and streaming adapters. One resolution beyond the design doc: the OpenAI/xAI Responses route shares one code path with diverging `reports` values, resolved by reading `cache_write_tokens` **field presence** on the actual response rather than threading a provider discriminator through — correct for both today, but only for descriptors that clear `AiAssist.supportsCacheUsageReporting` (`'openai'`/`'xai-grok'` only; added during PR review after the four usage-attaching call sites were found to be shared by every `apiFormat: 'openai'` descriptor, including Groq/Mistral/Ollama/`openai-compat`, none of which have a cache-reporting concept) — an unconfirmed descriptor, including a future one, gets `usage: undefined` rather than a guessed answer. `libraries/ts-extras/CAPABILITIES.md` and `.ai/instructions/LIBRARY_CAPABILITIES.md` updated in the same change. Gates green: `@fgv/ts-extras` build/lint/test (2836/2836 as of the PR's latest review round, up from 2829/2829 at open, 100% coverage), repo-wide `rush rebuild` (36/36, zero warnings); repo-wide `rush test` was blocked by the pre-existing, environmental `mutableFsTree.test.ts` root-permissions failure in `ts-json-base` (fails on clean `release` too), so the downstream consumers of the widened types (`ts-app-shell`, `ts-prompt-assist`, `samples/testbed`) were verified individually instead — all green. The live standing-assertion harness (§8) is written with its prediction recorded but not run — no API key/egress in this session.
+**C1 shipped — [PR #668](https://github.com/ErikFortune/fgv/pull/668) merged into `release`.** `AiCacheReportingLevel` / `IAiCompletionUsage` (new `usageTypes.ts`, sibling to `structuredOutputTypes.ts`), `IAiCompletionResponse.usage?` and `IAiStreamDone.usage?` (streaming in scope per OQ-5, not split out), and per-wire-shape normalization (`usageNormalization.ts`) filling design.md §8's six-row table for both the completion and streaming adapters. One resolution beyond the design doc: the OpenAI/xAI Responses route shares one code path with diverging `reports` values, resolved by reading `cache_write_tokens` **field presence** on the actual response rather than threading a provider discriminator through — correct for both today, but only for descriptors that clear `AiAssist.supportsCacheUsageReporting` (`'openai'`/`'xai-grok'` only; added during PR review after the four usage-attaching call sites were found to be shared by every `apiFormat: 'openai'` descriptor, including Groq/Mistral/Ollama/`openai-compat`, none of which have a cache-reporting concept) — an unconfirmed descriptor, including a future one, gets `usage: undefined` rather than a guessed answer. `libraries/ts-extras/CAPABILITIES.md` and `.ai/instructions/LIBRARY_CAPABILITIES.md` updated in the same change. Gates green: `@fgv/ts-extras` build/lint/test (2836/2836 as of the PR's latest review round, up from 2829/2829 at open, 100% coverage), repo-wide `rush rebuild` (36/36, zero warnings); repo-wide `rush test` was blocked by the pre-existing, environmental `mutableFsTree.test.ts` root-permissions failure in `ts-json-base` (fails on clean `release` too), so the downstream consumers of the widened types (`ts-app-shell`, `ts-prompt-assist`, `samples/testbed`) were verified individually instead — all green. The live standing-assertion harness (§8) is written with its prediction recorded but not run — no API key/egress in this session.
 
-**Open questions, all closed.** OQ-1 (xAI's cache surface) settled by a live `xai-cache-probe` testbed run: both routes cache ~99% of a stable prefix, under *different* field names per route, and neither reports a cache **write** — so xAI is `reads` on both, which is where it parts from OpenAI. The run also found a **128-token cached floor on a cold call**, which makes `cachedTokens > 0` meaningless as a signal and forces every C2 check to be a *ratio*. OQ-3 → C3 (a per-tenant cache key partitions traffic that shares a namespace today, so it must not ride on C1, whose whole claim is inertness). OQ-2 → not a gate on C3, but a wanted input to C2 because of that floor. OQ-4 → auto-cache not in C3; it buys nothing once §5 does the breakpoint bookkeeping deliberately. OQ-5 → one stream, *not* split: a split leaves callers unable to distinguish "streaming does not report usage" from "not implemented yet", reintroducing the exact ambiguity the required `reports` discriminator exists to kill.
+**C2 implemented — [PR #669](https://github.com/ErikFortune/fgv/pull/669) open against `release`,
+not yet merged.** The closed three-level
+`PromptCacheStability` vocabulary (`'frozen' | 'per-conversation' | 'per-request'`) with
+`PromptCacheStabilityOrigin` (`'authored' | 'call-site' | 'derived'`) and `IPromptCacheStabilityHint`;
+the two declared homes (`IPromptSlot.cacheStability?`, `IPromptResolveRequest.cacheStability?`, the
+latter winning unconditionally); `IPromptCacheFinding` / `PromptCacheFindingKind` (five kinds, closed
+set) and `IPromptCacheDiagnosticOptions`; and the diagnostic engine itself
+(`analyzePromptCacheStability`, new `resolve/cacheStabilityAnalysis.ts`), wired into
+`PromptLibrary._buildComposition` so `IPromptComposition.cacheFindings` is computed alongside the
+section map whenever `composition` is requested — new field, non-optional (mirrors
+`safeguardFindings`'s always-present-possibly-empty shape), `[]` when the composition itself is
+`unavailable`. Implements checks D1 (multi-scope binding refutation — required a new
+`IBindingTraceEntry.chainBindingCount?` field, computed in `bindingMerger.ts`; not something
+`IPromptResolveTrace` carried before this slice, since the design's own text names it as "a counter on
+an existing loop" without naming the field), D2 (conditional-template refutation), D4 (cache-hostile
+ordering) and D5/threshold checks, per design.md §9.
+
+**One deliberate deviation from a literal reading of §9's D2, surfaced rather than silently resolved.**
+`IPromptSection` carries no `candidateIndex` — template sections come from the *joined* body of every
+matched candidate, rendered as one Mustache template, so a per-section attribution back to "which
+candidate produced this text" is not data `IPromptComposition` has. Applied D2 at the coarser
+granularity the data actually supports: if *any* candidate matched with a non-empty, non-`matchAsDefault`
+condition set, every `'template'` section in the resolve is downgraded together. Conservative in the
+direction the governing asymmetry (§1) wants (a false volatile costs a discount, not the prefix), and
+uses only data the trace already carries — not the "spec incomplete, escalate" case the kickoff brief
+flagged as the alternative, since a defensible reading existed.
+
+**D5's exact algorithm was underspecified in §9** (one bullet: "Per §7, with `'threshold-unknown'` as a
+first-class outcome"), unlike D1/D2/D4's full paragraphs. Implemented as: fold sections into stability
+runs; the cacheable prefix is the leading run sequence that stays non-increasing and above
+`'per-request'`, stopping at whichever comes first — the first `'per-request'` section, or the first
+upward transition (already reported by D4). An empty prefix is `'no-cacheable-prefix'`; otherwise the
+prefix's measured size (when a `measure` was supplied) is judged against
+`options.minCacheablePrefixTokens` (when supplied), with `'threshold-unknown'` as the answer whenever no
+verdict can be rendered (R-c). Does **not** replicate §5's full nested-breakpoint-count algorithm — that
+machinery answers a different question (which ≤2 breakpoints to *emit*, C3's job) than the one D5 needs
+(how big is the biggest reliably-cacheable prefix, for a threshold *check*). Flagging the reasoning here
+per the kickoff brief's "a fifth correction is a good outcome" — a future reader with a sharper reading
+of §9 should revise this if it disagrees.
+
+**A converter gap the design didn't name, caught by an end-to-end test, not by the type system.**
+`IPromptSlot.cacheStability` and `IPromptComposition`/`IPromptResolveRequest` additions are pure
+TypeScript types, but slot declarations round-trip through `descriptorConverter.ts`'s hand-declared
+`slotConverter` (`Converters.object<IPromptSlot>({...})`, explicit field list) — which silently dropped
+`cacheStability` on any load through `PromptStoreFixture`/`FileTreePromptStore` until a new
+`EnumConvert.promptCacheStability` (mirroring `slotDirective`/`slotWritability`) was added to
+`enums.ts` and wired into `slotConverter`'s field list. Two of the seven end-to-end integration tests
+that existed at that point in the stream failed against the *type-correct* implementation before this
+fix landed (the file has since grown to 11 across the Copilot review rounds' regression tests); the
+pure-function unit tests of `analyzePromptCacheStability` alone could not have caught it, since they
+construct
+`IPromptSlot`/`IBindingTraceEntry` objects directly rather than round-tripping them through the
+descriptor loader. Kept as a lesson: a new declared field on a loader-facing type needs its converter
+updated in the same change, and a same-file type check cannot see that gap — only a test that exercises
+the actual load path can.
+
+**Gates green:** `@fgv/ts-prompt-assist` build/lint/test — 309/309 (up from 280/280 pre-change), 100%
+statements/branches/functions/lines; `rushx fixlint` (no changes needed); `rush change --verify`
+passing.
+
+**`code-reviewer` run on the diff before opening the PR — approved, no P1/P2 findings.** The two
+type assertions in `cacheStabilityAnalysis.ts` (an `IPromptSection.slot` cast backed by the
+producer's own invariant; a `.measured` cast immediately guarded by an every-element presence
+check) were checked and judged narrow, documented, and provably safe at their call sites — not the
+disallowed unsafe-cast pattern. `chainBindingCount` traced against `bindingMerger.ts`'s scope walk
+and confirmed to count every scope that declares a binding regardless of which one wins, threaded
+only into the `source === 'binding'` install sites. `foldRuns` / `checkHostileOrdering` /
+`checkThreshold` hand-traced against edge cases (single run, a run already at `'per-request'`, an
+upward transition that never reaches `'per-request'`, a down-then-up three-run sequence) with no
+off-by-one found. One P3 advisory, addressed in this same pass: this paragraph itself previously
+forward-referenced "findings/disposition" content that did not yet exist in the diff — folding the
+review's outcome in here, in the same change, is that disposition.
+
+**Open questions, all closed (the original five, at phase B — see the C2 status line above for OQ-6/OQ-7, opened later).** OQ-1 (xAI's cache surface) settled by a live `xai-cache-probe` testbed run: both routes cache ~99% of a stable prefix, under *different* field names per route, and neither reports a cache **write** — so xAI is `reads` on both, which is where it parts from OpenAI. The run also found a **128-token cached floor on a cold call**, which makes `cachedTokens > 0` meaningless as a signal and, at this design-time reasoning, appeared to force every C2 check to be a *ratio* — **C2 as shipped did not need this**: D5's threshold check (`minCacheablePrefixTokens`) compares an absolute measured prefix size, not a ratio, since it operates entirely on the composition side and never reads a provider usage block (see the C2 status line above). OQ-3 → C3 (a per-tenant cache key partitions traffic that shares a namespace today, so it must not ride on C1, whose whole claim is inertness). OQ-2 → not a gate on C3, but a wanted input to C2 because of that floor. OQ-4 → auto-cache not in C3; it buys nothing once §5 does the breakpoint bookkeeping deliberately. OQ-5 → one stream, *not* split: a split leaves callers unable to distinguish "streaming does not report usage" from "not implemented yet", reintroducing the exact ambiguity the required `reports` discriminator exists to kill.
 
 **Process note.** This stream did not use `/triage-cycle` — that skill and `docs/DESIGN_PROCESS.md` serve UI-prototype bundles and this repo has no `design/` directory. The questions were decided directly with reasoning recorded per question. The gap is filed in `docs/FUTURE.md`.
 

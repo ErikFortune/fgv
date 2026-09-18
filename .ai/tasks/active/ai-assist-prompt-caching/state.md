@@ -3,15 +3,19 @@
 **Branch:** `claude/ai-assist-prompt-caching` (design/research lineage); C1 implemented on
 `claude/ai-assist-cache-observability`, branched from this lineage's tip (which already
 carries `release` merged in) rather than from bare `release`, since the design/research
-docs this slice's brief requires only exist here.
+docs this slice's brief requires only exist here. **C2 implemented on
+`claude/ai-assist-cache-diagnostics`, branched directly off `release`** — C1 is merged now,
+so the "branch off the design lineage" rationale no longer applies, and stacking on a
+non-`release` branch is exactly the mistake C1's own checkpoint (below) flags: `ci.yml`
+only fires for PRs targeting `release`, so a stream branch never gets CI on its own.
 
 | phase | status | artifact |
 |---|---|---|
 | A — research | ✅ complete (2026-09-07) | `research.md` |
-| B — design | ✅ complete (2026-09-08); all 5 OQs closed 2026-09-17; **verified 2026-09-18** | `design.md` (+ §14) |
+| B — design | ✅ complete (2026-09-08); original 5 OQs closed 2026-09-17; **verified 2026-09-18, OQ-6 resolved same day**; **OQ-7 opened during C2, still open** | `design.md` (+ §14) |
 | triage | ⏭️ not used — questions decided directly; see `design.md` process note | — |
-| C1 — observability | ✅ implemented; PR #668. **Read `design.md` §14 before C2** | `libraries/ts-extras/src/packlets/ai-assist/{usageTypes,usageNormalization}.ts` + adapters |
-| C2 — diagnostics + vocabulary | ⛔ not started | — |
+| C1 — observability | ✅ shipped via #668 (merged into `release`) | `libraries/ts-extras/src/packlets/ai-assist/{usageTypes,usageNormalization}.ts` + adapters |
+| C2 — diagnostics + vocabulary | ✅ implemented; PR #669 open against `release` | `libraries/ts-prompt-assist/src/packlets/{types/cacheStability,resolve/cacheStabilityAnalysis}.ts` + `bindingMerger`/`promptLibrary`/`enums`/`descriptorConverter`/`slot`/`trace` |
 | C3 — emit | ⛔ not started; gated on C1 **and** C2 | — |
 
 ## Phase B checkpoint
@@ -360,4 +364,175 @@ drifted; a drift table is in §14 rather than in-place edits.
   `toEmbeddingUsage` is the end-to-end extraction template, which F4 recorded only in its
   reporting half.
 
-**Open questions: OQ-6.** No implementation; no PR; no surface committed to.
+**Open questions: OQ-6.** No implementation; no PR; no surface committed to. *(Resolved same
+day — see "C2 checkpoint" below and design.md §14 A2: `IAiCompletionUsage` is the
+token-accounting home; `thinkingTokens` goes inside it.)*
+
+## C2 checkpoint
+
+**[PR #669](https://github.com/ErikFortune/fgv/pull/669) open against `release`, not yet merged.**
+
+**Deliverable, per design.md §11's C2 row:** `PromptCacheStability` / `PromptCacheStabilityOrigin`
+/ `IPromptCacheStabilityHint` (new `types/cacheStability.ts`); `IPromptSlot.cacheStability?` and
+`IPromptResolveRequest.cacheStability?` (call-site wins unconditionally); `IPromptCacheFinding` /
+`PromptCacheFindingKind` (the five-kind closed set from §9's code block) and
+`IPromptCacheDiagnosticOptions`; the diagnostic engine `analyzePromptCacheStability` (new
+`resolve/cacheStabilityAnalysis.ts`), wired into `PromptLibrary._buildComposition` so
+`IPromptComposition.cacheFindings: ReadonlyArray<IPromptCacheFinding>` (non-optional, mirroring
+`safeguardFindings`'s always-present-possibly-empty shape; `[]` when the composition itself is
+`unavailable`) is computed alongside the section map whenever `composition` is requested. Package
+surface is `@fgv/ts-prompt-assist` only, as the kickoff brief specified — no `ts-extras` file
+touched, no adapter touched, nothing emitted to a provider.
+
+**D1 needed a field `IPromptResolveTrace` didn't carry.** §9 says D1 "is a counter on an existing
+loop" over `bindingMerger.ts`'s scope walk, but the count itself was never surfaced past that
+function — `IBindingTraceEntry` had no field for it. Added `chainBindingCount?: number`
+(`types/trace.ts`), set only when `source === 'binding'`, computed by a new `Map<SlotName,
+number>` incremented once per scope that declares a binding for a slot during the existing
+most-general-to-most-specific walk in `mergeBindings` (`resolve/bindingMerger.ts`). Additive,
+optional, and no existing test does exact-equality matching on a `mergedBindings` entry (checked
+before adding it), so nothing broke.
+
+**D2 applied at coarser granularity than a literal reading of §9 suggests, and documented why.**
+`IPromptSection` carries no `candidateIndex` — `PromptLibrary._renderResolved` joins every matched
+candidate's body into one string (`joinBodies`) before handing it to Mustache, so `'template'`
+sections come from segmenting the *joined* result. There is no data path back from a template
+section to "which candidate produced this text." Implemented D2 as: if *any* candidate in
+`trace.candidateMatches` matched with a non-empty, non-`matchAsDefault` condition set, every
+`'template'` section in the resolve is downgraded together (one finding per qualifying candidate,
+so multiple independently-conditional candidates are each named). This is conservative in the
+direction §1's governing asymmetry wants and uses only data the trace already carries — judged as
+"a reasonable reading existed" rather than "§9's spec is incomplete," per the kickoff brief's
+escalation criterion, but flagged here for a sharper reading to revise if this judgment is wrong.
+
+**D5's algorithm was one bullet in §9** ("Per §7, with `'threshold-unknown'` as a first-class
+outcome") versus D1/D2/D4's full paragraphs, and does not reference §5's breakpoint-count
+machinery directly. Implemented as: fold sections into stability runs (same fold D4 uses); the
+cacheable prefix is the leading run sequence that stays non-increasing and above `'per-request'`,
+stopping at whichever comes first — the first `'per-request'` section, or the first upward
+transition (D4 already reports that boundary separately). An empty prefix (index 0) is
+`'no-cacheable-prefix'`; otherwise the prefix's measured size — when every prefix section carries
+`.measured`, i.e. a `measure` was supplied to the composition — is judged against
+`options.minCacheablePrefixTokens` when supplied, with `'threshold-unknown'` as the answer
+whenever no verdict can be rendered (R-c: no measure supplied, or no minimum known). Deliberately
+does **not** replicate §5's full ≤2-breakpoint selection algorithm: that answers "which
+breakpoints to emit" (C3's question), not "how big is the biggest reliably-cacheable prefix" (the
+only number a threshold check needs). Recorded here per the kickoff brief's "a fifth correction is
+a good outcome" in case a sharper reading of §9 disagrees.
+
+**A converter gap the type system could not see, caught by an end-to-end test.**
+`IPromptSlot.cacheStability` is a plain additive TypeScript field, but slot declarations round-trip
+through `converters/descriptorConverter.ts`'s hand-declared `slotConverter`
+(`Converters.object<IPromptSlot>({...})` with an explicit field list) on every load through
+`PromptStoreFixture` / `FileTreePromptStore`. Two end-to-end integration tests (an authored
+`'frozen'` claim avoiding a `cache-hostile-ordering` finding; a multi-scope-bound slot triggering
+D1) failed against an otherwise type-correct implementation, because `cacheStability` was silently
+dropped by the converter before `PromptLibrary` ever saw it. Fixed by adding
+`EnumConvert.promptCacheStability` (`types/enums.ts`, mirroring the existing `slotDirective` /
+`slotWritability` converters — `allPromptCacheStabilityValues` + `Converters.enumeratedValue`) and
+wiring it into `slotConverter`'s field list. The pure-function unit tests of
+`analyzePromptCacheStability` (which construct `IPromptSlot` / `IBindingTraceEntry` objects
+directly) could not have caught this — only a test exercising the actual descriptor-load path
+could, which is why both a direct unit-test file
+(`test/unit/cacheStabilityAnalysis.test.ts`, the algorithm in isolation) and an
+end-to-end wiring file (`test/unit/cacheStabilityIntegration.test.ts`, through
+`PromptLibrary.resolve`) exist rather than just the former. *(Counts below are the
+final, post-Copilot-loop tallies — both files grew substantially across the review rounds'
+regression tests; see the round-by-round log for what each addition covers.)*
+
+**Gates green:** `@fgv/ts-prompt-assist` build/lint/test — 329/329 passing (up from 280/280
+pre-change: 36 direct unit tests in `cacheStabilityAnalysis.test.ts`, 11 end-to-end tests in
+`cacheStabilityIntegration.test.ts`, 2 enum/converter round-trip tests in `foundation.test.ts`),
+100%
+statements/branches/functions/lines coverage. `rushx fixlint` — no changes needed. Repo-wide
+`node common/scripts/install-run-rush.js rebuild` — 36/36 packages, zero warnings (required per
+`CODING_STANDARDS.md`: `IPromptComposition` gained a new non-optional field, a widened shared
+contract; checked first that no package outside `ts-prompt-assist` constructs an
+`IPromptComposition` literal or an `IPromptSlot`/`IPromptResolveRequest`/`IBindingTraceEntry`
+literal that a new optional field could break — only `samples/testbed`'s
+`localClassifierSafety.test.ts` casts a partial object `as IPromptSlot`, unaffected by an
+additional optional field). This slice does not widen or narrow what any function *accepts*,
+*returns*, or *classifies* at a fixed signature — every addition is a new optional field or a new
+export — so the `CODING_STANDARDS.md` "widened accepted set" rule (repo-wide `rush test`) does not
+apply; `rush rebuild`'s compiler-level check is the correct and sufficient gate here.
+`common/changes/@fgv/ts-prompt-assist/claude-ai-assist-cache-diagnostics_2026-09-18-00-00.json`
+added; `rush change --verify --target-branch origin/release` passing.
+
+**Docs:** `libraries/ts-prompt-assist/CAPABILITIES.md` (new decision-shortcut bullet) and
+`.ai/instructions/LIBRARY_CAPABILITIES.md` (new decision-shortcut line, `verify-capability-docs.mjs`
+passing) updated in this change. `docs/WORKSTREAMS.md`'s entry for this stream updated to record
+C2 shipped; the stream itself stays open (C3 remains), so no `finalize-task` migration to
+`completed/` — artifacts stay in `active/` per the kickoff brief.
+
+**Copilot round 1 — substantive.** Real: `chain = [scope, scope]` (the same scope appearing
+twice, non-adjacently or otherwise, in the resolve chain) double-counted `chainBindingCount`
+in `bindingMerger.ts`'s reverse walk, inflating D1's multi-scope-binding signal. Fixed with a
+`processedScopes` `Set` skipping an already-seen scope during the walk — **later found
+insufficient, see round 2**. Also real: a caller-supplied `minCacheablePrefixTokens` of `NaN`
+or a negative number silently mis-verdicted D5's threshold check rather than reporting
+`'threshold-unknown'` (R-c violation one level removed — an unknown-shaped input, not an
+unknown value, still needs the unknown-outcome path). Fixed with `Number.isFinite(...) &&
+... >= 0` validation, R-c-consistent with how an absent minimum is already handled.
+
+**Copilot round 2 — also substantive; caught round 1's own fix being wrong.** Real: round 1's
+`processedScopes` dedup is correct for adjacent repeats but wrong for non-adjacent ones —
+`chain = [A, B, A]` still double-counts `A` because the reverse walk revisits it after `B`.
+Fixed by deduping the chain to first-occurrence-only **before** the reverse walk runs
+(`distinctChain`), preserving most-specific-wins priority for any repeat shape. Also real: a
+resource-bound slot (its value from a full recursive `resolve` of an inner prompt) had no
+refutation path at all — a `'frozen'`-claiming resource-bound slot sailed through unrefuted.
+Added unconditional refutation (this check does not recurse into the inner resolve's own
+trace, so an unverified inner resolve can't be trusted transitively). Also real: `measure()`
+callback output — not just the caller's configured minimum — could be `NaN`/`Infinity`/
+negative for a section, corrupting `measuredTotal` silently; validated with the same pattern
+as round 1's minimum check. One doc fix: a stale `docs/WORKSTREAMS.md` claim.
+
+**Copilot round 3 — mixed: one design refinement (later found wrong), plus real doc/test
+gaps.** Suggested filtering `chars === 0` sections out of the D4/D5 walk — implemented, but
+**round 4 showed this was itself a regression, see below**. Real, and kept: enum exhaustiveness
+test coverage for `allPromptCacheStabilityValues`/`EnumConvert.promptCacheStability`, and a
+`CAPABILITIES.md` gap (the resource-bound-slot refutation case wasn't mentioned). The preface
+default tradeoff (unannotated `antiJailbreakPreface` — `'frozen'` vs `'per-request'`) was
+recorded as **OQ-7** here rather than re-declined with more words, since it's a genuine
+safety-vs-usability call the kickoff brief's escalation criterion says belongs to design, not
+implementation.
+
+**Copilot round 4 — caught my own round-3 regression.** Round 3's zero-length-section filter
+was wrong: Copilot correctly pointed out that a `'per-request'` slot rendering empty *on this
+resolve* can render non-empty on the *next* resolve of the same prompt, at the same position —
+excluding it from the D4/D5 walk suppresses exactly the warning that matters most (an
+empty-here, volatile-in-general slot ahead of stable content). Reverted the filter entirely and
+replaced the test that had encoded the wrong assumption with one proving the opposite: an
+empty per-request slot ahead of stable content still raises `cache-hostile-ordering`. Load-
+bearing principle carried forward: **a section's rendered length on this resolve says nothing
+about its length on other resolves of the same prompt** — round 5 (below) had to reason
+carefully about why a mirror-image case is legitimately different.
+
+**Copilot round 5 — two real findings, both about the boundary of round 4's own principle,
+plus doc drift from OQ-7's introduction.**
+
+1. `checkHostileOrdering` fired for *every* upward transition, even when the more-stable
+   ("after") run contributes zero bytes — e.g. a `'per-request'` slot followed by an
+   authored-`'frozen'` slot whose current value happens to be empty. This is not the same case
+   round 4 reverted: round 4's principle is about the *less*-stable side, where emptiness now
+   doesn't imply emptiness always. Here the *more*-stable side's claim has already survived
+   D1/D2's refutation checks by the time D4 runs — an unrefuted `'frozen'` claim is empty
+   *because the claim says it can't change*, so there is no later content on that side to
+   strand or reorder. Gated the finding on the after-run's total `chars` (summed across its
+   full section range, not just its first section) being non-zero.
+2. `checkConditionalTemplate` (renamed `checkConditionalBody`) was gated on the resolve having
+   at least one literal `'template'` section, and only downgraded template sections when it
+   fired. A conditional candidate body like `{{{topic}}} suffix` segments into
+   `[slot(topic), template(' suffix')]` — the slot section left `'frozen'` even though a
+   different matching candidate on a later resolve could change the slot's presence or
+   position just as much as the template text. Removed the template-existence gate and
+   extended the refutation body-wide: `resolveSlotStability` now takes a `bodyConditional`
+   boolean (computed once, before slot resolution) and downgrades any slot claiming better
+   than `'per-request'` when the body is conditional, alongside its existing resource-bound and
+   multi-scope-binding refutation branches.
+
+Also real: round 3's OQ-7 addition made an earlier, unrevisited line in this file (the phase
+table) and in `docs/WORKSTREAMS.md` factually wrong — both still read "all five/all 5 open
+questions closed" after OQ-7 was opened in the same PR. The same intra-file doc-lag class
+`CODING_STANDARDS.md`'s "Docs ship with the code" section names for C1 rounds 6/7. Corrected
+both.

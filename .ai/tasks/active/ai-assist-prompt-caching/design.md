@@ -339,6 +339,41 @@ stability level **is** that probability estimate. So:
 > **Rank downward transitions by the stability of the run they close, descending. Break
 > ties by earliest position.**
 
+### 5.1a Empty runs — settled by C2, and **C3 inherits this**
+
+**Added 2026-09-18.** §5.1's fold says nothing about a run whose sections render to zero bytes,
+and §9 said nothing either. C2 (#669) discovered the answer the expensive way: **five
+consecutive Copilot rounds** circled it, round 4 reverting round 3 outright. The rule below is
+what they converged on, recorded here rather than left in a comment in
+`cacheStabilityAnalysis.ts`, because **C3 folds sections into runs in exactly the same way** and
+would otherwise re-derive the whole argument.
+
+| run's level | empty on this resolve → |
+|---|---|
+| `'frozen'` (unrefuted) | **collapse it** — remove from adjacency checks entirely |
+| `'per-conversation'` | **keep it** |
+| `'per-request'` | **keep it** |
+
+**Why `'frozen'` is the exception and the other two are not.** An unrefuted `'frozen'` claim is
+invariant across *every* resolve of the prompt, so empty now means empty forever — there are no
+bytes there to strand or reorder, on this resolve or any other. `'per-conversation'` guarantees
+stability only *within* one conversation, so a different conversation resolving the same prompt
+could render it non-empty; an empty sample here is not evidence it can never contribute bytes.
+`'per-request'` says nothing at all about the next resolve.
+
+**And why collapsing beats merely skipping the run's own bytes.** D4 and D5 both compare a run
+against its **neighbour**. Left in place, an empty frozen run between two non-empty runs absorbs
+the check meant for the pair on either side of it — D4 compares against the empty run instead of
+the real predecessor, and D5 stops its prefix walk there instead of continuing through to
+genuinely cacheable bytes beyond. The same neighbour-comparison structure is what §5.1's
+downward-transition scan does, which is why this is C3's problem too.
+
+**One further trap, from the same rounds.** A zero-length section is **not** excluded from the
+per-section stability walk — only from the run-adjacency checks. A `'per-request'` slot that
+renders empty *this* time can render non-empty next time at the same position, which is exactly
+the byte-instability D4/D5 exist to catch; excluding it would suppress the warning in the case
+that matters most.
+
 ### 5.2 The resulting rule, and its consequence
 
 1. Fold to runs; take the maximal **monotone non-increasing** stability prefix.
@@ -591,6 +626,22 @@ a breakpoint did not take. Under `'reads'` it means the API cannot say, and infe
 writes" from it would be a fabricated fact. Research §6.6 names this exact hazard for Chat
 Completions; the required discriminator removes it by construction rather than by docstring.
 
+### Interpreting the numbers: use a ratio, never a raw count
+
+**Nothing in this design consumes these fields yet** — C1 reports them, C2's checks are
+composition-side and never read them — so this is guidance for whoever does first: a consumer,
+C3, or a later diagnostic that correlates composition against observed usage.
+
+The 2026-09-17 xAI run (OQ-1) reports **128 cached tokens on a genuinely cold call**, on both
+routes, against a prefix the provider had never seen — fixed scaffolding, not caller content.
+So `cachedInputTokens > 0` is true on effectively every request to that provider and means
+nothing. 128/4822 is 2.7%; 4800/4822 is 99.5%; only the second is a working cache. Any check
+phrased on the raw count reports success unconditionally.
+
+Judge `cachedInputTokens` as a fraction of total input, or against a per-provider floor — and
+where that floor is unknown, **R-c** applies: report the ratio and decline to judge, rather
+than assuming the floor is zero.
+
 ### Normalization, per provider
 
 | target | `reports` | `uncachedInputTokens` | `cachedInputTokens` | `cacheWriteTokens` |
@@ -650,14 +701,17 @@ export interface IPromptCacheFinding {
 
 ### The checks
 
-> **Express every cache-effectiveness check as a *ratio*, never as a raw count.** The
-> 2026-09-17 xAI run (OQ-1) reports **128 cached tokens on a genuinely cold call** on both
-> routes, against a prefix the provider had never seen — fixed scaffolding, not our content.
-> So `cachedTokens > 0` is true on effectively every request to that provider and means
-> nothing: 128/4822 is 2.7%, 4800/4822 is 99.5%, and only the second is a working cache. Any
-> check phrased on the raw count reports success unconditionally. Where a provider's floor is
-> unknown, **R-c** applies — report the ratio and decline to judge, rather than assuming the
-> floor is zero.
+> **Misplaced when written; corrected 2026-09-18 after C2 shipped.** This slot carried a rule
+> that *"every cache-effectiveness check must be a ratio, never a raw count"*, on the strength
+> of the 128-token cold floor OQ-1 found. **It does not bind on any check in this section**, and
+> C2 (#669) was right to ignore it: D1, D2, D4 and D5 are all **composition-side** — they read
+> `IPromptComposition`, and none of them reads a provider's usage block. `ts-prompt-assist` has
+> no reference to `IAiCompletionUsage` at all. D5's threshold check compares an *absolute*
+> prefix size against a caller-supplied `minCacheablePrefixTokens`, which is the right shape;
+> a ratio there would be meaningless.
+>
+> The hazard is real but belongs where **observed usage** is interpreted, which this design does
+> not yet reach. It is restated in §8 beside the type that carries the numbers.
 
 **D1 — multi-scope binding (refutation, downgrades).** A slot claiming better than
 `'per-request'` whose winning binding is one of **≥2** bindings for that slot across the
@@ -1104,3 +1158,62 @@ derivation that makes the shared four-cap unreachable, offsets rather than block
 `ai-assist` boundary, no `prompt_cache_options` on OpenAI, model-keyed thresholds with
 "unknown" first-class, and Gemini explicit `CachedContent` deferred — all unaffected. The
 open-question count goes from zero back to one: **OQ-6**.
+
+---
+
+## 15. C2 implementation findings — 2026-09-18
+
+C2 (diagnostics + vocabulary, `@fgv/ts-prompt-assist` only) shipped via PR #669. Implementation
+surfaced two corrections to §0/§4's factual claims and opens one new question — **OQ-7**, below —
+that C3 should read before placing breakpoints on a preface.
+
+**§4's premise for preface stability does not match the tree.** §4 says *"Preface and template
+text come from checked-in files."* True for template (the candidate body). False for preface:
+`IPromptSafetyPolicy.antiJailbreakPreface` is `(descriptor: IPromptDescriptor) => Result<string>`
+(`types/safety.ts`) — a **consumer-supplied callback invoked fresh on every resolve**, not file
+content the library reads. C2 still treats a `'preface'` section as `'frozen'` by default (per
+§4's actual instruction, independent of the premise that justified it), on a narrower, explicit
+assumption: the callback is a **deterministic function of `descriptor`** — same trust the design
+already places in template body content, which nothing here verifies either. There is no trace
+data to check this against; unlike D1/D2, there is no refutation path for a preface that breaks
+the assumption.
+
+**OQ-7 — should an unannotated preface default to `'frozen'` or `'per-request'`? Not resolved;
+carried to C3.** Copilot's review raised this independently, three times across the PR's review
+rounds, and the disagreement is real rather than a nitpick: a dynamic preface treated as
+`'frozen'` is exactly the design's worst case (§1) — a false-frozen prefix that never cache-hits,
+silently, forever. But the reverse default is not free either: `'per-request'` would make **every**
+resolve with a preface report `'cache-hostile-ordering'` against any stable content that follows
+it (the preface is always section 0, so anything more stable after it is an upward transition) —
+for what is very likely the common, correct shape (fixed framing text, then stable instructions).
+Neither default is strictly safer once usability is weighed, and C2's own remit (§9: "computes and
+reports, emits nothing") means the actual cost of either choice — a wasted cache write, or a
+diagnostic nobody trusts because it always fires — only materializes once C3 emits a breakpoint
+based on it. **Recommendation, undecided:** the durable fix is likely a third option neither §4 nor
+C2 offers — an explicit stability declaration on `IPromptSafetyPolicy` itself (e.g.
+`antiJailbreakPrefaceStability?: PromptCacheStability`), giving the policy author the same
+call-site-style override slots already have, rather than picking one blanket default for every
+consumer. Out of scope for C2 (new declared-hint surface, not a diagnostic); C3's implementer
+should decide before trusting a preface-inclusive prefix for an explicit breakpoint.
+
+**D1 needed a field the design's own text assumed already existed.** §9 describes D1 as "a
+counter on an existing loop" over `bindingMerger.ts`'s scope walk, but the count was never
+surfaced past that function before C2 — `IBindingTraceEntry` had no field for it
+(`chainBindingCount?: number`, added in C2, set only when `source === 'binding'`). Not a
+falsification of §9 — the counter genuinely was on an existing loop — but the surfaced count
+was not, and "a counter on an existing loop" undersold the work by exactly that gap. Recorded
+here as the same class of drift §14 tracked for C1: right when written, worth re-verifying
+before the next slice reads it as settled.
+
+**A resource-bound slot's stability is unverifiable, not merely unverified — treated
+accordingly.** Neither §4 nor §9 discusses `kind: 'resource'` slot bindings, whose value comes
+from a full recursive `PromptLibrary.resolve` of an inner prompt with its own qualifier context
+and its own trace (`resourceBindingResolutions[].innerTrace`). C2 does not recurse into that
+inner trace — doing so correctly would need the same D1/D2/D4/D5 analysis run at every nesting
+level, which is a real feature, not a bug fix, and out of scope here. Instead, any
+better-than-`'per-request'` claim on a resource-bound slot is refuted unconditionally. This is
+more conservative than the analogous D1 multi-scope check (which only refutes when there is
+*positive* evidence of ≥2 candidate bindings) — here the absence of any way to gather that
+evidence is itself treated as refuting evidence, per the governing asymmetry. A future slice
+that threads recursive analysis through would be a genuine capability increase, not a bug fix to
+this one.

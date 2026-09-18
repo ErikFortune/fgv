@@ -17,7 +17,7 @@ import {
   Runtime
 } from '@fgv/ts-res';
 import { PromptId, ScopeKey, SlotName } from '../types';
-import { IPromptCandidateRecord, IPromptDescriptor, IStoredPromptRecord } from '../types';
+import { IPromptCandidateRecord, IPromptDescriptor, IPromptSlot, IStoredPromptRecord } from '../types';
 import { PromptSubstitutions } from '../types';
 import {
   IPromptLibraryQualifiersInput,
@@ -34,7 +34,9 @@ import {
   IPromptSection,
   IResolvedPrompt,
   IResolvedPromptSlot,
-  ISafeguardFinding
+  IResourceBindingTraceEntry,
+  ISafeguardFinding,
+  PromptCacheStability
 } from '../types';
 import { IPromptStore } from '../store';
 import { IPromptRegistry } from '../registry';
@@ -50,6 +52,7 @@ import { applySafeguards } from '../safeguards';
 import { assertOutputValidationsCompatible, runOutputValidationPipeline } from '../output';
 import { walkScopeChain } from './chainWalker';
 import { IBindingMergeResult, mergeBindings } from './bindingMerger';
+import { analyzePromptCacheStability } from './cacheStabilityAnalysis';
 import { MustacheTemplateCache } from './mustacheCache';
 import { joinBodies } from './candidateSelector';
 import {
@@ -229,6 +232,16 @@ export interface IPromptResolveRequest<TQualifierNames extends string = string> 
    * they are not reading.
    */
   readonly composition?: IPromptCompositionOptions;
+  /**
+   * Per-slot prompt-cache stability overrides for this resolve. Wins over
+   * any {@link IPromptSlot.cacheStability} for the same slot, unconditionally
+   * — this is what rescues a caller-substituted value that is actually an
+   * app-held constant, invisible to the library at declaration time.
+   * Consulted only when {@link IPromptResolveRequest.composition} is also
+   * requested, since the diagnostics that use it (design.md §9) run
+   * alongside the section map.
+   */
+  readonly cacheStability?: ReadonlyMap<SlotName, PromptCacheStability>;
 }
 
 /**
@@ -1152,7 +1165,17 @@ export class PromptLibrary<
           const composition =
             req.composition === undefined
               ? undefined
-              : this._buildComposition(template, finalMerged, finalBody, prefaceLength, req.composition);
+              : this._buildComposition(
+                  template,
+                  finalMerged,
+                  finalBody,
+                  prefaceLength,
+                  req.composition,
+                  candidateMatches,
+                  resourceBindings.traceEntries,
+                  descriptor.slots,
+                  req.cacheStability
+                );
           return succeed<IResolvedPrompt>({
             id: req.id,
             body: finalBody,
@@ -1185,7 +1208,11 @@ export class PromptLibrary<
     merged: ReadonlyMap<SlotName, IBindingTraceEntry>,
     finalBody: string,
     prefaceLength: number,
-    options: IPromptCompositionOptions
+    options: IPromptCompositionOptions,
+    candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>,
+    resourceBindingResolutions: ReadonlyArray<IResourceBindingTraceEntry>,
+    slots: ReadonlyArray<IPromptSlot>,
+    callSiteCacheStability: ReadonlyMap<SlotName, PromptCacheStability> | undefined
   ): IPromptComposition {
     const measure = options.measure;
     // Accumulated as sections are built rather than summed afterwards: a later sum would need a
@@ -1202,7 +1229,12 @@ export class PromptLibrary<
 
     const segmented = template.renderWithSegments(this._buildRenderContext(merged));
     if (segmented.isFailure()) {
-      return { totalChars: finalBody.length, sections: [], unavailable: segmented.message };
+      return {
+        totalChars: finalBody.length,
+        sections: [],
+        cacheFindings: [],
+        unavailable: segmented.message
+      };
     }
 
     const sections: IPromptSection[] = [];
@@ -1240,10 +1272,21 @@ export class PromptLibrary<
       });
     }
 
+    const cacheFindings = analyzePromptCacheStability({
+      sections,
+      mergedBindings: merged,
+      candidateMatches,
+      resourceBindingResolutions,
+      slots,
+      callSiteOverrides: callSiteCacheStability,
+      options: options.cacheDiagnostics
+    });
+
     return {
       totalChars: finalBody.length,
       ...(measure === undefined ? {} : { totalMeasured: measuredTotal }),
-      sections
+      sections,
+      cacheFindings
     };
   }
 

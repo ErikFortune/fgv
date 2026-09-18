@@ -21,6 +21,7 @@
  */
 
 import { Converter, Converters } from '@fgv/ts-utils';
+import { PromptCacheStability } from './cacheStability';
 
 /**
  * Discriminator for slot binding shapes.
@@ -91,6 +92,16 @@ export const allResourceSubstitutionModeValues: ReadonlyArray<ResourceSubstituti
 ];
 
 /**
+ * All valid {@link PromptCacheStability} values.
+ * @public
+ */
+export const allPromptCacheStabilityValues: ReadonlyArray<PromptCacheStability> = [
+  'frozen',
+  'per-conversation',
+  'per-request'
+];
+
+/**
  * Kind of a {@link IPromptStoreEvent}. Pinned per OQ-3.
  * @public
  */
@@ -125,6 +136,7 @@ export const EnumConvert: {
     ReadonlyArray<ResourceSubstitutionMode>
   >;
   readonly promptStoreEventKind: Converter<PromptStoreEventKind, ReadonlyArray<PromptStoreEventKind>>;
+  readonly promptCacheStability: Converter<PromptCacheStability, ReadonlyArray<PromptCacheStability>>;
 } = {
   slotBindingKind: Converters.enumeratedValue<SlotBindingKind>(allSlotBindingKindValues),
   slotDirective: Converters.enumeratedValue<SlotDirective>(allSlotDirectiveValues),
@@ -133,5 +145,6 @@ export const EnumConvert: {
   resourceSubstitutionMode: Converters.enumeratedValue<ResourceSubstitutionMode>(
     allResourceSubstitutionModeValues
   ),
-  promptStoreEventKind: Converters.enumeratedValue<PromptStoreEventKind>(allPromptStoreEventKindValues)
+  promptStoreEventKind: Converters.enumeratedValue<PromptStoreEventKind>(allPromptStoreEventKindValues),
+  promptCacheStability: Converters.enumeratedValue<PromptCacheStability>(allPromptCacheStabilityValues)
 } as const;

@@ -80,18 +80,44 @@ export function mergeBindings(
   callerSubstitutions: PromptSubstitutions | undefined
 ): Result<IBindingMergeResult> {
   const winning = new Map<SlotName, { binding: SlotBinding; scope: ScopeKey }>();
+  // Count of DISTINCT scopes in `chain` that declared a binding for each
+  // slot, regardless of which one ends up winning. Feeds
+  // `IBindingTraceEntry.chainBindingCount`, which the cache-stability
+  // diagnostic's D1 check (design.md §9) uses to tell "one scope could bind
+  // this slot" apart from "the winning value depends on which scope wins
+  // this chain".
+  const chainBindingCounts = new Map<SlotName, number>();
+  // `chain` is caller-supplied and not guaranteed distinct. Deduping by
+  // FIRST occurrence (most-specific position, since `chain` is documented
+  // most-specific-first) before the reverse walk — rather than skipping a
+  // repeat as it's encountered during the walk — keeps a scope's priority
+  // pinned to its most-specific position even when a duplicate appears
+  // elsewhere in the chain (e.g. `[A, B, A]`): walking the raw chain and
+  // skipping an already-seen scope during the reverse pass would instead
+  // process the duplicate's LEAST-specific occurrence and skip its
+  // most-specific one, letting B win over A when A should win. Deduping
+  // first also fixes the simpler `[A, A]` case as a special case of this.
+  const distinctChain: ScopeKey[] = [];
+  const seenScopes = new Set<ScopeKey>();
+  for (const scope of chain) {
+    if (!seenScopes.has(scope)) {
+      seenScopes.add(scope);
+      distinctChain.push(scope);
+    }
+  }
 
   // Walk chain from most-general (last) to most-specific (first). For each
   // scope, set unset slot bindings, and ALSO overwrite previously-set non-
   // enforced bindings with this scope's enforced bindings (an enforced
   // binding from a more-general scope locks the value).
-  for (let i = chain.length - 1; i >= 0; i--) {
-    const scope = chain[i];
+  for (let i = distinctChain.length - 1; i >= 0; i--) {
+    const scope = distinctChain[i];
     const record = scopeBindings.get(scope);
     if (record === undefined) {
       continue;
     }
     record.bindings.forEach((binding, slot) => {
+      chainBindingCounts.set(slot, (chainBindingCounts.get(slot) ?? 0) + 1);
       const existing = winning.get(slot);
       if (existing === undefined) {
         winning.set(slot, { binding, scope });
@@ -127,7 +153,8 @@ export function mergeBindings(
         winner.scope,
         true,
         merged,
-        pendingResourceBindings
+        pendingResourceBindings,
+        chainBindingCounts.get(slot.name)
       );
       if (installed.isFailure()) {
         return fail(installed.message);
@@ -160,7 +187,8 @@ export function mergeBindings(
         winner.scope,
         winner.binding.enforced === true,
         merged,
-        pendingResourceBindings
+        pendingResourceBindings,
+        chainBindingCounts.get(slot.name)
       );
       if (installed.isFailure()) {
         return fail(installed.message);
@@ -207,7 +235,8 @@ function installBinding(
   winningScope: ScopeKey | undefined,
   wasEnforced: boolean,
   merged: Map<SlotName, IBindingTraceEntry>,
-  pending: IPendingResourceBinding[]
+  pending: IPendingResourceBinding[],
+  chainBindingCount?: number
 ): Result<true> {
   if (binding.kind === 'resource') {
     // The placeholder `value: ''` is rewritten by the caller (the
@@ -218,7 +247,8 @@ function installBinding(
       winningScope,
       directive: binding.directive,
       value: '',
-      wasEnforced
+      wasEnforced,
+      chainBindingCount
     });
     pending.push({ slot: slot.name, binding });
     return succeed(true as const);
@@ -229,7 +259,8 @@ function installBinding(
       winningScope,
       directive: binding.directive,
       value,
-      wasEnforced
+      wasEnforced,
+      chainBindingCount
     });
     return succeed(true as const);
   });
