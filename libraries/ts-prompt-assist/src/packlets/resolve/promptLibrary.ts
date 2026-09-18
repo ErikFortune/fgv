@@ -34,6 +34,7 @@ import {
   IPromptSection,
   IResolvedPrompt,
   IResolvedPromptSlot,
+  IResourceBindingTraceEntry,
   ISafeguardFinding,
   PromptCacheStability
 } from '../types';
@@ -1171,6 +1172,7 @@ export class PromptLibrary<
                   prefaceLength,
                   req.composition,
                   candidateMatches,
+                  resourceBindings.traceEntries,
                   descriptor.slots,
                   req.cacheStability
                 );
@@ -1208,6 +1210,7 @@ export class PromptLibrary<
     prefaceLength: number,
     options: IPromptCompositionOptions,
     candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>,
+    resourceBindingResolutions: ReadonlyArray<IResourceBindingTraceEntry>,
     slots: ReadonlyArray<IPromptSlot>,
     callSiteCacheStability: ReadonlyMap<SlotName, PromptCacheStability> | undefined
   ): IPromptComposition {
@@ -1273,6 +1276,7 @@ export class PromptLibrary<
       sections,
       mergedBindings: merged,
       candidateMatches,
+      resourceBindingResolutions,
       slots,
       callSiteOverrides: callSiteCacheStability,
       options: options.cacheDiagnostics

@@ -11,6 +11,7 @@ import {
   IPromptCacheFinding,
   IPromptSection,
   IPromptSlot,
+  IResourceBindingTraceEntry,
   PromptCacheStability,
   SlotName
 } from '../../packlets/types';
@@ -36,6 +37,10 @@ function condition(): TsResRuntime.IConditionMatchResult {
   return {} as unknown as TsResRuntime.IConditionMatchResult;
 }
 
+function resourceBinding(slotName: SlotName): IResourceBindingTraceEntry {
+  return { slot: slotName } as unknown as IResourceBindingTraceEntry;
+}
+
 function findingKinds(findings: ReadonlyArray<IPromptCacheFinding>): string[] {
   return findings.map((f) => f.kind);
 }
@@ -50,6 +55,7 @@ describe('analyzePromptCacheStability', () => {
       sections,
       mergedBindings: new Map(),
       candidateMatches: [],
+      resourceBindingResolutions: [],
       slots: [],
       options: { minCacheablePrefixTokens: 50 }
     });
@@ -63,6 +69,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 1 })],
         mergedBindings,
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [slot(SLOT_A, 'frozen')]
       });
       const refuted = findings.filter((f) => f.kind === 'stability-refuted');
@@ -81,6 +88,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 1 })],
         mergedBindings,
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [slot(SLOT_A, 'per-conversation')],
         callSiteOverrides: new Map([[SLOT_A, 'frozen']])
       });
@@ -95,6 +103,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 1 })],
         mergedBindings,
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [slot(SLOT_A, 'frozen')]
       });
       expect(findings.filter((f) => f.kind === 'stability-refuted')).toEqual([]);
@@ -108,6 +117,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 1 })],
         mergedBindings,
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [slot(SLOT_A, 'frozen')]
       });
       expect(findings.filter((f) => f.kind === 'stability-refuted')).toEqual([]);
@@ -119,6 +129,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 1 })],
         mergedBindings,
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [slot(SLOT_A, 'per-request')]
       });
       expect(findings.filter((f) => f.kind === 'stability-refuted')).toEqual([]);
@@ -130,7 +141,51 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 1 })],
         mergedBindings,
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [slot(SLOT_A)]
+      });
+      expect(findings.filter((f) => f.kind === 'stability-refuted')).toEqual([]);
+    });
+
+    test('downgrades a better-than-per-request claim on a resource-bound slot unconditionally', () => {
+      // No scope-level binding at all (chainBindingCount N/A) — the refutation comes purely from
+      // the slot being resource-bound, since this analysis does not recurse into the inner resolve.
+      const findings = analyzePromptCacheStability({
+        sections: [section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 1 })],
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [resourceBinding(SLOT_A)],
+        slots: [slot(SLOT_A, 'frozen')]
+      });
+      const refuted = findings.filter((f) => f.kind === 'stability-refuted');
+      expect(refuted).toHaveLength(1);
+      expect(refuted[0]).toMatchObject({
+        kind: 'stability-refuted',
+        slot: SLOT_A,
+        claimed: { stability: 'frozen', origin: 'authored' },
+        downgradedTo: 'per-request'
+      });
+    });
+
+    test('does not fire for a resource-bound slot claiming per-request', () => {
+      const findings = analyzePromptCacheStability({
+        sections: [section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 1 })],
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [resourceBinding(SLOT_A)],
+        slots: [slot(SLOT_A, 'per-request')]
+      });
+      expect(findings.filter((f) => f.kind === 'stability-refuted')).toEqual([]);
+    });
+
+    test('does not fire for an unrelated slot when a different slot is resource-bound', () => {
+      const mergedBindings = new Map([[SLOT_B, bindingEntry({ chainBindingCount: 1 })]]);
+      const findings = analyzePromptCacheStability({
+        sections: [section({ kind: 'slot', slot: SLOT_B, start: 0, chars: 1 })],
+        mergedBindings,
+        candidateMatches: [],
+        resourceBindingResolutions: [resourceBinding(SLOT_A)],
+        slots: [slot(SLOT_B, 'frozen')]
       });
       expect(findings.filter((f) => f.kind === 'stability-refuted')).toEqual([]);
     });
@@ -145,6 +200,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'template', start: 0, chars: 5 })],
         mergedBindings: new Map(),
         candidateMatches,
+        resourceBindingResolutions: [],
         slots: []
       });
       const refuted = findings.filter((f) => f.kind === 'stability-refuted');
@@ -165,6 +221,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'template', start: 0, chars: 5 })],
         mergedBindings: new Map(),
         candidateMatches,
+        resourceBindingResolutions: [],
         slots: []
       });
       expect(findings.filter((f) => f.kind === 'stability-refuted')).toHaveLength(2);
@@ -178,6 +235,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'template', start: 0, chars: 5 })],
         mergedBindings: new Map(),
         candidateMatches,
+        resourceBindingResolutions: [],
         slots: []
       });
       expect(findings.filter((f) => f.kind === 'stability-refuted')).toEqual([]);
@@ -191,6 +249,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 1 })],
         mergedBindings: new Map(),
         candidateMatches,
+        resourceBindingResolutions: [],
         slots: [slot(SLOT_A)]
       });
       expect(findings.filter((f) => f.kind === 'stability-refuted')).toEqual([]);
@@ -204,6 +263,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'template', start: 0, chars: 5 })],
         mergedBindings: new Map(),
         candidateMatches,
+        resourceBindingResolutions: [],
         slots: []
       });
       expect(findings.filter((f) => f.kind === 'stability-refuted')).toEqual([]);
@@ -220,6 +280,7 @@ describe('analyzePromptCacheStability', () => {
         sections,
         mergedBindings: new Map(),
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [slot(SLOT_A)]
       });
       const ordering = findings.filter((f) => f.kind === 'cache-hostile-ordering');
@@ -240,6 +301,7 @@ describe('analyzePromptCacheStability', () => {
         sections,
         mergedBindings: new Map(),
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [slot(SLOT_A, 'per-conversation'), slot(SLOT_B, 'per-request')]
       });
       expect(findings.filter((f) => f.kind === 'cache-hostile-ordering')).toEqual([]);
@@ -255,6 +317,7 @@ describe('analyzePromptCacheStability', () => {
         sections,
         mergedBindings: new Map(),
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [slot(SLOT_A), slot(SLOT_B, 'per-conversation')]
       });
       expect(findings.filter((f) => f.kind === 'cache-hostile-ordering')).toHaveLength(1);
@@ -267,6 +330,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 1 })],
         mergedBindings: new Map(),
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [slot(SLOT_A)]
       });
       expect(findingKinds(findings)).toEqual(['no-cacheable-prefix']);
@@ -277,6 +341,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'preface', start: 0, chars: 5 })],
         mergedBindings: new Map(),
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: []
       });
       expect(findingKinds(findings)).toEqual(['threshold-unknown']);
@@ -288,6 +353,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'preface', start: 0, chars: 5, measured: 42 })],
         mergedBindings: new Map(),
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: []
       });
       expect(findingKinds(findings)).toEqual(['threshold-unknown']);
@@ -295,11 +361,40 @@ describe('analyzePromptCacheStability', () => {
       expect(findings[0].detail).toMatch(/not known to this library/);
     });
 
+    test('treats a NaN measure result as unknown rather than corrupting the total', () => {
+      const findings = analyzePromptCacheStability({
+        sections: [section({ kind: 'preface', start: 0, chars: 5, measured: Number.NaN })],
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [],
+        options: { minCacheablePrefixTokens: 1 }
+      });
+      expect(findingKinds(findings)).toEqual(['threshold-unknown']);
+      expect(findings[0].detail).toMatch(/not a finite, non-negative number/);
+    });
+
+    test('treats a negative measure result as unknown rather than corrupting the total', () => {
+      const findings = analyzePromptCacheStability({
+        sections: [
+          section({ kind: 'preface', start: 0, chars: 5, measured: 100 }),
+          section({ kind: 'template', start: 5, chars: 5, measured: -1 })
+        ],
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [],
+        options: { minCacheablePrefixTokens: 1 }
+      });
+      expect(findingKinds(findings).filter((k) => k === 'threshold-unknown')).toHaveLength(1);
+    });
+
     test('treats a NaN configured minimum as unknown rather than comparing against it', () => {
       const findings = analyzePromptCacheStability({
         sections: [section({ kind: 'preface', start: 0, chars: 5, measured: 10 })],
         mergedBindings: new Map(),
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [],
         options: { minCacheablePrefixTokens: Number.NaN }
       });
@@ -312,6 +407,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'preface', start: 0, chars: 5, measured: 10 })],
         mergedBindings: new Map(),
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [],
         options: { minCacheablePrefixTokens: -1 }
       });
@@ -324,6 +420,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'preface', start: 0, chars: 5, measured: 10 })],
         mergedBindings: new Map(),
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [],
         options: { minCacheablePrefixTokens: 50 }
       });
@@ -337,6 +434,7 @@ describe('analyzePromptCacheStability', () => {
         sections: [section({ kind: 'preface', start: 0, chars: 5, measured: 50 })],
         mergedBindings: new Map(),
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [],
         options: { minCacheablePrefixTokens: 50 }
       });
@@ -352,6 +450,7 @@ describe('analyzePromptCacheStability', () => {
         sections,
         mergedBindings: new Map(),
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [slot(SLOT_A)]
       });
       // Zero-length prefix precedes the first (per-request) section, so D5
@@ -370,6 +469,7 @@ describe('analyzePromptCacheStability', () => {
         sections,
         mergedBindings: new Map(),
         candidateMatches: [],
+        resourceBindingResolutions: [],
         slots: [slot(SLOT_A, 'per-conversation')]
       });
       const threshold = findings.filter((f) => f.kind === 'threshold-unknown');

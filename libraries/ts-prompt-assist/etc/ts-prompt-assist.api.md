@@ -314,6 +314,7 @@ export interface IPromptCacheStabilityAnalysisParams {
     readonly mergedBindings: ReadonlyMap<SlotName, IBindingTraceEntry>;
     // (undocumented)
     readonly options?: IPromptCacheDiagnosticOptions;
+    readonly resourceBindingResolutions: ReadonlyArray<IResourceBindingTraceEntry>;
     readonly sections: ReadonlyArray<IPromptSection>;
     readonly slots: ReadonlyArray<IPromptSlot>;
 }

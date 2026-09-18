@@ -11,6 +11,7 @@ import {
   IPromptCacheStabilityHint,
   IPromptSection,
   IPromptSlot,
+  IResourceBindingTraceEntry,
   PromptCacheStability,
   SlotName
 } from '../types';
@@ -27,6 +28,8 @@ export interface IPromptCacheStabilityAnalysisParams {
   readonly mergedBindings: ReadonlyMap<SlotName, IBindingTraceEntry>;
   /** The resolve's per-candidate match trace — {@link IPromptResolveTrace.candidateMatches}. */
   readonly candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>;
+  /** The resolve's resource-binding entries — {@link IPromptResolveTrace.resourceBindingResolutions}. */
+  readonly resourceBindingResolutions: ReadonlyArray<IResourceBindingTraceEntry>;
   /** The descriptor's slot declarations — {@link IPromptDescriptor.slots}. */
   readonly slots: ReadonlyArray<IPromptSlot>;
   /** Per-slot stability overrides from the resolve request. Wins over an authored claim. */
@@ -59,10 +62,25 @@ interface IStabilityRun {
 export function analyzePromptCacheStability(
   params: IPromptCacheStabilityAnalysisParams
 ): ReadonlyArray<IPromptCacheFinding> {
-  const { sections, mergedBindings, candidateMatches, slots, callSiteOverrides, options } = params;
+  const {
+    sections,
+    mergedBindings,
+    candidateMatches,
+    resourceBindingResolutions,
+    slots,
+    callSiteOverrides,
+    options
+  } = params;
   const findings: IPromptCacheFinding[] = [];
 
-  const slotEffective = resolveSlotStability(slots, mergedBindings, callSiteOverrides, findings);
+  const resourceBoundSlots = new Set(resourceBindingResolutions.map((entry) => entry.slot));
+  const slotEffective = resolveSlotStability(
+    slots,
+    mergedBindings,
+    resourceBoundSlots,
+    callSiteOverrides,
+    findings
+  );
   const templateRefuted = checkConditionalTemplate(sections, candidateMatches, findings);
   const perSection = sections.map((section) =>
     effectiveSectionStability(section, slotEffective, templateRefuted)
@@ -76,18 +94,32 @@ export function analyzePromptCacheStability(
 }
 
 /**
- * D1 — multi-scope binding. A slot claiming better than `'per-request'`
- * whose winning binding is one of two-or-more scope-level bindings for that
- * slot across the resolve's chain has its claim downgraded: the winning
- * value depends on which scope wins in *this* chain, so a different chain
- * could select a different value. This is chain-relative evidence that the
- * value *may* vary, not proof that it *does* — the governing asymmetry
- * (design.md §1) makes that downgrade correct anyway, since a false
- * `'frozen'` is the expensive mistake.
+ * D1 — multi-scope binding, plus a resource-binding refutation the design's
+ * D1 text doesn't name but the trace makes checkable. A slot claiming better
+ * than `'per-request'` is downgraded when either:
+ *
+ * 1. Its winning binding is one of two-or-more scope-level bindings for that
+ *    slot across the resolve's chain — the winning value depends on which
+ *    scope wins in *this* chain, so a different chain could select a
+ *    different value. Chain-relative evidence that the value *may* vary, not
+ *    proof that it *does*.
+ * 2. It is resource-bound — its value came from a full recursive
+ *    {@link PromptLibrary.resolve} of an inner prompt with its own qualifier
+ *    context. This function does not recurse into
+ *    `resourceBindingResolutions[].innerTrace` to check whether that inner
+ *    resolve is itself stable — doing so would need the same analysis run
+ *    per level of nesting — so a resource-bound slot's claim is refuted
+ *    unconditionally rather than risk trusting an inner resolve neither this
+ *    check nor the caller has actually examined.
+ *
+ * Both are evidence the value *may* vary, not proof that it *does* — the
+ * governing asymmetry (design.md §1) makes the downgrade correct anyway,
+ * since a false `'frozen'` is the expensive mistake.
  */
 function resolveSlotStability(
   slots: ReadonlyArray<IPromptSlot>,
   mergedBindings: ReadonlyMap<SlotName, IBindingTraceEntry>,
+  resourceBoundSlots: ReadonlySet<SlotName>,
   callSiteOverrides: ReadonlyMap<SlotName, PromptCacheStability> | undefined,
   findings: IPromptCacheFinding[]
 ): ReadonlyMap<SlotName, PromptCacheStability> {
@@ -109,6 +141,20 @@ function resolveSlotStability(
     }
 
     if (hint.stability !== 'per-request') {
+      if (resourceBoundSlots.has(slot.name)) {
+        findings.push({
+          kind: 'stability-refuted',
+          slot: slot.name,
+          detail:
+            `slot '${slot.name}': claimed '${hint.stability}' (${hint.origin}), but it is resource-bound — ` +
+            `its value comes from a nested resolve this check does not inspect, so its stability is unverified`,
+          claimed: hint,
+          downgradedTo: 'per-request'
+        });
+        effective.set(slot.name, 'per-request');
+        continue;
+      }
+
       const entry = mergedBindings.get(slot.name);
       const chainBindingCount = entry?.source === 'binding' ? entry.chainBindingCount : undefined;
       if (chainBindingCount !== undefined && chainBindingCount >= 2) {
@@ -173,15 +219,29 @@ function checkConditionalTemplate(
 }
 
 /**
- * D3 — derived signals with no hints at all. A `'preface'` section is
- * always `'frozen'` (a fixed safety-policy prefix, unrelated to candidate
- * matching). A `'template'` section is `'frozen'` unless D2 refuted it. A
- * `'slot'` section uses its resolved effective stability, defaulting to
- * `'per-request'` (R-a) when neither an authored nor a call-site claim
- * exists — this default is exactly the "unclassified" case design.md §9
- * describes: no hint was ever recorded for it, but it still participates in
- * ordering as the least-stable level, never as `'frozen'` (R-b forbids the
- * upgrade).
+ * D3 — derived signals with no hints at all. A `'template'` section is
+ * `'frozen'` unless D2 refuted it. A `'slot'` section uses its resolved
+ * effective stability, defaulting to `'per-request'` (R-a) when neither an
+ * authored nor a call-site claim exists — this default is exactly the
+ * "unclassified" case design.md §9 describes: no hint was ever recorded for
+ * it, but it still participates in ordering as the least-stable level, never
+ * as `'frozen'` (R-b forbids the upgrade).
+ *
+ * A `'preface'` section is unconditionally `'frozen'`, on a narrower premise
+ * than design.md §4's own wording ("preface... come[s] from checked-in
+ * files") states: `IPromptSafetyPolicy.antiJailbreakPreface` is actually a
+ * consumer-supplied `(descriptor: IPromptDescriptor) => Result<string>`
+ * callback invoked on every resolve, not literally file content. The
+ * assumption this makes explicit is that the callback is a **pure function
+ * of `descriptor`** — deterministic, so byte-identical across every resolve
+ * of *this prompt* (design.md §3's actual `'frozen'` contract: stable per
+ * `(prompt, model)`, not stable globally). That mirrors the trust already
+ * placed in Mustache template body content, which nothing here verifies
+ * either. There is no trace data to check this assumption against — no
+ * evidence a callback varied its output exists the way `candidateMatches`
+ * evidences a conditional template — so unlike D1/D2 there is no refutation
+ * path for a preface that breaks the assumption; it is a documented risk,
+ * not a detected one.
  */
 function effectiveSectionStability(
   section: IPromptSection,
@@ -297,7 +357,23 @@ function checkThreshold(
 
   // `measureSupplied` above already guarantees every prefix section has
   // `measured` set, so trusting that rather than adding an unreachable `?? 0`
-  // fallback branch.
+  // fallback branch. `measure` is a caller-supplied callback, though — it can
+  // return NaN, Infinity, or a negative number for a given section, and
+  // summing those would corrupt the total silently (NaN would make the
+  // eventual threshold comparison always false; a negative section would
+  // shrink the total below what was actually measured). Validated the same
+  // way as the configured minimum below, per R-c.
+  const measureInvalid = prefixSections.some(
+    (section) => !Number.isFinite(section.measured as number) || (section.measured as number) < 0
+  );
+  if (measureInvalid) {
+    findings.push({
+      kind: 'threshold-unknown',
+      detail: `the supplied measure returned a value that is not a finite, non-negative number for a section in the cacheable prefix — the prefix's token size cannot be evaluated`
+    });
+    return;
+  }
+
   const measuredTotal = prefixSections.reduce((sum, section) => sum + (section.measured as number), 0);
   const minTokens = options?.minCacheablePrefixTokens;
   // A caller-supplied minimum that isn't a finite, non-negative number can't

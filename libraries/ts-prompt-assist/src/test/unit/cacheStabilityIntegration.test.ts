@@ -13,6 +13,7 @@ import {
   PromptId,
   PromptLibrary,
   PromptStoreFixture,
+  ResourceId,
   ScopeKey,
   SlotBinding,
   SlotName
@@ -64,6 +65,53 @@ function record(over: {
       output: { kind: 'free-text' }
     },
     candidates: [{ conditions: {}, body: over.body }]
+  };
+}
+
+const INNER_PROMPT = 'inner' as unknown as PromptId;
+
+function resourceBoundOuterRecord(
+  cacheStability: 'frozen' | 'per-conversation' | 'per-request'
+): IStoredPromptRecord {
+  return {
+    scope: SCOPE,
+    id: PROMPT,
+    descriptor: {
+      id: PROMPT,
+      title: 'p',
+      schemaVersion: '1',
+      surface: 'chat',
+      slots: [
+        {
+          name: TOPIC,
+          description: 'topic',
+          cacheStability,
+          defaultBinding: {
+            kind: 'resource',
+            resourceId: INNER_PROMPT as unknown as ResourceId,
+            directive: 'prose'
+          } as SlotBinding
+        }
+      ],
+      output: { kind: 'free-text' }
+    },
+    candidates: [{ conditions: {}, body: '{{{topic}}}' }]
+  };
+}
+
+function innerRecord(): IStoredPromptRecord {
+  return {
+    scope: SCOPE,
+    id: INNER_PROMPT,
+    descriptor: {
+      id: INNER_PROMPT,
+      title: 'inner',
+      schemaVersion: '1',
+      surface: 'chat',
+      slots: [],
+      output: { kind: 'free-text' }
+    },
+    candidates: [{ conditions: {}, body: 'everyone' }]
   };
 }
 
@@ -189,6 +237,32 @@ describe('prompt-cache stability diagnostics — end-to-end wiring', () => {
     });
   });
 
+  test('a non-adjacent duplicate scope keeps its most-specific position, not its least-specific one', async () => {
+    // Regression: chain [A, B, A] must resolve as if A (its first, most-specific occurrence) were
+    // the only entry, not process A's least-specific occurrence and let B win over it.
+    const bindings: ReadonlyArray<IScopeSlotBindingsRecord> = [
+      {
+        scope: SCOPE,
+        bindings: new Map([[TOPIC, { kind: 'literal', value: 'from-a', directive: 'prose' } as SlotBinding]])
+      },
+      {
+        scope: OTHER_SCOPE,
+        bindings: new Map([[TOPIC, { kind: 'literal', value: 'from-b', directive: 'prose' } as SlotBinding]])
+      }
+    ];
+    const lib = await buildLib([record({ body: '{{{topic}}}' })], bindings);
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE, OTHER_SCOPE, SCOPE],
+      qualifiers: {},
+      composition: {}
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.slots.get(TOPIC)?.value).toBe('from-a');
+      expect(r.slots.get(TOPIC)?.winningScope).toBe(SCOPE);
+    });
+  });
+
   test('cacheFindings is empty when the composition is unavailable', async () => {
     const lib = await buildLib([record({ cacheStability: 'frozen', body: 'a{{#topic}}b{{/topic}}c' })]);
     const result = await lib.resolve({
@@ -215,6 +289,36 @@ describe('prompt-cache stability diagnostics — end-to-end wiring', () => {
     });
     expect(result).toSucceedAndSatisfy((r) => {
       expect(r.composition).toBeUndefined();
+    });
+  });
+
+  test('a resource-bound slot claiming better than per-request is refuted end-to-end', async () => {
+    const lib = await buildLib([resourceBoundOuterRecord('frozen'), innerRecord()]);
+    const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {}, composition: {} });
+    expect(result).toSucceedAndSatisfy((r) => {
+      const refuted = refutedFindings(r) as ReadonlyArray<{ slot?: SlotName; downgradedTo?: string }>;
+      expect(refuted).toHaveLength(1);
+      expect(refuted[0].slot).toBe(TOPIC);
+      expect(refuted[0].downgradedTo).toBe('per-request');
+    });
+  });
+
+  test('composition.cacheDiagnostics is forwarded end-to-end to produce a threshold finding', async () => {
+    // Regression coverage for the analyzer-options wiring in PromptLibrary._buildComposition,
+    // which no prior end-to-end case exercised (only direct analyzer-input tests did).
+    const lib = await buildLib([record({ cacheStability: 'frozen', body: '{{{topic}}}' })]);
+    const chars = (text: string): number => text.length;
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'x' },
+      composition: { measure: chars, cacheDiagnostics: { minCacheablePrefixTokens: 1000 } }
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      const belowThreshold = (r.composition?.cacheFindings ?? []).filter((f) => f.kind === 'below-threshold');
+      expect(belowThreshold).toHaveLength(1);
+      expect(belowThreshold[0].detail).toMatch(/1000 token/);
     });
   });
 });

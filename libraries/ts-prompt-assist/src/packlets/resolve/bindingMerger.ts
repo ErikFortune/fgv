@@ -87,24 +87,31 @@ export function mergeBindings(
   // this slot" apart from "the winning value depends on which scope wins
   // this chain".
   const chainBindingCounts = new Map<SlotName, number>();
-  // Scopes already processed in this walk. `chain` is caller-supplied and
-  // not guaranteed distinct; processing the same scope twice would
-  // double-count its bindings above, producing a false chainBindingCount
-  // >= 2 (and a false D1 refutation) for a slot only one scope actually
-  // binds. Winner selection is idempotent under a repeat, so skipping the
-  // repeat outright is correct for both, not just for counting.
-  const processedScopes = new Set<ScopeKey>();
+  // `chain` is caller-supplied and not guaranteed distinct. Deduping by
+  // FIRST occurrence (most-specific position, since `chain` is documented
+  // most-specific-first) before the reverse walk — rather than skipping a
+  // repeat as it's encountered during the walk — keeps a scope's priority
+  // pinned to its most-specific position even when a duplicate appears
+  // elsewhere in the chain (e.g. `[A, B, A]`): walking the raw chain and
+  // skipping an already-seen scope during the reverse pass would instead
+  // process the duplicate's LEAST-specific occurrence and skip its
+  // most-specific one, letting B win over A when A should win. Deduping
+  // first also fixes the simpler `[A, A]` case as a special case of this.
+  const distinctChain: ScopeKey[] = [];
+  const seenScopes = new Set<ScopeKey>();
+  for (const scope of chain) {
+    if (!seenScopes.has(scope)) {
+      seenScopes.add(scope);
+      distinctChain.push(scope);
+    }
+  }
 
   // Walk chain from most-general (last) to most-specific (first). For each
   // scope, set unset slot bindings, and ALSO overwrite previously-set non-
   // enforced bindings with this scope's enforced bindings (an enforced
   // binding from a more-general scope locks the value).
-  for (let i = chain.length - 1; i >= 0; i--) {
-    const scope = chain[i];
-    if (processedScopes.has(scope)) {
-      continue;
-    }
-    processedScopes.add(scope);
+  for (let i = distinctChain.length - 1; i >= 0; i--) {
+    const scope = distinctChain[i];
     const record = scopeBindings.get(scope);
     if (record === undefined) {
       continue;
