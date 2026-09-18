@@ -74,14 +74,15 @@ export function analyzePromptCacheStability(
   const findings: IPromptCacheFinding[] = [];
 
   const resourceBoundSlots = new Set(resourceBindingResolutions.map((entry) => entry.slot));
+  const bodyConditional = checkConditionalBody(candidateMatches, findings);
   const slotEffective = resolveSlotStability(
     slots,
     mergedBindings,
     resourceBoundSlots,
     callSiteOverrides,
+    bodyConditional,
     findings
   );
-  const templateRefuted = checkConditionalTemplate(sections, candidateMatches, findings);
 
   // A section's `chars` on THIS resolve says nothing about its length on
   // another resolve of the same prompt — a 'per-request' slot rendering
@@ -93,7 +94,7 @@ export function analyzePromptCacheStability(
   // findings are keyed on slots and candidates, not section length, and are
   // unaffected either way.
   const perSection = sections.map((section) =>
-    effectiveSectionStability(section, slotEffective, templateRefuted)
+    effectiveSectionStability(section, slotEffective, bodyConditional)
   );
 
   const runs = foldRuns(perSection);
@@ -121,9 +122,14 @@ export function analyzePromptCacheStability(
  *    per level of nesting — so a resource-bound slot's claim is refuted
  *    unconditionally rather than risk trusting an inner resolve neither this
  *    check nor the caller has actually examined.
+ * 3. The resolve's body is itself qualifier-conditional (D2,
+ *    `bodyConditional`) — a slot's presence or position can change along
+ *    with which candidate wins, so a `'frozen'`/`'per-conversation'` claim on
+ *    a slot inside that body is exactly as unverifiable as a template
+ *    section's — see {@link checkConditionalBody}.
  *
- * Both are evidence the value *may* vary, not proof that it *does* — the
- * governing asymmetry (design.md §1) makes the downgrade correct anyway,
+ * All three are evidence the value *may* vary, not proof that it *does* —
+ * the governing asymmetry (design.md §1) makes the downgrade correct anyway,
  * since a false `'frozen'` is the expensive mistake.
  */
 function resolveSlotStability(
@@ -131,6 +137,7 @@ function resolveSlotStability(
   mergedBindings: ReadonlyMap<SlotName, IBindingTraceEntry>,
   resourceBoundSlots: ReadonlySet<SlotName>,
   callSiteOverrides: ReadonlyMap<SlotName, PromptCacheStability> | undefined,
+  bodyConditional: boolean,
   findings: IPromptCacheFinding[]
 ): ReadonlyMap<SlotName, PromptCacheStability> {
   const effective = new Map<SlotName, PromptCacheStability>();
@@ -180,6 +187,21 @@ function resolveSlotStability(
         effective.set(slot.name, 'per-request');
         continue;
       }
+
+      if (bodyConditional) {
+        findings.push({
+          kind: 'stability-refuted',
+          slot: slot.name,
+          detail:
+            `slot '${slot.name}': claimed '${hint.stability}' (${hint.origin}), but the resolve's body is ` +
+            `qualifier-conditional — a different matching candidate could change this slot's presence or ` +
+            `position, so its stability is unverified`,
+          claimed: hint,
+          downgradedTo: 'per-request'
+        });
+        effective.set(slot.name, 'per-request');
+        continue;
+      }
     }
 
     effective.set(slot.name, hint.stability);
@@ -189,25 +211,27 @@ function resolveSlotStability(
 }
 
 /**
- * D2 — conditional body. A `'template'` section's text comes from the
- * winning candidate(s)' joined body, which is rendered as a single Mustache
- * template — so a per-section attribution back to the contributing
- * candidate is not available from `IPromptComposition` (candidates are
- * already joined before segmentation runs). Applied at the coarser
- * granularity the data actually supports instead: if *any* candidate
- * matched with a non-empty, non-`matchAsDefault` condition set, the whole
- * joined body is qualifier-conditional, so every `'template'` section in
- * this resolve is downgraded together, uniformly.
+ * D2 — conditional body. A resolve's rendered body comes from the winning
+ * candidate(s)' joined body, rendered as a single Mustache template with the
+ * slot sections' values already substituted in — so a per-section
+ * attribution back to "which candidate produced this text" is not available
+ * from `IPromptComposition` (candidates are joined before segmentation
+ * runs). Applied at the coarser granularity the data actually supports
+ * instead: if *any* candidate matched with a non-empty, non-`matchAsDefault`
+ * condition set, the whole body is qualifier-conditional — a different
+ * matching candidate on a later resolve could change which text and which
+ * slots appear, and where. This is body-wide, not template-section-only: a
+ * `'template'` section is downgraded (via {@link effectiveSectionStability})
+ * and so is any slot claiming better than `'per-request'` stability (via
+ * {@link resolveSlotStability}'s `bodyConditional` check) — a slot's
+ * presence and position inside a conditional body is exactly as unverified
+ * as the surrounding template text, whether or not the body renders any
+ * literal `'template'` section at all.
  */
-function checkConditionalTemplate(
-  sections: ReadonlyArray<IPromptSection>,
+function checkConditionalBody(
   candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>,
   findings: IPromptCacheFinding[]
 ): boolean {
-  if (!sections.some((section) => section.kind === 'template')) {
-    return false;
-  }
-
   const conditionalCandidates = candidateMatches.filter(
     (match) => match.matchType === 'match' && match.conditions.length > 0
   );
@@ -219,7 +243,7 @@ function checkConditionalTemplate(
     findings.push({
       kind: 'stability-refuted',
       detail:
-        `template candidate ${match.candidateIndex}: matched on ${match.conditions.length} condition(s) — ` +
+        `candidate ${match.candidateIndex}: matched on ${match.conditions.length} condition(s) — ` +
         `the body is qualifier-conditional, not frozen`,
       claimed: { stability: 'frozen', origin: 'derived' },
       downgradedTo: 'per-request'
@@ -256,7 +280,7 @@ function checkConditionalTemplate(
 function effectiveSectionStability(
   section: IPromptSection,
   slotEffective: ReadonlyMap<SlotName, PromptCacheStability>,
-  templateRefuted: boolean
+  bodyConditional: boolean
 ): PromptCacheStability {
   if (section.kind === 'slot') {
     // `IPromptSection.slot` is always set when `kind === 'slot'` — every
@@ -266,7 +290,7 @@ function effectiveSectionStability(
     return slotEffective.get(section.slot as SlotName) ?? 'per-request';
   }
   if (section.kind === 'template') {
-    return templateRefuted ? 'per-request' : 'frozen';
+    return bodyConditional ? 'per-request' : 'frozen';
   }
   return 'frozen';
 }
@@ -295,6 +319,16 @@ function foldRuns(perSection: ReadonlyArray<PromptCacheStability>): ReadonlyArra
  * only lever a caller has. Per design.md §5.2 step 3 this is also exactly
  * where a breakpoint plan would have to stop, so the ordering hazard and the
  * stranded-content hazard are the same finding.
+ *
+ * Gated on the more-stable ("after") run contributing at least one byte.
+ * This is not in tension with the "a section's length on this resolve says
+ * nothing about its length on another resolve" principle above — that
+ * principle is about the *less*-stable side, where emptiness-now doesn't
+ * imply emptiness-always. Here the more-stable run's stability has already
+ * survived D1/D2's refutation checks by the time this runs, so an empty
+ * `'frozen'` (or unrefuted `'per-conversation'`) run is empty *because its
+ * claim says it can't change* — there is no later content on that side to
+ * strand or reorder, so nothing is actually cache-hostile yet.
  */
 function checkHostileOrdering(
   sections: ReadonlyArray<IPromptSection>,
@@ -303,6 +337,12 @@ function checkHostileOrdering(
 ): void {
   for (let i = 1; i < runs.length; i++) {
     if (runs[i].level > runs[i - 1].level) {
+      const afterChars = sections
+        .slice(runs[i].startIdx, runs[i].endIdx)
+        .reduce((sum, section) => sum + section.chars, 0);
+      if (afterChars === 0) {
+        continue;
+      }
       const before = sections[runs[i].startIdx - 1];
       const after = sections[runs[i].startIdx];
       findings.push({

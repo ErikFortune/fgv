@@ -12,7 +12,7 @@ only fires for PRs targeting `release`, so a stream branch never gets CI on its 
 | phase | status | artifact |
 |---|---|---|
 | A — research | ✅ complete (2026-09-07) | `research.md` |
-| B — design | ✅ complete (2026-09-08); all 5 OQs closed 2026-09-17; **verified 2026-09-18, OQ-6 resolved same day** | `design.md` (+ §14) |
+| B — design | ✅ complete (2026-09-08); original 5 OQs closed 2026-09-17; **verified 2026-09-18, OQ-6 resolved same day**; **OQ-7 opened during C2, still open** | `design.md` (+ §14) |
 | triage | ⏭️ not used — questions decided directly; see `design.md` process note | — |
 | C1 — observability | ✅ shipped via #668 (merged into `release`) | `libraries/ts-extras/src/packlets/ai-assist/{usageTypes,usageNormalization}.ts` + adapters |
 | C2 — diagnostics + vocabulary | ✅ implemented; PR #669 open against `release` | `libraries/ts-prompt-assist/src/packlets/{types/cacheStability,resolve/cacheStabilityAnalysis}.ts` + `bindingMerger`/`promptLibrary`/`enums`/`descriptorConverter`/`slot`/`trace` |
@@ -459,3 +459,76 @@ added; `rush change --verify --target-branch origin/release` passing.
 passing) updated in this change. `docs/WORKSTREAMS.md`'s entry for this stream updated to record
 C2 shipped; the stream itself stays open (C3 remains), so no `finalize-task` migration to
 `completed/` — artifacts stay in `active/` per the kickoff brief.
+
+**Copilot round 1 — substantive.** Real: `chain = [scope, scope]` (the same scope appearing
+twice, non-adjacently or otherwise, in the resolve chain) double-counted `chainBindingCount`
+in `bindingMerger.ts`'s reverse walk, inflating D1's multi-scope-binding signal. Fixed with a
+`processedScopes` `Set` skipping an already-seen scope during the walk — **later found
+insufficient, see round 2**. Also real: a caller-supplied `minCacheablePrefixTokens` of `NaN`
+or a negative number silently mis-verdicted D5's threshold check rather than reporting
+`'threshold-unknown'` (R-c violation one level removed — an unknown-shaped input, not an
+unknown value, still needs the unknown-outcome path). Fixed with `Number.isFinite(...) &&
+... >= 0` validation, R-c-consistent with how an absent minimum is already handled.
+
+**Copilot round 2 — also substantive; caught round 1's own fix being wrong.** Real: round 1's
+`processedScopes` dedup is correct for adjacent repeats but wrong for non-adjacent ones —
+`chain = [A, B, A]` still double-counts `A` because the reverse walk revisits it after `B`.
+Fixed by deduping the chain to first-occurrence-only **before** the reverse walk runs
+(`distinctChain`), preserving most-specific-wins priority for any repeat shape. Also real: a
+resource-bound slot (its value from a full recursive `resolve` of an inner prompt) had no
+refutation path at all — a `'frozen'`-claiming resource-bound slot sailed through unrefuted.
+Added unconditional refutation (this check does not recurse into the inner resolve's own
+trace, so an unverified inner resolve can't be trusted transitively). Also real: `measure()`
+callback output — not just the caller's configured minimum — could be `NaN`/`Infinity`/
+negative for a section, corrupting `measuredTotal` silently; validated with the same pattern
+as round 1's minimum check. One doc fix: a stale `docs/WORKSTREAMS.md` claim.
+
+**Copilot round 3 — mixed: one design refinement (later found wrong), plus real doc/test
+gaps.** Suggested filtering `chars === 0` sections out of the D4/D5 walk — implemented, but
+**round 4 showed this was itself a regression, see below**. Real, and kept: enum exhaustiveness
+test coverage for `allPromptCacheStabilityValues`/`EnumConvert.promptCacheStability`, and a
+`CAPABILITIES.md` gap (the resource-bound-slot refutation case wasn't mentioned). The preface
+default tradeoff (unannotated `antiJailbreakPreface` — `'frozen'` vs `'per-request'`) was
+recorded as **OQ-7** here rather than re-declined with more words, since it's a genuine
+safety-vs-usability call the kickoff brief's escalation criterion says belongs to design, not
+implementation.
+
+**Copilot round 4 — caught my own round-3 regression.** Round 3's zero-length-section filter
+was wrong: Copilot correctly pointed out that a `'per-request'` slot rendering empty *on this
+resolve* can render non-empty on the *next* resolve of the same prompt, at the same position —
+excluding it from the D4/D5 walk suppresses exactly the warning that matters most (an
+empty-here, volatile-in-general slot ahead of stable content). Reverted the filter entirely and
+replaced the test that had encoded the wrong assumption with one proving the opposite: an
+empty per-request slot ahead of stable content still raises `cache-hostile-ordering`. Load-
+bearing principle carried forward: **a section's rendered length on this resolve says nothing
+about its length on other resolves of the same prompt** — round 5 (below) had to reason
+carefully about why a mirror-image case is legitimately different.
+
+**Copilot round 5 — two real findings, both about the boundary of round 4's own principle,
+plus doc drift from OQ-7's introduction.**
+
+1. `checkHostileOrdering` fired for *every* upward transition, even when the more-stable
+   ("after") run contributes zero bytes — e.g. a `'per-request'` slot followed by an
+   authored-`'frozen'` slot whose current value happens to be empty. This is not the same case
+   round 4 reverted: round 4's principle is about the *less*-stable side, where emptiness now
+   doesn't imply emptiness always. Here the *more*-stable side's claim has already survived
+   D1/D2's refutation checks by the time D4 runs — an unrefuted `'frozen'` claim is empty
+   *because the claim says it can't change*, so there is no later content on that side to
+   strand or reorder. Gated the finding on the after-run's total `chars` (summed across its
+   full section range, not just its first section) being non-zero.
+2. `checkConditionalTemplate` (renamed `checkConditionalBody`) was gated on the resolve having
+   at least one literal `'template'` section, and only downgraded template sections when it
+   fired. A conditional candidate body like `{{{topic}}} suffix` segments into
+   `[slot(topic), template(' suffix')]` — the slot section left `'frozen'` even though a
+   different matching candidate on a later resolve could change the slot's presence or
+   position just as much as the template text. Removed the template-existence gate and
+   extended the refutation body-wide: `resolveSlotStability` now takes a `bodyConditional`
+   boolean (computed once, before slot resolution) and downgrades any slot claiming better
+   than `'per-request'` when the body is conditional, alongside its existing resource-bound and
+   multi-scope-binding refutation branches.
+
+Also real: round 3's OQ-7 addition made an earlier, unrevisited line in this file (the phase
+table) and in `docs/WORKSTREAMS.md` factually wrong — both still read "all five/all 5 open
+questions closed" after OQ-7 was opened in the same PR. The same intra-file doc-lag class
+`CODING_STANDARDS.md`'s "Docs ship with the code" section names for C1 rounds 6/7. Corrected
+both.

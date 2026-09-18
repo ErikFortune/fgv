@@ -241,7 +241,36 @@ describe('analyzePromptCacheStability', () => {
       expect(findings.filter((f) => f.kind === 'stability-refuted')).toEqual([]);
     });
 
-    test('does not fire when there are no template sections at all', () => {
+    test('downgrades a frozen slot claim body-wide even with no template section present', () => {
+      // A conditional candidate makes the whole body unverified, not just its
+      // literal 'template' text — a slot's presence/position inside that body
+      // can change along with which candidate wins on a later resolve, so its
+      // claim is refuted too, even though no 'template' section exists here.
+      const candidateMatches: ICandidateMatchTraceEntry[] = [
+        { candidateIndex: 0, matchType: 'match', conditions: [condition()] }
+      ];
+      const findings = analyzePromptCacheStability({
+        sections: [section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 1 })],
+        mergedBindings: new Map(),
+        candidateMatches,
+        resourceBindingResolutions: [],
+        slots: [slot(SLOT_A, 'frozen')]
+      });
+      const refuted = findings.filter((f) => f.kind === 'stability-refuted');
+      // One finding for the conditional candidate itself (D2), one for the
+      // slot's now-refuted claim (D1's bodyConditional branch).
+      expect(refuted).toHaveLength(2);
+      expect(refuted).toContainEqual(
+        expect.objectContaining({
+          kind: 'stability-refuted',
+          slot: SLOT_A,
+          claimed: { stability: 'frozen', origin: 'authored' },
+          downgradedTo: 'per-request'
+        })
+      );
+    });
+
+    test('does not touch an unclaimed slot when the body is conditional', () => {
       const candidateMatches: ICandidateMatchTraceEntry[] = [
         { candidateIndex: 0, matchType: 'match', conditions: [condition()] }
       ];
@@ -252,7 +281,11 @@ describe('analyzePromptCacheStability', () => {
         resourceBindingResolutions: [],
         slots: [slot(SLOT_A)]
       });
-      expect(findings.filter((f) => f.kind === 'stability-refuted')).toEqual([]);
+      const refuted = findings.filter((f) => f.kind === 'stability-refuted');
+      // Only the candidate-level D2 finding; an unclaimed slot has nothing to
+      // refute (it was already 'per-request' by default, R-a).
+      expect(refuted).toHaveLength(1);
+      expect(refuted[0]).not.toHaveProperty('slot', SLOT_A);
     });
 
     test('does not fire when no candidate matched on a non-empty condition set', () => {
@@ -309,6 +342,25 @@ describe('analyzePromptCacheStability', () => {
         options: { minCacheablePrefixTokens: 1 }
       });
       expect(findingKinds(findings).sort()).toEqual(['cache-hostile-ordering', 'no-cacheable-prefix']);
+    });
+
+    test('does not fire when the more-stable run contributes no bytes', () => {
+      // Unlike the per-request-side case above, an empty run on the
+      // more-stable side is empty *because its (unrefuted) claim says it
+      // can't change* — a trusted 'frozen' claim is invariant by definition,
+      // so there is no later content on that side to strand or reorder.
+      const sections: IPromptSection[] = [
+        section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 3 }),
+        section({ kind: 'slot', slot: SLOT_B, start: 3, chars: 0 })
+      ];
+      const findings = analyzePromptCacheStability({
+        sections,
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [slot(SLOT_A), slot(SLOT_B, 'frozen')]
+      });
+      expect(findings.filter((f) => f.kind === 'cache-hostile-ordering')).toEqual([]);
     });
 
     test('does not fire for a non-increasing (frozen, per-conversation, per-request) sequence', () => {
