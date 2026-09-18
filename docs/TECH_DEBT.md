@@ -406,8 +406,11 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
   **The live shape is in `ts-extras`' KeyStore**: `IKeyStoreAsymmetricEntry` /
   `IKeyStoreAsymmetricEntryJson` and the symmetric pair (`crypto-utils/keystore/model.ts:207`
-  and `:342`), each with its own converter. **Currently in sync — 5 fields each** — so this is a
-  place to check when either side changes, not a present defect.
+  and `:342`), each with its own converter. **Currently in sync — 8 fields each on the
+  asymmetric pair, 7 each on the symmetric** — so this is a place to check when either side
+  changes, not a present defect. (An earlier revision of this entry said 5 each; that count came
+  from a `grep -A 25` window that truncated both interface bodies. Corrected 2026-09-18 from the
+  sweep below, which counted full bodies.)
 
   **Observed live (single-converter form)**: C2 (#669) added `IPromptSlot.cacheStability?` and
   `slotConverter` silently discarded it on every load through the store, with build, lint and
