@@ -978,4 +978,34 @@ describe('deriveCacheBreakpointOffsets (design.md §5.2, used by toCacheRequest)
       5
     ]);
   });
+
+  test('does not emit a duplicate offset when two downward transitions land on the same empty run', () => {
+    // Regression (Copilot review, post-push): frozen(5) -> empty per-conversation -> per-request.
+    // The empty per-conversation run is NOT collapsed (collapseEmptyStableRuns only collapses
+    // 'frozen' empty runs), so it survives as its own run and the per-request run after it starts
+    // at the exact same offset (5) the per-conversation run started at. Both are genuine downward
+    // transitions, so the pre-fix code pushed 5 twice — [5, 5], which
+    // AiAssist.validateCacheBreakpoints rejects for being non-ascending. The boundary is real; it
+    // is claimed once, by whichever transition reaches it first.
+    const sections: IPromptSection[] = [
+      section({ kind: 'preface', start: 0, chars: 5 }),
+      section({ kind: 'slot', slot: SLOT_A, start: 5, chars: 0 }),
+      section({ kind: 'slot', slot: SLOT_B, start: 5, chars: 5 })
+    ];
+    expect(deriveCacheBreakpointOffsets(sections, ['frozen', 'per-conversation', 'per-request'])).toEqual([
+      5
+    ]);
+  });
+
+  test('does not emit an illegal offset 0 when the leading run is an empty non-frozen run', () => {
+    // Regression (Copilot review, post-push): the leading run is 'per-conversation' with
+    // chars === 0 (not collapsed, since collapsing is frozen-only), so the run after it starts at
+    // offset 0. That transition is downward and, pre-fix, satisfied `offset < totalChars`, pushing
+    // an illegal 0 — AiAssist.validateCacheBreakpoints requires every offset to be > 0.
+    const sections: IPromptSection[] = [
+      section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 0 }),
+      section({ kind: 'slot', slot: SLOT_B, start: 0, chars: 8 })
+    ];
+    expect(deriveCacheBreakpointOffsets(sections, ['per-conversation', 'per-request'])).toEqual([]);
+  });
 });

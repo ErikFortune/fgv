@@ -336,6 +336,67 @@ describe('IProviderCompletionParams.cache', () => {
     });
   });
 
+  describe('cache gating on the shared apiFormat: openai dispatch', () => {
+    // `makeDescriptor`'s default id is 'xai-grok' — a real apiFormat: 'openai' descriptor that
+    // is not the confirmed-supporting 'openai' one (AiAssist.supportsPromptCacheBreakpoints).
+    const nonOpenAiDescriptor = makeDescriptor({ apiFormat: 'openai' });
+
+    test('Chat Completions: a supplied cache is silently dropped for an unconfirmed descriptor', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: nonOpenAiDescriptor,
+        apiKey: 'test-key',
+        system: SYSTEM,
+        messages: [{ role: 'user', content: USER }],
+        cache: { systemBreakpoints: [8, 15], cacheKey: 'tenant-1' }
+      });
+
+      expect(result).toSucceed();
+      const body = lastRequestBody();
+      const messages = body.messages as Array<Record<string, unknown>>;
+      expect(messages[0]).toEqual({ role: 'system', content: SYSTEM });
+      expect('prompt_cache_key' in body).toBe(false);
+    });
+
+    test('Responses API: a supplied cache is silently dropped for an unconfirmed descriptor', async () => {
+      mockFetchResponse(responsesApiResponse('ok'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: makeDescriptor({ apiFormat: 'openai', supportedTools: ['web_search'] }),
+        apiKey: 'test-key',
+        system: SYSTEM,
+        messages: [{ role: 'user', content: USER }],
+        tools: [{ type: 'web_search' }],
+        cache: { systemBreakpoints: [8], cacheKey: 'tenant-1' }
+      });
+
+      expect(result).toSucceed();
+      const body = lastRequestBody();
+      const input = body.input as Array<Record<string, unknown>>;
+      expect(input[0]).toEqual({ role: 'system', content: SYSTEM });
+      expect('prompt_cache_key' in body).toBe(false);
+    });
+
+    test('an invalid breakpoint plan on an unconfirmed descriptor is silently dropped rather than validated', async () => {
+      // Gating happens before validation runs (the gated `cache` reaching the builder is
+      // `undefined`), so a plan that would fail AiAssist.validateCacheBreakpoints on 'openai'
+      // simply never reaches validation on a descriptor that never receives `cache` at all.
+      mockFetchResponse(openAiResponse('ok'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: nonOpenAiDescriptor,
+        apiKey: 'test-key',
+        system: SYSTEM,
+        messages: [{ role: 'user', content: USER }],
+        cache: { systemBreakpoints: [0] }
+      });
+
+      expect(result).toSucceed();
+      expect(global.fetch).toHaveBeenCalled();
+    });
+  });
+
   describe('Gemini generateContent', () => {
     test('ignores cache — no breakpoint mechanism, systemInstruction is unaffected', async () => {
       const descriptor = makeDescriptor({ apiFormat: 'gemini' });

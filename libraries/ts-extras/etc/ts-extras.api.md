@@ -205,6 +205,7 @@ declare namespace AiAssist {
         AiCacheReportingLevel,
         IAiCompletionUsage,
         supportsCacheUsageReporting,
+        supportsPromptCacheBreakpoints,
         supportsStreamUsageOption,
         ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
         AiStructuredOutputFormat,
@@ -3226,6 +3227,12 @@ function supportsEmbedding(descriptor: IAiProviderDescriptor): boolean;
 //
 // @public
 function supportsImageGeneration(descriptor: IAiProviderDescriptor): boolean;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function supportsPromptCacheBreakpoints(descriptor: IAiProviderDescriptor): boolean;
 
 // @public
 function supportsStreamUsageOption(descriptor: IAiProviderDescriptor): boolean;

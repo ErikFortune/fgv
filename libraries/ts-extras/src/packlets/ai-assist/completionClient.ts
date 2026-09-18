@@ -90,7 +90,7 @@ import {
   resolveStructuredOutput
 } from './structuredOutput';
 import { resolveStructuredOutputCapability } from './registry';
-import { supportsCacheUsageReporting } from './streamUsageCapability';
+import { supportsCacheUsageReporting, supportsPromptCacheBreakpoints } from './streamUsageCapability';
 import type { StructuredOutputRequest } from './structuredOutputTypes';
 import {
   normalizeAnthropicUsage,
@@ -337,10 +337,10 @@ async function callOpenAiCompletion(
     // Omitted when the caller doesn't set maxTokens — every non-Anthropic provider applies its
     // own default. See AiAssist.usesMaxCompletionTokensField for the field-name split.
     ...(maxTokens !== undefined ? { [maxTokensField]: maxTokens } : {}),
-    // Pure additive routing plumbing (research.md §1.3) — no vocabulary, no cap, and per
-    // design.md §6.3 not gated to a confirmed-supporting descriptor: unlike the streaming
-    // `stream_options` field, this is sent only when the caller explicitly opted in by supplying
-    // `cache.cacheKey`, so the choice of provider is already theirs.
+    // Pure additive routing plumbing (research.md §1.3) — no vocabulary, no cap. `cache` itself
+    // is gated to confirmed-supporting descriptors at the dispatch site (see
+    // supportsPromptCacheBreakpoints), so `cache?.cacheKey` is only ever defined here when this
+    // call is already known to be OpenAI.
     ...(cache?.cacheKey !== undefined
       ? // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field name
         { prompt_cache_key: cache.cacheKey }
@@ -438,8 +438,8 @@ async function callOpenAiResponsesCompletion(
     // Temperature is sent only when the caller explicitly provided one (see callOpenAiCompletion).
     ...(temperature !== undefined ? { temperature } : {}),
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {}),
-    // See the identical field on callOpenAiCompletion's body — same routing plumbing, confirmed
-    // on both Chat Completions and the Responses API (research.md §1.3).
+    // See the identical field and gating on callOpenAiCompletion's body — same routing plumbing,
+    // confirmed on both Chat Completions and the Responses API (research.md §1.3).
     ...(cache?.cacheKey !== undefined
       ? // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field name
         { prompt_cache_key: cache.cacheKey }
@@ -890,9 +890,14 @@ export async function callProviderCompletion(
   }
 
   switch (descriptor.apiFormat) {
-    case 'openai':
+    case 'openai': {
       // Responses-API-only models (e.g. gpt-5.5-pro) 400 on /chat/completions, so they route
       // to the Responses path even with no tools requested — same path the tools case uses.
+      // `cache` is gated to descriptors confirmed to tolerate the request-shape changes it
+      // produces — see supportsPromptCacheBreakpoints. Every other apiFormat: 'openai'
+      // descriptor (xAI, Groq, Mistral, Ollama, openai-compat) gets the same request body it
+      // would have gotten had the caller passed no `cache` at all.
+      const gatedCache = supportsPromptCacheBreakpoints(descriptor) ? cache : undefined;
       if (usesResponsesApi) {
         return callOpenAiResponsesCompletion(
           config,
@@ -906,7 +911,7 @@ export async function callProviderCompletion(
           maxTokens,
           resolvedStructured,
           supportsCacheUsageReporting(descriptor),
-          cache
+          gatedCache
         );
       }
       return callOpenAiCompletion(
@@ -921,8 +926,9 @@ export async function callProviderCompletion(
         usesMaxCompletionTokensField(descriptor),
         resolvedStructured,
         supportsCacheUsageReporting(descriptor),
-        cache
+        gatedCache
       );
+    }
     case 'anthropic':
       return callAnthropicCompletion(
         config,

@@ -1280,3 +1280,49 @@ more conservative than the analogous D1 multi-scope check (which only refutes wh
 evidence is itself treated as refuting evidence, per the governing asymmetry. A future slice
 that threads recursive analysis through would be a genuine capability increase, not a bug fix to
 this one.
+
+---
+
+## 16. C3 post-push Copilot findings — 2026-09-18
+
+PR #671's first Copilot review round surfaced two real defects in the C3 emit path, both
+distinct from the pre-merge `code-reviewer` P1 already recorded in the stream README. Neither
+was visible to layer 1 (`code-reviewer`) or to the 100%-coverage suite that existed at push time.
+
+**Finding A — `cache` reached non-OpenAI `apiFormat: 'openai'` descriptors unconditionally.**
+§6.3's `prompt_cache_key` discussion, and the implementation comment it was read to license,
+treated the field as "pure additive routing plumbing" not requiring descriptor gating — reasoning
+that in fact only ever addressed OpenAI's own `mode: 'explicit'` footgun, never the cross-descriptor
+question. `callOpenAiCompletion`/`callOpenAiResponsesCompletion` are shared by xAI, Groq, Mistral,
+Ollama, and self-hosted `openai-compat` (§F3 already established this sharing for the completion
+path generally), and neither `prompt_cache_breakpoint` content parts nor the top-level
+`prompt_cache_key` field had ever been confirmed tolerated outside OpenAI itself — the identical
+risk `supportsStreamUsageOption` (§8/C1) was written to avoid for `stream_options`. **Fixed**, not
+overruled: added `AiAssist.supportsPromptCacheBreakpoints(descriptor)` (`streamUsageCapability.ts`,
+same shape and write-side rationale as `supportsStreamUsageOption`, `true` only for
+`descriptor.id === 'openai'`), gating `cache` to `undefined` for every other descriptor at the
+`callProviderCompletion` dispatch site before it reaches either builder. This is descriptor-family
+safety, not the `IAiCacheCapability` model-keyed threshold/cap table §7/§11 scoped out of every
+C3 discussion — the two are different questions (whether a request shape is *safe to send at all*
+vs. how many bytes a model's cache *tolerates*), and only the latter was ever out of scope.
+
+**Finding B — `deriveCacheBreakpointOffsets` could still emit an illegal `0` or a duplicate
+offset.** The pre-merge P1 fix (README, "Lessons codified") suppressed only the offset-equals-
+document-length case. A second, structurally identical gap survived it: `collapseEmptyStableRuns`
+collapses empty **`'frozen'`** runs only (§5.1a), so an empty `'per-conversation'` or
+`'per-request'` run survives as its own run and the run after it starts at the same offset. Two
+downward transitions landing on the same empty run — `frozen(5) → empty per-conversation →
+per-request` — produced `[5, 5]`, a duplicate `AiAssist.validateCacheBreakpoints` rejects for
+non-ascending order; the same shape at the start of the document (`empty per-conversation →
+per-request`, nothing before it) produced an illegal `0`. **Fixed** by tracking the last emitted
+offset and requiring `offset > lastOffset` (initialized to `0`) in addition to the existing
+`offset < totalChars` guard — the redundant second candidate at an already-claimed position is
+discarded; the boundary it would have marked is unaffected, since the first transition to reach it
+already claimed the offset.
+
+Both fixes shipped in the same PR, with regression tests reproducing the exact reported shapes
+(`apiClient.cache.test.ts`'s "cache gating" describe block; `cacheStabilityAnalysis.test.ts`'s two
+new `deriveCacheBreakpointOffsets` cases) — the same "regression test pinned to the specific
+reported input" discipline the pre-merge P1 used, per `TESTING_GUIDELINES.md`'s caller-enumeration
+rule: a test that only re-derives the general property would not have failed against either
+pre-fix version.

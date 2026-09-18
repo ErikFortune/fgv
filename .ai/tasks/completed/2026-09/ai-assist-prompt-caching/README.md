@@ -113,6 +113,15 @@ None outstanding. `docs/FUTURE.md` carries the pre-existing note on Gemini expli
   transition gave the trailing run non-zero `chars`, so full coverage never saw the boundary value.
   Fixed by suppressing a breakpoint offset that equals the total document length, with unit and
   end-to-end regression tests reproducing the exact reported shape.
+- **Post-push Copilot review (PR #671, round 1)** caught two further real defects layer 1 and the
+  then-100%-coverage suite both missed: (1) `cache` reached xAI/Groq/Mistral/Ollama/openai-compat
+  unconditionally through the shared `apiFormat: 'openai'` dispatch — an implementation comment had
+  over-read design.md §6.3's OpenAI-only footgun discussion as blanket "no gating needed" license;
+  fixed with `AiAssist.supportsPromptCacheBreakpoints(descriptor)`, the same write-side-tolerance
+  pattern as C1's `supportsStreamUsageOption`. (2) `deriveCacheBreakpointOffsets` could still emit
+  an illegal `0` or a duplicate offset when an empty non-`'frozen'` run (not collapsed — §5.1a's
+  collapse is frozen-only) sat at a transition boundary; fixed by tracking the last emitted offset
+  and requiring strict forward progress. See design.md §16 for the full analysis.
 
 ## References
 

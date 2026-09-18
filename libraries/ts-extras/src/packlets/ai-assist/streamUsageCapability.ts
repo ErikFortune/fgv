@@ -19,9 +19,9 @@
 // SOFTWARE.
 
 /**
- * Provider-capability gates for `usage` reporting on the shared
- * `apiFormat: 'openai'` completion paths (Chat Completions and Responses,
- * streaming and non-streaming).
+ * Provider-capability gates for `usage` reporting and cache-breakpoint emission on the shared
+ * `apiFormat: 'openai'` completion paths (Chat Completions and Responses, streaming and
+ * non-streaming).
  *
  * @remarks
  * Its own module rather than part of `model.ts` because `model.ts` was at the
@@ -69,4 +69,28 @@ export function supportsStreamUsageOption(descriptor: IAiProviderDescriptor): bo
  */
 export function supportsCacheUsageReporting(descriptor: IAiProviderDescriptor): boolean {
   return descriptor.id === 'openai' || descriptor.id === 'xai-grok';
+}
+
+/**
+ * Whether a provider has confirmed tolerance for the request-shape changes an
+ * {@link AiAssist.IAiCacheRequest} produces on the shared Chat Completions / Responses paths: splitting
+ * `system` into content parts carrying `prompt_cache_breakpoint`, and the top-level
+ * `prompt_cache_key` field.
+ *
+ * @remarks
+ * Same sharing problem as {@link AiAssist.supportsStreamUsageOption}, on the write side instead of the
+ * read side: `callOpenAiCompletion` and `callOpenAiResponsesCompletion` are shared by every
+ * `apiFormat: 'openai'` descriptor (xAI Grok, Groq, Mistral, Ollama, self-hosted
+ * `openai-compat`), but only OpenAI's own API is confirmed to accept a `system`/first-item
+ * `content` restructured into an array of parts each carrying an unrecognized
+ * `prompt_cache_breakpoint` field, or the extra top-level `prompt_cache_key` field. A
+ * schema-strict server on one of the other descriptors could 400 on either — the identical
+ * failure mode `supportsStreamUsageOption` was written to avoid for `stream_options`. So `cache`
+ * is gated to `descriptor.id === 'openai'` at the dispatch site before it ever reaches these
+ * builders; every other descriptor gets the same request body it would have gotten had the
+ * caller passed no `cache` at all.
+ * @public
+ */
+export function supportsPromptCacheBreakpoints(descriptor: IAiProviderDescriptor): boolean {
+  return descriptor.id === 'openai';
 }

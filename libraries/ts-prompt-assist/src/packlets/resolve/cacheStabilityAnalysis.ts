@@ -594,6 +594,19 @@ function checkThreshold(
  * legal breakpoint, and a breakpoint there would be pointless besides: with nothing after it to
  * strand, the "prefix" it would mark already **is** the whole document. Skipped rather than
  * pushed; the walk still terminates the same way afterward.
+ *
+ * **Never emits an offset at or before the previously emitted one.** A run that
+ * `collapseEmptyStableRuns` did not collapse (because it is `'per-conversation'` or
+ * `'per-request'`, not `'frozen'`) but still measures `chars === 0` contributes nothing to the
+ * document, so the run after it starts at that same offset. Two downward transitions in a row
+ * that both land on an empty run — e.g. `frozen(5) → empty per-conversation → per-request` —
+ * would otherwise produce `[5, 5]`: a real duplicate, and also `offset <= previous`, both of
+ * which `AiAssist.validateCacheBreakpoints` rejects by contract. The same shape produces an
+ * illegal `0` when the empty run is the very first one (nothing precedes it to have already
+ * claimed a smaller offset). Tracking the last emitted offset and requiring strict forward
+ * progress (`offset > lastOffset`, with `lastOffset` starting at `0`) discards only the
+ * redundant second candidate at an already-claimed position — the boundary itself is still real,
+ * just not a second breakpoint at the same place.
  * @internal
  */
 export function deriveCacheBreakpointOffsets(
@@ -604,6 +617,7 @@ export function deriveCacheBreakpointOffsets(
   const totalChars =
     sections.length > 0 ? sections[sections.length - 1].start + sections[sections.length - 1].chars : 0;
   const offsets: number[] = [];
+  let lastOffset = 0;
   for (let i = 0; i < runs.length; i++) {
     const run = runs[i];
     if (i > 0) {
@@ -618,8 +632,9 @@ export function deriveCacheBreakpointOffsets(
       // spending part of the shared write cap on a boundary design.md §5.1(i) does not recognize
       // as a candidate at all.
       const offset = sections[run.startIdx].start;
-      if (run.level < runs[i - 1].level && offset < totalChars) {
+      if (run.level < runs[i - 1].level && offset > lastOffset && offset < totalChars) {
         offsets.push(offset);
+        lastOffset = offset;
       }
     }
     if (run.level === STABILITY_LEVEL['per-request']) {
