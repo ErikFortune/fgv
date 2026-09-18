@@ -377,6 +377,61 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] A field added to a converted entity can be silently dropped — and the compiler cannot
+  catch it. The dangerous shape is an entity with *more than one* converter.**
+  `FieldConverters<T>` (`ts-utils/src/packlets/conversion/objectConverter.ts:61`) is
+  `{ [key in keyof T]: Converter<T[key]> | Validator<T[key]> }` — a **homomorphic** mapped type,
+  so it preserves `?` from `T`. An optional interface field is therefore optional in the
+  converter's field map, and a converter that omits it type-checks clean. Verified 2026-09-18
+  against the real project config. This is a structural property of the pattern, not a defect in
+  `Converters.object` (the mandated idiom) or in any particular converter: interface and
+  converter are two declarations with nothing linking them, and the compiler enforces only the
+  *required* half.
+
+  **The single-converter case is largely handled by practice, and the entry should say so.**
+  The working habit is to define the model entity and its converter as a pair, and to update
+  them as a pair. That discipline holds well and is why this is P3 rather than higher.
+
+  **What the habit does not scale to is N.** The habit is singular — *"the* converter" — so an
+  entity with a second converter (a legacy reader, a wire-format transformer, a persisted-JSON
+  shape) has no moment that prompts you about the others. You update the primary, the sibling
+  goes stale, and every gate stays green. Reported as a recurring real-world miss by the repo
+  owner, independent of the instance below.
+
+  **And that case evades the obvious detector**, which is why it is worth writing down. A sibling
+  converter usually converts a *differently named* type — `Converters.object<IFooJson>`, not a
+  second `Converters.object<IFoo>` — so grepping for two converters over the same type parameter
+  finds nothing. Checked 2026-09-18: **no production entity in `libraries/*/src` has two
+  converters over the same type**, so the easy form is currently absent.
+
+  **The live shape is in `ts-extras`' KeyStore**: `IKeyStoreAsymmetricEntry` /
+  `IKeyStoreAsymmetricEntryJson` and the symmetric pair (`crypto-utils/keystore/model.ts:207`
+  and `:342`), each with its own converter. **Currently in sync — 5 fields each** — so this is a
+  place to check when either side changes, not a present defect.
+
+  **Observed live (single-converter form)**: C2 (#669) added `IPromptSlot.cacheStability?` and
+  `slotConverter` silently discarded it on every load through the store, with build, lint and
+  type-check green. Caught only by end-to-end tests that happened to round-trip through the
+  store; a unit test of the analysis would have passed.
+
+  **Trigger**: adding a field to any entity that has a converter — and especially to one with a
+  `*Json` / legacy / wire sibling.
+
+  **Scope sketch**, two parts of very different difficulty:
+  (a) *Single-converter sweep* — for each `Converters.object<T>`, diff `keyof T` against the
+  declared field map. Mechanical and cheap; tells you whether #669 was the only instance.
+  (b) *Sibling drift* — compare the field sets of naming-convention-paired types
+  (`I<X>` ↔ `I<X>Json` / `Raw` / `Dto` / `Legacy`). Heuristic rather than sound, since the two
+  shapes legitimately differ, so it wants to report *asymmetries for review* rather than fail a
+  gate. This is the half that matches the recurring real-world miss, and the half no type-level
+  trick fixes.
+
+  **Not a P2**: it drops data rather than corrupting it, the omission is inert until someone sets
+  the field, and (a) is cheap enough that exposure is measurable on demand.
+
+  **Reference**: #669; `objectConverter.ts:61`; `ts-prompt-assist/src/packlets/converters/descriptorConverter.ts`; `ts-extras/src/packlets/crypto-utils/keystore/model.ts`.
+
+
 - **[P3] `supportsCacheUsageReporting` withholds *all* token usage from Groq, Mistral, Ollama
   and `openai-compat`, not just cache fields.**
   C1 (#668) attaches `IAiCompletionResponse.usage` on the shared `apiFormat: 'openai'` path only

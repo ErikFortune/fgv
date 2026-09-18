@@ -591,6 +591,22 @@ a breakpoint did not take. Under `'reads'` it means the API cannot say, and infe
 writes" from it would be a fabricated fact. Research §6.6 names this exact hazard for Chat
 Completions; the required discriminator removes it by construction rather than by docstring.
 
+### Interpreting the numbers: use a ratio, never a raw count
+
+**Nothing in this design consumes these fields yet** — C1 reports them, C2's checks are
+composition-side and never read them — so this is guidance for whoever does first: a consumer,
+C3, or a later diagnostic that correlates composition against observed usage.
+
+The 2026-09-17 xAI run (OQ-1) reports **128 cached tokens on a genuinely cold call**, on both
+routes, against a prefix the provider had never seen — fixed scaffolding, not caller content.
+So `cachedInputTokens > 0` is true on effectively every request to that provider and means
+nothing. 128/4822 is 2.7%; 4800/4822 is 99.5%; only the second is a working cache. Any check
+phrased on the raw count reports success unconditionally.
+
+Judge `cachedInputTokens` as a fraction of total input, or against a per-provider floor — and
+where that floor is unknown, **R-c** applies: report the ratio and decline to judge, rather
+than assuming the floor is zero.
+
 ### Normalization, per provider
 
 | target | `reports` | `uncachedInputTokens` | `cachedInputTokens` | `cacheWriteTokens` |
@@ -650,14 +666,17 @@ export interface IPromptCacheFinding {
 
 ### The checks
 
-> **Express every cache-effectiveness check as a *ratio*, never as a raw count.** The
-> 2026-09-17 xAI run (OQ-1) reports **128 cached tokens on a genuinely cold call** on both
-> routes, against a prefix the provider had never seen — fixed scaffolding, not our content.
-> So `cachedTokens > 0` is true on effectively every request to that provider and means
-> nothing: 128/4822 is 2.7%, 4800/4822 is 99.5%, and only the second is a working cache. Any
-> check phrased on the raw count reports success unconditionally. Where a provider's floor is
-> unknown, **R-c** applies — report the ratio and decline to judge, rather than assuming the
-> floor is zero.
+> **Misplaced when written; corrected 2026-09-18 after C2 shipped.** This slot carried a rule
+> that *"every cache-effectiveness check must be a ratio, never a raw count"*, on the strength
+> of the 128-token cold floor OQ-1 found. **It does not bind on any check in this section**, and
+> C2 (#669) was right to ignore it: D1, D2, D4 and D5 are all **composition-side** — they read
+> `IPromptComposition`, and none of them reads a provider's usage block. `ts-prompt-assist` has
+> no reference to `IAiCompletionUsage` at all. D5's threshold check compares an *absolute*
+> prefix size against a caller-supplied `minCacheablePrefixTokens`, which is the right shape;
+> a ratio there would be meaningless.
+>
+> The hazard is real but belongs where **observed usage** is interpreted, which this design does
+> not yet reach. It is restated in §8 beside the type that carries the numbers.
 
 **D1 — multi-scope binding (refutation, downgrades).** A slot claiming better than
 `'per-request'` whose winning binding is one of **≥2** bindings for that slot across the
