@@ -54,8 +54,11 @@ export interface IPromptCacheStabilityHint {
  * Discriminator for a {@link IPromptCacheFinding}.
  *
  * @remarks
- * `'stability-refuted'` — a claim (declared or the template/preface default)
- * contradicted by resolve-time evidence; the claim is downgraded.
+ * `'stability-refuted'` — a declared or derived `'template'` claim
+ * contradicted by resolve-time evidence; the claim is downgraded. The
+ * `'preface'` section's `'frozen'` default is trusted, not refuted — no
+ * resolve-time evidence can check it (see `effectiveSectionStability`'s
+ * doc comment); this finding never fires for it.
  * `'cache-hostile-ordering'` — a stable section follows a less-stable one in
  * document order, which costs money today on every provider whose caching is
  * automatic, since byte order is the only lever those providers give a

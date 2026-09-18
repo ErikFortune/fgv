@@ -18,6 +18,7 @@ import {
 
 const SLOT_A = 'slotA' as unknown as SlotName;
 const SLOT_B = 'slotB' as unknown as SlotName;
+const SLOT_C = 'slotC' as unknown as SlotName;
 
 function slot(name: SlotName, cacheStability?: PromptCacheStability): IPromptSlot {
   return { name, description: 'test slot', ...(cacheStability === undefined ? {} : { cacheStability }) };
@@ -363,6 +364,30 @@ describe('analyzePromptCacheStability', () => {
       expect(findings.filter((f) => f.kind === 'cache-hostile-ordering')).toEqual([]);
     });
 
+    test('sees past an empty stable run to a real hazard further out', () => {
+      // per-request(non-empty) -> frozen(empty) -> per-conversation(non-empty),
+      // three DISTINCT levels so foldRuns keeps them as three separate runs
+      // (not merged the way two adjacent same-level sections would be). The
+      // empty frozen run must not "absorb" the check: comparing only
+      // adjacent runs (per-request -> frozen, frozen -> per-conversation)
+      // would miss that the per-conversation content is genuinely stranded
+      // behind the leading per-request content, since neither adjacent pair
+      // is an upward transition on its own once the empty run sits between.
+      const sections: IPromptSection[] = [
+        section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 3 }),
+        section({ kind: 'slot', slot: SLOT_B, start: 3, chars: 0 }),
+        section({ kind: 'slot', slot: SLOT_C, start: 3, chars: 5 })
+      ];
+      const findings = analyzePromptCacheStability({
+        sections,
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [slot(SLOT_A), slot(SLOT_B, 'frozen'), slot(SLOT_C, 'per-conversation')]
+      });
+      expect(findings.filter((f) => f.kind === 'cache-hostile-ordering')).toHaveLength(1);
+    });
+
     test('does not fire for a non-increasing (frozen, per-conversation, per-request) sequence', () => {
       const sections: IPromptSection[] = [
         section({ kind: 'preface', start: 0, chars: 2 }),
@@ -509,6 +534,29 @@ describe('analyzePromptCacheStability', () => {
         resourceBindingResolutions: [],
         slots: [],
         options: { minCacheablePrefixTokens: 50 }
+      });
+      expect(findings).toEqual([]);
+    });
+
+    test('counts genuinely cacheable bytes past a zero-byte stable run in the prefix', () => {
+      // frozen(10) -> per-conversation(10) -> frozen(0) -> per-conversation(10):
+      // 30 real cacheable tokens total. Without collapsing the empty frozen
+      // run, the per-conversation -> frozen step reads as an upward
+      // transition and stops the prefix walk at 20, wrongly reporting
+      // below-threshold against a minimum only the full 30 would clear.
+      const sections: IPromptSection[] = [
+        section({ kind: 'preface', start: 0, chars: 5, measured: 10 }),
+        section({ kind: 'slot', slot: SLOT_A, start: 5, chars: 5, measured: 10 }),
+        section({ kind: 'slot', slot: SLOT_B, start: 10, chars: 0, measured: 0 }),
+        section({ kind: 'slot', slot: SLOT_C, start: 10, chars: 5, measured: 10 })
+      ];
+      const findings = analyzePromptCacheStability({
+        sections,
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [slot(SLOT_A, 'per-conversation'), slot(SLOT_B, 'frozen'), slot(SLOT_C, 'per-conversation')],
+        options: { minCacheablePrefixTokens: 25 }
       });
       expect(findings).toEqual([]);
     });
