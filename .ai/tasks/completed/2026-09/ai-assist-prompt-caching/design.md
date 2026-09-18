@@ -867,6 +867,20 @@ surface per `ACTIVE_DEVELOPMENT.md` (`ts-extras`' `ai-assist` packlet by name;
 change shape. An un-annotated caller's request body is byte-identical before and after every
 slice.
 
+**Added 2026-09-18, at C3 close, per a pre-merge `code-reviewer` finding: the streaming
+completion path is deliberately out of scope for C3's emit surface**, and this table's
+absence of `IProviderCompletionStreamParams` from every C3 row was silent about that rather
+than stated, unlike §10's explicit Gemini deferral. `IProviderCompletionStreamParams` (the
+streaming counterpart to `IProviderCompletionParams`) gained no `cache?` field in C3. This is
+narrower than C1's own precedent — OQ-5 put streaming usage-reporting *in* scope specifically
+because a caller could not otherwise distinguish "streaming doesn't report usage" from "not
+implemented yet" — but the two are not the same hazard: an absent `cache?` field on the
+streaming params type is a **compile-time** signal (a caller cannot construct a request that
+silently drops the cache plan; the property does not exist to set), not a **silently-dropped
+runtime value** the way an omitted usage-reporting split would have been. Streaming
+cache-breakpoint emission remains a real, unaddressed surface — recorded here rather than left
+implicit, so a future reader does not have to re-derive that the gap is deliberate.
+
 ---
 
 ## 12. Open questions for triage

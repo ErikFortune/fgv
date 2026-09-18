@@ -396,4 +396,23 @@ describe('prompt-cache stability diagnostics — end-to-end wiring', () => {
       expect(toCacheRequest(r.composition!)).toFailWith(/unavailable/i);
     });
   });
+
+  test('toCacheRequest succeeds, with no breakpoint, when a trailing unannotated slot resolves empty', async () => {
+    // End-to-end regression for the pre-merge code-reviewer finding: a prompt ending in a dynamic
+    // slot that happens to render empty this call must not turn an ordinary resolve into a hard
+    // failure. No authored cacheStability on the slot: it defaults to 'per-request' (R-a), and the
+    // preceding literal template text defaults to 'frozen' (D3) — a genuine downward transition
+    // whose offset would coincide with the document's own length once the slot renders empty.
+    const lib = await buildLib([record({ body: 'prefix {{{topic}}}' })]);
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: '' },
+      composition: {}
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(toCacheRequest(r.composition!)).toSucceedWith({});
+    });
+  });
 });

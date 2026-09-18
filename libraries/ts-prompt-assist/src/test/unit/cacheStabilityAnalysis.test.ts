@@ -940,4 +940,42 @@ describe('deriveCacheBreakpointOffsets (design.md §5.2, used by toCacheRequest)
   test('yields no breakpoints for an empty section list', () => {
     expect(deriveCacheBreakpointOffsets([], [])).toEqual([]);
   });
+
+  test('never emits an offset at the end of the document — a trailing per-request slot rendering empty', () => {
+    // Regression (found by code-reviewer, pre-merge): the transition-into offset is the start of
+    // the run being entered. When that run is both the LAST content in the composition and renders
+    // empty this resolve, its start coincides with the total document length — an offset
+    // AiAssist.validateCacheBreakpoints rejects outright (must be < system.length), turning an
+    // entirely ordinary "prompt ends with a dynamic slot that happens to be empty" resolve into a
+    // hard failure. The genuine downward transition (frozen -> per-request) is real; only the
+    // specific offset at the document's own length must be suppressed.
+    const sections: IPromptSection[] = [
+      section({ kind: 'template', start: 0, chars: 7 }),
+      section({ kind: 'slot', slot: SLOT_A, start: 7, chars: 0 })
+    ];
+    expect(deriveCacheBreakpointOffsets(sections, ['frozen', 'per-request'])).toEqual([]);
+  });
+
+  test('never emits an offset at the end of the document — a trailing per-conversation slot rendering empty', () => {
+    // Same defect, different trailing stability level — not tied to 'per-request' specifically.
+    const sections: IPromptSection[] = [
+      section({ kind: 'template', start: 0, chars: 7 }),
+      section({ kind: 'slot', slot: SLOT_A, start: 7, chars: 0 })
+    ];
+    expect(deriveCacheBreakpointOffsets(sections, ['frozen', 'per-conversation'])).toEqual([]);
+  });
+
+  test('still emits the earlier breakpoint when a later, non-terminal transition is the one suppressed', () => {
+    // frozen -> per-conversation (real breakpoint, not at the document end) -> per-request, empty,
+    // terminal (its offset would equal the document length — suppressed). Confirms suppression is
+    // scoped to the specific offending offset, not the whole derivation.
+    const sections: IPromptSection[] = [
+      section({ kind: 'preface', start: 0, chars: 5 }),
+      section({ kind: 'slot', slot: SLOT_A, start: 5, chars: 5 }),
+      section({ kind: 'slot', slot: SLOT_B, start: 10, chars: 0 })
+    ];
+    expect(deriveCacheBreakpointOffsets(sections, ['frozen', 'per-conversation', 'per-request'])).toEqual([
+      5
+    ]);
+  });
 });

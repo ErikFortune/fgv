@@ -582,6 +582,18 @@ function checkThreshold(
  * embedded volatile content) yields **zero** offsets — there is no candidate breakpoint per
  * §5.1(i), and zero breakpoints is the same request body a caller omitting `cache` entirely would
  * send, so this is a missed optimization rather than a regression.
+ *
+ * **Never emits an offset at the very end of the document.** `AiAssist.IAiCacheRequest`'s
+ * `systemBreakpoints` requires every offset to be less than `system.length` — a breakpoint cannot
+ * mark "the entire document" as a prefix, only a proper one. The ordinary way to reach that
+ * boundary here:
+ * the run being transitioned into is the composition's *last* content and happens to render empty
+ * on this resolve (a trailing `'per-request'`/`'per-conversation'` slot with `chars === 0`), so its
+ * start offset coincides with the total document length. That transition is real — the content
+ * before it is still a genuine downward-transition boundary — but the specific offset is not a
+ * legal breakpoint, and a breakpoint there would be pointless besides: with nothing after it to
+ * strand, the "prefix" it would mark already **is** the whole document. Skipped rather than
+ * pushed; the walk still terminates the same way afterward.
  * @internal
  */
 export function deriveCacheBreakpointOffsets(
@@ -589,6 +601,8 @@ export function deriveCacheBreakpointOffsets(
   perSectionStability: ReadonlyArray<PromptCacheStability>
 ): ReadonlyArray<number> {
   const runs = collapseEmptyStableRuns(sections, foldRuns(perSectionStability));
+  const totalChars =
+    sections.length > 0 ? sections[sections.length - 1].start + sections[sections.length - 1].chars : 0;
   const offsets: number[] = [];
   for (let i = 0; i < runs.length; i++) {
     const run = runs[i];
@@ -603,8 +617,9 @@ export function deriveCacheBreakpointOffsets(
       // one: pushing a breakpoint there would split a single-stability span for no reason,
       // spending part of the shared write cap on a boundary design.md §5.1(i) does not recognize
       // as a candidate at all.
-      if (run.level < runs[i - 1].level) {
-        offsets.push(sections[run.startIdx].start);
+      const offset = sections[run.startIdx].start;
+      if (run.level < runs[i - 1].level && offset < totalChars) {
+        offsets.push(offset);
       }
     }
     if (run.level === STABILITY_LEVEL['per-request']) {

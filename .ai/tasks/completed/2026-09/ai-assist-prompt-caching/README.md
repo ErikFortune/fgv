@@ -103,6 +103,16 @@ None outstanding. `docs/FUTURE.md` carries the pre-existing note on Gemini expli
   `collapseEmptyStableRuns` removes an intervening empty run between them; treating "equal" as
   "push a breakpoint" would split a single-stability span for no analytical benefit, spending part
   of the shared write cap on a boundary design.md §5.1(i) does not recognize as a candidate.
+- **Pre-merge `code-reviewer` P1** (the layer this repo's review-loop discipline exists to catch
+  before it reaches Copilot): `deriveCacheBreakpointOffsets` could emit an offset equal to the
+  document's total length when the run being transitioned into was both the composition's *last*
+  content and rendered empty on that resolve — an ordinary "prompt ends with a dynamic slot that's
+  empty this time" shape, not a contrived one. `AiAssist.validateCacheBreakpoints` rejects any
+  offset `>= system.length` by contract, so `toCacheRequest` failed outright on a resolve that
+  should have succeeded (with or without a breakpoint). Every pre-fix test exercising a downward
+  transition gave the trailing run non-zero `chars`, so full coverage never saw the boundary value.
+  Fixed by suppressing a breakpoint offset that equals the total document length, with unit and
+  end-to-end regression tests reproducing the exact reported shape.
 
 ## References
 
