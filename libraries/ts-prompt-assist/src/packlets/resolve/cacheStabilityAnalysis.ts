@@ -83,23 +83,22 @@ export function analyzePromptCacheStability(
   );
   const templateRefuted = checkConditionalTemplate(sections, candidateMatches, findings);
 
-  // D4/D5 reason about byte prefixes, so a zero-length section (an empty
-  // slot value, most commonly) cannot participate: it contributes no bytes
-  // that could make a cache prefix match or fail to match, so it cannot
-  // itself create an ordering hazard or change a prefix's measured size.
-  // Left in, an empty per-request slot ahead of stable content would report
-  // a `cache-hostile-ordering` / `no-cacheable-prefix` finding over content
-  // that, byte-for-byte, has no volatility to report. D1/D2's refutation
-  // findings are unaffected — they are keyed on slots and candidates, not
-  // section length, and already ran above.
-  const orderedSections = sections.filter((section) => section.chars > 0);
-  const perSection = orderedSections.map((section) =>
+  // A section's `chars` on THIS resolve says nothing about its length on
+  // another resolve of the same prompt — a 'per-request' slot rendering
+  // empty here can render non-empty next time, at the same position. That
+  // is exactly the byte-instability D4/D5 exist to catch, so a zero-length
+  // section is not excluded from the walk: excluding it would suppress the
+  // warning for the case where it matters most (an empty-this-time,
+  // volatile-in-general slot ahead of stable content). D1/D2's refutation
+  // findings are keyed on slots and candidates, not section length, and are
+  // unaffected either way.
+  const perSection = sections.map((section) =>
     effectiveSectionStability(section, slotEffective, templateRefuted)
   );
 
   const runs = foldRuns(perSection);
-  checkHostileOrdering(orderedSections, runs, findings);
-  checkThreshold(orderedSections, runs, options, findings);
+  checkHostileOrdering(sections, runs, findings);
+  checkThreshold(sections, runs, options, findings);
 
   return findings;
 }

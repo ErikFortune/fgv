@@ -291,9 +291,11 @@ describe('analyzePromptCacheStability', () => {
       expect(findingKinds(findings).sort()).toEqual(['cache-hostile-ordering', 'no-cacheable-prefix']);
     });
 
-    test('a zero-length section cannot itself create an ordering hazard or empty prefix', () => {
-      // An empty per-request slot value contributes no bytes, so it cannot make a cache prefix
-      // fail to match — a real ordering hazard needs a section with actual content.
+    test('a per-request slot that renders empty on this resolve still creates an ordering hazard', () => {
+      // A slot's rendered length on THIS resolve says nothing about its length on another
+      // resolve of the same prompt: an empty-here, per-request slot can render non-empty next
+      // time, at the same position — exactly the byte-instability D4 exists to catch. Excluding
+      // an empty section from the walk would suppress the warning for the case that matters most.
       const sections: IPromptSection[] = [
         section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 0, measured: 0 }),
         section({ kind: 'template', start: 0, chars: 5, measured: 5 })
@@ -306,7 +308,7 @@ describe('analyzePromptCacheStability', () => {
         slots: [slot(SLOT_A)],
         options: { minCacheablePrefixTokens: 1 }
       });
-      expect(findings).toEqual([]);
+      expect(findingKinds(findings).sort()).toEqual(['cache-hostile-ordering', 'no-cacheable-prefix']);
     });
 
     test('does not fire for a non-increasing (frozen, per-conversation, per-request) sequence', () => {
