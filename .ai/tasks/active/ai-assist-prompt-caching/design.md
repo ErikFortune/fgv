@@ -374,6 +374,41 @@ renders empty *this* time can render non-empty next time at the same position, w
 the byte-instability D4/D5 exist to catch; excluding it would suppress the warning in the case
 that matters most.
 
+### 5.1b A zero-byte section contributes zero tokens — **open, and C3 must not inherit the bug**
+
+**Added 2026-09-18, from a post-merge backstop review of #669.** §5.1a settled *which runs
+collapse* and is silent on *what an empty run's `measured` does to the reported prefix total*.
+C2 shipped with that gap open, and it is a live defect in `checkThreshold`.
+
+`prefixEnd` is a single boundary index walked over the **collapsed** run list, but the prefix is
+then taken as `sections.slice(0, prefixEnd)` — contiguous over the **raw** section array. A
+collapsed run therefore contributes its `measured` iff it happens to sit interior to the walked
+region. Verified by executing the shipped code:
+
+| shape | reported prefix |
+|---|---|
+| empty `'frozen'` run mid-prefix, walk continues past it | **25** = 10+7+8 — the empty run's 7 counted |
+| *the same run*, sitting just before the run that ends the walk | **10** — the same 7 not counted |
+
+**The collapse asymmetry is a symptom, not the defect.** Any zero-`chars` section distorts the
+total, collapsed or not — an empty `'per-conversation'` slot (never collapsed) with `measured: 7`
+reports **17** where removing it reports **10**.
+
+The governing fact: `IPromptSection.start`/`chars` partition `IResolvedPrompt.body` exactly, with
+no per-section framing. A section with `chars === 0` contributes **no text** to the prefix that
+would be sent, so whatever a caller's `measure('')` returns for it is an artifact of an arbitrary
+callback, not tokens in the prompt.
+
+**The rule, for C3 and for the C2 fix:** a section with `chars === 0` contributes `0` to the
+measured total, wherever a prefix is sized. This subsumes the collapse asymmetry (both shapes
+above → 10) and closes the non-collapsed case in one invariant, rather than patching
+`prefixEnd`'s index arithmetic. It belongs beside `checkThreshold`'s existing guard against a
+hostile measure (NaN / Infinity / negative) — that guard already declines to trust the callback
+three lines above the sum that trusts it.
+
+**Why this is stated as a rule rather than left to C3's judgement:** C3 sizes breakpoints by the
+same fold and would re-derive — or re-miss — the same thing. Tracked in `docs/TECH_DEBT.md`.
+
 ### 5.2 The resulting rule, and its consequence
 
 1. Fold to runs; take the maximal **monotone non-increasing** stability prefix.
