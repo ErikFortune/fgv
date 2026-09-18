@@ -15,7 +15,7 @@ only fires for PRs targeting `release`, so a stream branch never gets CI on its 
 | B — design | ✅ complete (2026-09-08); all 5 OQs closed 2026-09-17; **verified 2026-09-18, OQ-6 resolved same day** | `design.md` (+ §14) |
 | triage | ⏭️ not used — questions decided directly; see `design.md` process note | — |
 | C1 — observability | ✅ shipped via #668 (merged into `release`) | `libraries/ts-extras/src/packlets/ai-assist/{usageTypes,usageNormalization}.ts` + adapters |
-| C2 — diagnostics + vocabulary | ✅ implemented on `claude/ai-assist-cache-diagnostics` | `libraries/ts-prompt-assist/src/packlets/{types/cacheStability,resolve/cacheStabilityAnalysis}.ts` + `bindingMerger`/`promptLibrary`/`enums`/`descriptorConverter`/`slot`/`trace` |
+| C2 — diagnostics + vocabulary | ✅ implemented; PR #669 open against `release` | `libraries/ts-prompt-assist/src/packlets/{types/cacheStability,resolve/cacheStabilityAnalysis}.ts` + `bindingMerger`/`promptLibrary`/`enums`/`descriptorConverter`/`slot`/`trace` |
 | C3 — emit | ⛔ not started; gated on C1 **and** C2 | — |
 
 ## Phase B checkpoint
@@ -369,6 +369,8 @@ day — see "C2 checkpoint" below and design.md §14 A2: `IAiCompletionUsage` is
 token-accounting home; `thinkingTokens` goes inside it.)*
 
 ## C2 checkpoint
+
+**[PR #669](https://github.com/ErikFortune/fgv/pull/669) open against `release`, not yet merged.**
 
 **Deliverable, per design.md §11's C2 row:** `PromptCacheStability` / `PromptCacheStabilityOrigin`
 / `IPromptCacheStabilityHint` (new `types/cacheStability.ts`); `IPromptSlot.cacheStability?` and
