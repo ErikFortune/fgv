@@ -54,6 +54,7 @@ import {
   resolveProviderModel,
   usesMaxCompletionTokensField
 } from './model';
+import { type IAiCacheRequest } from './cacheRequest';
 import {
   anthropicEffortToBudgetTokens,
   checkTemperatureConflict,
@@ -63,9 +64,12 @@ import {
 } from './thinkingOptionsResolver';
 import {
   buildAnthropicMessages,
+  buildAnthropicSystem,
   buildGeminiContents,
   buildMessages,
+  buildOpenAiChatSystemContent,
   buildOpenAiChatUserContent,
+  buildOpenAiResponsesSystemContent,
   buildOpenAiResponsesUserContent,
   normalizeOutboundMessages,
   splitChatRequest
@@ -163,6 +167,11 @@ export interface IProviderCompletionParams extends IChatRequest {
    * `IAiCompletionResponse.structuredOutput`.
    */
   readonly structuredOutput?: StructuredOutputRequest;
+  /**
+   * Prompt-caching plan for this request. Omitted, nothing cache-related is sent — the request
+   * body is byte-identical to a build predating this feature. See {@link AiAssist.IAiCacheRequest}.
+   */
+  readonly cache?: IAiCacheRequest;
 }
 
 // ============================================================================
@@ -303,10 +312,15 @@ async function callOpenAiCompletion(
   maxTokens?: number,
   useMaxCompletionTokensField: boolean = false,
   structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT,
-  reportsUsage: boolean = false
+  reportsUsage: boolean = false,
+  cache?: IAiCacheRequest
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/chat/completions`;
-  const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
+  const systemContentResult = buildOpenAiChatSystemContent(prompt.system, cache);
+  if (systemContentResult.isFailure()) {
+    return fail(systemContentResult.message);
+  }
+  const messages = buildMessages(systemContentResult.value, buildOpenAiChatUserContent(prompt), {
     head
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
@@ -322,7 +336,15 @@ async function callOpenAiCompletion(
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning_effort: effort } : {}),
     // Omitted when the caller doesn't set maxTokens — every non-Anthropic provider applies its
     // own default. See AiAssist.usesMaxCompletionTokensField for the field-name split.
-    ...(maxTokens !== undefined ? { [maxTokensField]: maxTokens } : {})
+    ...(maxTokens !== undefined ? { [maxTokensField]: maxTokens } : {}),
+    // Pure additive routing plumbing (research.md §1.3) — no vocabulary, no cap, and per
+    // design.md §6.3 not gated to a confirmed-supporting descriptor: unlike the streaming
+    // `stream_options` field, this is sent only when the caller explicitly opted in by supplying
+    // `cache.cacheKey`, so the choice of provider is already theirs.
+    ...(cache?.cacheKey !== undefined
+      ? // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field name
+        { prompt_cache_key: cache.cacheKey }
+      : {})
   };
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
@@ -395,10 +417,15 @@ async function callOpenAiResponsesCompletion(
   resolvedThinking?: IResolvedThinkingConfig,
   maxTokens?: number,
   structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT,
-  reportsUsage: boolean = false
+  reportsUsage: boolean = false,
+  cache?: IAiCacheRequest
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/responses`;
-  const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
+  const systemContentResult = buildOpenAiResponsesSystemContent(prompt.system, cache);
+  if (systemContentResult.isFailure()) {
+    return fail(systemContentResult.message);
+  }
+  const input = buildMessages(systemContentResult.value, buildOpenAiResponsesUserContent(prompt), {
     head
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
@@ -410,7 +437,13 @@ async function callOpenAiResponsesCompletion(
     ...(tools.length > 0 ? { tools: toResponsesApiTools(tools) } : {}),
     // Temperature is sent only when the caller explicitly provided one (see callOpenAiCompletion).
     ...(temperature !== undefined ? { temperature } : {}),
-    ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {})
+    ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {}),
+    // See the identical field on callOpenAiCompletion's body — same routing plumbing, confirmed
+    // on both Chat Completions and the Responses API (research.md §1.3).
+    ...(cache?.cacheKey !== undefined
+      ? // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field name
+        { prompt_cache_key: cache.cacheKey }
+      : {})
   };
   // Shared by OpenAI and xAI — both route through the Responses API with the same field name.
   if (maxTokens !== undefined) {
@@ -534,13 +567,18 @@ async function callAnthropicCompletion(
   resolvedThinking?: IResolvedThinkingConfig,
   useAdaptiveThinking: boolean = false,
   maxTokens?: number,
-  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT
+  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT,
+  cache?: IAiCacheRequest
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, { head });
+  const systemResult = buildAnthropicSystem(prompt.system, cache);
+  if (systemResult.isFailure()) {
+    return fail(systemResult.message);
+  }
   const body: Record<string, unknown> = {
     model: config.model,
-    system: prompt.system,
+    system: systemResult.value,
     messages,
     // Anthropic's Messages API requires max_tokens on every request — see
     // AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS for why only this provider defaults it.
@@ -751,7 +789,8 @@ export async function callProviderCompletion(
     endpoint,
     thinking,
     maxTokens,
-    structuredOutput
+    structuredOutput,
+    cache
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -866,7 +905,8 @@ export async function callProviderCompletion(
           resolvedThinking,
           maxTokens,
           resolvedStructured,
-          supportsCacheUsageReporting(descriptor)
+          supportsCacheUsageReporting(descriptor),
+          cache
         );
       }
       return callOpenAiCompletion(
@@ -880,7 +920,8 @@ export async function callProviderCompletion(
         maxTokens,
         usesMaxCompletionTokensField(descriptor),
         resolvedStructured,
-        supportsCacheUsageReporting(descriptor)
+        supportsCacheUsageReporting(descriptor),
+        cache
       );
     case 'anthropic':
       return callAnthropicCompletion(
@@ -894,7 +935,8 @@ export async function callProviderCompletion(
         resolvedThinking,
         isAdaptiveThinkingModel(descriptor, config.model),
         maxTokens,
-        resolvedStructured
+        resolvedStructured,
+        cache
       );
     case 'gemini':
       return callGeminiCompletion(
@@ -947,7 +989,8 @@ export async function callProxiedCompletion(
     signal,
     thinking,
     maxTokens,
-    structuredOutput
+    structuredOutput,
+    cache
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -1004,6 +1047,11 @@ export async function callProxiedCompletion(
               ? { onUnsupported: structuredOutput.onUnsupported }
               : {})
           };
+  }
+  // `IAiCacheRequest` is plain numbers and a string — JSON-serializable as-is, unlike
+  // `structuredOutput`'s schema above, so it needs no wire projection before forwarding.
+  if (cache !== undefined) {
+    body.cache = cache;
   }
 
   /* c8 ignore next 1 - optional logger */

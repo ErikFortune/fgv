@@ -29,6 +29,7 @@
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 import { type Converter, Converters, fail, Result, succeed } from '@fgv/ts-utils';
 
+import { type IAiCacheRequest, splitSystemForCache } from './cacheRequest';
 import { AiPrompt, type IAiImageAttachment, type IChatMessage, toDataUrl } from './model';
 
 /**
@@ -188,9 +189,11 @@ export interface IBuildMessagesOptions {
 
 /**
  * Builds the messages array from prompt + optional history (`head`) and raw
- * continuation (`rawTail`) messages. The caller supplies the user content
- * (string for text-only, parts array for vision prompts) since the parts shape
- * differs by format.
+ * continuation (`rawTail`) messages. The caller supplies the system content
+ * (string when no cache breakpoints are requested, parts array when they are
+ * — see {@link buildOpenAiChatSystemContent} / {@link buildOpenAiResponsesSystemContent})
+ * and the user content (string for text-only, parts array for vision prompts),
+ * since both shapes differ by format.
  *
  * `rawTail` items (OpenAI / xAI Responses `function_call` /
  * `function_call_output` continuation items) are appended verbatim after the
@@ -202,11 +205,11 @@ export interface IBuildMessagesOptions {
  * @internal
  */
 export function buildMessages(
-  systemPrompt: string,
+  systemContent: string | unknown[],
   userContent: string | unknown[],
   options?: IBuildMessagesOptions
 ): Array<Record<string, unknown>> {
-  const messages: Array<Record<string, unknown>> = [{ role: 'system', content: systemPrompt }];
+  const messages: Array<Record<string, unknown>> = [{ role: 'system', content: systemContent }];
   if (options?.head) {
     for (const msg of options.head) {
       messages.push({ role: msg.role, content: msg.content });
@@ -225,6 +228,98 @@ export function buildMessages(
     }
   }
   return messages;
+}
+
+/**
+ * Splits `segments` (from {@link splitSystemForCache}) into a single string when nothing carries
+ * a breakpoint, or a content-part array in `partType`'s shape (with `prompt_cache_breakpoint` on
+ * the parts that end a cacheable prefix) otherwise.
+ *
+ * @remarks
+ * A single non-breakpointed segment (the common case: `cache` omitted or empty) returns the
+ * plain string, byte-identical to a request built before cache support existed. Shared by
+ * {@link buildOpenAiChatSystemContent} and {@link buildOpenAiResponsesSystemContent}, whose only
+ * difference is the content-part `type` OpenAI's two APIs use (`'text'` vs `'input_text'`,
+ * research.md §1.2).
+ * @internal
+ */
+function toOpenAiSystemContent(
+  segments: ReadonlyArray<{ readonly text: string; readonly cacheBreakpoint: boolean }>,
+  partType: 'text' | 'input_text'
+): string | unknown[] {
+  if (segments.length === 1 && !segments[0].cacheBreakpoint) {
+    return segments[0].text;
+  }
+  return segments.map((seg) => ({
+    type: partType,
+    text: seg.text,
+    ...(seg.cacheBreakpoint
+      ? {
+          // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field name
+          prompt_cache_breakpoint: { mode: 'explicit' }
+        }
+      : {})
+  }));
+}
+
+/**
+ * Builds the system content for OpenAI Chat Completions, splitting `system` at `cache`'s
+ * breakpoints (design.md §6.3) into content parts each carrying
+ * `prompt_cache_breakpoint: { mode: 'explicit' }` where a cacheable prefix ends.
+ * `prompt_cache_options` is never touched — OpenAI keeps its own implicit breakpoint and writes
+ * up to the latest three of ours on top of it. Returns the plain `system` string when `cache` is
+ * `undefined` or declares no breakpoints, byte-identical to a request built before cache support
+ * existed.
+ * @internal
+ */
+export function buildOpenAiChatSystemContent(
+  system: string,
+  cache: IAiCacheRequest | undefined
+): Result<string | unknown[]> {
+  return splitSystemForCache(system, cache).onSuccess((segments) =>
+    succeed(toOpenAiSystemContent(segments, 'text'))
+  );
+}
+
+/**
+ * Builds the system content for the OpenAI / xAI Responses API. Identical to
+ * {@link buildOpenAiChatSystemContent} except for the content-part type (`'input_text'` instead
+ * of `'text'`) — see research.md §1.2, "Where the breakpoint may be attached."
+ * @internal
+ */
+export function buildOpenAiResponsesSystemContent(
+  system: string,
+  cache: IAiCacheRequest | undefined
+): Result<string | unknown[]> {
+  return splitSystemForCache(system, cache).onSuccess((segments) =>
+    succeed(toOpenAiSystemContent(segments, 'input_text'))
+  );
+}
+
+/**
+ * Builds the Anthropic `system` field, splitting `system` at `cache`'s breakpoints into content
+ * blocks carrying `cache_control: { type: 'ephemeral' }` on the block that ends each cacheable
+ * prefix (design.md §6.1). Returns the plain `system` string when `cache` is `undefined` or
+ * declares no breakpoints — byte-identical to `system: prompt.system` from a request built
+ * before cache support existed.
+ * @internal
+ */
+export function buildAnthropicSystem(
+  system: string,
+  cache: IAiCacheRequest | undefined
+): Result<string | unknown[]> {
+  return splitSystemForCache(system, cache).onSuccess((segments) => {
+    if (segments.length === 1 && !segments[0].cacheBreakpoint) {
+      return succeed<string | unknown[]>(segments[0].text);
+    }
+    return succeed<string | unknown[]>(
+      segments.map((seg) => ({
+        type: 'text',
+        text: seg.text,
+        ...(seg.cacheBreakpoint ? { cache_control: { type: 'ephemeral' } } : {})
+      }))
+    );
+  });
 }
 
 /**

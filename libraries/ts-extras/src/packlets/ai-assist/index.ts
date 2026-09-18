@@ -205,3 +205,5 @@ export {
 } from './jsonCompletion';
 
 export { anthropicEffortToBudgetTokens, type IResolvedThinkingConfig } from './thinkingOptionsResolver';
+
+export { type IAiCacheRequest, validateAiCacheRequest, validateCacheBreakpoints } from './cacheRequest';

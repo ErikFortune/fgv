@@ -227,7 +227,10 @@ declare namespace AiAssist {
         IGenerateJsonCompletionResult,
         JsonPromptHint,
         anthropicEffortToBudgetTokens,
-        IResolvedThinkingConfig
+        IResolvedThinkingConfig,
+        IAiCacheRequest,
+        validateAiCacheRequest,
+        validateCacheBreakpoints
     }
 }
 export { AiAssist }
@@ -1154,6 +1157,12 @@ interface IAiAssistSettings {
     readonly providers: ReadonlyArray<IAiAssistProviderConfig>;
     readonly proxyAllProviders?: boolean;
     readonly proxyUrl?: string;
+}
+
+// @public
+interface IAiCacheRequest {
+    readonly cacheKey?: string;
+    readonly systemBreakpoints?: ReadonlyArray<number>;
 }
 
 // @public
@@ -2137,6 +2146,8 @@ interface IPrivateKeyStorage {
 // @public
 interface IProviderCompletionParams extends IChatRequest {
     readonly apiKey: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly cache?: IAiCacheRequest;
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
@@ -3244,6 +3255,18 @@ const uint8ArrayFromBase64: Converter<Uint8Array>;
 
 // @public
 function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolean;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiCacheRequest"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "validateCacheBreakpoints"
+//
+// @public
+function validateAiCacheRequest(system: string, cache: IAiCacheRequest, maxBreakpointWrites?: number): Result<IAiCacheRequest>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiCacheRequest"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "validateAiCacheRequest"
+//
+// @public
+function validateCacheBreakpoints(systemLength: number, cache: IAiCacheRequest, maxBreakpointWrites?: number): Result<IAiCacheRequest>;
 
 // @public
 function validateResolvedOptions(modelId: string, capability: IAiImageModelCapability, resolved: IResolvedImageOptions): Result<IResolvedImageOptions>;

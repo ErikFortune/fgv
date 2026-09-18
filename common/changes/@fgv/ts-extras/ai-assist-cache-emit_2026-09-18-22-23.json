@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: add IAiCacheRequest (systemBreakpoints + cacheKey), validateAiCacheRequest/validateCacheBreakpoints, and IProviderCompletionParams.cache? — the Anthropic adapter splits system into content blocks carrying cache_control on cacheable-prefix boundaries, and the OpenAI Chat Completions / Responses adapters split the leading system message into content parts carrying prompt_cache_breakpoint, plus prompt_cache_key when cacheKey is supplied. Additive and optional; an un-annotated request is byte-identical to before (C3 of ai-assist-prompt-caching).",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
