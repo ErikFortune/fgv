@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: additive `IAiCompletionResponse.usage?` / `IAiStreamDone.usage?` (`IAiCompletionUsage`, `AiCacheReportingLevel`) report prompt-cache token reads/writes, normalized per provider wire shape, on both the completion and streaming adapters.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

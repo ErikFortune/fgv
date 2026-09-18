@@ -105,6 +105,7 @@ detail. `· pkg` names the owning package.*
 - **Running a tool-use conversation with harness-side client tools?** → `executeClientToolTurn` `JsonSchema` · `ts-extras`
 - **Making an MCP server's tools callable from an ai-assist tool-use conversation?** → `executeClientToolTurn` `JsonSchema` `fromJson` `adaptMcpTools` · `ts-extras-mcp`
 - **Diagnosing an OpenAI/xAI Responses stream that completes empty?** → `executeClientToolTurn` · `ts-extras`
+- **Reading prompt-cache token counts off a completion (reads/writes, normalized)?** → `IAiCompletionUsage` `AiCacheReportingLevel` · `ts-extras`
 - **Alerting on provider-API evolution affecting `@fgv/ts-extras/ai-assist`?** → `ILogger` `IStreamApiConfig` · `ts-extras`
 - **Stripping LLM Markdown fences from raw text?** → `extractJsonText` `fencedStringifiedJson` · `ts-extras`
 - **Diagnosing *why* an LLM's JSON response failed to parse?** → `classifyJsonParseFailure` · `ts-extras`

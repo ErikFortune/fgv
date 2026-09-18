@@ -39,6 +39,7 @@ import {
   resolveProviderModel,
   usesMaxCompletionTokensField
 } from './model';
+import { supportsCacheUsageReporting, supportsStreamUsageOption } from './streamUsageCapability';
 import { callAnthropicStream } from './streamingAdapters/anthropic';
 import { type IProviderCompletionStreamParams, type IStreamApiConfig } from './streamingAdapters/common';
 import { callGeminiStream } from './streamingAdapters/gemini';
@@ -182,7 +183,8 @@ export async function callProviderCompletionStream(
           resolvedThinking,
           undefined,
           undefined,
-          maxTokens
+          maxTokens,
+          supportsCacheUsageReporting(descriptor)
         );
       }
       return callOpenAiChatStream(
@@ -194,7 +196,8 @@ export async function callProviderCompletionStream(
         signal,
         resolvedThinking,
         maxTokens,
-        usesMaxCompletionTokensField(descriptor)
+        usesMaxCompletionTokensField(descriptor),
+        supportsStreamUsageOption(descriptor)
       );
     case 'anthropic':
       return callAnthropicStream(

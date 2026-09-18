@@ -31,7 +31,7 @@
  */
 
 import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
-import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
+import { type JsonObject } from '@fgv/ts-json-base';
 
 import { buildGeminiContents } from '../chatRequestBuilders';
 import { geminiAuthHeader } from '../endpoint';
@@ -39,7 +39,8 @@ import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } f
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toGeminiTools } from '../toolFormats';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
-import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
+import { normalizeGeminiUsage } from '../usageNormalization';
+import { IStreamApiConfig, jsonObjectValidator, openSseConnection, validateEventPayload } from './common';
 
 // ============================================================================
 // Accumulated call state (internal — used by C3 continuation builder)
@@ -100,12 +101,9 @@ interface IGeminiStreamCandidate {
  */
 interface IGeminiStreamChunk {
   readonly candidates: ReadonlyArray<IGeminiStreamCandidate>;
+  /** Present on every chunk with running totals; the last chunk's value is the final one. */
+  readonly usageMetadata?: JsonObject;
 }
-
-const jsonObjectValidator: Validator<JsonObject> = Validators.isA<JsonObject>(
-  'JsonObject',
-  (v): v is JsonObject => isJsonObject(v)
-);
 
 const geminiFunctionCallInner: Validator<{ name?: string; args?: JsonObject }> = Validators.object<{
   name?: string;
@@ -140,7 +138,8 @@ const geminiStreamCandidate: Validator<IGeminiStreamCandidate> = Validators.obje
 );
 
 const geminiStreamChunk: Validator<IGeminiStreamChunk> = Validators.object<IGeminiStreamChunk>({
-  candidates: Validators.arrayOf(geminiStreamCandidate)
+  candidates: Validators.arrayOf(geminiStreamCandidate),
+  usageMetadata: jsonObjectValidator.optional()
 });
 
 // ============================================================================
@@ -159,6 +158,9 @@ async function* translateGeminiStream(
   let fullText = '';
   let truncated = false;
   let receivedFinishReason = false;
+  // Gemini repeats usageMetadata on every chunk with running totals; the last chunk received
+  // carries the final figures, so each new value simply overwrites the previous one.
+  let usageRaw: JsonObject | undefined;
 
   try {
     /* c8 ignore next - body is non-null at this point per openSseConnection */
@@ -170,6 +172,9 @@ async function* translateGeminiStream(
         continue;
       }
       const chunk = validateEventPayload(json, geminiStreamChunk);
+      if (chunk?.usageMetadata !== undefined) {
+        usageRaw = chunk.usageMetadata;
+      }
       /* c8 ignore next 1 - defensive: chunk?.candidates optional chain unreachable after validation */
       const candidate = chunk?.candidates[0];
       /* c8 ignore next 3 - defensive: SSE events without candidates skipped */
@@ -208,7 +213,8 @@ async function* translateGeminiStream(
   } /* c8 ignore stop */
 
   if (receivedFinishReason) {
-    yield { type: 'done', truncated, fullText };
+    const usage = normalizeGeminiUsage(usageRaw);
+    yield { type: 'done', truncated, fullText, ...(usage !== undefined ? { usage } : {}) };
   } else {
     yield { type: 'error', message: 'Gemini stream ended without a finishReason' };
   }

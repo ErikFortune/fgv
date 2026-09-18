@@ -390,33 +390,38 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 
 **Origin / dependency.** Upstream gap-fix for `local-ai-exploration` B-3 (local classifier → `IPromptSafetyPolicy` backend), which can't be built against today's surface. Per the gap-then-fix tenet, fix the primitive here first → ship to `release` → `local-ai-exploration` absorbs (merge `release` → integration) before B-3. Runs parallel to `local-ai-exploration` B-2 (independent surfaces). Independent of the local-ai experiment's outcome — benefits any consumer wanting custom screeners.
 
-### `ai-assist-thinking-anchoring` ✅ (shipped via #667)
+### `ai-assist-prompt-caching` 🟢
 
-**Status:** ✅ shipped via **#667**. Gates green — build / lint / test at 100% coverage in
-`@fgv/ts-extras` (2795 tests), repo-wide `rush rebuild` at exit 0 with zero warnings across all
-36 packages, change file verified against `origin/release` (`type: major`, breaking). Layer-1
-`code-reviewer` run on the final diff: one P2 (a doc-comment overclaim on Gemini `'none'`'s
-Pro-family safety — fixed by adding the existing `IGeminiThinkingConfig.thinkingBudget` caveat
-to the new effort doc, not by adding model-aware gating), no P1s.
-**Branch base:** `release` HEAD
-**Package surface:** `@fgv/ts-extras/ai-assist` — as shipped: `model.ts`, `registry.ts`, `thinkingOptionsResolver.ts`, `index.ts`, `etc/ts-extras.api.md`, ai-assist tests. (The brief also declared `completionClient.ts` and `streamingClient.ts` in scope; neither needed a change, because the Anthropic emit site already gated on `anthropicEffort !== undefined`.)
-**Out-of-scope:** `@fgv/ts-app-shell`; the `ai-assist-thinking-events` surface (streaming event shapes, response `thinking` field, token accounting); all other `ts-extras` packlets
+**Status:** 🟢 phases A and B complete; **all five open questions closed**; phase C is three slices — **C1 observability implemented, [PR #668](https://github.com/ErikFortune/fgv/pull/668) open**, C2 diagnostics + vocabulary and C3 emit (gated on both) not started. Design at `.ai/tasks/active/ai-assist-prompt-caching/design.md`; C1 checkpoint in `.ai/tasks/active/ai-assist-prompt-caching/state.md`.
+**Branch base:** `release` HEAD (design/research on `claude/ai-assist-prompt-caching`; C1 on `claude/ai-assist-cache-observability`)
+**Package surface (expected):** `@fgv/ts-extras/ai-assist`, `@fgv/ts-prompt-assist` — exact surface is a phase-A/B output, not an input
 
-**Mission.** Thinking config bundles three separable concerns anchored at three levels — effort *vocabulary* (per provider, correct), wire *shape* (per model, correct), and *availability* (per provider, wrong). Fix the two cheap ones: delete `IAiProviderDescriptor.thinkingMode`, which nothing reads, and add `'none'` to the generic effort vocabulary so "thinking off" has a cross-provider spelling.
+**C1 implemented — [PR #668](https://github.com/ErikFortune/fgv/pull/668) open against `claude/ai-assist-prompt-caching`, not yet merged.** `AiCacheReportingLevel` / `IAiCompletionUsage` (new `usageTypes.ts`, sibling to `structuredOutputTypes.ts`), `IAiCompletionResponse.usage?` and `IAiStreamDone.usage?` (streaming in scope per OQ-5, not split out), and per-wire-shape normalization (`usageNormalization.ts`) filling design.md §8's six-row table for both the completion and streaming adapters. One resolution beyond the design doc: the OpenAI/xAI Responses route shares one code path with diverging `reports` values, resolved by reading `cache_write_tokens` **field presence** on the actual response rather than threading a provider discriminator through — correct for both today, but only for descriptors that clear `AiAssist.supportsCacheUsageReporting` (`'openai'`/`'xai-grok'` only; added during PR review after the four usage-attaching call sites were found to be shared by every `apiFormat: 'openai'` descriptor, including Groq/Mistral/Ollama/`openai-compat`, none of which have a cache-reporting concept) — an unconfirmed descriptor, including a future one, gets `usage: undefined` rather than a guessed answer. `libraries/ts-extras/CAPABILITIES.md` and `.ai/instructions/LIBRARY_CAPABILITIES.md` updated in the same change. Gates green: `@fgv/ts-extras` build/lint/test (2836/2836 as of the PR's latest review round, up from 2829/2829 at open, 100% coverage), repo-wide `rush rebuild` (36/36, zero warnings); repo-wide `rush test` was blocked by the pre-existing, environmental `mutableFsTree.test.ts` root-permissions failure in `ts-json-base` (fails on clean `release` too), so the downstream consumers of the widened types (`ts-app-shell`, `ts-prompt-assist`, `samples/testbed`) were verified individually instead — all green. The live standing-assertion harness (§8) is written with its prediction recorded but not run — no API key/egress in this session.
 
-**The finding.** `thinkingMode` is set on nine registry descriptors and every test fixture, and consulted nowhere — the real temperature/thinking gating switches on the provider **id** via `providerDiscriminatorForId`. Meanwhile a per-model representation of the same fact already exists and is in use for listing: `AiModelCapability` includes `'thinking'`, and `DEFAULT_MODEL_CAPABILITY_CONFIG` encodes which models think, per provider, by RegExp on the model id. Separately, generic `effort` is `'low' | 'medium' | 'high'` with no `'none'`, so turning thinking off is the one operation that forces a per-provider block — visible in `thinkingParamRejection.antagonist.test.ts`, which reaches for one to say it.
+**Open questions, all closed.** OQ-1 (xAI's cache surface) settled by a live `xai-cache-probe` testbed run: both routes cache ~99% of a stable prefix, under *different* field names per route, and neither reports a cache **write** — so xAI is `reads` on both, which is where it parts from OpenAI. The run also found a **128-token cached floor on a cold call**, which makes `cachedTokens > 0` meaningless as a signal and forces every C2 check to be a *ratio*. OQ-3 → C3 (a per-tenant cache key partitions traffic that shares a namespace today, so it must not ride on C1, whose whole claim is inertness). OQ-2 → not a gate on C3, but a wanted input to C2 because of that floor. OQ-4 → auto-cache not in C3; it buys nothing once §5 does the breakpoint bookkeeping deliberately. OQ-5 → one stream, *not* split: a split leaves callers unable to distinguish "streaming does not report usage" from "not implemented yet", reintroducing the exact ambiguity the required `reports` discriminator exists to kill.
 
-**Deliberately out of scope.** Gating the call path on the per-model capability table. That table is documented as intentionally narrow because "false positives are worse than missing a model" — right for a listing filter, wrong for a call gate, where the same miss rejects a valid request. Reusing it needs a design pass, not a line change; filed to `docs/FUTURE.md` with that reasoning on close.
+**Process note.** This stream did not use `/triage-cycle` — that skill and `docs/DESIGN_PROCESS.md` serve UI-prototype bundles and this repo has no `design/` directory. The questions were decided directly with reasoning recorded per question. The gap is filed in `docs/FUTURE.md`.
 
-**Breaking.** `thinkingMode` is a required field, so every external descriptor construction site needs a one-line delete. `ai-assist` is on the active-development list; break cleanly, no ignored-optional shim.
+**Phase B outcome.** No falsification this time; the brief's factual claims all held, and the design added four findings of its own. The load-bearing one: mechanism is keyed on `(descriptor, model, **usesResponsesApi**)`, not on the provider/model pair the brief named — nine registry providers share `apiFormat: 'openai'`, and that format splits at runtime into Responses vs Chat Completions on a boolean computed from *whether the caller passed tools*. Since `cache_write_tokens` exists only on Responses, **whether cache writes are observable at all flips on the presence of tools.** Also: xAI is reached over the OpenAI-compat path, so the xAI field names phase A verified are for a wire we never speak (**OQ-1**).
 
-**Origin.** Surfaced while answering a consumer's question about whether the library pins thinking effort (it does not — `resolvedThinking` stays undefined unless the caller passes `thinking`). Independent of that consumer's problem.
+**The central mechanical question dissolved rather than being answered.** Three stability levels admit at most two downward transitions, so the emitted breakpoint count is ≤2 and the shared cap of four is never binding — OpenAI's silent drop-by-recency never engages because we never send more than the cap. The cap only becomes reachable on an interleaved composition, whose real defect is its ordering, which the diagnostics already report.
 
-**Open question left behind.** Generic `effort: 'none'` maps to Gemini `thinkingBudget: 0`, which `IGeminiThinkingConfig.thinkingBudget`'s own doc says errors on Pro-family models. The stream documented the caveat rather than adding model-aware gating, reasoning that an explicit `providers` block could already request it — sound, but the pre-existing door was Gemini-specific while the new one is the *generic* field whose purpose is provider-obliviousness. Filed as **P3 in `docs/TECH_DEBT.md`** at finalization; note it is *not* covered by the `FUTURE.md` capability-gating entry, since Gemini Pro does think and simply cannot express "off" as a zero budget.
+**Phase B corrected the brief's diagnostics-first case.** The brief nominated the refutation check as the beachhead; a false-stable hint costs nothing until something acts on it, so refutation guards a hazard that does not yet exist. The correct beachhead is **cache-hostile ordering**, which costs money today on every provider — Gemini implicit, xAI and OpenAI's default mode have no directive to send, and byte order is the only lever.
+**Out-of-scope:** the `ai-assist-thinking-anchoring` and `ai-assist-thinking-events` surfaces; all other `ts-extras` packlets
 
-**Prediction scorecard.** The brief called the temperature-compatibility matrix the hard part; it needed **no new logic** — the `!== 'none'` guards on OpenAI and xAI already existed and Anthropic's branch already gated on `anthropicEffort !== undefined`, so `checkTemperatureConflict` was never touched. The brief's predicted Anthropic mapping (omit the thinking param) was exactly right. The surprise came from the item scoped as trivial.
+**Mission.** `ai-assist` has no prompt-caching support of any kind — verified greenfield, the only hits for `cache_control` / `prompt_cache` / `cachedContent` across `ts-extras` and `ts-prompt-assist` are crypto ephemeral-key code. Every provider we call supports caching, two of them without being asked, so we pay full input price on every repeated prefix. Caching is the first cost lever, ahead of effort and model choice, because it is the only one that does not trade quality.
 
-**Artifacts:** `.ai/tasks/completed/2026-09/ai-assist-thinking-anchoring/`
+**The finding that shapes it.** Phase A **falsified the brief's opening premise**, which is the most useful thing it could have done. The brief claimed cache mechanism was a property of the *provider* and that OpenAI had "nowhere to send" a directive. Wrong: OpenAI now ships inline breakpoint control structurally identical to Anthropic's (`prompt_cache_breakpoint` on a content block, `prompt_cache_options` at request level), so it occupies the automatic *and* the caller-placed cell at once, chosen per request. Verified directly against `openai/openai-openapi`, not taken from the research agent. Two of four providers now implement the breakpoint model; it is the emerging convention, not an Anthropic quirk. What survives is the conclusion: the authoring concept belongs as **stability annotation** (`frozen` / `per-conversation` / `per-request`) rather than as a cache directive — now because it is the one input that drives *all three* mechanisms, not because a directive would be unusable.
+
+**The central mechanical problem, now shared.** Both breakpoint providers cap writes at **four per request**, and OpenAI resolves overflow silently by recency — keeping the latest four, i.e. discarding the earliest and most stable ones, the worst possible direction. Deciding which four survive is the design's core question. Two OpenAI footguns to design against: `mode: 'explicit'` with zero breakpoints disables caching entirely (a reachable setting strictly worse than the default), and `ttl` currently accepts only `'30m'` despite looking like a knob.
+
+**Why prompt-assist.** `IPromptComposition` (shipped #663) already reports the document order and absolute size of every section composing a resolved prompt — exactly the substrate needed. It enables cache-hostile-ordering diagnosis (a volatile section ahead of a stable one costs the whole prefix), which no provider reports. Scope the diagnostics against OpenAI's *native* `prompt_cache_diagnostics` (nine miss reasons) rather than duplicating it — and note its ceiling: `reasoning_effort_changed` and `service_tier_changed` are undetectable by any prefix analysis.
+
+**Known gap.** Phase A established mechanism but **no numbers** — every threshold and discount for OpenAI, Gemini and xAI is unverified, because provider prose docs are egress-blocked from the agent environment (machine-readable specs and discovery documents survived). Thresholds must be caller-supplied, not baked in: by this stream's own reasoning a wrong threshold produces a silently-non-caching implementation.
+
+**Coupling to carry into design.** Caches are model-scoped, and a mid-conversation effort change invalidates the message cache on most models — thinking config and caching interact.
+
+**Artifacts:** `.ai/tasks/active/ai-assist-prompt-caching/`
 
 ---
 
@@ -432,9 +437,27 @@ to the new effort doc, not by adding model-aware gating), no P1s.
 - Non-streaming response shape: `thinking?: string` field (or similar) on `IAiCompletionResponse`
 - Opt-in plumbing (`IGeminiThinkingOptions.config.includeThoughts` placed by thinking-config stream — wire it up here for all providers)
 - Per-provider surfacing logic (Anthropic `thinking_delta` events; Gemini `thought: true` parts; OpenAI encrypted reasoning items if exposed)
-- Token accounting (`thinkingTokens?: number` on response)
+- Token accounting — **`thinkingTokens?: number` goes INSIDE `IAiCompletionUsage`, not beside it on the response.** See the binding note below.
 
 Design-triage-implement shape is likely; new public API has real consequences.
+
+**⚠️ Binding decision inherited from `ai-assist-prompt-caching` (OQ-6, resolved 2026-09-18).**
+`IAiCompletionUsage` — shipped by that stream's C1 slice as `IAiCompletionResponse.usage?` — is
+**the** token-accounting home on that interface. Add `thinkingTokens` as a field inside it.
+Do **not** add a sibling `thinkingTokens` on `IAiCompletionResponse`, which is what this entry
+said before C1 existed.
+
+Why this is written here rather than left to be discovered: this collision was structurally
+invisible. `ai-assist-prompt-caching` lists the thinking-events surface as out-of-scope, this
+entry claims token accounting as its own, and `ai-assist-thinking-anchoring` confirmed that
+assignment by deferring to it. Each brief correctly defers to the others, so **no stream owned
+the relationship between `usage` and `thinkingTokens`**, and no gate on either side would have
+caught two parallel accounting homes describing the same generation — the "absence is
+three-ways ambiguous" defect `IAiCompletionUsage.reports` exists to remove, reintroduced from
+outside its reach. `reports` is also already the right discriminator for a per-provider-optional
+figure, which is exactly what thinking tokens are.
+
+Reasoning in full: `.ai/tasks/active/ai-assist-prompt-caching/design.md` §14 A2.
 
 **Origin.** Carved out of `ai-assist-thinking-config` phase A v2 (D9). Required because v1's "future extension point" hand-wave didn't meet the bar of "concrete trackable followup."
 

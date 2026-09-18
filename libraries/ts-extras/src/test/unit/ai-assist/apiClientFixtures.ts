@@ -84,14 +84,19 @@ export function mockFetchHttpError(status: number, errorText: string): void {
 // OpenAI response helpers
 // ============================================================================
 
-export function openAiResponse(content: string, finishReason: string = 'stop'): unknown {
+export function openAiResponse(
+  content: string,
+  finishReason: string = 'stop',
+  extra: Record<string, unknown> = {}
+): unknown {
   return {
     choices: [
       {
         message: { content },
         finish_reason: finishReason
       }
-    ]
+    ],
+    ...extra
   };
 }
 
@@ -99,10 +104,15 @@ export function openAiResponse(content: string, finishReason: string = 'stop'): 
 // Anthropic response helpers
 // ============================================================================
 
-export function anthropicResponse(text: string, stopReason: string = 'end_turn'): unknown {
+export function anthropicResponse(
+  text: string,
+  stopReason: string = 'end_turn',
+  extra: Record<string, unknown> = {}
+): unknown {
   return {
     content: [{ type: 'text', text }],
-    stop_reason: stopReason
+    stop_reason: stopReason,
+    ...extra
   };
 }
 
@@ -110,7 +120,11 @@ export function anthropicResponse(text: string, stopReason: string = 'end_turn')
 // Gemini response helpers
 // ============================================================================
 
-export function geminiResponse(text: string, finishReason: string = 'STOP'): unknown {
+export function geminiResponse(
+  text: string,
+  finishReason: string = 'STOP',
+  extra: Record<string, unknown> = {}
+): unknown {
   return {
     candidates: [
       {
@@ -119,7 +133,8 @@ export function geminiResponse(text: string, finishReason: string = 'STOP'): unk
         },
         finishReason
       }
-    ]
+    ],
+    ...extra
   };
 }
 
@@ -127,7 +142,11 @@ export function geminiResponse(text: string, finishReason: string = 'STOP'): unk
 // Responses API response helpers (xAI/OpenAI with tools)
 // ============================================================================
 
-export function responsesApiResponse(text: string, status: string = 'completed'): unknown {
+export function responsesApiResponse(
+  text: string,
+  status: string = 'completed',
+  extra: Record<string, unknown> = {}
+): unknown {
   return {
     output: [
       { type: 'web_search_call', id: 'ws_1', status: 'completed' },
@@ -138,7 +157,8 @@ export function responsesApiResponse(text: string, status: string = 'completed')
         content: [{ type: 'output_text', text }]
       }
     ],
-    status
+    status,
+    ...extra
   };
 }
 

@@ -61,6 +61,7 @@ import { callAnthropicStream } from './anthropic';
 import { callOpenAiResponsesStream } from './openaiResponses';
 import { callGeminiStream } from './gemini';
 import { type IStreamApiConfig } from './common';
+import { supportsCacheUsageReporting } from '../streamUsageCapability';
 
 // ============================================================================
 // Tool-result accumulation (internal)
@@ -693,7 +694,8 @@ export function executeClientToolTurn(
           resolvedThinking,
           openAiCallMap,
           continuationMessages,
-          maxTokens
+          maxTokens,
+          supportsCacheUsageReporting(descriptor)
         );
       case 'gemini':
         return callGeminiStream(

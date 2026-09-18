@@ -202,6 +202,10 @@ declare namespace AiAssist {
         modelSpecKey,
         modelSpec,
         resolveEffectiveTools,
+        AiCacheReportingLevel,
+        IAiCompletionUsage,
+        supportsCacheUsageReporting,
+        supportsStreamUsageOption,
         ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
         AiStructuredOutputFormat,
         IAiStructuredOutputCapability,
@@ -237,6 +241,12 @@ const aiAssistProviderConfig: Converter<IAiAssistProviderConfig>;
 //
 // @public
 const aiAssistSettings: Converter<IAiAssistSettings>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type AiCacheReportingLevel = 'reads' | 'reads-and-writes';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1189,6 +1199,18 @@ interface IAiCompletionResponse {
     readonly content: string;
     readonly structuredOutput: StructuredOutputEnforcement;
     readonly truncated: boolean;
+    readonly usage?: IAiCompletionUsage;
+}
+
+// @public
+interface IAiCompletionUsage {
+    readonly cachedInputTokens?: number;
+    readonly cacheWriteTokens?: number;
+    readonly outputTokens?: number;
+    readonly raw?: JsonObject;
+    readonly reports: AiCacheReportingLevel;
+    readonly totalInputTokens?: number;
+    readonly uncachedInputTokens?: number;
 }
 
 // @public
@@ -1341,6 +1363,7 @@ interface IAiStreamDone {
     readonly truncated: boolean;
     // (undocumented)
     readonly type: 'done';
+    readonly usage?: IAiCompletionUsage;
 }
 
 // @public
@@ -3180,6 +3203,9 @@ type StructuredOutputRequest = ISchemaStructuredOutputRequest | IJsonObjectStruc
 // @public
 const SUPPORTED_SCHEMES: ReadonlyArray<string>;
 
+// @public
+function supportsCacheUsageReporting(descriptor: IAiProviderDescriptor): boolean;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //
 // @public
@@ -3189,6 +3215,9 @@ function supportsEmbedding(descriptor: IAiProviderDescriptor): boolean;
 //
 // @public
 function supportsImageGeneration(descriptor: IAiProviderDescriptor): boolean;
+
+// @public
+function supportsStreamUsageOption(descriptor: IAiProviderDescriptor): boolean;
 
 // @public
 function supportsStructuredOutput(descriptor: IAiProviderDescriptor): boolean;

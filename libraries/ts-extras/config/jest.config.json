@@ -8,7 +8,8 @@
     "index.node.js",
     "safer-fetch/model.js",
     "safer-fetch/failureReason.js",
-    "ai-assist/structuredOutputTypes.js"
+    "ai-assist/structuredOutputTypes.js",
+    "ai-assist/usageTypes.js"
   ],
   "coverageThreshold": {
     "global": {

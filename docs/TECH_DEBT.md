@@ -377,6 +377,36 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `supportsCacheUsageReporting` withholds *all* token usage from Groq, Mistral, Ollama
+  and `openai-compat`, not just cache fields.**
+  C1 (#668) attaches `IAiCompletionResponse.usage` on the shared `apiFormat: 'openai'` path only
+  when `supportsCacheUsageReporting(descriptor)` is true, which is `'openai' || 'xai-grok'`
+  (`streamUsageCapability.ts`). The gate exists for a real reason — Copilot round 4 found that
+  every `apiFormat: 'openai'` descriptor shares those call sites, so an ordinary usage block
+  from a provider with no cache concept was being normalized into a **false cache-reporting
+  signal**.
+
+  But the gate is cache-scoped and it is withholding **general** token accounting as collateral.
+  Groq, Mistral, Ollama and self-hosted `openai-compat` all report `prompt_tokens` /
+  `completion_tokens`; C1 now discards those for exactly the providers a cost-conscious consumer
+  is most likely to be self-hosting. Anthropic and Gemini are unaffected — their paths are not
+  behind this gate.
+
+  **Trigger**: a consumer asks why token counts are missing on a self-hosted or non-flagship
+  provider, or any stream that touches `streamUsageCapability.ts`.
+
+  **Scope sketch**: separate the two questions the single predicate currently conflates — *does
+  this provider report tokens at all* versus *does it report cache fields*. Arguably `reports`
+  is already the right home for the second, which would let usage attach broadly while
+  `reports` stays honest about the cache half. Note the `'none'` member that C1's layer-1 review
+  removed from `AiCacheReportingLevel` may want reconsidering as part of that — it was dropped
+  because nothing produced it, and this would give it a producer.
+
+  **Not a P2**: it withholds a number rather than reporting a wrong one, and the providers
+  affected are the ones with no cache concept, so nothing about caching is misreported.
+
+  **Reference**: #668; `design.md` §8; `streamUsageCapability.ts`.
+
 - **[P3] Generic `effort: 'none'` maps to a Gemini value that errors on Pro-family models.**
   `ai-assist-thinking-anchoring` (#667) added `'none'` to `IThinkingConfig.effort` as the
   cross-provider spelling for "thinking off". On Gemini it maps to `thinkingBudget: 0` in

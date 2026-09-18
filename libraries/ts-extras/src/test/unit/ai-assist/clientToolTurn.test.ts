@@ -1369,6 +1369,41 @@ describe('executeClientToolTurn', () => {
   });
 
   describe('OpenAI provider routing', () => {
+    test('client-tool turn on a cache-reporting descriptor still captures response.usage', async () => {
+      // Round 4 added a per-descriptor gate (AiAssist.supportsCacheUsageReporting) to
+      // callOpenAiResponsesStream, threaded from callProviderCompletionStream's dispatcher —
+      // but executeClientToolTurn calls callOpenAiResponsesStream directly and initially missed
+      // it, so every client-tool stream (openai included) silently lost usage. Pins the fix.
+      const openAiSse = [
+        `event: response.completed\ndata: ${JSON.stringify({
+          response: {
+            status: 'completed',
+            // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field names are snake_case
+            usage: { input_tokens: 100, output_tokens: 20, input_tokens_details: { cached_tokens: 40 } }
+          }
+        })}\n\n`
+      ];
+      mockSseResponse(openAiSse);
+
+      const result = executeClientToolTurn({
+        descriptor: makeOpenAiDescriptor(),
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools: [{ type: 'web_search' }],
+        clientTools: [] as IAiClientTool[],
+        model: 'gpt-4o'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      const events = await collect(result.value.events);
+      const done = events.find((e) => e.type === 'done');
+      expect(done?.type).toBe('done');
+      if (done?.type !== 'done') return;
+      expect(done.usage?.reports).toBe('reads');
+      expect(done.usage?.cachedInputTokens).toBe(40);
+    });
+
     test('routes to OpenAI Responses adapter and builds function_call continuation', async () => {
       // Live wire shape: function_call_arguments.{delta,done} carry item_id (the fc_*/output-item id),
       // NOT call_id. The adapter correlates item_id → call_id via the earlier output_item.added event.
