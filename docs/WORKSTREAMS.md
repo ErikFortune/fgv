@@ -453,7 +453,20 @@ the actual load path can.
 
 **Gates green:** `@fgv/ts-prompt-assist` build/lint/test — 309/309 (up from 280/280 pre-change), 100%
 statements/branches/functions/lines; `rushx fixlint` (no changes needed); `rush change --verify`
-passing. `code-reviewer` run on the diff before opening the PR (see below for findings/disposition).
+passing.
+
+**`code-reviewer` run on the diff before opening the PR — approved, no P1/P2 findings.** The two
+type assertions in `cacheStabilityAnalysis.ts` (an `IPromptSection.slot` cast backed by the
+producer's own invariant; a `.measured` cast immediately guarded by an every-element presence
+check) were checked and judged narrow, documented, and provably safe at their call sites — not the
+disallowed unsafe-cast pattern. `chainBindingCount` traced against `bindingMerger.ts`'s scope walk
+and confirmed to count every scope that declares a binding regardless of which one wins, threaded
+only into the `source === 'binding'` install sites. `foldRuns` / `checkHostileOrdering` /
+`checkThreshold` hand-traced against edge cases (single run, a run already at `'per-request'`, an
+upward transition that never reaches `'per-request'`, a down-then-up three-run sequence) with no
+off-by-one found. One P3 advisory, addressed in this same pass: this paragraph itself previously
+forward-referenced "findings/disposition" content that did not yet exist in the diff — folding the
+review's outcome in here, in the same change, is that disposition.
 
 **Open questions, all closed.** OQ-1 (xAI's cache surface) settled by a live `xai-cache-probe` testbed run: both routes cache ~99% of a stable prefix, under *different* field names per route, and neither reports a cache **write** — so xAI is `reads` on both, which is where it parts from OpenAI. The run also found a **128-token cached floor on a cold call**, which makes `cachedTokens > 0` meaningless as a signal and forces every C2 check to be a *ratio*. OQ-3 → C3 (a per-tenant cache key partitions traffic that shares a namespace today, so it must not ride on C1, whose whole claim is inertness). OQ-2 → not a gate on C3, but a wanted input to C2 because of that floor. OQ-4 → auto-cache not in C3; it buys nothing once §5 does the breakpoint bookkeeping deliberately. OQ-5 → one stream, *not* split: a split leaves callers unable to distinguish "streaming does not report usage" from "not implemented yet", reintroducing the exact ambiguity the required `reports` discriminator exists to kill.
 
