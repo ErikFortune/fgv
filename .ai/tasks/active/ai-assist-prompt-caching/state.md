@@ -15,7 +15,7 @@ only fires for PRs targeting `release`, so a stream branch never gets CI on its 
 | B — design | ✅ complete (2026-09-08); original 5 OQs closed 2026-09-17; **verified 2026-09-18, OQ-6 resolved same day**; **OQ-7 opened during C2, still open** | `design.md` (+ §14) |
 | triage | ⏭️ not used — questions decided directly; see `design.md` process note | — |
 | C1 — observability | ✅ shipped via #668 (merged into `release`) | `libraries/ts-extras/src/packlets/ai-assist/{usageTypes,usageNormalization}.ts` + adapters |
-| C2 — diagnostics + vocabulary | ✅ implemented; PR #669 open against `release` | `libraries/ts-prompt-assist/src/packlets/{types/cacheStability,resolve/cacheStabilityAnalysis}.ts` + `bindingMerger`/`promptLibrary`/`enums`/`descriptorConverter`/`slot`/`trace` |
+| C2 — diagnostics + vocabulary | ✅ shipped via #669 (merged into `release`) | `libraries/ts-prompt-assist/src/packlets/{types/cacheStability,resolve/cacheStabilityAnalysis}.ts` + `bindingMerger`/`promptLibrary`/`enums`/`descriptorConverter`/`slot`/`trace` |
 | C3 — emit | ⛔ not started; gated on C1 **and** C2 | — |
 
 ## Phase B checkpoint
@@ -370,7 +370,7 @@ token-accounting home; `thinkingTokens` goes inside it.)*
 
 ## C2 checkpoint
 
-**[PR #669](https://github.com/ErikFortune/fgv/pull/669) open against `release`, not yet merged.**
+**[PR #669](https://github.com/ErikFortune/fgv/pull/669) merged into `release`.**
 
 **Deliverable, per design.md §11's C2 row:** `PromptCacheStability` / `PromptCacheStabilityOrigin`
 / `IPromptCacheStabilityHint` (new `types/cacheStability.ts`); `IPromptSlot.cacheStability?` and
@@ -536,3 +536,47 @@ table) and in `docs/WORKSTREAMS.md` factually wrong — both still read "all fiv
 questions closed" after OQ-7 was opened in the same PR. The same intra-file doc-lag class
 `CODING_STANDARDS.md`'s "Docs ship with the code" section names for C1 rounds 6/7. Corrected
 both.
+
+**Copilot round 6 — round 5's own fix had a gap.** `checkHostileOrdering` only checked the
+*immediately-adjacent* run's bytes: with `per-request(non-empty) → frozen(empty) →
+per-conversation(non-empty)`, neither adjacent pair reads as upward once the empty run sits
+between them, so the per-conversation content's real stranding behind the leading per-request
+content went undetected. The same shape broke D5's threshold walk in the mirror case
+(`[frozen(10), per-conversation(10), frozen(0), per-conversation(10)]`): the empty run reads as
+an upward transition and stops the prefix count at 20 instead of the genuinely cacheable 30.
+Fixed with one change instead of two: zero-byte better-than-`'per-request'` runs are removed
+from the run sequence (`collapseEmptyStableRuns`) *before* both D4 and D5 run, rather than
+checked per-run inside `checkHostileOrdering`. Also fixed: `cacheStability.ts`'s
+`PromptCacheFindingKind` remarks and `CAPABILITIES.md`'s decision-shortcut both described the
+preface's `'frozen'` default as something `'stability-refuted'` could contradict — no refutation
+path exists for it (exactly OQ-7). Corrected both to state the preface is trusted, not refuted.
+
+**Copilot round 7 — round 6's collapse was too broad.** `collapseEmptyStableRuns` treated any
+empty better-than-`'per-request'` run as safe to remove, but that's only true for `'frozen'`: an
+unrefuted `'frozen'` claim is invariant across *every* resolve of the prompt, so empty now means
+empty forever. `'per-conversation'` is a weaker guarantee — stable only *within* a conversation —
+so a different conversation resolving the same prompt could render an empty-here
+`'per-conversation'` slot non-empty. Restricted the collapse to `'frozen'`-only. Also broadened
+`cacheStability.ts`'s `'stability-refuted'` doc, which round 6 had narrowed to cover only a
+`'template'` claim when it's also emitted for declared slot claims (D1: multi-scope binding,
+resource-bound, conditional-body).
+
+**Copilot round 8 — lower severity than 1-7.** Round 6's "sees past an empty stable run" test
+only asserted a finding count of 1, which a regression to comparing just immediate neighbors
+would also satisfy (same count, wrong attribution) — tightened the assertion to check which
+section the finding actually names. Also reconciled a stale phase-B "Open questions, all closed"
+paragraph in `docs/WORKSTREAMS.md` that predated OQ-6/OQ-7 and claimed the design-time 128-token
+cached floor "forces every C2 check to be a ratio" — D5's threshold check as shipped compares an
+absolute measured prefix size, not a ratio.
+
+**Copilot round 9 — 🟢 Approval recommended, two non-blocking doc nits.** Stale test counts in
+this file and `docs/WORKSTREAMS.md` (both still cited the PR's initial-open counts after rounds
+1-8's regression-test additions grew the suite to 329/329). Corrected.
+
+**Stopping the Copilot loop after round 9 on diminishing returns.** Rounds 1-7 were all
+runtime-correctness findings on the diagnostic engine — a real bug in nearly every round,
+including two rounds that caught gaps in the *previous* round's own fix (round 4 reverted round
+3's regression; round 7 narrowed round 6's over-broad collapse). Round 8 was already
+lower-severity; round 9 came back "Approval recommended" with only doc nits and no code-level
+findings — the clearest diminishing-returns signal short of a fully clean pass. Full suite at
+merge: 329/329 passing, 100% coverage, clean lint. **Merged into `release` 2026-09-18.**

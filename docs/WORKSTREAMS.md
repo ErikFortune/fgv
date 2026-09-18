@@ -392,14 +392,14 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 
 ### `ai-assist-prompt-caching` 🟢
 
-**Status:** 🟢 phases A and B complete; the original five open questions closed, plus OQ-6 (opened and resolved by the pre-C1 verification pass, design.md §14); **OQ-7 opened during C2** (unannotated preface default — `'frozen'` vs. `'per-request'` — a genuine safety-vs-usability tradeoff, not resolved in C2, carried to C3) remains open; phase C is three slices — **C1 observability shipped via [PR #668](https://github.com/ErikFortune/fgv/pull/668), C2 diagnostics + vocabulary implemented, [PR #669](https://github.com/ErikFortune/fgv/pull/669) open against `release`**, C3 emit (gated on both) not started. Design at `.ai/tasks/active/ai-assist-prompt-caching/design.md`; checkpoints in `.ai/tasks/active/ai-assist-prompt-caching/state.md`.
+**Status:** 🟢 phases A and B complete; the original five open questions closed, plus OQ-6 (opened and resolved by the pre-C1 verification pass, design.md §14); **OQ-7 opened during C2** (unannotated preface default — `'frozen'` vs. `'per-request'` — a genuine safety-vs-usability tradeoff, not resolved in C2, carried to C3) remains open; phase C is three slices — **C1 observability shipped via [PR #668](https://github.com/ErikFortune/fgv/pull/668), C2 diagnostics + vocabulary shipped via [PR #669](https://github.com/ErikFortune/fgv/pull/669)**, C3 emit (gated on both) not started. Design at `.ai/tasks/active/ai-assist-prompt-caching/design.md`; checkpoints in `.ai/tasks/active/ai-assist-prompt-caching/state.md`.
 **Branch base:** `release` HEAD (design/research on `claude/ai-assist-prompt-caching`; C1 on `claude/ai-assist-cache-observability`; C2 on `claude/ai-assist-cache-diagnostics`, based directly on `release` per the branching lesson C1 left — a slice stacked on the design branch got no CI for its entire life since `ci.yml` only fires for PRs targeting `release`)
 **Package surface (expected):** `@fgv/ts-extras/ai-assist`, `@fgv/ts-prompt-assist` — exact surface is a phase-A/B output, not an input
 
 **C1 shipped — [PR #668](https://github.com/ErikFortune/fgv/pull/668) merged into `release`.** `AiCacheReportingLevel` / `IAiCompletionUsage` (new `usageTypes.ts`, sibling to `structuredOutputTypes.ts`), `IAiCompletionResponse.usage?` and `IAiStreamDone.usage?` (streaming in scope per OQ-5, not split out), and per-wire-shape normalization (`usageNormalization.ts`) filling design.md §8's six-row table for both the completion and streaming adapters. One resolution beyond the design doc: the OpenAI/xAI Responses route shares one code path with diverging `reports` values, resolved by reading `cache_write_tokens` **field presence** on the actual response rather than threading a provider discriminator through — correct for both today, but only for descriptors that clear `AiAssist.supportsCacheUsageReporting` (`'openai'`/`'xai-grok'` only; added during PR review after the four usage-attaching call sites were found to be shared by every `apiFormat: 'openai'` descriptor, including Groq/Mistral/Ollama/`openai-compat`, none of which have a cache-reporting concept) — an unconfirmed descriptor, including a future one, gets `usage: undefined` rather than a guessed answer. `libraries/ts-extras/CAPABILITIES.md` and `.ai/instructions/LIBRARY_CAPABILITIES.md` updated in the same change. Gates green: `@fgv/ts-extras` build/lint/test (2836/2836 as of the PR's latest review round, up from 2829/2829 at open, 100% coverage), repo-wide `rush rebuild` (36/36, zero warnings); repo-wide `rush test` was blocked by the pre-existing, environmental `mutableFsTree.test.ts` root-permissions failure in `ts-json-base` (fails on clean `release` too), so the downstream consumers of the widened types (`ts-app-shell`, `ts-prompt-assist`, `samples/testbed`) were verified individually instead — all green. The live standing-assertion harness (§8) is written with its prediction recorded but not run — no API key/egress in this session.
 
-**C2 implemented — [PR #669](https://github.com/ErikFortune/fgv/pull/669) open against `release`,
-not yet merged.** The closed three-level
+**C2 shipped — [PR #669](https://github.com/ErikFortune/fgv/pull/669) merged into `release`.**
+The closed three-level
 `PromptCacheStability` vocabulary (`'frozen' | 'per-conversation' | 'per-request'`) with
 `PromptCacheStabilityOrigin` (`'authored' | 'call-site' | 'derived'`) and `IPromptCacheStabilityHint`;
 the two declared homes (`IPromptSlot.cacheStability?`, `IPromptResolveRequest.cacheStability?`, the
@@ -454,9 +454,19 @@ descriptor loader. Kept as a lesson: a new declared field on a loader-facing typ
 updated in the same change, and a same-file type check cannot see that gap — only a test that exercises
 the actual load path can.
 
-**Gates green:** `@fgv/ts-prompt-assist` build/lint/test — 309/309 (up from 280/280 pre-change), 100%
-statements/branches/functions/lines; `rushx fixlint` (no changes needed); `rush change --verify`
-passing.
+**Gates green:** `@fgv/ts-prompt-assist` build/lint/test — 329/329 at merge (up from 280/280
+pre-change and 309/309 at PR open — the Copilot review loop's regression tests account for the
+rest), 100% statements/branches/functions/lines; `rushx fixlint` (no changes needed); `rush
+change --verify` passing.
+
+**Copilot review loop — 9 rounds, stopped on diminishing returns.** Full round-by-round detail
+in `state.md`'s C2 checkpoint. Summary: rounds 1-7 were runtime-correctness findings on the
+diagnostic engine (chain-dedup double-counting, resource-bound-slot and conditional-body
+refutation gaps, and — across rounds 5-7 specifically — three successive rounds narrowing
+exactly which empty runs are safe to treat as non-barriers for the ordering/threshold checks,
+including two rounds that caught a gap in the *previous* round's own fix). Round 8 was
+lower-severity (a test-rigor nit, a stale doc claim); round 9 came back "Approval recommended"
+with only two non-blocking doc nits. Stopped there rather than requesting round 10.
 
 **`code-reviewer` run on the diff before opening the PR — approved, no P1/P2 findings.** The two
 type assertions in `cacheStabilityAnalysis.ts` (an `IPromptSection.slot` cast backed by the
