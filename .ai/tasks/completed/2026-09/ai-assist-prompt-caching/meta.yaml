@@ -1,0 +1,52 @@
+id: ai-assist-prompt-caching
+status: shipped
+packages: ['@fgv/ts-extras', '@fgv/ts-prompt-assist']
+prs: [668, 669]
+# C3's own PR number is added once opened — see result.md for what it carries; this stream's
+# work is split across three PRs (C1, C2, C3) and this file is written from the branch that
+# becomes the third.
+opened: 2026-09-07
+closed: 2026-09-18
+summary:
+  intended: >
+    Add prompt-caching support to ai-assist across every provider that supports it (Anthropic,
+    OpenAI, xAI, Gemini implicit), driven by a stability annotation vocabulary on
+    ts-prompt-assist resolves, per brief.md's three-shape mechanism survey and the "which four
+    breakpoints survive" central mechanical question.
+  shipped: >
+    C1: cache usage observability (IAiCompletionUsage/usage? on completion + streaming
+    responses, normalized across five wire shapes). C2: the closed three-level
+    PromptCacheStability vocabulary with provenance, and diagnostics (D1-D5) run at resolve
+    time with zero emit-side risk. C3: IAiCacheRequest + validated offset splitting on the
+    Anthropic and OpenAI adapters (content blocks/parts carrying cache_control /
+    prompt_cache_breakpoint), and ts-prompt-assist's toCacheRequest deriving a breakpoint plan
+    from a composition's per-section effective stability. Also folded into C3: the C2 P2
+    checkThreshold tech-debt fix and OQ-7 (antiJailbreakPrefaceStability).
+  diverged: >
+    Phase A falsified the brief's opening premise (OpenAI has an inline breakpoint mechanism
+    structurally identical to Anthropic's, not "nowhere to send" a directive) and the "central
+    mechanical question" (which four breakpoints survive a shared cap) dissolved rather than
+    being answered: the three-level vocabulary admits at most two downward transitions, so the
+    shared four-cap is never reached and no allocation policy was needed. Design §11's
+    IAiCacheCapability model-keyed threshold/cap table, originally scoped to C1, was resized out
+    entirely by A3's finding that C1 was already validator-widening across five response shapes
+    — it was never built in any slice, and C3's offset-cap check is a caller-supplied parameter
+    with no registry backing, matching the design's own proof that the vocabulary never needs
+    one. Streaming request emission (a cache? field on IProviderCompletionStreamParams) was left
+    out of C3 entirely, unlike C1's streaming usage-reporting inclusion under OQ-5 — a narrower
+    posture than OQ-5's precedent might suggest, reasoned through in result.md.
+  sourceLine: '**Shipped:** all three phase-C slices — C1 (observability), C2 (diagnostics + vocabulary), C3 (emit) — closing the stream.'
+  headline: >
+    ai-assist now places explicit prompt-cache breakpoints on Anthropic and OpenAI requests
+    built from a ts-prompt-assist resolve, reports cache usage across every provider that
+    supplies it, and diagnoses a cache-hostile composition before any request is sent.
+keywords:
+  - prompt caching
+  - cache breakpoints
+  - cache_control
+  - prompt_cache_breakpoint
+  - prompt_cache_key
+  - stability vocabulary
+  - frozen per-conversation per-request
+  - checkThreshold zero-byte-section
+  - anti-jailbreak preface stability

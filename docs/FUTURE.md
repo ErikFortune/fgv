@@ -1337,6 +1337,37 @@ sibling shape, or making `DESIGN_PROCESS.md`'s bucket list conditional on the de
 
 ---
 
+## Gemini explicit `CachedContent` as an `ai-assist` primitive
+
+A `GeminiCacheHandle` with explicit `create` / `release` and a documented ownership contract,
+wrapping Gemini's `caches.create(...)` / `GenerateContentRequest.cachedContent` resource. Unlike
+Anthropic's and OpenAI's inline breakpoints (stateless, per-request), this is a control-plane
+resource — `create` / `get` / `list` / `delete` / `patch`, immutable except expiry, with a handle
+whose lifetime spans requests.
+
+**Why deferred:** `ai-assist-prompt-caching` (C1–C3) deliberately did not build this — see design.md
+§10 for the five reasons, in descending force: (1) it is not a request-assembly concern, and every
+other primitive in `ai-assist` is stateless per call; (2) the library cannot own invalidation — any
+content change is delete-plus-create with a *new* handle every caller must re-reference, so
+returning the handle adds a wrapper and holding it adds state to a stateless packlet; (3) an
+abandoned handle is a recurring charge, not a one-time one — a materially different risk class from
+anything else in `ai-assist`; (4) the storage rate is unverified (provider pricing pages are
+egress-blocked from the agent environment); (5) Gemini implicit caching (which C1's usage
+normalization already covers) has zero API surface of its own — there is nothing else to build on
+Gemini without this. One unverified hazard carried forward: a non-monotonic Gemini implicit
+threshold has been reported (`cached_content_token_count` dropping to 0 between ~9K–17K prompt
+tokens) — if real, `ai-assist`'s per-model `minCacheablePrefixTokens` being unset for every Gemini
+entry is already the correct behavior (R-c: unknown reported as unknown), so no rework is implied
+either way.
+
+**Dependencies:** a real consumer with a Gemini-heavy, long-lived-context workload where implicit
+caching's cost is measured and found wanting; verified storage pricing; a design pass on ownership
+and invalidation (not a line change).
+
+**Reference:** `ai-assist-prompt-caching` `design.md` §10; C3 close, 2026-09-18.
+
+---
+
 ## Considered and closed — deferrals found by the 2026-08-14 finalize sweep
 
 The sweep found deferrals living only inside completed-stream artifacts, where no ledger reader
