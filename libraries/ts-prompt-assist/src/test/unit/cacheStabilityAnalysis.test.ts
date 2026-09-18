@@ -388,6 +388,28 @@ describe('analyzePromptCacheStability', () => {
       expect(findings.filter((f) => f.kind === 'cache-hostile-ordering')).toHaveLength(1);
     });
 
+    test('does not collapse an empty per-conversation run — it can still fire an ordering hazard', () => {
+      // frozen(non-empty) -> per-conversation(empty here) -> frozen(non-empty).
+      // Unlike 'frozen', a 'per-conversation' claim is only stable WITHIN a
+      // conversation — a different conversation resolving the same prompt
+      // could render this slot non-empty, so an empty sample here is not
+      // license to treat it as though it can never contribute bytes. The
+      // second frozen run following it is still an upward transition.
+      const sections: IPromptSection[] = [
+        section({ kind: 'preface', start: 0, chars: 5 }),
+        section({ kind: 'slot', slot: SLOT_A, start: 5, chars: 0 }),
+        section({ kind: 'preface', start: 5, chars: 5 })
+      ];
+      const findings = analyzePromptCacheStability({
+        sections,
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [slot(SLOT_A, 'per-conversation')]
+      });
+      expect(findings.filter((f) => f.kind === 'cache-hostile-ordering')).toHaveLength(1);
+    });
+
     test('does not fire for a non-increasing (frozen, per-conversation, per-request) sequence', () => {
       const sections: IPromptSection[] = [
         section({ kind: 'preface', start: 0, chars: 2 }),
@@ -559,6 +581,31 @@ describe('analyzePromptCacheStability', () => {
         options: { minCacheablePrefixTokens: 25 }
       });
       expect(findings).toEqual([]);
+    });
+
+    test('stops the cacheable prefix before frozen content following an empty per-conversation run', () => {
+      // frozen(10) -> per-conversation(empty here, 0) -> frozen(10). Only the
+      // first 10 tokens are safely cacheable: the empty per-conversation
+      // slot is not proven to stay empty across every conversation, so the
+      // second frozen run cannot be assumed reachable at a fixed offset.
+      // Collapsing the per-conversation run here (as if it behaved like an
+      // empty frozen run) would wrongly count all 20 tokens as cacheable.
+      const sections: IPromptSection[] = [
+        section({ kind: 'preface', start: 0, chars: 5, measured: 10 }),
+        section({ kind: 'slot', slot: SLOT_A, start: 5, chars: 0, measured: 0 }),
+        section({ kind: 'preface', start: 5, chars: 5, measured: 10 })
+      ];
+      const findings = analyzePromptCacheStability({
+        sections,
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [slot(SLOT_A, 'per-conversation')],
+        options: { minCacheablePrefixTokens: 15 }
+      });
+      expect(findingKinds(findings).filter((k) => k === 'below-threshold')).toHaveLength(1);
+      const belowThreshold = findings.find((f) => f.kind === 'below-threshold');
+      expect(belowThreshold?.detail).toMatch(/10 token/);
     });
 
     test('the cacheable prefix stops at the first upward transition, excluding stranded content', () => {

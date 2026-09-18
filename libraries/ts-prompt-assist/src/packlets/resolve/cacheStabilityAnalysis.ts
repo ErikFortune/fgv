@@ -98,17 +98,23 @@ export function analyzePromptCacheStability(
   );
 
   const runs = foldRuns(perSection);
-  // A run whose level is better than 'per-request' but contributes zero
-  // bytes is not a real ordering barrier: its (unrefuted) claim says it
-  // can't change, so there's nothing there to strand or reorder. Removing
-  // it from the adjacency checks below — rather than only checking each
-  // run's own bytes — matters because D4/D5 both compare a run against its
-  // *neighbor*: without this collapse, an empty stable run sitting between
-  // two non-empty runs would absorb the check meant for the pair on either
-  // side of it (D4 would compare against the empty run instead of the real
-  // predecessor; D5 would stop the prefix walk at it instead of continuing
-  // through to genuinely cacheable bytes beyond it). A 'per-request' run is
-  // never removed regardless of its byte count — see the comment above.
+  // An empty 'frozen' run is not a real ordering barrier: an unrefuted
+  // 'frozen' claim is invariant across EVERY resolve of this prompt, so
+  // empty now means empty forever — nothing there to strand or reorder.
+  // Removing it from the adjacency checks below — rather than only
+  // checking each run's own bytes — matters because D4/D5 both compare a
+  // run against its *neighbor*: without this collapse, an empty frozen run
+  // sitting between two non-empty runs would absorb the check meant for
+  // the pair on either side of it (D4 would compare against the empty run
+  // instead of the real predecessor; D5 would stop the prefix walk at it
+  // instead of continuing through to genuinely cacheable bytes beyond it).
+  // 'per-conversation' is NOT collapsed even when empty: its guarantee is
+  // only stable *within* a conversation, not across every resolve of the
+  // prompt the way 'frozen' is — a different conversation resolving the
+  // same prompt could render it non-empty, so an empty sample here is not
+  // evidence it can never contribute bytes. 'per-request' runs are also
+  // never removed, for the same reason plus the comment above (emptiness
+  // on this resolve says nothing about emptiness on the next one).
   const orderingRuns = collapseEmptyStableRuns(sections, runs);
   checkHostileOrdering(sections, orderingRuns, findings);
   checkThreshold(sections, orderingRuns, options, findings);
@@ -121,13 +127,16 @@ function totalRunChars(sections: ReadonlyArray<IPromptSection>, run: IStabilityR
 }
 
 /**
- * Removes runs that are better than `'per-request'` but contribute zero
- * bytes — an unrefuted better-than-`'per-request'` claim is empty *because
- * the claim says it can't change*, so it's not a real ordering barrier
- * between its neighbors. `'per-request'` runs are always kept regardless of
- * byte count, since an empty one may become non-empty on another resolve of
- * the same prompt (the opposite instability D4/D5's non-collapsed sections
- * exist to catch). See the call site in {@link analyzePromptCacheStability}
+ * Removes `'frozen'` runs that contribute zero bytes — an unrefuted
+ * `'frozen'` claim is empty *because the claim says it can't change, on any
+ * resolve of this prompt*, so it's not a real ordering barrier between its
+ * neighbors. Every other level is kept regardless of byte count:
+ * `'per-conversation'`'s guarantee is only stable *within* a conversation,
+ * not across every resolve the way `'frozen'` is, so an empty sample here
+ * doesn't rule out a different conversation rendering it non-empty; and
+ * `'per-request'` is kept for the reason given where {@link foldRuns}'s
+ * result is computed above (emptiness now says nothing about emptiness on
+ * the next resolve). See the call site in {@link analyzePromptCacheStability}
  * for why this has to run before D4/D5's adjacency checks rather than being
  * a per-run check inside them.
  */
@@ -135,9 +144,7 @@ function collapseEmptyStableRuns(
   sections: ReadonlyArray<IPromptSection>,
   runs: ReadonlyArray<IStabilityRun>
 ): ReadonlyArray<IStabilityRun> {
-  return runs.filter(
-    (run) => run.level === STABILITY_LEVEL['per-request'] || totalRunChars(sections, run) > 0
-  );
+  return runs.filter((run) => run.level !== STABILITY_LEVEL.frozen || totalRunChars(sections, run) > 0);
 }
 
 /**
@@ -356,13 +363,14 @@ function foldRuns(perSection: ReadonlyArray<PromptCacheStability>): ReadonlyArra
  * where a breakpoint plan would have to stop, so the ordering hazard and the
  * stranded-content hazard are the same finding.
  *
- * `runs` has already had zero-byte better-than-`'per-request'` runs removed
- * by {@link collapseEmptyStableRuns} — see that function's doc for why an
- * empty stable run isn't a real ordering barrier, and why the removal has to
- * happen before adjacency is computed rather than by checking each run's own
- * bytes here: comparing only a run against its immediate neighbor would let
- * an empty stable run in the middle absorb the check meant for the pair on
- * either side of it, hiding a real hazard one hop further out.
+ * `runs` has already had zero-byte `'frozen'` runs removed by
+ * {@link collapseEmptyStableRuns} — see that function's doc for why an
+ * empty *frozen* run isn't a real ordering barrier (unlike an empty
+ * `'per-conversation'` one), and why the removal has to happen before
+ * adjacency is computed rather than by checking each run's own bytes here:
+ * comparing only a run against its immediate neighbor would let an empty
+ * frozen run in the middle absorb the check meant for the pair on either
+ * side of it, hiding a real hazard one hop further out.
  */
 function checkHostileOrdering(
   sections: ReadonlyArray<IPromptSection>,
@@ -390,12 +398,12 @@ function checkHostileOrdering(
  * `'per-request'` — the same "maximal monotone non-increasing prefix" §5.1
  * derives for breakpoint placement, stopping at whichever comes first: the
  * first `'per-request'` section, or the first upward transition (already
- * reported by D4). Like D4, `runs` here has already had zero-byte
- * better-than-`'per-request'` runs removed by
- * {@link collapseEmptyStableRuns} — without that, an empty stable run in the
- * middle of an otherwise-cacheable sequence would end the prefix walk early
- * (an upward transition into it, from D4's perspective) even though it
- * contributes no bytes to strand and genuinely cacheable content follows it.
+ * reported by D4). Like D4, `runs` here has already had zero-byte `'frozen'`
+ * runs removed by {@link collapseEmptyStableRuns} — without that, an empty
+ * frozen run in the middle of an otherwise-cacheable sequence would end the
+ * prefix walk early (an upward transition into it, from D4's perspective)
+ * even though it contributes no bytes to strand and genuinely cacheable
+ * content follows it.
  * An empty prefix (the very first section is already `'per-request'`) is
  * `'no-cacheable-prefix'`. Otherwise the prefix's measured size is judged
  * against `options.minCacheablePrefixTokens`, with `'threshold-unknown'` as
