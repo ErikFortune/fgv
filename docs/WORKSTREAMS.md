@@ -445,8 +445,10 @@ TypeScript types, but slot declarations round-trip through `descriptorConverter.
 `cacheStability` on any load through `PromptStoreFixture`/`FileTreePromptStore` until a new
 `EnumConvert.promptCacheStability` (mirroring `slotDirective`/`slotWritability`) was added to
 `enums.ts` and wired into `slotConverter`'s field list. Two of the seven end-to-end integration tests
-failed against the *type-correct* implementation before this fix landed; the pure-function unit tests
-of `analyzePromptCacheStability` alone could not have caught it, since they construct
+that existed at that point in the stream failed against the *type-correct* implementation before this
+fix landed (the file has since grown to 11 across the Copilot review rounds' regression tests); the
+pure-function unit tests of `analyzePromptCacheStability` alone could not have caught it, since they
+construct
 `IPromptSlot`/`IBindingTraceEntry` objects directly rather than round-tripping them through the
 descriptor loader. Kept as a lesson: a new declared field on a loader-facing type needs its converter
 updated in the same change, and a same-file type check cannot see that gap — only a test that exercises

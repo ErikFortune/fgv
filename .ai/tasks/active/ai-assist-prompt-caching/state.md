@@ -434,12 +434,16 @@ wiring it into `slotConverter`'s field list. The pure-function unit tests of
 `analyzePromptCacheStability` (which construct `IPromptSlot` / `IBindingTraceEntry` objects
 directly) could not have caught this — only a test exercising the actual descriptor-load path
 could, which is why both a direct unit-test file
-(`test/unit/cacheStabilityAnalysis.test.ts`, 22 tests, the algorithm in isolation) and an
-end-to-end wiring file (`test/unit/cacheStabilityIntegration.test.ts`, 7 tests, through
-`PromptLibrary.resolve`) exist rather than just the former.
+(`test/unit/cacheStabilityAnalysis.test.ts`, the algorithm in isolation) and an
+end-to-end wiring file (`test/unit/cacheStabilityIntegration.test.ts`, through
+`PromptLibrary.resolve`) exist rather than just the former. *(Counts below are the
+final, post-Copilot-loop tallies — both files grew substantially across the review rounds'
+regression tests; see the round-by-round log for what each addition covers.)*
 
-**Gates green:** `@fgv/ts-prompt-assist` build/lint/test — 309/309 passing (up from 280/280
-pre-change: 22 new direct unit tests + 7 new end-to-end tests), 100%
+**Gates green:** `@fgv/ts-prompt-assist` build/lint/test — 329/329 passing (up from 280/280
+pre-change: 36 direct unit tests in `cacheStabilityAnalysis.test.ts`, 11 end-to-end tests in
+`cacheStabilityIntegration.test.ts`, 2 enum/converter round-trip tests in `foundation.test.ts`),
+100%
 statements/branches/functions/lines coverage. `rushx fixlint` — no changes needed. Repo-wide
 `node common/scripts/install-run-rush.js rebuild` — 36/36 packages, zero warnings (required per
 `CODING_STANDARDS.md`: `IPromptComposition` gained a new non-optional field, a widened shared
