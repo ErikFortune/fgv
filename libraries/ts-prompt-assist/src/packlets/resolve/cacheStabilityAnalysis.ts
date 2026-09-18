@@ -82,13 +82,24 @@ export function analyzePromptCacheStability(
     findings
   );
   const templateRefuted = checkConditionalTemplate(sections, candidateMatches, findings);
-  const perSection = sections.map((section) =>
+
+  // D4/D5 reason about byte prefixes, so a zero-length section (an empty
+  // slot value, most commonly) cannot participate: it contributes no bytes
+  // that could make a cache prefix match or fail to match, so it cannot
+  // itself create an ordering hazard or change a prefix's measured size.
+  // Left in, an empty per-request slot ahead of stable content would report
+  // a `cache-hostile-ordering` / `no-cacheable-prefix` finding over content
+  // that, byte-for-byte, has no volatility to report. D1/D2's refutation
+  // findings are unaffected — they are keyed on slots and candidates, not
+  // section length, and already ran above.
+  const orderedSections = sections.filter((section) => section.chars > 0);
+  const perSection = orderedSections.map((section) =>
     effectiveSectionStability(section, slotEffective, templateRefuted)
   );
 
   const runs = foldRuns(perSection);
-  checkHostileOrdering(sections, runs, findings);
-  checkThreshold(sections, runs, options, findings);
+  checkHostileOrdering(orderedSections, runs, findings);
+  checkThreshold(orderedSections, runs, options, findings);
 
   return findings;
 }

@@ -291,6 +291,24 @@ describe('analyzePromptCacheStability', () => {
       expect(findingKinds(findings).sort()).toEqual(['cache-hostile-ordering', 'no-cacheable-prefix']);
     });
 
+    test('a zero-length section cannot itself create an ordering hazard or empty prefix', () => {
+      // An empty per-request slot value contributes no bytes, so it cannot make a cache prefix
+      // fail to match — a real ordering hazard needs a section with actual content.
+      const sections: IPromptSection[] = [
+        section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 0, measured: 0 }),
+        section({ kind: 'template', start: 0, chars: 5, measured: 5 })
+      ];
+      const findings = analyzePromptCacheStability({
+        sections,
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [slot(SLOT_A)],
+        options: { minCacheablePrefixTokens: 1 }
+      });
+      expect(findings).toEqual([]);
+    });
+
     test('does not fire for a non-increasing (frozen, per-conversation, per-request) sequence', () => {
       const sections: IPromptSection[] = [
         section({ kind: 'preface', start: 0, chars: 2 }),

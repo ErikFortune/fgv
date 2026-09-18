@@ -1104,3 +1104,62 @@ derivation that makes the shared four-cap unreachable, offsets rather than block
 `ai-assist` boundary, no `prompt_cache_options` on OpenAI, model-keyed thresholds with
 "unknown" first-class, and Gemini explicit `CachedContent` deferred — all unaffected. The
 open-question count goes from zero back to one: **OQ-6**.
+
+---
+
+## 15. C2 implementation findings — 2026-09-18
+
+C2 (diagnostics + vocabulary, `@fgv/ts-prompt-assist` only) shipped via PR #669. Implementation
+surfaced two corrections to §0/§4's factual claims and opens one new question — **OQ-7**, below —
+that C3 should read before placing breakpoints on a preface.
+
+**§4's premise for preface stability does not match the tree.** §4 says *"Preface and template
+text come from checked-in files."* True for template (the candidate body). False for preface:
+`IPromptSafetyPolicy.antiJailbreakPreface` is `(descriptor: IPromptDescriptor) => Result<string>`
+(`types/safety.ts`) — a **consumer-supplied callback invoked fresh on every resolve**, not file
+content the library reads. C2 still treats a `'preface'` section as `'frozen'` by default (per
+§4's actual instruction, independent of the premise that justified it), on a narrower, explicit
+assumption: the callback is a **deterministic function of `descriptor`** — same trust the design
+already places in template body content, which nothing here verifies either. There is no trace
+data to check this against; unlike D1/D2, there is no refutation path for a preface that breaks
+the assumption.
+
+**OQ-7 — should an unannotated preface default to `'frozen'` or `'per-request'`? Not resolved;
+carried to C3.** Copilot's review raised this independently, three times across the PR's review
+rounds, and the disagreement is real rather than a nitpick: a dynamic preface treated as
+`'frozen'` is exactly the design's worst case (§1) — a false-frozen prefix that never cache-hits,
+silently, forever. But the reverse default is not free either: `'per-request'` would make **every**
+resolve with a preface report `'cache-hostile-ordering'` against any stable content that follows
+it (the preface is always section 0, so anything more stable after it is an upward transition) —
+for what is very likely the common, correct shape (fixed framing text, then stable instructions).
+Neither default is strictly safer once usability is weighed, and C2's own remit (§9: "computes and
+reports, emits nothing") means the actual cost of either choice — a wasted cache write, or a
+diagnostic nobody trusts because it always fires — only materializes once C3 emits a breakpoint
+based on it. **Recommendation, undecided:** the durable fix is likely a third option neither §4 nor
+C2 offers — an explicit stability declaration on `IPromptSafetyPolicy` itself (e.g.
+`antiJailbreakPrefaceStability?: PromptCacheStability`), giving the policy author the same
+call-site-style override slots already have, rather than picking one blanket default for every
+consumer. Out of scope for C2 (new declared-hint surface, not a diagnostic); C3's implementer
+should decide before trusting a preface-inclusive prefix for an explicit breakpoint.
+
+**D1 needed a field the design's own text assumed already existed.** §9 describes D1 as "a
+counter on an existing loop" over `bindingMerger.ts`'s scope walk, but the count was never
+surfaced past that function before C2 — `IBindingTraceEntry` had no field for it
+(`chainBindingCount?: number`, added in C2, set only when `source === 'binding'`). Not a
+falsification of §9 — the counter genuinely was on an existing loop — but the surfaced count
+was not, and "a counter on an existing loop" undersold the work by exactly that gap. Recorded
+here as the same class of drift §14 tracked for C1: right when written, worth re-verifying
+before the next slice reads it as settled.
+
+**A resource-bound slot's stability is unverifiable, not merely unverified — treated
+accordingly.** Neither §4 nor §9 discusses `kind: 'resource'` slot bindings, whose value comes
+from a full recursive `PromptLibrary.resolve` of an inner prompt with its own qualifier context
+and its own trace (`resourceBindingResolutions[].innerTrace`). C2 does not recurse into that
+inner trace — doing so correctly would need the same D1/D2/D4/D5 analysis run at every nesting
+level, which is a real feature, not a bug fix, and out of scope here. Instead, any
+better-than-`'per-request'` claim on a resource-bound slot is refuted unconditionally. This is
+more conservative than the analogous D1 multi-scope check (which only refutes when there is
+*positive* evidence of ≥2 candidate bindings) — here the absence of any way to gather that
+evidence is itself treated as refuting evidence, per the governing asymmetry. A future slice
+that threads recursive analysis through would be a genuine capability increase, not a bug fix to
+this one.
