@@ -1,7 +1,7 @@
 id: ai-assist-prompt-caching
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/ts-prompt-assist']
-prs: [668, 669, 671]
+prs: [671, 668, 669]
 opened: 2026-09-07
 closed: 2026-09-18
 summary:

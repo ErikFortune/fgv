@@ -67,13 +67,14 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
-*(none currently outstanding — the `checkThreshold` zero-byte-section measure gap (shipped in C2,
-#669) was fixed by C3 of `ai-assist-prompt-caching`: a section with `chars === 0` now contributes
-`0` to the measured total via an explicit filter before every check in `checkThreshold`, rather
-than being incidentally in-or-out of the slice depending on `prefixEnd`'s position. Regression
-tests use non-zero `measured` on the empty section in both of the original bug's layouts — see
+*(The `checkThreshold` zero-byte-section measure gap (shipped in C2, #669) was fixed by C3 of
+`ai-assist-prompt-caching`: a section with `chars === 0` now contributes `0` to the measured total
+via an explicit filter before every check in `checkThreshold`, rather than being incidentally
+in-or-out of the slice depending on `prefixEnd`'s position. Regression tests use non-zero
+`measured` on the empty section in both of the original bug's layouts — see
 `cacheStabilityAnalysis.test.ts`, the tests following "counts genuinely cacheable bytes past a
-zero-byte stable run in the prefix". Design rule recorded at design.md §5.1b.)*
+zero-byte stable run in the prefix". Design rule recorded at design.md §5.1b. This item is
+retired; the `as Record<string, …>` item below remains outstanding.)*
 
 - **[P2] `as Record<string, …>` after a `typeof` guard — a P1 anti-pattern, 32 sites in
   production source across 11 packages.**

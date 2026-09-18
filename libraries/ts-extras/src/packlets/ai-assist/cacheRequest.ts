@@ -63,7 +63,11 @@ export interface IAiCacheRequest {
  * @remarks
  * **Fails loudly, never clamps** (design.md §6.1): a non-ascending, out-of-range, or over-cap
  * offset returns `fail()`. A silently-clamped breakpoint is precisely the silent, non-caching
- * failure this stream exists to remove. `maxBreakpointWrites` is left to the caller to supply —
+ * failure this stream exists to remove. `maxBreakpointWrites` itself is validated as a
+ * non-negative integer when supplied — checked before `systemBreakpoints` even, so a malformed
+ * cap (`NaN`, a negative number) fails loudly rather than either silently disabling the cap
+ * check (`NaN` comparisons are always `false`) or passing unnoticed on an empty offset list.
+ * `maxBreakpointWrites` is left to the caller to supply —
  * there is no model-keyed cap table in this package yet (design.md §7's `IAiCacheCapability` is
  * out of this slice's scope), and design.md §5.2 establishes that a caller producing breakpoints
  * from the three-level `PromptCacheStability` vocabulary never emits more than two, so an
@@ -80,6 +84,12 @@ export function validateCacheBreakpoints(
   cache: IAiCacheRequest,
   maxBreakpointWrites?: number
 ): Result<IAiCacheRequest> {
+  if (
+    maxBreakpointWrites !== undefined &&
+    (!Number.isInteger(maxBreakpointWrites) || maxBreakpointWrites < 0)
+  ) {
+    return fail(`maxBreakpointWrites (${maxBreakpointWrites}) must be a non-negative integer`);
+  }
   const offsets = cache.systemBreakpoints;
   if (offsets === undefined || offsets.length === 0) {
     return succeed(cache);

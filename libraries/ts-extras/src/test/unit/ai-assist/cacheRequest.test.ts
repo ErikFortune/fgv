@@ -112,6 +112,42 @@ describe('validateAiCacheRequest', () => {
     const cache: AiAssist.IAiCacheRequest = { cacheKey: 'tenant-42' };
     expect(AiAssist.validateAiCacheRequest(system, cache)).toSucceedWith(cache);
   });
+
+  describe('maxBreakpointWrites validation (Copilot review, round 2)', () => {
+    test('fails on a NaN cap — a comparison against NaN is always false, which would silently disable the cap check', () => {
+      const cache: AiAssist.IAiCacheRequest = { systemBreakpoints: [2, 4, 6] };
+      expect(AiAssist.validateAiCacheRequest(system, cache, NaN)).toFailWith(/non-negative integer/i);
+    });
+
+    test('fails on a non-integer cap', () => {
+      const cache: AiAssist.IAiCacheRequest = { systemBreakpoints: [2, 4] };
+      expect(AiAssist.validateAiCacheRequest(system, cache, 1.5)).toFailWith(/non-negative integer/i);
+    });
+
+    test('fails on a negative cap even with a non-empty offset list', () => {
+      const cache: AiAssist.IAiCacheRequest = { systemBreakpoints: [2, 4] };
+      expect(AiAssist.validateAiCacheRequest(system, cache, -1)).toFailWith(/non-negative integer/i);
+    });
+
+    test('fails on a negative cap even when systemBreakpoints is empty — checked before the early return', () => {
+      const cache: AiAssist.IAiCacheRequest = { systemBreakpoints: [] };
+      expect(AiAssist.validateAiCacheRequest(system, cache, -1)).toFailWith(/non-negative integer/i);
+    });
+
+    test('fails on a negative cap even when systemBreakpoints is undefined', () => {
+      expect(AiAssist.validateAiCacheRequest(system, {}, -1)).toFailWith(/non-negative integer/i);
+    });
+
+    test('a cap of exactly 0 is valid and rejects any non-empty offset list', () => {
+      const cache: AiAssist.IAiCacheRequest = { systemBreakpoints: [2] };
+      expect(AiAssist.validateAiCacheRequest(system, cache, 0)).toFailWith(/exceeding the cap of 0/i);
+    });
+
+    test('a cap of exactly 0 is valid and succeeds with no offsets', () => {
+      const cache: AiAssist.IAiCacheRequest = { systemBreakpoints: [] };
+      expect(AiAssist.validateAiCacheRequest(system, cache, 0)).toSucceedWith(cache);
+    });
+  });
 });
 
 describe('splitSystemForCache', () => {
