@@ -1,8 +1,8 @@
 # ai-assist-prompt-caching — cross-provider prompt-cache observability, diagnostics, and emit
 
 **Shipped**: 2026-09-18 via [PR #668](https://github.com/ErikFortune/fgv/pull/668) (C1),
-[PR #669](https://github.com/ErikFortune/fgv/pull/669) (C2), and the PR that carries this
-directory's migration (C3).
+[PR #669](https://github.com/ErikFortune/fgv/pull/669) (C2), and
+[PR #671](https://github.com/ErikFortune/fgv/pull/671) (C3).
 
 ## Summary
 
@@ -122,4 +122,4 @@ None outstanding. `docs/FUTURE.md` carries the pre-existing note on Gemini expli
 - Exit artifact: `result.md`
 - Design: `design.md`
 - PRs: [#668](https://github.com/ErikFortune/fgv/pull/668) (C1),
-  [#669](https://github.com/ErikFortune/fgv/pull/669) (C2), and this migration's own PR (C3)
+  [#669](https://github.com/ErikFortune/fgv/pull/669) (C2), and [#671](https://github.com/ErikFortune/fgv/pull/671) (C3)

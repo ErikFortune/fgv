@@ -1,10 +1,7 @@
 id: ai-assist-prompt-caching
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/ts-prompt-assist']
-prs: [668, 669]
-# C3's own PR number is added once opened — see result.md for what it carries; this stream's
-# work is split across three PRs (C1, C2, C3) and this file is written from the branch that
-# becomes the third.
+prs: [668, 669, 671]
 opened: 2026-09-07
 closed: 2026-09-18
 summary:
