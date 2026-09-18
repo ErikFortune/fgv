@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-prompt-assist",
+      "comment": "Add toCacheRequest(composition, hints) building an AiAssist.IAiCacheRequest breakpoint plan from a resolved composition's per-section effective stability, now exposed as IPromptSection.effectiveStability. Add IPromptSafetyPolicy.antiJailbreakPrefaceStability (defaults to 'frozen', resolving OQ-7) and fix the C2 checkThreshold defect where a chars===0 section could count toward the measured cacheable-prefix total depending on its position (design.md §5.1b; TECH_DEBT.md). C3 of ai-assist-prompt-caching.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist",
+  "email": "noreply@anthropic.com"
+}

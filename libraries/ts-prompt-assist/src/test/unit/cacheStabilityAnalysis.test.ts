@@ -5,6 +5,11 @@
 
 import { Runtime as TsResRuntime } from '@fgv/ts-res';
 import { analyzePromptCacheStability } from '../../packlets/resolve';
+// `deriveCacheBreakpointOffsets` is `@internal` plumbing shared between `promptLibrary.ts` and
+// `toCacheRequest.ts` — deliberately not re-exported through the packlet's public barrel (see
+// `packlets/resolve/index.ts`), so tests reach it via the module directly.
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { deriveCacheBreakpointOffsets } from '../../packlets/resolve/cacheStabilityAnalysis';
 import {
   IBindingTraceEntry,
   ICandidateMatchTraceEntry,
@@ -304,6 +309,72 @@ describe('analyzePromptCacheStability', () => {
     });
   });
 
+  describe('preface stability (design.md §15, OQ-7)', () => {
+    test("defaults an unannotated preface to frozen, matching C2's prior unconditional default", () => {
+      const sections: IPromptSection[] = [
+        section({ kind: 'preface', start: 0, chars: 5, measured: 10 }),
+        section({ kind: 'template', start: 5, chars: 5, measured: 10 })
+      ];
+      const findings = analyzePromptCacheStability({
+        sections,
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [],
+        options: { minCacheablePrefixTokens: 20 }
+      });
+      // Both sections frozen and well-ordered, at exactly the threshold — no findings.
+      expect(findings).toEqual([]);
+    });
+
+    test('honors an explicit per-request declaration, treating the preface as volatile', () => {
+      const sections: IPromptSection[] = [
+        section({ kind: 'preface', start: 0, chars: 5, measured: 10 }),
+        section({ kind: 'template', start: 5, chars: 5, measured: 10 })
+      ];
+      const findings = analyzePromptCacheStability({
+        sections,
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [],
+        prefaceStability: 'per-request'
+      });
+      // The volatile preface precedes the frozen template — reported as both an ordering
+      // hazard (D4) and a zero-length cacheable prefix (D5), exactly as an unclassified
+      // per-request slot in the same position would be.
+      expect(findingKinds(findings).sort()).toEqual(['cache-hostile-ordering', 'no-cacheable-prefix']);
+    });
+
+    test('honors an explicit per-conversation declaration', () => {
+      const sections: IPromptSection[] = [section({ kind: 'preface', start: 0, chars: 5, measured: 10 })];
+      const findings = analyzePromptCacheStability({
+        sections,
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [],
+        prefaceStability: 'per-conversation',
+        options: { minCacheablePrefixTokens: 20 }
+      });
+      expect(findingKinds(findings)).toEqual(['below-threshold']);
+    });
+
+    test('never refutes a preface claim, at any declared stability — there is no evidence to check it against', () => {
+      const sections: IPromptSection[] = [section({ kind: 'preface', start: 0, chars: 5, measured: 10 })];
+      const findings = analyzePromptCacheStability({
+        sections,
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [],
+        prefaceStability: 'frozen',
+        options: { minCacheablePrefixTokens: 20 }
+      });
+      expect(findings.filter((f) => f.kind === 'stability-refuted')).toEqual([]);
+    });
+  });
+
   describe('D4 — cache-hostile ordering', () => {
     test('fires when an unclassified (per-request-default) slot precedes a frozen template', () => {
       const sections: IPromptSection[] = [
@@ -453,7 +524,7 @@ describe('analyzePromptCacheStability', () => {
   });
 
   describe('D5 — threshold checks', () => {
-    test('reports no-cacheable-prefix when the first section is already per-request', () => {
+    test('reports no-cacheable-prefix, naming volatile content, when the first section is already per-request', () => {
       const findings = analyzePromptCacheStability({
         sections: [section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 1 })],
         mergedBindings: new Map(),
@@ -462,6 +533,36 @@ describe('analyzePromptCacheStability', () => {
         slots: [slot(SLOT_A)]
       });
       expect(findingKinds(findings)).toEqual(['no-cacheable-prefix']);
+      expect(findings[0].detail).toMatch(/volatile content/);
+    });
+
+    test('reports no-cacheable-prefix, naming the absence of content, for an empty section list', () => {
+      const findings = analyzePromptCacheStability({
+        sections: [],
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: []
+      });
+      expect(findingKinds(findings)).toEqual(['no-cacheable-prefix']);
+      expect(findings[0].detail).toMatch(/no non-empty content/);
+      expect(findings[0].detail).not.toMatch(/volatile content/);
+    });
+
+    test('reports no-cacheable-prefix, naming the absence of content, when every section collapses to empty', () => {
+      // A single zero-byte 'frozen' preface: collapseEmptyStableRuns removes it entirely, so
+      // there are no runs to walk even though `sections` itself is non-empty — this must not be
+      // reported as "volatile content precedes nothing" (there is no volatile content here).
+      const findings = analyzePromptCacheStability({
+        sections: [section({ kind: 'preface', start: 0, chars: 0, measured: 0 })],
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: []
+      });
+      expect(findingKinds(findings)).toEqual(['no-cacheable-prefix']);
+      expect(findings[0].detail).toMatch(/no non-empty content/);
+      expect(findings[0].detail).not.toMatch(/volatile content/);
     });
 
     test('reports threshold-unknown when no measure was supplied', () => {
@@ -592,6 +693,83 @@ describe('analyzePromptCacheStability', () => {
       expect(findings).toEqual([]);
     });
 
+    // design.md §5.1b / TECH_DEBT.md P2 — a `chars === 0` section must contribute `0` to the
+    // measured total regardless of where the prefix boundary happens to fall. Every test above
+    // this point uses `measured: 0` on its empty sections, under which inclusion and exclusion
+    // of that section are indistinguishable in the reported total — which is exactly why the
+    // shipped C2 bug survived 100% coverage. These three use a non-zero `measured` on the empty
+    // section so a regression would show up as a wrong number, not just a wrong finding kind.
+    test("excludes a zero-byte frozen run's measured value even when the walk continues past it", () => {
+      // per-conversation(10) -> frozen, empty (measured 7) -> per-conversation(8): the walk
+      // does not stop at the empty run (per-conversation -> per-conversation is neither upward
+      // nor per-request), so it continues to the end and includes all three raw sections in the
+      // slice. Before the fix this reported 25 (10+7+8) — the empty run's 7 counted because it
+      // happened to sit interior to the walked region. TECH_DEBT.md's first table row.
+      const sections: IPromptSection[] = [
+        section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 5, measured: 10 }),
+        section({ kind: 'slot', slot: SLOT_B, start: 5, chars: 0, measured: 7 }),
+        section({ kind: 'slot', slot: SLOT_C, start: 5, chars: 5, measured: 8 })
+      ];
+      const findings = analyzePromptCacheStability({
+        sections,
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [slot(SLOT_A, 'per-conversation'), slot(SLOT_B, 'frozen'), slot(SLOT_C, 'per-conversation')]
+      });
+      const threshold = findings.filter((f) => f.kind === 'threshold-unknown');
+      expect(threshold).toHaveLength(1);
+      expect(threshold[0].detail).toMatch(/18 token/);
+      expect(threshold[0].detail).not.toMatch(/25 token/);
+    });
+
+    test("excludes a zero-byte frozen run's measured value when it precedes the run that ends the walk", () => {
+      // per-conversation(10) -> frozen, empty (measured 7) -> per-request(8, stranded): the walk
+      // stops the instant it reaches the per-request run, so the prefix is just the first
+      // section either way (10). TECH_DEBT.md's second table row — recorded here to show the
+      // SAME empty-run measured value (7) is excluded from the total in both this layout and the
+      // one above, where the pre-fix code disagreed with itself (25 vs. 10) depending on
+      // position alone.
+      const sections: IPromptSection[] = [
+        section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 5, measured: 10 }),
+        section({ kind: 'slot', slot: SLOT_B, start: 5, chars: 0, measured: 7 }),
+        section({ kind: 'slot', slot: SLOT_C, start: 5, chars: 5, measured: 8 })
+      ];
+      const findings = analyzePromptCacheStability({
+        sections,
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [slot(SLOT_A, 'per-conversation'), slot(SLOT_B, 'frozen')]
+        // SLOT_C carries no hint, so it defaults to 'per-request' (R-a) and ends the walk.
+      });
+      const threshold = findings.filter((f) => f.kind === 'threshold-unknown');
+      expect(threshold).toHaveLength(1);
+      expect(threshold[0].detail).toMatch(/10 token/);
+    });
+
+    test("excludes a zero-byte per-conversation section's measured value from the prefix total", () => {
+      // Unlike a zero-byte frozen run, a zero-byte per-conversation run is never collapsed (it
+      // isn't proven empty on every resolve) — so it stays in the run list and reaches the
+      // summation step directly. Without the §5.1b filter this reports 17 (10+7); the section
+      // contributes no text to what would actually be sent, so it must contribute 0.
+      const sections: IPromptSection[] = [
+        section({ kind: 'preface', start: 0, chars: 5, measured: 10 }),
+        section({ kind: 'slot', slot: SLOT_A, start: 5, chars: 0, measured: 7 })
+      ];
+      const findings = analyzePromptCacheStability({
+        sections,
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        resourceBindingResolutions: [],
+        slots: [slot(SLOT_A, 'per-conversation')]
+      });
+      const threshold = findings.filter((f) => f.kind === 'threshold-unknown');
+      expect(threshold).toHaveLength(1);
+      expect(threshold[0].detail).toMatch(/10 token/);
+      expect(threshold[0].detail).not.toMatch(/17 token/);
+    });
+
     test('stops the cacheable prefix before frozen content following an empty per-conversation run', () => {
       // frozen(10) -> per-conversation(empty here, 0) -> frozen(10). Only the
       // first 10 tokens are safely cacheable: the empty per-conversation
@@ -653,5 +831,113 @@ describe('analyzePromptCacheStability', () => {
       // Only the first two sections (20 tokens) count — the third is stranded past the upward transition.
       expect(threshold[0].detail).toMatch(/20 token/);
     });
+  });
+});
+
+describe('deriveCacheBreakpointOffsets (design.md §5.2, used by toCacheRequest)', () => {
+  test('yields no breakpoints for a uniformly frozen composition — no downward transition exists', () => {
+    const sections: IPromptSection[] = [
+      section({ kind: 'preface', start: 0, chars: 5 }),
+      section({ kind: 'template', start: 5, chars: 5 })
+    ];
+    expect(deriveCacheBreakpointOffsets(sections, ['frozen', 'frozen'])).toEqual([]);
+  });
+
+  test('yields no breakpoints for a uniform per-conversation composition — same reason', () => {
+    const sections: IPromptSection[] = [section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 10 })];
+    expect(deriveCacheBreakpointOffsets(sections, ['per-conversation'])).toEqual([]);
+  });
+
+  test('yields one breakpoint at the frozen -> per-request transition', () => {
+    const sections: IPromptSection[] = [
+      section({ kind: 'preface', start: 0, chars: 10 }),
+      section({ kind: 'slot', slot: SLOT_A, start: 10, chars: 5 })
+    ];
+    expect(deriveCacheBreakpointOffsets(sections, ['frozen', 'per-request'])).toEqual([10]);
+  });
+
+  test('yields one breakpoint at the frozen -> per-conversation transition, with nothing after it', () => {
+    const sections: IPromptSection[] = [
+      section({ kind: 'preface', start: 0, chars: 10 }),
+      section({ kind: 'slot', slot: SLOT_A, start: 10, chars: 5 })
+    ];
+    expect(deriveCacheBreakpointOffsets(sections, ['frozen', 'per-conversation'])).toEqual([10]);
+  });
+
+  test('yields two breakpoints for frozen -> per-conversation -> per-request, in document order', () => {
+    const sections: IPromptSection[] = [
+      section({ kind: 'preface', start: 0, chars: 10 }),
+      section({ kind: 'slot', slot: SLOT_A, start: 10, chars: 8 }),
+      section({ kind: 'slot', slot: SLOT_B, start: 18, chars: 5 })
+    ];
+    expect(deriveCacheBreakpointOffsets(sections, ['frozen', 'per-conversation', 'per-request'])).toEqual([
+      10, 18
+    ]);
+  });
+
+  test('never emits more than two breakpoints — the three-level vocabulary admits at most two downward transitions', () => {
+    const sections: IPromptSection[] = [
+      section({ kind: 'preface', start: 0, chars: 3 }),
+      section({ kind: 'template', start: 3, chars: 3 }),
+      section({ kind: 'slot', slot: SLOT_A, start: 6, chars: 3 }),
+      section({ kind: 'slot', slot: SLOT_B, start: 9, chars: 3 })
+    ];
+    const offsets = deriveCacheBreakpointOffsets(sections, [
+      'frozen',
+      'frozen',
+      'per-conversation',
+      'per-request'
+    ]);
+    expect(offsets.length).toBeLessThanOrEqual(2);
+    expect(offsets).toEqual([6, 9]);
+  });
+
+  test('yields no breakpoints when the first run is already per-request — no candidate prefix exists', () => {
+    const sections: IPromptSection[] = [
+      section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 5 }),
+      section({ kind: 'preface', start: 5, chars: 5 })
+    ];
+    expect(deriveCacheBreakpointOffsets(sections, ['per-request', 'frozen'])).toEqual([]);
+  });
+
+  test('stops at an upward transition and strands everything after it, per §5.1(ii)', () => {
+    const sections: IPromptSection[] = [
+      section({ kind: 'preface', start: 0, chars: 5 }),
+      section({ kind: 'slot', slot: SLOT_A, start: 5, chars: 5 }),
+      section({ kind: 'template', start: 10, chars: 5 })
+    ];
+    // frozen -> per-request (breakpoint) -> frozen (upward from per-request; per-request already
+    // stopped the walk before this run is even considered).
+    expect(deriveCacheBreakpointOffsets(sections, ['frozen', 'per-request', 'frozen'])).toEqual([5]);
+  });
+
+  test('stops at an upward transition that never passes through per-request, with no breakpoint at that boundary', () => {
+    // per-conversation -> frozen is upward (1 -> 2) without ever touching per-request — a
+    // different code path than the per-request-triggered stop above, and one that must NOT emit a
+    // breakpoint at the upward boundary itself (§5.1(i): only downward transitions are candidates).
+    const sections: IPromptSection[] = [
+      section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 5 }),
+      section({ kind: 'preface', start: 5, chars: 5 })
+    ];
+    expect(deriveCacheBreakpointOffsets(sections, ['per-conversation', 'frozen'])).toEqual([]);
+  });
+
+  test('does not emit a spurious breakpoint across a collapsed empty frozen run between two equal-level runs', () => {
+    // per-conversation(10) -> frozen, empty (collapsed away) -> per-conversation(5): after the
+    // empty frozen run is removed, the two per-conversation runs become adjacent in the run list
+    // with EQUAL level — not a downward transition, so no breakpoint belongs between them. Without
+    // the strict "<" check this would wrongly emit one at the second run's start offset.
+    const sections: IPromptSection[] = [
+      section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 10 }),
+      section({ kind: 'slot', slot: SLOT_B, start: 10, chars: 0 }),
+      section({ kind: 'slot', slot: 'slotC' as unknown as SlotName, start: 10, chars: 5 })
+    ];
+    expect(
+      deriveCacheBreakpointOffsets(sections, ['per-conversation', 'frozen', 'per-conversation'])
+    ).toEqual([]);
+  });
+
+  test('yields no breakpoints for an empty section list', () => {
+    expect(deriveCacheBreakpointOffsets([], [])).toEqual([]);
   });
 });

@@ -34,6 +34,12 @@ export interface IPromptCacheStabilityAnalysisParams {
   readonly slots: ReadonlyArray<IPromptSlot>;
   /** Per-slot stability overrides from the resolve request. Wins over an authored claim. */
   readonly callSiteOverrides?: ReadonlyMap<SlotName, PromptCacheStability>;
+  /**
+   * Declared stability for a `'preface'` section — {@link IPromptSafetyPolicy.antiJailbreakPrefaceStability}.
+   * Defaults to `'frozen'` when omitted, matching this function's prior unconditional default.
+   * See design.md §15 (OQ-7) for why there is no refutation check for this claim, unlike D1/D2.
+   */
+  readonly prefaceStability?: PromptCacheStability;
   readonly options?: IPromptCacheDiagnosticOptions;
 }
 
@@ -62,6 +68,37 @@ interface IStabilityRun {
 export function analyzePromptCacheStability(
   params: IPromptCacheStabilityAnalysisParams
 ): ReadonlyArray<IPromptCacheFinding> {
+  return computeCacheStabilityAnalysis(params).findings;
+}
+
+/**
+ * The result of {@link computeCacheStabilityAnalysis} — the same findings
+ * {@link analyzePromptCacheStability} returns, plus the per-section effective
+ * stability the checks computed to produce them.
+ * @internal
+ */
+export interface ICacheStabilityAnalysisResult {
+  readonly findings: ReadonlyArray<IPromptCacheFinding>;
+  /**
+   * Document-ordered, one entry per `sections[i]` — the same effective stability D1–D5 reasoned
+   * over, including any refutation downgrade. `PromptLibrary._buildComposition` attaches this to
+   * each built `IPromptSection.effectiveStability`; `toCacheRequest` folds it into runs to derive
+   * breakpoints, without re-deriving D1/D2's refutation logic.
+   */
+  readonly perSectionStability: ReadonlyArray<PromptCacheStability>;
+}
+
+/**
+ * The shared implementation behind {@link analyzePromptCacheStability}. Split out so a caller that
+ * also needs the per-section stability labels (`PromptLibrary._buildComposition`, for
+ * `IPromptSection.effectiveStability`) can get both in one pass rather than either recomputing
+ * this analysis or having `analyzePromptCacheStability`'s public return shape change to carry data
+ * most callers don't want.
+ * @internal
+ */
+export function computeCacheStabilityAnalysis(
+  params: IPromptCacheStabilityAnalysisParams
+): ICacheStabilityAnalysisResult {
   const {
     sections,
     mergedBindings,
@@ -69,6 +106,7 @@ export function analyzePromptCacheStability(
     resourceBindingResolutions,
     slots,
     callSiteOverrides,
+    prefaceStability = 'frozen',
     options
   } = params;
   const findings: IPromptCacheFinding[] = [];
@@ -94,7 +132,7 @@ export function analyzePromptCacheStability(
   // findings are keyed on slots and candidates, not section length, and are
   // unaffected either way.
   const perSection = sections.map((section) =>
-    effectiveSectionStability(section, slotEffective, bodyConditional)
+    effectiveSectionStability(section, slotEffective, bodyConditional, prefaceStability)
   );
 
   const runs = foldRuns(perSection);
@@ -119,7 +157,7 @@ export function analyzePromptCacheStability(
   checkHostileOrdering(sections, orderingRuns, findings);
   checkThreshold(sections, orderingRuns, options, findings);
 
-  return findings;
+  return { findings, perSectionStability: perSection };
 }
 
 function totalRunChars(sections: ReadonlyArray<IPromptSection>, run: IStabilityRun): number {
@@ -304,38 +342,42 @@ function checkConditionalBody(
  * it, but it still participates in ordering as the least-stable level, never
  * as `'frozen'` (R-b forbids the upgrade).
  *
- * A `'preface'` section is unconditionally `'frozen'`, on a narrower premise
- * than design.md §4's own wording ("preface... come[s] from checked-in
- * files") states: `IPromptSafetyPolicy.antiJailbreakPreface` is actually a
- * consumer-supplied `(descriptor: IPromptDescriptor) => Result<string>`
- * callback invoked on every resolve, not literally file content. The
- * assumption this makes explicit is that the callback is a **pure function
- * of `descriptor`** — deterministic, so byte-identical across every resolve
- * of *this prompt* (design.md §3's actual `'frozen'` contract: stable per
- * `(prompt, model)`, not stable globally). That mirrors the trust already
- * placed in Mustache template body content, which nothing here verifies
- * either. There is no trace data to check this assumption against — no
- * evidence a callback varied its output exists the way `candidateMatches`
- * evidences a conditional template — so unlike D1/D2 there is no refutation
- * path for a preface that breaks the assumption; it is a documented risk,
- * not a detected one.
+ * A `'preface'` section takes `prefaceStability` (default `'frozen'`, matching this function's
+ * prior unconditional default) — {@link IPromptSafetyPolicy.antiJailbreakPrefaceStability}. The
+ * default's premise is narrower than design.md §4's original wording ("preface... come[s] from
+ * checked-in files") states: `IPromptSafetyPolicy.antiJailbreakPreface` is actually a
+ * consumer-supplied `(descriptor: IPromptDescriptor) => Result<string>` callback invoked on every
+ * resolve, not literally file content. Trusting the default assumes the callback is a **pure
+ * function of `descriptor`** — deterministic, so byte-identical across every resolve of *this
+ * prompt* (design.md §3's actual `'frozen'` contract: stable per `(prompt, model)`, not stable
+ * globally). That mirrors the trust already placed in Mustache template body content, which
+ * nothing here verifies either. There is no trace data to check this assumption against — no
+ * evidence a callback varied its output exists the way `candidateMatches` evidences a conditional
+ * template — so unlike D1/D2 there is no refutation path for a preface that breaks the
+ * assumption; declaring `antiJailbreakPrefaceStability` explicitly (design.md §15, OQ-7) is the
+ * only way a policy author who knows their callback is dynamic can avoid the default's risk.
  */
 function effectiveSectionStability(
   section: IPromptSection,
   slotEffective: ReadonlyMap<SlotName, PromptCacheStability>,
-  bodyConditional: boolean
+  bodyConditional: boolean,
+  prefaceStability: PromptCacheStability
 ): PromptCacheStability {
   if (section.kind === 'slot') {
-    // `IPromptSection.slot` is always set when `kind === 'slot'` — every
-    // producer of `IPromptSection` (`PromptLibrary._buildComposition`)
-    // upholds that pairing, so trusting it here rather than adding an
-    // unreachable defensive branch.
+    // `IPromptSection.slot` is always set when `kind === 'slot'` for every section this
+    // package's own `PromptLibrary._buildComposition` produces — but `analyzePromptCacheStability`
+    // is `@public` and `slot` is declared optional, so an external caller building
+    // `IPromptSection`s by hand (e.g. to reuse this function against a composition it assembled
+    // itself) can violate that pairing. The `?? 'per-request'` fallback below degrades safely
+    // either way (R-a: absence of a claim defaults to the least-stable level), so this is not a
+    // soundness gap — only the cast needs a caller-widened justification, not the runtime check
+    // this comment used to claim was unreachable.
     return slotEffective.get(section.slot as SlotName) ?? 'per-request';
   }
   if (section.kind === 'template') {
     return bodyConditional ? 'per-request' : 'frozen';
   }
-  return 'frozen';
+  return prefaceStability;
 }
 
 function foldRuns(perSection: ReadonlyArray<PromptCacheStability>): ReadonlyArray<IStabilityRun> {
@@ -405,9 +447,16 @@ function checkHostileOrdering(
  * even though it contributes no bytes to strand and genuinely cacheable
  * content follows it.
  * An empty prefix (the very first section is already `'per-request'`) is
- * `'no-cacheable-prefix'`. Otherwise the prefix's measured size is judged
- * against `options.minCacheablePrefixTokens`, with `'threshold-unknown'` as
- * the answer whenever the check cannot render a verdict — no measure was
+ * `'no-cacheable-prefix'`. So is a resolve with no *runs* to walk at all —
+ * either `sections` is empty (an empty body), or every section collapsed
+ * away as zero-byte `'frozen'` runs ({@link collapseEmptyStableRuns}), so the
+ * resolve is entirely empty non-volatile content with nothing left to
+ * report on either side. The two shapes are distinguished in the finding's
+ * `detail`: the first has volatile content with nothing cacheable ahead of
+ * it; the second has no content, volatile or otherwise, at all. Otherwise
+ * the prefix's measured size is judged against
+ * `options.minCacheablePrefixTokens`, with `'threshold-unknown'` as the
+ * answer whenever the check cannot render a verdict — no measure was
  * supplied, or no minimum is known (R-c: unknown is reported as unknown,
  * never defaulted to a number).
  */
@@ -432,13 +481,24 @@ function checkThreshold(
   if (prefixEnd === 0) {
     findings.push({
       kind: 'no-cacheable-prefix',
-      detail: `no section precedes the resolve's volatile content — the declared/derived hints yield no cacheable prefix`
+      detail:
+        runs.length === 0
+          ? `the resolve has no non-empty content — there is nothing, volatile or otherwise, to cache`
+          : `no section precedes the resolve's volatile content — the declared/derived hints yield no cacheable prefix`
     });
     return;
   }
 
   const prefixSections = sections.slice(0, prefixEnd);
-  const measureSupplied = prefixSections.every((section) => section.measured !== undefined);
+  // design.md §5.1b: a `chars === 0` section contributes no text to the prefix that would
+  // actually be sent — `IPromptSection.start`/`chars` partition the body exactly, with no
+  // per-section framing, so whatever a caller's `measure('')` returns for it is an artifact
+  // of an arbitrary callback, not tokens in the prompt. Filtered out here, before every check
+  // below, rather than patched into `prefixEnd`'s index arithmetic — that keeps the total (and
+  // whether a verdict can be rendered at all) independent of *where* an empty section happens
+  // to fall relative to a run boundary, which is exactly the defect TECH_DEBT.md recorded.
+  const measuredSections = prefixSections.filter((section) => section.chars > 0);
+  const measureSupplied = measuredSections.every((section) => section.measured !== undefined);
   if (!measureSupplied) {
     findings.push({
       kind: 'threshold-unknown',
@@ -447,15 +507,13 @@ function checkThreshold(
     return;
   }
 
-  // `measureSupplied` above already guarantees every prefix section has
-  // `measured` set, so trusting that rather than adding an unreachable `?? 0`
-  // fallback branch. `measure` is a caller-supplied callback, though — it can
-  // return NaN, Infinity, or a negative number for a given section, and
-  // summing those would corrupt the total silently (NaN would make the
-  // eventual threshold comparison always false; a negative section would
-  // shrink the total below what was actually measured). Validated the same
-  // way as the configured minimum below, per R-c.
-  const measureInvalid = prefixSections.some(
+  // `measureSupplied` above already guarantees every measured section has `measured` set, so
+  // trusting that rather than adding an unreachable `?? 0` fallback branch. `measure` is a
+  // caller-supplied callback, though — it can return NaN, Infinity, or a negative number for a
+  // given section, and summing those would corrupt the total silently (NaN would make the
+  // eventual threshold comparison always false; a negative section would shrink the total below
+  // what was actually measured). Validated the same way as the configured minimum below, per R-c.
+  const measureInvalid = measuredSections.some(
     (section) => !Number.isFinite(section.measured as number) || (section.measured as number) < 0
   );
   if (measureInvalid) {
@@ -466,7 +524,7 @@ function checkThreshold(
     return;
   }
 
-  const measuredTotal = prefixSections.reduce((sum, section) => sum + (section.measured as number), 0);
+  const measuredTotal = measuredSections.reduce((sum, section) => sum + (section.measured as number), 0);
   const minTokens = options?.minCacheablePrefixTokens;
   // A caller-supplied minimum that isn't a finite, non-negative number can't
   // render a verdict either way: NaN makes every comparison false (silently
@@ -494,4 +552,64 @@ function checkThreshold(
         `${minTokens} token(s)`
     });
   }
+}
+
+/**
+ * Derives the cache-breakpoint offsets design.md §5.2 describes — used by `toCacheRequest` to
+ * build an `AiAssist.IAiCacheRequest.systemBreakpoints` plan from a resolved composition's
+ * per-section effective stability.
+ *
+ * @remarks
+ * Folds `perSectionStability` into runs exactly as {@link computeCacheStabilityAnalysis} does
+ * (same {@link foldRuns} / {@link collapseEmptyStableRuns} calls) — a breakpoint plan built from a
+ * different fold than the diagnostics would silently disagree with what D4/D5 already reported.
+ *
+ * Walks the maximal monotone non-increasing run prefix (§5.2 steps 1–3): every accepted downward
+ * transition becomes a breakpoint at the start offset of the run it transitions into, in document
+ * order. An upward transition stops the walk with **no** breakpoint at that boundary (§5.1(i): not
+ * a downward transition) and nothing further is considered (§5.1(ii): unreachable as a prefix). A
+ * transition into a `'per-request'` run **does** get a breakpoint — it is the boundary marking
+ * "everything before this is the reusable prefix" — and then the walk stops, since nothing at or
+ * after the first `'per-request'` run can ever be part of a matching prefix.
+ *
+ * With the three-level vocabulary this yields **at most two** offsets (§5.2's own conclusion —
+ * step 4's cap never binds), so this function does not implement cap truncation: an
+ * `IAiCacheRequest` built from a longer list would be a caller-supplied plan, not one this
+ * function ever produces, and caps are enforced (fail-loud, never a silent trim) by
+ * `AiAssist.validateCacheBreakpoints` where the plan is actually used.
+ *
+ * A composition with no downward transition at all (e.g. a wholly `'frozen'` prefix with no
+ * embedded volatile content) yields **zero** offsets — there is no candidate breakpoint per
+ * §5.1(i), and zero breakpoints is the same request body a caller omitting `cache` entirely would
+ * send, so this is a missed optimization rather than a regression.
+ * @internal
+ */
+export function deriveCacheBreakpointOffsets(
+  sections: ReadonlyArray<IPromptSection>,
+  perSectionStability: ReadonlyArray<PromptCacheStability>
+): ReadonlyArray<number> {
+  const runs = collapseEmptyStableRuns(sections, foldRuns(perSectionStability));
+  const offsets: number[] = [];
+  for (let i = 0; i < runs.length; i++) {
+    const run = runs[i];
+    if (i > 0) {
+      if (run.level > runs[i - 1].level) {
+        break;
+      }
+      // A strict decrease is a genuine downward transition and gets a breakpoint. An *equal*
+      // level here (impossible in `foldRuns`'s own output, since it merges consecutive same-level
+      // sections into one run — reachable only when `collapseEmptyStableRuns` removed a run
+      // between two others of the same level) is the same cacheable run continuing, not a new
+      // one: pushing a breakpoint there would split a single-stability span for no reason,
+      // spending part of the shared write cap on a boundary design.md §5.1(i) does not recognize
+      // as a candidate at all.
+      if (run.level < runs[i - 1].level) {
+        offsets.push(sections[run.startIdx].start);
+      }
+    }
+    if (run.level === STABILITY_LEVEL['per-request']) {
+      break;
+    }
+  }
+  return offsets;
 }

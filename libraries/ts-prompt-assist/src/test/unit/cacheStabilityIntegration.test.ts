@@ -16,7 +16,8 @@ import {
   ResourceId,
   ScopeKey,
   SlotBinding,
-  SlotName
+  SlotName,
+  toCacheRequest
 } from '../../index';
 import { QualifierTypes, Qualifiers } from '@fgv/ts-res';
 
@@ -319,6 +320,80 @@ describe('prompt-cache stability diagnostics — end-to-end wiring', () => {
       const belowThreshold = (r.composition?.cacheFindings ?? []).filter((f) => f.kind === 'below-threshold');
       expect(belowThreshold).toHaveLength(1);
       expect(belowThreshold[0].detail).toMatch(/1000 token/);
+    });
+  });
+
+  test('IPromptSection.effectiveStability is populated end-to-end, matching the diagnostics analysis', async () => {
+    const lib = await buildLib([record({ cacheStability: 'frozen', body: '{{{topic}}} static suffix' })]);
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'x' },
+      composition: {}
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      const sections = r.composition!.sections;
+      expect(sections.every((s) => s.effectiveStability !== undefined)).toBe(true);
+      const slotSection = sections.find((s) => s.kind === 'slot');
+      expect(slotSection?.effectiveStability).toBe('frozen');
+      // No cache-hostile-ordering finding was produced for this resolve (asserted above by a
+      // sibling test using the same fixture) precisely because both sections are 'frozen'.
+      expect(sections.every((s) => s.effectiveStability === 'frozen')).toBe(true);
+    });
+  });
+
+  test('toCacheRequest built from an end-to-end composition round-trips through AiAssist validation', async () => {
+    // Authored 'per-request' on the slot (an explicit call-site override) followed by static
+    // template text — a downward transition does not exist here (per-request -> frozen is
+    // upward), so this composition intentionally exercises the zero-breakpoint, no-op path.
+    const lib = await buildLib([record({ body: '{{{topic}}} static suffix' })]);
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'x' },
+      composition: {}
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(toCacheRequest(r.composition!)).toSucceedWith({});
+    });
+  });
+
+  test('toCacheRequest built from a frozen-then-volatile composition emits a breakpoint at the transition', async () => {
+    // No authored cacheStability on the slot: it defaults to 'per-request' (R-a), while the
+    // preceding literal template text defaults to 'frozen' (D3) — a genuine downward transition.
+    const lib = await buildLib([record({ body: 'prefix {{{topic}}}' })]);
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'x' },
+      composition: {}
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      const composition = r.composition!;
+      const templateSection = composition.sections.find((s) => s.kind === 'template');
+      const slotSection = composition.sections.find((s) => s.kind === 'slot');
+      expect(templateSection?.effectiveStability).toBe('frozen');
+      expect(slotSection?.effectiveStability).toBe('per-request');
+      expect(toCacheRequest(composition)).toSucceedAndSatisfy((cache) => {
+        expect(cache.systemBreakpoints).toEqual([slotSection!.start]);
+      });
+    });
+  });
+
+  test('toCacheRequest fails when the composition is unavailable', async () => {
+    const lib = await buildLib([record({ cacheStability: 'frozen', body: 'a{{#topic}}b{{/topic}}c' })]);
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'x' },
+      composition: {}
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(toCacheRequest(r.composition!)).toFailWith(/unavailable/i);
     });
   });
 });

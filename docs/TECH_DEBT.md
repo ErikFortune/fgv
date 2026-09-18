@@ -67,46 +67,13 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
-- **[P2] `checkThreshold` counts a zero-byte section's `measured` into the cacheable-prefix total,
-  and does so position-dependently.**
-  `@fgv/ts-prompt-assist`, `src/packlets/resolve/cacheStabilityAnalysis.ts` — `checkThreshold`.
-  Shipped in C2 (#669); found by a post-merge backstop `code-reviewer` pass and **verified by
-  executing the merged code**, not by reading.
-
-  `prefixEnd` is a single boundary index walked over the **collapsed** run list, but the prefix is
-  then taken as `sections.slice(0, prefixEnd)` — contiguous over the **raw** section array. A
-  collapsed empty `'frozen'` run therefore contributes its `measured` iff it happens to sit
-  interior to the walked region:
-
-  | shape | reported prefix |
-  |---|---|
-  | empty `'frozen'` run mid-prefix, walk continues past it | **25** = 10+7+8 — the empty run's 7 counted |
-  | *the same run*, just before the run that ends the walk | **10** — the same 7 not counted |
-
-  **The asymmetry is a symptom, not the defect.** Any zero-`chars` section distorts the total,
-  collapsed or not — an empty `'per-conversation'` slot (never collapsed) carrying `measured: 7`
-  reports **17** where removing it reports **10**. `IPromptSection.start`/`chars` partition
-  `IResolvedPrompt.body` exactly with no per-section framing, so a `chars === 0` section
-  contributes no text to the prefix that would be sent; whatever the caller's `measure('')`
-  returns for it is an artifact of an arbitrary callback.
-
-  **Precondition for user-visible harm**: a caller whose `PromptSectionMeasure` returns non-zero
-  for `''` (e.g. per-section overhead rather than a pure tokenizer). A plain tokenizer returns 0
-  and is unaffected — which is why this is P2 and not P1. But the type is
-  `(text: string) => number` with no purity contract, and `checkThreshold` **already** declines to
-  trust the callback (NaN / Infinity / negative guard) three lines above the sum that trusts it.
-
-  **Scope sketch**: one invariant — a section with `chars === 0` contributes `0` to the measured
-  total, wherever a prefix is sized. Subsumes both cases; preferable to patching `prefixEnd`'s
-  index arithmetic. Add regression tests with **non-zero `measured`** in both positions above;
-  every existing test of a collapsed run sets `measured: 0`, under which inclusion and exclusion
-  are indistinguishable — which is why 100% coverage did not see this.
-
-  **Trigger**: C3 (emit) of the `ai-assist-prompt-caching` stream — it folds sections into runs
-  the same way and sizes breakpoints by the same walk, so it inherits the bug unfixed. Rule
-  recorded as design.md §5.1b so C3 does not re-derive or re-miss it.
-
-  **Reference**: PR #669; backstop review 2026-09-18.
+*(none currently outstanding — the `checkThreshold` zero-byte-section measure gap (shipped in C2,
+#669) was fixed by C3 of `ai-assist-prompt-caching`: a section with `chars === 0` now contributes
+`0` to the measured total via an explicit filter before every check in `checkThreshold`, rather
+than being incidentally in-or-out of the slice depending on `prefixEnd`'s position. Regression
+tests use non-zero `measured` on the empty section in both of the original bug's layouts — see
+`cacheStabilityAnalysis.test.ts`, the tests following "counts genuinely cacheable bytes past a
+zero-byte stable run in the prefix". Design rule recorded at design.md §5.1b.)*
 
 - **[P2] `as Record<string, …>` after a `typeof` guard — a P1 anti-pattern, 32 sites in
   production source across 11 packages.**

@@ -58,10 +58,11 @@ export interface IPromptCacheStabilityHint {
  * the claim is downgraded, never upgraded. Fires for a declared slot claim
  * (multi-scope binding, a resource-bound slot, or a slot inside a
  * qualifier-conditional body) and for the derived `'template'` `'frozen'`
- * default (a qualifier-conditional body). The `'preface'` section's
- * `'frozen'` default is trusted, not refuted — no resolve-time evidence
- * can check it (see `effectiveSectionStability`'s doc comment); this
- * finding never fires for it.
+ * default (a qualifier-conditional body). A `'preface'` section's stability —
+ * whether the `'frozen'` default or an explicit
+ * {@link IPromptSafetyPolicy.antiJailbreakPrefaceStability} — is trusted, not
+ * refuted: no resolve-time evidence can check it (see
+ * `effectiveSectionStability`'s doc comment); this finding never fires for it.
  * `'cache-hostile-ordering'` — a stable section follows a less-stable one in
  * document order, which costs money today on every provider whose caching is
  * automatic, since byte order is the only lever those providers give a

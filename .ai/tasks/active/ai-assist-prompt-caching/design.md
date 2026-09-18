@@ -1213,23 +1213,37 @@ already places in template body content, which nothing here verifies either. The
 data to check this against; unlike D1/D2, there is no refutation path for a preface that breaks
 the assumption.
 
-**OQ-7 — should an unannotated preface default to `'frozen'` or `'per-request'`? Not resolved;
-carried to C3.** Copilot's review raised this independently, three times across the PR's review
-rounds, and the disagreement is real rather than a nitpick: a dynamic preface treated as
-`'frozen'` is exactly the design's worst case (§1) — a false-frozen prefix that never cache-hits,
-silently, forever. But the reverse default is not free either: `'per-request'` would make **every**
-resolve with a preface report `'cache-hostile-ordering'` against any stable content that follows
-it (the preface is always section 0, so anything more stable after it is an upward transition) —
-for what is very likely the common, correct shape (fixed framing text, then stable instructions).
-Neither default is strictly safer once usability is weighed, and C2's own remit (§9: "computes and
-reports, emits nothing") means the actual cost of either choice — a wasted cache write, or a
-diagnostic nobody trusts because it always fires — only materializes once C3 emits a breakpoint
-based on it. **Recommendation, undecided:** the durable fix is likely a third option neither §4 nor
-C2 offers — an explicit stability declaration on `IPromptSafetyPolicy` itself (e.g.
-`antiJailbreakPrefaceStability?: PromptCacheStability`), giving the policy author the same
-call-site-style override slots already have, rather than picking one blanket default for every
-consumer. Out of scope for C2 (new declared-hint surface, not a diagnostic); C3's implementer
-should decide before trusting a preface-inclusive prefix for an explicit breakpoint.
+**OQ-7 — should an unannotated preface default to `'frozen'` or `'per-request'`? ✅ RESOLVED
+2026-09-18 (C3): neither blanket default — an explicit third option on `IPromptSafetyPolicy`.**
+Copilot's review raised this independently, three times across #669's review rounds, and the
+disagreement is real rather than a nitpick: a dynamic preface treated as `'frozen'` is exactly the
+design's worst case (§1) — a false-frozen prefix that never cache-hits, silently, forever. But the
+reverse default is not free either: `'per-request'` would make **every** resolve with a preface
+report `'cache-hostile-ordering'` against any stable content that follows it (the preface is
+always section 0, so anything more stable after it is an upward transition) — for what is very
+likely the common, correct shape (fixed framing text, then stable instructions). Neither default
+is strictly safer once usability is weighed.
+
+**Decided as recommended, not overruled.** `IPromptSafetyPolicy.antiJailbreakPrefaceStability?:
+PromptCacheStability` — an explicit, optional declaration beside `antiJailbreakPreface`, giving the
+policy author the same call-site-style override slots every other stability claim already has
+(§4). **Default, when omitted, is `'frozen'`** — preserving C2's shipped behavior for every
+existing caller (no silent behavior change for a stream that predates this option) — but a policy
+author who knows their callback varies its output (per-descriptor text, a rotated warning,
+anything short of a pure function of `descriptor`) can now say `'per-request'` or
+`'per-conversation'` and get the honest treatment instead of the risky default.
+
+This is not a refutable claim, unlike D1/D2's slot-level checks: `antiJailbreakPreface` is a
+consumer-supplied callback invoked fresh on every resolve with no trace of what it returned on a
+prior resolve, so there is still no resolve-time evidence to check a declared value against — the
+`'stability-refuted'` finding never fires for a preface section, declared or defaulted, exactly as
+before. The declaration is advisory-trusted, the same trust already placed in Mustache template
+body content and now made an explicit, overridable assumption rather than a hard-coded one.
+
+Implemented in `ts-prompt-assist`: `IPromptSafetyPolicy.antiJailbreakPrefaceStability?` (types/safety.ts),
+threaded through `PromptLibrary._buildComposition` into
+`IPromptCacheStabilityAnalysisParams.prefaceStability?` (default `'frozen'` inside
+`analyzePromptCacheStability`), consumed by `effectiveSectionStability`'s `'preface'` branch.
 
 **D1 needed a field the design's own text assumed already existed.** §9 describes D1 as "a
 counter on an existing loop" over `bindingMerger.ts`'s scope walk, but the count was never

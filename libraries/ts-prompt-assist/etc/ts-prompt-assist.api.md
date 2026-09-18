@@ -4,6 +4,7 @@
 
 ```ts
 
+import { AiAssist } from '@fgv/ts-extras';
 import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
@@ -314,6 +315,7 @@ export interface IPromptCacheStabilityAnalysisParams {
     readonly mergedBindings: ReadonlyMap<SlotName, IBindingTraceEntry>;
     // (undocumented)
     readonly options?: IPromptCacheDiagnosticOptions;
+    readonly prefaceStability?: PromptCacheStability;
     readonly resourceBindingResolutions: ReadonlyArray<IResourceBindingTraceEntry>;
     readonly sections: ReadonlyArray<IPromptSection>;
     readonly slots: ReadonlyArray<IPromptSlot>;
@@ -590,6 +592,7 @@ export interface IPromptSafeguardOverrides {
 // @public
 export interface IPromptSafetyPolicy {
     readonly antiJailbreakPreface?: (descriptor: IPromptDescriptor) => Result<string>;
+    readonly antiJailbreakPrefaceStability?: PromptCacheStability;
     readonly defaultMaxLength?: number;
     readonly screeners?: ReadonlyArray<IScreener>;
 }
@@ -598,6 +601,7 @@ export interface IPromptSafetyPolicy {
 export interface IPromptSection {
     readonly chars: number;
     readonly directive?: SlotDirective;
+    readonly effectiveStability?: PromptCacheStability;
     readonly kind: 'preface' | 'template' | 'slot';
     readonly measured?: number;
     readonly slot?: SlotName;
@@ -816,6 +820,12 @@ export interface ITextOutputContract {
 }
 
 // @public
+export interface IToCacheRequestHints {
+    readonly cacheKey?: string;
+    readonly maxBreakpointWrites?: number;
+}
+
+// @public
 export function joinBodies(selected: ReadonlyArray<{
     readonly candidate: IPromptCandidateRecord;
 }>, policy: IPromptJoinPolicy | undefined): string;
@@ -982,6 +992,9 @@ export type SlotWritability = 'any-scope' | 'schema-only' | 'system-only';
 
 // @public
 export const substitutionEntry: Converter<string | SlotBinding>;
+
+// @public
+export function toCacheRequest(composition: IPromptComposition, hints?: IToCacheRequestHints): Result<AiAssist.IAiCacheRequest>;
 
 // @public
 export function typedPromptFileConverter<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<IPromptFileContents<TQualifierNames>>;
