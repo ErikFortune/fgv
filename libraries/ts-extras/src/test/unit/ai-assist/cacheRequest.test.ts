@@ -148,6 +148,39 @@ describe('validateAiCacheRequest', () => {
       expect(AiAssist.validateAiCacheRequest(system, cache, 0)).toSucceedWith(cache);
     });
   });
+
+  describe('systemLength validation (Copilot review, round 3)', () => {
+    // validateAiCacheRequest always derives systemLength from a real string's .length, which is
+    // never NaN/negative/fractional — these can only be reached by calling validateCacheBreakpoints
+    // directly (the primitive @fgv/ts-prompt-assist's toCacheRequest calls with `totalChars`).
+    test('fails on a NaN systemLength — an offset check against NaN is always false', () => {
+      const cache: AiAssist.IAiCacheRequest = { systemBreakpoints: [1] };
+      expect(AiAssist.validateCacheBreakpoints(NaN, cache)).toFailWith(/non-negative integer/i);
+    });
+
+    test('fails on a non-integer systemLength', () => {
+      const cache: AiAssist.IAiCacheRequest = { systemBreakpoints: [1] };
+      expect(AiAssist.validateCacheBreakpoints(3.5, cache)).toFailWith(/non-negative integer/i);
+    });
+
+    test('fails on a negative systemLength', () => {
+      const cache: AiAssist.IAiCacheRequest = { systemBreakpoints: [1] };
+      expect(AiAssist.validateCacheBreakpoints(-1, cache)).toFailWith(/non-negative integer/i);
+    });
+
+    test('fails on an invalid systemLength even when systemBreakpoints is empty', () => {
+      const cache: AiAssist.IAiCacheRequest = { systemBreakpoints: [] };
+      expect(AiAssist.validateCacheBreakpoints(NaN, cache)).toFailWith(/non-negative integer/i);
+    });
+
+    test('fails on an invalid systemLength even when systemBreakpoints is undefined', () => {
+      expect(AiAssist.validateCacheBreakpoints(NaN, {})).toFailWith(/non-negative integer/i);
+    });
+
+    test('a systemLength of exactly 0 is valid (an empty system string)', () => {
+      expect(AiAssist.validateCacheBreakpoints(0, {})).toSucceedWith({});
+    });
+  });
 });
 
 describe('splitSystemForCache', () => {

@@ -5,6 +5,7 @@
 
 import '@fgv/ts-utils-jest';
 import {
+  IPromptSafetyPolicy,
   IPromptStore,
   IPromptStoreFixtureSeed,
   IResolvedPrompt,
@@ -19,6 +20,7 @@ import {
   SlotName,
   toCacheRequest
 } from '../../index';
+import { Result, succeed } from '@fgv/ts-utils';
 import { QualifierTypes, Qualifiers } from '@fgv/ts-res';
 
 const TEST_QUALIFIER_TYPES = QualifierTypes.QualifierTypeCollector.create({
@@ -36,12 +38,15 @@ const TOPIC = 'topic' as unknown as SlotName;
 
 async function buildLib(
   records: ReadonlyArray<IStoredPromptRecord>,
-  bindings?: ReadonlyArray<IScopeSlotBindingsRecord>
+  bindings?: ReadonlyArray<IScopeSlotBindingsRecord>,
+  safetyPolicy?: IPromptSafetyPolicy
 ): Promise<PromptLibrary> {
   const store: IPromptStore = (
     await PromptStoreFixture.build({ records: [...records], bindings } as IPromptStoreFixtureSeed)
   ).orThrow();
-  return (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+  return (
+    await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR, safetyPolicy })
+  ).orThrow();
 }
 
 function record(over: {
@@ -149,6 +154,38 @@ describe('prompt-cache stability diagnostics — end-to-end wiring', () => {
       composition: {}
     });
     expect(result).toSucceedAndSatisfy((r) => {
+      expect(orderingFindings(r)).toHaveLength(1);
+    });
+  });
+
+  test('IPromptSafetyPolicy.antiJailbreakPrefaceStability propagates end-to-end through PromptLibrary.create', async () => {
+    // Regression (Copilot review, round 3): the analyzer-level test for prefaceStability already
+    // existed, but nothing exercised the wiring at promptLibrary.ts (safetyPolicy ->
+    // antiJailbreakPrefaceStability -> IPromptCacheStabilityAnalysisParams.prefaceStability). A
+    // silent break there (e.g. the value never reaching computeCacheStabilityAnalysis) would fall
+    // back to the 'frozen' default and this test would catch it two ways: the preface section's
+    // effectiveStability would read 'frozen' instead of 'per-request', and no
+    // cache-hostile-ordering finding would fire against the frozen slot that follows it.
+    const policy: IPromptSafetyPolicy = {
+      antiJailbreakPreface: (): Result<string> => succeed('preface text'),
+      antiJailbreakPrefaceStability: 'per-request'
+    };
+    const lib = await buildLib(
+      [record({ cacheStability: 'frozen', body: '{{{topic}}} static suffix' })],
+      undefined,
+      policy
+    );
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'x' },
+      composition: {}
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      const sections = r.composition!.sections;
+      const prefaceSection = sections.find((s) => s.kind === 'preface');
+      expect(prefaceSection?.effectiveStability).toBe('per-request');
       expect(orderingFindings(r)).toHaveLength(1);
     });
   });
@@ -344,8 +381,8 @@ describe('prompt-cache stability diagnostics — end-to-end wiring', () => {
   });
 
   test('toCacheRequest built from an end-to-end composition round-trips through AiAssist validation', async () => {
-    // Authored 'per-request' on the slot (an explicit call-site override) followed by static
-    // template text — a downward transition does not exist here (per-request -> frozen is
+    // No authored cacheStability on the slot: it defaults to 'per-request' (R-a) followed by
+    // static template text — a downward transition does not exist here (per-request -> frozen is
     // upward), so this composition intentionally exercises the zero-breakpoint, no-op path.
     const lib = await buildLib([record({ body: '{{{topic}}} static suffix' })]);
     const result = await lib.resolve({
