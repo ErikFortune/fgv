@@ -365,17 +365,23 @@ describe('analyzePromptCacheStability', () => {
     });
 
     test('sees past an empty stable run to a real hazard further out', () => {
-      // per-request(non-empty) -> frozen(empty) -> per-conversation(non-empty),
-      // three DISTINCT levels so foldRuns keeps them as three separate runs
-      // (not merged the way two adjacent same-level sections would be). The
-      // empty frozen run must not "absorb" the check: comparing only
-      // adjacent runs (per-request -> frozen, frozen -> per-conversation)
-      // would miss that the per-conversation content is genuinely stranded
-      // behind the leading per-request content, since neither adjacent pair
-      // is an upward transition on its own once the empty run sits between.
+      // per-request(non-empty) -> template/frozen(empty) -> per-conversation
+      // (non-empty), three DISTINCT levels so foldRuns keeps them as three
+      // separate runs. The empty frozen run must not "absorb" the check:
+      // comparing only adjacent runs (per-request -> frozen, frozen ->
+      // per-conversation) would miss that the per-conversation content is
+      // genuinely stranded behind the leading per-request content, since
+      // neither adjacent pair is an upward transition on its own once the
+      // empty run sits between. The empty run is given kind 'template'
+      // (distinct from the two 'slot' sections either side) precisely so the
+      // assertion below can tell "correctly attributed to the real
+      // per-conversation hazard" apart from "spuriously attributed to the
+      // collapsed, contentless template run" — a regression to comparing
+      // only immediate neighbors would report the latter and still produce
+      // exactly one finding, so the count alone would not catch it.
       const sections: IPromptSection[] = [
         section({ kind: 'slot', slot: SLOT_A, start: 0, chars: 3 }),
-        section({ kind: 'slot', slot: SLOT_B, start: 3, chars: 0 }),
+        section({ kind: 'template', start: 3, chars: 0 }),
         section({ kind: 'slot', slot: SLOT_C, start: 3, chars: 5 })
       ];
       const findings = analyzePromptCacheStability({
@@ -383,9 +389,12 @@ describe('analyzePromptCacheStability', () => {
         mergedBindings: new Map(),
         candidateMatches: [],
         resourceBindingResolutions: [],
-        slots: [slot(SLOT_A), slot(SLOT_B, 'frozen'), slot(SLOT_C, 'per-conversation')]
+        slots: [slot(SLOT_A), slot(SLOT_C, 'per-conversation')]
       });
-      expect(findings.filter((f) => f.kind === 'cache-hostile-ordering')).toHaveLength(1);
+      const ordering = findings.filter((f) => f.kind === 'cache-hostile-ordering');
+      expect(ordering).toHaveLength(1);
+      expect(ordering[0].detail).toMatch(/one \(kind 'slot'/);
+      expect(ordering[0].detail).not.toMatch(/one \(kind 'template'/);
     });
 
     test('does not collapse an empty per-conversation run — it can still fire an ordering hazard', () => {
