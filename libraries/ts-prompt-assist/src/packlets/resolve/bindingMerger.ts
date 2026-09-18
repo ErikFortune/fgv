@@ -80,12 +80,20 @@ export function mergeBindings(
   callerSubstitutions: PromptSubstitutions | undefined
 ): Result<IBindingMergeResult> {
   const winning = new Map<SlotName, { binding: SlotBinding; scope: ScopeKey }>();
-  // Count of scopes in `chain` that declared a binding for each slot,
-  // regardless of which one ends up winning. Feeds `IBindingTraceEntry.
-  // chainBindingCount`, which the cache-stability diagnostic's D1 check
-  // (design.md §9) uses to tell "one scope could bind this slot" apart
-  // from "the winning value depends on which scope wins this chain".
+  // Count of DISTINCT scopes in `chain` that declared a binding for each
+  // slot, regardless of which one ends up winning. Feeds
+  // `IBindingTraceEntry.chainBindingCount`, which the cache-stability
+  // diagnostic's D1 check (design.md §9) uses to tell "one scope could bind
+  // this slot" apart from "the winning value depends on which scope wins
+  // this chain".
   const chainBindingCounts = new Map<SlotName, number>();
+  // Scopes already processed in this walk. `chain` is caller-supplied and
+  // not guaranteed distinct; processing the same scope twice would
+  // double-count its bindings above, producing a false chainBindingCount
+  // >= 2 (and a false D1 refutation) for a slot only one scope actually
+  // binds. Winner selection is idempotent under a repeat, so skipping the
+  // repeat outright is correct for both, not just for counting.
+  const processedScopes = new Set<ScopeKey>();
 
   // Walk chain from most-general (last) to most-specific (first). For each
   // scope, set unset slot bindings, and ALSO overwrite previously-set non-
@@ -93,6 +101,10 @@ export function mergeBindings(
   // binding from a more-general scope locks the value).
   for (let i = chain.length - 1; i >= 0; i--) {
     const scope = chain[i];
+    if (processedScopes.has(scope)) {
+      continue;
+    }
+    processedScopes.add(scope);
     const record = scopeBindings.get(scope);
     if (record === undefined) {
       continue;

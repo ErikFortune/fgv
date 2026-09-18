@@ -107,6 +107,13 @@ export interface IPromptCacheFinding {
  * neither home has an answer, the diagnostic reports the measured prefix
  * size and declines to judge it (R-c) — it never assumes the minimum is
  * zero.
+ *
+ * **The paired `measure` must be a tokenizer.** `IPromptCompositionOptions.measure` accepts any
+ * `(text: string) => number` — a word count or character count is equally valid for other uses of
+ * `IPromptComposition` — but this diagnostic reports its result in tokens and compares it against
+ * `minCacheablePrefixTokens`, which is only meaningful when `measure` actually counts tokens. A
+ * non-token measure produces a verdict labeled in the wrong unit, not a caught error: this
+ * diagnostic has no way to tell what `measure` counts.
  * @public
  */
 export interface IPromptCacheDiagnosticOptions {

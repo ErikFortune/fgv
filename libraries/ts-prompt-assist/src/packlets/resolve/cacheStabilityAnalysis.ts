@@ -299,22 +299,31 @@ function checkThreshold(
   // `measured` set, so trusting that rather than adding an unreachable `?? 0`
   // fallback branch.
   const measuredTotal = prefixSections.reduce((sum, section) => sum + (section.measured as number), 0);
-  if (options?.minCacheablePrefixTokens === undefined) {
+  const minTokens = options?.minCacheablePrefixTokens;
+  // A caller-supplied minimum that isn't a finite, non-negative number can't
+  // render a verdict either way: NaN makes every comparison false (silently
+  // no finding), and a negative value would always pass. Treat it the same
+  // as "not supplied" rather than comparing against it — R-c: unknown is
+  // reported as unknown, never used to fabricate a verdict.
+  if (minTokens === undefined || !Number.isFinite(minTokens) || minTokens < 0) {
     findings.push({
       kind: 'threshold-unknown',
       detail:
-        `stable prefix measures ${measuredTotal} token(s); this model's minimum cacheable prefix is not ` +
-        `known to this library — supply one via IPromptCacheDiagnosticOptions.minCacheablePrefixTokens for a verdict`
+        minTokens === undefined
+          ? `stable prefix measures ${measuredTotal} token(s); this model's minimum cacheable prefix is not ` +
+            `known to this library — supply one via IPromptCacheDiagnosticOptions.minCacheablePrefixTokens for a verdict`
+          : `stable prefix measures ${measuredTotal} token(s); the configured minimum (${minTokens}) is not a ` +
+            `finite, non-negative token count — supply a valid IPromptCacheDiagnosticOptions.minCacheablePrefixTokens for a verdict`
     });
     return;
   }
 
-  if (measuredTotal < options.minCacheablePrefixTokens) {
+  if (measuredTotal < minTokens) {
     findings.push({
       kind: 'below-threshold',
       detail:
         `stable prefix measures ${measuredTotal} token(s), below the configured minimum of ` +
-        `${options.minCacheablePrefixTokens} token(s)`
+        `${minTokens} token(s)`
     });
   }
 }

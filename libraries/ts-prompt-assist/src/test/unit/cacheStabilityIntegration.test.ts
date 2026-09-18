@@ -90,7 +90,7 @@ describe('prompt-cache stability diagnostics — end-to-end wiring', () => {
     });
   });
 
-  test('an undeclared slot defaults to per-request and DOES trigger cache-hostile-ordering', async () => {
+  test('a slot with no declared cacheStability defaults to per-request and DOES trigger cache-hostile-ordering', async () => {
     const lib = await buildLib([record({ body: '{{{topic}}} static suffix' })]);
     const result = await lib.resolve({
       id: PROMPT,
@@ -162,6 +162,28 @@ describe('prompt-cache stability diagnostics — end-to-end wiring', () => {
     ];
     const lib = await buildLib([record({ cacheStability: 'frozen', body: '{{{topic}}}' })], bindings);
     const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {}, composition: {} });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(refutedFindings(r)).toEqual([]);
+    });
+  });
+
+  test('a repeated scope in the chain is not double-counted as a second binding', async () => {
+    // Regression: `chain` is caller-supplied and not guaranteed distinct. Walking it naively would
+    // count the one scope's binding twice, producing a false D1 refutation for a slot only one
+    // scope actually binds.
+    const bindings: ReadonlyArray<IScopeSlotBindingsRecord> = [
+      {
+        scope: SCOPE,
+        bindings: new Map([[TOPIC, { kind: 'literal', value: 'a', directive: 'prose' } as SlotBinding]])
+      }
+    ];
+    const lib = await buildLib([record({ cacheStability: 'frozen', body: '{{{topic}}}' })], bindings);
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE, SCOPE],
+      qualifiers: {},
+      composition: {}
+    });
     expect(result).toSucceedAndSatisfy((r) => {
       expect(refutedFindings(r)).toEqual([]);
     });

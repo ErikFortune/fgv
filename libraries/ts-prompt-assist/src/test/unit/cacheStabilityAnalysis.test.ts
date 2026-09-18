@@ -295,6 +295,30 @@ describe('analyzePromptCacheStability', () => {
       expect(findings[0].detail).toMatch(/not known to this library/);
     });
 
+    test('treats a NaN configured minimum as unknown rather than comparing against it', () => {
+      const findings = analyzePromptCacheStability({
+        sections: [section({ kind: 'preface', start: 0, chars: 5, measured: 10 })],
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        slots: [],
+        options: { minCacheablePrefixTokens: Number.NaN }
+      });
+      expect(findingKinds(findings)).toEqual(['threshold-unknown']);
+      expect(findings[0].detail).toMatch(/not a finite, non-negative token count/);
+    });
+
+    test('treats a negative configured minimum as unknown rather than comparing against it', () => {
+      const findings = analyzePromptCacheStability({
+        sections: [section({ kind: 'preface', start: 0, chars: 5, measured: 10 })],
+        mergedBindings: new Map(),
+        candidateMatches: [],
+        slots: [],
+        options: { minCacheablePrefixTokens: -1 }
+      });
+      expect(findingKinds(findings)).toEqual(['threshold-unknown']);
+      expect(findings[0].detail).toMatch(/not a finite, non-negative token count/);
+    });
+
     test('reports below-threshold when the measured prefix falls short of the configured minimum', () => {
       const findings = analyzePromptCacheStability({
         sections: [section({ kind: 'preface', start: 0, chars: 5, measured: 10 })],
