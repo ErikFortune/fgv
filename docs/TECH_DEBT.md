@@ -377,6 +377,43 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] Every optional field added to a `Converters.object`-converted interface can be silently
+  dropped, and the compiler cannot catch it.**
+  `FieldConverters<T>` (`ts-utils/src/packlets/conversion/objectConverter.ts:61`) is
+  `{ [key in keyof T]: Converter<T[key]> | Validator<T[key]> }` — a **homomorphic** mapped type,
+  so it preserves `?` from `T`. An optional interface field is therefore *optional in the
+  converter's field map*, and a converter that omits it type-checks clean. Verified 2026-09-18
+  against the real project config: a `Converters.object<{a: string; b?: number}>` declaring only
+  `a` compiles with no error.
+
+  **This is not a defect in `Converters.object`, which is the repo's mandated idiom, nor in any
+  particular converter.** It is a structural property of the pattern: interface and converter are
+  two declarations with nothing linking them, and the compiler only enforces the *required*
+  half. Adding an optional field to any converted type is a two-site change that looks like a
+  one-site change.
+
+  **Observed live**, which is what moves this off "theoretical": C2 (#669) added
+  `IPromptSlot.cacheStability?` and `slotConverter` silently discarded it on every load through
+  the store. Build, lint and type-check were all green. It was caught by two failing end-to-end
+  tests — and only because the author happened to write end-to-end tests that round-tripped
+  through the store. A unit test of the analysis would have passed.
+
+  **Trigger**: adding an optional field to any interface that has a converter, or a bug report
+  of the shape "I set X in the descriptor and it had no effect."
+
+  **Scope sketch**: two parts, separable. (a) A sweep — for each `Converters.object<T>` in the
+  repo, diff `keyof T` against the declared field map and report omissions. Mechanical, and its
+  result tells you whether this class is currently costing anything or whether #669 was the only
+  instance. (b) A gate, if the sweep finds more: either a lint rule, or a type-level trick that
+  makes the field map require every key (`Required<FieldConverters<T>>` with the optionality
+  expressed on the converter rather than the key) — the second is a real API change to `ts-utils`
+  and wants its own design.
+
+  **Not a P2**: it drops data rather than corrupting it, the omission is inert until someone
+  sets the field, and the sweep in (a) is cheap enough that the exposure is measurable on demand.
+
+  **Reference**: #669; `objectConverter.ts:61`; `ts-prompt-assist/src/packlets/converters/descriptorConverter.ts`.
+
 - **[P3] `supportsCacheUsageReporting` withholds *all* token usage from Groq, Mistral, Ollama
   and `openai-compat`, not just cache fields.**
   C1 (#668) attaches `IAiCompletionResponse.usage` on the shared `apiFormat: 'openai'` path only
