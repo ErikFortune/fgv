@@ -6,6 +6,7 @@
 import { PromptId, ResourceId, ScopeKey, SlotName } from './ids';
 import { SlotDirective, ResourceSubstitutionMode } from './enums';
 import { IPromptDescriptor } from './descriptor';
+import { IPromptCacheDiagnosticOptions, IPromptCacheFinding } from './cacheStability';
 import { Runtime as TsResRuntime } from '@fgv/ts-res';
 
 /**
@@ -40,6 +41,20 @@ export interface IBindingTraceEntry {
   readonly value: string;
   /** True iff the merged binding had `enforced: true` (caller subs were rejected). */
   readonly wasEnforced: boolean;
+  /**
+   * Number of scopes in the resolve's chain that declared a `_bindings.yaml`
+   * entry for this slot, counted while merging (regardless of which one
+   * won). Set only when `source === 'binding'`.
+   *
+   * @remarks
+   * A count of `2` or more means the winning value depends on which scope
+   * wins in *this* chain — a different chain could select a different
+   * scope's binding and produce different bytes. This is the evidence the
+   * cache-stability diagnostic's D1 check (design.md §9) needs to refute an
+   * authored or call-site claim of better-than-`'per-request'` stability;
+   * it does not by itself mean the value *does* vary, only that it *may*.
+   */
+  readonly chainBindingCount?: number;
 }
 
 /**
@@ -219,6 +234,12 @@ export type PromptSectionMeasure = (text: string) => number;
 export interface IPromptCompositionOptions {
   /** Optional second measure per section — typically a tokenizer. See {@link PromptSectionMeasure}. */
   readonly measure?: PromptSectionMeasure;
+  /**
+   * Options for the prompt-cache stability diagnostic run alongside the
+   * composition. See {@link IPromptComposition.cacheFindings} and
+   * `design.md` §9.
+   */
+  readonly cacheDiagnostics?: IPromptCacheDiagnosticOptions;
 }
 
 /**
@@ -282,6 +303,19 @@ export interface IPromptComposition {
    * it says why rather than being silently absent.
    */
   readonly unavailable?: string;
+  /**
+   * Prompt-cache stability diagnostics for this composition — see
+   * `design.md` §9 (checks D1–D5) and {@link PromptCacheFindingKind}.
+   * Findings report problems only; a wholly cacheable, well-ordered,
+   * above-threshold prefix produces an empty array, not a success entry.
+   * Always `[]` when {@link IPromptComposition.unavailable} is set — there
+   * is no section map to analyze.
+   *
+   * @remarks
+   * Purely computational: no provider is consulted, nothing is emitted, and
+   * this array cannot affect what `resolve()` returns for `body`.
+   */
+  readonly cacheFindings: ReadonlyArray<IPromptCacheFinding>;
 }
 
 /**

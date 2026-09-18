@@ -3,15 +3,19 @@
 **Branch:** `claude/ai-assist-prompt-caching` (design/research lineage); C1 implemented on
 `claude/ai-assist-cache-observability`, branched from this lineage's tip (which already
 carries `release` merged in) rather than from bare `release`, since the design/research
-docs this slice's brief requires only exist here.
+docs this slice's brief requires only exist here. **C2 implemented on
+`claude/ai-assist-cache-diagnostics`, branched directly off `release`** — C1 is merged now,
+so the "branch off the design lineage" rationale no longer applies, and stacking on a
+non-`release` branch is exactly the mistake C1's own checkpoint (below) flags: `ci.yml`
+only fires for PRs targeting `release`, so a stream branch never gets CI on its own.
 
 | phase | status | artifact |
 |---|---|---|
 | A — research | ✅ complete (2026-09-07) | `research.md` |
-| B — design | ✅ complete (2026-09-08); all 5 OQs closed 2026-09-17; **verified 2026-09-18** | `design.md` (+ §14) |
+| B — design | ✅ complete (2026-09-08); all 5 OQs closed 2026-09-17; **verified 2026-09-18, OQ-6 resolved same day** | `design.md` (+ §14) |
 | triage | ⏭️ not used — questions decided directly; see `design.md` process note | — |
-| C1 — observability | ✅ implemented; PR #668. **Read `design.md` §14 before C2** | `libraries/ts-extras/src/packlets/ai-assist/{usageTypes,usageNormalization}.ts` + adapters |
-| C2 — diagnostics + vocabulary | ⛔ not started | — |
+| C1 — observability | ✅ shipped via #668 (merged into `release`) | `libraries/ts-extras/src/packlets/ai-assist/{usageTypes,usageNormalization}.ts` + adapters |
+| C2 — diagnostics + vocabulary | ✅ implemented on `claude/ai-assist-cache-diagnostics` | `libraries/ts-prompt-assist/src/packlets/{types/cacheStability,resolve/cacheStabilityAnalysis}.ts` + `bindingMerger`/`promptLibrary`/`enums`/`descriptorConverter`/`slot`/`trace` |
 | C3 — emit | ⛔ not started; gated on C1 **and** C2 | — |
 
 ## Phase B checkpoint
@@ -360,4 +364,96 @@ drifted; a drift table is in §14 rather than in-place edits.
   `toEmbeddingUsage` is the end-to-end extraction template, which F4 recorded only in its
   reporting half.
 
-**Open questions: OQ-6.** No implementation; no PR; no surface committed to.
+**Open questions: OQ-6.** No implementation; no PR; no surface committed to. *(Resolved same
+day — see "C2 checkpoint" below and design.md §14 A2: `IAiCompletionUsage` is the
+token-accounting home; `thinkingTokens` goes inside it.)*
+
+## C2 checkpoint
+
+**Deliverable, per design.md §11's C2 row:** `PromptCacheStability` / `PromptCacheStabilityOrigin`
+/ `IPromptCacheStabilityHint` (new `types/cacheStability.ts`); `IPromptSlot.cacheStability?` and
+`IPromptResolveRequest.cacheStability?` (call-site wins unconditionally); `IPromptCacheFinding` /
+`PromptCacheFindingKind` (the five-kind closed set from §9's code block) and
+`IPromptCacheDiagnosticOptions`; the diagnostic engine `analyzePromptCacheStability` (new
+`resolve/cacheStabilityAnalysis.ts`), wired into `PromptLibrary._buildComposition` so
+`IPromptComposition.cacheFindings: ReadonlyArray<IPromptCacheFinding>` (non-optional, mirroring
+`safeguardFindings`'s always-present-possibly-empty shape; `[]` when the composition itself is
+`unavailable`) is computed alongside the section map whenever `composition` is requested. Package
+surface is `@fgv/ts-prompt-assist` only, as the kickoff brief specified — no `ts-extras` file
+touched, no adapter touched, nothing emitted to a provider.
+
+**D1 needed a field `IPromptResolveTrace` didn't carry.** §9 says D1 "is a counter on an existing
+loop" over `bindingMerger.ts`'s scope walk, but the count itself was never surfaced past that
+function — `IBindingTraceEntry` had no field for it. Added `chainBindingCount?: number`
+(`types/trace.ts`), set only when `source === 'binding'`, computed by a new `Map<SlotName,
+number>` incremented once per scope that declares a binding for a slot during the existing
+most-general-to-most-specific walk in `mergeBindings` (`resolve/bindingMerger.ts`). Additive,
+optional, and no existing test does exact-equality matching on a `mergedBindings` entry (checked
+before adding it), so nothing broke.
+
+**D2 applied at coarser granularity than a literal reading of §9 suggests, and documented why.**
+`IPromptSection` carries no `candidateIndex` — `PromptLibrary._renderResolved` joins every matched
+candidate's body into one string (`joinBodies`) before handing it to Mustache, so `'template'`
+sections come from segmenting the *joined* result. There is no data path back from a template
+section to "which candidate produced this text." Implemented D2 as: if *any* candidate in
+`trace.candidateMatches` matched with a non-empty, non-`matchAsDefault` condition set, every
+`'template'` section in the resolve is downgraded together (one finding per qualifying candidate,
+so multiple independently-conditional candidates are each named). This is conservative in the
+direction §1's governing asymmetry wants and uses only data the trace already carries — judged as
+"a reasonable reading existed" rather than "§9's spec is incomplete," per the kickoff brief's
+escalation criterion, but flagged here for a sharper reading to revise if this judgment is wrong.
+
+**D5's algorithm was one bullet in §9** ("Per §7, with `'threshold-unknown'` as a first-class
+outcome") versus D1/D2/D4's full paragraphs, and does not reference §5's breakpoint-count
+machinery directly. Implemented as: fold sections into stability runs (same fold D4 uses); the
+cacheable prefix is the leading run sequence that stays non-increasing and above `'per-request'`,
+stopping at whichever comes first — the first `'per-request'` section, or the first upward
+transition (D4 already reports that boundary separately). An empty prefix (index 0) is
+`'no-cacheable-prefix'`; otherwise the prefix's measured size — when every prefix section carries
+`.measured`, i.e. a `measure` was supplied to the composition — is judged against
+`options.minCacheablePrefixTokens` when supplied, with `'threshold-unknown'` as the answer
+whenever no verdict can be rendered (R-c: no measure supplied, or no minimum known). Deliberately
+does **not** replicate §5's full ≤2-breakpoint selection algorithm: that answers "which
+breakpoints to emit" (C3's question), not "how big is the biggest reliably-cacheable prefix" (the
+only number a threshold check needs). Recorded here per the kickoff brief's "a fifth correction is
+a good outcome" in case a sharper reading of §9 disagrees.
+
+**A converter gap the type system could not see, caught by an end-to-end test.**
+`IPromptSlot.cacheStability` is a plain additive TypeScript field, but slot declarations round-trip
+through `converters/descriptorConverter.ts`'s hand-declared `slotConverter`
+(`Converters.object<IPromptSlot>({...})` with an explicit field list) on every load through
+`PromptStoreFixture` / `FileTreePromptStore`. Two end-to-end integration tests (an authored
+`'frozen'` claim avoiding a `cache-hostile-ordering` finding; a multi-scope-bound slot triggering
+D1) failed against an otherwise type-correct implementation, because `cacheStability` was silently
+dropped by the converter before `PromptLibrary` ever saw it. Fixed by adding
+`EnumConvert.promptCacheStability` (`types/enums.ts`, mirroring the existing `slotDirective` /
+`slotWritability` converters — `allPromptCacheStabilityValues` + `Converters.enumeratedValue`) and
+wiring it into `slotConverter`'s field list. The pure-function unit tests of
+`analyzePromptCacheStability` (which construct `IPromptSlot` / `IBindingTraceEntry` objects
+directly) could not have caught this — only a test exercising the actual descriptor-load path
+could, which is why both a direct unit-test file
+(`test/unit/cacheStabilityAnalysis.test.ts`, 22 tests, the algorithm in isolation) and an
+end-to-end wiring file (`test/unit/cacheStabilityIntegration.test.ts`, 7 tests, through
+`PromptLibrary.resolve`) exist rather than just the former.
+
+**Gates green:** `@fgv/ts-prompt-assist` build/lint/test — 309/309 passing (up from 280/280
+pre-change: 22 new direct unit tests + 7 new end-to-end tests), 100%
+statements/branches/functions/lines coverage. `rushx fixlint` — no changes needed. Repo-wide
+`node common/scripts/install-run-rush.js rebuild` — 36/36 packages, zero warnings (required per
+`CODING_STANDARDS.md`: `IPromptComposition` gained a new non-optional field, a widened shared
+contract; checked first that no package outside `ts-prompt-assist` constructs an
+`IPromptComposition` literal or an `IPromptSlot`/`IPromptResolveRequest`/`IBindingTraceEntry`
+literal that a new optional field could break — only `samples/testbed`'s
+`localClassifierSafety.test.ts` casts a partial object `as IPromptSlot`, unaffected by an
+additional optional field). This slice does not widen or narrow what any function *accepts*,
+*returns*, or *classifies* at a fixed signature — every addition is a new optional field or a new
+export — so the `CODING_STANDARDS.md` "widened accepted set" rule (repo-wide `rush test`) does not
+apply; `rush rebuild`'s compiler-level check is the correct and sufficient gate here.
+`common/changes/@fgv/ts-prompt-assist/claude-ai-assist-cache-diagnostics_2026-09-18-00-00.json`
+added; `rush change --verify --target-branch origin/release` passing.
+
+**Docs:** `libraries/ts-prompt-assist/CAPABILITIES.md` (new decision-shortcut bullet) and
+`.ai/instructions/LIBRARY_CAPABILITIES.md` (new decision-shortcut line, `verify-capability-docs.mjs`
+passing) updated in this change. `docs/WORKSTREAMS.md`'s entry for this stream updated to record
+C2 shipped; the stream itself stays open (C3 remains), so no `finalize-task` migration to
+`completed/` — artifacts stay in `active/` per the kickoff brief.

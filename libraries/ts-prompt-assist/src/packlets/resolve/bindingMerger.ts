@@ -80,6 +80,12 @@ export function mergeBindings(
   callerSubstitutions: PromptSubstitutions | undefined
 ): Result<IBindingMergeResult> {
   const winning = new Map<SlotName, { binding: SlotBinding; scope: ScopeKey }>();
+  // Count of scopes in `chain` that declared a binding for each slot,
+  // regardless of which one ends up winning. Feeds `IBindingTraceEntry.
+  // chainBindingCount`, which the cache-stability diagnostic's D1 check
+  // (design.md §9) uses to tell "one scope could bind this slot" apart
+  // from "the winning value depends on which scope wins this chain".
+  const chainBindingCounts = new Map<SlotName, number>();
 
   // Walk chain from most-general (last) to most-specific (first). For each
   // scope, set unset slot bindings, and ALSO overwrite previously-set non-
@@ -92,6 +98,7 @@ export function mergeBindings(
       continue;
     }
     record.bindings.forEach((binding, slot) => {
+      chainBindingCounts.set(slot, (chainBindingCounts.get(slot) ?? 0) + 1);
       const existing = winning.get(slot);
       if (existing === undefined) {
         winning.set(slot, { binding, scope });
@@ -127,7 +134,8 @@ export function mergeBindings(
         winner.scope,
         true,
         merged,
-        pendingResourceBindings
+        pendingResourceBindings,
+        chainBindingCounts.get(slot.name)
       );
       if (installed.isFailure()) {
         return fail(installed.message);
@@ -160,7 +168,8 @@ export function mergeBindings(
         winner.scope,
         winner.binding.enforced === true,
         merged,
-        pendingResourceBindings
+        pendingResourceBindings,
+        chainBindingCounts.get(slot.name)
       );
       if (installed.isFailure()) {
         return fail(installed.message);
@@ -207,7 +216,8 @@ function installBinding(
   winningScope: ScopeKey | undefined,
   wasEnforced: boolean,
   merged: Map<SlotName, IBindingTraceEntry>,
-  pending: IPendingResourceBinding[]
+  pending: IPendingResourceBinding[],
+  chainBindingCount?: number
 ): Result<true> {
   if (binding.kind === 'resource') {
     // The placeholder `value: ''` is rewritten by the caller (the
@@ -218,7 +228,8 @@ function installBinding(
       winningScope,
       directive: binding.directive,
       value: '',
-      wasEnforced
+      wasEnforced,
+      chainBindingCount
     });
     pending.push({ slot: slot.name, binding });
     return succeed(true as const);
@@ -229,7 +240,8 @@ function installBinding(
       winningScope,
       directive: binding.directive,
       value,
-      wasEnforced
+      wasEnforced,
+      chainBindingCount
     });
     return succeed(true as const);
   });

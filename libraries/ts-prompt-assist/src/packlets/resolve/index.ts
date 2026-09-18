@@ -4,6 +4,7 @@
  */
 
 export * from './bindingMerger';
+export * from './cacheStabilityAnalysis';
 export * from './candidateSelector';
 export * from './chainWalker';
 export * from './mustacheCache';

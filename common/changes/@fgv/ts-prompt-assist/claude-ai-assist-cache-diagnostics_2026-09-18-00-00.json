@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Prompt-cache stability vocabulary and diagnostics (ai-assist-prompt-caching stream, slice C2): PromptCacheStability/PromptCacheStabilityOrigin/IPromptCacheStabilityHint; IPromptSlot.cacheStability and IPromptResolveRequest.cacheStability (call-site wins); IPromptCacheFinding/PromptCacheFindingKind/IPromptCacheDiagnosticOptions; analyzePromptCacheStability, wired into IPromptComposition.cacheFindings. Computes and reports only — emits nothing, touches no adapter.",
+      "type": "minor",
+      "packageName": "@fgv/ts-prompt-assist"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist",
+  "email": "noreply@anthropic.com"
+}

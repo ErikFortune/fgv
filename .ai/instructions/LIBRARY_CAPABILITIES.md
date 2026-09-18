@@ -139,6 +139,7 @@ detail. `· pkg` names the owning package.*
 - **Enforcing safety policies on a resolved prompt?** → `PromptLibrary` · `ts-prompt-assist`
 - **Mustache rendering for LLM prompts?** → `MustacheTemplate` · `ts-extras`
 - **What is a rendered template or resolved prompt made of?** → `renderWithSegments` `IPromptComposition` · `ts-extras` `ts-prompt-assist`
+- **Is a resolved prompt's section ordering or slot stability hostile to prompt caching?** → `analyzePromptCacheStability` `IPromptComposition.cacheFindings` `PromptCacheStability` · `ts-prompt-assist`
 - **Jest matchers for `Result<T>`?** → `toSucceedAndSatisfy` `toFailWith` · `ts-utils-jest`
 - **CSV / record-jar?** → `csv` · `ts-extras`
 - **Numeric / date / orderable range?** → `RangeOf<T>` · `ts-extras`
