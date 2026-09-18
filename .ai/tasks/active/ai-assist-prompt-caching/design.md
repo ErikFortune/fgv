@@ -1,7 +1,8 @@
 # Design — `ai-assist-prompt-caching`
 
-**Status:** phase B complete; **all five open questions closed** (OQ-1 and OQ-3 on 2026-09-15/17,
-OQ-2/4/5 on 2026-09-17). Ready for phase C implementation.
+**Status:** phase B complete; the original five open questions are closed (OQ-1 and OQ-3 on
+2026-09-15/17, OQ-2/4/5 on 2026-09-17). Ready for phase C implementation, **with one new
+question opened by the 2026-09-18 verification pass — see §14 (OQ-6).**
 
 **Date:** 2026-09-08 (open questions closed 2026-09-17)
 **Inputs:** `brief.md` (three revisions), `research.md` (phase A), the tree at
@@ -14,6 +15,12 @@ OQ-2/4/5 on 2026-09-17). Ready for phase C implementation.
 > no referent for a document-shaped library-API design; the fourth (followups) was already
 > discharged to `TECH_DEBT.md` and `FUTURE.md`. The open questions were decided directly
 > instead, each with its reasoning recorded in §12.
+
+> **Read §14 before starting C1.** An independent pre-C1 verification against the merged
+> branch found no falsification, but two things that change phase C: a token-accounting
+> collision with the `ai-assist-thinking-events` stream that neither stream's brief can see
+> (**OQ-6**), and the finding that C1 is validator-widening across five response shapes rather
+> than field-reading on one — which OQ-5 was decided without.
 
 This design does not re-derive the brief's three findings. It accepts them, and §0
 records four things the tree says that the brief did not have — one of which
@@ -168,7 +175,7 @@ So the phases:
 
 | slice | package(s) | depends on | can it make anything worse? |
 |---|---|---|---|
-| **C1 — observability** | `ts-extras/ai-assist` | — | No. Reads fields off responses we already receive. |
+| **C1 — observability** | `ts-extras/ai-assist` | — | Almost — see the correction below. |
 | **C2 — diagnostics + vocabulary** | `ts-prompt-assist` | — | No. Computes and reports; emits nothing. |
 | **C3 — emit** | both | C1 **and** C2 | Yes — it changes the wire. |
 
@@ -176,6 +183,21 @@ C1 and C2 are independent of each other and may run in parallel or in either ord
 **C3 is gated on both**, and the gate is not bureaucratic: without C1 there is no way to
 tell whether C3 works, and the failure mode is silent by construction. Shipping C3 before
 C1 means shipping an unverifiable change to the request body.
+
+> **Correction, 2026-09-18, from C1 as built (PR #668).** C1's row above said *"No. Reads
+> fields off responses we already receive."* That is now not quite true, and the claim matters
+> because C1's inertness is what justified shipping it first. **C1 sends one additive request
+> field**: `stream_options: { include_usage: true }` on OpenAI Chat Completions streaming,
+> because that API reports no usage at all while streaming unless asked. With OQ-5 putting
+> streaming in scope, the choice was that field or no streaming observability.
+>
+> It is tightly gated — `supportsStreamUsageOption` is `true` only for `'openai'`, precisely
+> because self-hosted `openai-compat` servers have unverified tolerance for an unrecognized
+> field — and it has no caching or billing effect. So the accurate claim is **"inert except for
+> one additive request field on one route, sent only to a descriptor confirmed to accept it,"**
+> not "cannot make anything worse." §14 A3 separately notes the cannot-make-anything-worse
+> property survives in the sense it was argued for (admitting an optional field rejects nothing
+> previously accepted); this correction is about the *request* side, which A3 does not cover.
 
 If only one slice ships, it should be **C1** — it is the precondition for validating
 everything else and it is the only slice that converts a silent failure into a visible
@@ -934,3 +956,151 @@ this change specifically triggers:
   cannot see either.
 - **The live harness of §8 runs before C3 is called done**, with its prediction recorded
   first, and its actual output pasted into `result.md`.
+
+---
+
+## 14. Pre-C1 verification pass — 2026-09-18
+
+**Why this section exists.** §§0–13 declare the design ready for phase C. This is an
+independent re-verification of its code-anchored claims against the branch as merged
+(`609dcfb2`, carrying `release` @ `dbe028ea`), run before any implementation starts.
+
+**Outcome: no falsification.** Every claim in §0 and every code-anchored claim in §§4–9
+holds. Three additions follow. **A1 is bookkeeping; A2 and A3 change phase C** — A2 opens a
+new question after §12 closed the previous five, and A3 resizes C1.
+
+### Line-citation drift
+
+§0's citations were taken before `release` was merged in. Recorded here rather than edited in
+place, because they were right when written and will drift again:
+
+| cited in §0 | on `609dcfb2` |
+|---|---|
+| `completionClient.ts:504` — `system: prompt.system` | **520** |
+| `completionClient.ts:745` — `usesResponsesApi` | **773** |
+| `model.ts:876` — `AiApiFormat` | **874** |
+| `model.ts:922` — `IAiCompletionResponse` | **920** |
+| `model.ts:1383` — `IAiEmbeddingResult.usage?` | **1369** |
+| `registry.ts:282-287` — `xai-grok` | **274-280** |
+| `structuredOutputTypes.ts:68` — `IAiStructuredOutputCapability` | 68 (unmoved) |
+| `completionClient.ts:384` — the "both route through the Responses API" comment | **moved**; the line now holds `buildOpenAiResponsesUserContent`. F3's conclusion is unaffected and OQ-1 has since settled it by live run |
+
+Substance re-checked and unchanged: the greenfield grep (only `crypto-utils` ephemeral-key
+hits, all in tests); `IPromptSection`'s `start` / `chars` / `measured` / `kind` / `source` /
+`winningScope`; `IPromptComposition.unavailable`; `ICandidateMatchTraceEntry.matchType` and
+`.conditions`, so D2 remains checkable from data the resolve already holds; `IPromptSlot`
+carrying no `cacheStability`; `IPromptResolveRequest.composition?` as the opt-in precedent;
+`IAiCompletionResponse` still exactly `{ content, truncated, structuredOutput }`.
+
+### A1 — §9's sequencing gate is discharged, and more cleanly than the brief expected
+
+§9 closes with *"C3 should sequence after that stream lands."* **`ai-assist-thinking-anchoring`
+shipped via #667** and its artifacts are now in-tree at
+`.ai/tasks/completed/2026-09/ai-assist-thinking-anchoring/`. That sentence is now history
+rather than a gate, and an implementer reading §9 cold would otherwise conclude C3 is blocked.
+
+The stronger half is in that stream's own scorecard: it declared `completionClient.ts` and
+`streamingClient.ts` in scope and **needed a change in neither**, because the Anthropic emit
+site already gated on `anthropicEffort !== undefined`. The file collision the brief warned
+about ("expect a rebase") never materialized. C3's request-assembly path is unblocked and
+uncontended.
+
+**The semantic coupling §9 names is untouched by this** — a mid-conversation effort change
+still invalidates the message cache, and `reasoning_effort_changed` is still one of OpenAI's
+nine miss reasons. §9's instruction to document the coupling wherever effort is settable
+stands, and now has a concrete new destination: #667 added `'none'` to the *generic* effort
+vocabulary, which is a new, provider-oblivious way for a caller to vary effort per turn.
+
+### A2 — a token-accounting collision with `ai-assist-thinking-events`. **OQ-6 — ✅ RESOLVED 2026-09-18**
+
+> **Resolved as recommended.** `IAiCompletionUsage` is the token-accounting home;
+> `thinkingTokens` belongs inside it as a field `ai-assist-thinking-events` adds. The decision
+> is recorded where that stream will actually read it — its own `docs/WORKSTREAMS.md` entry,
+> whose "token accounting" bullet previously said the opposite — rather than only here.
+>
+> One qualification to this section's ordering argument: it frames the fix as a race
+> (*"whichever stream ships first sets the shape"*), but `ai-assist-thinking-events` is 🟡
+> **ready, not started**, so there is no race to lose. The real risk is a cold start months
+> from now reading a ledger entry that told it to add a sibling. That is why the ledger edit,
+> not the merge timing, is the load-bearing half.
+
+`docs/WORKSTREAMS.md` lists `ai-assist-thinking-events` as 🟡 **ready**, and its declared
+scope includes, verbatim:
+
+> - Non-streaming response shape: `thinking?: string` field (or similar) on `IAiCompletionResponse`
+> - Token accounting (`thinkingTokens?: number` on response)
+
+C1's central deliverable is `IAiCompletionResponse.usage?: IAiCompletionUsage`.
+Thinking-events plans a **second, parallel token-accounting home on the same interface**.
+
+**What makes this structurally invisible rather than merely overlapping:** this stream's
+ledger entry lists *"the `ai-assist-thinking-events` surface"* as out-of-scope, and
+thinking-events' entry claims token accounting as its own — `ai-assist-thinking-anchoring`'s
+entry confirms that assignment by listing token accounting as out-of-scope *because it belongs
+to thinking-events*. So each brief correctly defers to the other, and **neither owns the
+relationship between `usage` and `thinkingTokens`.** Nothing in either stream's gates would
+catch it; both would go green shipping `usage.outputTokens` and a sibling `thinkingTokens`
+describing the same generation with no stated relationship — the *"absence is three-ways
+ambiguous"* defect §8 was built to remove, reintroduced from outside §8's reach.
+
+**Recommendation, for the stream owner to accept or reject:** `IAiCompletionUsage` is *the*
+token-accounting home on `IAiCompletionResponse`, and `thinkingTokens?: number` belongs
+**inside it** as a field thinking-events adds — not beside it. Output-token accounting and
+input-token accounting are one concern; `reports` already exists to say what a given wire
+shape can and cannot fill, and thinking tokens are exactly the per-provider-optional figure
+that discriminator is for. This costs thinking-events one field's worth of coordination and
+costs this stream nothing.
+
+**Ordering consequence, and it is the actionable half.** Whichever stream ships first sets the
+shape. If C1 is first it establishes the container and `thinkingTokens` is a field; if
+`thinkingTokens` is first it establishes a sibling and the container becomes a migration.
+**This is an argument for C1 not waiting**, and for saying so in C1's PR description so
+thinking-events inherits the decision rather than rediscovering it.
+
+### A3 — C1 is validator-widening, not field-reading. This resizes the slice
+
+§2's table describes C1 as *"reads fields off responses we already receive."* The
+cannot-make-anything-worse property survives intact — admitting an optional field rejects
+nothing that was accepted before, so C1 is still the safe slice. But the phrasing understates
+the work, and §12's OQ-5 was decided on that phrasing.
+
+**`grep -c usage completionClient.ts streamingClient.ts` returns `0` and `0`.** No completion
+path parses any usage field today. Each provider has a hand-written wire interface plus a
+`Validators.object` validator that simply does not declare `usage`, so the block is discarded
+at validation. C1 is therefore, per response shape, a wire interface **plus** a validator entry
+**plus** a mapper — across `openAiResponse` (188), `responsesApiResponse` (226),
+`geminiResponse` (275), the Anthropic path, and the streaming client. **Five sites, not one.**
+§8's five-row table is the output spec, not the work estimate.
+
+**OQ-5 should be re-read against this**, and the natural cut is by response shape rather than
+by streaming-vs-non-streaming.
+
+**One site is a design decision rather than a volume one.** The Anthropic completion path has
+**no validator at all**: it reads `(jsonResult.value as Record<string, unknown>).content` and
+`.stop_reason` (`completionClient.ts:581-582`) and hand-checks them with `Array.isArray` /
+`typeof === 'string'`. That is the shape `CODE_REVIEW_CHECKLIST.md` names as a **Priority-1**
+anti-pattern, in shipped code. Adding two more hand-checked reads for
+`cache_read_input_tokens` and `cache_creation_input_tokens` would deepen it, and C1's own
+layer-1 review would flag it.
+
+**C1 should introduce an `anthropicResponse` validator** matching the `openAiResponse` /
+`geminiResponse` pattern already in the same file, and read usage off it. That converts a
+pre-existing anti-pattern into the file's own convention, on the one path that has to change
+anyway. It is additive, it is the `/type-safe-validation` discipline, and it is a scope
+expansion worth approving deliberately rather than having an implementer discover mid-slice.
+
+**And the extraction template is more complete than F4 recorded.** F4 cites
+`IAiEmbeddingResult.usage?` as the *reporting* template. `embeddingClient.ts` also supplies
+the *extraction* template end to end: an `IOpenAiEmbeddingUsage` wire interface, an
+`openAiEmbeddingUsage.optional()` validator entry, and a `toEmbeddingUsage` mapper — including
+the rule §8 needs, that an all-fields-absent usage block maps to `undefined` rather than to a
+zero-filled object. C1 should follow it rather than re-derive it.
+
+### What this pass does not change
+
+Every decision in §§1–13 stands, and every one of §12's five closures stands. The three-level
+closed vocabulary with provenance, the two-homes-plus-precedence rule, the ≤2-breakpoint
+derivation that makes the shared four-cap unreachable, offsets rather than blocks at the
+`ai-assist` boundary, no `prompt_cache_options` on OpenAI, model-keyed thresholds with
+"unknown" first-class, and Gemini explicit `CachedContent` deferred — all unaffected. The
+open-question count goes from zero back to one: **OQ-6**.

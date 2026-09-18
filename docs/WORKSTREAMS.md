@@ -437,9 +437,27 @@ small, generic, and belongs beside its inverse in `ts-extras-mcp`. If not, the e
 - Non-streaming response shape: `thinking?: string` field (or similar) on `IAiCompletionResponse`
 - Opt-in plumbing (`IGeminiThinkingOptions.config.includeThoughts` placed by thinking-config stream — wire it up here for all providers)
 - Per-provider surfacing logic (Anthropic `thinking_delta` events; Gemini `thought: true` parts; OpenAI encrypted reasoning items if exposed)
-- Token accounting (`thinkingTokens?: number` on response)
+- Token accounting — **`thinkingTokens?: number` goes INSIDE `IAiCompletionUsage`, not beside it on the response.** See the binding note below.
 
 Design-triage-implement shape is likely; new public API has real consequences.
+
+**⚠️ Binding decision inherited from `ai-assist-prompt-caching` (OQ-6, resolved 2026-09-18).**
+`IAiCompletionUsage` — shipped by that stream's C1 slice as `IAiCompletionResponse.usage?` — is
+**the** token-accounting home on that interface. Add `thinkingTokens` as a field inside it.
+Do **not** add a sibling `thinkingTokens` on `IAiCompletionResponse`, which is what this entry
+said before C1 existed.
+
+Why this is written here rather than left to be discovered: this collision was structurally
+invisible. `ai-assist-prompt-caching` lists the thinking-events surface as out-of-scope, this
+entry claims token accounting as its own, and `ai-assist-thinking-anchoring` confirmed that
+assignment by deferring to it. Each brief correctly defers to the others, so **no stream owned
+the relationship between `usage` and `thinkingTokens`**, and no gate on either side would have
+caught two parallel accounting homes describing the same generation — the "absence is
+three-ways ambiguous" defect `IAiCompletionUsage.reports` exists to remove, reintroduced from
+outside its reach. `reports` is also already the right discriminator for a per-provider-optional
+figure, which is exactly what thinking tokens are.
+
+Reasoning in full: `.ai/tasks/active/ai-assist-prompt-caching/design.md` §14 A2.
 
 **Origin.** Carved out of `ai-assist-thinking-config` phase A v2 (D9). Required because v1's "future extension point" hand-wave didn't meet the bar of "concrete trackable followup."
 
