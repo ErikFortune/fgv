@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "change logs",
+      "type": "none",
+      "packageName": "@fgv/typedoc-compact-theme"
+    }
+  ],
+  "packageName": "@fgv/typedoc-compact-theme",
+  "email": "ErikFortune@outlook.com"
+}
