@@ -193,7 +193,13 @@ set, and it is the beachhead.
 > cannot obtain reliable prefix hits on xAI at all.
 >
 > So §2's claim is not overstated — it is under-served. Prefix stability is the right lever on
-> xAI; this library currently withholds the field that makes the lever connect.
+> xAI, and the library was withholding the field that makes the lever connect.
+>
+> **Fixed in the same PR as this note**: `supportsPromptCacheRouting` splits routing from
+> breakpoint support, so xAI now receives the key (`x-grok-conv-id` header on Chat
+> Completions, `prompt_cache_key` on Responses) while breakpoints stay OpenAI-only. The
+> confirming live-API measurement is a follow-up, not a blocker — the change is verified on
+> the wire by request-body and header assertions, not yet by a cache-hit ratio.
 >
 > **Unresolved detail:** the harness's cold reading was `cached=192`, which is not a multiple of
 > 128 and so does not fit the reported `floor(matched/128)*128` quantization. Small, but it does

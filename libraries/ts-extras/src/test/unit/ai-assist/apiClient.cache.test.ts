@@ -365,6 +365,21 @@ describe('IProviderCompletionParams.cache', () => {
       const messages = body.messages as Array<Record<string, unknown>>;
       expect(messages[0]).toEqual({ role: 'system', content: SYSTEM });
       expect('prompt_cache_key' in body).toBe(false);
+
+      // Headers matter as much as the body: a routing gate keyed off `apiFormat` rather than
+      // `id` would leak the key to every openai-compatible descriptor through the header, and a
+      // body-only assertion cannot see that. Compare against a real no-cache request rather than
+      // a hand-listed header set, so this cannot drift as auth headers change.
+      const withCacheHeaders = lastRequestHeaders();
+      mockFetchResponse(openAiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor: unconfirmedDescriptor,
+        apiKey: 'test-key',
+        system: SYSTEM,
+        messages: [{ role: 'user', content: USER }]
+      });
+      expect(withCacheHeaders).toEqual(lastRequestHeaders());
+      expect(body).toEqual(lastRequestBody());
     });
 
     test('xAI Chat Completions: carries cacheKey as the x-grok-conv-id header, not a body field', async () => {
@@ -465,6 +480,19 @@ describe('IProviderCompletionParams.cache', () => {
       const input = body.input as Array<Record<string, unknown>>;
       expect(input[0]).toEqual({ role: 'system', content: SYSTEM });
       expect('prompt_cache_key' in body).toBe(false);
+
+      // Same byte-identical comparison as the Chat Completions case above.
+      const withCacheHeaders = lastRequestHeaders();
+      mockFetchResponse(responsesApiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor: makeDescriptor({ apiFormat: 'openai', id: 'groq', supportedTools: ['web_search'] }),
+        apiKey: 'test-key',
+        system: SYSTEM,
+        messages: [{ role: 'user', content: USER }],
+        tools: [{ type: 'web_search' }]
+      });
+      expect(withCacheHeaders).toEqual(lastRequestHeaders());
+      expect(body).toEqual(lastRequestBody());
     });
 
     test('an invalid breakpoint plan on an unconfirmed descriptor is silently dropped rather than validated', async () => {

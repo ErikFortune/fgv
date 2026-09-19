@@ -50,8 +50,15 @@ export interface IAiCacheRequest {
    */
   readonly systemBreakpoints?: ReadonlyArray<number>;
   /**
-   * Opaque cache-routing key, sent where the provider has one (OpenAI `prompt_cache_key`).
-   * Ignored by adapters that have no such concept.
+   * Opaque cache-routing key, sent where the provider has one and by that provider's transport:
+   * `prompt_cache_key` as a body field on OpenAI (both routes) and on xAI Responses, and an
+   * `x-grok-conv-id` header on xAI Chat Completions. See `supportsPromptCacheRouting`.
+   *
+   * @remarks
+   * On xAI this is not a nicety. Its prompt cache is per-server and evictable, so two requests
+   * sharing a prefix can still miss if they are routed to different servers; the key pins them
+   * together. Providers with no routing concept ignore it and receive a request byte-identical
+   * to one built without a `cache` at all.
    */
   readonly cacheKey?: string;
 }

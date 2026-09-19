@@ -157,12 +157,21 @@ and the two do not share a support condition:
 | `systemBreakpoints` → `prompt_cache_breakpoint` | explicit cache boundary | not supported — correctly withheld |
 | `cacheKey` → `prompt_cache_key` / `x-grok-conv-id` | sticky routing so the prefix lands on the same box | **needed, and withheld** |
 
-So an ai-assist caller cannot obtain reliable prefix cache hits on xAI today. §2's premise —
-prefix stability is the lever — is correct; this library withholds the field that makes the lever
-connect. That is a defect in shipped code, not a design overstatement.
+So an ai-assist caller could not obtain reliable prefix cache hits on xAI. §2's premise — prefix
+stability is the lever — is correct; the library was withholding the field that makes the lever
+connect. That was a defect in shipped code, not a design overstatement.
 
-**Confirming run, not yet done:** re-run the harness with a stable routing key on both calls. A
-jump from 2.2% to ~99% on a varying tail confirms both the mechanism and the fix.
+**Fixed in the same PR as this note.** `supportsPromptCacheRouting(descriptor)` splits routing from
+breakpoint support and returns the per-route transport, so xAI now receives the key
+(`x-grok-conv-id` header on Chat Completions, `prompt_cache_key` on Responses) while
+`systemBreakpoints` stays OpenAI-only. Providers supporting neither still get a request
+byte-identical to one built with no `cache` at all — now pinned by comparing against a live
+no-cache request, headers included, after a review found the body-only assertion could not see a
+header leak.
+
+**Confirming run, still outstanding:** re-run the harness with a stable `cacheKey` on both calls.
+A jump from 2.2% to ~99% on a varying tail would confirm the mechanism and the fix together. The
+change is verified on the wire — what is unverified is the cache-hit ratio it is meant to buy.
 
 **Unresolved detail:** the harness's cold reading was `cached=192`, not a multiple of 128, so it
 does not fit the reported `floor(matched/128)*128` quantization. Minor, unexplained, noted rather
