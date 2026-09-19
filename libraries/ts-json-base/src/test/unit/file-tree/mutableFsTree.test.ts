@@ -80,16 +80,34 @@ describe('FsFileTreeAccessors', () => {
       expect(accessors.fileIsMutable('existing.json')).toSucceedWithDetail(true, 'persistent');
     });
 
-    it('returns permission-denied for read-only file', () => {
+    // Mode bits do not constrain root: `fs.accessSync(<0o444 file>, W_OK)` succeeds for uid 0,
+    // so `fileIsMutable` correctly reports the file as writable. Asserting `permission-denied`
+    // unconditionally made this test fail whenever the suite ran as root — which is the default
+    // in this repo's cloud-agent containers — and because Rush blocks every dependent of a failed
+    // project, that single failure stopped `rush test` at `@fgv/ts-json-base` and silently
+    // covered nothing downstream of it. Rather than skip under root (which would assert nothing
+    // there), each case asserts the outcome that is actually correct for its uid.
+    const isRoot = process.getuid?.() === 0;
+
+    it(`returns ${
+      isRoot ? 'persistent for a read-only file when running as root' : 'permission-denied for read-only file'
+    }`, () => {
       const filePath = path.join(tempDir, 'readonly.json');
       fs.writeFileSync(filePath, '{}');
       fs.chmodSync(filePath, 0o444);
       try {
         const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
-        expect(accessors.fileIsMutable('readonly.json')).toFailWithDetail(
-          /permission denied/i,
-          'permission-denied'
-        );
+        if (isRoot) {
+          // Not a weaker assertion: it pins that the permission probe reflects the *effective*
+          // ability to write, rather than reading mode bits and reporting a denial that would
+          // not actually occur.
+          expect(accessors.fileIsMutable('readonly.json')).toSucceedWithDetail(true, 'persistent');
+        } else {
+          expect(accessors.fileIsMutable('readonly.json')).toFailWithDetail(
+            /permission denied/i,
+            'permission-denied'
+          );
+        }
       } finally {
         fs.chmodSync(filePath, 0o644);
       }

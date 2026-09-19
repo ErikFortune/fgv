@@ -107,27 +107,15 @@ retired; the `as Record<string, …>` item below remains outstanding.)*
   is the right answer instead. **Triage before bulk-editing**; the `JsonValue`-narrowing ones are the
   cheap and provably-safe subset.
 
-- **[P2] The repo-wide `rush test` acceptance gate cannot complete, so it silently covers nothing
-  downstream of `@fgv/ts-json-base`.**
-  `libraries/ts-json-base/src/test/unit/file-tree/mutableFsTree.test.ts` §
-  *"returns permission-denied for read-only file"* fails whenever the suite runs as **root**, because
-  `chmod 0444` does not stop root from writing. That alone would be a nuisance; the consequence is
-  not. **Rush blocks every dependent of a failed project**, so `rush test` stops after
-  `@fgv/ts-json-base` and never runs `@fgv/ts-extras` or anything downstream of it.
+*(The repo-wide `rush test` acceptance gate — which could not complete, because
+`mutableFsTree.test.ts` § "returns permission-denied for read-only file" failed on every root run
+and Rush blocks dependents of a failed project, stopping the run at `@fgv/ts-json-base` and
+covering nothing downstream — was fixed 2026-09-19. The test now asserts the outcome correct for
+the uid it runs under: root genuinely *can* write a `0o444` file, so `fileIsMutable` reporting it
+writable is right, and a non-root run still asserts the denial. The `fsTree.ts` c8 directive that
+justified itself by citing the very test that could not pass under the condition it named was
+rewritten to describe the conditional reachability accurately. This item is retired.)*
 
-  This matters because `CODING_STANDARDS.md` § *"`rush rebuild` covers a widened type. Only a
-  repo-wide `rush test` covers a widened behaviour"* was promoted to an acceptance-criteria checkbox
-  in #656 — and the very next stream to need it (`schema-optional-translation`) found it unsatisfiable.
-  The failure mode is the dangerous kind: the command exits non-zero for a reason unrelated to the
-  change, an implementer sees a familiar known-failure and moves on, and **the box gets ticked for a
-  run that tested none of the packages the rule exists to protect.**
-
-  Interim practice, used by that stream: run `rush test --only <pkg>` over each package consuming the
-  changed surface, and say in the PR which ones. That is strictly weaker — it depends on the author
-  enumerating consumers correctly, which is the work the repo-wide run exists to remove.
-
-  **Fix:** make the test detect that it is running as root and assert the honest thing (root *can*
-  write a `0444` file), rather than skipping it. Restores the gate for every future stream.
 
 - **[P2] A `safer-fetch` retry test asserts a probabilistic outcome, and flakes CI for every
   unrelated PR at roughly 1 run in 170.**
