@@ -87,6 +87,23 @@ export function computeCacheUsageRatio(usage: IAiCompletionUsage | undefined): I
   if (cachedInputTokens === undefined || uncachedInputTokens === undefined) {
     return { totalInputTokens: undefined, cachedRatio: undefined };
   }
+  // A *present but out-of-range* component is not the same hazard as an absent one, and the
+  // absent case above does not cover it. A token count cannot be negative or non-finite, so one
+  // that is means the usage block is malformed — and computing anyway yields a ratio outside
+  // [0, 1] that this function's own contract promises cannot happen. That ratio then reaches
+  // `compareCacheHitRatios`, where a skewed baseline can fabricate a favourable verdict from an
+  // unremarkable candidate. Reachable from real wire data, not just hand-built input:
+  // `usageNormalization.ts` derives `uncachedInputTokens` as `promptTokens - cachedInputTokens`
+  // on both the Chat Completions and Responses routes with no guard, so any provider reporting
+  // `cached_tokens > prompt_tokens` produces exactly this shape.
+  if (
+    !Number.isFinite(cachedInputTokens) ||
+    !Number.isFinite(uncachedInputTokens) ||
+    cachedInputTokens < 0 ||
+    uncachedInputTokens < 0
+  ) {
+    return { totalInputTokens: undefined, cachedRatio: undefined };
+  }
   const totalInputTokens = cachedInputTokens + uncachedInputTokens;
   if (totalInputTokens <= 0) {
     return { totalInputTokens, cachedRatio: undefined };

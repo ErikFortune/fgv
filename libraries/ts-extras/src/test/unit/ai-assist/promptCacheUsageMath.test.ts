@@ -164,4 +164,40 @@ describe('compareCacheHitRatios', () => {
     const candidate = usage({ cachedInputTokens: 5, uncachedInputTokens: 3 });
     expect(compareCacheHitRatios(baseline, candidate).verdict).toBe('ambiguous');
   });
+
+  describe('out-of-range components (present, but impossible token counts)', () => {
+    // The absent-field guard above does not cover these: the fields ARE present, so every
+    // `undefined` check passes and the arithmetic runs. Reachable from wire data because
+    // usageNormalization derives uncached as `promptTokens - cachedInputTokens` unguarded.
+    test.each([
+      ['negative uncached', { cachedInputTokens: 150, uncachedInputTokens: -50 }],
+      ['negative cached', { cachedInputTokens: -10, uncachedInputTokens: 110 }],
+      ['both negative', { cachedInputTokens: -1, uncachedInputTokens: -1 }],
+      ['NaN cached', { cachedInputTokens: Number.NaN, uncachedInputTokens: 100 }],
+      ['Infinity uncached', { cachedInputTokens: 10, uncachedInputTokens: Number.POSITIVE_INFINITY }]
+    ])('reports %s as not computable rather than a ratio', (__label, fields) => {
+      const usage = { reports: 'reads', ...fields } as unknown as IAiCompletionUsage;
+      expect(computeCacheUsageRatio(usage)).toEqual({
+        totalInputTokens: undefined,
+        cachedRatio: undefined
+      });
+    });
+
+    test('a skewed baseline cannot fabricate a favourable verdict', () => {
+      // Before the range guard this returned 'confirms': the baseline's negative cached count
+      // yielded a -10% ratio, against which an unremarkable 60% candidate cleared the
+      // better-than-5x test. The candidate alone is not evidence of anything.
+      const baseline = {
+        reports: 'reads',
+        cachedInputTokens: -10,
+        uncachedInputTokens: 110
+      } as unknown as IAiCompletionUsage;
+      const candidate = {
+        reports: 'reads',
+        cachedInputTokens: 60,
+        uncachedInputTokens: 40
+      } as unknown as IAiCompletionUsage;
+      expect(compareCacheHitRatios(baseline, candidate).verdict).toBe('inconclusive');
+    });
+  });
 });
