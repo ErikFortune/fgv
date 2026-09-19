@@ -107,71 +107,17 @@ retired; the `as Record<string, …>` item below remains outstanding.)*
   is the right answer instead. **Triage before bulk-editing**; the `JsonValue`-narrowing ones are the
   cheap and provably-safe subset.
 
-- **[P2] The repo-wide `rush test` gate runs everything now, but still exits non-zero — the
-  blocker moved from a failure to four warnings.**
-  **Partially resolved 2026-09-19.** The original blocker is gone: `mutableFsTree.test.ts` §
-  *"returns permission-denied for read-only file"* failed on every root run, and because Rush
-  blocks dependents of a failed project the run stopped at `@fgv/ts-json-base` with **29 of 36
-  packages never executing**. That test now asserts the outcome correct for the running uid, and
-  a second test covers the `permission-denied` branch by spying the access probe, so the branch
-  is covered on root, non-root and Windows alike and the `c8 ignore` directive that had masked
-  it is deleted.
+*(The repo-wide `rush test` gate is **fully restored as of 2026-09-19**, in two steps. #673 fixed
+the root-only `mutableFsTree` assertion that stopped the run at `@fgv/ts-json-base` with 29 of 36
+packages never executing. The Jest 30 / Heft 1.3 upgrade then removed the four `SUCCESS WITH
+WARNINGS` packages, whose only warning was the Node `punycode` DEP0040 deprecation emitted by
+`tr46@3`'s `require("punycode")` — jsdom 26 brings tr46 5, which requires `"punycode/"` instead.
+Both `rush test` and `rush rebuild` are now exit 0 with no warnings bucket at all, so
+`CODING_STANDARDS.md`'s repo-wide-test acceptance checkbox is honestly tickable for the first
+time. The override route that looked cheaper was never taken and was right to avoid: pnpm itself
+logged "The `pnpm` field in package.json is no longer read by pnpm … `pnpm.overrides` ignored"
+during the upgrade, confirming it would have done nothing on Rush 5.177.2. This item is retired.)*
 
-  **What is still true, and why this entry survives rather than being retired.** Measured twice
-  on the fix branch, identically: `NO OP: 1 · SUCCESS: 31 · SUCCESS WITH WARNINGS: 4`, **exit 1**.
-  Rush treats *succeeded with warnings* as non-zero — the same behavior `CODING_STANDARDS.md`
-  documents for `rush rebuild`. So every package is now genuinely tested, but the command's exit
-  code still cannot be used as a pass/fail signal, which is what the acceptance checkbox needs.
-
-  The four are `@fgv/testbed`, `@fgv/ts-app-shell`, `@fgv/ts-res-ui-components` and
-  `@fgv/ts-sudoku-ui`, and every warning in all four is the Node `punycode` **DEP0040**
-  deprecation — no lint or build content. Pre-existing and environmental: none of those packages
-  is touched by the fix, whose entire diff is one test file, a comment-only edit and docs.
-
-  **A note on how this was nearly missed.** The first repo-wide run was reported as exit 0 and
-  believed. It was not: the background command ended in `tail`, so the status read was `tail`'s.
-  This repo already has the lesson written down for `rush test | tail`; it recurs through any
-  composite command whose last element is not the thing being measured. Read the summary block,
-  not the exit code of the pipeline you wrapped it in.
-
-  **Trigger**: before the next stream that needs the repo-wide-`rush test` acceptance checkbox —
-  it is not honestly tickable until this is closed.
-
-  **Cause, traced 2026-09-19.** `tr46@3.0.0` `index.js:3` does `require("punycode")`, which Node
-  resolves to its **deprecated builtin** rather than the userland `punycode` package tr46 has
-  always declared as a dependency. One consumer in the lockfile:
-  `jest-environment-jsdom@29.7.0` → `jsdom@20.0.3` → `whatwg-url@11.0.0` → `tr46@3.0.0`.
-  `tr46@4.1.1` (2023-03-08) and later changed the specifier to `require("punycode/")`, whose
-  trailing slash selects the userland package — verified from the published tarballs for 4.1.1,
-  5.1.1 and 6.0.0.
-
-  **Scope sketch — upgrade the rig; do not override the leaf.** In
-  `rigs/heft-dual-rig/package.json`: `@rushstack/heft-node-rig` 2.11.27 → **2.11.50** and
-  `@rushstack/heft` 1.2.7 → **1.3.x**. The rig version carries
-  `@rushstack/heft-jest-plugin` 1.2.7 → **2.0.17**, which peers `jest-environment-jsdom@^30.3.0`
-  → `jsdom@^26.1.0` → `whatwg-url@^14.1.1` → `tr46@^5.1.0`. Chain verified against the registry.
-
-  **Size is in the fallout, not the edit.** Two version strings in one rig package, but
-  `heft-jest-plugin` 1.x → 2.x and **Jest 29 → 30** are both majors and every package in the repo
-  runs tests. This is a stream, not a chore; per `MONOREPO_GUIDE.md`, its own branch with
-  confirmation at each step. Deliberately not bundled into the test fix.
-
-  **Rejected: a `globalOverrides` pin of `tr46`.** It is drop-in on the merits — `toASCII` and
-  `toUnicode` option destructuring are byte-identical between 3.0.0 and 4.1.1, exports are the
-  same two functions, CommonJS, `engines: node >=14`, and exactly one consumer. It was rejected
-  for two reasons. First, pinning a transitive leaf under a parent that still declares the old
-  range is fragile: it rots silently the next time the parent moves. Second, **it would not
-  currently work at all** — Rush 5.177.2 writes `globalOverrides` into `common/temp/package.json`'s
-  `pnpm` field, which pnpm 11 no longer reads (confirmed: the generated
-  `common/temp/pnpm-workspace.yaml` carries no `overrides` key). Rush 5.178.0 moved those settings
-  to `pnpm-workspace.yaml` for pnpm 11+, so that route would need a Rush bump *as well*. Two
-  fragile things stacked to avoid one honest upgrade.
-
-  **Not a P3**: it blocks a stated acceptance gate, which is the same reason the predecessor was
-  a P2.
-
-  **Reference**: PR for `claude/fix-mutablefstree-root-gate`, 2026-09-19; supersedes the
-  `mutableFsTree` root-permissions entry.
 
 
 
