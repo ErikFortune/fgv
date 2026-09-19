@@ -171,6 +171,28 @@ section ahead of a stable one costs money **today**, on every one of them, with 
 annotation, no wire change, and nothing reporting it. That is the strongest member of the
 set, and it is the beachhead.
 
+> **Correction, 2026-09-19, from the C1 standing assertion's first run — the claim above is
+> overstated by one provider.** "Every provider in the registry rewards prefix stability" was
+> generalized from OQ-1's probe, and the probe only ever demonstrated something narrower.
+> Measured on `grok-4.3`, same account, same day, back-to-back calls:
+>
+> | request pair | cached |
+> |---|---|
+> | byte-identical twice (the probe) | **99.5%** Chat Completions · **99.2%** Responses |
+> | same 8,684-token system prefix, different final user turn (the harness) | **2.2%** — the floor |
+>
+> Not a size threshold: the *failing* case has the **larger** prefix. And the probe's warm read is
+> 4,800 cached of 4,822 total input — essentially the whole request, user turn included, which is
+> the signature of whole-request caching rather than incremental prefix matching.
+>
+> **So for xAI, varying the tail defeats the cache, and section order buys nothing.** D4 remains
+> correct for Gemini implicit and OpenAI's default mode; on xAI its value is not merely
+> unevidenced but contradicted. The beachhead argument survives on two providers, not three.
+>
+> Nothing shipped is affected: C3 sends no breakpoints to xAI
+> (`supportsPromptCacheBreakpoints` is `true` only for `'openai'`), so xAI's request bodies are
+> byte-identical to what they were before this stream.
+
 So the phases:
 
 | slice | package(s) | depends on | can it make anything worse? |

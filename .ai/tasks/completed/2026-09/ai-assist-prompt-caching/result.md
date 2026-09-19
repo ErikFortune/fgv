@@ -113,23 +113,37 @@ rewards prefix stability — Gemini implicit, xAI, and OpenAI's default mode hav
 send, and the only lever is the order of the bytes."* If xAI does not reward prefix stability,
 that sentence is overstated by one provider, and D4's value on xAI specifically is unevidenced.
 
-### Not yet established, and how to settle it
+### Settled the same day — the probe re-ran, and drift is ruled out
 
-The probe last ran two days before this harness. Provider behaviour or account state could have
-changed in between, in which case this result says nothing about prefix-vs-exact caching. **The
-discriminator is to re-run the existing probe** (`rushx cli xai-cache-probe` in `samples/testbed`),
-which changes back exactly the one variable:
+`rushx cli xai-cache-probe` on `grok-4.3`, minutes after the harness:
 
-- still ~99% → the varying tail is the cause; xAI is exact-request, not prefix, and §2 needs the
-  correction above.
-- now ~2% → xAI's caching changed or is off for this account, and this harness result carries no
-  information about prefix caching either way.
+```
+Chat Completions  prompt_tokens_details.cached_tokens: cold=128  warm=4800   (of 4822 input)
+Responses         input_tokens_details.cached_tokens:  cold=128  warm=4544   (of 4582 input)
+```
+
+xAI's cache is alive and healthy today, so provider/account drift is not the explanation. The
+discriminator resolves cleanly, with everything held constant but the tail:
+
+| config | prefix | cached | ratio |
+|---|---|---|---|
+| byte-identical twice | 4,822 tok | 4,800 | **99.5%** |
+| same prefix, different final user turn | 8,684 tok | 192 | **2.2%** |
+
+Two things make this conclusive rather than suggestive. **It is not a size threshold** — the
+failing case has the *larger* prefix. And the warm probe caches **4,800 of 4,822 total input**,
+i.e. essentially the entire request including the user turn, which is what whole-request caching
+looks like; incremental prefix matching would have cached the harness's 8,684-token identical
+system prompt and missed only its short user turn.
+
+**Conclusion: xAI's automatic cache does not reward prefix stability.** Varying the tail — which
+is what every real caller does — defeats it. `design.md` §2 is corrected in place.
 
 ### Scope of the impact, stated precisely
 
 C3 does **not** send breakpoints to xAI — `supportsPromptCacheBreakpoints` is `true` only for
 `'openai'`, so xAI receives byte-identical request bodies to those it received before this stream.
 Nothing shipped is broken by this finding. What is affected is a **claim**: how much the C2
-ordering diagnostic is worth on a provider we cannot show rewards prefix stability. The Anthropic
+ordering diagnostic is worth on a provider now shown **not** to reward prefix stability. The Anthropic
 and OpenAI emit paths, which do receive explicit breakpoints, are untouched by this and remain
 unmeasured — no harness exercises them yet.
