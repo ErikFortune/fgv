@@ -272,6 +272,35 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     expect(body.maxTokens).toBeUndefined();
   });
 
+  test('forwards cache in the proxy body only when explicitly provided', async () => {
+    mockFetchResponse({ content: 'ok' });
+
+    await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest(),
+      cache: { systemBreakpoints: [4], cacheKey: 'tenant-1' }
+    });
+
+    // No wire projection needed (unlike structuredOutput's schema) — IAiCacheRequest is plain
+    // numbers and a string, so it forwards as-is for the proxy's own callProviderCompletion call.
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.cache).toEqual({ systemBreakpoints: [4], cacheKey: 'tenant-1' });
+  });
+
+  test('omits cache from the proxy body when the caller does not provide one', async () => {
+    mockFetchResponse({ content: 'ok' });
+
+    await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest()
+    });
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.cache).toBeUndefined();
+  });
+
   test('surfaces fetch network errors', async () => {
     mockFetchError(new Error('ECONNREFUSED'));
 

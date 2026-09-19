@@ -106,6 +106,8 @@ detail. `· pkg` names the owning package.*
 - **Making an MCP server's tools callable from an ai-assist tool-use conversation?** → `executeClientToolTurn` `JsonSchema` `fromJson` `adaptMcpTools` · `ts-extras-mcp`
 - **Diagnosing an OpenAI/xAI Responses stream that completes empty?** → `executeClientToolTurn` · `ts-extras`
 - **Reading prompt-cache token counts off a completion (reads/writes, normalized)?** → `IAiCompletionUsage` `AiCacheReportingLevel` · `ts-extras`
+- **Placing an explicit prompt-cache breakpoint on an Anthropic/OpenAI request?** → `IAiCacheRequest` `validateAiCacheRequest` · `ts-extras`
+- **Deriving a cache-breakpoint plan from a resolved prompt's composition?** → `toCacheRequest` · `ts-prompt-assist`
 - **Alerting on provider-API evolution affecting `@fgv/ts-extras/ai-assist`?** → `ILogger` `IStreamApiConfig` · `ts-extras`
 - **Stripping LLM Markdown fences from raw text?** → `extractJsonText` `fencedStringifiedJson` · `ts-extras`
 - **Diagnosing *why* an LLM's JSON response failed to parse?** → `classifyJsonParseFailure` · `ts-extras`
@@ -181,6 +183,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-09-07** — ai-assist now places explicit prompt-cache breakpoints on Anthropic and OpenAI requests built from a ts-prompt-assist resolve… ([#671](https://github.com/ErikFortune/fgv/pull/671)) · `ts-extras` `ts-prompt-assist`
 - **2026-09-07** — Thinking config loses a required provider field that gated nothing, and gains 'none' — the cross-provider spelling for off that… ([#667](https://github.com/ErikFortune/fgv/pull/667)) · `ts-extras`
 - **2026-09-02** — Shipped: a rendered template, and a resolved prompt, can now say what they are made of — order, absolute size and binding… ([#663](https://github.com/ErikFortune/fgv/pull/663)) · `ts-extras` `ts-prompt-assist`
 - **2026-08-28** — A string can now declare that it must be one printable line — and the name says shape, not safety, because no converter can promise… · `ts-utils`
@@ -190,8 +193,7 @@ markers.*
 - **2026-08-22** — Shipped: the rebuild-path table clear runs through `exec`, so the one statement `release()` could never reach no longer exists. ([#654](https://github.com/ErikFortune/fgv/pull/654)) · `ts-agent-memory-sqlite-vec`
 - **2026-08-21** — A caller that has already declared the shape it wants can now tell the provider, and learn which enforcement was actually applied… ([#652](https://github.com/ErikFortune/fgv/pull/652)) · `ts-extras` `ts-json-base` `ts-app-shell`
 - **2026-08-21** — Shipped: `release()` on both index classes — it drops the index's prepared statements and marks it unusable, and never touches the… ([#651](https://github.com/ErikFortune/fgv/pull/651)) · `ts-agent-memory-sqlite-vec`
-- **2026-08-18** — Shipped: one invariant, enforced at the one layer that sees both sides — a record loaded from an address derived from kind K is a… ([#648](https://github.com/ErikFortune/fgv/pull/648)) · `ts-agent-memory`
 
-*Showing the 10 most recent of 40. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 41. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

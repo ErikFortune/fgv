@@ -52,7 +52,7 @@ import { applySafeguards } from '../safeguards';
 import { assertOutputValidationsCompatible, runOutputValidationPipeline } from '../output';
 import { walkScopeChain } from './chainWalker';
 import { IBindingMergeResult, mergeBindings } from './bindingMerger';
-import { analyzePromptCacheStability } from './cacheStabilityAnalysis';
+import { computeCacheStabilityAnalysis } from './cacheStabilityAnalysis';
 import { MustacheTemplateCache } from './mustacheCache';
 import { joinBodies } from './candidateSelector';
 import {
@@ -1272,20 +1272,28 @@ export class PromptLibrary<
       });
     }
 
-    const cacheFindings = analyzePromptCacheStability({
+    const { findings: cacheFindings, perSectionStability } = computeCacheStabilityAnalysis({
       sections,
       mergedBindings: merged,
       candidateMatches,
       resourceBindingResolutions,
       slots,
       callSiteOverrides: callSiteCacheStability,
+      prefaceStability: this._safetyPolicy?.antiJailbreakPrefaceStability,
       options: options.cacheDiagnostics
     });
+    // Attaches the same effective stability the D1–D5 checks above just reasoned over to each
+    // section, so a consumer building a cache-breakpoint plan (`toCacheRequest`) reads it off the
+    // composition rather than re-deriving it from the trace.
+    const sectionsWithStability: IPromptSection[] = sections.map((section, index) => ({
+      ...section,
+      effectiveStability: perSectionStability[index]
+    }));
 
     return {
       totalChars: finalBody.length,
       ...(measure === undefined ? {} : { totalMeasured: measuredTotal }),
-      sections,
+      sections: sectionsWithStability,
       cacheFindings
     };
   }

@@ -374,6 +374,41 @@ renders empty *this* time can render non-empty next time at the same position, w
 the byte-instability D4/D5 exist to catch; excluding it would suppress the warning in the case
 that matters most.
 
+### 5.1b A zero-byte section contributes zero tokens — **open, and C3 must not inherit the bug**
+
+**Added 2026-09-18, from a post-merge backstop review of #669.** §5.1a settled *which runs
+collapse* and is silent on *what an empty run's `measured` does to the reported prefix total*.
+C2 shipped with that gap open, and it is a live defect in `checkThreshold`.
+
+`prefixEnd` is a single boundary index walked over the **collapsed** run list, but the prefix is
+then taken as `sections.slice(0, prefixEnd)` — contiguous over the **raw** section array. A
+collapsed run therefore contributes its `measured` iff it happens to sit interior to the walked
+region. Verified by executing the shipped code:
+
+| shape | reported prefix |
+|---|---|
+| empty `'frozen'` run mid-prefix, walk continues past it | **25** = 10+7+8 — the empty run's 7 counted |
+| *the same run*, sitting just before the run that ends the walk | **10** — the same 7 not counted |
+
+**The collapse asymmetry is a symptom, not the defect.** Any zero-`chars` section distorts the
+total, collapsed or not — an empty `'per-conversation'` slot (never collapsed) with `measured: 7`
+reports **17** where removing it reports **10**.
+
+The governing fact: `IPromptSection.start`/`chars` partition `IResolvedPrompt.body` exactly, with
+no per-section framing. A section with `chars === 0` contributes **no text** to the prefix that
+would be sent, so whatever a caller's `measure('')` returns for it is an artifact of an arbitrary
+callback, not tokens in the prompt.
+
+**The rule, for C3 and for the C2 fix:** a section with `chars === 0` contributes `0` to the
+measured total, wherever a prefix is sized. This subsumes the collapse asymmetry (both shapes
+above → 10) and closes the non-collapsed case in one invariant, rather than patching
+`prefixEnd`'s index arithmetic. It belongs beside `checkThreshold`'s existing guard against a
+hostile measure (NaN / Infinity / negative) — that guard already declines to trust the callback
+three lines above the sum that trusts it.
+
+**Why this is stated as a rule rather than left to C3's judgement:** C3 sizes breakpoints by the
+same fold and would re-derive — or re-miss — the same thing. Tracked in `docs/TECH_DEBT.md`.
+
 ### 5.2 The resulting rule, and its consequence
 
 1. Fold to runs; take the maximal **monotone non-increasing** stability prefix.
@@ -832,6 +867,20 @@ surface per `ACTIVE_DEVELOPMENT.md` (`ts-extras`' `ai-assist` packlet by name;
 change shape. An un-annotated caller's request body is byte-identical before and after every
 slice.
 
+**Added 2026-09-18, at C3 close, per a pre-merge `code-reviewer` finding: the streaming
+completion path is deliberately out of scope for C3's emit surface**, and this table's
+absence of `IProviderCompletionStreamParams` from every C3 row was silent about that rather
+than stated, unlike §10's explicit Gemini deferral. `IProviderCompletionStreamParams` (the
+streaming counterpart to `IProviderCompletionParams`) gained no `cache?` field in C3. This is
+narrower than C1's own precedent — OQ-5 put streaming usage-reporting *in* scope specifically
+because a caller could not otherwise distinguish "streaming doesn't report usage" from "not
+implemented yet" — but the two are not the same hazard: an absent `cache?` field on the
+streaming params type is a **compile-time** signal (a caller cannot construct a request that
+silently drops the cache plan; the property does not exist to set), not a **silently-dropped
+runtime value** the way an omitted usage-reporting split would have been. Streaming
+cache-breakpoint emission remains a real, unaddressed surface — recorded here rather than left
+implicit, so a future reader does not have to re-derive that the gap is deliberate.
+
 ---
 
 ## 12. Open questions for triage
@@ -1178,23 +1227,37 @@ already places in template body content, which nothing here verifies either. The
 data to check this against; unlike D1/D2, there is no refutation path for a preface that breaks
 the assumption.
 
-**OQ-7 — should an unannotated preface default to `'frozen'` or `'per-request'`? Not resolved;
-carried to C3.** Copilot's review raised this independently, three times across the PR's review
-rounds, and the disagreement is real rather than a nitpick: a dynamic preface treated as
-`'frozen'` is exactly the design's worst case (§1) — a false-frozen prefix that never cache-hits,
-silently, forever. But the reverse default is not free either: `'per-request'` would make **every**
-resolve with a preface report `'cache-hostile-ordering'` against any stable content that follows
-it (the preface is always section 0, so anything more stable after it is an upward transition) —
-for what is very likely the common, correct shape (fixed framing text, then stable instructions).
-Neither default is strictly safer once usability is weighed, and C2's own remit (§9: "computes and
-reports, emits nothing") means the actual cost of either choice — a wasted cache write, or a
-diagnostic nobody trusts because it always fires — only materializes once C3 emits a breakpoint
-based on it. **Recommendation, undecided:** the durable fix is likely a third option neither §4 nor
-C2 offers — an explicit stability declaration on `IPromptSafetyPolicy` itself (e.g.
-`antiJailbreakPrefaceStability?: PromptCacheStability`), giving the policy author the same
-call-site-style override slots already have, rather than picking one blanket default for every
-consumer. Out of scope for C2 (new declared-hint surface, not a diagnostic); C3's implementer
-should decide before trusting a preface-inclusive prefix for an explicit breakpoint.
+**OQ-7 — should an unannotated preface default to `'frozen'` or `'per-request'`? ✅ RESOLVED
+2026-09-18 (C3): neither blanket default — an explicit third option on `IPromptSafetyPolicy`.**
+Copilot's review raised this independently, three times across #669's review rounds, and the
+disagreement is real rather than a nitpick: a dynamic preface treated as `'frozen'` is exactly the
+design's worst case (§1) — a false-frozen prefix that never cache-hits, silently, forever. But the
+reverse default is not free either: `'per-request'` would make **every** resolve with a preface
+report `'cache-hostile-ordering'` against any stable content that follows it (the preface is
+always section 0, so anything more stable after it is an upward transition) — for what is very
+likely the common, correct shape (fixed framing text, then stable instructions). Neither default
+is strictly safer once usability is weighed.
+
+**Decided as recommended, not overruled.** `IPromptSafetyPolicy.antiJailbreakPrefaceStability?:
+PromptCacheStability` — an explicit, optional declaration beside `antiJailbreakPreface`, giving the
+policy author the same call-site-style override slots every other stability claim already has
+(§4). **Default, when omitted, is `'frozen'`** — preserving C2's shipped behavior for every
+existing caller (no silent behavior change for a stream that predates this option) — but a policy
+author who knows their callback varies its output (per-descriptor text, a rotated warning,
+anything short of a pure function of `descriptor`) can now say `'per-request'` or
+`'per-conversation'` and get the honest treatment instead of the risky default.
+
+This is not a refutable claim, unlike D1/D2's slot-level checks: `antiJailbreakPreface` is a
+consumer-supplied callback invoked fresh on every resolve with no trace of what it returned on a
+prior resolve, so there is still no resolve-time evidence to check a declared value against — the
+`'stability-refuted'` finding never fires for a preface section, declared or defaulted, exactly as
+before. The declaration is advisory-trusted, the same trust already placed in Mustache template
+body content and now made an explicit, overridable assumption rather than a hard-coded one.
+
+Implemented in `ts-prompt-assist`: `IPromptSafetyPolicy.antiJailbreakPrefaceStability?` (types/safety.ts),
+threaded through `PromptLibrary._buildComposition` into
+`IPromptCacheStabilityAnalysisParams.prefaceStability?` (default `'frozen'` inside
+`analyzePromptCacheStability`), consumed by `effectiveSectionStability`'s `'preface'` branch.
 
 **D1 needed a field the design's own text assumed already existed.** §9 describes D1 as "a
 counter on an existing loop" over `bindingMerger.ts`'s scope walk, but the count was never
@@ -1217,3 +1280,49 @@ more conservative than the analogous D1 multi-scope check (which only refutes wh
 evidence is itself treated as refuting evidence, per the governing asymmetry. A future slice
 that threads recursive analysis through would be a genuine capability increase, not a bug fix to
 this one.
+
+---
+
+## 16. C3 post-push Copilot findings — 2026-09-18
+
+PR #671's first Copilot review round surfaced two real defects in the C3 emit path, both
+distinct from the pre-merge `code-reviewer` P1 already recorded in the stream README. Neither
+was visible to layer 1 (`code-reviewer`) or to the 100%-coverage suite that existed at push time.
+
+**Finding A — `cache` reached non-OpenAI `apiFormat: 'openai'` descriptors unconditionally.**
+§6.3's `prompt_cache_key` discussion, and the implementation comment it was read to license,
+treated the field as "pure additive routing plumbing" not requiring descriptor gating — reasoning
+that in fact only ever addressed OpenAI's own `mode: 'explicit'` footgun, never the cross-descriptor
+question. `callOpenAiCompletion`/`callOpenAiResponsesCompletion` are shared by xAI, Groq, Mistral,
+Ollama, and self-hosted `openai-compat` (§F3 already established this sharing for the completion
+path generally), and neither `prompt_cache_breakpoint` content parts nor the top-level
+`prompt_cache_key` field had ever been confirmed tolerated outside OpenAI itself — the identical
+risk `supportsStreamUsageOption` (§8/C1) was written to avoid for `stream_options`. **Fixed**, not
+overruled: added `AiAssist.supportsPromptCacheBreakpoints(descriptor)` (`streamUsageCapability.ts`,
+same shape and write-side rationale as `supportsStreamUsageOption`, `true` only for
+`descriptor.id === 'openai'`), gating `cache` to `undefined` for every other descriptor at the
+`callProviderCompletion` dispatch site before it reaches either builder. This is descriptor-family
+safety, not the `IAiCacheCapability` model-keyed threshold/cap table §7/§11 scoped out of every
+C3 discussion — the two are different questions (whether a request shape is *safe to send at all*
+vs. how many bytes a model's cache *tolerates*), and only the latter was ever out of scope.
+
+**Finding B — `deriveCacheBreakpointOffsets` could still emit an illegal `0` or a duplicate
+offset.** The pre-merge P1 fix (README, "Lessons codified") suppressed only the offset-equals-
+document-length case. A second, structurally identical gap survived it: `collapseEmptyStableRuns`
+collapses empty **`'frozen'`** runs only (§5.1a), so an empty `'per-conversation'` or
+`'per-request'` run survives as its own run and the run after it starts at the same offset. Two
+downward transitions landing on the same empty run — `frozen(5) → empty per-conversation →
+per-request` — produced `[5, 5]`, a duplicate `AiAssist.validateCacheBreakpoints` rejects for
+non-ascending order; the same shape at the start of the document (`empty per-conversation →
+per-request`, nothing before it) produced an illegal `0`. **Fixed** by tracking the last emitted
+offset and requiring `offset > lastOffset` (initialized to `0`) in addition to the existing
+`offset < totalChars` guard — the redundant second candidate at an already-claimed position is
+discarded; the boundary it would have marked is unaffected, since the first transition to reach it
+already claimed the offset.
+
+Both fixes shipped in the same PR, with regression tests reproducing the exact reported shapes
+(`apiClient.cache.test.ts`'s "cache gating" describe block; `cacheStabilityAnalysis.test.ts`'s two
+new `deriveCacheBreakpointOffsets` cases) — the same "regression test pinned to the specific
+reported input" discipline the pre-merge P1 used, per `TESTING_GUIDELINES.md`'s caller-enumeration
+rule: a test that only re-derives the general property would not have failed against either
+pre-fix version.

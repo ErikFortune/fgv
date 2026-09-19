@@ -6,7 +6,7 @@
 import { PromptId, ResourceId, ScopeKey, SlotName } from './ids';
 import { SlotDirective, ResourceSubstitutionMode } from './enums';
 import { IPromptDescriptor } from './descriptor';
-import { IPromptCacheDiagnosticOptions, IPromptCacheFinding } from './cacheStability';
+import { IPromptCacheDiagnosticOptions, IPromptCacheFinding, PromptCacheStability } from './cacheStability';
 import { Runtime as TsResRuntime } from '@fgv/ts-res';
 
 /**
@@ -268,6 +268,13 @@ export interface IPromptSection {
   readonly wasEnforced?: boolean;
   /** Scope whose binding won, when the section's source is `'binding'`. */
   readonly winningScope?: ScopeKey;
+  /**
+   * This section's effective prompt-cache stability, as computed by
+   * `analyzePromptCacheStability` (design.md §9) alongside `cacheFindings` — the same value the
+   * D1–D5 checks reason over, including any refutation downgrade. Exposed so a consumer building
+   * a cache-breakpoint plan (see `toCacheRequest`) does not have to recompute it from the trace.
+   */
+  readonly effectiveStability?: PromptCacheStability;
 }
 
 /**
