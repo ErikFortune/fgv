@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "Test-only: make the FsFileTreeAccessors.fileIsMutable read-only-file test assert the outcome that is correct for the uid it runs under. Mode bits do not constrain root, so fs.accessSync(<0o444 file>, W_OK) succeeds for uid 0 and fileIsMutable correctly reports the file writable; asserting permission-denied unconditionally made the test fail on every root run, and because Rush blocks dependents of a failed project that single failure stopped repo-wide 'rush test' at @fgv/ts-json-base and covered nothing downstream. No change to fsTree.ts behavior; its c8 directive rationale was corrected to describe the conditional reachability accurately rather than citing a test that could not pass under the condition it named.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "noreply@anthropic.com"
+}
