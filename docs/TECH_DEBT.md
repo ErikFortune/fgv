@@ -107,14 +107,46 @@ retired; the `as Record<string, …>` item below remains outstanding.)*
   is the right answer instead. **Triage before bulk-editing**; the `JsonValue`-narrowing ones are the
   cheap and provably-safe subset.
 
-*(The repo-wide `rush test` acceptance gate — which could not complete, because
-`mutableFsTree.test.ts` § "returns permission-denied for read-only file" failed on every root run
-and Rush blocks dependents of a failed project, stopping the run at `@fgv/ts-json-base` and
-covering nothing downstream — was fixed 2026-09-19. The test now asserts the outcome correct for
-the uid it runs under: root genuinely *can* write a `0o444` file, so `fileIsMutable` reporting it
-writable is right, and a non-root run still asserts the denial. The `fsTree.ts` c8 directive that
-justified itself by citing the very test that could not pass under the condition it named was
-rewritten to describe the conditional reachability accurately. This item is retired.)*
+- **[P2] The repo-wide `rush test` gate runs everything now, but still exits non-zero — the
+  blocker moved from a failure to four warnings.**
+  **Partially resolved 2026-09-19.** The original blocker is gone: `mutableFsTree.test.ts` §
+  *"returns permission-denied for read-only file"* failed on every root run, and because Rush
+  blocks dependents of a failed project the run stopped at `@fgv/ts-json-base` with **29 of 36
+  packages never executing**. That test now asserts the outcome correct for the running uid, and
+  a second test covers the `permission-denied` branch by spying the access probe, so the branch
+  is covered on root, non-root and Windows alike and the `c8 ignore` directive that had masked
+  it is deleted.
+
+  **What is still true, and why this entry survives rather than being retired.** Measured twice
+  on the fix branch, identically: `NO OP: 1 · SUCCESS: 31 · SUCCESS WITH WARNINGS: 4`, **exit 1**.
+  Rush treats *succeeded with warnings* as non-zero — the same behavior `CODING_STANDARDS.md`
+  documents for `rush rebuild`. So every package is now genuinely tested, but the command's exit
+  code still cannot be used as a pass/fail signal, which is what the acceptance checkbox needs.
+
+  The four are `@fgv/testbed`, `@fgv/ts-app-shell`, `@fgv/ts-res-ui-components` and
+  `@fgv/ts-sudoku-ui`, and every warning in all four is the Node `punycode` **DEP0040**
+  deprecation — no lint or build content. Pre-existing and environmental: none of those packages
+  is touched by the fix, whose entire diff is one test file, a comment-only edit and docs.
+
+  **A note on how this was nearly missed.** The first repo-wide run was reported as exit 0 and
+  believed. It was not: the background command ended in `tail`, so the status read was `tail`'s.
+  This repo already has the lesson written down for `rush test | tail`; it recurs through any
+  composite command whose last element is not the thing being measured. Read the summary block,
+  not the exit code of the pipeline you wrapped it in.
+
+  **Trigger**: before the next stream that needs the repo-wide-`rush test` acceptance checkbox —
+  it is not honestly tickable until this is closed.
+
+  **Scope sketch**: find the dependency pulling in `punycode` in those four packages and bump or
+  replace it. Touches the lockfile, so per `MONOREPO_GUIDE.md` it belongs on its own branch with
+  confirmation at each step — deliberately not bundled into the test fix.
+
+  **Not a P3**: it blocks a stated acceptance gate, which is the same reason the predecessor was
+  a P2.
+
+  **Reference**: PR for `claude/fix-mutablefstree-root-gate`, 2026-09-19; supersedes the
+  `mutableFsTree` root-permissions entry.
+
 
 
 - **[P2] A `safer-fetch` retry test asserts a probabilistic outcome, and flakes CI for every

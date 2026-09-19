@@ -85,8 +85,11 @@ merge**, not as a post-merge follow-up.
 
 #### ~~`mutableFsTree` permission test cannot pass as root~~ — ✅ resolved 2026-09-19
 
-Fixed in `@fgv/ts-json-base`; also retired from `TECH_DEBT.md`, where it had been escalated to P2
-for silently disabling the repo-wide `rush test` gate.
+Fixed in `@fgv/ts-json-base`. **The repo-wide `rush test` gate is only partly restored, and the
+`TECH_DEBT.md` P2 survives in amended form rather than being retired**: all 36 packages now
+execute (29 previously never ran), but the command still exits 1 because four untouched packages
+report `SUCCESS WITH WARNINGS` — the Node `punycode` DEP0040 deprecation — and Rush treats that as
+non-zero. The failure this entry describes is gone; the gate is not yet honestly tickable.
 
 The entry's **preferred fix** (skip under root) was not taken, and the reason is worth keeping:
 root is the *default* in this repo's cloud-agent containers, so a skip would have asserted nothing
