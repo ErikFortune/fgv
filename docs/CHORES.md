@@ -85,11 +85,10 @@ merge**, not as a post-merge follow-up.
 
 #### ~~`mutableFsTree` permission test cannot pass as root~~ — ✅ resolved 2026-09-19
 
-Fixed in `@fgv/ts-json-base`. **The repo-wide `rush test` gate is only partly restored, and the
-`TECH_DEBT.md` P2 survives in amended form rather than being retired**: all 36 packages now
-execute (29 previously never ran), but the command still exits 1 because four untouched packages
-report `SUCCESS WITH WARNINGS` — the Node `punycode` DEP0040 deprecation — and Rush treats that as
-non-zero. The failure this entry describes is gone; the gate is not yet honestly tickable.
+Fixed in `@fgv/ts-json-base` (#673), which removed the blocking failure — all 36 packages execute,
+where 29 previously never ran. The gate was then **fully restored** by the Jest 30 / Heft 1.3
+upgrade, which cleared the four `SUCCESS WITH WARNINGS` packages (Node `punycode` DEP0040, emitted
+by `tr46@3`). `rush test` and `rush rebuild` are both exit 0 with no warnings bucket.
 
 The entry's **preferred fix** (skip under root) was not taken, and the reason is worth keeping:
 root is the *default* in this repo's cloud-agent containers, so a skip would have asserted nothing

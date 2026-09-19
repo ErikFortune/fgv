@@ -30,15 +30,19 @@ import {
   isFilePath
 } from '../../packlets/url-utils';
 
-// Mock window.location.search for testing
+// Drives the real `window.location.search` through jsdom's navigation API rather than
+// replacing `window.location` wholesale. jsdom 26 (Jest 30) makes `location` a
+// non-configurable own property, so `Object.defineProperty(window, 'location', …)` now
+// throws "Cannot redefine property" at module load and fails the whole suite. Keeping the
+// `mockLocation.search = '…'` shape means every existing assignment below is unchanged.
 const mockLocation = {
-  search: ''
+  get search(): string {
+    return window.location.search;
+  },
+  set search(value: string) {
+    window.history.replaceState({}, '', `/${value}`);
+  }
 };
-
-Object.defineProperty(window, 'location', {
-  value: mockLocation,
-  writable: true
-});
 
 describe('URL Parameters', () => {
   describe('parseUrlParameters', () => {
