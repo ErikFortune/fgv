@@ -206,7 +206,9 @@ declare namespace AiAssist {
         IAiCompletionUsage,
         supportsCacheUsageReporting,
         supportsPromptCacheBreakpoints,
+        supportsPromptCacheRouting,
         supportsStreamUsageOption,
+        IAiPromptCacheRoutingSupport,
         ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
         AiStructuredOutputFormat,
         IAiStructuredOutputCapability,
@@ -1334,6 +1336,14 @@ interface IAiModelInfo {
     readonly capabilities: ReadonlySet<AiModelCapability>;
     readonly displayName?: string;
     readonly id: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IAiPromptCacheRoutingSupport {
+    readonly chatCompletionsHeader: string | undefined;
 }
 
 // @public
@@ -3230,9 +3240,16 @@ function supportsImageGeneration(descriptor: IAiProviderDescriptor): boolean;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function supportsPromptCacheBreakpoints(descriptor: IAiProviderDescriptor): boolean;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function supportsPromptCacheRouting(descriptor: IAiProviderDescriptor): IAiPromptCacheRoutingSupport | undefined;
 
 // @public
 function supportsStreamUsageOption(descriptor: IAiProviderDescriptor): boolean;

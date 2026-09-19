@@ -90,7 +90,11 @@ import {
   resolveStructuredOutput
 } from './structuredOutput';
 import { resolveStructuredOutputCapability } from './registry';
-import { supportsCacheUsageReporting, supportsPromptCacheBreakpoints } from './streamUsageCapability';
+import {
+  supportsCacheUsageReporting,
+  supportsPromptCacheBreakpoints,
+  supportsPromptCacheRouting
+} from './streamUsageCapability';
 import type { StructuredOutputRequest } from './structuredOutputTypes';
 import {
   normalizeAnthropicUsage,
@@ -313,7 +317,8 @@ async function callOpenAiCompletion(
   useMaxCompletionTokensField: boolean = false,
   structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT,
   reportsUsage: boolean = false,
-  cache?: IAiCacheRequest
+  cache?: IAiCacheRequest,
+  cacheKeyHeader?: string
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/chat/completions`;
   const systemContentResult = buildOpenAiChatSystemContent(prompt.system, cache);
@@ -337,11 +342,12 @@ async function callOpenAiCompletion(
     // Omitted when the caller doesn't set maxTokens — every non-Anthropic provider applies its
     // own default. See AiAssist.usesMaxCompletionTokensField for the field-name split.
     ...(maxTokens !== undefined ? { [maxTokensField]: maxTokens } : {}),
-    // Pure additive routing plumbing (research.md §1.3) — no vocabulary, no cap. `cache` itself
-    // is gated to confirmed-supporting descriptors at the dispatch site (see
-    // supportsPromptCacheBreakpoints), so `cache?.cacheKey` is only ever defined here when this
-    // call is already known to be OpenAI.
-    ...(cache?.cacheKey !== undefined
+    // Pure additive routing plumbing (research.md §1.3) — no vocabulary, no cap. `cacheKey` is
+    // gated at the dispatch site to descriptors with a confirmed routing transport (see
+    // supportsPromptCacheRouting), and carried here as a body field only for providers that take
+    // it that way. xAI takes it as the `cacheKeyHeader` below instead, so sending it in the body
+    // as well would be an unrecognized field on a server whose tolerance is unconfirmed.
+    ...(cache?.cacheKey !== undefined && cacheKeyHeader === undefined
       ? // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field name
         { prompt_cache_key: cache.cacheKey }
       : {})
@@ -352,6 +358,12 @@ async function callOpenAiCompletion(
   Object.assign(body, structured.wire);
 
   const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
+  // Sticky-routing key, when the provider carries it as a header rather than a body field.
+  // xAI's prompt cache is per-server, so an identical prefix can still miss if the request is
+  // routed to a different box; `x-grok-conv-id` pins it.
+  if (cache?.cacheKey !== undefined && cacheKeyHeader !== undefined) {
+    headers[cacheKeyHeader] = cache.cacheKey;
+  }
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI completion: model=${config.model}`);
@@ -893,11 +905,21 @@ export async function callProviderCompletion(
     case 'openai': {
       // Responses-API-only models (e.g. gpt-5.5-pro) 400 on /chat/completions, so they route
       // to the Responses path even with no tools requested — same path the tools case uses.
-      // `cache` is gated to descriptors confirmed to tolerate the request-shape changes it
-      // produces — see supportsPromptCacheBreakpoints. Every other apiFormat: 'openai'
-      // descriptor (xAI, Groq, Mistral, Ollama, openai-compat) gets the same request body it
-      // would have gotten had the caller passed no `cache` at all.
-      const gatedCache = supportsPromptCacheBreakpoints(descriptor) ? cache : undefined;
+      // `cache` carries two independently-supported things, and they are gated separately.
+      // `systemBreakpoints` restructures `content` and needs the server to tolerate an
+      // unrecognized field inside it (OpenAI only). `cacheKey` is an opaque routing string that
+      // makes repeated requests with a shared prefix land on the same cache-holding server —
+      // which xAI needs precisely because it does per-server byte-for-byte prefix matching.
+      // Gating them together withheld the routing key from the provider that depends on it most.
+      // Every descriptor supporting neither (Groq, Mistral, Ollama, openai-compat) still gets the
+      // exact request body it would have gotten had the caller passed no `cache` at all.
+      const routing = supportsPromptCacheRouting(descriptor);
+      const breakpoints = supportsPromptCacheBreakpoints(descriptor) ? cache?.systemBreakpoints : undefined;
+      const routedKey = routing !== undefined ? cache?.cacheKey : undefined;
+      const gatedCache: IAiCacheRequest | undefined =
+        breakpoints !== undefined || routedKey !== undefined
+          ? { systemBreakpoints: breakpoints, cacheKey: routedKey }
+          : undefined;
       if (usesResponsesApi) {
         return callOpenAiResponsesCompletion(
           config,
@@ -926,7 +948,8 @@ export async function callProviderCompletion(
         usesMaxCompletionTokensField(descriptor),
         resolvedStructured,
         supportsCacheUsageReporting(descriptor),
-        gatedCache
+        gatedCache,
+        routing?.chatCompletionsHeader
       );
     }
     case 'anthropic':

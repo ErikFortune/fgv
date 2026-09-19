@@ -72,10 +72,15 @@ export function supportsCacheUsageReporting(descriptor: IAiProviderDescriptor): 
 }
 
 /**
- * Whether a provider has confirmed tolerance for the request-shape changes an
- * {@link AiAssist.IAiCacheRequest} produces on the shared Chat Completions / Responses paths: splitting
- * `system` into content parts carrying `prompt_cache_breakpoint`, and the top-level
- * `prompt_cache_key` field.
+ * Whether a provider has confirmed tolerance for the request-shape change
+ * {@link AiAssist.IAiCacheRequest.systemBreakpoints} produces on the shared Chat Completions /
+ * Responses paths: splitting `system` into content parts each carrying a
+ * `prompt_cache_breakpoint` field.
+ *
+ * This governs **breakpoints only**. The routing key is a separate capability with a different
+ * support set — see {@link AiAssist.supportsPromptCacheRouting}. An earlier version of this
+ * predicate gated both, which withheld the routing key from xAI, the one provider that most
+ * needs it.
  *
  * @remarks
  * Same sharing problem as {@link AiAssist.supportsStreamUsageOption}, on the write side instead of the
@@ -83,8 +88,8 @@ export function supportsCacheUsageReporting(descriptor: IAiProviderDescriptor): 
  * `apiFormat: 'openai'` descriptor (xAI Grok, Groq, Mistral, Ollama, self-hosted
  * `openai-compat`), but only OpenAI's own API is confirmed to accept a `system`/first-item
  * `content` restructured into an array of parts each carrying an unrecognized
- * `prompt_cache_breakpoint` field, or the extra top-level `prompt_cache_key` field. A
- * schema-strict server on one of the other descriptors could 400 on either — the identical
+ * `prompt_cache_breakpoint` field. A
+ * schema-strict server on one of the other descriptors could 400 on it — the identical
  * failure mode `supportsStreamUsageOption` was written to avoid for `stream_options`. So `cache`
  * is gated to `descriptor.id === 'openai'` at the dispatch site before it ever reaches these
  * builders; every other descriptor gets the same request body it would have gotten had the
@@ -93,4 +98,63 @@ export function supportsCacheUsageReporting(descriptor: IAiProviderDescriptor): 
  */
 export function supportsPromptCacheBreakpoints(descriptor: IAiProviderDescriptor): boolean {
   return descriptor.id === 'openai';
+}
+
+/**
+ * How a provider carries an {@link AiAssist.IAiCacheRequest.cacheKey} on the wire.
+ *
+ * @remarks
+ * Returned by {@link AiAssist.supportsPromptCacheRouting}. The Responses API takes the key as a
+ * `prompt_cache_key` body field on every provider that supports it, so only the Chat Completions
+ * transport varies and only that is described here.
+ * @public
+ */
+export interface IAiPromptCacheRoutingSupport {
+  /**
+   * Header name to carry the key on Chat Completions, or `undefined` when the provider takes it
+   * as a `prompt_cache_key` body field there (OpenAI). xAI uses `x-grok-conv-id`.
+   */
+  readonly chatCompletionsHeader: string | undefined;
+}
+
+/**
+ * Whether a provider accepts an opaque prompt-cache **routing** key, and by what transport.
+ *
+ * @remarks
+ * Distinct from {@link AiAssist.supportsPromptCacheBreakpoints}, and deliberately so. A breakpoint
+ * restructures the request body and needs the server to tolerate an unrecognized field inside
+ * `content`; a routing key is a single opaque string whose only job is to make repeated requests
+ * with a shared prefix land on the same cache-holding server.
+ *
+ * The two were originally gated together, which had a perverse effect: xAI does byte-for-byte
+ * prefix matching from the start of the `messages` array, and its cache is **per-server and
+ * evictable**, so without a routing key a caller can miss on an identical prefix simply by being
+ * routed elsewhere. Measured on `grok-4.3`: two requests sharing an 8,684-token system prefix but
+ * differing in their final user turn returned 2.2% cached, while a byte-identical pair returned
+ * 99.5%. Withholding the routing key from xAI withheld it from the provider whose caching depends
+ * on it most.
+ *
+ * The transport differs by route, which is why this returns a descriptor rather than a boolean:
+ *
+ * | provider | Chat Completions | Responses |
+ * |---|---|---|
+ * | `openai` | `prompt_cache_key` body field | `prompt_cache_key` body field |
+ * | `xai-grok` | `x-grok-conv-id` **header** | `prompt_cache_key` body field |
+ *
+ * Every other `apiFormat: 'openai'` descriptor (Groq, Mistral, Ollama, self-hosted
+ * `openai-compat`) returns `undefined` and gets the request it would have gotten had the caller
+ * passed no `cache` at all — the same unconfirmed-tolerance reasoning as
+ * {@link AiAssist.supportsStreamUsageOption}.
+ * @public
+ */
+export function supportsPromptCacheRouting(
+  descriptor: IAiProviderDescriptor
+): IAiPromptCacheRoutingSupport | undefined {
+  if (descriptor.id === 'openai') {
+    return { chatCompletionsHeader: undefined };
+  }
+  if (descriptor.id === 'xai-grok') {
+    return { chatCompletionsHeader: 'x-grok-conv-id' };
+  }
+  return undefined;
 }

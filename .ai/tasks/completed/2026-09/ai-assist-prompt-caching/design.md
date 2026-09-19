@@ -171,6 +171,41 @@ section ahead of a stable one costs money **today**, on every one of them, with 
 annotation, no wire change, and nothing reporting it. That is the strongest member of the
 set, and it is the beachhead.
 
+> **Measurement note, 2026-09-19 — §2's premise stands; the gap is ours, not the provider's.**
+> The C1 standing assertion ran for the first time and missed its prediction: with an identical
+> 8,684-token system prefix and only the final user turn changed, `grok-4.3` returned **2.2%**
+> cached, while the OQ-1 probe's byte-identical pair returned **99.5% / 99.2%** minutes later.
+>
+> An initial reading of that concluded xAI caches whole requests rather than prefixes. **That was
+> wrong**, and is recorded here because the error is instructive. xAI *does* match byte-for-byte
+> from the start of the `messages` array and bills the matched leading portion as
+> `cached_tokens`; appending a new turn is the intended hit path. What the reading missed is that
+> **the cache is per-server and evictable, and routing can miss even on an identical prefix**
+> unless the request carries a sticky-routing key — `x-grok-conv-id` on Chat Completions,
+> `prompt_cache_key` on Responses. A byte-identical pair plausibly hashes to one box; a pair
+> differing in its tail need not.
+>
+> **The actionable consequence is a gating defect in C3.** `IAiCacheRequest.cacheKey` is emitted
+> only when `supportsPromptCacheBreakpoints(descriptor)` passes, which is `true` for `'openai'`
+> alone (`completionClient.ts:342`). But `cacheKey` is a **routing hint**, not a breakpoint
+> directive, and the two do not share a support condition: xAI needs the routing key precisely
+> *because* it does prefix caching. Conflating them behind one gate means an ai-assist caller
+> cannot obtain reliable prefix hits on xAI at all.
+>
+> So §2's claim is not overstated — it is under-served. Prefix stability is the right lever on
+> xAI, and the library was withholding the field that makes the lever connect.
+>
+> **Fixed in the same PR as this note**: `supportsPromptCacheRouting` splits routing from
+> breakpoint support, so xAI now receives the key (`x-grok-conv-id` header on Chat
+> Completions, `prompt_cache_key` on Responses) while breakpoints stay OpenAI-only. The
+> change is verified both on the wire (request-body and header assertions) and live: measured
+> 1.9% warm without the key versus **99.7%** with it, on a varying tail, reproduced on a fresh
+> salt. See `result.md` and `perf/promptCacheRoutingAb.js`.
+>
+> **Unresolved detail:** the harness's cold reading was `cached=192`, which is not a multiple of
+> 128 and so does not fit the reported `floor(matched/128)*128` quantization. Small, but it does
+> not fit, and it has not been explained.
+
 So the phases:
 
 | slice | package(s) | depends on | can it make anything worse? |

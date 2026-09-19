@@ -175,8 +175,10 @@ export type { AiCacheReportingLevel, IAiCompletionUsage } from './usageTypes';
 export {
   supportsCacheUsageReporting,
   supportsPromptCacheBreakpoints,
+  supportsPromptCacheRouting,
   supportsStreamUsageOption
 } from './streamUsageCapability';
+export type { IAiPromptCacheRoutingSupport } from './streamUsageCapability';
 
 export { ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME } from './structuredOutput';
 

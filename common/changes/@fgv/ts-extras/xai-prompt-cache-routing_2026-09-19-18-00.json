@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: split prompt-cache breakpoint support from prompt-cache ROUTING support, and enable routing for xAI. IAiCacheRequest.cacheKey was gated behind supportsPromptCacheBreakpoints ('openai' only), but a routing key is not a breakpoint directive and the two have different support sets: xAI matches byte-for-byte from the start of the messages array and its cache is per-server and evictable, so without a sticky-routing key a caller can miss on an identical prefix by being routed elsewhere. New supportsPromptCacheRouting(descriptor) returns an IAiPromptCacheRoutingSupport describing the transport \u2014 xAI takes the key as an x-grok-conv-id header on Chat Completions and as prompt_cache_key on Responses; OpenAI takes prompt_cache_key on both. systemBreakpoints remains 'openai'-only. Providers supporting neither (Groq, Mistral, Ollama, openai-compat) still get a request byte-identical to one built with no cache at all.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
