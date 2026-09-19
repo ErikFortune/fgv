@@ -670,6 +670,30 @@ against the change files you are shipping — or just run `rush change --verify 
 origin/release` locally, which is the same check CI runs and takes about a second. A PR whose only
 red check is `rush change` has not been reviewed for anything yet; fix it before reading further.
 
+### A dependency bump can be green locally and rejected by CI, because `update` resolves and `install` verifies
+
+pnpm enforces a **minimum release age** (a supply-chain control: packages younger than ~24h are
+rejected). The asymmetry that matters is *which command enforces it*. `rush update` **resolves**
+and writes the lockfile, and will happily pin a package published an hour ago. CI runs `rush
+install`, which **verifies** the committed lockfile against the active policies and fails with
+*"The lockfile contains entries that the active policies reject."*
+
+So a dependency bump can pass `rush update`, `rush rebuild` and a repo-wide `rush test` locally —
+all exit 0, zero warnings — and still fail CI at its install step, **before any build or test
+runs**. Nothing local will tell you, for the same structural reason the change-file gate is
+invisible locally: the check lives in a command your local loop doesn't run the same way.
+
+Observed 2026-09-19 on the Jest 30 / Heft 1.3 upgrade: `jest@30.5.2` and its family had been
+published the previous afternoon. Every local gate was green; CI's `rush install` rejected 28
+packages and the job died in 49 seconds having compiled nothing.
+
+**Rule:** when a bump takes a package published within the last day or so, either wait for it to
+age out and re-run CI, or pin to the previous patch. Do **not** reach for
+`minimumReleaseAgeExclude` to force it through — the control is doing its job, and a four-hour
+wait is cheaper than an exemption that outlives its reason. The tell that you are in this case:
+CI fails at *install*, names a list of packages with publish timestamps, and your local run was
+clean.
+
 ### Widening a shared interface needs a repo-wide build, not a per-package one
 
 **This is now an acceptance-criteria checkbox, because four consecutive streams proved advice was

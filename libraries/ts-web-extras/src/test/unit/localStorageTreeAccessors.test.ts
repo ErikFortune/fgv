@@ -580,21 +580,25 @@ describe('LocalStorageTreeAccessors', () => {
     });
 
     test('createFromLocalStorage fails when localStorage is not available', () => {
-      // Remove the global window object to ensure no fallback
-      const originalWindow = global.window;
-      delete (global as Partial<typeof globalThis>).window;
+      // Stub the accessor rather than deleting `global.window`. Under jsdom 26 (Jest 30)
+      // `delete global.window` no longer makes `typeof window === 'undefined'`, so the
+      // previous save/delete/restore made this test silently assert nothing — it began
+      // taking the success path. Spying the property reaches the same `!storage` branch
+      // without mutating a global, per CODING_STANDARDS.md's note on hand-rolled global
+      // save/restore.
+      const spy = jest.spyOn(window, 'localStorage', 'get').mockReturnValue(undefined as unknown as Storage);
+      try {
+        const result = FileApiTreeAccessors.createFromLocalStorage({
+          pathToKeyMap: {
+            '/data/ingredients': 'test:ingredients:v1'
+          },
+          storage: undefined
+        });
 
-      const result = FileApiTreeAccessors.createFromLocalStorage({
-        pathToKeyMap: {
-          '/data/ingredients': 'test:ingredients:v1'
-        },
-        storage: undefined
-      });
-
-      // Restore window
-      global.window = originalWindow;
-
-      expect(result).toFailWith(/localStorage is not available/i);
+        expect(result).toFailWith(/localStorage is not available/i);
+      } finally {
+        spy.mockRestore();
+      }
     });
   });
 
