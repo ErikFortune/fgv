@@ -171,27 +171,33 @@ section ahead of a stable one costs money **today**, on every one of them, with 
 annotation, no wire change, and nothing reporting it. That is the strongest member of the
 set, and it is the beachhead.
 
-> **Correction, 2026-09-19, from the C1 standing assertion's first run — the claim above is
-> overstated by one provider.** "Every provider in the registry rewards prefix stability" was
-> generalized from OQ-1's probe, and the probe only ever demonstrated something narrower.
-> Measured on `grok-4.3`, same account, same day, back-to-back calls:
+> **Measurement note, 2026-09-19 — §2's premise stands; the gap is ours, not the provider's.**
+> The C1 standing assertion ran for the first time and missed its prediction: with an identical
+> 8,684-token system prefix and only the final user turn changed, `grok-4.3` returned **2.2%**
+> cached, while the OQ-1 probe's byte-identical pair returned **99.5% / 99.2%** minutes later.
 >
-> | request pair | cached |
-> |---|---|
-> | byte-identical twice (the probe) | **99.5%** Chat Completions · **99.2%** Responses |
-> | same 8,684-token system prefix, different final user turn (the harness) | **2.2%** — the floor |
+> An initial reading of that concluded xAI caches whole requests rather than prefixes. **That was
+> wrong**, and is recorded here because the error is instructive. xAI *does* match byte-for-byte
+> from the start of the `messages` array and bills the matched leading portion as
+> `cached_tokens`; appending a new turn is the intended hit path. What the reading missed is that
+> **the cache is per-server and evictable, and routing can miss even on an identical prefix**
+> unless the request carries a sticky-routing key — `x-grok-conv-id` on Chat Completions,
+> `prompt_cache_key` on Responses. A byte-identical pair plausibly hashes to one box; a pair
+> differing in its tail need not.
 >
-> Not a size threshold: the *failing* case has the **larger** prefix. And the probe's warm read is
-> 4,800 cached of 4,822 total input — essentially the whole request, user turn included, which is
-> the signature of whole-request caching rather than incremental prefix matching.
+> **The actionable consequence is a gating defect in C3.** `IAiCacheRequest.cacheKey` is emitted
+> only when `supportsPromptCacheBreakpoints(descriptor)` passes, which is `true` for `'openai'`
+> alone (`completionClient.ts:342`). But `cacheKey` is a **routing hint**, not a breakpoint
+> directive, and the two do not share a support condition: xAI needs the routing key precisely
+> *because* it does prefix caching. Conflating them behind one gate means an ai-assist caller
+> cannot obtain reliable prefix hits on xAI at all.
 >
-> **So for xAI, varying the tail defeats the cache, and section order buys nothing.** D4 remains
-> correct for Gemini implicit and OpenAI's default mode; on xAI its value is not merely
-> unevidenced but contradicted. The beachhead argument survives on two providers, not three.
+> So §2's claim is not overstated — it is under-served. Prefix stability is the right lever on
+> xAI; this library currently withholds the field that makes the lever connect.
 >
-> Nothing shipped is affected: C3 sends no breakpoints to xAI
-> (`supportsPromptCacheBreakpoints` is `true` only for `'openai'`), so xAI's request bodies are
-> byte-identical to what they were before this stream.
+> **Unresolved detail:** the harness's cold reading was `cached=192`, which is not a multiple of
+> 128 and so does not fit the reported `floor(matched/128)*128` quantization. Small, but it does
+> not fit, and it has not been explained.
 
 So the phases:
 

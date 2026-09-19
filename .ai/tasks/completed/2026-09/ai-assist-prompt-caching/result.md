@@ -130,20 +130,46 @@ discriminator resolves cleanly, with everything held constant but the tail:
 | byte-identical twice | 4,822 tok | 4,800 | **99.5%** |
 | same prefix, different final user turn | 8,684 tok | 192 | **2.2%** |
 
-Two things make this conclusive rather than suggestive. **It is not a size threshold** — the
-failing case has the *larger* prefix. And the warm probe caches **4,800 of 4,822 total input**,
-i.e. essentially the entire request including the user turn, which is what whole-request caching
-looks like; incremental prefix matching would have cached the harness's 8,684-token identical
-system prompt and missed only its short user turn.
+**An initial reading called this conclusive and said xAI caches whole requests rather than
+prefixes. That was wrong**, and the error is worth keeping because of how it was made. The two
+confounds actually ruled out were *size* (the failing case has the larger prefix) and *drift* (the
+probe re-ran healthy minutes later). A third was never controlled for and decides the case:
 
-**Conclusion: xAI's automatic cache does not reward prefix stability.** Varying the tail — which
-is what every real caller does — defeats it. `design.md` §2 is corrected in place.
+**xAI's cache is per-server and evictable, and routing can miss on an identical prefix** unless
+the request carries a sticky-routing key — `x-grok-conv-id` on Chat Completions,
+`prompt_cache_key` on Responses. A byte-identical pair plausibly hashes to the same box; a pair
+differing only in its tail need not. xAI *does* match byte-for-byte from the start of the
+`messages` array, and appending a turn is the intended hit path.
 
-### Scope of the impact, stated precisely
+Two measurements and one unexamined variable produced a confident conclusion in the wrong
+direction — the same failure the rest of this stream kept hitting, one layer up: a value that was
+never varied, so the thing depending on it was never tested.
 
-C3 does **not** send breakpoints to xAI — `supportsPromptCacheBreakpoints` is `true` only for
-`'openai'`, so xAI receives byte-identical request bodies to those it received before this stream.
-Nothing shipped is broken by this finding. What is affected is a **claim**: how much the C2
-ordering diagnostic is worth on a provider now shown **not** to reward prefix stability. The Anthropic
-and OpenAI emit paths, which do receive explicit breakpoints, are untouched by this and remain
-unmeasured — no harness exercises them yet.
+### The real finding: a gating defect in C3
+
+`IAiCacheRequest.cacheKey` is emitted only when `supportsPromptCacheBreakpoints(descriptor)`
+passes, which is `true` for `'openai'` alone (`completionClient.ts:342`, and the comment there
+states the coupling explicitly). But **`cacheKey` is a routing hint, not a breakpoint directive**,
+and the two do not share a support condition:
+
+| field | what it is | xAI |
+|---|---|---|
+| `systemBreakpoints` → `prompt_cache_breakpoint` | explicit cache boundary | not supported — correctly withheld |
+| `cacheKey` → `prompt_cache_key` / `x-grok-conv-id` | sticky routing so the prefix lands on the same box | **needed, and withheld** |
+
+So an ai-assist caller cannot obtain reliable prefix cache hits on xAI today. §2's premise —
+prefix stability is the lever — is correct; this library withholds the field that makes the lever
+connect. That is a defect in shipped code, not a design overstatement.
+
+**Confirming run, not yet done:** re-run the harness with a stable routing key on both calls. A
+jump from 2.2% to ~99% on a varying tail confirms both the mechanism and the fix.
+
+**Unresolved detail:** the harness's cold reading was `cached=192`, not a multiple of 128, so it
+does not fit the reported `floor(matched/128)*128` quantization. Minor, unexplained, noted rather
+than smoothed over.
+
+### Scope
+
+C3 sends xAI byte-identical request bodies to those it sent before this stream, so nothing
+regressed. What is missing is an improvement xAI can use. The Anthropic and OpenAI emit paths,
+which do receive explicit breakpoints, remain entirely unmeasured — no harness exercises them.
