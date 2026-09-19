@@ -169,9 +169,30 @@ byte-identical to one built with no `cache` at all — now pinned by comparing a
 no-cache request, headers included, after a review found the body-only assertion could not see a
 header leak.
 
-**Confirming run, still outstanding:** re-run the harness with a stable `cacheKey` on both calls.
-A jump from 2.2% to ~99% on a varying tail would confirm the mechanism and the fix together. The
-change is verified on the wire — what is unverified is the cache-hit ratio it is meant to buy.
+**Confirmed 2026-09-19** by `libraries/ts-extras/perf/promptCacheRoutingAb.js` against
+`grok-4.3`. Both arms vary the final user turn; they differ only in whether a stable `cacheKey`
+is supplied:
+
+| arm | cold | warm |
+|---|---|---|
+| without `cacheKey` (behaviour before the fix) | 192 / 10,076 — 1.9% | **192 / 10,076 — 1.9%** |
+| with `cacheKey` (this fix) | 192 / 10,076 — 1.9% | **10,048 / 10,076 — 99.7%** |
+
+**Reproduced identically on a fresh salt**, which is what rules out a TTL-tainted cold reading
+rather than merely asserting it was not one. The negative control held in both runs: arm 1 never
+hit by routing luck, so the jump is attributable to the key and not to which server happened to
+answer.
+
+That closes the loop the harness opened. The standing assertion falsified a premise on its first
+execution, the falsification located a real defect in shipped code, and the fix is now confirmed
+by the same instrument that found the problem — not by the reasoning that proposed it.
+
+**One detail still does not fit.** The cold floor is `192` in all four cold calls, and the warm
+read is `10,048`. Neither is a multiple of 128, so the `floor(matched/128)*128` quantization
+reported for xAI third-party does not describe these observations. It is stable rather than
+noisy — 192 appeared in the earlier observability run too, at a different input size — so it is
+some fixed scaffolding cost rather than measurement jitter. Unexplained, recorded rather than
+rounded away.
 
 **Unresolved detail:** the harness's cold reading was `cached=192`, not a multiple of 128, so it
 does not fit the reported `floor(matched/128)*128` quantization. Minor, unexplained, noted rather

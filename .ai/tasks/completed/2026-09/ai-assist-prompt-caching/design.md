@@ -198,8 +198,9 @@ set, and it is the beachhead.
 > **Fixed in the same PR as this note**: `supportsPromptCacheRouting` splits routing from
 > breakpoint support, so xAI now receives the key (`x-grok-conv-id` header on Chat
 > Completions, `prompt_cache_key` on Responses) while breakpoints stay OpenAI-only. The
-> confirming live-API measurement is a follow-up, not a blocker — the change is verified on
-> the wire by request-body and header assertions, not yet by a cache-hit ratio.
+> change is verified both on the wire (request-body and header assertions) and live: measured
+> 1.9% warm without the key versus **99.7%** with it, on a varying tail, reproduced on a fresh
+> salt. See `result.md` and `perf/promptCacheRoutingAb.js`.
 >
 > **Unresolved detail:** the harness's cold reading was `cached=192`, which is not a multiple of
 > 128 and so does not fit the reported `floor(matched/128)*128` quantization. Small, but it does
