@@ -107,6 +107,7 @@ detail. `· pkg` names the owning package.*
 - **Diagnosing an OpenAI/xAI Responses stream that completes empty?** → `executeClientToolTurn` · `ts-extras`
 - **Reading prompt-cache token counts off a completion (reads/writes, normalized)?** → `IAiCompletionUsage` `AiCacheReportingLevel` · `ts-extras`
 - **Placing an explicit prompt-cache breakpoint on an Anthropic/OpenAI request?** → `IAiCacheRequest` `validateAiCacheRequest` · `ts-extras`
+- **Prefix-sharing requests missing xAI's cache because they land on different servers?** → `IAiCacheRequest` `supportsPromptCacheRouting` · `ts-extras`
 - **Deriving a cache-breakpoint plan from a resolved prompt's composition?** → `toCacheRequest` · `ts-prompt-assist`
 - **Alerting on provider-API evolution affecting `@fgv/ts-extras/ai-assist`?** → `ILogger` `IStreamApiConfig` · `ts-extras`
 - **Stripping LLM Markdown fences from raw text?** → `extractJsonText` `fencedStringifiedJson` · `ts-extras`

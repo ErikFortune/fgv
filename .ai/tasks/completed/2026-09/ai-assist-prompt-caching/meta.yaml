@@ -1,9 +1,9 @@
 id: ai-assist-prompt-caching
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/ts-prompt-assist']
-prs: [671, 668, 669]
+prs: [668, 669, 671, 675, 676]
 opened: 2026-09-07
-closed: 2026-09-18
+closed: 2026-09-19
 summary:
   intended: >
     Add prompt-caching support to ai-assist across every provider that supports it (Anthropic,
