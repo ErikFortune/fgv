@@ -709,6 +709,46 @@ count, and `uncachedInputTokens` should fall by the same amount. A miss means th
 wrong, and the response is to revise the design — not to lower a threshold until the
 harness goes green.
 
+#### Addendum 2026-09-18 — the placement call stands; the *untestability* was not part of it, and is a defect
+
+**Queued as a follow-up PR, to land after C3.** The reasoning above is about keeping live
+traffic out of CI's gate, and it is correct. But it was read as also settling *structure*,
+and it does not. The result is that `libraries/ts-extras/perf/promptCacheObservability.js`
+has **no seam**: it `require`s `../lib/index`, reads `XAI_API_KEY` from the environment and
+calls `callProviderCompletion` twice, all inline. Nothing about it can be exercised without
+a key and live traffic — so its pure logic (the ratio arithmetic in `summarizeUsage`, the
+cold/warm comparison, the verdict against the 99% prediction) has **no test of any kind**,
+and as of this writing the harness has **never been run**.
+
+That is precisely the failure `TESTING_GUIDELINES.md` § *Measurement Harnesses* opens with:
+*"a broken harness prints a plausible figure and is believed."* A defect in the ratio
+arithmetic today surfaces as a believable percentage.
+
+**The sibling in this same stream shows the shape.** `samples/testbed` →
+`xaiCacheProbe` (OQ-1) hits the same provider for a closely related purpose and injects its
+dependencies at the network seam (`IXaiCacheProbeDeps`), so its logic is unit-tested offline
+while only the transport needs a key. Same constraint, same provider, same stream — one got
+a seam and one did not.
+
+**Preferred remedy: keep `perf/` placement, add the seam.** Porting wholesale to the testbed
+would satisfy the constraint too (testbed scenarios also run on demand, not in the gate), but
+it would relocate a harness this section deliberately placed, to fix a problem that placement
+never caused. Extract the pure logic into something importable, inject the completion call,
+and unit-test the arithmetic and the verdict against fixture usage blocks. The live run stays
+a `perf/` script invoked by hand.
+
+**Two further items for the same PR, both consequences of C3:**
+
+1. **Extend the harness to Anthropic.** The file's header carries a long "WHY xAI, NOT
+   ANTHROPIC" rationale whose premise is that C1 sends no cache directive, so an Anthropic
+   run would report a false miss. C3 emits `cache_control`, so that premise expires with it —
+   and the rationale becomes actively misleading to the next reader. Update it in the same
+   change that makes it false.
+2. **Actually run it.** The C1 standing assertion this section requires has never executed.
+   Needs `XAI_API_KEY`, plus `ANTHROPIC_API_KEY` for the new leg. Paste the output into the
+   stream's `result.md`, per this section's own instruction — a harness that has never run
+   asserts nothing.
+
 ---
 
 ## 9. The diagnostics — C2
