@@ -54,6 +54,12 @@ function lastRequestBody(): Record<string, unknown> {
   return JSON.parse(init.body as string) as Record<string, unknown>;
 }
 
+function lastRequestHeaders(): Record<string, string> {
+  const calls = (global.fetch as jest.Mock).mock.calls;
+  const init = calls[calls.length - 1][1] as RequestInit;
+  return (init.headers ?? {}) as Record<string, string>;
+}
+
 describe('IProviderCompletionParams.cache', () => {
   const originalFetch = global.fetch;
 
@@ -337,15 +343,17 @@ describe('IProviderCompletionParams.cache', () => {
   });
 
   describe('cache gating on the shared apiFormat: openai dispatch', () => {
-    // `makeDescriptor`'s default id is 'xai-grok' — a real apiFormat: 'openai' descriptor that
-    // is not the confirmed-supporting 'openai' one (AiAssist.supportsPromptCacheBreakpoints).
-    const nonOpenAiDescriptor = makeDescriptor({ apiFormat: 'openai' });
+    // Supports neither breakpoints nor a routing key — the request must be byte-identical to one
+    // built with no `cache` at all. `makeDescriptor`'s default id is 'xai-grok', which now DOES
+    // carry a routing key, so an unconfirmed descriptor has to be named explicitly.
+    const unconfirmedDescriptor = makeDescriptor({ apiFormat: 'openai', id: 'groq' });
+    const xaiDescriptor = makeDescriptor({ apiFormat: 'openai' });
 
     test('Chat Completions: a supplied cache is silently dropped for an unconfirmed descriptor', async () => {
       mockFetchResponse(openAiResponse('ok'));
 
       const result = await AiAssist.callProviderCompletion({
-        descriptor: nonOpenAiDescriptor,
+        descriptor: unconfirmedDescriptor,
         apiKey: 'test-key',
         system: SYSTEM,
         messages: [{ role: 'user', content: USER }],
@@ -359,11 +367,92 @@ describe('IProviderCompletionParams.cache', () => {
       expect('prompt_cache_key' in body).toBe(false);
     });
 
-    test('Responses API: a supplied cache is silently dropped for an unconfirmed descriptor', async () => {
+    test('xAI Chat Completions: carries cacheKey as the x-grok-conv-id header, not a body field', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: xaiDescriptor,
+        apiKey: 'test-key',
+        system: SYSTEM,
+        messages: [{ role: 'user', content: USER }],
+        cache: { systemBreakpoints: [8, 15], cacheKey: 'tenant-1' }
+      });
+
+      expect(result).toSucceed();
+      // The routing key rides in the header xAI documents for this route...
+      expect(lastRequestHeaders()['x-grok-conv-id']).toBe('tenant-1');
+      const body = lastRequestBody();
+      // ...and NOT in the body, where it would be an unrecognized field.
+      expect('prompt_cache_key' in body).toBe(false);
+      // Breakpoints remain withheld — xAI has no prompt_cache_breakpoint support, and the
+      // system message must be the plain string it was before this feature existed.
+      const messages = body.messages as Array<Record<string, unknown>>;
+      expect(messages[0]).toEqual({ role: 'system', content: SYSTEM });
+    });
+
+    test('xAI Responses: carries cacheKey as prompt_cache_key, with no breakpoints', async () => {
       mockFetchResponse(responsesApiResponse('ok'));
 
       const result = await AiAssist.callProviderCompletion({
         descriptor: makeDescriptor({ apiFormat: 'openai', supportedTools: ['web_search'] }),
+        apiKey: 'test-key',
+        system: SYSTEM,
+        messages: [{ role: 'user', content: USER }],
+        tools: [{ type: 'web_search' }],
+        cache: { systemBreakpoints: [8], cacheKey: 'tenant-9' }
+      });
+
+      expect(result).toSucceed();
+      const body = lastRequestBody();
+      // The Responses route takes the key in the body on every provider that supports it.
+      expect(body.prompt_cache_key).toBe('tenant-9');
+      expect('x-grok-conv-id' in lastRequestHeaders()).toBe(false);
+      const input = body.input as Array<Record<string, unknown>>;
+      expect(input[0]).toEqual({ role: 'system', content: SYSTEM });
+    });
+
+    test('xAI: a cache carrying only breakpoints changes nothing on the wire', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: xaiDescriptor,
+        apiKey: 'test-key',
+        system: SYSTEM,
+        messages: [{ role: 'user', content: USER }],
+        cache: { systemBreakpoints: [8, 15] }
+      });
+
+      expect(result).toSucceed();
+      const body = lastRequestBody();
+      expect('prompt_cache_key' in body).toBe(false);
+      expect('x-grok-conv-id' in lastRequestHeaders()).toBe(false);
+      expect((body.messages as Array<Record<string, unknown>>)[0]).toEqual({
+        role: 'system',
+        content: SYSTEM
+      });
+    });
+
+    test('OpenAI Chat Completions: carries cacheKey in the body, never as a header', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: makeDescriptor({ apiFormat: 'openai', id: 'openai' }),
+        apiKey: 'test-key',
+        system: SYSTEM,
+        messages: [{ role: 'user', content: USER }],
+        cache: { cacheKey: 'tenant-2' }
+      });
+
+      expect(result).toSucceed();
+      expect(lastRequestBody().prompt_cache_key).toBe('tenant-2');
+      expect('x-grok-conv-id' in lastRequestHeaders()).toBe(false);
+    });
+
+    test('Responses API: a supplied cache is silently dropped for an unconfirmed descriptor', async () => {
+      mockFetchResponse(responsesApiResponse('ok'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: makeDescriptor({ apiFormat: 'openai', id: 'groq', supportedTools: ['web_search'] }),
         apiKey: 'test-key',
         system: SYSTEM,
         messages: [{ role: 'user', content: USER }],
@@ -385,7 +474,7 @@ describe('IProviderCompletionParams.cache', () => {
       mockFetchResponse(openAiResponse('ok'));
 
       const result = await AiAssist.callProviderCompletion({
-        descriptor: nonOpenAiDescriptor,
+        descriptor: unconfirmedDescriptor,
         apiKey: 'test-key',
         system: SYSTEM,
         messages: [{ role: 'user', content: USER }],
