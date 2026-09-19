@@ -42,8 +42,42 @@ export function advanceByLongPress(ms: number = 600): void {
   });
 }
 
-// Helper to set window dimensions for different device types
-export function setWindowDimensions(width: number, height: number): void {
+/**
+ * Pins whether the environment looks like a touch device, which
+ * `useResponsiveLayout`'s `detectTouchSupport` probes via `'ontouchstart' in window`.
+ *
+ * This has to be explicit. jsdom 20 did not define `ontouchstart` on `window`, so the
+ * probe was incidentally `false` and every test rendered as a non-touch device without
+ * saying so. jsdom 26 (Jest 30) **does** define it, which flipped every test to the touch
+ * layout — `DualKeypad` then renders its own "N cells selected" status beside
+ * `SudokuGridEntry`'s multi-select hint, and twelve `getByText` queries started finding two
+ * matches. The viewport was always pinned by `setWindowDimensions`; touch capability was
+ * the half of the device profile the tests left to the environment.
+ */
+export function setTouchSupport(hasTouch: boolean): void {
+  if (hasTouch) {
+    Object.defineProperty(window, 'ontouchstart', {
+      writable: true,
+      configurable: true,
+      value: null
+    });
+  } else {
+    // Must be *absent*, not undefined — the probe is an `in` check, which an
+    // `undefined`-valued own property still satisfies.
+    delete (window as Partial<Window>).ontouchstart;
+  }
+}
+
+/**
+ * Sets the window dimensions, and with them the other half of the device profile:
+ * touch capability, which defaults to `false`.
+ *
+ * The default is deliberate rather than incidental. Under jsdom 20 every test ran as a
+ * non-touch device because `ontouchstart` simply did not exist, and the expectations
+ * throughout this suite were written against that. Defaulting to `false` keeps those
+ * expectations meaning what their authors intended, and makes a touch test say so.
+ */
+export function setWindowDimensions(width: number, height: number, hasTouch: boolean = false): void {
   Object.defineProperty(window, 'innerWidth', {
     writable: true,
     configurable: true,
@@ -54,6 +88,7 @@ export function setWindowDimensions(width: number, height: number): void {
     configurable: true,
     value: height
   });
+  setTouchSupport(hasTouch);
 }
 
 // Helper to render with mobile portrait layout (side-by-side keypads)
@@ -61,13 +96,13 @@ export function renderWithMobilePortrait(
   component: React.ReactElement,
   options?: RenderOptions
 ): RenderResult {
-  setWindowDimensions(375, 667);
+  setWindowDimensions(375, 667, true);
   return customRender(component, options);
 }
 
 // Helper to render with desktop layout (hidden/overlay keypads)
 export function renderWithDesktop(component: React.ReactElement, options?: RenderOptions): RenderResult {
-  setWindowDimensions(1024, 768);
+  setWindowDimensions(1024, 768, false);
   return customRender(component, options);
 }
 
