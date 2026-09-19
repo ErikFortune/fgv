@@ -797,11 +797,19 @@ a `perf/` script invoked by hand.
 > 99.7% with it, reproduced on a fresh salt. Both harnesses' full output, and the reasoning that
 > connects the miss to the fix, are in `result.md`.
 >
-> **The Anthropic leg has still not run**, and is **not** claimed here — extending this harness to
-> Anthropic is a separate stream (the C3 Anthropic and OpenAI emit paths remain entirely
-> unmeasured; see `result.md`'s closing "Scope" note). Item 1 above (the header correction) is
-> handled on its own, independent of whether an Anthropic run ever happens, since C3 shipping
-> `cache_control` support is what dates the rationale, not any particular harness run.
+> **The Anthropic leg has now run, 2026-09-19** — and item 2 is fully discharged. Measured on
+> `claude-sonnet-5`: with `systemBreakpoints`, the cold call writes 13,879 tokens and the warm
+> call reads back the same 13,879 (99.9%), while `uncached` falls from 13,899 to **20** — the
+> whole prefix moving into cache and leaving only the varying user turn. The negative control
+> arm, identical but for the absent directive, produced **zero** cache activity on both calls.
+> Full output in `result.md`.
+>
+> This is the first live exercise of **C3's emit path** on any route: every earlier measurement
+> in this stream ran against xAI's automatic cache, which sends no directive and therefore never
+> touched the `systemBreakpoints` → `cache_control` machinery. The `OpenAI` emit path
+> (`prompt_cache_breakpoint`) remains unmeasured. Item 1 above (the header correction) was
+> handled independently, since C3 shipping `cache_control` is what dates that rationale rather
+> than any particular harness run.
 >
 > **This PR (`claude/prompt-cache-harness-seam`) adds the seam** the remedy above calls for. The
 > pure logic — ratio arithmetic, the cold/warm comparison, and the verdict classification for both
