@@ -14,25 +14,30 @@
  *
  * Requires a built `lib/` (`rushx build` first).
  *
+ * The ratio arithmetic, the cold/warm comparison, and the prediction verdict below all live in
+ * `src/packlets/ai-assist/promptCacheObservabilityHarness.ts`, unit-tested against fixture usage
+ * blocks in `src/test/unit/ai-assist/promptCacheObservabilityHarness.test.ts` — this file is a
+ * thin wrapper that supplies the live network transport and prints the result.
+ *
  * ---------------------------------------------------------------------------
- * WHY xAI, NOT ANTHROPIC (corrected after a Copilot review-loop finding on
- * PR #668 — the first version of this harness targeted Anthropic and would
- * have failed for a reason that has nothing to do with C1):
+ * WHY xAI, NOT ANTHROPIC (corrected 2026-09-19 — the previous version of this note argued from a
+ * premise C3 has since retired; see below for what changed):
  *
- * Anthropic's prompt cache is opt-in per content block via `cache_control` —
- * there is no automatic/implicit path. C1 sends no cache directive of any
- * kind (that is C3's job; see design.md §2's slice table — "C1: reads fields
- * off responses we already receive"). A plain `system` string through the
- * current Anthropic adapter therefore CANNOT produce a cache hit on a second
- * call, no matter how stable the prefix is — the harness would report a false
- * miss that validates nothing about this slice's normalization.
+ * xAI (and Gemini, and OpenAI's default mode) cache automatically with no request-side opt-in —
+ * confirmed live against xAI in this stream's design phase (design.md §12, OQ-1, the
+ * `xai-cache-probe` testbed scenario). A repeat request against xAI is therefore a valid test of
+ * whether C1's *reading* of the usage block is correct, on a provider whose cache needs no
+ * cooperation from the request this harness sends.
  *
- * xAI (and Gemini, and OpenAI's default mode) cache automatically with no
- * request-side opt-in — confirmed live against xAI in this same stream's
- * design phase (design.md §12, OQ-1, the `xai-cache-probe` testbed scenario).
- * A repeat request against xAI is therefore a valid test of whether C1's
- * *reading* of the usage block is correct, independent of anything C3 will
- * add later.
+ * Anthropic's prompt cache, by contrast, is opt-in per content block via `cache_control`, and
+ * this harness sends no cache directive of any kind — it calls `AiAssist.callProviderCompletion`
+ * with a plain `system` string and no `cache` field. That is no longer because "C1 sends no cache
+ * directive" (the reason this note originally gave): **C3 shipped and does emit `cache_control`
+ * when a caller supplies `IAiCacheRequest.systemBreakpoints`** — this harness simply doesn't pass
+ * one. So an Anthropic leg is possible now, in a way it structurally was not when this note was
+ * first written; it would need `IAiCacheRequest.systemBreakpoints` set on the request. It has
+ * never been run and is out of scope for this change — see design.md §8's addendum for what is
+ * and is not claimed here.
  * ---------------------------------------------------------------------------
  *
  * THE PREDICTION, WRITTEN DOWN BEFORE THE FIRST RUN (per TESTING_GUIDELINES.md
@@ -66,6 +71,10 @@
 /* eslint-disable no-console */
 
 const { AiAssist } = require('../lib/index');
+const {
+  describeObservabilityUsage,
+  runPromptCacheObservabilityHarness
+} = require('../lib/packlets/ai-assist/promptCacheObservabilityHarness');
 
 const API_KEY = process.env.XAI_API_KEY;
 if (!API_KEY) {
@@ -73,72 +82,23 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-// A stable block, large enough that a genuine cache hit is unmistakable against the
-// design's recorded 128-token cold floor. Repetition, not padding: incompressible
-// enough that a provider genuinely has to see all of it.
-function stablePrefix() {
-  const lines = [];
-  for (let i = 0; i < 400; i++) {
-    lines.push(
-      `Directive ${i}: when asked about topic ${i}, respond precisely and cite source ${i}-${i * 7}.`
-    );
-  }
-  return `You are a careful assistant operating under the following fixed policy document.\n\n${lines.join(
-    '\n'
-  )}`;
-}
-
-function summarizeUsage(label, usage) {
-  if (usage === undefined) {
-    console.log(`${label}: usage absent from response`);
-    return;
-  }
-  const total =
-    usage.uncachedInputTokens !== undefined && usage.cachedInputTokens !== undefined
-      ? usage.uncachedInputTokens + usage.cachedInputTokens
-      : undefined;
-  const ratio =
-    total !== undefined && usage.cachedInputTokens !== undefined
-      ? `${((100 * usage.cachedInputTokens) / total).toFixed(1)}%`
-      : 'n/a';
-  console.log(
-    `${label}: reports=${usage.reports} uncached=${usage.uncachedInputTokens} cached=${usage.cachedInputTokens} ` +
-      `(${ratio} of input) written=${usage.cacheWriteTokens} output=${usage.outputTokens}`
-  );
-}
-
 async function main() {
   const descriptor = AiAssist.getProviderDescriptor('xai-grok').orThrow();
-  const system = stablePrefix();
 
-  const first = await AiAssist.callProviderCompletion({
+  const result = await runPromptCacheObservabilityHarness(
+    { callCompletion: AiAssist.callProviderCompletion },
     descriptor,
-    apiKey: API_KEY,
-    system,
-    messages: [{ role: 'user', content: 'In one sentence, what is directive 12 about?' }]
-  });
-  if (first.isFailure()) {
-    console.error(`First call failed: ${first.message}`);
-    process.exit(1);
-  }
-  summarizeUsage('cold call ', first.value.usage);
-
-  const second = await AiAssist.callProviderCompletion({
-    descriptor,
-    apiKey: API_KEY,
-    system,
-    messages: [{ role: 'user', content: 'In one sentence, what is directive 99 about?' }]
-  });
-  if (second.isFailure()) {
-    console.error(`Second call failed: ${second.message}`);
-    process.exit(1);
-  }
-  summarizeUsage('warm call ', second.value.usage);
-
-  console.log(
-    `\nprediction check: reports should read 'reads' on both calls, and the warm call's cache ` +
-      `ratio should sit near 99% — well above the cold call's (the design's recorded 128-token floor).`
+    API_KEY
   );
+  if (result.isFailure()) {
+    console.error(result.message);
+    process.exit(1);
+  }
+
+  const { value } = result;
+  console.log(describeObservabilityUsage('cold call ', value.cold));
+  console.log(describeObservabilityUsage('warm call ', value.warm));
+  console.log(`\nverdict: ${value.verdict.toUpperCase()} — ${value.detail}`);
 }
 
 main().catch((e) => {
