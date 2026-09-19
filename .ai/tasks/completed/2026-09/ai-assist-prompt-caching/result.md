@@ -71,3 +71,65 @@ root-permissions failure in `@fgv/ts-json-base` that C1's PR documented (this en
 tests as root; the test's `chmod`-based read-only fixture cannot fail for root regardless of the
 change under test) — verified downstream consumers of the widened types individually instead:
 `ts-app-shell` (155/155) and `samples/testbed` (534/534), both 100% clean.
+
+---
+
+## The C1 standing assertion, finally run — and it **falsified** the design's prefix-caching premise
+
+**2026-09-19.** `libraries/ts-extras/perf/promptCacheObservability.js` had never been executed.
+Run against `grok-4.3`:
+
+```
+cold call : reports=reads uncached=8684 cached=192 (2.2% of input) written=undefined output=20
+warm call : reports=reads uncached=8684 cached=192 (2.2% of input) written=undefined output=20
+```
+
+**What passed.** `reports=reads` on both calls, exactly as §8 predicted — C1's normalization reads
+and classifies xAI's usage block correctly, and that is the thing this harness was built to check.
+
+**What failed.** The prediction was ~99% cached on the warm call. The two calls are identical in
+every field, and 192 cached tokens matches the recorded ~128-token cold floor rather than a hit.
+There was no cache hit at all.
+
+Per §8's own instruction — *"A miss means the design is wrong, and the response is to revise the
+design, not to lower a threshold until the harness goes green"* — the entry below is the design
+revision, not a threshold adjustment.
+
+### The one variable that differs from OQ-1's measurement
+
+| measurement | request pair | cached |
+|---|---|---|
+| OQ-1 probe, 2026-09-17 | **byte-identical twice** | 99.5% / 99.2% |
+| this harness, 2026-09-19 | same prefix, **different final user turn** | 2.2% |
+
+`samples/testbed`'s `xaiCacheProbe` says so in its own docstring: it *"sends the same
+byte-identical request twice"*, using one `TRIVIAL_QUESTION` on both calls. The harness varies the
+tail, because varying the tail is what a real caller does.
+
+**This is consistent with xAI keying its cache on the whole request rather than on a prefix** —
+under which both numbers are true and **§2's premise is wrong for xAI**. §2 argues the
+cache-hostile-ordering diagnostic (D4) is the beachhead because *"every provider in the registry
+rewards prefix stability — Gemini implicit, xAI, and OpenAI's default mode have no directive to
+send, and the only lever is the order of the bytes."* If xAI does not reward prefix stability,
+that sentence is overstated by one provider, and D4's value on xAI specifically is unevidenced.
+
+### Not yet established, and how to settle it
+
+The probe last ran two days before this harness. Provider behaviour or account state could have
+changed in between, in which case this result says nothing about prefix-vs-exact caching. **The
+discriminator is to re-run the existing probe** (`rushx cli xai-cache-probe` in `samples/testbed`),
+which changes back exactly the one variable:
+
+- still ~99% → the varying tail is the cause; xAI is exact-request, not prefix, and §2 needs the
+  correction above.
+- now ~2% → xAI's caching changed or is off for this account, and this harness result carries no
+  information about prefix caching either way.
+
+### Scope of the impact, stated precisely
+
+C3 does **not** send breakpoints to xAI — `supportsPromptCacheBreakpoints` is `true` only for
+`'openai'`, so xAI receives byte-identical request bodies to those it received before this stream.
+Nothing shipped is broken by this finding. What is affected is a **claim**: how much the C2
+ordering diagnostic is worth on a provider we cannot show rewards prefix stability. The Anthropic
+and OpenAI emit paths, which do receive explicit breakpoints, are untouched by this and remain
+unmeasured — no harness exercises them yet.
