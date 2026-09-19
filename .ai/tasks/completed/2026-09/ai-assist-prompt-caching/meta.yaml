@@ -1,9 +1,12 @@
 id: ai-assist-prompt-caching
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/ts-prompt-assist']
-prs: [671, 668, 669]
+# Order matters: the capability feed links prs[0], and this stream's sourceLine
+# describes C3 (breakpoint emission), so #671 stays first rather than the
+# chronologically-earliest PR.
+prs: [671, 668, 669, 675, 676]
 opened: 2026-09-07
-closed: 2026-09-18
+closed: 2026-09-19
 summary:
   intended: >
     Add prompt-caching support to ai-assist across every provider that supports it (Anthropic,

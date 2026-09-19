@@ -422,7 +422,7 @@ three-ways ambiguous" defect `IAiCompletionUsage.reports` exists to remove, rein
 outside its reach. `reports` is also already the right discriminator for a per-provider-optional
 figure, which is exactly what thinking tokens are.
 
-Reasoning in full: `.ai/tasks/active/ai-assist-prompt-caching/design.md` §14 A2.
+Reasoning in full: `.ai/tasks/completed/2026-09/ai-assist-prompt-caching/design.md` §14 A2.
 
 **Origin.** Carved out of `ai-assist-thinking-config` phase A v2 (D9). Required because v1's "future extension point" hand-wave didn't meet the bar of "concrete trackable followup."
 

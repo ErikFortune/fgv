@@ -784,6 +784,60 @@ a `perf/` script invoked by hand.
    stream's `result.md`, per this section's own instruction — a harness that has never run
    asserts nothing.
 
+> **Update, 2026-09-19 — item 2 is half-discharged; this claim needs correcting.** "As of this
+> writing the harness has never been run" (above) is no longer true, and the record needs to say
+> what actually happened rather than leave the stale claim standing.
+>
+> **The xAI leg ran.** `promptCacheObservability.js` executed against `grok-4.3` on 2026-09-19 —
+> full output in `result.md`. It **falsified** the written-down prediction: the warm call showed no
+> cache hit above the cold floor. Chasing that miss located a real gating defect in shipped C3 code
+> (`IAiCacheRequest.cacheKey` was wired to `supportsPromptCacheBreakpoints`, an OpenAI-only gate,
+> when it should follow routing support instead — xAI needs the key precisely because its cache is
+> per-server). `promptCacheRoutingAb.js` then confirmed the fix: 1.9% cached without the key,
+> 99.7% with it, reproduced on a fresh salt. Both harnesses' full output, and the reasoning that
+> connects the miss to the fix, are in `result.md`.
+>
+> **The Anthropic leg has now run, 2026-09-19** — and item 2 is fully discharged. Measured on
+> `claude-sonnet-5`: with `systemBreakpoints`, the cold call writes 13,879 tokens and the warm
+> call reads back the same 13,879 (99.9%), while `uncached` falls from 13,899 to **20** — the
+> whole prefix moving into cache and leaving only the varying user turn. The negative control
+> arm, identical but for the absent directive, produced **zero** cache activity on both calls.
+> Full output in `result.md`.
+>
+> This is the first live exercise of **C3's emit path** on any route: every earlier measurement
+> in this stream ran against xAI's automatic cache, which sends no directive and therefore never
+> touched the `systemBreakpoints` → `cache_control` machinery. The `OpenAI` emit path
+> (`prompt_cache_breakpoint`) remains unmeasured. Item 1 above (the header correction) was
+> handled independently, since C3 shipping `cache_control` is what dates that rationale rather
+> than any particular harness run.
+>
+> **This PR (`claude/prompt-cache-harness-seam`) adds the seam** the remedy above calls for. The
+> pure logic — ratio arithmetic, the cold/warm comparison, and the verdict classification for both
+> harnesses — is extracted into `libraries/ts-extras/src/packlets/ai-assist/promptCacheUsageMath.ts`,
+> `promptCacheObservabilityHarness.ts`, and `promptCacheRoutingAbHarness.ts`, each taking an
+> injected `callCompletion`, and unit-tested against fixture usage blocks. A `code-reviewer` pass on
+> this PR's own diff found the extraction's fixture tests had exposed three disagreements between
+> the two harnesses' original inline math, not the two this note first listed:
+>
+> 1. `promptCacheObservability.js`'s `summarizeUsage` divided by a `0` total without a guard,
+>    printing `NaN%` on a zero-total usage block.
+> 2. `promptCacheRoutingAb.js`'s inline `pct()` coalesced a *missing* `cachedInputTokens` **or**
+>    `uncachedInputTokens` to `0` — and which field was missing decided the direction of the
+>    fabrication: a missing `cachedInputTokens` fabricated a false low ratio (feeding a false
+>    `MISSES`), while a missing `uncachedInputTokens` fabricated a false **100%** (feeding a false
+>    `CONFIRMS`). Not one-directional, which matters given this exact verdict "has already been
+>    used to justify a merge" (PR #675).
+> 3. That same harness's `describeUsage` separately special-cased a *genuinely reported*
+>    `cachedInputTokens: 0, uncachedInputTokens: 0` (both fields present, not missing) as `0.0%`,
+>    and its verdict's `pct()` scored that input as a hard `0`, feeding `MISSES`. The new shared
+>    ratio function scores a real zero-input total as not computable, same as case 1 above — there
+>    were no bytes to have a ratio over, so `0.0%` claimed more than the data supported.
+>
+> All three are fixed rather than reproduced (see `promptCacheUsageMath.ts`'s doc comments for the
+> full detail), and are covered by fixture tests. `perf/promptCacheObservability.js` and
+> `perf/promptCacheRoutingAb.js` are now thin wrappers supplying the live transport and printing
+> the result. Item 1's header correction is included in this same change.
+
 ---
 
 ## 9. The diagnostics — C2

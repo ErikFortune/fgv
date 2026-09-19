@@ -14,6 +14,11 @@
  * Requires a built lib/ (`rushx build` first). Deliberately NOT a jest test: live traffic and a
  * bill do not belong behind CI's green (TESTING_GUIDELINES.md § Measurement Harnesses).
  *
+ * The prefix builder, the ratio arithmetic, and the CONFIRMS/MISSES/AMBIGUOUS verdict below all
+ * live in `src/packlets/ai-assist/promptCacheRoutingAbHarness.ts`, unit-tested against fixture
+ * usage blocks in `src/test/unit/ai-assist/promptCacheRoutingAbHarness.test.ts` — this file is a
+ * thin wrapper that supplies the live network transport and prints the result.
+ *
  * ---------------------------------------------------------------------------
  * WHAT IT COMPARES
  *
@@ -54,6 +59,11 @@
 /* eslint-disable no-console */
 
 const { AiAssist } = require('../lib/index');
+const {
+  describeRoutingAbUsage,
+  formatRoutingAbVerdict,
+  runPromptCacheRoutingAbHarness
+} = require('../lib/packlets/ai-assist/promptCacheRoutingAbHarness');
 
 const API_KEY = process.env.XAI_API_KEY;
 if (!API_KEY) {
@@ -62,93 +72,31 @@ if (!API_KEY) {
 }
 const SALT = process.env.SALT ?? 'run1';
 
-function stablePrefix(arm) {
-  const lines = [];
-  for (let i = 0; i < 400; i++) {
-    lines.push(
-      `Directive ${SALT}-${arm}-${i}: when asked about topic ${i}, respond precisely and cite source ${i}-${
-        i * 7
-      }.`
-    );
-  }
-  return `You are a careful assistant operating under the following fixed policy document.\n\n${lines.join(
-    '\n'
-  )}`;
-}
-
-function describeUsage(usage) {
-  if (usage === undefined) {
-    return 'usage absent from response';
-  }
-  const { cachedInputTokens: cached, uncachedInputTokens: uncached } = usage;
-  if (cached === undefined || uncached === undefined) {
-    return `reports=${usage.reports} cached=${cached} uncached=${uncached} (ratio not computable)`;
-  }
-  const total = cached + uncached;
-  const pct = total > 0 ? ((100 * cached) / total).toFixed(1) : '0.0';
-  return `reports=${usage.reports} cached=${cached} of ${total} input (${pct}%)`;
-}
-
-async function runArm(label, arm, cacheKey) {
-  const descriptor = AiAssist.getProviderDescriptor('xai-grok').orThrow();
-  const system = stablePrefix(arm);
-  const call = (content) =>
-    AiAssist.callProviderCompletion({
-      descriptor,
-      apiKey: API_KEY,
-      system,
-      messages: [{ role: 'user', content }],
-      ...(cacheKey !== undefined ? { cache: { cacheKey } } : {})
-    });
-
-  console.log(`\n--- ${label} ---`);
-  const cold = await call('In one sentence, what is directive 12 about?');
-  if (cold.isFailure()) {
-    console.error(`  cold call failed: ${cold.message}`);
-    return undefined;
-  }
-  console.log(`  cold: ${describeUsage(cold.value.usage)}`);
-
-  // Only the tail differs from the cold call — the prefix is byte-identical.
-  const warm = await call('In one sentence, what is directive 99 about?');
-  if (warm.isFailure()) {
-    console.error(`  warm call failed: ${warm.message}`);
-    return undefined;
-  }
-  console.log(`  warm: ${describeUsage(warm.value.usage)}`);
-  return warm.value.usage;
-}
-
 async function main() {
   console.log(`=== xAI prompt-cache routing A/B (salt=${SALT}) ===`);
   console.log('Both arms vary only the final user turn. They differ only in the routing key.');
 
-  const withoutKey = await runArm('arm 1: WITHOUT cacheKey (behaviour before this change)', 'a', undefined);
-  const withKey = await runArm('arm 2: WITH cacheKey (this change)', 'b', `routing-ab-${SALT}`);
+  const descriptor = AiAssist.getProviderDescriptor('xai-grok').orThrow();
+
+  const result = await runPromptCacheRoutingAbHarness(
+    { callCompletion: AiAssist.callProviderCompletion },
+    { descriptor, apiKey: API_KEY, salt: SALT }
+  );
+  if (result.isFailure()) {
+    console.error(result.message);
+    process.exit(1);
+  }
+
+  const { value } = result;
+  console.log(`\n--- ${value.withoutKey.label} ---`);
+  console.log(`  cold: ${describeRoutingAbUsage(value.withoutKey.coldUsage)}`);
+  console.log(`  warm: ${describeRoutingAbUsage(value.withoutKey.warmUsage)}`);
+  console.log(`\n--- ${value.withKey.label} ---`);
+  console.log(`  cold: ${describeRoutingAbUsage(value.withKey.coldUsage)}`);
+  console.log(`  warm: ${describeRoutingAbUsage(value.withKey.warmUsage)}`);
 
   console.log('\n--- verdict ---');
-  if (withoutKey === undefined || withKey === undefined) {
-    console.log('inconclusive: at least one arm failed; see errors above.');
-    return;
-  }
-  const pct = (u) => {
-    const total = (u.cachedInputTokens ?? 0) + (u.uncachedInputTokens ?? 0);
-    return total > 0 ? (100 * (u.cachedInputTokens ?? 0)) / total : 0;
-  };
-  const a = pct(withoutKey);
-  const b = pct(withKey);
-  console.log(`arm 1 warm ${a.toFixed(1)}% -> arm 2 warm ${b.toFixed(1)}%`);
-  if (b > 50 && b > a * 5) {
-    console.log('CONFIRMS the prediction: the routing key materially improves the hit rate.');
-  } else if (b <= 50) {
-    console.log(
-      'MISSES the prediction: arm 2 did not jump. The routing key is not buying what this ' +
-        'change claims — revise the change or the claim, do not re-run for a better number. ' +
-        '(Re-run once with a fresh SALT first, to rule out a TTL-tainted reading.)'
-    );
-  } else {
-    console.log('AMBIGUOUS: arm 1 may have hit by routing luck. Re-run with a fresh SALT.');
-  }
+  console.log(formatRoutingAbVerdict(value));
 }
 
 main().catch((e) => {

@@ -203,3 +203,98 @@ than smoothed over.
 C3 sends xAI byte-identical request bodies to those it sent before this stream, so nothing
 regressed. What is missing is an improvement xAI can use. The Anthropic and OpenAI emit paths,
 which do receive explicit breakpoints, remain entirely unmeasured — no harness exercises them.
+
+---
+
+## Anthropic breakpoint measurement — C3's emit path, confirmed live
+
+**2026-09-19, `claude/anthropic-cache-breakpoint-measurement`.** Every prompt-cache measurement
+above ran against xAI, whose caching is automatic — no request-side directive is sent, so none of
+them exercise C3's emit path. Anthropic is the sharp case: its cache is opt-in **per content
+block** via `cache_control`, with no automatic fallback, so a breakpoint is the only thing that can
+produce a hit. Until this harness runs, C3's Anthropic emission has never been exercised against a
+live provider on any route — it is verified only by request-body assertions.
+
+`perf/promptCacheAnthropicBreakpoint.js` adds that measurement: an A/B against `claude-sonnet-5`
+(this provider's `'base'` tier), varying only whether `cache.systemBreakpoints` is supplied, with a
+cold-then-warm call pair per arm sharing a ~8,700-token system prefix (comfortably above both the
+1,024-token minimum design.md §7 records for Sonnet-class models and the 4,096-token minimum for
+Haiku-class ones) and varying only the final user turn. The without-breakpoints arm is the negative
+control Anthropic's opt-in cache requires — without it, a hit in the with-breakpoints arm could not
+be attributed to `systemBreakpoints` at all. Reports reads and writes separately
+(`cachedInputTokens`, `cacheWriteTokens`) since Anthropic's normalizer always reports
+`reports: 'reads-and-writes'`, unlike xAI's `'reads'`-only shape above.
+
+**The prediction, written down before the first run** (full text in the file's header):
+
+- arm 1 (no breakpoints), cold and warm — `cachedInputTokens` / `cacheWriteTokens` absent or 0 on
+  both calls. No directive was sent, so nothing should be written or read.
+- arm 2 (with breakpoints), cold — a cache **write** (`cacheWriteTokens` > 0, `cachedInputTokens`
+  near 0).
+- arm 2 (with breakpoints), warm — a cache **read** clearing roughly the prefix size (high, not a
+  small fixed floor the way xAI's automatic cache showed a ~192-token floor even on a cold call).
+
+A miss means C3's Anthropic emission is wrong, or this design's model of Anthropic caching is
+wrong — the response is to revise the design or the code, not the threshold.
+
+**Pure logic (`promptCacheAnthropicBreakpointHarness.ts`) is unit-tested** against fixture usage
+blocks (21 tests, 100% statement/branch/function/line coverage on the new file) and reuses
+`promptCacheUsageMath.ts`'s ratio/verdict comparison rather than duplicating it — see that file's
+`withAnthropicZeroDefaults` for the one Anthropic-specific wrinkle (an absent cache field on a
+`reads-and-writes` usage block is a *known* zero per design.md §8, not an unknown value, so it is
+safe to default before comparison, unlike the provider-agnostic shared function's stricter
+"absent = not computable" rule). Package gates (`rushx build` / `rushx lint` / `rushx test`, full
+suite: 2969/2969, 100% coverage) and the change-file gate are all green.
+
+**Ran 2026-09-19 against `claude-sonnet-5`. Every element of the pre-registered prediction held.**
+
+```
+--- arm 1: WITHOUT systemBreakpoints (negative control) ---
+  cold: reports=reads-and-writes uncached=13899 cached=0     (0.0%)  written=0
+  warm: reports=reads-and-writes uncached=13899 cached=0     (0.0%)  written=0
+
+--- arm 2: WITH systemBreakpoints (C3 emission under test) ---
+  cold: reports=reads-and-writes uncached=20    cached=0     (0.0%)  written=13879
+  warm: reports=reads-and-writes uncached=20    cached=13879 (99.9%) written=0
+```
+
+**This is the first time C3's emit path has been exercised against a live provider on any route.**
+Every prior measurement in this stream ran against xAI, whose caching is automatic — no directive
+is sent, so none of them touched the `systemBreakpoints` → `cache_control` machinery at all.
+
+Four things this establishes, each of which the request-body assertions could not:
+
+1. **The write happens, and it is the breakpoint that causes it.** Arm 2's cold call writes 13,879
+   tokens; arm 1's cold call, identical but for the absent `cache.systemBreakpoints`, writes
+   **zero**. The negative control did not merely fail to improve — it produced no cache activity
+   whatsoever, which is what Anthropic's opt-in-only cache should do when nothing opts in.
+2. **The read happens on the next call.** Arm 2 warm reads back 13,879 — exactly what was written,
+   with the write count dropping to 0.
+3. **`uncached` falls from 13,899 to 20.** That is the whole prefix moving into cache and leaving
+   only the varying user turn to be computed. It is the signature of genuine *prefix* caching, and
+   a stronger result than a ratio alone: 99.9% could in principle come from a whole-request hit,
+   but 20 uncached tokens against a varying tail cannot.
+4. **C1's Anthropic normalization is correct.** `reports: 'reads-and-writes'` on all four calls,
+   with reads and writes landing in the right fields in the right order — distinct from xAI's
+   `'reads'`-only shape, and exercised here for the first time.
+
+**The contrast with xAI is the sharp part.** xAI showed a ~128–192 token floor even on a genuinely
+cold call, because its cache is automatic and something is always matched. Anthropic shows exact
+zeros with no directive and full coverage with one. Opt-in versus automatic is not a documentation
+detail; it is visible in the numbers.
+
+To re-run (each arm salts its own prefix, so arms cannot warm each other; pass a fresh `SALT` to
+avoid a TTL-tainted cold reading):
+
+```
+cd libraries/ts-extras && rushx build
+ANTHROPIC_API_KEY=... node perf/promptCacheAnthropicBreakpoint.js
+```
+
+concluding anything from a miss, per this stream's own experience misdiagnosing the xAI miss on
+first read (§2's measurement note above): a TTL-tainted cold reading from a prior run sharing the
+same salt (re-run once with `SALT=<fresh>` before concluding); a wrong `minCacheablePrefixTokens`
+assumption for the resolved model (confirm which concrete model the `'base'` tier actually resolved
+to); and account/provider-side caching being disabled or rate-limited rather than the emission
+itself being wrong (check the raw response body, not just the normalized `usage` fields, on a
+miss).
