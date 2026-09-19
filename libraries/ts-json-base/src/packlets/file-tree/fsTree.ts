@@ -243,12 +243,6 @@ export class FsFileTreeAccessors<TCT extends string = string>
         }
       }
       return succeedWithDetail(true, 'persistent');
-      // Reachable only when the permission probe above actually throws. Mode bits cannot make
-      // it throw for uid 0, so under a root run — the default in this repo's cloud-agent
-      // containers — nothing can reach this branch. A non-root run covers it via
-      // mutableFsTree.test.ts § "returns permission-denied for read-only file", which asserts
-      // the denial only when it genuinely applies.
-      /* c8 ignore next 3 */
     } catch {
       return failWithDetail(`${absolutePath}: permission denied`, 'permission-denied');
     }

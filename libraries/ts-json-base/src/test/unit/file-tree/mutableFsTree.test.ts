@@ -80,28 +80,35 @@ describe('FsFileTreeAccessors', () => {
       expect(accessors.fileIsMutable('existing.json')).toSucceedWithDetail(true, 'persistent');
     });
 
-    // Mode bits do not constrain root: `fs.accessSync(<0o444 file>, W_OK)` succeeds for uid 0,
-    // so `fileIsMutable` correctly reports the file as writable. Asserting `permission-denied`
-    // unconditionally made this test fail whenever the suite ran as root — which is the default
-    // in this repo's cloud-agent containers — and because Rush blocks every dependent of a failed
-    // project, that single failure stopped `rush test` at `@fgv/ts-json-base` and silently
-    // covered nothing downstream of it. Rather than skip under root (which would assert nothing
-    // there), each case asserts the outcome that is actually correct for its uid.
+    // Mode bits do not constrain root: `fs.accessSync(<0o444 file>, W_OK)` succeeds for uid 0, so
+    // `fileIsMutable` correctly reports the file writable. Asserting `permission-denied`
+    // unconditionally made this fail on every root run — the default in this repo's cloud-agent
+    // containers — and because Rush blocks every dependent of a failed project, that single
+    // failure stopped `rush test` at `@fgv/ts-json-base` and covered nothing downstream. Rather
+    // than skip under root (which would assert nothing in the environment that actually runs),
+    // each case asserts the outcome that is correct for its uid, under one stable test name so
+    // the two environments share a single history.
+    //
+    // The root case is the discriminating one, not the lenient one: if `fileIsMutable` were
+    // "simplified" to read `stat().mode` instead of probing effective access, a 0o444 file would
+    // report not-writable for *every* uid — the root branch would go red while the non-root
+    // branch stayed green by coincidence, since the two strategies agree off root.
+    //
+    // Windows has no uid that bypasses the read-only attribute, so `process.getuid` being
+    // `undefined` there correctly selects the denial branch.
     const isRoot = process.getuid?.() === 0;
 
-    it(`returns ${
-      isRoot ? 'persistent for a read-only file when running as root' : 'permission-denied for read-only file'
-    }`, () => {
+    it('reports the outcome correct for the running uid on a read-only file', () => {
       const filePath = path.join(tempDir, 'readonly.json');
       fs.writeFileSync(filePath, '{}');
       fs.chmodSync(filePath, 0o444);
       try {
         const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
         if (isRoot) {
-          // Not a weaker assertion: it pins that the permission probe reflects the *effective*
-          // ability to write, rather than reading mode bits and reporting a denial that would
-          // not actually occur.
           expect(accessors.fileIsMutable('readonly.json')).toSucceedWithDetail(true, 'persistent');
+          // Closes the gap between "the access probe did not throw" and the effective-writability
+          // claim that answer actually makes: as root the write must genuinely succeed.
+          expect(() => fs.writeFileSync(filePath, '{"written":true}')).not.toThrow();
         } else {
           expect(accessors.fileIsMutable('readonly.json')).toFailWithDetail(
             /permission denied/i,
@@ -110,6 +117,32 @@ describe('FsFileTreeAccessors', () => {
         }
       } finally {
         fs.chmodSync(filePath, 0o644);
+      }
+    });
+
+    // Covers the permission-denied branch independently of uid and platform, by making the probe
+    // itself throw. The chmod-based case above cannot reach it as root, and gating coverage of a
+    // branch on the environment is what previously required a `c8 ignore` directive here.
+    // Same fs-spy idiom already used in this package (see `file.test.ts`, `jsonFsHelper.test.ts`).
+    it('returns permission-denied when the access probe throws', () => {
+      const filePath = path.join(tempDir, 'probe-throws.json');
+      fs.writeFileSync(filePath, '{}');
+      // Spy on the runtime `require('fs')` object rather than the imported namespace: the
+      // namespace's properties are non-configurable, so `jest.spyOn` on it throws "Cannot
+      // redefine property". Same reason `MockFileSystem.startSpies` in `@fgv/ts-utils-jest`
+      // resolves `fs` dynamically.
+      const runtimeFs: typeof fs = require('fs');
+      const spy = jest.spyOn(runtimeFs, 'accessSync').mockImplementation(() => {
+        throw new Error('EACCES: permission denied');
+      });
+      try {
+        const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+        expect(accessors.fileIsMutable('probe-throws.json')).toFailWithDetail(
+          /permission denied/i,
+          'permission-denied'
+        );
+      } finally {
+        spy.mockRestore();
       }
     });
   });
