@@ -671,6 +671,29 @@ describe('callProviderEmbedding', () => {
   });
 
   describe('callProxiedEmbedding', () => {
+    test('endpoint is refused up front rather than silently ignored', async () => {
+      // `IProviderEmbeddingParams` declares `endpoint`, the direct sibling honors
+      // it via `resolveEffectiveBaseUrl`, and this path used not to destructure it
+      // at all. The consequence is sharper here than on any other proxied path:
+      // pointing `endpoint` at a local Ollama is the DOCUMENTED way to use one, so
+      // dropping it does not degrade the answer — it sends the text to OpenAI's
+      // public API instead of the machine the caller named.
+      //
+      // Wrong impls this catches: dropping it (the original bug), and forwarding
+      // it hopefully to a proxy that has never been sent the field.
+      global.fetch = jest.fn();
+
+      const result = await AiAssist.callProxiedEmbedding('http://localhost:3001', {
+        descriptor: openAiDescriptor(),
+        apiKey: 'sk-test',
+        params: { input: 'x' },
+        endpoint: 'http://localhost:11434/v1'
+      });
+
+      expect(result).toFailWith(/endpoint is not supported on the proxied path/i);
+      expect(global.fetch as jest.Mock).not.toHaveBeenCalled();
+    });
+
     test('posts to the proxy embedding endpoint and returns the validated result', async () => {
       mockFetchResponse({
         vectors: [[0.1, 0.2]],

@@ -474,6 +474,15 @@ const proxiedEmbeddingResponse: Validator<IAiEmbeddingResult> = Validators.objec
  * handles descriptor lookup, model/capability resolution, and provider dispatch.
  * Error body `{ error: string }` is surfaced as `proxy: ${error}`.
  *
+ * @remarks
+ * `endpoint` is **refused** on this path rather than forwarded or dropped, on the
+ * same terms as `callProxiedCompletion`. It matters more here than
+ * anywhere else: pointing `endpoint` at `http://localhost:11434/v1` is the
+ * documented way to reach a local Ollama, so dropping it does not degrade the
+ * answer — it sends the text to OpenAI's public API instead of the machine the
+ * caller named. Use `callProviderEmbedding`, or point the proxy
+ * itself at the intended upstream.
+ *
  * @param proxyUrl - Base URL of the proxy server (e.g. `http://localhost:3001`).
  * @param params - Same parameters as {@link AiAssist.callProviderEmbedding}.
  * @returns The embedding result, or a failure.
@@ -483,7 +492,16 @@ export async function callProxiedEmbedding(
   proxyUrl: string,
   params: IProviderEmbeddingParams
 ): Promise<Result<IAiEmbeddingResult>> {
-  const { descriptor, apiKey, params: request, modelOverride, logger, signal } = params;
+  const { descriptor, apiKey, params: request, modelOverride, logger, signal, endpoint } = params;
+
+  if (endpoint !== undefined) {
+    return fail(
+      `callProxiedEmbedding: endpoint is not supported on the proxied path — a proxy ` +
+        `cannot confirm it honored it, and silently reaching the provider's default ` +
+        `upstream would send the request somewhere the caller excluded. Use ` +
+        `callProviderEmbedding, or route the proxy itself at the intended upstream.`
+    );
+  }
 
   const body: Record<string, unknown> = {
     providerId: descriptor.id,

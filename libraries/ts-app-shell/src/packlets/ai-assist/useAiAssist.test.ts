@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import '@fgv/ts-utils-jest';
 import { act, renderHook } from '@testing-library/react';
 
 import { AiAssist } from '@fgv/ts-extras';
@@ -545,6 +546,46 @@ describe('useAiAssist › generateDirect', () => {
 
     expect(proxiedSpy).toHaveBeenCalledTimes(1);
     expect(proxiedSpy.mock.calls[0][0]).toBe('http://proxy.local:3001');
+    expect(directSpy).not.toHaveBeenCalled();
+  });
+
+  test('a configured endpoint plus a proxy now fails loudly instead of misrouting', async () => {
+    // The hook threads `providerConfig.endpoint` into the params object handed to
+    // WHICHEVER branch runs. On the direct branch it is honored. On the proxied
+    // branch it used to be silently discarded, so a user who had pinned a
+    // self-hosted or LAN upstream AND turned on a proxy had their prompt sent to
+    // the provider's public API instead — visible only by watching proxy traffic.
+    //
+    // ts-extras now refuses it. This is the only place the two halves meet, and
+    // nothing covered the combination before, which is most of why it survived.
+    // So: no spy. The real callProxiedCompletion runs, and its refusal has to
+    // reach the caller as a legible failure. No wire call happens either way —
+    // the refusal fires before any fetch — so this stays a unit test.
+    //
+    // Wrong impls this catches: the hook dropping `endpoint` on the proxied
+    // branch to dodge the refusal (which would restore the silent misroute one
+    // layer up), and the failure being swallowed rather than surfaced.
+    proxiedSpy.mockRestore();
+
+    const settings: AiAssist.IAiAssistSettings = {
+      providers: [
+        {
+          provider: 'xai-grok',
+          secretName: 'secret.xai-grok',
+          endpoint: 'http://192.168.1.50:11434/v1'
+        }
+      ],
+      proxyUrl: 'http://proxy.local:3001'
+    };
+    const keyStore = new StubKeyStore(true, new Map([['secret.xai-grok', 'sk-xai']]));
+    const { result } = renderHook(() => useAiAssist({ settings, keyStore }));
+
+    let r!: Result<unknown>;
+    await act(async () => {
+      r = await result.current.generateDirect('xai-grok', TEST_PROMPT, succeed);
+    });
+
+    expect(r).toFailWith(/endpoint is not supported on the proxied path/i);
     expect(directSpy).not.toHaveBeenCalled();
   });
 
