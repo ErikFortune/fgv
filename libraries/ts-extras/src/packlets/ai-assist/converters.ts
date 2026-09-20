@@ -217,7 +217,15 @@ export const aiAssistSettings: Converter<IAiAssistSettings> = Converters.strictO
 
 /**
  * Converter for {@link AiAssist.AiCacheReportingLevel}.
- * @public
+ *
+ * @remarks
+ * Internal because it is not exported from the packlet barrel, so nothing
+ * outside this package can reach it — a `@public` tag would have claimed a
+ * reachability that does not exist. Its only consumer is
+ * {@link aiCompletionUsage} below. Promoting it later is additive and free;
+ * exporting it now to match the tag would add surface nobody has asked for,
+ * and un-exporting is the one direction that breaks callers.
+ * @internal
  */
 export const aiCacheReportingLevel: Converter<AiCacheReportingLevel> =
   Converters.enumeratedValue<AiCacheReportingLevel>(['reads', 'reads-and-writes']);
@@ -245,7 +253,13 @@ export const aiCacheReportingLevel: Converter<AiCacheReportingLevel> =
  * is the same forward-compatibility posture the rest of the proxy path takes toward
  * a peer of a different version. Required fields stay required; only openness to
  * extra ones changes.
- * @public
+ *
+ * Internal for the same reason as {@link aiCacheReportingLevel}: it is not in
+ * the packlet barrel, and its only consumer is `callProxiedCompletion`'s
+ * read-back. A proxy implementor validating the usage block they relay is the
+ * plausible external consumer, and exporting it for them is additive whenever
+ * one actually turns up.
+ * @internal
  */
 export const aiCompletionUsage: Converter<IAiCompletionUsage> = Converters.object<IAiCompletionUsage>({
   reports: aiCacheReportingLevel,
