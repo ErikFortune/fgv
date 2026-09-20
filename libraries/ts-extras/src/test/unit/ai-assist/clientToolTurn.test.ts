@@ -178,6 +178,33 @@ describe('executeClientToolTurn', () => {
     ];
   }
 
+  /**
+   * Two `tool_use` blocks in one assistant message — the shape a model emits when it
+   * calls several tools in a single turn. Distinct block indices, distinct ids.
+   */
+  function anthropicTwoToolUseSse(
+    first: { id: string; name: string; args: string },
+    second: { id: string; name: string; args: string }
+  ): string[] {
+    const block = (index: number, tool: { id: string; name: string; args: string }): string[] => [
+      `event: content_block_start\ndata: ${JSON.stringify({
+        index,
+        content_block: { type: 'tool_use', id: tool.id, name: tool.name }
+      })}\n\n`,
+      `event: content_block_delta\ndata: ${JSON.stringify({
+        index,
+        delta: { type: 'input_json_delta', partial_json: tool.args }
+      })}\n\n`,
+      `event: content_block_stop\ndata: ${JSON.stringify({ index })}\n\n`
+    ];
+    return [
+      ...block(0, first),
+      ...block(1, second),
+      `event: message_delta\ndata: ${JSON.stringify({ delta: { stop_reason: 'tool_use' } })}\n\n`,
+      `event: message_stop\ndata: {}\n\n`
+    ];
+  }
+
   function anthropicDoneSse(): string[] {
     return [
       `event: content_block_start\ndata: ${JSON.stringify({
@@ -681,7 +708,12 @@ describe('executeClientToolTurn', () => {
   });
 
   describe('unknown tool name', () => {
-    test('emits client-tool-result with isError=true and resolves nextTurn as Result.fail', async () => {
+    // Deliberately asserts the same shape as 'schema validation failure' below. A model naming a
+    // tool the host never registered is a model error, and this module's taxonomy puts model
+    // errors on the continue side; only host-machinery errors terminate the turn. Consumer ask,
+    // 2026-09-18: a model read a prose trailer in the prompt as a tool call and the person saw
+    // "I couldn't respond" for a turn that had every chance to recover.
+    test('emits client-tool-result with isError=true and continues (does not fail nextTurn)', async () => {
       mockSseResponse(anthropicToolUseSse('toolu_unk', 'unknown_tool', '{}'));
 
       const result = executeClientToolTurn({
@@ -704,7 +736,49 @@ describe('executeClientToolTurn', () => {
         expect(errorEvent.result).toMatch(/unknown tool/i);
       }
 
-      expect(turnResult).toFailWith(/unknown tool/i);
+      // The turn recovers: the stream completes and the error rides in the continuation, so the
+      // model is told what went wrong and can try again.
+      expect(turnResult).toSucceedAndSatisfy((r) => {
+        expect(r.continuation).toBeDefined();
+        expect(r.continuation?.toolCallsSummary[0].isError).toBe(true);
+        expect(r.continuation?.toolCallsSummary[0].toolName).toBe('unknown_tool');
+      });
+    });
+
+    test('a known tool called after an unknown one still executes', async () => {
+      // The recovery is only worth anything if the turn genuinely carries on: pin that a second
+      // call in the same stream is still dispatched, rather than the generator having unwound.
+      mockSseResponse(
+        anthropicTwoToolUseSse(
+          { id: 'toolu_unk', name: 'unknown_tool', args: '{}' },
+          { id: 'toolu_ok', name: 'recall_memory', args: '{"query":"x"}' }
+        )
+      );
+      let executed = false;
+      const tool = makeMemoryTool(async () => {
+        executed = true;
+        return 'recalled';
+      });
+
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [tool] as IAiClientTool[],
+        model: 'claude-sonnet-4-6'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      await collect(result.value.events);
+      const turnResult = await result.value.nextTurn;
+
+      expect(executed).toBe(true);
+      expect(turnResult).toSucceedAndSatisfy((r) => {
+        expect(r.continuation?.toolCallsSummary).toHaveLength(2);
+        expect(r.continuation?.toolCallsSummary[0].isError).toBe(true);
+        expect(r.continuation?.toolCallsSummary[1].isError).toBe(false);
+      });
     });
   });
 

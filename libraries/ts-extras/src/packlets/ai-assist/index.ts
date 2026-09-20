@@ -11,6 +11,8 @@ export {
   type AiServerToolType,
   type AiServerToolConfig,
   type AiToolConfig,
+  type AiToolConflictPolicy,
+  type IAiToolConflictReport,
   type IAiWebSearchToolConfig,
   type IAiClientToolConfig,
   type IAiToolAnnotations,
@@ -168,7 +170,8 @@ export {
   modelSpec
 } from './converters';
 
-export { resolveEffectiveTools } from './toolFormats';
+export { resolveEffectiveTools, resolveToolConflicts, defaultToolConflictPolicy } from './toolFormats';
+export type { IAiResolvedToolConflicts } from './toolFormats';
 
 export type { AiCacheReportingLevel, IAiCompletionUsage } from './usageTypes';
 
