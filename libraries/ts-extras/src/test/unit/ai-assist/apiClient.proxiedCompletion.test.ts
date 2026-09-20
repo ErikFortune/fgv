@@ -25,6 +25,7 @@
 
 import '@fgv/ts-utils-jest';
 
+import { JsonSchema } from '@fgv/ts-json-base';
 import { AiAssist } from '../../..';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import type { IAiImageModelCapability, IAiProviderDescriptor } from '../../../packlets/ai-assist/model';
@@ -102,6 +103,177 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
       { role: 'assistant', content: 'earlier reply' },
       { role: 'user', content: 'more context' }
     ]);
+  });
+
+  // ==========================================================================
+  // Parameters the proxy path used to drop
+  //
+  // `callProxiedCompletion` documents its params as "Same parameters as
+  // callProviderCompletion" and silently discarded four of them. Each test below
+  // asserts the REQUEST BODY or the returned value, not merely that the call
+  // succeeded — a success-only assertion passes against the broken version, since
+  // dropping a parameter is exactly the failure that still returns a 200.
+  // ==========================================================================
+
+  test('tier resolves to a concrete model and travels as modelOverride', async () => {
+    // Wrong impl this catches: `tier` never destructured, so a frontier request
+    // silently resolves to the base model — a caller paying for a model they are
+    // not getting, invisible without reading the request body.
+    mockFetchResponse({ content: 'ok' });
+
+    await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor({
+        defaultModel: { base: 'grok-base', advanced: 'grok-advanced' },
+        aliases: undefined
+      }),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest(),
+      tier: 'advanced'
+    });
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.modelOverride).toBe('grok-advanced');
+    // Resolved on this side rather than forwarded, so a proxy that has never heard
+    // of tiers still honors it. A `tier` body field would be the giveaway that it
+    // had not been.
+    expect(body.tier).toBeUndefined();
+  });
+
+  test('a frontier tier cascades through the descriptor, not the proxy', async () => {
+    // xai-grok declares no frontier key, so frontier must cascade to advanced. The
+    // cascade lives in the descriptor walk, which is client-side — pin that the
+    // resolved result is what ships.
+    mockFetchResponse({ content: 'ok' });
+
+    await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor({
+        defaultModel: { base: 'grok-base', advanced: 'grok-advanced' },
+        aliases: undefined
+      }),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest(),
+      tier: 'frontier'
+    });
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.modelOverride).toBe('grok-advanced');
+  });
+
+  test('with no tier, modelOverride passes through untouched — including absent', async () => {
+    // Wrong impl this catches: resolving unconditionally, which would always send a
+    // concrete model and take away the proxy's ability to apply its own default.
+    // That would be a silent regression for every existing caller.
+    mockFetchResponse({ content: 'ok' });
+
+    await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest()
+    });
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect('modelOverride' in body).toBe(false);
+  });
+
+  test('adaptOptionalToNullable rides along in the structuredOutput projection', async () => {
+    // The hoist is applied where the wire schema is built, which on this path is
+    // the proxy. Wrong impl this catches: the projection forwarding only
+    // mode/schema/onUnsupported, so an opted-in caller's schema gets refused or
+    // degraded instead of hoisted — and `onUnsupported` then reports a constraint
+    // loss the caller had explicitly opted out of.
+    mockFetchResponse({ content: '{}', structuredOutput: 'schema' });
+
+    await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest(),
+      structuredOutput: {
+        mode: 'schema',
+        schema: JsonSchema.object({ name: JsonSchema.string() }),
+        adaptOptionalToNullable: true
+      }
+    });
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.structuredOutput.mode).toBe('schema');
+    expect(body.structuredOutput.adaptOptionalToNullable).toBe(true);
+  });
+
+  test('endpoint is forwarded so the proxy can target a self-hosted upstream', async () => {
+    // Unlike `tier`, this cannot be resolved here — the proxy makes the upstream
+    // call. Wrong impl this catches: `endpoint` never destructured, so a caller
+    // pointing at a LAN Ollama silently reaches the provider's public API instead.
+    mockFetchResponse({ content: 'ok' });
+
+    await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest(),
+      endpoint: 'http://192.168.1.50:11434/v1'
+    });
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.endpoint).toBe('http://192.168.1.50:11434/v1');
+  });
+
+  test('usage on the proxy response reaches the result', async () => {
+    // Wrong impl this catches: never reading response.usage, so the field was
+    // unconditionally absent on this path and a consumer concluded their provider
+    // does not report usage.
+    mockFetchResponse({
+      content: 'ok',
+      usage: {
+        reports: 'reads-and-writes',
+        cachedInputTokens: 40,
+        cacheWriteTokens: 5,
+        outputTokens: 20,
+        totalInputTokens: 100
+      }
+    });
+
+    const result = await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest()
+    });
+
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.usage?.reports).toBe('reads-and-writes');
+      expect(r.usage?.cachedInputTokens).toBe(40);
+      expect(r.usage?.cacheWriteTokens).toBe(5);
+    });
+  });
+
+  test('a malformed usage block is dropped whole, not partially trusted', async () => {
+    // `reports` is required on IAiCompletionUsage — a block that cannot say which
+    // of reads/writes it covers is not one this package hands on. Wrong impl this
+    // catches: casting the response through instead of validating it, which would
+    // surface an object missing the field its consumers branch on.
+    mockFetchResponse({ content: 'ok', usage: { cachedInputTokens: 40 } });
+
+    const result = await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest()
+    });
+
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.usage).toBeUndefined();
+    });
+  });
+
+  test('no usage from the proxy leaves the field absent, never a zero', async () => {
+    mockFetchResponse({ content: 'ok' });
+
+    const result = await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest()
+    });
+
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.usage).toBeUndefined();
+    });
   });
 
   test('fails fast when messages is empty (unified invariant, no proxy call)', async () => {
