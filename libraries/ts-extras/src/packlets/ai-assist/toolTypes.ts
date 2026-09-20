@@ -417,12 +417,26 @@ export interface IAiClientToolTurnResult {
    *
    * **Optional on purpose, unlike `toolConflicts`.** The library always knows
    * what it did to your tools, so a silent `toolConflicts` would be a defect
-   * and it is required. It cannot know what a provider declined to tell it, so
-   * a required `usage` could only be satisfied by inventing one — the exact
-   * failure {@link AiAssist.IAiCompletionUsage.reports} exists to prevent.
-   * Absent means the provider reported nothing, the same as it does on
-   * {@link AiAssist.IAiCompletionResponse.usage} and
-   * {@link AiAssist.IAiStreamDone.usage}; it is never a fabricated zero.
+   * and it is required. It cannot always know what a turn cost, so a required
+   * `usage` could only be satisfied by inventing one — the exact failure
+   * {@link AiAssist.IAiCompletionUsage.reports} exists to prevent.
+   *
+   * Absent means **no normalized usage is being exposed**, which covers two
+   * cases, the same as on {@link AiAssist.IAiCompletionResponse.usage} and
+   * {@link AiAssist.IAiStreamDone.usage}:
+   *
+   * - the provider reported nothing; or
+   * - the provider reported something the library declines to normalize,
+   *   because this descriptor is outside
+   *   {@link AiAssist.supportsCacheUsageReporting}. Groq, Mistral, Ollama and
+   *   self-hosted `openai-compat` share the OpenAI-format adapter but have
+   *   unverified usage shapes, so a raw `usage` block from one of them is
+   *   dropped rather than stamped with a cache-reporting level it may not
+   *   have earned.
+   *
+   * Either way it is never a fabricated zero. If you need to tell the two
+   * apart, the descriptor answers it: the second case is a property of the
+   * provider you picked, not of the turn.
    */
   readonly usage?: IAiCompletionUsage;
 }
