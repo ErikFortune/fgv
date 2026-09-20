@@ -5,6 +5,7 @@
 
 import { Hash, Logging, Normalizer, Result, captureResult, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { sanitizeJsonObject } from '@fgv/ts-json-base';
+import { Mustache } from '@fgv/ts-extras';
 import {
   QualifierTypes,
   Qualifiers,
@@ -16,7 +17,7 @@ import {
   Runtime
 } from '@fgv/ts-res';
 import { PromptId, ScopeKey, SlotName } from '../types';
-import { IPromptCandidateRecord, IPromptDescriptor, IStoredPromptRecord } from '../types';
+import { IPromptCandidateRecord, IPromptDescriptor, IPromptSlot, IStoredPromptRecord } from '../types';
 import { PromptSubstitutions } from '../types';
 import {
   IPromptLibraryQualifiersInput,
@@ -27,10 +28,15 @@ import {
 import {
   IBindingTraceEntry,
   ICandidateMatchTraceEntry,
+  IPromptComposition,
+  IPromptCompositionOptions,
   IPromptResolveTrace,
+  IPromptSection,
   IResolvedPrompt,
   IResolvedPromptSlot,
-  ISafeguardFinding
+  IResourceBindingTraceEntry,
+  ISafeguardFinding,
+  PromptCacheStability
 } from '../types';
 import { IPromptStore } from '../store';
 import { IPromptRegistry } from '../registry';
@@ -46,6 +52,7 @@ import { applySafeguards } from '../safeguards';
 import { assertOutputValidationsCompatible, runOutputValidationPipeline } from '../output';
 import { walkScopeChain } from './chainWalker';
 import { IBindingMergeResult, mergeBindings } from './bindingMerger';
+import { computeCacheStabilityAnalysis } from './cacheStabilityAnalysis';
 import { MustacheTemplateCache } from './mustacheCache';
 import { joinBodies } from './candidateSelector';
 import {
@@ -216,6 +223,25 @@ export interface IPromptResolveRequest<TQualifierNames extends string = string> 
   readonly qualifiers: Readonly<Partial<Record<TQualifierNames, string>>>;
   /** Optional caller substitutions, applied to slots not locked by an `enforced` scope binding. */
   readonly substitutions?: PromptSubstitutions;
+  /**
+   * Request a {@link IPromptComposition} on the result — what is in the body, in what order, and
+   * how much of it each part is. Presence opts in; omitted, nothing extra is computed or retained.
+   * @remarks
+   * Opt-in because it costs a second render and an array per resolve, and observers retain
+   * resolutions in a bounded ring buffer — a cost most resolves should not pay for a diagnostic
+   * they are not reading.
+   */
+  readonly composition?: IPromptCompositionOptions;
+  /**
+   * Per-slot prompt-cache stability overrides for this resolve. Wins over
+   * any {@link IPromptSlot.cacheStability} for the same slot, unconditionally
+   * — this is what rescues a caller-substituted value that is actually an
+   * app-held constant, invisible to the library at declaration time.
+   * Consulted only when {@link IPromptResolveRequest.composition} is also
+   * requested, since the diagnostics that use it (design.md §9) run
+   * alongside the section map.
+   */
+  readonly cacheStability?: ReadonlyMap<SlotName, PromptCacheStability>;
 }
 
 /**
@@ -1104,9 +1130,14 @@ export class PromptLibrary<
           template
             .validateAndRender(this._buildRenderContext(finalMerged))
             .withErrorFormat((msg) => `prompt '${req.id}': ${msg}`)
+            .onSuccess((rendered) => succeed({ template, rendered }))
         )
-        .onSuccess((rendered) => this._applyAntiJailbreakPreface(descriptor, rendered))
-        .onSuccess((finalBody) => {
+        .onSuccess(({ template, rendered }) =>
+          this._applyAntiJailbreakPreface(descriptor, rendered).onSuccess((prefaced) =>
+            succeed({ template, finalBody: prefaced.body, prefaceLength: prefaced.prefaceLength })
+          )
+        )
+        .onSuccess(({ template, finalBody, prefaceLength }) => {
           const candidateMatches: ICandidateMatchTraceEntry[] = matches.map((m) => ({
             candidateIndex: m.index,
             matchType: m.matchType,
@@ -1131,25 +1162,167 @@ export class PromptLibrary<
               winningScope: entry.winningScope
             });
           });
+          const composition =
+            req.composition === undefined
+              ? undefined
+              : this._buildComposition(
+                  template,
+                  finalMerged,
+                  finalBody,
+                  prefaceLength,
+                  req.composition,
+                  candidateMatches,
+                  resourceBindings.traceEntries,
+                  descriptor.slots,
+                  req.cacheStability
+                );
           return succeed<IResolvedPrompt>({
             id: req.id,
             body: finalBody,
             descriptor,
             trace,
-            slots
+            slots,
+            ...(composition === undefined ? {} : { composition })
           });
         })
     );
   }
 
-  private _applyAntiJailbreakPreface(descriptor: IPromptDescriptor, rendered: string): Result<string> {
+  /**
+   * Builds the section map for a resolved body.
+   *
+   * @remarks
+   * The body is `preface + Mustache.render(joinedTemplate)`, so the preface is a known-length
+   * section at offset 0 and everything after it is `renderWithSegments`' map shifted by that
+   * length. Offsets are therefore *computed*, never recovered by searching the finished text —
+   * which would be unsound for a value used twice, one that renders empty, one that is a substring
+   * of the surrounding literal text, or one that escaping alters.
+   *
+   * Returns an `unavailable` composition rather than failing when the template cannot be
+   * segmented: the caller asked for a diagnostic, and a diagnostic must not be able to break the
+   * resolution it observes. The reason is carried rather than the absence being silent.
+   * @internal
+   */
+  private _buildComposition(
+    template: Mustache.MustacheTemplate,
+    merged: ReadonlyMap<SlotName, IBindingTraceEntry>,
+    finalBody: string,
+    prefaceLength: number,
+    options: IPromptCompositionOptions,
+    candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>,
+    resourceBindingResolutions: ReadonlyArray<IResourceBindingTraceEntry>,
+    slots: ReadonlyArray<IPromptSlot>,
+    callSiteCacheStability: ReadonlyMap<SlotName, PromptCacheStability> | undefined
+  ): IPromptComposition {
+    const measure = options.measure;
+    // Accumulated as sections are built rather than summed afterwards: a later sum would need a
+    // fallback for a section with no `measured`, and no such section can exist here.
+    let measuredTotal = 0;
+    const measured = (text: string): { measured?: number } => {
+      if (measure === undefined) {
+        return {};
+      }
+      const value = measure(text);
+      measuredTotal += value;
+      return { measured: value };
+    };
+
+    const segmented = template.renderWithSegments(this._buildRenderContext(merged));
+    if (segmented.isFailure()) {
+      return {
+        totalChars: finalBody.length,
+        sections: [],
+        cacheFindings: [],
+        unavailable: segmented.message
+      };
+    }
+
+    const sections: IPromptSection[] = [];
+    if (prefaceLength > 0) {
+      sections.push({
+        kind: 'preface',
+        start: 0,
+        chars: prefaceLength,
+        ...measured(finalBody.slice(0, prefaceLength))
+      });
+    }
+    for (const seg of segmented.value.segments) {
+      const start = seg.start + prefaceLength;
+      const text = finalBody.slice(start, start + seg.length);
+      if (seg.kind === 'literal') {
+        sections.push({ kind: 'template', start, chars: seg.length, ...measured(text) });
+        continue;
+      }
+      const name = seg.name as SlotName;
+      const entry = merged.get(name);
+      sections.push({
+        kind: 'slot',
+        slot: name,
+        start,
+        chars: seg.length,
+        ...measured(text),
+        ...(entry === undefined
+          ? {}
+          : {
+              source: entry.source,
+              directive: entry.directive,
+              wasEnforced: entry.wasEnforced,
+              ...(entry.winningScope === undefined ? {} : { winningScope: entry.winningScope })
+            })
+      });
+    }
+
+    const { findings: cacheFindings, perSectionStability } = computeCacheStabilityAnalysis({
+      sections,
+      mergedBindings: merged,
+      candidateMatches,
+      resourceBindingResolutions,
+      slots,
+      callSiteOverrides: callSiteCacheStability,
+      prefaceStability: this._safetyPolicy?.antiJailbreakPrefaceStability,
+      options: options.cacheDiagnostics
+    });
+    // Attaches the same effective stability the D1–D5 checks above just reasoned over to each
+    // section, so a consumer building a cache-breakpoint plan (`toCacheRequest`) reads it off the
+    // composition rather than re-deriving it from the trace.
+    const sectionsWithStability: IPromptSection[] = sections.map((section, index) => ({
+      ...section,
+      effectiveStability: perSectionStability[index]
+    }));
+
+    return {
+      totalChars: finalBody.length,
+      ...(measure === undefined ? {} : { totalMeasured: measuredTotal }),
+      sections: sectionsWithStability,
+      cacheFindings
+    };
+  }
+
+  /**
+   * Applies the safety policy's anti-jailbreak preface to a rendered body.
+   *
+   * @remarks
+   * Returns the length of what it prepended alongside the body, rather than leaving the caller to
+   * recover it as `body.length - rendered.length`. That subtraction is correct only while this
+   * method exclusively *prepends*, and it would keep returning a plausible number if that ever
+   * stopped being true — silently shifting every section offset the composition reports. Naming
+   * the split point here means a future change to this method cannot mis-describe it.
+   * @internal
+   */
+  private _applyAntiJailbreakPreface(
+    descriptor: IPromptDescriptor,
+    rendered: string
+  ): Result<{ body: string; prefaceLength: number }> {
     const preface = this._safetyPolicy?.antiJailbreakPreface;
     if (preface === undefined) {
-      return succeed(rendered);
+      return succeed({ body: rendered, prefaceLength: 0 });
     }
     return preface(descriptor)
       .withErrorFormat((msg) => `prompt '${descriptor.id}': antiJailbreakPreface failed: ${msg}`)
-      .onSuccess((prefaceText) => succeed(prefaceText === '' ? rendered : `${prefaceText}\n${rendered}`));
+      .onSuccess((prefaceText) => {
+        const prefix = prefaceText === '' ? '' : `${prefaceText}\n`;
+        return succeed({ body: `${prefix}${rendered}`, prefaceLength: prefix.length });
+      });
   }
 
   private _buildRenderContext(merged: ReadonlyMap<SlotName, IBindingTraceEntry>): Record<string, string> {

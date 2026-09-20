@@ -85,6 +85,7 @@ summary:
   shipped: >                 # from result.md — what actually landed
   diverged: >                # the delta: scope cut, approach changed, verdict reversed
   sourceLine: '…'            # VERBATIM authored opener from result.md / README.md
+  headline: '…'              # CURATED one-liner for the capability feed (optional)
 keywords: [ … ]              # generated; concepts a literal grep would miss
 sourceHash: <hash>           # over the artifacts this was derived from
 ```
@@ -108,6 +109,30 @@ for these, which recur:
 verbatim — `**Shipped:** …`, `## Outcome`, `## Delivered`, `**Status:** …`. It costs
 nothing and lets a later reader check your synthesis against its source without
 opening the stream. If you cannot find one, leave it blank.
+
+**`headline` is a different field for a different reader, and the two are easy to
+conflate.** It is a **curated** one-line "what shipped" — under ~200 chars, no Markdown
+heading, scannable in a list — and it feeds the generated *Recent additions* list in
+`LIBRARY_CAPABILITIES.md` and each package's `CAPABILITIES.md`, which is how consumers
+answer *"what changed in fgv since I last looked?"*.
+
+```yaml
+summary:
+  sourceLine: '# Brief — crypto-utils base64url + branded multibase SPKI hardening'  # verbatim
+  headline: >                                                                        # curated
+    base64url decoding now rejects what it cannot round-trip, and a public key
+    carries its encoding in its type rather than in a comment.
+```
+
+**Do not "fix" a `sourceLine` to serve the feed.** Its value is that it is verbatim; a
+stream whose only authored opener was a `# Brief — …` heading recorded that correctly,
+and rewriting it destroys the property it exists for. Add a `headline` beside it instead.
+
+`headline` may be omitted. `common/scripts/generate-capability-feed.mjs` falls back to
+`sourceLine` when it happens to be usable — a good verbatim opener often *is* a good
+headline — and a stream with neither is simply absent from the feed. That is the right
+outcome: a fabricated summary is worse than a gap, which is why the streams carrying
+`artifactLoss` are left alone rather than backfilled.
 
 **`keywords` earn their place by adding recall.** Include concepts a literal grep for
 the stream id would miss — the problem class, the primitives touched, the failure mode
@@ -161,7 +186,13 @@ like". `brief.md` / `state.md` / `result.md` are archived read-only alongside it
 This ships **in the same PR as the work**. Not after merge, not as a follow-up — both
 failure modes are named in the protocol with the incidents that produced them.
 
-### 4. Draft the `docs/WORKSTREAMS.md` entry — **for review, not for commit**
+### 4. Draft the ledger entry — **for review, not for commit**
+
+**Where it goes.** A stream that is shipping writes its ✅ entry directly into the month
+archive `docs/workstreams/<YYYY-MM>.md` (newest first) and adds its id to the **Shipped
+streams** index in `docs/WORKSTREAMS.md`. The working ledger holds in-flight streams only,
+so that reading it does not mean reading every stream ever run. A stream still in flight
+keeps its entry in `docs/WORKSTREAMS.md` until it ships.
 
 Match the shape of the entries already there (see the ledger's own § "Stream entry
 shape"). They are narrative and opinionated, and that is deliberate — a mechanical row
@@ -213,6 +244,7 @@ not a maybe.
 - Does every assertion in `summary.intended` / `shipped` trace to a specific line in `brief.md` /
   `result.md`? Quote the line or drop the claim.
 - Does `sourceLine` actually appear verbatim in the source file?
+- If `sourceLine` is a heading, a paragraph, or blank, is there a `headline` beside it?
 - Do the `prs` numbers belong to *this* stream, and are they in the state claimed (merged vs
   open)? Check, do not assume.
 - Does the drafted ledger entry's status marker match reality?
@@ -296,7 +328,7 @@ two totals. Report the streams with no entry.
 find .ai/tasks/active -mindepth 1 -maxdepth 1 -type d -printf '%f\n'  > /tmp/d.txt
 find .ai/tasks/completed -mindepth 2 -maxdepth 2 -type d -printf '%f\n' >> /tmp/d.txt
 sort -u /tmp/d.txt -o /tmp/d.txt
-grep -o '^### `[^`]*`' docs/WORKSTREAMS.md | sed 's/^### `//;s/`$//' | sort -u > /tmp/l.txt
+grep -oh '^### `[^`]*`' docs/WORKSTREAMS.md docs/workstreams/*.md | sed 's/^### `//;s/`$//' | sort -u > /tmp/l.txt
 comm -23 /tmp/d.txt /tmp/l.txt   # directories with no ledger entry  ← the worklist
 comm -13 /tmp/d.txt /tmp/l.txt   # ledger entries with no directory  ← naming mismatches
 ```
@@ -305,6 +337,9 @@ comm -13 /tmp/d.txt /tmp/l.txt   # ledger entries with no directory  ← naming 
 
 - **`grep -c '^### '` over-counts.** The ledger carries prose section headings at the
   same level as stream entries. Match on the backticked form and nothing else.
+- **The ledger alone is no longer the whole ledger.** Shipped entries live in
+  `docs/workstreams/<YYYY-MM>.md`; `docs/WORKSTREAMS.md` keeps the in-flight ones and an
+  index of ids. Grepping only the working file reports every shipped stream as missing.
 - **`dirs − entries` is not the gap.** Ledger entries naming a stream whose directory
   is absent (or differently named) cancel against real gaps, so the subtraction lands
   low and hides the reconciliation work. Both `comm` directions are the report; the

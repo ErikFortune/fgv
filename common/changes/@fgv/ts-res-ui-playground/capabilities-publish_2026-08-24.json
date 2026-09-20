@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-ui-playground",
+      "comment": "Publishing: allow CAPABILITIES.md through .npmignore. The `*.md` rule was excluding it, so the per-package capability reference existed in the repo but never reached anyone who installed the package \u2014 defeating the version accuracy the per-package split exists for. Asserted against the packed tarball by verify-tarball-exports.mjs.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-res-ui-playground"
+}

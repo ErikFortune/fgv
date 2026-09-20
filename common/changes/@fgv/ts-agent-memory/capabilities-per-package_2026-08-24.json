@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "Publishing: add CAPABILITIES.md to the package's files allowlist so the capability reference ships in the tarball and is version-accurate for whatever release a consumer installed.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}

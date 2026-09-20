@@ -6,6 +6,7 @@
 import { SerializerId, SlotName } from './ids';
 import { SlotDirective, SlotWritability } from './enums';
 import { SlotBinding } from './bindings';
+import { PromptCacheStability } from './cacheStability';
 
 /**
  * Declaration of a prompt slot.
@@ -27,4 +28,11 @@ export interface IPromptSlot {
   readonly maxLength?: number;
   /** Open string narrowed by the consumer's descriptor Converter. */
   readonly source?: string;
+  /**
+   * Declared prompt-cache stability for this slot's value. Default
+   * `'per-request'` — absence never means "assume stable" (design.md §1,
+   * R-a). A resolve-time {@link IPromptResolveRequest.cacheStability}
+   * override for the same slot wins over this unconditionally.
+   */
+  readonly cacheStability?: PromptCacheStability;
 }

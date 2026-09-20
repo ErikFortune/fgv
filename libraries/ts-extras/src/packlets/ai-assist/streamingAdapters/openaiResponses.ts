@@ -39,10 +39,12 @@ import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } f
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toResponsesApiTools } from '../toolFormats';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
+import { normalizeOpenAiResponsesUsage } from '../usageNormalization';
 import {
   IStreamApiConfig,
   UNRECOGNIZED_EVENT_WARN_TAG,
   formatUnrecognizedEventPayloadPreview,
+  jsonObjectOrNullValidator,
   openSseConnection,
   validateEventPayload
 } from './common';
@@ -121,6 +123,13 @@ interface IResponsesCompletedPayload {
   readonly response: {
     readonly status?: string;
     readonly incomplete_details?: { readonly reason?: string };
+    /**
+     * `null` when the provider has no usage block for this response (not just
+     * absent) — must validate, or the whole `response.completed` payload is
+     * rejected and `status`/`incomplete_details` are lost along with it.
+     */
+    // eslint-disable-next-line @rushstack/no-new-null
+    readonly usage?: JsonObject | null;
   };
 }
 
@@ -174,13 +183,16 @@ const responsesIncompleteDetails: Validator<{ reason?: string }> = Validators.ob
 
 const responsesCompletedPayload: Validator<IResponsesCompletedPayload> =
   Validators.object<IResponsesCompletedPayload>({
-    response: Validators.object<{ status?: string; incomplete_details?: { reason?: string } }>(
-      {
-        status: Validators.string.optional(),
-        incomplete_details: responsesIncompleteDetails.optional()
-      },
-      { options: { optionalFields: ['status', 'incomplete_details'] } }
-    )
+    response: Validators.object<{
+      status?: string;
+      incomplete_details?: { reason?: string };
+      // eslint-disable-next-line @rushstack/no-new-null
+      usage?: JsonObject | null;
+    }>({
+      status: Validators.string.optional(),
+      incomplete_details: responsesIncompleteDetails.optional(),
+      usage: jsonObjectOrNullValidator.optional()
+    })
   });
 
 const responsesErrorInner: Validator<{ message?: string }> = Validators.object<{ message?: string }>(
@@ -291,12 +303,14 @@ const RECOGNIZED_OPENAI_RESPONSES_EVENTS: ReadonlySet<string> = new Set<string>(
 async function* translateOpenAiResponsesStream(
   response: Response,
   functionCallMap: Map<string, IAccumulatedFunctionCall>,
+  reportsUsage: boolean,
   logger?: Logging.ILogger
 ): AsyncGenerator<IAiStreamEvent> {
   let fullText = '';
   let truncated = false;
   let completed = false;
   let incompleteReason: string | undefined;
+  let usageRaw: JsonObject | undefined;
   // OpenAI / xAI Responses API emits function_call_arguments.{delta,done} events keyed by
   // `item_id` (the fc_* output-item id). The harness and continuation builder key by
   // `call_id` (the call_* id). This map correlates the two — populated when the
@@ -400,6 +414,10 @@ async function* translateOpenAiResponsesStream(
           // event so a stray incomplete_details on a non-incomplete payload never leaks
           // through, and a later (defensive) completed event can't leave a stale reason.
           incompleteReason = truncated ? payload.response.incomplete_details?.reason : undefined;
+          // Gated the same way as the non-streaming Responses path (see
+          // supportsCacheUsageReporting) — this adapter is shared by descriptors with no
+          // confirmed cache-usage reporting.
+          usageRaw = reportsUsage ? payload.response.usage ?? undefined : undefined;
         }
         completed = true;
         /* c8 ignore next 1 - defensive: eventName === 'error' alternative not exercised in tests */
@@ -436,7 +454,8 @@ async function* translateOpenAiResponsesStream(
   } /* c8 ignore stop */
 
   if (completed) {
-    yield { type: 'done', truncated, fullText, incompleteReason };
+    const usage = normalizeOpenAiResponsesUsage(usageRaw);
+    yield { type: 'done', truncated, fullText, incompleteReason, ...(usage !== undefined ? { usage } : {}) };
   } else {
     yield { type: 'error', message: 'Responses API stream ended without a completed event' };
   }
@@ -463,7 +482,8 @@ export async function callOpenAiResponsesStream(
   resolvedThinking?: IResolvedThinkingConfig,
   functionCallMap?: Map<string, IAccumulatedFunctionCall>,
   continuationMessages?: ReadonlyArray<JsonObject>,
-  maxTokens?: number
+  maxTokens?: number,
+  reportsUsage: boolean = false
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/responses`;
   const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
@@ -505,5 +525,7 @@ export async function callOpenAiResponsesStream(
   );
   const callMap = functionCallMap ?? new Map<string, IAccumulatedFunctionCall>();
   const conn = await openSseConnection(url, headers, body, logger, signal);
-  return conn.onSuccess((response) => succeed(translateOpenAiResponsesStream(response, callMap, logger)));
+  return conn.onSuccess((response) =>
+    succeed(translateOpenAiResponsesStream(response, callMap, reportsUsage, logger))
+  );
 }

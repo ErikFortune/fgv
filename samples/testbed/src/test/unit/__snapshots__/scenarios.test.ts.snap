@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`@fgv/testbed scenario registry registry exposes the expected scenario ids (snapshot) 1`] = `
 Array [
@@ -26,5 +26,6 @@ Array [
   "anthropic-structured-output",
   "google-gemini-structured-output",
   "xai-grok-structured-output",
+  "xai-cache-probe",
 ]
 `;

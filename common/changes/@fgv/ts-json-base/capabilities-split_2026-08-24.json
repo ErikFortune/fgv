@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "Docs: add CAPABILITIES.md \u2014 the package's authoritative capability reference, split out of the repo-wide LIBRARY_CAPABILITIES.md so the always-loaded index can stay an index. Content moved, not rewritten; the index links here.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

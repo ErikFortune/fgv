@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "conversion: add StringConverter.singleLine(options?) \u2014 constrains a string to one line of printable text (no line breaks, no control characters, non-empty, optionally bounded), rejecting rather than rewriting. Named for the shape it checks, not for a safety property it cannot provide.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

@@ -46,7 +46,6 @@ function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProv
     corsRestricted: false,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
-    thinkingMode: 'optional',
     responsesOnlyModelPrefixes: ['gpt-5.5-pro'],
     ...overrides
   };

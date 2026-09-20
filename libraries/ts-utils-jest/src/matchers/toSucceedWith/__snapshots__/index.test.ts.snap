@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`.toSucceedWith reports details when it fails due to a failure result: toFailTestAndMatchSnapshot 1`] = `
 "expect(received).toSucceedWith(expected)

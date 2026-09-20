@@ -4,6 +4,7 @@
 
 ```ts
 
+import { AiAssist } from '@fgv/ts-extras';
 import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
@@ -19,6 +20,9 @@ import { Runtime } from '@fgv/ts-res';
 export const allOutputContractKindValues: ReadonlyArray<OutputContractKind>;
 
 // @public
+export const allPromptCacheStabilityValues: ReadonlyArray<PromptCacheStability>;
+
+// @public
 export const allPromptStoreEventKindValues: ReadonlyArray<PromptStoreEventKind>;
 
 // @public
@@ -32,6 +36,9 @@ export const allSlotDirectiveValues: ReadonlyArray<SlotDirective>;
 
 // @public
 export const allSlotWritabilityValues: ReadonlyArray<SlotWritability>;
+
+// @public
+export function analyzePromptCacheStability(params: IPromptCacheStabilityAnalysisParams): ReadonlyArray<IPromptCacheFinding>;
 
 // @public
 export type AxisName = Brand<string, 'AxisName'>;
@@ -105,6 +112,7 @@ export const EnumConvert: {
     readonly outputContractKind: Converter<OutputContractKind, ReadonlyArray<OutputContractKind>>;
     readonly resourceSubstitutionMode: Converter<ResourceSubstitutionMode, ReadonlyArray<ResourceSubstitutionMode>>;
     readonly promptStoreEventKind: Converter<PromptStoreEventKind, ReadonlyArray<PromptStoreEventKind>>;
+    readonly promptCacheStability: Converter<PromptCacheStability, ReadonlyArray<PromptCacheStability>>;
 };
 
 // @public
@@ -139,6 +147,7 @@ export interface IBindingsFileContents {
 
 // @public
 export interface IBindingTraceEntry {
+    readonly chainBindingCount?: number;
     readonly directive: SlotDirective;
     readonly source: BindingTraceSource;
     readonly value: string;
@@ -284,6 +293,43 @@ export interface IPendingResourceBinding {
 }
 
 // @public
+export interface IPromptCacheDiagnosticOptions {
+    readonly minCacheablePrefixTokens?: number;
+}
+
+// @public
+export interface IPromptCacheFinding {
+    readonly claimed?: IPromptCacheStabilityHint;
+    // (undocumented)
+    readonly detail: string;
+    readonly downgradedTo?: PromptCacheStability;
+    // (undocumented)
+    readonly kind: PromptCacheFindingKind;
+    readonly slot?: SlotName;
+}
+
+// @public
+export interface IPromptCacheStabilityAnalysisParams {
+    readonly callSiteOverrides?: ReadonlyMap<SlotName, PromptCacheStability>;
+    readonly candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>;
+    readonly mergedBindings: ReadonlyMap<SlotName, IBindingTraceEntry>;
+    // (undocumented)
+    readonly options?: IPromptCacheDiagnosticOptions;
+    readonly prefaceStability?: PromptCacheStability;
+    readonly resourceBindingResolutions: ReadonlyArray<IResourceBindingTraceEntry>;
+    readonly sections: ReadonlyArray<IPromptSection>;
+    readonly slots: ReadonlyArray<IPromptSlot>;
+}
+
+// @public
+export interface IPromptCacheStabilityHint {
+    // (undocumented)
+    readonly origin: PromptCacheStabilityOrigin;
+    // (undocumented)
+    readonly stability: PromptCacheStability;
+}
+
+// @public
 export interface IPromptCandidateRecord<TQualifierNames extends string = string> {
     // (undocumented)
     readonly body: string;
@@ -306,6 +352,21 @@ export interface IPromptComposeObservation extends IPromptObservationCommon {
     readonly phase: 'compose';
     readonly provenanceTrace?: ReadonlyMap<SlotName, ReadonlyArray<ISlotProvenanceEntry>>;
     readonly safeguardFindings?: ReadonlyArray<ISafeguardFinding>;
+}
+
+// @public
+export interface IPromptComposition {
+    readonly cacheFindings: ReadonlyArray<IPromptCacheFinding>;
+    readonly sections: ReadonlyArray<IPromptSection>;
+    readonly totalChars: number;
+    readonly totalMeasured?: number;
+    readonly unavailable?: string;
+}
+
+// @public
+export interface IPromptCompositionOptions {
+    readonly cacheDiagnostics?: IPromptCacheDiagnosticOptions;
+    readonly measure?: PromptSectionMeasure;
 }
 
 // @public
@@ -497,7 +558,9 @@ export interface IPromptResolveObservation extends IPromptObservationBase {
 
 // @public
 export interface IPromptResolveRequest<TQualifierNames extends string = string> {
+    readonly cacheStability?: ReadonlyMap<SlotName, PromptCacheStability>;
     readonly chain: ReadonlyArray<ScopeKey>;
+    readonly composition?: IPromptCompositionOptions;
     readonly id: PromptId;
     readonly qualifiers: Readonly<Partial<Record<TQualifierNames, string>>>;
     readonly substitutions?: PromptSubstitutions;
@@ -529,13 +592,29 @@ export interface IPromptSafeguardOverrides {
 // @public
 export interface IPromptSafetyPolicy {
     readonly antiJailbreakPreface?: (descriptor: IPromptDescriptor) => Result<string>;
+    readonly antiJailbreakPrefaceStability?: PromptCacheStability;
     readonly defaultMaxLength?: number;
     readonly screeners?: ReadonlyArray<IScreener>;
 }
 
 // @public
+export interface IPromptSection {
+    readonly chars: number;
+    readonly directive?: SlotDirective;
+    readonly effectiveStability?: PromptCacheStability;
+    readonly kind: 'preface' | 'template' | 'slot';
+    readonly measured?: number;
+    readonly slot?: SlotName;
+    readonly source?: BindingTraceSource;
+    readonly start: number;
+    readonly wasEnforced?: boolean;
+    readonly winningScope?: ScopeKey;
+}
+
+// @public
 export interface IPromptSlot {
     readonly allowedDirectives?: ReadonlyArray<SlotDirective>;
+    readonly cacheStability?: PromptCacheStability;
     // (undocumented)
     readonly defaultBinding?: SlotBinding;
     // (undocumented)
@@ -632,6 +711,7 @@ export interface IQualifiersFileContents {
 // @public
 export interface IResolvedPrompt {
     readonly body: string;
+    readonly composition?: IPromptComposition;
     readonly descriptor: IPromptDescriptor;
     readonly id: PromptId;
     readonly slots: ReadonlyMap<SlotName, IResolvedPromptSlot>;
@@ -740,6 +820,12 @@ export interface ITextOutputContract {
 }
 
 // @public
+export interface IToCacheRequestHints {
+    readonly cacheKey?: string;
+    readonly maxBreakpointWrites?: number;
+}
+
+// @public
 export function joinBodies(selected: ReadonlyArray<{
     readonly candidate: IPromptCandidateRecord;
 }>, policy: IPromptJoinPolicy | undefined): string;
@@ -770,6 +856,15 @@ export class OutputValidationRegistry<TResponse extends IPromptResponseBase> imp
     has(id: ValidatorId): boolean;
     register(id: ValidatorId, validator: IPromptOutputValidator<TResponse>): Result<ValidatorId>;
 }
+
+// @public
+export type PromptCacheFindingKind = 'stability-refuted' | 'cache-hostile-ordering' | 'no-cacheable-prefix' | 'threshold-unknown' | 'below-threshold';
+
+// @public
+export type PromptCacheStability = 'frozen' | 'per-conversation' | 'per-request';
+
+// @public
+export type PromptCacheStabilityOrigin = 'authored' | 'call-site' | 'derived';
 
 // @public
 export const promptFileConverter: Converter<IPromptFileContents>;
@@ -827,6 +922,9 @@ export class PromptRegistry<TResponse extends IPromptResponseBase = IPromptRespo
     // (undocumented)
     readonly slotKinds: IPromptSlotKindRegistry;
 }
+
+// @public
+export type PromptSectionMeasure = (text: string) => number;
 
 // @public
 export type PromptStoreEventKind = 'descriptor-changed' | 'descriptor-removed' | 'bindings-changed' | 'qualifier-axes-changed';
@@ -894,6 +992,9 @@ export type SlotWritability = 'any-scope' | 'schema-only' | 'system-only';
 
 // @public
 export const substitutionEntry: Converter<string | SlotBinding>;
+
+// @public
+export function toCacheRequest(composition: IPromptComposition, hints?: IToCacheRequestHints): Result<AiAssist.IAiCacheRequest>;
 
 // @public
 export function typedPromptFileConverter<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<IPromptFileContents<TQualifierNames>>;

@@ -51,7 +51,8 @@ const slotConverter: Converter<IPromptSlot> = Converters.object<IPromptSlot>(
     allowedDirectives: Converters.arrayOf(EnumConvert.slotDirective).optional(),
     writableBy: EnumConvert.slotWritability.optional(),
     maxLength: Converters.number.optional(),
-    source: Converters.string.optional()
+    source: Converters.string.optional(),
+    cacheStability: EnumConvert.promptCacheStability.optional()
   },
   {
     optionalFields: [
@@ -62,7 +63,8 @@ const slotConverter: Converter<IPromptSlot> = Converters.object<IPromptSlot>(
       'allowedDirectives',
       'writableBy',
       'maxLength',
-      'source'
+      'source',
+      'cacheStability'
     ]
   }
 );

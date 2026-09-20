@@ -22,7 +22,9 @@ wrong, update the streams ledger before deviating.
 ### 1. Read the source brief
 
 Open `docs/WORKSTREAMS.md` and locate the section for the requested
-workstream id. Read its **full** entry: track, status today, v1
+workstream id. In-flight streams are there; one that has already shipped is
+in `docs/workstreams/<YYYY-MM>.md`, findable from the **Shipped streams**
+index. Read its **full** entry: track, status today, v1
 deliverable, stop point, reading list, dependencies, publishes-for-
 downstream, open design questions.
 

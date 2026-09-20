@@ -19,6 +19,7 @@ import { localClassifierSafetyScenario } from './localClassifierSafety';
 import { localEmbeddingSearchScenario } from './localEmbeddingSearch';
 import { localSummarizationScenario } from './localSummarization';
 import { mcpProbeScenario } from './mcpProbe';
+import { xaiCacheProbeScenario } from './xaiCacheProbe';
 import { sqliteVecMemoryPersistenceScenario } from './sqliteVecMemoryPersistence';
 import { sqliteVecFragmentPersistenceScenario } from './sqliteVecFragmentPersistence';
 import { memoryToolsGateScenario } from './memoryToolsGate';
@@ -67,5 +68,6 @@ export const scenarios: readonly IScenario[] = [
   openaiStructuredOutputScenario,
   anthropicStructuredOutputScenario,
   geminiStructuredOutputScenario,
-  xaiStructuredOutputScenario
+  xaiStructuredOutputScenario,
+  xaiCacheProbeScenario
 ];

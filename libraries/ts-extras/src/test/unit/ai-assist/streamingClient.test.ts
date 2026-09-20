@@ -41,7 +41,6 @@ function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProv
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
-    thinkingMode: 'optional',
     ...overrides
   };
 }

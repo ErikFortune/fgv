@@ -49,4 +49,5 @@ dist/
 docs/
 *.md
 !README.md
+!CAPABILITIES.md
 !LICENSE.md

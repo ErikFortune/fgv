@@ -24,8 +24,16 @@
  */
 
 import { fail, type Result, succeed } from '@fgv/ts-utils';
-import { type JsonObject, type JsonSchema } from '@fgv/ts-json-base';
+import { type JsonObject } from '@fgv/ts-json-base';
 import type { IAiStructuredOutputCapability, StructuredOutputEnforcement } from './structuredOutputTypes';
+import type { IAiCompletionUsage } from './usageTypes';
+import type {
+  AiServerToolType,
+  IAiStreamToolUseComplete,
+  IAiStreamToolUseDelta,
+  IAiStreamToolUseStart,
+  IAiToolEnablement
+} from './toolTypes';
 
 // ============================================================================
 // Image Data
@@ -196,295 +204,32 @@ export interface IChatRequest {
 }
 
 // ============================================================================
-// Server-Side Tools
+// Tool Types (re-exported)
 // ============================================================================
 
-/**
- * Built-in server-side tool types supported across providers.
- * @public
- */
-export type AiServerToolType = 'web_search';
-
-/**
- * Configuration specific to web search tools.
- * @public
- */
-export interface IAiWebSearchToolConfig {
-  readonly type: 'web_search';
-  /** Optional: restrict search to these domains. */
-  readonly allowedDomains?: ReadonlyArray<string>;
-  /** Optional: exclude these domains from search. */
-  readonly blockedDomains?: ReadonlyArray<string>;
-  /** Optional: max number of searches per request. */
-  readonly maxUses?: number;
-  /**
-   * Optional: enable image understanding during web search.
-   * When true, the model can view and analyze images found during search.
-   * Currently supported by xAI only; ignored by other providers.
-   */
-  readonly enableImageUnderstanding?: boolean;
-}
-
-/**
- * Union of all server-side tool configurations. Discriminated on `type`.
- * @public
- */
-export type AiServerToolConfig = IAiWebSearchToolConfig;
-
-/**
- * Declares a tool as enabled/disabled in provider settings.
- * Tools are disabled by default — consuming apps must opt in explicitly.
- * @public
- */
-export interface IAiToolEnablement {
-  /** Which tool type. */
-  readonly type: AiServerToolType;
-  /** Whether this tool is enabled by default for this provider. */
-  readonly enabled: boolean;
-  /** Optional tool-specific configuration. */
-  readonly config?: AiServerToolConfig;
-}
-
-// ============================================================================
-// Client-Defined Tools
-// ============================================================================
-
-/**
- * Behavior annotations for a client-defined tool.
- *
- * @remarks
- * These are **host-advisory-only hints** describing a tool's side-effect profile.
- * They are consumed by the host's tool loop (e.g. a before-execute gate) and are
- * **never serialized to the model** — the provider wire tool-schemas whitelist
- * `{name, description, parameters}` and ignore this field.
- *
- * Field names mirror MCP's `ToolAnnotations` (`@modelcontextprotocol/sdk`) 1:1 so
- * an MCP tool's annotations pass through unchanged. Per the MCP spec, all fields
- * are hints — a host should never make tool-use decisions based on annotations
- * received from an untrusted server without its own validation.
- *
- * @public
- */
-export interface IAiToolAnnotations {
-  /** Optional human-readable display title for the tool. */
-  readonly title?: string;
-  /** Hint: the tool does not modify its environment (read-only). */
-  readonly readOnlyHint?: boolean;
-  /** Hint: the tool may perform destructive updates (only meaningful when not read-only). */
-  readonly destructiveHint?: boolean;
-  /** Hint: repeated calls with the same arguments have no additional effect. */
-  readonly idempotentHint?: boolean;
-  /** Hint: the tool interacts with an open world of external entities. */
-  readonly openWorldHint?: boolean;
-}
-
-/**
- * Configuration for a client-defined (harness-supplied) tool.
- *
- * @remarks
- * The `parametersSchema` is the single source of truth for both the wire-format
- * JSON Schema sent to the provider (via `.toJson()`) and the runtime argument
- * validation (via `.validate(rawArgs)`). Use `JsonSchema.object(...)` from
- * `@fgv/ts-json-base` to author the schema as a const (e.g. `const mySchema = JsonSchema.object({...})`);
- * the static type `TParams` is then derived via `JsonSchema.Static<typeof mySchema>` —
- * no drift between wire schema and runtime validation.
- *
- * @public
- */
-export interface IAiClientToolConfig<TParams = unknown> {
-  /** Discriminator — always `'client_tool'`. */
-  readonly type: 'client_tool';
-  /** Tool name sent to the model (must be unique within a call). */
-  readonly name: string;
-  /** Human-readable description of what the tool does, shown to the model. */
-  readonly description: string;
-  /**
-   * JSON Schema validator for the tool's parameters. Emits wire format via
-   * `.toJson()` and validates model-returned args via `.validate(rawArgs)`.
-   */
-  readonly parametersSchema: JsonSchema.ISchemaValidator<TParams>;
-  /**
-   * Optional host-advisory behavior annotations (read-only / destructive /
-   * idempotent / open-world hints + display title). Consumed by the host's
-   * tool loop; never serialized to the model. See {@link IAiToolAnnotations}.
-   */
-  readonly annotations?: IAiToolAnnotations;
-}
-
-/**
- * A client-defined tool: configuration + execution callback pair.
- *
- * @remarks
- * The `execute` callback receives typed `TParams` (already validated by
- * `config.parametersSchema.validate()`) and returns a `Promise<Result<unknown>>`.
- * Thrown errors are caught via `captureAsyncResult` in the round-trip helper.
- *
- * @public
- */
-export interface IAiClientTool<TParams = unknown> {
-  /** The tool's configuration (name, description, parameters schema). */
-  readonly config: IAiClientToolConfig<TParams>;
-  /**
-   * Execute the tool with validated parameters.
-   * @param args - Typed arguments, already validated against `config.parametersSchema`.
-   * @returns A `Promise<Result<unknown>>` — the result is stringified and sent back to the model.
-   */
-  readonly execute: (args: TParams) => Promise<Result<unknown>>;
-}
-
-/**
- * Union of all tool configurations: server-side or client-defined.
- * Discriminated on `type`.
- * @public
- */
-export type AiToolConfig = AiServerToolConfig | IAiClientToolConfig;
-
-// ============================================================================
-// Client Tool Streaming Events
-// ============================================================================
-
-/**
- * Emitted when a client-defined tool call begins streaming. Carries the tool name
- * and optional provider-assigned call ID (Anthropic / OpenAI Responses API; absent
- * for Gemini which does not assign call IDs).
- * @public
- */
-export interface IAiStreamToolUseStart {
-  readonly type: 'client-tool-call-start';
-  /** The name of the client tool being called. */
-  readonly toolName: string;
-  /**
-   * Provider-assigned call identifier (Anthropic: `toolu_*`; OpenAI: `call_*`).
-   * Absent for Gemini (correlation by name).
-   */
-  readonly callId?: string;
-}
-
-/**
- * Emitted when a client-defined tool call is complete and its arguments are fully
- * accumulated. The `args` object is the fully parsed JSON object — no further
- * streaming deltas follow for this call.
- * @public
- */
-export interface IAiStreamToolUseDelta {
-  readonly type: 'client-tool-call-done';
-  /** The name of the client tool being called. */
-  readonly toolName: string;
-  /**
-   * Provider-assigned call identifier. Absent for Gemini.
-   */
-  readonly callId?: string;
-  /** The fully accumulated and parsed tool arguments. */
-  readonly args: JsonObject;
-}
-
-/**
- * Emitted after a client-defined tool has been executed and the result is ready
- * to be fed back to the model in the round-trip continuation.
- * @public
- */
-export interface IAiStreamToolUseComplete {
-  readonly type: 'client-tool-result';
-  /** The name of the client tool that was executed. */
-  readonly toolName: string;
-  /**
-   * Provider-assigned call identifier. Absent for Gemini.
-   */
-  readonly callId?: string;
-  /** The stringified result returned by the tool's execute callback. */
-  readonly result: string;
-  /** Whether the tool execution failed (schema validation failure, execute error, or unknown tool). */
-  readonly isError: boolean;
-}
-
-// ============================================================================
-// Client Tool Round-Trip Types
-// ============================================================================
-
-/**
- * Summary of a single client tool call within a turn: the tool name, call ID,
- * raw arguments, execution result, and whether the execution was an error.
- * @public
- */
-export interface IAiClientToolCallSummary {
-  /** The name of the tool that was called. */
-  readonly toolName: string;
-  /** Provider-assigned call identifier (absent for Gemini). */
-  readonly callId?: string;
-  /** The fully accumulated raw arguments object as parsed JSON. */
-  readonly args: JsonObject;
-  /** The stringified result (success value or error message). */
-  readonly result: string;
-  /** Whether execution failed (schema validation failure, execute error, or unknown tool). */
-  readonly isError: boolean;
-}
-
-/**
- * The provider-specific continuation data needed to build the follow-up request
- * for the next round of the conversation.
- *
- * @remarks
- * `messages` are provider-native request objects (Anthropic: content-block arrays,
- * OpenAI Responses API: input items, Gemini: content parts). The continuation
- * builder in `clientToolContinuationBuilder.ts` populates this.
- *
- * @public
- */
-export interface IAiClientToolContinuation {
-  /**
-   * **Cumulative** provider-native wire-format message objects covering all
-   * tool rounds so far. On each turn, `executeClientToolTurn` prepends the
-   * inbound `continuationMessages` so that this array always contains the
-   * complete wire tail from round 1 through the current round.
-   *
-   * To drive a multi-round loop, simply **replace** `continuationMessages`
-   * with this value — do not manually concatenate:
-   *
-   * ```ts
-   * let tail: JsonObject[] | undefined;
-   * while (true) {
-   *   const { events, nextTurn } = executeClientToolTurn({
-   *     ..., continuationMessages: tail
-   *   }).orThrow();
-   *   for await (const e of events) { /* observe *\/ }
-   *   const outcome = (await nextTurn).orThrow();
-   *   if (!outcome.continuation) break;
-   *   tail = [...outcome.continuation.messages]; // replace — already cumulative
-   * }
-   * ```
-   *
-   * The exact shape is provider-native and may include provider-specific
-   * blocks (e.g. Anthropic thinking/redacted_thinking/tool_use, OpenAI
-   * function_call/function_call_output items, Gemini functionCall/functionResponse
-   * parts). These are NOT `IChatMessage[]` and must NOT be placed in the
-   * `messages` parameter — the normalized-message path strips provider-native
-   * fields (thinking signatures, redacted_thinking data) that the server
-   * requires for continuation validation.
-   *
-   * `toolCallsSummary` is per-round only (the calls executed in the current
-   * turn). Only `messages` is cumulative.
-   */
-  readonly messages: ReadonlyArray<JsonObject>;
-  /** Summary of each tool call executed in this turn (per-round, not cumulative). */
-  readonly toolCallsSummary: ReadonlyArray<IAiClientToolCallSummary>;
-}
-
-/**
- * The result of a single client-tool turn: the optional continuation for the next
- * call (absent when no tool calls occurred) and whether the stream was truncated.
- * @public
- */
-export interface IAiClientToolTurnResult {
-  /**
-   * The continuation data for the next round-trip. `undefined` when the model
-   * completed without invoking any client tools.
-   */
-  readonly continuation: IAiClientToolContinuation | undefined;
-  /** Whether the stream was truncated (token limit or stop reason). */
-  readonly truncated: boolean;
-  /** The full concatenated text from all `text-delta` events in this turn. */
-  readonly fullText: string;
-}
+// Server-side tools, client-defined tools, their streaming events, the
+// provider-exclusion vocabulary and the client-tool round-trip results all live
+// in `toolTypes.ts`. They are re-exported here so `model` remains the single
+// import site every consumer already uses; the split exists only to keep this
+// file under its line ceiling.
+export type {
+  AiServerToolType,
+  IAiWebSearchToolConfig,
+  AiServerToolConfig,
+  IAiToolEnablement,
+  IAiToolAnnotations,
+  IAiClientToolConfig,
+  AiToolConfig,
+  IAiClientTool,
+  IAiStreamToolUseStart,
+  IAiStreamToolUseDelta,
+  IAiStreamToolUseComplete,
+  AiToolConflictPolicy,
+  IAiToolConflictReport,
+  IAiClientToolCallSummary,
+  IAiClientToolContinuation,
+  IAiClientToolTurnResult
+} from './toolTypes';
 
 // ============================================================================
 // Model Specification
@@ -506,17 +251,15 @@ export interface IAiClientToolTurnResult {
  * `'advanced'` / `'frontier'`) and sets the tools / thinking request params
  * independently. Thinking composes with any tier without a tier-level capability
  * check — but that is a statement about the tier axis, not a claim that every
- * provider supports thinking: several descriptors declare
- * `thinkingMode: 'unsupported'` (e.g. `copy-paste`, `groq`, `mistral`, `ollama`,
- * `openai-compat`).
- *
- * Thinking availability is declared **per provider**, on the descriptor's
- * `thinkingMode`; the descriptor does not encode per-model thinking availability at
- * all, so a provider that declares support may still have individual models its own
- * API rejects thinking on. (`adaptiveThinkingModelPrefixes` is per-model but selects
- * a wire *shape*, not availability.) What the tier axis guarantees is therefore
- * narrow and exact: a tier selects a model within one provider and never changes the
- * provider, so it never changes `thinkingMode`.
+ * provider supports thinking, or that every model of a thinking-capable provider
+ * does: the descriptor itself declares no thinking-availability field at all.
+ * `AiModelCapability`'s `'thinking'` entry (per-model, RegExp-matched on model id
+ * in `DEFAULT_MODEL_CAPABILITY_CONFIG`) is a listing/filtering signal only — the
+ * call path does not gate a thinking request on it, so an unlisted model is not
+ * rejected, merely absent from a capability-filtered menu. (`adaptiveThinkingModelPrefixes`
+ * is per-model but selects a wire *shape*, not availability.) What the tier axis
+ * guarantees is therefore narrow and exact: a tier selects a model within one
+ * provider and never changes the provider.
  *
  * Do not add a `'tools'` or `'thinking'` key here, and do not hand-roll a
  * `resolveModel` + `resolveModelAlias` walk to emulate one — call
@@ -942,6 +685,8 @@ export interface IAiCompletionResponse {
    * split.
    */
   readonly structuredOutput: StructuredOutputEnforcement;
+  /** Token usage, when the provider reports it. */
+  readonly usage?: IAiCompletionUsage;
 }
 
 /**
@@ -1020,6 +765,8 @@ export interface IAiStreamDone {
    * reports truncation without a reason).
    */
   readonly incompleteReason?: string;
+  /** Token usage, when the provider reports it on this stream. */
+  readonly usage?: IAiCompletionUsage;
 }
 
 /**
@@ -1059,12 +806,6 @@ export type IAiStreamEvent =
   | IAiStreamError;
 
 /**
- * Thinking/reasoning mode support for a provider.
- * @public
- */
-export type AiThinkingMode = 'optional' | 'required' | 'unsupported';
-
-/**
  * Describes a single AI provider — single source of truth for all metadata.
  * @public
  */
@@ -1098,6 +839,29 @@ export interface IAiProviderDescriptor {
   readonly aliases?: IModelAliasMap;
   /** Which server-side tools this provider supports (empty = none). */
   readonly supportedTools: ReadonlyArray<AiServerToolType>;
+  /**
+   * Server tools this provider's API refuses to accept in the *same request* as
+   * client (function) tools. Absent or empty means the provider imposes no such
+   * constraint and any supported server tool may be mixed with client tools.
+   *
+   * @remarks
+   * This is a narrower statement than {@link AiAssist.IAiProviderDescriptor.supportedTools}:
+   * a tool listed here is genuinely supported, just not *together* with function
+   * calling. Only Gemini declares anything today — its `generateContent` API
+   * HTTP-400s (`INVALID_ARGUMENT`) when built-in grounding (`web_search` →
+   * `google_search`) and `function_declarations` appear in one request.
+   *
+   * Declaring the rule here rather than enforcing it at the call site is the
+   * point: {@link AiAssist.resolveToolConflicts} applies it generically, so a host
+   * never writes `if (descriptor.apiFormat === 'gemini')` in its tool assembly,
+   * and the day a provider lifts its limit only this line changes.
+   *
+   * Optional because most providers have nothing to say. The library's own
+   * registry descriptors are the ones that reach the wire and are pinned by test;
+   * a hand-built descriptor that omits this simply gets the unconstrained
+   * behavior, which is the correct reading of "declares no constraint".
+   */
+  readonly serverToolsExclusiveWithClientTools?: ReadonlyArray<AiServerToolType>;
   /** Whether this provider's API enforces CORS restrictions that prevent direct browser calls. */
   readonly corsRestricted: boolean;
   /**
@@ -1117,13 +881,6 @@ export interface IAiProviderDescriptor {
    * `prompt.attachments` are rejected up front.
    */
   readonly acceptsImageInput: boolean;
-  /**
-   * Whether this provider supports thinking/reasoning mode.
-   * - 'optional': thinking can be enabled but is not required
-   * - 'required': thinking is always active (e.g. o-series models)
-   * - 'unsupported': thinking is not supported
-   */
-  readonly thinkingMode: AiThinkingMode;
   /**
    * Image-generation capabilities, scoped to model id prefixes. Empty or
    * undefined means the provider does not support image generation.
@@ -1898,11 +1655,27 @@ export type IThinkingProviderConfig =
 export interface IThinkingConfig {
   /**
    * Cross-provider effort level. Common-subset mapping:
+   * - 'none': Anthropic — no thinking param emitted | OpenAI effort:none | Gemini thinkingBudget:0 | xAI reasoning_effort:none
    * - 'low': Anthropic effort:low | OpenAI effort:low | Gemini thinkingBudget:1024 | xAI reasoning_effort:low
-   * - 'medium': effort:medium | effort:medium | thinkingBudget:4096 | reasoning_effort:medium
-   * - 'high': effort:high | effort:high | thinkingBudget:8192 | reasoning_effort:high
+   * - 'medium': Anthropic effort:medium | OpenAI effort:medium | Gemini thinkingBudget:4096 | xAI reasoning_effort:medium
+   * - 'high': Anthropic effort:high | OpenAI effort:high | Gemini thinkingBudget:8192 | xAI reasoning_effort:high
+   *
+   * @remarks
+   * `'none'` is the one cross-provider spelling for "thinking off". Anthropic has no
+   * off value in its own effort vocabulary — off there means omitting the `thinking`
+   * wire param entirely — so `'none'` maps to that omission rather than to a value.
+   * Whichever provider is in play, `'none'` also re-enables `temperature`: see
+   * `checkTemperatureConflict` in `thinkingOptionsResolver.ts`.
+   *
+   * The mapping is not model-aware (same posture as every other entry in this table —
+   * see `ModelSpecKey`'s remarks for why thinking availability isn't gated at the call
+   * path). For Gemini specifically, `thinkingBudget: 0` is documented as valid only on
+   * Flash and Flash-Lite and erroring on Pro (see `IGeminiThinkingConfig.thinkingBudget`);
+   * `'none'` on a Pro-family model inherits that same caveat, exactly as an explicit
+   * `providers: [{ provider: 'google', config: { thinkingBudget: 0 } }]` block already did
+   * before this field existed.
    */
-  readonly effort?: 'low' | 'medium' | 'high';
+  readonly effort?: 'none' | 'low' | 'medium' | 'high';
   /**
    * Optional per-provider precision blocks. Blocks for providers that don't
    * match the resolved model's provider are silently skipped.

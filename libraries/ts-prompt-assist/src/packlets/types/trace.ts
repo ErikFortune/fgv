@@ -6,6 +6,7 @@
 import { PromptId, ResourceId, ScopeKey, SlotName } from './ids';
 import { SlotDirective, ResourceSubstitutionMode } from './enums';
 import { IPromptDescriptor } from './descriptor';
+import { IPromptCacheDiagnosticOptions, IPromptCacheFinding, PromptCacheStability } from './cacheStability';
 import { Runtime as TsResRuntime } from '@fgv/ts-res';
 
 /**
@@ -40,6 +41,20 @@ export interface IBindingTraceEntry {
   readonly value: string;
   /** True iff the merged binding had `enforced: true` (caller subs were rejected). */
   readonly wasEnforced: boolean;
+  /**
+   * Number of scopes in the resolve's chain that declared a `_bindings.yaml`
+   * entry for this slot, counted while merging (regardless of which one
+   * won). Set only when `source === 'binding'`.
+   *
+   * @remarks
+   * A count of `2` or more means the winning value depends on which scope
+   * wins in *this* chain — a different chain could select a different
+   * scope's binding and produce different bytes. This is the evidence the
+   * cache-stability diagnostic's D1 check (design.md §9) needs to refute an
+   * authored or call-site claim of better-than-`'per-request'` stability;
+   * it does not by itself mean the value *does* vary, only that it *may*.
+   */
+  readonly chainBindingCount?: number;
 }
 
 /**
@@ -200,6 +215,117 @@ export interface IResolvedPromptSlot {
 }
 
 /**
+ * How a resolved prompt's text is measured, when the default character count is not the unit the
+ * caller cares about.
+ * @remarks
+ * **Segmentation is the library's job; measurement is the caller's.** A prompt budget is
+ * denominated in *tokens*, and `ts-prompt-assist` cannot count those truthfully — tokenization is
+ * model-specific, so a bundled tokenizer would be confidently wrong for every model it was not
+ * built for. Characters are always reported because they are exact and free; supply this to get a
+ * second number in a unit that means something to you.
+ * @public
+ */
+export type PromptSectionMeasure = (text: string) => number;
+
+/**
+ * Options requesting a {@link IPromptComposition} from a resolve. Presence opts in.
+ * @public
+ */
+export interface IPromptCompositionOptions {
+  /** Optional second measure per section — typically a tokenizer. See {@link PromptSectionMeasure}. */
+  readonly measure?: PromptSectionMeasure;
+  /**
+   * Options for the prompt-cache stability diagnostic run alongside the
+   * composition. See {@link IPromptComposition.cacheFindings} and
+   * `design.md` §9.
+   */
+  readonly cacheDiagnostics?: IPromptCacheDiagnosticOptions;
+}
+
+/**
+ * One contiguous run of a resolved prompt's body, attributed to what produced it.
+ * @public
+ */
+export interface IPromptSection {
+  /**
+   * `'preface'` for the anti-jailbreak preface, `'template'` for literal body text, `'slot'` for a
+   * substituted slot value.
+   */
+  readonly kind: 'preface' | 'template' | 'slot';
+  /** Slot name, when `kind` is `'slot'`. */
+  readonly slot?: SlotName;
+  /** Offset into {@link IResolvedPrompt.body}, in UTF-16 code units. */
+  readonly start: number;
+  /** Length in UTF-16 code units. May be `0` for a slot that resolved to an empty value. */
+  readonly chars: number;
+  /** Result of {@link IPromptCompositionOptions.measure}, when one was supplied. */
+  readonly measured?: number;
+  /** Provenance of the winning binding, for a `'slot'` section — mirrors {@link IResolvedPromptSlot}. */
+  readonly source?: BindingTraceSource;
+  /** Framing directive for a `'slot'` section. */
+  readonly directive?: SlotDirective;
+  /** True iff the slot's winning binding was enforced. */
+  readonly wasEnforced?: boolean;
+  /** Scope whose binding won, when the section's source is `'binding'`. */
+  readonly winningScope?: ScopeKey;
+  /**
+   * This section's effective prompt-cache stability, as computed by
+   * `analyzePromptCacheStability` (design.md §9) alongside `cacheFindings` — the same value the
+   * D1–D5 checks reason over, including any refutation downgrade. Exposed so a consumer building
+   * a cache-breakpoint plan (see `toCacheRequest`) does not have to recompute it from the trace.
+   */
+  readonly effectiveStability?: PromptCacheStability;
+}
+
+/**
+ * Where a resolved prompt's bulk actually went: what is in the body, in what order, and how much of
+ * it each part is.
+ * @remarks
+ * Answers "why is this prompt so large", which the trace cannot — the trace says which bindings won,
+ * not how many characters each contributed to the output. Sections carry the same provenance as
+ * {@link IResolvedPromptSlot}, so a large section is attributable to the scope and binding that
+ * produced it without a second lookup.
+ *
+ * **Offsets are computed during the render, never recovered from the finished text.** See
+ * `MustacheTemplate.renderWithSegments` in `@fgv/ts-extras` for why searching the output for each
+ * substituted value is unsound.
+ * @public
+ */
+export interface IPromptComposition {
+  /** Length of {@link IResolvedPrompt.body} in UTF-16 code units. Always present. */
+  readonly totalChars: number;
+  /** Sum of the sections' `measured`, when a measure was supplied. */
+  readonly totalMeasured?: number;
+  /**
+   * Document-ordered, contiguous and gapless — concatenating the slices reproduces `body` exactly.
+   * **Empty when {@link IPromptComposition.unavailable} is set.**
+   */
+  readonly sections: ReadonlyArray<IPromptSection>;
+  /**
+   * Set when a section map could not be produced — e.g. the body template uses Mustache sections or
+   * partials, whose output is not a linear image of the template.
+   * @remarks
+   * A diagnostic must not be able to break the thing it observes, so this is reported here rather
+   * than failing the resolve. The prompt is returned normally; only the section map is missing, and
+   * it says why rather than being silently absent.
+   */
+  readonly unavailable?: string;
+  /**
+   * Prompt-cache stability diagnostics for this composition — see
+   * `design.md` §9 (checks D1–D5) and {@link PromptCacheFindingKind}.
+   * Findings report problems only; a wholly cacheable, well-ordered,
+   * above-threshold prefix produces an empty array, not a success entry.
+   * Always `[]` when {@link IPromptComposition.unavailable} is set — there
+   * is no section map to analyze.
+   *
+   * @remarks
+   * Purely computational: no provider is consulted, nothing is emitted, and
+   * this array cannot affect what `resolve()` returns for `body`.
+   */
+  readonly cacheFindings: ReadonlyArray<IPromptCacheFinding>;
+}
+
+/**
  * Output of a successful {@link PromptLibrary.resolve} invocation.
  * @public
  */
@@ -227,4 +353,9 @@ export interface IResolvedPrompt {
    * first-class composed descriptor over the merged slot map.
    */
   readonly slots: ReadonlyMap<SlotName, IResolvedPromptSlot>;
+  /**
+   * Section-by-section view of `body` — present only when the request supplied
+   * {@link IPromptResolveRequest.composition}. See {@link IPromptComposition}.
+   */
+  readonly composition?: IPromptComposition;
 }

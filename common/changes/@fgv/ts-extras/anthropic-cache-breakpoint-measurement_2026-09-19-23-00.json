@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: add perf/promptCacheAnthropicBreakpoint.js, the first measurement of whether C3's Anthropic cache_control emission (IAiCacheRequest.systemBreakpoints) actually produces a cache hit against a live provider — every prior prompt-cache measurement in this stream ran against xAI, whose caching is automatic and never exercises the breakpoint emit path. An A/B against claude-sonnet-5 (with vs. without systemBreakpoints, the without-arm serving as the negative control Anthropic's opt-in-per-block cache requires), reusing promptCacheUsageMath.ts's ratio/verdict logic rather than duplicating it. Pure logic in promptCacheAnthropicBreakpointHarness.ts, unit-tested against fixture usage blocks; the perf script is a thin live-transport wrapper.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

@@ -27,7 +27,7 @@
  * @packageDocumentation
  */
 
-import { type JsonObject } from '@fgv/ts-json-base';
+import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 import {
   captureResult,
   fail,
@@ -54,6 +54,7 @@ import {
   resolveProviderModel,
   usesMaxCompletionTokensField
 } from './model';
+import { type IAiCacheRequest } from './cacheRequest';
 import {
   anthropicEffortToBudgetTokens,
   checkTemperatureConflict,
@@ -63,9 +64,12 @@ import {
 } from './thinkingOptionsResolver';
 import {
   buildAnthropicMessages,
+  buildAnthropicSystem,
   buildGeminiContents,
   buildMessages,
+  buildOpenAiChatSystemContent,
   buildOpenAiChatUserContent,
+  buildOpenAiResponsesSystemContent,
   buildOpenAiResponsesUserContent,
   normalizeOutboundMessages,
   splitChatRequest
@@ -86,7 +90,18 @@ import {
   resolveStructuredOutput
 } from './structuredOutput';
 import { resolveStructuredOutputCapability } from './registry';
+import {
+  supportsCacheUsageReporting,
+  supportsPromptCacheBreakpoints,
+  supportsPromptCacheRouting
+} from './streamUsageCapability';
 import type { StructuredOutputRequest } from './structuredOutputTypes';
+import {
+  normalizeAnthropicUsage,
+  normalizeGeminiUsage,
+  normalizeOpenAiChatUsage,
+  normalizeOpenAiResponsesUsage
+} from './usageNormalization';
 
 // ============================================================================
 // Types
@@ -156,6 +171,11 @@ export interface IProviderCompletionParams extends IChatRequest {
    * `IAiCompletionResponse.structuredOutput`.
    */
   readonly structuredOutput?: StructuredOutputRequest;
+  /**
+   * Prompt-caching plan for this request. Omitted, nothing cache-related is sent — the request
+   * body is byte-identical to a build predating this feature. See {@link AiAssist.IAiCacheRequest}.
+   */
+  readonly cache?: IAiCacheRequest;
 }
 
 // ============================================================================
@@ -232,16 +252,22 @@ const responsesApiResponse: Validator<IResponsesApiResponse> = Validators.object
 
 /** @internal */
 interface IGeminiPart {
-  text: string;
+  // Optional: a part is not always a text part. Reasoning parts carry `thought`, and tool parts
+  // carry `functionCall`; both arrive with no `text` at all.
+  text?: string;
 }
 /** @internal */
 interface IGeminiContent {
-  parts: IGeminiPart[];
+  parts?: IGeminiPart[];
 }
 /** @internal */
 interface IGeminiCandidate {
-  content: IGeminiContent;
-  finishReason: string;
+  // Every field here is optional because a candidate that produced nothing still comes back —
+  // as `content: {}`, or with no `content` key. Requiring them turned "the model declined, and
+  // here is why" into an opaque validation error naming a field of an empty object.
+  content?: IGeminiContent;
+  finishReason?: string;
+  finishMessage?: string;
 }
 /** @internal */
 interface IGeminiResponse {
@@ -249,15 +275,23 @@ interface IGeminiResponse {
 }
 
 const geminiPart: Validator<IGeminiPart> = Validators.object<IGeminiPart>({
-  text: Validators.string
+  text: Validators.string.optional()
 });
 const geminiContent: Validator<IGeminiContent> = Validators.object<IGeminiContent>({
-  parts: Validators.arrayOf(geminiPart).withConstraint((arr) => arr.length > 0)
+  // No non-empty constraint: `parts: []` is a shape Gemini actually returns, and rejecting it
+  // here reports a schema violation for what is really "the model produced no output".
+  parts: Validators.arrayOf(geminiPart).optional()
 });
 const geminiCandidate: Validator<IGeminiCandidate> = Validators.object<IGeminiCandidate>({
-  content: geminiContent,
-  finishReason: Validators.string
+  content: geminiContent.optional(),
+  finishReason: Validators.string.optional(),
+  finishMessage: Validators.string.optional()
 });
+
+// Terminal reasons that mean "the model finished normally", as distinct from a refusal. Kept in
+// step with the identical set in `imageGenerationClient.ts`; both exist so an empty response can
+// be reported as the decline it is rather than as an empty string or a parse error.
+const benignGeminiFinishReasons: ReadonlySet<string> = new Set(['STOP', 'MAX_TOKENS']);
 const geminiResponse: Validator<IGeminiResponse> = Validators.object<IGeminiResponse>({
   candidates: Validators.arrayOf(geminiCandidate).withConstraint((arr) => arr.length > 0)
 });
@@ -281,10 +315,17 @@ async function callOpenAiCompletion(
   resolvedThinking?: IResolvedThinkingConfig,
   maxTokens?: number,
   useMaxCompletionTokensField: boolean = false,
-  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT
+  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT,
+  reportsUsage: boolean = false,
+  cache?: IAiCacheRequest,
+  cacheKeyHeader?: string
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/chat/completions`;
-  const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
+  const systemContentResult = buildOpenAiChatSystemContent(prompt.system, cache);
+  if (systemContentResult.isFailure()) {
+    return fail(systemContentResult.message);
+  }
+  const messages = buildMessages(systemContentResult.value, buildOpenAiChatUserContent(prompt), {
     head
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
@@ -300,7 +341,16 @@ async function callOpenAiCompletion(
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning_effort: effort } : {}),
     // Omitted when the caller doesn't set maxTokens — every non-Anthropic provider applies its
     // own default. See AiAssist.usesMaxCompletionTokensField for the field-name split.
-    ...(maxTokens !== undefined ? { [maxTokensField]: maxTokens } : {})
+    ...(maxTokens !== undefined ? { [maxTokensField]: maxTokens } : {}),
+    // Pure additive routing plumbing (research.md §1.3) — no vocabulary, no cap. `cacheKey` is
+    // gated at the dispatch site to descriptors with a confirmed routing transport (see
+    // supportsPromptCacheRouting), and carried here as a body field only for providers that take
+    // it that way. xAI takes it as the `cacheKeyHeader` below instead, so sending it in the body
+    // as well would be an unrecognized field on a server whose tolerance is unconfirmed.
+    ...(cache?.cacheKey !== undefined && cacheKeyHeader === undefined
+      ? // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field name
+        { prompt_cache_key: cache.cacheKey }
+      : {})
   };
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
@@ -308,6 +358,12 @@ async function callOpenAiCompletion(
   Object.assign(body, structured.wire);
 
   const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
+  // Sticky-routing key, when the provider carries it as a header rather than a body field.
+  // xAI's prompt cache is per-server, so an identical prefix can still miss if the request is
+  // routed to a different box; `x-grok-conv-id` pins it.
+  if (cache?.cacheKey !== undefined && cacheKeyHeader !== undefined) {
+    headers[cacheKeyHeader] = cache.cacheKey;
+  }
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI completion: model=${config.model}`);
@@ -315,6 +371,13 @@ async function callOpenAiCompletion(
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
+  // Only descriptors with confirmed cache-relevant usage reporting are normalized — the
+  // adapter is shared by Groq/Mistral/Ollama/openai-compat too, and an ordinary usage block
+  // from one of those carries no cache information. See supportsCacheUsageReporting.
+  const rawUsage = jsonResult.value.usage;
+  const usage = reportsUsage
+    ? normalizeOpenAiChatUsage(isJsonObject(rawUsage) ? rawUsage : undefined)
+    : undefined;
   return openAiResponse
     .validate(jsonResult.value)
     .withErrorFormat((msg) => `OpenAI API response: ${msg}`)
@@ -323,7 +386,8 @@ async function callOpenAiCompletion(
       return succeed({
         content: choice.message.content,
         truncated: choice.finish_reason === 'length',
-        structuredOutput: structured.enforcement
+        structuredOutput: structured.enforcement,
+        ...(usage !== undefined ? { usage } : {})
       });
     });
 }
@@ -364,10 +428,16 @@ async function callOpenAiResponsesCompletion(
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
   maxTokens?: number,
-  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT
+  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT,
+  reportsUsage: boolean = false,
+  cache?: IAiCacheRequest
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/responses`;
-  const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
+  const systemContentResult = buildOpenAiResponsesSystemContent(prompt.system, cache);
+  if (systemContentResult.isFailure()) {
+    return fail(systemContentResult.message);
+  }
+  const input = buildMessages(systemContentResult.value, buildOpenAiResponsesUserContent(prompt), {
     head
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
@@ -379,7 +449,13 @@ async function callOpenAiResponsesCompletion(
     ...(tools.length > 0 ? { tools: toResponsesApiTools(tools) } : {}),
     // Temperature is sent only when the caller explicitly provided one (see callOpenAiCompletion).
     ...(temperature !== undefined ? { temperature } : {}),
-    ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {})
+    ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {}),
+    // See the identical field and gating on callOpenAiCompletion's body — same routing plumbing,
+    // confirmed on both Chat Completions and the Responses API (research.md §1.3).
+    ...(cache?.cacheKey !== undefined
+      ? // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field name
+        { prompt_cache_key: cache.cacheKey }
+      : {})
   };
   // Shared by OpenAI and xAI — both route through the Responses API with the same field name.
   if (maxTokens !== undefined) {
@@ -398,6 +474,11 @@ async function callOpenAiResponsesCompletion(
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
+  // See the identical gate in callOpenAiCompletion above — this route is shared the same way.
+  const rawResponsesUsage = jsonResult.value.usage;
+  const responsesUsage = reportsUsage
+    ? normalizeOpenAiResponsesUsage(isJsonObject(rawResponsesUsage) ? rawResponsesUsage : undefined)
+    : undefined;
   return responsesApiResponse
     .validate(jsonResult.value)
     .withErrorFormat((msg) => `Responses API response: ${msg}`)
@@ -406,7 +487,8 @@ async function callOpenAiResponsesCompletion(
         succeed({
           content: text,
           truncated: response.status === 'incomplete',
-          structuredOutput: structured.enforcement
+          structuredOutput: structured.enforcement,
+          ...(responsesUsage !== undefined ? { usage: responsesUsage } : {})
         })
       );
     });
@@ -497,13 +579,18 @@ async function callAnthropicCompletion(
   resolvedThinking?: IResolvedThinkingConfig,
   useAdaptiveThinking: boolean = false,
   maxTokens?: number,
-  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT
+  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT,
+  cache?: IAiCacheRequest
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, { head });
+  const systemResult = buildAnthropicSystem(prompt.system, cache);
+  if (systemResult.isFailure()) {
+    return fail(systemResult.message);
+  }
   const body: Record<string, unknown> = {
     model: config.model,
-    system: prompt.system,
+    system: systemResult.value,
     messages,
     // Anthropic's Messages API requires max_tokens on every request — see
     // AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS for why only this provider defaults it.
@@ -566,6 +653,10 @@ async function callAnthropicCompletion(
 
   const rawContent = (jsonResult.value as Record<string, unknown>).content;
   const stopReason = (jsonResult.value as Record<string, unknown>).stop_reason;
+  const rawAnthropicUsage = jsonResult.value.usage;
+  const anthropicUsage = normalizeAnthropicUsage(
+    isJsonObject(rawAnthropicUsage) ? rawAnthropicUsage : undefined
+  );
   if (!Array.isArray(rawContent)) {
     return fail('Anthropic API response: content is not an array');
   }
@@ -580,7 +671,8 @@ async function callAnthropicCompletion(
     succeed({
       content: text,
       truncated: stopReason === 'max_tokens',
-      structuredOutput: structured.enforcement
+      structuredOutput: structured.enforcement,
+      ...(anthropicUsage !== undefined ? { usage: anthropicUsage } : {})
     })
   );
 }
@@ -646,21 +738,38 @@ async function callGeminiCompletion(
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
+  const rawGeminiUsage = jsonResult.value.usageMetadata;
+  const geminiUsage = normalizeGeminiUsage(isJsonObject(rawGeminiUsage) ? rawGeminiUsage : undefined);
   return geminiResponse
     .validate(jsonResult.value)
     .withErrorFormat((msg) => `Gemini API response: ${msg}`)
     .onSuccess((response) => {
       const candidate = response.candidates[0];
+      // ALL parts, not `parts[0]`. Gemini may split one reply across several
+      // text parts, and reading only the first silently discards the rest —
+      // yielding a truncated document that often still parses, which is the
+      // worst way to be wrong. The streaming adapter has always concatenated
+      // (`fullText += part.text`); this path did not, so the same response gave
+      // different text depending on which one you called.
+      //
+      // `part.text ?? ''` rather than `part.text`: a reasoning or tool part contributes no text,
+      // and joining `undefined` would put the literal string "undefined" into the reply.
+      const content = candidate.content?.parts?.map((part) => part.text ?? '').join('') ?? '';
+      if (content.length === 0) {
+        // Nothing came back. If the candidate says why, say so — an empty string handed to a
+        // caller is indistinguishable from a model that legitimately replied with nothing, and
+        // sends them looking in the wrong place.
+        const reason = candidate.finishReason;
+        if (reason !== undefined && !benignGeminiFinishReasons.has(reason)) {
+          const suffix = candidate.finishMessage ? ` — ${candidate.finishMessage}` : '';
+          return fail(`Gemini completion declined: ${reason}${suffix}`);
+        }
+      }
       return succeed({
-        // ALL parts, not `parts[0]`. Gemini may split one reply across several
-        // text parts, and reading only the first silently discards the rest —
-        // yielding a truncated document that often still parses, which is the
-        // worst way to be wrong. The streaming adapter has always concatenated
-        // (`fullText += part.text`); this path did not, so the same response gave
-        // different text depending on which one you called.
-        content: candidate.content.parts.map((part) => part.text).join(''),
+        content,
         truncated: candidate.finishReason === 'MAX_TOKENS',
-        structuredOutput: structured.enforcement
+        structuredOutput: structured.enforcement,
+        ...(geminiUsage !== undefined ? { usage: geminiUsage } : {})
       });
     });
 }
@@ -692,7 +801,8 @@ export async function callProviderCompletion(
     endpoint,
     thinking,
     maxTokens,
-    structuredOutput
+    structuredOutput,
+    cache
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -792,9 +902,24 @@ export async function callProviderCompletion(
   }
 
   switch (descriptor.apiFormat) {
-    case 'openai':
+    case 'openai': {
       // Responses-API-only models (e.g. gpt-5.5-pro) 400 on /chat/completions, so they route
       // to the Responses path even with no tools requested — same path the tools case uses.
+      // `cache` carries two independently-supported things, and they are gated separately.
+      // `systemBreakpoints` restructures `content` and needs the server to tolerate an
+      // unrecognized field inside it (OpenAI only). `cacheKey` is an opaque routing string that
+      // makes repeated requests with a shared prefix land on the same cache-holding server —
+      // which xAI needs precisely because it does per-server byte-for-byte prefix matching.
+      // Gating them together withheld the routing key from the provider that depends on it most.
+      // Every descriptor supporting neither (Groq, Mistral, Ollama, openai-compat) still gets the
+      // exact request body it would have gotten had the caller passed no `cache` at all.
+      const routing = supportsPromptCacheRouting(descriptor);
+      const breakpoints = supportsPromptCacheBreakpoints(descriptor) ? cache?.systemBreakpoints : undefined;
+      const routedKey = routing !== undefined ? cache?.cacheKey : undefined;
+      const gatedCache: IAiCacheRequest | undefined =
+        breakpoints !== undefined || routedKey !== undefined
+          ? { systemBreakpoints: breakpoints, cacheKey: routedKey }
+          : undefined;
       if (usesResponsesApi) {
         return callOpenAiResponsesCompletion(
           config,
@@ -806,7 +931,9 @@ export async function callProviderCompletion(
           signal,
           resolvedThinking,
           maxTokens,
-          resolvedStructured
+          resolvedStructured,
+          supportsCacheUsageReporting(descriptor),
+          gatedCache
         );
       }
       return callOpenAiCompletion(
@@ -819,8 +946,12 @@ export async function callProviderCompletion(
         resolvedThinking,
         maxTokens,
         usesMaxCompletionTokensField(descriptor),
-        resolvedStructured
+        resolvedStructured,
+        supportsCacheUsageReporting(descriptor),
+        gatedCache,
+        routing?.chatCompletionsHeader
       );
+    }
     case 'anthropic':
       return callAnthropicCompletion(
         config,
@@ -833,7 +964,8 @@ export async function callProviderCompletion(
         resolvedThinking,
         isAdaptiveThinkingModel(descriptor, config.model),
         maxTokens,
-        resolvedStructured
+        resolvedStructured,
+        cache
       );
     case 'gemini':
       return callGeminiCompletion(
@@ -886,7 +1018,8 @@ export async function callProxiedCompletion(
     signal,
     thinking,
     maxTokens,
-    structuredOutput
+    structuredOutput,
+    cache
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -943,6 +1076,11 @@ export async function callProxiedCompletion(
               ? { onUnsupported: structuredOutput.onUnsupported }
               : {})
           };
+  }
+  // `IAiCacheRequest` is plain numbers and a string — JSON-serializable as-is, unlike
+  // `structuredOutput`'s schema above, so it needs no wire projection before forwarding.
+  if (cache !== undefined) {
+    body.cache = cache;
   }
 
   /* c8 ignore next 1 - optional logger */

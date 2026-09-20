@@ -83,37 +83,28 @@ merge**, not as a post-merge follow-up.
 
 ### Queued — unbatched
 
-#### `mutableFsTree` permission test cannot pass as root
+#### ~~`mutableFsTree` permission test cannot pass as root~~ — ✅ resolved 2026-09-19
 
-`libraries/ts-json-base/src/test/unit/file-tree/mutableFsTree.test.ts:89` —
-`FsFileTreeAccessors > fileIsMutable > returns permission-denied for read-only file` `chmod`s a file
-to `0444` and asserts it is not writable. **Root ignores permission bits**, so the write succeeds,
-`fileIsMutable` correctly reports `true`, and the assertion fails. It passes in CI, which runs as
-the non-root `runner` user.
+Fixed in `@fgv/ts-json-base` (#673), which removed the blocking failure — all 36 packages execute,
+where 29 previously never ran. The gate was then **fully restored** by the Jest 30 / Heft 1.3
+upgrade, which cleared the four `SUCCESS WITH WARNINGS` packages (Node `punycode` DEP0040, emitted
+by `tr46@3`). `rush test` and `rush rebuild` are both exit 0 with no warnings bucket.
 
-**Why it is worth fixing rather than tolerating.** Agent and cloud containers routinely run as uid
-0, and the repo's own guidance is to reproduce CI locally before blaming CI — advice that quietly
-assumes a non-root environment. The failure surfaces in a package the reader has usually not
-touched, and its message (`expected "permission denied", received "persistent"`) gives no hint of
-the cause. It has now cost investigation time on at least three separate occasions.
+The entry's **preferred fix** (skip under root) was not taken, and the reason is worth keeping:
+root is the *default* in this repo's cloud-agent containers, so a skip would have asserted nothing
+in the environment that actually runs it. Instead each case asserts the outcome correct for its
+uid, under one stable test name. The root case turns out to be the *discriminating* one — if
+`fileIsMutable` were simplified to read `stat().mode` rather than probe effective access, a `0o444`
+file would report not-writable for every uid, so the root branch goes red while the non-root branch
+stays green by coincidence.
 
-**Preferred fix**, from the finding that first recorded it
-(`.ai/tasks/completed/2026-08/ts-utils-async-detailed-result/findings/inbox/2026-08-06-root-sensitive-fstree-test.md`):
-skip when `process.getuid?.() === 0`, with a message naming root as the reason — keeps the assertion
-honest where it means something and removes the false signal where it does not. The stronger
-alternative is to assert on the accessor's permission logic with an injected stat result, testing
-the code rather than the kernel.
-
-**Not a defect in the test's correctness** — it is correct for the environment it assumes.
-
-**Escalated 2026-08-23 (`schema-optional-translation`, #659): it now silently disables a gate.**
-`CODING_STANDARDS.md` gained a repo-wide `rush test` acceptance checkbox in #656, for changes that
-widen what a function *accepts* (a compiler cannot see those). **Rush blocks every dependent of a
-failed project**, so this one failure stops the run at `@fgv/ts-json-base` and `@fgv/ts-extras` and
-everything downstream never execute. The failure mode is the bad kind: the command exits non-zero
-for a familiar unrelated reason, the reader recognises it and moves on, and **the box gets ticked
-for a run that tested none of the packages the rule protects.** This raises the item from *annoying*
-to *blocking a stated gate*; also filed as P2 in `TECH_DEBT.md`.
+The entry's **stronger alternative** ("assert on the accessor's permission logic with an injected
+stat result, testing the code rather than the kernel") was also taken, as a second test: spying the
+access probe to throw covers the `permission-denied` branch independently of uid and platform, and
+let the `c8 ignore` directive on that branch be **deleted** rather than re-justified. One wrinkle
+for anyone repeating it — `jest.spyOn` on the imported `fs` namespace throws "Cannot redefine
+property"; spy the runtime `require('fs')` object instead, which is why
+`MockFileSystem.startSpies` resolves `fs` dynamically.
 
 #### `as Record<string, …>` after a type guard — 32 sites, a P1 anti-pattern that propagates by example
 

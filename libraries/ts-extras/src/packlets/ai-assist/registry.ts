@@ -55,8 +55,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     supportedTools: [],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: false,
-    thinkingMode: 'unsupported'
+    acceptsImageInput: false
   },
   {
     id: 'anthropic',
@@ -83,7 +82,6 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
-    thinkingMode: 'optional',
     // Claude 5 family requires the adaptive thinking wire shape (thinking.type: 'adaptive' +
     // output_config.effort) and 400s on the legacy thinking.type: 'enabled' + budget_tokens
     // shape; see AiAssist.isAdaptiveThinkingModel.
@@ -118,10 +116,16 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       '@google-gemini:embedding': 'gemini-embedding-001' // NOT deprecated — aliased for uniformity only
     },
     supportedTools: ['web_search'],
+    // `generateContent` HTTP-400s (INVALID_ARGUMENT) when built-in grounding
+    // (`web_search` → `google_search`) and `function_declarations` are combined in
+    // one request. The only descriptor in the registry that declares an exclusion;
+    // keep it that way deliberately — a new entry here changes what a host gets
+    // back without the host changing anything, so it wants the same evidence a
+    // capability claim wants.
+    serverToolsExclusiveWithClientTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
-    thinkingMode: 'optional',
     // Gemini carries the constraint inside `generationConfig`
     // (responseMimeType + responseSchema), uniform across the family.
     structuredOutput: [{ modelPrefix: '', format: 'gemini-response-schema' }],
@@ -158,8 +162,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     supportedTools: [],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: false,
-    thinkingMode: 'unsupported'
+    acceptsImageInput: false
   },
   {
     id: 'mistral',
@@ -173,7 +176,6 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: false,
-    thinkingMode: 'unsupported',
     structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }],
     embedding: [{ modelPrefix: '', format: 'openai-embeddings' }]
   },
@@ -189,7 +191,6 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: false,
-    thinkingMode: 'unsupported',
     embedding: [{ modelPrefix: '', format: 'openai-embeddings' }]
   },
   {
@@ -223,7 +224,6 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
-    thinkingMode: 'optional',
     responsesOnlyModelPrefixes: ['gpt-5.5-pro'],
     // Declared once for the whole line. The Chat-Completions-vs-Responses split is
     // NOT declared here on purpose: the route depends on whether the call carries
@@ -275,7 +275,6 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: false,
-    thinkingMode: 'unsupported',
     embedding: [{ modelPrefix: '', format: 'openai-embeddings' }]
   },
   {
@@ -300,7 +299,6 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: true,
     streamingCorsRestricted: true,
     acceptsImageInput: true,
-    thinkingMode: 'optional',
     structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }],
     imageGeneration: [
       {

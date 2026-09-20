@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: extract the pure ratio arithmetic, cold/warm comparison, and verdict classification out of the perf/promptCacheObservability.js and perf/promptCacheRoutingAb.js harnesses into unit-tested modules (promptCacheUsageMath.ts, promptCacheObservabilityHarness.ts, promptCacheRoutingAbHarness.ts) with the completion call injected; perf/*.js are now thin wrappers over the live transport. Fixes three latent defects the extraction's fixture tests found: an unguarded division producing NaN% on a zero-total usage block; a pct() that coalesced a missing cachedInputTokens or uncachedInputTokens to 0, fabricating a false low ratio (false MISSES) or a false 100% (false CONFIRMS) depending on which field was missing; and a genuinely-reported zero/zero usage block being scored as a hard 0.0%/MISSES rather than not-computable. Also corrects promptCacheObservability.js's header, whose WHY-xAI-NOT-ANTHROPIC rationale assumed C1 sends no cache directive; C3 now emits cache_control.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

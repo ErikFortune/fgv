@@ -27,13 +27,20 @@
  */
 
 import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { type JsonObject } from '@fgv/ts-json-base';
 
 import { buildMessages, buildOpenAiChatUserContent } from '../chatRequestBuilders';
 import { bearerAuthHeader } from '../endpoint';
 import { AiPrompt, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
-import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
+import { normalizeOpenAiChatUsage } from '../usageNormalization';
+import {
+  IStreamApiConfig,
+  jsonObjectOrNullValidator,
+  openSseConnection,
+  validateEventPayload
+} from './common';
 
 // ============================================================================
 // Event payload shapes
@@ -62,6 +69,18 @@ interface IOpenAiChatStreamChoice {
  */
 interface IOpenAiChatStreamChunk {
   readonly choices: ReadonlyArray<IOpenAiChatStreamChoice>;
+  /**
+   * Only present at all when the request carries
+   * `stream_options.include_usage: true` (see `callOpenAiChatStream`) — without
+   * it OpenAI Chat Completions never emits a usage block while streaming,
+   * unlike every other adapter here. When
+   * present, the wire sends literal `null` on every chunk except the terminal
+   * one, which carries the populated object; `null` must validate (not fail the
+   * whole chunk) or every intermediate chunk — including its `delta.content` and
+   * `finish_reason` — is dropped along with it.
+   */
+  // eslint-disable-next-line @rushstack/no-new-null
+  readonly usage?: JsonObject | null;
 }
 
 // eslint-disable-next-line @rushstack/no-new-null
@@ -83,7 +102,8 @@ const openAiChatStreamChoice: Validator<IOpenAiChatStreamChoice> = Validators.ob
 );
 
 const openAiChatStreamChunk: Validator<IOpenAiChatStreamChunk> = Validators.object<IOpenAiChatStreamChunk>({
-  choices: Validators.arrayOf(openAiChatStreamChoice)
+  choices: Validators.arrayOf(openAiChatStreamChoice),
+  usage: jsonObjectOrNullValidator.optional()
 });
 
 // ============================================================================
@@ -95,10 +115,14 @@ const openAiChatStreamChunk: Validator<IOpenAiChatStreamChunk> = Validators.obje
  *
  * @internal
  */
-async function* translateOpenAiChatStream(response: Response): AsyncGenerator<IAiStreamEvent> {
+async function* translateOpenAiChatStream(
+  response: Response,
+  reportsUsage: boolean
+): AsyncGenerator<IAiStreamEvent> {
   let fullText = '';
   let truncated = false;
   let receivedDone = false;
+  let usageRaw: JsonObject | undefined;
 
   try {
     /* c8 ignore next - body is non-null at this point per openSseConnection */
@@ -110,9 +134,19 @@ async function* translateOpenAiChatStream(response: Response): AsyncGenerator<IA
         continue;
       }
       const chunk = validateEventPayload(json, openAiChatStreamChunk);
+      // Every intermediate chunk carries literal `null` once `stream_options.include_usage`
+      // is set; only the terminal chunk's populated object should update the accumulator.
+      // Gated on reportsUsage (same descriptor check that decides whether the request even
+      // asked for it, see callOpenAiChatStream) — this adapter is shared by descriptors with
+      // no confirmed cache-usage reporting, and an unprompted usage block from one of those
+      // carries no cache information (see supportsCacheUsageReporting).
+      if (reportsUsage && chunk?.usage !== undefined && chunk.usage !== null) {
+        usageRaw = chunk.usage;
+      }
       /* c8 ignore next 1 - defensive: chunk?.choices optional chain unreachable after validation */
       const choice = chunk?.choices[0];
-      /* c8 ignore next 3 - defensive: SSE events without choices are skipped */
+      // The `stream_options.include_usage` terminal chunk carries `choices: []` and only
+      // `usage` — already captured above, so it is expected (not defensive) to fall through here.
       if (!choice) {
         continue;
       }
@@ -134,7 +168,8 @@ async function* translateOpenAiChatStream(response: Response): AsyncGenerator<IA
   } /* c8 ignore stop */
 
   if (receivedDone) {
-    yield { type: 'done', truncated, fullText };
+    const usage = normalizeOpenAiChatUsage(usageRaw);
+    yield { type: 'done', truncated, fullText, ...(usage !== undefined ? { usage } : {}) };
   } else {
     yield { type: 'error', message: 'OpenAI stream ended without a finish_reason' };
   }
@@ -159,7 +194,8 @@ export async function callOpenAiChatStream(
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
   maxTokens?: number,
-  useMaxCompletionTokensField: boolean = false
+  useMaxCompletionTokensField: boolean = false,
+  includeStreamUsage: boolean = false
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/chat/completions`;
   const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
@@ -167,7 +203,19 @@ export async function callOpenAiChatStream(
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
   const supportsReasoning = config.model !== 'grok-4';
-  const body: Record<string, unknown> = { model: config.model, messages, stream: true };
+  const body: Record<string, unknown> = {
+    model: config.model,
+    messages,
+    stream: true
+  };
+  // Chat Completions omits the usage block from every streaming response unless asked —
+  // unlike the Responses API and Anthropic, which report it unconditionally. Gated per
+  // AiAssist.supportsStreamUsageOption: this adapter also carries providers whose tolerance
+  // for an unrecognized request field is unverified (a strict self-hosted server can reject
+  // the whole request rather than ignore it), so the field is sent only where it's confirmed.
+  if (includeStreamUsage) {
+    body.stream_options = { include_usage: true };
+  }
   if (effort !== undefined && supportsReasoning) {
     body.reasoning_effort = effort;
   }
@@ -191,5 +239,5 @@ export async function callOpenAiChatStream(
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI streaming completion: model=${config.model}`);
   const conn = await openSseConnection(url, headers, body, logger, signal);
-  return conn.onSuccess((response) => succeed(translateOpenAiChatStream(response)));
+  return conn.onSuccess((response) => succeed(translateOpenAiChatStream(response, includeStreamUsage)));
 }

@@ -67,6 +67,15 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+*(The `checkThreshold` zero-byte-section measure gap (shipped in C2, #669) was fixed by C3 of
+`ai-assist-prompt-caching`: a section with `chars === 0` now contributes `0` to the measured total
+via an explicit filter before every check in `checkThreshold`, rather than being incidentally
+in-or-out of the slice depending on `prefixEnd`'s position. Regression tests use non-zero
+`measured` on the empty section in both of the original bug's layouts — see
+`cacheStabilityAnalysis.test.ts`, the tests following "counts genuinely cacheable bytes past a
+zero-byte stable run in the prefix". Design rule recorded at design.md §5.1b. This item is
+retired; the `as Record<string, …>` item below remains outstanding.)*
+
 - **[P2] `as Record<string, …>` after a `typeof` guard — a P1 anti-pattern, 32 sites in
   production source across 11 packages.**
   `CODE_REVIEW_CHECKLIST.md` lists "manual type checking with unsafe casts" as **P1 CRITICAL** and
@@ -98,27 +107,19 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   is the right answer instead. **Triage before bulk-editing**; the `JsonValue`-narrowing ones are the
   cheap and provably-safe subset.
 
-- **[P2] The repo-wide `rush test` acceptance gate cannot complete, so it silently covers nothing
-  downstream of `@fgv/ts-json-base`.**
-  `libraries/ts-json-base/src/test/unit/file-tree/mutableFsTree.test.ts` §
-  *"returns permission-denied for read-only file"* fails whenever the suite runs as **root**, because
-  `chmod 0444` does not stop root from writing. That alone would be a nuisance; the consequence is
-  not. **Rush blocks every dependent of a failed project**, so `rush test` stops after
-  `@fgv/ts-json-base` and never runs `@fgv/ts-extras` or anything downstream of it.
+*(The repo-wide `rush test` gate is **fully restored as of 2026-09-19**, in two steps. #673 fixed
+the root-only `mutableFsTree` assertion that stopped the run at `@fgv/ts-json-base` with 29 of 36
+packages never executing. The Jest 30 / Heft 1.3 upgrade then removed the four `SUCCESS WITH
+WARNINGS` packages, whose only warning was the Node `punycode` DEP0040 deprecation emitted by
+`tr46@3`'s `require("punycode")` — jsdom 26 brings tr46 5, which requires `"punycode/"` instead.
+Both `rush test` and `rush rebuild` are now exit 0 with no warnings bucket at all, so
+`CODING_STANDARDS.md`'s repo-wide-test acceptance checkbox is honestly tickable for the first
+time. The override route that looked cheaper was never taken and was right to avoid: pnpm itself
+logged "The `pnpm` field in package.json is no longer read by pnpm … `pnpm.overrides` ignored"
+during the upgrade, confirming it would have done nothing on Rush 5.177.2. This item is retired.)*
 
-  This matters because `CODING_STANDARDS.md` § *"`rush rebuild` covers a widened type. Only a
-  repo-wide `rush test` covers a widened behaviour"* was promoted to an acceptance-criteria checkbox
-  in #656 — and the very next stream to need it (`schema-optional-translation`) found it unsatisfiable.
-  The failure mode is the dangerous kind: the command exits non-zero for a reason unrelated to the
-  change, an implementer sees a familiar known-failure and moves on, and **the box gets ticked for a
-  run that tested none of the packages the rule exists to protect.**
 
-  Interim practice, used by that stream: run `rush test --only <pkg>` over each package consuming the
-  changed surface, and say in the PR which ones. That is strictly weaker — it depends on the author
-  enumerating consumers correctly, which is the work the repo-wide run exists to remove.
 
-  **Fix:** make the test detect that it is running as root and assert the honest thing (root *can*
-  write a `0444` file), rather than skipping it. Restores the gate for every future stream.
 
 - **[P2] A `safer-fetch` retry test asserts a probabilistic outcome, and flakes CI for every
   unrelated PR at roughly 1 run in 170.**
@@ -376,6 +377,134 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   **Reference**: PR #377 (ts-extras Yaml fix + micro-test pattern landed); original L13 lessons-pending entry; earlier ts-extras `Crypto` bug.
 
 ## P3 — Opportunistic cleanup
+
+- **[P3] A field added to a converted entity can be silently dropped — and the compiler cannot
+  catch it. The dangerous shape is an entity with *more than one* converter.**
+  `FieldConverters<T>` (`ts-utils/src/packlets/conversion/objectConverter.ts:61`) is
+  `{ [key in keyof T]: Converter<T[key]> | Validator<T[key]> }` — a **homomorphic** mapped type,
+  so it preserves `?` from `T`. An optional interface field is therefore optional in the
+  converter's field map, and a converter that omits it type-checks clean. Verified 2026-09-18
+  against the real project config. This is a structural property of the pattern, not a defect in
+  `Converters.object` (the mandated idiom) or in any particular converter: interface and
+  converter are two declarations with nothing linking them, and the compiler enforces only the
+  *required* half.
+
+  **The single-converter case is largely handled by practice, and the entry should say so.**
+  The working habit is to define the model entity and its converter as a pair, and to update
+  them as a pair. That discipline holds well and is why this is P3 rather than higher.
+
+  **What the habit does not scale to is N.** The habit is singular — *"the* converter" — so an
+  entity with a second converter (a legacy reader, a wire-format transformer, a persisted-JSON
+  shape) has no moment that prompts you about the others. You update the primary, the sibling
+  goes stale, and every gate stays green. Reported as a recurring real-world miss by the repo
+  owner, independent of the instance below.
+
+  **And that case evades the obvious detector**, which is why it is worth writing down. A sibling
+  converter usually converts a *differently named* type — `Converters.object<IFooJson>`, not a
+  second `Converters.object<IFoo>` — so grepping for two converters over the same type parameter
+  finds nothing. Checked 2026-09-18: **no production entity in `libraries/*/src` has two
+  converters over the same type**, so the easy form is currently absent.
+
+  **The live shape is in `ts-extras`' KeyStore**: `IKeyStoreAsymmetricEntry` /
+  `IKeyStoreAsymmetricEntryJson` and the symmetric pair (`crypto-utils/keystore/model.ts:207`
+  and `:342`), each with its own converter. **Currently in sync — 8 fields each on the
+  asymmetric pair, 7 each on the symmetric** — so this is a place to check when either side
+  changes, not a present defect. (An earlier revision of this entry said 5 each; that count came
+  from a `grep -A 25` window that truncated both interface bodies. Corrected 2026-09-18 from the
+  sweep below, which counted full bodies.)
+
+  **Observed live (single-converter form)**: C2 (#669) added `IPromptSlot.cacheStability?` and
+  `slotConverter` silently discarded it on every load through the store, with build, lint and
+  type-check green. Caught only by end-to-end tests that happened to round-trip through the
+  store; a unit test of the analysis would have passed.
+
+  **Trigger**: adding a field to any entity that has a converter — and especially to one with a
+  `*Json` / legacy / wire sibling.
+
+  **Scope sketch**, two parts of very different difficulty:
+  (a) *Single-converter sweep* — for each `Converters.object<T>`, diff `keyof T` against the
+  declared field map. Mechanical and cheap; tells you whether #669 was the only instance.
+  (b) *Sibling drift* — compare the field sets of naming-convention-paired types
+  (`I<X>` ↔ `I<X>Json` / `Raw` / `Dto` / `Legacy`). Heuristic rather than sound, since the two
+  shapes legitimately differ, so it wants to report *asymmetries for review* rather than fail a
+  gate. This is the half that matches the recurring real-world miss, and the half no type-level
+  trick fixes.
+
+  **Not a P2**: it drops data rather than corrupting it, the omission is inert until someone sets
+  the field, and (a) is cheap enough that exposure is measurable on demand.
+
+  **Reference**: #669; `objectConverter.ts:61`; `ts-prompt-assist/src/packlets/converters/descriptorConverter.ts`; `ts-extras/src/packlets/crypto-utils/keystore/model.ts`.
+
+
+- **[P3] `supportsCacheUsageReporting` withholds *all* token usage from Groq, Mistral, Ollama
+  and `openai-compat`, not just cache fields.**
+  C1 (#668) attaches `IAiCompletionResponse.usage` on the shared `apiFormat: 'openai'` path only
+  when `supportsCacheUsageReporting(descriptor)` is true, which is `'openai' || 'xai-grok'`
+  (`streamUsageCapability.ts`). The gate exists for a real reason — Copilot round 4 found that
+  every `apiFormat: 'openai'` descriptor shares those call sites, so an ordinary usage block
+  from a provider with no cache concept was being normalized into a **false cache-reporting
+  signal**.
+
+  But the gate is cache-scoped and it is withholding **general** token accounting as collateral.
+  Groq, Mistral, Ollama and self-hosted `openai-compat` all report `prompt_tokens` /
+  `completion_tokens`; C1 now discards those for exactly the providers a cost-conscious consumer
+  is most likely to be self-hosting. Anthropic and Gemini are unaffected — their paths are not
+  behind this gate.
+
+  **Trigger**: a consumer asks why token counts are missing on a self-hosted or non-flagship
+  provider, or any stream that touches `streamUsageCapability.ts`.
+
+  **Scope sketch**: separate the two questions the single predicate currently conflates — *does
+  this provider report tokens at all* versus *does it report cache fields*. Arguably `reports`
+  is already the right home for the second, which would let usage attach broadly while
+  `reports` stays honest about the cache half. Note the `'none'` member that C1's layer-1 review
+  removed from `AiCacheReportingLevel` may want reconsidering as part of that — it was dropped
+  because nothing produced it, and this would give it a producer.
+
+  **Not a P2**: it withholds a number rather than reporting a wrong one, and the providers
+  affected are the ones with no cache concept, so nothing about caching is misreported.
+
+  **Reference**: #668; `design.md` §8; `streamUsageCapability.ts`.
+
+- **[P3] Generic `effort: 'none'` maps to a Gemini value that errors on Pro-family models.**
+  `ai-assist-thinking-anchoring` (#667) added `'none'` to `IThinkingConfig.effort` as the
+  cross-provider spelling for "thinking off". On Gemini it maps to `thinkingBudget: 0` in
+  `thinkingOptionsResolver.ts`'s `genericEffortToGemini`. But
+  `IGeminiThinkingConfig.thinkingBudget`'s own doc comment — one field away in `model.ts` —
+  states that `0` is valid on **Flash and Flash-Lite only and errors on Pro**. So a caller who
+  writes `thinking: { effort: 'none' }` and routes to a Gemini Pro model gets a provider-side
+  400.
+
+  The stream's layer-1 `code-reviewer` pass caught the *doc comment* overclaiming this and fixed
+  it by adding the caveat, on the reasoning that the same footgun already existed via an explicit
+  `providers: [{ provider: 'google', config: { thinkingBudget: 0 } }]` block. That reasoning is
+  sound but incomplete, which is why this entry exists: the pre-existing door was **Gemini-
+  specific**, where reading the Gemini field's docs is the natural thing to do, while the new one
+  is the **generic** field whose entire purpose is not having to think about providers. The
+  library's own cross-provider abstraction is where the leak now is.
+
+  **Not covered by the `FUTURE.md` entry it looks adjacent to.** That entry ("Gate thinking
+  requests on the per-model capability table") is about models that cannot think at all. Gemini
+  Pro *does* think — it simply cannot express "off" as a budget of zero. Different problem, and
+  it would survive that entry being implemented.
+
+  **Trigger**: a consumer reports a Gemini Pro 400 on `effort: 'none'`, or any stream that
+  touches `genericEffortToGemini`.
+
+  **Scope sketch**: the resolver already has model-prefix machinery
+  (`isExactOrDashBoundedPrefix`, used by `isAdaptiveThinkingModel`), so the cheap fix is to fail
+  fast in `mergeThinkingConfig` with a message naming the Pro-family constraint, rather than
+  emitting a value the provider will reject. Note the alternatives are both worse: omitting
+  `thinkingConfig` entirely means "model default", which on a thinking-by-default Pro model
+  leaves thinking **on** and silently fails to honour `'none'`; and `-1` is dynamic, not off.
+
+  **Not a P4**: it is a wrong value on the wire reachable from the generic public surface, not a
+  documentation inconsistency. The failure is loud (a provider 400 rather than silent corruption),
+  which is what keeps it out of P2.
+
+  **Reference**: #667; `.ai/tasks/completed/2026-09/ai-assist-thinking-anchoring/` (README
+  § "The easy part hid a real edge", `meta.yaml` `summary.diverged`); surfaced by the
+  `finalize-task` antagonist pass, not by the stream itself.
 
 - **[P3] `rushx update-snapshot` writes snapshots with a different Jest config than
   `rushx test` reads them with — nine packages.**

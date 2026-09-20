@@ -57,7 +57,6 @@ function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IA
     corsRestricted: false,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
-    thinkingMode: 'optional',
     imageGeneration: [{ modelPrefix: '', format: 'gemini-image-out', acceptsImageReferenceInput: true }],
     ...overrides
   };
@@ -76,7 +75,6 @@ function makeCompletionDescriptor(overrides: Partial<IAiProviderDescriptor> = {}
     corsRestricted: false,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
-    thinkingMode: 'optional',
     ...overrides
   };
 }
@@ -254,8 +252,7 @@ describe('callProviderCompletion — Anthropic truncated flag matrix (antagonist
       supportedTools: [],
       corsRestricted: false,
       acceptsImageInput: true,
-      streamingCorsRestricted: false,
-      thinkingMode: 'optional'
+      streamingCorsRestricted: false
     };
   }
 

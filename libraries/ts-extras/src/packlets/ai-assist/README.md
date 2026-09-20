@@ -299,3 +299,71 @@ problem: the providers impose their own constraints on combining it with increme
 delivery, and a per-chunk report has no obvious meaning. Also out: repair (the
 `jsonResponse` boundary stays — with `'json-mode'` or better the syntactic-repair
 question stops arising), injectable validation, and retry inside the client.
+
+## Prompt-cache token usage
+
+Every direct-provider completion — streaming and non-streaming alike, via
+`callProviderCompletion` / `callProviderCompletionStream` — can carry a normalized
+`usage?: IAiCompletionUsage` on `IAiCompletionResponse` / `IAiStreamDone`. **Not**
+`callProxiedCompletion` / `callProxiedCompletionStream`: forwarding usage through the
+proxy wire is out of scope for this slice, so a proxied completion's `usage` is always
+absent regardless of what the upstream provider reported — the same as any caller on an
+older build that predates this field, never a build error:
+
+```ts
+const result = await AiAssist.callProviderCompletion({ descriptor, apiKey, ...request });
+if (result.isSuccess() && result.value.usage) {
+  const { reports, cachedInputTokens, uncachedInputTokens, cacheWriteTokens } = result.value.usage;
+}
+```
+
+`reports: 'reads' | 'reads-and-writes'` is **required, not optional**, for the same
+reason `structuredOutput` is: an absent `cacheWriteTokens` is three-ways ambiguous (no
+write happened / this API cannot report writes / a build predating the field) unless
+something disambiguates it. Under `'reads-and-writes'` an absent `cacheWriteTokens`
+genuinely means zero were written this request; under `'reads'` it means the API cannot
+say, and the field is never present at all. There is no `'none'` member — "nothing was
+reported at all" is already `usage` itself being `undefined`, so check for that rather
+than for a `reports` value.
+
+Anthropic Messages always reports `'reads-and-writes'`; OpenAI/xAI Chat Completions and
+Gemini `generateContent` always report `'reads'` only — Chat Completions has no
+`cache_write_tokens` field on any provider reached through it, and Gemini's writes happen
+out-of-band via the explicit `cachedContents` resource (out of scope here). The OpenAI/xAI
+Responses route is one shared code path whose answer depends on which provider is on the
+other end: once a descriptor is confirmed to carry cache-relevant usage (see below),
+`reports` is derived from whether the wire response's `input_tokens_details.cache_write_tokens`
+is **present** (OpenAI always sends it, even as `0`, so that route is `'reads-and-writes'`;
+xAI never sends it, so that route is `'reads'`), not from provider identity.
+
+All four call sites above (Chat Completions and Responses, streaming and non-streaming)
+are shared by every `apiFormat: 'openai'` descriptor — Groq, Mistral, Ollama, and
+self-hosted `openai-compat`, not just OpenAI and xAI Grok. Only the latter two are
+confirmed to report cache-relevant `usage`; `AiAssist.supportsCacheUsageReporting(descriptor)`
+gates all four call sites on that before any normalization runs, so an unconfirmed
+`apiFormat: 'openai'` descriptor — including a future one — gets `usage: undefined`
+rather than a guess derived from whatever ordinary usage shape its wire happens to send.
+
+**Two separate gates, not one.** `supportsCacheUsageReporting` is the general
+"does this descriptor report cache-relevant usage at all" gate, checked on Responses
+(streaming and non-streaming) and Chat Completions non-streaming. Chat Completions
+*streaming* has its own narrower gate, `supportsStreamUsageOption` — `true` only for
+`'openai'` — because that path also decides whether to send the unconfirmed-tolerance-risk
+`stream_options: { include_usage: true }` request field (see below), not just whether to
+trust a response. Confirming a new provider's cache reporting means adding it to
+`supportsCacheUsageReporting`; that alone enables its non-streaming and Responses-streaming
+usage. Enabling its Chat-Completions-*streaming* usage additionally requires adding it to
+`supportsStreamUsageOption`, a separate, independent decision (a provider can be confirmed
+to report cache tokens correctly while its tolerance for an unrecognized request field is
+still unverified).
+
+Every derived field (`uncachedInputTokens`, `totalInputTokens`) stays `undefined` when an
+input it needs is itself unknown, rather than assuming the missing figure is zero — most
+notably on Gemini, where `cachedContentTokenCount` sits **inside** `promptTokenCount`
+(unlike OpenAI, where it sits in a sibling `…_details` object next to a separate total).
+`raw?: JsonObject` on `IAiCompletionUsage` carries the provider's own unnormalized usage
+block for anything this shape drops.
+
+This surface is read-only: it reports fields off responses already received and sends no
+new cache directive of its own — a caching *plan* (breakpoints, `prompt_cache_key`) is a
+separate, wire-changing surface.

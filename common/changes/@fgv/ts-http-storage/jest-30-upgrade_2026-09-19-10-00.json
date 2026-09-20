@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-http-storage",
+      "comment": "Build-tooling upgrade only, no runtime surface change: Heft 1.2.7 -> 1.3.0, heft-node-rig 2.11.27 -> 2.11.50, heft-web-rig 1.4.3 -> 1.4.34, heft-jest-plugin 1.2.6 -> 2.0.17, and Jest 29 -> 30.5.2 with its matching @types/jest, jest-environment-jsdom and internals. This removes the Node punycode DEP0040 deprecation warning, which tr46@3 emitted via require(\"punycode\") and which made repo-wide `rush test` exit non-zero on SUCCESS WITH WARNINGS; jsdom 26 brings tr46 5, which requires \"punycode/\" instead. `rush test` and `rush rebuild` are both exit 0 with zero warnings.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-http-storage",
+  "email": "noreply@anthropic.com"
+}

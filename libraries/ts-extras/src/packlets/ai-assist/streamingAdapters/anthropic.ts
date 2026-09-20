@@ -46,11 +46,13 @@ import {
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toAnthropicTools } from '../toolFormats';
 import { anthropicEffortToBudgetTokens, type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
+import { normalizeAnthropicUsage } from '../usageNormalization';
 import {
   IStreamApiConfig,
   MALFORMED_TOOL_USE_WARN_TAG,
   UNRECOGNIZED_EVENT_WARN_TAG,
   formatUnrecognizedEventPayloadPreview,
+  jsonObjectValidator,
   openSseConnection,
   validateEventPayload
 } from './common';
@@ -167,11 +169,23 @@ interface IAnthropicContentBlockStopPayload {
 }
 
 /**
- * Payload of a `message_delta` SSE event carrying the final stop reason.
+ * Payload of a `message_delta` SSE event carrying the final stop reason and,
+ * on the terminal `message_delta`, the completed output-token count.
  * @internal
  */
 interface IAnthropicMessageDeltaPayload {
   readonly delta: { readonly stop_reason?: string };
+  readonly usage?: JsonObject;
+}
+
+/**
+ * Payload of a `message_start` SSE event. Carries the initial `usage` block —
+ * `input_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens` —
+ * which does not repeat on later events.
+ * @internal
+ */
+interface IAnthropicMessageStartPayload {
+  readonly message: { readonly usage?: JsonObject };
 }
 
 /**
@@ -250,7 +264,13 @@ const anthropicMessageDeltaInner: Validator<{ stop_reason?: string }> = Validato
 
 const anthropicMessageDeltaPayload: Validator<IAnthropicMessageDeltaPayload> =
   Validators.object<IAnthropicMessageDeltaPayload>({
-    delta: anthropicMessageDeltaInner
+    delta: anthropicMessageDeltaInner,
+    usage: jsonObjectValidator.optional()
+  });
+
+const anthropicMessageStartPayload: Validator<IAnthropicMessageStartPayload> =
+  Validators.object<IAnthropicMessageStartPayload>({
+    message: Validators.object<{ usage?: JsonObject }>({ usage: jsonObjectValidator.optional() })
   });
 
 const anthropicErrorInner: Validator<{ message?: string }> = Validators.object<{ message?: string }>(
@@ -277,6 +297,7 @@ const anthropicErrorPayload: Validator<IAnthropicErrorPayload> = Validators.obje
  */
 const RECOGNIZED_ANTHROPIC_EVENTS: ReadonlySet<string> = new Set<string>([
   // ---- handled by the translator ----
+  'message_start',
   'content_block_start',
   'content_block_delta',
   'content_block_stop',
@@ -284,7 +305,6 @@ const RECOGNIZED_ANTHROPIC_EVENTS: ReadonlySet<string> = new Set<string>([
   'message_stop',
   'error',
   // ---- lifecycle / heartbeats: intentionally silent ----
-  'message_start',
   'ping'
 ]);
 
@@ -308,6 +328,10 @@ async function* translateAnthropicStream(
   let fullText = '';
   let truncated = false;
   let stopped = false;
+  // Anthropic splits the usage block across two events: `message_start` carries
+  // input/cache tokens (once, not repeated), `message_delta` carries the final
+  // output-token count. Merged here so `done` can normalize a single object.
+  let usageRaw: JsonObject | undefined;
   // Track unrecognized event names we have already warned about, so a hot stream of
   // an unknown event type produces exactly one log line per name per stream.
   const warnedEvents = new Set<string>();
@@ -318,7 +342,12 @@ async function* translateAnthropicStream(
     for await (const message of readSseEvents(response.body)) {
       const eventName = message.event;
 
-      if (eventName === 'content_block_start') {
+      if (eventName === 'message_start') {
+        const payload = validateEventPayload(parseSseEventJson(message.data), anthropicMessageStartPayload);
+        if (payload?.message.usage !== undefined) {
+          usageRaw = { ...usageRaw, ...payload.message.usage };
+        }
+      } else if (eventName === 'content_block_start') {
         const payload = validateEventPayload(
           parseSseEventJson(message.data),
           anthropicContentBlockStartPayload
@@ -437,6 +466,9 @@ async function* translateAnthropicStream(
         if (payload?.delta.stop_reason === 'max_tokens') {
           truncated = true;
         }
+        if (payload?.usage !== undefined) {
+          usageRaw = { ...usageRaw, ...payload.usage };
+        }
       } else if (eventName === 'message_stop') {
         stopped = true;
       } else if (eventName === 'error') {
@@ -472,7 +504,8 @@ async function* translateAnthropicStream(
   } /* c8 ignore stop */
 
   if (stopped) {
-    yield { type: 'done', truncated, fullText };
+    const usage = normalizeAnthropicUsage(usageRaw);
+    yield { type: 'done', truncated, fullText, ...(usage !== undefined ? { usage } : {}) };
   } else {
     yield { type: 'error', message: 'Anthropic stream ended without a message_stop event' };
   }

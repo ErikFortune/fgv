@@ -11,6 +11,8 @@ export {
   type AiServerToolType,
   type AiServerToolConfig,
   type AiToolConfig,
+  type AiToolConflictPolicy,
+  type IAiToolConflictReport,
   type IAiWebSearchToolConfig,
   type IAiClientToolConfig,
   type IAiToolAnnotations,
@@ -84,7 +86,6 @@ export {
   isAdaptiveThinkingModel,
   usesMaxCompletionTokensField,
   toDataUrl,
-  type AiThinkingMode,
   type IThinkingConfig,
   type IThinkingProviderConfig,
   type IAnthropicThinkingOptions,
@@ -169,7 +170,18 @@ export {
   modelSpec
 } from './converters';
 
-export { resolveEffectiveTools } from './toolFormats';
+export { resolveEffectiveTools, resolveToolConflicts, defaultToolConflictPolicy } from './toolFormats';
+export type { IAiResolvedToolConflicts } from './toolFormats';
+
+export type { AiCacheReportingLevel, IAiCompletionUsage } from './usageTypes';
+
+export {
+  supportsCacheUsageReporting,
+  supportsPromptCacheBreakpoints,
+  supportsPromptCacheRouting,
+  supportsStreamUsageOption
+} from './streamUsageCapability';
+export type { IAiPromptCacheRoutingSupport } from './streamUsageCapability';
 
 export { ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME } from './structuredOutput';
 
@@ -202,3 +214,5 @@ export {
 } from './jsonCompletion';
 
 export { anthropicEffortToBudgetTokens, type IResolvedThinkingConfig } from './thinkingOptionsResolver';
+
+export { type IAiCacheRequest, validateAiCacheRequest, validateCacheBreakpoints } from './cacheRequest';

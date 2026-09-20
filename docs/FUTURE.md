@@ -457,6 +457,38 @@ Current ai-assist adapters discard thinking / reasoning content by design — on
 
 **Reference:** 2026-06-04 conversation; PR #447 P1-1 + PR #449 thinking-wire-shape + PR #448 browser-export demonstrate the failure mode; L37 codification (PR #445) is the principle; `samples/testbed/src/scenarios/anthropicClientTools/` is the shape template.
 
+### Gate thinking requests on the per-model capability table
+
+`ai-assist-thinking-anchoring` deleted `IAiProviderDescriptor.thinkingMode` (a required
+per-provider field that gated nothing — `providerDiscriminatorForId` already switches on
+provider **id**, not on that field) and closed the effort-vocabulary hole by adding `'none'`.
+The obvious next move looked like reusing `AiModelCapability`'s `'thinking'` entry —
+already populated per provider via `DEFAULT_MODEL_CAPABILITY_CONFIG`'s RegExp-on-model-id
+rules, and already used for listing/filtering — to have `callProviderCompletion` /
+`callProviderCompletionStream` reject a thinking request up front when the resolved model's
+capability set lacks `'thinking'`.
+
+**Deliberately not done in that stream, and the reasoning is the point of this entry.**
+`DEFAULT_MODEL_CAPABILITY_CONFIG`'s own doc comment states its posture explicitly:
+"Patterns are intentionally narrow — false positives are worse than missing a model." That
+posture is correct for a **listing filter**: a model the patterns miss from a menu is merely
+absent, a one-time annoyance discoverable by browsing. It is wrong for a **call gate**: the
+same miss now rejects a request the provider would have accepted, for a real model a caller
+legitimately passed via `modelOverride` — turning a false negative in the capability table
+into a hard failure on the call path, potentially for a model the table's authors simply
+hadn't added a pattern for yet (new model releases routinely outpace the pattern list).
+
+Reusing the table for gating therefore isn't a line change — it needs a design pass on one of:
+splitting the table into a permissive listing view and a stricter (or explicitly
+unknown-means-allow) gating view; widening the patterns until false negatives are rare enough
+to gate on; or giving the gate an explicit escape hatch for `modelOverride` calls. Each of
+those is a real design decision with tradeoffs, not a "just wire it up" reuse.
+
+**Why deferred:** no consumer has asked for call-path rejection of unsupported thinking
+requests (the actual failure mode today — the provider's own API 400s — isn't silent
+corruption, matching the "provider-side request validation" entry above). Worth a
+design-triage-implement stream if that changes.
+
 ---
 
 ## Prompt observability for `@fgv/ts-prompt-assist`
@@ -1263,6 +1295,76 @@ fixed in the `module-resolution-upgrade` stream, so it is no longer a prerequisi
 
 **Reference**: `module-resolution-upgrade` stream, 2026-08-10;
 `.claude/project/esm-emit-design.md` § "Amendment 2 — what the graded steps actually cost, measured".
+
+---
+
+## The design-triage-implement shape only serves UI-prototype designs
+
+`CLAUDE.md` offers `design-triage-implement` as one of three general workflow shapes and points
+at `/triage-cycle`. That skill and `docs/DESIGN_PROCESS.md` are both written for one specific
+case: a **high-fidelity UI prototype** exported from a design tool, dropped at
+`design/pages/<feature>/`, staged into `design/staging/<feature>/`, and sorted by a
+`PACKAGING.md` into port / revise-and-port / already-canonical / discard.
+
+`ai-assist-prompt-caching` (2026-09) was the first stream to reach the triage step with a
+**document-shaped** design — a library API worked out in prose, no prototype, no assets, no
+visuals. The mismatch was total rather than partial:
+
+- The repo has **no `design/` directory at all**, so the skill's step-1 precondition ("the bundle
+  must already be committed under the drop path") cannot be met — and its own instruction in that
+  case is to stop.
+- Three of the process's four triage buckets — *visuals → component plan*, *assets → package
+  destinations*, *staging tree* — have no referent. Only *emergent capabilities → architectural
+  docs* applies, and the fourth (followups) had already been discharged during design.
+
+That stream's open questions were decided directly instead, with per-question reasoning in its
+`design.md` §12 and the deviation noted at the top of that file. It worked — but it worked by
+abandoning the named process, which is the tell that the process does not cover the case.
+
+**What is actually missing** is a triage shape for document-shaped designs, where the valuable
+work is an adversarial pass over the design's *recommendations* — are the defaults right, what
+did it not consider, which open questions are genuinely open versus already settled by an
+existing principle — rather than sorting prototype artifacts. Any library-API design reaching
+phase C hits this.
+
+**Why deferred:** n=1, and the direct-decision path was cheap. Worth doing when a second
+document-shaped design reaches triage, or if the prototype-shaped process ever actually runs — it
+never has; `.ai/tasks/completed/*/` contains no triage cycle, so both halves of this are
+currently unexercised. Options span renaming the existing skill to scope it honestly, adding a
+sibling shape, or making `DESIGN_PROCESS.md`'s bucket list conditional on the design's form.
+
+**Reference:** `ai-assist-prompt-caching` `design.md` § "Note on process"; 2026-09-17 session.
+
+---
+
+## Gemini explicit `CachedContent` as an `ai-assist` primitive
+
+A `GeminiCacheHandle` with explicit `create` / `release` and a documented ownership contract,
+wrapping Gemini's `caches.create(...)` / `GenerateContentRequest.cachedContent` resource. Unlike
+Anthropic's and OpenAI's inline breakpoints (stateless, per-request), this is a control-plane
+resource — `create` / `get` / `list` / `delete` / `patch`, immutable except expiry, with a handle
+whose lifetime spans requests.
+
+**Why deferred:** `ai-assist-prompt-caching` (C1–C3) deliberately did not build this — see design.md
+§10 for the five reasons, in descending force: (1) it is not a request-assembly concern, and every
+other primitive in `ai-assist` is stateless per call; (2) the library cannot own invalidation — any
+content change is delete-plus-create with a *new* handle every caller must re-reference, so
+returning the handle adds a wrapper and holding it adds state to a stateless packlet; (3) an
+abandoned handle is a recurring charge, not a one-time one — a materially different risk class from
+anything else in `ai-assist`; (4) the storage rate is unverified (provider pricing pages are
+egress-blocked from the agent environment); (5) Gemini implicit caching (which C1's usage
+normalization already covers) has zero API surface of its own — there is nothing else to build on
+Gemini without this. One unverified hazard carried forward: a non-monotonic Gemini implicit
+threshold has been reported (`cached_content_token_count` dropping to 0 between ~9K–17K prompt
+tokens) — if real, `ai-assist`'s per-model `minCacheablePrefixTokens` being unset for every Gemini
+entry is already the correct behavior (R-c: unknown reported as unknown), so no rework is implied
+either way.
+
+**Dependencies:** a real consumer with a Gemini-heavy, long-lived-context workload where implicit
+caching's cost is measured and found wanting; verified storage pricing; a design pass on ownership
+and invalidation (not a line change).
+
+**Reference:** `ai-assist-prompt-caching` `design.md` §10; C3 close, 2026-09-18.
 
 ---
 

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "executeClientToolTurn: a model naming an unregistered tool no longer terminates the turn. The client-tool-result with isError:true is unchanged, but the error now rides in the continuation so the model can react, matching how arg-validation failures, execute failures and gate denials already behaved. Only host-machinery errors (a gate fail/reject) end a turn.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

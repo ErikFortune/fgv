@@ -93,8 +93,7 @@ function makeAnthropicDescriptor(): IAiProviderDescriptor {
     supportedTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: false,
-    thinkingMode: 'optional'
+    acceptsImageInput: false
   };
 }
 
@@ -110,8 +109,7 @@ function makeOpenAiDescriptor(): IAiProviderDescriptor {
     supportedTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: false,
-    thinkingMode: 'unsupported'
+    acceptsImageInput: false
   };
 }
 
@@ -127,8 +125,7 @@ function makeGeminiDescriptor(): IAiProviderDescriptor {
     supportedTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: false,
-    thinkingMode: 'optional'
+    acceptsImageInput: false
   };
 }
 
@@ -176,6 +173,33 @@ describe('executeClientToolTurn', () => {
         delta: { type: 'input_json_delta', partial_json: argsJson }
       })}\n\n`,
       `event: content_block_stop\ndata: ${JSON.stringify({ index: 0 })}\n\n`,
+      `event: message_delta\ndata: ${JSON.stringify({ delta: { stop_reason: 'tool_use' } })}\n\n`,
+      `event: message_stop\ndata: {}\n\n`
+    ];
+  }
+
+  /**
+   * Two `tool_use` blocks in one assistant message — the shape a model emits when it
+   * calls several tools in a single turn. Distinct block indices, distinct ids.
+   */
+  function anthropicTwoToolUseSse(
+    first: { id: string; name: string; args: string },
+    second: { id: string; name: string; args: string }
+  ): string[] {
+    const block = (index: number, tool: { id: string; name: string; args: string }): string[] => [
+      `event: content_block_start\ndata: ${JSON.stringify({
+        index,
+        content_block: { type: 'tool_use', id: tool.id, name: tool.name }
+      })}\n\n`,
+      `event: content_block_delta\ndata: ${JSON.stringify({
+        index,
+        delta: { type: 'input_json_delta', partial_json: tool.args }
+      })}\n\n`,
+      `event: content_block_stop\ndata: ${JSON.stringify({ index })}\n\n`
+    ];
+    return [
+      ...block(0, first),
+      ...block(1, second),
       `event: message_delta\ndata: ${JSON.stringify({ delta: { stop_reason: 'tool_use' } })}\n\n`,
       `event: message_stop\ndata: {}\n\n`
     ];
@@ -684,7 +708,12 @@ describe('executeClientToolTurn', () => {
   });
 
   describe('unknown tool name', () => {
-    test('emits client-tool-result with isError=true and resolves nextTurn as Result.fail', async () => {
+    // Deliberately asserts the same shape as 'schema validation failure' below. A model naming a
+    // tool the host never registered is a model error, and this module's taxonomy puts model
+    // errors on the continue side; only host-machinery errors terminate the turn. Consumer ask,
+    // 2026-09-18: a model read a prose trailer in the prompt as a tool call and the person saw
+    // "I couldn't respond" for a turn that had every chance to recover.
+    test('emits client-tool-result with isError=true and continues (does not fail nextTurn)', async () => {
       mockSseResponse(anthropicToolUseSse('toolu_unk', 'unknown_tool', '{}'));
 
       const result = executeClientToolTurn({
@@ -707,7 +736,49 @@ describe('executeClientToolTurn', () => {
         expect(errorEvent.result).toMatch(/unknown tool/i);
       }
 
-      expect(turnResult).toFailWith(/unknown tool/i);
+      // The turn recovers: the stream completes and the error rides in the continuation, so the
+      // model is told what went wrong and can try again.
+      expect(turnResult).toSucceedAndSatisfy((r) => {
+        expect(r.continuation).toBeDefined();
+        expect(r.continuation?.toolCallsSummary[0].isError).toBe(true);
+        expect(r.continuation?.toolCallsSummary[0].toolName).toBe('unknown_tool');
+      });
+    });
+
+    test('a known tool called after an unknown one still executes', async () => {
+      // The recovery is only worth anything if the turn genuinely carries on: pin that a second
+      // call in the same stream is still dispatched, rather than the generator having unwound.
+      mockSseResponse(
+        anthropicTwoToolUseSse(
+          { id: 'toolu_unk', name: 'unknown_tool', args: '{}' },
+          { id: 'toolu_ok', name: 'recall_memory', args: '{"query":"x"}' }
+        )
+      );
+      let executed = false;
+      const tool = makeMemoryTool(async () => {
+        executed = true;
+        return 'recalled';
+      });
+
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [tool] as IAiClientTool[],
+        model: 'claude-sonnet-4-6'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      await collect(result.value.events);
+      const turnResult = await result.value.nextTurn;
+
+      expect(executed).toBe(true);
+      expect(turnResult).toSucceedAndSatisfy((r) => {
+        expect(r.continuation?.toolCallsSummary).toHaveLength(2);
+        expect(r.continuation?.toolCallsSummary[0].isError).toBe(true);
+        expect(r.continuation?.toolCallsSummary[1].isError).toBe(false);
+      });
     });
   });
 
@@ -1372,6 +1443,41 @@ describe('executeClientToolTurn', () => {
   });
 
   describe('OpenAI provider routing', () => {
+    test('client-tool turn on a cache-reporting descriptor still captures response.usage', async () => {
+      // Round 4 added a per-descriptor gate (AiAssist.supportsCacheUsageReporting) to
+      // callOpenAiResponsesStream, threaded from callProviderCompletionStream's dispatcher —
+      // but executeClientToolTurn calls callOpenAiResponsesStream directly and initially missed
+      // it, so every client-tool stream (openai included) silently lost usage. Pins the fix.
+      const openAiSse = [
+        `event: response.completed\ndata: ${JSON.stringify({
+          response: {
+            status: 'completed',
+            // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field names are snake_case
+            usage: { input_tokens: 100, output_tokens: 20, input_tokens_details: { cached_tokens: 40 } }
+          }
+        })}\n\n`
+      ];
+      mockSseResponse(openAiSse);
+
+      const result = executeClientToolTurn({
+        descriptor: makeOpenAiDescriptor(),
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools: [{ type: 'web_search' }],
+        clientTools: [] as IAiClientTool[],
+        model: 'gpt-4o'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      const events = await collect(result.value.events);
+      const done = events.find((e) => e.type === 'done');
+      expect(done?.type).toBe('done');
+      if (done?.type !== 'done') return;
+      expect(done.usage?.reports).toBe('reads');
+      expect(done.usage?.cachedInputTokens).toBe(40);
+    });
+
     test('routes to OpenAI Responses adapter and builds function_call continuation', async () => {
       // Live wire shape: function_call_arguments.{delta,done} carry item_id (the fc_*/output-item id),
       // NOT call_id. The adapter correlates item_id → call_id via the earlier output_item.added event.

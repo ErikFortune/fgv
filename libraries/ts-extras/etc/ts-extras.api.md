@@ -70,6 +70,8 @@ declare namespace AiAssist {
         AiServerToolType,
         AiServerToolConfig,
         AiToolConfig,
+        AiToolConflictPolicy,
+        IAiToolConflictReport,
         IAiWebSearchToolConfig,
         IAiClientToolConfig,
         IAiToolAnnotations,
@@ -143,7 +145,6 @@ declare namespace AiAssist {
         isAdaptiveThinkingModel,
         usesMaxCompletionTokensField,
         toDataUrl,
-        AiThinkingMode,
         IThinkingConfig,
         IThinkingProviderConfig,
         IAnthropicThinkingOptions,
@@ -203,6 +204,16 @@ declare namespace AiAssist {
         modelSpecKey,
         modelSpec,
         resolveEffectiveTools,
+        resolveToolConflicts,
+        defaultToolConflictPolicy,
+        IAiResolvedToolConflicts,
+        AiCacheReportingLevel,
+        IAiCompletionUsage,
+        supportsCacheUsageReporting,
+        supportsPromptCacheBreakpoints,
+        supportsPromptCacheRouting,
+        supportsStreamUsageOption,
+        IAiPromptCacheRoutingSupport,
         ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
         AiStructuredOutputFormat,
         IAiStructuredOutputCapability,
@@ -224,7 +235,10 @@ declare namespace AiAssist {
         IGenerateJsonCompletionResult,
         JsonPromptHint,
         anthropicEffortToBudgetTokens,
-        IResolvedThinkingConfig
+        IResolvedThinkingConfig,
+        IAiCacheRequest,
+        validateAiCacheRequest,
+        validateCacheBreakpoints
     }
 }
 export { AiAssist }
@@ -238,6 +252,12 @@ const aiAssistProviderConfig: Converter<IAiAssistProviderConfig>;
 //
 // @public
 const aiAssistSettings: Converter<IAiAssistSettings>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type AiCacheReportingLevel = 'reads' | 'reads-and-writes';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -305,9 +325,6 @@ const aiServerToolType: Converter<AiServerToolType>;
 // @public
 type AiStructuredOutputFormat = 'openai-json-schema' | 'openai-responses-format' | 'gemini-response-schema' | 'anthropic-tool-forced';
 
-// @public
-type AiThinkingMode = 'optional' | 'required' | 'unsupported';
-
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -315,6 +332,11 @@ const aiToolAnnotations: Converter<IAiToolAnnotations>;
 
 // @public
 type AiToolConfig = AiServerToolConfig | IAiClientToolConfig;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type AiToolConflictPolicy = 'drop-server-tools' | 'prefer-server-tools' | 'fail';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiToolEnablement"
 //
@@ -676,6 +698,11 @@ const DEFAULT_SECRET_ITERATIONS: number;
 
 // @public
 const DEFAULT_TIMEOUT_MS: number;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const defaultToolConflictPolicy: AiToolConflictPolicy;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1151,6 +1178,12 @@ interface IAiAssistSettings {
 }
 
 // @public
+interface IAiCacheRequest {
+    readonly cacheKey?: string;
+    readonly systemBreakpoints?: ReadonlyArray<number>;
+}
+
+// @public
 interface IAiClientTool<TParams = unknown> {
     readonly config: IAiClientToolConfig<TParams>;
     readonly execute: (args: TParams) => Promise<Result<unknown>>;
@@ -1167,7 +1200,7 @@ interface IAiClientToolCallSummary {
 
 // @public
 interface IAiClientToolConfig<TParams = unknown> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiToolAnnotations"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly annotations?: IAiToolAnnotations;
     readonly description: string;
     readonly name: string;
@@ -1185,6 +1218,7 @@ interface IAiClientToolContinuation {
 interface IAiClientToolTurnResult {
     readonly continuation: IAiClientToolContinuation | undefined;
     readonly fullText: string;
+    readonly toolConflicts: IAiToolConflictReport;
     readonly truncated: boolean;
 }
 
@@ -1193,6 +1227,18 @@ interface IAiCompletionResponse {
     readonly content: string;
     readonly structuredOutput: StructuredOutputEnforcement;
     readonly truncated: boolean;
+    readonly usage?: IAiCompletionUsage;
+}
+
+// @public
+interface IAiCompletionUsage {
+    readonly cachedInputTokens?: number;
+    readonly cacheWriteTokens?: number;
+    readonly outputTokens?: number;
+    readonly raw?: JsonObject;
+    readonly reports: AiCacheReportingLevel;
+    readonly totalInputTokens?: number;
+    readonly uncachedInputTokens?: number;
 }
 
 // @public
@@ -1308,6 +1354,14 @@ interface IAiModelInfo {
     readonly id: string;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IAiPromptCacheRoutingSupport {
+    readonly chatCompletionsHeader: string | undefined;
+}
+
 // @public
 interface IAiProviderDescriptor {
     readonly acceptsImageInput: boolean;
@@ -1332,11 +1386,22 @@ interface IAiProviderDescriptor {
     readonly needsSecret: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly serverToolsExclusiveWithClientTools?: ReadonlyArray<AiServerToolType>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     readonly streamingCorsRestricted: boolean;
     readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
     readonly supportedTools: ReadonlyArray<AiServerToolType>;
-    readonly thinkingMode: AiThinkingMode;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IAiResolvedToolConflicts {
+    readonly clientTools: ReadonlyArray<IAiClientTool>;
+    readonly report: IAiToolConflictReport;
+    readonly serverTools: ReadonlyArray<AiServerToolConfig>;
 }
 
 // @public
@@ -1346,6 +1411,7 @@ interface IAiStreamDone {
     readonly truncated: boolean;
     // (undocumented)
     readonly type: 'done';
+    readonly usage?: IAiCompletionUsage;
 }
 
 // @public
@@ -1415,6 +1481,15 @@ interface IAiToolAnnotations {
     readonly openWorldHint?: boolean;
     readonly readOnlyHint?: boolean;
     readonly title?: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IAiToolConflictReport {
+    readonly droppedClientTools: ReadonlyArray<string>;
+    readonly droppedServerTools: ReadonlyArray<AiServerToolType>;
+    readonly policy: AiToolConflictPolicy;
 }
 
 // @public
@@ -1697,6 +1772,8 @@ interface IExecuteClientToolTurnParams extends IChatRequest {
     readonly resolvedThinking?: IResolvedThinkingConfig;
     readonly signal?: AbortSignal;
     readonly temperature?: number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly toolConflictPolicy?: AiToolConflictPolicy;
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
 }
 
@@ -2119,6 +2196,8 @@ interface IPrivateKeyStorage {
 // @public
 interface IProviderCompletionParams extends IChatRequest {
     readonly apiKey: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly cache?: IAiCacheRequest;
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
@@ -2201,6 +2280,21 @@ interface IRemoveSecretResult {
     readonly entry: IKeyStoreEntry;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly warning?: string;
+}
+
+// @public
+interface IRenderedSegment {
+    readonly escaped: boolean;
+    readonly kind: 'literal' | 'substitution';
+    readonly length: number;
+    readonly name?: string;
+    readonly start: number;
+}
+
+// @public
+interface IRenderedTemplate {
+    readonly segments: ReadonlyArray<IRenderedSegment>;
+    readonly text: string;
 }
 
 // @public
@@ -2405,7 +2499,7 @@ function isValidMultibaseSpkiPublicKey(value: unknown): value is MultibaseSpkiPu
 
 // @public
 interface IThinkingConfig {
-    readonly effort?: 'low' | 'medium' | 'high';
+    readonly effort?: 'none' | 'low' | 'medium' | 'high';
     readonly providers?: ReadonlyArray<IThinkingProviderConfig>;
 }
 
@@ -2816,6 +2910,8 @@ declare namespace Mustache {
         IContextValidationResult,
         IMissingVariableDetail,
         IMustacheTemplateOptions,
+        IRenderedSegment,
+        IRenderedTemplate,
         IVariableRef,
         MustacheEscapeStrategy,
         MustacheTokenType,
@@ -2835,6 +2931,7 @@ class MustacheTemplate {
     // Warning: (ae-forgotten-export) The symbol "IRequiredMustacheTemplateOptions" needs to be exported by the entry point index.d.ts
     readonly options: Readonly<IRequiredMustacheTemplateOptions>;
     render(context: unknown): Result<string>;
+    renderWithSegments(context: unknown): Result<IRenderedTemplate>;
     readonly template: string;
     static validate(template: string, options?: IMustacheTemplateOptions): Result<true>;
     validate(): Result<true>;
@@ -3044,6 +3141,12 @@ function resolveProviderModel(descriptor: IAiProviderDescriptor, modelOverride: 
 // @public
 function resolveStructuredOutputCapability(descriptor: IAiProviderDescriptor, modelId: string): IAiStructuredOutputCapability | undefined;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function resolveToolConflicts(descriptor: IAiProviderDescriptor, serverTools: ReadonlyArray<AiServerToolConfig> | undefined, clientTools: ReadonlyArray<IAiClientTool>, policy?: AiToolConflictPolicy): Result<IAiResolvedToolConflicts>;
+
 // @public
 const RETRY_AFTER_STATUSES: ReadonlyArray<number>;
 
@@ -3167,6 +3270,9 @@ type StructuredOutputRequest = ISchemaStructuredOutputRequest | IJsonObjectStruc
 // @public
 const SUPPORTED_SCHEMES: ReadonlyArray<string>;
 
+// @public
+function supportsCacheUsageReporting(descriptor: IAiProviderDescriptor): boolean;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //
 // @public
@@ -3176,6 +3282,22 @@ function supportsEmbedding(descriptor: IAiProviderDescriptor): boolean;
 //
 // @public
 function supportsImageGeneration(descriptor: IAiProviderDescriptor): boolean;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function supportsPromptCacheBreakpoints(descriptor: IAiProviderDescriptor): boolean;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function supportsPromptCacheRouting(descriptor: IAiProviderDescriptor): IAiPromptCacheRoutingSupport | undefined;
+
+// @public
+function supportsStreamUsageOption(descriptor: IAiProviderDescriptor): boolean;
 
 // @public
 function supportsStructuredOutput(descriptor: IAiProviderDescriptor): boolean;
@@ -3202,6 +3324,18 @@ const uint8ArrayFromBase64: Converter<Uint8Array>;
 
 // @public
 function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolean;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiCacheRequest"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "validateCacheBreakpoints"
+//
+// @public
+function validateAiCacheRequest(system: string, cache: IAiCacheRequest, maxBreakpointWrites?: number): Result<IAiCacheRequest>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiCacheRequest"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "validateAiCacheRequest"
+//
+// @public
+function validateCacheBreakpoints(systemLength: number, cache: IAiCacheRequest, maxBreakpointWrites?: number): Result<IAiCacheRequest>;
 
 // @public
 function validateResolvedOptions(modelId: string, capability: IAiImageModelCapability, resolved: IResolvedImageOptions): Result<IResolvedImageOptions>;

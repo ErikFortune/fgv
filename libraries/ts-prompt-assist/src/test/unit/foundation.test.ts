@@ -32,6 +32,7 @@ import {
   SlotName,
   SlotBinding,
   allOutputContractKindValues,
+  allPromptCacheStabilityValues,
   allPromptStoreEventKindValues,
   allResourceSubstitutionModeValues,
   allSlotBindingKindValues,
@@ -123,6 +124,7 @@ describe('ts-prompt-assist foundation', () => {
         'bindings-changed',
         'qualifier-axes-changed'
       ]);
+      expect(allPromptCacheStabilityValues).toEqual(['frozen', 'per-conversation', 'per-request']);
     });
 
     test('EnumConvert routes valid values', () => {
@@ -134,6 +136,10 @@ describe('ts-prompt-assist foundation', () => {
       expect(EnumConvert.promptStoreEventKind.convert('descriptor-removed')).toSucceedWith(
         'descriptor-removed'
       );
+      expect(EnumConvert.promptCacheStability.convert('frozen')).toSucceedWith('frozen');
+      expect(EnumConvert.promptCacheStability.convert('per-conversation')).toSucceedWith('per-conversation');
+      expect(EnumConvert.promptCacheStability.convert('per-request')).toSucceedWith('per-request');
+      expect(EnumConvert.promptCacheStability.convert('nope')).toFail();
       expect(EnumConvert.slotBindingKind.convert('nope')).toFail();
     });
 
@@ -228,6 +234,32 @@ describe('ts-prompt-assist foundation', () => {
       expect(descriptorConverter.convert(descYaml)).toSucceedAndSatisfy((d) => {
         expect(d.output.kind).toBe('json');
       });
+    });
+
+    test('descriptorConverter round-trips a slot cacheStability annotation', () => {
+      const descYaml = {
+        id: 'g',
+        title: 'G',
+        schemaVersion: '1',
+        surface: 'chat',
+        slots: [{ name: 'a', description: '', cacheStability: 'frozen' }],
+        output: { kind: 'free-text' }
+      };
+      expect(descriptorConverter.convert(descYaml)).toSucceedAndSatisfy((d) => {
+        expect(d.slots[0].cacheStability).toBe('frozen');
+      });
+    });
+
+    test('descriptorConverter rejects an invalid slot cacheStability value', () => {
+      const descYaml = {
+        id: 'g',
+        title: 'G',
+        schemaVersion: '1',
+        surface: 'chat',
+        slots: [{ name: 'a', description: '', cacheStability: 'sometimes' }],
+        output: { kind: 'free-text' }
+      };
+      expect(descriptorConverter.convert(descYaml)).toFail();
     });
 
     test('promptFileConverter fails on non-object input', () => {
