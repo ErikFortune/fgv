@@ -548,6 +548,47 @@ describe('useAiAssist › generateDirect', () => {
     expect(directSpy).not.toHaveBeenCalled();
   });
 
+  test('a configured endpoint plus a proxy now fails loudly instead of misrouting', async () => {
+    // The hook threads `providerConfig.endpoint` into the params object handed to
+    // WHICHEVER branch runs. On the direct branch it is honored. On the proxied
+    // branch it used to be silently discarded, so a user who had pinned a
+    // self-hosted or LAN upstream AND turned on a proxy had their prompt sent to
+    // the provider's public API instead — visible only by watching proxy traffic.
+    //
+    // ts-extras now refuses it. This is the only place the two halves meet, and
+    // nothing covered the combination before, which is most of why it survived.
+    // So: no spy. The real callProxiedCompletion runs, and its refusal has to
+    // reach the caller as a legible failure. No wire call happens either way —
+    // the refusal fires before any fetch — so this stays a unit test.
+    //
+    // Wrong impls this catches: the hook dropping `endpoint` on the proxied
+    // branch to dodge the refusal (which would restore the silent misroute one
+    // layer up), and the failure being swallowed rather than surfaced.
+    proxiedSpy.mockRestore();
+
+    const settings: AiAssist.IAiAssistSettings = {
+      providers: [
+        {
+          provider: 'xai-grok',
+          secretName: 'secret.xai-grok',
+          endpoint: 'http://192.168.1.50:11434/v1'
+        }
+      ],
+      proxyUrl: 'http://proxy.local:3001'
+    };
+    const keyStore = new StubKeyStore(true, new Map([['secret.xai-grok', 'sk-xai']]));
+    const { result } = renderHook(() => useAiAssist({ settings, keyStore }));
+
+    let r: Result<unknown> | undefined;
+    await act(async () => {
+      r = await result.current.generateDirect('xai-grok', TEST_PROMPT, succeed);
+    });
+
+    expect(r?.isFailure()).toBe(true);
+    expect(r?.message).toMatch(/endpoint is not supported on the proxied path/i);
+    expect(directSpy).not.toHaveBeenCalled();
+  });
+
   test('routes direct (skips proxy) for non-CORS providers when proxyAllProviders is false', async () => {
     mockCompletion(directSpy, { content: '{"x":1}', truncated: false, structuredOutput: 'none' });
     const settings: AiAssist.IAiAssistSettings = {

@@ -431,7 +431,7 @@ export async function callProviderListModels(
  * that is where it stays. `endpoint` names *which server answers at all*, so
  * ignoring it would list the provider's public catalog in place of the host the
  * caller pinned; it is **refused**, on the same terms as
- * {@link AiAssist.callProxiedCompletion}.
+ * `callProxiedCompletion`.
  *
  * @public
  */

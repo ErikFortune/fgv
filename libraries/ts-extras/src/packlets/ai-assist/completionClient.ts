@@ -1010,7 +1010,7 @@ export async function callProviderCompletion(
  * `endpoint` is **refused**: it names where the prompt must go, the proxy is what
  * makes that call, and the field has never been sent to one — so honoring it is
  * unverifiable and ignoring it would reach the provider's default upstream instead
- * of the host the caller pinned. Use {@link callProviderCompletion}, or point the
+ * of the host the caller pinned. Use `callProviderCompletion`, or point the
  * proxy itself at the intended upstream.
  *
  * @param proxyUrl - Base URL of the proxy server

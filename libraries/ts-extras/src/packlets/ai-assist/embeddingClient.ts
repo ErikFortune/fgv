@@ -476,11 +476,11 @@ const proxiedEmbeddingResponse: Validator<IAiEmbeddingResult> = Validators.objec
  *
  * @remarks
  * `endpoint` is **refused** on this path rather than forwarded or dropped, on the
- * same terms as {@link AiAssist.callProxiedCompletion}. It matters more here than
+ * same terms as `callProxiedCompletion`. It matters more here than
  * anywhere else: pointing `endpoint` at `http://localhost:11434/v1` is the
  * documented way to reach a local Ollama, so dropping it does not degrade the
  * answer — it sends the text to OpenAI's public API instead of the machine the
- * caller named. Use {@link AiAssist.callProviderEmbedding}, or point the proxy
+ * caller named. Use `callProviderEmbedding`, or point the proxy
  * itself at the intended upstream.
  *
  * @param proxyUrl - Base URL of the proxy server (e.g. `http://localhost:3001`).

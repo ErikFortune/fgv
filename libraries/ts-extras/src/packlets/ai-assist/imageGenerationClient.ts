@@ -617,10 +617,10 @@ export async function callProviderImageGeneration(
  *
  * @remarks
  * `endpoint` is **refused** on this path rather than forwarded or dropped, on the
- * same terms as {@link callProxiedCompletion}: a proxy cannot confirm it honored
+ * same terms as `callProxiedCompletion`: a proxy cannot confirm it honored
  * it, the field has never been sent to one, and reaching the provider's default
  * upstream instead would send the prompt somewhere the caller excluded. Use
- * {@link callProviderImageGeneration}, or point the proxy itself at the intended
+ * `callProviderImageGeneration`, or point the proxy itself at the intended
  * upstream.
  *
  * @param proxyUrl - Base URL of the proxy server
