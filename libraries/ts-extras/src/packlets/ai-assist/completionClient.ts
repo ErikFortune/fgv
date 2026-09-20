@@ -1000,6 +1000,19 @@ export async function callProviderCompletion(
  * CORS, and API key forwarding. The request body serializes the unified
  * {@link AiAssist.IChatRequest} shape (`system?` + `messages`). Enforces the same
  * non-empty / trailing-user-turn and image-input invariants as the direct path.
+ *
+ * @remarks
+ * Two parameters are handled before the body is composed, rather than forwarded.
+ * `tier` is resolved here and sent as a concrete `modelOverride`, because both
+ * halves of the resolution live on the descriptor the caller already holds — so a
+ * proxy needs no `tier` vocabulary, where a `tier` body field it did not understand
+ * would be ignored and silently serve a frontier request from the base model.
+ * `endpoint` is **refused**: it names where the prompt must go, the proxy is what
+ * makes that call, and the field has never been sent to one — so honoring it is
+ * unverifiable and ignoring it would reach the provider's default upstream instead
+ * of the host the caller pinned. Use {@link callProviderCompletion}, or point the
+ * proxy itself at the intended upstream.
+ *
  * @param proxyUrl - Base URL of the proxy server
  * @param params - Same parameters as {@link callProviderCompletion}
  * @public

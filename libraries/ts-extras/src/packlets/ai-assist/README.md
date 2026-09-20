@@ -65,11 +65,24 @@ client-side and send as a concrete `modelOverride`. Both halves of a tier resolu
 `tier` body field would instead be ignored by every proxy that predates it, silently serving a
 frontier request from the base model.
 
-`endpoint` gets the opposite treatment on both proxied entry points: it is **refused**, not
-forwarded and not dropped. It names where the prompt must go, the proxy is the one making that call,
-and no deployed proxy has ever been sent the field — so honoring it is unverifiable and ignoring it
-sends content somewhere the caller explicitly excluded. Use the direct entry point, or point the
-proxy itself at the intended upstream.
+`endpoint` gets the opposite treatment, on **every** proxied entry point — completion, completion
+stream, embedding, image generation and list-models: it is **refused**, not forwarded and not
+dropped. It names where the request must go, the proxy is the one making that call, and no deployed
+proxy has ever been sent the field — so honoring it is unverifiable and ignoring it sends content
+somewhere the caller explicitly excluded. Use the direct entry point, or point the proxy itself at
+the intended upstream.
+
+The embedding path is where this bites hardest, and the reason is in this README's own embedding
+section: pointing `endpoint` at `http://localhost:11434/v1` is the *documented* way to reach a local
+Ollama. Dropping it there does not degrade an answer — it sends the text to OpenAI instead of the
+machine the caller named.
+
+`callProxiedListModels` also declares `capabilityConfig`, and that one stays a **disclosed no-op**
+rather than becoming a refusal. It overrides how a model id is classified, and the proxy returns
+models already classified, so a caller-supplied override could only ever arrive too late; ignoring
+it yields the default classification. The distinction is the consequence, not the mechanism: a
+worse classification is a degraded answer, where a wrong host is the request going somewhere it was
+told not to.
 
 ## Quality Tiers (`base` / `advanced` / `frontier`)
 

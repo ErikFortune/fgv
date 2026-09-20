@@ -880,6 +880,22 @@ describe('callProxiedImageGeneration', () => {
     global.fetch = originalFetch;
   });
 
+  test('endpoint is refused up front rather than silently ignored', async () => {
+    // `IProviderImageGenerationParams` declares `endpoint` and the direct sibling
+    // honors it; this path used not to destructure it. Wrong impls this catches:
+    // dropping it (the original bug), and forwarding it to a proxy that has never
+    // been sent the field and would ignore it.
+    const result = await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
+      descriptor: makeImageDescriptor(),
+      apiKey: 'test-key',
+      params: { prompt: 'a cat' },
+      endpoint: 'http://192.168.1.50:8080/v1'
+    });
+
+    expect(result).toFailWith(/endpoint is not supported on the proxied path/i);
+    expect(global.fetch as jest.Mock).not.toHaveBeenCalled();
+  });
+
   test('calls the proxy image-generation endpoint and returns images', async () => {
     mockFetchResponse({
       images: [{ mimeType: 'image/png', base64: 'AAAA', revisedPrompt: 'rewritten' }]

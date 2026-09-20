@@ -421,13 +421,34 @@ export async function callProviderListModels(
  * `POST ${proxyUrl}/api/ai/list-models`. Capability config is not forwarded;
  * `capabilities` is serialized as a string array. Error body `{error: string}`
  * is surfaced as `proxy: ${error}`.
+ *
+ * @remarks
+ * `capabilityConfig` and `endpoint` are both unusable here, but they are not the
+ * same case and are not treated the same way. `capabilityConfig` overrides how a
+ * model id is classified, and the proxy returns models already classified — so a
+ * caller-supplied override could only ever have arrived too late. Ignoring it
+ * yields the default classification: a degraded answer, disclosed above, and
+ * that is where it stays. `endpoint` names *which server answers at all*, so
+ * ignoring it would list the provider's public catalog in place of the host the
+ * caller pinned; it is **refused**, on the same terms as
+ * {@link AiAssist.callProxiedCompletion}.
+ *
  * @public
  */
 export async function callProxiedListModels(
   proxyUrl: string,
   params: IProviderListModelsParams
 ): Promise<Result<ReadonlyArray<IAiModelInfo>>> {
-  const { descriptor, apiKey, capability, logger, signal } = params;
+  const { descriptor, apiKey, capability, logger, signal, endpoint } = params;
+
+  if (endpoint !== undefined) {
+    return fail(
+      `callProxiedListModels: endpoint is not supported on the proxied path — a proxy ` +
+        `cannot confirm it honored it, and silently reaching the provider's default ` +
+        `upstream would list a different server's catalog than the caller named. Use ` +
+        `callProviderListModels, or route the proxy itself at the intended upstream.`
+    );
+  }
 
   const body: Record<string, unknown> = {
     providerId: descriptor.id,

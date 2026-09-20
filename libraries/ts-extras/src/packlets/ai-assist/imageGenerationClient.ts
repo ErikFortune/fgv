@@ -614,6 +614,15 @@ export async function callProviderImageGeneration(
  * lookup, model resolution, provider dispatch, and response normalization
  * (including repackaging `referenceImages` for the upstream wire format).
  * Error body `{error: string}` is surfaced as `proxy: ${error}`.
+ *
+ * @remarks
+ * `endpoint` is **refused** on this path rather than forwarded or dropped, on the
+ * same terms as {@link callProxiedCompletion}: a proxy cannot confirm it honored
+ * it, the field has never been sent to one, and reaching the provider's default
+ * upstream instead would send the prompt somewhere the caller excluded. Use
+ * {@link callProviderImageGeneration}, or point the proxy itself at the intended
+ * upstream.
+ *
  * @param proxyUrl - Base URL of the proxy server
  * @param params - Same parameters as {@link callProviderImageGeneration}
  * @public
@@ -622,7 +631,16 @@ export async function callProxiedImageGeneration(
   proxyUrl: string,
   params: IProviderImageGenerationParams
 ): Promise<Result<IAiImageGenerationResponse>> {
-  const { descriptor, apiKey, params: request, modelOverride, logger, signal } = params;
+  const { descriptor, apiKey, params: request, modelOverride, logger, signal, endpoint } = params;
+
+  if (endpoint !== undefined) {
+    return fail(
+      `callProxiedImageGeneration: endpoint is not supported on the proxied path — a proxy ` +
+        `cannot confirm it honored it, and silently reaching the provider's default ` +
+        `upstream would send the request somewhere the caller excluded. Use ` +
+        `callProviderImageGeneration, or route the proxy itself at the intended upstream.`
+    );
+  }
 
   const body: Record<string, unknown> = {
     providerId: descriptor.id,
