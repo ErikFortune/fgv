@@ -52,11 +52,23 @@ export type AiServerToolType = 'web_search';
  */
 export interface IAiWebSearchToolConfig {
   readonly type: 'web_search';
-  /** Optional: restrict search to these domains. */
+  /**
+   * Optional: restrict search to these domains.
+   * Reaches Anthropic and the OpenAI/xAI Responses API; ignored on Gemini,
+   * whose `google_search` tool takes no configuration at all.
+   */
   readonly allowedDomains?: ReadonlyArray<string>;
-  /** Optional: exclude these domains from search. */
+  /**
+   * Optional: exclude these domains from search.
+   * Same reach as {@link AiAssist.IAiWebSearchToolConfig.allowedDomains}:
+   * Anthropic and OpenAI/xAI, ignored on Gemini.
+   */
   readonly blockedDomains?: ReadonlyArray<string>;
-  /** Optional: max number of searches per request. */
+  /**
+   * Optional: max number of searches per request.
+   * **Anthropic only** — emitted as `max_uses` by the Anthropic formatter and
+   * read nowhere else, so it is silently ignored on OpenAI/xAI and Gemini.
+   */
   readonly maxUses?: number;
   /**
    * Optional: enable image understanding during web search.

@@ -88,6 +88,11 @@ export {
  * `Result.fail` before fetch is invoked. Callers should route through
  * {@link AiAssist.callProxiedCompletionStream} or surface the failure to the user.
  *
+ * This guard is applied **here only**. `executeClientToolTurn` is also a
+ * streaming entry point and does not pre-flight the flag, so a browser
+ * client-tool turn against a `streamingCorsRestricted` provider fails at the
+ * fetch with a CORS error rather than with this legible refusal.
+ *
  * Connection-time failures (auth, network, non-2xx) surface as the outer
  * `Result.fail`. Once iteration begins, errors mid-stream surface as a
  * terminal error event ({@link AiAssist.IAiStreamError}) followed by the iterable

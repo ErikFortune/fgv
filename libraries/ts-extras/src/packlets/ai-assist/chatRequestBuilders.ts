@@ -20,8 +20,8 @@
 
 /**
  * Per-format chat request shape builders. Shared between the synchronous
- * (`apiClient.ts`) and streaming (`streamingClient.ts`) paths so the wire
- * shapes stay consistent.
+ * (`completionClient.ts`) and streaming (`streamingClient.ts`) paths so the
+ * wire shapes stay consistent.
  *
  * @packageDocumentation
  */

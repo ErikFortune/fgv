@@ -79,7 +79,12 @@ export function providerDiscriminatorForId(providerId: string): ThinkingProvider
  * @public
  */
 export interface IResolvedThinkingConfig {
-  /** Anthropic: effort level; emit-site converts to `thinking.budget_tokens` via `anthropicEffortToBudgetTokens`. */
+  /**
+   * Anthropic: effort level. The emit-site picks one of two wire shapes — on the
+   * Claude 5 family it sends the effort string verbatim in `output_config` with no
+   * budget; on older models it converts via `anthropicEffortToBudgetTokens`. See
+   * {@link AiAssist.IAnthropicThinkingConfig.effort}.
+   */
   readonly anthropicEffort?: IAnthropicThinkingConfig['effort'];
   /** OpenAI Chat: reasoning_effort value; OpenAI Responses: reasoning.effort */
   readonly openAiEffort?: IOpenAiThinkingConfig['effort'];
@@ -111,8 +116,11 @@ function genericEffortToAnthropic(effort: 'low' | 'medium' | 'high'): IAnthropic
  *
  * Policy: low = 2048, medium = 8192, high = 24000, max = 32000. The lower three
  * align with the Anthropic-published minimum-meaningful budget, a mid-range
- * default, and a "deep thinking" allotment respectively. `max` targets Opus 4.6's
- * deepest budget and stays within typical model limits.
+ * default, and a "deep thinking" allotment respectively. `max` is the deepest
+ * allotment and stays within typical model limits.
+ *
+ * Only reached for models outside the Claude 5 family — the adaptive-thinking path
+ * sends no budget at all.
  *
  * @public
  */
