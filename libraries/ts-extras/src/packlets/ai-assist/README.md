@@ -340,7 +340,9 @@ All four call sites above (Chat Completions and Responses, streaming and non-str
 are shared by every `apiFormat: 'openai'` descriptor — Groq, Mistral, Ollama, and
 self-hosted `openai-compat`, not just OpenAI and xAI Grok. Only the latter two are
 confirmed to report cache-relevant `usage`; `AiAssist.supportsCacheUsageReporting(descriptor)`
-gates all four call sites on that before any normalization runs, so an unconfirmed
+gates the four completion sites it governs on that before any normalization runs
+(see the two-gate note below — streaming Chat Completions is **not** one of them),
+so an unconfirmed
 `apiFormat: 'openai'` descriptor — including a future one — gets `usage: undefined`
 rather than a guess derived from whatever ordinary usage shape its wire happens to send.
 

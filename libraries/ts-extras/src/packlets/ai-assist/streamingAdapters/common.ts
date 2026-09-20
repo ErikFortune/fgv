@@ -68,9 +68,17 @@ export const jsonObjectOrNullValidator: Validator<JsonObject | null> = Validator
 );
 
 /**
- * Parameters for a streaming completion request. Structurally identical to
- * the non-streaming `IProviderCompletionParams`; kept as its own interface
- * so callers can be explicit about which path they're invoking.
+ * Parameters for a streaming completion request. The non-streaming
+ * `IProviderCompletionParams` shape **minus `structuredOutput` and `cache`**;
+ * kept as its own interface so callers can be explicit about which path
+ * they're invoking.
+ *
+ * @remarks
+ * The two omissions are deliberate, not oversights. Native structured output
+ * is a non-streaming feature on every provider the package supports, and the
+ * prompt-cache breakpoint emitter has no streaming wire path today — so
+ * neither field would have anywhere to go. A caller that needs either must use
+ * `callProviderCompletion`.
  *
  * @remarks
  * Carries the unified {@link AiAssist.IChatRequest} shape (`system?` + ordered

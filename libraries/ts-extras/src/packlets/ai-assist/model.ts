@@ -1509,11 +1509,25 @@ export type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4' | 'gro
  */
 export interface IAnthropicThinkingConfig {
   /**
-   * Anthropic effort level. The emit-site converts to `thinking.budget_tokens`
-   * (the integer budget the Anthropic API requires). Mapping policy: low = 2048,
-   * medium = 8192, high = 24000, max = 32000.
-   * - 'low' | 'medium' | 'high': all thinking-capable models
-   * - 'max': Opus 4.6 only
+   * Anthropic effort level, emitted as one of **two** wire shapes chosen by
+   * {@link AiAssist.isAdaptiveThinkingModel}:
+   *
+   * - **Claude 5 family** (`claude-sonnet-5`, `claude-opus-5`, `claude-fable-5`
+   *   — which includes the `base` and `advanced` tiers, so this is the default
+   *   path): an adaptive `thinking` block plus an `output_config` block
+   *   carrying `effort`. The effort string goes on the wire verbatim and
+   *   **no token budget is sent**.
+   * - **Older thinking-capable models**: an enabled `thinking` block carrying
+   *   `budget_tokens`, converted by `anthropicEffortToBudgetTokens` — low =
+   *   2048, medium = 8192, high = 24000, max = 32000.
+   *
+   * So the budget mapping is not a description of what a default Anthropic
+   * call sends; size a budget from it only when you have pinned a pre-Claude-5
+   * model.
+   *
+   * `'max'` is accepted on every thinking-capable model here — the library
+   * applies no model restriction of its own, and whether a given model accepts
+   * it is the provider's to enforce.
    */
   readonly effort?: 'low' | 'medium' | 'high' | 'max';
 }
@@ -1557,8 +1571,9 @@ export interface IGeminiThinkingConfig {
   /**
    * Whether to include thought summaries in the response.
    * @remarks
-   * INERT in phase B. Adapters never send `includeThoughts: true`.
-   * Wired up by the followup stream `ai-assist-thinking-events`.
+   * Reserved for forward compatibility and **currently ignored by every
+   * adapter** — nothing reads this field, so setting it has no effect on the
+   * request. Surfacing thinking output as stream events is not yet built.
    */
   readonly includeThoughts?: boolean;
 }

@@ -34,6 +34,7 @@
 
 import { type Result } from '@fgv/ts-utils';
 import { type JsonObject, type JsonSchema } from '@fgv/ts-json-base';
+import type { IAiCompletionUsage } from './usageTypes';
 
 // ============================================================================
 // Server-Side Tools
@@ -51,11 +52,23 @@ export type AiServerToolType = 'web_search';
  */
 export interface IAiWebSearchToolConfig {
   readonly type: 'web_search';
-  /** Optional: restrict search to these domains. */
+  /**
+   * Optional: restrict search to these domains.
+   * Reaches Anthropic and the OpenAI/xAI Responses API; ignored on Gemini,
+   * whose `google_search` tool takes no configuration at all.
+   */
   readonly allowedDomains?: ReadonlyArray<string>;
-  /** Optional: exclude these domains from search. */
+  /**
+   * Optional: exclude these domains from search.
+   * Same reach as {@link AiAssist.IAiWebSearchToolConfig.allowedDomains}:
+   * Anthropic and OpenAI/xAI, ignored on Gemini.
+   */
   readonly blockedDomains?: ReadonlyArray<string>;
-  /** Optional: max number of searches per request. */
+  /**
+   * Optional: max number of searches per request.
+   * **Anthropic only** — emitted as `max_uses` by the Anthropic formatter and
+   * read nowhere else, so it is silently ignored on OpenAI/xAI and Gemini.
+   */
   readonly maxUses?: number;
   /**
    * Optional: enable image understanding during web search.
@@ -381,4 +394,49 @@ export interface IAiClientToolTurnResult {
    * because the pinned model cannot ground and call functions in one request.
    */
   readonly toolConflicts: IAiToolConflictReport;
+  /**
+   * Token usage for this turn's provider call, when the provider reports it.
+   *
+   * @remarks
+   * The same `IAiCompletionUsage` the plain completion paths carry — normalized
+   * cache reads/writes, output and total input tokens, and a `reports` level
+   * saying which of those the provider is able to tell you. Sourced from the
+   * terminal `done` event of the underlying stream, so it is exactly what a
+   * caller watching `events` would see.
+   *
+   * Reading it here spares you *inspecting* the event stream, not *driving* it:
+   * `nextTurn` only resolves once `events` has been iterated to completion, the
+   * same as every other field on this interface.
+   *
+   * **One call, one usage.** `executeClientToolTurn` makes a single provider
+   * call per invocation; the multi-round loop is driven by the caller
+   * re-invoking with `continuationMessages`. So each result's `usage` already
+   * *is* one round's usage, and a host accumulating a per-turn total sums the
+   * results of its own loop. There is deliberately no `perRound` array here —
+   * it could only ever have one entry.
+   *
+   * **Optional on purpose, unlike `toolConflicts`.** The library always knows
+   * what it did to your tools, so a silent `toolConflicts` would be a defect
+   * and it is required. It cannot always know what a turn cost, so a required
+   * `usage` could only be satisfied by inventing one — the exact failure
+   * {@link AiAssist.IAiCompletionUsage.reports} exists to prevent.
+   *
+   * Absent means **no normalized usage is being exposed**, which covers two
+   * cases, the same as on {@link AiAssist.IAiCompletionResponse.usage} and
+   * {@link AiAssist.IAiStreamDone.usage}:
+   *
+   * - the provider reported nothing; or
+   * - the provider reported something the library declines to normalize,
+   *   because this descriptor is outside
+   *   {@link AiAssist.supportsCacheUsageReporting}. Groq, Mistral, Ollama and
+   *   self-hosted `openai-compat` share the OpenAI-format adapter but have
+   *   unverified usage shapes, so a raw `usage` block from one of them is
+   *   dropped rather than stamped with a cache-reporting level it may not
+   *   have earned.
+   *
+   * Either way it is never a fabricated zero. If you need to tell the two
+   * apart, the descriptor answers it: the second case is a property of the
+   * provider you picked, not of the turn.
+   */
+  readonly usage?: IAiCompletionUsage;
 }

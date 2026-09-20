@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: IAiClientToolTurnResult gains an optional usage field carrying the same IAiCompletionUsage the plain completion paths report, so a host driving tool-using turns through executeClientToolTurn can read token cost and cache hit rate off the turn result instead of watching the event stream for the terminal done event. Additive; absent means the provider reported nothing, never a fabricated zero. Also corrects the IExecuteClientToolTurnResult.events docstring, which listed only the tool-dispatch events and read as though done and error were not forwarded — they always were.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
