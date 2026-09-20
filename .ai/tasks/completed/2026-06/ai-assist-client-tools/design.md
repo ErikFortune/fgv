@@ -790,7 +790,15 @@ In all three adapters, the wire format is emitted via `.toJson()` at the adapter
 ### 2.6 Error and refusal handling
 
 **Model calls a tool that isn't in the client tools list:**
-The streaming adapter receives a `client-tool-call-done` event for an unknown tool name. The round-trip helper returns `Result.fail` via the `nextTurn` promise: `"model called unknown tool: ${toolName}"`. The consumer sees a `client-tool-result` event with `isError: true` before the fail surfaces.
+~~The streaming adapter receives a `client-tool-call-done` event for an unknown tool name. The round-trip helper returns `Result.fail` via the `nextTurn` promise: `"model called unknown tool: ${toolName}"`. The consumer sees a `client-tool-result` event with `isError: true` before the fail surfaces.~~
+
+> **Superseded 2026-09-19** (consumer ask from PersonAIlity). The adapter still emits the
+> `client-tool-result` with `isError: true` and the same message, but the turn **continues** instead
+> of terminating — the error rides in the continuation and the model gets a chance to react, the
+> same as the two cases below it. The reasoning is the taxonomy this section itself sets out: a
+> model naming a tool the host never registered is a *model* error, and every other model error
+> here continues. Only host-machinery errors (a gate `fail`/reject) terminate a turn. The original
+> shape cost a recoverable turn whenever a model read something in the prompt as a tool call.
 
 **Tool callback returns `Result.fail`:**
 The round-trip helper treats this as a tool error. It constructs a `tool_result` with an error indicator (provider-specific: Anthropic has `is_error: true` on `tool_result`; OpenAI/xAI and Gemini receive the error text as the result string). The model is given the error result and continues. The `client-tool-result` event has `isError: true`. If the model produces a `tool_use` for the same tool again immediately (retry loop), `maxRoundTrips` protects against infinite cycles.

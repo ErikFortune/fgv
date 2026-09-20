@@ -784,8 +784,19 @@ export function executeClientToolTurn(
           };
           yield resultEvent;
           toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
-          resolveNextTurn(fail(errMsg));
-          return;
+          // A model naming a tool the host never registered is a *model* error, and this
+          // module's taxonomy (see IToolExecutionDecision's remarks) puts model errors on the
+          // continue side: an arg-validation failure, an `execute` failure and a gate `deny`
+          // all yield an isError tool-result and let the model react. Only host-machinery
+          // errors — a gate `fail`/reject — terminate the turn. This branch used to terminate,
+          // which cost a recoverable turn: a model that emits one bad tool name (for instance,
+          // reading a prose trailer in the prompt as a tool) ended the stream instead of being
+          // told and trying again.
+          //
+          // Safe on the wire: both continuation builders correlate results by call id and
+          // explicitly never by tool name, so an unrecognized name cannot malform the
+          // continuation — the id is the one the model just emitted.
+          continue;
         }
 
         const validationResult = tool.config.parametersSchema.validate(args);
