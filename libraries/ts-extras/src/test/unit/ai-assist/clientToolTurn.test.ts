@@ -1442,6 +1442,137 @@ describe('executeClientToolTurn', () => {
     });
   });
 
+  describe('usage on the client-tool path, per provider', () => {
+    // These pin a claim made to a consumer: that token usage is reachable on the
+    // client-tool path for every provider that reports it, and has been since
+    // before `IAiClientToolTurnResult.usage` existed. The `done` assertions
+    // describe behavior that predates this change; the `nextTurn` assertions
+    // describe what it adds. Anthropic and Gemini compute usage unconditionally,
+    // so nothing gates them — but that had never been asserted from *this* path,
+    // only from the plain streaming one, and a path can go quiet without a line
+    // changing.
+
+    test('Anthropic: usage reaches both the done event and nextTurn', async () => {
+      mockSseResponse([
+        `event: message_start\ndata: ${JSON.stringify({
+          message: {
+            usage: {
+              input_tokens: 100,
+              // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field names are snake_case
+              cache_read_input_tokens: 40,
+              // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field names are snake_case
+              cache_creation_input_tokens: 5
+            }
+          }
+        })}\n\n`,
+        `event: content_block_start\ndata: ${JSON.stringify({
+          index: 0,
+
+          content_block: { type: 'text' }
+        })}\n\n`,
+        `event: content_block_delta\ndata: ${JSON.stringify({
+          index: 0,
+          delta: { type: 'text_delta', text: 'hi' }
+        })}\n\n`,
+        `event: content_block_stop\ndata: ${JSON.stringify({ index: 0 })}\n\n`,
+        `event: message_delta\ndata: ${JSON.stringify({
+          delta: { stop_reason: 'end_turn' },
+
+          usage: { output_tokens: 20 }
+        })}\n\n`,
+        `event: message_stop\ndata: {}\n\n`
+      ]);
+
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [makeMemoryTool(async () => 'x')] as IAiClientTool[],
+        model: 'claude-sonnet-4-6'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      const events = await collect(result.value.events);
+      const done = events.find((e) => e.type === 'done');
+      expect(done?.type).toBe('done');
+      if (done?.type !== 'done') return;
+      expect(done.usage?.reports).toBe('reads-and-writes');
+      expect(done.usage?.cachedInputTokens).toBe(40);
+      expect(done.usage?.cacheWriteTokens).toBe(5);
+
+      expect(await result.value.nextTurn).toSucceedAndSatisfy((turn) => {
+        expect(turn.usage).toEqual(done.usage);
+      });
+    });
+
+    test('Gemini: usage reaches both the done event and nextTurn', async () => {
+      mockSseResponse([
+        `data: ${JSON.stringify({
+          candidates: [{ content: { parts: [{ text: 'hi' }] }, finishReason: 'STOP' }],
+          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 20, cachedContentTokenCount: 40 }
+        })}\n\n`
+      ]);
+
+      const result = executeClientToolTurn({
+        descriptor: makeGeminiDescriptor(),
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [makeMemoryTool(async () => 'x')] as IAiClientTool[],
+        model: 'gemini-3.5-flash'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      const events = await collect(result.value.events);
+      const done = events.find((e) => e.type === 'done');
+      expect(done?.type).toBe('done');
+      if (done?.type !== 'done') return;
+      // Gemini nests the cached count inside promptTokenCount, so the uncached
+      // figure is a subtraction — pin it, since a consumer reading cache hit rate
+      // off these two numbers depends on that correction.
+      expect(done.usage?.cachedInputTokens).toBe(40);
+      expect(done.usage?.uncachedInputTokens).toBe(60);
+
+      expect(await result.value.nextTurn).toSucceedAndSatisfy((turn) => {
+        expect(turn.usage).toEqual(done.usage);
+      });
+    });
+
+    test('a descriptor outside the cache-reporting set gets no usage, not a zero', async () => {
+      // supportsCacheUsageReporting gates the OpenAI-format adapter to openai and
+      // xai-grok, because the same adapter also carries groq / mistral / ollama /
+      // openai-compat, whose usage shapes are unverified. A consumer on one of
+      // those sees `undefined` here and on the plain path alike — the gate is not
+      // specific to client-tool turns, and this pins that it is not silently
+      // bypassed on this path either.
+      mockSseResponse([
+        `event: response.completed\ndata: ${JSON.stringify({
+          response: {
+            status: 'completed',
+
+            usage: { input_tokens: 100, output_tokens: 20 }
+          }
+        })}\n\n`
+      ]);
+
+      const result = executeClientToolTurn({
+        descriptor: { ...makeOpenAiDescriptor(), id: 'groq' },
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [] as IAiClientTool[],
+        model: 'llama-3.3-70b-versatile'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      await collect(result.value.events);
+      expect(await result.value.nextTurn).toSucceedAndSatisfy((turn) => {
+        expect(turn.usage).toBeUndefined();
+      });
+    });
+  });
+
   describe('OpenAI provider routing', () => {
     test('client-tool turn on a cache-reporting descriptor still captures response.usage', async () => {
       // Round 4 added a per-descriptor gate (AiAssist.supportsCacheUsageReporting) to
@@ -1476,6 +1607,117 @@ describe('executeClientToolTurn', () => {
       if (done?.type !== 'done') return;
       expect(done.usage?.reports).toBe('reads');
       expect(done.usage?.cachedInputTokens).toBe(40);
+    });
+
+    test('the same usage also resolves on nextTurn, not only on the done event', async () => {
+      // Consumer ask, 2026-09-20: a host driving tool-using turns had to watch the
+      // event stream to learn what a round cost, while the plain completion paths
+      // hand it back on the result. The figure was always crossing the boundary on
+      // `done` (the test above pins that); this pins that `nextTurn` carries the
+      // same object, so a host accumulating per-turn cost never has to scrape a
+      // stream it is otherwise not interested in.
+      const openAiSse = [
+        `event: response.completed\ndata: ${JSON.stringify({
+          response: {
+            status: 'completed',
+            // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field names are snake_case
+            usage: { input_tokens: 100, output_tokens: 20, input_tokens_details: { cached_tokens: 40 } }
+          }
+        })}\n\n`
+      ];
+      mockSseResponse(openAiSse);
+
+      const result = executeClientToolTurn({
+        descriptor: makeOpenAiDescriptor(),
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tools: [{ type: 'web_search' }],
+        clientTools: [] as IAiClientTool[],
+        model: 'gpt-4o'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      const events = await collect(result.value.events);
+      const done = events.find((e) => e.type === 'done');
+
+      expect(await result.value.nextTurn).toSucceedAndSatisfy((turn) => {
+        expect(turn.usage?.reports).toBe('reads');
+        expect(turn.usage?.cachedInputTokens).toBe(40);
+        expect(turn.usage?.outputTokens).toBe(20);
+        // Same figure on both surfaces — not two independently derived numbers
+        // that could drift.
+        if (done?.type === 'done') {
+          expect(turn.usage).toEqual(done.usage);
+        }
+      });
+    });
+
+    test('usage is absent on nextTurn when the provider reported none — never a zero', async () => {
+      // Wrong impl this catches: defaulting the field (`usage ?? emptyUsage`, or a
+      // zeroed object) so a host cannot tell "this provider does not report" from
+      // "this turn genuinely cost nothing". That distinction is the whole reason
+      // IAiCompletionUsage.reports exists, and it is why this field is optional
+      // rather than required like toolConflicts.
+      mockSseResponse([
+        `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+      ]);
+
+      const result = executeClientToolTurn({
+        descriptor: makeOpenAiDescriptor(),
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [] as IAiClientTool[],
+        model: 'gpt-4o'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      await collect(result.value.events);
+      expect(await result.value.nextTurn).toSucceedAndSatisfy((turn) => {
+        expect(turn.usage).toBeUndefined();
+      });
+    });
+
+    test('usage survives a turn that actually dispatched a tool', async () => {
+      // The two tests above take the no-tool-calls resolution path. A turn that
+      // dispatches a tool resolves through the continuation-building path instead,
+      // and that is the path a tool-loop host is always on — so pin it there too.
+      // Wrong impl this catches: threading usage into only one of the two
+      // `resolveNextTurn(succeed(...))` sites.
+      mockSseResponse([
+        `event: response.output_item.added\ndata: ${JSON.stringify({
+          item: { type: 'function_call', id: 'fc_u1', name: 'recall_memory', call_id: 'call_u1' }
+        })}\n\n`,
+        `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
+          item_id: 'fc_u1',
+          arguments: '{"query":"x"}'
+        })}\n\n`,
+        `event: response.completed\ndata: ${JSON.stringify({
+          response: {
+            status: 'completed',
+            // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field names are snake_case
+            usage: { input_tokens: 77, output_tokens: 11, input_tokens_details: { cached_tokens: 7 } }
+          }
+        })}\n\n`
+      ]);
+
+      const result = executeClientToolTurn({
+        descriptor: makeOpenAiDescriptor(),
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [makeMemoryTool(async () => 'recalled')] as IAiClientTool[],
+        model: 'gpt-4o'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      await collect(result.value.events);
+      expect(await result.value.nextTurn).toSucceedAndSatisfy((turn) => {
+        expect(turn.continuation).toBeDefined();
+        expect(turn.usage?.cachedInputTokens).toBe(7);
+        expect(turn.usage?.outputTokens).toBe(11);
+      });
     });
 
     test('routes to OpenAI Responses adapter and builds function_call continuation', async () => {

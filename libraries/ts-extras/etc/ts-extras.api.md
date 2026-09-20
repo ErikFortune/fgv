@@ -1220,6 +1220,10 @@ interface IAiClientToolTurnResult {
     readonly fullText: string;
     readonly toolConflicts: IAiToolConflictReport;
     readonly truncated: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly usage?: IAiCompletionUsage;
 }
 
 // @public
@@ -1781,6 +1785,8 @@ interface IExecuteClientToolTurnParams extends IChatRequest {
 //
 // @public
 interface IExecuteClientToolTurnResult {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly events: AsyncIterable<IAiStreamEvent>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly nextTurn: Promise<Result<IAiClientToolTurnResult>>;

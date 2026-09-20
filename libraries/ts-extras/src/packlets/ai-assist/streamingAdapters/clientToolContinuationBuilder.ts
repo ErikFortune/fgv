@@ -53,6 +53,7 @@ import {
   resolveProviderModel
 } from '../model';
 import { resolveToolConflicts } from '../toolFormats';
+import type { IAiCompletionUsage } from '../usageTypes';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { splitChatRequest } from '../chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from '../endpoint';
@@ -544,8 +545,23 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
 export interface IExecuteClientToolTurnResult {
   /**
    * The unified-event iterable. Callers iterate this to drive the streaming UI.
-   * The iterable forwards `text-delta`, `tool-event`, `client-tool-call-start`,
-   * `client-tool-call-done`, and `client-tool-result` events through.
+   *
+   * @remarks
+   * Forwards every event the underlying adapter emits: `text-delta`,
+   * `tool-event`, `done` and `error` come through from the provider stream, and
+   * `client-tool-call-start`, `client-tool-call-done` and `client-tool-result`
+   * are the tool-dispatch events this layer adds.
+   *
+   * The `done` event is the terminal one and carries
+   * {@link AiAssist.IAiStreamDone.usage} when the provider reports it — this
+   * iterable is not a text-only view. A caller that only wants the token counts
+   * does not have to watch the stream for them: the same figure is on
+   * {@link AiAssist.IAiClientToolTurnResult.usage} when `nextTurn` resolves.
+   *
+   * (An earlier version of this comment listed only the five non-terminal
+   * events. It was describing the tool-dispatch subset, but it read as the
+   * complete set, and at least one consumer reasonably concluded from it that
+   * usage never crossed the package boundary on this path. It always did.)
    */
   readonly events: AsyncIterable<IAiStreamEvent>;
   /**
@@ -769,12 +785,16 @@ export function executeClientToolTurn(
 
     let truncated = false;
     let fullText = '';
+    let usage: IAiCompletionUsage | undefined;
     let streamError: string | undefined;
 
     for await (const event of streamResult.value) {
       if (event.type === 'done') {
         truncated = event.truncated;
         fullText = event.fullText;
+        // Absent when the provider reported nothing — carried through as absent
+        // rather than defaulted, so a caller can tell "not reported" from zero.
+        usage = event.usage;
         yield event;
         continue;
       }
@@ -968,7 +988,7 @@ export function executeClientToolTurn(
     }
 
     if (toolResults.length === 0) {
-      resolveNextTurn(succeed({ continuation: undefined, truncated, fullText, toolConflicts }));
+      resolveNextTurn(succeed({ continuation: undefined, truncated, fullText, toolConflicts, usage }));
       return;
     }
 
@@ -1013,7 +1033,7 @@ export function executeClientToolTurn(
       continuation = { ...continuation, messages: [...continuationMessages, ...continuation.messages] };
     }
 
-    resolveNextTurn(succeed({ continuation, truncated, fullText, toolConflicts }));
+    resolveNextTurn(succeed({ continuation, truncated, fullText, toolConflicts, usage }));
   }
 
   return succeed({
