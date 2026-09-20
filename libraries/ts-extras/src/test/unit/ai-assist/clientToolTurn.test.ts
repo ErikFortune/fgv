@@ -1442,6 +1442,45 @@ describe('executeClientToolTurn', () => {
     });
   });
 
+  describe('nextTurn is driven by the event iterable', () => {
+    test('nextTurn does not resolve until `events` is consumed', async () => {
+      // Copilot, PR #678: `nextTurn` is resolved from inside `eventGenerator()`,
+      // and an async generator does not begin executing until something iterates
+      // it. So `await nextTurn` without touching `events` waits forever — and the
+      // response body is never drained either.
+      //
+      // This is not new; `continuation`, `truncated` and `fullText` have always
+      // arrived the same way. What was new was documentation actively inviting the
+      // trap: the first draft of the usage docs told callers they "do not have to
+      // watch the stream". Pin the real contract so the docs cannot drift from it
+      // again.
+      mockSseResponse([
+        `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+      ]);
+
+      const result = executeClientToolTurn({
+        descriptor: makeOpenAiDescriptor(),
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [] as IAiClientTool[],
+        model: 'gpt-4o'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      const pending = Symbol('pending');
+      const raced = await Promise.race([
+        result.value.nextTurn,
+        new Promise((resolve) => setTimeout(() => resolve(pending), 50))
+      ]);
+      expect(raced).toBe(pending);
+
+      // Draining `events` is what lets it resolve.
+      await collect(result.value.events);
+      expect(await result.value.nextTurn).toSucceed();
+    });
+  });
+
   describe('usage on the client-tool path, per provider', () => {
     // These pin a claim made to a consumer: that token usage is reachable on the
     // client-tool path for every provider that reports it, and has been since

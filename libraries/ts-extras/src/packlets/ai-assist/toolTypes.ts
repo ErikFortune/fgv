@@ -404,6 +404,10 @@ export interface IAiClientToolTurnResult {
    * terminal `done` event of the underlying stream, so it is exactly what a
    * caller watching `events` would see.
    *
+   * Reading it here spares you *inspecting* the event stream, not *driving* it:
+   * `nextTurn` only resolves once `events` has been iterated to completion, the
+   * same as every other field on this interface.
+   *
    * **One call, one usage.** `executeClientToolTurn` makes a single provider
    * call per invocation; the multi-round loop is driven by the caller
    * re-invoking with `continuationMessages`. So each result's `usage` already

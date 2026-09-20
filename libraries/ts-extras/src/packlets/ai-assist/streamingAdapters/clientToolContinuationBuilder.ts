@@ -555,8 +555,9 @@ export interface IExecuteClientToolTurnResult {
    * The `done` event is the terminal one and carries
    * {@link AiAssist.IAiStreamDone.usage} when the provider reports it — this
    * iterable is not a text-only view. A caller that only wants the token counts
-   * does not have to watch the stream for them: the same figure is on
-   * {@link AiAssist.IAiClientToolTurnResult.usage} when `nextTurn` resolves.
+   * can read them off {@link AiAssist.IAiClientToolTurnResult.usage} instead of
+   * matching on events — but it must still iterate this to completion, because
+   * that is what drives `nextTurn` to resolve at all.
    *
    * (An earlier version of this comment listed only the five non-terminal
    * events. It was describing the tool-dispatch subset, but it read as the
@@ -568,6 +569,13 @@ export interface IExecuteClientToolTurnResult {
    * Resolves when the stream terminates. On success, carries the
    * {@link AiAssist.IAiClientToolTurnResult} with the optional continuation for the
    * next round. On failure, carries the error message.
+   *
+   * @remarks
+   * **You must drive `events` for this to resolve.** It is settled from inside
+   * the generator backing `events`, and an async generator does not start until
+   * something iterates it — so `await nextTurn` on its own waits forever, and
+   * the response body is never drained. Iterate `events` to completion (ignore
+   * the events if you do not want them) and then await this.
    */
   readonly nextTurn: Promise<Result<IAiClientToolTurnResult>>;
 }
