@@ -1378,6 +1378,46 @@ describe('callProxiedCompletionStream', () => {
     global.fetch = originalFetch;
   });
 
+  test('an unrecognized event type is dropped and the stream carries on', async () => {
+    // Sibling to 'skips events with unknown type' below, and not a duplicate of it.
+    // That one feeds a type nobody defines ('unknown-future-event') and pins
+    // forward-compatibility. This one feeds a REAL member of IAiStreamEvent that the
+    // proxy contract deliberately excludes, and pins the documented boundary: the
+    // path carries four of the seven variants, and the three `client-tool-*` ones
+    // are discarded because nothing on this path can produce them.
+    //
+    // Both matter because the branch they share used to carry
+    // `c8 ignore ... defensive`, asserting it was unreachable — on the one branch
+    // that silently discards data, while a test twelve lines away was already
+    // proving it reachable. The directive is gone; these are what hold it.
+    //
+    // Wrong impls this catches: forwarding an event the contract says is not
+    // carried, and aborting the stream on one rather than skipping it.
+    mockSseResponse([
+      `data: ${JSON.stringify({ type: 'text-delta', delta: 'before' })}\n\n`,
+      `data: ${JSON.stringify({ type: 'client-tool-call-start', toolName: 'recall' })}\n\n`,
+      `data: ${JSON.stringify({ type: 'text-delta', delta: 'after' })}\n\n`,
+      `data: ${JSON.stringify({ type: 'done', truncated: false, fullText: 'beforeafter' })}\n\n`
+    ]);
+
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      messages: [{ role: 'user', content: 'go' }]
+    });
+    expect(result).toSucceed();
+    if (result.isFailure()) return;
+
+    const seen: string[] = [];
+    for await (const event of result.value) {
+      seen.push(event.type);
+    }
+
+    // The client-tool event is gone; the deltas on either side of it are not, so
+    // the drop is a skip rather than a stop.
+    expect(seen).toEqual(['text-delta', 'text-delta', 'done']);
+  });
+
   test('fails fast when the last message is not a user turn (unified invariant, no proxy call)', async () => {
     const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
       descriptor: makeDescriptor(),

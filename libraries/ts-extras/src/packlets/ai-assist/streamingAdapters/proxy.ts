@@ -24,6 +24,14 @@
  * directly: each `data:` line is a JSON-serialized {@link AiAssist.IAiStreamEvent},
  * so this adapter only validates the event-type discriminator and forwards.
  *
+ * **It carries the four completion-path events, not the whole union.**
+ * `text-delta`, `tool-event`, `done` and `error` pass through; the three
+ * `client-tool-*` dispatch events are not recognized and are dropped. That is a
+ * real limit rather than an oversight: `executeClientToolTurn` has no proxied
+ * entry point, so nothing produces those events on this path, and forwarding a
+ * vocabulary no caller can reach would be dead code. A proxy implementor reading
+ * this contract should not emit them.
+ *
  * @packageDocumentation
  */
 
@@ -38,6 +46,19 @@ import { IProviderCompletionStreamParams, openSseConnection, validateEventPayloa
 // Event payload shape — a tagged-event envelope
 // ============================================================================
 
+/**
+ * The event types this adapter recognizes — deliberately the four completion-path
+ * events, not all seven members of `IAiStreamEvent`.
+ *
+ * @remarks
+ * The omitted three are the `client-tool-*` dispatch events. `IAiStreamEvent`'s own
+ * docstring tells exhaustive switches over that union to be updated in lockstep
+ * when those variants were added; this one is a deliberate exception, and saying so
+ * here is the difference between a documented boundary and a switch someone forgot.
+ * Revisit together with a proxied client-tool entry point, not before — see
+ * `docs/FUTURE.md`, "A browser story for client-tool turns".
+ * @internal
+ */
 type ProxyEventType = 'text-delta' | 'tool-event' | 'done' | 'error';
 
 /**
@@ -79,7 +100,11 @@ async function* translateProxyStream(response: Response): AsyncGenerator<IAiStre
         continue;
       }
       const envelope = validateEventPayload(json, proxyEventEnvelope);
-      /* c8 ignore next 3 - defensive: SSE events without valid envelope skipped */
+      // Reachable, not defensive: any event whose `type` is outside
+      // `proxyEventTypes` lands here, which includes the three `client-tool-*`
+      // variants a proxy might emit from a vocabulary this path does not carry.
+      // It previously claimed to be unreachable defensive code, so the coverage
+      // gate reported clean on the one branch that silently discards data.
       if (!envelope) {
         continue;
       }
@@ -109,6 +134,10 @@ async function* translateProxyStream(response: Response): AsyncGenerator<IAiStre
  * - Response: `Content-Type: text/event-stream`; body is the unified
  *   {@link AiAssist.IAiStreamEvent} JSON-serialized one event per SSE `data:` line
  *   (no `event:` line needed since the type discriminator is in the JSON).
+ *   **Only `text-delta`, `tool-event`, `done` and `error` are carried** — an event
+ *   of any other type, including the three `client-tool-*` variants, is discarded
+ *   without error. Client-tool turns are not proxiable; `executeClientToolTurn`
+ *   has no proxied entry point.
  * - Error response (when the proxy can't even start): JSON `{error: string}`
  *   with a non-2xx status, surfaced as `proxy: ${error}`.
  *
