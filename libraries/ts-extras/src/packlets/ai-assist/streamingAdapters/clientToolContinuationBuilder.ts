@@ -42,6 +42,7 @@ import { type JsonArray, type JsonObject } from '@fgv/ts-json-base';
 import {
   type AiServerToolConfig,
   type AiToolConfig,
+  type AiToolConflictPolicy,
   type IAiClientTool,
   type IAiClientToolContinuation,
   type IAiClientToolTurnResult,
@@ -51,6 +52,7 @@ import {
   isAdaptiveThinkingModel,
   resolveProviderModel
 } from '../model';
+import { resolveToolConflicts } from '../toolFormats';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { splitChatRequest } from '../chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from '../endpoint';
@@ -520,6 +522,19 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
    * `DEFAULT_ANTHROPIC_MAX_TOKENS`.
    */
   readonly maxTokens?: number;
+  /**
+   * What to do when this provider declares one of the requested server tools
+   * mutually exclusive with client tools (see
+   * {@link AiAssist.IAiProviderDescriptor.serverToolsExclusiveWithClientTools}). Defaults to
+   * `'drop-server-tools'` — the client tools this host registered for the turn are
+   * kept and the server tool is dropped.
+   *
+   * @remarks
+   * Whatever the policy, the turn result's `toolConflicts` says what actually
+   * happened, so a degraded turn is never a silent one. Pass `'fail'` for the
+   * pre-policy behavior: a `Result.fail` up front, before any wire call.
+   */
+  readonly toolConflictPolicy?: AiToolConflictPolicy;
 }
 
 /**
@@ -546,23 +561,6 @@ export interface IExecuteClientToolTurnResult {
 // ============================================================================
 
 /**
- * True when a request would combine Gemini built-in grounding (a `web_search`
- * server tool) with client (function) tools — a combination Gemini's
- * `generateContent` API rejects with HTTP 400 (`INVALID_ARGUMENT`). Callers gate
- * on `descriptor.apiFormat === 'gemini'` before consulting this; other providers
- * accept the mix. Kept as a pure predicate so the conflict rule is unit-testable
- * without a live stream.
- *
- * @internal
- */
-export function hasGeminiToolConflict(
-  tools: ReadonlyArray<AiServerToolConfig> | undefined,
-  clientTools: ReadonlyArray<IAiClientTool>
-): boolean {
-  return clientTools.length > 0 && (tools?.some((t) => t.type === 'web_search') ?? false);
-}
-
-/**
  * Orchestrates a single client-tool streaming turn for any supported provider.
  *
  * Starts a streaming request, iterates the underlying provider stream, and:
@@ -578,6 +576,13 @@ export function hasGeminiToolConflict(
  * **Anthropic constraint (E3):** The continuation for Anthropic does not set
  * a forced `tool_choice`. Only `tool_choice: 'auto'` (the default, i.e.
  * omitted) is compatible with extended thinking.
+ *
+ * **Provider tool exclusions:** when the descriptor declares a server tool
+ * mutually exclusive with client tools (today only Gemini, for `web_search`),
+ * `toolConflictPolicy` decides — by default the server tool is dropped and the
+ * turn proceeds. The turn result's `toolConflicts` always says what happened, so
+ * a host can tell the person that e.g. web search was unavailable this turn.
+ * Pass `'fail'` to refuse the request up front instead.
  *
  * @param params - Turn parameters
  * @returns `{ events, nextTurn }` — stream iterable + completion promise
@@ -601,7 +606,8 @@ export function executeClientToolTurn(
     model,
     endpoint,
     onBeforeToolExecute,
-    maxTokens
+    maxTokens,
+    toolConflictPolicy
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -613,31 +619,58 @@ export function executeClientToolTurn(
     return fail(`provider "${descriptor.id}" does not accept image input`);
   }
 
-  // Build a lookup map of client tools by name for fast access.
-  // Fail fast on duplicate names — silently overwriting would cause one tool
-  // to shadow another with no observable signal.
-  const toolsByName = new Map<string, IAiClientTool>();
+  // Apply whatever server-tool/client-tool exclusions this provider declares. The
+  // rule itself lives on the descriptor, so nothing here branches on provider
+  // identity; under the default policy an exclusive server tool is dropped and the
+  // turn proceeds, where it used to be refused outright. `'fail'` reproduces that
+  // refusal for hosts that would rather choose for themselves.
+  const conflictResult = resolveToolConflicts(descriptor, tools, clientTools, toolConflictPolicy);
+  if (conflictResult.isFailure()) {
+    return fail(`executeClientToolTurn: ${conflictResult.message}`);
+  }
+  const {
+    serverTools: resolvedServerTools,
+    clientTools: resolvedClientTools,
+    report: toolConflicts
+  } = conflictResult.value;
+
+  // Fail fast on duplicate names — silently overwriting would cause one tool to
+  // shadow another with no observable signal.
+  //
+  // Scanned over the caller's ORIGINAL list, not the post-conflict survivors. A
+  // duplicate name is a defect in the host's tool registration, not a property of
+  // this turn; reporting it only on the turns that happen to keep both tools would
+  // make a deterministic bug look intermittent — it would go quiet exactly when a
+  // policy dropped the colliding pair and reappear on the next provider.
+  const seen = new Set<string>();
   for (const tool of clientTools) {
-    if (toolsByName.has(tool.config.name)) {
+    if (seen.has(tool.config.name)) {
       return fail(`executeClientToolTurn: duplicate client tool name '${tool.config.name}'`);
     }
-    toolsByName.set(tool.config.name, tool);
+    seen.add(tool.config.name);
   }
+
+  // The dispatch map holds only the tools actually offered this turn, so a tool a
+  // policy dropped is genuinely unavailable rather than merely unadvertised.
+  const toolsByName = new Map<string, IAiClientTool>(
+    resolvedClientTools.map((tool) => [tool.config.name, tool])
+  );
 
   // Merge server tools and client tool configs into a single array for the provider.
   // This is the fix for P1-1: client tools were never sent to the provider because
   // the adapters only received `tools` (server tools). Both must coexist per design §2.5.
-  const effectiveTools: ReadonlyArray<AiToolConfig> | undefined =
-    clientTools.length > 0 ? [...(tools ?? []), ...clientTools.map((t) => t.config)] : tools;
-
-  // Gemini pre-flight: its generateContent API HTTP-400s (INVALID_ARGUMENT) when
-  // built-in grounding (`web_search`) and function calling (client tools) are
-  // combined in one request. Fail fast with a clear, actionable message rather
-  // than letting the opaque wire 400 surface. Other providers accept the mix.
-  if (descriptor.apiFormat === 'gemini' && hasGeminiToolConflict(tools, clientTools)) {
-    return fail(
-      'executeClientToolTurn: Gemini cannot combine web_search grounding with client (function) tools in the same request; send one or the other'
-    );
+  //
+  // With no client tools to merge, pass the caller's own `tools` through when the
+  // resolution changed nothing, so a caller who sent `undefined` still sends
+  // `undefined` — an absent `tools` field and an empty one are not the same request
+  // on every provider.
+  let effectiveTools: ReadonlyArray<AiToolConfig> | undefined;
+  if (resolvedClientTools.length > 0) {
+    effectiveTools = [...resolvedServerTools, ...resolvedClientTools.map((t) => t.config)];
+  } else if (tools === undefined) {
+    effectiveTools = undefined;
+  } else {
+    effectiveTools = resolvedServerTools;
   }
 
   const modelResult = resolveProviderModel(descriptor, model);
@@ -935,7 +968,7 @@ export function executeClientToolTurn(
     }
 
     if (toolResults.length === 0) {
-      resolveNextTurn(succeed({ continuation: undefined, truncated, fullText }));
+      resolveNextTurn(succeed({ continuation: undefined, truncated, fullText, toolConflicts }));
       return;
     }
 
@@ -980,7 +1013,7 @@ export function executeClientToolTurn(
       continuation = { ...continuation, messages: [...continuationMessages, ...continuation.messages] };
     }
 
-    resolveNextTurn(succeed({ continuation, truncated, fullText }));
+    resolveNextTurn(succeed({ continuation, truncated, fullText, toolConflicts }));
   }
 
   return succeed({

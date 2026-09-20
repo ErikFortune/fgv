@@ -70,6 +70,8 @@ declare namespace AiAssist {
         AiServerToolType,
         AiServerToolConfig,
         AiToolConfig,
+        AiToolConflictPolicy,
+        IAiToolConflictReport,
         IAiWebSearchToolConfig,
         IAiClientToolConfig,
         IAiToolAnnotations,
@@ -202,6 +204,9 @@ declare namespace AiAssist {
         modelSpecKey,
         modelSpec,
         resolveEffectiveTools,
+        resolveToolConflicts,
+        defaultToolConflictPolicy,
+        IAiResolvedToolConflicts,
         AiCacheReportingLevel,
         IAiCompletionUsage,
         supportsCacheUsageReporting,
@@ -327,6 +332,11 @@ const aiToolAnnotations: Converter<IAiToolAnnotations>;
 
 // @public
 type AiToolConfig = AiServerToolConfig | IAiClientToolConfig;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type AiToolConflictPolicy = 'drop-server-tools' | 'prefer-server-tools' | 'fail';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiToolEnablement"
 //
@@ -688,6 +698,11 @@ const DEFAULT_SECRET_ITERATIONS: number;
 
 // @public
 const DEFAULT_TIMEOUT_MS: number;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const defaultToolConflictPolicy: AiToolConflictPolicy;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1185,7 +1200,7 @@ interface IAiClientToolCallSummary {
 
 // @public
 interface IAiClientToolConfig<TParams = unknown> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiToolAnnotations"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly annotations?: IAiToolAnnotations;
     readonly description: string;
     readonly name: string;
@@ -1203,6 +1218,7 @@ interface IAiClientToolContinuation {
 interface IAiClientToolTurnResult {
     readonly continuation: IAiClientToolContinuation | undefined;
     readonly fullText: string;
+    readonly toolConflicts: IAiToolConflictReport;
     readonly truncated: boolean;
 }
 
@@ -1370,10 +1386,22 @@ interface IAiProviderDescriptor {
     readonly needsSecret: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly serverToolsExclusiveWithClientTools?: ReadonlyArray<AiServerToolType>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     readonly streamingCorsRestricted: boolean;
     readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
     readonly supportedTools: ReadonlyArray<AiServerToolType>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IAiResolvedToolConflicts {
+    readonly clientTools: ReadonlyArray<IAiClientTool>;
+    readonly report: IAiToolConflictReport;
+    readonly serverTools: ReadonlyArray<AiServerToolConfig>;
 }
 
 // @public
@@ -1453,6 +1481,15 @@ interface IAiToolAnnotations {
     readonly openWorldHint?: boolean;
     readonly readOnlyHint?: boolean;
     readonly title?: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IAiToolConflictReport {
+    readonly droppedClientTools: ReadonlyArray<string>;
+    readonly droppedServerTools: ReadonlyArray<AiServerToolType>;
+    readonly policy: AiToolConflictPolicy;
 }
 
 // @public
@@ -1735,6 +1772,8 @@ interface IExecuteClientToolTurnParams extends IChatRequest {
     readonly resolvedThinking?: IResolvedThinkingConfig;
     readonly signal?: AbortSignal;
     readonly temperature?: number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly toolConflictPolicy?: AiToolConflictPolicy;
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
 }
 
@@ -3101,6 +3140,12 @@ function resolveProviderModel(descriptor: IAiProviderDescriptor, modelOverride: 
 
 // @public
 function resolveStructuredOutputCapability(descriptor: IAiProviderDescriptor, modelId: string): IAiStructuredOutputCapability | undefined;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function resolveToolConflicts(descriptor: IAiProviderDescriptor, serverTools: ReadonlyArray<AiServerToolConfig> | undefined, clientTools: ReadonlyArray<IAiClientTool>, policy?: AiToolConflictPolicy): Result<IAiResolvedToolConflicts>;
 
 // @public
 const RETRY_AFTER_STATUSES: ReadonlyArray<number>;

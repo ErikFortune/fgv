@@ -669,6 +669,29 @@ describe('AiAssist.registry', () => {
       expect(AiAssist.allProviderIds).toEqual(expectedIds);
     });
   });
+
+  describe('serverToolsExclusiveWithClientTools', () => {
+    // The declaration is what makes the rule work: `resolveToolConflicts` reads it
+    // and has no other way to know Gemini has the limit. A registry descriptor that
+    // lost it would still build, still pass every unit test written against a
+    // hand-built descriptor, and put `google_search` + `function_declarations` on
+    // the wire together for an opaque 400. Pin it on the descriptor that ships.
+    test('gemini declares web_search exclusive with client tools', () => {
+      expect(AiAssist.getProviderDescriptor('google-gemini')).toSucceedAndSatisfy((d) => {
+        expect(d.serverToolsExclusiveWithClientTools).toEqual(['web_search']);
+      });
+    });
+
+    test('no other built-in provider declares an exclusion', () => {
+      // Not a style rule — an exclusion silently changes what a host gets back
+      // without the host changing anything, so adding one should be a deliberate
+      // act that updates this test alongside the descriptor.
+      const declaring = AiAssist.getProviderDescriptors()
+        .filter((d) => (d.serverToolsExclusiveWithClientTools?.length ?? 0) > 0)
+        .map((d) => d.id);
+      expect(declaring).toEqual(['google-gemini']);
+    });
+  });
 });
 
 describe('DEFAULT_MODEL_CAPABILITY_CONFIG', () => {

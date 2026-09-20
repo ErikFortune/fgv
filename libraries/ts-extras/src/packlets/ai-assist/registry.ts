@@ -116,6 +116,13 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       '@google-gemini:embedding': 'gemini-embedding-001' // NOT deprecated — aliased for uniformity only
     },
     supportedTools: ['web_search'],
+    // `generateContent` HTTP-400s (INVALID_ARGUMENT) when built-in grounding
+    // (`web_search` → `google_search`) and `function_declarations` are combined in
+    // one request. The only descriptor in the registry that declares an exclusion;
+    // keep it that way deliberately — a new entry here changes what a host gets
+    // back without the host changing anything, so it wants the same evidence a
+    // capability claim wants.
+    serverToolsExclusiveWithClientTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,

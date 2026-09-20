@@ -24,15 +24,20 @@
  */
 
 import { type JsonObject, type JsonValue } from '@fgv/ts-json-base';
+import { type Result, fail, succeed } from '@fgv/ts-utils';
 
+import { type IAiProviderDescriptor } from './model';
 import {
   type AiServerToolConfig,
+  type AiServerToolType,
   type AiToolConfig,
+  type AiToolConflictPolicy,
+  type IAiClientTool,
   type IAiClientToolConfig,
-  type IAiProviderDescriptor,
+  type IAiToolConflictReport,
   type IAiToolEnablement,
   type IAiWebSearchToolConfig
-} from './model';
+} from './toolTypes';
 
 // ============================================================================
 // Tool resolution
@@ -70,6 +75,110 @@ export function resolveEffectiveTools(
   return settingsTools
     .filter((e) => e.enabled && supported.has(e.type))
     .map((e): AiServerToolConfig => e.config ?? { type: e.type });
+}
+
+/**
+ * The default {@link AiAssist.AiToolConflictPolicy} applied when a caller passes none.
+ *
+ * @remarks
+ * Keeping the client tools is the right default because they are what the host
+ * registered explicitly for *this* turn, while a built-in server tool is a
+ * per-provider nicety the same host would get on some providers and not others.
+ * Dropping the nicety degrades a turn; dropping the client tools changes what the
+ * turn can do.
+ * @public
+ */
+export const defaultToolConflictPolicy: AiToolConflictPolicy = 'drop-server-tools';
+
+/**
+ * The outcome of {@link AiAssist.resolveToolConflicts}: the tools that survived,
+ * plus the report of what did not.
+ * @public
+ */
+export interface IAiResolvedToolConflicts {
+  /** Server tools to send, after the policy was applied. */
+  readonly serverTools: ReadonlyArray<AiServerToolConfig>;
+  /** Client tools to send, after the policy was applied. */
+  readonly clientTools: ReadonlyArray<IAiClientTool>;
+  /** What the resolution did. Always populated; empty arrays mean nothing conflicted. */
+  readonly report: IAiToolConflictReport;
+}
+
+/**
+ * Applies a provider's declared server-tool/client-tool exclusions to one request's
+ * tools.
+ *
+ * @remarks
+ * The generic half of a rule that used to be a provider-identity branch. The
+ * constraint is declared on the descriptor
+ * (`IAiProviderDescriptor.serverToolsExclusiveWithClientTools`); this reads it
+ * and applies `policy`, so no consumer needs to know *which* provider has the limit
+ * or *what* the limit is. A descriptor that declares nothing, or a request with no
+ * client tools, or one with no server tools, passes through untouched with an empty
+ * report — the exclusion is about the *combination*, and either half alone is legal.
+ *
+ * Sibling to {@link AiAssist.resolveEffectiveTools} rather than an extension of it:
+ * that function filters server tools against what the provider supports at all and
+ * is used by every completion path, most of which have no client tools to weigh.
+ *
+ * @param descriptor - The provider descriptor carrying the declared exclusions.
+ * @param serverTools - The server tools the caller wants to send, if any.
+ * @param clientTools - The client tools the caller wants to send.
+ * @param policy - What to do about a conflict. Defaults to
+ * {@link AiAssist.defaultToolConflictPolicy}.
+ * @returns `Success` with the surviving tools and a report, or `Failure` naming the
+ * conflict when `policy` is `'fail'`.
+ * @public
+ */
+export function resolveToolConflicts(
+  descriptor: IAiProviderDescriptor,
+  serverTools: ReadonlyArray<AiServerToolConfig> | undefined,
+  clientTools: ReadonlyArray<IAiClientTool>,
+  policy: AiToolConflictPolicy = defaultToolConflictPolicy
+): Result<IAiResolvedToolConflicts> {
+  const present = serverTools ?? [];
+  const exclusive = new Set(descriptor.serverToolsExclusiveWithClientTools ?? []);
+  const conflicting: ReadonlyArray<AiServerToolType> =
+    clientTools.length > 0 ? present.filter((t) => exclusive.has(t.type)).map((t) => t.type) : [];
+
+  if (conflicting.length === 0) {
+    return succeed({
+      serverTools: present,
+      clientTools,
+      report: { policy, droppedServerTools: [], droppedClientTools: [] }
+    });
+  }
+
+  // Name every conflicting tool, not just the first: a host reading the message is
+  // deciding what to send instead, and a partial list invites a second round.
+  const named = conflicting.join(', ');
+  switch (policy) {
+    case 'fail':
+      return fail(
+        `provider "${descriptor.id}" cannot combine server tool(s) [${named}] with client (function) tools in the same request; send one or the other`
+      );
+    case 'prefer-server-tools':
+      return succeed({
+        serverTools: present,
+        clientTools: [],
+        report: {
+          policy,
+          droppedServerTools: [],
+          droppedClientTools: clientTools.map((t) => t.config.name)
+        }
+      });
+    case 'drop-server-tools':
+      return succeed({
+        serverTools: present.filter((t) => !exclusive.has(t.type)),
+        clientTools,
+        report: { policy, droppedServerTools: conflicting, droppedClientTools: [] }
+      });
+    /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
+    default: {
+      const _exhaustive: never = policy;
+      return fail(`unknown tool conflict policy: ${JSON.stringify(_exhaustive)}`);
+    }
+  }
 }
 
 // ============================================================================

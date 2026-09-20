@@ -40,6 +40,13 @@
  *
  * This is a provider-side constraint, not a library bug. Consequently this scenario
  * exercises **client tool only** — `web_search` is intentionally not included in the request.
+ *
+ * Since 2026-09 the library resolves this rather than refusing it: the exclusion is declared
+ * on the descriptor (`serverToolsExclusiveWithClientTools`) and `executeClientToolTurn` drops
+ * the grounding tool by default, reporting it on the turn result's `toolConflicts`. So a host
+ * that *does* send both gets a working turn without web search, not an error — and still must
+ * not write an `apiFormat === 'gemini'` branch of its own. This scenario keeps sending client
+ * tools alone, so what it exercises is unchanged.
  * Two gates are therefore N/A for Gemini:
  *
  * - "Server tool events emitted" — grounding metadata is attached to text chunks (not its

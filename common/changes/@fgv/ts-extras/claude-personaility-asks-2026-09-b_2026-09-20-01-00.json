@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: provider server-tool/client-tool exclusions are now declared on the descriptor (IAiProviderDescriptor.serverToolsExclusiveWithClientTools) and resolved generically by resolveToolConflicts, instead of being a hard failure keyed on apiFormat === 'gemini'. executeClientToolTurn takes toolConflictPolicy ('drop-server-tools' default | 'prefer-server-tools' | 'fail') and its result carries a required toolConflicts report naming what was dropped. Behavior change: a Gemini turn combining web_search with client tools now succeeds with web_search dropped where it previously failed; pass toolConflictPolicy: 'fail' for the old behavior. IAiClientToolTurnResult gains the required toolConflicts member. The tool types move to a new ai-assist/toolTypes module, re-exported from model, so no import path changes.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
