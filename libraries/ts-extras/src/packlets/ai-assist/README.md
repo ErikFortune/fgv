@@ -58,7 +58,18 @@ export interface IModelAliasMap {
 | `resolveProviderModel(descriptor, modelOverride, context?)` | The call-time chokepoint: the `ModelSpecKey` walk (`resolveModel`) **then** `resolveModelAlias`. Used by the completion, streaming, image, embedding, and client-tool paths. |
 
 Resolution is **call-time**, not registry-build-time, so the registry stays a pure inspectable data
-structure and the proxy path resolves server-side via the reconstructed descriptor.
+structure and the proxy path resolves server-side via the reconstructed descriptor — **except for a
+tiered request**, which both `callProxiedCompletion` and `callProxiedCompletionStream` resolve
+client-side and send as a concrete `modelOverride`. Both halves of a tier resolution (the
+`ModelSpecKey` walk and the alias map) live on the descriptor, which the caller already holds; a
+`tier` body field would instead be ignored by every proxy that predates it, silently serving a
+frontier request from the base model.
+
+`endpoint` gets the opposite treatment on both proxied entry points: it is **refused**, not
+forwarded and not dropped. It names where the prompt must go, the proxy is the one making that call,
+and no deployed proxy has ever been sent the field — so honoring it is unverifiable and ignoring it
+sends content somewhere the caller explicitly excluded. Use the direct entry point, or point the
+proxy itself at the intended upstream.
 
 ## Quality Tiers (`base` / `advanced` / `frontier`)
 
@@ -304,11 +315,22 @@ question stops arising), injectable validation, and retry inside the client.
 
 Every direct-provider completion — streaming and non-streaming alike, via
 `callProviderCompletion` / `callProviderCompletionStream` — can carry a normalized
-`usage?: IAiCompletionUsage` on `IAiCompletionResponse` / `IAiStreamDone`. **Not**
-`callProxiedCompletion` / `callProxiedCompletionStream`: forwarding usage through the
-proxy wire is out of scope for this slice, so a proxied completion's `usage` is always
-absent regardless of what the upstream provider reported — the same as any caller on an
-older build that predates this field, never a build error:
+`usage?: IAiCompletionUsage` on `IAiCompletionResponse` / `IAiStreamDone`.
+
+`callProxiedCompletion` carries it too: the proxy relays an already-normalized
+`IAiCompletionUsage` (it ran `callProviderCompletion` itself), which is validated on
+arrival rather than cast — a proxy reporting nothing, or something missing the required
+`reports` level, yields `undefined` rather than a partially-trusted object. Unknown extra
+fields are tolerated, since the proxy may be running a newer build than the caller.
+
+`callProxiedCompletionStream` carries whatever the proxy puts on `done`, but on weaker
+terms: that adapter validates only the event-type discriminator and forwards the event
+as-is, so a `usage` block reaches the caller *typed* but not *checked*. That is the
+proxy-stream contract generally, not a `usage`-specific gap — the same blanket trust
+covers `fullText` and every other field on every forwarded event.
+
+In every case `usage` is optional, so a caller on an older build that predates the field
+sees an absent property, never a build error:
 
 ```ts
 const result = await AiAssist.callProviderCompletion({ descriptor, apiKey, ...request });

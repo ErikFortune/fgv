@@ -1546,6 +1546,121 @@ describe('callProxiedCompletionStream', () => {
     expect(body.tools).toEqual([{ type: 'web_search' }]);
   });
 
+  // ==========================================================================
+  // tier / endpoint on the proxied STREAM path.
+  //
+  // Exact siblings of the `callProxiedCompletion` tests in
+  // apiClient.proxiedCompletion.test.ts, and here for the same reason: this
+  // function accepts `IProviderCompletionStreamParams`, which declares both
+  // parameters, and destructured neither. A success-only assertion passes
+  // against the broken version — dropping a parameter is the failure that still
+  // returns a 200 — so each of these asserts the request body or the refusal.
+  // ==========================================================================
+
+  test('tier resolves to a concrete model and travels as modelOverride', async () => {
+    // Wrong impl this catches: `tier` never destructured, so a frontier stream
+    // silently runs on the base model — invisible without reading the body.
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor({ defaultModel: { base: 'gpt-base', advanced: 'gpt-advanced' } }),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      tier: 'advanced'
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.modelOverride).toBe('gpt-advanced');
+    // Resolved here rather than forwarded, so a proxy that has never heard of
+    // tiers still honors one. A `tier` body field is the giveaway that it had not.
+    expect(body.tier).toBeUndefined();
+  });
+
+  test('a frontier tier cascades through the descriptor, not the proxy', async () => {
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor({ defaultModel: { base: 'gpt-base', advanced: 'gpt-advanced' } }),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      tier: 'frontier'
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.modelOverride).toBe('gpt-advanced');
+  });
+
+  test('with no tier, modelOverride passes through untouched — including absent', async () => {
+    // Wrong impl this catches: resolving unconditionally, which would always send
+    // a concrete model and take away the proxy's own default.
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest()
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect('modelOverride' in body).toBe(false);
+  });
+
+  test('a tier that resolves to no model fails before any wire call', async () => {
+    global.fetch = jest.fn();
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor({ defaultModel: '' }),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      tier: 'advanced'
+    });
+    expect(result).toFailWith(/no model resolved/i);
+    expect(global.fetch as jest.Mock).not.toHaveBeenCalled();
+  });
+
+  test('endpoint is refused up front rather than silently ignored', async () => {
+    // `endpoint` names WHERE the prompt goes, the proxy is what makes the upstream
+    // call, and the field has never been sent — so every deployed proxy would
+    // ignore it and reach the provider's public API instead of the host the caller
+    // pinned. Wrong impls this catches: dropping it silently (the original bug),
+    // and forwarding it hopefully (reads as support, delivers none).
+    global.fetch = jest.fn();
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      endpoint: 'http://192.168.1.50:11434/v1'
+    });
+    expect(result).toFailWith(/endpoint is not supported on the proxied path/i);
+    expect(global.fetch as jest.Mock).not.toHaveBeenCalled();
+  });
+
+  test('a usage block on the proxy done event reaches the caller', async () => {
+    // Unlike the non-streaming path, this adapter validates only the type
+    // discriminator and forwards the event as-is — so `usage` arrives typed but
+    // not checked, which is the proxy-stream contract generally rather than a
+    // usage-specific decision. Pinned because the README now says so.
+    mockSseResponse([
+      `data: ${JSON.stringify({
+        type: 'done',
+        truncated: false,
+        fullText: 'hi',
+        usage: { reports: 'reads-and-writes', cachedInputTokens: 10, cacheWriteTokens: 4 }
+      })}\n\n`
+    ]);
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest()
+    });
+    expect(result).toSucceed();
+    if (result.isFailure()) return;
+
+    const events: AiAssist.IAiStreamEvent[] = [];
+    for await (const event of result.value) {
+      events.push(event);
+    }
+    const done = events.find((e): e is AiAssist.IAiStreamDone => e.type === 'done');
+    expect(done?.usage).toEqual({
+      reports: 'reads-and-writes',
+      cachedInputTokens: 10,
+      cacheWriteTokens: 4
+    });
+  });
+
   test('forwards abort signal', async () => {
     mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
     const controller = new AbortController();

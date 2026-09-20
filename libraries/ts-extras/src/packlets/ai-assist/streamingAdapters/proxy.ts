@@ -38,7 +38,7 @@
 import { fail, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 
 import { normalizeOutboundMessages, splitChatRequest } from '../chatRequestBuilders';
-import { type IAiStreamEvent } from '../model';
+import { type IAiStreamEvent, type ModelSpec, resolveProviderModel } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { IProviderCompletionStreamParams, openSseConnection, validateEventPayload } from './common';
 
@@ -141,6 +141,12 @@ async function* translateProxyStream(response: Response): AsyncGenerator<IAiStre
  * - Error response (when the proxy can't even start): JSON `{error: string}`
  *   with a non-2xx status, surfaced as `proxy: ${error}`.
  *
+ * Two request parameters are handled before the body is composed, identically to
+ * `callProxiedCompletion`: `tier` is resolved here and sent as a concrete
+ * `modelOverride`, so a proxy needs no `tier` vocabulary; `endpoint` is refused,
+ * because a proxy cannot confirm it honored it and reaching the provider's default
+ * upstream instead would send the request somewhere the caller excluded.
+ *
  * The proxy server is responsible for opening the upstream SSE connection,
  * translating provider-native events to the unified vocabulary, and
  * forwarding events as they arrive (no buffering). The library does not
@@ -163,7 +169,9 @@ export async function callProxiedCompletionStream(
     tools,
     signal,
     thinking,
-    maxTokens
+    maxTokens,
+    tier,
+    endpoint
   } = params;
 
   // Enforce the same unified-request invariants the direct entry points apply
@@ -175,6 +183,31 @@ export async function callProxiedCompletionStream(
   }
   if (splitResult.value.prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
     return fail(`provider "${descriptor.id}" does not accept image input`);
+  }
+
+  // `tier` and `endpoint` are handled exactly as `callProxiedCompletion` handles them,
+  // and for the same reasons — see the comments there. Briefly: the tier resolves on
+  // this side because the descriptor holding both halves of the resolution is already
+  // here, and the concrete model rides the existing `modelOverride` field, so a proxy
+  // that predates tiers still honors one. `endpoint` cannot resolve here, has never
+  // been sent, and forwarding it would be unverifiable, so it is refused rather than
+  // dropped.
+  if (endpoint !== undefined) {
+    return fail(
+      `callProxiedCompletionStream: endpoint is not supported on the proxied path — a proxy ` +
+        `cannot confirm it honored it, and silently reaching the provider's default ` +
+        `upstream would send the request somewhere the caller excluded. Use ` +
+        `callProviderCompletionStream, or route the proxy itself at the intended upstream.`
+    );
+  }
+
+  let effectiveModelOverride: ModelSpec | undefined = modelOverride;
+  if (tier !== undefined) {
+    const tierResult = resolveProviderModel(descriptor, modelOverride, tier);
+    if (tierResult.isFailure()) {
+      return fail(tierResult.message);
+    }
+    effectiveModelOverride = tierResult.value;
   }
 
   const body: Record<string, unknown> = {
@@ -191,8 +224,8 @@ export async function callProxiedCompletionStream(
   if (system !== undefined) {
     body.system = system;
   }
-  if (modelOverride !== undefined) {
-    body.modelOverride = modelOverride;
+  if (effectiveModelOverride !== undefined) {
+    body.modelOverride = effectiveModelOverride;
   }
   if (tools && tools.length > 0) {
     body.tools = tools;
