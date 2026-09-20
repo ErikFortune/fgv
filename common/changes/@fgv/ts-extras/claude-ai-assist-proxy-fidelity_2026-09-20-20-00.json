@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: callProxiedCompletion honors parameters it silently dropped. `tier` is resolved client-side and sent through the existing modelOverride field, so a frontier request no longer runs on the base model and an already-deployed proxy needs no update; `adaptOptionalToNullable` rides along in the structuredOutput projection; `usage` is read back from the proxy response through a new validating aiCompletionUsage converter. `endpoint` is now refused on the proxied path rather than ignored — a proxy cannot confirm it honored it, and silently reaching the provider's default upstream would send the request somewhere the caller excluded. Use callProviderCompletion, or point the proxy itself at the intended upstream.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

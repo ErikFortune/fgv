@@ -1034,6 +1034,32 @@ export async function callProxiedCompletion(
     return fail(`provider "${descriptor.id}" does not accept image input`);
   }
 
+  // `endpoint` names the upstream the request must reach. Unlike `tier` it cannot be
+  // resolved on this side, because the proxy is the one making that call — it would
+  // have to be forwarded and honored. No proxy honors it: the field has never been
+  // sent, so every deployed proxy would ignore it and fall back to the provider's
+  // public API.
+  //
+  // Silently is the problem. A caller names an endpoint to pin *where the prompt
+  // goes* — a self-hosted model, a LAN deployment, a residency boundary — so the
+  // failure is not a degraded answer, it is the content going somewhere they
+  // explicitly said it must not, discoverable only by watching the proxy's traffic.
+  // That is the same shape as the structured-output silent-drop this function
+  // already refuses to allow, with a worse consequence.
+  //
+  // So refuse rather than pretend. Honoring `endpoint` over a proxy needs a wire
+  // field AND a report-back the caller can verify, the way `structuredOutput` is
+  // acknowledged below; until that protocol exists, the direct path is where this
+  // parameter works.
+  if (endpoint !== undefined) {
+    return fail(
+      `callProxiedCompletion: endpoint is not supported on the proxied path — a proxy ` +
+        `cannot confirm it honored it, and silently reaching the provider's default ` +
+        `upstream would send the request somewhere the caller excluded. Use ` +
+        `callProviderCompletion, or route the proxy itself at the intended upstream.`
+    );
+  }
+
   // The quality tier is resolved HERE rather than forwarded, because it can be:
   // the tier walk and the alias map both live on the descriptor, which is
   // client-side, so this side already holds everything the resolution needs.
@@ -1070,14 +1096,7 @@ export async function callProxiedCompletion(
   if (effectiveModelOverride !== undefined) {
     body.modelOverride = effectiveModelOverride;
   }
-  // Forwarded so a proxy can target a self-hosted or LAN upstream on the caller's
-  // behalf. Unlike `tier`, this cannot be resolved on this side: the proxy is the
-  // one making the upstream call. A proxy that does not implement the field falls
-  // back to the descriptor's base URL, so treat honoring it as a proxy capability
-  // rather than a guarantee of this function.
-  if (endpoint !== undefined) {
-    body.endpoint = endpoint;
-  }
+
   if (tools && tools.length > 0) {
     body.tools = tools;
   }
@@ -1153,13 +1172,16 @@ export async function callProxiedCompletion(
   // fabricated zero.
   const usage: IAiCompletionUsage | undefined = aiCompletionUsage.convert(response.usage).orDefault();
 
+  // Built once: the two returns differ only in the enforcement they report, and
+  // duplicating the shape is how a field added to one and not the other drifts.
+  const base = {
+    content: response.content,
+    truncated: response.truncated === true,
+    ...(usage !== undefined ? { usage } : {})
+  };
+
   if (structuredOutput === undefined) {
-    return succeed({
-      content: response.content,
-      truncated: response.truncated === true,
-      structuredOutput: 'none',
-      ...(usage !== undefined ? { usage } : {})
-    });
+    return succeed({ ...base, structuredOutput: 'none' });
   }
   if (!isStructuredOutputEnforcement(response.structuredOutput)) {
     return fail(
@@ -1168,10 +1190,5 @@ export async function callProxiedCompletion(
         `dropped the request silently`
     );
   }
-  return succeed({
-    content: response.content,
-    truncated: response.truncated === true,
-    structuredOutput: response.structuredOutput,
-    ...(usage !== undefined ? { usage } : {})
-  });
+  return succeed({ ...base, structuredOutput: response.structuredOutput });
 }

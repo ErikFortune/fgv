@@ -236,9 +236,18 @@ export const aiCacheReportingLevel: Converter<AiCacheReportingLevel> =
  * which of reads/writes it is able to report is not a usage block this package
  * will hand on. A proxy relaying a malformed one gets the whole field dropped
  * rather than a partially-trusted object.
+ *
+ * **Not `strictObject`, deliberately.** This validates a payload from a network
+ * peer that may be running a *newer* build of this library. Under strict rules one
+ * unrecognized field — a future token count, an echoed setting — would fail the
+ * conversion and drop the entire usage block, and `.orDefault()` would render that
+ * indistinguishable from "the provider reported nothing". Tolerating unknown fields
+ * is the same forward-compatibility posture the rest of the proxy path takes toward
+ * a peer of a different version. Required fields stay required; only openness to
+ * extra ones changes.
  * @public
  */
-export const aiCompletionUsage: Converter<IAiCompletionUsage> = Converters.strictObject<IAiCompletionUsage>({
+export const aiCompletionUsage: Converter<IAiCompletionUsage> = Converters.object<IAiCompletionUsage>({
   reports: aiCacheReportingLevel,
   uncachedInputTokens: Converters.number.optional(),
   cachedInputTokens: Converters.number.optional(),

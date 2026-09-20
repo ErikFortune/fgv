@@ -199,21 +199,89 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
     expect(body.structuredOutput.adaptOptionalToNullable).toBe(true);
   });
 
-  test('endpoint is forwarded so the proxy can target a self-hosted upstream', async () => {
-    // Unlike `tier`, this cannot be resolved here — the proxy makes the upstream
-    // call. Wrong impl this catches: `endpoint` never destructured, so a caller
-    // pointing at a LAN Ollama silently reaches the provider's public API instead.
-    mockFetchResponse({ content: 'ok' });
+  test('endpoint is refused up front rather than silently ignored', async () => {
+    // `endpoint` names WHERE the prompt goes. It cannot be resolved on this side —
+    // the proxy makes the upstream call — and no proxy honors it, because the field
+    // has never been sent. Forwarding it would mean every deployed proxy ignores it
+    // and reaches the provider's public API instead of the host the caller pinned:
+    // not a degraded answer, but the content going somewhere they excluded.
+    //
+    // Wrong impls this catches: dropping it silently (the original bug), and
+    // forwarding it hopefully (which reads as support and delivers none). No wire
+    // call should happen at all.
+    global.fetch = jest.fn();
 
-    await AiAssist.callProxiedCompletion('http://localhost:3001', {
+    const result = await AiAssist.callProxiedCompletion('http://localhost:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'test-key',
       ...testPrompt.toRequest(),
       endpoint: 'http://192.168.1.50:11434/v1'
     });
 
-    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-    expect(body.endpoint).toBe('http://192.168.1.50:11434/v1');
+    expect(result).toFailWith(/endpoint is not supported on the proxied path/i);
+    expect(global.fetch as jest.Mock).not.toHaveBeenCalled();
+  });
+
+  test('a tier that resolves to no model fails, matching every other call site', async () => {
+    // The same "no model resolved" failure the direct, embedding, streaming and
+    // client-tool paths each test explicitly. Wrong impl this catches: swallowing
+    // the resolution failure and sending a request with no model.
+    global.fetch = jest.fn();
+
+    const result = await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor({ defaultModel: '', aliases: undefined }),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest(),
+      tier: 'advanced'
+    });
+
+    expect(result).toFailWith(/no model resolved/i);
+    expect(global.fetch as jest.Mock).not.toHaveBeenCalled();
+  });
+
+  test('an unrecognized field in the usage block does not discard the block', async () => {
+    // The proxy may be a NEWER build of this library. Wrong impl this catches:
+    // validating with `strictObject`, where one future field fails the conversion
+    // and drops the whole usage object — indistinguishable, after `.orDefault()`,
+    // from the provider having reported nothing.
+    mockFetchResponse({
+      content: 'ok',
+      usage: { reports: 'reads', cachedInputTokens: 40, someFutureCount: 7 }
+    });
+
+    const result = await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest()
+    });
+
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.usage?.reports).toBe('reads');
+      expect(r.usage?.cachedInputTokens).toBe(40);
+    });
+  });
+
+  test('usage and structuredOutput arrive together on the same response', async () => {
+    // Both returns must carry usage. Wrong impl this catches: threading it into
+    // only the no-structured-output return, which the other tests would not see
+    // because they all take that path.
+    mockFetchResponse({
+      content: '{}',
+      structuredOutput: 'schema',
+      usage: { reports: 'reads', outputTokens: 12 }
+    });
+
+    const result = await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      ...testPrompt.toRequest(),
+      structuredOutput: { mode: 'schema', schema: JsonSchema.object({ a: JsonSchema.string() }) }
+    });
+
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.structuredOutput).toBe('schema');
+      expect(r.usage?.outputTokens).toBe(12);
+    });
   });
 
   test('usage on the proxy response reaches the result', async () => {
