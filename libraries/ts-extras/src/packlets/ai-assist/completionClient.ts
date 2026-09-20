@@ -55,6 +55,8 @@ import {
   usesMaxCompletionTokensField
 } from './model';
 import { type IAiCacheRequest } from './cacheRequest';
+import { aiCompletionUsage } from './converters';
+import type { IAiCompletionUsage } from './usageTypes';
 import {
   anthropicEffortToBudgetTokens,
   checkTemperatureConflict,
@@ -1019,7 +1021,9 @@ export async function callProxiedCompletion(
     thinking,
     maxTokens,
     structuredOutput,
-    cache
+    cache,
+    tier,
+    endpoint
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -1028,6 +1032,26 @@ export async function callProxiedCompletion(
   }
   if (splitResult.value.prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
     return fail(`provider "${descriptor.id}" does not accept image input`);
+  }
+
+  // The quality tier is resolved HERE rather than forwarded, because it can be:
+  // the tier walk and the alias map both live on the descriptor, which is
+  // client-side, so this side already holds everything the resolution needs.
+  // Sending the concrete model through the existing `modelOverride` field means a
+  // proxy needs no new vocabulary and an already-deployed one honors the tier
+  // without being updated — where a `tier` body field it did not understand would
+  // be ignored, silently serving a frontier request from the base model.
+  //
+  // Only when a tier was actually asked for. With no tier, `modelOverride` passes
+  // through exactly as before, including absent — which is what lets a proxy apply
+  // its own default.
+  let effectiveModelOverride: ModelSpec | undefined = modelOverride;
+  if (tier !== undefined) {
+    const tierResult = resolveProviderModel(descriptor, modelOverride, tier);
+    if (tierResult.isFailure()) {
+      return fail(tierResult.message);
+    }
+    effectiveModelOverride = tierResult.value;
   }
 
   const body: Record<string, unknown> = {
@@ -1043,8 +1067,16 @@ export async function callProxiedCompletion(
   if (system !== undefined) {
     body.system = system;
   }
-  if (modelOverride !== undefined) {
-    body.modelOverride = modelOverride;
+  if (effectiveModelOverride !== undefined) {
+    body.modelOverride = effectiveModelOverride;
+  }
+  // Forwarded so a proxy can target a self-hosted or LAN upstream on the caller's
+  // behalf. Unlike `tier`, this cannot be resolved on this side: the proxy is the
+  // one making the upstream call. A proxy that does not implement the field falls
+  // back to the descriptor's base URL, so treat honoring it as a proxy capability
+  // rather than a guarantee of this function.
+  if (endpoint !== undefined) {
+    body.endpoint = endpoint;
   }
   if (tools && tools.length > 0) {
     body.tools = tools;
@@ -1068,6 +1100,14 @@ export async function callProxiedCompletion(
             schema: structuredOutput.schema.toJson(),
             ...(structuredOutput.onUnsupported !== undefined
               ? { onUnsupported: structuredOutput.onUnsupported }
+              : {}),
+            // Part of the request, not a local-only concern: the hoist is applied
+            // where the wire schema is built, which on this path is the proxy. Drop
+            // it and an opted-in caller's schema gets refused or degraded instead of
+            // hoisted, and `onUnsupported` reports a constraint loss the caller had
+            // already opted out of.
+            ...(structuredOutput.adaptOptionalToNullable !== undefined
+              ? { adaptOptionalToNullable: structuredOutput.adaptOptionalToNullable }
               : {})
           }
         : {
@@ -1105,11 +1145,20 @@ export async function callProxiedCompletion(
   // rather than a response claiming an enforcement nobody verified — a proxy
   // predating this feature drops the constraint silently, which is the exact
   // failure this surface exists to remove.
+  // A proxy relaying `callProviderCompletion`'s result carries an already-normalized
+  // IAiCompletionUsage, not a provider wire shape — so this validates that shape
+  // rather than reaching for the per-provider normalizers. A proxy that reports
+  // nothing, or reports something malformed, yields `undefined`: the documented
+  // "no normalized usage exposed", never a partially-trusted object and never a
+  // fabricated zero.
+  const usage: IAiCompletionUsage | undefined = aiCompletionUsage.convert(response.usage).orDefault();
+
   if (structuredOutput === undefined) {
     return succeed({
       content: response.content,
       truncated: response.truncated === true,
-      structuredOutput: 'none'
+      structuredOutput: 'none',
+      ...(usage !== undefined ? { usage } : {})
     });
   }
   if (!isStructuredOutputEnforcement(response.structuredOutput)) {
@@ -1122,6 +1171,7 @@ export async function callProxiedCompletion(
   return succeed({
     content: response.content,
     truncated: response.truncated === true,
-    structuredOutput: response.structuredOutput
+    structuredOutput: response.structuredOutput,
+    ...(usage !== undefined ? { usage } : {})
   });
 }
