@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import '@fgv/ts-utils-jest';
 import { act, renderHook } from '@testing-library/react';
 
 import { AiAssist } from '@fgv/ts-extras';
@@ -579,13 +580,12 @@ describe('useAiAssist › generateDirect', () => {
     const keyStore = new StubKeyStore(true, new Map([['secret.xai-grok', 'sk-xai']]));
     const { result } = renderHook(() => useAiAssist({ settings, keyStore }));
 
-    let r: Result<unknown> | undefined;
+    let r!: Result<unknown>;
     await act(async () => {
       r = await result.current.generateDirect('xai-grok', TEST_PROMPT, succeed);
     });
 
-    expect(r?.isFailure()).toBe(true);
-    expect(r?.message).toMatch(/endpoint is not supported on the proxied path/i);
+    expect(r).toFailWith(/endpoint is not supported on the proxied path/i);
     expect(directSpy).not.toHaveBeenCalled();
   });
 
