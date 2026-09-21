@@ -51,6 +51,22 @@ import { defaultAtomicFsOperations } from './atomicFsOperations';
 import { qualifyAtomicWrites } from './atomicRootQualification';
 
 /**
+ * A root's atomic-write qualification, together with the failure code to report
+ * if it refuses.
+ *
+ * @remarks
+ * The code travels with the qualification rather than being inferred later from
+ * whichever check happened to run first: a refusal this accessor makes on policy
+ * grounds is `'not-writable'` (matching the in-memory store for the same
+ * conditions), while one the platform or filesystem forces is `'unsupported'`.
+ */
+interface IAccessorQualification {
+  readonly capabilities: IAtomicWriteCapabilities;
+  readonly reason: string;
+  readonly refusalCode: IAtomicWriteFailure['code'];
+}
+
+/**
  * Implementation of {@link FileTree.IMutableBinaryFileTreeAccessors} that uses the
  * file system to access and modify files and directories.
  *
@@ -328,20 +344,6 @@ export class FsFileTreeAccessors<TCT extends string = string>
       });
     }
 
-    // Writability is settled before capability, so that every mutability
-    // refusal — disabled, filtered, or denied by the filesystem — reports
-    // `not-writable`, exactly as the in-memory store reports the same
-    // conditions. Two implementations of one contract answering the same
-    // question with different codes is what breaks a caller's `switch`.
-    const mutable = this.fileIsMutable(filePath);
-    if (mutable.isFailure()) {
-      return failWithDetail(mutable.message, {
-        code: 'not-writable',
-        stage: 'validate',
-        visibility: 'unchanged'
-      });
-    }
-
     // The qualification is per containing directory, not per accessor: one root
     // can span a qualified filesystem and an unqualified mount beneath it.
     const qualification = this._qualifyDirectory(directoryPath);
@@ -352,11 +354,11 @@ export class FsFileTreeAccessors<TCT extends string = string>
         visibility: 'unchanged'
       });
     }
-    const { capabilities, reason } = qualification.value;
+    const { capabilities, reason, refusalCode } = qualification.value;
 
     if (!capabilities.atomicReplace) {
       return failWithDetail(`${absolutePath}: atomic writes are not available here: ${reason}`, {
-        code: 'unsupported',
+        code: refusalCode,
         stage: 'validate',
         visibility: 'unchanged'
       });
@@ -371,6 +373,18 @@ export class FsFileTreeAccessors<TCT extends string = string>
         }' exceeds what this root can honor (${capabilities.guarantees.join(', ')}) — ${reason}`,
         { code: 'unsupported', stage: 'validate', visibility: 'unchanged' }
       );
+    }
+
+    // The destination's own writability, which the directory-level checks above
+    // cannot see: a filter may exclude this one file inside a writable, qualified
+    // directory.
+    const mutable = this.fileIsMutable(filePath);
+    if (mutable.isFailure()) {
+      return failWithDetail(mutable.message, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
     }
 
     return commitFileAtomically({
@@ -406,26 +420,31 @@ export class FsFileTreeAccessors<TCT extends string = string>
    * fails rather than answering "not capable" — the same distinction the
    * in-memory accessors draw.
    */
-  private _qualifyDirectory(directory: string): Result<{
-    capabilities: IAtomicWriteCapabilities;
-    reason: string;
-  }> {
+  private _qualifyDirectory(directory: string): Result<IAccessorQualification> {
     const absolutePath = this.resolveAbsolutePath(directory);
     return qualifyAtomicWrites(defaultAtomicFsOperations, absolutePath, process.platform).onSuccess(
-      (qualification) => {
+      (qualification): Result<IAccessorQualification> => {
+        // A refusal this accessor makes on POLICY grounds is `not-writable` —
+        // the same code the in-memory store reports for the same conditions.
+        // A refusal the platform or filesystem forces is `unsupported`. One
+        // contract answering the same question two ways is what breaks a
+        // caller's `switch`, so the distinction is carried rather than
+        // inferred later from whichever check happened to run first.
         if (this._mutable === false) {
           return succeed({
             capabilities: { atomicReplace: false, guarantees: [] },
-            reason: `${absolutePath}: mutability is disabled`
+            reason: `${absolutePath}: mutability is disabled`,
+            refusalCode: 'not-writable'
           });
         }
         if (!isPathMutable(absolutePath, this._mutable)) {
           return succeed({
             capabilities: { atomicReplace: false, guarantees: [] },
-            reason: `${absolutePath}: path is excluded by filter`
+            reason: `${absolutePath}: path is excluded by filter`,
+            refusalCode: 'not-writable'
           });
         }
-        return succeed(qualification);
+        return succeed({ ...qualification, refusalCode: 'unsupported' });
       }
     );
   }

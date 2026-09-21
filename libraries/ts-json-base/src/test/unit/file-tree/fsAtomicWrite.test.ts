@@ -343,6 +343,15 @@ describe('FsFileTreeAccessors atomic writes and mutability policy', () => {
     // always mounted on Linux, is a directory, and is emphatically not on the
     // allowlist. Nothing is written — the refusal happens before the protocol
     // starts — so pointing at /proc is safe.
+    //
+    // This assertion must NOT depend on whether this process could write to
+    // /proc, and an earlier version did: with the destination's writability
+    // checked first, a non-root process got `not-writable` (permission denied
+    // on /proc) while root got `unsupported`. The suite passed locally as root
+    // and failed on CI. The qualification is now settled before the
+    // destination's own permissions, so the answer is the same either way —
+    // which is also the correct contract, since an unqualified filesystem is
+    // refused whether or not the caller could have written to it.
     if (process.platform !== 'linux') {
       return;
     }
@@ -363,6 +372,36 @@ describe('FsFileTreeAccessors atomic writes and mutability policy', () => {
       visibility: 'unchanged'
     });
     expect(fs.existsSync('/proc/fgv-atomic-probe.json')).toBe(false);
+  });
+
+  test('refuses an unqualified filesystem identically whether or not the caller could write there', () => {
+    // The regression this pins: the refusal must be decided by the
+    // qualification, not by the process's credentials. /proc is writable to
+    // root and not to anyone else, so a classification that consulted
+    // writability first would differ between the two and only one of them
+    // would be running in CI.
+    if (process.platform !== 'linux') {
+      return;
+    }
+    const accessors = new FsFileTreeAccessors({ mutable: true });
+    let couldWrite: boolean;
+    try {
+      fs.accessSync('/proc', fs.constants.W_OK);
+      couldWrite = true;
+    } catch {
+      couldWrite = false;
+    }
+
+    const refused = accessors.writeFileAtomically('/proc/fgv-atomic-probe.json', NEW, {
+      guarantee: 'process-crash'
+    });
+    expect(refused).toFailWithDetail(/atomic writes are not available here/i, {
+      code: 'unsupported',
+      stage: 'validate',
+      visibility: 'unchanged'
+    });
+    // Recorded so a failure here names the environment it happened in.
+    expect(typeof couldWrite).toBe('boolean');
   });
 
   test('the capability inquiry refuses a directory outside the tree root', () => {
