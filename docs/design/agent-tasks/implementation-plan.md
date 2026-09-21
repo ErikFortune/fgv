@@ -1,23 +1,23 @@
 # Agent tasks — phased implementation plan
 
-**Status:** durability boundary and bounded stop presets approved 2026-09-21; capacity amendment A3 pending orchestrator/user approval; awaiting explicit authorization to implement.
+**Status:** A1/A2 and finite-horizon capacity amendment A3 approved 2026-09-21; reference-consumer A3 approval is limited to V1 ingestion. Awaiting explicit authorization to implement.
 **Date:** 2026-09-21. **Source inspection:** `d0ec601c6d67a6016a00a33a69ddee18bec6ddb1`.
 **Engineering contract:** [development design](development-design.md).
 **Scope authorities:** [library proposal](fgv-library.md), [adoption proposal](multi-agent-chat-adoption.md), [deferred scope](deferred.md).
 
-This plan changes no production code or consumer repository. Every test and measurement below is **planned**, not run. Source/document review is the only evidence available at this stage. The slices are dependency-ordered review units; an incomplete internal slice is not a release claiming all task guarantees.
+This plan changes no production code or consumer repository. Every implementation test and M1 measurement below is **planned**, not run. Source/document review and the separately attributed consumer execution-record measurements in the adoption proposal are the available evidence; those measurements do not qualify broker limits or memory. The slices are dependency-ordered review units; an incomplete internal slice is not a release claiming all task guarantees.
 
 ## 1. Decisions and approval status
 
 Adopt `@fgv/ts-agent-tasks` at `libraries/ts-agent-tasks`, one package with integration packlets. Use generic scopes, a single-writer broker, stable task-ID storage, typed kind/command registration, native state plus owed updates in one atomic task record, exact per-consumer acknowledgements, resident query indexes, and explicit source reconciliation. Keep the tracked/list/external helper built-ins and the snapshot-only entry point. Reassignment is included from the first broker release and never changes execution binding.
 
-The original two material recommendations were approved on 2026-09-21. The residency/capacity amendment is a separate pending decision:
+All three material decisions were approved on 2026-09-21. The user reports orchestrator and reference-consumer agreement; the consumer's A3 acceptance is scoped to disposable V1 ingestion hubs:
 
 | Approval | Recommended decision | Consequence of a different decision |
 |---|---|---|
 | A1 — approved 2026-09-21 | Process-crash survival on qualified local Linux/macOS Node FileTree roots; file and directory flushes before acknowledgement. OS-crash and power-loss survival are excluded; reject requests for those guarantees and unqualified backends. | Stronger guarantees or additional platforms require separate design/qualification. Approval sets the intended contract; it does not replace implementation evidence or passing crash tests. |
 | A2 — approved 2026-09-21 | Include bounded cascade pause/cancel as a best attempt with an observable result: persisted intent, explicit partial effects/blockers, stable-stop source opt-in, and frozen subtree admission while latched | Acceptance remains distinct from completion. No all-or-nothing execution promise; no silent skipped children or weakening of intent/recovery requirements. |
-| A3 — recommended; awaiting orchestrator/user approval | Minimal archived resident projection; on-demand historical evidence; bounded caches/rebuild; design §8.6's finite whole-repository limits and persisted reservations for completing accepted work; explicitly qualified source-replay bounds | Adds capacity accounting, admission and recovery work across T1/T3–T9, a narrow host limit-increase API, and measurements M1. Compaction remains deferred only if a finite history horizon is acceptable. Indefinite fixed-resource operation requires a separately scoped compaction design before that adoption. |
+| A3 — approved 2026-09-21; consumer acceptance limited to V1 ingestion | Minimal archived resident projection; on-demand historical evidence; bounded caches/rebuild; design §8.6's finite whole-repository limits and persisted reservations for completing accepted work; explicitly qualified source-replay bounds | Adds capacity accounting, admission and recovery work across T1/T3–T9, a narrow host limit-increase API, and measurements M1. Initial limits remain subject to qualification. The reference consumer accepts a finite horizon for disposable hubs only; its future always-on collective requires a separately approved compaction design before adoption. |
 
 Package naming, lifecycle vocabulary, strict schemas, pagination and receipt issuance are reasoned technical recommendations, not open product discovery. Document acceptance may approve them together. Consumer rollout choices below remain the consumer's responsibility and do not block standalone library implementation.
 
@@ -40,7 +40,7 @@ Package naming, lifecycle vocabulary, strict schemas, pagination and receipt iss
 | Receipt ownership (already settled) | Renderer is pure in both modes; only bound service/checkpoint store mutates acknowledgements | T2, T7, I2 | Snapshot-only render has no store, pure-repeat equality, no model acknowledgement tool |
 | Residency/capacity amendment (A3) | Design §7 category projections and staged rebuild; §8.6 finite counts/bytes, persisted closeout/acknowledgement claims and finite-horizon limitation | T1, T3–T9, **M1**, P1 | Deterministic retained-shape/counter and saturation/crash evidence; separate on-demand steady-state and peak memory report including lifetime subscription and dedup history |
 
-No numbered gate is left to an implementer to “discover later.” A1 and A2 remain approved; A3 requires a separate decision before the amended dependent slices. Implementation and qualification gates remain mandatory. If reservations cannot cover the admitted source/closeout semantics, or memory predictions fail, amend the design openly rather than weaken guarantees or choose thresholds after seeing results.
+No numbered gate is left to an implementer to “discover later.” A1, A2 and the scoped A3 decision are approved; implementation and qualification gates remain mandatory. If reservations cannot cover the admitted source/closeout semantics, or memory predictions fail, amend the design openly rather than weaken guarantees or choose thresholds after seeing results.
 
 ## 3. Upstream FileTree slices
 
@@ -160,6 +160,8 @@ For unchanged source revision with later `observedAt`, prove freshness refresh i
 
 A3: reserve maximum command result/settlement before dispatch; load retained dedup evidence on demand, including archived-task replay. Qualify finite source-replay envelopes or reject that stronger guarantee before registration/subscription activation. Test bound exhaustion/extension, over-bound source-contract failure, unchanged cursor on backpressure, and a reserved terminal observation while ordinary observed-state sampling is capacity-blocked. No arbitrary replay history may be skipped to reach terminal state.
 
+Add a layering fixture with an executor-owned payload larger than 64 KiB and a bounded task projection that fits `details`. Prove that task/source-checkpoint records do not copy retained source text or execution checkpoints, and that recovery resolves the original source binding. Measure the serialized adapter projection independently of the execution record. The 1 MiB broker source-checkpoint bound is not an executor-job limit; external storage retains its own capacity/durability contract.
+
 **Review gate:** no blind re-execution and no second authoritative lifecycle store. Verify the simulated source actually applies commands; the ingestion compatibility adapter's empty command set supplies no command evidence.
 
 ### T7 — Subscriptions, exact issued receipts and acknowledgement
@@ -277,6 +279,8 @@ All ten remaining adoption gates are accounted for here. These are proposed hand
 
 The ingestion adapter advertises no execution commands. It can validate current/terminal projection, scoped visibility, indexing and receipts. It cannot demonstrate cancellation, pause, retry, reliable cascade completion, or execution migration. Human-input request/answer protocols stay deferred in all journeys.
 
+**Scoped A3 adoption acceptance:** the reference consumer approves the finite history horizon for disposable V1 ingestion hubs, not the future autonomous collective. Its adapter uses `observed-state`: optional/coalescible progress and required terminal delivery, with applicable attention obligations preserved. The finite `source-replay` envelope therefore does not constrain this port; generic replayable-source tests remain required. Keep the executor's retained source/checkpoints/curation state in its authoritative store and pass only bounded projections/references to FGV. Consumer-reported byte measurements and unmeasured rates are recorded in the [adoption proposal](multi-agent-chat-adoption.md#consumer-a3-approval-and-payload-measurements); they neither establish a broker byte-bound violation nor satisfy M1. Compaction is a prerequisite for collective adoption, not F1/F2 or the V1 ingestion port. Deferred per-turn work is not planned as one task per deferral in this consumer; this is a consumer modeling choice, not a library prohibition on short-lived tracked tasks.
+
 ## 8. Cross-cutting validation and release gate
 
 Each implementation slice starts with behavior-driven positive, negative, boundary and integration tests. Run the repository's `code-reviewer` pass **before** closing coverage gaps; resolve findings, then reach meaningful 100% statements, branches, functions and lines in each affected package. Use `@fgv/ts-utils-jest`, Result assertions and setup-only throwing. Do not paper over failures, add public test-only exports, or use coverage ignores without the repository-required approval. Use typed lower-boundary fakes to inject real error paths; do not fake a Result implementation or mock away the contract being tested.
@@ -339,4 +343,4 @@ For code slices, run `rushx build`, `rushx lint`, `rushx test` and coverage in a
 
 At implementation close, load the repository's finalize-task skill before any closing PR, update the shared workstream/design/capability artifacts in that implementation change, and follow the normal internal/external review process. That later workflow must not cause this design task to alter ledgers, production code, dependencies or proposals: the current authorized output is only these two documents, with no commit or PR.
 
-**Approval handoff:** A1 and A2 remain approved. Ask the orchestrator/user to approve **A3's finite-horizon policy and protected completion/accounting scope**, including the proposed initial limits and finite source-replay admission condition, or require a separately designed compaction capability before the relevant implementation/adoption. Approval of the proposal does not certify its memory profile; M1 supplies that later evidence. Then await explicit implementation authorization and start F1 as an isolated upstream FileTree slice; F2 must establish the promised backend behavior before a durable task path is advertised. No consumer rollout is implied.
+**Approval handoff:** A1, A2 and A3 are approved; consumer acceptance of A3's finite horizon is limited to disposable V1 ingestion hubs. The future autonomous collective requires a separate compaction design before adoption. Approval and consumer execution-record byte measurements do not certify the broker's memory profile; M1 supplies that later evidence. Await explicit implementation authorization and start F1 as an isolated upstream FileTree slice, followed by F2's Node implementation and crash qualification before a durable task path is advertised. These adoption clarifications do not block F1/F2 or authorize consumer rollout. Branch/squash operations and shared orchestration artifacts remain with the user/orchestrator.

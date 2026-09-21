@@ -355,6 +355,17 @@ adding them to make the package feel complete.
 
 ## Complete event history, audit, and retention products
 
+**Scoped A3 acceptance (2026-09-21):** the reference consumer accepts the finite,
+non-recycling history budget for its disposable V1 ingestion hubs only. This is
+not approval for its future always-on autonomous collective. Safe operational
+compaction/deletion is a prerequisite before that collective adopts the model,
+not a prerequisite for F1/F2 or the V1 ingestion port. Its later design must cover
+inventory and graph/source identity, exact acknowledgement history, operation
+replay horizons, outstanding obligations, and crash-safe reclamation. This is
+distinct from an optional complete event-history or compliance-audit product;
+raising finite limits postpones exhaustion but does not satisfy indefinite
+fixed-resource operation.
+
 Durable current state and required outstanding updates do not imply an immutable
 audit log of every progress tick. Defer full event sourcing, history compaction
 tooling, compliance-grade audit, and cross-source global ordering.
