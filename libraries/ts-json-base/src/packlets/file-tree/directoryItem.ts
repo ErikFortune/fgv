@@ -168,7 +168,11 @@ export class DirectoryItem<TCT extends string = string>
     contents: string,
     options: IAtomicWriteOptions
   ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure> {
-    if (name.length === 0 || name.includes('/')) {
+    // Reject BOTH separators regardless of platform. `FsFileTreeAccessors.joinPaths` is
+    // `path.join`, which treats `\` as a separator on Windows, so a name like `a\b` would
+    // otherwise pass this check and silently become a nested path once F2 makes that
+    // accessor atomic-capable. A child name is a single component on every platform.
+    if (name.length === 0 || name.includes('/') || name.includes('\\')) {
       return failWithDetail(`${this.absolutePath}: '${name}' is not a valid child file name`, {
         code: 'not-writable',
         stage: 'validate',
@@ -178,7 +182,9 @@ export class DirectoryItem<TCT extends string = string>
 
     const hal = this._hal;
     if (!isAtomicAccessors(hal)) {
-      return failWithDetail(`${this.absolutePath}/${name}: atomic writes not supported`, {
+      // Compose through joinPaths rather than a hardcoded '/' so the message does not mix
+      // separators on a Windows-style absolutePath.
+      return failWithDetail(`${hal.joinPaths(this.absolutePath, name)}: atomic writes not supported`, {
         code: 'unsupported',
         stage: 'validate',
         visibility: 'unchanged'

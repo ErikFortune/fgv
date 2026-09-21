@@ -247,6 +247,26 @@ describe('DirectoryItem atomic delegation', () => {
     );
   });
 
+  test('rejects a child name containing a backslash on every platform', () => {
+    // `FsFileTreeAccessors.joinPaths` is `path.join`, which treats `\` as a separator on
+    // Windows. Today this is latent — that accessor is not atomic-capable, and the in-memory
+    // one splits on '/' only — but F2 makes it live, so the check belongs here rather than
+    // being inherited as a hole. Rejection is unconditional, not platform-sniffed: a child
+    // name is a single component everywhere, so neither separator is ever legitimate.
+    const dir = InMemoryTreeAccessors.create([], { mutable: true }).orThrow().getItem('/').orThrow();
+    if (!isAtomicDirectoryItem(dir)) {
+      throw new Error('expected an atomic directory item');
+    }
+    expect(dir.writeChildAtomically('a\\b', 'contents', { guarantee: 'session' })).toFailWithDetail(
+      /not a valid child file name/i,
+      { code: 'not-writable', stage: 'validate', visibility: 'unchanged' }
+    );
+    // Nothing was created under either interpretation of the name.
+    expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+      expect(children).toHaveLength(0);
+    });
+  });
+
   test('fails explicitly rather than degrading when the backing store does not support atomic writes', () => {
     const fsAccessors = new FsFileTreeAccessors({ mutable: true });
     const fsDir = DirectoryItem.create('.', fsAccessors).orThrow();
