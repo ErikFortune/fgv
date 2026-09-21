@@ -105,7 +105,7 @@ belong in the envelope.
 | Progress | Optional phase, completed amount, total, unit, and detail; unknown total is valid |
 | Revision | Stable ordering/deduplication token for the view; not a wall-clock timestamp |
 | Parent | Optional task identity; children are queried through the relationship model |
-| Responsibility | Optional actor/role reference, distinct from the executing implementation |
+| Responsibility | Reassignable actor/role reference, distinct from task identity, storage location, and the executing implementation |
 | Scopes | Opaque host-defined associations used for selection, not implicit permission grants |
 | Execution binding | Implementation/source identity and a serializable reference, when bound |
 | Recovery declaration | How the implementation can recover or be reattached |
@@ -262,6 +262,7 @@ Conceptual operations (names are illustrative, not frozen TypeScript APIs):
 | Reconcile a source | Observed updates and explicit unresolved items/gaps |
 | Prepare task context | Structured context, rendered fragments, inclusion receipt, omissions |
 | Acknowledge presented updates | Checkpoint result limited to the supplied receipt |
+| Reassign responsibility | Updated task revision and assignment change; execution binding unchanged |
 
 Fallible operations use `Result<T>`/async Result conventions; classified failures
 use the established detailed-result pattern when callers must branch. Return
@@ -321,6 +322,60 @@ not comprehension, human approval, or completion of an obligation.
 The first version does not arbitrate which agent claims a shared task. It supports
 explicit responsibility metadata and host-authorized changes. That leaves the
 collective-work policy open without making the representation unusable.
+
+### Reassignment and handoff
+
+**Responsibility reassignment is supported in the initial model and broker-owned
+metadata operations; it is not forbidden or deferred.** A host-authorized actor
+can reassign a task from actor/role A to B using the expected task revision. The
+same task retains its identity, history/outcome references, children, and execution
+binding. Record a revisioned assignment change so scoped context and subscriptions
+can reflect it. Automatic assignee selection, competing claims, and negotiated
+handover/acceptance are separate policies, not prerequisites for explicit reassignment.
+
+Example: agent A owns the next step of a shared research task; the host reassigns
+it to B while an external ingestion child continues running. B sees the existing
+task and current child state, not a newly created copy. Reassigning the parent
+does not implicitly reassign children, move their source records, or restart work.
+
+Assignment is not authorization. The host authorizes the change and decides what
+access B requires and whether A retains any access/control. Changing the actor
+reference alone neither grants B new scopes nor revokes A's existing grants.
+Any needed access setup is explicit host policy; the library does not claim an
+atomic transaction across external identity/permission systems. Subsequent
+commands recheck current policy, and stale metadata writes fail their revision
+precondition. Assignment does not by itself quiesce an in-flight agent turn or
+external executor; the host must arrange that if its handoff requires exclusivity.
+
+Presentation checkpoints are not transferable acknowledgements. B receives an
+explicit starting view under the host's subscription policy, including current
+state and relevant outstanding attention; A having seen an update does not mean B
+has seen it. Existing delivery obligations are retained or explicitly disposed of
+under current authorization, not silently lost when assignment changes. This does
+not require replaying all history to B or providing durable delivery to A after
+access is revoked.
+
+**Changing execution is a different operation.** Moving a running job to another
+executor, transferring checkpoints/leases, or guaranteeing that A has stopped
+before B starts requires implementation-specific coordination. Generic live
+execution migration is deferred; responsibility reassignment never advertises it
+implicitly. The ingestion adapter's empty execution-command set does not prevent
+the broker from updating responsibility metadata it owns under host authorization.
+
+### Storage consequence
+
+The canonical task address and lifetime must not depend on the currently assigned
+actor. The default catalog should be keyed by stable task identity within a
+host-selected repository root; responsibility and scopes are mutable indexed
+metadata, not actor-owned directory identities. Reassignment must not require
+copy/delete of the canonical task record or manufacture a new task ID.
+
+An actor-partitioned external source is still adaptable: retain its stable source
+reference independently of the current assignee. Its original actor may be part
+of provenance/addressing, but changing responsibility must not redirect lookup to
+B's vault. Such a host must preserve resolution and recovery even if A leaves;
+actor removal cannot silently erase a surviving task. Physical migration between
+repositories is distinct from reassignment and is not an initial broker operation.
 
 ## 7. Input requests — deferred protocol, supported waiting state
 
@@ -513,6 +568,8 @@ The contract is behavioral, not an exposed in-memory map implementation:
   database or host store can satisfy the same query contract differently.
 - Successful native mutations update query-visible scope/lifecycle/due membership
   before returning success. Removal and scope changes cannot leave stale entries.
+- Responsibility changes update any assignee-derived view/index without changing
+  canonical task identity or implying changes to independently assigned scopes.
 - Indexes are derived, rebuildable state, not competing task authority. Initial
   open/recovery may rebuild them; a rebuilding or failed index is explicitly
   unavailable/degraded, never a healthy empty list. Persisting an index is optional;
@@ -710,6 +767,10 @@ The initial proof should be deterministic and usable without API credentials:
     accepted versus applied, refusal, unsupported operation, duplicate submission,
     revoked authority, and ambiguous outcome. The ingestion reference adapter
     advertises no commands and therefore cannot validate this surface for FGV.
+11. Reassign a tracked parent from A to B while an external child runs. Verify
+    stable task/source identity, unchanged child responsibility, revision conflicts,
+    current authorization, B's starting context, independent acknowledgements, and
+    persistence/recovery without moving the task record into B's storage.
 
 This is a small executable example plus contract/journey tests, not a resident
 agent product. A fuller showcase agent is discussed in [deferred considerations](deferred.md#simple-fgv-showcase-agent).

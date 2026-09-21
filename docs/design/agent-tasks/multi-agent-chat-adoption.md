@@ -209,6 +209,34 @@ reactivity supplies execution as a chosen recipient, not the choice itself.
 Command authority is likewise host-supplied and rechecked per command; a stored
 task association or delegated-stop label is not a durable FGV grant.
 
+### Reassignment scenario and storage choice
+
+Explicit responsibility reassignment is part of the initial FGV model, not a
+forbidden or deferred operation. A chat-shared task can move from A to B while
+retaining its task ID, children, results, and source binding. Parent reassignment
+does not automatically reassign its children. The host decides recipient selection,
+any access changes, and whether an in-flight agent turn must yield before handoff.
+
+This argues for a stable catalog keyed by task ID, with actor responsibility as
+mutable indexed metadata, rather than making the canonical task live under its
+current assignee. FGV's default follows that distinction. The consumer may still
+adapt existing actor-local ingestion records: the binding continues to identify
+the original source store/job even when another actor becomes responsible for
+following up. Do not copy a job into B's vault or redirect its lookup merely
+because the task was reassigned.
+
+For example, B can take over a shared research plan while ingestion continues in
+A's knowledge store. That does not move extracted knowledge, grant B access to
+private artifacts, transfer an ingestion lease, or restart the runner. The host
+must arrange the necessary visibility and preserve source availability if A is
+removed. A's acknowledgement is not B's; initialize B's context explicitly and
+retain or explicitly disposition prior delivery obligations under current access.
+
+Generic live-executor migration and physical store migration remain deferred.
+The library does not promise to stop A and start B merely by changing responsibility.
+The observation-only ingestion adapter can coexist with broker-owned responsibility
+updates: those are catalog metadata operations, not new ingestion commands.
+
 ## 6. Proactive context
 
 Build task context for ordinary principal turns, participant contributions, and
@@ -356,6 +384,8 @@ Before implementation, the consuming project must settle:
 8. Whether to adopt FGV's supplied repository or implement its indexed contract
    over host storage, preserving authoritative admission checks and query performance.
 9. Replacement of transient-TTL-only task delivery with recoverable obligations.
+10. Stable catalog/source addressing across reassignment and actor removal, including
+    access updates and presentation-checkpoint policy for the incoming assignee.
 
 No calendar estimate is asserted. These choices, especially room scheduling,
 determine the adoption cost. They do not block independent design and validation

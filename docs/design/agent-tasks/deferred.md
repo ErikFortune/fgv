@@ -15,6 +15,8 @@ would make true.
 - Stable identities and validated serialization.
 - Authorization on views, tools, commands, and subscribed delivery.
 - Parent/child integrity and explicit parent-completion semantics.
+- Explicit host-authorized responsibility reassignment without replacing task
+  identity or moving its canonical record between assignees' storage.
 - Durable acceptance/recovery for any mode advertised as durable.
 - FileTree as the default persistence implementation, not a deferred adapter.
 - The additive FileTree atomic/durable-write dependency for the initial Node
@@ -152,6 +154,25 @@ transactions, compensating transactions, and exactly-once external effects.
 source capability declarations, and explicit authoritative ownership.
 **Trigger:** competing writers or external operations whose safety requires those
 guarantees. Single-writer implementations must state their limits now.
+
+## Execution migration and negotiated handover
+
+Responsibility reassignment is in initial scope; automatic assignee selection,
+negotiated acceptance, competing claims, and live execution migration are not.
+Changing an actor reference does not stop an executor, transfer its lease or
+checkpoint, move artifacts, or atomically hand execution to another process.
+
+Likewise defer a generic physical repository-migration operation. The initial
+catalog's stable task IDs and actor-independent canonical addressing ensure a
+normal reassignment does not need such a migration. Actor-local external records
+remain reachable through their original source binding, independently of assignee.
+
+**Extension preserved:** separate responsibility, source binding, scopes, and
+host-supplied authority; revisioned assignment changes and consumer checkpoints.
+**Trigger:** a consumer requires coordinated handover of actual running work or
+storage ownership, beyond explicit reassignment and implementation-owned execution.
+At that point quiescence/fencing, transfer failure, recovery, and actor-removal
+semantics need their own contract; do not imply them from today's assignment API.
 
 ## Dependency graphs and sophisticated aggregation
 
