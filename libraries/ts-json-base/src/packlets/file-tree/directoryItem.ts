@@ -20,14 +20,20 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { DetailedResult, Result, captureResult, fail, failWithDetail, succeed } from '@fgv/ts-utils';
 import {
   FileTreeItem,
+  IAtomicFileTreeDirectoryItem,
+  IAtomicWriteCapabilities,
+  IAtomicWriteFailure,
+  IAtomicWriteOptions,
+  IAtomicWriteReceipt,
   IDeleteChildOptions,
   IFileTreeAccessors,
   IMutableBinaryFileTreeDirectoryItem,
   IMutableFileTreeDirectoryItem,
   IMutableFileTreeFileItem,
+  isAtomicAccessors,
   isMutableAccessors,
   isMutableBinaryAccessors,
   isMutableFileItem
@@ -38,13 +44,18 @@ import {
  *
  * @remarks
  * Implements the optional byte-native create capability
- * ({@link FileTree.IMutableBinaryFileTreeDirectoryItem}) by delegating to the underlying
- * accessors, so the guard is true regardless of what backs it. Ask
- * {@link FileTree.DirectoryItem.canCreateChildFileBytes | canCreateChildFileBytes} for the
- * store's actual answer.
+ * ({@link FileTree.IMutableBinaryFileTreeDirectoryItem}) and the optional atomic-write
+ * capability ({@link FileTree.IAtomicFileTreeDirectoryItem}) by delegating to the underlying
+ * accessors, so both guards are true regardless of what backs it. Ask
+ * {@link FileTree.DirectoryItem.canCreateChildFileBytes | canCreateChildFileBytes} or
+ * {@link FileTree.DirectoryItem.getAtomicWriteCapabilities | getAtomicWriteCapabilities} for
+ * the store's actual answer. A consumer holding a `DirectoryItem` never needs a native path or
+ * accessor internals to perform an atomic child write.
  * @public
  */
-export class DirectoryItem<TCT extends string = string> implements IMutableBinaryFileTreeDirectoryItem<TCT> {
+export class DirectoryItem<TCT extends string = string>
+  implements IMutableBinaryFileTreeDirectoryItem<TCT>, IAtomicFileTreeDirectoryItem<TCT>
+{
   /**
    * {@inheritDoc FileTree.IFileTreeDirectoryItem."type"}
    */
@@ -137,6 +148,45 @@ export class DirectoryItem<TCT extends string = string> implements IMutableBinar
 
     const filePath = hal.joinPaths(this.absolutePath, name);
     return this._createdChildFile(filePath, () => hal.saveFileBytes(filePath, bytes));
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeDirectoryItem.getAtomicWriteCapabilities}
+   */
+  public getAtomicWriteCapabilities(): Result<IAtomicWriteCapabilities> {
+    if (!isAtomicAccessors(this._hal)) {
+      return succeed({ atomicReplace: false, guarantees: [] });
+    }
+    return this._hal.getAtomicWriteCapabilities(this.absolutePath);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeDirectoryItem.writeChildAtomically}
+   */
+  public writeChildAtomically(
+    name: string,
+    contents: string,
+    options: IAtomicWriteOptions
+  ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure> {
+    if (name.length === 0 || name.includes('/')) {
+      return failWithDetail(`${this.absolutePath}: '${name}' is not a valid child file name`, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    const hal = this._hal;
+    if (!isAtomicAccessors(hal)) {
+      return failWithDetail(`${this.absolutePath}/${name}: atomic writes not supported`, {
+        code: 'unsupported',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    const filePath = hal.joinPaths(this.absolutePath, name);
+    return hal.writeFileAtomically(filePath, contents, options);
   }
 
   /**

@@ -33,6 +33,11 @@ import { DirectoryItem } from '../directoryItem';
 import { FileItem } from '../fileItem';
 import {
   FileTreeItem,
+  IAtomicFileTreeAccessors,
+  IAtomicWriteCapabilities,
+  IAtomicWriteFailure,
+  IAtomicWriteOptions,
+  IAtomicWriteReceipt,
   IBinaryFileTreeAccessors,
   IFileTreeInitParams,
   IFilterSpec,
@@ -171,10 +176,17 @@ class MutableInMemoryDirectory<TCT extends string = string> {
  * supported: subclasses that persist this tree (`localStorage`, HTTP JSON transport,
  * File System Access) persist text, so a byte write could not round-trip through them.
  * Seed a tree with `Uint8Array` contents to hold bytes verbatim.
+ *
+ * Also implements the optional atomic-write capability
+ * ({@link FileTree.IAtomicFileTreeAccessors}). A replacement of an in-memory file's
+ * contents is a single synchronous property assignment, so a reader can never observe
+ * a torn write — this store advertises the `'session'` guarantee and never
+ * `'process-crash'`: nothing here survives the process exiting, because nothing here
+ * is ever written to anything other than process memory.
  * @public
  */
 export class InMemoryTreeAccessors<TCT extends string = string>
-  implements IMutableFileTreeAccessors<TCT>, IBinaryFileTreeAccessors<TCT>
+  implements IMutableFileTreeAccessors<TCT>, IBinaryFileTreeAccessors<TCT>, IAtomicFileTreeAccessors<TCT>
 {
   private readonly _tree: TreeBuilder<TCT>;
   private readonly _inferContentType: (filePath: string) => Result<TCT | undefined>;
@@ -676,5 +688,76 @@ export class InMemoryTreeAccessors<TCT extends string = string>
 
       return succeed(contents);
     });
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeAccessors.getAtomicWriteCapabilities}
+   */
+  public getAtomicWriteCapabilities(directory: string): Result<IAtomicWriteCapabilities> {
+    const absolutePath = this.resolveAbsolutePath(directory);
+    const item = this._tree.byAbsolutePath.get(absolutePath);
+    if (item === undefined) {
+      return fail(`${absolutePath}: not found`);
+    }
+    if (!(item instanceof InMemoryDirectory)) {
+      return fail(`${absolutePath}: not a directory`);
+    }
+    if (this._mutable === false) {
+      return succeed({ atomicReplace: false, guarantees: [] });
+    }
+    return succeed({ atomicReplace: true, guarantees: ['session'] });
+  }
+
+  /**
+   * Replaces (or creates) a file's contents such that a reader never observes
+   * a torn write.
+   *
+   * @remarks
+   * A replacement of an in-memory file's contents is a single synchronous
+   * assignment (see {@link MutableInMemoryFile.setContents}), so there is no
+   * intermediate state a reader could observe as torn — this store can honor
+   * `'session'` unconditionally whenever ordinary mutation would succeed, and
+   * fails any stronger request before touching anything.
+   * @param path - Absolute path of the file to write.
+   * @param contents - The string contents to write.
+   * @param options - The requested {@link FileTree.IAtomicWriteOptions | options}.
+   * @returns `DetailedSuccess` with the receipt if the write committed, or
+   * `DetailedFailure` with a classified failure.
+   */
+  public writeFileAtomically(
+    path: string,
+    contents: string,
+    options: IAtomicWriteOptions
+  ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure> {
+    const absolutePath = this.resolveAbsolutePath(path);
+
+    if (options.guarantee !== 'session') {
+      return failWithDetail(
+        `${absolutePath}: requested guarantee '${options.guarantee}' exceeds this store's 'session' capability`,
+        { code: 'unsupported', stage: 'validate', visibility: 'unchanged' }
+      );
+    }
+
+    const isMutable = this.fileIsMutable(path);
+    if (isMutable.isFailure()) {
+      return failWithDetail(isMutable.message, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    const replaced = this._mutableByPath.get(absolutePath) instanceof MutableInMemoryFile;
+
+    const saveResult = this.saveFileContents(path, contents);
+    if (saveResult.isFailure()) {
+      return failWithDetail(saveResult.message, {
+        code: 'io',
+        stage: 'replace',
+        visibility: 'unknown'
+      });
+    }
+
+    return succeedWithDetail({ guarantee: 'session', replaced });
   }
 }
