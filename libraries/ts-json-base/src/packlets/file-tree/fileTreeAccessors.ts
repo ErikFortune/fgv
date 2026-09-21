@@ -982,7 +982,7 @@ export function isPersistentAccessors<TCT extends string = string>(
   accessors: IFileTreeAccessors<TCT>
 ): accessors is IPersistentFileTreeAccessors<TCT> {
   const persistent = accessors as IPersistentFileTreeAccessors<TCT>;
-  /* c8 ignore next 6 - no current accessor implements IPersistentFileTreeAccessors */
+  /* c8 ignore next 6 - unreachable from THIS package's suite: no accessor here implements IPersistentFileTreeAccessors (three in ts-web-extras do) */
   return (
     isMutableAccessors(accessors) &&
     typeof persistent.syncToDisk === 'function' &&
