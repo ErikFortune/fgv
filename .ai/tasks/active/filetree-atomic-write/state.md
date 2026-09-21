@@ -1,5 +1,8 @@
 # State — `filetree-atomic-write`
 
+**F1 ✅ shipped via #681. F2 🟢 ready — the stream stays active; artifacts migrate
+to `.ai/tasks/completed/` when F2 closes the stream, not at F1.**
+
 ## 2026-09-21 — stream opened, F1 not yet started
 
 Branch `claude/filetree-atomic-write-f1` cut from `release` at `c27dd647` (the merge of #680,
@@ -146,3 +149,40 @@ then drive the layer-2 Copilot loop per the standard review-loop discipline, the
 `/finalize-task` before merge (migrate `.ai/tasks/active/filetree-atomic-write/` to
 `.ai/tasks/completed/2026-09/filetree-atomic-write/` with a polished `README.md`, write
 `result.md`, update the streams ledger). Until then this state.md is the record of what's done.
+
+## 2026-09-21 — F1 orchestrator verification and PR
+
+Every gate re-run independently rather than accepted from the report above:
+`rushx build` exit 0 zero warnings, `rushx lint` exit 0, `rushx test` exit 0 with 100%
+statements/branches/functions/lines on all three touched files and zero `c8 ignore`
+directives added, `rush change --verify` finds the change file, and the repo-wide
+`rush rebuild` passed **exit 0 clean on the first attempt at default parallelism** —
+confirming the pre-existing-race diagnosis above rather than taking it on trust.
+
+`api.md` reviewed as additive: the only removed lines are two `implements` clauses
+widening on `DirectoryItem` and `InMemoryTreeAccessors`, which is what an additive
+optional capability looks like. The 34 added `ae-unresolved-link` warnings are the
+endemic `{@link FileTree.X}` namespace pattern — `release` already carries 204 identical
+ones in this same file — so they are sibling-consistent, and commit `6d69b7e9` correctly
+removed the one genuinely-broken reference (`does not have an export
+"MutableInMemoryFile"`) while leaving the house-style ones alone.
+
+One item the brief flagged and F1 left unaddressed is now fixed in `298e56c5`: the
+`isPersistentAccessors` `c8 ignore` justification claimed no accessor implements the
+interface, which is false repo-wide. Scope corrected to this package, downstream
+implementers named. Kept to one line because `c8 ignore next 6` counts file lines — a
+four-line version shifted the window off the return block and dropped the file to 99.91%.
+
+### Carried into F2
+
+- The `stage` union already documents all six values, with the four F1 never produces
+  named as reserved for the Node implementation. F2 fills them in.
+- The `visibility: 'unchanged' | 'replaced' | 'unknown'` discipline is the load-bearing
+  inheritance. F1 establishes it with a real distinction — a destination collision is
+  `unchanged` because it is caught pre-mutation, while an ancestor-segment conflict keeps
+  `unknown` because `saveFileContents` may have created intermediate directories before
+  failing. F2's post-rename failure path is the case this vocabulary exists for.
+- Open follow-up, dispositioned out of F1: `createChildFile` / `createChildFileBytes` do
+  not validate child names the way `writeChildAtomically` now does, and silently
+  `joinPaths` a slash-containing name. Correct finding, but backfilling stricter
+  validation onto two established methods is a behavior change outside this stream.

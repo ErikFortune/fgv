@@ -128,7 +128,7 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `filetree-atomic-write` 🔵 (F1 🟢 ready · F2 🔴 blocked on F1)
+### `filetree-atomic-write` 🔵 (F1 ✅ shipped via #681 · F2 🟢 ready)
 
 **Mission.** Add an optional atomic-write capability to `FileTree` in `@fgv/ts-json-base`, so a
 consumer can replace a file's contents without a reader ever observing a torn write, and a durable
@@ -151,11 +151,11 @@ It is independently valuable: any consumer committing JSON durably wants it, `ts
 
 **Versions.**
 
-- **F1 — contracts and session implementation** 🟢 ready. Optional accessor/directory interfaces,
+- **F1 — contracts and session implementation** ✅ shipped via #681. Optional accessor/directory interfaces,
   guarantee vocabulary, classified result types, capability guards, `DirectoryItem` delegation,
   atomic session replacement in the in-memory accessors, documentation separating method presence
   from writability from atomic visibility from durability. Claims no crash survival of any kind.
-- **F2 — Node implementation and process-crash qualification** 🔴 blocked on F1. Temp/flush/rename/
+- **F2 — Node implementation and process-crash qualification** 🟢 ready (unblocked by F1). Temp/flush/rename/
   directory-flush protocol with precise unchanged/replaced/unknown classification. Crash evidence
   from real child-process termination at protocol boundaries, not sleeps. Decision **A1** bounds the
   claim to process-crash survival on qualified local Linux and macOS roots; no OS-crash or
