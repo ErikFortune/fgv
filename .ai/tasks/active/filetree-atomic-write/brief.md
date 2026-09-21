@@ -1,15 +1,47 @@
 # Stream brief — `filetree-atomic-write`
 
-**Status: F1 ready to start. F2 blocked on F1.** Drafted 2026-09-21, from the merged
-agent-tasks design bundle (`docs/design/agent-tasks/`, landed in #680 as `c27dd647`).
+**Status: F1 ✅ merged (#681, `7ba1b568`). F2 🟢 ready — in progress on
+`claude/filetree-atomic-write-f2`.** Drafted 2026-09-21, from the merged agent-tasks design
+bundle (`docs/design/agent-tasks/`, landed in #680 as `c27dd647`).
+
+## Branch and PR posture
+
+Both versions land on an **integration branch** and squash to `release` as one stream landing.
+F1 does not reach `release` on its own.
+
+| | |
+|---|---|
+| Integration branch | `integration/filetree-atomic-write` (off `release` at `c27dd647`) |
+| F1 | `claude/filetree-atomic-write-f1` → #681, merged as `7ba1b568` |
+| F2 | `claude/filetree-atomic-write-f2` (created off `7ba1b568`) → PRs into the integration branch |
+| Squash to `release` | opened by the orchestrator once F2 lands — **not** by the implementing agent |
+
+Change-file verification therefore targets the integration branch, not `release`:
+`rush change --verify --target-branch origin/integration/filetree-atomic-write`.
+
+CI runs on PRs into `integration/**` as of `e57faef0`; before that commit the trigger list
+omitted them and such a PR got no checks at all. If an F2 PR shows no checks, stop and say so.
+
+**Why an integration branch** — F1 is internally coherent but not independently *evidenced*. It
+declares a failure vocabulary it barely exercises: 1 of 6 `stage` values, 1 of 3 `visibility`
+values, 1 of 4 `AtomicWriteGuarantee` values, 2 of 3 `code` values. The unexercised members are
+predictions about a Node protocol that did not exist when they were named. F1's review sharpened
+this: the ancestor-collision path had produced the only three otherwise-unused members, that
+classification was **wrong**, and correcting it in `c95b3791` left the wider vocabulary with no
+witness at all. **F2 may therefore revise F1's unions** rather than inheriting them — nothing is
+published until the pair lands, so a revision costs a diff, not a migration on a
+stability-obligated surface. See `state.md` for the full handoff.
 
 ## Mission
 
 Add an **optional atomic-write capability** to `FileTree` in `@fgv/ts-json-base`, so a consumer
 can replace a file's contents such that a reader never observes a torn write, and so a durable
-consumer can wait for a declared persistence boundary before acknowledging. Ships in two
-independently-shippable versions: F1 the contracts plus a session-guarantee in-memory
-implementation, F2 the Node implementation plus process-crash qualification.
+consumer can wait for a declared persistence boundary before acknowledging. Built in two versions — F1 the contracts plus a
+session-guarantee in-memory implementation, F2 the Node implementation plus process-crash
+qualification — which **ship together as one landing on `release`**. They were originally
+scoped as independently shippable; F1's review established that its failure vocabulary has
+almost no exercised witness, so the contracts land with the implementation that tests them.
+See *Branch and PR posture*.
 
 This stream exists because `@fgv/ts-agent-tasks` needs it, but it is **not** scoped to that
 consumer. Any consumer committing JSON records durably wants it — `ts-agent-memory`'s
@@ -79,7 +111,7 @@ Facts an implementer would otherwise have to rediscover:
 
 ## Versions
 
-### F1 — contracts and session implementation 🟢 ready
+### F1 — contracts and session implementation ✅ merged (#681, `7ba1b568`)
 
 **Deliverables.** `IAtomicFileTreeAccessors` / `IAtomicFileTreeDirectoryItem`, the
 `AtomicWriteGuarantee` vocabulary, classified `IAtomicWriteReceipt` / `IAtomicWriteFailure`
@@ -96,7 +128,7 @@ accessors above still typecheck unchanged.
 
 **Explicitly not claimed by F1:** any durable task repository, and any crash survival whatsoever.
 
-### F2 — Node implementation and process-crash qualification 🔴 blocked on F1
+### F2 — Node implementation and process-crash qualification 🟢 ready
 
 Node leaf protocol per design §8.2: exclusive sibling temp, complete write, file flush and close,
 same-directory rename as the visibility linearization point, directory flush, then success.
@@ -117,14 +149,22 @@ macOS roots only — no OS-crash or power-loss claim may be derived from process
       widens a shared contract, and the six implementers span three packages. This is the exact
       checkbox the repo added after four consecutive streams broke a downstream implementer.
 - [ ] Change file for `@fgv/ts-json-base`; verify with
-      `rush change --verify --target-branch origin/release`
+      `rush change --verify --target-branch origin/integration/filetree-atomic-write`
+      *(the integration branch is the PR base — see Branch and PR posture)*
 - [ ] API Extractor diff reviewed — `ts-json-base` is an **established, stability-obligated**
       surface per `ACTIVE_DEVELOPMENT.md`, not an active-development one. Additive only.
 - [ ] `CAPABILITIES.md` entry ships in the same PR
 - [ ] Artifacts migrated to `.ai/tasks/completed/2026-09/filetree-atomic-write/` with a polished
       `README.md`, in the PR, before merge
 
-## Known adjacent defect (fix here or file separately)
+## Known adjacent defect — ✅ resolved in F1 (`298e56c5`)
+
+**Do not re-open this; it is recorded for provenance.** F1 corrected the justification's scope
+to "no accessor *in this package*" and named the three downstream `ts-web-extras` implementers.
+The directive was kept to **one line** because `c8 ignore next 6` counts *file* lines — a
+four-line comment shifted the window off the return block and dropped the file to 99.91%.
+
+The original finding, as written before F1:
 
 `fileTreeAccessors.ts:749` carries
 `/* c8 ignore next 6 - no current accessor implements IPersistentFileTreeAccessors */`.
