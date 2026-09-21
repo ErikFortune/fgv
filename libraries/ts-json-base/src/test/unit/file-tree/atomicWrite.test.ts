@@ -136,17 +136,25 @@ describe('InMemoryTreeAccessors.writeFileAtomically', () => {
     });
   });
 
-  test('fails with io/unknown when an ancestor path segment names an existing file', () => {
+  test('reports the destination unchanged when an ancestor path segment names an existing file', () => {
+    // `visibility` is scoped to the DESTINATION path, so an ancestor collision is
+    // `unchanged` even though the parent walk may have created directories elsewhere:
+    // the destination was never written, and a caller must be able to retry safely
+    // rather than treat its own file as ambiguously mutated.
     const accessors = InMemoryTreeAccessors.create([{ path: '/ancestor.txt', contents: 'x' }], {
       mutable: true
     }).orThrow();
     expect(
       accessors.writeFileAtomically('/ancestor.txt/nested.txt', 'hello', { guarantee: 'session' })
     ).toFailWithDetail(/not a directory/i, {
-      code: 'io',
-      stage: 'replace',
-      visibility: 'unknown'
+      code: 'not-writable',
+      stage: 'validate',
+      visibility: 'unchanged'
     });
+    // The claim the classification makes: the destination is genuinely still absent,
+    // and the ancestor file itself is untouched.
+    expect(accessors.getItem('/ancestor.txt/nested.txt')).toFail();
+    expect(accessors.getFileContents('/ancestor.txt')).toSucceedWith('x');
   });
 });
 
@@ -248,6 +256,25 @@ describe('DirectoryItem atomic delegation', () => {
       /not a valid child file name/i,
       { code: 'not-writable', stage: 'validate', visibility: 'unchanged' }
     );
+  });
+
+  test.each(['.', '..'])('rejects %p as a child name', (name) => {
+    // Sharper than the separator cases: `path.join` NORMALIZES dot segments, so
+    // `joinPaths('/a/b', '..')` is `/a` — a path outside the directory entirely. Not
+    // exploitable today (the in-memory accessor preserves dot segments and the
+    // filesystem one is not atomic-capable yet), but the contract is what every future
+    // accessor is written against, so it must not admit a traversal.
+    const dir = InMemoryTreeAccessors.create([], { mutable: true }).orThrow().getItem('/').orThrow();
+    if (!isAtomicDirectoryItem(dir)) {
+      throw new Error('expected an atomic directory item');
+    }
+    expect(dir.writeChildAtomically(name, 'contents', { guarantee: 'session' })).toFailWithDetail(
+      /not a valid child file name/i,
+      { code: 'not-writable', stage: 'validate', visibility: 'unchanged' }
+    );
+    expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+      expect(children).toHaveLength(0);
+    });
   });
 
   test('rejects a child name containing a backslash on every platform', () => {

@@ -168,11 +168,18 @@ export class DirectoryItem<TCT extends string = string>
     contents: string,
     options: IAtomicWriteOptions
   ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure> {
-    // Reject BOTH separators regardless of platform. `FsFileTreeAccessors.joinPaths` is
-    // `path.join`, which treats `\` as a separator on Windows, so a name like `a\b` would
-    // otherwise pass this check and silently become a nested path once F2 makes that
-    // accessor atomic-capable. A child name is a single component on every platform.
-    if (name.length === 0 || name.includes('/') || name.includes('\\')) {
+    // A child name must denote a single component that stays inside this directory.
+    //
+    // Both separators are rejected regardless of platform: `FsFileTreeAccessors.joinPaths`
+    // is `path.join`, which treats `\` as a separator on Windows, so `a\b` would otherwise
+    // become a nested path once F2 makes that accessor atomic-capable.
+    //
+    // `.` and `..` are rejected for the sharper reason that `path.join` NORMALIZES them —
+    // `joinPaths('/a/b', '..')` is `/a`, a path outside this directory entirely. The
+    // in-memory accessor preserves dot segments and the filesystem one is not yet
+    // atomic-capable, so neither is exploitable today, but the contract is what every
+    // future accessor is written against and it should not admit a traversal.
+    if (name.length === 0 || name === '.' || name === '..' || name.includes('/') || name.includes('\\')) {
       return failWithDetail(`${this.absolutePath}: '${name}' is not a valid child file name`, {
         code: 'not-writable',
         stage: 'validate',

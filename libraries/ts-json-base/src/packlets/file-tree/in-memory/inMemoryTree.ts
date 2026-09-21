@@ -763,14 +763,21 @@ export class InMemoryTreeAccessors<TCT extends string = string>
 
     const saveResult = this.saveFileContents(path, contents);
     if (saveResult.isFailure()) {
-      // Reachable only when an ancestor path segment names an existing file (so the
-      // parent-directory walk inside saveFileContents fails partway through, possibly
-      // after creating intermediate directories) — a genuinely ambiguous outcome, unlike
-      // the destination-collision case handled above.
+      // Reachable only when an ancestor path segment names an existing file, so the
+      // parent-directory walk inside saveFileContents fails before updateOrAddFile runs.
+      //
+      // `visibility` is defined as what a reader can now see FOR THE DESTINATION PATH, and
+      // the destination was never written — so it is `unchanged`, not `unknown`. The walk
+      // may have created intermediate directories on the way, but those are other paths;
+      // reporting `unknown` because the tree changed somewhere would force a caller to
+      // treat a safe retry as an ambiguous mutation of its own file.
+      //
+      // An ancestor that is a file also means this path can never hold one, which is a
+      // not-writable destination rather than an I/O fault.
       return failWithDetail(saveResult.message, {
-        code: 'io',
-        stage: 'replace',
-        visibility: 'unknown'
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
       });
     }
 
