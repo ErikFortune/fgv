@@ -1,6 +1,7 @@
 # Agent tasks — proposed multi-agent chat ingestion adoption
 
 **Status:** consumer proposal only; no authorization to implement in the reference application.
+**A3 acceptance:** approved 2026-09-21 for disposable V1 ingestion hubs only; not the future always-on autonomous collective.
 **Date:** 2026-09-21.
 **Source basis:** static inspection of a private multi-agent chat application as of 2026-09-21; repository identity and package prefixes are omitted.
 **Companions:** [FGV library design](fgv-library.md), [deferred considerations](deferred.md).
@@ -19,7 +20,9 @@ while the choice of adopting its FileTree default remains with the consumer.
 This document is retained in FGV as integration evidence and a handoff proposal.
 The consuming project remains responsible for reconciling it with its current design,
 decision ledger, authorization rules, and implementation workflow before adoption.
-The findings below are static source observations, not a runtime verification.
+The original findings below are static source observations, not a runtime verification.
+The separately attributed consumer measurements below were supplied after review;
+they have not been independently rerun in FGV.
 
 ## 1. Objective and boundary
 
@@ -104,6 +107,76 @@ The relevant implementation details are:
   retention rule and must change during adoption.
 - Reactive turns hold the conversation open through their model/tool loop, so
   increased wakeups would amplify existing contention with human messages.
+
+### Consumer A3 approval and payload measurements
+
+The consumer approves A3 for the **V1 ingestion trailblazer only**. Its hubs are
+disposable and are not upgraded mid-ingestion; it accepts a finite history horizon
+without deletion, identity recycling, compaction or repository rotation with
+continuity. This is not permission for FGV to silently discard accepted work or
+delete individual repository files. The future always-on autonomous collective
+creates work indefinitely and requires a separately approved compaction design
+before adoption. That prerequisite does not block the V1 port or F1/F2.
+
+**Ownership resolves the byte-bound question:**
+
+| Data | Owner and applicable bound |
+|---|---|
+| Retained source text, segmentation/restart checkpoints, accumulated claims/entities | Executor-owned ingestion store; its own limits and recovery contract |
+| Bounded ingestion-specific task projection | FGV task `details`: 64 KiB; envelope/outcome/update limits apply separately |
+| `source-<sourceId>.json` in the task repository | Broker reconciliation checkpoint: 1 MiB, **not** an authoritative ingestion-job payload |
+
+Keep full execution payloads in the existing store and reference them through the
+stable source binding/artifact references. Do not copy the job record into task
+details or the broker's source-checkpoint file. This remains true if a custom
+repository co-locates the logical records. External execution bytes are outside
+the broker's quota, not outside the host's total resource budget or durability
+responsibility. Retained input is load-bearing for restart and must not be
+truncated to fit a presentation bound.
+
+**Consumer-reported measurements (2026-09-21):** encoded UTF-8 lengths of the
+consumer's `JSON.stringify(record)` fixtures, not measurements of an FGV adapter
+projection or V8/RSS. Predictions preceded the run; the reported curation-only
+64 KiB crossover was **210 claims**, missing the predicted 400–600 range. The
+consumer reports that its other two predictions held; FGV has not independently
+verified the harness or results.
+
+| Execution-record fixture | Reported encoded bytes |
+|---|---:|
+| Fixed overhead, no retained source or curation | 675 |
+| Pre-document, source at the consumer's enforced cap | 262,819 |
+| Terminal, 425 claims and 250 entities | 131,753 |
+| Peak fixture, retained source plus 850 claims and 500 entities | 525,107 |
+| Marginal claim / entity | 264 / 77 |
+
+Inputs include the enforced 262,144-character source cap and UUID claim keys;
+12-character entity IDs and 64-character statements are fixture estimates.
+The character cap is not a general UTF-8 byte cap. Production claims per block
+were not measured. For the reported 85-block case, its fixture sweep crossed
+1 MiB at roughly 30 claims/block and did not reach 8 MiB through at least 235
+claims/block. These are **hypothetical comparisons**, not applicable FGV limits
+on the executor store. The full job already exceeding 64 KiB therefore does not
+establish a task-detail violation. Adoption must measure the actual bounded
+projection and encoded broker records independently; these figures do not satisfy
+the planned FGV M1 resident-memory/rebuild qualification.
+
+The adapter selects **`observed-state`**, not `source-replay`: optional/coalescible
+progress, current-state discovery, and required terminal delivery. Applicable
+attention obligations and protected completion/acknowledgement capacity remain
+required. The finite remaining replay-event envelope does not apply to this port.
+The consumer cannot currently declare such an envelope because block count is
+unknown until segmentation; a future request for replay semantics would need
+separate qualification, not a silent upgrade of this observed-state contract.
+
+Production task-creation, acknowledgement and command-evidence rates, as well as
+resident memory, are **unmeasured**. The consumer's structural estimate is one
+identity per ingestion, one required terminal update per job and an audience of
+the announcing room's agents; this is not telemetry or a measured time to a
+capacity ceiling. Baselines, attention changes and other configured obligations
+must be included in actual accounting. The consumer does not plan one task per
+short-lived per-turn deferral; that is its modeling choice, not a prohibition on
+FGV tracked tasks. Count limits and source-storage byte limits must be assessed
+separately from the broker's projection and reservation limits.
 
 ## 3. Source adapter and identity
 
