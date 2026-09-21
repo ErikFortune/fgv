@@ -5,6 +5,12 @@
 **Source basis:** static inspection of a private multi-agent chat application as of 2026-09-21; repository identity and package prefixes are omitted.
 **Companions:** [FGV library design](fgv-library.md), [deferred considerations](deferred.md).
 
+**FGV review incorporated:** the initial library excludes its own input-request
+protocol. This adoption uses waiting/attention references where needed, pure
+inclusion receipts with broker-managed acknowledgement, and explicit prompt-cache
+composition validation. The ingestion journeys do not depend on answer arbitration
+or durable answer-to-continuation machinery.
+
 This document is retained in FGV as integration evidence and a handoff proposal.
 The consuming project remains responsible for reconciling it with its current design,
 decision ledger, authorization rules, and implementation workflow before adoption.
@@ -27,6 +33,12 @@ FileTree-backed storage boundaries where practical, not introduce a competing
 filesystem layer or require migration of authoritative ingestion records into a
 second store. The adapter/repository contracts allow that existing ownership to
 remain intact.
+
+Use existing FileTree capability checks and synchronization interfaces when
+binding storage. `isPersistentAccessors` identifies an explicit sync interface,
+not a transaction/crash-safety certificate; write-through adapters can persist
+without implementing it. Validate the chosen source/repository commit boundary
+and recovery behavior rather than inferring durability from that probe alone.
 
 FGV supplies task values, broker contracts, scoped views, typed commands, context
 fragments, and observation/acknowledgement primitives. The chat application supplies actor
@@ -156,14 +168,30 @@ task-triggered turns using the same scoped view. Inject reusable prompt resource
 with dynamic slots through prompt-assist; keep inclusion receipts outside the
 model-visible text.
 
-Provide current tasks, material outstanding changes, and requests needing attention.
+Provide current tasks, material outstanding changes, and waiting reasons or
+host-owned attention references. An existing host decision mechanism remains
+host-owned; adoption does not require a new FGV request/answer service.
 Read tools use the same access boundary and let an agent inspect omitted detail.
 Capabilities, not prompt prose alone, constrain what the agent may command.
+
+Inclusion receipts are pure values returned by context preparation. The host passes
+them to the broker's acknowledgement service under the same bound consumer/
+subscription context; that service validates them and updates its configured
+checkpoint store. Neither rendering nor a model's claim that it read something
+advances a checkpoint. Foreign receipts cannot consume another participant's work.
 
 The host acknowledges only included updates after the chosen successful turn
 boundary. Provider failures, prompt-build failures, and failed commits do not
 consume them. An intentional abstention must have an explicit policy distinct
 from failure; otherwise a harmless event can cause endless wakeups.
+
+Place volatile task context after the intended stable prompt prefix. Verify the
+final composition with `analyzePromptCacheStability`/`cacheFindings` and the
+`toCacheRequest` breakpoint plan, including any post-composition changes made by
+the host. Assert composition availability: empty findings with unavailable
+analysis do not prove good cache ordering. Progress-only changes should preserve
+the intended stable prefix and its breakpoints. This verifies the integration's
+composition, not a guarantee of provider cache hits.
 
 Replace ingestion's old agent report projection when the new task path takes
 ownership, or suppress it by stable source identity. Do not show the same completion
@@ -185,7 +213,8 @@ The hub owns a pending-trigger policy:
 
 - Persist or reconstruct owed triggers from task subscription checkpoints.
 - Coalesce routine progress and exclude lease-only maintenance.
-- Retain terminal outcomes and unresolved requests across coalescing.
+- Retain terminal outcomes and outstanding attention requirements across coalescing;
+  any referenced interaction's request lifecycle remains host-owned.
 - When a room is busy, keep the trigger pending and reconsider on an appropriate
   turn-close/reconciliation opportunity.
 - Choose the recipient, recheck membership, and honor the hub's reactivity controls.
@@ -239,8 +268,13 @@ same journey.
 - Model failure, process restart, and publication failure do not silently drop outcomes.
 - Unreachable state is reported as uncertain, not successful/failed by inference.
 - Multiple participants see only authorized work; one does not consume another's updates.
+- Forged scope/actor tool arguments, foreign task IDs, child traversal, and foreign
+  receipt replay cannot widen access or advance another participant's checkpoint.
 - Routine progress does not create an unbounded stream of model calls.
 - Old and new completion paths do not duplicate announcements.
+- Available composition analysis establishes appropriate cache ordering, and
+  progress-only changes preserve the intended stable prefix/breakpoint plan.
+- All journeys work without the deferred FGV input-request protocol.
 
 ## 9. Remaining adoption decisions and cost
 
@@ -258,6 +292,8 @@ Before implementation, the consuming project must settle:
 5. Migration/backfill of existing jobs and announcement-attempt markers, without
    falsely treating attempted delivery as acknowledged presentation.
 6. UI/wire changes required for the chosen initial journeys and their rollout order.
+7. Final placement of task fragments and verification of composition availability,
+   cache diagnostics, and derived breakpoint offsets against the actual prompt.
 
 No calendar estimate is asserted. These choices, especially room scheduling,
 determine the adoption cost. They do not block independent design and validation

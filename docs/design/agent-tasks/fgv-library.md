@@ -5,6 +5,11 @@
 **Source baseline:** FGV `9c309985077a201b2bf3c873c23684f7ecabe7af`.
 **Proposed package:** `@fgv/ts-agent-tasks` (name subject to approval).
 
+**FGV review incorporated:** the initial delivery excludes the input-request
+protocol; inclusion receipts are pure values in both consumption modes; core and
+integrations ship in one package. FileTree capability checks and prompt-cache
+composition checks are explicit implementation gates below.
+
 This is the first of three documents:
 
 1. **This document:** the standalone FGV capability.
@@ -39,7 +44,8 @@ not a second integration to design or implement here.
 - Prompt fragments that keep an agent aware of current work and relevant changes.
 - Persistent tasks where required; loss of execution must not silently erase work.
 - FileTree is the default persistence abstraction, following established FGV usage.
-- Human answers can arrive independently of the original conversation or device.
+- Future human answers must be independent of the original conversation or device;
+  the input-request protocol itself is deferred from the initial delivery (§7).
 - FGV remains generally useful independently of the multi-agent chat adoption.
 
 The concrete shapes and defaults below are recommendations. Section 14 identifies
@@ -49,7 +55,7 @@ the decisions that still need to be settled before implementation.
 
 | Layer | Responsibility | Must not assume |
 |---|---|---|
-| Task values | Validated, serializable snapshots, relationships, progress, requests, outcomes | A running implementation or a backing store |
+| Task values | Validated, serializable snapshots, relationships, progress, attention references, outcomes | A running implementation or a backing store |
 | Scoped views and presentation | Select authorized tasks; compose bounded context and detail | A chat or automatic model invocation |
 | Broker | Resolve identities, bind sources, validate and route commands, reconcile observations | Ownership of execution |
 | Task implementations | Execute or track work; own execution truth and supported operations | A particular prompt or delivery channel |
@@ -61,16 +67,23 @@ Support two entry levels:
 **Snapshot-only:** a consumer supplies an already scoped collection of validated
 task snapshots. It gets the common renderer and structured view without starting
 a broker, registering implementations, or configuring storage. It owns freshness,
-authorization, and persistence. The library makes no live-observation guarantee
-for a static collection.
+authorization, and persistence. Rendering also returns a pure inclusion receipt:
+a description of the supplied task revisions actually included, not a stored
+checkpoint or proof of delivery. The consumer can ignore it or use it in its own
+checkpoint mechanism. The library makes no live-observation or durable-delivery
+guarantee for a static collection.
 
 **Broker-backed:** a consumer binds implementations and repositories, obtains an
 authorized view, and optionally subscribes to changes. Tools and prompts consume
 that view. Persistence, observation, and commands are capabilities, not necessary
-conditions for rendering a task list.
+conditions for rendering a task list. The broker's acknowledgement service
+validates inclusion receipts against a bound consumer/subscription and updates
+its configured checkpoint store; the renderer neither owns nor writes that store.
 
-The same snapshot format crosses both modes. A simple integration should not have
-to imitate the broker's infrastructure to use the presentation layer.
+The same snapshot and inclusion-receipt formats cross both modes. Live change
+identities are included only when supplied; snapshot-only rendering does not
+invent event history. A simple integration should not have to imitate the
+broker's infrastructure to use the presentation layer.
 
 ## 3. Common task model
 
@@ -92,7 +105,7 @@ belong in the envelope.
 | Execution binding | Implementation/source identity and a serializable reference, when bound |
 | Recovery declaration | How the implementation can recover or be reattached |
 | Outcome | Optional bounded summary and artifact references, not an unbounded result payload |
-| Pending interactions | References to requests for input or decisions |
+| Attention references | Optional opaque references to host-owned input/decision workflows; no FGV request lifecycle in the initial delivery |
 | Observation health | Freshness, availability, and last successful observation, separate from lifecycle |
 
 Identifiers and scope references are generic. A host may use agent, user, chat,
@@ -154,7 +167,7 @@ new task kind. Subclassing can be a convenience, not the extensibility mechanism
 Separate three registrations:
 
 1. **Kind descriptor:** detail converter/schema, presentation hooks, and typed
-   command/input descriptors.
+   command descriptors and their parameter schemas.
 2. **Source/implementation binding:** read state, execute supported commands,
    optionally observe changes and reconcile/recover existing work.
 3. **Task registration/catalog metadata:** stable identity, source reference,
@@ -196,7 +209,6 @@ Conceptual operations (names are illustrative, not frozen TypeScript APIs):
 | Reconcile a source | Observed updates and explicit unresolved items/gaps |
 | Prepare task context | Structured context, rendered fragments, inclusion receipt, omissions |
 | Acknowledge presented updates | Checkpoint result limited to the supplied receipt |
-| Submit an interaction response | Receipt identifying the winning response or refusal |
 
 Fallible operations use `Result<T>`/async Result conventions; classified failures
 use the established detailed-result pattern when callers must branch. Return
@@ -248,36 +260,34 @@ The first version does not arbitrate which agent claims a shared task. It suppor
 explicit responsibility metadata and host-authorized changes. That leaves the
 collective-work policy open without making the representation unusable.
 
-## 7. Requests for human or agent input
+## 7. Input requests — deferred protocol, supported waiting state
 
-Represent an input request independently of its delivery channel. It has a stable
-request ID, task ID, request revision, intended respondent/audience, typed response
-contract, prompt/context, and state such as pending, answered, withdrawn, or expired.
-Approval is one possible response type; a choice or free-text clarification is
-another. Runtime validators are registered, not serialized as functions.
+The initial delivery can represent a task waiting for input, with a structured
+reason and an optional opaque reference to a host-owned interaction. It can expose
+that attention requirement in scoped views and context. The host owns answering
+and continuation; the task implementation reports any resulting state change.
+Neither displaying nor acknowledging the reference resolves the interaction.
 
-Any authorized endpoint can submit a response using the request identity. The
-originating conversation is optional provenance, never a condition that the
-original chat still be alive. Authentication and mobile/inbox delivery are host
-responsibilities.
+FGV does not initially provide request creation/answer tools, a request lifecycle,
+typed answer registration, concurrent-answer arbitration, expiry/supersession, or
+durable answer-to-continuation coordination. A host may integrate its own workflow,
+but that does not acquire FGV recovery guarantees merely by being referenced.
 
-Accept a response only while the request is applicable. Concurrent answers are
-resolved by the request owner's atomic/serialized acceptance boundary; a stale
-answer cannot overwrite the winner. Withdrawal, expiration, and supersession are
-explicit. No response is not equivalent to refusal, and an answered question is
-not automatically a completed task.
+This deferral closes the original §14 gate #6. The standalone tracked/external
+task capability is useful without a second durable response protocol, and none
+of the initial ingestion adoption journeys requires one. The reason is bounded
+scope and correctness cost, not a rule that ingestion determines every FGV feature.
 
-The task implementation interprets the accepted answer. Its continuation follows
-the same durable command rules as other work: recording the answer and later
-applying it must not lose the outstanding continuation on restart. This is a
-primitive response protocol, not a human inbox or workflow engine.
+The future protocol must support answers from any authorized context, independent
+of the originating conversation/device. Its proposed semantics and revisit trigger
+are retained in [deferred considerations](deferred.md#input-request-and-response-protocol).
 
 ## 8. Persistence and recovery
 
 ### Three separate capabilities
 
-1. **Serializable representation:** every published task snapshot and durable
-   request/receipt can be represented as validated data.
+1. **Serializable representation:** every published task snapshot, command
+   receipt, inclusion receipt, and checkpoint can be represented as validated data.
 2. **Durable registration:** the task's identity, binding, latest recoverable
    representation, and outstanding obligations survive the owning process.
 3. **Execution recovery:** the implementation can reattach, resume, retry under
@@ -312,6 +322,34 @@ Use in-memory FileTree adapters for tests and explicit session-only operation,
 exercising the same repository implementation as persistent adapters. Memory-only
 storage still cannot promise survival across process restart. Alternative host
 repositories implement the same contracts and declare their supported guarantees.
+
+Use the existing FileTree capability vocabulary at construction and commit
+boundaries rather than inventing a parallel task-specific accessor taxonomy:
+
+- `isMutableAccessors` checks the mutation interface; also check the configured
+  root/items are writable. Implementing mutation methods does not by itself mean
+  a particular instance or item allows writing.
+- `isPersistentAccessors` checks for the explicit `syncToDisk`, `isDirty`, and
+  `getDirtyPaths` interface. For buffered adapters using that interface, await
+  successful synchronization at the promised acceptance boundary; an in-memory
+  mutation alone is not durable acceptance.
+- Binary and strict-text probes apply when the chosen format requires those
+  capabilities, not as blanket prerequisites for every task repository.
+
+**The persistence probe is not a generic survival or transaction guarantee.**
+The [filesystem adapter](../../../libraries/ts-json-base/src/packlets/file-tree/fsTree.ts)
+writes through without implementing the explicit synchronization interface;
+rejecting it solely because `isPersistentAccessors` returns false would be wrong.
+Conversely, the [localStorage adapter](../../../libraries/ts-web-extras/src/packlets/file-tree/localStorageTreeAccessors.ts)
+implements synchronization by writing files individually; passing the probe does
+not promise atomic multi-file commits or crash recovery. A failed probe is not
+proof that an adapter is memory-only, and a successful probe is not enough to
+establish the repository's durability contract.
+
+The composition root binds supported commit behavior using these existing
+interfaces and documented backend guarantees. If a missing guarantee needs a new
+capability, resolve it in FileTree rather than bypassing it with filesystem calls
+or silently assuming stronger semantics in the task repository.
 
 Native tracked tasks have one repository authority. External tasks retain their
 source authority; the broker may durably keep catalog metadata and a derived
@@ -352,8 +390,9 @@ rather than silently degrading to memory-only behavior.
 
 Opening a repository does not automatically authorize external side effects.
 The host invokes recovery/reconciliation under its execution policy. Retention,
-archive, and explicit removal must not erase owed responses or undelivered
-required outcomes without an explicit disposition policy.
+archive, and explicit removal must not erase undelivered required outcomes or
+outstanding attention records without an explicit disposition policy. Host-owned
+interactions retain their own lifecycle and retention authority.
 
 ## 9. Observation, attention, and acknowledgement
 
@@ -369,16 +408,24 @@ host; they never invoke a model or open a conversation themselves. A host withou
 subscriptions can query/reconcile on its own schedule.
 
 Changes identify task/source revision and semantic category: progress, lifecycle,
-input requested/resolved, result available, or recovery/observation issue. A raw
+attention changed, result available, or recovery/observation issue. A raw
 storage timestamp is insufficient because maintenance writes need not be salient.
 The host owns wakeup urgency and may coalesce intermediate progress. It must not
-silently coalesce away a pending question or required terminal outcome.
+silently coalesce away an outstanding attention requirement or required terminal
+outcome. Reporting a host-owned interaction's attention state is not implementing
+its request/response protocol.
 
 Durable delivery is opt-in per consumer/subscription and at-least-once, not
 exactly-once. Stable identities allow duplicate suppression. Persisted consumer
 checkpoints are distinct from task data and are reauthorized when used. A newly
 created subscription establishes its starting snapshot/checkpoint explicitly;
 it does not imply delivery of every historical event to every future reader.
+
+Checkpoint ownership belongs to the acknowledgement service, not the renderer.
+In broker-backed mode the service owns updates through an injected checkpoint
+store. In snapshot-only mode the host owns any checkpoint policy and storage;
+the library only returns inclusion data. No hidden broker store is required to
+render or use that data.
 
 Diagnostic observers can be best-effort. An obligation-bearing subscription
 cannot use observer exceptions as a reason to discard owed delivery. Explicit
@@ -389,8 +436,9 @@ gaps, backpressure, and retention failures are part of its Result surface.
 Provide a structured context builder and default text fragments for:
 
 - Current tasks and relevant child summaries.
-- Material changes since the consumer's acknowledged view.
-- Pending input requests and other attention requirements.
+- Material changes since the consumer's acknowledged view, when supplied by a
+  broker or host-owned comparison mechanism.
+- Waiting reasons and references to host-owned attention requirements.
 
 Selection is deterministic and bounded by configurable item/depth/text budgets.
 Unknown totals stay unknown. Omitted visible items are reported, not treated as
@@ -398,10 +446,22 @@ absent; omitted items are not acknowledged. Restricted tasks and children are
 not included in omission counts. Required attention takes precedence over routine
 progress, with tools/direct APIs available for further inspection.
 
-Context preparation returns fragments plus an inclusion receipt identifying the
-actual task revisions, update IDs, and request revisions included. It has no
-acknowledgement side effect. A later acknowledgement advances only those entries;
-an update arriving during the model call remains pending. A maximum revision
+Context preparation in both modes returns fragments plus a pure, immutable
+inclusion receipt identifying the actual task revisions and any supplied update
+IDs included. Attention references are covered by the containing task revision;
+the initial library does not issue request revisions. The receipt records
+inclusion, not delivery, authorization, or permission to mutate a checkpoint.
+
+Snapshot-only hosts may ignore the receipt or apply their own checkpoint policy.
+The broker acknowledgement service accepts it only through the bound consumer/
+subscription context, validates its provenance and included identities/revisions,
+and advances only those entries in the configured checkpoint store. A foreign or
+fabricated receipt must not acknowledge work outside that context. Replaying a
+valid receipt is idempotent and cannot consume newer revisions. This is a
+host-facing operation, not an agent tool for declaring arbitrary updates read.
+
+Rendering has no acknowledgement side effect. An update arriving during the model
+call remains pending; omitted items remain unacknowledged. A maximum revision
 across a truncated result set is not an adequate receipt.
 
 The host decides its successful-processing boundary. A committed turn is one
@@ -420,13 +480,35 @@ with status slots declared per-request for cache stability. Do not add a task
 query engine or execution callbacks to `PromptLibrary.resolve`. Resolve dynamic
 task data before prompt composition; keep receipts alongside, not inside, text.
 
+### Prompt-cache ordering and verification
+
+Task context is highly volatile. Declaring its slots per-request is necessary but
+does not protect stable content placed after it. Put dynamic task context after
+the intended stable prefix; do not interleave routine progress into that prefix.
+The default templates/example must demonstrate this ordering. Hosts own final
+placement and must preserve trust framing as well as cache behavior.
+
+Request composition metadata and use the existing `analyzePromptCacheStability` /
+`IPromptComposition.cacheFindings` diagnostics. Verify the plan produced by
+`toCacheRequest` against the actual system body sent to ai-assist; appending or
+reordering content after analysis must not invalidate its offset assumptions.
+These APIs inspect declared composition stability, not actual provider cache hits.
+
+An empty findings array is not sufficient evidence: it is also returned when
+composition is unavailable. Acceptance requires an available composition, no
+unexplained `cache-hostile-ordering` or task-slot stability-refutation findings,
+and the expected stable-prefix breakpoints. Other findings, such as an unknown
+token threshold, are evaluated separately rather than demanding an indiscriminately
+empty diagnostics array. Progress-only changes must preserve the intended stable
+prefix and its breakpoint plan in the tested integration.
+
 ## 11. ai-assist tools and package boundaries
 
 Provide a factory over a bound scoped view/broker, following the existing
 [memory-tool factory](../../../libraries/ts-agent-memory/src/packlets/tools/memoryTools.ts)
 pattern. The initial useful surface is list, inspect, create/update tracked work,
-invoke an advertised command, and respond to an input request. Mutating tools are
-explicit opt-ins; read-only tools should be usable independently.
+and invoke an advertised command. Input-request/answer tools are deferred.
+Mutating tools are explicit opt-ins; read-only tools should be usable independently.
 
 Use [ai-assist client-tool contracts](../../../libraries/ts-extras/src/packlets/ai-assist/toolTypes.ts)
 and typed `JsonSchema` validators. Kind-specific commands have registered schemas;
@@ -438,16 +520,21 @@ The host still owns multi-round tool execution, provider selection, budgets,
 continuations, and whether a reactive turn may use mutation tools. This proposal
 requires no provider protocol changes and no new ai-assist agent loop.
 
+**One package is the chosen initial topology**, including tools and prompt
+integration packlets. The closest sibling, `ts-agent-memory`, already ships its
+tools packlet in-package; use that precedent rather than opening a speculative
+adapter-package split. The exact package name remains subject to approval.
+
 Proposed packlets: types/converters, implementations, broker/views, storage,
 context, tools, and prompt integration. These names are organizational suggestions.
 Core logic uses ts-utils and ts-json-base; integration packlets can depend on
 ts-extras and ts-prompt-assist in the existing family pattern. No dependency on
 the reference chat application, native storage, React, or agent-memory is necessary.
-Keep runtime initialization out of module imports. A separate adapter package is warranted
-only if concrete dependency/runtime costs require it.
+Keep runtime initialization out of module imports. A future package split would
+require new concrete evidence, not remain an initial implementation gate.
 
 Converters validate persisted records, source observations, registered detail,
-commands, and responses at boundaries. Reuse published primitives for identifiers,
+commands, and receipts at boundaries. Reuse published primitives for identifiers,
 FileTree access, logging, schemas, and collections; no custom copies. Inject
 logging, clocks, and ID generation where needed for testability.
 
@@ -461,19 +548,36 @@ The initial proof should be deterministic and usable without API credentials:
 4. Feed those views through default fragments and ai-assist tool definitions.
 5. Advance external progress while one view is in flight; acknowledge only the
    included revisions and show that the newer update remains pending.
-6. Create an input request; answer through a different authorized host context.
+6. Show a waiting task with a host-owned attention reference without requiring
+   an FGV request/response service.
 7. Reopen durable state and reconcile recoverable, completed, and unrecoverable work.
+8. Render the same snapshots without a broker; verify that inclusion receipts
+   require no store and that rendering changes no checkpoint.
+9. Resolve a prompt-assist composition, verify its cache diagnostics and
+   `toCacheRequest` plan, then change only progress and verify the stable prefix.
 
 This is a small executable example plus contract/journey tests, not a resident
 agent product. A fuller showcase agent is discussed in [deferred considerations](deferred.md#simple-fgv-showcase-agent).
 
 Acceptance includes invalid/cyclic nesting, cross-source children, partial views,
 unauthorized reads/commands, revoked subscription access, stale revisions,
-duplicate responses, unsupported commands, ambiguous external submission,
+duplicate command submissions, unsupported commands, ambiguous external submission,
 truncated prompt receipts, model/host failure before acknowledgement, source
 outage, terminal recovery, corrupt records, and crash windows around durable
 acceptance and update delivery. Meaningful tests must meet repository coverage
 requirements; live model output is supplementary, not the correctness oracle.
+
+Explicit adversarial scope-widening tests are required, beyond ordinary denial
+tests: model-generated actor/scope overrides, foreign task IDs, hidden child
+traversal, and changed membership must not widen the bound view or reveal hidden
+counts. Foreign/fabricated inclusion receipts must not advance another consumer's
+checkpoint, and replaying one's own receipt must not consume a later update.
+Exercise both tool schemas and execution-time enforcement; prompt instructions
+alone are not the security boundary.
+
+Cache acceptance must positively establish composition availability, test the
+relevant ordering/refutation findings, and inspect breakpoint offsets. Also test
+that an unavailable composition with empty `cacheFindings` cannot pass that gate.
 
 ## 13. Alternatives and rationale
 
@@ -486,7 +590,7 @@ requirements; live model output is supplementary, not the correctness oracle.
   making the reading agent's perspective part of task identity.
 - **One global task-read flag:** cannot represent independent participants or views.
 - **Only events:** cannot reconstruct current context for a new consumer.
-- **Only snapshots:** cannot by itself preserve required outcomes/requests through
+- **Only snapshots:** cannot by itself preserve required outcomes/attention changes through
   gaps, especially when tasks leave the active set.
 - **Copy ingestion into a generic runner first:** creates avoidable migration risk;
   adapt its authoritative implementation instead.
@@ -495,19 +599,33 @@ requirements; live model output is supplementary, not the correctness oracle.
 
 ## 14. Decisions to close before implementation
 
-These are gates, not silently approved defaults:
+These are the remaining implementation gates, with the original gate #6 retained
+to record its explicit deferral rather than leave it appearing unresolved:
 
-1. Approve package placement/name and the initial built-in implementation set.
+1. Approve the package name/location and initial built-in implementation set. One
+   package with integration packlets is settled.
 2. Finalize the public lifecycle, command receipt, and recovery-result unions.
 3. Specify commit/recovery mechanics for the default FileTree repository and the
    first supported backend's durability guarantees; prove the crash windows before
-   advertising them. The choice of FileTree as the default is already settled.
+   advertising them. Reuse FileTree mutation/synchronization capability checks;
+   do not equate `isPersistentAccessors` with crash safety or reject write-through
+   backends merely for lacking that interface. Extend FileTree if a required
+   capability is missing. The FileTree default is settled.
 4. Specify source revisions and reconciliation completeness, including terminal
    discovery, relationship metadata, and catalog/projection migration on reopen.
 5. Finalize the smallest durable consumer-checkpoint/retention protocol that meets
    the observation contract without building a general message broker.
-6. Confirm the input-request primitive belongs in the initial library delivery
-   rather than only a reserved extension; this draft recommends including it.
+6. **Closed — defer the input-request protocol.** Initial scope includes waiting
+   reasons and host-owned attention references, not answer arbitration or durable
+   continuation. See §7 and the deferred document.
+7. Fix task-context placement in the default composition and verify availability,
+   cache findings, and the `toCacheRequest` breakpoint plan. Preserve the stable
+   prefix under progress-only updates; §12 makes this an acceptance gate.
+
+The receipt ownership choice is also settled: inclusion receipts are pure values
+in both modes; a broker acknowledgement service owns checkpoint mutation when
+wired, and snapshot-only hosts own any equivalent mechanism. Gate #5 concerns
+the detailed storage/validation/retention protocol, not that ownership split.
 
 The chat application's room scheduling, human-priority policy, and rollout are separately
 gated in its adoption proposal. They must not become prerequisites for using or

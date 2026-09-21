@@ -19,13 +19,54 @@ would make true.
 - FileTree as the default persistence implementation, not a deferred adapter.
 - Explicit inclusion receipts and acknowledgement for delivery-aware context.
 - Reconciliation of owed outcomes after interruption.
-- Validation and stale/duplicate-answer handling if the input-request primitive ships.
+- Correct validation of inclusion receipts and isolation of consumer checkpoints.
+- Available prompt-composition analysis and verified cache ordering/breakpoint plans.
 
 The FileTree default is settled. Its commit mechanics, lifecycle names, and
 consumer-checkpoint retention are open design gates in the library proposal,
-not implementation details to discover
-after consumers rely on them. The chat application's human-priority gate likewise cannot
-be deferred while enabling uncontrolled main-room task wakeups.
+not implementation details to discover after consumers rely on them. FileTree's
+existing synchronization probe is useful but does not certify crash-safe commits.
+The chat application's human-priority gate likewise cannot be deferred while
+enabling uncontrolled main-room task wakeups.
+
+## Input-request and response protocol
+
+**Deferred from the initial delivery after FGV review.** Tasks can report waiting
+for input and reference a host-owned interaction. FGV does not initially create
+or answer requests, arbitrate concurrent responses, or guarantee recovery between
+answer acceptance and continuation. Acknowledging a task-context update never
+answers the referenced question.
+
+**Why deferred:** the standalone task broker is useful without this protocol,
+and all four ingestion adoption journeys and their acceptance criteria can be
+satisfied without it. Request lifecycle plus answer-to-continuation durability
+would add a second substantial obligation protocol and crash-test surface. This
+is not a restriction that all future FGV capabilities must be justified by ingestion.
+
+The future design should preserve the original intent:
+
+- A stable request ID, task ID, request revision, intended respondent/audience,
+  and typed answer contract; approval, choice, and free text are possible kinds.
+- A lifecycle distinguishing pending, answered, withdrawn, expired, and superseded
+  requests, with no response distinct from refusal.
+- Answers accepted from any authorized context; the original chat/device is
+  provenance rather than a required live endpoint.
+- Validation against the still-applicable request, an atomic/serialized winning
+  answer boundary, and idempotent handling of duplicate submissions.
+- Explicit durable coordination between accepting an answer and applying the
+  task continuation, so a crash between them does not lose owed work.
+- Task completion independent of request resolution, and no runtime validators
+  serialized as executable functions in stored data.
+
+**Extension preserved now:** stable task IDs, generic responsibility/scope
+references, waiting reasons, and opaque host-owned attention references. These
+do not freeze the future request schema or advertise typed answer APIs today.
+
+**Trigger:** a concrete consumer needs FGV-owned request/response semantics beyond
+host-owned interaction references. At that point validation, stale/concurrent
+answers, withdrawal, and continuation crash recovery are required acceptance
+criteria, not optional followups. A human inbox is not required to adopt this
+future protocol and remains a separate transport/UI concern below.
 
 ## Simple FGV showcase agent
 
@@ -44,7 +85,9 @@ A useful small demonstration could:
 1. Let a user ask the agent to create a short nested plan.
 2. Attach a simulated background operation through the normal task adapter.
 3. Recompose prompt fragments as scope and task status change.
-4. Ask a typed clarification, accept it through the host API, and continue.
+4. Display a waiting task with a host-owned clarification reference. A typed
+   answer/continuation demonstration follows only when the deferred request
+   protocol is implemented, or is clearly labelled as host-owned behavior.
 5. Show the difference between current state, outstanding updates, and acknowledgement.
 6. Reopen durable tasks and explain recovery outcomes.
 
@@ -69,7 +112,8 @@ delegation policies, multi-agent negotiation, and automatic follow-through.
 The broker supports representations and commands; a host/agent decides to use them.
 
 **Extension preserved:** nested tasks, responsibility references, implementation
-bindings, scoped views, and input requests.
+bindings, scoped views, and waiting/attention references. FGV-owned input requests
+remain subject to the separate deferral above.
 **Trigger:** a real workflow requiring a specific policy, tested independently
 of task storage/presentation.
 
@@ -99,11 +143,13 @@ implementation-owned behavior. A display tree does not claim execution ordering.
 Defer inbox UI, phone/push/email delivery, reminders, escalation schedules,
 multi-human quorum decisions, and cross-device authentication plumbing.
 
-**Extension preserved:** durable task/request identity, generic respondent
-references, typed responses, and delivery-independent request ownership.
+**Extension preserved:** stable task identity and host-owned attention references
+now; channel-independent request identity, respondent references, and typed
+responses are requirements for the separately deferred request protocol.
 **Trigger:** the chat application or another host implements a durable human inbox.
-An answer from another authorized context is valid without building any of these
-transports into FGV.
+The eventual protocol must allow an answer from another authorized context without
+building any of these transports into FGV. Deferring the inbox does not implicitly
+include the request protocol in the initial task library.
 
 ## Long-lived jobs independent of chats
 
