@@ -128,7 +128,7 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `filetree-atomic-write` 🔵 (F1 ✅ shipped via #681 · F2 🟢 ready)
+### `filetree-atomic-write` 🔵 (F1 ✅ merged to integration via #681 · F2 🟢 ready)
 
 **Mission.** Add an optional atomic-write capability to `FileTree` in `@fgv/ts-json-base`, so a
 consumer can replace a file's contents without a reader ever observing a torn write, and a durable
@@ -149,17 +149,37 @@ filesystem adapter, per `CODING_STANDARDS.md` § *Extending Core Libraries Over 
 It is independently valuable: any consumer committing JSON durably wants it, `ts-agent-memory`'s
 `FileTreeMemoryStore` first among them.
 
+**Landing shape — F1 and F2 ship as one commit to `release`.** Both versions merge to
+`integration/filetree-atomic-write`, which squashes to `release` as a single stream landing. F1 is
+internally coherent but not independently *evidenced*: it declares a failure vocabulary of which it
+exercises almost nothing — 1 of 6 `stage` values, 1 of 3 `visibility` values, 1 of 4
+`AtomicWriteGuarantee` values, 2 of 3 `code` values. The unexercised members (`'file-flush'`,
+`'directory-flush'`, `'cleanup'`, `'power-loss'` …) are predictions about the Node protocol, written
+before that protocol exists.
+
+The point was sharpened during F1's own review. Before `c95b3791`, the ancestor-collision path
+produced `io` / `replace` / `unknown` — three otherwise-unused members. That classification was
+**wrong** (the destination was never written; `visibility` is scoped to the destination path), and
+correcting it left the wider vocabulary with no witness at all. A contract whose only evidence was a
+misclassification should land with the implementation that tests it. **F2 therefore has license to
+amend F1's vocabulary** rather than inheriting it as fixed — that license is the reason for the
+integration branch.
+
 **Versions.**
 
-- **F1 — contracts and session implementation** ✅ shipped via #681. Optional accessor/directory interfaces,
+- **F1 — contracts and session implementation** ✅ merged to `integration/filetree-atomic-write` via
+  #681. Optional accessor/directory interfaces,
   guarantee vocabulary, classified result types, capability guards, `DirectoryItem` delegation,
   atomic session replacement in the in-memory accessors, documentation separating method presence
   from writability from atomic visibility from durability. Claims no crash survival of any kind.
-- **F2 — Node implementation and process-crash qualification** 🟢 ready (unblocked by F1). Temp/flush/rename/
+- **F2 — Node implementation and process-crash qualification** 🟢 ready (unblocked by F1). Branches
+  from `integration/filetree-atomic-write` and PRs back into it. Temp/flush/rename/
   directory-flush protocol with precise unchanged/replaced/unknown classification. Crash evidence
   from real child-process termination at protocol boundaries, not sleeps. Decision **A1** bounds the
   claim to process-crash survival on qualified local Linux and macOS roots; no OS-crash or
-  power-loss claim may be derived from process-kill evidence.
+  power-loss claim may be derived from process-kill evidence. **May revise F1's `stage` /
+  `visibility` / `AtomicWriteGuarantee` / `code` unions** where the real protocol disagrees with the
+  predicted vocabulary; nothing has been published, so this costs a diff, not a migration.
 
 **Acceptance criteria.** Build with zero warnings, lint, 100% coverage, `code-reviewer` before
 coverage-gap closure; **repo-wide `rush rebuild`** (mandatory — this widens a shared contract with

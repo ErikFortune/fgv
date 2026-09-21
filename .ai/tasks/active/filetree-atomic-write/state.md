@@ -1,7 +1,28 @@
 # State — `filetree-atomic-write`
 
-**F1 ✅ shipped via #681. F2 🟢 ready — the stream stays active; artifacts migrate
-to `.ai/tasks/completed/` when F2 closes the stream, not at F1.**
+**F1 ✅ merged to `integration/filetree-atomic-write` via #681. F2 🟢 ready — the stream stays
+active; artifacts migrate to `.ai/tasks/completed/` when F2 closes the stream, not at F1.**
+
+**Landing shape: F1 and F2 squash to `release` as one commit.** Both versions PR into
+`integration/filetree-atomic-write`; that branch squashes to `release` when F2 lands. F1 does not
+reach `release` on its own, so nothing here is published or promoted until the pair is complete.
+
+The reason is F1's evidence gap, not its correctness. F1 declares a failure vocabulary it barely
+exercises — **1 of 6 `stage` values, 1 of 3 `visibility` values, 1 of 4 `AtomicWriteGuarantee`
+values, 2 of 3 `code` values**. Eleven of sixteen declared union members across the four unions have
+no implementation behind them; they are predictions about a Node protocol that does not exist yet.
+
+Review sharpened this rather than settling it. Before `c95b3791` the ancestor-collision path
+produced `io` / `replace` / `unknown`, three otherwise-unused members. That classification was wrong
+— the destination was never written, and `visibility` is scoped to the destination path — and
+correcting it left the wider vocabulary with **no exercised witness at all**. The orchestrator's own
+layer-1 review had endorsed the wrong classification; CodeRabbit caught it.
+
+**Consequence for F2: the vocabulary is a proposal, not an inheritance.** Where the real
+temp/flush/rename/directory-flush protocol disagrees with the predicted `stage` / `visibility` /
+`AtomicWriteGuarantee` / `code` members, change them. Nothing has been published, and F1 has not
+reached `release`, so a revision costs a diff rather than a migration on a stability-obligated
+surface. Do not contort an implementation to fit a name that was guessed.
 
 ## 2026-09-21 — stream opened, F1 not yet started
 
@@ -175,13 +196,23 @@ four-line version shifted the window off the return block and dropped the file t
 
 ### Carried into F2
 
-- The `stage` union already documents all six values, with the four F1 never produces
-  named as reserved for the Node implementation. F2 fills them in.
+- The `stage` union documents all six values, but F1 **produces only `'validate'`**. The other
+  five are predictions about the Node protocol. F2 fills them in *or changes them* — see the
+  landing-shape note at the top of this file. Same for `AtomicWriteGuarantee` (F1 produces
+  `'session'` only) and `code` (F1 never produces `'io'`).
 - The `visibility: 'unchanged' | 'replaced' | 'unknown'` discipline is the load-bearing
-  inheritance. F1 establishes it with a real distinction — a destination collision is
-  `unchanged` because it is caught pre-mutation, while an ancestor-segment conflict keeps
-  `unknown` because `saveFileContents` may have created intermediate directories before
-  failing. F2's post-rename failure path is the case this vocabulary exists for.
+  inheritance, and the rule that settles every case is: **`visibility` describes what a
+  subsequent reader can see at the destination path** — not whether the tree changed anywhere.
+  F1 produces `'unchanged'` exclusively. Both pre-mutation cases are `'unchanged'` for the same
+  reason: a destination collision is caught before any write, and an ancestor-segment conflict
+  never reaches the destination either, even though the walk may have created intermediate
+  directories on the way — those are *other paths*.
+
+  Note this corrects an earlier claim in this file's own history, which had the ancestor case
+  keeping `'unknown'`. That was F1's original classification, it was wrong, and `c95b3791`
+  fixed it after CodeRabbit caught it — the orchestrator's layer-1 review had endorsed the
+  wrong answer. **F2's post-rename failure path is the first genuine `'replaced'` / `'unknown'`
+  case in the stream**, and the first real test of whether this vocabulary is the right one.
 - Open follow-up, dispositioned out of F1: `createChildFile` / `createChildFileBytes` do
   not validate child names the way `writeChildAtomically` now does, and silently
   `joinPaths` a slash-containing name. Correct finding, but backfilling stricter
