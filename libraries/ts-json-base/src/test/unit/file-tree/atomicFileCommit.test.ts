@@ -134,8 +134,38 @@ describe('commitFileAtomically — committing', () => {
     withExistingFile(OLD);
     const ops = new FaultingFsOperations();
     expect(commit(ops, NEW)).toSucceed();
+
     expect(ops.calls).not.toContain('unlink');
     expect(ops.callCount('rename')).toBe(1);
+
+    // Non-truncation is a claim about a PATH, which an operation-name log cannot
+    // make. The only way this protocol could truncate the destination is by
+    // opening it, so: every open went to a reserved temporary, and the only
+    // operation that ever named the destination was the rename.
+    const opened = ops.pathCalls.filter((c) => c.op === 'openExclusive');
+    expect(opened).toHaveLength(1);
+    expect(isReservedTemporaryName(path.basename(opened[0].path))).toBe(true);
+    expect(ops.pathCalls.filter((c) => c.path === destination()).map((c) => c.op)).toEqual(['rename']);
+  });
+
+  test('flushes the record once and the directory entry once, in that order', () => {
+    // Counting flushes is not enough, and assuming otherwise was an actual
+    // mistake caught by mutation: a protocol that flushes the DIRECTORY twice
+    // and the record never has the same count and the same occurrence
+    // positions, so it survives both a count assertion and every
+    // occurrence-indexed fault injection in this file. The descriptors are what
+    // distinguish them.
+    withExistingFile(OLD);
+    const ops = new FaultingFsOperations();
+    expect(commit(ops, NEW)).toSucceed();
+
+    const flushed = ops.fdCalls.filter((c) => c.op === 'fsync').map((c) => c.fd);
+    expect(flushed).toHaveLength(2);
+    expect(ops.temporaryFd).toBeDefined();
+    expect(ops.directoryFd).toBeDefined();
+    expect(flushed[0]).toBe(ops.temporaryFd);
+    expect(flushed[1]).toBe(ops.directoryFd);
+    expect(flushed[0]).not.toBe(flushed[1]);
   });
 
   test('carries an existing file’s permissions onto its replacement', () => {

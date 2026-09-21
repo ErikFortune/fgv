@@ -25,7 +25,7 @@ summary:
     injection at every protocol boundary against a real directory, plus subprocess tests in which
     a child running the real protocol SIGKILLs itself at each boundary, on ext4 and tmpfs.
   diverged: >
-    Three material divergences. (1) macOS is NOT qualified, contrary to A1's intended matrix:
+    Three material divergences, plus one deliberate non-additive API change (below). (1) macOS is NOT qualified, contrary to A1's intended matrix:
     the protocol needs a stable filesystem-type identification under a path, Linux's statfs magic
     supplies one, and darwin reports a mount-table index with no Node-exposed equivalent of
     f_fstypename — so a darwin root cannot be positively identified from inside the package and is
@@ -34,9 +34,17 @@ summary:
     with the protocol implemented it has no producer and cannot honestly acquire one. All four
     AtomicWriteGuarantee members were KEPT, on the distinction that guarantee is an input
     vocabulary witnessed by a refusal while stage is an output vocabulary where a member with no
-    producer is dead. (3) cleanupAtomicTemporaries was added to both atomic interfaces beyond the
-    brief, because section 8.2 step 6 requires reclamation at exclusive reopen and without a
-    caller-reachable entry point a consumer would have to depend on the reserved naming format.
+    producer is dead. (3) cleanupAtomicTemporaries became a REQUIRED member of both optional
+    capability interfaces. Reclamation at reopen was itself in the brief's F2 scope, so this is
+    not work beyond the brief; what needed a judgement is the brief's out-of-scope clause
+    "any required member added to an existing base interface". Judged to mean the base
+    interfaces every accessor implements, which are untouched, rather than the optional
+    capability interfaces this stream introduced in F1 and which no version has published.
+    Reasoned out in result.md rather than assumed. Separately, the API Extractor diff is
+    additive EXCEPT for removing 'cleanup' from IAtomicWriteFailure.stage, which the brief's
+    "additive only" criterion would otherwise forbid; permitted because that member was
+    introduced by F1, F1 never reached release, and the pair squashes as one landing, so no
+    published version ever carried it.
   sourceLine: '**Shipped: an optional atomic-write capability on `FileTree`, and a Node implementation whose durability claim is decided per root by positive identification rather than assumed from a platform string.**'
   headline: >
     A FileTree can now replace a file such that a reader never sees a torn write, and on a root

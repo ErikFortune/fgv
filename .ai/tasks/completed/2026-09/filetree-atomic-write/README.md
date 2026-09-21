@@ -61,14 +61,15 @@ direction is telling a caller nothing happened when something might have.
   before an injected failure actually happened on disk.
 - **Subprocess crash tests** in which a child running the real protocol **kills itself** with
   `SIGKILL` at each of seven boundaries. Self-inflicted, so the synchronization is exact rather
-  than a sleep the parent hoped was long enough. Verified on ext4 and tmpfs.
+  than a sleep the parent hoped was long enough. Verified on ext4 and tmpfs — 11 tests per
+  filesystem, 10 of them crash-synchronized plus an uninterrupted control.
 - **Mutation testing** — twelve protections neutered one at a time to confirm the intended test
   actually goes red. A regression test nobody has watched fail is a guess.
 
 **It is not evidence of OS-crash or power-loss survival, and none is claimed.** A process-kill
 leaves the page cache intact, so flushed and unflushed bytes are indistinguishable to every test
-here. The two `fsync` calls are verified to be *made*, once each, at their points in the
-sequence — structural evidence, not physical.
+here. What is pinned is that the record is flushed once and the directory entry once, in that
+order, **identified by descriptor** — structural evidence, not physical.
 
 ## Three things that only showed up because of how it was tested
 
@@ -84,7 +85,9 @@ sequence — structural evidence, not physical.
    `TypeError` instead of returning a `Result`. Caught by `code-reviewer` (P1).
 3. **Two mutations did not compile, and returned "nothing went red"** — indistinguishable from a
    verified protection. They were the two *flushes*. Recorded as unverified and redone rather than
-   counted.
+   counted. A later round caught a second instance of the same shape: an assertion that *counted*
+   flushes passed a mutation flushing the directory twice and the record never, because the count
+   and the occurrence positions are identical. The assertion now pins descriptors.
 
 ## Vocabulary reconciliation
 

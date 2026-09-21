@@ -346,6 +346,10 @@ describe('FsFileTreeAccessors atomic writes and mutability policy', () => {
     if (process.platform !== 'linux') {
       return;
     }
+    // Source the magic number the published matrix quotes, rather than leaving
+    // it as a figure someone probed once and wrote down.
+    expect(fs.statfsSync('/proc').type).toBe(0x9fa0);
+
     const accessors = new FsFileTreeAccessors({ mutable: true });
     expect(accessors.getAtomicWriteCapabilities('/proc')).toSucceedAndSatisfy((capabilities) => {
       expect(capabilities.atomicReplace).toBe(false);

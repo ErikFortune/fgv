@@ -95,6 +95,41 @@ export class FaultingFsOperations implements IAtomicFsOperations {
    */
   public readonly calls: AtomicFsOperationName[] = [];
 
+  /**
+   * Every path-taking operation and the path it was given.
+   *
+   * @remarks
+   * `calls` records that an operation happened; this records *what it happened
+   * to*. The difference matters for the protocol's central promise: "the
+   * destination was never opened for writing" is a claim about a path, and an
+   * operation-name log cannot tell opening the temporary from opening the
+   * destination.
+   */
+  public readonly pathCalls: Array<{ op: AtomicFsOperationName; path: string }> = [];
+
+  /**
+   * Every descriptor-taking operation and the descriptor it was given, plus the
+   * descriptors the two open operations handed back.
+   *
+   * @remarks
+   * Counting flushes is not enough to pin "the record, then the directory
+   * entry": a protocol that flushed the directory twice and the record never
+   * has the same flush *count* and the same flush *positions*, so it satisfies
+   * both a count assertion and every occurrence-indexed fault injection. Only
+   * the descriptor identifies which object was flushed.
+   */
+  public readonly fdCalls: Array<{ op: AtomicFsOperationName; fd: number }> = [];
+
+  /**
+   * The descriptor `openExclusive` returned, once it has succeeded.
+   */
+  public temporaryFd: number | undefined;
+
+  /**
+   * The descriptor `openDirectory` returned, once it has succeeded.
+   */
+  public directoryFd: number | undefined;
+
   private readonly _base: IAtomicFsOperations;
   private readonly _faults: IInjectedFault[] = [];
   private readonly _counts: Map<AtomicFsOperationName, number> = new Map();
@@ -149,11 +184,21 @@ export class FaultingFsOperations implements IAtomicFsOperations {
   }
 
   public openExclusive(filePath: string, permissions: number): DetailedResult<number, AtomicFsErrno> {
-    return this._guard('openExclusive', () => this._base.openExclusive(filePath, permissions));
+    this.pathCalls.push({ op: 'openExclusive', path: filePath });
+    const opened = this._guard('openExclusive', () => this._base.openExclusive(filePath, permissions));
+    if (opened.isSuccess()) {
+      this.temporaryFd = opened.value;
+    }
+    return opened;
   }
 
   public openDirectory(directoryPath: string): DetailedResult<number, AtomicFsErrno> {
-    return this._guard('openDirectory', () => this._base.openDirectory(directoryPath));
+    this.pathCalls.push({ op: 'openDirectory', path: directoryPath });
+    const opened = this._guard('openDirectory', () => this._base.openDirectory(directoryPath));
+    if (opened.isSuccess()) {
+      this.directoryFd = opened.value;
+    }
+    return opened;
   }
 
   public write(fd: number, bytes: Uint8Array, offset: number): DetailedResult<number, AtomicFsErrno> {
@@ -170,6 +215,7 @@ export class FaultingFsOperations implements IAtomicFsOperations {
   }
 
   public fsync(fd: number): DetailedResult<number, AtomicFsErrno> {
+    this.fdCalls.push({ op: 'fsync', fd });
     return this._guard('fsync', () => this._base.fsync(fd));
   }
 
@@ -182,10 +228,12 @@ export class FaultingFsOperations implements IAtomicFsOperations {
   }
 
   public rename(from: string, to: string): DetailedResult<string, AtomicFsErrno> {
+    this.pathCalls.push({ op: 'rename', path: to });
     return this._guard('rename', () => this._base.rename(from, to));
   }
 
   public unlink(filePath: string): DetailedResult<string, AtomicFsErrno> {
+    this.pathCalls.push({ op: 'unlink', path: filePath });
     return this._guard('unlink', () => this._base.unlink(filePath));
   }
 

@@ -25,10 +25,10 @@ Every row below was **run**. Nothing is listed because it is expected to work.
 
 | platform | filesystem | magic | advertises | evidence |
 |---|---|---|---|---|
-| Linux (Node 22.22.2, x64) | ext4 | `0xef53` | `['session', 'process-crash']` | full suite + 11 subprocess crash assertions |
-| Linux (Node 22.22.2, x64) | tmpfs (`/dev/shm`) | `0x1021994` | `['session', 'process-crash']` | full suite + 11 subprocess crash assertions |
-| Linux | procfs | `0x9fa0` | nothing; refuses | `refuses an atomic write on a filesystem the allowlist does not name` |
-| any | in-memory | — | `['session']` | F1's suite, unchanged |
+| Linux (Node 22.22.2, x64) | ext4 | `0xef53` | `['session', 'process-crash']` | full suite + 11 subprocess tests, **10 of them crash-synchronized** (the 11th is the uninterrupted control) |
+| Linux (Node 22.22.2, x64) | tmpfs (`/dev/shm`) | `0x1021994` | `['session', 'process-crash']` | full suite + the same 11 |
+| Linux | procfs | `0x9fa0` | nothing; refuses | `refuses an atomic write on a filesystem the allowlist does not name`, which asserts the magic number as well as the refusal |
+| any | in-memory | — | `['session']` | F1's suite, **extended** by F2 — the advertised guarantee is unchanged, but the implementation gained `cleanupAtomicTemporaries` and the suite grew |
 
 **Unsupported, and why — each of these refuses rather than downgrading:**
 
@@ -53,7 +53,7 @@ currently expose.
 |---|---|
 | a reader never observes a torn write | `atomicCrash.test.ts` — a child running the real protocol `SIGKILL`s **itself** at each of 7 boundaries; at every one the destination is byte-identical to the whole previous record or the whole new one |
 | the rename is the visibility linearization point | the same suite, by the pair `before-rename` → previous record, `after-rename` → new record |
-| the destination is never unlinked or truncated | `never unlinks or truncates the destination on the way to replacing it` (asserts on the *operations performed*, not only the outcome) + the `before-rename` crash tests |
+| the destination is never unlinked or truncated | `never unlinks or truncates the destination on the way to replacing it` — asserts on the *operations and the paths they were given*: every `openExclusive` went to a reserved temporary, and `rename` is the only operation that ever named the destination. Non-truncation is a claim about a path, so an operation-name log could not have made it |
 | an interrupted write leaves a recognizable orphan, and reopen reclaims it | `the mid-write orphan really is partial` + `reopen reclaims the orphan and leaves the surviving record exactly as it was` |
 | a failure before the rename leaves the old record authoritative | `atomicFileCommit.test.ts`, 8 injected boundaries, each asserting the *contents and permissions* afterwards |
 | a failure after the rename cannot be mistaken for nonapplication | `a failed directory flush reports the replacement as visible, and it is` — asserts `visibility: 'replaced'` **and** that the destination really holds the new record |
@@ -64,8 +64,13 @@ currently expose.
 
 **What no test here establishes.** That bytes reached the storage device. A process-kill leaves
 the page cache intact, so flushed and unflushed data are **indistinguishable to every test in
-this suite**. The two `fsync` calls are verified to be made, once each, at their points in the
-sequence — structural evidence, not physical. The flushes are performed because §8.2's acceptance
+this suite**. What *is* pinned is that the record is flushed once and the directory entry once,
+in that order, **identified by descriptor** — structural evidence, not physical.
+
+That descriptor detail was not a flourish. The first attempt at this assertion counted flushes,
+and a mutation that flushes the *directory* twice and the record never passed it: same count,
+same occurrence positions, so it survived both the count and every occurrence-indexed fault
+injection. Only the descriptor tells the two apart. The flushes are performed because §8.2's acceptance
 boundary requires them, and A1 already states that a directory flush does not prove power-loss
 safety on a real storage stack. **No OS-crash or power-loss claim is derived from any of this.**
 
@@ -85,7 +90,7 @@ happened on disk and every assertion is about what a real reader would then see.
 | temp close | `EIO` | `io` / `file-flush` / `unchanged` | previous record |
 | rename | `EACCES` | `io` / `replace` / **`unchanged`** | previous record |
 | rename | `EIO`, `ENOSPC`, `EDQUOT`, unknown, **absent** | `io` / `replace` / **`unknown`** | — caller must read the record back |
-| directory flush | `EIO` | `io` / `directory-flush` / **`replaced`** | **new record** — and the test asserts it |
+| directory flush | `EIO` | `io` / `directory-flush` / **`replaced`** | **new record** — and the test asserts the contents, not just the classification |
 | directory close | `EIO` | `io` / `directory-flush` / `replaced` | new record |
 | destination lstat | `ENOTDIR` | `io` / `validate` / `unchanged` | untouched |
 | directory open | `EACCES` | `io` / `validate` / `unchanged` | untouched, nothing created |
@@ -145,13 +150,26 @@ separates a dead union member from a live one:
 
 So: 16 declared members, 11 unexercised at F1; 15 declared members, **0 unexercised** now.
 
-## Added beyond the brief
+## Reclamation, and the scope question it raises
 
-`cleanupAtomicTemporaries` on both atomic interfaces. §8.2 step 6 requires cleanup "on failure or
-exclusive reopen"; the failure half lives inside the protocol, but the reopen half needs a
-caller-reachable entry point. Without one, a consumer would have to know the reserved naming
-format — a dependency on an internal convention, which is exactly what reserving the namespace
-was meant to prevent. It is additive and nothing outside this package implements the interfaces.
+**`cleanupAtomicTemporaries` was in scope, not beyond it.** The brief's F2 paragraph says
+"Qualified-root inquiry; **reserved-temp cleanup on reopen**". An earlier draft of this document,
+of `README.md`, of `meta.yaml` and of the ledger entry all described it as "added beyond the
+brief"; that was wrong four times over and is corrected here. §8.2 step 6's failure half lives
+inside the protocol; the reopen half needs a caller-reachable entry point, or a consumer would
+have to know the reserved naming format — a dependency on an internal convention, which is what
+reserving the namespace was meant to prevent.
+
+**What *is* worth declaring is narrower, and it is a scope question the brief does raise.** The
+brief lists as out-of-scope "any **required** member added to an existing base interface", and
+`cleanupAtomicTemporaries` is a required member added to two interfaces that already existed on
+the integration branch. The judgement made here: those are the **optional capability** interfaces
+this very stream introduced in F1, not the base interfaces every accessor implements
+(`IFileTreeAccessors`, `IMutableFileTreeAccessors`, …), which are untouched. The clause's stated
+purpose — "The capability stays optional" — is preserved: no accessor is obliged to implement
+anything it did not already, and the repo-wide rebuild confirms all six pre-existing accessors
+across three packages still typecheck unchanged. Recorded rather than assumed, because the
+alternative reading is available and nobody had engaged it.
 
 ## The defect the fault injection caught
 
@@ -201,11 +219,22 @@ deleted. Both filter tests use `RegExp` now.
 
 ## Gates
 
-`rushx build` zero warnings · `rushx lint` clean · `rushx fixlint` run · `rushx test` 1174
+`rushx build` zero warnings · `rushx lint` clean · `rushx fixlint` run · `rushx test` 1175
 passed, 0 failed · **100% statements, branches, functions and lines**, with **no `c8 ignore`
-directives added** · `rush change --verify --target-branch origin/integration/filetree-atomic-write`
-finds the change file · API Extractor diff reviewed and additive · repo-wide `rush rebuild` and
-repo-wide `rush test` both pass.
+directives added** (and none removed) · `rush change --verify --target-branch origin/integration/filetree-atomic-write`
+finds the change file · repo-wide `rush rebuild` **`SUCCESS: 36 operations`** and repo-wide
+`rush test` **`SUCCESS: 35 operations`**, both clean at `--parallelism 1`.
+
+**API Extractor diff — additive except for one deliberate removal, which needs stating plainly
+because the brief's acceptance criterion says "Additive only".** The diff removes `'cleanup'`
+from `IAtomicWriteFailure.stage` in the checked-in `etc/ts-json-base.api.md`. That is a narrowing
+of a published-looking union, and the criterion exists because `ts-json-base` is a
+stability-obligated surface. It is permitted here for one specific reason: **`'cleanup'` was
+introduced by F1, F1 has not reached `release`, and the pair squashes as a single landing** — so
+no version of `ts-json-base` has ever shipped with that member, and no consumer can have depended
+on it. The integration branch exists precisely to make this revision cost a diff instead of a
+migration. Nothing predating F1 is touched. Everything else in the report is additive, plus two
+`implements` clauses widening.
 
 On the repo-wide rebuild: at default parallelism it reported *"succeeded with warnings"* — 20
 instances of downstream API Extractor not resolving `@fgv/ts-json-base`'s rollup `.d.ts`, which is

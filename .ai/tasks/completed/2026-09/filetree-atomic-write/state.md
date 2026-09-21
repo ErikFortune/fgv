@@ -339,3 +339,58 @@ A1 already states, and it is why no `os-crash` or `power-loss` claim is made.
 `result.md` and in the commit message for `596df35f` — in short, `guarantee` is an *input*
 vocabulary where a refusal is a witness, and `stage` is an *output* vocabulary where a member
 with no producer is dead.
+
+## 2026-09-21 — antagonist pass on the closure, and what it changed
+
+An independent adversarial pass was run over the closure artifacts, briefed to **refute**: verify
+every claim against the code and a live run rather than against the prose asserting it, and treat
+an untraceable claim as a finding rather than a maybe. It re-ran every gate itself instead of
+accepting the reported results, and independently corroborated all twelve mutation red-counts
+against the machine-written results files.
+
+**It found a false statement in the Gates line, which is the one that mattered.** `result.md`
+claimed *"API Extractor diff reviewed and additive"*. The diff **removes** `'cleanup'` from
+`IAtomicWriteFailure.stage` in the checked-in `api.md` — which the same document says two screens
+earlier. The brief's acceptance criterion reads *"Additive only"*, and nothing anywhere
+reconciled the removal against it. Corrected: the removal is now stated plainly, with the reason
+it is permitted (the member was introduced by F1, F1 never reached `release`, the pair squashes
+as one landing, so no published version ever carried it — which is what the integration branch is
+*for*).
+
+**Four places called `cleanupAtomicTemporaries` "added beyond the brief".** The brief's own F2
+paragraph says "reserved-temp cleanup on reopen". Wrong four times over; corrected in
+`result.md`, `README.md`, `meta.yaml` and the ledger entry. The genuinely open question it had
+displaced — the brief's out-of-scope clause *"any **required** member added to an existing base
+interface"* — had been engaged nowhere, and is now reasoned out explicitly rather than assumed.
+
+**Three overstatements of evidence, each fixed by making the claim true rather than weakening
+it:**
+
+- *"11 subprocess crash assertions"* — 10 are crash-synchronized; the 11th is the uninterrupted
+  control. Stated precisely now.
+- *"the destination is never unlinked or truncated ... asserts on the operations performed"* —
+  the unlink half was operational, the **truncation half was asserted nowhere**, and the harness
+  recorded operation names without paths so it *could not* have made that claim. The harness now
+  records paths, and the test asserts every `openExclusive` went to a reserved temporary and that
+  `rename` is the only operation that ever named the destination.
+- *"the two `fsync` calls are verified to be made, once each"* — nothing asserted a count. The
+  first fix added one, **and a mutation immediately showed the count was the wrong property**: a
+  protocol that flushes the *directory* twice and the record never has the same count and the
+  same occurrence positions, so it passed the new assertion and every occurrence-indexed
+  injection. The assertion now pins **descriptors**, and that mutation goes red on exactly the
+  one test.
+
+That last item is the second time in this stream that a first attempt at a regression test was
+insufficient and only the mutation revealed it. The lesson generalizes: **an assertion added to
+support a claim must itself be watched to fail**, or it is the same guess the mutation discipline
+exists to eliminate.
+
+**Also corrected:** the tested-matrix row for the in-memory store said "F1's suite, unchanged",
+while F2 added `cleanupAtomicTemporaries` to it and grew its suite by +150/−7. The *advertised
+guarantee* is unchanged; the cell now says so. And the procfs magic number the matrix quotes was
+probed but asserted nowhere — the test now asserts it.
+
+**Findings accepted as correct and left alone:** that the macOS *reason* is asserted by no test,
+only the refusal — a rationale for an allowlist is not an executable path, and the test's own
+title already concedes the point; and that `brief.md`'s acceptance checkboxes remain unticked,
+which the artifact protocol requires, since a brief is authored in flight and never edited after.
