@@ -72,22 +72,77 @@ precedent. **User confirmed: ship both.** Implemented as designed in §8.1, no d
   `InMemoryTreeAccessors`), which is exactly what an additive optional-capability interface
   looks like in an api.md diff.
 
-**In flight (backgrounded, not yet reported back):**
-- `code-reviewer` agent run on the diff (mandated before calling coverage closed — coverage was
-  already 100% so this is the "trigger fires the moment you're about to chase coverage" case with
-  nothing left to chase, but the review still runs per the rule).
-- `node common/scripts/install-run-rush.js rebuild` (repo-wide) — mandatory per the acceptance
-  checklist, confirms the six-accessor blast radius (three packages) still typechecks. Not
-  expected to find anything since the new interfaces are additive-only and no existing accessor
-  class was touched, but this is the checkbox the repo added after four consecutive streams
-  broke a downstream implementer without it, so it runs regardless of that expectation.
+**`code-reviewer` pass — findings resolved:**
+- **P2 (fixed):** `writeFileAtomically`'s destination-collides-with-existing-directory failure
+  was misclassified as `{code:'io', stage:'replace', visibility:'unknown'}` when nothing had
+  actually mutated — it's a pre-mutation destination-validity check. Added an explicit
+  destination-type pre-check ahead of `saveFileContents` and now reports
+  `{code:'not-writable', stage:'validate', visibility:'unchanged'}`, matching the shape used for
+  the guarantee-mismatch case a few lines above. Test updated to pin the corrected detail and to
+  assert the destination directory is untouched afterward. Added a second test for the one
+  remaining `saveFileContents` failure mode (an ancestor path segment already exists as a file),
+  which is genuinely ambiguous (can create intermediate directories before failing) and correctly
+  keeps the `io`/`replace`/`unknown` classification.
+- **P2 (fixed):** `{@link MutableInMemoryFile.setContents}` was an unresolvable cross-reference —
+  `MutableInMemoryFile` is an internal, non-exported class, so API Extractor baked a real
+  `ae-unresolved-link` warning (not the accepted "not supported yet by the resolver" kind) into
+  the checked-in `api.md`. Replaced with a plain code span. Confirmed by diffing `api.md`
+  before/after: the warning line is gone, nothing else changed.
+- **P3 (fixed, cheap):** success receipt now echoes `options.guarantee` instead of hardcoding
+  `'session'` (correct today only incidentally); accessor-level `getAtomicWriteCapabilities` doc
+  now documents the "path names a file, not a directory" failure case alongside "doesn't exist";
+  `IAtomicFileTreeDirectoryItem.getAtomicWriteCapabilities`'s "Never `Failure`" doc softened to
+  describe what today's implementations actually guarantee rather than an absolute promise the
+  accessor-level contract doesn't make; added a one-line comment noting the intentional
+  duplicate `fileIsMutable` check; added per-value documentation to `IAtomicWriteFailure.stage`
+  (six values, F1 only ever produces two, the rest are named as reserved for a Node/F2
+  implementation).
+- **P3 (dispositioned, not fixed):** the reviewer noted `writeChildAtomically`'s new
+  name-validation (reject empty/`/`-containing names) isn't mirrored on the older sibling
+  methods `createChildFile`/`createChildFileBytes`, which today silently `joinPaths` a
+  slash-containing name. Correct observation, but backfilling stricter validation onto two
+  established, pre-existing methods is a behavior change outside this stream's scope (not
+  requested, not related to atomic writes) — left as a follow-up rather than folded in here per
+  "don't refactor surrounding code during a focused change."
+- Re-ran `rushx build` (zero warnings, api.md diff shows only the one line removed), `rushx lint`
+  (clean), `rushx test` (1007 passed — 985 pre-existing + 22 in the new file after the fix-round
+  addition, 100% coverage, no `c8 ignore` directives) after applying the fixes.
 
-**Not done yet:** change file, `CAPABILITIES.md` entry, `rush change --verify`, PR description,
-`result.md`, artifact migration to `.ai/tasks/completed/2026-09/filetree-atomic-write/` (via
-`/finalize-task`), Copilot review loop (opens after first push).
+**Repo-wide rebuild — resolved:** the first two `rush rebuild` attempts (default parallelism)
+both failed identically at `@fgv/ts-json-base`'s `api-extractor` step with
+`Internal Error: The referenced path was not found: .../lib/packlets/file-tree/fileTreeAccessors.d.ts`.
+A standalone `rush rebuild --to @fgv/ts-json-base` (clean) succeeded immediately both times,
+and a full `rush rebuild --parallelism 1` then succeeded on **all 36 operations** with zero
+failures — confirming this was a pre-existing build-cache race under concurrent Heft
+`--clean`/API-Extractor steps in this environment, not a defect introduced by this change. All
+six accessor classes named in the brief's blast-radius table, across all three packages
+(`ts-json-base`, `ts-web-extras`, `ts-extras`), and every downstream consumer, still typecheck
+unchanged.
+
+**Change file verified:** `rush change --verify --target-branch origin/release` finds and accepts
+`common/changes/@fgv/ts-json-base/filetree-atomic-write-f1_2026-09-21-19-57-46.json` (type
+`minor`, matching the precedent set by the earlier `filetree-bytes-capability` binary-capability
+addition).
+
+**Commits on `claude/filetree-atomic-write-f1`, pushed:**
+1. `357446d6` — F1 implementation (contracts, delegation, in-memory session implementation,
+   tests, change file, `CAPABILITIES.md` entry).
+2. `9d4d675b` — `code-reviewer` fix round (classification fix, doc fixes, two new/updated tests).
+3. `6d69b7e9` — regenerated `api.md` (the one line for the now-resolved `@link` warning).
+
+**Not done, and deliberately not started:** opening a PR. The repo's standing instruction is
+"do NOT create a pull request unless the user explicitly asks for one," and this session's task
+harness instructed commit + push only — no PR request appears anywhere in this conversation.
+Everything the brief describes as PR-gated (layer-2 Copilot loop, `/finalize-task` artifact
+migration to `.ai/tasks/completed/2026-09/filetree-atomic-write/`, the polished `README.md`) is
+therefore also not started, since each depends on a PR existing. The branch is pushed and green
+end-to-end; opening the PR is a one-step action once requested.
 
 ### Next action
 
-Once the code-reviewer and repo-wide rebuild report back: resolve/disposition any findings, add
-the ts-json-base change file, add the `CAPABILITIES.md` entry, commit, push, open the PR with the
-layer-1 review summary in the description, then run `/finalize-task` before merge.
+If/when a PR is requested: open it against `release` with a description summarizing the layer-1
+`code-reviewer` round above (what was found, what was fixed, what was dispositioned and why),
+then drive the layer-2 Copilot loop per the standard review-loop discipline, then run
+`/finalize-task` before merge (migrate `.ai/tasks/active/filetree-atomic-write/` to
+`.ai/tasks/completed/2026-09/filetree-atomic-write/` with a polished `README.md`, write
+`result.md`, update the streams ledger). Until then this state.md is the record of what's done.
