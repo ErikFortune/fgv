@@ -57,6 +57,9 @@ function arrayOf_2<T, TC = unknown>(validateElement: JsonCompatible_2.Validator<
 type ArrayValidator<T, TC = unknown> = Validation.Classes.ArrayValidator<JsonCompatibleType<T>, TC>;
 
 // @public
+type AtomicWriteGuarantee = 'session' | 'process-crash' | 'os-crash' | 'power-loss';
+
+// @public
 const boolean: Converter<boolean, IJsonConverterContext>;
 
 // @public
@@ -160,9 +163,11 @@ const DefaultJsonTreeHelper: JsonTreeHelper;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class DirectoryItem<TCT extends string = string> implements IMutableBinaryFileTreeDirectoryItem<TCT> {
+class DirectoryItem<TCT extends string = string> implements IMutableBinaryFileTreeDirectoryItem<TCT>, IAtomicFileTreeDirectoryItem<TCT> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(path: string, hal: IFileTreeAccessors<TCT>);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -199,6 +204,10 @@ class DirectoryItem<TCT extends string = string> implements IMutableBinaryFileTr
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
+    getAtomicWriteCapabilities(): Result<IAtomicWriteCapabilities>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
     getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected readonly _hal: IFileTreeAccessors<TCT>;
@@ -210,6 +219,10 @@ class DirectoryItem<TCT extends string = string> implements IMutableBinaryFileTr
     //
     // (undocumented)
     readonly type: 'directory';
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    writeChildAtomically(name: string, contents: string, options: IAtomicWriteOptions): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -314,12 +327,14 @@ declare namespace FileTree {
         isBinaryAccessors,
         isStrictTextAccessors,
         isMutableBinaryAccessors,
+        isAtomicAccessors,
         isBinaryFileItem,
         isStrictTextFileItem,
         isMutableBinaryFileItem,
         isMutableFileItem,
         isMutableDirectoryItem,
         isMutableBinaryDirectoryItem,
+        isAtomicDirectoryItem,
         SaveCapability,
         SaveFailureReason,
         SaveDetail,
@@ -345,6 +360,13 @@ declare namespace FileTree {
         IBinaryFileTreeAccessors,
         IMutableBinaryFileTreeAccessors,
         IPersistentFileTreeAccessors,
+        AtomicWriteGuarantee,
+        IAtomicWriteCapabilities,
+        IAtomicWriteOptions,
+        IAtomicWriteReceipt,
+        IAtomicWriteFailure,
+        IAtomicFileTreeAccessors,
+        IAtomicFileTreeDirectoryItem,
         IStrictTextFileTreeAccessors,
         FileTree_2 as FileTree,
         DirectoryItem,
@@ -435,6 +457,68 @@ class FsFileTreeAccessors<TCT extends string = string> implements IMutableBinary
     // (undocumented)
     saveFileBytes(path: string, bytes: Uint8Array): Result<Uint8Array>;
     saveFileContents(path: string, contents: string): Result<string>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IAtomicFileTreeAccessors<TCT extends string = string> extends IMutableFileTreeAccessors<TCT> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getAtomicWriteCapabilities(directory: string): Result<IAtomicWriteCapabilities>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    writeFileAtomically(path: string, contents: string, options: IAtomicWriteOptions): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IAtomicFileTreeDirectoryItem<TCT extends string = string> extends IMutableFileTreeDirectoryItem<TCT> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getAtomicWriteCapabilities(): Result<IAtomicWriteCapabilities>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    writeChildAtomically(name: string, contents: string, options: IAtomicWriteOptions): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IAtomicWriteCapabilities {
+    readonly atomicReplace: boolean;
+    readonly guarantees: ReadonlyArray<AtomicWriteGuarantee>;
+}
+
+// @public
+interface IAtomicWriteFailure {
+    readonly code: 'unsupported' | 'not-writable' | 'io';
+    readonly stage: 'validate' | 'temporary-write' | 'file-flush' | 'replace' | 'directory-flush' | 'cleanup';
+    readonly visibility: 'unchanged' | 'replaced' | 'unknown';
+}
+
+// @public
+interface IAtomicWriteOptions {
+    readonly guarantee: AtomicWriteGuarantee;
+}
+
+// @public
+interface IAtomicWriteReceipt {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly guarantee: AtomicWriteGuarantee;
+    readonly replaced: boolean;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -707,9 +791,10 @@ function inMemory<TCT extends string = string>(files: IInMemoryFile<TCT>[], para
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFileTreeAccessors<TCT>, IBinaryFileTreeAccessors<TCT> {
+class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFileTreeAccessors<TCT>, IBinaryFileTreeAccessors<TCT>, IAtomicFileTreeAccessors<TCT> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(files: IInMemoryFile<TCT>[], params?: IFileTreeInitParams<TCT>);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -724,6 +809,10 @@ class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFile
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     fileIsMutable(path: string): DetailedResult<boolean, SaveDetail>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getAtomicWriteCapabilities(directory: string): Result<IAtomicWriteCapabilities>;
     getBaseName(path: string, suffix?: string): string;
     getChildren(path: string): Result<ReadonlyArray<FileTreeItem<TCT>>>;
     getExtension(path: string): string;
@@ -738,6 +827,8 @@ class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFile
     joinPaths(...paths: string[]): string;
     resolveAbsolutePath(...paths: string[]): string;
     saveFileContents(path: string, contents: string): Result<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    writeFileAtomically(path: string, contents: string, options: IAtomicWriteOptions): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure>;
 }
 
 // @public
@@ -770,6 +861,18 @@ interface IReadDirectoryItem<T> {
     filename: string;
     item: T;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isAtomicAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IAtomicFileTreeAccessors<TCT>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isAtomicDirectoryItem<TCT extends string = string>(item: AnyFileTreeDirectoryItem<TCT> | FileTreeItem<TCT>): item is IAtomicFileTreeDirectoryItem<TCT>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

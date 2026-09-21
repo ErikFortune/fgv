@@ -128,6 +128,70 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `filetree-atomic-write` 🔵 (F1 ✅ merged to integration via #681 · F2 🟢 ready)
+
+**Mission.** Add an optional atomic-write capability to `FileTree` in `@fgv/ts-json-base`, so a
+consumer can replace a file's contents without a reader ever observing a torn write, and a durable
+consumer can wait for a declared persistence boundary before acknowledging.
+
+**Package surface:** `ts-json-base/file-tree` — and nothing else.
+
+**Out-of-scope:** ordinary `saveFileContents` / `saveFileBytes` semantics; any *required* member on
+an existing base interface; `ts-web-extras` and `ts-extras/zip-file-tree` adapters (read and rebuilt
+for compatibility, never edited); `@fgv/ts-agent-tasks`, which does not exist yet and is not created
+here.
+
+**Origin.** First implementation slice of the agent-tasks design bundle merged in #680
+(`docs/design/agent-tasks/`, slices F1/F2). `FsFileTreeAccessors` writes through a bare
+`fs.writeFileSync` with no temp/flush/replace protocol, so a crash mid-write truncates the file.
+The design routes this as an **extension to the shared primitive** rather than a task-owned
+filesystem adapter, per `CODING_STANDARDS.md` § *Extending Core Libraries Over Working Around Them*.
+It is independently valuable: any consumer committing JSON durably wants it, `ts-agent-memory`'s
+`FileTreeMemoryStore` first among them.
+
+**Landing shape — F1 and F2 ship as one commit to `release`.** Both versions merge to
+`integration/filetree-atomic-write`, which squashes to `release` as a single stream landing. F1 is
+internally coherent but not independently *evidenced*: it declares a failure vocabulary of which it
+exercises almost nothing — 1 of 6 `stage` values, 1 of 3 `visibility` values, 1 of 4
+`AtomicWriteGuarantee` values, 2 of 3 `code` values. The unexercised members (`'file-flush'`,
+`'directory-flush'`, `'cleanup'`, `'power-loss'` …) are predictions about the Node protocol, written
+before that protocol exists.
+
+The point was sharpened during F1's own review. Before `c95b3791`, the ancestor-collision path
+produced `io` / `replace` / `unknown` — three otherwise-unused members. That classification was
+**wrong** (the destination was never written; `visibility` is scoped to the destination path), and
+correcting it left the wider vocabulary with no witness at all. A contract whose only evidence was a
+misclassification should land with the implementation that tests it. **F2 therefore has license to
+amend F1's vocabulary** rather than inheriting it as fixed — that license is the reason for the
+integration branch.
+
+**Versions.**
+
+- **F1 — contracts and session implementation** ✅ merged to `integration/filetree-atomic-write` via
+  #681. Optional accessor/directory interfaces,
+  guarantee vocabulary, classified result types, capability guards, `DirectoryItem` delegation,
+  atomic session replacement in the in-memory accessors, documentation separating method presence
+  from writability from atomic visibility from durability. Claims no crash survival of any kind.
+- **F2 — Node implementation and process-crash qualification** 🟢 ready (unblocked by F1). Branches
+  from `integration/filetree-atomic-write` and PRs back into it. Temp/flush/rename/
+  directory-flush protocol with precise unchanged/replaced/unknown classification. Crash evidence
+  from real child-process termination at protocol boundaries, not sleeps. Decision **A1** bounds the
+  claim to process-crash survival on qualified local Linux and macOS roots; no OS-crash or
+  power-loss claim may be derived from process-kill evidence. **May revise F1's `stage` /
+  `visibility` / `AtomicWriteGuarantee` / `code` unions** where the real protocol disagrees with the
+  predicted vocabulary; nothing has been published, so this costs a diff, not a migration.
+
+**Acceptance criteria.** Build with zero warnings, lint, 100% coverage, `code-reviewer` before
+coverage-gap closure; **repo-wide `rush rebuild`** (mandatory — this widens a shared contract with
+six implementers across three packages); change file verified with `rush change --verify`; API
+Extractor diff reviewed, since `ts-json-base` is a stability-obligated surface and this must be
+purely additive; `CAPABILITIES.md` entry in the same PR.
+
+**Downstream contract.** `@fgv/ts-agent-tasks` T3's durable path is blocked until F2 passes on the
+release's claimed platform matrix. Missing platform evidence is not "passed."
+
+**Artifact pointer:** `.ai/tasks/active/filetree-atomic-write/`.
+
 ### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
 
 **Status:** 🟢 **shipped to `release`** — all five units merged 2026-08-12, plus one unplanned refactor that unblocked them. Nothing published yet; the alpha still has to go out. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md`, `…-reply-2026-08-11-ask-package.md`, `…-status-2026-08-12-stream-a.md`, `…-status-2026-08-12-shipped.md`.

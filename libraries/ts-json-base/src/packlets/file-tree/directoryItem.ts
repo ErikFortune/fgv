@@ -20,14 +20,20 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { DetailedResult, Result, captureResult, fail, failWithDetail, succeed } from '@fgv/ts-utils';
 import {
   FileTreeItem,
+  IAtomicFileTreeDirectoryItem,
+  IAtomicWriteCapabilities,
+  IAtomicWriteFailure,
+  IAtomicWriteOptions,
+  IAtomicWriteReceipt,
   IDeleteChildOptions,
   IFileTreeAccessors,
   IMutableBinaryFileTreeDirectoryItem,
   IMutableFileTreeDirectoryItem,
   IMutableFileTreeFileItem,
+  isAtomicAccessors,
   isMutableAccessors,
   isMutableBinaryAccessors,
   isMutableFileItem
@@ -38,13 +44,18 @@ import {
  *
  * @remarks
  * Implements the optional byte-native create capability
- * ({@link FileTree.IMutableBinaryFileTreeDirectoryItem}) by delegating to the underlying
- * accessors, so the guard is true regardless of what backs it. Ask
- * {@link FileTree.DirectoryItem.canCreateChildFileBytes | canCreateChildFileBytes} for the
- * store's actual answer.
+ * ({@link FileTree.IMutableBinaryFileTreeDirectoryItem}) and the optional atomic-write
+ * capability ({@link FileTree.IAtomicFileTreeDirectoryItem}) by delegating to the underlying
+ * accessors, so both guards are true regardless of what backs it. Ask
+ * {@link FileTree.DirectoryItem.canCreateChildFileBytes | canCreateChildFileBytes} or
+ * {@link FileTree.DirectoryItem.getAtomicWriteCapabilities | getAtomicWriteCapabilities} for
+ * the store's actual answer. A consumer holding a `DirectoryItem` never needs a native path or
+ * accessor internals to perform an atomic child write.
  * @public
  */
-export class DirectoryItem<TCT extends string = string> implements IMutableBinaryFileTreeDirectoryItem<TCT> {
+export class DirectoryItem<TCT extends string = string>
+  implements IMutableBinaryFileTreeDirectoryItem<TCT>, IAtomicFileTreeDirectoryItem<TCT>
+{
   /**
    * {@inheritDoc FileTree.IFileTreeDirectoryItem."type"}
    */
@@ -137,6 +148,58 @@ export class DirectoryItem<TCT extends string = string> implements IMutableBinar
 
     const filePath = hal.joinPaths(this.absolutePath, name);
     return this._createdChildFile(filePath, () => hal.saveFileBytes(filePath, bytes));
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeDirectoryItem.getAtomicWriteCapabilities}
+   */
+  public getAtomicWriteCapabilities(): Result<IAtomicWriteCapabilities> {
+    if (!isAtomicAccessors(this._hal)) {
+      return succeed({ atomicReplace: false, guarantees: [] });
+    }
+    return this._hal.getAtomicWriteCapabilities(this.absolutePath);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeDirectoryItem.writeChildAtomically}
+   */
+  public writeChildAtomically(
+    name: string,
+    contents: string,
+    options: IAtomicWriteOptions
+  ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure> {
+    // A child name must denote a single component that stays inside this directory.
+    //
+    // Both separators are rejected regardless of platform: `FsFileTreeAccessors.joinPaths`
+    // is `path.join`, which treats `\` as a separator on Windows, so `a\b` would otherwise
+    // become a nested path once F2 makes that accessor atomic-capable.
+    //
+    // `.` and `..` are rejected for the sharper reason that `path.join` NORMALIZES them —
+    // `joinPaths('/a/b', '..')` is `/a`, a path outside this directory entirely. The
+    // in-memory accessor preserves dot segments and the filesystem one is not yet
+    // atomic-capable, so neither is exploitable today, but the contract is what every
+    // future accessor is written against and it should not admit a traversal.
+    if (name.length === 0 || name === '.' || name === '..' || name.includes('/') || name.includes('\\')) {
+      return failWithDetail(`${this.absolutePath}: '${name}' is not a valid child file name`, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    const hal = this._hal;
+    if (!isAtomicAccessors(hal)) {
+      // Compose through joinPaths rather than a hardcoded '/' so the message does not mix
+      // separators on a Windows-style absolutePath.
+      return failWithDetail(`${hal.joinPaths(this.absolutePath, name)}: atomic writes not supported`, {
+        code: 'unsupported',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    const filePath = hal.joinPaths(this.absolutePath, name);
+    return hal.writeFileAtomically(filePath, contents, options);
   }
 
   /**
