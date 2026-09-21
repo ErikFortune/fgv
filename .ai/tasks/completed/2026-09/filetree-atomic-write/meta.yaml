@@ -1,10 +1,13 @@
 id: filetree-atomic-write
 status: shipped
 packages: ['@fgv/ts-json-base']
-# F1 into the integration branch; F2's number is filled in when its PR opens.
+# Order matters: the capability feed links prs[0], and this stream's headline
+# describes the qualified Node implementation, which is F2 (#682). Linking #681
+# would attach a crash-survival headline to the PR whose own body says it claims
+# no crash survival of any kind.
 # The squash from integration/filetree-atomic-write to release is the
 # orchestrator's PR, not this stream's, so it is deliberately not listed here.
-prs: [681]
+prs: [682, 681]
 opened: 2026-09-21
 closed: 2026-09-21
 summary:
