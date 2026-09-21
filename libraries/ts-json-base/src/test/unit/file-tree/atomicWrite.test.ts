@@ -24,7 +24,6 @@ import '@fgv/ts-utils-jest';
 import {
   DirectoryItem,
   FsFileTreeAccessors,
-  IAtomicFileTreeDirectoryItem,
   InMemoryTreeAccessors,
   isAtomicAccessors,
   isAtomicDirectoryItem
@@ -192,10 +191,14 @@ describe('DirectoryItem atomic delegation', () => {
   });
 
   test('writeChildAtomically creates a child with no native path or accessor internals visible to the caller', () => {
-    const dir: IAtomicFileTreeDirectoryItem = InMemoryTreeAccessors.create([], { mutable: true })
-      .orThrow()
-      .getItem('/')
-      .orThrow() as IAtomicFileTreeDirectoryItem;
+    // Narrow via the guard rather than casting. This is the acceptance-criterion test for
+    // the whole slice, so it must not assert the thing it is meant to prove: a cast would
+    // still compile and pass if DirectoryItem stopped delegating, while the guard fails
+    // loudly at exactly that point — the same shape every other test in this file uses.
+    const dir = InMemoryTreeAccessors.create([], { mutable: true }).orThrow().getItem('/').orThrow();
+    if (!isAtomicDirectoryItem(dir)) {
+      throw new Error('expected an atomic directory item');
+    }
 
     expect(dir.writeChildAtomically('child.txt', 'contents', { guarantee: 'session' })).toSucceedAndSatisfy(
       (receipt) => {
