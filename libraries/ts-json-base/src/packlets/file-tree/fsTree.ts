@@ -22,6 +22,11 @@
 
 import {
   FileTreeItem,
+  IAtomicFileTreeAccessors,
+  IAtomicWriteCapabilities,
+  IAtomicWriteFailure,
+  IAtomicWriteOptions,
+  IAtomicWriteReceipt,
   IFileTreeInitParams,
   IFilterSpec,
   IMutableBinaryFileTreeAccessors,
@@ -41,6 +46,9 @@ import {
 import { DirectoryItem } from './directoryItem';
 import { FileItem } from './fileItem';
 import { isPathMutable } from './filterSpec';
+import { cleanupAtomicTemporaries, commitFileAtomically } from './atomicFileCommit';
+import { defaultAtomicFsOperations } from './atomicFsOperations';
+import { qualifyAtomicWrites } from './atomicRootQualification';
 
 /**
  * Implementation of {@link FileTree.IMutableBinaryFileTreeAccessors} that uses the
@@ -49,10 +57,21 @@ import { isPathMutable } from './filterSpec';
  * @remarks
  * The file system is byte-native, so this implementation supports the optional binary
  * capability for both reads and writes.
+ *
+ * It also implements the optional atomic-write capability
+ * ({@link FileTree.IAtomicFileTreeAccessors}). Ordinary
+ * {@link FileTree.FsFileTreeAccessors.saveFileContents | saveFileContents} and
+ * {@link FileTree.FsFileTreeAccessors.saveFileBytes | saveFileBytes} are
+ * unchanged and still write in place; the atomic capability is a separate,
+ * opt-in path. Which guarantee — if any — a given root can honor depends on the
+ * platform and filesystem and is reported by
+ * {@link FileTree.FsFileTreeAccessors.getAtomicWriteCapabilities |
+ * getAtomicWriteCapabilities}; an unqualified root refuses a durable write
+ * rather than quietly performing a weaker one.
  * @public
  */
 export class FsFileTreeAccessors<TCT extends string = string>
-  implements IMutableBinaryFileTreeAccessors<TCT>
+  implements IMutableBinaryFileTreeAccessors<TCT>, IAtomicFileTreeAccessors<TCT>
 {
   /**
    * Optional path prefix to prepend to all paths.
@@ -275,6 +294,152 @@ export class FsFileTreeAccessors<TCT extends string = string>
         return bytes;
       });
     });
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeAccessors.getAtomicWriteCapabilities}
+   */
+  public getAtomicWriteCapabilities(directory: string): Result<IAtomicWriteCapabilities> {
+    return this._qualifyDirectory(directory).onSuccess((qualification) =>
+      succeed(qualification.capabilities)
+    );
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeAccessors.writeFileAtomically}
+   */
+  public writeFileAtomically(
+    filePath: string,
+    contents: string,
+    options: IAtomicWriteOptions
+  ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure> {
+    const absolutePath = this.resolveAbsolutePath(filePath);
+    const directoryPath = path.dirname(absolutePath);
+
+    const confined = this._confineToRoot(absolutePath);
+    if (confined.isFailure()) {
+      return failWithDetail(confined.message, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    // The qualification is per containing directory, not per accessor: one root
+    // can span a qualified filesystem and an unqualified mount beneath it.
+    const qualification = this._qualifyDirectory(directoryPath);
+    if (qualification.isFailure()) {
+      return failWithDetail(qualification.message, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+    const { capabilities, reason } = qualification.value;
+
+    if (!capabilities.atomicReplace) {
+      return failWithDetail(`${absolutePath}: atomic writes are not available here: ${reason}`, {
+        code: 'unsupported',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    if (!capabilities.guarantees.includes(options.guarantee)) {
+      // No silent downgrade: a caller that asked for more durability than this
+      // root can be shown to provide gets a refusal, not a weaker write.
+      return failWithDetail(
+        `${absolutePath}: requested guarantee '${
+          options.guarantee
+        }' exceeds what this root can honor (${capabilities.guarantees.join(', ')}) — ${reason}`,
+        { code: 'unsupported', stage: 'validate', visibility: 'unchanged' }
+      );
+    }
+
+    const mutable = this.fileIsMutable(filePath);
+    if (mutable.isFailure()) {
+      return failWithDetail(mutable.message, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    return commitFileAtomically({
+      destinationPath: absolutePath,
+      directoryPath,
+      contents,
+      guarantee: options.guarantee,
+      ops: defaultAtomicFsOperations,
+      joinPaths: (...paths: string[]) => this.joinPaths(...paths)
+    });
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeAccessors.cleanupAtomicTemporaries}
+   */
+  public cleanupAtomicTemporaries(directory: string): Result<ReadonlyArray<string>> {
+    const absolutePath = this.resolveAbsolutePath(directory);
+    return this._confineToRoot(absolutePath)
+      .onSuccess(() => this.fileIsMutable(directory).asResult)
+      .onSuccess(() =>
+        cleanupAtomicTemporaries(defaultAtomicFsOperations, absolutePath, (...paths: string[]) =>
+          this.joinPaths(...paths)
+        )
+      );
+  }
+
+  /**
+   * Qualifies a directory for atomic writes, applying this accessor's mutability
+   * policy on top of the platform/filesystem qualification.
+   *
+   * @remarks
+   * Existence is checked first, so asking about a path that is not a directory
+   * fails rather than answering "not capable" — the same distinction the
+   * in-memory accessors draw.
+   */
+  private _qualifyDirectory(directory: string): Result<{
+    capabilities: IAtomicWriteCapabilities;
+    reason: string;
+  }> {
+    const absolutePath = this.resolveAbsolutePath(directory);
+    return qualifyAtomicWrites(defaultAtomicFsOperations, absolutePath, process.platform).onSuccess(
+      (qualification) => {
+        if (this._mutable === false) {
+          return succeed({
+            capabilities: { atomicReplace: false, guarantees: [] },
+            reason: `${absolutePath}: mutability is disabled`
+          });
+        }
+        if (!isPathMutable(absolutePath, this._mutable)) {
+          return succeed({
+            capabilities: { atomicReplace: false, guarantees: [] },
+            reason: `${absolutePath}: path is excluded by filter`
+          });
+        }
+        return succeed(qualification);
+      }
+    );
+  }
+
+  /**
+   * Rejects a path that resolves outside this tree's root.
+   *
+   * @remarks
+   * {@link FileTree.FsFileTreeAccessors.resolveAbsolutePath | resolveAbsolutePath}
+   * ignores the prefix for an input that is already absolute, so confinement has
+   * to be checked rather than assumed. A tree with no prefix has no root to be
+   * confined to, and the check is vacuous.
+   */
+  private _confineToRoot(absolutePath: string): Result<string> {
+    if (this.prefix === undefined) {
+      return succeed(absolutePath);
+    }
+    const root = path.resolve(this.prefix);
+    if (absolutePath === root || absolutePath.startsWith(`${root}${path.sep}`)) {
+      return succeed(absolutePath);
+    }
+    return fail(`${absolutePath}: resolves outside the tree root '${root}'`);
   }
 
   /**

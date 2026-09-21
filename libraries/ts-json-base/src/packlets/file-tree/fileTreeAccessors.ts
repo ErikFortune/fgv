@@ -896,6 +896,28 @@ export interface IAtomicFileTreeAccessors<TCT extends string = string>
     contents: string,
     options: IAtomicWriteOptions
   ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure>;
+
+  /**
+   * Removes any working files this store reserves for interrupted atomic
+   * writes from the given directory.
+   *
+   * @remarks
+   * A store that commits by writing somewhere else first can leave that
+   * working file behind when the process dies mid-write. The name of such a
+   * file is reserved to the store, so only the store can recognize one; this
+   * is how a consumer reclaims them without being handed a naming convention
+   * it would then depend on.
+   *
+   * **Call this only at exclusive reopen**, which the single-writer fault
+   * model already assumes: a working file belonging to a *live* write is
+   * indistinguishable from an orphan, and removing it would break that write.
+   * A store with nothing to reclaim answers with an empty list.
+   *
+   * @param directory - Absolute path of the directory to reclaim.
+   * @returns `Success` with the names removed, or `Failure` naming what could
+   * not be removed.
+   */
+  cleanupAtomicTemporaries(directory: string): Result<ReadonlyArray<string>>;
 }
 
 /**
@@ -947,6 +969,11 @@ export interface IAtomicFileTreeDirectoryItem<TCT extends string = string>
     contents: string,
     options: IAtomicWriteOptions
   ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure>;
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeAccessors.cleanupAtomicTemporaries}
+   */
+  cleanupAtomicTemporaries(): Result<ReadonlyArray<string>>;
 }
 
 // ============================================================================

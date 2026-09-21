@@ -21,13 +21,75 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { DetailedResult, Result } from '@fgv/ts-utils';
 import {
   DirectoryItem,
+  FileTreeItem,
   FsFileTreeAccessors,
+  IMutableFileTreeAccessors,
   InMemoryTreeAccessors,
+  SaveDetail,
   isAtomicAccessors,
   isAtomicDirectoryItem
 } from '../../../packlets/file-tree';
+
+/**
+ * A mutable store with no atomic capability at all.
+ *
+ * @remarks
+ * Every accessor shipped in this package now implements the atomic capability,
+ * so the "backing store cannot do this" branches need a store that genuinely
+ * cannot. This delegates the whole mutable contract to a real in-memory tree and
+ * simply does not carry the three atomic methods — so the guard sees the truth
+ * rather than a partial shape asserted into place with a cast.
+ */
+class NonAtomicAccessors implements IMutableFileTreeAccessors {
+  private readonly _inner: InMemoryTreeAccessors;
+
+  public constructor() {
+    this._inner = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
+  }
+
+  public resolveAbsolutePath(...paths: string[]): string {
+    return this._inner.resolveAbsolutePath(...paths);
+  }
+  public getExtension(itemPath: string): string {
+    return this._inner.getExtension(itemPath);
+  }
+  public getBaseName(itemPath: string, suffix?: string): string {
+    return this._inner.getBaseName(itemPath, suffix);
+  }
+  public joinPaths(...paths: string[]): string {
+    return this._inner.joinPaths(...paths);
+  }
+  public getItem(itemPath: string): Result<FileTreeItem> {
+    return this._inner.getItem(itemPath);
+  }
+  public getFileContents(filePath: string): Result<string> {
+    return this._inner.getFileContents(filePath);
+  }
+  public getFileContentType(filePath: string, provided?: string): Result<string | undefined> {
+    return this._inner.getFileContentType(filePath, provided);
+  }
+  public getChildren(dirPath: string): Result<ReadonlyArray<FileTreeItem>> {
+    return this._inner.getChildren(dirPath);
+  }
+  public fileIsMutable(itemPath: string): DetailedResult<boolean, SaveDetail> {
+    return this._inner.fileIsMutable(itemPath);
+  }
+  public saveFileContents(filePath: string, contents: string): Result<string> {
+    return this._inner.saveFileContents(filePath, contents);
+  }
+  public deleteFile(filePath: string): Result<boolean> {
+    return this._inner.deleteFile(filePath);
+  }
+  public createDirectory(dirPath: string): Result<string> {
+    return this._inner.createDirectory(dirPath);
+  }
+  public deleteDirectory(dirPath: string): Result<boolean> {
+    return this._inner.deleteDirectory(dirPath);
+  }
+}
 
 describe('isAtomicAccessors', () => {
   test('returns true for a mutable InMemoryTreeAccessors', () => {
@@ -35,9 +97,13 @@ describe('isAtomicAccessors', () => {
     expect(isAtomicAccessors(accessors)).toBe(true);
   });
 
-  test('returns false for FsFileTreeAccessors (F1 does not implement atomic writes on Node)', () => {
+  test('returns true for FsFileTreeAccessors, which implements the capability on Node', () => {
     const accessors = new FsFileTreeAccessors();
-    expect(isAtomicAccessors(accessors)).toBe(false);
+    expect(isAtomicAccessors(accessors)).toBe(true);
+  });
+
+  test('returns false for a mutable store that does not carry the atomic methods', () => {
+    expect(isAtomicAccessors(new NonAtomicAccessors())).toBe(false);
   });
 });
 
@@ -190,12 +256,16 @@ describe('DirectoryItem atomic delegation', () => {
   });
 
   test('getAtomicWriteCapabilities reports no atomic replacement when the backing store lacks the capability', () => {
-    const fsAccessors = new FsFileTreeAccessors({ mutable: true });
-    const fsDir = DirectoryItem.create('.', fsAccessors).orThrow();
-    expect(fsDir.getAtomicWriteCapabilities()).toSucceedAndSatisfy((caps) => {
+    const dir = DirectoryItem.create('/', new NonAtomicAccessors()).orThrow();
+    expect(dir.getAtomicWriteCapabilities()).toSucceedAndSatisfy((caps) => {
       expect(caps.atomicReplace).toBe(false);
       expect(caps.guarantees).toEqual([]);
     });
+  });
+
+  test('cleanupAtomicTemporaries reclaims nothing when the backing store lacks the capability', () => {
+    const dir = DirectoryItem.create('/', new NonAtomicAccessors()).orThrow();
+    expect(dir.cleanupAtomicTemporaries()).toSucceedWith([]);
   });
 
   test('writeChildAtomically creates a child with no native path or accessor internals visible to the caller', () => {
@@ -298,8 +368,7 @@ describe('DirectoryItem atomic delegation', () => {
   });
 
   test('fails explicitly rather than degrading when the backing store does not support atomic writes', () => {
-    const fsAccessors = new FsFileTreeAccessors({ mutable: true });
-    const fsDir = DirectoryItem.create('.', fsAccessors).orThrow();
+    const fsDir = DirectoryItem.create('/', new NonAtomicAccessors()).orThrow();
     expect(fsDir.writeChildAtomically('child.txt', 'contents', { guarantee: 'session' })).toFailWithDetail(
       /atomic writes not supported/i,
       {

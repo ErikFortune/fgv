@@ -217,3 +217,68 @@ four-line version shifted the window off the return block and dropped the file t
   not validate child names the way `writeChildAtomically` now does, and silently
   `joinPaths` a slash-containing name. Correct finding, but backfilling stricter
   validation onto two established methods is a behavior change outside this stream.
+
+## 2026-09-21 — F2 phases 1–4 done; crash-test prediction recorded BEFORE running
+
+**Phases 1–4 complete.** Orientation confirmed the kickoff against the tree: `development-design.md`
+§8.1–8.2 says exactly what the kickoff says it says, `implementation-plan.md` F2 matches, and F1's
+code is as described. No missing-input gap to surface.
+
+**Built:**
+
+- `atomicFsOperations.ts` — the typed internal filesystem seam (11 operations + the temporary-name
+  token). Not re-exported from either barrel, so no public fault-injection knob exists.
+- `atomicRootQualification.ts` — the allowlist that decides what a root may claim.
+- `atomicFileCommit.ts` — the §8.2 ordering protocol plus reserved-temporary reclamation.
+- `fsTree.ts` — `FsFileTreeAccessors` now implements `IAtomicFileTreeAccessors`, with root
+  confinement and the mutability policy layered on the qualification.
+- `cleanupAtomicTemporaries` added to both atomic interfaces, implemented on Fs, in-memory and
+  `DirectoryItem` (see the vocabulary note below — this is an addition to F1's surface).
+
+**Real defect the fault-injection suite caught, which the compiler and a reads-against-intent pass
+could not.** `errnoOf` used `error instanceof Error` before reading `.code`. The errors Node's `fs`
+throws are constructed in Node's own realm, and `instanceof` tests the *calling* realm's `Error`.
+Wherever the two differ — a `vm` context, a worker thread, the sandbox a test runner evaluates
+modules in — a perfectly ordinary `ENOENT` reports as `'UNKNOWN'`. Consequence: **a rename failure
+that was provably `unchanged` would have been classified `unknown`**, and a missing destination
+would have been read as an uninspectable one. 29 tests went red on it. Now reads the properties
+directly, realm-independently, with no cast. This is precisely the native-boundary class the
+kickoff predicted layer 1 would under-cover.
+
+**Status of gates at this point:** `rushx build` zero warnings; `rushx test` 1143 passed, 0 failed;
+`atomicFileCommit.ts`, `atomicFsOperations.ts`, `atomicRootQualification.ts` all at 100% on every
+metric. Remaining gaps, deliberately left for after the `code-reviewer` pass per
+TESTING_GUIDELINES § *Coverage Gap Resolution*: `fsTree.ts` 361-366 and 436-437, `inMemoryTree.ts`
+801-802.
+
+### Prediction for the subprocess crash tests, written before the first run
+
+The protocol claims the rename is the visibility linearization point. If that is true, then for a
+child process hard-killed (`SIGKILL`, self-inflicted, synchronized to the protocol boundary rather
+than to a sleep) the following must hold on every qualified filesystem:
+
+1. **The destination is byte-identical to either the whole previous record or the whole new record,
+   at every boundary, with no exceptions.** Not a prefix, not a mixture, not empty. This is the
+   claim; a single torn destination falsifies it.
+2. Killed at `before-temp-open`, `after-temp-open`, `mid-write`, `after-file-flush`,
+   `before-rename` → the destination holds the **previous** record.
+3. Killed at `after-rename`, `after-directory-flush` → the destination holds the **new** record.
+4. A reserved orphan temporary exists **exactly** for `after-temp-open`, `mid-write`,
+   `after-file-flush` and `before-rename`, and **not** for `before-temp-open`, `after-rename` or
+   `after-directory-flush` — the rename consumes the temporary.
+5. At `mid-write` the orphan holds a **partial** record. If it holds a complete one, the injection
+   did not fire where this suite believes it fires, and every other result in the table is
+   worthless — so this is asserted explicitly rather than assumed.
+6. `cleanupAtomicTemporaries` at reopen removes exactly the orphan and leaves the destination
+   exactly as the crash left it.
+
+**What a miss means.** A torn destination at any boundary means the ordering protocol is wrong and
+`development-design.md` §8.2 needs revising — not that the test's threshold needs relaxing. An
+orphan present or absent where the table says otherwise means the temporary lifecycle is wrong.
+A complete record at `mid-write` means the harness is measuring nothing.
+
+**What this evidence does NOT establish, and must not be reported as establishing:** any OS-crash or
+power-loss survival. The process is killed while the kernel and filesystem keep running, which is
+exactly the fault model A1 approved and nothing more. The directory flush is performed because the
+acceptance boundary requires it, not because process-kill evidence says anything about a storage
+stack's write cache.

@@ -783,4 +783,21 @@ export class InMemoryTreeAccessors<TCT extends string = string>
 
     return succeedWithDetail({ guarantee: options.guarantee, replaced });
   }
+
+  /**
+   * Removes any working files this store reserves for interrupted atomic
+   * writes from the given directory.
+   *
+   * @remarks
+   * Always an empty list: an in-memory replacement is a single synchronous
+   * assignment, so there is no intermediate working file for an interrupted
+   * write to leave behind. The method exists so a consumer's reopen path is the
+   * same shape whichever store is behind it.
+   * @param directory - Absolute path of the directory to reclaim.
+   * @returns `Success` with an empty list, or `Failure` if the path is not an
+   * existing directory.
+   */
+  public cleanupAtomicTemporaries(directory: string): Result<ReadonlyArray<string>> {
+    return this.getAtomicWriteCapabilities(directory).onSuccess(() => succeed([]));
+  }
 }
