@@ -10,6 +10,11 @@ protocol; inclusion receipts are pure values in both consumption modes; core and
 integrations ship in one package. FileTree capability checks and prompt-cache
 composition checks are explicit implementation gates below.
 
+**Consumer review incorporated:** indexed scoped queries are a repository contract;
+waiting reasons may carry `notBefore`; the ingestion reference adapter is
+observation-only. Explicit parent stop policies are proposed with an unresolved
+coordination gate, not an implicit cascade or a guarantee that dispatch means stopped.
+
 This is the first of three documents:
 
 1. **This document:** the standalone FGV capability.
@@ -119,6 +124,20 @@ Proposed lifecycle vocabulary: `pending`, `running`, `waiting`, `paused`,
 transition. `waiting` carries a reason, such as required input or an unavailable
 prerequisite. These names are provisional, but the distinctions are important.
 
+A waiting reason may include an optional `notBefore`: a validated absolute instant
+with an unambiguous time zone. It is an eligibility constraint, not a deadline,
+timer, retry schedule, or promise to run. The host can query waiting tasks whose
+instant is at or before a supplied cutoff; other waiting prerequisites may still
+prevent execution. Absence does not mean immediately due, and passing the instant
+does not change task status automatically. The field and due query belong in the
+common model/repository, avoiding a second host store keyed by task identity.
+
+`paused` can likewise carry a structured reason. A host's stuck detector or other
+policy can produce that reason and the corresponding lifecycle/attention change;
+its classifier, prompt, budget, and decision policy do not belong in FGV. The
+authoritative implementation must actually apply/report the pause: storing a
+verdict alone must not claim that externally running work has stopped.
+
 A failed status query does not make the task failed. Preserve the last known
 snapshot and report that observation is stale or unavailable. A task with no
 usable snapshot remains an explicitly unresolved reference, not a fabricated
@@ -144,7 +163,8 @@ A parent may have its own work as well as children. Therefore:
 
 - Child completion does not automatically complete an ordinary parent.
 - A failed child does not automatically fail or cancel siblings.
-- Cancelling a parent does not silently cascade to children.
+- Pausing/cancelling a parent does not silently cascade; an explicit parent policy
+  may request it under the coordination contract below.
 - Child counts are not a meaningful percentage for arbitrary work.
 - A partial or access-filtered child view cannot establish parent completion.
 
@@ -157,6 +177,39 @@ Cross-implementation nesting is required: an agent-managed plan can contain an
 external task. Relationship metadata has one declared owner (the broker catalog
 for broker-owned associations); it need not be written into the external system.
 Such metadata must not become a competing authority for execution status.
+
+### Explicit parent stop policies — coordination gate
+
+Allow a parent implementation/preset to declare `none` (the default),
+`cascade-pause`, or `cascade-cancel`, analogous to an explicit task-list completion
+policy. These are proposed policy semantics, not capabilities every task acquires
+by having children. Evaluate them over the authoritative child set, never the
+calling agent's possibly partial display tree. The exact descendant rule and
+interaction with nested policies must be settled before exposing these presets.
+
+The policy coordinates supported commands; each implementation still executes
+its own work. Parent membership is not authority to control a child. Recheck the
+host-supplied authority for every affected command, including resumed dispatch.
+A parent stop holder may have host-delegated control distinct from visibility,
+but the library does not infer or persist that grant from the relationship.
+
+Before claiming a cascade complete, the contract must account for unsupported
+operations, refused or unreachable children, accepted-but-pending commands,
+confirmed outcomes, and partial effects. An observation-only child may make the
+requested guarantee impossible; it must not be silently skipped or marked paused.
+An accepted parent stop request is distinct from achieving the requested stop
+across all relevant work, including any work of the parent itself.
+
+A durable stop also needs persisted intent/reconciliation and a rule for children
+added or reparented while it is pending or after it has taken effect. A true
+standing stop requires admission enforcement by the authoritative parent/host;
+traversing yesterday's child list is insufficient. This is not an atomic
+distributed transaction and does not undo already applied child commands.
+
+Gate #9 closes these semantics and the initial implementation scope. Do not ship
+a naive fan-out under the name of a reliable stop switch. A consumer can provide
+its own parent implementation meanwhile, but its coordination/recovery guarantees
+remain its responsibility, not implied guarantees of the adapter helper.
 
 ## 4. Implementations and extension model
 
@@ -230,6 +283,9 @@ Neither a Result failure after an ambiguous external submission nor a broker
 restart is permission to replay a non-idempotent command blindly.
 
 Capabilities are filtered for the current caller and rechecked at execution.
+An empty command set is a valid implementation: an external task can be useful
+solely for observation. Internal recovery methods do not automatically become
+agent-callable commands.
 No arbitrary `setStatus` operation is offered for externally authoritative tasks.
 For tracked tasks, compare-and-update semantics prevent stale agent turns from
 overwriting newer changes within the supported writer model. General distributed
@@ -239,6 +295,12 @@ claims/leases are not included in that promise.
 
 Keep four relationships independent: parentage, responsibility, visibility, and
 authority to act. Sharing a task does not establish who owns its next step.
+
+Authority-to-act is supplied by host policy and rechecked for each command, not
+an FGV-issued stored grant. Persisted responsibility, scope associations, command
+receipts, or parent policies do not preserve permission after revocation. Hosts
+may persist their own grants or delegation policies behind the authorization
+interface; that is not a fifth authorization relationship owned by this library.
 
 A scoped view is a union of host-authorized selections, deduplicated by task
 identity. It is not prompt-assist's ordered fallback chain. Scope hierarchies,
@@ -312,6 +374,10 @@ not an optional persistence backend postponed until after an in-memory-only rele
 FGV persistence must not require installing agent-memory, a vector store, or
 the reference chat application.
 
+The repository contract is the primary integration surface; the FileTree
+implementation is a supplied default, not a mandatory storage migration. A host
+repository must meet the same query, consistency, and recovery contracts.
+
 The repository accepts an injected FileTree directory. The host selects and opens
 the adapter at its composition root; repository logic does not branch on runtime,
 take native filesystem paths, or bypass FileTree with direct filesystem APIs.
@@ -351,6 +417,53 @@ interfaces and documented backend guarantees. If a missing guarantee needs a new
 capability, resolve it in FileTree rather than bypassing it with filesystem calls
 or silently assuming stronger semantics in the task repository.
 
+### Initial backend and scoped FileTree dependency
+
+The first supported durable backend is the Node filesystem adapter,
+`FileTree.FsFileTreeAccessors` in `ts-json-base`'s `fsTree.ts`. In-memory FileTree
+adapters remain the session-only/test option. Supporting other persistent adapters
+is a later qualification effort, not an implicit initial-delivery promise.
+The Node path writes through, so the `isPersistentAccessors` synchronization
+interface is not exercised by its production commit path; it cannot close the
+initial crash-safety gate.
+
+At the inspected baseline, `saveFileContents` and `saveFileBytes` call bare
+`fs.writeFileSync`, with no temporary-file replacement or explicit filesystem
+flush. An interrupted overwrite can leave a truncated record. Reporting that
+record as unreadable is honest recovery reporting, but is not a substitute for
+protecting a previously accepted task from a torn update.
+
+**Scope an additive atomic/durable-write capability in FileTree as an upstream
+dependency of the task repository's durable delivery.** Do not discover this as
+an unplanned task-library workaround during crash testing. `ts-json-base` is a
+stable surface: design the extension additively, preserve existing callers, and
+avoid silently strengthening/changing every ordinary save operation's semantics.
+The concrete API and capability probe are to be designed in FileTree; task code
+uses the abstraction, never its own filesystem calls.
+
+Specify two guarantees separately:
+
+- **Atomic replacement:** a reader/recovery path sees a complete previous or new
+  committed record, not a partially overwritten one. The expected Node mechanism
+  is a same-filesystem temporary write followed by atomic replacement, with an
+  explicit orphan-temporary recovery policy.
+- **Durable acknowledgement:** define the supported fault model, including whether
+  success promises survival of process failure only or also OS/power failure.
+  Atomic replacement alone does not establish the latter. The Node design must
+  address flushing file contents and the containing directory entry, ordering
+  those steps before acknowledgement, supported platform/filesystem behavior,
+  and explicit failure when the requested guarantee cannot be provided.
+
+This primitive does not create a multi-file transaction. The task repository
+must still arrange task state and its owed-update metadata into a recoverable
+commit unit, using one atomic record or an explicitly designed commit protocol.
+Gate #3 must specify creation as well as replacement, failure before/after
+replacement and before acknowledgement, restart handling, and retention of the
+last accepted state. Process-crash tests alone must not be presented as proof
+of power-loss durability.
+
+### Task authority and repository commit protocol
+
 Native tracked tasks have one repository authority. External tasks retain their
 source authority; the broker may durably keep catalog metadata and a derived
 last-known projection. A projection is explicitly a cache, not another place to
@@ -375,6 +488,44 @@ writer model should be single-writer, with validated recoverable commits and
 explicit backend requirements. Do not advertise a durable adapter before crash
 tests prove those requirements. A store that cannot meet them fails configuration
 rather than silently degrading to memory-only behavior.
+
+### Indexed queries are a repository contract
+
+Every repository implementation must support indexed selection by
+`(scope, lifecycle-class)`, not merely provide a list operation whose default
+implementation scans all retained records. Initially `open` means non-terminal
+(pending/running/waiting/paused) and `terminal` means succeeded/failed/cancelled;
+exact-status filtering refines those classes. Open does not mean actively executing.
+
+Provide authorized multi-scope union queries, deduplication by task ID, and
+bounded/paged results. Index waiting eligibility by `notBefore` as well, so a host
+can query due candidates at a supplied instant without scanning task history or
+maintaining a separate scheduler-owned task catalog. This query schedules nothing
+and does not imply all other prerequisites are met.
+
+The contract is behavioral, not an exposed in-memory map implementation:
+
+- Warm indexed selection must not enumerate/read historical task records. Its
+  work must not grow linearly with unrelated retained terminal history.
+- The FileTree default maintains derived query metadata in memory, sufficient
+  to answer hot open-work summary queries without per-query record-file reads.
+  Detailed bodies may be loaded separately for selected tasks. A custom indexed
+  database or host store can satisfy the same query contract differently.
+- Successful native mutations update query-visible scope/lifecycle/due membership
+  before returning success. Removal and scope changes cannot leave stale entries.
+- Indexes are derived, rebuildable state, not competing task authority. Initial
+  open/recovery may rebuild them; a rebuilding or failed index is explicitly
+  unavailable/degraded, never a healthy empty list. Persisting an index is optional;
+  correctness after an interrupted record/index update is not.
+- Queries report the revision/freshness/completeness they actually know. An
+  external-source projection can lag its source; an index does not make that
+  projection an authoritative lock or write-admission decision.
+
+Terminal delivery obligations remain independently discoverable; an open-work
+index cannot replace the owed-update/checkpoint machinery. Access checks still
+apply after indexed candidate selection, including traversal, counts, and paging.
+Snapshot-only collection rendering may scan its supplied collection; it is not
+advertised as an indexed repository.
 
 ### Recovery outcomes
 
@@ -555,6 +706,10 @@ The initial proof should be deterministic and usable without API credentials:
    require no store and that rendering changes no checkpoint.
 9. Resolve a prompt-assist composition, verify its cache diagnostics and
    `toCacheRequest` plan, then change only progress and verify the stable prefix.
+10. Exercise actual commands on the tracked and simulated external implementations:
+    accepted versus applied, refusal, unsupported operation, duplicate submission,
+    revoked authority, and ambiguous outcome. The ingestion reference adapter
+    advertises no commands and therefore cannot validate this surface for FGV.
 
 This is a small executable example plus contract/journey tests, not a resident
 agent product. A fuller showcase agent is discussed in [deferred considerations](deferred.md#simple-fgv-showcase-agent).
@@ -567,6 +722,12 @@ outage, terminal recovery, corrupt records, and crash windows around durable
 acceptance and update delivery. Meaningful tests must meet repository coverage
 requirements; live model output is supplementary, not the correctness oracle.
 
+Durability acceptance includes the real Node FileTree path, not only in-memory
+fixtures: interrupt creation/replacement at the defined commit boundaries,
+recover orphan temporary state, preserve the last accepted record, and reconcile
+owed updates after restart. Test flush/replace failures against the declared
+fault model without claiming stronger hardware/power-loss guarantees than proved.
+
 Explicit adversarial scope-widening tests are required, beyond ordinary denial
 tests: model-generated actor/scope overrides, foreign task IDs, hidden child
 traversal, and changed membership must not widen the bound view or reveal hidden
@@ -578,6 +739,17 @@ alone are not the security boundary.
 Cache acceptance must positively establish composition availability, test the
 relevant ordering/refutation findings, and inspect breakpoint offsets. Also test
 that an unavailable composition with empty `cacheFindings` cannot pass that gate.
+
+Index acceptance grows retained terminal history while holding the open set fixed
+and counts record reads/candidate visits, not just wall-clock timings. Verify
+scope/status/due changes, paging, deduplication, rebuild after interrupted writes,
+and explicit degraded queries. Test `notBefore` at either side of the cutoff,
+absence, and remaining non-time prerequisites; querying never starts a task.
+
+Any supplied cascading-stop preset additionally needs authoritative-child-set,
+unsupported-child, revoked-authority, partial-effect, restart, and child-admission
+tests under the semantics settled by gate #9. An observation-only adapter does
+not become controllable because it is placed under such a parent.
 
 ## 13. Alternatives and rationale
 
@@ -605,12 +777,17 @@ to record its explicit deferral rather than leave it appearing unresolved:
 1. Approve the package name/location and initial built-in implementation set. One
    package with integration packlets is settled.
 2. Finalize the public lifecycle, command receipt, and recovery-result unions.
-3. Specify commit/recovery mechanics for the default FileTree repository and the
-   first supported backend's durability guarantees; prove the crash windows before
-   advertising them. Reuse FileTree mutation/synchronization capability checks;
-   do not equate `isPersistentAccessors` with crash safety or reject write-through
-   backends merely for lacking that interface. Extend FileTree if a required
-   capability is missing. The FileTree default is settled.
+3. **First durable backend: Node `FileTree.FsFileTreeAccessors` (`fsTree.ts`).**
+   Scope and design an additive atomic/durable-write FileTree capability before
+   implementing the task repository's durable commit path (§8). Existing bare
+   `writeFileSync` saves are insufficient protection against interrupted overwrite;
+   `isPersistentAccessors` does not participate in this backend's commit path.
+   Specify atomic replacement, the acknowledged durability/fault model, required
+   flush ordering and platform support, and recovery across creation/replacement
+   and acknowledgement boundaries. Define the task-state/owed-update commit unit;
+   single-file atomicity does not imply a multi-file transaction. Prove the
+   declared crash windows before advertising the guarantee. FileTree and the
+   initial backend choice are settled; the additive API/protocol remains the gate.
 4. Specify source revisions and reconciliation completeness, including terminal
    discovery, relationship metadata, and catalog/projection migration on reopen.
 5. Finalize the smallest durable consumer-checkpoint/retention protocol that meets
@@ -621,6 +798,15 @@ to record its explicit deferral rather than leave it appearing unresolved:
 7. Fix task-context placement in the default composition and verify availability,
    cache findings, and the `toCacheRequest` breakpoint plan. Preserve the stable
    prefix under progress-only updates; §12 makes this an acceptance gate.
+8. Specify the indexed repository query API, lifecycle-class/status filters, due
+   selection, pagination, consistency/freshness results, and rebuild behavior.
+   Indexed scoped selection and no history-scan hot path are requirements for all
+   repositories, not optional FileTree optimizations (§8).
+9. Settle the proposed `cascade-pause`/`cascade-cancel` parent policies and their
+   initial implementation scope: authoritative descendants, per-command authority,
+   unsupported/refused children, partial outcomes, durable stop intent, and
+   admission/reparenting during or after a stop. Do not imply universal support
+   or a completed stop from command dispatch alone (§3).
 
 The receipt ownership choice is also settled: inclusion receipts are pure values
 in both modes; a broker acknowledgement service owns checkpoint mutation when

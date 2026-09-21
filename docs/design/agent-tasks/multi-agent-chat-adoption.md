@@ -11,6 +11,11 @@ inclusion receipts with broker-managed acknowledgement, and explicit prompt-cach
 composition validation. The ingestion journeys do not depend on answer arbitration
 or durable answer-to-continuation machinery.
 
+**Consumer review incorporated:** recipient selection is new host mechanism;
+ingestion is an observation-only adapter; existing transient notices do not meet
+required-delivery retention. Indexed repository queries are a library contract,
+while the choice of adopting its FileTree default remains with the consumer.
+
 This document is retained in FGV as integration evidence and a handoff proposal.
 The consuming project remains responsible for reconciling it with its current design,
 decision ledger, authorization rules, and implementation workflow before adoption.
@@ -39,6 +44,19 @@ binding storage. `isPersistentAccessors` identifies an explicit sync interface,
 not a transaction/crash-safety certificate; write-through adapters can persist
 without implementing it. Validate the chosen source/repository commit boundary
 and recovery behavior rather than inferring durability from that probe alone.
+
+FGV's first durable backend is Node `FileTree.FsFileTreeAccessors`. The library
+design explicitly scopes an additive atomic/durable-write FileTree capability
+as an upstream dependency; current write-through saves do not protect records
+against interrupted overwrite. Adoption must check which writes in its existing
+authoritative ingestion store actually use the stronger primitive and commit
+protocol. Upgrading the package alone does not strengthen old call sites, and
+atomic writes of individual files do not make separate job/update writes atomic.
+
+Using that implementation is optional. The consumer may adapt its per-actor vault
+or adopt the generic catalog after evaluating the repository contract, especially
+indexed scope/lifecycle queries. Either choice must preserve one execution
+authority and the hot-path behavior below.
 
 FGV supplies task values, broker contracts, scoped views, typed commands, context
 fragments, and observation/acknowledgement primitives. The chat application supplies actor
@@ -76,8 +94,14 @@ The relevant implementation details are:
 - System reports bypass the distributor for a trust reason, not merely because
   somebody forgot a callback. The inbox reactive path builds a synthetic turn
   attributed to a sender; feeding task prose through it unchanged is inappropriate.
-- Inbox-triggered turns already select a recipient principal in a multi-agent
-  room. Opening a busy room fails; that is not a pending-trigger scheduler.
+- Inbox-triggered turns run as the notification's already-addressed target, using
+  a principal override. They do not choose a responsible agent among a room's
+  participants. Task-update recipient selection is new host mechanism, not an
+  existing selection policy to reuse. Opening a busy room also fails; that is
+  not a pending-trigger scheduler.
+- Existing system report notices are transient and carry a TTL. They can expire
+  before presentation; that path does not meet the task contract's required-delivery
+  retention rule and must change during adoption.
 - Reactive turns hold the conversation open through their model/tool loop, so
   increased wakeups would amplify existing contention with human messages.
 
@@ -104,12 +128,31 @@ Keep ingestion status writes inside the existing runner/store. Broker-owned scop
 and parent associations can live separately, but cached observations must be
 labelled as such. Commands route to supported ingestion operations only: do not
 advertise pause, cancellation, or retry unless the executor actually implements
-their required semantics.
+their required semantics. For the reference adoption the advertised command set
+is **empty**: there is no pause/cancel operation, and capped recovery sweeps are
+host lifecycle work, not caller-invocable retry commands. This integration validates
+observation, not FGV's command surface; tracked/simulated tasks must prove commands.
 
 Connect all entry paths: addressed ingestion, direct knowledge ingestion/edit
 paths, agent handoffs, packaged seed acceptance, and recovery. Installing the
 adapter only on the chat initiation route would miss background and resumed jobs.
 Preserve current deferred-start behavior around turn completion where applicable.
+
+### Hot open-work queries
+
+The consumer reports that its open-work listing participates in every knowledge
+write's admission check, document delete/move/rekey, ingestion acceptance, and
+per-agent recovery sweeps. Records are retained, so a full-history scan would
+regress foreground work as the catalog grows. The inspected source confirms the
+write arbiter, acceptance, and recovery routes call the tagged open-job listing.
+
+Preserve indexed selection through the repository's `(scope, lifecycle-class)`
+contract. The existing store derives an index from kind/tag metadata; whether
+adoption uses it or the FGV catalog is the consumer's choice. Measure hot-query
+record reads/candidate work with increasing terminal history during adoption.
+Do not replace an authoritative write-admission check with a potentially stale
+broker projection merely because that projection has a fast index. Coordination
+with the source's actual write authority remains necessary.
 
 ## 4. Progress publication and recovery
 
@@ -161,6 +204,11 @@ The host selects who is responsible for surfacing an update and which others
 receive it in their next context. Avoid one model invocation per visible agent
 per progress write. One participant's acknowledgement does not clear another's.
 
+That selection policy must be built on the host side. Existing recipient-bound
+reactivity supplies execution as a chosen recipient, not the choice itself.
+Command authority is likewise host-supplied and rechecked per command; a stored
+task association or delegated-stop label is not a durable FGV grant.
+
 ## 6. Proactive context
 
 Build task context for ordinary principal turns, participant contributions, and
@@ -198,6 +246,12 @@ ownership, or suppress it by stable source identity. Do not show the same comple
 twice because both the old inbox and new task context include it. Existing
 human-visible transcript completion entries can remain separate presentation.
 
+Required task-derived notices cannot retain the old transient-TTL semantics as
+their only delivery record. Keep an obligation durable until acknowledgement or
+explicit disposition; an optional expiring notification can be a delivery hint,
+not the only recoverable representation of what is owed. Test expiry before
+presentation and recovery while the main room is inactive.
+
 ## 7. Task-change reactivity
 
 Introduce a task-change trigger, rather than disguising a task change as a message
@@ -232,10 +286,11 @@ task wakeup implemented identically can block a human's next message for a long
 time. This is a real adoption cost, even with the generic library already built.
 
 Before enabling task wakeups, choose and test a policy for pending human input,
-background cancellation/yield, bounded background work, and stale context. Possible
-mechanisms include preparing outside the room's exclusive turn and revalidating
-before commit, or a turn scheduler that explicitly prioritizes human work. Neither
-is assumed to be a trivial extraction from today's code.
+background cancellation/yield, bounded background work, and stale context. The
+consumer identifies its model-provider seam as the home of its priority fix;
+this proposal does not prescribe a turn scheduler or introduce a priority knob
+in FGV tasks. Verify the resulting room-occupancy/human-experience behavior end to
+end rather than assuming provider priority alone resolves every open-turn conflict.
 
 The initial task-triggered turn need not initiate arbitrary cross-room effects.
 Preserve current tool authority limits until the host explicitly designs broader
@@ -275,6 +330,10 @@ same journey.
 - Available composition analysis establishes appropriate cache ordering, and
   progress-only changes preserve the intended stable prefix/breakpoint plan.
 - All journeys work without the deferred FGV input-request protocol.
+- Increasing retained terminal history does not turn hot open-work queries into
+  full-history scans or per-query reads of every job.
+- Required task updates remain owed after transient notice expiry, until valid
+  acknowledgement or an explicit disposition.
 
 ## 9. Remaining adoption decisions and cost
 
@@ -294,6 +353,9 @@ Before implementation, the consuming project must settle:
 6. UI/wire changes required for the chosen initial journeys and their rollout order.
 7. Final placement of task fragments and verification of composition availability,
    cache diagnostics, and derived breakpoint offsets against the actual prompt.
+8. Whether to adopt FGV's supplied repository or implement its indexed contract
+   over host storage, preserving authoritative admission checks and query performance.
+9. Replacement of transient-TTL-only task delivery with recoverable obligations.
 
 No calendar estimate is asserted. These choices, especially room scheduling,
 determine the adoption cost. They do not block independent design and validation

@@ -17,9 +17,13 @@ would make true.
 - Parent/child integrity and explicit parent-completion semantics.
 - Durable acceptance/recovery for any mode advertised as durable.
 - FileTree as the default persistence implementation, not a deferred adapter.
+- The additive FileTree atomic/durable-write dependency for the initial Node
+  filesystem backend; its guarantees and repository commit protocol are gate #3.
 - Explicit inclusion receipts and acknowledgement for delivery-aware context.
 - Reconciliation of owed outcomes after interruption.
 - Correct validation of inclusion receipts and isolation of consumer checkpoints.
+- Indexed scope/lifecycle queries and honest query freshness; no full-history
+  scan on the broker repository's hot open-work path.
 - Available prompt-composition analysis and verified cache ordering/breakpoint plans.
 
 The FileTree default is settled. Its commit mechanics, lifecycle names, and
@@ -28,6 +32,22 @@ not implementation details to discover after consumers rely on them. FileTree's
 existing synchronization probe is useful but does not certify crash-safe commits.
 The chat application's human-priority gate likewise cannot be deferred while
 enabling uncontrolled main-room task wakeups.
+
+## Additional persistent backends
+
+The first qualified durable backend is Node `FileTree.FsFileTreeAccessors`;
+in-memory trees remain supported for tests/session-only operation. Defer qualifying
+browser storage, HTTP-backed trees, archives, and other persistent adapters for
+the task repository's durable profile. Their availability through FileTree does
+not automatically establish the required commit/recovery guarantees.
+
+**Extension preserved:** injected FileTree roots and existing capability/
+synchronization interfaces, plus the additive atomic/durable-write capability
+designed for the Node delivery. Keep the contract backend-neutral rather than
+making the task library branch on adapter classes.
+**Trigger:** a consumer needs another persistent backend. Qualify its acceptance,
+sync, atomicity, and recovery semantics against the same declared fault model;
+do not treat `isPersistentAccessors` alone as certification.
 
 ## Input-request and response protocol
 
@@ -111,6 +131,11 @@ Defer plan generation, automatic decomposition, scheduling, agent selection,
 delegation policies, multi-agent negotiation, and automatic follow-through.
 The broker supports representations and commands; a host/agent decides to use them.
 
+The optional `notBefore` field and a due-candidate query are model/query data in
+initial scope, not scheduling. FGV does not wake a task, clear other prerequisites,
+or change lifecycle state when time passes. Stuck detectors, budgets, cost
+attribution, recipient selection, and provider/foreground priority remain host policy.
+
 **Extension preserved:** nested tasks, responsibility references, implementation
 bindings, scoped views, and waiting/attention references. FGV-owned input requests
 remain subject to the separate deferral above.
@@ -132,7 +157,11 @@ guarantees. Single-writer implementations must state their limits now.
 
 The first task structure is a tree, not a general workflow DAG. Defer dependencies,
 multiple parents, conditional branches, optional-child policy languages, weighted
-progress across arbitrary work, and cascading cancellation/retry orchestration.
+progress across arbitrary work, and generalized retry/compensation orchestration.
+Explicit `cascade-pause`/`cascade-cancel` parent policies are no longer categorically
+deferred: the consumer review surfaced a concrete standing-stop use case. Their
+semantics and initial implementation scope are unresolved gate #9 in the library
+design. That proposal must not be read as an already-provided reliable stop switch.
 
 **Extension preserved:** stable task references and explicit list-policy semantics.
 **Trigger:** concrete workflows that cannot be represented by nested tasks plus
