@@ -2,7 +2,7 @@
 
 **Status:** future design space, not current implementation scope.
 **Date:** 2026-09-21.
-**Companions:** [FGV library design](fgv-library.md), [multi-agent chat adoption](multi-agent-chat-adoption.md).
+**Companions:** [FGV library design](fgv-library.md), [development design](development-design.md), [multi-agent chat adoption](multi-agent-chat-adoption.md).
 
 Deferral does not mean prohibition. The core should leave an appropriate extension
 point without implementing speculative infrastructure. Conversely, a correctness
@@ -28,10 +28,12 @@ would make true.
   scan on the broker repository's hot open-work path.
 - Available prompt-composition analysis and verified cache ordering/breakpoint plans.
 
-The FileTree default is settled. Its commit mechanics, lifecycle names, and
-consumer-checkpoint retention are open design gates in the library proposal,
-not implementation details to discover after consumers rely on them. FileTree's
-existing synchronization probe is useful but does not certify crash-safe commits.
+The FileTree default is settled. The [development design](development-design.md)
+resolves the proposal's commit, lifecycle, and consumer-checkpoint gates; those
+contracts still require implementation and qualification. The approved durability
+boundary includes process-crash survival and excludes OS-crash and power-loss
+survival. FileTree's existing synchronization probe is useful but does not certify
+crash-safe commits.
 The chat application's human-priority gate likewise cannot be deferred while
 enabling uncontrolled main-room task wakeups.
 
@@ -118,6 +120,11 @@ does not need external accounts. A live model mode can demonstrate ai-assist;
 its credentials and spend are explicit. Inspect the existing testbed/example
 infrastructure before choosing a new CLI/app package.
 
+The [execution-helper follow-up](#optional-execution-helpers-and-bounded-agent-runners)
+can use this showcase as its second host after exploring the reference app's
+foreground and background paths. Sharing that proving ground does not make
+either follow-up a prerequisite for the broker.
+
 **Why deferred:** the user has raised the idea for consideration, not requested
 another agent product. UI, conversation history, provider setup, budgets, and
 long-running execution could readily exceed the task-library scope.
@@ -126,6 +133,115 @@ long-running execution could readily exceed the task-library scope.
 It should exercise exported APIs only; a need for private hooks is feedback on
 the library design. Knowledge retrieval is an optional later scenario, not a
 prerequisite for showcasing tasks.
+
+## Optional execution helpers and bounded agent runners
+
+**Intent:** explore reusable helpers for task invocation, progress reporting,
+scheduling, recovery, and bounded model/tool execution after the broker. These
+are plausible FGV capabilities, not responsibilities that every application must
+forever implement itself. This entry records a direction for later design, not
+new broker scope, a settled runtime API, or authorization to change the consumer.
+
+**Source basis:** static inspection of the reference application's clean working
+checkout at commit `7a984af39ed51f6391075bf6a3537d48571f5cbe` on 2026-09-21.
+The following are source suffixes in that consumer, not files in FGV. No runtime
+verification is claimed.
+
+| Existing surface | Observation shaping the follow-up |
+|---|---|
+| Core `runtime/llm/aiAssistProvider.ts`, `callWithTools` | Already drives bounded provider/tool rounds, drains events, carries continuation, and handles cancellation, timing, and partial output. This is a concrete extraction candidate. |
+| Core `runtime/orchestrator/turnOrchestrator.ts`; hub `sessionRoutes.ts` | One pending turn per session/conversation; foreground participant/principal orchestration and reactive turns have host-owned admission and commit/abort boundaries. Reactive model/tool work runs while its conversation turn is open. |
+| Core `curate/ingestionJobRunner.ts`; hub `knowledgeIngestHandoff.ts` | Acceptance and execution are separate; the runner owns progress, checkpoints, and execution recovery. A tool can hand off work whose execution outlives the initiating invocation. |
+| Hub `scheduling.ts`, `ingestionJobService.ts`, `state.ts` | Injectable timers, bounded periodic recovery sweeps, and deferred work drained after turn resolution provide existing examples. Process-local callback queues and timers are not themselves durable obligations. |
+
+### Relationship to the application
+
+The working direction is a **runner invoked by the host**, usable inside an
+interactive turn or inside a background executor. A small standalone application
+could use a helper to drive most of its work; the chat application can retain its
+own turn orchestration. Neither arrangement should be mandatory.
+
+Distinguish three responsibilities before choosing an abstraction:
+
+1. **Host admission and publication:** decide what may run, in which context,
+   with which authority and budget, and when its output can become a conversation
+   turn. Human priority, room membership, participant/principal selection, and
+   notification policy remain host choices.
+2. **One bounded invocation:** compose authorized context, run model/tool rounds,
+   and return a structured outcome and observed usage. Ordinary tool calls are
+   nested work in that invocation. A tool does not automatically get a separate
+   autonomous loop; a long-running handoff can return an accepted task reference.
+3. **Background execution and supervision:** execute accepted work independently
+   of the initiating turn, publish task progress/outcomes, and request later host
+   attention. An executor may use the same bounded runner or no model at all.
+
+Multiple invocations can run concurrently where the host permits it. The future
+contract must identify the serialization key and shared resources: the current
+app's conversation boundary does not imply one global loop, or one lock per agent
+across every context. Background results should re-enter through task observations
+and the host's admission/publication path. They must not bypass a busy room or
+hold its turn open merely to await a long-running job. Starting another loop does
+not grant additional tool authority or bypass the broker's single-writer boundary.
+
+### Candidate shared helpers
+
+| Helper | Useful shared mechanics and boundary |
+|---|---|
+| Invocation/handoff | Stable invocation and task references, explicit acceptance versus start, typed executor binding, caller cancellation, and observable disposition. Preserve an existing executor's ownership of its work. |
+| Progress reporting | Publish structured phase/count/result references and distinguish observed progress from liveness. Coalesce optional progress hints without discarding required outcomes; report committed facts rather than promises in model prose. |
+| Bounded model/tool runner | Continuation handling, stream consumption, round limits, cancellation/deadline propagation, usage reporting, and explicit completion/yield/limit/failure outcomes. Keep model response completion separate from task success. |
+| Scheduling | Caller-driven bounded passes, wakeup coalescing, concurrency limits, injectable clocks/timers, and shutdown/drain results. Hosts supply eligibility, priority, fairness, budget, and serialization policy; a due candidate is not permission to start. |
+| Recovery | Reconcile accepted work with executor state/checkpoints, rediscover owed starts and outcomes, and classify resumable, retryable, blocked, or uncertain work. Retry only when the implementation's capabilities and operation identity make it safe. |
+
+Start with explicit dependencies and small operations that a host can drive.
+Optional timer-driven presets can wrap them later. Importing a helper must not
+start a service. Low-level model-round machinery may belong in ai-assist;
+task-aware orchestration would sit above the broker and provider primitives.
+Package placement and public signatures remain decisions for that later design.
+
+### Correctness questions for the follow-up
+
+- **Admission and context:** when is context captured, what may change between
+  rounds, and how are authority and invocation identity checked before effects or
+  publication? Define what happens when a human arrives during background/reactive
+  work, including cooperative yield and stale results. Do not assume cancellation
+  can undo an external tool effect.
+- **Acceptance and recovery:** identify which store owns a promised start, how it
+  is rediscovered after a crash, and which checkpoints are actually resumable.
+  Broker process-crash survival does not imply durable model continuations,
+  persisted callback closures, exactly-once tools, or executor migration. An
+  uncertain external effect cannot be blindly replayed. Execution-specific leases
+  remain with their executor; generic distributed ownership is separately deferred.
+- **Completion and delivery:** an invocation ending, a task completing, and an
+  outcome being presented are distinct boundaries. Integrate exact broker receipts
+  with the host's chosen durable processing/commit boundary; prompt composition or
+  a model response alone must not acknowledge an outcome. Waiting may use current
+  host-owned attention references without pulling in the deferred input protocol.
+- **Liveness and stop:** specify queue bounds, coalescing without lost wakeups,
+  fairness, hung-work behavior, and shutdown with observable unfinished work.
+  Stopping future scheduling, requesting cancellation, and confirming execution
+  stopped are different results. Preserve the approved bounded-stop semantics.
+- **Provider compatibility:** verify continuation semantics against the consumed
+  ai-assist version before extracting the app's loop. The inspected app accumulates
+  returned tails, while FGV's current [continuation contract](../../../libraries/ts-extras/src/packlets/ai-assist/toolTypes.ts)
+  is cumulative and requires replacement. This is an integration check, not a
+  claim about the consumer's installed version; copying the loop unchanged is
+  not a sound extraction strategy.
+
+**Trigger and first experiment:** after explicit follow-up agreement, explore two
+journeys in the current app: an interactive invocation using several tool rounds,
+and an accepted background task that reports progress, survives an interrupted
+host according to its executor contract, and later requests attention while a
+human turn has priority. Use scripted providers, simulated tasks, injected clocks,
+and deterministic scheduling. Prove safe commit/abort cleanup, bounded concurrency,
+no lost owed work on restart, and no automatic replay of uncertain effects.
+
+Extract the smallest common helper set, then exercise its exported APIs in the
+simple showcase without conversation-specific types. That second host tests
+portability; the reference app supplies realistic integration pressure. Decide
+loop placement, context/checkpoint ownership, and scheduling presets from those
+experiments before committing to a general runtime. Autonomous planning, agent
+selection, and negotiation remain the separate policy work below.
 
 ## Autonomous planning and collective execution
 
@@ -137,6 +253,10 @@ The optional `notBefore` field and a due-candidate query are model/query data in
 initial scope, not scheduling. FGV does not wake a task, clear other prerequisites,
 or change lifecycle state when time passes. Stuck detectors, budgets, cost
 attribution, recipient selection, and provider/foreground priority remain host policy.
+
+The [execution-helper follow-up](#optional-execution-helpers-and-bounded-agent-runners)
+may share scheduling and runner mechanics without committing to these autonomous
+policies. Both remain outside the initial broker implementation.
 
 **Extension preserved:** nested tasks, responsibility references, implementation
 bindings, scoped views, and waiting/attention references. FGV-owned input requests
@@ -179,10 +299,11 @@ semantics need their own contract; do not imply them from today's assignment API
 The first task structure is a tree, not a general workflow DAG. Defer dependencies,
 multiple parents, conditional branches, optional-child policy languages, weighted
 progress across arbitrary work, and generalized retry/compensation orchestration.
-Explicit `cascade-pause`/`cascade-cancel` parent policies are no longer categorically
-deferred: the consumer review surfaced a concrete standing-stop use case. Their
-semantics and initial implementation scope are unresolved gate #9 in the library
-design. That proposal must not be read as an already-provided reliable stop switch.
+Explicit `cascade-pause`/`cascade-cancel` parent policies are included in the approved
+initial scope: the [development design](development-design.md#10-exact-initial-cascade-stop-semantics)
+resolves gate #9 as bounded best attempts with persisted intent, explicit partial
+effects/blockers, and observable results. Acceptance is distinct from completion;
+approval does not claim the stop mechanism is already implemented or qualified.
 
 **Extension preserved:** stable task references and explicit list-policy semantics.
 **Trigger:** concrete workflows that cannot be represented by nested tasks plus
