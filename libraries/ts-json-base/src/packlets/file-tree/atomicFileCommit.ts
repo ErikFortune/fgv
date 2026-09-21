@@ -31,7 +31,7 @@ import {
   succeedWithDetail
 } from '@fgv/ts-utils';
 import { AtomicWriteGuarantee, IAtomicWriteFailure, IAtomicWriteReceipt } from './fileTreeAccessors';
-import { AtomicFsErrno, IAtomicFsOperations } from './atomicFsOperations';
+import { AtomicFsErrno, IAtomicFsOperations, UNKNOWN_ERRNO } from './atomicFsOperations';
 
 /**
  * The Node atomic write protocol from the agent-tasks development design §8.2,
@@ -291,7 +291,10 @@ function _writeFully(
     if (written.value <= 0) {
       // A write reporting no progress would otherwise spin forever. Treat it as
       // the I/O failure it is rather than hanging the caller.
-      return failWithDetail(`wrote ${offset} of ${bytes.length} bytes and then made no progress`, 'UNKNOWN');
+      return failWithDetail(
+        `wrote ${offset} of ${bytes.length} bytes and then made no progress`,
+        UNKNOWN_ERRNO
+      );
     }
     offset += written.value;
   }

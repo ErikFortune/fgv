@@ -160,4 +160,15 @@ describe('qualifyAtomicWrites — a question it cannot answer fails rather than 
     fs.writeFileSync(file, 'x');
     expect(qualifyAtomicWrites(defaultAtomicFsOperations, file, 'linux')).toFailWith(/not a directory/i);
   });
+
+  test('does not report a directory it could not inspect as one that is not there', () => {
+    // "Not found" is a diagnosis. Reporting it for EACCES sends a caller looking
+    // for a directory that exists and is simply unreadable, and they only learn
+    // the message was wrong after spending the time.
+    const ops = new FaultingFsOperations().failAt({ op: 'lstat', errno: 'EACCES' });
+    const qualified = qualifyAtomicWrites(ops, root, 'linux');
+    expect(qualified).toFailWith(/cannot inspect directory/i);
+    // And specifically NOT the diagnosis it used to give.
+    expect(qualified).not.toFailWith(/not found/i);
+  });
 });

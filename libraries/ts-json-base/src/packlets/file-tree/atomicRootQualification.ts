@@ -129,7 +129,12 @@ export function qualifyAtomicWrites(
 ): Result<IRootQualification> {
   const stats = ops.lstat(directoryPath);
   if (stats.isFailure()) {
-    return fail(`${directoryPath}: not found`);
+    // "Not found" is a diagnosis, and it is the wrong one for EACCES, EPERM or
+    // ENOTDIR. Sending a caller to look for a directory that is in fact there
+    // but unreadable costs them the time it takes to discover the message lied.
+    return stats.detail === 'ENOENT'
+      ? fail(`${directoryPath}: not found`)
+      : fail(`${directoryPath}: cannot inspect directory: ${stats.message}`);
   }
   if (!stats.value.isDirectory) {
     return fail(`${directoryPath}: not a directory`);
