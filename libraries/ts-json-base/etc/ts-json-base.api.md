@@ -827,7 +827,6 @@ class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFile
     joinPaths(...paths: string[]): string;
     resolveAbsolutePath(...paths: string[]): string;
     saveFileContents(path: string, contents: string): Result<string>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "MutableInMemoryFile"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     writeFileAtomically(path: string, contents: string, options: IAtomicWriteOptions): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure>;
 }
