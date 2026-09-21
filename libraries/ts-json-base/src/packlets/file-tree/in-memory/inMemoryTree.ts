@@ -714,7 +714,7 @@ export class InMemoryTreeAccessors<TCT extends string = string>
    *
    * @remarks
    * A replacement of an in-memory file's contents is a single synchronous
-   * assignment (see {@link MutableInMemoryFile.setContents}), so there is no
+   * assignment (see `MutableInMemoryFile.setContents`), so there is no
    * intermediate state a reader could observe as torn — this store can honor
    * `'session'` unconditionally whenever ordinary mutation would succeed, and
    * fails any stronger request before touching anything.
@@ -738,6 +738,8 @@ export class InMemoryTreeAccessors<TCT extends string = string>
       );
     }
 
+    // fileIsMutable is checked again inside saveFileContents below; repeated here because
+    // this call site needs it attached to an IAtomicWriteFailure, not a plain Result.
     const isMutable = this.fileIsMutable(path);
     if (isMutable.isFailure()) {
       return failWithDetail(isMutable.message, {
@@ -747,10 +749,24 @@ export class InMemoryTreeAccessors<TCT extends string = string>
       });
     }
 
-    const replaced = this._mutableByPath.get(absolutePath) instanceof MutableInMemoryFile;
+    const existingEntry = this._mutableByPath.get(absolutePath);
+    if (existingEntry !== undefined && !(existingEntry instanceof MutableInMemoryFile)) {
+      // The destination names an existing directory. Caught here, before any mutation,
+      // so this is a validation failure (an invalid destination path), not an I/O failure.
+      return failWithDetail(`${absolutePath}: not a file`, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+    const replaced = existingEntry !== undefined;
 
     const saveResult = this.saveFileContents(path, contents);
     if (saveResult.isFailure()) {
+      // Reachable only when an ancestor path segment names an existing file (so the
+      // parent-directory walk inside saveFileContents fails partway through, possibly
+      // after creating intermediate directories) — a genuinely ambiguous outcome, unlike
+      // the destination-collision case handled above.
       return failWithDetail(saveResult.message, {
         code: 'io',
         stage: 'replace',
@@ -758,6 +774,6 @@ export class InMemoryTreeAccessors<TCT extends string = string>
       });
     }
 
-    return succeedWithDetail({ guarantee: 'session', replaced });
+    return succeedWithDetail({ guarantee: options.guarantee, replaced });
   }
 }

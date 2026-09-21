@@ -121,17 +121,33 @@ describe('InMemoryTreeAccessors.writeFileAtomically', () => {
     );
   });
 
-  test('fails with io when the destination path collides with an existing directory', () => {
+  test('fails validation, before mutating anything, when the destination path collides with an existing directory', () => {
     const accessors = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
     accessors.createDirectory('/collision').orThrow();
     expect(accessors.writeFileAtomically('/collision', 'hello', { guarantee: 'session' })).toFailWithDetail(
       /not a file/i,
       {
-        code: 'io',
-        stage: 'replace',
-        visibility: 'unknown'
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
       }
     );
+    expect(accessors.getItem('/collision')).toSucceedAndSatisfy((item) => {
+      expect(item.type).toBe('directory');
+    });
+  });
+
+  test('fails with io/unknown when an ancestor path segment names an existing file', () => {
+    const accessors = InMemoryTreeAccessors.create([{ path: '/ancestor.txt', contents: 'x' }], {
+      mutable: true
+    }).orThrow();
+    expect(
+      accessors.writeFileAtomically('/ancestor.txt/nested.txt', 'hello', { guarantee: 'session' })
+    ).toFailWithDetail(/not a directory/i, {
+      code: 'io',
+      stage: 'replace',
+      visibility: 'unknown'
+    });
   });
 });
 

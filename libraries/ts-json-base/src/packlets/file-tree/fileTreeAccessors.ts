@@ -814,6 +814,16 @@ export interface IAtomicWriteFailure {
 
   /**
    * The protocol stage at which the failure occurred.
+   * - `validate`: destination/guarantee/path checks, before anything is touched.
+   * - `temporary-write`: writing the sibling temporary file (Node/F2 only).
+   * - `file-flush`: flushing the temporary file's contents (Node/F2 only).
+   * - `replace`: the rename/assignment that makes the new contents visible.
+   * - `directory-flush`: flushing the containing directory entry (Node/F2 only).
+   * - `cleanup`: post-commit or post-failure temporary-file cleanup (Node/F2 only).
+   *
+   * The in-memory implementation in this package only ever produces `'validate'`
+   * or `'replace'` — the remaining stages describe the Node write protocol and
+   * are reserved for a qualified filesystem implementation.
    */
   readonly stage: 'validate' | 'temporary-write' | 'file-flush' | 'replace' | 'directory-flush' | 'cleanup';
 
@@ -857,7 +867,8 @@ export interface IAtomicFileTreeAccessors<TCT extends string = string>
    * given directory.
    * @param directory - Absolute path of the containing directory.
    * @returns `Success` with the store's {@link FileTree.IAtomicWriteCapabilities
-   * | capabilities}, or `Failure` if the directory does not exist.
+   * | capabilities}, or `Failure` if the directory does not exist or the path
+   * names a file rather than a directory.
    */
   getAtomicWriteCapabilities(directory: string): Result<IAtomicWriteCapabilities>;
 
@@ -912,8 +923,11 @@ export interface IAtomicFileTreeDirectoryItem<TCT extends string = string>
    * Reports what atomic replacement this directory's backing store can
    * offer.
    * @returns `Success` with the store's {@link FileTree.IAtomicWriteCapabilities
-   * | capabilities}. Never `Failure` — a non-capable store answers
-   * `atomicReplace: false` rather than failing the inquiry.
+   * | capabilities} — a non-capable store answers `atomicReplace: false`
+   * rather than failing the inquiry. This directory's own `absolutePath` is
+   * known to exist, so no accessor shipped today fails this call for a
+   * `DirectoryItem`; a hypothetical accessor whose directory-existence check
+   * could race with deletion is not precluded from returning `Failure`.
    */
   getAtomicWriteCapabilities(): Result<IAtomicWriteCapabilities>;
 
