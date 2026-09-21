@@ -57,16 +57,25 @@ describe.each(atomicTestRoots())('FsFileTreeAccessors atomic writes on $label', 
   // and on every platform.
   const whenQualified: jest.It = qualified ? test : test.skip;
 
+  // The tree root sits INSIDE a container this block owns, so "outside the
+  // root" is still somewhere the test cleans up. Reaching for the base
+  // directory's parent instead would make the confinement assertions depend on
+  // a shared directory being free of a particular file name — which is how a
+  // confinement test comes to fail because an unrelated run left something in
+  // /tmp.
+  let container: string;
   let root: string;
   let accessors: FsFileTreeAccessors;
 
   beforeEach(() => {
-    root = fs.mkdtempSync(path.join(base, 'fgv-atomic-fs-'));
+    container = fs.mkdtempSync(path.join(base, 'fgv-atomic-fs-'));
+    root = path.join(container, 'tree');
+    fs.mkdirSync(root);
     accessors = new FsFileTreeAccessors({ prefix: root, mutable: true });
   });
 
   afterEach(() => {
-    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(container, { recursive: true, force: true });
   });
 
   test('the filesystem accessors now advertise the atomic capability', () => {
@@ -151,7 +160,7 @@ describe.each(atomicTestRoots())('FsFileTreeAccessors atomic writes on $label', 
   whenQualified('refuses a path that resolves outside the tree root', () => {
     // `resolveAbsolutePath` ignores the prefix for an already-absolute input, so
     // confinement has to be checked rather than assumed.
-    const outside = path.join(path.dirname(root), 'escaped.json');
+    const outside = path.join(container, 'escaped.json');
     expect(accessors.writeFileAtomically(outside, NEW, { guarantee: 'process-crash' })).toFailWithDetail(
       /resolves outside the tree root/i,
       { code: 'not-writable', stage: 'validate', visibility: 'unchanged' }
@@ -182,9 +191,7 @@ describe.each(atomicTestRoots())('FsFileTreeAccessors atomic writes on $label', 
   });
 
   whenQualified('refuses to reclaim outside the tree root', () => {
-    expect(accessors.cleanupAtomicTemporaries(path.dirname(root))).toFailWith(
-      /resolves outside the tree root/i
-    );
+    expect(accessors.cleanupAtomicTemporaries(container)).toFailWith(/resolves outside the tree root/i);
   });
 
   whenQualified('leaves ordinary saves exactly as they were', () => {

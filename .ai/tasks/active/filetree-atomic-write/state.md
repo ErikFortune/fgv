@@ -282,3 +282,60 @@ power-loss survival. The process is killed while the kernel and filesystem keep 
 exactly the fault model A1 approved and nothing more. The directory flush is performed because the
 acceptance boundary requires it, not because process-kill evidence says anything about a storage
 stack's write cache.
+
+## 2026-09-21 — F2 phases 6–7: review fixes, vocabulary, and the mutation results
+
+**Prediction held.** All 22 subprocess crash assertions passed on both filesystems, at every
+boundary, first run. No destination was ever observed torn; `before-temp-open` … `before-rename`
+showed the previous record, `after-rename` and `after-directory-flush` showed the new one; orphans
+appeared exactly where the table said and nowhere else; the `mid-write` orphan was genuinely
+partial and a strict prefix of the new record.
+
+### Watching every protection fail
+
+Twelve protections were neutered one at a time, rebuilt, measured and restored. Two rounds were
+needed, and the second round is the point of the exercise.
+
+| # | protection neutered | outcome |
+|---|---|---|
+| M1 | unlink the destination before renaming over it | 8 red, incl. both `before-rename` crash tests |
+| M2 | skip the containing-directory flush | **round 1: did not compile — no evidence.** Round 2 (`M2b`, call removed outright): 4 red |
+| M3 | claim `unchanged` for every failed rename | 7 red |
+| M4 | drop the new member from both capability guards | 2 red — the P1 regression tests |
+| M5 | qualify any filesystem, not just allowlisted ones | 2 red |
+| M6 | carry set-user-ID onto the replacement | 1 red |
+| M7 | create the temporary without `O_EXCL` | 3 red |
+| M8 | write once instead of looping short writes | 15 red |
+| M9 | skip the temporary's flush | **round 1: did not compile — no evidence.** Round 2 (`M9b`): 8 red |
+| M10 | stop confining paths to the tree root | 5 red |
+| M11 | follow a symlink at the destination | 3 red |
+| M12 | advertise `os-crash` / `power-loss` | 11 red |
+
+**Two things this exercise caught that the suite could not.**
+
+1. **M2 and M9 did not compile in round 1, and a mutation that does not compile is not evidence.**
+   Recorded as unverified and redone with a mutation that builds, rather than counted as a pass
+   because nothing went red. The two steps involved are the flushes — the durability-critical
+   ones — so accepting the first round would have meant claiming the two least-verifiable steps
+   on the weakest evidence in the set.
+2. **M10 leaked `/tmp/escaped.json` and `/dev/shm/escaped.json`**, which then made M11 and M12
+   report a spurious extra failure. Tracing that back found a real defect in the *test*: the
+   confinement assertions reached for `path.dirname(root)`, so they depended on a shared
+   directory not containing a particular file name. The tree root now sits inside a container
+   the block owns, so "outside the root" is still somewhere the test cleans up. Baseline after
+   the fix: 0 failures.
+
+**What the flush mutations do and do not establish.** They establish that the two `fsync` calls
+are made, once each, at those points in the sequence — that is what the injected-failure tests
+pin. They do **not** establish that the bytes reached the storage device, and no test here can:
+a process-kill leaves the page cache intact, so flushed and unflushed data are indistinguishable
+to every test in this suite. The flushes are performed because §8.2's acceptance boundary
+requires them; the evidence for them is structural, not physical. This is the same limitation
+A1 already states, and it is why no `os-crash` or `power-loss` claim is made.
+
+### Vocabulary decision
+
+`stage` loses `'cleanup'`; all four `AtomicWriteGuarantee` members are kept. Reasoning in
+`result.md` and in the commit message for `596df35f` — in short, `guarantee` is an *input*
+vocabulary where a refusal is a witness, and `stage` is an *output* vocabulary where a member
+with no producer is dead.
