@@ -1,0 +1,71 @@
+id: filetree-atomic-write
+status: shipped
+packages: ['@fgv/ts-json-base']
+# F1 into the integration branch; F2's number is filled in when its PR opens.
+# The squash from integration/filetree-atomic-write to release is the
+# orchestrator's PR, not this stream's, so it is deliberately not listed here.
+prs: [681]
+opened: 2026-09-21
+closed: 2026-09-21
+summary:
+  intended: >
+    Add an optional atomic-write capability to FileTree in @fgv/ts-json-base so a consumer can
+    replace a file's contents without a reader ever observing a torn write, and a durable
+    consumer can wait for a declared persistence boundary before acknowledging. Two versions
+    shipping as one landing: F1 the contracts plus a session-guarantee in-memory implementation,
+    F2 the Node temp/flush/rename/directory-flush protocol with process-crash qualification on
+    local Linux and macOS roots per decision A1.
+  shipped: >
+    F1: IAtomicFileTreeAccessors / IAtomicFileTreeDirectoryItem, the AtomicWriteGuarantee
+    vocabulary, classified IAtomicWriteReceipt / IAtomicWriteFailure, isAtomicAccessors /
+    isAtomicDirectoryItem, DirectoryItem delegation, and InMemoryTreeAccessors at 'session' only.
+    F2: the design's six-step Node protocol over a typed internal filesystem seam, per-directory
+    qualification against a positively-identified filesystem allowlist, reserved-temporary
+    reclamation, and precise unchanged/replaced/unknown classification. Evidence is fault
+    injection at every protocol boundary against a real directory, plus subprocess tests in which
+    a child running the real protocol SIGKILLs itself at each boundary, on ext4 and tmpfs.
+  diverged: >
+    Three material divergences. (1) macOS is NOT qualified, contrary to A1's intended matrix:
+    the protocol needs a stable filesystem-type identification under a path, Linux's statfs magic
+    supplies one, and darwin reports a mount-table index with no Node-exposed equivalent of
+    f_fstypename — so a darwin root cannot be positively identified from inside the package and is
+    refused rather than assumed. This narrows what ts-agent-tasks T3 may depend on. (2) F2 used
+    its license to amend F1's vocabulary and removed 'cleanup' from IAtomicWriteFailure.stage:
+    with the protocol implemented it has no producer and cannot honestly acquire one. All four
+    AtomicWriteGuarantee members were KEPT, on the distinction that guarantee is an input
+    vocabulary witnessed by a refusal while stage is an output vocabulary where a member with no
+    producer is dead. (3) cleanupAtomicTemporaries was added to both atomic interfaces beyond the
+    brief, because section 8.2 step 6 requires reclamation at exclusive reopen and without a
+    caller-reachable entry point a consumer would have to depend on the reserved naming format.
+  sourceLine: '**Shipped: an optional atomic-write capability on `FileTree`, and a Node implementation whose durability claim is decided per root by positive identification rather than assumed from a platform string.**'
+  headline: >
+    A FileTree can now replace a file such that a reader never sees a torn write, and on a root
+    whose filesystem was actually qualified it survives the writing process being killed — an
+    unqualified root refuses rather than quietly promising less.
+keywords:
+  - atomic file replacement
+  - crash safety
+  - durability qualification
+  - fsync
+  - rename linearization point
+  - temp-and-rename
+  - process-crash survival
+  - fault injection
+  - mutation testing
+  - filesystem allowlist
+  - statfs magic number
+  - torn write
+  - orphaned temporary file
+  - errno classification
+  - cross-realm instanceof
+  - type guard widening
+relatedStreams:
+  - id: filetree-bytes-capability
+    relationship: >
+      the optional-capability shape this one mirrors — accessor and item interfaces plus a
+      presence guard, with the inquiry rather than the guard answering what a call will achieve
+  - id: filetree-strict-text-read
+    relationship: >
+      the sibling optional capability whose "custody of the bytes" rule this one follows for
+      strict UTF-8 readback of durable records
+sourceHash: 1632b62e141e6a3f # sha256/16 over brief.md, result.md, state.md

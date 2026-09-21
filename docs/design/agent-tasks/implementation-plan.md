@@ -44,7 +44,7 @@ No numbered gate is left to an implementer to “discover later.” A1, A2 and t
 
 ## 3. Upstream FileTree slices
 
-### F1 — Optional atomic-write contracts and session implementation
+### F1 — Optional atomic-write contracts and session implementation — ✅ shipped ([#681](https://github.com/ErikFortune/fgv/pull/681))
 
 **Dependencies:** design approval; A1 fixes the advertised guarantee vocabulary. **Affected package:** `ts-json-base` only.
 
@@ -56,7 +56,9 @@ No numbered gate is left to an implementer to “discover later.” A1, A2 and t
 
 **Review gate:** stable-surface compatibility and browser import review; public API Extractor diff; shared-contract build gate. This is the **first implementation slice**, after explicit approval. It does not claim a durable task repository.
 
-### F2 — Node atomic replacement and process-crash qualification
+### F2 — Node atomic replacement and process-crash qualification — ✅ shipped
+
+**Qualified matrix as shipped: Linux ext2/ext3/ext4 and tmpfs. macOS is NOT qualified** — Node exposes no stable filesystem-type identifier on darwin, so a darwin root cannot be positively identified from inside the package and is refused rather than assumed. The review gate below says not to mark missing platform evidence “passed”; accordingly, **T3's durable path is unblocked on Linux only**.
 
 **Dependencies:** F1, A1. **Affected package:** `ts-json-base`; CI configuration only if necessary to run the approved platform matrix.
 

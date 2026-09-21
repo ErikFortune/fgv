@@ -184,6 +184,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-09-21** — A FileTree can now replace a file such that a reader never sees a torn write, and on a root whose filesystem was actually qualified… ([#681](https://github.com/ErikFortune/fgv/pull/681)) · `ts-json-base`
 - **2026-09-07** — ai-assist now places explicit prompt-cache breakpoints on Anthropic and OpenAI requests built from a ts-prompt-assist resolve… ([#671](https://github.com/ErikFortune/fgv/pull/671)) · `ts-extras` `ts-prompt-assist`
 - **2026-09-07** — Thinking config loses a required provider field that gated nothing, and gains 'none' — the cross-provider spelling for off that… ([#667](https://github.com/ErikFortune/fgv/pull/667)) · `ts-extras`
 - **2026-09-02** — Shipped: a rendered template, and a resolved prompt, can now say what they are made of — order, absolute size and binding… ([#663](https://github.com/ErikFortune/fgv/pull/663)) · `ts-extras` `ts-prompt-assist`
@@ -193,8 +194,7 @@ markers.*
 - **2026-08-22** — Shipped: `nullable: true` on every factory — the spelling OpenAI strict mode accepts for an absent-able field, where… ([#655](https://github.com/ErikFortune/fgv/pull/655)) · `ts-json-base` `ts-extras` `ts-extras-mcp`
 - **2026-08-22** — Shipped: the rebuild-path table clear runs through `exec`, so the one statement `release()` could never reach no longer exists. ([#654](https://github.com/ErikFortune/fgv/pull/654)) · `ts-agent-memory-sqlite-vec`
 - **2026-08-21** — A caller that has already declared the shape it wants can now tell the provider, and learn which enforcement was actually applied… ([#652](https://github.com/ErikFortune/fgv/pull/652)) · `ts-extras` `ts-json-base` `ts-app-shell`
-- **2026-08-21** — Shipped: `release()` on both index classes — it drops the index's prepared statements and marks it unusable, and never touches the… ([#651](https://github.com/ErikFortune/fgv/pull/651)) · `ts-agent-memory-sqlite-vec`
 
-*Showing the 10 most recent of 41. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 42. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

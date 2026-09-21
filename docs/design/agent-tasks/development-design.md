@@ -1,6 +1,6 @@
 # Agent tasks — development design
 
-**Status:** A1/A2 and finite-horizon capacity amendment A3 approved 2026-09-21; reference-consumer A3 approval is limited to V1 ingestion. Awaiting explicit implementation authorization. No production implementation, FGV test execution, or resident-memory measurement is claimed.
+**Status:** A1/A2 and finite-horizon capacity amendment A3 approved 2026-09-21; reference-consumer A3 approval is limited to V1 ingestion. **§8.1–§8.2 are implemented and qualified** — the FileTree atomic-write capability and its Node protocol shipped via the `filetree-atomic-write` stream (F1 [#681](https://github.com/ErikFortune/fgv/pull/681), F2 alongside it), with process-crash qualification on **Linux ext2/ext3/ext4 and tmpfs only**. **macOS is NOT qualified**, contrary to A1's intended matrix: Node exposes no stable filesystem-type identifier on darwin, so a darwin root cannot be positively identified and is refused rather than assumed — see `.ai/tasks/completed/2026-09/filetree-atomic-write/result.md`. Every other section remains design-only and awaits explicit implementation authorization. No task-library implementation, FGV test execution beyond the FileTree slice, or resident-memory measurement is claimed.
 **Date:** 2026-09-21. **Inspected checkout:** `d0ec601c6d67a6016a00a33a69ddee18bec6ddb1`.
 **Agreement:** [library proposal](fgv-library.md), [multi-agent chat adoption](multi-agent-chat-adoption.md), and [deferred scope](deferred.md), read in full.
 **Delivery sequence:** [implementation plan](implementation-plan.md).
