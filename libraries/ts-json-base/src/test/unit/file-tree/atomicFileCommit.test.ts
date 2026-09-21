@@ -146,6 +146,21 @@ describe('commitFileAtomically — committing', () => {
     expect(ops.callCount('fchmod')).toBe(1);
   });
 
+  test('does not carry set-user-ID onto the replacement', () => {
+    // The replacement is a brand-new inode. Carrying rwx forward keeps an
+    // atomic write from being a silent permission change; carrying a privilege
+    // bit forward would hand elevated execution to content someone else just
+    // supplied. Dropping one is recoverable, granting one is not.
+    withExistingFile(OLD, 0o4755);
+    expect(fs.statSync(destination()).mode % 0o10000).toBe(0o4755);
+
+    const ops = new FaultingFsOperations();
+    expect(commit(ops, NEW)).toSucceed();
+
+    expect(fs.statSync(destination()).mode % 0o10000).toBe(0o755);
+    expect(readDestination()).toBe(NEW);
+  });
+
   test('does not adjust permissions when the existing file is already private', () => {
     withExistingFile(OLD, 0o600);
     const ops = new FaultingFsOperations();

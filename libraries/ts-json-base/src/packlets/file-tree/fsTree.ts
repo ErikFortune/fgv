@@ -300,9 +300,12 @@ export class FsFileTreeAccessors<TCT extends string = string>
    * {@inheritDoc FileTree.IAtomicFileTreeAccessors.getAtomicWriteCapabilities}
    */
   public getAtomicWriteCapabilities(directory: string): Result<IAtomicWriteCapabilities> {
-    return this._qualifyDirectory(directory).onSuccess((qualification) =>
-      succeed(qualification.capabilities)
-    );
+    // Confined like the two mutating methods. An inquiry that answered for a
+    // directory outside the root would contradict the write that then refused
+    // it, and two different answers to one question is worse than either.
+    return this._confineToRoot(this.resolveAbsolutePath(directory))
+      .onSuccess(() => this._qualifyDirectory(directory))
+      .onSuccess((qualification) => succeed(qualification.capabilities));
   }
 
   /**
@@ -319,6 +322,20 @@ export class FsFileTreeAccessors<TCT extends string = string>
     const confined = this._confineToRoot(absolutePath);
     if (confined.isFailure()) {
       return failWithDetail(confined.message, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    // Writability is settled before capability, so that every mutability
+    // refusal — disabled, filtered, or denied by the filesystem — reports
+    // `not-writable`, exactly as the in-memory store reports the same
+    // conditions. Two implementations of one contract answering the same
+    // question with different codes is what breaks a caller's `switch`.
+    const mutable = this.fileIsMutable(filePath);
+    if (mutable.isFailure()) {
+      return failWithDetail(mutable.message, {
         code: 'not-writable',
         stage: 'validate',
         visibility: 'unchanged'
@@ -354,15 +371,6 @@ export class FsFileTreeAccessors<TCT extends string = string>
         }' exceeds what this root can honor (${capabilities.guarantees.join(', ')}) — ${reason}`,
         { code: 'unsupported', stage: 'validate', visibility: 'unchanged' }
       );
-    }
-
-    const mutable = this.fileIsMutable(filePath);
-    if (mutable.isFailure()) {
-      return failWithDetail(mutable.message, {
-        code: 'not-writable',
-        stage: 'validate',
-        visibility: 'unchanged'
-      });
     }
 
     return commitFileAtomically({
@@ -426,9 +434,8 @@ export class FsFileTreeAccessors<TCT extends string = string>
    * Rejects a path that resolves outside this tree's root.
    *
    * @remarks
-   * {@link FileTree.FsFileTreeAccessors.resolveAbsolutePath | resolveAbsolutePath}
-   * ignores the prefix for an input that is already absolute, so confinement has
-   * to be checked rather than assumed. A tree with no prefix has no root to be
+   * `resolveAbsolutePath` ignores the prefix for an input that is already
+   * absolute, so confinement has to be checked rather than assumed. A tree with no prefix has no root to be
    * confined to, and the check is vacuous.
    */
   private _confineToRoot(absolutePath: string): Result<string> {

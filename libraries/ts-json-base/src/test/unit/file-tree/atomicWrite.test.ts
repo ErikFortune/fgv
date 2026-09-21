@@ -21,11 +21,14 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { DetailedResult, Result } from '@fgv/ts-utils';
+import { DetailedResult, Result, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import {
   DirectoryItem,
   FileTreeItem,
   FsFileTreeAccessors,
+  IAtomicWriteCapabilities,
+  IAtomicWriteFailure,
+  IAtomicWriteReceipt,
   IMutableFileTreeAccessors,
   InMemoryTreeAccessors,
   SaveDetail,
@@ -91,6 +94,27 @@ class NonAtomicAccessors implements IMutableFileTreeAccessors {
   }
 }
 
+/**
+ * A store carrying exactly the two atomic methods the capability shipped with
+ * before `cleanupAtomicTemporaries` joined the interface.
+ *
+ * @remarks
+ * This is the shape that matters: a guard that checks only the members it
+ * remembers will narrow this to a type promising a method it does not have, and
+ * the first caller to use that promise gets a `TypeError` instead of a
+ * `Result`. Widening an interface without widening its guard is invisible to
+ * the compiler, because the guard's own assertion is what suppresses the check.
+ */
+class PartiallyAtomicAccessors extends NonAtomicAccessors {
+  public getAtomicWriteCapabilities(): Result<IAtomicWriteCapabilities> {
+    return succeed({ atomicReplace: true, guarantees: ['session'] });
+  }
+
+  public writeFileAtomically(): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure> {
+    return succeedWithDetail({ guarantee: 'session', replaced: false });
+  }
+}
+
 describe('isAtomicAccessors', () => {
   test('returns true for a mutable InMemoryTreeAccessors', () => {
     const accessors = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
@@ -104,6 +128,12 @@ describe('isAtomicAccessors', () => {
 
   test('returns false for a mutable store that does not carry the atomic methods', () => {
     expect(isAtomicAccessors(new NonAtomicAccessors())).toBe(false);
+  });
+
+  test('returns false for a store carrying only some of the atomic methods', () => {
+    // The guard asserts the whole interface or none of it. Accepting a partial
+    // shape would hand a caller a type that promises a method that is not there.
+    expect(isAtomicAccessors(new PartiallyAtomicAccessors())).toBe(false);
   });
 });
 
@@ -268,6 +298,22 @@ describe('DirectoryItem atomic delegation', () => {
     expect(dir.cleanupAtomicTemporaries()).toSucceedWith([]);
   });
 
+  test('reports, rather than throwing, when the backing store carries only some atomic methods', () => {
+    // Every method here goes through the accessor guard, so a guard that
+    // accepted a partial shape would turn each of these into an uncaught
+    // TypeError — the Result contract broken by a missing method rather than by
+    // a failing operation.
+    const dir = DirectoryItem.create('/', new PartiallyAtomicAccessors()).orThrow();
+    expect(dir.cleanupAtomicTemporaries()).toSucceedWith([]);
+    expect(dir.getAtomicWriteCapabilities()).toSucceedAndSatisfy((caps) => {
+      expect(caps.atomicReplace).toBe(false);
+    });
+    expect(dir.writeChildAtomically('child.txt', 'contents', { guarantee: 'session' })).toFailWithDetail(
+      /atomic writes not supported/i,
+      { code: 'unsupported', stage: 'validate', visibility: 'unchanged' }
+    );
+  });
+
   test('writeChildAtomically creates a child with no native path or accessor internals visible to the caller', () => {
     // Narrow via the guard rather than casting. This is the acceptance-criterion test for
     // the whole slice, so it must not assert the thing it is meant to prove: a cast would
@@ -395,5 +441,26 @@ describe('DirectoryItem atomic delegation', () => {
     expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
       expect(children.some((c) => c.name === 'unwritten.txt')).toBe(false);
     });
+  });
+});
+
+describe('InMemoryTreeAccessors.cleanupAtomicTemporaries', () => {
+  test('reclaims nothing, because an in-memory replacement leaves no working file', () => {
+    const accessors = InMemoryTreeAccessors.create([{ path: '/f.txt', contents: 'x' }], {
+      mutable: true
+    }).orThrow();
+    expect(accessors.cleanupAtomicTemporaries('/')).toSucceedWith([]);
+    // And reclaiming did not disturb anything.
+    expect(accessors.getFileContents('/f.txt')).toSucceedWith('x');
+  });
+
+  test('still refuses a path that is not an existing directory', () => {
+    // "Nothing to reclaim" is an answer about a directory. Asked about a path
+    // that is not one, it fails rather than answering for it.
+    const accessors = InMemoryTreeAccessors.create([{ path: '/f.txt', contents: 'x' }], {
+      mutable: true
+    }).orThrow();
+    expect(accessors.cleanupAtomicTemporaries('/nope')).toFailWith(/not found/i);
+    expect(accessors.cleanupAtomicTemporaries('/f.txt')).toFailWith(/not a directory/i);
   });
 });

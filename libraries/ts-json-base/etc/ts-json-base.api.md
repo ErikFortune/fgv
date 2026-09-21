@@ -530,7 +530,7 @@ interface IAtomicWriteCapabilities {
 // @public
 interface IAtomicWriteFailure {
     readonly code: 'unsupported' | 'not-writable' | 'io';
-    readonly stage: 'validate' | 'temporary-write' | 'file-flush' | 'replace' | 'directory-flush' | 'cleanup';
+    readonly stage: 'validate' | 'temporary-write' | 'file-flush' | 'replace' | 'directory-flush';
     readonly visibility: 'unchanged' | 'replaced' | 'unknown';
 }
 
@@ -1406,10 +1406,6 @@ declare namespace Validators_2 {
 //
 // @public (undocumented)
 function writeJsonFileSync(srcPath: string, value: JsonValue): Result<boolean>;
-
-// Warnings were encountered during analysis:
-//
-// src/packlets/file-tree/fsTree.ts:434:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

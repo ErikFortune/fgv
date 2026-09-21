@@ -38,6 +38,18 @@ import { atomicTestRoots, isQualified } from './atomicTestRoots';
 const OLD: string = '{"revision":1}\n';
 const NEW: string = '{"revision":2}\n';
 
+describe('the qualification evidence is actually being gathered', () => {
+  test('at least one discovered root is qualified, so the committing tests are not all skipped', () => {
+    // Without this, moving CI onto a filesystem the allowlist does not name
+    // would turn every committing and crash-survival test into a silent skip.
+    // The suite would stay green and the evidence behind the durability claim
+    // would quietly stop existing. Silence is not success.
+    const roots = atomicTestRoots();
+    expect(roots.length).toBeGreaterThan(0);
+    expect(roots.some((root) => isQualified(root.base))).toBe(true);
+  });
+});
+
 describe.each(atomicTestRoots())('FsFileTreeAccessors atomic writes on $label', ({ base }) => {
   const qualified: boolean = isQualified(base);
   // A root the qualification table does not recognize cannot commit at all, so
@@ -238,14 +250,40 @@ describe('FsFileTreeAccessors atomic writes and mutability policy', () => {
       expect(capabilities.atomicReplace).toBe(false);
       expect(capabilities.guarantees).toEqual([]);
     });
+    // `not-writable`, the same code the in-memory store reports for the same
+    // condition — one contract, one answer, whichever store is behind it.
     expect(
       accessors.writeFileAtomically(path.join(root, 'r.json'), NEW, { guarantee: 'process-crash' })
     ).toFailWithDetail(/mutability is disabled/i, {
-      code: 'unsupported',
+      code: 'not-writable',
       stage: 'validate',
       visibility: 'unchanged'
     });
     expect(fs.readdirSync(root)).toEqual([]);
+  });
+
+  test('refuses a file the filter excludes even when its directory is writable', () => {
+    // The directory qualifies and is mutable, so the refusal can only come from
+    // the destination's own mutability check.
+    const accessors = new FsFileTreeAccessors({
+      prefix: root,
+      // A RegExp, not a glob string: string patterns in an IFilterSpec are
+      // substring matches, so '**/*.locked.json' would match nothing at all.
+      mutable: { exclude: [/\.locked\.json$/] }
+    });
+    expect(accessors.getAtomicWriteCapabilities(root)).toSucceedAndSatisfy((capabilities) => {
+      expect(capabilities.atomicReplace).toBe(isQualified(root));
+    });
+    expect(
+      accessors.writeFileAtomically(path.join(root, 'secrets.locked.json'), NEW, {
+        guarantee: 'process-crash'
+      })
+    ).toFailWithDetail(/excluded by filter/i, {
+      code: 'not-writable',
+      stage: 'validate',
+      visibility: 'unchanged'
+    });
+    expect(fs.existsSync(path.join(root, 'secrets.locked.json'))).toBe(false);
   });
 
   test('a filter-excluded directory advertises no atomic replacement', () => {
@@ -255,7 +293,11 @@ describe('FsFileTreeAccessors atomic writes and mutability policy', () => {
     fs.mkdirSync(path.join(root, 'locked'));
     const accessors = new FsFileTreeAccessors({
       prefix: root,
-      mutable: { include: ['**'], exclude: ['**/locked/**', '**/locked'] }
+      // Likewise a RegExp. The earlier glob-shaped spelling excluded the
+      // directory only incidentally — `include: ['**']` matched nothing, so
+      // every path failed the include test rather than the exclude one, and the
+      // assertion below would have held even with the exclude list removed.
+      mutable: { exclude: [/\/locked(\/|$)/] }
     });
     expect(accessors.getAtomicWriteCapabilities(path.join(root, 'locked'))).toSucceedAndSatisfy(
       (capabilities) => {
@@ -267,7 +309,7 @@ describe('FsFileTreeAccessors atomic writes and mutability policy', () => {
         guarantee: 'process-crash'
       })
     ).toFailWithDetail(/excluded by filter/i, {
-      code: 'unsupported',
+      code: 'not-writable',
       stage: 'validate',
       visibility: 'unchanged'
     });
@@ -280,5 +322,42 @@ describe('FsFileTreeAccessors atomic writes and mutability policy', () => {
     expect(accessors.getAtomicWriteCapabilities(root)).toSucceedAndSatisfy((capabilities) => {
       expect(capabilities.atomicReplace).toBe(isQualified(root));
     });
+
+    if (isQualified(root)) {
+      const target = path.join(root, 'unconfined.json');
+      expect(accessors.writeFileAtomically(target, NEW, { guarantee: 'process-crash' })).toSucceed();
+      expect(fs.readFileSync(target, 'utf8')).toBe(NEW);
+      expect(accessors.cleanupAtomicTemporaries(root)).toSucceedWith([]);
+    }
+  });
+
+  test('refuses an atomic write on a filesystem the allowlist does not name', () => {
+    // A real unqualified filesystem rather than a simulated one: procfs is
+    // always mounted on Linux, is a directory, and is emphatically not on the
+    // allowlist. Nothing is written — the refusal happens before the protocol
+    // starts — so pointing at /proc is safe.
+    if (process.platform !== 'linux') {
+      return;
+    }
+    const accessors = new FsFileTreeAccessors({ mutable: true });
+    expect(accessors.getAtomicWriteCapabilities('/proc')).toSucceedAndSatisfy((capabilities) => {
+      expect(capabilities.atomicReplace).toBe(false);
+      expect(capabilities.guarantees).toEqual([]);
+    });
+    expect(
+      accessors.writeFileAtomically('/proc/fgv-atomic-probe.json', NEW, { guarantee: 'process-crash' })
+    ).toFailWithDetail(/atomic writes are not available here/i, {
+      code: 'unsupported',
+      stage: 'validate',
+      visibility: 'unchanged'
+    });
+    expect(fs.existsSync('/proc/fgv-atomic-probe.json')).toBe(false);
+  });
+
+  test('the capability inquiry refuses a directory outside the tree root', () => {
+    const accessors = new FsFileTreeAccessors({ prefix: root, mutable: true });
+    expect(accessors.getAtomicWriteCapabilities(path.dirname(root))).toFailWith(
+      /resolves outside the tree root/i
+    );
   });
 });

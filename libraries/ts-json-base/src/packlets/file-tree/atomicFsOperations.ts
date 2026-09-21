@@ -69,8 +69,12 @@ export interface IAtomicFsStats {
   readonly isSymbolicLink: boolean;
 
   /**
-   * The permission bits (`mode & 0o7777`), used to carry an existing
+   * The ordinary rwx permission bits (`mode & 0o777`), used to carry an existing
    * destination's permissions onto its replacement.
+   *
+   * @remarks
+   * Excludes set-user-ID, set-group-ID and sticky by construction — see the
+   * implementation note in `defaultAtomicFsOperations.lstat`.
    */
   readonly permissions: number;
 }
@@ -278,10 +282,15 @@ export const defaultAtomicFsOperations: IAtomicFsOperations = {
         isFile: stats.isFile(),
         isDirectory: stats.isDirectory(),
         isSymbolicLink: stats.isSymbolicLink(),
-        // The low twelve bits of `mode` are the permission and set-id bits.
-        // `% 0o10000` extracts them exactly as `& 0o7777` would, without the
+        // The low NINE bits of `mode`: the ordinary rwx permissions, and
+        // deliberately not the set-user-ID, set-group-ID or sticky bits above
+        // them. Those are carried onto a brand-new inode by whoever reads this,
+        // and granting a privilege bit to a file whose contents someone else
+        // just supplied is the one direction that cannot be walked back.
+        // Dropping one is recoverable; granting one is a privilege escalation.
+        // `% 0o1000` extracts them exactly as `& 0o777` would, without the
         // bitwise operator this repo's lint configuration rejects.
-        permissions: stats.mode % 0o10000
+        permissions: stats.mode % 0o1000
       };
     });
   },
