@@ -88,7 +88,11 @@ export class TaskEnvironment implements ITaskEnvironment {
   }
 
   private _mint<T>(converter: Converter<T>, description: string): Result<T> {
-    return this.newId()
+    // `captureResult` for the same reason `now()` wraps the clock: `newId` is host code,
+    // and a factory that throws must arrive as a mint failure rather than escaping the
+    // Result-valued API this seam advertises.
+    return captureResult(() => this.newId())
+      .onSuccess((minted: Result<string>) => minted)
       .onSuccess((raw: string) => converter.convert(raw))
       .withErrorFormat((message: string) => `new ${description}: ${message}`);
   }

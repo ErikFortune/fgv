@@ -245,6 +245,23 @@ describe('typed handles', () => {
     );
   });
 
+  test('encode re-validates details — a domain invariant cannot be cast past it', () => {
+    const registry: TaskKindRegistry = newRegistry();
+    const handle: ITaskKindHandle<IWidgetDetails> = registry.register(widgetDescriptor()).orThrow();
+    const snapshot = converters.envelopes.snapshot.convert(widgetSnapshot({ width: 4 })).orThrow();
+    // A JS caller, or a TS caller with an assertion, can hand over a `T` the converter
+    // would reject. `encode` must not turn that into a successful snapshot.
+    expect(handle.encode({ envelope: snapshot.envelope, details: { width: 0 } })).toFailWith(
+      /test\.widget@1: width must be positive/i
+    );
+    expect(
+      handle.encode({
+        envelope: snapshot.envelope,
+        details: { width: 'wide' } as unknown as IWidgetDetails
+      })
+    ).toFail();
+  });
+
   test('encode reports a failing encoder', () => {
     const registry: TaskKindRegistry = newRegistry();
     const handle: ITaskKindHandle<IWidgetDetails> = registry

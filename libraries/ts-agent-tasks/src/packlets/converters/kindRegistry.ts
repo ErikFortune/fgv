@@ -193,8 +193,13 @@ export class TaskKindRegistry implements ITaskKindRegistry {
         ),
       encode: (snapshot: ITaskSnapshot<T>): Result<ITaskSnapshot> =>
         matches(snapshot).onSuccess(() =>
-          descriptor
-            .encode(snapshot.details)
+          // Validate before encoding, exactly as `decode` validates after. TypeScript
+          // cannot stop a JS caller or an assertion handing over a `T` that violates the
+          // converter's domain invariants, and an encoder that never re-checks would turn
+          // that into a successful snapshot.
+          descriptor.details
+            .convert(snapshot.details)
+            .onSuccess((validated: T) => descriptor.encode(validated))
             .onSuccess((details: JsonValue) =>
               succeed<ITaskSnapshot>({ envelope: snapshot.envelope, details })
             )

@@ -699,10 +699,10 @@ export interface IWaitingReason extends ITaskReason {
 }
 
 // @public
-export function maximumClosureCharges(profile: ITaskCapacityProfile): ReadonlyArray<ITaskCapacityCharge>;
+export function maximumClosureCharges(profile: ITaskCapacityProfile): Result<ReadonlyArray<ITaskCapacityCharge>>;
 
 // @public
-export function maximumSettlementCharges(profile: ITaskCapacityProfile): ReadonlyArray<ITaskCapacityCharge>;
+export function maximumSettlementCharges(profile: ITaskCapacityProfile): Result<ReadonlyArray<ITaskCapacityCharge>>;
 
 // @public
 export const nonNegativeAmount: Converter<number>;

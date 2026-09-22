@@ -59,6 +59,13 @@ the revision it reached), or `indeterminate` (with its reason, keeping the opera
 than degrading into a generic retryable failure). `ICommandRequest` always carries an
 `operationId` and an `expectedRevision`; no timestamp is a concurrency token.
 
+**The detail converter runs on every path.** `convert`, `decode` *and* `encode` all validate
+through the registered `Converter<T>`: TypeScript cannot stop a JS caller or an assertion handing
+over a `T` that violates a domain invariant, so an encoder that trusted its argument would turn
+that into a successful snapshot. `detailSchema`, where a kind supplies one, is the wire schema a
+model is offered; **registration does not check that the two agree** — agreement is a claim about
+every value, and it is established by a registration's own fixtures, as the built-ins' are here.
+
 **The registry erases kinds through converter closures, never casts.** `TaskKindRegistry.create`
 returns an independent registry — nothing is registered at import. `register<T>(descriptor)`
 stores a `Converter<JsonValue>` built with `Converters.generic` that runs the descriptor's own
@@ -100,7 +107,13 @@ defaults, not measured safe maxima.** `maximumClosureCharges(profile)` and
 `maximumSettlementCharges(profile)` compute the protected completion and settlement charges from
 the profile alone, which is what lets admission reserve room to *finish* accepted work before
 accepting it — a ceiling without that room could refuse the terminal write that would free
-capacity.
+capacity. Both are `Result`-valued and **fail rather than return an inexact figure** when a
+profile's bounds push a product or sum past the safe-integer range: a charge is an admission
+input, so "approximately the maximum" is not a usable answer.
+
+**A capacity status reports every dimension exactly once.** The converter enforces both halves —
+a duplicated row is ambiguous, and a missing one would silently read as a dimension under no
+pressure, which is the wrong default for something admission consults.
 
 **Capacity claims are repository-generated data, never caller-issued authority.**
 `ITaskCapacityClaim` is discriminated on one of five `CapacityClaimPurpose`s, carries the

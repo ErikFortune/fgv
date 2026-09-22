@@ -5,7 +5,7 @@
 
 import '@fgv/ts-utils-jest';
 import { JsonValue } from '@fgv/ts-json-base';
-import { defaultTaskCapacityProfile } from '../../../index';
+import { CapacityDimension, allCapacityDimensions, defaultTaskCapacityProfile } from '../../../index';
 import { claim, converters } from '../../helpers/fixtures';
 
 describe('capacity profile', () => {
@@ -161,7 +161,7 @@ describe('capacity claims', () => {
     expect(converters.capacity.claim.convert(claim('speculative-growth', {}))).toFail();
   });
 
-  test('a claim cannot borrow another purpose s identities', () => {
+  test("a claim cannot borrow another purpose's identities", () => {
     expect(
       converters.capacity.claim.convert(
         claim('receipt-preparation', { subscriptionId: 'sub-1', updateId: 'upd-4' })
@@ -240,21 +240,33 @@ describe('claim ownership and disposition', () => {
 });
 
 describe('capacity status', () => {
-  const dimension: Record<string, JsonValue> = {
-    dimension: 'updates',
-    used: 16000,
-    reserved: 2000,
-    available: 2000,
-    limit: 20000,
-    pressure: true,
-    limitingRecordIds: ['task-3']
-  };
+  function row(dimension: CapacityDimension, overrides: Record<string, JsonValue> = {}): JsonValue {
+    return {
+      dimension,
+      used: 16000,
+      reserved: 2000,
+      available: 2000,
+      limit: 20000,
+      pressure: true,
+      limitingRecordIds: ['task-3'],
+      ...overrides
+    };
+  }
 
-  test('converts a status reporting one dimension', () => {
+  function everyRow(): JsonValue[] {
+    return allCapacityDimensions.map((d) => row(d));
+  }
+
+  test('converts a status reporting every dimension', () => {
     expect(
-      converters.capacity.status.convert({ profileVersion: 1, state: 'pressure', dimensions: [dimension] })
+      converters.capacity.status.convert({
+        profileVersion: 1,
+        state: 'pressure',
+        dimensions: everyRow()
+      })
     ).toSucceedAndSatisfy((status) => {
       expect(status.state).toBe('pressure');
+      expect(status.dimensions).toHaveLength(allCapacityDimensions.length);
       expect(status.dimensions[0].limitingRecordIds).toEqual(['task-3']);
     });
   });
@@ -262,17 +274,51 @@ describe('capacity status', () => {
   test.each([['ok'], ['pressure'], ['admission-blocked'], ['draining']])(
     'converts the %s state',
     (state: string) => {
-      expect(converters.capacity.status.convert({ profileVersion: 1, state, dimensions: [] })).toSucceed();
+      expect(
+        converters.capacity.status.convert({ profileVersion: 1, state, dimensions: everyRow() })
+      ).toSucceed();
     }
   );
 
   test('capacity state is not an index-health state', () => {
     expect(
-      converters.capacity.status.convert({ profileVersion: 1, state: 'degraded', dimensions: [] })
+      converters.capacity.status.convert({
+        profileVersion: 1,
+        state: 'degraded',
+        dimensions: everyRow()
+      })
     ).toFail();
     expect(
-      converters.capacity.status.convert({ profileVersion: 1, state: 'unavailable', dimensions: [] })
+      converters.capacity.status.convert({
+        profileVersion: 1,
+        state: 'unavailable',
+        dimensions: everyRow()
+      })
     ).toFail();
+  });
+
+  test('a duplicated dimension row is ambiguous, and is rejected', () => {
+    const rows: JsonValue[] = everyRow();
+    rows[1] = row('updates');
+    expect(
+      converters.capacity.status.convert({ profileVersion: 1, state: 'ok', dimensions: rows })
+    ).toFailWith(/duplicate row for dimension 'updates'/i);
+  });
+
+  test('a missing dimension is rejected — silence is not "no pressure"', () => {
+    expect(
+      converters.capacity.status.convert({
+        profileVersion: 1,
+        state: 'ok',
+        dimensions: everyRow().slice(1)
+      })
+    ).toFailWith(/no row for 'retained-tasks'/i);
+  });
+
+  test('an empty dimension list names every dimension it is missing', () => {
+    expect(converters.capacity.status.convert({ profileVersion: 1, state: 'ok', dimensions: [] })).toFailWith(
+      /no row for .*'retained-tasks'.*'resident-payload-bytes'/i
+    );
   });
 
   test('rejects more dimension rows than there are dimensions', () => {
@@ -280,7 +326,7 @@ describe('capacity status', () => {
       converters.capacity.status.convert({
         profileVersion: 1,
         state: 'ok',
-        dimensions: Array.from({ length: 12 }, () => dimension)
+        dimensions: [...everyRow(), row('updates')]
       })
     ).toFail();
   });

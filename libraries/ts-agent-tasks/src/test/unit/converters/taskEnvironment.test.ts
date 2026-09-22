@@ -97,6 +97,15 @@ describe('minting identities', () => {
     expect(env.newSubscriptionId()).toFailWith(/new subscription id: entropy exhausted/i);
   });
 
+  test('a throwing id factory becomes a mint failure, not an escaped exception', () => {
+    const env: TaskEnvironment = environment({
+      newId: (): Result<string> => {
+        throw new Error('entropy source unavailable');
+      }
+    });
+    expect(env.newTaskId()).toFailWith(/new task id: entropy source unavailable/i);
+  });
+
   test('an id factory producing a path fragment is caught at the mint, not at the filename', () => {
     const env: TaskEnvironment = environment({ newId: (): Result<string> => succeed('../../etc') });
     expect(env.newTaskId()).toFailWith(/new task id: .*not a valid task id/i);

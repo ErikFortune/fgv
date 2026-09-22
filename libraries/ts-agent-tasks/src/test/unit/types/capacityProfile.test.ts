@@ -8,6 +8,7 @@ import {
   CapacityDimension,
   ITaskCapacityCharge,
   ITaskCapacityProfile,
+  ITaskEncodedBounds,
   allUpdateCategories,
   defaultTaskCapacityProfile,
   defaultTaskEncodedBounds,
@@ -55,7 +56,8 @@ describe('default profile', () => {
 });
 
 describe('maximumClosureCharges', () => {
-  const charges: ReadonlyArray<ITaskCapacityCharge> = maximumClosureCharges(defaultTaskCapacityProfile);
+  const charges: ReadonlyArray<ITaskCapacityCharge> =
+    maximumClosureCharges(defaultTaskCapacityProfile).orThrow();
 
   test('reserves one required payload of every update category', () => {
     expect(allUpdateCategories).toHaveLength(7);
@@ -97,16 +99,17 @@ describe('maximumClosureCharges', () => {
       ...defaultTaskCapacityProfile,
       perOwner: { ...defaultTaskPerOwnerLimits, maxAudiencePerUpdate: 2 }
     };
-    expect(charged(maximumClosureCharges(lean), 'audience-links')).toBe(14);
+    expect(charged(maximumClosureCharges(lean).orThrow(), 'audience-links')).toBe(14);
   });
 
   test('every charge is computable before acceptance — it depends on nothing but the profile', () => {
-    expect(maximumClosureCharges(defaultTaskCapacityProfile)).toEqual(charges);
+    expect(maximumClosureCharges(defaultTaskCapacityProfile)).toSucceedWith(charges);
   });
 });
 
 describe('maximumSettlementCharges', () => {
-  const charges: ReadonlyArray<ITaskCapacityCharge> = maximumSettlementCharges(defaultTaskCapacityProfile);
+  const charges: ReadonlyArray<ITaskCapacityCharge> =
+    maximumSettlementCharges(defaultTaskCapacityProfile).orThrow();
 
   test('reserves one result payload with its audience evidence', () => {
     expect(charged(charges, 'updates')).toBe(1);
@@ -129,12 +132,69 @@ describe('maximumSettlementCharges', () => {
   });
 
   test('settlement is strictly cheaper than closeout', () => {
-    const closure: ReadonlyArray<ITaskCapacityCharge> = maximumClosureCharges(defaultTaskCapacityProfile);
+    const closure: ReadonlyArray<ITaskCapacityCharge> =
+      maximumClosureCharges(defaultTaskCapacityProfile).orThrow();
     expect(charged(charges, 'record-bytes')).toBeLessThan(charged(closure, 'record-bytes'));
     expect(charged(charges, 'updates')).toBeLessThan(charged(closure, 'updates'));
   });
 
   test('charges no dimension twice', () => {
     expect(new Set(charges.map((c) => c.dimension)).size).toBe(charges.length);
+  });
+});
+
+describe('inexact charges fail rather than reserving the wrong amount', () => {
+  function withEncoded(overrides: Partial<ITaskEncodedBounds>): ITaskCapacityProfile {
+    return {
+      ...defaultTaskCapacityProfile,
+      encoded: { ...defaultTaskEncodedBounds, ...overrides }
+    };
+  }
+
+  test('a profile whose update bytes overflow the safe range fails the closeout charge', () => {
+    expect(maximumClosureCharges(withEncoded({ maxUpdateBytes: Number.MAX_SAFE_INTEGER }))).toFailWith(
+      /maximumClosureCharges: closeout update bytes: .*not exactly representable/i
+    );
+  });
+
+  test('a profile whose snapshot bytes overflow fails the closeout charge', () => {
+    expect(
+      maximumClosureCharges(
+        withEncoded({
+          maxEnvelopeBytes: Number.MAX_SAFE_INTEGER,
+          maxDetailBytes: Number.MAX_SAFE_INTEGER
+        })
+      )
+    ).toFailWith(/closeout snapshot bytes: the sum is not exactly representable/i);
+  });
+
+  test('a profile whose operation bytes overflow fails the closeout charge', () => {
+    expect(
+      maximumClosureCharges(withEncoded({ maxStoredOperationBytes: Number.MAX_SAFE_INTEGER }))
+    ).toFailWith(/closeout operation bytes: .*not exactly representable/i);
+  });
+
+  test('an audience bound that overflows the link count fails', () => {
+    expect(
+      maximumClosureCharges({
+        ...defaultTaskCapacityProfile,
+        perOwner: { ...defaultTaskPerOwnerLimits, maxAudiencePerUpdate: Number.MAX_SAFE_INTEGER }
+      })
+    ).toFailWith(/closeout audience links: .*not exactly representable/i);
+  });
+
+  test('a record-bytes total that overflows only when summed fails', () => {
+    const third: number = Math.floor(Number.MAX_SAFE_INTEGER / 3);
+    expect(
+      maximumClosureCharges(
+        withEncoded({ maxEnvelopeBytes: third, maxDetailBytes: third, maxUpdateBytes: third })
+      )
+    ).toFailWith(/closeout (update bytes|record bytes)/i);
+  });
+
+  test('the settlement charge fails the same way', () => {
+    expect(
+      maximumSettlementCharges(withEncoded({ maxStoredOperationBytes: Number.MAX_SAFE_INTEGER }))
+    ).toFailWith(/maximumSettlementCharges: settlement record bytes: the sum is not exactly representable/i);
   });
 });

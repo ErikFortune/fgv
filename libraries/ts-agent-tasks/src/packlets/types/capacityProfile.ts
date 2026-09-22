@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { Result, fail, populateObject, succeed } from '@fgv/ts-utils';
+import { CapacityDimension } from './failure';
 import {
   ITaskCapacityCharge,
   ITaskCapacityProfile,
@@ -86,8 +88,35 @@ export const defaultTaskCapacityProfile: ITaskCapacityProfile = {
   encoded: defaultTaskEncodedBounds
 };
 
+/**
+ * Multiplies two safe integers, failing rather than returning an inexact product.
+ *
+ * @remarks
+ * A charge is an admission input, so "approximately the maximum" is not a usable answer.
+ * Past 2^53 a product of integers stops being exactly representable, and
+ * `Number.isSafeInteger` is exactly the predicate for that — so a profile whose bounds
+ * push a charge out of range fails here, before any reservation is computed from it,
+ * rather than quietly reserving the wrong amount.
+ */
+function _product(a: number, b: number, what: string): Result<number> {
+  const value: number = a * b;
+  if (!Number.isSafeInteger(value)) {
+    return fail(`${what}: ${a} x ${b} is not exactly representable; the profile's bounds are too large`);
+  }
+  return succeed(value);
+}
+
+/** Adds safe integers, failing rather than returning an inexact sum. */
+function _sum(terms: ReadonlyArray<number>, what: string): Result<number> {
+  const value: number = terms.reduce((total: number, term: number) => total + term, 0);
+  if (!Number.isSafeInteger(value)) {
+    return fail(`${what}: the sum is not exactly representable; the profile's bounds are too large`);
+  }
+  return succeed(value);
+}
+
 function _charges(
-  entries: ReadonlyArray<readonly [ITaskCapacityCharge['dimension'], number]>
+  entries: ReadonlyArray<readonly [CapacityDimension, number]>
 ): ReadonlyArray<ITaskCapacityCharge> {
   return entries.map(([dimension, amount]) => ({ dimension, amount }));
 }
@@ -107,27 +136,48 @@ function _charges(
  * Closeout is a bounded path, not an unlimited emergency pool. Ordinary progress,
  * repeated attention changes, reassignment, new subscriptions and new command attempts
  * can all still be refused while this room is held.
+ *
+ * Fails rather than returning an inexact figure when the profile's bounds push a product or
+ * sum past the safe-integer range: a charge is an admission input, so "approximately the
+ * maximum" is not a usable answer.
  * @public
  */
-export function maximumClosureCharges(profile: ITaskCapacityProfile): ReadonlyArray<ITaskCapacityCharge> {
+export function maximumClosureCharges(
+  profile: ITaskCapacityProfile
+): Result<ReadonlyArray<ITaskCapacityCharge>> {
   const categories: number = allUpdateCategories.length;
   const audience: number = profile.perOwner.maxAudiencePerUpdate;
   const encoded: ITaskEncodedBounds = profile.encoded;
 
-  const snapshotBytes: number = encoded.maxEnvelopeBytes + encoded.maxDetailBytes;
-  const updateBytes: number = categories * encoded.maxUpdateBytes;
-  // Terminal operation evidence plus one archive operation receipt.
-  const operationBytes: number = 2 * encoded.maxStoredOperationBytes;
-
-  return _charges([
-    ['updates', categories],
-    ['audience-links', categories * audience],
-    ['acknowledgement-ids', categories * audience],
-    ['operations', 2],
-    ['record-bytes', snapshotBytes + updateBytes + operationBytes],
-    ['logical-bytes', snapshotBytes + updateBytes + operationBytes],
-    ['resident-payload-bytes', updateBytes]
-  ]);
+  return populateObject<{
+    links: number;
+    snapshotBytes: number;
+    updateBytes: number;
+    operationBytes: number;
+  }>({
+    links: () => _product(categories, audience, 'closeout audience links'),
+    snapshotBytes: () => _sum([encoded.maxEnvelopeBytes, encoded.maxDetailBytes], 'closeout snapshot bytes'),
+    updateBytes: () => _product(categories, encoded.maxUpdateBytes, 'closeout update bytes'),
+    // Terminal operation evidence plus one archive operation receipt.
+    operationBytes: () => _product(2, encoded.maxStoredOperationBytes, 'closeout operation bytes')
+  })
+    .onSuccess((parts) =>
+      _sum([parts.snapshotBytes, parts.updateBytes, parts.operationBytes], 'closeout record bytes').onSuccess(
+        (recordBytes) =>
+          succeed(
+            _charges([
+              ['updates', categories],
+              ['audience-links', parts.links],
+              ['acknowledgement-ids', parts.links],
+              ['operations', 2],
+              ['record-bytes', recordBytes],
+              ['logical-bytes', recordBytes],
+              ['resident-payload-bytes', parts.updateBytes]
+            ])
+          )
+      )
+    )
+    .withErrorFormat((message: string) => `maximumClosureCharges: ${message}`);
 }
 
 /**
@@ -138,20 +188,33 @@ export function maximumClosureCharges(profile: ITaskCapacityProfile): ReadonlyAr
  * attempt can always settle — even at pressure, and without consuming another ordinary
  * operation slot. A fresh retry under a *new* identity is new admission, not an
  * entitlement created by the first attempt.
+ *
+ * Fails rather than returning an inexact figure when the profile's bounds push a product or
+ * sum past the safe-integer range: a charge is an admission input, so "approximately the
+ * maximum" is not a usable answer.
  * @public
  */
-export function maximumSettlementCharges(profile: ITaskCapacityProfile): ReadonlyArray<ITaskCapacityCharge> {
+export function maximumSettlementCharges(
+  profile: ITaskCapacityProfile
+): Result<ReadonlyArray<ITaskCapacityCharge>> {
   const audience: number = profile.perOwner.maxAudiencePerUpdate;
   const encoded: ITaskEncodedBounds = profile.encoded;
-  const bytes: number =
-    encoded.maxStoredOperationBytes + encoded.maxIssuedReceiptBytes + encoded.maxUpdateBytes;
 
-  return _charges([
-    ['updates', 1],
-    ['audience-links', audience],
-    ['acknowledgement-ids', audience],
-    ['record-bytes', bytes],
-    ['logical-bytes', bytes],
-    ['resident-payload-bytes', encoded.maxUpdateBytes]
-  ]);
+  return _sum(
+    [encoded.maxStoredOperationBytes, encoded.maxIssuedReceiptBytes, encoded.maxUpdateBytes],
+    'settlement record bytes'
+  )
+    .onSuccess((bytes) =>
+      succeed(
+        _charges([
+          ['updates', 1],
+          ['audience-links', audience],
+          ['acknowledgement-ids', audience],
+          ['record-bytes', bytes],
+          ['logical-bytes', bytes],
+          ['resident-payload-bytes', encoded.maxUpdateBytes]
+        ])
+      )
+    )
+    .withErrorFormat((message: string) => `maximumSettlementCharges: ${message}`);
 }

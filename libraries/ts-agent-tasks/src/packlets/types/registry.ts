@@ -33,9 +33,14 @@ export interface ITaskCommandHandle {
  * Registration of one `(kind, detailVersion)` pair.
  *
  * @remarks
- * `details` is the runtime converter and is authoritative for domain invariants.
- * `detailSchema`, when present, is additionally the wire schema a model is offered;
- * registration checks that the two agree rather than trusting that they do.
+ * `details` is the runtime converter and is authoritative for domain invariants — it is
+ * what `convert`, `decode` and `encode` all run.
+ *
+ * `detailSchema`, when present, is additionally the wire schema a model is offered.
+ * **Registration does not check that the two agree**, and cannot: agreement is a claim
+ * about every value, which no signature-level check can settle. It is a *fixture*
+ * obligation — a registration's tests assert that the schema and the converter accept and
+ * reject the same things, which is how the built-in kinds' agreement is established here.
  * @public
  */
 export interface ITaskKindDescriptor<T> {

@@ -6,6 +6,7 @@
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import {
   CapacityClaimDisposition,
+  CapacityDimension,
   CapacityClaimOwner,
   CapacityClaimOwnership,
   ITaskCapacityCharge,
@@ -220,10 +221,36 @@ export function buildCapacityConverters(
       )
     });
 
+  // A status reports *every* dimension exactly once. A repeated row is ambiguous — two
+  // `updates` rows cannot both be the used figure — and a missing one silently reads as a
+  // dimension under no pressure, which is the wrong default for an admission input.
+  const dimensions: Converter<ReadonlyArray<ITaskCapacityDimensionStatus>> = boundedArrayOf(
+    dimensionStatus,
+    allCapacityDimensions.length,
+    'capacity dimensions'
+  ).withConstraint(
+    (
+      value: ReadonlyArray<ITaskCapacityDimensionStatus>
+    ): Result<ReadonlyArray<ITaskCapacityDimensionStatus>> => {
+      const seen: Set<CapacityDimension> = new Set<CapacityDimension>();
+      for (const entry of value) {
+        if (seen.has(entry.dimension)) {
+          return fail(`capacity status: duplicate row for dimension '${entry.dimension}'`);
+        }
+        seen.add(entry.dimension);
+      }
+      const missing: ReadonlyArray<CapacityDimension> = allCapacityDimensions.filter((d) => !seen.has(d));
+      if (missing.length > 0) {
+        return fail(`capacity status: no row for ${missing.map((d) => `'${d}'`).join(', ')}`);
+      }
+      return succeed(value);
+    }
+  );
+
   const status: Converter<ITaskCapacityStatus> = Converters.strictObject<ITaskCapacityStatus>({
     profileVersion: Converters.literal<1>(1),
     state: Converters.enumeratedValue<TaskCapacityState>(['ok', 'pressure', 'admission-blocked', 'draining']),
-    dimensions: boundedArrayOf(dimensionStatus, allCapacityDimensions.length, 'capacity dimensions')
+    dimensions
   });
 
   return {

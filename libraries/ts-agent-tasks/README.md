@@ -4,7 +4,8 @@ Recording, observation and command mediation for agent work.
 
 This library **records** work and **mediates** observations and commands. It runs no
 agent loop: there is no scheduler, no executor, no retry policy and no model invocation.
-Hosts call its reconciliation and delivery APIs; nothing here runs on its own.
+A host drives it by calling it; nothing here runs on its own. Reconciliation and delivery
+will be host-called APIs too — they arrive in later releases, not this one.
 
 See [CAPABILITIES.md](./CAPABILITIES.md) for the published surface.
 

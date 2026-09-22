@@ -27,7 +27,7 @@ field bounds; `TaskKindRegistry` and `createTaskCommandHandle`; the two built-in
 `TaskEnvironment`; and the primitives (`instant`, the safe-integer family, the bounded
 identifier / single-line / text / array factories).
 
-366 tests. 100% statements, branches, functions and lines.
+377 tests. 100% statements, branches, functions and lines.
 
 ---
 
@@ -88,7 +88,7 @@ on an integration branch.
 | Bound waiting state contains only opaque host attention references | `envelopeConverters.test.ts` — a waiting reason's attention survives as bare `(namespace, key)` pairs, and a reason carrying a `request` or `answer` fails; `publicSurface.test.ts` asserts no export matches `/inputrequest\|answer\|inbox\|continuation/i` |
 | *(review gate)* no task runner, scheduler, executor or retry policy; no storage or broker | `publicSurface.test.ts` — regex assertions over the whole export surface |
 | *(A3)* claims are repository-generated, not caller-issued | `commandConverters.test.ts` (a request carrying `capacityClaims` fails), `envelopeConverters.test.ts` (same at the envelope), `publicSurface.test.ts` (no claim-minting export) |
-| *(A3)* count/byte schemas make maximum completion and settlement charges computable before acceptance | `types/capacityProfile.test.ts` — both computations are checked term by term against the profile's own maxima, shown to depend on nothing but the profile, and shown to claim no new task identity |
+| *(A3)* count/byte schemas make maximum completion and settlement charges computable before acceptance | `types/capacityProfile.test.ts` — both computations are checked term by term against the profile's own maxima, shown to depend on nothing but the profile, and shown to claim no new task identity; and shown to **fail rather than answer inexactly** when a profile's bounds push a product or sum past the safe-integer range |
 
 The plan's named test topics all have homes: envelopes and every discriminant, zone-free and
 invalid instants, revision overflow, progress bounds, unknown and additional fields, limits,
@@ -130,7 +130,30 @@ unknown-kind handling, claim unreachability from caller shapes, and the absent i
   against the library's own `taskKind` converter.
 - *`CAPABILITIES.md` omits the source-observation types.* **Fixed**, for what survived the cut.
 
-**Copilot loop (layer 2):** not yet run — it starts on the open PR.
+**Layer 2 — Copilot, round 1: 5 medium + 2 low, all 7 real, all fixed.** Three were genuine
+defects rather than polish:
+
+1. **`handle.encode` bypassed the details converter** while `decode` ran it — a
+   validate/convert symmetry hole. A JS caller or an assertion could push a `T` violating a
+   domain invariant straight through to a successful snapshot. `encode` now validates first,
+   with a test that casts an invalid `width` past the type system and watches it fail.
+2. **The capacity-status converter accepted duplicate and missing dimension rows.** Two
+   `updates` rows cannot both be the used figure, and an absent row reads as "no pressure" —
+   the wrong default for an admission input. Now unique *and* complete, naming what is missing.
+3. **`maximumClosureCharges` / `maximumSettlementCharges` used unchecked arithmetic.** A
+   profile with large encoded bounds pushed a product or sum past 2^53, so the advertised
+   *maximum* stopped being exact — silently, in the values admission reserves from. Both are
+   now `Result`-valued and fail on an inexact product or sum. **This is an API change to the
+   two functions, made before anything consumed them.**
+
+The other four: a throwing injected `newId` escaped the Result-valued seam (`now()` already
+captured a throwing clock; `_mint` now matches); the `ITaskKindDescriptor` TSDoc claimed
+registration checks schema/converter agreement, which it does not and cannot — walked back to
+what ships, naming the fixture obligation the design itself assigns; a README sentence described
+reconciliation and delivery APIs in the present tense; and a typo in a test description.
+
+Round 2 pending. Round 1's profile was substantive — three real defects, one of them a
+symmetry hole invisible to top-level tests — so this is not diminishing returns yet.
 
 ---
 
@@ -173,7 +196,7 @@ unknown-kind handling, claim unreachability from caller shapes, and the absent i
 |---|---|
 | `rushx build` | clean, zero warnings; `etc/ts-agent-tasks.api.md` checked in |
 | `rushx lint` | clean; `rushx fixlint` run before the final commit |
-| `rushx test` | 366 passed; 100% statements, branches, functions, lines |
+| `rushx test` | 377 passed; 100% statements, branches, functions, lines |
 | `rush rebuild` (repo-wide) | green — required, since a new Rush project changes the build graph |
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `verify-capability-docs.mjs` | router 19,158/24,000 chars, 24/24 libraries documented, 75 reflexes intact |
