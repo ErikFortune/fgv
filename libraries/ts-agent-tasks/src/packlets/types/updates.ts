@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { SubscriptionId, TaskId, TaskRevision, UpdateId } from './ids';
+import { ITaskSummary } from './summary';
+
 /**
  * The categories of owed update a task commit can produce.
  *
@@ -34,3 +37,26 @@ export const allUpdateCategories: ReadonlyArray<UpdateCategory> = [
   'observation',
   'relationship'
 ];
+
+/**
+ * One immutable update payload a task commit owes to an audience.
+ *
+ * @remarks
+ * `snapshot` is the bounded presentation data *for this revision*, frozen when the update
+ * was committed — never a reference to mutable current state, which is what lets a required
+ * attention change or terminal outcome survive a later revision.
+ *
+ * An update's identity is the tuple (`taskId`, `revision`, `category`): there is at most one
+ * update per category per task revision, and the renderer rejects input that carries two.
+ * `snapshot` must describe the same task and revision the update names.
+ * @public
+ */
+export interface ITaskUpdate {
+  readonly id: UpdateId;
+  readonly taskId: TaskId;
+  readonly revision: TaskRevision;
+  readonly category: UpdateCategory;
+  readonly required: boolean;
+  readonly snapshot: ITaskSummary;
+  readonly audience: ReadonlyArray<SubscriptionId>;
+}

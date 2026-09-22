@@ -43,6 +43,9 @@ export function buildCapacityConverters(bounds: ITaskFieldBounds, ids: IIdentity
 export function buildCommandConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters): ICommandConverters;
 
 // @public
+export function buildContextConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters, values: IValueConverters, envelopes: IEnvelopeConverters): IContextConverters;
+
+// @public
 export function buildEnvelopeConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters, values: IValueConverters): IEnvelopeConverters;
 
 // @public
@@ -114,6 +117,12 @@ export const defaultTaskCapacityLimits: TaskCapacityLimits;
 
 // @public
 export const defaultTaskCapacityProfile: ITaskCapacityProfile;
+
+// @public
+export const defaultTaskContextBudget: ITaskContextBudget;
+
+// @public
+export function defaultTaskContextProjection(summary: ITaskSummary): Result<ITaskSummary>;
 
 // @public
 export const defaultTaskEncodedBounds: ITaskEncodedBounds;
@@ -210,6 +219,27 @@ export interface ICommandRequest {
 }
 
 // @public
+export interface IContextConverters {
+    readonly budget: Converter<ITaskContextBudget>;
+    // (undocumented)
+    readonly completeness: Converter<TaskInputCompleteness>;
+    // (undocumented)
+    readonly inclusionEntry: Converter<IInclusionEntry>;
+    // (undocumented)
+    readonly input: Converter<ITaskContextInput>;
+    readonly presentable: Converter<ITaskSummary>;
+    // (undocumented)
+    readonly receipt: Converter<ITaskInclusionReceipt>;
+    readonly summary: Converter<ITaskSummary>;
+    // (undocumented)
+    readonly unresolvedReference: Converter<IUnresolvedTaskReference>;
+    // (undocumented)
+    readonly update: Converter<ITaskUpdate>;
+    // (undocumented)
+    readonly updateCategory: Converter<UpdateCategory>;
+}
+
+// @public
 export interface IEnvelopeConverters {
     // (undocumented)
     readonly envelope: Converter<ITaskEnvelope>;
@@ -251,6 +281,16 @@ export interface IIdentityConverters {
     readonly taskKind: Converter<TaskKind>;
     // (undocumented)
     readonly updateId: Converter<UpdateId>;
+}
+
+// @public
+export interface IInclusionEntry {
+    // (undocumented)
+    readonly revision: TaskRevision;
+    // (undocumented)
+    readonly taskId: TaskId;
+    // (undocumented)
+    readonly updateIds: ReadonlyArray<UpdateId>;
 }
 
 // @public
@@ -423,6 +463,70 @@ export interface ITaskCommandHandle {
 }
 
 // @public
+export interface ITaskContext {
+    readonly diagnostics: ReadonlyArray<IUnresolvedTaskReference>;
+    readonly entries: ReadonlyArray<ITaskContextEntry>;
+    // (undocumented)
+    readonly omissions: ITaskContextOmissions;
+    // (undocumented)
+    readonly receipt: ITaskInclusionReceipt;
+    readonly text: string;
+}
+
+// @public
+export interface ITaskContextBudget {
+    readonly maxChars: number;
+    readonly maxDepth: number;
+    readonly maxItems: number;
+}
+
+// @public
+export interface ITaskContextEntry {
+    readonly depth: number;
+    // (undocumented)
+    readonly presentation: TaskContextPresentation;
+    // (undocumented)
+    readonly section: TaskContextSection;
+    readonly summary: ITaskSummary;
+    readonly updateIds: ReadonlyArray<UpdateId>;
+}
+
+// @public
+export interface ITaskContextInput {
+    // (undocumented)
+    readonly completeness: TaskInputCompleteness;
+    // (undocumented)
+    readonly deliveryId?: DeliveryId;
+    // (undocumented)
+    readonly tasks: ReadonlyArray<ITaskSummary>;
+    // (undocumented)
+    readonly unresolved?: ReadonlyArray<IUnresolvedTaskReference>;
+    // (undocumented)
+    readonly updates?: ReadonlyArray<ITaskUpdate>;
+}
+
+// @public
+export interface ITaskContextLimits {
+    readonly maxInputEntries: number;
+    readonly maxItems: number;
+}
+
+// @public
+export interface ITaskContextOmissions {
+    readonly abbreviated: number;
+    readonly exhaustive: boolean;
+    readonly reasons: ReadonlyArray<TaskContextOmissionReason>;
+    readonly requiredUpdates: number;
+    readonly visibleItems: number;
+}
+
+// @public
+export interface ITaskContextRendererCreateParams {
+    readonly converters?: TaskConverters;
+    readonly projection?: TaskContextProjection;
+}
+
+// @public
 export interface ITaskConvertersCreateParams {
     readonly bounds?: Partial<ITaskFieldBounds>;
 }
@@ -537,6 +641,16 @@ export interface ITaskFieldBounds {
 }
 
 // @public
+export interface ITaskInclusionReceipt {
+    // (undocumented)
+    readonly deliveryId?: DeliveryId;
+    // (undocumented)
+    readonly included: ReadonlyArray<IInclusionEntry>;
+    // (undocumented)
+    readonly version: 1;
+}
+
+// @public
 export interface ITaskKindDescriptor<T> {
     // (undocumented)
     readonly commands?: ReadonlyArray<ITaskCommandHandle>;
@@ -648,6 +762,54 @@ export interface ITaskSnapshot<T = JsonValue> {
     readonly details: T;
     // (undocumented)
     readonly envelope: ITaskEnvelope;
+}
+
+// @public
+export interface ITaskSummary {
+    // (undocumented)
+    readonly envelope: ITaskEnvelope;
+}
+
+// @public
+export interface ITaskUpdate {
+    // (undocumented)
+    readonly audience: ReadonlyArray<SubscriptionId>;
+    // (undocumented)
+    readonly category: UpdateCategory;
+    // (undocumented)
+    readonly id: UpdateId;
+    // (undocumented)
+    readonly required: boolean;
+    // (undocumented)
+    readonly revision: TaskRevision;
+    // (undocumented)
+    readonly snapshot: ITaskSummary;
+    // (undocumented)
+    readonly taskId: TaskId;
+}
+
+// @public
+export interface IUnresolvedTaskReference {
+    // (undocumented)
+    readonly binding: ISourceBinding;
+    // (undocumented)
+    readonly detailVersion: number;
+    // (undocumented)
+    readonly id: TaskId;
+    // (undocumented)
+    readonly kind: TaskKind;
+    // (undocumented)
+    readonly parentId?: TaskId;
+    // (undocumented)
+    readonly reason: string;
+    // (undocumented)
+    readonly responsibility?: IResponsibility;
+    // (undocumented)
+    readonly revision: TaskRevision;
+    // (undocumented)
+    readonly scopes: ReadonlyArray<ITaskScope>;
+    // (undocumented)
+    readonly title: string;
 }
 
 // @public
@@ -777,10 +939,34 @@ export type TaskCapacityLimits = {
 export type TaskCapacityState = 'ok' | 'pressure' | 'admission-blocked' | 'draining';
 
 // @public
+export const taskContextLimits: ITaskContextLimits;
+
+// @public
+export type TaskContextOmissionReason = 'items' | 'depth' | 'text' | 'partial-input';
+
+// @public
+export type TaskContextPresentation = 'complete' | 'abbreviated';
+
+// @public
+export type TaskContextProjection = (summary: ITaskSummary) => Result<ITaskSummary>;
+
+// @public
+export class TaskContextRenderer {
+    readonly converters: TaskConverters;
+    static create(params?: ITaskContextRendererCreateParams): Result<TaskContextRenderer>;
+    readonly framingReserve: number;
+    render(input: ITaskContextInput, budget?: ITaskContextBudget): TaskResult<ITaskContext>;
+}
+
+// @public
+export type TaskContextSection = 'attention' | 'updates' | 'current';
+
+// @public
 export class TaskConverters {
     readonly bounds: ITaskFieldBounds;
     readonly capacity: ICapacityConverters;
     readonly commands: ICommandConverters;
+    readonly context: IContextConverters;
     static create(params?: ITaskConvertersCreateParams): Result<TaskConverters>;
     readonly envelopes: IEnvelopeConverters;
     readonly failures: IFailureConverters;
@@ -811,6 +997,9 @@ export type TaskFailureCode = 'invalid' | 'not-found-or-denied' | 'conflict' | '
 
 // @public
 export type TaskId = Brand<string, 'TaskId'>;
+
+// @public
+export type TaskInputCompleteness = 'complete' | 'partial';
 
 // @public
 export type TaskKind = Brand<string, 'TaskKind'>;
