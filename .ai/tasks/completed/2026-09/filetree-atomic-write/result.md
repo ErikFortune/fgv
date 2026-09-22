@@ -40,12 +40,20 @@ Every row below was **run**. Nothing is listed because it is expected to work.
 | overlayfs, NFS/SMB, FUSE, cloud-synced | rename and flush semantics differ from the local case |
 | any root whose filesystem cannot be identified | "we could not tell" is recorded as unqualified, never as qualified |
 
-**This is a deviation from decision A1, which named macOS in the intended matrix.** A1's text is
-*"Qualification is pending, not a claim that these tests ran"*, and the acceptance criterion this
-stream was held to is *"no platform claimed without evidence actually run on it"* — so the
-deviation is in the honest direction, but it is a real narrowing and it bounds what
-`@fgv/ts-agent-tasks` T3 can depend on. A macOS slice needs a filesystem-type probe Node does not
-currently expose.
+**At the time this stream ran, this was a deviation from decision A1, which named macOS in the
+intended matrix.** A1's text is *"Qualification is pending, not a claim that these tests ran"*, and
+the acceptance criterion this stream was held to is *"no platform claimed without evidence actually
+run on it"* — so the deviation was in the honest direction, but it was a real narrowing.
+
+> **Resolved by amendment, 2026-09-22 — read this before treating darwin as an open gap.** A1 was
+> amended from "Linux/macOS" to "Linux": darwin is **dropped from the intended matrix, not
+> deferred**, and no darwin qualification slice is queued. The reference consumer develops on macOS
+> but runs in containers, so `process.platform` is `'linux'` and `statfs` returns a real magic
+> number — the darwin gap is never on the execution path. **The live question is the filesystem,
+> not the platform:** `overlayfs` is deliberately absent from the allowlist, so a container root on
+> the writable layer is *refused* while a named volume or Linux bind mount qualifies. See
+> `docs/design/agent-tasks/implementation-plan.md` § *A1 amendment* for the mount table and the
+> one-liner that reads a root's magic number.
 
 ## Which guarantee each test proves
 
@@ -296,5 +304,14 @@ something else.
 ## Handoff
 
 `@fgv/ts-agent-tasks` T3's durable path is unblocked **on Linux ext2/ext3/ext4 and tmpfs only**.
-macOS is not qualified and must not be treated as passed. A T3 host that needs darwin needs a
-qualification slice first.
+macOS is not qualified and must not be treated as passed.
+
+Per the A1 amendment of 2026-09-22, that is **not** a gap awaiting a darwin slice — darwin is out of
+the intended matrix and no slice is queued, because a containerized consumer never executes there.
+**What a T3 host must actually check is where its root is mounted.** The container's writable layer
+is `overlayfs`, which is deliberately not on the allowlist and is refused; a named volume, a Linux
+bind mount, or tmpfs qualifies; a macOS-host bind mount through VirtioFS is refused. A durable root
+belongs on a volume rather than the ephemeral writable layer in any case, so the refusal points at
+the right practice — but a host that assumed the writable layer would qualify will be refused at
+run time, and that is the failure worth anticipating. Qualifying `overlayfs` remains available as a
+future slice and is deliberately not queued.

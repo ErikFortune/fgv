@@ -17,7 +17,7 @@ summary:
     consumer can wait for a declared persistence boundary before acknowledging. Two versions
     shipping as one landing: F1 the contracts plus a session-guarantee in-memory implementation,
     F2 the Node temp/flush/rename/directory-flush protocol with process-crash qualification on
-    local Linux and macOS roots per decision A1.
+    local Linux roots (decision A1, amended 2026-09-22 from its original "Linux/macOS").
   shipped: >
     F1: IAtomicFileTreeAccessors / IAtomicFileTreeDirectoryItem, the AtomicWriteGuarantee
     vocabulary, classified IAtomicWriteReceipt / IAtomicWriteFailure, isAtomicAccessors /
@@ -28,11 +28,11 @@ summary:
     injection at every protocol boundary against a real directory, plus subprocess tests in which
     a child running the real protocol SIGKILLs itself at each boundary, on ext4 and tmpfs.
   diverged: >
-    Three material divergences, plus one deliberate non-additive API change (below). (1) macOS is NOT qualified, contrary to A1's intended matrix:
+    Three material divergences, plus one deliberate non-additive API change (below). (1) macOS is NOT qualified, which was contrary to A1's intended matrix as it stood when the stream ran:
     the protocol needs a stable filesystem-type identification under a path, Linux's statfs magic
     supplies one, and darwin reports a mount-table index with no Node-exposed equivalent of
     f_fstypename — so a darwin root cannot be positively identified from inside the package and is
-    refused rather than assumed. This narrows what ts-agent-tasks T3 may depend on. (2) F2 used
+    refused rather than assumed. This narrows what ts-agent-tasks T3 may depend on. A1 was subsequently amended (2026-09-22) to read "Linux", dropping darwin from the intended matrix rather than deferring it: a containerized consumer executes against the Linux kernel, so the darwin gap is never on the execution path and no darwin slice is queued. The live constraint for a consumer is the filesystem rather than the platform — overlayfs is deliberately unqualified, so a container root on the writable layer is refused while a named volume, Linux bind mount or tmpfs qualifies. (2) F2 used
     its license to amend F1's vocabulary and removed 'cleanup' from IAtomicWriteFailure.stage:
     with the protocol implemented it has no producer and cannot honestly acquire one. All four
     AtomicWriteGuarantee members were KEPT, on the distinction that guarantee is an input

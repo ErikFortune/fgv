@@ -115,5 +115,13 @@ Design authority: [`docs/design/agent-tasks/development-design.md`](../../../../
 ## Handoff
 
 `@fgv/ts-agent-tasks` T3's durable path is unblocked **on Linux ext2/ext3/ext4 and tmpfs only**.
-macOS is not qualified and must not be recorded as passed. A host needing darwin needs a
-qualification slice that supplies a filesystem-type probe Node does not currently expose.
+macOS is not qualified and must not be recorded as passed.
+
+**A1 was amended on 2026-09-22 and darwin is now out of the intended matrix, not awaiting a slice.**
+A containerized consumer never executes on darwin — `process.platform` is `'linux'` and `statfs`
+returns a real magic number — so the gap is off the execution path and no darwin slice is queued.
+What a T3 host must check instead is **where its root is mounted**: the container's writable layer
+is `overlayfs`, which is deliberately absent from the allowlist and is refused; a named volume, a
+Linux bind mount, or tmpfs qualifies; a macOS-host bind mount through VirtioFS is refused. A host
+that assumed the writable layer would qualify learns otherwise at run time. Mount table and the
+magic-number one-liner: `docs/design/agent-tasks/implementation-plan.md` § *A1 amendment*.
