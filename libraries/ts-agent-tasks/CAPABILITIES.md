@@ -83,7 +83,8 @@ never establish parent completion.
 **Task prose is data.** Each item is one JSON record under trusted fixed framing that tells the
 model its field values are untrusted and carry no authority. Strings are escaped so no field can
 close the frame (`<` `>` `&`), form a Mustache tag (`{` `}`), close a Markdown fence (the
-backtick), or smuggle DEL, C1 controls, line/paragraph separators or bidirectional overrides;
+backtick), or smuggle DEL, C1 controls, line/paragraph separators, bidirectional overrides, invisible
+formatting characters, variation selectors or Unicode tag characters;
 every escape is a `\uXXXX`, so each record still parses back to the original text. Details, the
 source binding, scopes and observation timestamps are never rendered. Update IDs go in the
 receipt, not the text.
@@ -171,7 +172,8 @@ codes 128, 32 references per field, 64 scopes, 128-byte identifiers). A supplied
 default is a `create()` failure, not a silent clamp. Two converter sets share nothing, so two
 hosts in one process cannot see each other's limits. Identifiers use one bounded safe syntax
 (`[A-Za-z0-9][A-Za-z0-9._:-]*`) that excludes `/`, `\`, whitespace and control characters — an
-ID reaches a record filename and an index key, so it is never a caller-supplied path fragment.
+ID reaches a record filename and an index key, so it is never a caller-supplied path fragment. Every bounded array (`boundedArrayOf`) checks its length **before** converting any element, so
+an oversized input is refused without the per-element work it would cost.
 
 **One instant spelling.** `instant` accepts canonical UTC `YYYY-MM-DDTHH:mm:ss.sssZ` only. It is a
 shape check, a platform parse, and an ISO round-trip — the round-trip is what rejects a

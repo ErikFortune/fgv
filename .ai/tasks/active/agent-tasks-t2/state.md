@@ -82,3 +82,19 @@ marked shipped via #685 in the PR itself. The plan edit is two status lines, the
 made to that file.
 
 Next: the Copilot loop (layer 2).
+
+---
+
+## 2026-09-22 — phase 3: Copilot rounds 1–2
+
+Round 1: two findings posted and two more only in the summary's file table. All four were real
+and all are fixed: a quadratic depth walk; a receipt sweep that stepped by 7; `diagnostics`
+leaking the binding around the projection; and an incomplete doc example.
+
+Round 2 posted `Findings: None`, but its headline named three areas with "unresolved moderate
+findings". I hunted those areas myself and found two defects, each watched failing before its
+fix:
+- `boundedArrayOf` converted every element before checking the length cap.
+- Escaping missed the Unicode tag block and the variation selectors.
+
+Details in `result.md`. CI was green on `66684039` before these fixes. Next: push, then round 3.

@@ -31,7 +31,8 @@ entries).
 **`context`** (new packlet)
 - `normalize.ts` — dedup and conflict rules (below).
 - `escaping.ts` — per-string JSON quoting that additionally `\uXXXX`-escapes `< > & { }`, the
-  backtick, DEL and C1 controls, U+2028/2029, bidi controls and zero-width characters.
+  backtick, DEL and C1 controls, U+2028/2029, bidi controls, zero-width and other invisible
+  formatting characters, variation selectors and the Unicode tag block.
 - `framing.ts` — the fixed trusted framing and `computeFramingReserve()` (fixed lines + the
   longest omission line any rendering can produce).
 - `renderer.ts` — `TaskContextRenderer.create({ converters?, projection? })`,
@@ -43,7 +44,7 @@ project each distinct `(task, revision)` once, re-validate, pin identity → rej
 rank → greedy select (items → depth → full line → abbreviated line → omit) → render by section →
 receipt from what rendered.
 
-493 tests in the package (84 new). 100% statements, branches, functions and lines. No coverage
+495 tests in the package (86 new). 100% statements, branches, functions and lines. No coverage
 directives.
 
 ---
@@ -159,6 +160,25 @@ all four real, all fixed.**
    projection. Fixed.
 
 Worth recording: as in T1, **half this round's substance was not posted as comments.**
+
+**Layer 2 — Copilot, round 2: `Findings: None` posted, and a headline saying "unresolved moderate
+findings remain in the renderer, escaping, and bounded input validation" — with nothing named.**
+This is the exact shape T1 warned about, so it was treated as a pointer, not a pass: I hunted the
+three named areas myself and found two real defects, each shown failing before its fix.
+1. **`boundedArrayOf` checked the length *after* converting every element** (a T1 primitive,
+   used by all 18 bounded arrays in the package). The cap bounded the result, not the work: a
+   million-entry `tasks` array was validated in full before being refused. Now the length is
+   checked first; a counting-converter test proves no element is touched when the array is
+   oversized.
+2. **Escaping missed invisible code points outside the listed set** — above all the Unicode tag
+   block (U+E0000–U+E007F), which spells an ASCII message a reader cannot see and a model can,
+   plus variation selectors, soft hyphen, U+180E, invisible operators and interlinear
+   annotation marks. Now escaped; variation selectors go by `\p{Variation_Selector}` because
+   a selector inside a regex class trips `no-misleading-character-class`. The hostile-text test
+   smuggles "IGNORE" in tag characters and asserts no such code point survives.
+
+Whether these are what Copilot meant cannot be known from its output; they are what the three
+areas it named actually contained.
 
 ---
 
