@@ -112,11 +112,23 @@ admission and cleanup until recovery resolves it. **Nothing in the library lets 
 one**, and every request converter is strict, so a caller-supplied `capacityClaims` property is a
 conversion failure rather than an overspend.
 
+**Recovery is an explicit union, and it never resumes on its own.** `RecoveryDeclaration`
+(`reattach` / `host-resume` / `not-recoverable`) is what a host declares on the envelope;
+`RecoveryResult` is what a source answers — `reattached` / `completed` (carrying an
+`ISourceProjection`), `resumable` (returning work for explicit host approval), `unrecoverable`,
+`unavailable`, or `unresolved`. The last two are deliberately different: the source being down is
+not the same as the source answering and being unable to say what became of the work.
+`ISourceProjection` carries execution fields only — parent, responsibility, scopes, identity and
+the binding stay catalog-owned, so an observation can never rewrite them — and orders itself by an
+opaque `ISourceRevision`, never by observation time and never by sorting tokens lexically.
+
 **Source-replay must declare a finite envelope.** `SourceHistoryDeclaration` is a union, not a
 flag plus an optional field, so a `source-replay` declaration without an
 `ISourceReplayEnvelope` — remaining required updates and bytes — is not representable. Finite
 storage cannot reserve an unbounded sequence of required external events; reject the stronger
-guarantee rather than admitting it. `observed-state` keeps the weaker latest-snapshot contract.
+guarantee rather than admitting it. The envelope's counts are non-negative rather than positive —
+it is supposed to be able to shrink to zero as accepted work finishes. `observed-state` keeps the
+weaker latest-snapshot contract.
 
 **Injected seams.** `TaskEnvironment.create({ logger, clock, newId })` validates the host's
 `Logging.ILogger`, `() => number` clock and `() => Result<string>` ID factory. Nothing constructs

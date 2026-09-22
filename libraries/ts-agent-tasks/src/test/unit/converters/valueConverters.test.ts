@@ -232,20 +232,6 @@ describe('source values', () => {
   });
 
   test.each([
-    ['observed', { state: 'observed', value: projection }],
-    ['unavailable', { state: 'unavailable', reason: 'network' }],
-    ['missing', { state: 'missing', reason: 'gone from the source' }]
-  ])('converts the %s source read', (state: string, value: JsonValue) => {
-    expect(values.sourceRead.convert(value)).toSucceedAndSatisfy((read) => {
-      expect(read.state).toBe(state);
-    });
-  });
-
-  test('a missing read is a reason, never a cancellation', () => {
-    expect(values.sourceRead.convert({ state: 'missing', value: projection })).toFail();
-  });
-
-  test.each([
     ['reattached', { state: 'reattached', value: projection }],
     ['completed', { state: 'completed', value: projection }],
     ['resumable', { state: 'resumable', reference: { token: 'r' } }],
@@ -291,7 +277,22 @@ describe('source history declaration', () => {
       })
     ).toFail();
     expect(
-      values.sourceReplayEnvelope.convert({ remainingRequiredUpdates: 0, remainingRequiredBytes: 4096 })
+      values.sourceReplayEnvelope.convert({
+        remainingRequiredUpdates: 12,
+        remainingRequiredBytes: Number.MAX_SAFE_INTEGER + 1
+      })
+    ).toFail();
+  });
+
+  test('an envelope may reach zero — a bounded replay is supposed to be able to finish', () => {
+    expect(
+      values.sourceReplayEnvelope.convert({ remainingRequiredUpdates: 0, remainingRequiredBytes: 0 })
+    ).toSucceedWith({ remainingRequiredUpdates: 0, remainingRequiredBytes: 0 });
+  });
+
+  test('an envelope may not go negative', () => {
+    expect(
+      values.sourceReplayEnvelope.convert({ remainingRequiredUpdates: -1, remainingRequiredBytes: 0 })
     ).toFail();
   });
 

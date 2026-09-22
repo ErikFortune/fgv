@@ -19,6 +19,22 @@ import {
   trackedTaskDetails,
   trackedTaskKind
 } from '../../../index';
+import { converters } from '../../helpers/fixtures';
+
+describe('built-in kind names', () => {
+  test('satisfy the same bounded identifier syntax every other kind is held to', () => {
+    // The two built-in kind names are source literals rather than converted values,
+    // because `types` cannot depend on `converters`. This is where that is checked.
+    expect(converters.ids.taskKind.convert(trackedTaskKind)).toSucceedWith(trackedTaskKind);
+    expect(converters.ids.taskKind.convert(taskListKind)).toSucceedWith(taskListKind);
+  });
+
+  test('are distinct, and namespaced to this library', () => {
+    expect(trackedTaskKind).not.toBe(taskListKind);
+    expect(trackedTaskKind.startsWith('fgv.')).toBe(true);
+    expect(taskListKind.startsWith('fgv.')).toBe(true);
+  });
+});
 
 describe('fgv.tracked@1', () => {
   test('is named and versioned as the design says', () => {

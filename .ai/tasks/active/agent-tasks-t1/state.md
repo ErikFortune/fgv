@@ -49,3 +49,44 @@ Deliberately **not** in T1, though adjacent in the same design sections:
    recording it for T6 to confirm or revise.
 2. The §8.3/T6/T8 executor-payload-dereference question does not reach any T1 type.
    `ITaskReference` stays opaque and carries no dereference permission. Nothing to surface.
+
+---
+
+## 2026-09-22 — phase 1: T1 implemented, gates green
+
+**Shipped.** `libraries/ts-agent-tasks` exists with its `types` and `converters` packlets, a
+`CAPABILITIES.md`, a router row and a change file. 366 tests, 100% on all four coverage metrics.
+
+**Verified.**
+
+| gate | result |
+|---|---|
+| `rushx build` | clean, **zero warnings**, API report checked in |
+| `rushx lint` | clean; `rushx fixlint` run |
+| `rushx test` | 366 passed, 100% statements/branches/functions/lines |
+| `rush rebuild` (repo-wide) | green — a new Rush project changes the build graph |
+| `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
+| `verify-capability-docs.mjs` | 24/24 libraries documented, router 19,158/24,000 |
+| `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
+| `verify-bundler-resolution.mjs` | 20 checked, 0 failed |
+| `verify-tarball-exports.mjs` | 26 packages, 205 manifest paths, 0 failed |
+
+**Layer-1 review run and its findings resolved.** No P1. Three P2 and three P3; what changed is in
+`result.md` § *Review*. The load-bearing one: the reviewer called `SourceRead` gold-plating, and it
+was — it is `ITaskSource.observe`'s return type and no T1 gate names it. Cut. `RecoveryResult` and
+the `ISourceProjection` / `ISourceRevision` it requires stay, because the plan's gate-2 row names
+"explicit reattach/resumable/unrecoverable/unavailable recovery" and lists T1 among its slices.
+
+**Open, carried forward.**
+
+1. The source-history spelling remains unified on §8.6's `observed-state` / `source-replay`. §5's
+   `ITaskSource.history` says `latest-snapshot` / `replayable-updates` for the same distinction.
+   T6 confirms or revises; nothing in T1 depends on which wins.
+2. An upstream observation, **not folded in** per the brief: `Converters.strictObject(...).convert()`
+   **throws** on a null-prototype object rather than returning a failure, because `ts-utils`'
+   `isKeyOf` calls `item.hasOwnProperty(key)` instead of `Object.prototype.hasOwnProperty.call`.
+   `JSON.parse` never produces such an object, so wire data does not reach it; a host that hands a
+   converter an `Object.create(null)` value does. Escalated, not fixed.
+3. `rushx coverage` (the `jest --coverage` script) fails with a babel-parser error on every TS test
+   file — reproduced on the already-shipped `ts-prompt-assist`, so it is pre-existing tooling, not
+   this package. `rushx test` carries the coverage gate and is green.

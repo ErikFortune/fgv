@@ -43,6 +43,10 @@ export interface ISourceRevision {
  * @remarks
  * Only execution fields appear here. Parent, responsibility, scopes, identity and the
  * source binding itself are catalog-owned and cannot be changed by an observation.
+ *
+ * This slice declares it because {@link RecoveryResult} carries one. The source
+ * *interface* that produces projections, and the read result of observing a binding,
+ * belong to the slice that implements reconciliation.
  * @public
  */
 export interface ISourceProjection {
@@ -53,17 +57,6 @@ export interface ISourceProjection {
   readonly attention: ReadonlyArray<ITaskReference>;
   readonly details: JsonValue;
 }
-
-/**
- * Result of reading one binding from its source.
- *
- * @remarks
- * `missing` is an unresolved condition, never automatic cancellation or deletion.
- * @public
- */
-export type SourceRead =
-  | { readonly state: 'observed'; readonly value: ISourceProjection }
-  | { readonly state: 'unavailable' | 'missing'; readonly reason: string };
 
 /**
  * What a host declares about recovering an external task after a restart.

@@ -23,7 +23,6 @@ import {
   RecoveryDeclaration,
   RecoveryResult,
   SourceHistoryDeclaration,
-  SourceRead,
   TaskLifecycle
 } from '../types';
 import { IIdentityConverters } from './identityConverters';
@@ -34,6 +33,7 @@ import {
   boundedText,
   instant,
   nonNegativeAmount,
+  nonNegativeSafeInteger,
   positiveSafeInteger
 } from './primitives';
 
@@ -58,7 +58,6 @@ export interface IValueConverters {
   readonly sourceBinding: Converter<ISourceBinding>;
   readonly sourceRevision: Converter<ISourceRevision>;
   readonly sourceProjection: Converter<ISourceProjection>;
-  readonly sourceRead: Converter<SourceRead>;
   readonly recoveryResult: Converter<RecoveryResult>;
   readonly sourceReplayEnvelope: Converter<ISourceReplayEnvelope>;
   readonly sourceHistoryDeclaration: Converter<SourceHistoryDeclaration>;
@@ -200,21 +199,6 @@ export function buildValueConverters(bounds: ITaskFieldBounds, ids: IIdentityCon
     details: jsonValue
   });
 
-  const sourceRead: Converter<SourceRead> = Converters.discriminatedObject<SourceRead>('state', {
-    observed: Converters.strictObject<Extract<SourceRead, { state: 'observed' }>>({
-      state: Converters.literal('observed'),
-      value: sourceProjection
-    }),
-    unavailable: Converters.strictObject<Extract<SourceRead, { state: 'unavailable' | 'missing' }>>({
-      state: Converters.literal('unavailable'),
-      reason: summary
-    }),
-    missing: Converters.strictObject<Extract<SourceRead, { state: 'unavailable' | 'missing' }>>({
-      state: Converters.literal('missing'),
-      reason: summary
-    })
-  });
-
   const recoveryResult: Converter<RecoveryResult> = Converters.discriminatedObject<RecoveryResult>('state', {
     reattached: Converters.strictObject<Extract<RecoveryResult, { state: 'reattached' | 'completed' }>>({
       state: Converters.literal('reattached'),
@@ -244,8 +228,12 @@ export function buildValueConverters(bounds: ITaskFieldBounds, ids: IIdentityCon
 
   const sourceReplayEnvelope: Converter<ISourceReplayEnvelope> =
     Converters.strictObject<ISourceReplayEnvelope>({
-      remainingRequiredUpdates: positiveSafeInteger,
-      remainingRequiredBytes: positiveSafeInteger
+      // Non-negative, not positive: the requirement is that the envelope be *finite*,
+      // and an envelope naturally shrinks to zero as accepted work reaches its terminal
+      // state. Zero remaining is "nothing further is required", which is exactly the
+      // state a bounded replay is supposed to be able to reach.
+      remainingRequiredUpdates: nonNegativeSafeInteger,
+      remainingRequiredBytes: nonNegativeSafeInteger
     });
 
   const sourceHistoryDeclaration: Converter<SourceHistoryDeclaration> =
@@ -282,7 +270,6 @@ export function buildValueConverters(bounds: ITaskFieldBounds, ids: IIdentityCon
     sourceBinding,
     sourceRevision,
     sourceProjection,
-    sourceRead,
     recoveryResult,
     sourceReplayEnvelope,
     sourceHistoryDeclaration

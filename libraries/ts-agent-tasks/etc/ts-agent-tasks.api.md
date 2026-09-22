@@ -683,8 +683,6 @@ export interface IValueConverters {
     // (undocumented)
     readonly sourceProjection: Converter<ISourceProjection>;
     // (undocumented)
-    readonly sourceRead: Converter<SourceRead>;
-    // (undocumented)
     readonly sourceReplayEnvelope: Converter<ISourceReplayEnvelope>;
     // (undocumented)
     readonly sourceRevision: Converter<ISourceRevision>;
@@ -765,15 +763,6 @@ export type SourceHistoryDeclaration = {
 } | {
     readonly history: 'source-replay';
     readonly envelope: ISourceReplayEnvelope;
-};
-
-// @public
-export type SourceRead = {
-    readonly state: 'observed';
-    readonly value: ISourceProjection;
-} | {
-    readonly state: 'unavailable' | 'missing';
-    readonly reason: string;
 };
 
 // @public

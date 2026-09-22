@@ -143,25 +143,27 @@ describe('convert', () => {
 
   test('reports unknown-kind-version in the classified detail', () => {
     const registry: TaskKindRegistry = newRegistry();
-    const result = registry.convert(trackedSnapshot());
-    expect(result.isFailure()).toBe(true);
-    expect(result.detail).toEqual({ code: 'unknown-kind-version', retry: 'after-host-action' });
+    expect(registry.convert(trackedSnapshot())).toFailWithDetail(/fgv\.tracked@1: no registered task kind/i, {
+      code: 'unknown-kind-version',
+      retry: 'after-host-action'
+    });
   });
 
   test('a malformed envelope is invalid, not unknown-kind', () => {
     const registry: TaskKindRegistry = newRegistry();
-    const result = registry.convert({ envelope: { id: 'x' }, details: {} });
-    expect(result.isFailure()).toBe(true);
-    expect(result.detail).toEqual({ code: 'invalid', retry: 'after-host-action' });
+    expect(registry.convert({ envelope: { id: 'x' }, details: {} })).toFailWithDetail(
+      /schemaVersion not found/i,
+      { code: 'invalid', retry: 'after-host-action' }
+    );
   });
 
   test('details that fail the registered converter are invalid', () => {
     const registry: TaskKindRegistry = newRegistry();
     expect(registry.register(widgetDescriptor())).toSucceed();
-    const result = registry.convert(widgetSnapshot({ width: -1 }));
-    expect(result.isFailure()).toBe(true);
-    expect(result.detail?.code).toBe('invalid');
-    expect(result.message).toMatch(/test\.widget@1: width must be positive/i);
+    expect(registry.convert(widgetSnapshot({ width: -1 }))).toFailWithDetail(
+      /test\.widget@1: width must be positive/i,
+      { code: 'invalid', retry: 'after-host-action' }
+    );
   });
 
   test('conversion enforces domain invariants the schema alone would not', () => {
