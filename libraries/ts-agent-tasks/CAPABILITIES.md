@@ -15,9 +15,83 @@ on its own, and importing it has no side effects.
 
 ## What ships today
 
-This release is the **vocabulary**: the `types` and `converters` packlets. Storage, the broker,
-context rendering, delivery, tools and prompt integration follow in later slices, and are
-deliberately absent from the export surface rather than stubbed.
+Two things: the **vocabulary** (the `types` and `converters` packlets) and the **snapshot-only
+context entry point** (the `context` packlet). Storage, the broker, delivery, tools and prompt
+integration follow in later slices, and are deliberately absent from the export surface rather
+than stubbed.
+
+## Rendering task context without a broker
+
+**`TaskContextRenderer` is a complete snapshot-only entry point.** A host hands it
+already-authorized task values and gets back bounded framed text, a structured view, an omission
+report and a pure inclusion receipt — with no repository, no broker, no clock, no ID factory, no
+random source, no checkpoint store and no logger. There is nothing for it to write to, and the
+test suite establishes that by spying on the clock, random, crypto and every `fs` function
+rather than by comparing state afterwards.
+
+```ts
+const renderer = TaskContextRenderer.create({ projection }).orThrow(); // projection optional
+const context = renderer.render({ tasks, updates, unresolved, completeness: 'complete' }, budget);
+// context.text     — framed, escaped; put it in the prompt
+// context.receipt  — keep it alongside the prompt, never inside it
+```
+
+**Input is validated, then reduced, and conflicts are refused rather than resolved.**
+`ITaskContextInput.tasks` is current state (`ITaskSummary`; a snapshot is accepted and its details
+discarded, never rendered). Duplicates of one revision — overlapping scope selections — collapse,
+keeping the newest observation telemetry. Two different revisions of one task in `tasks`, one
+revision described two ways, two updates of one category at one revision, an update newer than
+current state, or a task both resolved and unresolved each fail `conflict`: the renderer does not
+choose freshness without a declared source contract. Malformed input, a failing projection and a
+parent cycle fail `invalid`.
+
+**What a receipt claims is exactly what the text holds.** `ITaskInclusionReceipt` has one entry
+per rendered `(taskId, revision)` and lists an update ID only where that update's **complete**
+payload was rendered. An item that only fits with its descriptive prose abbreviated keeps its
+revision and carries no update IDs; one that does not fit is omitted. Either way a required
+update stays owed and is counted in `omissions.requiredUpdates` — never truncated and receipted.
+Distinct revisions of one task are distinct entries, so including revision 4 never covers an
+omitted revision-3 attention change. A snapshot-only render with no `updates` gets a receipt with
+no update IDs: nothing invents event history. A supplied `deliveryId` is echoed, never minted,
+never authenticated. The receipt is **canonical** — entries ascending by task then revision,
+update IDs ascending, nothing repeated — and `converters.context.receipt` enforces that form.
+Producing a receipt writes nothing; the bound delivery service that turns one into an
+acknowledgement is a later slice.
+
+**Budgets are honest about their own framing.** `ITaskContextBudget` bounds items, visible-tree
+depth and UTF-16 characters of the *whole* text (default 20 / 3 / 8,000). The renderer reserves
+the fixed framing plus the longest omission report any rendering can produce
+(`renderer.framingReserve`) before selecting anything, and rejects a `maxChars` below it — so the
+line saying what was dropped can never itself be dropped. No token count is claimed.
+
+**Selection is deterministic and independent of input order.** Priority: outstanding attention,
+terminal outcomes, other material changes, current open work, routine progress, unresolved
+diagnostics; ties break on task ID then revision, by ordinal comparison. Omission counts cover
+only what was supplied — nothing hidden is counted — and `exhaustive` is true only for complete
+input with nothing omitted. Depth is depth in the *visible* forest: a parent that was not
+supplied ends the chain rather than being guessed at. **Nothing is aggregated from children** — a
+parent's own lifecycle is the only completion statement rendered, so a partial visible tree can
+never establish parent completion.
+
+**Task prose is data.** Each item is one JSON record under trusted fixed framing that tells the
+model its field values are untrusted and carry no authority. Strings are escaped so no field can
+close the frame (`<` `>` `&`), form a Mustache tag (`{` `}`), close a Markdown fence (the
+backtick), or smuggle DEL, C1 controls, line/paragraph separators or bidirectional overrides;
+every escape is a `\uXXXX`, so each record still parses back to the original text. Details, the
+source binding, scopes and observation timestamps are never rendered. Update IDs go in the
+receipt, not the text.
+
+**The projection seam is where disclosure is decided.** `TaskContextProjection` runs on every
+task revision before rendering — redact a description, drop artifacts, hide a parent. Its output
+is **re-validated** against the same bounds, must keep `id`, `revision` and `kind` (a receipt
+must not describe something other than what was rendered), and a failing or throwing projection
+fails the render with **no fallback to the unprojected value**. `defaultTaskContextProjection`
+removes the source binding and nothing else.
+
+**Also here:** `ITaskSummary`, `ITaskUpdate` (one immutable payload per `(task, revision,
+category)`, its snapshot pinned to the revision it names) and `IUnresolvedTaskReference` (a
+registration awaiting its first observation — rendered as a diagnostic, never receipted, never
+with its binding), with converters on `TaskConverters.context`.
 
 **The common envelope.** `ITaskEnvelope` is what every task carries whatever its kind — branded
 `TaskId` / `TaskKind` / `TaskRevision`, a `title` and optional `description`, an optional
@@ -152,7 +226,7 @@ fragment is caught at the mint rather than at the filename.
 
 ## Not in scope
 
-No storage, repository, broker, context renderer, delivery service, tool factory or prompt
+No storage, repository, broker, delivery service, acknowledgement, tool factory or prompt
 integration **yet** — those are later slices, and their absence from the export surface is
 deliberate. **Permanently** out of scope: an input-request/answer protocol, a task runner or
 scheduler, an executor, a retry policy, cross-repository parenting, execution migration,

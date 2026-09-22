@@ -13,7 +13,9 @@ See [CAPABILITIES.md](./CAPABILITIES.md) for the published surface.
 
 Early. This release ships the vocabulary — value types, converters, the versioned kind
 and command registry, typed handles, the injected clock/ID/logger seam, and the finite
-capacity model. Storage, the broker, context rendering and delivery follow in later
+capacity model — and a snapshot-only context renderer: hand `TaskContextRenderer` task
+snapshots and get bounded, escaped prompt text plus a pure receipt of exactly what it
+included, with no storage and no broker. Storage, the broker and delivery follow in later
 slices.
 
 ## License
