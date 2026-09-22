@@ -6,6 +6,7 @@
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import {
   CapacityClaimDisposition,
+  CapacityClaimId,
   CapacityDimension,
   CapacityClaimOwner,
   CapacityClaimOwnership,
@@ -247,6 +248,25 @@ export function buildCapacityConverters(
     }
   );
 
+  // Claim IDs are the join key recovery reconstructs reservations by, so a collection
+  // holding the same id twice is an ambiguous ledger — and the safe reading of an
+  // ambiguous reservation is that it is still held, which means a duplicate silently
+  // double-counts. Reject it here rather than let a record carry it.
+  const claims: Converter<ReadonlyArray<ITaskCapacityClaim>> = boundedArrayOf(
+    claim,
+    256,
+    'capacity claims'
+  ).withConstraint((value: ReadonlyArray<ITaskCapacityClaim>): Result<ReadonlyArray<ITaskCapacityClaim>> => {
+    const seen: Set<CapacityClaimId> = new Set<CapacityClaimId>();
+    for (const entry of value) {
+      if (seen.has(entry.claimId)) {
+        return fail(`capacity claims: duplicate claim id '${entry.claimId}'`);
+      }
+      seen.add(entry.claimId);
+    }
+    return succeed(value);
+  });
+
   const status: Converter<ITaskCapacityStatus> = Converters.strictObject<ITaskCapacityStatus>({
     profileVersion: Converters.literal<1>(1),
     state: Converters.enumeratedValue<TaskCapacityState>(['ok', 'pressure', 'admission-blocked', 'draining']),
@@ -261,7 +281,7 @@ export function buildCapacityConverters(
     profile,
     claimOwner,
     claim,
-    claims: boundedArrayOf(claim, 256, 'capacity claims'),
+    claims,
     dimensionStatus,
     status
   };

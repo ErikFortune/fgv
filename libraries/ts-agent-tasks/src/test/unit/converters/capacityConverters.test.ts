@@ -179,6 +179,37 @@ describe('capacity claims', () => {
   });
 });
 
+describe('a claim collection', () => {
+  test('accepts distinct claims', () => {
+    expect(
+      converters.capacity.claims.convert([
+        claim('receipt-preparation', { subscriptionId: 'sub-1' }),
+        { ...claim('receipt-preparation', { subscriptionId: 'sub-2' }), claimId: 'claim-2' }
+      ])
+    ).toSucceedAndSatisfy((claims) => {
+      expect(claims).toHaveLength(2);
+    });
+  });
+
+  test('accepts an empty collection', () => {
+    expect(converters.capacity.claims.convert([])).toSucceedWith([]);
+  });
+
+  test('rejects two claims sharing a claim id — the ledger joins on that id', () => {
+    expect(
+      converters.capacity.claims.convert([
+        claim('receipt-preparation', { subscriptionId: 'sub-1' }),
+        claim('terminal-closeout', { taskId: 'task-1', audience: [] })
+      ])
+    ).toFailWith(/duplicate claim id 'claim-1'/i);
+  });
+
+  test('rejects a duplicate even when the two claims are otherwise identical', () => {
+    const one: Record<string, JsonValue> = claim('receipt-preparation', { subscriptionId: 'sub-1' });
+    expect(converters.capacity.claims.convert([one, one])).toFailWith(/duplicate claim id/i);
+  });
+});
+
 describe('claim ownership and disposition', () => {
   test.each([
     ['task', { owner: 'task', taskId: 'task-1' }],

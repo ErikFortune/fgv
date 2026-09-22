@@ -27,7 +27,7 @@ field bounds; `TaskKindRegistry` and `createTaskCommandHandle`; the two built-in
 `TaskEnvironment`; and the primitives (`instant`, the safe-integer family, the bounded
 identifier / single-line / text / array factories).
 
-377 tests. 100% statements, branches, functions and lines.
+381 tests. 100% statements, branches, functions and lines.
 
 ---
 
@@ -152,8 +152,22 @@ registration checks schema/converter agreement, which it does not and cannot —
 what ships, naming the fixture obligation the design itself assigns; a README sentence described
 reconciliation and delivery APIs in the present tense; and a typo in a test description.
 
-Round 2 pending. Round 1's profile was substantive — three real defects, one of them a
-symmetry hole invisible to top-level tests — so this is not diminishing returns yet.
+**Layer 2 — Copilot, round 2: one finding, high severity, real.** The `capacityClaims`
+collection converter bounded its length but not its identities, so a record could carry two
+claims with the same `claimId`. That id is the stable join key §8.6 says recovery reconstructs
+reservations by ("after a crash, join by exact ID"), and the safe reading of an ambiguous
+reservation is that it is still held — so a duplicate silently double-counts. Fixed, with tests
+for distinct claims, an empty collection, two different claims sharing an id, and the same claim
+twice.
+
+**It is the third instance of one blind spot.** Round 1 caught duplicate *charges* within a
+claim and duplicate *status rows*; I fixed both and still did not check the collection of claims
+itself. The pattern — "a bounded array whose entries carry an identity needs a uniqueness
+constraint, not just a length cap" — is worth carrying into T3, where these collections are
+written and read for real.
+
+Round 3 requested. Rounds 1 and 2 both produced structural findings, so the finding profile has
+not gone nitpicky and stopping now would be stopping on round count.
 
 ---
 
@@ -196,7 +210,7 @@ symmetry hole invisible to top-level tests — so this is not diminishing return
 |---|---|
 | `rushx build` | clean, zero warnings; `etc/ts-agent-tasks.api.md` checked in |
 | `rushx lint` | clean; `rushx fixlint` run before the final commit |
-| `rushx test` | 377 passed; 100% statements, branches, functions, lines |
+| `rushx test` | 381 passed; 100% statements, branches, functions, lines |
 | `rush rebuild` (repo-wide) | green — required, since a new Rush project changes the build graph |
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `verify-capability-docs.mjs` | router 19,158/24,000 chars, 24/24 libraries documented, 75 reflexes intact |
