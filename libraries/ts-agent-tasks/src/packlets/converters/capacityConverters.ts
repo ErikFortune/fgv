@@ -24,6 +24,7 @@ import {
   allCapacityDimensions,
   capacityPressureThreshold,
   maximumClosureCharges,
+  maximumResolutionCharges,
   maximumSettlementCharges
 } from '../types';
 import { IFailureConverters } from './failureConverters';
@@ -51,6 +52,20 @@ export interface ICapacityConverters {
 /**
  * Checks that a profile's limits can hold one protected bundle of charges.
  */
+/**
+ * Adds two bundles dimension by dimension.
+ */
+function _combine(
+  a: ReadonlyArray<ITaskCapacityCharge>,
+  b: ReadonlyArray<ITaskCapacityCharge>
+): ReadonlyArray<ITaskCapacityCharge> {
+  const totals: Map<CapacityDimension, number> = new Map<CapacityDimension, number>();
+  for (const charge of [...a, ...b]) {
+    totals.set(charge.dimension, (totals.get(charge.dimension) ?? 0) + charge.amount);
+  }
+  return Array.from(totals.entries()).map(([dimension, amount]) => ({ dimension, amount }));
+}
+
 function _fits(
   charges: ReadonlyArray<ITaskCapacityCharge>,
   profile: ITaskCapacityProfile,
@@ -175,6 +190,13 @@ export function buildCapacityConverters(
         maximumClosureCharges(value).onSuccess((charges) => _fits(charges, value, 'terminal closeout')),
         maximumSettlementCharges(value).onSuccess((charges) =>
           _fits(charges, value, 'accepted-operation settlement')
+        ),
+        // An unresolved registration holds both bundles at once (T3), so the pair must fit
+        // together, not merely each on its own.
+        maximumClosureCharges(value).onSuccess((closeout) =>
+          maximumResolutionCharges(value).onSuccess((resolution) =>
+            _fits(_combine(closeout, resolution), value, 'unresolved registration (resolution + closeout)')
+          )
         )
       ]).onSuccess(() => succeed(value))
   );
@@ -250,6 +272,13 @@ export function buildCapacityConverters(
       taskId: ids.taskId,
       audience: audience
     }),
+    'first-resolution': Converters.strictObject<Extract<ITaskCapacityClaim, { purpose: 'first-resolution' }>>(
+      {
+        ...common,
+        purpose: Converters.literal('first-resolution'),
+        taskId: ids.taskId
+      }
+    ),
     'accepted-operation-settlement': Converters.strictObject<
       Extract<ITaskCapacityClaim, { purpose: 'accepted-operation-settlement' }>
     >({

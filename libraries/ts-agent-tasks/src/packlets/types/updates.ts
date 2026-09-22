@@ -60,3 +60,29 @@ export interface ITaskUpdate {
   readonly snapshot: ITaskSummary;
   readonly audience: ReadonlyArray<SubscriptionId>;
 }
+
+/**
+ * The longest suffix {@link taskUpdateId} appends to a task id: a separator, up to sixteen
+ * revision digits (`Number.MAX_SAFE_INTEGER` has sixteen), a separator and one ordinal digit.
+ * @public
+ */
+export const maxUpdateIdSuffixLength: number = 19;
+
+/**
+ * The canonical identity of the update a task owes for one `(revision, category)`.
+ *
+ * @remarks
+ * Design §8.3: "a collision-free tuple encoding of task ID, task revision and category
+ * ordinal; never a timestamp or CRC". The encoding is `<taskId>:<revision>:<ordinal>`. A task
+ * id may itself contain `:`, but the revision and ordinal are digit-only and are read from
+ * the right, so two distinct tuples can never produce the same string.
+ *
+ * Storage checks every stored update against this encoding, so an update id that disagrees
+ * with the task, revision or category it names is an integrity failure rather than a second,
+ * silently different identity. (T3: the update-id bound grew by
+ * {@link maxUpdateIdSuffixLength} so a maximum-length task id still has one.)
+ * @public
+ */
+export function taskUpdateId(taskId: TaskId, revision: TaskRevision, category: UpdateCategory): UpdateId {
+  return `${taskId}:${revision}:${allUpdateCategories.indexOf(category)}` as UpdateId;
+}

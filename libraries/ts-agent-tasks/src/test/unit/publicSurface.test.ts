@@ -7,12 +7,15 @@ import '@fgv/ts-utils-jest';
 import * as TaskLib from '../../index';
 
 describe('public surface', () => {
-  test('exports no repository, storage, broker or filesystem surface', () => {
+  test('exports the FileTree repository (T3) but no broker and no filesystem of its own', () => {
     const names: ReadonlyArray<string> = Object.keys(TaskLib);
-    for (const forbidden of ['FileTree', 'FileTreeTaskRepository', 'TaskRepository', 'TaskBroker']) {
+    // T3 adds exactly one repository implementation, over an injected FileTree root.
+    expect(names.filter((n) => /repository/i.test(n))).toEqual(['FileTreeTaskRepository']);
+    // It does not re-export FileTree, and there is no broker yet (T5).
+    for (const forbidden of ['FileTree', 'TaskBroker']) {
       expect(names).not.toContain(forbidden);
     }
-    expect(names.filter((n) => /repository|storage|broker|filetree/i.test(n))).toEqual([]);
+    expect(names.filter((n) => /broker|^fs|filesystem/i.test(n))).toEqual([]);
   });
 
   test('exports no deferred input-request or answer protocol', () => {
