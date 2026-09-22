@@ -108,8 +108,7 @@ export class FaultingFsOperations implements IAtomicFsOperations {
   public readonly pathCalls: Array<{ op: AtomicFsOperationName; path: string }> = [];
 
   /**
-   * Every descriptor-taking operation and the descriptor it was given, plus the
-   * descriptors the two open operations handed back.
+   * Every `fsync`, and the descriptor it was given.
    *
    * @remarks
    * Counting flushes is not enough to pin "the record, then the directory
@@ -117,6 +116,13 @@ export class FaultingFsOperations implements IAtomicFsOperations {
    * has the same flush *count* and the same flush *positions*, so it satisfies
    * both a count assertion and every occurrence-indexed fault injection. Only
    * the descriptor identifies which object was flushed.
+   *
+   * `fsync` is the only operation recorded here, because it is the only one
+   * whose *subject* a test needs to distinguish; the descriptors it is checked
+   * against are {@link FaultingFsOperations.temporaryFd | temporaryFd} and
+   * {@link FaultingFsOperations.directoryFd | directoryFd}, which the two open
+   * operations record separately. Widening this to the other descriptor-taking
+   * calls means recording them here, not reading more into the name.
    */
   public readonly fdCalls: Array<{ op: AtomicFsOperationName; fd: number }> = [];
 
