@@ -15,7 +15,7 @@ All three material decisions were approved on 2026-09-21. The user reports orche
 
 | Approval | Recommended decision | Consequence of a different decision |
 |---|---|---|
-| A1 — approved 2026-09-21 | Process-crash survival on qualified local Linux/macOS Node FileTree roots; file and directory flushes before acknowledgement. OS-crash and power-loss survival are excluded; reject requests for those guarantees and unqualified backends. | Stronger guarantees or additional platforms require separate design/qualification. Approval sets the intended contract; it does not replace implementation evidence or passing crash tests. |
+| A1 — approved 2026-09-21, **amended 2026-09-22** | Process-crash survival on qualified local **Linux** Node FileTree roots; file and directory flushes before acknowledgement. OS-crash and power-loss survival are excluded; reject requests for those guarantees and unqualified backends. *(Amendment: the original text read "Linux/macOS". darwin is dropped from the intended matrix, not merely unqualified — see below.)* | Stronger guarantees or additional platforms require separate design/qualification. Approval sets the intended contract; it does not replace implementation evidence or passing crash tests. |
 | A2 — approved 2026-09-21 | Include bounded cascade pause/cancel as a best attempt with an observable result: persisted intent, explicit partial effects/blockers, stable-stop source opt-in, and frozen subtree admission while latched | Acceptance remains distinct from completion. No all-or-nothing execution promise; no silent skipped children or weakening of intent/recovery requirements. |
 | A3 — approved 2026-09-21; consumer acceptance limited to V1 ingestion | Minimal archived resident projection; on-demand historical evidence; bounded caches/rebuild; design §8.6's finite whole-repository limits and persisted reservations for completing accepted work; explicitly qualified source-replay bounds | Adds capacity accounting, admission and recovery work across T1/T3–T9, a narrow host limit-increase API, and measurements M1. Initial limits remain subject to qualification. The reference consumer accepts a finite horizon for disposable hubs only; its future always-on collective requires a separately approved compaction design before adoption. |
 
@@ -59,6 +59,25 @@ No numbered gate is left to an implementer to “discover later.” A1, A2 and t
 ### F2 — Node atomic replacement and process-crash qualification — ✅ shipped
 
 **Qualified matrix as shipped: Linux ext2/ext3/ext4 and tmpfs. macOS is NOT qualified** — Node exposes no stable filesystem-type identifier on darwin, so a darwin root cannot be positively identified from inside the package and is refused rather than assumed. The review gate below says not to mark missing platform evidence “passed”; accordingly, **T3's durable path is unblocked on Linux only**.
+
+**A1 amendment, 2026-09-22 — darwin is dropped from the intended matrix, and no darwin qualification slice is queued.** The reference consumer develops on macOS but **runs everything in containers, nothing on bare iron**. A container executes against the Linux kernel, so `process.platform` is `'linux'` and `statfs` returns a real magic number: the darwin gap is never on the execution path, and qualifying it would buy nothing. A1's decision text is amended from "Linux/macOS" to "Linux" above.
+
+**The live question this replaces it with is the filesystem, not the platform.** F2's allowlist is ext2/ext3/ext4 and tmpfs; **overlayfs is deliberately absent**, because rename and flush semantics over a lower layer (copy-up) differ from the local case. So a containerized deployment qualifies or refuses according to *where the repository root is mounted*, not what the developer's laptop runs:
+
+| root location | filesystem | outcome |
+|---|---|---|
+| container writable layer (overlay2 driver) | overlayfs | **refused** |
+| named volume, or bind mount from a Linux host | usually ext4 | qualifies |
+| bind mount from a macOS host (Docker Desktop VirtioFS) | FUSE-like | **refused** |
+| tmpfs mount | tmpfs | qualifies |
+
+A durable root belongs on a volume rather than the container's ephemeral writable layer regardless of this protocol, so the refusal points at the right practice. **Measure rather than assume** — the refusal message names the magic number it found and the qualified list, and the same value is readable directly:
+
+```bash
+node -e "console.log('0x'+require('fs').statfsSync('<root>').type.toString(16))"
+```
+
+Qualifying overlayfs remains available as a future slice — it means running the crash suite on it and answering what `fsync` on an upper-dir file guarantees after a copy-up — but it is **not queued**, because no measured consumer need has been shown for it.
 
 **Dependencies:** F1, A1. **Affected package:** `ts-json-base`; CI configuration only if necessary to run the approved platform matrix.
 
