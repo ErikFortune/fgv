@@ -3,7 +3,8 @@
 **Status:** A1/A2 and finite-horizon capacity amendment A3 approved 2026-09-21; reference-consumer A3 approval is limited to V1 ingestion. A1 **amended 2026-09-22** to Linux-only — see § *F2*.
 **F1 and F2 are shipped** ([#683](https://github.com/ErikFortune/fgv/pull/683), squashing [#681](https://github.com/ErikFortune/fgv/pull/681) and [#682](https://github.com/ErikFortune/fgv/pull/682)): the upstream `ts-json-base` FileTree atomic-write capability and its qualified Node protocol exist and are on `release`. **T1 is implemented** and lands on `integration/agent-tasks-v1` via
 [#684](https://github.com/ErikFortune/fgv/pull/684) — it is *not* on `release`, and reaches it only
-in the integration branch's squash. **Every other T slice, and every I, P and M slice, remains
+in the integration branch's squash. **T2 is implemented** on the same branch via
+[#685](https://github.com/ErikFortune/fgv/pull/685). **Every other T slice, and every I, P and M slice, remains
 unimplemented and awaits explicit authorization**, taken one slice at a time.
 **Date:** 2026-09-21. **Source inspection:** `d0ec601c6d67a6016a00a33a69ddee18bec6ddb1`.
 **Engineering contract:** [development design](development-design.md).
@@ -109,7 +110,7 @@ Under A3 also define the versioned capacity profile and typed dimension failures
 
 **Review gate:** public contract/dependency review; no deferred input protocol, task runner, source-specific fields or consumer vocabulary. API report and package capability entry describe proposed shipped values accurately when this slice later lands.
 
-### T2 — Pure context and snapshot-only use
+### T2 — Pure context and snapshot-only use — ✅ implemented on `integration/agent-tasks-v1` ([#685](https://github.com/ErikFortune/fgv/pull/685))
 
 **Dependencies:** T1. **Affected package:** `ts-agent-tasks` context/converters.
 

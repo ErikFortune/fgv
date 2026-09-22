@@ -62,3 +62,23 @@ the "> 50 spies" sanity assertion is what caught that.
 
 Coverage after scenario tests alone: 100% lines, two renderer branches open. Stopping here for
 `code-reviewer` before closing them, per the layer-1 order.
+
+---
+
+## 2026-09-22 — phase 2: layer-1 review resolved, gates green, PR open
+
+`code-reviewer`: no P1. Two P2s (the revision tie-break was an untested path, now tested; the §9
+tie-break wording was dispositioned for the design authority) and five P3s. Four P3s were fixed.
+The unreachable `?? 0` and the second open branch were removed by restructuring, with no
+coverage directive. `allTaskResults` was dispositioned as a ts-utils candidate. Coverage is 100%
+on all four metrics.
+
+All nine `ci.yml` steps ran locally and exited 0, including repo-wide `rush rebuild` and
+`rush test`. The regenerated API report was unchanged by the review fixes.
+
+PR [#685](https://github.com/ErikFortune/fgv/pull/685) targets `integration/agent-tasks-v1`. Per
+"a PR anticipates its own merge", the ledger entry and the plan's T2 heading/status line are
+marked shipped via #685 in the PR itself. The plan edit is two status lines, the same edit T1
+made to that file.
+
+Next: the Copilot loop (layer 2).

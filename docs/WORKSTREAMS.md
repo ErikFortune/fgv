@@ -128,7 +128,7 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-t2` 🟢 (slice T2 of the agent-tasks plan)
+### `agent-tasks-t2` ✅ (slice T2 of the agent-tasks plan) — landed on the integration branch via [#685](https://github.com/ErikFortune/fgv/pull/685)
 
 **Mission.** Land **T2** — the pure context and snapshot-only entry point: deterministic selection
 and rendering, current/update/attention fragments, budgets and omissions, a pure inclusion receipt,
@@ -166,6 +166,13 @@ task prose treated as data), plus the repo gates — zero-warning build, lint, 1
 `code-reviewer` before coverage closure, repo-wide `rush rebuild`, change file against the
 integration branch, `CAPABILITIES.md` in the same PR, **and every step `ci.yml` runs** (T1 lost a
 round to `generate-capability-feed.mjs --check`, which no local checklist named).
+
+**T2 status.** Shipped to `integration/agent-tasks-v1` via
+[#685](https://github.com/ErikFortune/fgv/pull/685): `TaskContextRenderer`, the `context` packlet,
+`ITaskSummary` / `ITaskUpdate` / `IUnresolvedTaskReference`, and `TaskConverters.context`. No T1
+union member was revised. Carried forward: T7 must reconcile `'initial'` baseline obligations with
+T2's one-update-per-(task, revision, category) rule, and design §9's tie-break wording
+("task ID and update ID") should read "task ID and revision". Details in `result.md`.
 
 **Artifact pointer:** `.ai/tasks/active/agent-tasks-t2/`.
 
