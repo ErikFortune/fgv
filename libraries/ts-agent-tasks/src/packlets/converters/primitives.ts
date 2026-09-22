@@ -121,12 +121,9 @@ export function boundedIdentifier(maxLength: number, description: string): Conve
  * @public
  */
 export function boundedSingleLine(maxLength: number, description: string): Converter<string> {
-  return Converters.string.singleLine({ maxLength }).withConstraint((value: string): Result<string> => {
-    if (value.length < 1) {
-      return fail(`${description}: may not be empty`);
-    }
-    return succeed(value);
-  });
+  return Converters.string
+    .singleLine({ maxLength })
+    .withFormattedError((__value: unknown, message?: string) => `${description}: ${message}`);
 }
 
 /**
