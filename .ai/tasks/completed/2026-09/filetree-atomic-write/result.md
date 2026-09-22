@@ -217,9 +217,51 @@ substring matches, not globs, so `include: ['**']` matched nothing and every pat
 *include* test rather than the exclude one. That assertion would have held with the exclude list
 deleted. Both filter tests use `RegExp` now.
 
+## Layer-2 review — the external loop, and where it stopped
+
+**Stopped after 4 external rounds on diminishing returns, not the cap.** Five findings across
+Copilot (3 rounds) and CodeRabbit (1 round). **All five were genuine; all five were fixed.** No
+finding was dispositioned as wrong, which is worth stating plainly — this was not a loop spent
+arguing.
+
+| round | reviewer | finding | severity | outcome |
+|---|---|---|---|---|
+| 1 | Copilot | `qualifyAtomicWrites` reported every `lstat` failure as "not found", including `EACCES` / `EPERM` / `ENOTDIR` | medium | fixed; `ENOENT` keeps the diagnosis, everything else reports that the directory could not be inspected |
+| 1 | Copilot | `atomicFileCommit` respelled `'UNKNOWN'` instead of importing `UNKNOWN_ERRNO` | low | fixed; the sentinel is load-bearing — a spelling that drifted would silently change a durability classification |
+| 2 | Copilot | `fdCalls` documented as recording every descriptor-taking operation plus the open descriptors; it records `fsync` only | low | fixed by correcting the doc, not by widening the harness |
+| 3 | Copilot | the qualification guard asserts a qualified root unconditionally, so it fails off Linux | medium | fixed |
+| 4 | CodeRabbit | `test.each(qualified ? expectations : [])` **fails** a suite on an empty array; it does not skip | major | fixed |
+| 4 | CodeRabbit | same qualification guard as Copilot round 3 | minor | same fix |
+
+Two are worth keeping for the lesson rather than the fix.
+
+**The empty-`each` finding was a real defect, not a style point**, and it was invisible here for a
+structural reason: both roots on this machine qualify, so the conditional never took its empty
+branch. It would have fired on the first macOS box or any runner whose `/tmp` the allowlist does
+not name — precisely the machines this stream is about. Verified against the installed Jest
+(``.each` called with an empty Array of table data``) rather than taken on trust, and the fix was
+re-verified under a simulated unqualified machine by making `QUALIFIED_PLATFORMS` match nothing.
+
+**One suggestion was declined in substance while the defect was accepted.** Both reviewers
+proposed scoping the qualification guard with `test.skip` off Linux. That guard exists *because
+silence looks like success* — it was written so that moving CI onto an unnamed filesystem turns
+the suite red rather than degrading every crash test into a skip. Answering it with a skip would
+reintroduce the silence it was built to prevent. Off Linux there is a correct expectation and it
+is simply the opposite one, so the assertion became
+`expect(roots.some(isQualified)).toBe(process.platform === 'linux')` — the test now runs
+everywhere, and pins the refusal as well as the qualification. CodeRabbit re-read the commit and
+agreed it is stronger than the skip it proposed.
+
+**Why the stop is here.** The brief warned that a native-boundary package should expect a
+substantive layer-2 loop on rounds 1–2 and that a clean layer-1 pass is not license to expect
+nitpicks. That held exactly: rounds 1 and 4 carried the correctness findings. Rounds 2 and 3
+produced one doc-accuracy item and a re-report of a finding already in hand — the finding profile
+has gone from behavior to wording, which is the diminishing-returns signal the discipline names.
+The final push is comment-only; commissioning another round against it would measure nothing.
+
 ## Gates
 
-`rushx build` zero warnings · `rushx lint` clean · `rushx fixlint` run · `rushx test` 1175
+`rushx build` zero warnings · `rushx lint` clean · `rushx fixlint` run · `rushx test` 1177
 passed, 0 failed · **100% statements, branches, functions and lines**, with **no `c8 ignore`
 directives added** (and none removed) · `rush change --verify --target-branch origin/integration/filetree-atomic-write`
 finds the change file · repo-wide `rush rebuild` **`SUCCESS: 36 operations`** and repo-wide
