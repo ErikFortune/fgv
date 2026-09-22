@@ -249,6 +249,27 @@ describe('open refuses a writable repository over detectable corruption, and rew
     unchanged();
   });
 
+  test('a pending entry whose present record carries its operation but different claims is not completed', async () => {
+    // The join key between a pending entry and its record is the claim id set, not only the
+    // operation id: completing a registration whose record holds other claims would count one
+    // reservation as another's.
+    const manifest = readJson(root, 'repository.json');
+    const record = readJson(root, 'task-t2.json');
+    const operationId = (record.operations as JsonObject[])[0].operationId as string;
+    writeJson(root, 'repository.json', {
+      ...manifest,
+      tasks: [
+        { id: 't1', state: 'live' },
+        { id: 't2', state: 'pending', operationId, request: {}, capacityClaims: [] }
+      ]
+    });
+    freeze();
+    expect(blocked(await open(root)).issues).toEqual([
+      issue('integrity', 'blocking', new RegExp(`present for pending registration '${operationId}'`))
+    ]);
+    unchanged();
+  });
+
   test('an inventory entry whose id is not a valid identifier', async () => {
     const manifest = readJson(root, 'repository.json');
     writeJson(root, 'repository.json', {
