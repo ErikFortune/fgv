@@ -466,6 +466,49 @@ describe('TaskContextRenderer', () => {
       ]);
     });
 
+    test('each revision of a reparented task is placed under the parent it names', () => {
+      // r is a root, a hangs off r, b is a second root. Task t moved from a (revision 1) to
+      // b (revision 2); each record's depth must agree with the parent it shows.
+      const parts = {
+        tasks: [
+          summary('r', 1),
+          summary('a', 1, { parentId: 'r' }),
+          summary('b', 1),
+          summary('t', 2, { parentId: 'b' })
+        ],
+        updates: [update('u1', 't', 1, 'relationship', true, { parentId: 'a' })]
+      };
+      expect(renderer.render(input(parts))).toSucceedAndSatisfy((context) => {
+        const records = parseRecords(context).filter((r) => r.record.task === 't');
+        expect(records.map((r) => [r.record.revision, r.record.parent, r.record.depth])).toEqual([
+          [1, 'a', 2],
+          [2, 'b', 1]
+        ]);
+      });
+      // An older revision under a parent that was not supplied is a visible root.
+      const orphan = {
+        tasks: [summary('t', 2)],
+        updates: [update('u1', 't', 1, 'relationship', true, { parentId: 'gone' })]
+      };
+      expect(renderer.render(input(orphan))).toSucceedAndSatisfy((context) => {
+        expect(context.entries.map((e) => [e.summary.envelope.revision, e.depth])).toEqual([
+          [1, 0],
+          [2, 0]
+        ]);
+      });
+    });
+
+    test('an older revision naming itself as parent is invalid', () => {
+      const parts = {
+        tasks: [summary('t', 2)],
+        updates: [update('u1', 't', 1, 'relationship', true, { parentId: 't' })]
+      };
+      expect(renderer.render(input(parts))).toFailWithDetail(/names itself as its parent/i, {
+        code: 'invalid',
+        retry: 'after-host-action'
+      });
+    });
+
     test('depth zero renders roots of the visible forest only', () => {
       expect(renderer.render(input({ tasks: chain }), budget({ maxDepth: 0 }))).toSucceedAndSatisfy(
         (context) => {

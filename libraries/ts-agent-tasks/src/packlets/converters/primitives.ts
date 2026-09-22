@@ -157,10 +157,14 @@ export function boundedArrayOf<T>(
   description: string
 ): Converter<ReadonlyArray<T>> {
   const elements: Converter<T[]> = Converters.arrayOf(item);
-  return Converters.generic<ReadonlyArray<T>>((from: unknown): Result<ReadonlyArray<T>> => {
-    if (Array.isArray(from) && from.length > maxItems) {
-      return fail(`${description}: ${from.length} entries exceeds the maximum of ${maxItems}`);
+  return Converters.generic<ReadonlyArray<T>>(
+    (from: unknown, __self: unknown, context?: unknown): Result<ReadonlyArray<T>> => {
+      if (Array.isArray(from) && from.length > maxItems) {
+        return fail(`${description}: ${from.length} entries exceeds the maximum of ${maxItems}`);
+      }
+      // Pass the conversion context through: a context-dependent element converter must see
+      // exactly what it would have seen without the bound in front of it.
+      return elements.convert(from, context);
     }
-    return elements.convert(from);
-  });
+  );
 }

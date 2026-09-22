@@ -98,3 +98,7 @@ fix:
 - Escaping missed the Unicode tag block and the variation selectors.
 
 Details in `result.md`. CI was green on `66684039` before these fixes. Next: push, then round 3.
+
+Round 3 (`0d44cb7e`, CI green): no comments posted; the headline named two issues, both real.
+Per-revision depth now follows each revision's own parent. `boundedArrayOf` now passes the
+converter `context` through; round 2's fix had dropped it. Both were watched failing first.

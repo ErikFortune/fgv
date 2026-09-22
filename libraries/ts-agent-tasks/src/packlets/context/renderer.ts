@@ -258,6 +258,35 @@ function _visibleDepth(
   return succeedWithDetail(base + chain.length);
 }
 
+/**
+ * Depth of one task *revision*, placed under the parent that revision names.
+ *
+ * @remarks
+ * A task reparented between two supplied revisions renders each revision with its own
+ * `parent`, so each revision's depth must be measured from that same parent — otherwise one
+ * record would show a parent and a depth that disagree. The task's own position is still
+ * walked first, so a cycle through its current parentage is refused whichever revision is
+ * rendered.
+ */
+function _revisionDepth(
+  parents: ReadonlyMap<string, string | undefined>,
+  memo: Map<string, number>,
+  taskId: string,
+  parentId: string | undefined
+): TaskResult<number> {
+  return _visibleDepth(parents, memo, taskId).onSuccess(() => {
+    if (parentId === taskId) {
+      return failWithDetail<number, ITaskFailure>(
+        `task ${taskId}: names itself as its parent`,
+        invalidDetail
+      );
+    }
+    return parentId !== undefined && parents.has(parentId)
+      ? _visibleDepth(parents, memo, parentId).onSuccess((depth) => succeedWithDetail(depth + 1))
+      : succeedWithDetail(0);
+  });
+}
+
 function _compareItems(a: Item, b: Item): number {
   return a.rank - b.rank || compareOrdinal(a.taskId, b.taskId) || a.revision - b.revision;
 }
@@ -386,7 +415,7 @@ export class TaskContextRenderer {
       const memo: Map<string, number> = new Map<string, number>();
       const taskItems: TaskResult<Item[]> = allTaskResults(
         projected.map(({ candidate, summary }) =>
-          _visibleDepth(parents, memo, candidate.taskId).onSuccess((depth) => {
+          _revisionDepth(parents, memo, candidate.taskId, summary.envelope.parentId).onSuccess((depth) => {
             const rank: number = _rank(summary, candidate.current, candidate.updates);
             const section: TaskContextSection =
               rank === 1 ? 'attention' : candidate.updates.length > 0 ? 'updates' : 'current';

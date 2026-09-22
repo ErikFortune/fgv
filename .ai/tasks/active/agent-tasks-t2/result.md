@@ -44,7 +44,7 @@ project each distinct `(task, revision)` once, re-validate, pin identity → rej
 rank → greedy select (items → depth → full line → abbreviated line → omit) → render by section →
 receipt from what rendered.
 
-495 tests in the package (86 new). 100% statements, branches, functions and lines. No coverage
+498 tests in the package (89 new). 100% statements, branches, functions and lines. No coverage
 directives.
 
 ---
@@ -179,6 +179,18 @@ three named areas myself and found two real defects, each shown failing before i
 
 Whether these are what Copilot meant cannot be known from its output; they are what the three
 areas it named actually contained.
+
+**Layer 2 — Copilot, round 3: again `Findings: None` posted, and a headline naming two issues —
+both real, both fixed, each watched failing first.**
+1. **Depth disagreed with `parent` across revisions.** A task reparented between two supplied
+   revisions rendered its older revision with that revision's own `parent` but the newest
+   revision's depth. Each revision's depth is now measured from the parent that revision names
+   (the task's current position is still walked first, so cycle refusal is unchanged); an older
+   revision naming itself as parent is `invalid`.
+2. **Round 2's `boundedArrayOf` fix dropped the converter `context` argument** — the wrapper
+   called the element converter without it. Now passed through, with a test using a
+   context-dependent element converter. A regression introduced by a review fix, caught by the
+   next round: the reason the loop runs past the first clean-looking pass.
 
 ---
 

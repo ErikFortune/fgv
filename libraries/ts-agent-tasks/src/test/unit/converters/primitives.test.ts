@@ -184,4 +184,14 @@ describe('boundedArrayOf', () => {
     expect(counted.convert(['a', 'b'])).toSucceed();
     expect(element).toHaveBeenCalledTimes(2);
   });
+
+  test('passes the conversion context through to each element', () => {
+    const seen: unknown[] = [];
+    const contextual = Converters.generic<string, string>((from: unknown, __self, context?: string) => {
+      seen.push(context);
+      return Converters.string.convert(from);
+    });
+    expect(boundedArrayOf(contextual, 2, 'contextual items').convert(['a'], 'the-context')).toSucceed();
+    expect(seen).toEqual(['the-context']);
+  });
 });
