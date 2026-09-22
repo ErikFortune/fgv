@@ -22,7 +22,8 @@ import {
   OperationId,
   TaskId,
   TaskRegistrationResult,
-  TaskResult
+  TaskResult,
+  isTerminalTaskStatus
 } from '../types';
 import { mintRegistrationClaims, spendClaim, withOwnership } from './claims';
 import {
@@ -347,6 +348,9 @@ export class FileTreeTaskRepository implements ITaskRepository {
     return this._validateDraft(draft)
       .onSuccess((validated) => this._checkParent(taskId, validated).onSuccess(() => ok(validated)))
       .onSuccess((validated) =>
+        this._checkOperationCount(taskId, validated.operations.length, 2).onSuccess(() => ok(validated))
+      )
+      .onSuccess((validated) =>
         pending !== undefined
           ? this._writeRegistration(taskId, operationId, validated, pending)
           : this._newRegistration(taskId, operationId, request, validated)
@@ -537,6 +541,34 @@ export class FileTreeTaskRepository implements ITaskRepository {
         }
       }
 
+      // An observation whose source revision is already committed is a replay when it projects
+      // the same semantic state, and a source contract violation when it does not (design §5).
+      if (
+        request.purpose === 'observation' &&
+        current.recordType === 'resolved' &&
+        draft.recordType === 'resolved'
+      ) {
+        const sameRevision: Result<boolean> = canonicallyEqual(current.sourceRevision, draft.sourceRevision);
+        if (sameRevision.isSuccess() && sameRevision.value && current.sourceRevision !== undefined) {
+          const semantic = (r: typeof draft | typeof current): unknown => ({
+            lifecycle: r.task.envelope.lifecycle,
+            progress: r.task.envelope.progress,
+            attention: r.task.envelope.attention,
+            details: r.task.details
+          });
+          const same: Result<boolean> = canonicallyEqual(semantic(current), semantic(draft));
+          if (same.isFailure() || !same.value) {
+            return taskFailure<ITaskCommitRecord>(
+              `commit ${taskId}: source revision ${current.sourceRevision.epoch}/${current.sourceRevision.token} ` +
+                `is already committed with a different projection; the source violated its revision contract`,
+              'source-gap',
+              'after-host-action'
+            );
+          }
+          return this._reestablish(read!, undefined).onSuccess(() => ok(current));
+        }
+      }
+
       if (projection.archived) {
         return taskFailure<ITaskCommitRecord>(
           `commit ${taskId}: an archived tombstone is immutable`,
@@ -585,12 +617,6 @@ export class FileTreeTaskRepository implements ITaskRepository {
           if (draft.recordType !== 'resolved' || draft.sourceRevision === undefined) {
             return fail<true>(`an observation carries the source revision that deduplicates it`);
           }
-          const previous = current.recordType === 'resolved' ? current.sourceRevision : undefined;
-          return canonicallyEqual(previous, draft.sourceRevision).onSuccess((same) =>
-            same
-              ? fail<true>(`source revision already committed; an observation replay is a no-op`)
-              : ok<true>(true)
-          );
         }
         return ok<true>(true);
       })
@@ -630,6 +656,20 @@ export class FileTreeTaskRepository implements ITaskRepository {
   ): TaskResult<ITaskCommitRecord> {
     const record: ITaskCommitRecord = current.record;
     const recordRevision: number = record.recordRevision + 1;
+    if (draft.operations.length > record.operations.length) {
+      // Closeout slots still owed after this step: the archive, and before that the terminal.
+      const terminal: boolean =
+        draft.recordType === 'resolved' && isTerminalTaskStatus(draft.task.envelope.lifecycle.status);
+      const archived: boolean = draft.recordType === 'resolved' && draft.archived;
+      const counted: TaskResult<true> = this._checkOperationCount(
+        taskId,
+        draft.operations.length,
+        archived ? 0 : terminal ? 1 : 2
+      );
+      if (counted.isFailure()) {
+        return propagate(counted);
+      }
+    }
     return this._buildRecord(draft, recordRevision, record.capacityClaims)
       .onSuccess((provisional) =>
         this._ledgerForRecord(taskId, provisional.record, provisional.encoded).onSuccess(
@@ -769,6 +809,41 @@ export class FileTreeTaskRepository implements ITaskRepository {
           );
     }
     return this._registry.convert(draft.task).onSuccess((task) => ok<ITaskRecordDraft>({ ...draft, task }));
+  }
+
+  /**
+   * The per-task operation limit, with the closeout path's own slots held back.
+   *
+   * @remarks
+   * Every accepted task reserves room for a terminal operation and an archive operation
+   * (`maximumClosureCharges`). The repository-wide ledger holds those as claims; the per-task
+   * bound needs the same protection, or a task could spend its last slot on ordinary work and
+   * be unable to finish. So an ordinary operation may use the limit less the closeout slots
+   * still owed, and a closeout step may use the whole limit.
+   */
+  private _checkOperationCount(taskId: TaskId, count: number, heldBack: number): TaskResult<true> {
+    const limit: number = this.profile.perOwner.maxOperationsPerTask;
+    if (count <= limit - heldBack) {
+      return ok(true);
+    }
+    return taskFailure(
+      `capacity: task ${taskId} would hold ${count} operations; its limit is ${limit}` +
+        (heldBack > 0 ? `, of which ${heldBack} are held for closeout` : ''),
+      'backpressure',
+      'after-host-action',
+      {
+        capacity: {
+          reason: 'capacity-exhausted',
+          dimension: 'operations',
+          recordId: taskId,
+          used: count - 1,
+          reserved: heldBack,
+          requested: 1,
+          limit,
+          reclaimableByCleanup: false
+        }
+      }
+    );
   }
 
   /** A parent edge must name a live task, and must not close a cycle. */
@@ -916,7 +991,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
    * would otherwise report success for a record whose directory entry was never flushed.
    * Nothing semantic changes: same text, same record revision.
    */
-  private _reestablish(read: IReadRecord, operationId: OperationId): TaskResult<true> {
+  private _reestablish(read: IReadRecord, operationId: OperationId | undefined): TaskResult<true> {
     const name: string = recordName('task', idOf(read.record));
     return this._writeFile(name, read.encoded.text, operationId)
       .onSuccess(() => this._encodeManifest(this._manifest))

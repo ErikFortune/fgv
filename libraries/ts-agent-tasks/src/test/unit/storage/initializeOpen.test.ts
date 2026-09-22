@@ -84,7 +84,7 @@ describe('initialize', () => {
     const root = memoryRoot();
     const repository = await initialized(root);
     expect(names(root)).toEqual(['repository.json']);
-    expect(repository.repositoryId).toBe('id-1');
+    expect(repository.repositoryId).toMatch(/^id-\d+$/);
     expect(repository.profile).toEqual(defaultTaskCapacityProfile);
     expect(repository.health()).toEqual({ state: 'ready', generation: 0, issues: [] });
   });

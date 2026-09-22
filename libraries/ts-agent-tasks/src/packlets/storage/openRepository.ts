@@ -429,6 +429,9 @@ function _scan(
   const stillPending: Array<{ taskId: TaskId; operationId: OperationId }> = [];
   const claimOwners: Map<string, string> = new Map<string, string>();
   const named: Set<string> = new Set<string>([manifestName]);
+  // Every task the inventory names, whether or not its record validated: a child of a parent
+  // whose record is already reported broken is not *also* a dangling edge.
+  const inventoried: Set<string> = new Set<string>(manifest.tasks.map((entry) => entry.id));
 
   const noteClaims = (owner: string, claimIds: ReadonlyArray<string>): void => {
     for (const claimId of claimIds) {
@@ -445,12 +448,9 @@ function _scan(
   for (const entry of manifest.tasks) {
     const name: string = recordName('task', entry.id);
     named.add(name);
-    const taskIdResult: Result<TaskId> = converters.ids.taskId.convert(entry.id);
-    if (taskIdResult.isFailure()) {
-      scan.blocking('manifest-invalid', `task inventory entry: ${taskIdResult.message}`);
-      continue;
-    }
-    const taskId: TaskId = taskIdResult.value;
+    // The manifest converter validated every entry id with the same bounded identifier syntax
+    // the task-id converter applies, so this is a brand, not an unchecked assertion.
+    const taskId: TaskId = entry.id as TaskId;
     const present: boolean = store.has(name);
 
     if (!present) {
@@ -617,7 +617,7 @@ function _scan(
 
   // ---- the graph ----
   for (const projection of tasks.values()) {
-    if (projection.parentId !== undefined && !tasks.has(projection.parentId)) {
+    if (projection.parentId !== undefined && !inventoried.has(projection.parentId)) {
       scan.blocking('integrity', `task ${projection.id}: parent ${projection.parentId} is not a live task`);
     }
   }

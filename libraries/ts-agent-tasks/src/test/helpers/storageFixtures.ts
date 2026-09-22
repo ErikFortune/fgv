@@ -60,14 +60,20 @@ export function registry(extra?: { withoutVendor?: boolean }): TaskKindRegistry 
   return reg;
 }
 
+/**
+ * Every environment in one process draws from one sequence. A real host's ID factory is
+ * globally unique; a per-environment counter restarting at 1 would mint claim IDs that collide
+ * with claims an earlier environment already wrote to the same root.
+ */
+let next: number = 0;
+
 /** A deterministic environment: sequential IDs, fixed clock, in-memory logger. */
-export function environment(): { env: TaskEnvironment; logger: Logging.InMemoryLogger } {
-  let next: number = 0;
+export function environment(prefix: string = 'id'): { env: TaskEnvironment; logger: Logging.InMemoryLogger } {
   const logger: Logging.InMemoryLogger = new Logging.InMemoryLogger('detail');
   const env: TaskEnvironment = TaskEnvironment.create({
     logger,
     clock: () => Date.parse(at),
-    newId: () => succeed(`id-${++next}`)
+    newId: () => succeed(`${prefix}-${++next}`)
   }).orThrow();
   return { env, logger };
 }
@@ -209,7 +215,7 @@ export function unresolvedRegistration(id: string, operationId?: string): ITaskR
  * replaced, a new operation appended, and new updates added.
  */
 export function nextDraft(
-  current: ITaskCommitRecord,
+  current: ITaskCommitRecord | IResolvedTaskRecordDraft,
   change: {
     envelope?: Partial<ITaskEnvelope>;
     operation?: IStoredTaskOperation;
