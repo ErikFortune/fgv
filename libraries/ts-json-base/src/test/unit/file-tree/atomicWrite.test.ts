@@ -1,0 +1,466 @@
+/*
+ * Copyright (c) 2025 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+import '@fgv/ts-utils-jest';
+import { DetailedResult, Result, succeed, succeedWithDetail } from '@fgv/ts-utils';
+import {
+  DirectoryItem,
+  FileTreeItem,
+  FsFileTreeAccessors,
+  IAtomicWriteCapabilities,
+  IAtomicWriteFailure,
+  IAtomicWriteReceipt,
+  IMutableFileTreeAccessors,
+  InMemoryTreeAccessors,
+  SaveDetail,
+  isAtomicAccessors,
+  isAtomicDirectoryItem
+} from '../../../packlets/file-tree';
+
+/**
+ * A mutable store with no atomic capability at all.
+ *
+ * @remarks
+ * Every accessor shipped in this package now implements the atomic capability,
+ * so the "backing store cannot do this" branches need a store that genuinely
+ * cannot. This delegates the whole mutable contract to a real in-memory tree and
+ * simply does not carry the three atomic methods — so the guard sees the truth
+ * rather than a partial shape asserted into place with a cast.
+ */
+class NonAtomicAccessors implements IMutableFileTreeAccessors {
+  private readonly _inner: InMemoryTreeAccessors;
+
+  public constructor() {
+    this._inner = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
+  }
+
+  public resolveAbsolutePath(...paths: string[]): string {
+    return this._inner.resolveAbsolutePath(...paths);
+  }
+  public getExtension(itemPath: string): string {
+    return this._inner.getExtension(itemPath);
+  }
+  public getBaseName(itemPath: string, suffix?: string): string {
+    return this._inner.getBaseName(itemPath, suffix);
+  }
+  public joinPaths(...paths: string[]): string {
+    return this._inner.joinPaths(...paths);
+  }
+  public getItem(itemPath: string): Result<FileTreeItem> {
+    return this._inner.getItem(itemPath);
+  }
+  public getFileContents(filePath: string): Result<string> {
+    return this._inner.getFileContents(filePath);
+  }
+  public getFileContentType(filePath: string, provided?: string): Result<string | undefined> {
+    return this._inner.getFileContentType(filePath, provided);
+  }
+  public getChildren(dirPath: string): Result<ReadonlyArray<FileTreeItem>> {
+    return this._inner.getChildren(dirPath);
+  }
+  public fileIsMutable(itemPath: string): DetailedResult<boolean, SaveDetail> {
+    return this._inner.fileIsMutable(itemPath);
+  }
+  public saveFileContents(filePath: string, contents: string): Result<string> {
+    return this._inner.saveFileContents(filePath, contents);
+  }
+  public deleteFile(filePath: string): Result<boolean> {
+    return this._inner.deleteFile(filePath);
+  }
+  public createDirectory(dirPath: string): Result<string> {
+    return this._inner.createDirectory(dirPath);
+  }
+  public deleteDirectory(dirPath: string): Result<boolean> {
+    return this._inner.deleteDirectory(dirPath);
+  }
+}
+
+/**
+ * A store carrying exactly the two atomic methods the capability shipped with
+ * before `cleanupAtomicTemporaries` joined the interface.
+ *
+ * @remarks
+ * This is the shape that matters: a guard that checks only the members it
+ * remembers will narrow this to a type promising a method it does not have, and
+ * the first caller to use that promise gets a `TypeError` instead of a
+ * `Result`. Widening an interface without widening its guard is invisible to
+ * the compiler, because the guard's own assertion is what suppresses the check.
+ */
+class PartiallyAtomicAccessors extends NonAtomicAccessors {
+  public getAtomicWriteCapabilities(): Result<IAtomicWriteCapabilities> {
+    return succeed({ atomicReplace: true, guarantees: ['session'] });
+  }
+
+  public writeFileAtomically(): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure> {
+    return succeedWithDetail({ guarantee: 'session', replaced: false });
+  }
+}
+
+describe('isAtomicAccessors', () => {
+  test('returns true for a mutable InMemoryTreeAccessors', () => {
+    const accessors = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
+    expect(isAtomicAccessors(accessors)).toBe(true);
+  });
+
+  test('returns true for FsFileTreeAccessors, which implements the capability on Node', () => {
+    const accessors = new FsFileTreeAccessors();
+    expect(isAtomicAccessors(accessors)).toBe(true);
+  });
+
+  test('returns false for a mutable store that does not carry the atomic methods', () => {
+    expect(isAtomicAccessors(new NonAtomicAccessors())).toBe(false);
+  });
+
+  test('returns false for a store carrying only some of the atomic methods', () => {
+    // The guard asserts the whole interface or none of it. Accepting a partial
+    // shape would hand a caller a type that promises a method that is not there.
+    expect(isAtomicAccessors(new PartiallyAtomicAccessors())).toBe(false);
+  });
+});
+
+describe('InMemoryTreeAccessors.getAtomicWriteCapabilities', () => {
+  test('advertises session, and only session, for a mutable tree', () => {
+    const accessors = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
+    expect(accessors.getAtomicWriteCapabilities('/')).toSucceedAndSatisfy((caps) => {
+      expect(caps.atomicReplace).toBe(true);
+      expect(caps.guarantees).toEqual(['session']);
+      expect(caps.guarantees).not.toContain('process-crash');
+    });
+  });
+
+  test('reports no atomic replacement for a non-mutable tree', () => {
+    const accessors = InMemoryTreeAccessors.create([], { mutable: false }).orThrow();
+    expect(accessors.getAtomicWriteCapabilities('/')).toSucceedAndSatisfy((caps) => {
+      expect(caps.atomicReplace).toBe(false);
+      expect(caps.guarantees).toEqual([]);
+    });
+  });
+
+  test('fails when the directory does not exist', () => {
+    const accessors = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
+    expect(accessors.getAtomicWriteCapabilities('/nope')).toFailWith(/not found/i);
+  });
+
+  test('fails when the path is a file, not a directory', () => {
+    const accessors = InMemoryTreeAccessors.create([{ path: '/f.txt', contents: 'x' }], {
+      mutable: true
+    }).orThrow();
+    expect(accessors.getAtomicWriteCapabilities('/f.txt')).toFailWith(/not a directory/i);
+  });
+});
+
+describe('InMemoryTreeAccessors.writeFileAtomically', () => {
+  test('creates a new file and reports replaced: false', () => {
+    const accessors = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
+    expect(accessors.writeFileAtomically('/new.txt', 'hello', { guarantee: 'session' })).toSucceedAndSatisfy(
+      (receipt) => {
+        expect(receipt.guarantee).toBe('session');
+        expect(receipt.replaced).toBe(false);
+      }
+    );
+    expect(accessors.getFileContents('/new.txt')).toSucceedWith('hello');
+  });
+
+  test('replaces an existing file and reports replaced: true', () => {
+    const accessors = InMemoryTreeAccessors.create([{ path: '/existing.txt', contents: 'old' }], {
+      mutable: true
+    }).orThrow();
+    expect(
+      accessors.writeFileAtomically('/existing.txt', 'new', { guarantee: 'session' })
+    ).toSucceedAndSatisfy((receipt) => {
+      expect(receipt.replaced).toBe(true);
+    });
+    expect(accessors.getFileContents('/existing.txt')).toSucceedWith('new');
+  });
+
+  test('fails before mutating anything when a stronger guarantee than session is requested', () => {
+    const accessors = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
+    expect(
+      accessors.writeFileAtomically('/unwritten.txt', 'hello', { guarantee: 'process-crash' })
+    ).toFailWithDetail(/exceeds this store's 'session' capability/i, {
+      code: 'unsupported',
+      stage: 'validate',
+      visibility: 'unchanged'
+    });
+    expect(accessors.getItem('/unwritten.txt')).toFailWith(/not found/i);
+  });
+
+  test('fails with not-writable when the tree is not mutable', () => {
+    const accessors = InMemoryTreeAccessors.create([], { mutable: false }).orThrow();
+    expect(accessors.writeFileAtomically('/blocked.txt', 'hello', { guarantee: 'session' })).toFailWithDetail(
+      /mutability is disabled/i,
+      {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      }
+    );
+  });
+
+  test('fails validation, before mutating anything, when the destination path collides with an existing directory', () => {
+    const accessors = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
+    accessors.createDirectory('/collision').orThrow();
+    expect(accessors.writeFileAtomically('/collision', 'hello', { guarantee: 'session' })).toFailWithDetail(
+      /not a file/i,
+      {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      }
+    );
+    expect(accessors.getItem('/collision')).toSucceedAndSatisfy((item) => {
+      expect(item.type).toBe('directory');
+    });
+  });
+
+  test('reports the destination unchanged when an ancestor path segment names an existing file', () => {
+    // `visibility` is scoped to the DESTINATION path, so an ancestor collision is
+    // `unchanged` even though the parent walk may have created directories elsewhere:
+    // the destination was never written, and a caller must be able to retry safely
+    // rather than treat its own file as ambiguously mutated.
+    const accessors = InMemoryTreeAccessors.create([{ path: '/ancestor.txt', contents: 'x' }], {
+      mutable: true
+    }).orThrow();
+    expect(
+      accessors.writeFileAtomically('/ancestor.txt/nested.txt', 'hello', { guarantee: 'session' })
+    ).toFailWithDetail(/not a directory/i, {
+      code: 'not-writable',
+      stage: 'validate',
+      visibility: 'unchanged'
+    });
+    // The claim the classification makes: the destination is genuinely still absent,
+    // and the ancestor file itself is untouched.
+    expect(accessors.getItem('/ancestor.txt/nested.txt')).toFail();
+    expect(accessors.getFileContents('/ancestor.txt')).toSucceedWith('x');
+  });
+});
+
+describe('DirectoryItem atomic delegation', () => {
+  test('isAtomicDirectoryItem is true for any DirectoryItem regardless of backing store', () => {
+    const inMemoryDir = InMemoryTreeAccessors.create([], { mutable: true }).orThrow().getItem('/').orThrow();
+    expect(isAtomicDirectoryItem(inMemoryDir)).toBe(true);
+
+    const fsAccessors = new FsFileTreeAccessors({ mutable: true });
+    const fsDir = DirectoryItem.create('.', fsAccessors).orThrow();
+    expect(isAtomicDirectoryItem(fsDir)).toBe(true);
+  });
+
+  test('returns false for a plain object that lacks the atomic methods', () => {
+    const item = {
+      type: 'directory' as const,
+      absolutePath: '/test',
+      name: 'test',
+      getChildren: () => ({} as never)
+    };
+    expect(isAtomicDirectoryItem(item)).toBe(false);
+  });
+
+  test('getAtomicWriteCapabilities reflects the backing store for a mutable in-memory directory', () => {
+    const dir = InMemoryTreeAccessors.create([], { mutable: true }).orThrow().getItem('/').orThrow();
+    if (!isAtomicDirectoryItem(dir)) {
+      throw new Error('expected an atomic directory item');
+    }
+    expect(dir.getAtomicWriteCapabilities()).toSucceedAndSatisfy((caps) => {
+      expect(caps.atomicReplace).toBe(true);
+      expect(caps.guarantees).toEqual(['session']);
+    });
+  });
+
+  test('getAtomicWriteCapabilities reports no atomic replacement when the backing store lacks the capability', () => {
+    const dir = DirectoryItem.create('/', new NonAtomicAccessors()).orThrow();
+    expect(dir.getAtomicWriteCapabilities()).toSucceedAndSatisfy((caps) => {
+      expect(caps.atomicReplace).toBe(false);
+      expect(caps.guarantees).toEqual([]);
+    });
+  });
+
+  test('cleanupAtomicTemporaries reclaims nothing when the backing store lacks the capability', () => {
+    const dir = DirectoryItem.create('/', new NonAtomicAccessors()).orThrow();
+    expect(dir.cleanupAtomicTemporaries()).toSucceedWith([]);
+  });
+
+  test('reports, rather than throwing, when the backing store carries only some atomic methods', () => {
+    // Every method here goes through the accessor guard, so a guard that
+    // accepted a partial shape would turn each of these into an uncaught
+    // TypeError — the Result contract broken by a missing method rather than by
+    // a failing operation.
+    const dir = DirectoryItem.create('/', new PartiallyAtomicAccessors()).orThrow();
+    expect(dir.cleanupAtomicTemporaries()).toSucceedWith([]);
+    expect(dir.getAtomicWriteCapabilities()).toSucceedAndSatisfy((caps) => {
+      expect(caps.atomicReplace).toBe(false);
+    });
+    expect(dir.writeChildAtomically('child.txt', 'contents', { guarantee: 'session' })).toFailWithDetail(
+      /atomic writes not supported/i,
+      { code: 'unsupported', stage: 'validate', visibility: 'unchanged' }
+    );
+  });
+
+  test('writeChildAtomically creates a child with no native path or accessor internals visible to the caller', () => {
+    // Narrow via the guard rather than casting. This is the acceptance-criterion test for
+    // the whole slice, so it must not assert the thing it is meant to prove: a cast would
+    // still compile and pass if DirectoryItem stopped delegating, while the guard fails
+    // loudly at exactly that point — the same shape every other test in this file uses.
+    const dir = InMemoryTreeAccessors.create([], { mutable: true }).orThrow().getItem('/').orThrow();
+    if (!isAtomicDirectoryItem(dir)) {
+      throw new Error('expected an atomic directory item');
+    }
+
+    expect(dir.writeChildAtomically('child.txt', 'contents', { guarantee: 'session' })).toSucceedAndSatisfy(
+      (receipt) => {
+        expect(receipt.guarantee).toBe('session');
+        expect(receipt.replaced).toBe(false);
+      }
+    );
+
+    expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+      expect(children.some((c) => c.name === 'child.txt')).toBe(true);
+    });
+  });
+
+  test('writeChildAtomically replaces an existing child and reports replaced: true', () => {
+    const accessors = InMemoryTreeAccessors.create([{ path: '/existing.txt', contents: 'old' }], {
+      mutable: true
+    }).orThrow();
+    const dir = accessors.getItem('/').orThrow();
+    if (!isAtomicDirectoryItem(dir)) {
+      throw new Error('expected an atomic directory item');
+    }
+    expect(dir.writeChildAtomically('existing.txt', 'new', { guarantee: 'session' })).toSucceedAndSatisfy(
+      (receipt) => {
+        expect(receipt.replaced).toBe(true);
+      }
+    );
+    expect(accessors.getFileContents('/existing.txt')).toSucceedWith('new');
+  });
+
+  test('rejects an empty child name before touching the backing store', () => {
+    const dir = InMemoryTreeAccessors.create([], { mutable: true }).orThrow().getItem('/').orThrow();
+    if (!isAtomicDirectoryItem(dir)) {
+      throw new Error('expected an atomic directory item');
+    }
+    expect(dir.writeChildAtomically('', 'contents', { guarantee: 'session' })).toFailWithDetail(
+      /not a valid child file name/i,
+      { code: 'not-writable', stage: 'validate', visibility: 'unchanged' }
+    );
+  });
+
+  test('rejects a child name containing a path separator', () => {
+    const dir = InMemoryTreeAccessors.create([], { mutable: true }).orThrow().getItem('/').orThrow();
+    if (!isAtomicDirectoryItem(dir)) {
+      throw new Error('expected an atomic directory item');
+    }
+    expect(dir.writeChildAtomically('a/b', 'contents', { guarantee: 'session' })).toFailWithDetail(
+      /not a valid child file name/i,
+      { code: 'not-writable', stage: 'validate', visibility: 'unchanged' }
+    );
+  });
+
+  test.each(['.', '..'])('rejects %p as a child name', (name) => {
+    // Sharper than the separator cases: `path.join` NORMALIZES dot segments, so
+    // `joinPaths('/a/b', '..')` is `/a` — a path outside the directory entirely. Not
+    // exploitable today (the in-memory accessor preserves dot segments and the
+    // filesystem one is not atomic-capable yet), but the contract is what every future
+    // accessor is written against, so it must not admit a traversal.
+    const dir = InMemoryTreeAccessors.create([], { mutable: true }).orThrow().getItem('/').orThrow();
+    if (!isAtomicDirectoryItem(dir)) {
+      throw new Error('expected an atomic directory item');
+    }
+    expect(dir.writeChildAtomically(name, 'contents', { guarantee: 'session' })).toFailWithDetail(
+      /not a valid child file name/i,
+      { code: 'not-writable', stage: 'validate', visibility: 'unchanged' }
+    );
+    expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+      expect(children).toHaveLength(0);
+    });
+  });
+
+  test('rejects a child name containing a backslash on every platform', () => {
+    // `FsFileTreeAccessors.joinPaths` is `path.join`, which treats `\` as a separator on
+    // Windows. Today this is latent — that accessor is not atomic-capable, and the in-memory
+    // one splits on '/' only — but F2 makes it live, so the check belongs here rather than
+    // being inherited as a hole. Rejection is unconditional, not platform-sniffed: a child
+    // name is a single component everywhere, so neither separator is ever legitimate.
+    const dir = InMemoryTreeAccessors.create([], { mutable: true }).orThrow().getItem('/').orThrow();
+    if (!isAtomicDirectoryItem(dir)) {
+      throw new Error('expected an atomic directory item');
+    }
+    expect(dir.writeChildAtomically('a\\b', 'contents', { guarantee: 'session' })).toFailWithDetail(
+      /not a valid child file name/i,
+      { code: 'not-writable', stage: 'validate', visibility: 'unchanged' }
+    );
+    // Nothing was created under either interpretation of the name.
+    expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+      expect(children).toHaveLength(0);
+    });
+  });
+
+  test('fails explicitly rather than degrading when the backing store does not support atomic writes', () => {
+    const fsDir = DirectoryItem.create('/', new NonAtomicAccessors()).orThrow();
+    expect(fsDir.writeChildAtomically('child.txt', 'contents', { guarantee: 'session' })).toFailWithDetail(
+      /atomic writes not supported/i,
+      {
+        code: 'unsupported',
+        stage: 'validate',
+        visibility: 'unchanged'
+      }
+    );
+  });
+
+  test('a stronger requested guarantee fails before mutating, delegated through the directory item', () => {
+    const dir = InMemoryTreeAccessors.create([], { mutable: true }).orThrow().getItem('/').orThrow();
+    if (!isAtomicDirectoryItem(dir)) {
+      throw new Error('expected an atomic directory item');
+    }
+    expect(dir.writeChildAtomically('unwritten.txt', 'contents', { guarantee: 'os-crash' })).toFailWithDetail(
+      /exceeds this store's 'session' capability/i,
+      {
+        code: 'unsupported',
+        stage: 'validate',
+        visibility: 'unchanged'
+      }
+    );
+    expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+      expect(children.some((c) => c.name === 'unwritten.txt')).toBe(false);
+    });
+  });
+});
+
+describe('InMemoryTreeAccessors.cleanupAtomicTemporaries', () => {
+  test('reclaims nothing, because an in-memory replacement leaves no working file', () => {
+    const accessors = InMemoryTreeAccessors.create([{ path: '/f.txt', contents: 'x' }], {
+      mutable: true
+    }).orThrow();
+    expect(accessors.cleanupAtomicTemporaries('/')).toSucceedWith([]);
+    // And reclaiming did not disturb anything.
+    expect(accessors.getFileContents('/f.txt')).toSucceedWith('x');
+  });
+
+  test('still refuses a path that is not an existing directory', () => {
+    // "Nothing to reclaim" is an answer about a directory. Asked about a path
+    // that is not one, it fails rather than answering for it.
+    const accessors = InMemoryTreeAccessors.create([{ path: '/f.txt', contents: 'x' }], {
+      mutable: true
+    }).orThrow();
+    expect(accessors.cleanupAtomicTemporaries('/nope')).toFailWith(/not found/i);
+    expect(accessors.cleanupAtomicTemporaries('/f.txt')).toFailWith(/not a directory/i);
+  });
+});

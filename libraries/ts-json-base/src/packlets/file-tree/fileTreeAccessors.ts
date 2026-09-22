@@ -713,6 +713,281 @@ export interface IPersistentFileTreeAccessors<TCT extends string = string>
 }
 
 // ============================================================================
+// Atomic Write Types
+// ============================================================================
+
+/**
+ * Durability guarantee an atomic write claims to honor.
+ *
+ * @remarks
+ * Ordered weakest to strongest. `'session'` means only that a reader never
+ * observes a torn write while the writing process is alive — nothing survives
+ * a crash. `'process-crash'` additionally survives abrupt termination of the
+ * writing process while the OS/filesystem keeps running. `'os-crash'` and
+ * `'power-loss'` are stronger claims that no accessor in this package makes
+ * yet; they are reserved for a future qualified implementation and requesting
+ * either today fails rather than silently downgrading.
+ * @public
+ */
+export type AtomicWriteGuarantee = 'session' | 'process-crash' | 'os-crash' | 'power-loss';
+
+/**
+ * Reports what atomic replacement a directory's backing store can actually
+ * offer.
+ *
+ * @remarks
+ * This is an inquiry, not a capability guard: a store that cannot atomically
+ * replace anything still answers `Success` with `atomicReplace: false` and an
+ * empty `guarantees` list, rather than `Failure` — the guard
+ * ({@link FileTree.isAtomicAccessors | isAtomicAccessors} /
+ * {@link FileTree.isAtomicDirectoryItem | isAtomicDirectoryItem}) answers
+ * *method presence*; this answers *what a write would actually achieve*, the
+ * same relationship {@link FileTree.IMutableFileTreeFileItem.getIsMutable |
+ * getIsMutable} has to {@link FileTree.isMutableFileItem | isMutableFileItem}.
+ * @public
+ */
+export interface IAtomicWriteCapabilities {
+  /**
+   * `true` if this store can replace a file such that a reader never observes
+   * a torn write.
+   */
+  readonly atomicReplace: boolean;
+
+  /**
+   * The durability guarantees this store can honor for an atomic write,
+   * weakest to strongest. Empty when `atomicReplace` is `false`.
+   */
+  readonly guarantees: ReadonlyArray<AtomicWriteGuarantee>;
+}
+
+/**
+ * Options controlling an atomic write.
+ * @public
+ */
+export interface IAtomicWriteOptions {
+  /**
+   * The durability guarantee the caller requires. A guarantee stronger than
+   * the store can honor fails before any mutation — there is no silent
+   * downgrade to a weaker guarantee than requested.
+   */
+  readonly guarantee: AtomicWriteGuarantee;
+}
+
+/**
+ * Receipt returned by a successful atomic write.
+ * @public
+ */
+export interface IAtomicWriteReceipt {
+  /**
+   * The guarantee actually honored. Always equal to the guarantee requested
+   * in {@link FileTree.IAtomicWriteOptions.guarantee} — a weaker receipt is
+   * never substituted for a stronger request.
+   */
+  readonly guarantee: AtomicWriteGuarantee;
+
+  /**
+   * `true` if this write replaced an existing file; `false` if it created a
+   * new one.
+   */
+  readonly replaced: boolean;
+}
+
+/**
+ * Classified detail for a failed atomic write.
+ *
+ * @remarks
+ * Separates *why* the write failed from *what a reader can now see*, because
+ * those are independent questions once a write protocol has multiple stages.
+ * A failure at `'replace'` or later may have already changed what is durably
+ * visible; a failure at `'validate'` never has.
+ * @public
+ */
+export interface IAtomicWriteFailure {
+  /**
+   * - `unsupported`: the store or destination does not support atomic
+   *   writes, or the requested guarantee exceeds what the store can honor.
+   * - `not-writable`: the destination or containing directory is not
+   *   writable, or the requested name/path is not valid.
+   * - `io`: an underlying read/write/flush/rename operation failed.
+   */
+  readonly code: 'unsupported' | 'not-writable' | 'io';
+
+  /**
+   * The protocol stage at which the failure occurred.
+   * - `validate`: destination, guarantee and path checks, before anything is
+   *   touched. Always `visibility: 'unchanged'`.
+   * - `temporary-write`: creating or writing the working file a store commits
+   *   through. The destination has not been opened.
+   * - `file-flush`: flushing or closing that working file. The previous
+   *   destination is still authoritative.
+   * - `replace`: the rename or assignment that makes the new contents visible.
+   *   This is the stage whose `visibility` can be `'unknown'`.
+   * - `directory-flush`: establishing the durability boundary *after* the
+   *   contents are already visible, so `visibility` is `'replaced'`.
+   *
+   * @remarks
+   * A store that replaces in one step produces only `'validate'` and
+   * `'replace'`; a store that commits through a working file produces all five.
+   *
+   * There is deliberately no `'cleanup'` stage. Removing a working file is
+   * something a store does *on the way out of* a failure, and the failure a
+   * caller has to act on is the one that caused it — so a cleanup problem is
+   * reported in the message and never replaces the classification. A successful
+   * commit leaves nothing to clean up, because the replacement consumes the
+   * working file.
+   */
+  readonly stage: 'validate' | 'temporary-write' | 'file-flush' | 'replace' | 'directory-flush';
+
+  /**
+   * What a subsequent reader can now see for the destination path.
+   * - `unchanged`: the destination still holds whatever it held before this
+   *   call — nothing was mutated.
+   * - `replaced`: the destination was already replaced when the failure
+   *   occurred (a failure during a later stage, such as directory flush).
+   * - `unknown`: the underlying operation's outcome could not be determined
+   *   (for example, an ambiguous system-call result).
+   */
+  readonly visibility: 'unchanged' | 'replaced' | 'unknown';
+}
+
+/**
+ * Extended accessors interface for trees that can replace a file's contents
+ * such that a reader never observes a torn write.
+ *
+ * @remarks
+ * This is an *optional capability* — use
+ * {@link FileTree.isAtomicAccessors | isAtomicAccessors} to narrow. It is
+ * deliberately separate from {@link FileTree.IPersistentFileTreeAccessors} —
+ * `isPersistentAccessors` means `syncToDisk`/`isDirty`/`getDirtyPaths` exist,
+ * which is neither necessary for atomic write-through storage nor sufficient
+ * for transactional durability; a buffered adapter would need to implement
+ * and separately qualify this capability, including its own flush boundary,
+ * before a caller can accept it as durable. Method presence (this guard),
+ * writability (still {@link FileTree.IMutableFileTreeAccessors.fileIsMutable
+ * | fileIsMutable}), atomic visibility
+ * ({@link FileTree.IAtomicWriteCapabilities.atomicReplace | atomicReplace}),
+ * and durability ({@link FileTree.IAtomicWriteCapabilities.guarantees |
+ * guarantees}) are four distinct questions this interface keeps separate
+ * rather than conflating into one boolean.
+ * @public
+ */
+export interface IAtomicFileTreeAccessors<TCT extends string = string>
+  extends IMutableFileTreeAccessors<TCT> {
+  /**
+   * Reports what atomic replacement this store can offer for writes into the
+   * given directory.
+   * @param directory - Absolute path of the containing directory.
+   * @returns `Success` with the store's {@link FileTree.IAtomicWriteCapabilities
+   * | capabilities}, or `Failure` if the directory does not exist or the path
+   * names a file rather than a directory.
+   */
+  getAtomicWriteCapabilities(directory: string): Result<IAtomicWriteCapabilities>;
+
+  /**
+   * Replaces (or creates) a file's contents such that a reader never
+   * observes a torn write.
+   *
+   * @remarks
+   * Validates destination writability, path confinement, and the requested
+   * guarantee before any mutation — a stronger guarantee than this store can
+   * honor fails at the `'validate'` stage, leaving the destination
+   * unchanged. Ordinary {@link FileTree.IMutableFileTreeAccessors.saveFileContents
+   * | saveFileContents} retains its existing semantics; this is a sibling
+   * capability, not a replacement.
+   *
+   * @param path - Absolute path of the file to write.
+   * @param contents - The string contents to write.
+   * @param options - The requested {@link FileTree.IAtomicWriteOptions | options}.
+   * @returns `DetailedSuccess` with the {@link FileTree.IAtomicWriteReceipt |
+   * receipt} if the write committed, or `DetailedFailure` with a classified
+   * {@link FileTree.IAtomicWriteFailure | failure}.
+   */
+  writeFileAtomically(
+    path: string,
+    contents: string,
+    options: IAtomicWriteOptions
+  ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure>;
+
+  /**
+   * Removes any working files this store reserves for interrupted atomic
+   * writes from the given directory.
+   *
+   * @remarks
+   * A store that commits by writing somewhere else first can leave that
+   * working file behind when the process dies mid-write. The name of such a
+   * file is reserved to the store, so only the store can recognize one; this
+   * is how a consumer reclaims them without being handed a naming convention
+   * it would then depend on.
+   *
+   * **Call this only at exclusive reopen**, which the single-writer fault
+   * model already assumes: a working file belonging to a *live* write is
+   * indistinguishable from an orphan, and removing it would break that write.
+   * A store with nothing to reclaim answers with an empty list.
+   *
+   * @param directory - Absolute path of the directory to reclaim.
+   * @returns `Success` with the names removed, or `Failure` naming what could
+   * not be removed.
+   */
+  cleanupAtomicTemporaries(directory: string): Result<ReadonlyArray<string>>;
+}
+
+/**
+ * Extended directory item interface for directories that can atomically
+ * write a child file, without the caller ever seeing a native path or
+ * reaching into accessor internals.
+ *
+ * @remarks
+ * This is an *optional capability* — use
+ * {@link FileTree.isAtomicDirectoryItem | isAtomicDirectoryItem} to narrow.
+ * **As with the other item-level guards, the guard narrows the type and is
+ * not a success guarantee** — {@link FileTree.DirectoryItem} implements this
+ * interface unconditionally and delegates to its accessors, so
+ * `isAtomicDirectoryItem` is `true` for any `DirectoryItem` regardless of
+ * what backs it. Ask
+ * {@link FileTree.IAtomicFileTreeDirectoryItem.getAtomicWriteCapabilities |
+ * getAtomicWriteCapabilities} for the store's actual answer, mirroring
+ * {@link FileTree.IMutableBinaryFileTreeDirectoryItem.canCreateChildFileBytes
+ * | canCreateChildFileBytes}.
+ * @public
+ */
+export interface IAtomicFileTreeDirectoryItem<TCT extends string = string>
+  extends IMutableFileTreeDirectoryItem<TCT> {
+  /**
+   * Reports what atomic replacement this directory's backing store can
+   * offer.
+   * @returns `Success` with the store's {@link FileTree.IAtomicWriteCapabilities
+   * | capabilities} — a non-capable store answers `atomicReplace: false`
+   * rather than failing the inquiry. This directory's own `absolutePath` is
+   * known to exist, so no accessor shipped today fails this call for a
+   * `DirectoryItem`; a hypothetical accessor whose directory-existence check
+   * could race with deletion is not precluded from returning `Failure`.
+   */
+  getAtomicWriteCapabilities(): Result<IAtomicWriteCapabilities>;
+
+  /**
+   * Atomically writes (creating or replacing) a child file of this
+   * directory, such that a reader never observes a torn write.
+   * @param name - The file name to write, relative to this directory. Must
+   * be a single valid child name — no path separators.
+   * @param contents - The string contents to write.
+   * @param options - The requested {@link FileTree.IAtomicWriteOptions | options}.
+   * @returns `DetailedSuccess` with the {@link FileTree.IAtomicWriteReceipt |
+   * receipt} if the write committed, or `DetailedFailure` with a classified
+   * {@link FileTree.IAtomicWriteFailure | failure}.
+   */
+  writeChildAtomically(
+    name: string,
+    contents: string,
+    options: IAtomicWriteOptions
+  ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure>;
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeAccessors.cleanupAtomicTemporaries}
+   */
+  cleanupAtomicTemporaries(): Result<ReadonlyArray<string>>;
+}
+
+// ============================================================================
 // Type Guards
 // ============================================================================
 
@@ -745,7 +1020,7 @@ export function isPersistentAccessors<TCT extends string = string>(
   accessors: IFileTreeAccessors<TCT>
 ): accessors is IPersistentFileTreeAccessors<TCT> {
   const persistent = accessors as IPersistentFileTreeAccessors<TCT>;
-  /* c8 ignore next 6 - no current accessor implements IPersistentFileTreeAccessors */
+  /* c8 ignore next 6 - unreachable from THIS package's suite: no accessor here implements IPersistentFileTreeAccessors (three in ts-web-extras do) */
   return (
     isMutableAccessors(accessors) &&
     typeof persistent.syncToDisk === 'function' &&
@@ -832,6 +1107,24 @@ export function isMutableBinaryAccessors<TCT extends string = string>(
     isBinaryAccessors(accessors) &&
     isMutableAccessors(accessors) &&
     typeof binary.saveFileBytes === 'function'
+  );
+}
+
+/**
+ * Type guard to check if accessors support atomic writes.
+ * @param accessors - The accessors to check.
+ * @returns `true` if the accessors implement {@link FileTree.IAtomicFileTreeAccessors}.
+ * @public
+ */
+export function isAtomicAccessors<TCT extends string = string>(
+  accessors: IFileTreeAccessors<TCT>
+): accessors is IAtomicFileTreeAccessors<TCT> {
+  const atomic = accessors as IAtomicFileTreeAccessors<TCT>;
+  return (
+    isMutableAccessors(accessors) &&
+    typeof atomic.getAtomicWriteCapabilities === 'function' &&
+    typeof atomic.writeFileAtomically === 'function' &&
+    typeof atomic.cleanupAtomicTemporaries === 'function'
   );
 }
 
@@ -951,5 +1244,29 @@ export function isMutableBinaryDirectoryItem<TCT extends string = string>(
     isMutableDirectoryItem(item) &&
     typeof binary.canCreateChildFileBytes === 'function' &&
     typeof binary.createChildFileBytes === 'function'
+  );
+}
+
+/**
+ * Type guard narrowing a directory item to {@link FileTree.IAtomicFileTreeDirectoryItem}.
+ *
+ * @remarks
+ * Narrows the type; does **not** promise `writeChildAtomically()` will
+ * succeed — see that interface's remarks. Follow a successful narrowing with
+ * {@link FileTree.IAtomicFileTreeDirectoryItem.getAtomicWriteCapabilities |
+ * getAtomicWriteCapabilities}, which does answer for the backing store.
+ * @param item - The directory item to check.
+ * @returns `true` if the item implements {@link FileTree.IAtomicFileTreeDirectoryItem}.
+ * @public
+ */
+export function isAtomicDirectoryItem<TCT extends string = string>(
+  item: AnyFileTreeDirectoryItem<TCT> | FileTreeItem<TCT>
+): item is IAtomicFileTreeDirectoryItem<TCT> {
+  const atomic = item as IAtomicFileTreeDirectoryItem<TCT>;
+  return (
+    isMutableDirectoryItem(item) &&
+    typeof atomic.getAtomicWriteCapabilities === 'function' &&
+    typeof atomic.writeChildAtomically === 'function' &&
+    typeof atomic.cleanupAtomicTemporaries === 'function'
   );
 }

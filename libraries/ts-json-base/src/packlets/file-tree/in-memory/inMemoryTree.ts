@@ -33,6 +33,11 @@ import { DirectoryItem } from '../directoryItem';
 import { FileItem } from '../fileItem';
 import {
   FileTreeItem,
+  IAtomicFileTreeAccessors,
+  IAtomicWriteCapabilities,
+  IAtomicWriteFailure,
+  IAtomicWriteOptions,
+  IAtomicWriteReceipt,
   IBinaryFileTreeAccessors,
   IFileTreeInitParams,
   IFilterSpec,
@@ -171,10 +176,17 @@ class MutableInMemoryDirectory<TCT extends string = string> {
  * supported: subclasses that persist this tree (`localStorage`, HTTP JSON transport,
  * File System Access) persist text, so a byte write could not round-trip through them.
  * Seed a tree with `Uint8Array` contents to hold bytes verbatim.
+ *
+ * Also implements the optional atomic-write capability
+ * ({@link FileTree.IAtomicFileTreeAccessors}). A replacement of an in-memory file's
+ * contents is a single synchronous property assignment, so a reader can never observe
+ * a torn write — this store advertises the `'session'` guarantee and never
+ * `'process-crash'`: nothing here survives the process exiting, because nothing here
+ * is ever written to anything other than process memory.
  * @public
  */
 export class InMemoryTreeAccessors<TCT extends string = string>
-  implements IMutableFileTreeAccessors<TCT>, IBinaryFileTreeAccessors<TCT>
+  implements IMutableFileTreeAccessors<TCT>, IBinaryFileTreeAccessors<TCT>, IAtomicFileTreeAccessors<TCT>
 {
   private readonly _tree: TreeBuilder<TCT>;
   private readonly _inferContentType: (filePath: string) => Result<TCT | undefined>;
@@ -676,5 +688,116 @@ export class InMemoryTreeAccessors<TCT extends string = string>
 
       return succeed(contents);
     });
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeAccessors.getAtomicWriteCapabilities}
+   */
+  public getAtomicWriteCapabilities(directory: string): Result<IAtomicWriteCapabilities> {
+    const absolutePath = this.resolveAbsolutePath(directory);
+    const item = this._tree.byAbsolutePath.get(absolutePath);
+    if (item === undefined) {
+      return fail(`${absolutePath}: not found`);
+    }
+    if (!(item instanceof InMemoryDirectory)) {
+      return fail(`${absolutePath}: not a directory`);
+    }
+    if (this._mutable === false) {
+      return succeed({ atomicReplace: false, guarantees: [] });
+    }
+    return succeed({ atomicReplace: true, guarantees: ['session'] });
+  }
+
+  /**
+   * Replaces (or creates) a file's contents such that a reader never observes
+   * a torn write.
+   *
+   * @remarks
+   * A replacement of an in-memory file's contents is a single synchronous
+   * assignment (see `MutableInMemoryFile.setContents`), so there is no
+   * intermediate state a reader could observe as torn — this store can honor
+   * `'session'` unconditionally whenever ordinary mutation would succeed, and
+   * fails any stronger request before touching anything.
+   * @param path - Absolute path of the file to write.
+   * @param contents - The string contents to write.
+   * @param options - The requested {@link FileTree.IAtomicWriteOptions | options}.
+   * @returns `DetailedSuccess` with the receipt if the write committed, or
+   * `DetailedFailure` with a classified failure.
+   */
+  public writeFileAtomically(
+    path: string,
+    contents: string,
+    options: IAtomicWriteOptions
+  ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure> {
+    const absolutePath = this.resolveAbsolutePath(path);
+
+    if (options.guarantee !== 'session') {
+      return failWithDetail(
+        `${absolutePath}: requested guarantee '${options.guarantee}' exceeds this store's 'session' capability`,
+        { code: 'unsupported', stage: 'validate', visibility: 'unchanged' }
+      );
+    }
+
+    // fileIsMutable is checked again inside saveFileContents below; repeated here because
+    // this call site needs it attached to an IAtomicWriteFailure, not a plain Result.
+    const isMutable = this.fileIsMutable(path);
+    if (isMutable.isFailure()) {
+      return failWithDetail(isMutable.message, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    const existingEntry = this._mutableByPath.get(absolutePath);
+    if (existingEntry !== undefined && !(existingEntry instanceof MutableInMemoryFile)) {
+      // The destination names an existing directory. Caught here, before any mutation,
+      // so this is a validation failure (an invalid destination path), not an I/O failure.
+      return failWithDetail(`${absolutePath}: not a file`, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+    const replaced = existingEntry !== undefined;
+
+    const saveResult = this.saveFileContents(path, contents);
+    if (saveResult.isFailure()) {
+      // Reachable only when an ancestor path segment names an existing file, so the
+      // parent-directory walk inside saveFileContents fails before updateOrAddFile runs.
+      //
+      // `visibility` is defined as what a reader can now see FOR THE DESTINATION PATH, and
+      // the destination was never written — so it is `unchanged`, not `unknown`. The walk
+      // may have created intermediate directories on the way, but those are other paths;
+      // reporting `unknown` because the tree changed somewhere would force a caller to
+      // treat a safe retry as an ambiguous mutation of its own file.
+      //
+      // An ancestor that is a file also means this path can never hold one, which is a
+      // not-writable destination rather than an I/O fault.
+      return failWithDetail(saveResult.message, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    return succeedWithDetail({ guarantee: options.guarantee, replaced });
+  }
+
+  /**
+   * Removes any working files this store reserves for interrupted atomic
+   * writes from the given directory.
+   *
+   * @remarks
+   * Always an empty list: an in-memory replacement is a single synchronous
+   * assignment, so there is no intermediate working file for an interrupted
+   * write to leave behind. The method exists so a consumer's reopen path is the
+   * same shape whichever store is behind it.
+   * @param directory - Absolute path of the directory to reclaim.
+   * @returns `Success` with an empty list, or `Failure` if the path is not an
+   * existing directory.
+   */
+  public cleanupAtomicTemporaries(directory: string): Result<ReadonlyArray<string>> {
+    return this.getAtomicWriteCapabilities(directory).onSuccess(() => succeed([]));
   }
 }

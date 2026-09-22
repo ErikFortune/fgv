@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add an optional atomic-write capability to the FileTree packlet (F1 of the filetree-atomic-write stream): additive interfaces and type guards, mirroring the existing binary/persistent capability shape. New vocabulary AtomicWriteGuarantee ('session' | 'process-crash' | 'os-crash' | 'power-loss') plus IAtomicWriteCapabilities / IAtomicWriteOptions / IAtomicWriteReceipt / IAtomicWriteFailure (a classified code/stage/visibility failure detail). New interfaces IAtomicFileTreeAccessors (getAtomicWriteCapabilities(directory), writeFileAtomically(path, contents, options)) and IAtomicFileTreeDirectoryItem (getAtomicWriteCapabilities(), writeChildAtomically(name, contents, options)), with new guards isAtomicAccessors / isAtomicDirectoryItem. No existing interface or guard probe list changes, so every existing accessor implementation (FsFileTreeAccessors and the three ts-web-extras/ts-extras adapters) keeps reporting exactly the same capabilities and continues to typecheck unchanged - confirmed with a repo-wide rebuild. DirectoryItem implements the new capability unconditionally and delegates to its accessors, so a consumer holding a directory item can perform an atomic child write without ever seeing a native path or accessor internals; a backing store that lacks the capability answers the inquiry with atomicReplace: false rather than failing it, and fails writeChildAtomically explicitly (code 'unsupported') rather than degrading silently. InMemoryTreeAccessors implements the capability and advertises only the 'session' guarantee, never 'process-crash' - an in-memory content replacement is a single synchronous assignment, so a reader can never observe a torn write, but nothing here survives the process exiting. Requesting a guarantee stronger than a store can honor fails before any mutation. F1 claims no crash survival of any kind; a qualified Node implementation with process-crash durability is F2, which this stream's interfaces and vocabulary now unblock.",
+      "type": "minor",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "noreply@anthropic.com"
+}

@@ -390,3 +390,54 @@ Before implementation, the consuming project must settle:
 No calendar estimate is asserted. These choices, especially room scheduling,
 determine the adoption cost. They do not block independent design and validation
 of the FGV contracts.
+
+## Consumer A3 approval and payload measurements
+
+Recorded 2026-09-21, reported by the user from the consuming project. This section
+is the referent for the A3 citations in the [development design](development-design.md)
+and [implementation plan](implementation-plan.md).
+
+**Scope of the approval.** The consumer accepts A3's finite, non-recycling history
+budget **for its disposable V1 ingestion hubs only**. A disposable hub does not need
+to outlive its workload, so a finite horizon is acceptable by construction rather
+than by rate estimate. This is explicitly **not** approval for the consumer's future
+always-on autonomous collective, which requires a separately approved
+compaction/deletion design before it adopts. Raising finite limits postpones
+exhaustion; it does not satisfy indefinite fixed-resource operation.
+
+**History class.** The ingestion adapter is `observed-state`, not
+`replayable-updates`: optional and coalescible progress, required terminal delivery,
+applicable attention obligations preserved. The finite `source-replay` envelope in
+§8.6 therefore does not constrain this port. That requirement remains in force for
+any adapter that requests the stronger guarantee, and generic replayable-source tests
+remain required of the library.
+
+**Task modeling.** Deferred per-turn work is not modeled as one task per deferral in
+this consumer. That is a consumer modeling choice, not a library prohibition on
+short-lived tracked tasks, and it removes the cheap-checklist-item accumulation rate
+as a driver for this port.
+
+**What was measured, and what it established.** The consumer reported sizes for its
+**executor-owned execution records** — retained source text, segmentation checkpoints
+and accumulated curation state. Read against the broker's 1 MiB source-record limit,
+those figures appeared to exceed a broker bound. They do not: the resolution is a
+layering clarification rather than a limit change, now recorded in
+[development design §8.3](development-design.md) — the broker's source record holds
+**reconciliation metadata**, while execution payloads stay in the executor's own
+store under that store's capacity and durability contract. The task's 64 KiB `details`
+bound applies to the bounded adapter projection, with stable references for larger
+artifacts. Implementation plan slice T6 carries the layering fixture that proves task
+and source-checkpoint records copy neither retained source text nor execution
+checkpoints.
+
+**What was not measured, and therefore is not claimed.** The consumer did **not**
+supply measured production rates for retained task creation, acknowledgement or
+disposition IDs, or command evidence; nor any heap/RSS figures. §8.6's request for an
+earliest-limiting-dimension and drain-margin estimate is answered by the disposable-hub
+scoping above rather than by rate data, and that answer does not transfer to the
+always-on collective. The reported execution-record sizes are consumer-side
+measurements of consumer-side storage: they neither qualify the broker's memory
+profile nor substitute for **M1**, which remains mandatory before any resource profile
+is advertised. The precise figures live in the consumer's own report and are not
+transcribed here; nothing in the FGV design depends on their exact values, only on the
+ownership boundary they surfaced.

@@ -378,6 +378,38 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `createChildFile` / `createChildFileBytes` accept a child name containing a path
+  separator and silently `joinPaths` it into a nested path.**
+  `DirectoryItem.createChildFile` / `createChildFileBytes`
+  (`ts-json-base/src/packlets/file-tree/directoryItem.ts`) pass `name` straight to
+  `hal.joinPaths(this.absolutePath, name)` with no validation. A caller handing them
+  `'sub/child.txt'` gets a file one level down; on Windows `'sub\\child.txt'` does the same,
+  because `joinPaths` is `path.join`. `'..'` is worse, because `path.join` **normalizes** it —
+  `joinPaths('/a/b', '..')` is `/a`, a path outside the directory entirely.
+
+  The sibling `writeChildAtomically`, added by the `filetree-atomic-write` stream, rejects all
+  of these before touching the store. So the package now has two adjacent child-creating methods
+  with different name contracts, which is the actual defect: a caller who learns the strict rule
+  from one reasonably assumes it of the other.
+
+  **Trigger**: the next change that touches `DirectoryItem`'s child-creation methods for any
+  other reason, or the first consumer report of a traversal through one of them.
+
+  **Scope sketch**: lift the validation `writeChildAtomically` already performs into a shared
+  private helper and call it from all three. The work is small; the cost is that it is a
+  **behavior change on two established methods** of a stability-obligated package — a call that
+  succeeds today starts failing. That needs its own change file and a note in
+  `CAPABILITIES.md`, and it wants to be someone's deliberate decision rather than a rider on an
+  unrelated stream.
+
+  **Not a P2**: no known consumer passes a separator-bearing name, and neither method is
+  reachable from the atomic protocol, so nothing is currently exposed to it. It is a contract
+  inconsistency and a latent traversal, not a live one.
+
+  **Reference**: dispositioned out of F1 of `filetree-atomic-write` by its `code-reviewer` pass,
+  and out of F2 for the same reason — see
+  `.ai/tasks/completed/2026-09/filetree-atomic-write/result.md` § *Known follow-up*.
+
 - **[P3] A field added to a converted entity can be silently dropped — and the compiler cannot
   catch it. The dangerous shape is an entity with *more than one* converter.**
   `FieldConverters<T>` (`ts-utils/src/packlets/conversion/objectConverter.ts:61`) is
