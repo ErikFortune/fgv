@@ -1,0 +1,199 @@
+# Result — `agent-tasks-t1`
+
+**T1 does not close the stream.** T2 and beyond follow; artifacts stay in
+`.ai/tasks/active/agent-tasks-t1/`. Written 2026-09-22.
+
+---
+
+## What shipped
+
+`@fgv/ts-agent-tasks` at `libraries/ts-agent-tasks`, registered in `rush.json` under the
+`base-utils` lockstep policy, with two packlets and nothing else. No storage, no broker, no
+side effects at import.
+
+**`types`** — branded identities; `ITaskScope` / `IResponsibility` / `ITaskReference`;
+`ITaskReason` / `IWaitingReason` / `ITaskProgress` / `ITaskOutcome`; `TaskLifecycle` and its
+status-set helpers; `ObservationHealth`; `ISourceBinding` / `ISourceRevision` /
+`ISourceProjection`; `RecoveryDeclaration` / `RecoveryResult`; `SourceHistoryDeclaration` and
+`ISourceReplayEnvelope`; `ITaskEnvelope` / `ITaskSnapshot<T>`; `TaskFailureCode` / `ITaskFailure` /
+`ICapacityFailure` / `TaskResult<T>`; `ICommandRequest` / `CommandState` / `ICommandReceipt` /
+`ITaskCommandDescriptor<P>`; `UpdateCategory`; `ITaskFieldBounds`; the A3 capacity model
+(`ITaskCapacityProfile`, `ITaskEncodedBounds`, `ITaskPerOwnerLimits`, `ITaskCapacityClaim`,
+`ITaskCapacityStatus`, `maximumClosureCharges`, `maximumSettlementCharges`); the registry
+interfaces; and `ITaskEnvironmentParams` / `ITaskEnvironment`.
+
+**`converters`** — `TaskConverters.create({ bounds })` builds every converter against one set of
+field bounds; `TaskKindRegistry` and `createTaskCommandHandle`; the two built-in kind descriptors;
+`TaskEnvironment`; and the primitives (`instant`, the safe-integer family, the bounded
+identifier / single-line / text / array factories).
+
+366 tests. 100% statements, branches, functions and lines.
+
+---
+
+## Declared vs exercised, per union
+
+**This is the table the brief asked for, and it is the part to read.** T1's tests exercise
+*shapes*. They cannot exercise *choices*. Every row marked **prediction** is a guess about what a
+slice that does not exist yet will need, and later slices hold explicit licence to revise it rather
+than inherit it.
+
+| union / closed set | members | converter-exercised | what the tests establish | what they cannot |
+|---|---|---|---|---|
+| `TaskLifecycle` | 7 (`pending` `running` `waiting` `paused` `succeeded` `failed` `cancelled`) | **7/7** | each discriminant converts; each state's required payload is required; unknown status converts to nothing | whether the payload attached to each state is the *right* payload once transitions exist (T5) |
+| `TaskLifecycleStatus` sets | 7, partitioned 4 open / 3 terminal | **7/7** | the partition is exhaustive and disjoint | nothing — this one is fully settled |
+| `ObservationHealth` | 3 (`current` `stale` `unavailable`) | **3/3** | health is independent of lifecycle; `current` cannot carry a failure reason | whether `stale` vs `unavailable` is the distinction reconciliation actually needs (T6) |
+| `RecoveryDeclaration` | 3 (`reattach` `host-resume` `not-recoverable`) | **3/3** | each converts; unknown fails | whether three host declarations are enough (T6/T8) |
+| `RecoveryResult` | 6 (`reattached` `completed` `resumable` `unrecoverable` `unavailable` `unresolved`) | **6/6** | each converts with its required payload | **prediction.** Nothing in T1 produces or consumes one. The plan's gate-2 row names four of the six ("explicit reattach/resumable/unrecoverable/unavailable recovery"); `completed` and `unresolved` come from design §5 and are the least-evidenced members here |
+| `CommandState` | 4 (`rejected` `accepted` `applied` `indeterminate`) | **4/4** | the four do not collapse; `applied` requires its revision; `indeterminate` requires its reason | whether `accepted`'s optional `sourceReceipt` is the right carrier (T6) |
+| `CommandRejectionReason` | 6 | **6/6** | each converts; unknown fails | **partial prediction.** `stop-active` presumes T9's latch and `idempotency-conflict` presumes T3's dedup store; neither exists |
+| `TaskFailureCode` | 14 | **14/14** | each converts with a retry disposition; `capacity` detail is coupled to `backpressure` and to nothing else | **prediction for 9 of 14.** Only `invalid`, `unknown-kind-version`, `backpressure`, `conflict` and `not-found-or-denied` have any T1-side meaning; the storage, source, receipt and cursor codes describe slices that do not exist |
+| `CapacityDimension` | 11 | **11/11** | each converts; the profile names a limit for each; the closeout/settlement computations charge a subset | **prediction.** Which dimension actually fills first is an empirical question M1 answers. The limits are engineering defaults, not measured safe maxima |
+| `CapacityClaimPurpose` | 5 | **5/5** | each variant carries the identities needed to rejoin it after a crash; a claim cannot borrow another purpose's identities | **prediction.** No claim is generated anywhere in T1; T3 is the first slice that mints one |
+| `CapacityClaimOwnership` | 2 (`pending` `live`) | **2/2** | transfer keeps the claim id and charges | whether ownership transfer needs a third state during recovery (T3) |
+| `CapacityClaimDisposition` | 3 (`reserved` `consumed` `indeterminate`) | **3/3** | conversion is a disposition change, not a charge change | **`indeterminate` is a prediction.** It exists because §8.6 says ambiguity must fence admission; nothing yet produces it |
+| `TaskCapacityState` | 4 (`ok` `pressure` `admission-blocked` `draining`) | **4/4** | capacity state is not an index-health state | whether `admission-blocked` and `draining` are two states or one (T3/T8) |
+| `SourceHistoryDeclaration` | 2 (`observed-state` `source-replay`) | **2/2** | a replay declaration without a finite envelope is not representable; an observed-state one may not smuggle an envelope in | whether a two-member union survives contact with a real adapter (T6) |
+| `UpdateCategory` | 7 | count only | the count is the arithmetic input to closeout | **prediction.** No update is constructed in T1; the seven names come from design §8.3 |
+| `ParentStopPolicy` | 3 | **3/3** | each converts; unknown fails | whether v1's immutability holds (T9) |
+| `TrackedTaskCommandName` | 11 | names only | each satisfies the command-name syntax; none is an external `setStatus` | **the parameter schemas do not exist.** Deliberately: they belong to the slice implementing the transitions |
+| `TaskListCompletion` | 2 | **2/2** | both convert; unknown fails | whether `all-children-succeeded` needs sub-modes (T5) |
+
+**Honest summary of the above: 15 closed sets, 101 members, every one shape-exercised and roughly
+half of them choice-unexercised.** That is the F1 shape the brief named, and it is why this lands
+on an integration branch.
+
+### What was *not* declared, on purpose
+
+- **No `PageCursor` converter.** The brand exists (design §4 declares it); the encoding is T4's,
+  and this slice cannot exercise that choice.
+- **No `SourceRead`.** Declared in a first pass, then cut on review: it is `ITaskSource.observe`'s
+  return type, no T1 gate names it, and nothing here consumes it.
+- **No `ITaskSource` or `ISourceCapabilities`.** The source *interface* is T6.
+- **No `ITaskUpdate`, `ITaskSummary` or commit-record shapes.** Storage is T3. Only
+  `UpdateCategory` was pulled forward, because the plan requires closeout charges be computable.
+- **No tracked command parameter schemas.** Eleven names, zero schemas. An empty command registry
+  is explicitly supported, and the schemas are transition implementation.
+
+---
+
+## Which test establishes which acceptance criterion
+
+| plan acceptance criterion | established by |
+|---|---|
+| Runtime validation produces the same public shape the type declarations promise | `envelopeConverters.test.ts` — every required field is individually removed and fails; the converted object's key set is compared against the fixture's; each optional field is absent on the minimal envelope and present on the full one |
+| Registry erasure uses converter closures, not unsafe generic casts | `kindRegistry.test.ts` — conversion enforces a domain invariant (`width > 0`) that no schema expresses, proving the registered *converter* runs and not a cast; decode/encode round-trips through the registered codec; a failing encoder surfaces under its kind |
+| Unknown versions/kinds cannot be treated as validated current types | `kindRegistry.test.ts` — an unknown kind and an unknown *version of a known kind* both fail `toFailWithDetail(..., { code: 'unknown-kind-version' })`; a typed handle refuses both another kind and another version of its own |
+| Independent schema versions, and metadata/source ownership, are explicit | `envelopeConverters.test.ts` (schemaVersion 2 rejected; detailVersion validated separately), `valueConverters.test.ts` (a source projection carrying `responsibility` or `scopes` fails — execution fields only), `capacityConverters.test.ts` (`claimVersion` and `profileVersion` each rejected at 2) |
+| Bound waiting state contains only opaque host attention references | `envelopeConverters.test.ts` — a waiting reason's attention survives as bare `(namespace, key)` pairs, and a reason carrying a `request` or `answer` fails; `publicSurface.test.ts` asserts no export matches `/inputrequest\|answer\|inbox\|continuation/i` |
+| *(review gate)* no task runner, scheduler, executor or retry policy; no storage or broker | `publicSurface.test.ts` — regex assertions over the whole export surface |
+| *(A3)* claims are repository-generated, not caller-issued | `commandConverters.test.ts` (a request carrying `capacityClaims` fails), `envelopeConverters.test.ts` (same at the envelope), `publicSurface.test.ts` (no claim-minting export) |
+| *(A3)* count/byte schemas make maximum completion and settlement charges computable before acceptance | `types/capacityProfile.test.ts` — both computations are checked term by term against the profile's own maxima, shown to depend on nothing but the profile, and shown to claim no new task identity |
+
+The plan's named test topics all have homes: envelopes and every discriminant, zone-free and
+invalid instants, revision overflow, progress bounds, unknown and additional fields, limits,
+unknown kind/version, duplicate registry keys, converter/encoder round-trip, typed handle
+mismatch, schema consistency, and command names. Hostile inputs are `unknown`, never `any`.
+
+---
+
+## Review
+
+`code-reviewer` ran on the final diff before the first push, per layer 1.
+
+**P1: none.** Verified clean on `any`, `c8 ignore`, `Result<void>`, converter-closure erasure,
+unknown-kind handling, claim unreachability from caller shapes, and the absent input protocol.
+
+**P2 (3), all resolved:**
+
+1. *`ISourceRevision` / `ISourceProjection` / `SourceRead` / `RecoveryResult` are out-of-slice
+   gold-plating (T6).* **Partly accepted.** `SourceRead` was cut — the reviewer is right that
+   nothing names it and nothing exercises it. The other three stay: the plan's gate-2 row names
+   "explicit reattach/resumable/unrecoverable/unavailable recovery" and lists **T1** among its
+   slices, and `RecoveryResult` structurally requires the projection and the revision. They are
+   recorded above as predictions and `CAPABILITIES.md` now describes them.
+2. *`ISourceReplayEnvelope`'s counts reject `0`.* **Accepted and fixed.** §8.6 requires the
+   envelope be *finite*, not perpetually non-empty; it shrinks toward zero as accepted work
+   finishes, so zero remaining is the state a bounded replay exists to reach. Now
+   `nonNegativeSafeInteger`, with a test pinning zero as valid and negative as not.
+3. *Imperative `isFailure()` assertions where `toFailWithDetail` applies.* **Accepted and fixed** —
+   three sites in `kindRegistry.test.ts`.
+
+**P3 (3):**
+
+- *`TaskKindRegistry.create()` is a vacuously-succeeding `Result`.* **Dispositioned, kept.** It
+  matches `TaskConverters.create` and `TaskEnvironment.create`, both of which can fail, and T3
+  will give it real validation to do. A non-Result outlier in the family costs more than a
+  vacuous success.
+- *Built-in kind literals are cast rather than converted.* **Addressed where it can be.**
+  `types` cannot depend on `converters`, so the literals stay literals; a test now checks both
+  against the library's own `taskKind` converter.
+- *`CAPABILITIES.md` omits the source-observation types.* **Fixed**, for what survived the cut.
+
+**Copilot loop (layer 2):** not yet run — it starts on the open PR.
+
+---
+
+## Things a later slice must decide
+
+1. **The source-history spelling is not settled in the design.** §5's `ITaskSource.history` is
+   `'latest-snapshot' | 'replayable-updates'`; §1 and §8.6 say `'observed-state'` and
+   `'source-replay'` for the same distinction. T1 unified on the §8.6 spelling because A3 is the
+   authority for the declaration that keys off it. **T6 confirms or revises.** Nothing in T1
+   depends on which wins.
+2. **`maximumClosureCharges` and `maximumSettlementCharges` are engineering derivations, not
+   transcriptions.** §8.6 states *what* must be reserved in prose; the arithmetic — 7 categories ×
+   audience for links and acknowledgement evidence, 2 operation slots, schema maxima summed for
+   bytes — is T1's reading of it. T3 admits work against these numbers and is the first slice that
+   can say whether they are right. If a reservation turns out to be short, the fix is here.
+3. **The capacity limits are proposed defaults, not measured safe maxima.** M1 qualifies them.
+   `defaultTaskCapacityProfile` says so in its own TSDoc.
+4. **Per-owner limits are modelled separately from repository-wide dimensions**
+   (`ITaskPerOwnerLimits` vs `TaskCapacityLimits`) because §8.6's table mixes both scopes —
+   50,000 acknowledgement IDs *per subscription* and 200,000 across all, 128 operations *per task*
+   and 100,000 repository-wide. Whether the ledger wants them in one structure is T3's call.
+5. **Record-byte ceilings are per record *type*** (`maxTaskRecordBytes`, `maxConsumerRecordBytes`,
+   `maxInventoryRecordBytes`, `maxSourceRecordBytes`) while `record-bytes` is a single admission
+   *dimension*. That split is a T1 reading of a table that gives four numbers under one heading.
+6. **An upstream robustness gap, escalated rather than fixed.**
+   `Converters.strictObject(...).convert()` **throws** rather than failing on a null-prototype
+   object, because `ts-utils`' `isKeyOf` calls `item.hasOwnProperty(key)` instead of
+   `Object.prototype.hasOwnProperty.call(item, key)`. `JSON.parse` never produces such an object,
+   so wire data does not reach it; a host passing an `Object.create(null)` value to a converter
+   does. Per the brief, a demonstrated upstream bug is an escalation, not a fix folded in here.
+7. **The §8.3 / T6 / T8 executor-payload-dereference question did not reach this slice.**
+   `ITaskReference` is opaque identity with no dereference permission, and no T1 type needed
+   either answer. Nothing to surface.
+
+---
+
+## Gate results
+
+| gate | result |
+|---|---|
+| `rushx build` | clean, zero warnings; `etc/ts-agent-tasks.api.md` checked in |
+| `rushx lint` | clean; `rushx fixlint` run before the final commit |
+| `rushx test` | 366 passed; 100% statements, branches, functions, lines |
+| `rush rebuild` (repo-wide) | green — required, since a new Rush project changes the build graph |
+| `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
+| `verify-capability-docs.mjs` | router 19,158/24,000 chars, 24/24 libraries documented, 75 reflexes intact |
+| `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
+| `verify-bundler-resolution.mjs` | 20 checked, 0 failed |
+| `verify-tarball-exports.mjs` | 26 packages, 205 manifest paths, 0 failed |
+
+A repo-wide `rush test` was **not** run: this slice adds a package nothing consumes yet, so it
+widens no existing function's accepted set and there is no downstream assertion to move. The
+repo-wide *rebuild* is the applicable gate, and it is green.
+
+`rushx coverage` (the `jest --coverage` script) fails with a babel-parser error on every TS test
+file. Reproduced on the already-shipped `ts-prompt-assist`, so it is pre-existing tooling rather
+than this package; `rushx test` carries the coverage gate.
+
+---
+
+## One shape worth keeping
+
+The only coverage gap this slice produced was a redundant empty-string check inside
+`boundedSingleLine` — `singleLine()` already rejects empty. Running the scenario tests *before*
+chasing coverage is what surfaced it as a branch that should not exist rather than as a line
+needing a `c8` directive. There are no coverage directives in this package.
