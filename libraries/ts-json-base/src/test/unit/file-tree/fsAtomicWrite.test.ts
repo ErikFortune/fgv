@@ -39,14 +39,20 @@ const OLD: string = '{"revision":1}\n';
 const NEW: string = '{"revision":2}\n';
 
 describe('the qualification evidence is actually being gathered', () => {
-  test('at least one discovered root is qualified, so the committing tests are not all skipped', () => {
-    // Without this, moving CI onto a filesystem the allowlist does not name
-    // would turn every committing and crash-survival test into a silent skip.
-    // The suite would stay green and the evidence behind the durability claim
-    // would quietly stop existing. Silence is not success.
+  test('a root qualifies exactly where this package says one can', () => {
+    // The guard exists because moving CI onto a filesystem the allowlist does
+    // not name would turn every committing and crash-survival test into a
+    // silent skip: the suite would stay green while the evidence behind the
+    // durability claim quietly stopped existing. Silence is not success.
+    //
+    // It asserts on EVERY platform rather than skipping off Linux, because
+    // "this test does not run here" is the same silence it was written to
+    // prevent. Off Linux the correct expectation is simply the opposite one —
+    // qualification refuses every root — and that is a claim of this stream
+    // worth pinning too.
     const roots = atomicTestRoots();
     expect(roots.length).toBeGreaterThan(0);
-    expect(roots.some((root) => isQualified(root.base))).toBe(true);
+    expect(roots.some((root) => isQualified(root.base))).toBe(process.platform === 'linux');
   });
 });
 

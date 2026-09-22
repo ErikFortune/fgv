@@ -221,7 +221,13 @@ describe.each(atomicTestRoots())('process-crash survival on $label', ({ base }) 
     expect(orphans()).toEqual([]);
   });
 
-  test.each(qualified ? expectations : [])(
+  // `whenQualified.each`, NOT `test.each(qualified ? expectations : [])`.
+  // Jest's `.each` FAILS on an empty array — "called with an empty Array of
+  // table data" — so the conditional-array form would turn this whole file red
+  // on any machine whose roots are unqualified, rather than skipping. Verified
+  // against the installed Jest rather than assumed. Both roots qualify here, so
+  // the defect was invisible locally.
+  whenQualified.each(expectations)(
     'killed at $boundary, a reader sees the $sees record whole',
     ({ boundary, sees, leavesOrphan }) => {
       const child = runChild(boundary);
