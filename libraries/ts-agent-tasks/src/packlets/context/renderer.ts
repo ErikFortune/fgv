@@ -487,14 +487,19 @@ export class TaskContextRenderer {
       }
     }
 
+    const abbreviated: number = rendered.filter((r) => r.presentation === 'abbreviated').length;
+    // Abbreviation is a text-budget omission of content, even though the item appears: a
+    // context that shortened anything is not exhaustive, whatever its item count says.
+    if (abbreviated > 0) {
+      omitted.add('text');
+    }
     if (input.completeness === 'partial') {
       omitted.add('partial-input');
     }
     const reasons: ReadonlyArray<TaskContextOmissionReason> = omissionReasonOrder.filter((r) =>
       omitted.has(r)
     );
-    const abbreviated: number = rendered.filter((r) => r.presentation === 'abbreviated').length;
-    const exhaustive: boolean = input.completeness === 'complete' && omittedCount === 0;
+    const exhaustive: boolean = input.completeness === 'complete' && omittedCount === 0 && abbreviated === 0;
 
     const lines: string[] = [framing.open, framing.preamble];
     const entries: ITaskContextEntry[] = [];

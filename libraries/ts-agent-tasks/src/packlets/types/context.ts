@@ -145,7 +145,7 @@ export interface ITaskContextEntry {
 }
 
 /**
- * Why something visible was not rendered, or why the rendering is not exhaustive.
+ * Why something visible was not rendered in full, or why the rendering is not exhaustive.
  * @public
  */
 export type TaskContextOmissionReason = 'items' | 'depth' | 'text' | 'partial-input';
@@ -167,7 +167,10 @@ export interface ITaskContextOmissions {
   readonly abbreviated: number;
   /** The distinct reasons that applied, in a fixed order. */
   readonly reasons: ReadonlyArray<TaskContextOmissionReason>;
-  /** True only when the input was complete and every supplied item was rendered. */
+  /**
+   * True only when the input was complete and every supplied item was rendered in full. An
+   * abbreviated item makes a context non-exhaustive, and reports the `text` reason.
+   */
   readonly exhaustive: boolean;
 }
 

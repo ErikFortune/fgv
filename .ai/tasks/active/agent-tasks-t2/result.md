@@ -192,6 +192,21 @@ both real, both fixed, each watched failing first.**
    context-dependent element converter. A regression introduced by a review fix, caught by the
    next round: the reason the loop runs past the first clean-looking pass.
 
+**Layer 2 — Copilot, round 4: `Findings: None` posted; the headline named one issue, real.**
+`omissions.exhaustive` could be `true` for a context that abbreviated an item — every item
+appeared, but not every item's content. I had scoped `exhaustive` to item coverage; that is the
+wrong default for an honesty flag, since a host reading `true` may assume nothing was held back
+while a required update sits unreceipted. Now abbreviation makes a context non-exhaustive and adds
+the `text` reason. No existing test pinned the flag under abbreviation — the new assertion was
+watched failing first.
+
+**The stop call.** The finding profile ran: four (a disclosure hole among them) → two (a
+bounded-input hole and tag-character smuggling) → two (a per-revision consistency bug and a
+regression in round 2's own fix) → **one flag-semantics correction**. Round 4 is a single
+consistency item with no hole in a guarantee — the diminishing-returns signal. Stopping the
+Copilot loop at four rounds on finding profile, not the cap; CodeRabbit's single review follows
+with every round's fix landed.
+
 ---
 
 ## Things a later slice must decide

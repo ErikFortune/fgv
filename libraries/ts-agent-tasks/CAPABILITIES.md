@@ -75,7 +75,7 @@ line saying what was dropped can never itself be dropped. No token count is clai
 terminal outcomes, other material changes, current open work, routine progress, unresolved
 diagnostics; ties break on task ID then revision, by ordinal comparison. Omission counts cover
 only what was supplied — nothing hidden is counted — and `exhaustive` is true only for complete
-input with nothing omitted. Depth is depth in the *visible* forest: a parent that was not
+input with nothing omitted and nothing abbreviated. Depth is depth in the *visible* forest: a parent that was not
 supplied ends the chain rather than being guessed at. **Nothing is aggregated from children** — a
 parent's own lifecycle is the only completion statement rendered, so a partial visible tree can
 never establish parent completion.

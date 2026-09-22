@@ -102,3 +102,8 @@ Details in `result.md`. CI was green on `66684039` before these fixes. Next: pus
 Round 3 (`0d44cb7e`, CI green): no comments posted; the headline named two issues, both real.
 Per-revision depth now follows each revision's own parent. `boundedArrayOf` now passes the
 converter `context` through; round 2's fix had dropped it. Both were watched failing first.
+
+Round 4 (`191e90b6`): no comments posted; the headline named one issue. `exhaustive` could be
+true despite abbreviation. Fixed, with the flag pinned in a test that was watched failing first.
+The Copilot loop stops here on diminishing returns (4 → 2 → 2 → 1, the last a flag-semantics
+item). Next: CodeRabbit's single review.

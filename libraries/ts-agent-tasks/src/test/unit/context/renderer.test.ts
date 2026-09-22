@@ -684,6 +684,15 @@ describe('TaskContextRenderer', () => {
           expect(record.description).toBeUndefined();
           expect(record.progress).toEqual({ phase: 'ingest', completed: 1 });
           expect(context.receipt.included).toEqual([{ taskId: 't1', revision: 1, updateIds: [] }]);
+          // Every item appears, yet the context shortened something: it is not exhaustive,
+          // and says why.
+          expect(context.omissions).toEqual({
+            visibleItems: 0,
+            requiredUpdates: 0,
+            abbreviated: 1,
+            reasons: ['text'],
+            exhaustive: false
+          });
         }
       );
     });
