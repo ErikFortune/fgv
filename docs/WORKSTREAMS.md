@@ -128,7 +128,7 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-t1` 🔵 (slice T1 of the agent-tasks plan)
+### `agent-tasks-t1` 🔵 (slice T1 of the agent-tasks plan) — T1 ✅ (landed on the integration branch via [#684](https://github.com/ErikFortune/fgv/pull/684))
 
 **Mission.** Create `@fgv/ts-agent-tasks` and land slice **T1** — package scaffold, value types and
 converters, the versioned detail/command registry, typed handles, Result-valued factories, injected
@@ -173,6 +173,28 @@ and the ESM/bundler/tarball export gates that exist precisely to catch a new pac
 executor-owned payload after the broker update is acknowledged — a §8.3 / T6 / T8 decision raised by
 CodeRabbit on #681 and carried to the design authority. T1 must not encode either answer into a
 type; if a type seems to require one, that is a signal to stop and surface it.
+
+**T1 status.** Shipped to `integration/agent-tasks-v1` via
+[#684](https://github.com/ErikFortune/fgv/pull/684). `@fgv/ts-agent-tasks` exists with its `types`
+and `converters` packlets, a `CAPABILITIES.md` and its router row; 366 tests at 100% on all four
+metrics; repo-wide `rush rebuild` and all four export/capability gates green. The stream stays open
+— T2 and beyond follow, and the artifacts stay in `active/`.
+
+**What T1's successors inherit — and are licensed to revise.** `result.md` carries the
+declared-vs-exercised table the integration branch exists for: **15 closed sets, 101 members, every
+one shape-exercised and roughly half choice-unexercised.** `TaskFailureCode` declares 14 codes of
+which 5 have any T1-side meaning; the whole `CapacityClaimPurpose` set is a prediction, since no
+claim is minted anywhere in this slice. Read that table before treating any of it as settled.
+
+**Two items carried to the design authority.** (1) The source-history spelling is inconsistent in
+the design — §5 says `latest-snapshot` / `replayable-updates`, §1 and §8.6 say `observed-state` /
+`source-replay` for the same distinction; T1 unified on the §8.6 spelling and **T6 confirms or
+revises**. (2) An upstream robustness gap, escalated not folded in: `Converters.strictObject(...)`
+throws rather than failing on a null-prototype object, because `ts-utils`' `isKeyOf` uses
+`item.hasOwnProperty(key)`. Wire data never reaches it; a host passing `Object.create(null)` does.
+
+The §8.3 / T6 / T8 executor-payload-dereference question did **not** reach T1 — `ITaskReference`
+stayed opaque identity and no type needed either answer.
 
 **Artifact pointer:** `.ai/tasks/active/agent-tasks-t1/`.
 
