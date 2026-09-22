@@ -1,11 +1,12 @@
 # Agent tasks — phased implementation plan
 
-**Status:** A1/A2 and finite-horizon capacity amendment A3 approved 2026-09-21; reference-consumer A3 approval is limited to V1 ingestion. Awaiting explicit authorization to implement.
+**Status:** A1/A2 and finite-horizon capacity amendment A3 approved 2026-09-21; reference-consumer A3 approval is limited to V1 ingestion. A1 **amended 2026-09-22** to Linux-only — see § *F2*.
+**F1 and F2 are shipped** ([#683](https://github.com/ErikFortune/fgv/pull/683), squashing [#681](https://github.com/ErikFortune/fgv/pull/681) and [#682](https://github.com/ErikFortune/fgv/pull/682)): the upstream `ts-json-base` FileTree atomic-write capability and its qualified Node protocol exist and are on `release`. **Every T, I, P and M slice remains unimplemented and awaits explicit authorization**, taken one slice at a time.
 **Date:** 2026-09-21. **Source inspection:** `d0ec601c6d67a6016a00a33a69ddee18bec6ddb1`.
 **Engineering contract:** [development design](development-design.md).
 **Scope authorities:** [library proposal](fgv-library.md), [adoption proposal](multi-agent-chat-adoption.md), [deferred scope](deferred.md).
 
-This plan changes no production code or consumer repository. Every implementation test and M1 measurement below is **planned**, not run. Source/document review and the separately attributed consumer execution-record measurements in the adoption proposal are the available evidence; those measurements do not qualify broker limits or memory. The slices are dependency-ordered review units; an incomplete internal slice is not a release claiming all task guarantees.
+This plan document itself changes no production code or consumer repository. **F1's and F2's tests are run and their results recorded** (`.ai/tasks/completed/2026-09/filetree-atomic-write/result.md` — fault injection at every protocol boundary, subprocess crash tests on two filesystems, and fourteen mutations watched to fail). **Every other implementation test below, and the M1 measurement, remain planned and not run.** Source/document review and the separately attributed consumer execution-record measurements in the adoption proposal are the available evidence; those measurements do not qualify broker limits or memory. The slices are dependency-ordered review units; an incomplete internal slice is not a release claiming all task guarantees.
 
 ## 1. Decisions and approval status
 

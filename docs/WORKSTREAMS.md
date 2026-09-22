@@ -128,6 +128,54 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-t1` 🔵 (slice T1 of the agent-tasks plan)
+
+**Mission.** Create `@fgv/ts-agent-tasks` and land slice **T1** — package scaffold, value types and
+converters, the versioned detail/command registry, typed handles, Result-valued factories, injected
+clock/ID/logger contracts, and the A3 capacity profile / `capacityClaims` schemas. **No storage, no
+broker, no side effects at import.** T1 is the vocabulary the rest of the library is written in.
+
+**Package surface:** `libraries/ts-agent-tasks` (new) + its `rush.json` registration. Nothing else.
+
+**Out-of-scope:** any storage/filesystem/broker code (T3 and T5 own those); the deferred
+input-request protocol (gate #6 — tasks carry only opaque host-owned attention references); any task
+runner, scheduler or retry policy; source-specific or consumer vocabulary; every existing package,
+consumed unchanged.
+
+**Origin.** The agent-tasks design bundle merged in #680. F1 and F2 — the upstream `ts-json-base`
+FileTree atomic-write capability — shipped via #683, so **T3's durable path is unblocked and T1 is
+the only thing between the plan and it.**
+
+**Landing shape — an integration branch, for the F1/F2 reason.** Slices land on
+`integration/agent-tasks-v1` (off `release` at `af05bb319`) and squash to `release` as coherent
+shipping units; T1 does not reach `release` alone. The precedent is exact: F1 declared a failure
+vocabulary of which it exercised 5 of 16 members, F2 revised it and dropped one, and nothing was
+ever published carrying the dropped member. T1 declares the lifecycle/observation/command/recovery
+unions and the A3 capacity schemas — predictions about what T3, T5 and T8 will need, written before
+any of them exist. T1's converter tests exercise the *shapes*, not the *choices*, so **later slices
+carry license to revise T1's vocabulary rather than inherit it.**
+
+**Dependency position.** T1 is the only slice whose dependencies are met. Critical path:
+**T1 → T3 → T4 → T5 → T6 → T7 → T8 → T9 → I1 → I2 → P1**, with T2 branching off T1 and needed only
+by T7 and I2. T2 is the first coherent consumer-facing unit — the plan calls it "a complete usable
+snapshot-only entry point without a broker."
+
+**Acceptance criteria.** Plan § T1's five (runtime validation matches the declared public shape;
+registry erasure via converter closures, never unsafe generic casts; unknown versions/kinds cannot
+pass as validated current types; independent schema versions and metadata/source ownership explicit;
+bound waiting state carries only opaque host attention references), plus the repo gates — build with
+zero warnings, lint, 100% coverage, `code-reviewer` before coverage closure, **repo-wide
+`rush rebuild`** (a new Rush project changes the build graph), change file verified against the
+integration branch, `"sideEffects": false`, a package `CAPABILITIES.md` with its one-line index row,
+and the ESM/bundler/tarball export gates that exist precisely to catch a new package.
+
+**Open design question, not T1's to answer:** whether terminal presentation may dereference an
+executor-owned payload after the broker update is acknowledged — a §8.3 / T6 / T8 decision raised by
+CodeRabbit on #681 and carried to the design authority. T1 must not encode either answer into a
+type; if a type seems to require one, that is a signal to stop and surface it.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-t1/`.
+
 ### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
 
 **Status:** 🟢 **shipped to `release`** — all five units merged 2026-08-12, plus one unplanned refactor that unblocked them. Nothing published yet; the alpha still has to go out. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md`, `…-reply-2026-08-11-ask-package.md`, `…-status-2026-08-12-stream-a.md`, `…-status-2026-08-12-shipped.md`.
