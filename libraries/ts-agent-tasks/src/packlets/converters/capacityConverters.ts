@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import {
   CapacityClaimDisposition,
   CapacityClaimId,
   CapacityDimension,
+  SubscriptionId,
   CapacityClaimOwner,
   CapacityClaimOwnership,
   ITaskCapacityCharge,
@@ -20,7 +21,10 @@ import {
   ITaskPerOwnerLimits,
   TaskCapacityLimits,
   TaskCapacityState,
-  allCapacityDimensions
+  allCapacityDimensions,
+  capacityPressureThreshold,
+  maximumClosureCharges,
+  maximumSettlementCharges
 } from '../types';
 import { IFailureConverters } from './failureConverters';
 import { IIdentityConverters } from './identityConverters';
@@ -42,6 +46,26 @@ export interface ICapacityConverters {
   readonly claims: Converter<ReadonlyArray<ITaskCapacityClaim>>;
   readonly dimensionStatus: Converter<ITaskCapacityDimensionStatus>;
   readonly status: Converter<ITaskCapacityStatus>;
+}
+
+/**
+ * Checks that a profile's limits can hold one protected bundle of charges.
+ */
+function _fits(
+  charges: ReadonlyArray<ITaskCapacityCharge>,
+  profile: ITaskCapacityProfile,
+  what: string
+): Result<ReadonlyArray<ITaskCapacityCharge>> {
+  for (const charge of charges) {
+    const limit: number = profile.limits[charge.dimension];
+    if (charge.amount > limit) {
+      return fail(
+        `capacity profile: ${what} needs ${charge.amount} of '${charge.dimension}' but the ` +
+          `limit is ${limit}; a profile must be able to finish the work it can accept`
+      );
+    }
+  }
+  return succeed(charges);
 }
 
 /**
@@ -119,11 +143,43 @@ export function buildCapacityConverters(
     maxSourceRecordBytes: positiveSafeInteger
   });
 
+  // §8.6 allows a host to choose lower limits, but requires that "lower limits must still
+  // accommodate the minimum closeout bundle". Without this check a profile such as
+  // `updates: 1` converts happily while `maximumClosureCharges` still asks for seven — a
+  // repository that can accept a task and then cannot finish it, which is precisely the
+  // logical capacity deadlock the protected-completion design exists to prevent. A profile
+  // that cannot hold its own protected path is rejected here, before admission reads it.
   const profile: Converter<ITaskCapacityProfile> = Converters.strictObject<ITaskCapacityProfile>({
     profileVersion: Converters.literal<1>(1),
     limits,
     perOwner,
     encoded
+  }).withConstraint(
+    (value: ITaskCapacityProfile): Result<ITaskCapacityProfile> =>
+      mapResults([
+        maximumClosureCharges(value).onSuccess((charges) => _fits(charges, value, 'terminal closeout')),
+        maximumSettlementCharges(value).onSuccess((charges) =>
+          _fits(charges, value, 'accepted-operation settlement')
+        )
+      ]).onSuccess(() => succeed(value))
+  );
+
+  // Each audience entry is one subscription's reserved link and acknowledgement evidence,
+  // so a repeated id double-counts the same obligation — the same hazard as a duplicate
+  // charge or a duplicate claim, one level further in.
+  const audience: Converter<ReadonlyArray<SubscriptionId>> = boundedArrayOf(
+    ids.subscriptionId,
+    256,
+    'claim audience'
+  ).withConstraint((value: ReadonlyArray<SubscriptionId>): Result<ReadonlyArray<SubscriptionId>> => {
+    const seen: Set<SubscriptionId> = new Set<SubscriptionId>();
+    for (const entry of value) {
+      if (seen.has(entry)) {
+        return fail(`claim audience: duplicate subscription id '${entry}'`);
+      }
+      seen.add(entry);
+    }
+    return succeed(value);
   });
 
   const claimOwner: Converter<CapacityClaimOwner> = Converters.discriminatedObject<CapacityClaimOwner>(
@@ -172,7 +228,7 @@ export function buildCapacityConverters(
       ...common,
       purpose: Converters.literal('terminal-closeout'),
       taskId: ids.taskId,
-      audience: boundedArrayOf(ids.subscriptionId, 256, 'claim audience')
+      audience: audience
     }),
     'accepted-operation-settlement': Converters.strictObject<
       Extract<ITaskCapacityClaim, { purpose: 'accepted-operation-settlement' }>
@@ -207,6 +263,13 @@ export function buildCapacityConverters(
     })
   });
 
+  // `capacityStatus()` is a *trusted* host API, so a row that contradicts itself is worse
+  // than no row: admission would read false capacity from it. Two things are therefore
+  // checked rather than assumed. The accounting identity is arithmetic, not a policy
+  // choice — `available` is what is left. And `pressure` is documented as derived at
+  // `capacityPressureThreshold`, so a row is not free to assert a different answer; if a
+  // producer wants to report differently it must change the published threshold, not the
+  // row.
   const dimensionStatus: Converter<ITaskCapacityDimensionStatus> =
     Converters.strictObject<ITaskCapacityDimensionStatus>({
       dimension: failures.capacityDimension,
@@ -220,6 +283,22 @@ export function buildCapacityConverters(
         32,
         'limiting record ids'
       )
+    }).withConstraint((value: ITaskCapacityDimensionStatus): Result<ITaskCapacityDimensionStatus> => {
+      const committed: number = value.used + value.reserved;
+      if (committed + value.available !== value.limit) {
+        return fail(
+          `capacity status '${value.dimension}': used ${value.used} + reserved ${value.reserved} + ` +
+            `available ${value.available} does not equal the limit of ${value.limit}`
+        );
+      }
+      const expected: boolean = committed >= Math.ceil(value.limit * capacityPressureThreshold);
+      if (value.pressure !== expected) {
+        return fail(
+          `capacity status '${value.dimension}': pressure is derived at ` +
+            `${capacityPressureThreshold * 100}% of the limit, so it must be ${expected} here`
+        );
+      }
+      return succeed(value);
     });
 
   // A status reports *every* dimension exactly once. A repeated row is ambiguous — two

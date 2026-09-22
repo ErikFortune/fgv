@@ -262,6 +262,48 @@ describe('typed handles', () => {
     ).toFail();
   });
 
+  test('encode revalidates the envelope, not just the details', () => {
+    const registry: TaskKindRegistry = newRegistry();
+    const handle: ITaskKindHandle<IWidgetDetails> = registry.register(widgetDescriptor()).orThrow();
+    const snapshot = converters.envelopes.snapshot.convert(widgetSnapshot({ width: 4 })).orThrow();
+    // `decode` is handed an envelope that has already been through the converter;
+    // `encode` is handed whatever the caller built. Returning that unchecked would hand
+    // back a "successful" snapshot the common envelope converter rejects.
+    const badTitle = { ...snapshot.envelope, title: '' } as unknown as typeof snapshot.envelope;
+    expect(handle.encode({ envelope: badTitle, details: { width: 4 } })).toFailWith(
+      /test\.widget@1: .*title/i
+    );
+  });
+
+  test('a host encoder that throws becomes a failure, not an escaped exception', () => {
+    const registry: TaskKindRegistry = newRegistry();
+    const handle: ITaskKindHandle<IWidgetDetails> = registry
+      .register({
+        ...widgetDescriptor(),
+        encode: (): Result<JsonValue> => {
+          throw new Error('encoder exploded');
+        }
+      })
+      .orThrow();
+    const snapshot = converters.envelopes.snapshot.convert(widgetSnapshot({ width: 4 })).orThrow();
+    expect(handle.encode({ envelope: snapshot.envelope, details: { width: 4 } })).toFailWith(
+      /test\.widget@1: encoder exploded/i
+    );
+  });
+
+  test('a host encoder that throws also fails registry conversion rather than escaping', () => {
+    const registry: TaskKindRegistry = newRegistry();
+    expect(
+      registry.register({
+        ...widgetDescriptor(),
+        encode: (): Result<JsonValue> => {
+          throw new Error('encoder exploded');
+        }
+      })
+    ).toSucceed();
+    expect(registry.convert(widgetSnapshot({ width: 4 }))).toFailWith(/encoder exploded/i);
+  });
+
   test('encode reports a failing encoder', () => {
     const registry: TaskKindRegistry = newRegistry();
     const handle: ITaskKindHandle<IWidgetDetails> = registry
@@ -324,6 +366,19 @@ describe('command handles', () => {
     const command = growHandle();
     expect(command.validate({ by: 'a lot' })).toFailWith(/command 'grow'/i);
     expect(command.validate({})).toFailWith(/command 'grow'/i);
+  });
+
+  test('a command encoder that throws becomes a failure, not an escaped exception', () => {
+    const command = createTaskCommandHandle<IGrowParameters>({
+      name: 'grow',
+      parameters: growSchema,
+      encode: (): Result<JsonValue> => {
+        throw new Error('encoder exploded');
+      },
+      idempotency: 'none',
+      conditional: false
+    });
+    expect(command.validate({ by: 3 })).toFailWith(/command 'grow': encoder exploded/i);
   });
 
   test('validate surfaces an encoder failure under the command name', () => {

@@ -5,7 +5,12 @@
 
 import '@fgv/ts-utils-jest';
 import { JsonValue } from '@fgv/ts-json-base';
-import { CapacityDimension, allCapacityDimensions, defaultTaskCapacityProfile } from '../../../index';
+import {
+  CapacityDimension,
+  allCapacityDimensions,
+  capacityPressureThreshold,
+  defaultTaskCapacityProfile
+} from '../../../index';
 import { claim, converters } from '../../helpers/fixtures';
 
 describe('capacity profile', () => {
@@ -271,6 +276,8 @@ describe('claim ownership and disposition', () => {
 });
 
 describe('capacity status', () => {
+  // 16000 + 2000 committed of 20000 is 90% — over the 80% threshold, so `pressure` is
+  // true, and 2000 available closes the accounting identity.
   function row(dimension: CapacityDimension, overrides: Record<string, JsonValue> = {}): JsonValue {
     return {
       dimension,
@@ -360,5 +367,149 @@ describe('capacity status', () => {
         dimensions: [...everyRow(), row('updates')]
       })
     ).toFail();
+  });
+});
+
+describe('a dimension status cannot contradict itself', () => {
+  function status(overrides: Record<string, JsonValue>): JsonValue {
+    return {
+      dimension: 'updates',
+      used: 10,
+      reserved: 0,
+      available: 90,
+      limit: 100,
+      pressure: false,
+      limitingRecordIds: [],
+      ...overrides
+    };
+  }
+
+  test('accepts a row whose figures add up and whose pressure matches the threshold', () => {
+    expect(converters.capacity.dimensionStatus.convert(status({}))).toSucceed();
+  });
+
+  test('rejects a row where used, reserved and available do not reach the limit', () => {
+    expect(converters.capacity.dimensionStatus.convert(status({ available: 0 }))).toFailWith(
+      /does not equal the limit of 100/i
+    );
+  });
+
+  test('rejects a row that over-reports, claiming more than the limit holds', () => {
+    expect(converters.capacity.dimensionStatus.convert(status({ used: 50 }))).toFailWith(
+      /does not equal the limit/i
+    );
+  });
+
+  test('reserved counts toward pressure, not just used', () => {
+    expect(
+      converters.capacity.dimensionStatus.convert(
+        status({ used: 10, reserved: 70, available: 20, pressure: true })
+      )
+    ).toSucceed();
+    expect(
+      converters.capacity.dimensionStatus.convert(
+        status({ used: 10, reserved: 70, available: 20, pressure: false })
+      )
+    ).toFailWith(/pressure is derived at 80% of the limit, so it must be true/i);
+  });
+
+  test('a row may not under-report pressure to an admission caller', () => {
+    expect(
+      converters.capacity.dimensionStatus.convert(
+        status({ used: 80, reserved: 0, available: 20, pressure: false })
+      )
+    ).toFailWith(/must be true here/i);
+  });
+
+  test('a row may not over-report it either', () => {
+    expect(
+      converters.capacity.dimensionStatus.convert(
+        status({ used: 79, reserved: 0, available: 21, pressure: true })
+      )
+    ).toFailWith(/must be false here/i);
+  });
+
+  test('the threshold is exactly 80%, and 80 of 100 is at it', () => {
+    expect(capacityPressureThreshold).toBe(0.8);
+    expect(
+      converters.capacity.dimensionStatus.convert(
+        status({ used: 80, reserved: 0, available: 20, pressure: true })
+      )
+    ).toSucceed();
+  });
+});
+
+describe('a terminal-closeout claim audience', () => {
+  test('accepts distinct subscriptions', () => {
+    expect(
+      converters.capacity.claim.convert(
+        claim('terminal-closeout', { taskId: 'task-1', audience: ['sub-1', 'sub-2'] })
+      )
+    ).toSucceed();
+  });
+
+  test('rejects a repeated subscription — it would double-count one obligation', () => {
+    expect(
+      converters.capacity.claim.convert(
+        claim('terminal-closeout', { taskId: 'task-1', audience: ['sub-1', 'sub-1'] })
+      )
+    ).toFailWith(/duplicate subscription id 'sub-1'/i);
+  });
+});
+
+describe('a profile must be able to finish the work it can accept', () => {
+  test('the default profile can hold its own protected closeout', () => {
+    expect(converters.capacity.profile.convert(defaultTaskCapacityProfile)).toSucceed();
+  });
+
+  test('rejects a profile whose update limit cannot hold one closeout bundle', () => {
+    expect(
+      converters.capacity.profile.convert({
+        ...defaultTaskCapacityProfile,
+        limits: { ...defaultTaskCapacityProfile.limits, updates: 1 }
+      })
+    ).toFailWith(/terminal closeout needs 7 of 'updates' but the limit is 1/i);
+  });
+
+  test("rejects a profile whose record-bytes limit cannot hold the closeout's own writes", () => {
+    expect(
+      converters.capacity.profile.convert({
+        ...defaultTaskCapacityProfile,
+        limits: { ...defaultTaskCapacityProfile.limits, 'record-bytes': 1024 }
+      })
+    ).toFailWith(/terminal closeout needs \d+ of 'record-bytes' but the limit is 1024/i);
+  });
+
+  test('rejects a profile that can close out but cannot settle an accepted operation', () => {
+    // Seven update payloads fit; the settlement bundle's stored operation plus receipt
+    // does not. The two bundles are checked independently for exactly this reason.
+    const encoded = defaultTaskCapacityProfile.encoded;
+    const closeoutBytes: number =
+      encoded.maxEnvelopeBytes +
+      encoded.maxDetailBytes +
+      7 * encoded.maxUpdateBytes +
+      2 * encoded.maxStoredOperationBytes;
+    const settlementBytes: number =
+      encoded.maxStoredOperationBytes + encoded.maxIssuedReceiptBytes + encoded.maxUpdateBytes;
+    expect(settlementBytes).toBeLessThan(closeoutBytes);
+    expect(
+      converters.capacity.profile.convert({
+        ...defaultTaskCapacityProfile,
+        limits: {
+          ...defaultTaskCapacityProfile.limits,
+          'record-bytes': closeoutBytes,
+          'logical-bytes': settlementBytes - 1
+        }
+      })
+    ).toFailWith(/settlement needs \d+ of 'logical-bytes'/i);
+  });
+
+  test('a profile whose bounds make the charge inexact fails rather than being admitted', () => {
+    expect(
+      converters.capacity.profile.convert({
+        ...defaultTaskCapacityProfile,
+        encoded: { ...defaultTaskCapacityProfile.encoded, maxUpdateBytes: Number.MAX_SAFE_INTEGER }
+      })
+    ).toFailWith(/not exactly representable/i);
   });
 });

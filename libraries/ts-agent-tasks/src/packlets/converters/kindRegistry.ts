@@ -4,7 +4,7 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { Converter, Converters, Result, fail, failWithDetail, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Result, captureResult, fail, failWithDetail, succeed } from '@fgv/ts-utils';
 import {
   ITaskCommandDescriptor,
   ITaskCommandHandle,
@@ -33,9 +33,13 @@ export function createTaskCommandHandle<P>(descriptor: ITaskCommandDescriptor<P>
     idempotency: descriptor.idempotency,
     conditional: descriptor.conditional,
     validate: (parameters: unknown): Result<JsonValue> =>
-      descriptor.parameters
-        .convert(parameters)
-        .onSuccess((typed: P) => descriptor.encode(typed))
+      // `captureResult` because `encode` is host code: a descriptor whose encoder throws
+      // must produce a failure, not escape the Result-valued boundary this handle
+      // advertises. Same reasoning as the injected clock and ID factory.
+      captureResult(() =>
+        descriptor.parameters.convert(parameters).onSuccess((typed: P) => descriptor.encode(typed))
+      )
+        .onSuccess((encoded: Result<JsonValue>) => encoded)
         .withErrorFormat((message: string) => `command '${descriptor.name}': ${message}`)
   };
 }
@@ -118,7 +122,9 @@ export class TaskKindRegistry implements ITaskKindRegistry {
         kind: descriptor.kind,
         detailVersion: descriptor.detailVersion,
         details: Converters.generic<JsonValue>((from: unknown) =>
-          descriptor.details.convert(from).onSuccess((typed: T) => descriptor.encode(typed))
+          captureResult(() =>
+            descriptor.details.convert(from).onSuccess((typed: T) => descriptor.encode(typed))
+          ).onSuccess((encoded: Result<JsonValue>) => encoded)
         ),
         commands
       };
@@ -197,11 +203,19 @@ export class TaskKindRegistry implements ITaskKindRegistry {
           // cannot stop a JS caller or an assertion handing over a `T` that violates the
           // converter's domain invariants, and an encoder that never re-checks would turn
           // that into a successful snapshot.
-          descriptor.details
-            .convert(snapshot.details)
-            .onSuccess((validated: T) => descriptor.encode(validated))
+          //
+          // The envelope gets the same treatment, through the registry's own snapshot
+          // converter: `decode` receives an envelope that has already been validated,
+          // whereas `encode` receives whatever the caller built. Returning that unchecked
+          // would hand back a "successful" snapshot the common envelope converter rejects.
+          captureResult(() =>
+            descriptor.details
+              .convert(snapshot.details)
+              .onSuccess((validated: T) => descriptor.encode(validated))
+          )
+            .onSuccess((encoded: Result<JsonValue>) => encoded)
             .onSuccess((details: JsonValue) =>
-              succeed<ITaskSnapshot>({ envelope: snapshot.envelope, details })
+              this._envelopeConverter.convert({ envelope: snapshot.envelope, details })
             )
             .withErrorFormat((message: string) => `${key}: ${message}`)
         ),

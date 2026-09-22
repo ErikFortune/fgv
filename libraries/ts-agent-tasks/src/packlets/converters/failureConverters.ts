@@ -67,6 +67,13 @@ export function buildFailureConverters(
     if (value.code !== 'backpressure' && value.capacity !== undefined) {
       return fail(`${value.code}: capacity detail accompanies 'backpressure' only`);
     }
+    // `commit-indeterminate` exists to say "the durable effect may or may not have
+    // happened" — and the only way to settle that later is to look the operation up.
+    // A commit-indeterminate failure with no operation id states the ambiguity and
+    // withholds the one thing that resolves it.
+    if (value.code === 'commit-indeterminate' && value.operationId === undefined) {
+      return fail(`${value.code}: requires the operation id it is resolved by`);
+    }
     return succeed(value);
   });
 

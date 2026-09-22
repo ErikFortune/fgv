@@ -27,7 +27,7 @@ field bounds; `TaskKindRegistry` and `createTaskCommandHandle`; the two built-in
 `TaskEnvironment`; and the primitives (`instant`, the safe-integer family, the bounded
 identifier / single-line / text / array factories).
 
-381 tests. 100% statements, branches, functions and lines.
+401 tests. 100% statements, branches, functions and lines.
 
 ---
 
@@ -166,8 +166,44 @@ itself. The pattern — "a bounded array whose entries carry an identity needs a
 constraint, not just a length cap" — is worth carrying into T3, where these collections are
 written and read for real.
 
-Round 3 requested. Rounds 1 and 2 both produced structural findings, so the finding profile has
-not gone nitpicky and stopping now would be stopping on round count.
+**Layer 2 — Copilot, round 3: zero findings *posted*, six real ones in the summaries.** This is
+the round worth recording, because the naive reading of it is wrong. Round 3's posted count was
+`Findings: None` and it marked the duplicate-claim-id thread resolved. But its summary carried a
+**"Previously missed (5)"** block — findings in code that had not changed since the last review,
+surfaced in prose and never posted as comments — and round 2's summary carried three more. Six
+were distinct; all six were real on inspection, and all six are fixed:
+
+1. **A profile could be admitted that cannot finish the work it accepts.** `updates: 1` converted
+   happily while `maximumClosureCharges` asked for seven. §8.6 says in as many words that "lower
+   limits must still accommodate the minimum closeout bundle" — design text this slice
+   schematized without enforcing. The profile converter now computes both protected bundles and
+   rejects a profile whose limits cannot hold them. **The deepest finding of the whole loop**: it
+   is the logical-capacity-deadlock case the protected-completion design exists to prevent,
+   reachable through a valid-looking profile.
+2. **`encode` returned the caller's envelope unchecked.** The round-1 fix made it validate
+   *details*; the envelope beside them was still whatever the caller built, so an empty title came
+   back as a successful snapshot. It now goes through the registry's snapshot converter. The same
+   symmetry hole as round 1, one level up.
+3. **Host-supplied `encode` callbacks were invoked bare.** A descriptor whose encoder throws made
+   `validate` and `convert` throw, escaping the Result boundary — the same defect as the `newId`
+   seam fixed in round 1, in the two places I did not then look.
+4. **`commit-indeterminate` did not require its operation id.** The code exists to say "this may
+   or may not have happened", and the operation id is the only way to settle it later; the type's
+   own TSDoc said so and the converter did not enforce it.
+5. **A dimension status could contradict itself** — `used: 10, reserved: 0, available: 0,
+   limit: 1`, or a `pressure` flag disagreeing with the threshold the type documents it as derived
+   from. `capacityStatus()` is a *trusted* host API, so a row admission cannot believe is worse
+   than no row. The accounting identity and the derived flag are both enforced now.
+6. **A terminal-closeout claim accepted a duplicate audience id** — the fourth instance of the
+   uniqueness blind spot, after charges, status rows and claim collections.
+
+**The process lesson is sharper than any individual fix.** Copilot's *posted* finding count went
+7 → 1 → 0, which reads like textbook convergence; its *summaries* went on describing real
+defects the whole time. Stopping at round 3 on the posted count would have shipped all six. So:
+**read the summary's "previously missed" block, not just the posted comments** — and a round that
+posts nothing is not evidence of a clean diff.
+
+Round 4 requested.
 
 ---
 
@@ -210,7 +246,7 @@ not gone nitpicky and stopping now would be stopping on round count.
 |---|---|
 | `rushx build` | clean, zero warnings; `etc/ts-agent-tasks.api.md` checked in |
 | `rushx lint` | clean; `rushx fixlint` run before the final commit |
-| `rushx test` | 381 passed; 100% statements, branches, functions, lines |
+| `rushx test` | 401 passed; 100% statements, branches, functions, lines |
 | `rush rebuild` (repo-wide) | green — required, since a new Rush project changes the build graph |
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `verify-capability-docs.mjs` | router 19,158/24,000 chars, 24/24 libraries documented, 75 reflexes intact |

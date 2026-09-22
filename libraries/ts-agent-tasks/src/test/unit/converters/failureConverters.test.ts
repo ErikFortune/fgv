@@ -24,7 +24,9 @@ const capacityDetail: Record<string, JsonValue> = {
 };
 
 describe('failure codes', () => {
-  test.each(allTaskFailureCodes.filter((c) => c !== 'backpressure'))(
+  // `backpressure` and `commit-indeterminate` each require a field of their own, checked
+  // below; every other code converts on its own.
+  test.each(allTaskFailureCodes.filter((c) => c !== 'backpressure' && c !== 'commit-indeterminate'))(
     'converts the %s code with a retry disposition',
     (code: TaskFailureCode) => {
       expect(converters.failures.failure.convert({ code, retry: 'safe' })).toSucceedAndSatisfy((failure) => {
@@ -33,6 +35,11 @@ describe('failure codes', () => {
       });
     }
   );
+
+  test('the two codes excluded above are excluded because they carry a requirement', () => {
+    expect(converters.failures.failure.convert({ code: 'backpressure', retry: 'safe' })).toFail();
+    expect(converters.failures.failure.convert({ code: 'commit-indeterminate', retry: 'safe' })).toFail();
+  });
 
   test('declares fourteen codes', () => {
     expect(allTaskFailureCodes).toHaveLength(14);
@@ -63,6 +70,19 @@ describe('failure codes', () => {
     ).toSucceedAndSatisfy((failure) => {
       expect(failure.operationId).toBe('op-1');
     });
+  });
+
+  test('an indeterminate commit without that operation id is rejected', () => {
+    // The code says "this may or may not have happened"; the operation id is the only
+    // way to find out later. Stating the ambiguity while withholding its resolution is
+    // not a usable failure.
+    expect(
+      converters.failures.failure.convert({ code: 'commit-indeterminate', retry: 'reconcile-first' })
+    ).toFailWith(/requires the operation id it is resolved by/i);
+  });
+
+  test('other codes remain free to omit the operation id', () => {
+    expect(converters.failures.failure.convert({ code: 'conflict', retry: 'safe' })).toSucceed();
   });
 });
 
