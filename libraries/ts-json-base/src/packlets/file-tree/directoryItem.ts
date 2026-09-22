@@ -203,6 +203,19 @@ export class DirectoryItem<TCT extends string = string>
   }
 
   /**
+   * {@inheritDoc FileTree.IAtomicFileTreeDirectoryItem.cleanupAtomicTemporaries}
+   */
+  public cleanupAtomicTemporaries(): Result<ReadonlyArray<string>> {
+    if (!isAtomicAccessors(this._hal)) {
+      // A store with no atomic capability has no reserved working files, so
+      // there is nothing to reclaim and nothing to report. This is the same
+      // "inquiry, not guard" posture as getAtomicWriteCapabilities above.
+      return succeed([]);
+    }
+    return this._hal.cleanupAtomicTemporaries(this.absolutePath);
+  }
+
+  /**
    * {@inheritDoc FileTree.IMutableFileTreeDirectoryItem.createChildDirectory}
    */
   public createChildDirectory(name: string): Result<IMutableFileTreeDirectoryItem<TCT>> {

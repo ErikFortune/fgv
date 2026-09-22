@@ -21,13 +21,99 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { DetailedResult, Result, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import {
   DirectoryItem,
+  FileTreeItem,
   FsFileTreeAccessors,
+  IAtomicWriteCapabilities,
+  IAtomicWriteFailure,
+  IAtomicWriteReceipt,
+  IMutableFileTreeAccessors,
   InMemoryTreeAccessors,
+  SaveDetail,
   isAtomicAccessors,
   isAtomicDirectoryItem
 } from '../../../packlets/file-tree';
+
+/**
+ * A mutable store with no atomic capability at all.
+ *
+ * @remarks
+ * Every accessor shipped in this package now implements the atomic capability,
+ * so the "backing store cannot do this" branches need a store that genuinely
+ * cannot. This delegates the whole mutable contract to a real in-memory tree and
+ * simply does not carry the three atomic methods — so the guard sees the truth
+ * rather than a partial shape asserted into place with a cast.
+ */
+class NonAtomicAccessors implements IMutableFileTreeAccessors {
+  private readonly _inner: InMemoryTreeAccessors;
+
+  public constructor() {
+    this._inner = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
+  }
+
+  public resolveAbsolutePath(...paths: string[]): string {
+    return this._inner.resolveAbsolutePath(...paths);
+  }
+  public getExtension(itemPath: string): string {
+    return this._inner.getExtension(itemPath);
+  }
+  public getBaseName(itemPath: string, suffix?: string): string {
+    return this._inner.getBaseName(itemPath, suffix);
+  }
+  public joinPaths(...paths: string[]): string {
+    return this._inner.joinPaths(...paths);
+  }
+  public getItem(itemPath: string): Result<FileTreeItem> {
+    return this._inner.getItem(itemPath);
+  }
+  public getFileContents(filePath: string): Result<string> {
+    return this._inner.getFileContents(filePath);
+  }
+  public getFileContentType(filePath: string, provided?: string): Result<string | undefined> {
+    return this._inner.getFileContentType(filePath, provided);
+  }
+  public getChildren(dirPath: string): Result<ReadonlyArray<FileTreeItem>> {
+    return this._inner.getChildren(dirPath);
+  }
+  public fileIsMutable(itemPath: string): DetailedResult<boolean, SaveDetail> {
+    return this._inner.fileIsMutable(itemPath);
+  }
+  public saveFileContents(filePath: string, contents: string): Result<string> {
+    return this._inner.saveFileContents(filePath, contents);
+  }
+  public deleteFile(filePath: string): Result<boolean> {
+    return this._inner.deleteFile(filePath);
+  }
+  public createDirectory(dirPath: string): Result<string> {
+    return this._inner.createDirectory(dirPath);
+  }
+  public deleteDirectory(dirPath: string): Result<boolean> {
+    return this._inner.deleteDirectory(dirPath);
+  }
+}
+
+/**
+ * A store carrying exactly the two atomic methods the capability shipped with
+ * before `cleanupAtomicTemporaries` joined the interface.
+ *
+ * @remarks
+ * This is the shape that matters: a guard that checks only the members it
+ * remembers will narrow this to a type promising a method it does not have, and
+ * the first caller to use that promise gets a `TypeError` instead of a
+ * `Result`. Widening an interface without widening its guard is invisible to
+ * the compiler, because the guard's own assertion is what suppresses the check.
+ */
+class PartiallyAtomicAccessors extends NonAtomicAccessors {
+  public getAtomicWriteCapabilities(): Result<IAtomicWriteCapabilities> {
+    return succeed({ atomicReplace: true, guarantees: ['session'] });
+  }
+
+  public writeFileAtomically(): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure> {
+    return succeedWithDetail({ guarantee: 'session', replaced: false });
+  }
+}
 
 describe('isAtomicAccessors', () => {
   test('returns true for a mutable InMemoryTreeAccessors', () => {
@@ -35,9 +121,19 @@ describe('isAtomicAccessors', () => {
     expect(isAtomicAccessors(accessors)).toBe(true);
   });
 
-  test('returns false for FsFileTreeAccessors (F1 does not implement atomic writes on Node)', () => {
+  test('returns true for FsFileTreeAccessors, which implements the capability on Node', () => {
     const accessors = new FsFileTreeAccessors();
-    expect(isAtomicAccessors(accessors)).toBe(false);
+    expect(isAtomicAccessors(accessors)).toBe(true);
+  });
+
+  test('returns false for a mutable store that does not carry the atomic methods', () => {
+    expect(isAtomicAccessors(new NonAtomicAccessors())).toBe(false);
+  });
+
+  test('returns false for a store carrying only some of the atomic methods', () => {
+    // The guard asserts the whole interface or none of it. Accepting a partial
+    // shape would hand a caller a type that promises a method that is not there.
+    expect(isAtomicAccessors(new PartiallyAtomicAccessors())).toBe(false);
   });
 });
 
@@ -190,12 +286,32 @@ describe('DirectoryItem atomic delegation', () => {
   });
 
   test('getAtomicWriteCapabilities reports no atomic replacement when the backing store lacks the capability', () => {
-    const fsAccessors = new FsFileTreeAccessors({ mutable: true });
-    const fsDir = DirectoryItem.create('.', fsAccessors).orThrow();
-    expect(fsDir.getAtomicWriteCapabilities()).toSucceedAndSatisfy((caps) => {
+    const dir = DirectoryItem.create('/', new NonAtomicAccessors()).orThrow();
+    expect(dir.getAtomicWriteCapabilities()).toSucceedAndSatisfy((caps) => {
       expect(caps.atomicReplace).toBe(false);
       expect(caps.guarantees).toEqual([]);
     });
+  });
+
+  test('cleanupAtomicTemporaries reclaims nothing when the backing store lacks the capability', () => {
+    const dir = DirectoryItem.create('/', new NonAtomicAccessors()).orThrow();
+    expect(dir.cleanupAtomicTemporaries()).toSucceedWith([]);
+  });
+
+  test('reports, rather than throwing, when the backing store carries only some atomic methods', () => {
+    // Every method here goes through the accessor guard, so a guard that
+    // accepted a partial shape would turn each of these into an uncaught
+    // TypeError — the Result contract broken by a missing method rather than by
+    // a failing operation.
+    const dir = DirectoryItem.create('/', new PartiallyAtomicAccessors()).orThrow();
+    expect(dir.cleanupAtomicTemporaries()).toSucceedWith([]);
+    expect(dir.getAtomicWriteCapabilities()).toSucceedAndSatisfy((caps) => {
+      expect(caps.atomicReplace).toBe(false);
+    });
+    expect(dir.writeChildAtomically('child.txt', 'contents', { guarantee: 'session' })).toFailWithDetail(
+      /atomic writes not supported/i,
+      { code: 'unsupported', stage: 'validate', visibility: 'unchanged' }
+    );
   });
 
   test('writeChildAtomically creates a child with no native path or accessor internals visible to the caller', () => {
@@ -298,8 +414,7 @@ describe('DirectoryItem atomic delegation', () => {
   });
 
   test('fails explicitly rather than degrading when the backing store does not support atomic writes', () => {
-    const fsAccessors = new FsFileTreeAccessors({ mutable: true });
-    const fsDir = DirectoryItem.create('.', fsAccessors).orThrow();
+    const fsDir = DirectoryItem.create('/', new NonAtomicAccessors()).orThrow();
     expect(fsDir.writeChildAtomically('child.txt', 'contents', { guarantee: 'session' })).toFailWithDetail(
       /atomic writes not supported/i,
       {
@@ -326,5 +441,26 @@ describe('DirectoryItem atomic delegation', () => {
     expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
       expect(children.some((c) => c.name === 'unwritten.txt')).toBe(false);
     });
+  });
+});
+
+describe('InMemoryTreeAccessors.cleanupAtomicTemporaries', () => {
+  test('reclaims nothing, because an in-memory replacement leaves no working file', () => {
+    const accessors = InMemoryTreeAccessors.create([{ path: '/f.txt', contents: 'x' }], {
+      mutable: true
+    }).orThrow();
+    expect(accessors.cleanupAtomicTemporaries('/')).toSucceedWith([]);
+    // And reclaiming did not disturb anything.
+    expect(accessors.getFileContents('/f.txt')).toSucceedWith('x');
+  });
+
+  test('still refuses a path that is not an existing directory', () => {
+    // "Nothing to reclaim" is an answer about a directory. Asked about a path
+    // that is not one, it fails rather than answering for it.
+    const accessors = InMemoryTreeAccessors.create([{ path: '/f.txt', contents: 'x' }], {
+      mutable: true
+    }).orThrow();
+    expect(accessors.cleanupAtomicTemporaries('/nope')).toFailWith(/not found/i);
+    expect(accessors.cleanupAtomicTemporaries('/f.txt')).toFailWith(/not a directory/i);
   });
 });

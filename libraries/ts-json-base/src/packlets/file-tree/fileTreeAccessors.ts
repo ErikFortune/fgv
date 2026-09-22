@@ -814,18 +814,29 @@ export interface IAtomicWriteFailure {
 
   /**
    * The protocol stage at which the failure occurred.
-   * - `validate`: destination/guarantee/path checks, before anything is touched.
-   * - `temporary-write`: writing the sibling temporary file (Node/F2 only).
-   * - `file-flush`: flushing the temporary file's contents (Node/F2 only).
-   * - `replace`: the rename/assignment that makes the new contents visible.
-   * - `directory-flush`: flushing the containing directory entry (Node/F2 only).
-   * - `cleanup`: post-commit or post-failure temporary-file cleanup (Node/F2 only).
+   * - `validate`: destination, guarantee and path checks, before anything is
+   *   touched. Always `visibility: 'unchanged'`.
+   * - `temporary-write`: creating or writing the working file a store commits
+   *   through. The destination has not been opened.
+   * - `file-flush`: flushing or closing that working file. The previous
+   *   destination is still authoritative.
+   * - `replace`: the rename or assignment that makes the new contents visible.
+   *   This is the stage whose `visibility` can be `'unknown'`.
+   * - `directory-flush`: establishing the durability boundary *after* the
+   *   contents are already visible, so `visibility` is `'replaced'`.
    *
-   * The in-memory implementation in this package only ever produces `'validate'`
-   * or `'replace'` — the remaining stages describe the Node write protocol and
-   * are reserved for a qualified filesystem implementation.
+   * @remarks
+   * A store that replaces in one step produces only `'validate'` and
+   * `'replace'`; a store that commits through a working file produces all five.
+   *
+   * There is deliberately no `'cleanup'` stage. Removing a working file is
+   * something a store does *on the way out of* a failure, and the failure a
+   * caller has to act on is the one that caused it — so a cleanup problem is
+   * reported in the message and never replaces the classification. A successful
+   * commit leaves nothing to clean up, because the replacement consumes the
+   * working file.
    */
-  readonly stage: 'validate' | 'temporary-write' | 'file-flush' | 'replace' | 'directory-flush' | 'cleanup';
+  readonly stage: 'validate' | 'temporary-write' | 'file-flush' | 'replace' | 'directory-flush';
 
   /**
    * What a subsequent reader can now see for the destination path.
@@ -896,6 +907,28 @@ export interface IAtomicFileTreeAccessors<TCT extends string = string>
     contents: string,
     options: IAtomicWriteOptions
   ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure>;
+
+  /**
+   * Removes any working files this store reserves for interrupted atomic
+   * writes from the given directory.
+   *
+   * @remarks
+   * A store that commits by writing somewhere else first can leave that
+   * working file behind when the process dies mid-write. The name of such a
+   * file is reserved to the store, so only the store can recognize one; this
+   * is how a consumer reclaims them without being handed a naming convention
+   * it would then depend on.
+   *
+   * **Call this only at exclusive reopen**, which the single-writer fault
+   * model already assumes: a working file belonging to a *live* write is
+   * indistinguishable from an orphan, and removing it would break that write.
+   * A store with nothing to reclaim answers with an empty list.
+   *
+   * @param directory - Absolute path of the directory to reclaim.
+   * @returns `Success` with the names removed, or `Failure` naming what could
+   * not be removed.
+   */
+  cleanupAtomicTemporaries(directory: string): Result<ReadonlyArray<string>>;
 }
 
 /**
@@ -947,6 +980,11 @@ export interface IAtomicFileTreeDirectoryItem<TCT extends string = string>
     contents: string,
     options: IAtomicWriteOptions
   ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure>;
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeAccessors.cleanupAtomicTemporaries}
+   */
+  cleanupAtomicTemporaries(): Result<ReadonlyArray<string>>;
 }
 
 // ============================================================================
@@ -1085,7 +1123,8 @@ export function isAtomicAccessors<TCT extends string = string>(
   return (
     isMutableAccessors(accessors) &&
     typeof atomic.getAtomicWriteCapabilities === 'function' &&
-    typeof atomic.writeFileAtomically === 'function'
+    typeof atomic.writeFileAtomically === 'function' &&
+    typeof atomic.cleanupAtomicTemporaries === 'function'
   );
 }
 
@@ -1227,6 +1266,7 @@ export function isAtomicDirectoryItem<TCT extends string = string>(
   return (
     isMutableDirectoryItem(item) &&
     typeof atomic.getAtomicWriteCapabilities === 'function' &&
-    typeof atomic.writeChildAtomically === 'function'
+    typeof atomic.writeChildAtomically === 'function' &&
+    typeof atomic.cleanupAtomicTemporaries === 'function'
   );
 }

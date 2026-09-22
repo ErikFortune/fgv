@@ -1,0 +1,82 @@
+id: filetree-atomic-write
+status: shipped
+packages: ['@fgv/ts-json-base']
+# Order matters: the capability feed links prs[0], and this stream's headline
+# describes the qualified Node implementation, which is F2 (#682). Linking #681
+# would attach a crash-survival headline to the PR whose own body says it claims
+# no crash survival of any kind.
+# The squash from integration/filetree-atomic-write to release is the
+# orchestrator's PR, not this stream's, so it is deliberately not listed here.
+prs: [682, 681]
+opened: 2026-09-21
+closed: 2026-09-21
+summary:
+  intended: >
+    Add an optional atomic-write capability to FileTree in @fgv/ts-json-base so a consumer can
+    replace a file's contents without a reader ever observing a torn write, and a durable
+    consumer can wait for a declared persistence boundary before acknowledging. Two versions
+    shipping as one landing: F1 the contracts plus a session-guarantee in-memory implementation,
+    F2 the Node temp/flush/rename/directory-flush protocol with process-crash qualification on
+    local Linux roots (decision A1, amended 2026-09-22 from its original "Linux/macOS").
+  shipped: >
+    F1: IAtomicFileTreeAccessors / IAtomicFileTreeDirectoryItem, the AtomicWriteGuarantee
+    vocabulary, classified IAtomicWriteReceipt / IAtomicWriteFailure, isAtomicAccessors /
+    isAtomicDirectoryItem, DirectoryItem delegation, and InMemoryTreeAccessors at 'session' only.
+    F2: the design's six-step Node protocol over a typed internal filesystem seam, per-directory
+    qualification against a positively-identified filesystem allowlist, reserved-temporary
+    reclamation, and precise unchanged/replaced/unknown classification. Evidence is fault
+    injection at every protocol boundary against a real directory, plus subprocess tests in which
+    a child running the real protocol SIGKILLs itself at each boundary, on ext4 and tmpfs.
+  diverged: >
+    Three material divergences, plus one deliberate non-additive API change (below). (1) macOS is NOT qualified, which was contrary to A1's intended matrix as it stood when the stream ran:
+    the protocol needs a stable filesystem-type identification under a path, Linux's statfs magic
+    supplies one, and darwin reports a mount-table index with no Node-exposed equivalent of
+    f_fstypename — so a darwin root cannot be positively identified from inside the package and is
+    refused rather than assumed. This narrows what ts-agent-tasks T3 may depend on. A1 was subsequently amended (2026-09-22) to read "Linux", dropping darwin from the intended matrix rather than deferring it: a containerized consumer executes against the Linux kernel, so the darwin gap is never on the execution path and no darwin slice is queued. The live constraint for a consumer is the filesystem rather than the platform — overlayfs is deliberately unqualified, so a container root on the writable layer is refused while a named volume, Linux bind mount or tmpfs qualifies. (2) F2 used
+    its license to amend F1's vocabulary and removed 'cleanup' from IAtomicWriteFailure.stage:
+    with the protocol implemented it has no producer and cannot honestly acquire one. All four
+    AtomicWriteGuarantee members were KEPT, on the distinction that guarantee is an input
+    vocabulary witnessed by a refusal while stage is an output vocabulary where a member with no
+    producer is dead. (3) cleanupAtomicTemporaries became a REQUIRED member of both optional
+    capability interfaces. Reclamation at reopen was itself in the brief's F2 scope, so this is
+    not work beyond the brief; what needed a judgement is the brief's out-of-scope clause
+    "any required member added to an existing base interface". Judged to mean the base
+    interfaces every accessor implements, which are untouched, rather than the optional
+    capability interfaces this stream introduced in F1 and which no version has published.
+    Reasoned out in result.md rather than assumed. Separately, the API Extractor diff is
+    additive EXCEPT for removing 'cleanup' from IAtomicWriteFailure.stage, which the brief's
+    "additive only" criterion would otherwise forbid; permitted because that member was
+    introduced by F1, F1 never reached release, and the pair squashes as one landing, so no
+    published version ever carried it.
+  sourceLine: '**Shipped: an optional atomic-write capability on `FileTree`, and a Node implementation whose durability claim is decided per root by positive identification rather than assumed from a platform string.**'
+  headline: >
+    A FileTree can now replace a file such that a reader never sees a torn write, and on a root
+    whose filesystem was actually qualified it survives the writing process being killed — an
+    unqualified root refuses rather than quietly promising less.
+keywords:
+  - atomic file replacement
+  - crash safety
+  - durability qualification
+  - fsync
+  - rename linearization point
+  - temp-and-rename
+  - process-crash survival
+  - fault injection
+  - mutation testing
+  - filesystem allowlist
+  - statfs magic number
+  - torn write
+  - orphaned temporary file
+  - errno classification
+  - cross-realm instanceof
+  - type guard widening
+relatedStreams:
+  - id: filetree-bytes-capability
+    relationship: >
+      the optional-capability shape this one mirrors — accessor and item interfaces plus a
+      presence guard, with the inquiry rather than the guard answering what a call will achieve
+  - id: filetree-strict-text-read
+    relationship: >
+      the sibling optional capability whose "custody of the bytes" rule this one follows for
+      strict UTF-8 readback of durable records
+sourceHash: 1632b62e141e6a3f # sha256/16 over brief.md, result.md, state.md

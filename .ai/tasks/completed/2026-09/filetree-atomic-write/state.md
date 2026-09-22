@@ -217,3 +217,180 @@ four-line version shifted the window off the return block and dropped the file t
   not validate child names the way `writeChildAtomically` now does, and silently
   `joinPaths` a slash-containing name. Correct finding, but backfilling stricter
   validation onto two established methods is a behavior change outside this stream.
+
+## 2026-09-21 — F2 phases 1–4 done; crash-test prediction recorded BEFORE running
+
+**Phases 1–4 complete.** Orientation confirmed the kickoff against the tree: `development-design.md`
+§8.1–8.2 says exactly what the kickoff says it says, `implementation-plan.md` F2 matches, and F1's
+code is as described. No missing-input gap to surface.
+
+**Built:**
+
+- `atomicFsOperations.ts` — the typed internal filesystem seam (11 operations + the temporary-name
+  token). Not re-exported from either barrel, so no public fault-injection knob exists.
+- `atomicRootQualification.ts` — the allowlist that decides what a root may claim.
+- `atomicFileCommit.ts` — the §8.2 ordering protocol plus reserved-temporary reclamation.
+- `fsTree.ts` — `FsFileTreeAccessors` now implements `IAtomicFileTreeAccessors`, with root
+  confinement and the mutability policy layered on the qualification.
+- `cleanupAtomicTemporaries` added to both atomic interfaces, implemented on Fs, in-memory and
+  `DirectoryItem` (see the vocabulary note below — this is an addition to F1's surface).
+
+**Real defect the fault-injection suite caught, which the compiler and a reads-against-intent pass
+could not.** `errnoOf` used `error instanceof Error` before reading `.code`. The errors Node's `fs`
+throws are constructed in Node's own realm, and `instanceof` tests the *calling* realm's `Error`.
+Wherever the two differ — a `vm` context, a worker thread, the sandbox a test runner evaluates
+modules in — a perfectly ordinary `ENOENT` reports as `'UNKNOWN'`. Consequence: **a rename failure
+that was provably `unchanged` would have been classified `unknown`**, and a missing destination
+would have been read as an uninspectable one. 29 tests went red on it. Now reads the properties
+directly, realm-independently, with no cast. This is precisely the native-boundary class the
+kickoff predicted layer 1 would under-cover.
+
+**Status of gates at this point:** `rushx build` zero warnings; `rushx test` 1143 passed, 0 failed;
+`atomicFileCommit.ts`, `atomicFsOperations.ts`, `atomicRootQualification.ts` all at 100% on every
+metric. Remaining gaps, deliberately left for after the `code-reviewer` pass per
+TESTING_GUIDELINES § *Coverage Gap Resolution*: `fsTree.ts` 361-366 and 436-437, `inMemoryTree.ts`
+801-802.
+
+### Prediction for the subprocess crash tests, written before the first run
+
+The protocol claims the rename is the visibility linearization point. If that is true, then for a
+child process hard-killed (`SIGKILL`, self-inflicted, synchronized to the protocol boundary rather
+than to a sleep) the following must hold on every qualified filesystem:
+
+1. **The destination is byte-identical to either the whole previous record or the whole new record,
+   at every boundary, with no exceptions.** Not a prefix, not a mixture, not empty. This is the
+   claim; a single torn destination falsifies it.
+2. Killed at `before-temp-open`, `after-temp-open`, `mid-write`, `after-file-flush`,
+   `before-rename` → the destination holds the **previous** record.
+3. Killed at `after-rename`, `after-directory-flush` → the destination holds the **new** record.
+4. A reserved orphan temporary exists **exactly** for `after-temp-open`, `mid-write`,
+   `after-file-flush` and `before-rename`, and **not** for `before-temp-open`, `after-rename` or
+   `after-directory-flush` — the rename consumes the temporary.
+5. At `mid-write` the orphan holds a **partial** record. If it holds a complete one, the injection
+   did not fire where this suite believes it fires, and every other result in the table is
+   worthless — so this is asserted explicitly rather than assumed.
+6. `cleanupAtomicTemporaries` at reopen removes exactly the orphan and leaves the destination
+   exactly as the crash left it.
+
+**What a miss means.** A torn destination at any boundary means the ordering protocol is wrong and
+`development-design.md` §8.2 needs revising — not that the test's threshold needs relaxing. An
+orphan present or absent where the table says otherwise means the temporary lifecycle is wrong.
+A complete record at `mid-write` means the harness is measuring nothing.
+
+**What this evidence does NOT establish, and must not be reported as establishing:** any OS-crash or
+power-loss survival. The process is killed while the kernel and filesystem keep running, which is
+exactly the fault model A1 approved and nothing more. The directory flush is performed because the
+acceptance boundary requires it, not because process-kill evidence says anything about a storage
+stack's write cache.
+
+## 2026-09-21 — F2 phases 6–7: review fixes, vocabulary, and the mutation results
+
+**Prediction held.** All 22 subprocess crash assertions passed on both filesystems, at every
+boundary, first run. No destination was ever observed torn; `before-temp-open` … `before-rename`
+showed the previous record, `after-rename` and `after-directory-flush` showed the new one; orphans
+appeared exactly where the table said and nowhere else; the `mid-write` orphan was genuinely
+partial and a strict prefix of the new record.
+
+### Watching every protection fail
+
+Twelve protections were neutered one at a time, rebuilt, measured and restored. Two rounds were
+needed, and the second round is the point of the exercise.
+
+| # | protection neutered | outcome |
+|---|---|---|
+| M1 | unlink the destination before renaming over it | 8 red, incl. both `before-rename` crash tests |
+| M2 | skip the containing-directory flush | **round 1: did not compile — no evidence.** Round 2 (`M2b`, call removed outright): 4 red |
+| M3 | claim `unchanged` for every failed rename | 7 red |
+| M4 | drop the new member from both capability guards | 2 red — the P1 regression tests |
+| M5 | qualify any filesystem, not just allowlisted ones | 2 red |
+| M6 | carry set-user-ID onto the replacement | 1 red |
+| M7 | create the temporary without `O_EXCL` | 3 red |
+| M8 | write once instead of looping short writes | 15 red |
+| M9 | skip the temporary's flush | **round 1: did not compile — no evidence.** Round 2 (`M9b`): 8 red |
+| M10 | stop confining paths to the tree root | 5 red |
+| M11 | follow a symlink at the destination | 3 red |
+| M12 | advertise `os-crash` / `power-loss` | 11 red |
+
+**Two things this exercise caught that the suite could not.**
+
+1. **M2 and M9 did not compile in round 1, and a mutation that does not compile is not evidence.**
+   Recorded as unverified and redone with a mutation that builds, rather than counted as a pass
+   because nothing went red. The two steps involved are the flushes — the durability-critical
+   ones — so accepting the first round would have meant claiming the two least-verifiable steps
+   on the weakest evidence in the set.
+2. **M10 leaked `/tmp/escaped.json` and `/dev/shm/escaped.json`**, which then made M11 and M12
+   report a spurious extra failure. Tracing that back found a real defect in the *test*: the
+   confinement assertions reached for `path.dirname(root)`, so they depended on a shared
+   directory not containing a particular file name. The tree root now sits inside a container
+   the block owns, so "outside the root" is still somewhere the test cleans up. Baseline after
+   the fix: 0 failures.
+
+**What the flush mutations do and do not establish.** They establish that the two `fsync` calls
+are made, once each, at those points in the sequence — that is what the injected-failure tests
+pin. They do **not** establish that the bytes reached the storage device, and no test here can:
+a process-kill leaves the page cache intact, so flushed and unflushed data are indistinguishable
+to every test in this suite. The flushes are performed because §8.2's acceptance boundary
+requires them; the evidence for them is structural, not physical. This is the same limitation
+A1 already states, and it is why no `os-crash` or `power-loss` claim is made.
+
+### Vocabulary decision
+
+`stage` loses `'cleanup'`; all four `AtomicWriteGuarantee` members are kept. Reasoning in
+`result.md` and in the commit message for `596df35f` — in short, `guarantee` is an *input*
+vocabulary where a refusal is a witness, and `stage` is an *output* vocabulary where a member
+with no producer is dead.
+
+## 2026-09-21 — antagonist pass on the closure, and what it changed
+
+An independent adversarial pass was run over the closure artifacts, briefed to **refute**: verify
+every claim against the code and a live run rather than against the prose asserting it, and treat
+an untraceable claim as a finding rather than a maybe. It re-ran every gate itself instead of
+accepting the reported results, and independently corroborated all twelve mutation red-counts
+against the machine-written results files.
+
+**It found a false statement in the Gates line, which is the one that mattered.** `result.md`
+claimed *"API Extractor diff reviewed and additive"*. The diff **removes** `'cleanup'` from
+`IAtomicWriteFailure.stage` in the checked-in `api.md` — which the same document says two screens
+earlier. The brief's acceptance criterion reads *"Additive only"*, and nothing anywhere
+reconciled the removal against it. Corrected: the removal is now stated plainly, with the reason
+it is permitted (the member was introduced by F1, F1 never reached `release`, the pair squashes
+as one landing, so no published version ever carried it — which is what the integration branch is
+*for*).
+
+**Four places called `cleanupAtomicTemporaries` "added beyond the brief".** The brief's own F2
+paragraph says "reserved-temp cleanup on reopen". Wrong four times over; corrected in
+`result.md`, `README.md`, `meta.yaml` and the ledger entry. The genuinely open question it had
+displaced — the brief's out-of-scope clause *"any **required** member added to an existing base
+interface"* — had been engaged nowhere, and is now reasoned out explicitly rather than assumed.
+
+**Three overstatements of evidence, each fixed by making the claim true rather than weakening
+it:**
+
+- *"11 subprocess crash assertions"* — 10 are crash-synchronized; the 11th is the uninterrupted
+  control. Stated precisely now.
+- *"the destination is never unlinked or truncated ... asserts on the operations performed"* —
+  the unlink half was operational, the **truncation half was asserted nowhere**, and the harness
+  recorded operation names without paths so it *could not* have made that claim. The harness now
+  records paths, and the test asserts every `openExclusive` went to a reserved temporary and that
+  `rename` is the only operation that ever named the destination.
+- *"the two `fsync` calls are verified to be made, once each"* — nothing asserted a count. The
+  first fix added one, **and a mutation immediately showed the count was the wrong property**: a
+  protocol that flushes the *directory* twice and the record never has the same count and the
+  same occurrence positions, so it passed the new assertion and every occurrence-indexed
+  injection. The assertion now pins **descriptors**, and that mutation goes red on exactly the
+  one test.
+
+That last item is the second time in this stream that a first attempt at a regression test was
+insufficient and only the mutation revealed it. The lesson generalizes: **an assertion added to
+support a claim must itself be watched to fail**, or it is the same guess the mutation discipline
+exists to eliminate.
+
+**Also corrected:** the tested-matrix row for the in-memory store said "F1's suite, unchanged",
+while F2 added `cleanupAtomicTemporaries` to it and grew its suite by +150/−7. The *advertised
+guarantee* is unchanged; the cell now says so. And the procfs magic number the matrix quotes was
+probed but asserted nowhere — the test now asserts it.
+
+**Findings accepted as correct and left alone:** that the macOS *reason* is asserted by no test,
+only the refusal — a rationale for an allowlist is not an executable path, and the test's own
+title already concedes the point; and that `brief.md`'s acceptance checkboxes remain unticked,
+which the artifact protocol requires, since a brief is authored in flight and never edited after.
