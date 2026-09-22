@@ -21,7 +21,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { IAtomicWriteCapabilities } from './fileTreeAccessors';
+import { IAtomicWriteCapabilities } from '../fileTreeAccessors';
 import { IAtomicFsOperations } from './atomicFsOperations';
 
 /**

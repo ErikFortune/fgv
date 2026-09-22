@@ -26,7 +26,7 @@ import fs from 'fs';
 import path from 'path';
 import { FsFileTreeAccessors } from '../../../packlets/file-tree';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { isReservedTemporaryName } from '../../../packlets/file-tree/atomicFileCommit';
+import { isReservedTemporaryName } from '../../../packlets/file-tree/fs-atomic/atomicFileCommit';
 import { atomicTestRoots, isQualified } from './atomicTestRoots';
 
 /**
@@ -84,8 +84,8 @@ const path = require('path');
 const fs = require('fs');
 
 const [libRoot, directoryPath, destinationPath, contentsPath, boundary, chunk] = process.argv.slice(2);
-const opsModule = require(path.join(libRoot, 'packlets', 'file-tree', 'atomicFsOperations.js'));
-const commitModule = require(path.join(libRoot, 'packlets', 'file-tree', 'atomicFileCommit.js'));
+const opsModule = require(path.join(libRoot, 'packlets', 'file-tree', 'fs-atomic', 'atomicFsOperations.js'));
+const commitModule = require(path.join(libRoot, 'packlets', 'file-tree', 'fs-atomic', 'atomicFileCommit.js'));
 const real = opsModule.defaultAtomicFsOperations;
 const chunkSize = Number(chunk);
 

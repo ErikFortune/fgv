@@ -23,9 +23,9 @@
 import fs from 'fs';
 import os from 'os';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { defaultAtomicFsOperations } from '../../../packlets/file-tree/atomicFsOperations';
+import { defaultAtomicFsOperations } from '../../../packlets/file-tree/fs-atomic/atomicFsOperations';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { qualifyAtomicWrites } from '../../../packlets/file-tree/atomicRootQualification';
+import { qualifyAtomicWrites } from '../../../packlets/file-tree/fs-atomic/atomicRootQualification';
 
 /**
  * The real filesystems the atomic suites run against.

@@ -27,7 +27,7 @@ import {
   IAtomicFsOperations,
   IAtomicFsStats,
   defaultAtomicFsOperations
-} from '../../../packlets/file-tree/atomicFsOperations';
+} from '../../../packlets/file-tree/fs-atomic/atomicFsOperations';
 
 /**
  * Fault injection for the atomic write protocol.

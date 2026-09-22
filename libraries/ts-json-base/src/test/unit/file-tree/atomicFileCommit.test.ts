@@ -30,12 +30,12 @@ import {
   cleanupAtomicTemporaries,
   commitFileAtomically,
   isReservedTemporaryName
-} from '../../../packlets/file-tree/atomicFileCommit';
+} from '../../../packlets/file-tree/fs-atomic/atomicFileCommit';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import {
   IAtomicFsOperations,
   defaultAtomicFsOperations
-} from '../../../packlets/file-tree/atomicFsOperations';
+} from '../../../packlets/file-tree/fs-atomic/atomicFsOperations';
 import { IAtomicWriteFailure, IAtomicWriteReceipt } from '../../../packlets/file-tree';
 import { FaultingFsOperations } from './atomicFaultHarness';
 

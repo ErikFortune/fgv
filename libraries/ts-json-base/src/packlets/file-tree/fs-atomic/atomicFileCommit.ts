@@ -30,7 +30,7 @@ import {
   succeed,
   succeedWithDetail
 } from '@fgv/ts-utils';
-import { AtomicWriteGuarantee, IAtomicWriteFailure, IAtomicWriteReceipt } from './fileTreeAccessors';
+import { AtomicWriteGuarantee, IAtomicWriteFailure, IAtomicWriteReceipt } from '../fileTreeAccessors';
 import { AtomicFsErrno, IAtomicFsOperations, UNKNOWN_ERRNO } from './atomicFsOperations';
 
 /**

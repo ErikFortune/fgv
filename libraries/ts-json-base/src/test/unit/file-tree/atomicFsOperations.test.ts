@@ -29,7 +29,7 @@ import {
   UNKNOWN_ERRNO,
   captureFsResult,
   defaultAtomicFsOperations
-} from '../../../packlets/file-tree/atomicFsOperations';
+} from '../../../packlets/file-tree/fs-atomic/atomicFsOperations';
 
 /**
  * The seam itself: that each operation reaches the real filesystem, and that a

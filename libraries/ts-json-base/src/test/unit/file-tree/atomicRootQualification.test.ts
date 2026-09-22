@@ -26,13 +26,13 @@ import os from 'os';
 import path from 'path';
 import { DetailedResult, succeedWithDetail } from '@fgv/ts-utils';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { qualifyAtomicWrites } from '../../../packlets/file-tree/atomicRootQualification';
+import { qualifyAtomicWrites } from '../../../packlets/file-tree/fs-atomic/atomicRootQualification';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import {
   AtomicFsErrno,
   IAtomicFsOperations,
   defaultAtomicFsOperations
-} from '../../../packlets/file-tree/atomicFsOperations';
+} from '../../../packlets/file-tree/fs-atomic/atomicFsOperations';
 import { FaultingFsOperations } from './atomicFaultHarness';
 
 /**

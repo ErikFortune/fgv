@@ -46,9 +46,12 @@ import {
 import { DirectoryItem } from './directoryItem';
 import { FileItem } from './fileItem';
 import { isPathMutable } from './filterSpec';
-import { cleanupAtomicTemporaries, commitFileAtomically } from './atomicFileCommit';
-import { defaultAtomicFsOperations } from './atomicFsOperations';
-import { qualifyAtomicWrites } from './atomicRootQualification';
+import {
+  cleanupAtomicTemporaries,
+  commitFileAtomically,
+  defaultAtomicFsOperations,
+  qualifyAtomicWrites
+} from './fs-atomic';
 
 /**
  * A root's atomic-write qualification, together with the failure code to report
