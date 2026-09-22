@@ -36,6 +36,11 @@ export function revisionOf(record: ITaskCommitRecord | ITaskRecordDraft): TaskRe
   return record.recordType === 'resolved' ? record.task.envelope.revision : record.reference.revision;
 }
 
+/** The updates a record or draft owes. An unresolved record owes none. */
+export function updatesOf(record: ITaskCommitRecord | ITaskRecordDraft): ReadonlyArray<ITaskUpdate> {
+  return record.recordType === 'resolved' ? record.updates : [];
+}
+
 /** The task a record or draft describes. */
 export function idOf(record: ITaskCommitRecord | ITaskRecordDraft): TaskId {
   return record.recordType === 'resolved' ? record.task.envelope.id : record.reference.id;
@@ -70,11 +75,9 @@ export function checkRegistrationDraft(
   if (draft.recordType === 'resolved' && draft.archived) {
     return fail(`a first record cannot be archived`);
   }
-  return canonicallyEqual(op.request, request).onSuccess((equal) =>
-    equal
-      ? succeed<true>(true)
-      : fail<true>(`the creation operation's request differs from the registration request`)
-  );
+  return canonicallyEqual(op.request, request)
+    ? succeed(true)
+    : fail(`the creation operation's request differs from the registration request`);
 }
 
 /**
@@ -90,7 +93,7 @@ export function checkIdentity(current: ITaskCommitRecord, draft: ITaskRecordDraf
   if (current.recordType === 'unresolved') {
     const reference = current.reference;
     // First resolution preserves identity and every piece of catalog metadata (§8.3).
-    return canonicallyEqual(
+    const same: boolean = canonicallyEqual(
       {
         id: reference.id,
         kind: reference.kind,
@@ -111,15 +114,14 @@ export function checkIdentity(current: ITaskCommitRecord, draft: ITaskRecordDraf
         scopes: next.scopes,
         binding: next.binding
       }
-    ).onSuccess((equal) => {
-      if (!equal) {
-        return fail<true>(`first resolution must preserve the registration's identity and catalog metadata`);
-      }
-      if (next.revision <= reference.revision) {
-        return fail<true>(`first resolution must advance the revision past ${reference.revision}`);
-      }
-      return succeed<true>(true);
-    });
+    );
+    if (!same) {
+      return fail(`first resolution must preserve the registration's identity and catalog metadata`);
+    }
+    if (next.revision <= reference.revision) {
+      return fail(`first resolution must advance the revision past ${reference.revision}`);
+    }
+    return succeed(true);
   }
   const previous = current.task.envelope;
   if (
@@ -132,19 +134,18 @@ export function checkIdentity(current: ITaskCommitRecord, draft: ITaskRecordDraf
   if (next.createdAt !== previous.createdAt) {
     return fail(`a replacement cannot change createdAt`);
   }
-  return canonicallyEqual(previous.binding, next.binding).onSuccess((equal) => {
-    if (!equal) {
-      return fail<true>(`a source binding is not a metadata patch; it cannot change in a replacement`);
-    }
-    if (isTerminalTaskStatus(previous.lifecycle.status)) {
-      // Terminal execution state is absorbing in v1, and closeout accounting relies on there
-      // being exactly one terminal outcome.
-      return canonicallyEqual(previous.lifecycle, next.lifecycle).onSuccess((same) =>
-        same ? succeed<true>(true) : fail<true>(`terminal state is absorbing; it cannot change`)
-      );
-    }
-    return succeed<true>(true);
-  });
+  if (!canonicallyEqual(previous.binding, next.binding)) {
+    return fail(`a source binding is not a metadata patch; it cannot change in a replacement`);
+  }
+  // Terminal execution state is absorbing in v1, and closeout accounting relies on there being
+  // exactly one terminal outcome.
+  if (
+    isTerminalTaskStatus(previous.lifecycle.status) &&
+    !canonicallyEqual(previous.lifecycle, next.lifecycle)
+  ) {
+    return fail(`terminal state is absorbing; it cannot change`);
+  }
+  return succeed(true);
 }
 
 /**
@@ -162,7 +163,7 @@ export function checkOperations(
     if (kept === undefined) {
       return fail(`operation '${op.operationId}' is dedup evidence and cannot be dropped`);
     }
-    const same: Result<boolean> = canonicallyEqual(
+    const same: boolean = canonicallyEqual(
       { type: op.type, request: op.request, operation: op.type === 'catalog' ? op.operation : undefined },
       {
         type: kept.type,
@@ -170,10 +171,7 @@ export function checkOperations(
         operation: kept.type === 'catalog' ? kept.operation : undefined
       }
     );
-    if (same.isFailure()) {
-      return fail(same.message);
-    }
-    if (!same.value) {
+    if (!same) {
       return fail(`operation '${op.operationId}': a stored request cannot change`);
     }
     byId.delete(op.operationId);
@@ -207,11 +205,7 @@ export function checkUpdates(
       }
       continue;
     }
-    const same: Result<boolean> = canonicallyEqual(update, kept);
-    if (same.isFailure()) {
-      return fail(same.message);
-    }
-    if (!same.value) {
+    if (!canonicallyEqual(update, kept)) {
       return fail(`update '${update.id}' is immutable once committed`);
     }
     byId.delete(update.id);

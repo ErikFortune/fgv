@@ -126,6 +126,17 @@ describe('capacity status', () => {
   });
 });
 
+describe('limiting records', () => {
+  test('are the largest contributors, ties broken by record id, so the report is deterministic', async () => {
+    const repository = await repositoryWith(defaultTaskCapacityProfile);
+    for (const id of ['m', 'c', 'x', 'a', 'q', 'k']) {
+      expect(await register(repository, id)).toSucceed();
+    }
+    // Every task contributes one retained identity: a six-way tie, reported first five by id.
+    expect(row(repository, 'retained-tasks').limitingRecordIds).toEqual(['a', 'c', 'k', 'm', 'q']);
+  });
+});
+
 describe('admission — exact fit and one over', () => {
   test('retained identities: the last slot admits, one more is refused as a lifetime dimension', async () => {
     const repository = await repositoryWith(profileWith({ 'retained-tasks': 2 }));

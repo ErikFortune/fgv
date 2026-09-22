@@ -107,13 +107,19 @@ export function encodeRecord(value: unknown): Result<IEncodedRecord> {
 /**
  * Canonical equality of two JSON-shaped values. Used for replay comparison, which must
  * compare the entire request, not a lossy hash of it (design §5).
+ *
+ * @remarks
+ * Every value compared here has already passed a converter, so canonicalization does not fail.
+ * If it ever did, the values compare **unequal** — and every caller treats unequal as the
+ * refusing answer (a conflict, an integrity failure, an immutable field changed), so an
+ * uncomparable value can never be mistaken for a replay.
  * @internal
  */
-export function canonicallyEqual(a: unknown, b: unknown): Result<boolean> {
+export function canonicallyEqual(a: unknown, b: unknown): boolean {
   // Wrapped so that an absent value (`undefined`) compares as absent rather than failing.
-  return encodeRecord({ value: a }).onSuccess((left) =>
-    encodeRecord({ value: b }).onSuccess((right) => succeed(left.text === right.text))
-  );
+  const left: Result<IEncodedRecord> = encodeRecord({ value: a });
+  const right: Result<IEncodedRecord> = encodeRecord({ value: b });
+  return left.isSuccess() && right.isSuccess() && left.value.text === right.value.text;
 }
 
 /**

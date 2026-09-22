@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, mapResults, succeed } from '@fgv/ts-utils';
 import {
   IPendingInventoryEntry,
   ITaskCapacityClaim,
@@ -15,7 +14,7 @@ import {
   isTerminalTaskStatus
 } from '../types';
 import { DimensionAmounts, ILedgerEntry, heldCharges, zeroAmounts } from './ledger';
-import { encodeRecord } from './layout';
+import { utf8Length } from './layout';
 
 /**
  * The minimal resident projection of one live task (design §7): identity, graph edge,
@@ -105,9 +104,16 @@ export function taskRecordLimit(profile: ITaskCapacityProfile): number {
  * prunes it: storage cannot see consumer records' acknowledgements in this release.
  * @internal
  */
-export function taskUsage(record: ITaskCommitRecord, recordBytes: number): Result<DimensionAmounts> {
+export function taskUsage(record: ITaskCommitRecord, recordBytes: number): DimensionAmounts {
   const updates = record.recordType === 'resolved' ? record.updates : [];
-  return mapResults(updates.map((update) => encodeRecord(update))).onSuccess((encoded) => {
+  // `JSON.stringify` of a validated value is the same *length* as its RFC 8785 canonical form:
+  // the canonicalizer serializes every string and number through `JSON.stringify`, and only key
+  // order differs. So this is the canonical byte count, without a failure path that cannot fire.
+  const payloadBytes: number = updates.reduce(
+    (total, update) => total + utf8Length(JSON.stringify(update)),
+    0
+  );
+  {
     const used: DimensionAmounts = zeroAmounts();
     used['retained-tasks'] = 1;
     used['non-archived-tasks'] = record.recordType === 'resolved' && record.archived ? 0 : 1;
@@ -116,9 +122,9 @@ export function taskUsage(record: ITaskCommitRecord, recordBytes: number): Resul
     used.operations = record.operations.length;
     used['record-bytes'] = recordBytes;
     used['logical-bytes'] = recordBytes;
-    used['resident-payload-bytes'] = encoded.reduce((total, e) => total + e.bytes, 0);
-    return succeed(used);
-  });
+    used['resident-payload-bytes'] = payloadBytes;
+    return used;
+  }
 }
 
 /**

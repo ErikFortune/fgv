@@ -18,6 +18,8 @@ export interface IInjectedFault {
   readonly when: 'before' | 'after';
   readonly visibility: FileTree.IAtomicWriteFailure['visibility'];
   readonly stage?: FileTree.IAtomicWriteFailure['stage'];
+  /** Fail with no classification at all, as a store that does not classify might. */
+  readonly unclassified?: boolean;
   /** Let this many matching writes through before the fault fires. */
   skip?: number;
 }
@@ -36,6 +38,8 @@ export class FaultyRoot implements FileTree.IAtomicFileTreeDirectoryItem {
   public readonly faults: IInjectedFault[] = [];
   public readonly writes: string[] = [];
   public failChildren: boolean = false;
+  /** Present file children without the strict-text capability. */
+  public hideStrictText: boolean = false;
   public capabilities: FileTree.IAtomicWriteCapabilities | undefined;
 
   public readonly inner: FileTree.IAtomicFileTreeDirectoryItem;
@@ -61,7 +65,28 @@ export class FaultyRoot implements FileTree.IAtomicFileTreeDirectoryItem {
     if (this.failChildren) {
       return failWithDetail('injected: cannot list', undefined);
     }
-    return this.inner.getChildren();
+    if (!this.hideStrictText) {
+      return this.inner.getChildren();
+    }
+    return this.inner.getChildren().onSuccess((children) =>
+      succeed(
+        children.map(
+          (child): FileTree.FileTreeItem =>
+            child.type === 'file'
+              ? {
+                  type: 'file',
+                  absolutePath: child.absolutePath,
+                  name: child.name,
+                  baseName: child.baseName,
+                  extension: child.extension,
+                  contentType: child.contentType,
+                  getContents: () => child.getContents(),
+                  getRawContents: () => child.getRawContents()
+                }
+              : child
+        )
+      )
+    );
   }
 
   public createChildFile(name: string, contents: string): Result<FileTree.IMutableFileTreeFileItem> {
@@ -105,6 +130,11 @@ export class FaultyRoot implements FileTree.IAtomicFileTreeDirectoryItem {
     const [fault] = this.faults.splice(index, 1);
     if (fault.when === 'after') {
       this.inner.writeChildAtomically(name, contents, options).orThrow();
+    }
+    if (fault.unclassified === true) {
+      return failWithDetail<FileTree.IAtomicWriteReceipt, FileTree.IAtomicWriteFailure>(
+        `injected unclassified failure on ${name}`
+      );
     }
     return failWithDetail(`injected ${fault.when}-write failure on ${name}`, {
       code: 'io',

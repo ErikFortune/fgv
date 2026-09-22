@@ -11,6 +11,8 @@ import {
   ITaskCapacityProfile,
   ITaskCommitRecord,
   ITaskRecoveryIssue,
+  ITaskEnvironment,
+  ITaskKindRegistry,
   ITaskRecoveryReport,
   ITaskRepositoryManifest,
   OperationId,
@@ -21,7 +23,7 @@ import {
   defaultTaskCapacityProfile,
   taskStorageFormatVersion
 } from '../types';
-import { classify, ok, propagate, taskFailure } from './failures';
+import { classify, ok, propagate, taskFailure, writeRetry } from './failures';
 import {
   canonicallyEqual,
   encodeRecord,
@@ -51,10 +53,28 @@ import {
   taskUsage
 } from './projection';
 import { RecordStore } from './recordStore';
-import { IRepositoryState } from './state';
 import { IRootOwnership, acquireRoot } from './rootOwnership';
 
 type Guarantee = FileTree.AtomicWriteGuarantee;
+
+/**
+ * Everything a scan of the root establishes, handed to the repository it opens.
+ * @internal
+ */
+export interface IRepositoryState {
+  readonly store: RecordStore;
+  readonly ownership: IRootOwnership;
+  readonly converters: TaskConverters;
+  readonly registry: ITaskKindRegistry;
+  readonly environment: ITaskEnvironment;
+  readonly mode: TaskRepositoryMode;
+  readonly manifest: ITaskRepositoryManifest;
+  readonly manifestBytes: number;
+  readonly tasks: Map<TaskId, ITaskProjection>;
+  readonly pending: Map<string, IPendingInventoryEntry>;
+  readonly ledger: CapacityLedger;
+  readonly report: ITaskRecoveryReport;
+}
 
 const modeConverter: Converter<TaskRepositoryMode> = Converters.oneOf<TaskRepositoryMode>([
   Converters.literal('session'),
@@ -90,11 +110,14 @@ interface IAcquired {
  * interrupted writes' working files — valid only now, under exclusive ownership — and list.
  */
 function _acquire(params: ITaskRepositoryOpenParams): TaskResult<IAcquired> {
-  const converters: Result<TaskConverters> =
-    params.converters !== undefined ? ok(params.converters) : TaskConverters.create();
-  if (converters.isFailure()) {
-    return taskFailure(converters.message, 'invalid', 'after-host-action');
-  }
+  return classify(
+    params.converters !== undefined ? ok(params.converters) : TaskConverters.create(),
+    'invalid',
+    'after-host-action'
+  ).onSuccess((converters) => _acquireWith(params, converters));
+}
+
+function _acquireWith(params: ITaskRepositoryOpenParams, converters: TaskConverters): TaskResult<IAcquired> {
   return _guarantee(params.mode).onSuccess((guarantee) => {
     const store: Result<RecordStore> = RecordStore.create(params.root, guarantee);
     if (store.isFailure()) {
@@ -115,7 +138,7 @@ function _acquire(params: ITaskRepositoryOpenParams): TaskResult<IAcquired> {
     return ok<IAcquired>({
       store: store.value,
       ownership: ownership.value,
-      converters: converters.value,
+      converters,
       mode: guarantee === 'session' ? 'session' : { durable: 'process-crash' },
       removed: listed.value.removed,
       names: listed.value.names
@@ -177,7 +200,8 @@ export function initializeRepository(
       return refuse(`initialize: ${created.message}`, 'invalid');
     }
     const profile: ITaskCapacityProfile = created.value.manifest.profile;
-    const ledger: CapacityLedger = new CapacityLedger(profile);
+    // Seeded with an empty manifest, so the real one is admitted as growth against the profile.
+    const ledger: CapacityLedger = new CapacityLedger(profile, manifestEntry(0, profile));
     const admitted: TaskResult<true> = ledger.admit(
       new Map([['repository', manifestEntry(created.value.bytes, profile)]])
     );
@@ -191,7 +215,7 @@ export function initializeRepository(
       return taskFailure<ITaskRepository>(
         `initialize: ${written.message}`,
         'storage-unavailable',
-        written.detail?.visibility === 'unchanged' ? 'safe' : 'reconcile-first'
+        writeRetry(written.detail)
       );
     }
     const listed: Result<ReadonlyArray<string>> = acquired.store.list();
@@ -244,13 +268,8 @@ class Scan {
     });
   }
 
-  public advisory(code: TaskRecoveryIssueCode, message: string, recordName?: string): void {
-    this.issues.push({
-      code,
-      severity: 'advisory',
-      message,
-      ...(recordName !== undefined ? { recordName } : {})
-    });
+  public advisory(code: TaskRecoveryIssueCode, message: string, recordName: string): void {
+    this.issues.push({ code, severity: 'advisory', message, recordName });
   }
 
   public get isBlocked(): boolean {
@@ -259,8 +278,8 @@ class Scan {
 }
 
 /**
- * Reads and parses one file, classifying failures. `undefined` means absent or already
- * reported.
+ * Reads and parses one file the caller knows is present, classifying failures. `undefined`
+ * means the problem has been reported.
  */
 function _readJson(
   store: RecordStore,
@@ -268,12 +287,9 @@ function _readJson(
   name: string,
   limit: number | undefined
 ): { readonly parsed: unknown; readonly bytes: number } | undefined {
-  const text: Result<string | undefined> = store.read(name);
+  const text: Result<string> = store.read(name);
   if (text.isFailure()) {
     scan.blocking('unreadable', text.message, name);
-    return undefined;
-  }
-  if (text.value === undefined) {
     return undefined;
   }
   const bytes: number = utf8Length(text.value);
@@ -343,6 +359,40 @@ export function openRepository(
   });
 }
 
+/**
+ * Step 3 of the registration protocol, for registrations whose record landed before the
+ * process died: one manifest write marking them live. The only write open performs.
+ */
+function _completeRegistrations(
+  store: RecordStore,
+  converters: TaskConverters,
+  manifest: ITaskRepositoryManifest,
+  done: ReadonlySet<string>
+): TaskResult<{ manifest: ITaskRepositoryManifest; bytes: number }> {
+  const next: ITaskRepositoryManifest = {
+    ...manifest,
+    manifestRevision: manifest.manifestRevision + 1,
+    tasks: manifest.tasks.map((entry) => (done.has(entry.id) ? { id: entry.id, state: 'live' } : entry))
+  };
+  return classify(
+    encodeRecord(next)
+      .onSuccess((encoded) => parseJson(encoded.text))
+      .onSuccess((parsed) => converters.storage.manifest.convert(parsed))
+      .onSuccess(encodeRecord),
+    'storage-corrupt',
+    'after-host-action'
+  ).onSuccess((encoded) => {
+    const written = store.write(manifestName, encoded.text);
+    return written.isSuccess()
+      ? ok({ manifest: next, bytes: encoded.bytes })
+      : taskFailure<{ manifest: ITaskRepositoryManifest; bytes: number }>(
+          `open: completing pending registrations failed: ${written.message}`,
+          'storage-unavailable',
+          writeRetry(written.detail)
+        );
+  });
+}
+
 function _recovery(acquired: IAcquired, report: ITaskRecoveryReport): TaskResult<TaskRepositoryOpenResult> {
   let closed: boolean = false;
   const recovery: ITaskRecoveryHandle = {
@@ -351,9 +401,7 @@ function _recovery(acquired: IAcquired, report: ITaskRecoveryReport): TaskResult
       if (closed) {
         return fail(`recovery: closed`);
       }
-      return acquired.store
-        .read(name)
-        .onSuccess((text) => (text === undefined ? fail<string>(`${name}: not present`) : ok(text)));
+      return acquired.store.read(name);
     },
     close: (): Result<boolean> => {
       if (closed) {
@@ -417,8 +465,7 @@ function _scan(
   // A host's configuration never reinterprets a stored repository: any difference, lower or
   // higher, refuses the open and leaves the stored policy exactly as it was.
   if (params.profile !== undefined) {
-    const same: Result<boolean> = canonicallyEqual(params.profile, profile);
-    if (same.isFailure() || !same.value) {
+    if (!canonicallyEqual(params.profile, profile)) {
       return taskFailure(
         `open: the requested capacity profile differs from the stored one; the stored profile governs, ` +
           `and raising it is an explicit operation (lowering is unsupported)`,
@@ -428,8 +475,7 @@ function _scan(
     }
   }
 
-  const ledger: CapacityLedger = new CapacityLedger(profile);
-  ledger.apply(new Map([['repository', manifestEntry(manifestRead.bytes, profile)]]));
+  const ledger: CapacityLedger = new CapacityLedger(profile, manifestEntry(manifestRead.bytes, profile));
   const tasks: Map<TaskId, ITaskProjection> = new Map<TaskId, ITaskProjection>();
   const pending: Map<string, IPendingInventoryEntry> = new Map<string, IPendingInventoryEntry>();
   const completed: TaskId[] = [];
@@ -504,29 +550,22 @@ function _scan(
       continue;
     }
 
-    let known: boolean = true;
-    if (record.recordType === 'resolved') {
-      const converted = params.registry.convert(record.task);
-      if (converted.isFailure()) {
-        if (converted.detail?.code === 'unknown-kind-version') {
-          known = false;
-          scan.advisory(
-            'unknown-kind',
-            `${name}: ${converted.message}; quarantined and never rewritten until the kind is registered`,
-            name
-          );
-        } else {
-          scan.blocking('record-invalid', `${name}: ${converted.message}`, name);
-          continue;
-        }
-      }
-    } else if (!params.registry.has(record.reference.kind, record.reference.detailVersion)) {
-      known = false;
+    // An unregistered kind is quarantined, never rewritten; a registered one must convert.
+    const kind = record.recordType === 'resolved' ? record.task.envelope : record.reference;
+    const known: boolean = params.registry.has(kind.kind, kind.detailVersion);
+    if (!known) {
       scan.advisory(
         'unknown-kind',
-        `${name}: ${record.reference.kind}@${record.reference.detailVersion} is not registered; quarantined`,
+        `${name}: ${kind.kind}@${kind.detailVersion} is not registered; quarantined and never rewritten ` +
+          `until the kind is registered`,
         name
       );
+    } else if (record.recordType === 'resolved') {
+      const converted = params.registry.convert(record.task);
+      if (converted.isFailure()) {
+        scan.blocking('record-invalid', `${name}: ${converted.message}`, name);
+        continue;
+      }
     }
 
     if (entry.state === 'pending') {
@@ -548,14 +587,14 @@ function _scan(
       completed.push(taskId);
     }
 
-    const usage = taskUsage(record, read.bytes);
-    if (usage.isFailure()) {
-      scan.blocking('record-invalid', `${name}: ${usage.message}`, name);
-      continue;
-    }
     tasks.set(taskId, projectRecord(record, known));
     ledger.apply(
-      new Map([[taskKey(taskId), ledgerEntry(taskId, usage.value, record.capacityClaims, recordLimit)]])
+      new Map([
+        [
+          taskKey(taskId),
+          ledgerEntry(taskId, taskUsage(record, read.bytes), record.capacityClaims, recordLimit)
+        ]
+      ])
     );
     noteClaims(
       taskId,
@@ -661,38 +700,16 @@ function _scan(
   }
 
   // ---- complete registrations that died after their record was written ----
-  let finalManifest: ITaskRepositoryManifest = manifest;
-  let finalBytes: number = manifestRead.bytes;
-  if (completed.length > 0) {
-    const done: Set<string> = new Set<string>(completed);
-    finalManifest = {
-      ...manifest,
-      manifestRevision: manifest.manifestRevision + 1,
-      tasks: manifest.tasks.map((entry) => (done.has(entry.id) ? { id: entry.id, state: 'live' } : entry))
-    };
-    const encoded = classify(
-      encodeRecord(finalManifest).onSuccess((e) =>
-        parseJson(e.text)
-          .onSuccess((p) => converters.storage.manifest.convert(p))
-          .onSuccess(() => ok(e))
-      ),
-      'storage-corrupt',
-      'after-host-action'
-    );
-    if (encoded.isFailure()) {
-      return propagate(encoded);
-    }
-    const written = store.write(manifestName, encoded.value.text);
-    if (written.isFailure()) {
-      return taskFailure(
-        `open: completing pending registrations failed: ${written.message}`,
-        'storage-unavailable',
-        written.detail?.visibility === 'unchanged' ? 'safe' : 'reconcile-first'
-      );
-    }
-    finalBytes = encoded.value.bytes;
-    ledger.apply(new Map([['repository', manifestEntry(finalBytes, profile)]]));
+  const completion: TaskResult<{ manifest: ITaskRepositoryManifest; bytes: number }> =
+    completed.length === 0
+      ? ok({ manifest, bytes: manifestRead.bytes })
+      : _completeRegistrations(store, converters, manifest, new Set<string>(completed));
+  if (completion.isFailure()) {
+    return propagate(completion);
   }
+  ledger.apply(new Map([['repository', manifestEntry(completion.value.bytes, profile)]]));
+  const finalManifest: ITaskRepositoryManifest = completion.value.manifest;
+  const finalBytes: number = completion.value.bytes;
 
   const state: IRepositoryState = {
     store,

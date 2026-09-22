@@ -265,8 +265,9 @@ describe('open refuses a writable repository over detectable corruption, and rew
     });
     freeze();
     expect(blocked(await open(root)).issues).toEqual([
-      issue('integrity', 'blocking', new RegExp(`present for pending registration '${operationId}'`))
+      issue('integrity', 'blocking', /present for pending registration 'op-create-t2'/)
     ]);
+    expect(operationId).toBe('op-create-t2');
     unchanged();
   });
 
@@ -338,7 +339,11 @@ describe('unknown data is retained without lossy rewrite', () => {
     const reopened = ready(await open(root, registry({ withoutVendor: true })));
     expect(reopened.report.issues).toEqual([
       issue('unknown-kind', 'advisory', /task-u1\.json: acme\.job@1 is not registered; quarantined/),
-      issue('unknown-kind', 'advisory', /task-v1\.json: .*quarantined and never rewritten/)
+      issue(
+        'unknown-kind',
+        'advisory',
+        /task-v1\.json: acme\.job@1 is not registered; quarantined and never rewritten/
+      )
     ]);
     expect(await reopened.read('v1' as TaskId)).toFailWithDetail(
       /no registered task kind/i,

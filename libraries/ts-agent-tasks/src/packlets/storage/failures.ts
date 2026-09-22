@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { FileTree } from '@fgv/ts-json-base';
 import { DetailedFailure, Result, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
 import { ICapacityFailure, ITaskFailure, OperationId, TaskFailureCode, TaskResult } from '../types';
 
@@ -50,10 +51,14 @@ export function ok<T>(value: T): TaskResult<T> {
  * @internal
  */
 export function propagate<T>(failure: DetailedFailure<unknown, ITaskFailure>): TaskResult<T> {
-  return taskFailure<T>(
-    failure.message,
-    failure.detail?.code ?? 'storage-unavailable',
-    failure.detail?.retry ?? 'after-host-action',
-    { operationId: failure.detail?.operationId, capacity: failure.detail?.capacity }
-  );
+  return failWithDetail<T, ITaskFailure>(failure.message, failure.detail);
+}
+
+/**
+ * The retry disposition of a failed atomic write that is not also a fence: safe only on positive
+ * evidence that nothing became visible. A store that did not classify its failure gave none.
+ * @internal
+ */
+export function writeRetry(failure: FileTree.IAtomicWriteFailure | undefined): ITaskFailure['retry'] {
+  return failure?.visibility === 'unchanged' ? 'safe' : 'reconcile-first';
 }

@@ -82,11 +82,11 @@ export class RecordStore {
     });
   }
 
-  /** Reads a file's text, or `undefined` if the root has no file of that name. */
-  public read(name: string): Result<string | undefined> {
+  /** Reads a file's text. Fails if the last listing saw no file of that name. */
+  public read(name: string): Result<string> {
     const file: FileTree.IFileTreeFileItem | undefined = this._files.get(name);
     if (file === undefined) {
-      return succeed(undefined);
+      return fail(`${name}: not present`);
     }
     if (!this._strictText) {
       return file.getRawContents();

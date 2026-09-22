@@ -110,36 +110,28 @@ export class CapacityLedger {
   private _profile: ITaskCapacityProfile;
   private readonly _entries: Map<string, ILedgerEntry>;
 
-  public constructor(profile: ITaskCapacityProfile) {
+  /**
+   * @param manifest - the manifest's own entry. A repository always has one, so the ledger is
+   * never empty.
+   */
+  public constructor(profile: ITaskCapacityProfile, manifest: ILedgerEntry) {
     this._profile = profile;
-    this._entries = new Map<string, ILedgerEntry>();
-  }
-
-  public get profile(): ITaskCapacityProfile {
-    return this._profile;
+    this._entries = new Map<string, ILedgerEntry>([['repository', manifest]]);
   }
 
   public setProfile(profile: ITaskCapacityProfile): void {
     this._profile = profile;
   }
 
-  public get(key: string): ILedgerEntry | undefined {
-    return this._entries.get(key);
-  }
-
   /** Applies a change that has already been admitted and committed. */
-  public apply(changes: ReadonlyMap<string, ILedgerEntry | undefined>): void {
+  public apply(changes: ReadonlyMap<string, ILedgerEntry>): void {
     for (const [key, entry] of changes) {
-      if (entry === undefined) {
-        this._entries.delete(key);
-      } else {
-        this._entries.set(key, entry);
-      }
+      this._entries.set(key, entry);
     }
   }
 
   /** Totals of the additive dimensions, with `changes` applied hypothetically. */
-  private _totals(changes?: ReadonlyMap<string, ILedgerEntry | undefined>): {
+  private _totals(changes?: ReadonlyMap<string, ILedgerEntry>): {
     used: DimensionAmounts;
     reserved: DimensionAmounts;
   } {
@@ -156,12 +148,8 @@ export class CapacityLedger {
         add(entry);
       }
     }
-    if (changes !== undefined) {
-      for (const entry of changes.values()) {
-        if (entry !== undefined) {
-          add(entry);
-        }
-      }
+    for (const entry of changes?.values() ?? []) {
+      add(entry);
     }
     return { used, reserved };
   }
@@ -178,7 +166,7 @@ export class CapacityLedger {
    * being committed, which must itself admit the manifest that stores it.
    */
   public admit(
-    changes: ReadonlyMap<string, ILedgerEntry | undefined>,
+    changes: ReadonlyMap<string, ILedgerEntry>,
     profile: ITaskCapacityProfile = this._profile
   ): TaskResult<true> {
     const before = this._totals();
@@ -234,31 +222,29 @@ export class CapacityLedger {
     // `record-bytes` is per record: each changed record must fit its own ceiling, counting its
     // own reserved growth. Only growth is refused, as for every other dimension.
     for (const [key, entry] of changes) {
-      if (entry !== undefined) {
-        const previous: ILedgerEntry | undefined = this._entries.get(key);
-        const beforeBytes: number =
-          previous === undefined ? 0 : previous.used['record-bytes'] + previous.reserved['record-bytes'];
-        const afterBytes: number = entry.used['record-bytes'] + entry.reserved['record-bytes'];
-        if (afterBytes > beforeBytes && afterBytes > entry.recordLimit) {
-          return taskFailure(
-            `capacity: record ${entry.recordId} would be ${afterBytes} bytes including its reserved ` +
-              `growth, over its limit of ${entry.recordLimit}`,
-            'backpressure',
-            'after-host-action',
-            {
-              capacity: {
-                reason: 'capacity-exhausted',
-                dimension: 'record-bytes',
-                recordId: entry.recordId,
-                used: entry.used['record-bytes'],
-                reserved: entry.reserved['record-bytes'],
-                requested: afterBytes - beforeBytes,
-                limit: entry.recordLimit,
-                reclaimableByCleanup: true
-              }
+      const previous: ILedgerEntry | undefined = this._entries.get(key);
+      const beforeBytes: number =
+        previous === undefined ? 0 : previous.used['record-bytes'] + previous.reserved['record-bytes'];
+      const afterBytes: number = entry.used['record-bytes'] + entry.reserved['record-bytes'];
+      if (afterBytes > beforeBytes && afterBytes > entry.recordLimit) {
+        return taskFailure(
+          `capacity: record ${entry.recordId} would be ${afterBytes} bytes including its reserved ` +
+            `growth, over its limit of ${entry.recordLimit}`,
+          'backpressure',
+          'after-host-action',
+          {
+            capacity: {
+              reason: 'capacity-exhausted',
+              dimension: 'record-bytes',
+              recordId: entry.recordId,
+              used: entry.used['record-bytes'],
+              reserved: entry.reserved['record-bytes'],
+              requested: afterBytes - beforeBytes,
+              limit: entry.recordLimit,
+              reclaimableByCleanup: true
             }
-          );
-        }
+          }
+        );
       }
     }
     return ok(true);
@@ -338,18 +324,12 @@ export class CapacityLedger {
 
   /** The record nearest its own ceiling represents the per-record dimension. */
   private _recordBytesRow(): ITaskCapacityDimensionStatus {
-    let worst: ILedgerEntry | undefined;
-    let worstRatio: number = -1;
-    for (const entry of this._entries.values()) {
-      const ratio: number = (entry.used['record-bytes'] + entry.reserved['record-bytes']) / entry.recordLimit;
-      if (ratio > worstRatio) {
-        worst = entry;
-        worstRatio = ratio;
-      }
-    }
-    if (worst === undefined) {
-      return this._row('record-bytes', 0, 0, this._profile.limits['record-bytes']);
-    }
+    const ratio = (entry: ILedgerEntry): number =>
+      (entry.used['record-bytes'] + entry.reserved['record-bytes']) / entry.recordLimit;
+    // Never empty: the manifest's entry is always present.
+    const worst: ILedgerEntry = Array.from(this._entries.values()).reduce((a, b) =>
+      ratio(b) > ratio(a) ? b : a
+    );
     const row: ITaskCapacityDimensionStatus = this._row(
       'record-bytes',
       worst.used['record-bytes'],

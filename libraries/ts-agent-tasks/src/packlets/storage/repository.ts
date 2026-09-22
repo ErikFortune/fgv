@@ -33,7 +33,8 @@ import {
   checkRegistrationDraft,
   checkUpdates,
   idOf,
-  revisionOf
+  revisionOf,
+  updatesOf
 } from './commitRules';
 import { classify, ok, propagate, taskFailure } from './failures';
 import {
@@ -56,7 +57,7 @@ import {
   TaskRepositoryMode,
   TaskRepositoryOpenResult
 } from './model';
-import { initializeRepository, openRepository } from './openRepository';
+import { IRepositoryState, initializeRepository, openRepository } from './openRepository';
 import {
   ITaskProjection,
   isTerminalRecord,
@@ -70,7 +71,6 @@ import {
 } from './projection';
 import { RecordStore } from './recordStore';
 import { IRootOwnership } from './rootOwnership';
-import { IRepositoryState } from './state';
 
 interface IReadRecord {
   readonly record: ITaskCommitRecord;
@@ -331,11 +331,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
     }
     const pending: IPendingInventoryEntry | undefined = this._pending.get(taskId);
     if (pending !== undefined) {
-      const same: Result<boolean> = canonicallyEqual(
+      const same: boolean = canonicallyEqual(
         { operationId: pending.operationId, request: pending.request },
         { operationId, request: request.request }
       );
-      if (same.isFailure() || !same.value) {
+      if (!same) {
         return taskFailure(
           `register ${taskId}: a different registration of this id is pending`,
           'conflict',
@@ -390,16 +390,14 @@ export class FileTreeTaskRepository implements ITaskRepository {
     return this._encodeManifest(pendingManifest)
       .onSuccess((manifestEncoded) =>
         this._buildRecord(draft, 1, withOwnership(claims.value, 'live')).onSuccess((built) =>
-          this._ledgerForRecord(taskId, built.record, built.encoded).onSuccess((recordEntry) =>
-            this._ledger
-              .admit(
-                new Map<string, ILedgerEntry | undefined>([
-                  [taskKey(taskId), recordEntry],
-                  ['repository', manifestEntry(manifestEncoded.bytes, profile)]
-                ])
-              )
-              .onSuccess(() => ok(manifestEncoded))
-          )
+          this._ledger
+            .admit(
+              new Map<string, ILedgerEntry>([
+                [taskKey(taskId), this._ledgerForRecord(taskId, built.record, built.encoded)],
+                ['repository', manifestEntry(manifestEncoded.bytes, profile)]
+              ])
+            )
+            .onSuccess(() => ok(manifestEncoded))
         )
       )
       .onSuccess((manifestEncoded) =>
@@ -422,33 +420,32 @@ export class FileTreeTaskRepository implements ITaskRepository {
   ): TaskResult<ITaskCommitRecord> {
     const profile: ITaskCapacityProfile = this.profile;
     const liveManifest: ITaskRepositoryManifest = this._withEntry({ id: taskId, state: 'live' });
-    return this._buildRecord(draft, 1, withOwnership(entry.capacityClaims, 'live')).onSuccess((built) =>
-      this._ledgerForRecord(taskId, built.record, built.encoded).onSuccess((recordEntry) =>
-        // The claims move from the pending entry to the record by the same IDs: the record's
-        // entry replaces the pending one, so nothing is charged twice or released early.
-        this._ledger
-          .admit(new Map([[taskKey(taskId), recordEntry]]))
-          .onSuccess(() => this._encodeManifest(liveManifest))
-          .onSuccess((manifestEncoded) =>
-            this._writeFile(recordName('task', taskId), built.encoded.text, operationId)
-              .onSuccess(() => this._relist(operationId))
-              .onSuccess(() => this._writeFile(manifestName, manifestEncoded.text, operationId))
-              .onSuccess(() => {
-                this._setManifest(liveManifest);
-                this._pending.delete(taskId);
-                this._tasks.set(taskId, projectRecord(built.record, true));
-                this._ledger.apply(
-                  new Map([
-                    [taskKey(taskId), recordEntry],
-                    ['repository', manifestEntry(manifestEncoded.bytes, profile)]
-                  ])
-                );
-                this._generation++;
-                return ok(built.record);
-              })
-          )
-      )
-    );
+    return this._buildRecord(draft, 1, withOwnership(entry.capacityClaims, 'live')).onSuccess((built) => {
+      const recordEntry: ILedgerEntry = this._ledgerForRecord(taskId, built.record, built.encoded);
+      // The claims move from the pending entry to the record by the same IDs: the record's
+      // entry replaces the pending one, so nothing is charged twice or released early.
+      return this._ledger
+        .admit(new Map([[taskKey(taskId), recordEntry]]))
+        .onSuccess(() => this._encodeManifest(liveManifest))
+        .onSuccess((manifestEncoded) =>
+          this._writeFile(recordName('task', taskId), built.encoded.text, operationId)
+            .onSuccess(() => this._relist(operationId))
+            .onSuccess(() => this._writeFile(manifestName, manifestEncoded.text, operationId))
+            .onSuccess(() => {
+              this._setManifest(liveManifest);
+              this._pending.delete(taskId);
+              this._tasks.set(taskId, projectRecord(built.record, true));
+              this._ledger.apply(
+                new Map([
+                  [taskKey(taskId), recordEntry],
+                  ['repository', manifestEntry(manifestEncoded.bytes, profile)]
+                ])
+              );
+              this._generation++;
+              return ok(built.record);
+            })
+        );
+    });
   }
 
   /**
@@ -463,9 +460,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     return this._readCommitted(taskId).onSuccess((read) => {
       const record: ITaskCommitRecord = read!.record;
       const creation = record.operations.find((op) => op.operationId === operationId);
-      const same: Result<boolean> =
-        creation === undefined ? ok(false) : canonicallyEqual(creation.request, request.request);
-      if (same.isFailure() || !same.value) {
+      if (creation === undefined || !canonicallyEqual(creation.request, request.request)) {
         return taskFailure<ITaskCommitRecord>(
           `register ${taskId}: this id is already registered by a different operation or request`,
           'conflict',
@@ -522,14 +517,13 @@ export class FileTreeTaskRepository implements ITaskRepository {
         const stored = current.operations.find((op) => op.operationId === operationId);
         if (stored !== undefined) {
           const offered = draft.operations.find((op) => op.operationId === operationId);
-          const same: Result<boolean> =
-            offered === undefined
-              ? ok(false)
-              : canonicallyEqual(
-                  { type: stored.type, request: stored.request },
-                  { type: offered.type, request: offered.request }
-                );
-          if (same.isFailure() || !same.value) {
+          const same: boolean =
+            offered !== undefined &&
+            canonicallyEqual(
+              { type: stored.type, request: stored.request },
+              { type: offered.type, request: offered.request }
+            );
+          if (!same) {
             return taskFailure<ITaskCommitRecord>(
               `commit ${taskId}: operation '${operationId}' is already recorded with a different request`,
               'conflict',
@@ -548,16 +542,17 @@ export class FileTreeTaskRepository implements ITaskRepository {
         current.recordType === 'resolved' &&
         draft.recordType === 'resolved'
       ) {
-        const sameRevision: Result<boolean> = canonicallyEqual(current.sourceRevision, draft.sourceRevision);
-        if (sameRevision.isSuccess() && sameRevision.value && current.sourceRevision !== undefined) {
+        if (
+          current.sourceRevision !== undefined &&
+          canonicallyEqual(current.sourceRevision, draft.sourceRevision)
+        ) {
           const semantic = (r: typeof draft | typeof current): unknown => ({
             lifecycle: r.task.envelope.lifecycle,
             progress: r.task.envelope.progress,
             attention: r.task.envelope.attention,
             details: r.task.details
           });
-          const same: Result<boolean> = canonicallyEqual(semantic(current), semantic(draft));
-          if (same.isFailure() || !same.value) {
+          if (!canonicallyEqual(semantic(current), semantic(draft))) {
             return taskFailure<ITaskCommitRecord>(
               `commit ${taskId}: source revision ${current.sourceRevision.epoch}/${current.sourceRevision.token} ` +
                 `is already committed with a different projection; the source violated its revision contract`,
@@ -628,14 +623,9 @@ export class FileTreeTaskRepository implements ITaskRepository {
         )
       )
       .onSuccess(() =>
-        draft.recordType === 'resolved'
-          ? checkUpdates(
-              current.recordType === 'resolved' ? current.updates : [],
-              draft.updates,
-              draft.task.envelope.revision,
-              maintenance
-            )
-          : ok<true>(true)
+        // An unresolved draft never reaches here (identity refuses it), and an unresolved current
+        // record has no updates: first resolution adds them all.
+        checkUpdates(updatesOf(current), updatesOf(draft), revisionOf(draft), maintenance)
       );
     return checked.isSuccess()
       ? ok(true)
@@ -670,39 +660,40 @@ export class FileTreeTaskRepository implements ITaskRepository {
         return propagate(counted);
       }
     }
+    // Growth is measured against the current record's own usage — the same figure its ledger
+    // entry holds — so a step spends exactly what it adds.
+    const previous: ILedgerEntry = this._ledgerForRecord(taskId, record, current.encoded);
     return this._buildRecord(draft, recordRevision, record.capacityClaims)
-      .onSuccess((provisional) =>
-        this._ledgerForRecord(taskId, provisional.record, provisional.encoded).onSuccess(
-          (provisionalEntry) => {
-            const previousEntry: ILedgerEntry | undefined = this._ledger.get(taskKey(taskId));
-            const growth: DimensionAmounts = zeroAmounts();
-            for (const dimension of Object.keys(growth) as Array<keyof DimensionAmounts>) {
-              growth[dimension] = provisionalEntry.used[dimension] - (previousEntry?.used[dimension] ?? 0);
-            }
-            let claims: ReadonlyArray<ITaskCapacityClaim> = record.capacityClaims;
-            const next: ITaskCommitRecord = provisional.record;
-            if (record.recordType === 'unresolved' && next.recordType === 'resolved') {
-              claims = spendClaim(claims, 'first-resolution', growth, true);
-            } else if (
-              !isTerminalRecord(record) &&
-              isTerminalRecord(next) &&
-              !(next.recordType === 'resolved' && next.archived)
-            ) {
-              claims = spendClaim(claims, 'terminal-closeout', growth, false);
-            }
-            if (next.recordType === 'resolved' && next.archived) {
-              claims = spendClaim(claims, 'terminal-closeout', growth, true);
-            }
-            return claims === record.capacityClaims
-              ? ok({ built: provisional, entry: provisionalEntry })
-              : this._buildRecord(draft, recordRevision, claims).onSuccess((built) =>
-                  this._ledgerForRecord(taskId, built.record, built.encoded).onSuccess((entry) =>
-                    ok({ built, entry })
-                  )
-                );
-          }
-        )
-      )
+      .onSuccess((provisional) => {
+        const provisionalEntry: ILedgerEntry = this._ledgerForRecord(
+          taskId,
+          provisional.record,
+          provisional.encoded
+        );
+        const growth: DimensionAmounts = zeroAmounts();
+        for (const dimension of Object.keys(growth) as Array<keyof DimensionAmounts>) {
+          growth[dimension] = provisionalEntry.used[dimension] - previous.used[dimension];
+        }
+        let claims: ReadonlyArray<ITaskCapacityClaim> = record.capacityClaims;
+        const next: ITaskCommitRecord = provisional.record;
+        if (record.recordType === 'unresolved' && next.recordType === 'resolved') {
+          claims = spendClaim(claims, 'first-resolution', growth, true);
+        } else if (
+          !isTerminalRecord(record) &&
+          isTerminalRecord(next) &&
+          !(next.recordType === 'resolved' && next.archived)
+        ) {
+          claims = spendClaim(claims, 'terminal-closeout', growth, false);
+        }
+        if (next.recordType === 'resolved' && next.archived) {
+          claims = spendClaim(claims, 'terminal-closeout', growth, true);
+        }
+        return claims === record.capacityClaims
+          ? ok({ built: provisional, entry: provisionalEntry })
+          : this._buildRecord(draft, recordRevision, claims).onSuccess((built) =>
+              ok({ built, entry: this._ledgerForRecord(taskId, built.record, built.encoded) })
+            );
+      })
       .onSuccess(({ built, entry }) =>
         this._ledger
           .admit(new Map([[taskKey(taskId), entry]]))
@@ -832,8 +823,8 @@ export class FileTreeTaskRepository implements ITaskRepository {
       return ok(true);
     }
     return taskFailure(
-      `capacity: task ${taskId} would hold ${count} operations; its limit is ${limit}` +
-        (heldBack > 0 ? `, of which ${heldBack} are held for closeout` : ''),
+      `capacity: task ${taskId} would hold ${count} operations; its limit is ${limit}, ` +
+        `of which ${heldBack} are held for closeout`,
       'backpressure',
       'after-host-action',
       {
@@ -895,23 +886,21 @@ export class FileTreeTaskRepository implements ITaskRepository {
         ? { ...draft, formatVersion: 1, recordRevision, capacityClaims: claims }
         : { ...draft, formatVersion: 1, recordRevision, capacityClaims: claims };
     const converter = this._converters.storage.record;
-    const encoded: Result<IEncodedRecord> = _encodeValidated(record, (from) => converter.convert(from));
-    return encoded.isSuccess()
-      ? ok({ record, encoded: encoded.value })
-      : taskFailure(`task ${idOf(draft)}: ${encoded.message}`, 'invalid', 'after-host-action');
-  }
-
-  private _ledgerForRecord(
-    taskId: TaskId,
-    record: ITaskCommitRecord,
-    encoded: IEncodedRecord
-  ): TaskResult<ILedgerEntry> {
     return classify(
-      taskUsage(record, encoded.bytes).onSuccess((used) =>
-        ok(ledgerEntry(taskId, used, record.capacityClaims, taskRecordLimit(this.profile)))
+      _encodeValidated(record, (from) => converter.convert(from)).onSuccess((encoded) =>
+        succeed({ record, encoded })
       ),
       'invalid',
       'after-host-action'
+    ).withErrorFormat((message) => `task ${idOf(draft)}: ${message}`);
+  }
+
+  private _ledgerForRecord(taskId: TaskId, record: ITaskCommitRecord, encoded: IEncodedRecord): ILedgerEntry {
+    return ledgerEntry(
+      taskId,
+      taskUsage(record, encoded.bytes),
+      record.capacityClaims,
+      taskRecordLimit(this.profile)
     );
   }
 
@@ -920,7 +909,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     return {
       ...this._manifest,
       manifestRevision: this._manifest.manifestRevision + 1,
-      tasks: [...others, entry].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+      tasks: [...others, entry].sort((a, b) => (a.id < b.id ? -1 : 1))
     };
   }
 
@@ -952,8 +941,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
     if (written.isSuccess()) {
       return ok(true);
     }
-    const failure: FileTree.IAtomicWriteFailure | undefined = written.detail;
-    if (failure !== undefined && failure.visibility === 'unchanged') {
+    // A store that fails without classifying the failure has told us nothing about what a
+    // reader can see, which is exactly 'unknown'.
+    const visibility: FileTree.IAtomicWriteFailure['visibility'] = written.detail?.visibility ?? 'unknown';
+    const stage: string = written.detail?.stage ?? 'unclassified';
+    if (visibility === 'unchanged') {
       return taskFailure(
         `${name}: write failed before anything became visible: ${written.message}`,
         'storage-unavailable',
@@ -961,18 +953,16 @@ export class FileTreeTaskRepository implements ITaskRepository {
         operationId !== undefined ? { operationId } : undefined
       );
     }
-    this._fence(
-      `${name}: write outcome is ${failure?.visibility ?? 'unknown'} after '${failure?.stage ?? 'unknown'}'`
-    );
+    this._fence(`${name}: write outcome is ${visibility} after '${stage}'`);
     return operationId !== undefined
       ? taskFailure(
-          `${name}: the write may have landed (${failure?.visibility ?? 'unknown'}): ${written.message}`,
+          `${name}: the write may have landed (${visibility}): ${written.message}`,
           'commit-indeterminate',
           'reconcile-first',
           { operationId }
         )
       : taskFailure(
-          `${name}: the write may have landed (${failure?.visibility ?? 'unknown'}): ${written.message}`,
+          `${name}: the write may have landed (${visibility}): ${written.message}`,
           'storage-unavailable',
           'reconcile-first'
         );
@@ -1022,7 +1012,6 @@ export class FileTreeTaskRepository implements ITaskRepository {
     const limit: number = taskRecordLimit(this.profile);
     const read: Result<IReadRecord> = this._store
       .read(name)
-      .onSuccess((text) => (text === undefined ? fail<string>(`${name}: missing`) : succeed(text)))
       .onSuccess((text) => {
         const bytes: number = utf8Length(text);
         return bytes > limit

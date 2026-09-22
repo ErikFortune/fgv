@@ -195,7 +195,9 @@ export function buildCapacityConverters(
         // operation slots, which the repository holds back from ordinary work (T3). A profile
         // below that validates here and then refuses every registration forever.
         maximumClosureCharges(value).onSuccess((closeout) => {
-          const held: number = closeout.find((c) => c.dimension === 'operations')?.amount ?? 0;
+          const held: number = closeout
+            .filter((c) => c.dimension === 'operations')
+            .reduce((total, c) => total + c.amount, 0);
           return value.perOwner.maxOperationsPerTask < held + 1
             ? fail<ReadonlyArray<ITaskCapacityCharge>>(
                 `capacity profile: maxOperationsPerTask ${value.perOwner.maxOperationsPerTask} cannot hold a ` +
