@@ -433,6 +433,39 @@ describe('TaskContextRenderer', () => {
       );
     });
 
+    test('a deep chain and its side branches get exact visible depths', () => {
+      // A chain as long as the input bound allows, plus siblings hanging off its middle,
+      // whose walks stop at an ancestor already measured.
+      const length: number = 2000;
+      const tasks = Array.from({ length }, (__v, i) =>
+        summary(
+          `n${String(i).padStart(5, '0')}`,
+          1,
+          i === 0 ? {} : { parentId: `n${String(i - 1).padStart(5, '0')}` }
+        )
+      );
+      tasks.push(summary('side-a', 1, { parentId: 'n01000' }), summary('side-b', 1, { parentId: 'n01000' }));
+      const context: ITaskContext = renderer
+        .render(input({ tasks }), { maxItems: 200, maxDepth: length, maxChars: 1000000 })
+        .orThrow();
+      const depthOf = (id: string): number | undefined =>
+        context.entries.find((e) => e.summary.envelope.id === id)?.depth;
+      expect(depthOf('n00000')).toBe(0);
+      expect(depthOf('n00150')).toBe(150);
+      const deep: ITaskContext = renderer
+        .render(input({ tasks }), { maxItems: 200, maxDepth: 0, maxChars: 1000000 })
+        .orThrow();
+      expect(deep.entries.map((e) => e.summary.envelope.id)).toEqual(['n00000']);
+      expect(deep.omissions.visibleItems).toBe(length + 1);
+      const sides: ITaskContext = renderer
+        .render(input({ tasks: [...tasks.slice(990, 1001), tasks[length], tasks[length + 1]] }), ample)
+        .orThrow();
+      // n00990 is a visible root here, so n01000 is at depth 10 and its children at 11.
+      expect(sides.entries.filter((e) => /side/.test(e.summary.envelope.id)).map((e) => e.depth)).toEqual([
+        11, 11
+      ]);
+    });
+
     test('depth zero renders roots of the visible forest only', () => {
       expect(renderer.render(input({ tasks: chain }), budget({ maxDepth: 0 }))).toSucceedAndSatisfy(
         (context) => {
@@ -798,6 +831,17 @@ describe('TaskContextRenderer', () => {
         ]);
         expect(context.receipt.included).toEqual([]);
         expect(context.text).not.toContain('source-a');
+        // The structured view discloses exactly what the text does: no binding, no revision.
+        expect(context.diagnostics).toEqual([
+          {
+            id: 'x1',
+            kind: 'acme.job',
+            title: 'pending registration x1',
+            reason: 'no first observation yet',
+            depth: 0
+          }
+        ]);
+        expect(JSON.stringify(context.diagnostics)).not.toContain('source-a');
       });
     });
   });
@@ -1014,7 +1058,7 @@ describe('TaskContextRenderer', () => {
     test('at every character budget the receipt is exactly what the text alone justifies', () => {
       const full: number = renderer.render(input(parts), ample).orThrow().text.length;
       const receiptConverter = renderer.converters.context.receipt;
-      for (let maxChars = reserve; maxChars <= full; maxChars += 7) {
+      for (let maxChars = reserve; maxChars <= full; maxChars++) {
         const context: ITaskContext = renderer.render(input(parts), budget({ maxChars })).orThrow();
         const justified = receiptFromText(context, (id, rev) => updateIds[`${id}@${rev}`]);
         expect(context.receipt.included).toEqual(justified);

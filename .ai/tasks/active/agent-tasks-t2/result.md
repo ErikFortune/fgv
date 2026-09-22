@@ -19,7 +19,7 @@ receipt — with no storage, no broker, and nothing the renderer could write to.
   `ITaskContextLimits` / `taskContextLimits` (200 items, 10,000 input entries per list),
   `IInclusionEntry`, `ITaskInclusionReceipt`, `TaskInputCompleteness`, `ITaskContextInput`,
   `TaskContextSection`, `TaskContextPresentation`, `ITaskContextEntry`, `TaskContextOmissionReason`,
-  `ITaskContextOmissions`, `ITaskContext`, `TaskContextProjection`.
+  `ITaskContextOmissions`, `ITaskContextDiagnostic`, `ITaskContext`, `TaskContextProjection`.
 
 **`converters`** — `TaskConverters.context` (`contextConverters.ts`): strict `summary`;
 `presentable` (summary or snapshot, details explicitly discarded); `update` (snapshot pinned to the
@@ -68,7 +68,7 @@ directives.
 5. **`ITaskContext` grew three things beyond the sketch.** `entries` is `ITaskContextEntry`
    (summary + section + presentation + depth + delivered update IDs) rather than bare
    `ITaskSummary`, because the structured view has to say which items were abbreviated;
-   `diagnostics` carries the rendered unresolved references; `omissions.abbreviated` counts
+   `diagnostics` is `ITaskContextDiagnostic[]` — the rendered unresolved references reduced to exactly the fields the text shows (Copilot round 1: returning the raw reference leaked the binding around the projection); `omissions.abbreviated` counts
    abbreviated items.
 6. **At most one update per `(task, revision, category)`, enforced as `conflict`.** §8.3 says
    update identity *is* that tuple. It also bounds a receipt entry at seven update IDs.
@@ -106,7 +106,7 @@ Nothing in T1's vocabulary was wrong for rendering. The honest reading: T2 exerc
 |---|---|
 | Same validated input and budget produces the same output | `renderer.test.ts` › *determinism* — two renders and a second renderer instance are deep-equal; **reversed input order** is deep-equal; *observation tie breaks deterministically regardless of order* |
 | No filesystem, clock, random or checkpoint calls | `purity.test.ts` — spies on `Date.now`, `Math.random`, `performance.now`, `hrtime.bigint`, web crypto and every configurable function on `crypto`, `fs`, `fs/promises` (> 50 spies, with a sanity assertion that they are live); the projection is the only call. **Watched fail** with an injected `Date.now()` + `fs.existsSync`. Plus: the renderer's own fields are only converters, reserve, projection and normalizer (no store/clock/ID/logger), the packlet's imports are allow-listed, and input is not mutated |
-| Only actually-included revisions and update IDs appear in receipts | `renderer.test.ts` › *receipt honesty* — at every 7th character budget from the reserve to a full fit, the receipt equals one **derived independently from parsing the text**, round-trips its own converter, and `requiredUpdates` equals the undelivered required IDs |
+| Only actually-included revisions and update IDs appear in receipts | `renderer.test.ts` › *receipt honesty* — at every character budget from the reserve to a full fit, the receipt equals one **derived independently from parsing the text**, round-trips its own converter, and `requiredUpdates` equals the undelivered required IDs |
 | A required payload that does not fit remains unacknowledged | *multi-revision required updates* (abbreviated rev 3 keeps no update ID while rev 4 is receipted; outright omission; optional vs required counting) and *truncation of results* |
 | Partial visible trees never establish parent completion | *partial visible trees never establish parent completion* (partial and complete input, all visible children succeeded, parent still `running`, no aggregate field or phrase); *an omitted child is reported as omitted* |
 | Task prose is data | *treating task prose as data* — frame close, fake section header, Mustache, fence, controls, bidi, zero-width, separators; exact JSON round-trip; framing text byte-identical with and without hostile input; single-line fields reject controls |
@@ -143,7 +143,22 @@ Mustache / control characters; snapshot receipts without event history.
   drops `DetailedResult` detail. Kept package-local (eight lines); **a `ts-utils` candidate** if a
   second slice needs it — record in `TECH_DEBT.md` at stream close rather than repeat it.
 
-**Layer 2** — see the PR thread.
+**Layer 2 — Copilot, round 1: two posted findings, two more only in the summary's file table;
+all four real, all fixed.**
+1. *Depth recomputed by a full ancestor walk per item — quadratic on a deep chain within the
+   10,000-entry bound.* Fixed: one walk per node across the whole render, memoized, with
+   `Set`-based cycle detection; a 2,000-deep chain test pins exact depths including siblings whose
+   walks stop at a measured ancestor.
+2. *The receipt-honesty sweep stepped by 7, so it did not establish "at every budget".* Fixed:
+   step 1. A test named for a property must check the property.
+3. *(summary only)* **`diagnostics` returned the raw `IUnresolvedTaskReference`, binding and all
+   — a disclosure path around the projection.** The symmetry hole the brief warned about: the text
+   never rendered the binding, but the structured view beside it handed it over. Fixed with
+   `ITaskContextDiagnostic`, and a test that the structured view contains no binding.
+4. *(summary only)* The `CAPABILITIES.md` example did not unwrap the result or define the
+   projection. Fixed.
+
+Worth recording: as in T1, **half this round's substance was not posted as comments.**
 
 ---
 

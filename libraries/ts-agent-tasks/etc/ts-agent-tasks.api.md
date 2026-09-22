@@ -464,7 +464,7 @@ export interface ITaskCommandHandle {
 
 // @public
 export interface ITaskContext {
-    readonly diagnostics: ReadonlyArray<IUnresolvedTaskReference>;
+    readonly diagnostics: ReadonlyArray<ITaskContextDiagnostic>;
     readonly entries: ReadonlyArray<ITaskContextEntry>;
     // (undocumented)
     readonly omissions: ITaskContextOmissions;
@@ -478,6 +478,20 @@ export interface ITaskContextBudget {
     readonly maxChars: number;
     readonly maxDepth: number;
     readonly maxItems: number;
+}
+
+// @public
+export interface ITaskContextDiagnostic {
+    // (undocumented)
+    readonly depth: number;
+    // (undocumented)
+    readonly id: TaskId;
+    // (undocumented)
+    readonly kind: TaskKind;
+    // (undocumented)
+    readonly reason: string;
+    // (undocumented)
+    readonly title: string;
 }
 
 // @public

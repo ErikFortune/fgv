@@ -30,10 +30,17 @@ test suite establishes that by spying on the clock, random, crypto and every `fs
 rather than by comparing state afterwards.
 
 ```ts
-const renderer = TaskContextRenderer.create({ projection }).orThrow(); // projection optional
-const context = renderer.render({ tasks, updates, unresolved, completeness: 'complete' }, budget);
-// context.text     — framed, escaped; put it in the prompt
-// context.receipt  — keep it alongside the prompt, never inside it
+// Optional: decide what may be disclosed. Here, redact every description.
+const projection: TaskContextProjection = (s) =>
+  succeed({ envelope: { ...s.envelope, description: undefined } });
+
+const renderer = TaskContextRenderer.create({ projection }).orThrow(); // at setup
+const rendered = renderer.render({ tasks, updates, unresolved, completeness: 'complete' }, budget);
+rendered.onSuccess((context) => {
+  // context.text    — framed, escaped; put it in the prompt
+  // context.receipt — keep it alongside the prompt, never inside it
+  return succeed(context);
+});
 ```
 
 **Input is validated, then reduced, and conflicts are refused rather than resolved.**
@@ -91,7 +98,7 @@ removes the source binding and nothing else.
 **Also here:** `ITaskSummary`, `ITaskUpdate` (one immutable payload per `(task, revision,
 category)`, its snapshot pinned to the revision it names) and `IUnresolvedTaskReference` (a
 registration awaiting its first observation — rendered as a diagnostic, never receipted, never
-with its binding), with converters on `TaskConverters.context`.
+with its binding; `context.diagnostics` is `ITaskContextDiagnostic`, the rendered fields only), with converters on `TaskConverters.context`.
 
 **The common envelope.** `ITaskEnvelope` is what every task carries whatever its kind — branded
 `TaskId` / `TaskKind` / `TaskRevision`, a `title` and optional `description`, an optional

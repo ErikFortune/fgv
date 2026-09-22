@@ -10,6 +10,7 @@ import {
   IInclusionEntry,
   ITaskContext,
   ITaskContextBudget,
+  ITaskContextDiagnostic,
   ITaskContextEntry,
   ITaskContextInput,
   ITaskFailure,
@@ -190,10 +191,10 @@ function _taskRecord(item: ITaskItem, presentation: TaskContextPresentation): Re
   };
 }
 
-/** An unresolved reference as a diagnostic record. Never its binding, never a revision. */
-function _unresolvedRecord(item: IUnresolvedItem): RecordValue {
+/** An unresolved reference as rendered. Never its binding, never a revision. */
+function _diagnostic(item: IUnresolvedItem): ITaskContextDiagnostic {
   return {
-    unresolved: item.reference.id,
+    id: item.reference.id,
     kind: item.reference.kind,
     title: item.reference.title,
     reason: item.reference.reason,
@@ -201,30 +202,19 @@ function _unresolvedRecord(item: IUnresolvedItem): RecordValue {
   };
 }
 
-function _line(item: Item, presentation: TaskContextPresentation): string {
-  return serializeRecord(item.type === 'task' ? _taskRecord(item, presentation) : _unresolvedRecord(item));
+function _unresolvedRecord(item: IUnresolvedItem): RecordValue {
+  const diagnostic: ITaskContextDiagnostic = _diagnostic(item);
+  return {
+    unresolved: diagnostic.id,
+    kind: diagnostic.kind,
+    title: diagnostic.title,
+    reason: diagnostic.reason,
+    depth: diagnostic.depth
+  };
 }
 
-/**
- * Refuses a cycle in the visible parent graph. Every chain is walked once: a node already
- * proven to reach a root ends the walk.
- */
-function _acyclic(
-  parents: ReadonlyMap<string, string | undefined>
-): TaskResult<ReadonlyMap<string, string | undefined>> {
-  const settled: Set<string> = new Set<string>();
-  for (const start of parents.keys()) {
-    const chain: string[] = [];
-    for (let cursor: string | undefined = start; cursor !== undefined && !settled.has(cursor); ) {
-      if (chain.includes(cursor)) {
-        return failWithDetail(`task ${cursor}: parent chain forms a cycle`, invalidDetail);
-      }
-      chain.push(cursor);
-      cursor = _visibleParent(parents, cursor);
-    }
-    chain.forEach((id: string) => settled.add(id));
-  }
-  return succeedWithDetail(parents);
+function _line(item: Item, presentation: TaskContextPresentation): string {
+  return serializeRecord(item.type === 'task' ? _taskRecord(item, presentation) : _unresolvedRecord(item));
 }
 
 function _visibleParent(parents: ReadonlyMap<string, string | undefined>, id: string): string | undefined {
@@ -233,20 +223,39 @@ function _visibleParent(parents: ReadonlyMap<string, string | undefined>, id: st
 }
 
 /**
- * Depth in the visible forest: the number of ancestors that were themselves supplied. A
- * parent that was not supplied ends the chain — the renderer cannot know, and does not guess,
- * how deep the real tree is. Only called once {@link _acyclic} has passed.
+ * Depth of `start` in the visible forest: the number of its ancestors that were themselves
+ * supplied. A parent that was not supplied ends the chain — the renderer cannot know, and does
+ * not guess, how deep the real tree is. A cycle is invalid input.
+ *
+ * `memo` is shared across calls, so a walk stops at the first ancestor already measured and
+ * every node is walked once across the whole render: linear, not quadratic, in a deep chain.
  */
-function _visibleDepth(parents: ReadonlyMap<string, string | undefined>, id: string): number {
-  let depth: number = 0;
+function _visibleDepth(
+  parents: ReadonlyMap<string, string | undefined>,
+  memo: Map<string, number>,
+  start: string
+): TaskResult<number> {
+  const chain: string[] = [];
+  const onChain: Set<string> = new Set<string>();
+  let base: number = -1;
   for (
-    let p: string | undefined = _visibleParent(parents, id);
-    p !== undefined;
-    p = _visibleParent(parents, p)
+    let cursor: string | undefined = start;
+    cursor !== undefined;
+    cursor = _visibleParent(parents, cursor)
   ) {
-    depth++;
+    const known: number | undefined = memo.get(cursor);
+    if (known !== undefined) {
+      base = known;
+      break;
+    }
+    if (onChain.has(cursor)) {
+      return failWithDetail(`task ${cursor}: parent chain forms a cycle`, invalidDetail);
+    }
+    onChain.add(cursor);
+    chain.push(cursor);
   }
-  return depth;
+  chain.forEach((id: string, index: number) => memo.set(id, base + chain.length - index));
+  return succeedWithDetail(base + chain.length);
 }
 
 function _compareItems(a: Item, b: Item): number {
@@ -373,36 +382,46 @@ export class TaskContextRenderer {
       for (const reference of normalized.unresolved) {
         parents.set(reference.id, reference.parentId);
       }
-      return _acyclic(parents).onSuccess((graph) => {
-        const depthOf = (taskId: string): number => _visibleDepth(graph, taskId);
-        const items: Item[] = projected.map(({ candidate, summary }): Item => {
-          const rank: number = _rank(summary, candidate.current, candidate.updates);
-          const section: TaskContextSection =
-            rank === 1 ? 'attention' : candidate.updates.length > 0 ? 'updates' : 'current';
-          return {
-            type: 'task',
-            taskId: candidate.taskId,
-            revision: candidate.revision,
-            summary,
-            current: candidate.current,
-            updates: candidate.updates,
-            depth: depthOf(candidate.taskId),
-            rank,
-            section
-          };
-        });
-        for (const reference of normalized.unresolved) {
-          items.push({
-            type: 'unresolved',
-            taskId: reference.id,
-            revision: reference.revision,
-            reference,
-            depth: depthOf(reference.id),
-            rank: unresolvedRank
-          });
-        }
-        return succeedWithDetail<ReadonlyArray<Item>, ITaskFailure>(items.sort(_compareItems));
-      });
+      // Every node of the graph is a start below, so every cycle is found.
+      const memo: Map<string, number> = new Map<string, number>();
+      const taskItems: TaskResult<Item[]> = allTaskResults(
+        projected.map(({ candidate, summary }) =>
+          _visibleDepth(parents, memo, candidate.taskId).onSuccess((depth) => {
+            const rank: number = _rank(summary, candidate.current, candidate.updates);
+            const section: TaskContextSection =
+              rank === 1 ? 'attention' : candidate.updates.length > 0 ? 'updates' : 'current';
+            return succeedWithDetail<Item, ITaskFailure>({
+              type: 'task',
+              taskId: candidate.taskId,
+              revision: candidate.revision,
+              summary,
+              current: candidate.current,
+              updates: candidate.updates,
+              depth,
+              rank,
+              section
+            });
+          })
+        )
+      );
+      return taskItems.onSuccess((tasks) =>
+        allTaskResults(
+          normalized.unresolved.map((reference) =>
+            _visibleDepth(parents, memo, reference.id).onSuccess((depth) =>
+              succeedWithDetail<Item, ITaskFailure>({
+                type: 'unresolved',
+                taskId: reference.id,
+                revision: reference.revision,
+                reference,
+                depth,
+                rank: unresolvedRank
+              })
+            )
+          )
+        ).onSuccess((unresolved) =>
+          succeedWithDetail<ReadonlyArray<Item>, ITaskFailure>([...tasks, ...unresolved].sort(_compareItems))
+        )
+      );
     });
   }
 
@@ -466,11 +485,11 @@ export class TaskContextRenderer {
       }
     }
     lines.push(framing.diagnostics);
-    const diagnostics: IUnresolvedTaskReference[] = [];
+    const diagnostics: ITaskContextDiagnostic[] = [];
     for (const r of rendered) {
       if (r.item.type === 'unresolved') {
         lines.push(r.line);
-        diagnostics.push(r.item.reference);
+        diagnostics.push(_diagnostic(r.item));
       }
     }
     lines.push(

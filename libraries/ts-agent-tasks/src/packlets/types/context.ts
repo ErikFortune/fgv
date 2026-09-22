@@ -4,7 +4,7 @@
  */
 
 import { Result } from '@fgv/ts-utils';
-import { DeliveryId, TaskId, TaskRevision, UpdateId } from './ids';
+import { DeliveryId, TaskId, TaskKind, TaskRevision, UpdateId } from './ids';
 import { ITaskSummary, IUnresolvedTaskReference } from './summary';
 import { ITaskUpdate } from './updates';
 
@@ -172,6 +172,23 @@ export interface ITaskContextOmissions {
 }
 
 /**
+ * One unresolved reference as rendered: exactly the fields the text shows, and no more.
+ *
+ * @remarks
+ * Deliberately not an {@link IUnresolvedTaskReference}: that carries the source binding and
+ * the registration record's revision, neither of which is ever presented. The structured view
+ * discloses no more than the text does.
+ * @public
+ */
+export interface ITaskContextDiagnostic {
+  readonly id: TaskId;
+  readonly kind: TaskKind;
+  readonly title: string;
+  readonly reason: string;
+  readonly depth: number;
+}
+
+/**
  * A rendered task context: framed text, its structured view, and an inclusion receipt.
  * @public
  */
@@ -180,8 +197,8 @@ export interface ITaskContext {
   readonly text: string;
   /** The task revisions rendered, in render order. */
   readonly entries: ReadonlyArray<ITaskContextEntry>;
-  /** The unresolved references rendered as diagnostics. */
-  readonly diagnostics: ReadonlyArray<IUnresolvedTaskReference>;
+  /** The unresolved references rendered as diagnostics, reduced to what the text shows. */
+  readonly diagnostics: ReadonlyArray<ITaskContextDiagnostic>;
   readonly receipt: ITaskInclusionReceipt;
   readonly omissions: ITaskContextOmissions;
 }
