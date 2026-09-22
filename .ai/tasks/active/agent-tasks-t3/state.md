@@ -97,3 +97,31 @@ the replay-before-precondition order · M6 omit the operation-superset check · 
 flush-boundary rewrite on replay · M8 double-charge on pending→live · M9 skip strict UTF-8 in
 durable mode · M10 let open initialize over a missing manifest · M11 allow durable on a
 session-only root · M12 ledger ignores pending-entry claims · M13 allow in-place lowering.
+
+---
+
+## 2026-09-22 — implementation + scenario suites done; layer-1 review running
+
+**Built:** `storage` packlet (`FileTreeTaskRepository`, open/initialize scan, ledger, claims,
+commit rules, record store over the injected root), `types/storage.ts`, `storageConverters`.
+T1 revisions: `CapacityClaimPurpose` += `first-resolution`; claim charges shrink as spent;
+`taskUpdateId` + update-id bound +19; `maximumResolutionCharges`; profile must hold an
+unresolved registration's two bundles together; `TaskCapacityState` semantics settled.
+
+**Added beyond the first design pass (found while writing tests):**
+- per-task operation limit with the closeout's two slots held back (was missing entirely);
+- observation replay: same source revision + same projection = replay, different = `source-gap`;
+- admission is checked against the protocol's *widest* state (record written while the pending
+  entry still carries request + claims) — the settled footprint under-counts by ~1 KiB, and the
+  capacity test now measures the peak rather than assuming it;
+- a parent whose record failed validation no longer cascades a spurious "dangling" issue;
+- test environments share one global ID sequence — per-environment counters minted colliding
+  claim IDs across reopen, which open (correctly) reports as an integrity failure.
+
+**Crash matrix, first run against the predictions:** all C1–C11 predictions held on ext4; the only
+two reds were a harness defect (the "retry" rebuilt its request from the post-commit record, so it
+was not a retry). Fixed by building every scenario request from the pre-commit state. Extended
+to tmpfs: 75 tests, 37 per filesystem + the qualification guard.
+
+**Next:** layer-1 `code-reviewer` (running) → mutation pass (`scratchpad/mutate.py`, 24
+mutations; UNVERIFIED if a pattern is absent or it does not build) → coverage closure → gates.

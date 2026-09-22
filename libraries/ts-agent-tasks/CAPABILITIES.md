@@ -15,10 +15,145 @@ on its own, and importing it has no side effects.
 
 ## What ships today
 
-Two things: the **vocabulary** (the `types` and `converters` packlets) and the **snapshot-only
-context entry point** (the `context` packlet). Storage, the broker, delivery, tools and prompt
+Three things: the **vocabulary** (the `types` and `converters` packlets), the **snapshot-only
+context entry point** (the `context` packlet), and **durable task storage** (the `storage`
+packlet: `FileTreeTaskRepository`). The broker, indexed queries, delivery, tools and prompt
 integration follow in later slices, and are deliberately absent from the export surface rather
 than stubbed.
+
+## Storing tasks durably — `FileTreeTaskRepository`
+
+**One repository implementation over an injected `FileTree` root.** It never sees a native path
+and never imports `node:fs`; what backs the root decides what it can promise. Over the in-memory
+tree it is a `'session'` repository; over `FsFileTreeAccessors` on a qualified filesystem it is a
+`{ durable: 'process-crash' }` one. Same code, same records, same tests — the adapter is the
+FileTree accessor, chosen at the host's boot edge.
+
+```ts
+// Boot edge: provision the directory, pick the accessor, inject the root.
+const root = FileTree.DirectoryItem.create(dir, new FileTree.FsFileTreeAccessors({ prefix: dir, mutable: true })).orThrow();
+const environment = TaskEnvironment.create({ logger, clock: Date.now, newId }).orThrow();
+const params = { root, mode: { durable: 'process-crash' }, environment, registry } as const;
+
+// Once, into an empty root:
+const repository = (await FileTreeTaskRepository.initialize(params)).orThrow();
+// Afterwards:
+const opened = (await FileTreeTaskRepository.open(params)).orThrow();
+if (opened.state === 'recovery-required') { /* inspect opened.recovery.report; nothing is writable */ }
+```
+
+**Durability is exactly what the root can prove, and never degrades.** `{ durable: 'process-crash' }`
+is refused at construction — `unsupported`, before any I/O — on any root whose FileTree capability
+inquiry does not list `'process-crash'`: the in-memory tree, a read-only tree, and on Node every
+filesystem outside F2's allowlist (Linux ext2/ext3/ext4 and tmpfs). **A container's writable layer
+is overlayfs and is refused**; put a durable root on a named volume or a Linux bind mount. There
+is no OS-crash or power-loss mode, and asking for one fails. `'session'` is explicit and claims
+nothing that survives the process.
+
+**Nothing is acknowledged before the FileTree atomic boundary.** Every record is written with
+`writeChildAtomically` at the repository's guarantee, and every method returns success only after
+that call has — on Node, after the record is renamed into place *and* the directory flushed. The
+real-Node crash suite pins the order: a registration's success is the event after the third
+write's directory flush, and a mutation's after its one write's.
+
+**One task, one record, one atomic replacement.** `task-<taskId>.json` holds the task's current
+state, every owed update (`ITaskUpdate`, one immutable payload per `(task, revision, category)`
+whose id is `taskUpdateId`), every operation's dedup evidence (`IStoredTaskOperation`), and the
+task's capacity claims — replaced together or not at all. Addresses are task-ID based and never
+change. `ITaskRepositoryWriter.commit` takes one of three purposes:
+- `operation` — must add exactly its own stored operation. **A repeated operation id replays**:
+  the committed record comes back and nothing is applied twice — checked *before* the revision
+  preconditions, because a lost-response retry carries the revision it expected before its own
+  commit. The same id with a different request is a `conflict`.
+- `observation` — a source projection, deduplicated by `sourceRevision`. The same source revision
+  projecting the same state is a replay; projecting a different state is `source-gap`.
+- `maintenance` — receipt evolution, telemetry, pruning: no semantic revision change, no new
+  operation, no new update.
+
+Every replacement keeps all operation evidence with its request unchanged, keeps every retained
+update byte-identical (a required one is removed only by maintenance), advances `recordRevision`
+by one, and is refused on a stale `expectedRevision` **or** `expectedRecordRevision` — the two are
+separate so pruning cannot erase a receipt committed underneath it. Identity, kind, detail
+version, creation time and source binding never change; terminal state is absorbing; an archived
+record (`archived: true`, the tombstone) is immutable. These are storage integrity rules, not
+transition policy — which lifecycle moves are allowed is the broker's (a later slice).
+
+**Registration is the ordered inventory protocol.** `register` commits a *pending* inventory entry
+(with the canonical creation request and the task's capacity claims), then the record, then marks
+the entry *live*. A pending registration is not an accepted task — `read` returns `undefined` —
+but it holds its reservations, survives a crash, is reported by the next open, and **resumes when
+the host retries the same registration**: same task id, operation id and canonically equal
+request, same claim ids, no second charge. A pending entry whose record did land is completed by
+the next open. The same identity with anything else is a `conflict`. A live identity replays.
+
+**An external task can be registered unresolved.** An `IUnresolvedTaskCommitRecord` carries the
+registration and its binding and invents no lifecycle; `read` returns
+`{ state: 'unresolved', reference }`. Its first `observation` commit replaces it with the resolved
+record — state plus required updates, atomically — and must preserve identity and every piece of
+catalog metadata the registration fixed. No other replacement of an unresolved record is accepted.
+
+**`withWriter` is serialization, not a transaction.** One writer per repository: a nested or
+concurrent `withWriter` is refused (`conflict`, `retry: 'safe'`), never queued; a handle used after
+its callback returns fails. A replacement that succeeded stays committed if the callback later
+fails or throws — there is no rollback, and none is claimed.
+
+**A failure is classified by what a reader can now see.** A write failing with FileTree visibility
+`'unchanged'` is `storage-unavailable`, `retry: 'safe'`, and nothing moved. `'replaced'` or
+`'unknown'` **fences** the repository — `health().state === 'unavailable'`, every call fails — and
+returns `commit-indeterminate` with the operation id: the write may have landed, and a failed call
+is not proof that it did not. Close, reopen (which reads what is actually on disk), and retry the
+same operation, which replays if it landed and applies once if it did not. A replay rewrites the
+committed record byte-for-byte, re-establishing the flush boundary rather than returning a
+success whose directory entry was never flushed.
+
+**Open validates everything and initializes nothing.** `open` requires a valid `repository.json`;
+`initialize` accepts only an empty root. Open reclaims interrupted writes' working files (valid only
+now, under exclusive in-process ownership), then checks every named record's presence, strict
+UTF-8 (durable mode), JSON, format version, strict converters, filename/ID agreement, claim-id
+uniqueness across the repository, the parent graph, and that committed usage fits the stored
+profile. **Anything blocking returns a read-only `ITaskRecoveryHandle`**, never a writable
+repository, and nothing is repaired or rewritten. Open performs no clock read, no ID mint and no
+source I/O: **it never starts or reattaches external work.** `ITaskRecoveryReport` says what open
+found (`ITaskRecoveryIssue`, blocking or advisory) and did (completed registrations, reclaimed
+temporaries). A second instance over the same root in one process is refused — by path for a
+durable root, by item for a session root. That is a guard against accidents, not cross-process
+fencing: exclusivity between processes is the host's deployment requirement.
+
+**Unknown data is kept, not rewritten.** A record written by a newer storage format (or a newer
+envelope schema) blocks open and is left byte-identical. A structurally valid task whose kind is
+not registered is **quarantined**: an advisory issue, readable through `readCommit`, `read` fails
+`unknown-kind-version`, commits are refused, and the file is never rewritten. Files the inventory
+does not name are reported and left alone. Consumer and source records are named in the
+inventory now so their absence is detectable; this release validates only their header
+(`ITaskRecordHeader`) and never writes them.
+
+**Capacity is admitted before anything is written.** Every registration reserves its whole
+terminal closeout (`maximumClosureCharges`), and an unresolved one its first resolution as well
+(`maximumResolutionCharges`) — claims computed by the repository, never by the caller. Admission
+is a vector check over every dimension, against the **widest state the protocol passes through**
+(the record written while its pending entry is still in the manifest), and refuses only growth:
+a step that does not grow a dimension is never refused on it, so closeout, archive and pruning run
+at a full repository. A protected step — first resolution, the terminal transition, archive —
+spends from its own claim, whose charges shrink by what it spent; it never spends another task's
+reservation. Archive consumes the closeout claim and releases the non-archived slot; nothing
+releases a retained identity. Per record, bytes plus that record's reserved growth must fit its
+ceiling; per task, ordinary operations leave the closeout's two operation slots free. Refusal is
+`backpressure` with `ICapacityFailure` naming the dimension, the figures and whether cleanup could
+reclaim it. The ledger is derived — rebuilt from the records at every open, never a quota file.
+`capacityStatus()` is the trusted host view: `draining` when a dimension has no headroom,
+`admission-blocked` when an `indeterminate` claim fences all growth, `pressure` at 80%.
+
+**The profile is stored, and governs.** `initialize` stores the profile (default
+`defaultTaskCapacityProfile`); `open` without one uses the stored profile, and `open` with a
+different one — lower, higher or otherwise — fails without touching it. The only way to change it
+is `raiseCapacityLimits`, under the writer: every limit and bound must be at least its stored
+value, and the policy is replaced atomically. Lowering in place is unsupported.
+
+**What the guarantee rests on, and what it does not.** `'process-crash'` rests on F2's qualified
+Node protocol and on this package's crash matrix, which kills a real child process at each leaf
+boundary of each write of registration, mutation, terminal closeout, first resolution and limit
+increase, on ext4 and tmpfs, and reopens through the real Node path. It says nothing about OS
+crashes or power loss: the kernel keeps running in every one of those tests.
 
 ## Rendering task context without a broker
 
@@ -201,7 +336,7 @@ a duplicated row is ambiguous, and a missing one would silently read as a dimens
 pressure, which is the wrong default for something admission consults.
 
 **Capacity claims are repository-generated data, never caller-issued authority.**
-`ITaskCapacityClaim` is discriminated on one of five `CapacityClaimPurpose`s, carries the
+`ITaskCapacityClaim` is discriminated on one of six `CapacityClaimPurpose`s (`allCapacityClaimPurposes`), carries the
 identities needed to reconstruct its consumption after a crash (an acknowledgement claim joins by
 exact subscription *and* update), and tracks `ownership: 'pending' | 'live'` for the
 pending-to-live transfer and `disposition: 'reserved' | 'consumed' | 'indeterminate'` for the
@@ -237,9 +372,10 @@ fragment is caught at the mint rather than at the filename.
 
 ## Not in scope
 
-No storage, repository, broker, delivery service, acknowledgement, tool factory or prompt
-integration **yet** — those are later slices, and their absence from the export surface is
-deliberate. **Permanently** out of scope: an input-request/answer protocol, a task runner or
+No broker, indexed query or paging, due discovery, subscription, delivery service,
+acknowledgement, retention or pruning policy, cascade stop, tool factory or prompt integration
+**yet** — those are later slices, and their absence from the export surface is deliberate. The
+repository reads records on demand; resident query indexes are the next slice's. **Permanently** out of scope: an input-request/answer protocol, a task runner or
 scheduler, an executor, a retry policy, cross-repository parenting, execution migration,
 multi-process ownership, general event sourcing, and dependency DAGs.
 
