@@ -754,14 +754,19 @@ export class FileTreeTaskRepository implements ITaskRepository {
       manifestRevision: this._manifest.manifestRevision + 1,
       profile
     };
+    // Preflighted like every other write, against the policy being committed: the manifest
+    // that stores the new profile must itself fit it, or the next open would find it over.
     return this._encodeManifest(manifest).onSuccess((encoded) =>
-      this._writeFile(manifestName, encoded.text, undefined).onSuccess(() => {
-        this._setManifest(manifest);
-        this._ledger.setProfile(profile);
-        this._ledger.apply(new Map([['repository', manifestEntry(encoded.bytes, profile)]]));
-        this._generation++;
-        return ok(profile);
-      })
+      this._ledger
+        .admit(new Map([['repository', manifestEntry(encoded.bytes, profile)]]), profile)
+        .onSuccess(() => this._writeFile(manifestName, encoded.text, undefined))
+        .onSuccess(() => {
+          this._setManifest(manifest);
+          this._ledger.setProfile(profile);
+          this._ledger.apply(new Map([['repository', manifestEntry(encoded.bytes, profile)]]));
+          this._generation++;
+          return ok(profile);
+        })
     );
   }
 
@@ -883,6 +888,8 @@ export class FileTreeTaskRepository implements ITaskRepository {
     recordRevision: number,
     claims: ReadonlyArray<ITaskCapacityClaim>
   ): TaskResult<{ record: ITaskCommitRecord; encoded: IEncodedRecord }> {
+    // The two branches are textually identical; the ternary is what lets the compiler narrow the
+    // discriminated union through the spread. Collapsing it is a type error.
     const record: ITaskCommitRecord =
       draft.recordType === 'resolved'
         ? { ...draft, formatVersion: 1, recordRevision, capacityClaims: claims }

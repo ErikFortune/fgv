@@ -176,6 +176,15 @@ export function initializeRepository(
     if (created.isFailure()) {
       return refuse(`initialize: ${created.message}`, 'invalid');
     }
+    const profile: ITaskCapacityProfile = created.value.manifest.profile;
+    const ledger: CapacityLedger = new CapacityLedger(profile);
+    const admitted: TaskResult<true> = ledger.admit(
+      new Map([['repository', manifestEntry(created.value.bytes, profile)]])
+    );
+    if (admitted.isFailure()) {
+      acquired.ownership.release();
+      return propagate(admitted);
+    }
     const written = acquired.store.write(manifestName, created.value.text);
     if (written.isFailure()) {
       acquired.ownership.release();
@@ -194,8 +203,6 @@ export function initializeRepository(
         'reconcile-first'
       );
     }
-    const profile: ITaskCapacityProfile = created.value.manifest.profile;
-    const ledger: CapacityLedger = new CapacityLedger(profile);
     ledger.apply(new Map([['repository', manifestEntry(created.value.bytes, profile)]]));
     return ok<ITaskRepository>(
       factory({

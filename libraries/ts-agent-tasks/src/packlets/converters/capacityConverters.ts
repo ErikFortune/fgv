@@ -191,6 +191,19 @@ export function buildCapacityConverters(
         maximumSettlementCharges(value).onSuccess((charges) =>
           _fits(charges, value, 'accepted-operation settlement')
         ),
+        // Per task, a registration's own creation operation must fit alongside the closeout's
+        // operation slots, which the repository holds back from ordinary work (T3). A profile
+        // below that validates here and then refuses every registration forever.
+        maximumClosureCharges(value).onSuccess((closeout) => {
+          const held: number = closeout.find((c) => c.dimension === 'operations')?.amount ?? 0;
+          return value.perOwner.maxOperationsPerTask < held + 1
+            ? fail<ReadonlyArray<ITaskCapacityCharge>>(
+                `capacity profile: maxOperationsPerTask ${value.perOwner.maxOperationsPerTask} cannot hold a ` +
+                  `creation operation plus the ${held} operation slots closeout reserves; a profile must be ` +
+                  `able to finish the work it can accept`
+              )
+            : succeed(closeout);
+        }),
         // An unresolved registration holds both bundles at once (T3), so the pair must fit
         // together, not merely each on its own.
         maximumClosureCharges(value).onSuccess((closeout) =>

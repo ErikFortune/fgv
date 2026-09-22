@@ -173,11 +173,17 @@ export class CapacityLedger {
    * Fails with `backpressure` and structured capacity detail naming the first dimension that
    * would be exceeded. An indeterminate claim anywhere fences all growth: the ledger cannot
    * know what is free, and never assumes.
+   *
+   * `profile` is the policy to admit against — the stored one, or a candidate policy that is
+   * being committed, which must itself admit the manifest that stores it.
    */
-  public admit(changes: ReadonlyMap<string, ILedgerEntry | undefined>): TaskResult<true> {
+  public admit(
+    changes: ReadonlyMap<string, ILedgerEntry | undefined>,
+    profile: ITaskCapacityProfile = this._profile
+  ): TaskResult<true> {
     const before = this._totals();
     const after = this._totals(changes);
-    const limits = this._profile.limits;
+    const limits = profile.limits;
 
     for (const dimension of allCapacityDimensions) {
       if (dimension === 'record-bytes') {

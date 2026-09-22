@@ -216,6 +216,26 @@ describe('manifest and inventory converters', () => {
     );
   });
 
+  test('a stored profile whose per-task operation limit cannot hold creation plus closeout is refused', () => {
+    // Below three, every registration would be refused forever: one creation operation plus the
+    // two operation slots the closeout reserves.
+    for (const maxOperationsPerTask of [1, 2]) {
+      const profile: ITaskCapacityProfile = {
+        ...defaultTaskCapacityProfile,
+        perOwner: { ...defaultTaskCapacityProfile.perOwner, maxOperationsPerTask }
+      };
+      expect(converters.capacity.profile.convert(profile)).toFailWith(
+        /cannot hold a creation operation plus the 2 operation slots closeout reserves/i
+      );
+    }
+    expect(
+      converters.capacity.profile.convert({
+        ...defaultTaskCapacityProfile,
+        perOwner: { ...defaultTaskCapacityProfile.perOwner, maxOperationsPerTask: 3 }
+      })
+    ).toSucceed();
+  });
+
   test('the header converter validates only what this release owns', () => {
     expect(storage.header.convert({ formatVersion: 1, id: 's1', anything: { else: true } })).toSucceedWith({
       formatVersion: 1,

@@ -384,4 +384,36 @@ describe('raising limits', () => {
     expect(repository.health().state).toBe('unavailable');
     expect(repository.capacityStatus()).toFailWith(/fenced/i);
   });
+
+  test('a limit increase whose own manifest would not fit the policy it commits is refused before writing', async () => {
+    // The manifest grows by the digits of the raised limit; with the inventory ceiling set just
+    // above its current size, that growth must be caught at commit time, not at the next open.
+    const probe = await repositoryWith(
+      profileWith({ 'retained-tasks': 9999 }, { maxInventoryRecordBytes: 999 })
+    );
+    const size: number = row(probe, 'record-bytes').used;
+    expect(String(size + 2)).toHaveLength(3);
+    const tight = profileWith({ 'retained-tasks': 9999 }, { maxInventoryRecordBytes: size + 2 });
+    const repository = await repositoryWith(tight);
+    const raised = profileWith({ 'retained-tasks': 99999999 }, { maxInventoryRecordBytes: size + 2 });
+    expect(await repository.withWriter((w) => w.raiseCapacityLimits(raised))).toFailWithDetail(
+      /record repository would be \d+ bytes/i,
+      expect.objectContaining({
+        code: 'backpressure',
+        capacity: expect.objectContaining({ dimension: 'record-bytes', recordId: 'repository' })
+      })
+    );
+    expect(repository.profile).toEqual(tight);
+  });
+
+  test('initialize refuses a profile whose own manifest would not fit it', async () => {
+    expect(
+      await FileTreeTaskRepository.initialize(
+        params(memoryRoot(), 'session', { profile: profileWith({}, { maxInventoryRecordBytes: 100 }) })
+      )
+    ).toFailWithDetail(
+      /record repository would be \d+ bytes/i,
+      expect.objectContaining({ code: 'backpressure' })
+    );
+  });
 });
