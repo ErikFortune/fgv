@@ -76,6 +76,8 @@ interface ITaskItem {
 interface IUnresolvedItem {
   readonly type: 'unresolved';
   readonly taskId: TaskId;
+  /** The registration record's revision: a sort key only, never rendered or receipted. */
+  readonly revision: TaskRevision;
   readonly reference: IUnresolvedTaskReference;
   readonly depth: number;
   readonly rank: number;
@@ -204,37 +206,51 @@ function _line(item: Item, presentation: TaskContextPresentation): string {
 }
 
 /**
- * Depth of every node in the visible forest: the number of ancestors that are themselves
- * visible. A parent that was not supplied ends the chain — the renderer cannot know, and
- * does not guess, how deep the real tree is. A cycle is invalid input.
+ * Refuses a cycle in the visible parent graph. Every chain is walked once: a node already
+ * proven to reach a root ends the walk.
  */
-function _depths(parents: ReadonlyMap<string, string | undefined>): TaskResult<ReadonlyMap<string, number>> {
-  const depths: Map<string, number> = new Map<string, number>();
+function _acyclic(
+  parents: ReadonlyMap<string, string | undefined>
+): TaskResult<ReadonlyMap<string, string | undefined>> {
+  const settled: Set<string> = new Set<string>();
   for (const start of parents.keys()) {
     const chain: string[] = [];
-    let base: number = -1;
-    let cursor: string | undefined = start;
-    while (cursor !== undefined) {
-      const known: number | undefined = depths.get(cursor);
-      if (known !== undefined) {
-        base = known;
-        break;
-      }
+    for (let cursor: string | undefined = start; cursor !== undefined && !settled.has(cursor); ) {
       if (chain.includes(cursor)) {
         return failWithDetail(`task ${cursor}: parent chain forms a cycle`, invalidDetail);
       }
       chain.push(cursor);
-      const parent: string | undefined = parents.get(cursor);
-      cursor = parent !== undefined && parents.has(parent) ? parent : undefined;
+      cursor = _visibleParent(parents, cursor);
     }
-    chain.reverse().forEach((id: string, index: number) => depths.set(id, base + 1 + index));
+    chain.forEach((id: string) => settled.add(id));
   }
-  return succeedWithDetail(depths);
+  return succeedWithDetail(parents);
+}
+
+function _visibleParent(parents: ReadonlyMap<string, string | undefined>, id: string): string | undefined {
+  const parent: string | undefined = parents.get(id);
+  return parent !== undefined && parents.has(parent) ? parent : undefined;
+}
+
+/**
+ * Depth in the visible forest: the number of ancestors that were themselves supplied. A
+ * parent that was not supplied ends the chain — the renderer cannot know, and does not guess,
+ * how deep the real tree is. Only called once {@link _acyclic} has passed.
+ */
+function _visibleDepth(parents: ReadonlyMap<string, string | undefined>, id: string): number {
+  let depth: number = 0;
+  for (
+    let p: string | undefined = _visibleParent(parents, id);
+    p !== undefined;
+    p = _visibleParent(parents, p)
+  ) {
+    depth++;
+  }
+  return depth;
 }
 
 function _compareItems(a: Item, b: Item): number {
-  const revision = (item: Item): number => (item.type === 'task' ? item.revision : 0);
-  return a.rank - b.rank || compareOrdinal(a.taskId, b.taskId) || revision(a) - revision(b);
+  return a.rank - b.rank || compareOrdinal(a.taskId, b.taskId) || a.revision - b.revision;
 }
 
 /**
@@ -357,8 +373,8 @@ export class TaskContextRenderer {
       for (const reference of normalized.unresolved) {
         parents.set(reference.id, reference.parentId);
       }
-      return _depths(parents).onSuccess((depths) => {
-        const depthOf = (taskId: string): number => depths.get(taskId) ?? 0;
+      return _acyclic(parents).onSuccess((graph) => {
+        const depthOf = (taskId: string): number => _visibleDepth(graph, taskId);
         const items: Item[] = projected.map(({ candidate, summary }): Item => {
           const rank: number = _rank(summary, candidate.current, candidate.updates);
           const section: TaskContextSection =
@@ -379,6 +395,7 @@ export class TaskContextRenderer {
           items.push({
             type: 'unresolved',
             taskId: reference.id,
+            revision: reference.revision,
             reference,
             depth: depthOf(reference.id),
             rank: unresolvedRank
@@ -397,7 +414,7 @@ export class TaskContextRenderer {
     const available: number = budget.maxChars - this.framingReserve;
     const rendered: IRendered[] = [];
     const omitted: Set<TaskContextOmissionReason> = new Set<TaskContextOmissionReason>();
-    let omittedItems: number = 0;
+    let omittedCount: number = 0;
     let omittedRequired: number = 0;
     let used: number = 0;
 
@@ -411,7 +428,7 @@ export class TaskContextRenderer {
       );
       if (typeof choice === 'string') {
         omitted.add(choice);
-        omittedItems++;
+        omittedCount++;
       } else {
         rendered.push(choice);
         used += choice.line.length + 1;
@@ -429,7 +446,7 @@ export class TaskContextRenderer {
       omitted.has(r)
     );
     const abbreviated: number = rendered.filter((r) => r.presentation === 'abbreviated').length;
-    const exhaustive: boolean = input.completeness === 'complete' && omittedItems === 0;
+    const exhaustive: boolean = input.completeness === 'complete' && omittedCount === 0;
 
     const lines: string[] = [framing.open, framing.preamble];
     const entries: ITaskContextEntry[] = [];
@@ -459,7 +476,7 @@ export class TaskContextRenderer {
     lines.push(
       framing.omissions,
       omissionLine({
-        omittedItems,
+        omittedItems: omittedCount,
         omittedRequiredUpdates: omittedRequired,
         abbreviated,
         reasons,
@@ -475,7 +492,7 @@ export class TaskContextRenderer {
       diagnostics,
       receipt: this._receipt(entries, input.deliveryId),
       omissions: {
-        visibleItems: omittedItems,
+        visibleItems: omittedCount,
         requiredUpdates: omittedRequired,
         abbreviated,
         reasons,

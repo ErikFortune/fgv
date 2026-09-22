@@ -23,13 +23,15 @@ export type RecordValue =
  * - the backtick — no field can close a Markdown fence a host wraps the block in.
  * - U+007F–U+009F — DEL and the C1 controls, which JSON leaves unescaped.
  * - U+2028/U+2029 — line and paragraph separators, which some consumers treat as newlines.
- * - U+200E/U+200F, U+202A–U+202E, U+2066–U+2069 — bidirectional controls, which can make
- *   displayed text read differently from its code units.
+ * - U+061C, U+200E/U+200F, U+202A–U+202E, U+2066–U+2069 — bidirectional controls, which
+ *   can make displayed text read differently from its code units.
+ * - U+200B–U+200D, U+2060, U+FEFF — zero-width characters, which hide content from a reader.
  *
  * C0 controls, `"` and `\` are already escaped by `JSON.stringify`. Every replacement is a
  * `\uXXXX` escape, so a record remains valid JSON and parses back to the original string.
  */
-const UNSAFE: RegExp = /[<>&{}`\u007f-\u009f\u2028\u2029\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
+const UNSAFE: RegExp =
+  /[<>&{}`\u007f-\u009f\u2028\u2029\u061c\u200b-\u200f\u2060\ufeff\u202a-\u202e\u2066-\u2069]/g;
 
 function _escape(char: string): string {
   return `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`;

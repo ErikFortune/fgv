@@ -25,9 +25,10 @@ export interface ITaskSummary {
  * A registered external task whose first usable observation has not arrived.
  *
  * @remarks
- * An unresolved reference has no lifecycle — none is invented for it — and so it carries
- * no revision a consumer could acknowledge. The renderer shows it only as a diagnostic,
- * never as a receipt entry, and never renders its `binding`.
+ * An unresolved reference has no lifecycle — none is invented for it. Its `revision` is the
+ * catalog revision of the registration record (design §8.3), not a presentable task state, so
+ * no consumer can acknowledge it: the renderer shows an unresolved reference only as a
+ * diagnostic, never as a receipt entry, and never renders its `binding`.
  * @public
  */
 export interface IUnresolvedTaskReference {
