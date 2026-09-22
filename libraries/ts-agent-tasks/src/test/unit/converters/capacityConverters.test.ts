@@ -490,6 +490,41 @@ describe('a claim audience uses the shared reference bound', () => {
     // If these two ever diverge, a claim can record links its own charge did not cover.
     expect(converters.bounds.maxReferences).toBe(defaultTaskCapacityProfile.perOwner.maxAudiencePerUpdate);
   });
+
+  test('a profile may not reserve more audience than a claim could ever encode', () => {
+    // The converse of the bound above, and the one that bites: the profile figure is
+    // what the closeout charge reserves from, the reference bound is what a claim may
+    // actually hold. A profile above the bound reserves room for a claim that cannot
+    // be written.
+    expect(
+      converters.capacity.profile.convert({
+        ...defaultTaskCapacityProfile,
+        perOwner: { ...defaultTaskCapacityProfile.perOwner, maxAudiencePerUpdate: 33 }
+      })
+    ).toFailWith(/maxAudiencePerUpdate 33 exceeds the reference bound of 32/i);
+  });
+
+  test('a profile at the bound is accepted', () => {
+    expect(
+      converters.capacity.profile.convert({
+        ...defaultTaskCapacityProfile,
+        perOwner: { ...defaultTaskCapacityProfile.perOwner, maxAudiencePerUpdate: 32 }
+      })
+    ).toSucceed();
+  });
+
+  test('a lowered reference bound lowers what a profile may reserve, too', () => {
+    const tight: TaskConverters = TaskConverters.create({ bounds: { maxReferences: 8 } }).orThrow();
+    expect(tight.capacity.profile.convert(defaultTaskCapacityProfile)).toFailWith(
+      /maxAudiencePerUpdate 32 exceeds the reference bound of 8/i
+    );
+    expect(
+      tight.capacity.profile.convert({
+        ...defaultTaskCapacityProfile,
+        perOwner: { ...defaultTaskCapacityProfile.perOwner, maxAudiencePerUpdate: 8 }
+      })
+    ).toSucceed();
+  });
 });
 
 describe('a profile must be able to finish the work it can accept', () => {

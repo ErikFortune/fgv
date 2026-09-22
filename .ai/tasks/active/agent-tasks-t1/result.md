@@ -27,7 +27,7 @@ field bounds; `TaskKindRegistry` and `createTaskCommandHandle`; the two built-in
 `TaskEnvironment`; and the primitives (`instant`, the safe-integer family, the bounded
 identifier / single-line / text / array factories).
 
-407 tests. 100% statements, branches, functions and lines.
+409 tests. 100% statements, branches, functions and lines.
 
 ---
 
@@ -227,6 +227,38 @@ signal the discipline describes: no round-4 finding was a hole in the design's g
 two doc items are the class that appears when a reviewer has run out of code to object to.
 Stopping the Copilot loop here, at four rounds, on finding profile rather than the ten-round cap.
 
+### Layer 2, second reviewer — CodeRabbit, one review: one major finding, and it was the converse of my own last fix
+
+CodeRabbit's single manual review (its auto-review is off for non-default base branches) returned
+one actionable major finding, one nitpick, and a docstring-coverage warning.
+
+**The major finding is the instructive one, because it is the mirror image of Copilot's round-4
+finding and I had just "fixed" that area.** Round 4 said a claim's audience used a private 256 cap
+instead of `bounds.maxReferences`, so I bound it to the shared bound. CodeRabbit pointed out the
+other direction was still open: `maxAudiencePerUpdate` in the profile remained any positive safe
+integer, so a profile with `maxAudiencePerUpdate: 33` against the default `maxReferences: 32`
+validates, and `maximumClosureCharges` *reserves* 33 audience links per payload — for a claim the
+converter would then refuse to encode. **Capacity reserved for a claim that cannot exist.**
+
+My round-4 test was part of the reason I missed it: it pinned
+`bounds.maxReferences === perOwner.maxAudiencePerUpdate` **for the default profile only**, which
+made the invariant look guarded while saying nothing about a custom profile. The fix binds the two
+in the `perOwner` converter, where both are in scope, with tests in both directions and for a
+lowered bound.
+
+The nitpick was also right and worth taking: `publicSurface.test.ts` had a test named "importing
+the library performs no I/O" that enumerated `Object.keys(TaskLib)` and asserted each key exists —
+tautological, incapable of failing, and not testing its own name. Removed; the meaningful
+no-shared-state assertions (two independent registries, two independent converter sets) carry that
+claim.
+
+**Dispositioned, not fixed:** CodeRabbit's docstring-coverage check reports 62.5% against its own
+80% threshold. Every *exported* symbol in the package has a doc comment — verified by walking every
+`export` in `src/packlets` for a preceding comment block, with zero hits. The shortfall is inline
+arrow callbacks, chiefly `withConstraint` predicates. The repo's documentation gates are API
+Extractor (zero warnings, report checked in) and the tsdoc ESLint plugin (clean); neither asks for
+docstrings on inline callbacks, and adding them would be noise.
+
 ---
 
 ## Things a later slice must decide
@@ -268,7 +300,7 @@ Stopping the Copilot loop here, at four rounds, on finding profile rather than t
 |---|---|
 | `rushx build` | clean, zero warnings; `etc/ts-agent-tasks.api.md` checked in |
 | `rushx lint` | clean; `rushx fixlint` run before the final commit |
-| `rushx test` | 407 passed; 100% statements, branches, functions, lines |
+| `rushx test` | 409 passed; 100% statements, branches, functions, lines |
 | `rush rebuild` (repo-wide) | green — required, since a new Rush project changes the build graph |
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `verify-capability-docs.mjs` | router 19,158/24,000 chars, 24/24 libraries documented, 75 reflexes intact |

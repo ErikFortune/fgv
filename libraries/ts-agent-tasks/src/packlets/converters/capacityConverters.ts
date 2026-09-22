@@ -119,11 +119,26 @@ export function buildCapacityConverters(
     'resident-payload-bytes': positiveSafeInteger
   });
 
+  // `maxAudiencePerUpdate` is what `maximumClosureCharges` reserves audience links from,
+  // and `bounds.maxReferences` is what a claim's audience is actually allowed to hold.
+  // If the profile figure were the larger of the two, a profile would validate and reserve
+  // room for an audience its own claim converter then refuses to encode — capacity
+  // reserved for a claim that cannot exist. The two are bound together here, in the one
+  // place both are in scope.
   const perOwner: Converter<ITaskPerOwnerLimits> = Converters.strictObject<ITaskPerOwnerLimits>({
     maxAcknowledgementIdsPerSubscription: positiveSafeInteger,
     maxOperationsPerTask: positiveSafeInteger,
     maxAudiencePerUpdate: positiveSafeInteger,
     maxOutstandingReceiptsPerSubscription: positiveSafeInteger
+  }).withConstraint((value: ITaskPerOwnerLimits): Result<ITaskPerOwnerLimits> => {
+    if (value.maxAudiencePerUpdate > bounds.maxReferences) {
+      return fail(
+        `capacity profile: maxAudiencePerUpdate ${value.maxAudiencePerUpdate} exceeds the ` +
+          `reference bound of ${bounds.maxReferences}, so a claim reserving that audience ` +
+          `could not be encoded`
+      );
+    }
+    return succeed(value);
   });
 
   const encoded: Converter<ITaskEncodedBounds> = Converters.strictObject<ITaskEncodedBounds>({
