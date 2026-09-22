@@ -438,6 +438,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-agent-tasks",
+      "projectFolder": "libraries/ts-agent-tasks",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-prompt-assist",
       "projectFolder": "libraries/ts-prompt-assist",
       "shouldPublish": true,
