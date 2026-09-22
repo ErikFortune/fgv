@@ -20,7 +20,6 @@
  * SOFTWARE.
  */
 
-import crypto from 'crypto';
 import fs from 'fs';
 import { DetailedResult, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
 
@@ -304,6 +303,17 @@ export const defaultAtomicFsOperations: IAtomicFsOperations = {
   },
 
   generateTemporaryToken(): string {
-    return crypto.randomBytes(12).toString('hex');
+    // Web Crypto off the global rather than `node:crypto` — the same source
+    // `@fgv/ts-utils`'s `generateUuid` reads, but yielding this protocol's own
+    // 24-hex-digit shape rather than a UUID. `fs` is genuinely unavailable off
+    // Node; randomness never was, and this was the only gratuitously Node-bound
+    // piece of the protocol.
+    //
+    // Not `generateUuid().replace(...)`: TEMPORARY_NAME_PATTERN pins exactly 24
+    // digits, and a UUID is 32 of which four nibbles are the fixed version and
+    // variant. Truncating one to fit would silently cost entropy, and widening
+    // the pattern would change what reclamation recognizes as its own orphan.
+    const bytes = globalThis.crypto.getRandomValues(new Uint8Array(12));
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
   }
 };
