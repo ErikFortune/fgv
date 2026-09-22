@@ -176,8 +176,9 @@ type; if a type seems to require one, that is a signal to stop and surface it.
 
 **T1 status.** Shipped to `integration/agent-tasks-v1` via
 [#684](https://github.com/ErikFortune/fgv/pull/684). `@fgv/ts-agent-tasks` exists with its `types`
-and `converters` packlets, a `CAPABILITIES.md` and its router row; 366 tests at 100% on all four
-metrics; repo-wide `rush rebuild` and all four export/capability gates green. The stream stays open
+and `converters` packlets, a `CAPABILITIES.md` and its router row; a full suite at 100% on all four
+metrics (the exact count lives in `result.md`, which is the one place it is recorded — quoting it
+here too is how it went stale); repo-wide `rush rebuild` and all four export/capability gates green. The stream stays open
 — T2 and beyond follow, and the artifacts stay in `active/`.
 
 **What T1's successors inherit — and are licensed to revise.** `result.md` carries the

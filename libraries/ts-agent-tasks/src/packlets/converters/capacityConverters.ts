@@ -167,9 +167,14 @@ export function buildCapacityConverters(
   // Each audience entry is one subscription's reserved link and acknowledgement evidence,
   // so a repeated id double-counts the same obligation — the same hazard as a duplicate
   // charge or a duplicate claim, one level further in.
+  // Bounded by the shared reference bound rather than a private cap. Two reasons: a host
+  // that lowers `maxReferences` expects it to apply everywhere, and — the load-bearing one
+  // — `maximumClosureCharges` reserves `maxAudiencePerUpdate` links per payload, so an
+  // audience larger than that bound would record more obligation than its own claim
+  // reserved capacity for.
   const audience: Converter<ReadonlyArray<SubscriptionId>> = boundedArrayOf(
     ids.subscriptionId,
-    256,
+    bounds.maxReferences,
     'claim audience'
   ).withConstraint((value: ReadonlyArray<SubscriptionId>): Result<ReadonlyArray<SubscriptionId>> => {
     const seen: Set<SubscriptionId> = new Set<SubscriptionId>();

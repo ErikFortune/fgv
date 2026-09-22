@@ -7,6 +7,7 @@ import '@fgv/ts-utils-jest';
 import { JsonValue } from '@fgv/ts-json-base';
 import {
   CapacityDimension,
+  TaskConverters,
   allCapacityDimensions,
   capacityPressureThreshold,
   defaultTaskCapacityProfile
@@ -454,6 +455,40 @@ describe('a terminal-closeout claim audience', () => {
         claim('terminal-closeout', { taskId: 'task-1', audience: ['sub-1', 'sub-1'] })
       )
     ).toFailWith(/duplicate subscription id 'sub-1'/i);
+  });
+});
+
+describe('a claim audience uses the shared reference bound', () => {
+  function audienceOf(n: number): JsonValue[] {
+    return Array.from({ length: n }, (__v, i) => `sub-${i}`);
+  }
+
+  test('accepts an audience at the shared bound', () => {
+    expect(
+      converters.capacity.claim.convert(
+        claim('terminal-closeout', { taskId: 'task-1', audience: audienceOf(32) })
+      )
+    ).toSucceed();
+  });
+
+  test('rejects one over it — a claim may not record more obligation than it reserved', () => {
+    expect(
+      converters.capacity.claim.convert(
+        claim('terminal-closeout', { taskId: 'task-1', audience: audienceOf(33) })
+      )
+    ).toFailWith(/claim audience: 33 entries exceeds the maximum of 32/i);
+  });
+
+  test('a lowered reference bound lowers the audience bound with it', () => {
+    const tight: TaskConverters = TaskConverters.create({ bounds: { maxReferences: 2 } }).orThrow();
+    expect(
+      tight.capacity.claim.convert(claim('terminal-closeout', { taskId: 'task-1', audience: audienceOf(3) }))
+    ).toFailWith(/exceeds the maximum of 2/i);
+  });
+
+  test('the shared bound matches the per-update audience the closeout charge reserves', () => {
+    // If these two ever diverge, a claim can record links its own charge did not cover.
+    expect(converters.bounds.maxReferences).toBe(defaultTaskCapacityProfile.perOwner.maxAudiencePerUpdate);
   });
 });
 

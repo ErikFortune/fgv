@@ -291,6 +291,17 @@ describe('typed handles', () => {
     );
   });
 
+  test('a details encoder returning non-JSON fails conversion rather than being stored', () => {
+    const registry: TaskKindRegistry = newRegistry();
+    expect(
+      registry.register({
+        ...widgetDescriptor(),
+        encode: (): Result<JsonValue> => succeed(undefined as unknown as JsonValue)
+      })
+    ).toSucceed();
+    expect(registry.convert(widgetSnapshot({ width: 4 }))).toFail();
+  });
+
   test('a host encoder that throws also fails registry conversion rather than escaping', () => {
     const registry: TaskKindRegistry = newRegistry();
     expect(
@@ -366,6 +377,19 @@ describe('command handles', () => {
     const command = growHandle();
     expect(command.validate({ by: 'a lot' })).toFailWith(/command 'grow'/i);
     expect(command.validate({})).toFailWith(/command 'grow'/i);
+  });
+
+  test('an encoder returning something unrepresentable fails rather than being stored', () => {
+    const command = createTaskCommandHandle<IGrowParameters>({
+      name: 'grow',
+      parameters: growSchema,
+      // The encoder's output is host data too, and canonical parameters are stored and
+      // deduplicated against — so a value that is not JSON must not reach that store.
+      encode: (): Result<JsonValue> => succeed(undefined as unknown as JsonValue),
+      idempotency: 'none',
+      conditional: false
+    });
+    expect(command.validate({ by: 3 })).toFailWith(/command 'grow'/i);
   });
 
   test('a command encoder that throws becomes a failure, not an escaped exception', () => {

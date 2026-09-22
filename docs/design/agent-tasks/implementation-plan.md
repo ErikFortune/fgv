@@ -1,7 +1,10 @@
 # Agent tasks — phased implementation plan
 
 **Status:** A1/A2 and finite-horizon capacity amendment A3 approved 2026-09-21; reference-consumer A3 approval is limited to V1 ingestion. A1 **amended 2026-09-22** to Linux-only — see § *F2*.
-**F1 and F2 are shipped** ([#683](https://github.com/ErikFortune/fgv/pull/683), squashing [#681](https://github.com/ErikFortune/fgv/pull/681) and [#682](https://github.com/ErikFortune/fgv/pull/682)): the upstream `ts-json-base` FileTree atomic-write capability and its qualified Node protocol exist and are on `release`. **Every T, I, P and M slice remains unimplemented and awaits explicit authorization**, taken one slice at a time.
+**F1 and F2 are shipped** ([#683](https://github.com/ErikFortune/fgv/pull/683), squashing [#681](https://github.com/ErikFortune/fgv/pull/681) and [#682](https://github.com/ErikFortune/fgv/pull/682)): the upstream `ts-json-base` FileTree atomic-write capability and its qualified Node protocol exist and are on `release`. **T1 is implemented** and lands on `integration/agent-tasks-v1` via
+[#684](https://github.com/ErikFortune/fgv/pull/684) — it is *not* on `release`, and reaches it only
+in the integration branch's squash. **Every other T slice, and every I, P and M slice, remains
+unimplemented and awaits explicit authorization**, taken one slice at a time.
 **Date:** 2026-09-21. **Source inspection:** `d0ec601c6d67a6016a00a33a69ddee18bec6ddb1`.
 **Engineering contract:** [development design](development-design.md).
 **Scope authorities:** [library proposal](fgv-library.md), [adoption proposal](multi-agent-chat-adoption.md), [deferred scope](deferred.md).
@@ -92,7 +95,7 @@ Qualifying overlayfs remains available as a future slice — it means running th
 
 ## 4. Task foundations and storage
 
-### T1 — Package, values, converters and registry
+### T1 — Package, values, converters and registry — ✅ implemented on `integration/agent-tasks-v1` ([#684](https://github.com/ErikFortune/fgv/pull/684))
 
 **Dependencies:** approved model; F1 contract available. **Affected package:** new `ts-agent-tasks`; Rush project/dependency/version-policy configuration via normal tooling.
 

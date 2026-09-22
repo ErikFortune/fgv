@@ -27,7 +27,7 @@ field bounds; `TaskKindRegistry` and `createTaskCommandHandle`; the two built-in
 `TaskEnvironment`; and the primitives (`instant`, the safe-integer family, the bounded
 identifier / single-line / text / array factories).
 
-401 tests. 100% statements, branches, functions and lines.
+407 tests. 100% statements, branches, functions and lines.
 
 ---
 
@@ -203,7 +203,29 @@ defects the whole time. Stopping at round 3 on the posted count would have shipp
 **read the summary's "previously missed" block, not just the posted comments** — and a round that
 posts nothing is not evidence of a clean diff.
 
-Round 4 requested.
+**Layer 2 — Copilot, round 4: two real findings and two real doc inconsistencies.**
+
+1. **A claim's audience used a private 256 cap instead of the shared reference bound.** The
+   consequence is not cosmetic: `maximumClosureCharges` reserves `maxAudiencePerUpdate` links per
+   payload, so an audience above that bound records more obligation than its own claim reserved
+   capacity for. Now bounded by `bounds.maxReferences`, which also means a host lowering that
+   bound sees it applied here. A test pins the two numbers as equal, so a future divergence fails
+   rather than drifts.
+2. **`validate()` and the registry's details closure trusted the encoder's *output*.** Input was
+   validated; whatever the encoder returned was not, so a descriptor returning a non-JSON value
+   produced a success whose value is then stored and deduplicated against. Both paths now run the
+   encoder's result through `jsonValue`.
+3. **The streams ledger quoted a stale test count**, and **the implementation plan still said
+   every T slice was unimplemented** while this PR implements T1. Both corrected — and the ledger
+   no longer quotes a count at all, because three copies of a number that changes every round is
+   the defect, not the one stale instance.
+
+**The stop call, and why here.** Across four rounds the profile went: three structural defects →
+one structural defect → six (summary-only, including the deepest of the loop) → **one consistency
+bug, one robustness hole, two doc corrections**. That last profile is the diminishing-returns
+signal the discipline describes: no round-4 finding was a hole in the design's guarantees, and the
+two doc items are the class that appears when a reviewer has run out of code to object to.
+Stopping the Copilot loop here, at four rounds, on finding profile rather than the ten-round cap.
 
 ---
 
@@ -246,7 +268,7 @@ Round 4 requested.
 |---|---|
 | `rushx build` | clean, zero warnings; `etc/ts-agent-tasks.api.md` checked in |
 | `rushx lint` | clean; `rushx fixlint` run before the final commit |
-| `rushx test` | 401 passed; 100% statements, branches, functions, lines |
+| `rushx test` | 407 passed; 100% statements, branches, functions, lines |
 | `rush rebuild` (repo-wide) | green — required, since a new Rush project changes the build graph |
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `verify-capability-docs.mjs` | router 19,158/24,000 chars, 24/24 libraries documented, 75 reflexes intact |

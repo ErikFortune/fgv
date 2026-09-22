@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { JsonValue } from '@fgv/ts-json-base';
+import { Converters as JsonConverters, JsonValue } from '@fgv/ts-json-base';
 import { Converter, Converters, Result, captureResult, fail, failWithDetail, succeed } from '@fgv/ts-utils';
 import {
   ITaskCommandDescriptor,
@@ -40,6 +40,10 @@ export function createTaskCommandHandle<P>(descriptor: ITaskCommandDescriptor<P>
         descriptor.parameters.convert(parameters).onSuccess((typed: P) => descriptor.encode(typed))
       )
         .onSuccess((encoded: Result<JsonValue>) => encoded)
+        // The encoder's *output* is host data as much as its input was. Canonical
+        // parameters are stored and deduplicated against, so an encoder returning
+        // something unrepresentable must fail here rather than downstream.
+        .onSuccess((encoded: JsonValue) => JsonConverters.jsonValue.convert(encoded))
         .withErrorFormat((message: string) => `command '${descriptor.name}': ${message}`)
   };
 }
@@ -124,7 +128,9 @@ export class TaskKindRegistry implements ITaskKindRegistry {
         details: Converters.generic<JsonValue>((from: unknown) =>
           captureResult(() =>
             descriptor.details.convert(from).onSuccess((typed: T) => descriptor.encode(typed))
-          ).onSuccess((encoded: Result<JsonValue>) => encoded)
+          )
+            .onSuccess((encoded: Result<JsonValue>) => encoded)
+            .onSuccess((encoded: JsonValue) => JsonConverters.jsonValue.convert(encoded))
         ),
         commands
       };
