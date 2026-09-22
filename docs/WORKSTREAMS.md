@@ -128,7 +128,55 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-t1` 🔵 (slice T1 of the agent-tasks plan) — T1 ✅ (landed on the integration branch via [#684](https://github.com/ErikFortune/fgv/pull/684))
+### `agent-tasks-t2` ✅ (slice T2 of the agent-tasks plan) — landed on the integration branch via [#685](https://github.com/ErikFortune/fgv/pull/685)
+
+**Mission.** Land **T2** — the pure context and snapshot-only entry point: deterministic selection
+and rendering, current/update/attention fragments, budgets and omissions, a pure inclusion receipt,
+and a safe bounded projection seam. The plan calls it "a complete usable snapshot-only entry point
+without a broker," and that is the point: after T2 a host can render task context and get an honest
+receipt for what it included, with no storage, no broker and no infrastructure.
+
+**Package surface:** `libraries/ts-agent-tasks` — a new `context` packlet, additions to
+`converters`, and **permitted revisions to `types`** (see below).
+
+**Out-of-scope:** any filesystem, clock, random or checkpoint call — T2's acceptance is that there
+are none, which the tests must *establish*, not merely avoid; the broker (T5), durable records (T3),
+indexes and paging (T4), subscriptions and acknowledgement (T7); the deferred input protocol (gate
+#6 — attention is an opaque host-owned reference); any runner, scheduler or retry policy; every
+other package, consumed unchanged.
+
+**Dependencies.** T1 only, and T1 landed on the integration branch as `1337c27c` (#684).
+
+**Why T2 before T3, rather than in parallel.** Both are unblocked, and both would touch the same new
+package — but the sequencing is not just collision avoidance. T1 shipped **101 union members, about
+half choice-unexercised**; they are predictions about slices that do not exist yet. **T2 is the
+first slice to exercise any of them for real**, and it is pure, so it is the cheapest possible place
+to discover the vocabulary is wrong. T3 writes that same vocabulary into durable records on disk,
+where the identical discovery costs a storage-format change. So T2 holds explicit licence to revise
+T1's types, and is expected to update T1's declared-vs-exercised table rather than leave it
+describing a vocabulary that has moved.
+
+**Landing shape.** PRs into `integration/agent-tasks-v1`. **T1 + T2 is the intended first squash to
+`release`** — the first coherent consumer-facing unit. T3 and beyond form later batches.
+
+**Acceptance criteria.** Plan § T2's six (determinism; no filesystem/clock/random/checkpoint; only
+actually-included revisions and update IDs in receipts; a required payload that does not fit stays
+*unacknowledged* rather than truncated; partial visible trees never establish parent completion;
+task prose treated as data), plus the repo gates — zero-warning build, lint, 100% coverage,
+`code-reviewer` before coverage closure, repo-wide `rush rebuild`, change file against the
+integration branch, `CAPABILITIES.md` in the same PR, **and every step `ci.yml` runs** (T1 lost a
+round to `generate-capability-feed.mjs --check`, which no local checklist named).
+
+**T2 status.** Shipped to `integration/agent-tasks-v1` via
+[#685](https://github.com/ErikFortune/fgv/pull/685): `TaskContextRenderer`, the `context` packlet,
+`ITaskSummary` / `ITaskUpdate` / `IUnresolvedTaskReference`, and `TaskConverters.context`. No T1
+union member was revised. Carried forward: T7 must reconcile `'initial'` baseline obligations with
+T2's one-update-per-(task, revision, category) rule, and design §9's tie-break wording
+("task ID and update ID") should read "task ID and revision". Details in `result.md`.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-t2/`.
+
+### `agent-tasks-t1` ✅ (slice T1 of the agent-tasks plan) — landed on the integration branch via [#684](https://github.com/ErikFortune/fgv/pull/684)
 
 **Mission.** Create `@fgv/ts-agent-tasks` and land slice **T1** — package scaffold, value types and
 converters, the versioned detail/command registry, typed handles, Result-valued factories, injected

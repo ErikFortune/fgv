@@ -170,4 +170,28 @@ describe('boundedArrayOf', () => {
   test('rejects an entry of the wrong type', () => {
     expect(items.convert(['a', 3])).toFail();
   });
+
+  test('rejects a non-array', () => {
+    expect(items.convert('ab')).toFail();
+  });
+
+  test('checks the length before converting any element', () => {
+    const element = jest.fn((from: unknown) => Converters.string.convert(from));
+    const counted = boundedArrayOf(Converters.generic(element), 2, 'counted items');
+    expect(counted.convert(['a', 'b', 'c'])).toFailWith(/3 entries exceeds the maximum of 2/i);
+    // An oversized array is refused without doing the per-element work it would cost.
+    expect(element).not.toHaveBeenCalled();
+    expect(counted.convert(['a', 'b'])).toSucceed();
+    expect(element).toHaveBeenCalledTimes(2);
+  });
+
+  test('passes the conversion context through to each element', () => {
+    const seen: unknown[] = [];
+    const contextual = Converters.generic<string, string>((from: unknown, __self, context?: string) => {
+      seen.push(context);
+      return Converters.string.convert(from);
+    });
+    expect(boundedArrayOf(contextual, 2, 'contextual items').convert(['a'], 'the-context')).toSucceed();
+    expect(seen).toEqual(['the-context']);
+  });
 });

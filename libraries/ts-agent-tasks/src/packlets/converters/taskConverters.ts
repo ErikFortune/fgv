@@ -7,6 +7,7 @@ import { Result, captureResult, fail, populateObject, succeed } from '@fgv/ts-ut
 import { ITaskFieldBounds, defaultTaskFieldBounds } from '../types';
 import { ICapacityConverters, buildCapacityConverters } from './capacityConverters';
 import { ICommandConverters, buildCommandConverters } from './commandConverters';
+import { IContextConverters, buildContextConverters } from './contextConverters';
 import { IEnvelopeConverters, buildEnvelopeConverters } from './envelopeConverters';
 import { IFailureConverters, buildFailureConverters } from './failureConverters';
 import { IIdentityConverters, buildIdentityConverters } from './identityConverters';
@@ -77,6 +78,8 @@ export class TaskConverters {
   public readonly commands: ICommandConverters;
   /** A3 capacity profile, claim and status converters. */
   public readonly capacity: ICapacityConverters;
+  /** Summary, update, context input, budget and inclusion-receipt converters. */
+  public readonly context: IContextConverters;
 
   private constructor(bounds: ITaskFieldBounds) {
     this.bounds = bounds;
@@ -86,6 +89,7 @@ export class TaskConverters {
     this.failures = buildFailureConverters(bounds, this.ids);
     this.commands = buildCommandConverters(bounds, this.ids);
     this.capacity = buildCapacityConverters(bounds, this.ids, this.values, this.failures);
+    this.context = buildContextConverters(bounds, this.ids, this.values, this.envelopes);
   }
 
   /**

@@ -144,6 +144,11 @@ export function boundedText(maxLength: number, description: string): Converter<s
 
 /**
  * Builds a converter for a bounded readonly array.
+ *
+ * @remarks
+ * The length is checked **before** any element is converted. Checking it afterwards would
+ * bound the result but not the work: an oversized array would be validated element by element
+ * in full, and only then refused.
  * @public
  */
 export function boundedArrayOf<T>(
@@ -151,10 +156,15 @@ export function boundedArrayOf<T>(
   maxItems: number,
   description: string
 ): Converter<ReadonlyArray<T>> {
-  return Converters.arrayOf(item).withConstraint((value: T[]): Result<T[]> => {
-    if (value.length > maxItems) {
-      return fail(`${description}: ${value.length} entries exceeds the maximum of ${maxItems}`);
+  const elements: Converter<T[]> = Converters.arrayOf(item);
+  return Converters.generic<ReadonlyArray<T>>(
+    (from: unknown, __self: unknown, context?: unknown): Result<ReadonlyArray<T>> => {
+      if (Array.isArray(from) && from.length > maxItems) {
+        return fail(`${description}: ${from.length} entries exceeds the maximum of ${maxItems}`);
+      }
+      // Pass the conversion context through: a context-dependent element converter must see
+      // exactly what it would have seen without the bound in front of it.
+      return elements.convert(from, context);
     }
-    return succeed(value);
-  });
+  );
 }
