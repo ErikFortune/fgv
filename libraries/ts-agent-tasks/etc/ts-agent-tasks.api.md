@@ -538,6 +538,7 @@ export interface ITaskContextOmissions {
 export interface ITaskContextRendererCreateParams {
     readonly converters?: TaskConverters;
     readonly projection?: TaskContextProjection;
+    readonly unresolvedProjection?: TaskContextUnresolvedProjection;
 }
 
 // @public
@@ -974,6 +975,9 @@ export class TaskContextRenderer {
 
 // @public
 export type TaskContextSection = 'attention' | 'updates' | 'current';
+
+// @public
+export type TaskContextUnresolvedProjection = (reference: IUnresolvedTaskReference) => Result<IUnresolvedTaskReference>;
 
 // @public
 export class TaskConverters {

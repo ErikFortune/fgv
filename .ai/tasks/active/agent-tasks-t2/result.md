@@ -19,7 +19,8 @@ receipt — with no storage, no broker, and nothing the renderer could write to.
   `ITaskContextLimits` / `taskContextLimits` (200 items, 10,000 input entries per list),
   `IInclusionEntry`, `ITaskInclusionReceipt`, `TaskInputCompleteness`, `ITaskContextInput`,
   `TaskContextSection`, `TaskContextPresentation`, `ITaskContextEntry`, `TaskContextOmissionReason`,
-  `ITaskContextOmissions`, `ITaskContextDiagnostic`, `ITaskContext`, `TaskContextProjection`.
+  `ITaskContextOmissions`, `ITaskContextDiagnostic`, `ITaskContext`, `TaskContextProjection`,
+  `TaskContextUnresolvedProjection`.
 
 **`converters`** — `TaskConverters.context` (`contextConverters.ts`): strict `summary`;
 `presentable` (summary or snapshot, details explicitly discarded); `update` (snapshot pinned to the
@@ -44,7 +45,7 @@ project each distinct `(task, revision)` once, re-validate, pin identity → rej
 rank → greedy select (items → depth → full line → abbreviated line → omit) → render by section →
 receipt from what rendered.
 
-498 tests in the package (89 new). 100% statements, branches, functions and lines. No coverage
+500 tests in the package (91 new). 100% statements, branches, functions and lines. No coverage
 directives.
 
 ---
@@ -206,6 +207,23 @@ regression in round 2's own fix) → **one flag-semantics correction**. Round 4 
 consistency item with no hole in a guarantee — the diminishing-returns signal. Stopping the
 Copilot loop at four rounds on finding profile, not the cap; CodeRabbit's single review follows
 with every round's fix landed.
+
+### Layer 2, second reviewer — CodeRabbit, one review: one major finding, real
+
+**Unresolved references bypassed the projection.** Titles, reasons and kinds were rendered as
+supplied, and each reference's `parentId` placed it in the visible tree, even for a host whose
+task projection redacts titles or hides parents. This is round 1's disclosure hole a second time:
+round 1 closed the binding leak on the *output* side (`ITaskContextDiagnostic`). This one is on
+the *input* side, because the projection seam covered one of the two kinds of item the renderer
+presents. Fixed with `TaskContextUnresolvedProjection` (`unresolvedProjection` on `create`),
+which has the task projection's contract: captured, re-validated, identity pinned, and no
+fallback. Its projected `parentId` drives the tree. The default passes references through. Their
+binding is never rendered either way.
+
+**Dispositioned, as in T1:** CodeRabbit's docstring-coverage check (61% of touched functions,
+against its 80%). Every exported symbol is documented. API Extractor and the tsdoc lint plugin,
+the repo's actual documentation gates, are clean. The shortfall is inline arrow callbacks and
+file-local helpers.
 
 ---
 

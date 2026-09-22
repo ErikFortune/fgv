@@ -94,7 +94,9 @@ task revision before rendering — redact a description, drop artifacts, hide a 
 is **re-validated** against the same bounds, must keep `id`, `revision` and `kind` (a receipt
 must not describe something other than what was rendered), and a failing or throwing projection
 fails the render with **no fallback to the unprojected value**. `defaultTaskContextProjection`
-removes the source binding and nothing else.
+removes the source binding and nothing else. Unresolved references get their own seam,
+`TaskContextUnresolvedProjection`, with the same contract; its projected `parentId` is the one
+the visible tree uses, so a host that hides a parent hides it for diagnostics too.
 
 **Also here:** `ITaskSummary`, `ITaskUpdate` (one immutable payload per `(task, revision,
 category)`, its snapshot pinned to the revision it names) and `IUnresolvedTaskReference` (a

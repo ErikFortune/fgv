@@ -10,7 +10,9 @@ import {
   ITaskContext,
   ITaskContextBudget,
   ITaskSummary,
+  IUnresolvedTaskReference,
   TaskContextRenderer,
+  TaskContextUnresolvedProjection,
   TaskConverters,
   defaultTaskContextBudget,
   defaultTaskContextProjection
@@ -1067,6 +1069,58 @@ describe('TaskContextRenderer', () => {
           projection: (s) => succeed({ envelope: { ...s.envelope, ...change } } as unknown as ITaskSummary)
         }).orThrow();
         expect(changing.render(input({ tasks: [summary('t1', 1)] }))).toFailWithDetail(/changed identity/i, {
+          code: 'invalid',
+          retry: 'after-host-action'
+        });
+      }
+    });
+
+    test('unresolved references go through their own projection before rendering', () => {
+      const unresolvedProjection = jest.fn(
+        (r: IUnresolvedTaskReference): Result<IUnresolvedTaskReference> =>
+          succeed({ ...omit(r, ['parentId']), title: 'withheld', reason: 'withheld' })
+      );
+      const redacting: TaskContextRenderer = TaskContextRenderer.create({ unresolvedProjection }).orThrow();
+      const parts = {
+        tasks: [summary('p', 1)],
+        unresolved: [unresolved('x1', { parentId: 'p', title: 'secret job name', reason: 'secret reason' })]
+      };
+      expect(redacting.render(input(parts), budget({ maxDepth: 0 }))).toSucceedAndSatisfy((context) => {
+        // Redacted in both the text and the structured view, and the hidden parent no longer
+        // places the reference below `p` — at depth 0 it renders.
+        expect(context.text).not.toMatch(/secret/);
+        expect(context.diagnostics).toEqual([
+          { id: 'x1', kind: 'acme.job', title: 'withheld', reason: 'withheld', depth: 0 }
+        ]);
+      });
+      expect(unresolvedProjection).toHaveBeenCalledTimes(1);
+      // Without the projection, the same parent places it at depth 1 and depth 0 omits it.
+      expect(renderer.render(input(parts), budget({ maxDepth: 0 }))).toSucceedAndSatisfy((context) => {
+        expect(context.diagnostics).toEqual([]);
+        expect(context.omissions.reasons).toEqual(['depth']);
+      });
+    });
+
+    test('an unresolved projection that fails, throws, changes identity or emits invalid data fails the render', () => {
+      const cases: ReadonlyArray<[TaskContextUnresolvedProjection, RegExp]> = [
+        [() => fail('not permitted'), /x1: projection failed: not permitted/i],
+        [
+          () => {
+            throw new Error('exploded');
+          },
+          /exploded/i
+        ],
+        [(r) => succeed({ ...r, id: 'other' } as unknown as IUnresolvedTaskReference), /changed identity/i],
+        [(r) => succeed({ ...r, revision: 7 } as unknown as IUnresolvedTaskReference), /changed identity/i],
+        [
+          (r) => succeed({ ...r, kind: 'acme.other' } as unknown as IUnresolvedTaskReference),
+          /changed identity/i
+        ],
+        [(r) => succeed({ ...r, title: 't'.repeat(300) }), /projection failed.*title/i]
+      ];
+      for (const [unresolvedProjection, pattern] of cases) {
+        const failing: TaskContextRenderer = TaskContextRenderer.create({ unresolvedProjection }).orThrow();
+        expect(failing.render(input({ unresolved: [unresolved('x1')] }))).toFailWithDetail(pattern, {
           code: 'invalid',
           retry: 'after-host-action'
         });

@@ -218,3 +218,18 @@ export interface ITaskContext {
  * @public
  */
 export type TaskContextProjection = (summary: ITaskSummary) => Result<ITaskSummary>;
+
+/**
+ * A host-supplied projection applied to every unresolved reference before it is rendered.
+ *
+ * @remarks
+ * The unresolved counterpart of {@link TaskContextProjection}, with the same contract: it
+ * must be pure, its output is re-validated and must keep the input's `id`, `revision` and
+ * `kind`, and a projection that fails or throws fails the render with no fallback. A host that
+ * redacts task titles or hides parents redacts or hides them here too — the projected
+ * `parentId` is the one the visible tree uses.
+ * @public
+ */
+export type TaskContextUnresolvedProjection = (
+  reference: IUnresolvedTaskReference
+) => Result<IUnresolvedTaskReference>;

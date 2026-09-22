@@ -85,6 +85,7 @@ describe('rendering has no side effects', () => {
     expect(Object.keys(renderer).sort()).toEqual([
       '_normalizer',
       '_projection',
+      '_unresolvedProjection',
       'converters',
       'framingReserve'
     ]);

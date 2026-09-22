@@ -107,3 +107,7 @@ Round 4 (`191e90b6`): no comments posted; the headline named one issue. `exhaust
 true despite abbreviation. Fixed, with the flag pinned in a test that was watched failing first.
 The Copilot loop stops here on diminishing returns (4 → 2 → 2 → 1, the last a flag-semantics
 item). Next: CodeRabbit's single review.
+
+CodeRabbit (one manual review, on `60913ea0`, CI green): one major finding, and it was real.
+Unresolved references bypassed the projection. Fixed with `TaskContextUnresolvedProjection`.
+The docstring-coverage warning is dispositioned as T1's was.

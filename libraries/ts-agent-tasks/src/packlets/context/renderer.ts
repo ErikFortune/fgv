@@ -22,6 +22,7 @@ import {
   TaskContextPresentation,
   TaskContextProjection,
   TaskContextSection,
+  TaskContextUnresolvedProjection,
   TaskId,
   TaskResult,
   TaskRevision,
@@ -60,6 +61,11 @@ export interface ITaskContextRendererCreateParams {
   readonly converters?: TaskConverters;
   /** The disclosure projection. Defaults to {@link defaultTaskContextProjection}. */
   readonly projection?: TaskContextProjection;
+  /**
+   * The disclosure projection for unresolved references. Defaults to passing them through;
+   * their binding is never rendered either way.
+   */
+  readonly unresolvedProjection?: TaskContextUnresolvedProjection;
 }
 
 interface ITaskItem {
@@ -314,12 +320,18 @@ export class TaskContextRenderer {
    */
   public readonly framingReserve: number;
   private readonly _projection: TaskContextProjection;
+  private readonly _unresolvedProjection: TaskContextUnresolvedProjection;
   private readonly _normalizer: InputNormalizer;
 
-  private constructor(converters: TaskConverters, projection: TaskContextProjection) {
+  private constructor(
+    converters: TaskConverters,
+    projection: TaskContextProjection,
+    unresolvedProjection: TaskContextUnresolvedProjection
+  ) {
     this.converters = converters;
     this.framingReserve = computeFramingReserve();
     this._projection = projection;
+    this._unresolvedProjection = unresolvedProjection;
     this._normalizer = new InputNormalizer();
   }
 
@@ -330,7 +342,14 @@ export class TaskContextRenderer {
     const converters: Result<TaskConverters> =
       params?.converters !== undefined ? succeed(params.converters) : TaskConverters.create();
     return converters.onSuccess((c) =>
-      captureResult(() => new TaskContextRenderer(c, params?.projection ?? defaultTaskContextProjection))
+      captureResult(
+        () =>
+          new TaskContextRenderer(
+            c,
+            params?.projection ?? defaultTaskContextProjection,
+            params?.unresolvedProjection ?? succeed
+          )
+      )
     );
   }
 
@@ -395,8 +414,35 @@ export class TaskContextRenderer {
       .withFailureDetail(invalidDetail);
   }
 
+  private _projectUnresolved(reference: IUnresolvedTaskReference): TaskResult<IUnresolvedTaskReference> {
+    // The same contract as `_project`: captured, re-validated, identity pinned, no fallback.
+    return captureResult(() => this._unresolvedProjection(reference))
+      .onSuccess((projected) => projected)
+      .onSuccess((projected) => this.converters.context.unresolvedReference.convert(projected))
+      .onSuccess((projected) =>
+        projected.id !== reference.id ||
+        projected.revision !== reference.revision ||
+        projected.kind !== reference.kind
+          ? fail<IUnresolvedTaskReference>(
+              `projection changed identity to ${projected.kind} ${projected.id}@${projected.revision}`
+            )
+          : succeed(projected)
+      )
+      .withErrorFormat((message: string) => `unresolved ${reference.id}: projection failed: ${message}`)
+      .withFailureDetail(invalidDetail);
+  }
+
   private _items(normalized: INormalizedInput): TaskResult<ReadonlyArray<Item>> {
-    return allTaskResults(normalized.revisions.map((c) => this._project(c))).onSuccess((projected) => {
+    return allTaskResults(normalized.unresolved.map((r) => this._projectUnresolved(r))).onSuccess(
+      (unresolvedReferences) => this._itemsFrom(normalized.revisions, unresolvedReferences)
+    );
+  }
+
+  private _itemsFrom(
+    revisions: ReadonlyArray<IRevisionCandidate>,
+    unresolvedReferences: ReadonlyArray<IUnresolvedTaskReference>
+  ): TaskResult<ReadonlyArray<Item>> {
+    return allTaskResults(revisions.map((c) => this._project(c))).onSuccess((projected) => {
       // A task's place in the tree comes from its newest supplied revision, which is its
       // current state when that was supplied: no update may be newer than current state.
       // `projected` is in ascending revision order, so the last one per task wins.
@@ -408,7 +454,7 @@ export class TaskContextRenderer {
       for (const [taskId, summary] of representative) {
         parents.set(taskId, summary.envelope.parentId);
       }
-      for (const reference of normalized.unresolved) {
+      for (const reference of unresolvedReferences) {
         parents.set(reference.id, reference.parentId);
       }
       // Every node of the graph is a start below, so every cycle is found.
@@ -435,7 +481,7 @@ export class TaskContextRenderer {
       );
       return taskItems.onSuccess((tasks) =>
         allTaskResults(
-          normalized.unresolved.map((reference) =>
+          unresolvedReferences.map((reference) =>
             _visibleDepth(parents, memo, reference.id).onSuccess((depth) =>
               succeedWithDetail<Item, ITaskFailure>({
                 type: 'unresolved',
