@@ -165,4 +165,7 @@ multi-process ownership, general event sourcing, and dependency DAGs.
 *Newest first. **Generated** — see the repo index; do not hand-edit inside the markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
+
+*No stream has recorded a `sourceLine` against this package yet.*
+
 <!-- END GENERATED: recent-additions -->

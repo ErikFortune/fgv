@@ -200,13 +200,35 @@ symmetry hole invisible to top-level tests — so this is not diminishing return
 | `rush rebuild` (repo-wide) | green — required, since a new Rush project changes the build graph |
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `verify-capability-docs.mjs` | router 19,158/24,000 chars, 24/24 libraries documented, 75 reflexes intact |
+| `generate-capability-feed.mjs --check` | 0 stale — **the gate this stream tripped; see below** |
 | `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
 | `verify-bundler-resolution.mjs` | 20 checked, 0 failed |
 | `verify-tarball-exports.mjs` | 26 packages, 205 manifest paths, 0 failed |
 
-A repo-wide `rush test` was **not** run: this slice adds a package nothing consumes yet, so it
-widens no existing function's accepted set and there is no downstream assertion to move. The
-repo-wide *rebuild* is the applicable gate, and it is green.
+A repo-wide `rush test` was run, because CI runs one and a red push costs a cycle. The
+argument for skipping it still holds on the merits — this slice adds a package nothing consumes
+yet, so it widens no existing function's accepted set and there is no downstream assertion to
+move — but "the applicable gate" is whichever gate CI actually runs.
+
+### The gate this stream tripped, and why the checklist did not catch it
+
+**`generate-capability-feed.mjs --check` is a CI step that no local checklist named, and it went
+red on the first two pushes.** A new package's `CAPABILITIES.md` ships empty
+`<!-- BEGIN/END GENERATED: recent-additions -->` markers; the generator considers that *stale*
+until it has written the content itself — here, the line saying no stream has recorded a
+`sourceLine` against the package yet. Running the generator and committing its output is the fix.
+
+It belongs with the change-file gate in the family of traps this repo already documents: **it is
+invisible to the entire local build/lint/test loop, and it keys off a file existing rather than a
+surface changing.** The stream brief listed four export/capability gates to run locally and this
+was not among them, which is precisely how it got missed — so the durable form of this lesson is
+"read `.github/workflows/ci.yml` and run *every* step it runs", not "remember the feed gate". The
+full list, for a later slice: `rush change --verify`, `rush install`, `rush rebuild`, `rush test`,
+`verify-capability-docs`, `generate-capability-feed --check`, `verify-esm-entrypoints`,
+`verify-bundler-resolution`, `verify-tarball-exports`.
+
+**A new package is the shape that trips it**, because an existing package's markers were filled in
+long ago. T2 and later slices will not hit it for `ts-agent-tasks` again.
 
 `rushx coverage` (the `jest --coverage` script) fails with a babel-parser error on every TS test
 file. Reproduced on the already-shipped `ts-prompt-assist`, so it is pre-existing tooling rather

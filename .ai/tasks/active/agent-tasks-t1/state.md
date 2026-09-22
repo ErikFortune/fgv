@@ -90,3 +90,26 @@ the `ISourceProjection` / `ISourceRevision` it requires stay, because the plan's
 3. `rushx coverage` (the `jest --coverage` script) fails with a babel-parser error on every TS test
    file — reproduced on the already-shipped `ts-prompt-assist`, so it is pre-existing tooling, not
    this package. `rushx test` carries the coverage gate and is green.
+
+---
+
+## 2026-09-22 — phase 2: review rounds, and one CI gate the local checklist did not name
+
+**Copilot round 1 — 7 findings, all real, all fixed** (`2c96a6ea`). Three were defects rather
+than polish: `ITaskKindHandle.encode` bypassed the details converter while `decode` ran it (a
+validate/convert symmetry hole); the capacity-status converter accepted duplicate and missing
+dimension rows; and the closeout/settlement charge computations used unchecked arithmetic, so a
+profile with large encoded bounds made the advertised *maximum* silently inexact. The last one
+changed two function signatures to `Result`-valued — done before anything consumed them, which is
+what the integration branch is for. Every thread replied to and resolved. Round 2 commissioned,
+because that profile is not diminishing returns.
+
+**CI went red on a gate no local checklist named.** `generate-capability-feed.mjs --check` failed
+on the first two pushes: a new package's `CAPABILITIES.md` ships empty generated-feed markers, and
+the generator treats that as stale until it writes the content itself. Fixed by running the
+generator and committing its output.
+
+The lesson is not "remember the feed gate" — it is **read `.github/workflows/ci.yml` and run every
+step it runs.** The brief named four export/capability scripts; CI runs nine steps. The full list
+is recorded in `result.md`. Like the change-file gate, this one is invisible to the whole local
+build/lint/test loop and keys off a file existing rather than a surface changing.
