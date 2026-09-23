@@ -39,10 +39,19 @@ lacks, so this is completing a design rather than overturning one.
 `composition?: IPromptComposition` on `IPromptResolveObservation`, populated from
 `resolved.composition`.
 
-**Your "absent otherwise, so records stay byte-identical" caveat is already guaranteed and needs
-no conditional logic.** `IResolvedPrompt.composition` is *already* `undefined` when the request
-did not ask for one (`types/trace.ts:355-360`), so a plain assignment gives you the property for
-free. Flagging it so nobody on either side implements a redundant branch.
+**Your "absent otherwise" caveat needs no conditional logic** — `IResolvedPrompt.composition` is
+*already* `undefined` when the request did not ask for one (`types/trace.ts:355-360`), so a plain
+assignment carries it. Flagging it so nobody on either side implements a redundant branch.
+
+**One precision on "byte-identical", because we told you it was free and it is free only in the
+sense you probably meant.** The shipped code is a plain `composition: resolved.composition`, so
+the in-memory success record now has a `composition` **key** whose value is `undefined` when the
+request did not ask. `JSON.stringify` drops it, so the *serialized* record is byte-identical to
+before, and `record.composition` reads `undefined` either way — that is what our test pins. But
+`Object.keys(record)` and `'composition' in record` now see the key. We are calling this out
+rather than letting you find it, because a prompt browser enumerating record fields is exactly
+the consumer that would. If you need true key-absence we would add a spread-conditional; say so
+and it is a small change.
 
 **We checked the retention question you did not raise, and it is a non-issue.**
 `PromptObservationStore` is a `RetainingRingBuffer`, so anything on the record is held N-deep —

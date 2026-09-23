@@ -144,8 +144,10 @@ which is a behaviour change outside this stream's contract.
 
 ## Gates
 
-- `rushx build`: zero warnings. `rushx lint`: clean (`fixlint` run). `rushx test`: 405/405 at
-  100% coverage, with no coverage directives added.
+- `rushx build`: zero warnings. `rushx lint`: clean (`fixlint` run). `rushx test`: **406/406** at
+  100% coverage, with no coverage directives added. (Re-verified by the orchestrator at head
+  `39e44853`: 406 passed, 0 failed. This line read 405 until then — the round-2 regression test
+  was added after it was written.)
 - `rush change --verify --target-branch origin/release`: clean. The change file is `minor`.
 - `verify-capability-docs.mjs` and `generate-capability-feed.mjs --check`: clean.
 - **Repo-wide `node common/scripts/install-run-rush.js test`:** green twice (35 operations each),
@@ -156,8 +158,11 @@ which is a behaviour change outside this stream's contract.
   (`grep` for `stability-refuted` / `cacheFindings` outside `ts-prompt-assist/src` finds nothing).
 - **Watched-it-fail:** neutering the competing-candidate fold-in (`competing.length >= 0` →
   early return) turns red exactly the four tests in "candidates that did not win this resolve"
-  that depend on it (401 of 405 pass). When first run it turned two red; the other two tests were
-  added afterwards, and the antagonist pass re-ran the neuter to get the current count. The first attempt at this
+  that depend on it (401 of 405 pass **as measured on the then-current head**; the suite is 406
+  now, and that observation has not been re-run since the round-2 regression test landed —
+  stated as observed rather than rescaled to a number nobody watched). When first run it
+  turned two red; the other two tests were added afterwards, and the antagonist pass re-ran
+  the neuter to get that count. The first attempt at this
   neuter (`if (false as boolean)`) did not compile, and a run that collided with a concurrent
   repo-wide build failed for an unrelated reason; neither was counted as a result.
 - **Layer 1, `code-reviewer`, two passes:**
