@@ -150,4 +150,106 @@ red (including on T4's own interrupted-update test). All 92 rows' patterns resol
 
 ---
 
-<!-- M1, gates, and what a later slice must decide follow -->
+## M1 — prediction manifest, then early measurements
+
+`libraries/ts-agent-tasks/perf/residentMemory.js`, beside T3's mutation matrix. Run on demand
+against the built package: `node perf/residentMemory.js [--reps 5]`. The parent measures nothing;
+every arm seeds its own corpus on a real Node root under `/tmp` (ext4) in its own child, and a
+fresh `node --expose-gc` child opens it through the production **durable** `open`. Raw data for the
+recorded run: `.ai/tasks/active/agent-tasks-t4/m1-early.json`.
+
+### The manifest, as stated before any run
+
+Frozen in the harness's `MANIFEST` constant; copied here verbatim in substance.
+
+- **Sample method.** Post-GC `heapUsed` after four forced `gc()` passes, never inside a measured
+  open/rebuild; peaks are `heapUsed` sampled at every record read through an instrumented FileTree
+  proxy — a **sampled** high-water, not an allocator maximum — plus the child's `maxRSS`. Five fresh
+  processes per arm.
+- **Fixture profile.** retained 25,000; non-archived 11,000; updates 100,000; audience links and
+  acknowledgement ids 5,000,000; operations 100,000; logical bytes 64 GiB; resident payload 8 GiB;
+  everything else default — declared because the default admits neither the cohorts nor, through
+  closeout reservations, more than a few hundred non-archived tasks (see *Findings*).
+- **Fixture validity.** 16 MiB of independently generated random hex allocates ≥ 80% of its payload
+  and releases 80–120% of that (1 MiB noise); otherwise stop.
+- **Archived growth.** 100 fixed tasks; 0 / 1,000 / 10,000 archived children of one parent, each
+  with a 128-byte source key and ~8 KiB of unique presentation. Entry counts linear (projections =
+  100 + n, children = n, sources = n). At 1,000 → 10,000 the minimal projection's post-GC increment
+  is **≤ 25%** of the full-summary-retaining control's, and **≥ 1 MiB** (not flat).
+- **Non-archived terminal.** 100 fixed + 100 / 500 / 900 terminal tasks with ~6 KiB of unique
+  presentation each. 100 → 900 grows by **≥ 50%** of the added presentation (2 MiB noise); archiving
+  all of them releases **≥ 50%** of their presentation (2 MiB noise); identities remain.
+- **Cold-history peak.** 100 fixed + ≥ 64 MiB of archived cold details. Sampled peak above settled,
+  cold open and warm rebuild, **≤ 25% of cold bytes + 16 MiB**; an all-record-buffering control
+  exceeds that bound.
+
+**Amendments, each dated in the manifest, none to a threshold:** (1) a one-repetition shakeout
+found the peak fixture at 66,000,000 bytes, under its own 64 MiB precondition — the count went from
+1,100 to 1,200 tasks; (2) after the first recorded run, the post-close residual was inflated by the
+harness still holding the repository through `open`'s result — dropped, all arms re-run; (3) after
+the second, settled heap after rebuild sat ~6.4 MiB above settled-after-open because the harness's
+inspection snapshot referenced the old generation — dropped, all arms re-run. **All three recorded
+runs passed every prediction**; the numbers below are the third, on `31914e3a` (source identical to
+the reviewed code; later commits touch only the harness and docs).
+
+### Early measurements
+
+Node v22.22.2, V8 12.4.254.21, Linux 6.18 x64, ext4 `/tmp`. Medians of five, `[min–max]`, MiB.
+
+| cohort | measured | prediction | |
+|---|---|---|---|
+| fixture | allocated 16.07 of 16; released 99.8% (all five identical) | ≥ 80%; 80–120% | **held** |
+| archived, post-GC heap above baseline | minimal 1.02 / 2.55 / 15.32 at 0 / 1k / 10k; control 1.13 / 11.49 / 103.61 | — | |
+| archived, 1k → 10k increment | minimal **+12.76**, control **+92.12**, ratio **0.139** | ≤ 0.25 and ≥ 1 MiB | **held** |
+| archived, entry counts at 10k | projections 10,100; summaries 100; children 10,000; sources 10,000; hot-query task reads 0 | linear | **held** |
+| terminal, post-GC heap | 1.85 / 5.09 / 8.16 at 100 / 500 / 900 | — | |
+| terminal, 100 → 900 growth | **6.31** for 4.58 of added presentation | ≥ 50% − 2 MiB | **held** |
+| terminal, archiving 900 releases | **5.36** of 5.15 presentation; projections kept, summaries back to 100 | ≥ 50% − 2 MiB | **held** |
+| cold peak, 68.66 MiB cold details | open **16.37** [16.35–16.42] above settled; rebuild **17.88** [17.78–17.89]; bound 33.17 | ≤ bound | **held** |
+| cold peak, buffering control | **76.68** [76.33–76.87] above settled | > bound | **held** |
+
+Descriptive, not predicted: the minimal archived projection costs **≈ 1.45 KB per archived task**
+(12.76 MiB / 9,000) — T3's projection object, its fingerprint string, index memberships, a child-set
+entry and the 128-byte canonical source key. At 10k archived the cold open's sampled peak sits
+20.5–20.9 MiB above settled and a warm rebuild's 32.0–32.4 MiB: records are parsed one at a time,
+so the peak is allocation that no GC has yet reclaimed, not live records — sampled heap cannot
+distinguish the two, and M1's later peak cohorts should add an allocation-profile arm. Warm
+rebuild settles to within 0.04 MiB of the post-open heap (old generation released). Post-close
+residual 0.7–1.1 MiB. Process `maxRSS` 110–112 MiB for the cold-peak arm vs 170–179 MiB for the
+buffering control.
+
+**What this does not qualify:** acknowledgement history, per-subscription records, receipt pins and
+reservations under load — none exist until T7/T8, which is when M1 repeats in full. No production
+profile is qualified by this run.
+
+---
+
+## What a later slice must decide
+
+1. **The default capacity profile admits 146 concurrent non-archived tasks, not 1,000** (T1/T3
+   arithmetic → T8/M1). Each registration's closeout claim reserves 7 × 64 KiB = 448 KiB of
+   `resident-payload-bytes` (64 MiB limit); `audience-links`/`acknowledgement-ids` bind at 892
+   and `logical-bytes` at 496. Measured: the 147th registration on `defaultTaskCapacityProfile` is
+   refused `backpressure`. Either the reservation (schema maxima × 7 categories) or the defaults
+   must move before the profile is advertised; T4 changed neither.
+2. **T7 — the consumer pass's join.** The staged rebuild has its consumer pass in place (counted,
+   ordered, header-only). T7 must subtract exact acknowledgements/dispositions from the owed
+   descriptors there, keep satisfied-but-pinned payloads, and own the "unpruned-but-satisfied" and
+   "live pins" tests. Until then every audience link on a retained update is listed as owed.
+3. **T5 — views.** Repository queries are trusted host APIs. `IBoundTaskView` must bind cursors to
+   the access identity and policy epoch (the handle table has room: a descriptor is any bounded
+   JSON), filter after indexed selection and before inclusion, and never leak denied counts.
+4. **T6 — source reconciliation work index.** T4 indexes source *identity* (binding → task, archived
+   included) and refuses duplicate bindings. A per-source enumeration of reconciliation work is
+   T6's to add, beside it.
+5. **Read-concurrency classification.** The gate refuses `conflict`/`safe`, not `backpressure`,
+   because `ITaskFailure` couples `backpressure` to a capacity dimension. If hosts need to
+   distinguish working-space refusal from a concurrent writer, that is a `TaskFailureCode` or
+   `ICapacityFailure` revision for whoever next owns the failure vocabulary.
+6. **M1 peak method.** Sampled-heap peaks include unreclaimed garbage; the full M1 run after T7/T8
+   should pair them with an allocation-profile or `--max-old-space-size` arm before a peak bound is
+   used to size a host.
+
+---
+
+<!-- gates follow -->
