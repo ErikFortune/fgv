@@ -683,6 +683,23 @@ describe('analyzePromptCacheStability', () => {
         expect(refutations(findings)[0].detail).toMatch(/^candidate 0:/);
       });
 
+      test("claims the winners' level, not 'frozen', when the winners already lowered it", () => {
+        const findings = analyzePromptCacheStability({
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map(),
+          candidateMatches: [match(0)],
+          resourceBindingResolutions: [],
+          slots: [],
+          candidates: [candidate({ persona: 'pirate' }), candidate({ tone: 'formal' })],
+          qualifiers
+        });
+        expect(refutations(findings).map((f) => [f.claimed?.stability, f.downgradedTo])).toEqual([
+          ['frozen', 'per-conversation'],
+          ['per-conversation', 'per-request']
+        ]);
+        expect(refutations(findings)[1].detail).toMatch(/so the body is not 'per-conversation'$/);
+      });
+
       test('a matchAsDefault winner is folded in like a losing candidate', () => {
         const findings = analyzePromptCacheStability({
           sections: TEMPLATE_THEN_SLOT,

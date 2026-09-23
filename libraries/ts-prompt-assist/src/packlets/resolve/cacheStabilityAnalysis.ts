@@ -483,7 +483,9 @@ function checkCompetingCandidates(
         .join(', ')}: did not match this resolve on their conditions, but ` +
       `are conditioned on ${describeRefutingConditioning(conditioning, winnersStability)} — a change there ` +
       `could select a different body, so the body is not '${winnersStability}'`,
-    claimed: { stability: 'frozen', origin: 'derived' },
+    // The level this finding contradicts is the one the winners already established — which a
+    // per-candidate finding above may already have lowered from `'frozen'` — not `'frozen'` itself.
+    claimed: { stability: winnersStability, origin: 'derived' },
     downgradedTo: conditioning.stability
   });
 }
