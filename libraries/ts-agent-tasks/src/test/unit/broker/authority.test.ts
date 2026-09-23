@@ -620,6 +620,83 @@ describe('replays are authorized like the operation, and confirmed in the writer
     expect(await h.writer.reassign(reassign)).toFailWith(/task t changed after the operation was authorized/);
   });
 
+  test('a same-key operation that committed while this one waited is re-read: hidden by then, it is not found', async () => {
+    const h = await brokerHarness({ scopes: [alpha, beta] });
+    const both = bindWriter(h, { scopes: [alpha, beta] });
+    await both.createTracked({ taskId: tid('t'), operationId: op(), title: 't' });
+    const alphaOnly = bindWriter(h, { scopes: [alpha] });
+    const reassign = { taskId: tid('t'), operationId: op(), expectedRevision: rev(1), responsibility: ada };
+    const start = {
+      taskId: tid('t'),
+      operationId: op(),
+      expectedRevision: rev(2),
+      command: 'start',
+      parameters: {}
+    };
+    const policy = h.policy;
+    const commitFirstThenHide = (action: string, first: () => Promise<unknown>, revision: number): void => {
+      policy.afterDecision = async (request) => {
+        if (request.action === action) {
+          policy.afterDecision = undefined;
+          await first();
+          await both.changeScopes({
+            taskId: tid('t'),
+            operationId: op(),
+            expectedRevision: rev(revision),
+            remove: [alpha]
+          });
+        }
+      };
+    };
+
+    // Catalog: the first reassign commits and alpha is removed while the second waits.
+    commitFirstThenHide('reassign', () => alphaOnly.reassign(reassign), 2);
+    expect(await alphaOnly.reassign(reassign)).toFailWith(/^task t: not found or not visible$/);
+
+    // Command: restore alpha, then the same shape through execute.
+    (
+      await both.changeScopes({ taskId: tid('t'), operationId: op(), expectedRevision: rev(3), add: [alpha] })
+    ).orThrow();
+    const started = { ...start, expectedRevision: rev(4) };
+    commitFirstThenHide('command', () => alphaOnly.execute(started), 5);
+    expect(await alphaOnly.execute(started)).toFailWith(/^task t: not found or not visible$/);
+  });
+
+  test('a command or creation replay whose task changed after authorization withholds the receipt', async () => {
+    const h = await brokerHarness();
+    const create = { taskId: tid('t'), operationId: op(), title: 't' };
+    (await h.writer.createTracked(create)).orThrow();
+    const start = {
+      taskId: tid('t'),
+      operationId: op(),
+      expectedRevision: rev(1),
+      command: 'start',
+      parameters: {}
+    };
+    (await h.writer.execute(start)).orThrow();
+    const other = bindWriter(h, { principal: 'bob' });
+    const policy = h.policy;
+    const moveDuring = (action: string, revision: number): void => {
+      policy.afterDecision = async (request) => {
+        if (request.action === action) {
+          policy.afterDecision = undefined;
+          await other.updateTracked({
+            taskId: tid('t'),
+            operationId: op(),
+            expectedRevision: rev(revision),
+            patch: { title: `moved ${revision}` }
+          });
+        }
+      };
+    };
+    moveDuring('command', 2);
+    expect(await h.writer.execute(start)).toFailWith(/task t changed after the operation was authorized/);
+    moveDuring('create', 3);
+    expect(await h.writer.createTracked(create)).toFailWith(
+      /task t changed after the operation was authorized/
+    );
+  });
+
   test('a policy change during an inspection fails it, resolved or unresolved', async () => {
     const h = await brokerHarness();
     await track(h.writer, 't');

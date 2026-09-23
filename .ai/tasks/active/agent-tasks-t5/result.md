@@ -257,4 +257,12 @@ creation replays; a record change during it does too; a policy change during an 
 it. Revert checks: removing the catalog confirmation (2 red), the access context (1), the command
 confirmation (1), the inspection recheck (1). Package: 1,149 tests, 100% on all four metrics.
 
+Follow-up pinning tests (before the thread replies were resolved). The first replies named tests that
+existed only in part, so two were added: a same-key operation that committed while this one waited, with
+the task then hidden from the caller, is not found on both the catalog and command paths (turns red if the
+catalog path replays the pre-writer snapshot instead of restarting); and command and creation replays whose
+task changed after authorization withhold the receipt (turns red with `confirmUnchanged`'s revision check
+removed). The target-restricted replay is pinned only in the allow direction: a different target under the
+same key is an idempotency conflict, rejected before the policy is consulted. Package: 1,151 tests, 100%.
+
 The finding profile is still substantive (real disclosure paths), so the loop continues.
