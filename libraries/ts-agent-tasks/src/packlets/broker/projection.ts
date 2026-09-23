@@ -57,7 +57,8 @@ function _failed<T>(what: string, message: string): TaskResult<T> {
  * @remarks
  * The projector's output is validated, not trusted: it must convert strictly to the projected
  * shape — which has no `binding` member, so an extra property fails — and describe the same task
- * at the same revision. Any failure, including a throw, fails the call.
+ * at the same revision. Any failure, including a throw, fails the call. The projector is given a
+ * copy of the envelope, never the broker's own.
  * @internal
  */
 export function projectEnvelope(
@@ -66,7 +67,11 @@ export function projectEnvelope(
   envelope: ITaskEnvelope
 ): TaskResult<IProjectedTaskEnvelope> {
   const what: string = `task ${envelope.id}`;
-  const projected: Result<IProjectedTaskEnvelope> = captureResult(() => projector.envelope(envelope))
+  // The projector is host code and the envelope may be the resident index's own: it is handed a
+  // copy, so a projector that writes to its input cannot change what the broker holds.
+  const projected: Result<IProjectedTaskEnvelope> = captureResult(() =>
+    projector.envelope(structuredClone(envelope))
+  )
     .onSuccess((inner) => inner)
     .onSuccess((value) => converters.projectedEnvelope.convert(value));
   if (projected.isFailure()) {
@@ -97,9 +102,9 @@ export function projectDetails(
   if (detailsOf === undefined) {
     return ok(undefined);
   }
-  const projected: Result<JsonValue> = captureResult(() => detailsOf.call(projector, snapshot)).onSuccess(
-    (inner) => inner
-  );
+  const projected: Result<JsonValue> = captureResult(() =>
+    detailsOf.call(projector, structuredClone(snapshot))
+  ).onSuccess((inner) => inner);
   return projected.isSuccess()
     ? ok<JsonValue | undefined>(projected.value)
     : _failed(`task ${snapshot.envelope.id} details`, projected.message);

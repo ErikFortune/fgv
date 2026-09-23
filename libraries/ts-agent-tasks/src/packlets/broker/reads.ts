@@ -10,6 +10,7 @@ import {
   IBoundTaskQuery,
   IProjectedTaskSummary,
   IProjectedUnresolvedReference,
+  ITaskCommitRecord,
   ITaskPage,
   ITaskSelection,
   PageCursor,
@@ -21,7 +22,7 @@ import {
 import { AccessContext, AccessSubject, subjectOf } from './access';
 import { readExisting } from './catalogMutation';
 import { isNativeKind } from './catalogOperations';
-import { BrokerCore } from './core';
+import { BrokerCore, revisionOf } from './core';
 import { changedSinceAuthorized, notFound, ok, propagate, taskFailure } from './failures';
 import { projectDetails, projectEnvelope, projectReference } from './projection';
 
@@ -160,6 +161,10 @@ export async function inspectView(
   if (found === undefined) {
     return notFound(id.value);
   }
+  // The typed read is a second read: it is returned only if it is the record that was authorized.
+  if (!_isAuthorizedRecord(found, record.value)) {
+    return changedSinceAuthorized(`task ${id.value}`);
+  }
   const inspection: TaskResult<TaskInspection> =
     found.state === 'unresolved'
       ? projectReference(core.converters.broker, found.reference).onSuccess((reference) =>
@@ -171,6 +176,17 @@ export async function inspectView(
     return changedSinceAuthorized('the authorization policy');
   }
   return inspection;
+}
+
+/**
+ * Whether a typed read describes the committed record that was authorized: the same registration
+ * state at the same semantic revision. Every change that bears on authorization — re-scoping,
+ * archiving, an unresolved registration resolving — moves one or the other.
+ */
+function _isAuthorizedRecord(found: TaskRegistrationResult, authorized: ITaskCommitRecord): boolean {
+  return found.state === 'resolved'
+    ? authorized.recordType === 'resolved' && found.task.envelope.revision === revisionOf(authorized)
+    : authorized.recordType === 'unresolved' && found.reference.revision === revisionOf(authorized);
 }
 
 /** The projected inspection of a resolved task, with the commands this principal may run now. */

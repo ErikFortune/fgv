@@ -75,6 +75,12 @@ export interface ICatalogMutation<TReceipt extends ITaskMutationResult> {
    * authorized for the same action in its role, and re-verified inside the writer.
    */
   readonly related?: (record: IResolvedTaskCommitRecord) => Promise<TaskResult<ReadonlyArray<IRelatedTask>>>;
+  /**
+   * The other tasks the request itself names, read and authorized in their roles again when the
+   * operation replays — a receipt is returned only while its principal still holds every grant
+   * the request relied on. Confirmed unchanged inside the writer with the subject.
+   */
+  readonly replayRelated?: () => Promise<TaskResult<ReadonlyArray<IRelatedTask>>>;
   /** Decides the change inside the writer, from the current subject and related records. */
   readonly evaluate: (
     current: IResolvedTaskCommitRecord,
@@ -154,8 +160,9 @@ export async function replayCatalog<TReceipt>(
 
 /**
  * Returns a replayed receipt only if nothing it was authorized against has moved: inside the
- * writer, the policy epoch and the record's semantic revision must be what the replay was
- * authorized under. A replay is private data, so it gets the same revalidation a commit does.
+ * writer, the policy epoch, the record's semantic revision, and that of every related task the
+ * replay authorized, must be what the replay was authorized under. A replay is private data, so
+ * it gets the same revalidation a commit does.
  * @internal
  */
 export async function confirmUnchanged<T>(
@@ -165,19 +172,25 @@ export async function confirmUnchanged<T>(
   id: TaskId,
   record: ITaskCommitRecord,
   value: T,
-  operationId: IStoredTaskOperation['operationId']
+  operationId: IStoredTaskOperation['operationId'],
+  related: ReadonlyArray<IRelatedTask> = []
 ): Promise<TaskResult<T>> {
   return core.gated(async (writer) => {
     const now = ctx.epoch();
     if (now.isFailure() || now.value !== epoch) {
       return changedSinceAuthorized<T>('the authorization policy', operationId);
     }
-    const again = await writer.readCommit(id);
-    if (again.isFailure()) {
-      return propagate<T>(again);
-    }
-    if (again.value === undefined || revisionOf(again.value) !== revisionOf(record)) {
-      return changedSinceAuthorized<T>(`task ${id}`, operationId);
+    for (const [taskId, authorized, what] of [
+      [id, record, `task ${id}`] as const,
+      ...related.map((task) => [task.id, task.record, `a task related to ${id}`] as const)
+    ]) {
+      const again = await writer.readCommit(taskId);
+      if (again.isFailure()) {
+        return propagate<T>(again);
+      }
+      if (again.value === undefined || revisionOf(again.value) !== revisionOf(authorized)) {
+        return changedSinceAuthorized<T>(what, operationId);
+      }
     }
     return ok(value);
   });
@@ -249,7 +262,8 @@ function _stale<T>(identity: ITaskMutationIdentity, found: ITaskCommitRecord | u
  *
  * 1. read the subject and capture the policy epoch, before any question is put to the policy;
  * 2. not visible → the same failure as a foreign id;
- * 3. an operation already recorded under this id replays (re-authorized) or conflicts;
+ * 3. an operation already recorded under this id replays — re-authorized, with every task its
+ *    request names, and confirmed inside the writer — or conflicts;
  * 4. authorize the action on the subject — before anything action-specific is disclosed;
  * 5. unresolved and archived subjects take no catalog change; operation-specific admission; a
  *    stale expected revision is refused;
@@ -285,9 +299,13 @@ export async function runCatalogMutation<TReceipt extends ITaskMutationResult>(
   const replayed: IStoredTaskOperation | undefined = storedOperation(record, operationId);
   if (replayed !== undefined) {
     const receipt = await replayCatalog(ctx, subject, replayed, mutation);
-    return receipt.isFailure()
-      ? receipt
-      : confirmUnchanged(core, ctx, epoch.value, taskId, record, receipt.value, operationId);
+    if (receipt.isFailure()) {
+      return receipt;
+    }
+    const named = mutation.replayRelated !== undefined ? await mutation.replayRelated() : ok([]);
+    return named.isFailure()
+      ? propagate(named)
+      : confirmUnchanged(core, ctx, epoch.value, taskId, record, receipt.value, operationId, named.value);
   }
   // Authority is decided before any mutation-specific fact about the task is disclosed: a
   // principal that may read but not perform this action learns nothing from the refusal.

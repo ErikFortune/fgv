@@ -107,12 +107,15 @@ export class AccessContext {
   }
 
   /**
-   * Asks the host policy. Fails closed: a check that fails, throws, rejects or answers anything
-   * but `true` is a denial. A failing policy is reported to the host logger, never to the caller.
+   * Asks the host policy, with a copy of the request. Fails closed: a check that fails, throws,
+   * rejects or answers anything but `true` is a denial. A failing policy is reported to the host
+   * logger, never to the caller.
    */
   public async allows(request: ITaskAccessRequest): Promise<boolean> {
+    // The policy is host code: it is handed a copy, so nothing it does to the request can reach
+    // the broker's resident state.
     const answer: Result<boolean> = (
-      await captureAsyncResult(() => this._authorization.check(request))
+      await captureAsyncResult(() => this._authorization.check(structuredClone(request)))
     ).onSuccess((inner) => inner);
     if (answer.isFailure()) {
       this._logger.warn(

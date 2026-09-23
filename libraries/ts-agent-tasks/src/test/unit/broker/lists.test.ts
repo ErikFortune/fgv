@@ -8,6 +8,7 @@ import {
   FileTreeTaskRepository,
   ITaskMutationResult,
   ITaskOutcome,
+  OperationId,
   TaskId,
   TaskResult,
   checkListCompletion
@@ -22,6 +23,7 @@ import {
   list,
   op,
   registerVendor,
+  rev,
   revisionOf,
   succeedTask,
   tid,
@@ -155,6 +157,28 @@ describe('the completion pump', () => {
     });
     expect(await candidates(h)).toEqual([]);
     expect(await pump(h)).toEqual([]);
+  });
+
+  test("a caller operation already holding the pump's key does not block the list: the pump takes the next key", async () => {
+    await succeedTask(h, h.writer, 'a');
+    await succeedTask(h, h.writer, 'b');
+    // An unchanged reassignment records its id without moving the list's revision — here, the id
+    // the pump derives from that revision, and then the next in its sequence.
+    for (const claimed of ['complete-list-r1', 'complete-list-r1-1']) {
+      expect(
+        await h.writer.reassign({
+          taskId: tid('l'),
+          operationId: claimed as OperationId,
+          expectedRevision: rev(1),
+          responsibility: 'unassigned'
+        })
+      ).toSucceedWith(expect.objectContaining({ disposition: 'unchanged' }));
+    }
+    const report = (await h.writer.reconcileListCompletions({ limit: 10 })).orThrow();
+    expect(report.completed).toEqual([
+      expect.objectContaining({ taskId: 'l', operationId: 'complete-list-r1-2', disposition: 'changed' })
+    ]);
+    expect(await status(h, 'l')).toBe('succeeded');
   });
 
   test('completing a list makes its parent list eligible in turn', async () => {

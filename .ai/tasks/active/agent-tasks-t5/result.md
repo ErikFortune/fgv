@@ -266,3 +266,16 @@ removed). The target-restricted replay is pinned only in the allow direction: a 
 same key is an idempotency conflict, rejected before the policy is consulted. Package: 1,151 tests, 100%.
 
 The finding profile is still substantive (real disclosure paths), so the loop continues.
+
+### Copilot round 3 — 5 high, all real; three classes
+
+| finding | fix |
+|---|---|
+| a `reparent` replay re-authorized the subject only, never the parent it moved to (2 findings: catalog and creation) | a catalog mutation declares `replayRelated`, the tasks its **request** names; a replay reads and authorizes each in its role and `confirmUnchanged` re-reads them in the writer with the subject. `reparent` names the new parent; a creation replay authorizes `parentId` in the `parent` role. The previous parent of a move is in neither the request nor, after the commit, the record, and the receipt says nothing about it, so it is not re-authorized. This is a stated limit, not an oversight |
+| the pump's key `complete-list-r<rev>` could already hold a caller's operation (an unchanged operation records its id without moving the revision), so the list was skipped on every pass forever | the key is the first free one in a fixed sequence (`…-r<rev>`, `…-r<rev>-1`, …), bounded by the record's operations. A concurrent pump that commits the same key first is answered by the pipeline's in-writer restart and replay |
+| the projector (and, by the same reasoning, the policy) was handed the resident index's own objects, so host code could mutate broker state without a commit | the policy receives a `structuredClone` of its request, and the envelope and details projectors a clone of their input |
+| `inspect` authorized one read and returned a second (`repository.read`), which could be a newer record | the typed read is returned only if it is the authorized record, meaning the same registration state at the same semantic revision; otherwise `conflict`/`safe` |
+
+Tests: replays of a move are withheld when the new parent is hidden or `reparent` on it is denied; the same holds for a creation replay's parent; a move to root replays without a parent; a new parent changed during the replay's authorization withholds the receipt; two claimed keys, then the pump completes the list under `complete-list-r1-2`; a vandal projector and policy leave the index and the record intact; a task changed between authorization and read is not inspected. Revert checks: request-named parents on catalog replay (2 red), creation parent (1), pump key (1), projector and policy copies together (1) and the policy copy alone (1), inspect identity (1). Package: 1,157 tests, 100% on all four metrics, lint clean.
+
+Round 3 is still substantive (the pump-key finding is a liveness bug; the others are disclosure or integrity paths), so the loop continues to round 4.

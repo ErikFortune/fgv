@@ -332,6 +332,15 @@ export async function reparent(
       }
       return ok(related);
     },
+    // A replay re-authorizes the parent the request names. The previous parent is not in the
+    // request and, once the move is committed, not in the record either; the receipt says nothing
+    // about it.
+    replayRelated: async (): Promise<TaskResult<ReadonlyArray<IRelatedTask>>> =>
+      target === undefined
+        ? ok([])
+        : (await readParent(core, ctx, request.taskId, target, 'new-parent', 'reparent')).onSuccess(
+            (parent) => ok([parent])
+          ),
     evaluate: async (current, related): Promise<TaskResult<CatalogChange>> => {
       const envelope: ITaskEnvelope = current.task.envelope;
       if (envelope.parentId === target) {

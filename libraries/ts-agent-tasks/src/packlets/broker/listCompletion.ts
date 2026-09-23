@@ -8,6 +8,7 @@ import {
   IListCompletionReport,
   IListCompletionRequest,
   IResolvedTaskCommitRecord,
+  ITaskCommitRecord,
   ITaskMutationResult,
   OperationId,
   TaskFailureCode,
@@ -18,7 +19,7 @@ import {
 import { AccessContext } from './access';
 import { readExisting, runCatalogMutation } from './catalogMutation';
 import { completion, requireOpen } from './catalogOperations';
-import { BrokerCore, revisionOf } from './core';
+import { BrokerCore, revisionOf, storedOperation } from './core';
 import { codeOf, ok, propagate, taskFailure } from './failures';
 
 /**
@@ -47,11 +48,23 @@ function _automatic(record: IResolvedTaskCommitRecord): TaskResult<true> {
 }
 
 /**
- * The idempotency key of an automatic completion: the list and the revision it became eligible
- * at. A retry at the same revision replays; a list that has moved gets a new key.
+ * The idempotency key of an automatic completion: derived from the revision the list became
+ * eligible at, so a list that has moved gets a new key.
+ *
+ * @remarks
+ * Operation ids are caller-chosen, and an operation that changes nothing records its id without
+ * moving the revision, so the derived key may already hold another operation. The key is then
+ * the next free one in a fixed sequence. Each collision is a distinct stored operation, so the
+ * search is bounded by the record's operations. A concurrent pump that commits under the same key
+ * first is answered by the pipeline's own replay.
  */
-function _completionKey(revision: TaskRevision): OperationId {
-  return `complete-list-r${revision}` as OperationId;
+function _completionKey(record: ITaskCommitRecord): OperationId {
+  const base: string = `complete-list-r${revisionOf(record)}`;
+  let key: string = base;
+  for (let attempt = 1; storedOperation(record, key as OperationId) !== undefined; attempt++) {
+    key = `${base}-${attempt}`;
+  }
+  return key as OperationId;
 }
 
 /**
@@ -107,7 +120,8 @@ async function _completeOne(
     return propagate(read);
   }
   const revision: TaskRevision = revisionOf(read.value);
-  const identity = { taskId: id, operationId: _completionKey(revision), expectedRevision: revision };
+  const operationId: OperationId = _completionKey(read.value);
+  const identity = { taskId: id, operationId, expectedRevision: revision };
   return runCatalogMutation(core, ctx, {
     action: 'complete-list',
     operation: 'complete-list',

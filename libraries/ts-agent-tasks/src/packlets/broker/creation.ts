@@ -157,10 +157,20 @@ export async function createNative(
     if (!(await ctx.mayCreate(access))) {
       return denied(taskId, 'create', operationId);
     }
+    // The parent the request names is authorized again in its role, as the creation was.
+    const named =
+      request.parentId !== undefined
+        ? (await readParent(core, ctx, taskId, request.parentId, 'parent', 'create')).onSuccess((parent) =>
+            ok([parent])
+          )
+        : ok<ReadonlyArray<IRelatedTask>>([]);
+    if (named.isFailure()) {
+      return propagate(named);
+    }
     const receipt = _committedReceipt(core, record);
     return receipt.isFailure()
       ? receipt
-      : confirmUnchanged(core, ctx, epoch.value, taskId, record, receipt.value, operationId);
+      : confirmUnchanged(core, ctx, epoch.value, taskId, record, receipt.value, operationId, named.value);
   }
   if (!(await ctx.mayCreate(access))) {
     return denied(taskId, 'create', operationId);

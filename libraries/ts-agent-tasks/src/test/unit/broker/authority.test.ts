@@ -711,6 +711,133 @@ describe('replays are authorized like the operation, and confirmed in the writer
   });
 });
 
+describe('replays re-authorize the tasks their request names', () => {
+  test('a reparent replay re-authorizes the new parent: hidden or not permitted, no receipt', async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 'p');
+    await track(h.writer, 't');
+    const move = {
+      taskId: tid('t'),
+      operationId: op(),
+      expectedRevision: rev(1),
+      parent: { taskId: tid('p') }
+    };
+    const first = (await h.writer.reparent(move)).orThrow();
+    h.policy.hide('p');
+    expect(await h.writer.reparent(move)).toFailWith(/^task p: not found or not visible$/);
+    h.policy.deny.length = 0;
+    h.policy.denyOn('reparent', 'p');
+    expect(await h.writer.reparent(move)).toFailWith(/^task p: not found or not visible$/);
+    h.policy.deny.length = 0;
+    expect(await h.writer.reparent(move)).toSucceedWith(first);
+    // A move to the root names no parent: its replay authorizes the subject alone.
+    const toRoot = { taskId: tid('t'), operationId: op(), expectedRevision: rev(2), parent: 'root' as const };
+    const moved = (await h.writer.reparent(toRoot)).orThrow();
+    h.policy.hide('p');
+    expect(await h.writer.reparent(toRoot)).toSucceedWith(moved);
+  });
+
+  test('a reparent replay whose new parent changed after authorization withholds the receipt', async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 'p');
+    await track(h.writer, 't');
+    const move = {
+      taskId: tid('t'),
+      operationId: op(),
+      expectedRevision: rev(1),
+      parent: { taskId: tid('p') }
+    };
+    (await h.writer.reparent(move)).orThrow();
+    const other = bindWriter(h, { principal: 'bob' });
+    const policy = h.policy;
+    policy.afterDecision = async (request) => {
+      if (request.action === 'reparent' && request.role === 'new-parent') {
+        policy.afterDecision = undefined;
+        await other.updateTracked({
+          taskId: tid('p'),
+          operationId: op(),
+          expectedRevision: rev(1),
+          patch: { title: 'moved' }
+        });
+      }
+    };
+    expect(await h.writer.reparent(move)).toFailWith(
+      /a task related to t changed after the operation was authorized/
+    );
+  });
+
+  test('a creation replay re-authorizes its parent: hidden or not permitted, no receipt', async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 'p');
+    const create = { taskId: tid('c'), operationId: op(), title: 'c', parentId: tid('p') };
+    const first = (await h.writer.createTracked(create)).orThrow();
+    h.policy.hide('p');
+    expect(await h.writer.createTracked(create)).toFailWith(/^task p: not found or not visible$/);
+    h.policy.deny.length = 0;
+    h.policy.denyOn('create', 'p');
+    expect(await h.writer.createTracked(create)).toFailWith(/^task p: not found or not visible$/);
+    h.policy.deny.length = 0;
+    expect(await h.writer.createTracked(create)).toSucceedWith(first);
+  });
+});
+
+describe('host code is handed copies, never the broker state', () => {
+  test('a projector and a policy that write to their inputs change nothing the broker holds', async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 't');
+    const vandal: ITaskProjector = {
+      envelope: (envelope) => {
+        (envelope as { title: string }).title = 'defaced';
+        (envelope.scopes as unknown as unknown[]).length = 0;
+        return defaultTaskProjector.envelope(envelope);
+      },
+      details: (snapshot) => {
+        (snapshot.envelope as { title: string }).title = 'defaced';
+        return succeed({});
+      }
+    };
+    const policy = h.policy;
+    policy.afterDecision = (request) => {
+      if (request.task !== undefined) {
+        (request.task.envelope as { title: string }).title = 'defaced by policy';
+      }
+    };
+    const writer = bindWriter(h, { projector: vandal });
+    expect(await writer.query({})).toSucceed();
+    expect(await writer.inspect(tid('t'))).toSucceed();
+    policy.afterDecision = undefined;
+    // The index and the record are as committed: title intact, scopes intact, still visible.
+    expect(await h.writer.query({})).toSucceedAndSatisfy((page) => {
+      expect(page.items.map((i) => [i.envelope.title, i.envelope.scopes])).toEqual([['task t', [alpha]]]);
+    });
+    expect(await h.writer.inspect(tid('t'))).toSucceedAndSatisfy((inspection) => {
+      expect(inspection.state === 'resolved' && inspection.envelope.title).toBe('task t');
+    });
+  });
+});
+
+describe('inspect returns only the record it authorized', () => {
+  test('a task changed between its authorization and its read is not returned', async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 't');
+    const other = bindWriter(h, { principal: 'bob' });
+    const policy = h.policy;
+    policy.afterDecision = async (request) => {
+      if (request.action === 'read' && request.task?.envelope.id === tid('t')) {
+        policy.afterDecision = undefined;
+        await other.updateTracked({
+          taskId: tid('t'),
+          operationId: op(),
+          expectedRevision: rev(1),
+          patch: { title: 'moved' }
+        });
+      }
+    };
+    expect(await h.writer.inspect(tid('t'))).toFailWith(/task t changed after the operation was authorized/);
+    expect(await h.writer.inspect(tid('t'))).toSucceed();
+  });
+});
+
 describe('view cursors', () => {
   let h: IBrokerHarness;
   let cursor: PageCursor;
