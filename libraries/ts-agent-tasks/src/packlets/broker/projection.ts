@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { JsonValue } from '@fgv/ts-json-base';
+import { Converters as JsonConverters, JsonValue } from '@fgv/ts-json-base';
 import { Result, captureResult, succeed } from '@fgv/ts-utils';
 import { IBrokerConverters } from '../converters';
 import { withEnvelopeFields } from '../implementations';
@@ -102,9 +102,12 @@ export function projectDetails(
   if (detailsOf === undefined) {
     return ok(undefined);
   }
+  // Validated, not trusted: a host projection that is not JSON fails closed, as an envelope does.
   const projected: Result<JsonValue> = captureResult(() =>
     detailsOf.call(projector, structuredClone(snapshot))
-  ).onSuccess((inner) => inner);
+  )
+    .onSuccess((inner) => inner)
+    .onSuccess((value) => JsonConverters.jsonValue.convert(value));
   return projected.isSuccess()
     ? ok<JsonValue | undefined>(projected.value)
     : _failed(`task ${snapshot.envelope.id} details`, projected.message);

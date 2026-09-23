@@ -133,7 +133,9 @@ export async function queryView(
  * Visibility is decided before anything else is read: a hidden task and a foreign id fail
  * identically. An unregistered kind then fails rather than being presented as a typed task.
  * Details appear only through the host's details projection, and the command list is evaluated
- * against the current lifecycle and the current policy for this call.
+ * against the current lifecycle and the current policy for this call. The record is read again
+ * at the end: an inspection whose task changed while it was being answered fails rather than
+ * returning a snapshot nothing authorized.
  * @internal
  */
 export async function inspectView(
@@ -177,6 +179,19 @@ export async function inspectView(
           ok<TaskInspection>({ state: 'unresolved', reference })
         )
       : await _inspectResolved(core, ctx, subject, found);
+  // Everything above was answered about the authorized record: if a commit landed while the
+  // projector or the command checks ran, the answer describes a task that no longer exists as such.
+  const again = await core.repository.readCommit(id.value);
+  if (again.isFailure()) {
+    return propagate(again);
+  }
+  if (
+    again.value === undefined ||
+    again.value.recordType !== record.value.recordType ||
+    revisionOf(again.value) !== revisionOf(record.value)
+  ) {
+    return changedSinceAuthorized(`task ${id.value}`);
+  }
   const after = ctx.epoch();
   if (after.isFailure() || after.value !== epoch.value) {
     return changedSinceAuthorized('the authorization policy');

@@ -441,6 +441,17 @@ describe('the remaining refusals', () => {
     expect(await w.reassign(request)).toFailWith(/storage down/);
   });
 
+  test('an inspection whose closing re-read fails reports it', async () => {
+    let reads = 0;
+    const w = writerOf(
+      faulty(h, (real) => ({
+        readCommit: async (id: TaskId) => (++reads === 2 ? storageDown() : real.readCommit(id))
+      })),
+      h
+    );
+    expect(await w.inspect(tid('t'))).toFailWith(/storage down/);
+  });
+
   test('a candidate whose record cannot be read stops the pump', async () => {
     await list(h.writer, 'l');
     await track(h.writer, 'c', { parentId: 'l' });

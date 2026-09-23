@@ -303,3 +303,16 @@ Round 4 is narrower than rounds 1–3: one class, a refinement of an existing gu
 Tests: a hidden list as the whole first page yields no completion and an opaque continuation that resumes onto the next list; a continuation from another view, a query cursor, and a continuation after an epoch change are each refused as not live; a commit while the page is being authorized fails the query; the returned unresolved references are isolated. Revert checks: the generation fence (1 red); a boundary rule that withholds `next` when nothing visible completed (1 red). Package: 1,162 tests, 100% on all four metrics, lint clean.
 
 Round 5 is still substantive: one disclosure path and one stale-read path, and both are real. The loop continues to round 6.
+
+### Copilot round 6 — 2 high + 2 "previously missed" medium: 2 fixed, 2 declined with reasons
+
+| finding | disposition |
+|---|---|
+| `inspect` was fenced only at the typed read, so a commit while the projector or the command checks ran went unseen | **fixed**: the record is re-read at the end and must be the authorized record (same type, same semantic revision), otherwise `conflict`/`safe`. This is per-task, so unrelated commits do not fail an inspection |
+| (medium, flagged in rounds 2 and 6, missed until now) the details projector's success value was returned unvalidated | **fixed**: converted with `JsonConverters.jsonValue`, so a non-JSON value (e.g. a `BigInt`) fails closed, the same as the envelope projection |
+| the pump should recheck the epoch before returning its report | **declined**: each completion is its own catalog operation, authorized and epoch-checked in the writer immediately before its own commit. The report returns receipts for commits this principal performed, as every mutation does after its commit. Failing the report afterwards would hide receipts for work that has committed and is no longer a candidate. The continuation is already bound to the pass's starting epoch, so it is dead if the policy moved |
+| (medium) `changeScopes`'s outside-selector check and `reparent`'s self-parent check run before the subject is read and authorized | **declined**: both depend only on the request and the caller's own view configuration, never on the task. The refusal is identical for a visible, hidden or foreign id and discloses nothing, the same as request-conversion failures, which also precede authorization. Nothing is performed, so no authority is bypassed |
+
+Tests: a task changed while its commands are being authorized is not inspected (and is inspected once settled); a failing closing re-read is reported; a details projection that is not JSON fails the inspection. Revert checks: the inspection fence (1 red); details validation (1 red). Package: 1,164 tests, 100% on all four metrics, lint clean.
+
+The profile is narrowing. Rounds 4–6 found extensions of guards already in place (epoch placement, fences at the end of reads), and half of round 6 does not hold up on inspection. One more round decides whether the loop stops.

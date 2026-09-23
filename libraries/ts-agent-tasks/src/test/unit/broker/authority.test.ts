@@ -5,6 +5,7 @@
 
 import '@fgv/ts-utils-jest';
 import { fail, succeed } from '@fgv/ts-utils';
+import { JsonValue } from '@fgv/ts-json-base';
 import {
   FileTreeTaskRepository,
   IBoundTaskWriter,
@@ -326,6 +327,14 @@ describe('projection: fail closed, never fall back', () => {
       projector: { envelope: defaultTaskProjector.envelope, details: () => fail('no details for you') }
     });
     expect(await failingDetails.inspect(tid('v1'))).toFailWith(/details: projection failed/);
+    // A projection that succeeds with something that is not JSON fails closed as well.
+    const notJson = bindWriter(h, {
+      projector: {
+        envelope: defaultTaskProjector.envelope,
+        details: () => succeed({ count: BigInt(1) } as unknown as JsonValue)
+      }
+    });
+    expect(await notJson.inspect(tid('v1'))).toFailWith(/details: projection failed/);
   });
 
   test('an unresolved registration is projected without its binding', async () => {
@@ -874,6 +883,28 @@ describe('inspect returns only the record it authorized', () => {
     };
     expect(await h.writer.inspect(tid('t'))).toFailWith(/task t changed after the operation was authorized/);
     expect(await h.writer.inspect(tid('t'))).toSucceed();
+  });
+
+  test('a task changed while its commands are being authorized is not returned', async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 't');
+    const other = bindWriter(h, { principal: 'bob' });
+    const policy = h.policy;
+    policy.afterDecision = async (request) => {
+      if (request.action === 'command') {
+        policy.afterDecision = undefined;
+        await other.updateTracked({
+          taskId: tid('t'),
+          operationId: op(),
+          expectedRevision: rev(1),
+          patch: { title: 'moved' }
+        });
+      }
+    };
+    expect(await h.writer.inspect(tid('t'))).toFailWith(/task t changed after the operation was authorized/);
+    expect(await h.writer.inspect(tid('t'))).toSucceedAndSatisfy((inspection) => {
+      expect(inspection.state === 'resolved' && inspection.envelope.title).toBe('moved');
+    });
   });
 });
 
