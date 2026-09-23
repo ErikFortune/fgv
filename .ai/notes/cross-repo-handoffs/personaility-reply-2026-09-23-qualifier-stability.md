@@ -138,3 +138,24 @@ But once you declare stabilities on your axes, the thing we cannot observe from 
 is whether a `frozen`-declared axis ever actually changes mid-conversation in a real deployment.
 If the browser surfaces one, that is a genuine bug report about the declaration model rather than
 about your prompts, and we would want to hear it.
+
+---
+
+## Addendum — what shipped beyond this note (2026-09-23, #689)
+
+Everything above shipped as described. Two further behaviours follow from the same rule; they
+are recorded here so the note matches the code:
+
+- **A refuted claim drops to the axis's level, not always to `per-request`.** A `frozen` slot
+  claim in a body conditioned on a `per-conversation`-declared axis now reads `per-conversation`.
+  With nothing declared the two are identical.
+- **Candidates that did not win count too, once the body is conditional.** Suppose your winning
+  candidate is conditioned only on a `frozen` axis, and another candidate conditioned on an
+  undeclared axis lost this resolve. The body is still refuted, and the finding names the losing
+  candidates and their axis. A change on that axis can bring them in next time. Without this,
+  declaring `personality.archetype` `frozen` could have produced a false `frozen` that you did not
+  get before.
+
+One gap remains and is recorded in our `TECH_DEBT.md`. When *every* winning candidate is
+unconditional, a losing conditional candidate is not seen at all. That was already true before
+this change, and this change does not alter it.

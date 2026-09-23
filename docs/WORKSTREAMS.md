@@ -128,61 +128,6 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `prompt-assist-qualifier-stability` 🔵
-
-**Status:** 🔵 in flight — branch created off `release` at `9eb0e5139`, brief written, not yet
-started. Artifacts at `.ai/tasks/active/prompt-assist-qualifier-stability/`.
-
-**Mission.** Two PersonAIlity asks, both additive, both about cache-stability diagnostics
-reaching the people who need them. **A:** `composition?: IPromptComposition` on
-`IPromptResolveObservation`, populated from `resolved.composition`, so an observer-backed prompt
-browser sees section maps and `cacheFindings` for every resolve rather than only the one the
-caller retains. **B:** give a qualifier axis a declared stability, and have the D2
-conditional-body check refute a claim only when a qualifier that actually conditioned the
-winning candidate is declared less stable than the claim.
-
-**Origin.** Two asks verified against our own source before acting — **every claim in both held**,
-including the exact observation that a call-site override becomes `hint.origin: 'call-site'` and
-is then refuted identically to an authored hint. Reply sent:
-`.ai/notes/cross-repo-handoffs/personaility-reply-2026-09-23-qualifier-stability.md`.
-
-**The finding that kept it cheap.** `IConditionMatchResult` in `@fgv/ts-res` carries only
-`priority`/`matchType`/`score` and **never names the qualifier** — so the obvious reading is that
-D2 needs a ts-res widening, on a production surface with stability obligations. It does not:
-`IPromptCandidateRecord.conditions` is a `ConditionSetDecl<TQualifierNames>` keyed by qualifier
-name, and `candidateIndex` joins a match to its declaration. The whole change stays inside
-`ts-prompt-assist`. **Editing `libraries/ts-res/` is the signal that the approach has drifted.**
-
-**Design decided at brief time, not left to the implementer.** Option 1 (stability on the axis
-declaration). The consumer's option 3 (call-site override survives D2) is refused on the
-`adaptOptionalToNullable` precedent — it converts a verified diagnostic into an unfalsifiable
-assertion. Option 2 (per-resolve map) is refused as a second source of truth about a property of
-the axis. Reasoning in the brief and in the reply note; it belongs in `result.md` too.
-
-**Package surface:** `@fgv/ts-prompt-assist` only — `observe`, `resolve`, `types` packlets. An
-**active surface**, all packlets, so additive and free.
-
-**Out-of-scope:** `libraries/ts-res/**` (see above); `toCacheRequest` and the `IAiCacheRequest`
-emission path in `ts-extras` — this changes what the diagnostics *say*, not what goes on the
-wire; `HorizontalComposer` and composition *construction*; `applySafeguards`.
-
-**Acceptance criteria.** Undeclared qualifiers reproduce today's refutations **exactly, pinned by
-a test**; the positive case pinned on both a slot section and a template section; the finding
-`detail` names the refuting axis. Plus the repo gates **including a repo-wide `rush test`** —
-this widens what a function *classifies* without moving a signature, which a rebuild cannot see,
-and a downstream fixture pinning the old refutation boundary is the expected casualty.
-
-**Parallel with:** `agent-tasks-t4` (different package, different base branch, no overlap) — both
-touch `LIBRARY_CAPABILITIES.md` and this file, **own section only**.
-
-**Branch:** `claude/prompt-assist-qualifier-stability`, off `release` at `9eb0e5139`.
-**PR into `release`** — single-phase, one landing, no integration branch.
-
-**Downstream:** the user publishes an alpha off the back of this landing, so a red gate here
-blocks a release rather than just a merge.
-
-**Artifact pointer:** `.ai/tasks/active/prompt-assist-qualifier-stability/`.
-
 ### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
 
 **Status:** 🟢 **shipped to `release`** — all five units merged 2026-08-12, plus one unplanned refactor that unblocked them. Nothing published yet; the alpha still has to go out. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md`, `…-reply-2026-08-11-ask-package.md`, `…-status-2026-08-12-stream-a.md`, `…-status-2026-08-12-shipped.md`.
@@ -517,8 +462,8 @@ here so a stream can be found by id without opening them; each archive links bac
 the same "docs ship with the code" rule as everywhere else, so the working ledger never
 accumulates history again.
 
-**[2026-09](workstreams/2026-09.md)** — 5 shipped
-`ai-assist-streaming-cache` · `filetree-atomic-write` · `ai-assist-prompt-caching` · `ai-assist-thinking-anchoring` · `prompt-composition-metadata`
+**[2026-09](workstreams/2026-09.md)** — 6 shipped
+`prompt-assist-qualifier-stability` · `ai-assist-streaming-cache` · `filetree-atomic-write` · `ai-assist-prompt-caching` · `ai-assist-thinking-anchoring` · `prompt-composition-metadata`
 
 **[2026-08](workstreams/2026-08.md)** — 19 shipped
 `converters-single-line` · `schema-optional-translation` · `json-schema-nullable` · `sqlite-vec-throwaway-clear-statement` · `filetree-faithful-copy` · `ai-assist-structured-output` · `agent-memory-kind-collision-guard` · `sqlite-vec-statement-lifetime` · `fragment-query-scoping` · `agent-memory-derived-state-reconciliation` · `agent-memory-index-partial-read` · `vector-rebuild-report-by-kind` · `sqlite-vec-path-open` · `module-resolution-upgrade` · `publish-tarball-gate` · `ts-utils-async-detailed-result` · `fetch-primitive-threat-model` · `ts-prompt-assist-features` · `async-result-family`

@@ -141,4 +141,27 @@ which is a behaviour change outside this stream's contract.
 
 ## Gates
 
-<!-- filled in at exit -->
+- `rushx build`: zero warnings. `rushx lint`: clean (`fixlint` run). `rushx test`: 405/405 at
+  100% coverage, with no coverage directives added.
+- `rush change --verify --target-branch origin/release`: clean. The change file is `minor`.
+- `verify-capability-docs.mjs` and `generate-capability-feed.mjs --check`: clean.
+- **Repo-wide `node common/scripts/install-run-rush.js test`:** green twice (35 operations each),
+  the second run on the head that carried the competing-candidate fix.
+  `rush test --from @fgv/ts-prompt-assist` (17 operations, including `@fgv/testbed`) was re-run
+  green after each later D2 commit. **No downstream fixture pinned the old refutation boundary.**
+  The expected casualty class did not occur: nothing outside this package asserts on D2's findings
+  (`grep` for `stability-refuted` / `cacheFindings` outside `ts-prompt-assist/src` finds nothing).
+- **Watched-it-fail:** neutering the competing-candidate fold-in (`competing.length >= 0` →
+  early return) turns exactly the two tests that depend on it red. The first attempt at this
+  neuter (`if (false as boolean)`) did not compile, and a run that collided with a concurrent
+  repo-wide build failed for an unrelated reason; neither was counted as a result.
+- **Layer 1, `code-reviewer`, two passes:**
+  - **Pass 1:** no P1. One P2: the ledger and `state.md` were stale, resolved by this finalize.
+    The pass missed the losing-candidate false `'frozen'`, which was found while writing this file.
+  - **Pass 2**, on that fix: no P1, and the compatibility contract was confirmed algebraically.
+    One P2: the competing-candidate finding claimed `'frozen'` while its `detail` referred to the
+    winners' level. **Fixed**; it now claims the winners' level, and a test pins it.
+  - Two P3s, both dispositioned: folding `matchAsDefault` winners in slightly overstates their
+    risk, which is intentional and conservative; the all-unconditional-winners gap predates this
+    stream (above).
+- **Layer 2, Copilot:** requested on #689. Its outcome is recorded on the PR, not here.
