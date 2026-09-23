@@ -325,7 +325,7 @@ function resolveSlotStability(
           detail:
             `slot '${slot.name}': claimed '${hint.stability}' (${hint.origin}), but the resolve's body is ` +
             `conditioned on ${describeRefutingConditioning(bodyConditioning, hint.stability)} — a ` +
-            `different matching candidate could change this slot's presence or position that often`,
+            `different matching candidate could change this slot's presence or position just as often`,
           claimed: hint,
           downgradedTo: bodyConditioning.stability
         });
