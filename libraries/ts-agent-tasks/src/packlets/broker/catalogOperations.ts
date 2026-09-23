@@ -19,6 +19,7 @@ import {
   ITaskMutationResult,
   ITaskScope,
   IUpdateTrackedTask,
+  TaskAccessRole,
   TaskId,
   TaskResult,
   isTerminalTaskStatus,
@@ -263,17 +264,19 @@ export async function readParent(
  * terminal — terminal parent membership is immutable in v1.
  * @internal
  */
-export function checkParentOpen(record: ITaskCommitRecord, role: string): TaskResult<true> {
+export function checkParentOpen(record: ITaskCommitRecord, role: TaskAccessRole): TaskResult<true> {
+  const which: string =
+    role === 'previous-parent' ? 'current parent' : role === 'new-parent' ? 'new parent' : 'parent';
   if (record.recordType === 'unresolved') {
     return taskFailure(
-      `the ${role} is an unresolved registration and takes no children until its first observation`,
+      `the ${which} is an unresolved registration and takes no children until its first observation`,
       'unsupported',
       'after-host-action'
     );
   }
   if (record.archived || isTerminalTaskStatus(record.task.envelope.lifecycle.status)) {
     return taskFailure(
-      `the ${role} is terminal; terminal parent membership is immutable`,
+      `the ${which} is terminal; terminal parent membership is immutable`,
       'conflict',
       'after-host-action'
     );

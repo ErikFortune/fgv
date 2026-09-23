@@ -141,10 +141,10 @@ export function buildBrokerConverters(
   const reassign: Converter<IReassignTask> = Converters.strictObject<IReassignTask>({
     ...identityFields,
     // Required: absence is never an accidental unassignment.
-    responsibility: Converters.oneOf<IResponsibility | 'unassigned'>(
-      [Converters.literal<'unassigned'>('unassigned'), values.responsibility],
-      'failOnError'
-    )
+    responsibility: Converters.oneOf<IResponsibility | 'unassigned'>([
+      Converters.literal<'unassigned'>('unassigned'),
+      values.responsibility
+    ])
   });
 
   const changeScopes: Converter<IChangeTaskScopes> = Converters.strictObject<IChangeTaskScopes>({
@@ -155,13 +155,10 @@ export function buildBrokerConverters(
 
   const reparent: Converter<IReparentTask> = Converters.strictObject<IReparentTask>({
     ...identityFields,
-    parent: Converters.oneOf<IReparentTask['parent']>(
-      [
-        Converters.literal<'root'>('root'),
-        Converters.strictObject<{ readonly taskId: IReparentTask['taskId'] }>({ taskId: ids.taskId })
-      ],
-      'failOnError'
-    )
+    parent: Converters.oneOf<IReparentTask['parent']>([
+      Converters.literal<'root'>('root'),
+      Converters.strictObject<{ readonly taskId: IReparentTask['taskId'] }>({ taskId: ids.taskId })
+    ])
   });
 
   const completeList: Converter<ICompleteTaskList> = Converters.strictObject<ICompleteTaskList>({
