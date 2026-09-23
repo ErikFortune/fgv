@@ -361,6 +361,20 @@ describe('the remaining refusals', () => {
     ).toFailWith(/storage down/);
   });
 
+  test('a replay whose record cannot be re-read inside the writer is reported', async () => {
+    const request = { taskId: tid('t'), operationId: op(), expectedRevision: rev(1), responsibility: ada };
+    (await h.writer.reassign(request)).orThrow();
+    const w = writerOf(
+      faulty(
+        h,
+        () => ({}),
+        () => ({ readCommit: async () => storageDown() })
+      ),
+      h
+    );
+    expect(await w.reassign(request)).toFailWith(/storage down/);
+  });
+
   test('a candidate whose record cannot be read stops the pump', async () => {
     await list(h.writer, 'l');
     await track(h.writer, 'c', { parentId: 'l' });

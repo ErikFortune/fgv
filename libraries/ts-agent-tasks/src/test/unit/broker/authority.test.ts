@@ -157,6 +157,7 @@ describe('visibility: scopes and policy, both required', () => {
     };
     const writer = bindWriter(h, { authorization: broken });
     expect(await writer.query({})).toFailWith(/policy epoch unavailable/);
+    expect(await writer.inspect(tid('visible'))).toFailWith(/policy epoch unavailable/);
     expect(
       await writer.reassign({
         taskId: tid('visible'),
@@ -525,6 +526,111 @@ describe('authority is decided before anything action-specific is disclosed', ()
         responsibility: ada
       })
     ).toFailWith(/authorization policy changed/);
+  });
+});
+
+describe('replays are authorized like the operation, and confirmed in the writer', () => {
+  test("a replay is authorized with the operation's own access context", async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 't');
+    // The policy allows reassignment to ada only: it decides on the target.
+    h.policy.deny.push(
+      (r) =>
+        r.action === 'reassign' &&
+        (typeof r.targetResponsibility !== 'object' || r.targetResponsibility.key !== ada.key)
+    );
+    const request = { taskId: tid('t'), operationId: op(), expectedRevision: rev(1), responsibility: ada };
+    const first = (await h.writer.reassign(request)).orThrow();
+    expect(await h.writer.reassign(request)).toSucceedWith(first);
+  });
+
+  test('a replay of a task no longer visible is not found, whatever it once was', async () => {
+    const h = await brokerHarness({ scopes: [alpha, beta] });
+    const both = bindWriter(h, { scopes: [alpha, beta] });
+    await both.createTracked({ taskId: tid('t'), operationId: op(), title: 't' });
+    const alphaOnly = bindWriter(h, { scopes: [alpha] });
+    const request = { taskId: tid('t'), operationId: op(), expectedRevision: rev(1), responsibility: ada };
+    (await alphaOnly.reassign(request)).orThrow();
+    (
+      await both.changeScopes({
+        taskId: tid('t'),
+        operationId: op(),
+        expectedRevision: rev(2),
+        remove: [alpha]
+      })
+    ).orThrow();
+    expect(await alphaOnly.reassign(request)).toFailWith(/^task t: not found or not visible$/);
+  });
+
+  const bumpDuring = (h: IBrokerHarness, action: string): void => {
+    const policy = h.policy;
+    policy.afterDecision = (request) => {
+      if (request.action === action) {
+        policy.afterDecision = undefined;
+        policy.epoch = `${policy.epoch}+`;
+      }
+    };
+  };
+
+  test("a policy change during a replay's authorization withholds the receipt — catalog, command and creation", async () => {
+    const h = await brokerHarness();
+    const create = { taskId: tid('t'), operationId: op(), title: 't' };
+    (await h.writer.createTracked(create)).orThrow();
+    const reassign = { taskId: tid('t'), operationId: op(), expectedRevision: rev(1), responsibility: ada };
+    (await h.writer.reassign(reassign)).orThrow();
+    const start = {
+      taskId: tid('t'),
+      operationId: op(),
+      expectedRevision: rev(2),
+      command: 'start',
+      parameters: {}
+    };
+    (await h.writer.execute(start)).orThrow();
+
+    bumpDuring(h, 'reassign');
+    expect(await h.writer.reassign(reassign)).toFailWith(/authorization policy changed/);
+    bumpDuring(h, 'command');
+    expect(await h.writer.execute(start)).toFailWith(/authorization policy changed/);
+    bumpDuring(h, 'create');
+    expect(await h.writer.createTracked(create)).toFailWith(/authorization policy changed/);
+    // With the policy settled, each replays.
+    expect(await h.writer.reassign(reassign)).toSucceed();
+    expect(await h.writer.execute(start)).toSucceed();
+    expect(await h.writer.createTracked(create)).toSucceed();
+  });
+
+  test('a replay whose task moved since it was authorized withholds the receipt', async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 't');
+    const reassign = { taskId: tid('t'), operationId: op(), expectedRevision: rev(1), responsibility: ada };
+    (await h.writer.reassign(reassign)).orThrow();
+    const other = bindWriter(h, { principal: 'bob' });
+    const policy = h.policy;
+    policy.afterDecision = async (request) => {
+      if (request.action === 'reassign') {
+        policy.afterDecision = undefined;
+        await other.updateTracked({
+          taskId: tid('t'),
+          operationId: op(),
+          expectedRevision: rev(2),
+          patch: { title: 'moved' }
+        });
+      }
+    };
+    expect(await h.writer.reassign(reassign)).toFailWith(/task t changed after the operation was authorized/);
+  });
+
+  test('a policy change during an inspection fails it, resolved or unresolved', async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 't');
+    await registerVendor(h, 'u', { unresolved: true });
+    for (const [id, action] of [
+      ['t', 'command'],
+      ['u', 'read']
+    ] as const) {
+      bumpDuring(h, action);
+      expect(await h.writer.inspect(tid(id))).toFailWith(/authorization policy changed/);
+    }
   });
 });
 

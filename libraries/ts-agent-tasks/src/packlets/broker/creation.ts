@@ -30,7 +30,7 @@ import {
 } from '../types';
 import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, subjectOf } from './access';
-import { IRelatedTask, isSameCatalog, readExisting } from './catalogMutation';
+import { IRelatedTask, confirmUnchanged, isSameCatalog, readExisting } from './catalogMutation';
 import { checkParentOpen, convertRequest, readParent } from './catalogOperations';
 import { BrokerCore, receiptJson, revisionOf } from './core';
 import { changedSinceAuthorized, denied, notFound, ok, propagate, taskFailure } from './failures';
@@ -154,9 +154,13 @@ export async function createNative(
         { operationId }
       );
     }
-    return (await ctx.mayCreate(access))
-      ? _committedReceipt(core, record)
-      : denied(taskId, 'create', operationId);
+    if (!(await ctx.mayCreate(access))) {
+      return denied(taskId, 'create', operationId);
+    }
+    const receipt = _committedReceipt(core, record);
+    return receipt.isFailure()
+      ? receipt
+      : confirmUnchanged(core, ctx, epoch.value, taskId, record, receipt.value, operationId);
   }
   if (!(await ctx.mayCreate(access))) {
     return denied(taskId, 'create', operationId);

@@ -24,7 +24,7 @@ import {
 } from '../types';
 import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, AccessSubject, subjectOf } from './access';
-import { advance, nextDraft, readExisting } from './catalogMutation';
+import { advance, confirmUnchanged, nextDraft, readExisting } from './catalogMutation';
 import { isNativeKind } from './catalogOperations';
 import { BrokerCore, canonicallySame, revisionOf, storedOperation } from './core';
 import { changedSinceAuthorized, notFound, ok, propagate, taskFailure } from './failures';
@@ -52,22 +52,25 @@ function _isSameCommand(
 
 /**
  * The replay of a command already recorded under this id: the same request, re-authorized, gets
- * its stored receipt; a different request under the key is `idempotency-conflict`. Neither
+ * its stored receipt — once the writer confirms the record and policy it was authorized against
+ * have not moved; a different request under the key is `idempotency-conflict`. Neither
  * dispatches anything or stores anything.
  */
 async function _replay(
+  core: BrokerCore,
   ctx: AccessContext,
-  subject: AccessSubject,
+  epoch: string,
+  record: ITaskCommitRecord,
   stored: IStoredTaskOperation,
   request: ICommandRequest
 ): Promise<TaskResult<ICommandReceipt>> {
   if (!_isSameCommand(stored, ctx.principal, request)) {
     return _rejected(request, 'idempotency-conflict');
   }
-  if (!(await ctx.may('command', subject, 'subject', { command: request.command }))) {
+  if (!(await ctx.may('command', subjectOf(record), 'subject', { command: request.command }))) {
     return _rejected(request, 'denied');
   }
-  return ok(stored.receipt);
+  return confirmUnchanged(core, ctx, epoch, request.taskId, record, stored.receipt, request.operationId);
 }
 
 /** What evaluation decided before the writer: a refusal to record, or a command to evaluate. */
@@ -160,7 +163,14 @@ export async function execute(
   const prepared = _prepare(core, record, request);
   const stored: IStoredTaskOperation | undefined = storedOperation(record, operationId);
   if (stored !== undefined) {
-    return _replay(ctx, subject, stored, prepared.isSuccess() ? prepared.value.stored : request);
+    return _replay(
+      core,
+      ctx,
+      epoch.value,
+      record,
+      stored,
+      prepared.isSuccess() ? prepared.value.stored : request
+    );
   }
   // Command authority is decided before anything else about the command is disclosed.
   if (!(await ctx.may('command', subject, 'subject', { command: request.command }))) {
@@ -179,22 +189,24 @@ export async function execute(
   }
   const { prepared: plan, stored: storedRequest } = prepared.value;
 
-  return core.gated(async (writer) => {
+  // `undefined` from the writer section means: the same command committed while this one waited.
+  const outcome = await core.gated(async (writer): Promise<TaskResult<ICommandReceipt | undefined>> => {
     const now = ctx.epoch();
     if (now.isFailure() || now.value !== epoch.value) {
-      return changedSinceAuthorized<ICommandReceipt>('the authorization policy', operationId);
+      return changedSinceAuthorized<ICommandReceipt | undefined>('the authorization policy', operationId);
     }
     const reread = await writer.readCommit(taskId);
     if (reread.isFailure()) {
-      return propagate<ICommandReceipt>(reread);
+      return propagate<ICommandReceipt | undefined>(reread);
     }
     const found: ITaskCommitRecord | undefined = reread.value;
     const concurrent = found !== undefined ? storedOperation(found, operationId) : undefined;
     if (concurrent !== undefined) {
-      return _replay(ctx, subject, concurrent, storedRequest);
+      // Answered through the ordinary replay path, against the record as it is now.
+      return ok<ICommandReceipt | undefined>(undefined);
     }
     if (found === undefined || found.recordType !== 'resolved' || revisionOf(found) !== revisionOf(record)) {
-      return changedSinceAuthorized<ICommandReceipt>(`task ${taskId}`, operationId);
+      return changedSinceAuthorized<ICommandReceipt | undefined>(`task ${taskId}`, operationId);
     }
     const outcome: Outcome =
       plan.kind === 'refuse'
@@ -204,6 +216,10 @@ export async function execute(
           });
     return _commit(core, writer, ctx.principal, found, storedRequest, outcome);
   });
+  if (outcome.isFailure()) {
+    return propagate(outcome);
+  }
+  return outcome.value !== undefined ? ok(outcome.value) : execute(core, ctx, input);
 }
 
 /** A transition, or a refusal decided before evaluation. */

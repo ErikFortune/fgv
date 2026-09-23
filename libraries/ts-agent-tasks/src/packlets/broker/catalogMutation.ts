@@ -132,6 +132,7 @@ export async function replayCatalog<TReceipt>(
     readonly request: JsonValue;
     readonly identity: { readonly taskId: TaskId; readonly operationId: IStoredTaskOperation['operationId'] };
     readonly receiptConverter: Converter<TReceipt>;
+    readonly access?: Pick<ITaskAccessRequest, 'targetResponsibility' | 'scopes'>;
   }
 ): Promise<TaskResult<TReceipt>> {
   const { taskId, operationId } = mutation.identity;
@@ -143,10 +144,43 @@ export async function replayCatalog<TReceipt>(
       { operationId }
     );
   }
-  if (!(await ctx.may(mutation.action, subject))) {
+  // The same access context the operation was first authorized with: a policy that decides on
+  // the target must decide the replay the same way.
+  if (!(await ctx.may(mutation.action, subject, 'subject', mutation.access))) {
     return denied(taskId, mutation.action, operationId);
   }
   return _storedReceipt(stored, mutation.receiptConverter, taskId);
+}
+
+/**
+ * Returns a replayed receipt only if nothing it was authorized against has moved: inside the
+ * writer, the policy epoch and the record's semantic revision must be what the replay was
+ * authorized under. A replay is private data, so it gets the same revalidation a commit does.
+ * @internal
+ */
+export async function confirmUnchanged<T>(
+  core: BrokerCore,
+  ctx: AccessContext,
+  epoch: string,
+  id: TaskId,
+  record: ITaskCommitRecord,
+  value: T,
+  operationId: IStoredTaskOperation['operationId']
+): Promise<TaskResult<T>> {
+  return core.gated(async (writer) => {
+    const now = ctx.epoch();
+    if (now.isFailure() || now.value !== epoch) {
+      return changedSinceAuthorized<T>('the authorization policy', operationId);
+    }
+    const again = await writer.readCommit(id);
+    if (again.isFailure()) {
+      return propagate<T>(again);
+    }
+    if (again.value === undefined || revisionOf(again.value) !== revisionOf(record)) {
+      return changedSinceAuthorized<T>(`task ${id}`, operationId);
+    }
+    return ok(value);
+  });
 }
 
 function _storedReceipt<TReceipt>(
@@ -250,7 +284,10 @@ export async function runCatalogMutation<TReceipt extends ITaskMutationResult>(
   }
   const replayed: IStoredTaskOperation | undefined = storedOperation(record, operationId);
   if (replayed !== undefined) {
-    return replayCatalog(ctx, subject, replayed, mutation);
+    const receipt = await replayCatalog(ctx, subject, replayed, mutation);
+    return receipt.isFailure()
+      ? receipt
+      : confirmUnchanged(core, ctx, epoch.value, taskId, record, receipt.value, operationId);
   }
   // Authority is decided before any mutation-specific fact about the task is disclosed: a
   // principal that may read but not perform this action learns nothing from the refusal.
@@ -287,46 +324,48 @@ export async function runCatalogMutation<TReceipt extends ITaskMutationResult>(
     return propagate(related);
   }
 
-  return core.gated(async (writer) => {
+  // `undefined` from the writer section means: the same operation committed while this one waited.
+  const outcome = await core.gated(async (writer): Promise<TaskResult<TReceipt | undefined>> => {
     const now = ctx.epoch();
     if (now.isFailure() || now.value !== epoch.value) {
-      return changedSinceAuthorized<TReceipt>('the authorization policy', operationId);
+      return changedSinceAuthorized<TReceipt | undefined>('the authorization policy', operationId);
     }
     const reread = await writer.readCommit(taskId);
     if (reread.isFailure()) {
-      return propagate<TReceipt>(reread);
+      return propagate<TReceipt | undefined>(reread);
     }
     const found: ITaskCommitRecord | undefined = reread.value;
     const concurrent: IStoredTaskOperation | undefined =
       found !== undefined ? storedOperation(found, operationId) : undefined;
     if (concurrent !== undefined) {
-      // The same operation committed while this one waited: it was authorized above.
-      return replayCatalog(ctx, subject, concurrent, mutation);
+      // Its receipt is authorized against the record as it is now, through the ordinary replay
+      // path, once this writer section has returned.
+      return ok<TReceipt | undefined>(undefined);
     }
     // The repository is an injected interface, so what it returns inside the writer is checked,
     // not assumed: the subject must still be the resolved task at the authorized revision.
     if (found === undefined || found.recordType !== 'resolved' || revisionOf(found) !== expectedRevision) {
-      return _stale<TReceipt>(mutation.identity, found);
+      return _stale<TReceipt | undefined>(mutation.identity, found);
     }
     const current: IResolvedTaskCommitRecord = found;
     const relatedNow: IRelatedTask[] = [];
     for (const task of related.value) {
       const again = await writer.readCommit(task.id);
       if (again.isFailure()) {
-        return propagate<TReceipt>(again);
+        return propagate<TReceipt | undefined>(again);
       }
       if (again.value === undefined || revisionOf(again.value) !== revisionOf(task.record)) {
-        return changedSinceAuthorized<TReceipt>(`a task related to ${taskId}`, operationId);
+        return changedSinceAuthorized<TReceipt | undefined>(`a task related to ${taskId}`, operationId);
       }
       relatedNow.push({ ...task, record: again.value });
     }
     const change = await mutation.evaluate(current, relatedNow, writer);
     if (change.isFailure()) {
-      return propagate<TReceipt>(change);
+      return propagate<TReceipt | undefined>(change);
     }
     const clock = core.now();
     if (clock.isFailure()) {
-      return propagate<TReceipt>(clock);
+      return propagate<TReceipt | undefined>(clock);
     }
     const before: ITaskEnvelope = current.task.envelope;
     const after: ITaskEnvelope =
@@ -363,6 +402,12 @@ export async function runCatalogMutation<TReceipt extends ITaskMutationResult>(
       expectedRecordRevision: current.recordRevision,
       record: nextDraft(current, after, operation, updates, archived)
     });
-    return committed.isSuccess() ? ok(receipt) : propagate<TReceipt>(committed);
+    return committed.isSuccess()
+      ? ok<TReceipt | undefined>(receipt)
+      : propagate<TReceipt | undefined>(committed);
   });
+  if (outcome.isFailure()) {
+    return propagate(outcome);
+  }
+  return outcome.value !== undefined ? ok(outcome.value) : runCatalogMutation(core, ctx, mutation);
 }

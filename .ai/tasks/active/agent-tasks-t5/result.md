@@ -241,3 +241,20 @@ Every step `.github/workflows/ci.yml` runs, run locally on the final source:
 The layer-1 P2 and Copilot's medium are one defect class found twice: an ordering in which a
 refusal can disclose state before authority is decided. The fix is now uniform across entry points.
 Package after the round: 1,143 tests, 100% on all four metrics, lint clean.
+
+### Copilot round 2 — 6 high, all real; one class (replay) plus one sibling (inspect), fixed as a class
+
+| finding | fix |
+|---|---|
+| catalog replay re-authorized without the operation's access context (a policy deciding on the target decided the replay differently) | `replayCatalog` passes the same `access` (target responsibility, proposed scopes) the operation was first authorized with |
+| catalog, command and creation replays returned the stored receipt without the in-writer revalidation a commit gets — a policy change or a record change after authorization went unseen (3 findings) | every replay path now ends in `confirmUnchanged`: inside the writer, the policy epoch and the record's semantic revision must be what the replay was authorized under, else `conflict`/`safe` |
+| a replay discovered *inside* the writer (the same operation committed while this one waited) was authorized against the pre-writer snapshot (2 findings) | the writer section now returns a restart marker and the operation re-runs from the top, reaching the ordinary replay path against the record as it is now |
+| `inspect` never captured or rechecked the policy epoch | bracketed: captured before the first policy question, rechecked before returning, for resolved and unresolved tasks |
+
+Tests: a target-restricted policy replays; a replay after the task left the view is not found; a
+policy change during a replay's authorization withholds the receipt for catalog, command and
+creation replays; a record change during it does too; a policy change during an inspection fails
+it. Revert checks: removing the catalog confirmation (2 red), the access context (1), the command
+confirmation (1), the inspection recheck (1). Package: 1,149 tests, 100% on all four metrics.
+
+The finding profile is still substantive (real disclosure paths), so the loop continues.

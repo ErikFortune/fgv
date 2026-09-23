@@ -14,6 +14,7 @@ import {
   ITaskSelection,
   PageCursor,
   TaskInspection,
+  TaskRegistrationResult,
   TaskResult,
   taskListKind
 } from '../types';
@@ -137,6 +138,12 @@ export async function inspectView(
   if (id.isFailure()) {
     return taskFailure(`inspect: ${id.message}`, 'invalid', 'after-host-action');
   }
+  // Captured before the first question is put to the policy; if it moves before the answer is
+  // returned, the inspection fails rather than mixing two policies.
+  const epoch = ctx.epoch();
+  if (epoch.isFailure()) {
+    return propagate(epoch);
+  }
   const record = await readExisting(core, id.value);
   if (record.isFailure()) {
     return propagate(record);
@@ -153,11 +160,26 @@ export async function inspectView(
   if (found === undefined) {
     return notFound(id.value);
   }
-  if (found.state === 'unresolved') {
-    return projectReference(core.converters.broker, found.reference).onSuccess((reference) =>
-      ok<TaskInspection>({ state: 'unresolved', reference })
-    );
+  const inspection: TaskResult<TaskInspection> =
+    found.state === 'unresolved'
+      ? projectReference(core.converters.broker, found.reference).onSuccess((reference) =>
+          ok<TaskInspection>({ state: 'unresolved', reference })
+        )
+      : await _inspectResolved(core, ctx, subject, found);
+  const after = ctx.epoch();
+  if (after.isFailure() || after.value !== epoch.value) {
+    return changedSinceAuthorized('the authorization policy');
   }
+  return inspection;
+}
+
+/** The projected inspection of a resolved task, with the commands this principal may run now. */
+async function _inspectResolved(
+  core: BrokerCore,
+  ctx: AccessContext,
+  subject: AccessSubject,
+  found: Extract<TaskRegistrationResult, { state: 'resolved' }>
+): Promise<TaskResult<TaskInspection>> {
   const envelope = projectEnvelope(ctx.projector, core.converters.broker, found.task.envelope);
   if (envelope.isFailure()) {
     return propagate(envelope);
