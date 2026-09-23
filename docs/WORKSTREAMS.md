@@ -128,7 +128,7 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-t3` 🟢 (slice T3 of the agent-tasks plan)
+### `agent-tasks-t3` ✅ (slice T3 of the agent-tasks plan) — landed on the integration branch via [#686](https://github.com/ErikFortune/fgv/pull/686)
 
 **Mission.** Land **T3** — FileTree records, durable commit and reopen: injected-root session and
 durable factories, a private single-writer coordinator, strict JSON storage records, a flat
@@ -174,6 +174,15 @@ surviving the same crash boundaries as acceptance, explicit finite-limit increas
 lowering) — and the crash acceptance matrix run **through the real Node FileTree path**, validated
 against design §8.4, with no mocked successful store substituting for it. Plus the repo gates and
 every step `ci.yml` runs.
+
+**T3 status.** Shipped to `integration/agent-tasks-v1` via
+[#686](https://github.com/ErikFortune/fgv/pull/686): `FileTreeTaskRepository`, the `storage`
+packlet, storage record/inventory converters, and the T1 revisions (`first-resolution` claim
+purpose, claim charges that shrink as spent, `taskUpdateId`). Durable mode rests on a real-Node
+crash matrix on ext4 and tmpfs and 26 mutations watched to fail. Carried forward: claim audiences
+are empty until T7's subscriptions expand them; archive's release of acknowledgement reservations
+is safe only once T8 gates archive on acknowledgement; consumer/source record content is T6/T7's.
+Details in `result.md`.
 
 **Artifact pointer:** `.ai/tasks/active/agent-tasks-t3/`.
 

@@ -4,7 +4,7 @@
 **F1 and F2 are shipped** ([#683](https://github.com/ErikFortune/fgv/pull/683), squashing [#681](https://github.com/ErikFortune/fgv/pull/681) and [#682](https://github.com/ErikFortune/fgv/pull/682)): the upstream `ts-json-base` FileTree atomic-write capability and its qualified Node protocol exist and are on `release`. **T1 is implemented** and lands on `integration/agent-tasks-v1` via
 [#684](https://github.com/ErikFortune/fgv/pull/684) — it is *not* on `release`, and reaches it only
 in the integration branch's squash. **T2 is implemented** on the same branch via
-[#685](https://github.com/ErikFortune/fgv/pull/685), and **T3** via PR_T3 — durable mode qualified on Linux ext4/tmpfs by a real-Node crash matrix (`.ai/tasks/active/agent-tasks-t3/result.md`). **Every other T slice, and every I, P and M slice, remains
+[#685](https://github.com/ErikFortune/fgv/pull/685), and **T3** via [#686](https://github.com/ErikFortune/fgv/pull/686) — durable mode qualified on Linux ext4/tmpfs by a real-Node crash matrix (`.ai/tasks/active/agent-tasks-t3/result.md`). **Every other T slice, and every I, P and M slice, remains
 unimplemented and awaits explicit authorization**, taken one slice at a time.
 **Date:** 2026-09-21. **Source inspection:** `d0ec601c6d67a6016a00a33a69ddee18bec6ddb1`.
 **Engineering contract:** [development design](development-design.md).
@@ -122,7 +122,7 @@ Under A3 also define the versioned capacity profile and typed dimension failures
 
 **Review gate:** disclosure/omission and receipt semantics; pure API independent of live infrastructure.
 
-### T3 — FileTree records, durable commit and reopen — ✅ implemented on `integration/agent-tasks-v1` (PR_T3)
+### T3 — FileTree records, durable commit and reopen — ✅ implemented on `integration/agent-tasks-v1` ([#686](https://github.com/ErikFortune/fgv/pull/686))
 
 **Dependencies:** T1, **F2**. **Affected package:** `ts-agent-tasks` storage.
 
