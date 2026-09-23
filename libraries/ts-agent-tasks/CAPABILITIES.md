@@ -15,11 +15,13 @@ on its own, and importing it has no side effects.
 
 ## What ships today
 
-Three things: the **vocabulary** (the `types` and `converters` packlets), the **snapshot-only
-context entry point** (the `context` packlet), and **durable task storage** (the `storage`
-packlet: `FileTreeTaskRepository`). The broker, indexed queries, delivery, tools and prompt
-integration follow in later slices, and are deliberately absent from the export surface rather
-than stubbed.
+Four things: the **vocabulary** (the `types` and `converters` packlets), the **snapshot-only
+context entry point** (the `context` packlet), **durable task storage** (the `storage` packlet:
+`FileTreeTaskRepository`), and **indexed selection** over that storage — scope/lifecycle queries,
+due candidates and owed updates answered from resident indexes, with keyset paging, a staged
+rebuild and a reusable conformance suite for custom repositories. The broker, delivery, tools and
+prompt integration follow in later slices, and are deliberately absent from the export surface
+rather than stubbed.
 
 ## Storing tasks durably — `FileTreeTaskRepository`
 
@@ -184,6 +186,84 @@ Node protocol and on this package's crash matrix, which kills a real child proce
 boundary of each write of registration, mutation, terminal closeout, first resolution and limit
 increase, on ext4 and tmpfs, and reopens through the real Node path. It says nothing about OS
 crashes or power loss: the kernel keeps running in every one of those tests.
+
+## Querying tasks — resident indexes, paging, due and owed
+
+**Queries never read a record.** `query`, `queryDue` and `listOwed` are answered from resident
+indexes the repository keeps current on every commit; a warm query performs **zero task-file
+reads**. Do not page through `readCommit`, and do not filter a list of every task — the indexes
+exist so that growing, unrelated history does not grow a query's work. (The package's counter
+suite holds that fixed at 0, 1,000 and 10,000 unrelated tasks.)
+
+```ts
+const page = (
+  await repository.query({
+    selection: { scopes: [projectScope, personalScope], lifecycleClass: 'open' },
+    limit: 50
+  })
+).orThrow();
+// page.items: ITaskSummary[], ordered by task id; page.nextCursor when there may be more
+const due = (
+  await repository.queryDue({ selection: { scopes, lifecycleClass: 'open' }, cutoff: now })
+).orThrow();
+const owed = (await repository.listOwed({ subscription })).orThrow();
+```
+
+**Selection.** `scopes` is a **union**, deduplicated by task before paging; an empty list matches
+nothing (never implicit global access). `lifecycleClass` is `open` (pending, running, waiting,
+paused), `terminal` (succeeded, failed, cancelled) or `all`; `statuses` narrows to exact statuses
+and must lie within the class — `open` with `succeeded` is refused `invalid`, not answered empty.
+`parentId` selects direct children; `responsibility` narrows and confers nothing. Pages hold
+**non-archived** tasks, terminal ones awaiting cleanup included; an archived task is inspected by
+id (`read`), never enumerated.
+
+**Unresolved and quarantined tasks are reported, not hidden.** A registered external task with no
+first observation matches on scopes, parent and responsibility, comes back in `page.unresolved`,
+shares the page budget and makes the page `partial` — no lifecycle is invented for it. A task
+whose kind is not registered is named in `page.issues` (also `partial`).
+
+**Due candidates** are waiting tasks with a `notBefore` at or before `cutoff`: absent `notBefore`
+is excluded, equal is included, ordered by `(notBefore, taskId)`. The class must admit `waiting`.
+A due query changes nothing — it starts no work and leaves every other prerequisite intact.
+
+**Owed updates** are listed per subscription from their own index, independent of lifecycle: a
+terminal or archived task's obligations stay listed after it leaves open work. (This release has
+no acknowledgement records, so every audience link on a retained update is owed; subscriptions
+arrive later.)
+
+**Paging.** Limit defaults to 50, maximum 200. `nextCursor` is an opaque server-held handle — it
+carries no key — valid only at the page's `generation`: **any committed change restarts paging**
+(`cursor-stale`, `retry: 'safe'`). A cursor presented with a different query is `invalid`; one from
+another repository, from before a reopen, expired (five idle minutes) or evicted (at most 256 per
+repository) is `cursor-stale`, never an empty last page. A page that runs out of its candidate
+budget returns a cursor even if it is short — it is not the end until there is no cursor.
+
+**Archive keeps identity, edges and source.** Archiving removes the task's summary and every
+lifecycle membership in the same commit; its identity, parent edge, final status and source
+binding stay resident. `lookupSource(binding)` finds the task a binding is bound to — archived
+included — and registering a second task with a binding already bound is refused `conflict`.
+
+**When an index cannot be updated, the repository says so.** A record that commits and whose
+index update then fails fences the repository (`unavailable`) and reports the operation
+`commit-indeterminate` with its operation id: no stale read. `rebuildIndexes()` is the way out —
+it releases the old index and every cursor first, fences queries while it runs, rebuilds in
+bounded passes (every task record once, one at a time; consumer and source records once; then only
+the records holding owed updates), and either publishes a healthy new generation or leaves the
+repository `unavailable` with the problems listed. It never publishes an empty index as healthy.
+`open` builds its indexes the same way.
+
+**Bounded working space.** Record reads are limited to four in flight; excess is refused
+(`conflict`, `retry: 'safe'`), never queued. The optional parsed-record cache (`recordCache` on
+open/initialize) is **off by default**, one per repository, at most 32 entries and 8 MiB of
+encoded charge.
+
+**Custom repositories.** `runTaskRepositoryConformance(factory)` runs the behavioural contract
+above against any `ITaskRepository` and succeeds with a report or fails naming each check that
+did not pass — framework-free, so it drops into any test runner:
+
+```ts
+expect(await runTaskRepositoryConformance(() => MyRepository.createEmpty())).toSucceed();
+```
 
 ## Rendering task context without a broker
 
@@ -402,10 +482,9 @@ fragment is caught at the mint rather than at the filename.
 
 ## Not in scope
 
-No broker, indexed query or paging, due discovery, subscription, delivery service,
-acknowledgement, retention or pruning policy, cascade stop, tool factory or prompt integration
-**yet** — those are later slices, and their absence from the export surface is deliberate. The
-repository reads records on demand; resident query indexes are the next slice's. **Permanently** out of scope: an input-request/answer protocol, a task runner or
+No broker, subscription, delivery service, acknowledgement, retention or pruning policy, cascade
+stop, tool factory or prompt integration **yet** — those are later slices, and their absence from
+the export surface is deliberate. **Permanently** out of scope: an input-request/answer protocol, a task runner or
 scheduler, an executor, a retry policy, cross-repository parenting, execution migration,
 multi-process ownership, general event sourcing, and dependency DAGs.
 

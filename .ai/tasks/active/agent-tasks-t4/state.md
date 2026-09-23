@@ -102,3 +102,32 @@ candidates.
 | due in `A` | visits = 5 matches + 1 stop-peek per scope stream, identical as future/non-waiting candidates grow | due iteration visits past the cutoff or non-waiting tasks |
 | inspection | summaries = resolved non-archived count; archived entries carry no envelope/details/operations/updates; child/source entry counts exact; resident payloads = owed updates | a category projection retains what it should not |
 | rebuild | task reads = N (pass 1) + records with owed updates (pass 3); materialization high-water 1 | rebuild buffers records |
+
+---
+
+## 2026-09-23 — first counter run; a profile finding
+
+**Counter predictions: all held at 0 / 1,000 / 10,000** on the first run, archived and non-archived
+cohorts separately (open 20 visits, owed 10, due 6 = 5 + the stop key, zero task reads; archived
+never visited by terminal/all/child queries; summaries = resolved non-archived; rebuild reads N +
+10). The one red was an expectation I derived during the run, not a prediction: a terminal query
+that stops at 200 reads 202 keys (the extra candidate that says "more", plus one key of stream
+lookahead). Corrected in the test, recorded here.
+
+**Finding — the default profile admits 146 concurrent non-archived tasks, not 1,000.** Each
+registration's closeout claim reserves `maximumClosureCharges`: 7 updates × 64 KiB = 448 KiB of
+`resident-payload-bytes` (limit 64 MiB → 146), 224 audience links / acknowledgement ids (limit
+200,000 → 892), ~1.03 MiB of `logical-bytes` (512 MiB → 496). Confirmed empirically: the 147th
+registration on `defaultTaskCapacityProfile` is refused `backpressure` on `resident-payload-bytes`.
+The counter cohorts and M1 therefore declare a finite fixture profile that raises those dimensions.
+Not T4's to change (T1/T3 arithmetic, T8/M1 profile qualification) — carried to `result.md`.
+
+**Two corrections to the kickoff entry, disclosed rather than edited in place.** (1) The fixture
+profile as first declared (retained 25,000 / non-archived 11,000) could not hold its own cohorts:
+the first seeding attempt opened as a recovery handle, over `audience-links` and
+`acknowledgement-ids`, before any counter was measured. Those two, `logical-bytes` and
+`resident-payload-bytes` were raised to finite values stated in `src/test/helpers/cohorts.ts`; no
+prediction changed. (2) Decision 7 said the materialization gate refuses with `backpressure`. T1's
+failure converter couples `backpressure` to a capacity dimension, which a working-space limit does
+not have, so the gate refuses `conflict` / `retry: 'safe'` — T3's classification for a concurrent
+writer.
