@@ -279,3 +279,15 @@ The finding profile is still substantive (real disclosure paths), so the loop co
 Tests: replays of a move are withheld when the new parent is hidden or `reparent` on it is denied; the same holds for a creation replay's parent; a move to root replays without a parent; a new parent changed during the replay's authorization withholds the receipt; two claimed keys, then the pump completes the list under `complete-list-r1-2`; a vandal projector and policy leave the index and the record intact; a task changed between authorization and read is not inspected. Revert checks: request-named parents on catalog replay (2 red), creation parent (1), pump key (1), projector and policy copies together (1) and the policy copy alone (1), inspect identity (1). Package: 1,157 tests, 100% on all four metrics, lint clean.
 
 Round 3 is still substantive (the pump-key finding is a liveness bug; the others are disclosure or integrity paths), so the loop continues to round 4.
+
+### Copilot round 4 — 3 high, all one class: the in-writer epoch check sat before the section's awaits
+
+The writer section checked the policy epoch first, then awaited re-reads, cycle-check reads and evaluation before the write. A revocation during any of those awaits went unseen. That was true of the catalog pipeline, commands, native creation and the replay confirmation.
+
+| fix |
+|---|
+| `AccessContext.epochIs(epoch)`; each writer section now checks it **after its last await**, immediately before the durable write (`writer.commit` / `_commit` / `_register`, none of which awaits before writing) or before a replay's receipt is released. The check moved rather than being duplicated: one check, at the linearization point |
+
+Test: a writer whose reads change the host policy mid-section. The catalog, command and creation (with parent) commits are each refused with nothing written, and so is a replayed receipt. Revert checks: each of the four checks disabled on its own turns 2–4 tests red. Package: 1,158 tests, 100% on all four metrics, lint clean.
+
+Round 4 is narrower than rounds 1–3: one class, a refinement of an existing guard rather than a missing one. The loop takes one more round to see whether the profile has turned.

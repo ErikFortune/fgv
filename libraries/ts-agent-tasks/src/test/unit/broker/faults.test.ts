@@ -7,6 +7,7 @@ import '@fgv/ts-utils-jest';
 import { JsonValue } from '@fgv/ts-json-base';
 import { failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import {
+  IBoundTaskWriter,
   ITaskFailure,
   ITaskRepository,
   ITaskRepositoryWriter,
@@ -279,6 +280,71 @@ describe('the broker checks what an injected repository returns', () => {
     expect(
       await h.writer.createTracked({ taskId: tid('x'), operationId: 'op-x' as OperationId, title: 'x' })
     ).toFailWith(/creation receipt does not convert/);
+  });
+});
+
+describe('a policy change during an await inside the writer is seen before anything is written', () => {
+  let h: IBrokerHarness;
+  let armed: boolean;
+  let w: IBoundTaskWriter;
+  beforeEach(async () => {
+    h = await brokerHarness();
+    await track(h.writer, 't');
+    await track(h.writer, 'p');
+    armed = false;
+    const policy = h.policy;
+    // A writer whose reads yield to a host that changes its policy mid-section.
+    w = writerOf(
+      faulty(
+        h,
+        () => ({}),
+        (real) => ({
+          readCommit: async (id: TaskId) => {
+            const read = await real.readCommit(id);
+            if (armed) {
+              armed = false;
+              policy.epoch = `${policy.epoch}+`;
+            }
+            return read;
+          }
+        })
+      ),
+      h
+    );
+  });
+
+  test('catalog, command and creation commits, and a replayed receipt, are all refused', async () => {
+    const reassign = { taskId: tid('t'), operationId: op(), expectedRevision: rev(1), responsibility: ada };
+    const cases: ReadonlyArray<[string, () => Promise<TaskResult<unknown>>]> = [
+      ['catalog', () => w.reassign(reassign)],
+      [
+        'command',
+        () =>
+          w.execute({
+            taskId: tid('t'),
+            operationId: op(),
+            expectedRevision: rev(1),
+            command: 'start',
+            parameters: {}
+          })
+      ],
+      [
+        'creation',
+        () => w.createTracked({ taskId: tid('c'), operationId: op(), title: 'c', parentId: tid('p') })
+      ]
+    ];
+    for (const [, run] of cases) {
+      armed = true;
+      expect(await run()).toFailWith(/the authorization policy changed after the operation was authorized/);
+    }
+    // Nothing was written by any of them.
+    expect(await revisionOf(h.repository, 't')).toBe(1);
+    expect(await h.repository.readCommit(tid('c'))).toSucceedWith(undefined);
+
+    (await w.reassign(reassign)).orThrow();
+    armed = true;
+    expect(await w.reassign(reassign)).toFailWith(/the authorization policy changed/);
+    expect(await w.reassign(reassign)).toSucceed();
   });
 });
 

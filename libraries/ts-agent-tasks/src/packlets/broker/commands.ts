@@ -191,10 +191,6 @@ export async function execute(
 
   // `undefined` from the writer section means: the same command committed while this one waited.
   const outcome = await core.gated(async (writer): Promise<TaskResult<ICommandReceipt | undefined>> => {
-    const now = ctx.epoch();
-    if (now.isFailure() || now.value !== epoch.value) {
-      return changedSinceAuthorized<ICommandReceipt | undefined>('the authorization policy', operationId);
-    }
     const reread = await writer.readCommit(taskId);
     if (reread.isFailure()) {
       return propagate<ICommandReceipt | undefined>(reread);
@@ -214,6 +210,11 @@ export async function execute(
         : evaluateTrackedCommand(found.task.envelope, plan.command, {
             list: found.task.envelope.kind === taskListKind
           });
+    // After the last await and immediately before the commit, which awaits nothing before it
+    // writes: the policy must still be the one the command was authorized under.
+    if (!ctx.epochIs(epoch.value)) {
+      return changedSinceAuthorized<ICommandReceipt | undefined>('the authorization policy', operationId);
+    }
     return _commit(core, writer, ctx.principal, found, storedRequest, outcome);
   });
   if (outcome.isFailure()) {

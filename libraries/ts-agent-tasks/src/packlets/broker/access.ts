@@ -107,6 +107,15 @@ export class AccessContext {
   }
 
   /**
+   * Whether the host's policy epoch is still the one an operation captured. Asked as the last
+   * step before a durable write or a replayed receipt, after every await the writer section makes.
+   */
+  public epochIs(epoch: string): boolean {
+    const now = this.epoch();
+    return now.isSuccess() && now.value === epoch;
+  }
+
+  /**
    * Asks the host policy, with a copy of the request. Fails closed: a check that fails, throws,
    * rejects or answers anything but `true` is a denial. A failing policy is reported to the host
    * logger, never to the caller.

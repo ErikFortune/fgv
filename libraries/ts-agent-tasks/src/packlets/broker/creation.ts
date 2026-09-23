@@ -195,10 +195,6 @@ export async function createNative(
   }
 
   return core.gated(async (writer) => {
-    const now = ctx.epoch();
-    if (now.isFailure() || now.value !== epoch.value) {
-      return changedSinceAuthorized<ITaskMutationResult>('the authorization policy', operationId);
-    }
     const parentNow = await recheckParent(writer, parent, taskId, operationId);
     if (parentNow.isFailure()) {
       return propagate<ITaskMutationResult>(parentNow);
@@ -215,6 +211,11 @@ export async function createNative(
       core.audience
     );
     const details: JsonValue = 'completion' in request ? { completion: request.completion } : {};
+    // After the last await and immediately before the registration, which awaits nothing before
+    // it writes: the policy must still be the one the creation was authorized under.
+    if (!ctx.epochIs(epoch.value)) {
+      return changedSinceAuthorized<ITaskMutationResult>('the authorization policy', operationId);
+    }
     return _register(core, writer, {
       taskId,
       operationId,

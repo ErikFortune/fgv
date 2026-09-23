@@ -176,10 +176,6 @@ export async function confirmUnchanged<T>(
   related: ReadonlyArray<IRelatedTask> = []
 ): Promise<TaskResult<T>> {
   return core.gated(async (writer) => {
-    const now = ctx.epoch();
-    if (now.isFailure() || now.value !== epoch) {
-      return changedSinceAuthorized<T>('the authorization policy', operationId);
-    }
     for (const [taskId, authorized, what] of [
       [id, record, `task ${id}`] as const,
       ...related.map((task) => [task.id, task.record, `a task related to ${id}`] as const)
@@ -191,6 +187,10 @@ export async function confirmUnchanged<T>(
       if (again.value === undefined || revisionOf(again.value) !== revisionOf(authorized)) {
         return changedSinceAuthorized<T>(what, operationId);
       }
+    }
+    // After the last await, immediately before the receipt is released.
+    if (!ctx.epochIs(epoch)) {
+      return changedSinceAuthorized<T>('the authorization policy', operationId);
     }
     return ok(value);
   });
@@ -344,10 +344,6 @@ export async function runCatalogMutation<TReceipt extends ITaskMutationResult>(
 
   // `undefined` from the writer section means: the same operation committed while this one waited.
   const outcome = await core.gated(async (writer): Promise<TaskResult<TReceipt | undefined>> => {
-    const now = ctx.epoch();
-    if (now.isFailure() || now.value !== epoch.value) {
-      return changedSinceAuthorized<TReceipt | undefined>('the authorization policy', operationId);
-    }
     const reread = await writer.readCommit(taskId);
     if (reread.isFailure()) {
       return propagate<TReceipt | undefined>(reread);
@@ -412,6 +408,11 @@ export async function runCatalogMutation<TReceipt extends ITaskMutationResult>(
       principalKey: ctx.principal,
       receipt: receiptJson(receipt)
     };
+    // After the last await — every re-read and the evaluation — and immediately before the
+    // durable write: the policy must still be the one every answer was given under.
+    if (!ctx.epochIs(epoch.value)) {
+      return changedSinceAuthorized<TReceipt | undefined>('the authorization policy', operationId);
+    }
     const committed = await writer.commit({
       purpose: 'operation',
       operationId,
