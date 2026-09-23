@@ -4,7 +4,7 @@
  */
 
 import { DetailedFailure, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
-import { ICapacityFailure, ITaskFailure, OperationId, TaskFailureCode, TaskId, TaskResult } from '../types';
+import { ITaskFailure, OperationId, TaskFailureCode, TaskId, TaskResult } from '../types';
 
 /**
  * Builds a classified task failure.
@@ -14,13 +14,12 @@ export function taskFailure<T>(
   message: string,
   code: TaskFailureCode,
   retry: ITaskFailure['retry'],
-  extra?: { readonly operationId?: OperationId; readonly capacity?: ICapacityFailure }
+  extra?: { readonly operationId?: OperationId }
 ): DetailedFailure<T, ITaskFailure> {
   return failWithDetail<T, ITaskFailure>(message, {
     code,
     retry,
-    ...(extra?.operationId !== undefined ? { operationId: extra.operationId } : {}),
-    ...(extra?.capacity !== undefined ? { capacity: extra.capacity } : {})
+    ...(extra?.operationId !== undefined ? { operationId: extra.operationId } : {})
   });
 }
 
@@ -68,12 +67,14 @@ export function notFound<T>(id: TaskId, operationId?: OperationId): TaskResult<T
  * The failure for a visible task on which this principal may not perform an action.
  * @internal
  */
-export function denied<T>(id: TaskId, action: string, operationId?: OperationId): TaskResult<T> {
+export function denied<T>(id: TaskId, action: string, operationId: OperationId): TaskResult<T> {
   return taskFailure<T>(
     `task ${id}: '${action}' is not permitted`,
     'not-found-or-denied',
     'after-host-action',
-    operationId !== undefined ? { operationId } : undefined
+    {
+      operationId
+    }
   );
 }
 

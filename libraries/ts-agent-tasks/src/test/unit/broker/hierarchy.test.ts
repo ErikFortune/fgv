@@ -67,6 +67,15 @@ describe('creation under a parent', () => {
     expect(await revisionOf(h.repository, 'p')).toBe(1);
   });
 
+  test("a view lists a parent's visible children, and only those", async () => {
+    await track(h.writer, 'c1', { parentId: 'p' });
+    await track(h.writer, 'c2', { parentId: 'p' });
+    h.policy.hide('c2');
+    expect(await h.writer.query({ filter: { parentId: tid('p') } })).toSucceedAndSatisfy((page) => {
+      expect(page.items.map((i) => i.envelope.id)).toEqual(['c1']);
+    });
+  });
+
   test('a missing or hidden parent fails exactly as a foreign id, naming only what the caller named', async () => {
     h.policy.hide('p');
     const hidden = await h.writer.createTracked({

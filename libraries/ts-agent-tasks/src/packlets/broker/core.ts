@@ -3,12 +3,14 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Converters as JsonConverters, JsonValue } from '@fgv/ts-json-base';
+import { Converters as JsonConverters, JsonObject, JsonValue } from '@fgv/ts-json-base';
 import { Hash, Result } from '@fgv/ts-utils';
 import { TaskConverters } from '../converters';
 import { TaskAudienceResolver } from '../implementations';
 import {
+  IReassignmentResult,
   IStoredTaskOperation,
+  ITaskMutationResult,
   ITaskCommitRecord,
   ITaskEnvironment,
   Instant,
@@ -51,6 +53,27 @@ export function storedOperation(
   operationId: OperationId
 ): IStoredTaskOperation | undefined {
   return record.operations.find((op) => op.operationId === operationId);
+}
+
+/**
+ * A mutation receipt as stored JSON, built field by field: a receipt the broker computed is
+ * always representable, so this cannot fail.
+ * @internal
+ */
+export function receiptJson(receipt: ITaskMutationResult | IReassignmentResult): JsonObject {
+  const label = (value: { readonly namespace: string; readonly key: string }): JsonObject => ({
+    namespace: value.namespace,
+    key: value.key
+  });
+  return {
+    taskId: receipt.taskId,
+    revision: receipt.revision,
+    operationId: receipt.operationId,
+    disposition: receipt.disposition,
+    updateIds: [...receipt.updateIds],
+    ...('previous' in receipt && receipt.previous !== undefined ? { previous: label(receipt.previous) } : {}),
+    ...('current' in receipt && receipt.current !== undefined ? { current: label(receipt.current) } : {})
+  };
 }
 
 /**

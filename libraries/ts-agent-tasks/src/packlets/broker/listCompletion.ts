@@ -108,15 +108,11 @@ async function _completeOne(
   }
   const revision: TaskRevision = revisionOf(read.value);
   const identity = { taskId: id, operationId: _completionKey(revision), expectedRevision: revision };
-  const json = core.toJson({ ...identity, completion: 'all-children-succeeded' });
-  if (json.isFailure()) {
-    return propagate(json);
-  }
   return runCatalogMutation(core, ctx, {
     action: 'complete-list',
     operation: 'complete-list',
     identity,
-    request: json.value,
+    request: { ...identity, completion: 'all-children-succeeded' },
     receiptConverter: core.converters.broker.mutationResult,
     admit: (record) => requireOpen(record, 'it is already complete').onSuccess(() => _automatic(record)),
     evaluate: (current) =>

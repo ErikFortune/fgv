@@ -54,8 +54,4 @@ export class ViewCursorTable {
     }
     return ok(handle.inner);
   }
-
-  public get size(): number {
-    return this._handles.size;
-  }
 }

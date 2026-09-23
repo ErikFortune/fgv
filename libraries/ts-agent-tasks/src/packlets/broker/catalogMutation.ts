@@ -28,7 +28,7 @@ import {
 } from '../types';
 import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, AccessSubject, subjectOf } from './access';
-import { BrokerCore, canonicallySame, revisionOf, storedOperation } from './core';
+import { BrokerCore, canonicallySame, receiptJson, revisionOf, storedOperation } from './core';
 import { changedSinceAuthorized, denied, notFound, ok, propagate, taskFailure } from './failures';
 
 /**
@@ -342,17 +342,13 @@ export async function runCatalogMutation<TReceipt extends ITaskMutationResult>(
       after
     );
     const archived: boolean = change.value.disposition === 'changed' && change.value.archived === true;
-    const stored = core.toJson(receipt);
-    if (stored.isFailure()) {
-      return propagate<TReceipt>(stored);
-    }
     const operation: IStoredCatalogOperation = {
       type: 'catalog',
       operationId,
       operation: mutation.operation,
       request: mutation.request,
       principalKey: ctx.principal,
-      receipt: stored.value
+      receipt: receiptJson(receipt)
     };
     const committed = await writer.commit({
       purpose: 'operation',

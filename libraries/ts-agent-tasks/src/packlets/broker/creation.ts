@@ -32,7 +32,7 @@ import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, subjectOf } from './access';
 import { IRelatedTask, isSameCatalog, readExisting } from './catalogMutation';
 import { checkParentOpen, convertRequest, readParent } from './catalogOperations';
-import { BrokerCore, revisionOf } from './core';
+import { BrokerCore, receiptJson, revisionOf } from './core';
 import { changedSinceAuthorized, denied, notFound, ok, propagate, taskFailure } from './failures';
 
 const firstRevision: TaskRevision = 1 as TaskRevision;
@@ -260,17 +260,13 @@ async function _register(
     readonly draft: (operation: IStoredCatalogOperation) => ITaskRecordDraft;
   }
 ): Promise<TaskResult<ITaskMutationResult>> {
-  const stored = core.toJson(params.receipt);
-  if (stored.isFailure()) {
-    return propagate(stored);
-  }
   const operation: IStoredCatalogOperation = {
     type: 'catalog',
     operationId: params.operationId,
     operation: params.operation,
     request: params.request,
     principalKey: params.principal,
-    receipt: stored.value
+    receipt: receiptJson(params.receipt)
   };
   const registered = await writer.register({
     taskId: params.taskId,
