@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-prompt-assist",
+      "comment": "Resolve observations carry the resolve's composition when one was requested; a qualifier axis can declare its cache stability, and the conditional-body diagnostic refutes a claim only when a conditioning axis is declared less stable than it, naming that axis.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist",
+  "email": "noreply@anthropic.com"
+}
