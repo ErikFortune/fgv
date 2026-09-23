@@ -130,11 +130,13 @@ substrate. Don't queue streams against them here.
 
 ### `ai-assist-streaming-cache` 🔵
 
-**Status: implementation complete, pushed to branch; PR not yet opened.** All acceptance
-criteria below verified, `code-reviewer` approved with no P1/P2 findings, repo-wide `rebuild` +
-`test` both green. Exit artifact migrated to
-`.ai/tasks/completed/2026-09/ai-assist-streaming-cache/` (see its `README.md`/`result.md`) —
-this entry moves to the Shipped list once a PR exists and merges.
+**Status: ✅ shipped via [#688](https://github.com/ErikFortune/fgv/pull/688).** All acceptance
+criteria verified, `code-reviewer` approved with no P1/P2 findings, repo-wide `rebuild` + `test`
+green. Exit artifact at `.ai/tasks/completed/2026-09/ai-assist-streaming-cache/`.
+
+*Written anticipating merge, per the artifact protocol — a PR cannot observe its own merge, so an
+author-time-accurate marker is guaranteed wrong on landing.* Layer 2 (Copilot / CodeRabbit) runs on
+#688; it had not run when the branch was first pushed.
 
 **Mission.** Thread `cache?: IAiCacheRequest` through the **streaming** request paths of
 `@fgv/ts-extras/ai-assist`, as `completionClient` already threads it through the non-streaming ones,
