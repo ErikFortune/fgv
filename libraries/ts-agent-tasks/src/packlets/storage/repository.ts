@@ -16,7 +16,9 @@ import {
 import { TaskConverters } from '../converters';
 import {
   IDueTaskQuery,
+  IListCompletionCandidateQuery,
   IOwedUpdatePage,
+  ITaskChildState,
   IOwedUpdateQuery,
   IPendingInventoryEntry,
   ISourceBinding,
@@ -383,6 +385,50 @@ export class FileTreeTaskRepository implements ITaskRepository {
                 'after-host-action'
               );
         })
+    );
+  }
+
+  /** {@inheritDoc ITaskRepository.childStates} */
+  public async childStates(parentId: TaskId): Promise<TaskResult<ReadonlyArray<ITaskChildState>>> {
+    return this._queryable().onSuccess((index) =>
+      classify(this._converters.ids.taskId.convert(parentId), 'invalid', 'after-host-action').onSuccess(
+        (id) => {
+          if (!this._tasks.has(id)) {
+            return taskFailure<ReadonlyArray<ITaskChildState>>(
+              `childStates: ${id} is not a live task`,
+              'not-found-or-denied',
+              'after-host-action'
+            );
+          }
+          const children: ReadonlyArray<TaskId> = Array.from(index.children.get(id) ?? []).sort();
+          return ok(children.map((child) => this._childState(index, child)));
+        }
+      )
+    );
+  }
+
+  /** One child's state, from its projection and index membership. */
+  private _childState(index: TaskIndex, id: TaskId): ITaskChildState {
+    // Every child in the adjacency is a live task with a projection: they are added together.
+    const projection: ITaskProjection = this._tasks.get(id)!;
+    const category = index.categoryOf(id);
+    if (category === 'unresolved' || category === 'quarantined') {
+      return { id, state: category, archived: projection.archived };
+    }
+    return { id, state: 'resolved', status: projection.status!, archived: projection.archived };
+  }
+
+  /** {@inheritDoc ITaskRepository.listCompletionCandidates} */
+  public async listCompletionCandidates(
+    request: IListCompletionCandidateQuery
+  ): Promise<TaskResult<ReadonlyArray<TaskId>>> {
+    return this._queryable().onSuccess((index) =>
+      this._convertQuery(this._converters.broker.listCompletion, request).onSuccess((query) => {
+        const keys: ReadonlyArray<string> = index.listCandidates.keys;
+        const start: number = index.listCandidates.startAfter(query.after);
+        // Every key in the set is a task id the index added under that brand.
+        return ok(keys.slice(start, start + query.limit).map((key) => key as TaskId));
+      })
     );
   }
 

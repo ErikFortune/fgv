@@ -5,7 +5,7 @@
 
 import { FileTree } from '@fgv/ts-json-base';
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
-import { TaskConverters } from '../converters';
+import { TaskConverters, taskListDetails } from '../converters';
 import {
   IPendingInventoryEntry,
   IStoredCatalogOperation,
@@ -22,6 +22,8 @@ import {
   TaskRecoveryIssueCode,
   TaskResult,
   defaultTaskCapacityProfile,
+  taskListDetailVersion,
+  taskListKind,
   taskStorageFormatVersion
 } from '../types';
 import { checkTaskClaims, withOwnership } from './claims';
@@ -1062,7 +1064,20 @@ function _indexContent(record: ITaskCommitRecord, known: boolean): IndexContent 
   if (record.recordType === 'unresolved') {
     return { category: 'unresolved', reference: record.reference };
   }
-  return { category: record.archived ? 'archived' : 'summary', envelope: record.task.envelope };
+  if (record.archived) {
+    return { category: 'archived', envelope: record.task.envelope };
+  }
+  const envelope = record.task.envelope;
+  // Whether a list completes automatically lives in its details, which are never resident; it is
+  // read here, where the whole record is in hand, and kept as one flag on its membership.
+  const automaticList: boolean =
+    envelope.kind === taskListKind &&
+    envelope.detailVersion === taskListDetailVersion &&
+    taskListDetails
+      .convert(record.task.details)
+      .onSuccess((details) => succeed(details.completion === 'all-children-succeeded'))
+      .orDefault(false);
+  return { category: 'summary', envelope, ...(automaticList ? { automaticList } : {}) };
 }
 
 /**

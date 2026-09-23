@@ -8,6 +8,8 @@ import { Result } from '@fgv/ts-utils';
 import { TaskConverters } from '../converters';
 import {
   IDueTaskQuery,
+  IListCompletionCandidateQuery,
+  ITaskChildState,
   IOwedUpdatePage,
   IOwedUpdateQuery,
   ISourceBinding,
@@ -238,6 +240,29 @@ export interface ITaskRepository {
    * bound to at most one retained task.
    */
   lookupSource(binding: ISourceBinding): Promise<TaskResult<TaskId | undefined>>;
+  /**
+   * Every retained child of a live task, from the resident graph: archived, unresolved and
+   * quarantined children included, ordered by id. Reads no record.
+   *
+   * @remarks
+   * The authoritative child set, never a filtered tree — list completion and relationship rules
+   * are decided from it. Fails `not-found-or-denied` when `parentId` is not a live task. A trusted
+   * host API: it is not an authorization boundary and says nothing about who may see a child.
+   */
+  childStates(parentId: TaskId): Promise<TaskResult<ReadonlyArray<ITaskChildState>>>;
+  /**
+   * List-completion candidates, ordered by id: open task lists that complete automatically, have
+   * at least one child, and whose every child — archived ones included — has succeeded.
+   *
+   * @remarks
+   * Maintained by every commit and rebuilt from the records at open and by
+   * {@link ITaskRepository.rebuildIndexes}, so a crash between a last child's success and its
+   * list's completion leaves a discoverable candidate. A candidate is a hint, not a decision: the
+   * completing writer rechecks it.
+   */
+  listCompletionCandidates(
+    request: IListCompletionCandidateQuery
+  ): Promise<TaskResult<ReadonlyArray<TaskId>>>;
   /**
    * Discards the resident indexes and rebuilds them from the committed records, in bounded
    * sequential passes.

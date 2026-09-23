@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
+export * from './authority';
 export * from './bounds';
+export * from './broker';
 export * from './builtins';
 export * from './capacity';
 export * from './capacityProfile';
@@ -20,4 +22,5 @@ export * from './registry';
 export * from './source';
 export * from './storage';
 export * from './summary';
+export * from './trackedCommands';
 export * from './updates';
