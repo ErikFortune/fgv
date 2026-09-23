@@ -266,6 +266,61 @@ describe('PromptLibrary observability wiring', () => {
     });
   });
 
+  describe('composition on the resolve record', () => {
+    test('carries the resolved composition whole when the request asked for one', async () => {
+      const store = PromptObservationStore.create().orThrow();
+      const lib = await buildLib([freeTextRecord()], { observers: [store] });
+      expect(
+        await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {}, composition: {} })
+      ).toSucceedAndSatisfy((resolved) => {
+        const [record] = store.query();
+        expect(record.phase).toBe('resolve');
+        if (record.phase === 'resolve') {
+          expect(resolved.composition).toBeDefined();
+          // The same object, not a copy — cacheFindings is reached through it, not hoisted.
+          expect(record.composition).toBe(resolved.composition);
+          expect(record.composition?.sections.length).toBeGreaterThan(0);
+          expect(record.composition?.cacheFindings).toBe(resolved.composition?.cacheFindings);
+          expect(record).not.toHaveProperty('cacheFindings');
+        }
+      });
+    });
+
+    test('leaves the serialized record unchanged when the request did not ask for a composition', async () => {
+      const store = PromptObservationStore.create().orThrow();
+      const lib = await buildLib([freeTextRecord()], { observers: [store] });
+      expect(await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {} })).toSucceedAndSatisfy(
+        (resolved) => {
+          expect(resolved.composition).toBeUndefined();
+        }
+      );
+      const [record] = store.query();
+      expect(record.phase).toBe('resolve');
+      if (record.phase === 'resolve') {
+        expect(record.composition).toBeUndefined();
+        expect(JSON.stringify(record)).not.toMatch(/composition/);
+      }
+    });
+
+    test('a failed resolve carries no composition even when one was requested', async () => {
+      const store = PromptObservationStore.create().orThrow();
+      const lib = await buildLib([freeTextRecord()], { observers: [store] });
+      expect(
+        await lib.resolve({
+          id: 'missing' as unknown as PromptId,
+          chain: [SCOPE],
+          qualifiers: {},
+          composition: {}
+        })
+      ).toFail();
+      const [record] = store.query();
+      expect(record.outcome).toBe('failure');
+      if (record.phase === 'resolve') {
+        expect(record.composition).toBeUndefined();
+      }
+    });
+  });
+
   describe('seq + contentHash semantics', () => {
     test('seq is monotonic across calls and shared across observers', async () => {
       const a = PromptObservationStore.create().orThrow();

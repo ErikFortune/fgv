@@ -29,6 +29,7 @@
 import { fail, type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 
+import { type IAiCacheRequest } from '../cacheRequest';
 import {
   type AiServerToolConfig,
   type IAiProviderDescriptor,
@@ -68,9 +69,15 @@ export const jsonObjectOrNullValidator: Validator<JsonObject | null> = Validator
 );
 
 /**
- * Parameters for a streaming completion request. Structurally identical to
- * the non-streaming `IProviderCompletionParams`; kept as its own interface
- * so callers can be explicit about which path they're invoking.
+ * Parameters for a streaming completion request. The non-streaming
+ * `IProviderCompletionParams` shape **minus `structuredOutput`**; kept as its
+ * own interface so callers can be explicit about which path they're invoking.
+ *
+ * @remarks
+ * The omission is deliberate, not an oversight. Native structured output is a
+ * non-streaming feature on every provider the package supports, so the field
+ * would have nowhere to go here. A caller that needs it must use
+ * `callProviderCompletion`.
  *
  * @remarks
  * Carries the unified {@link AiAssist.IChatRequest} shape (`system?` + ordered
@@ -126,6 +133,13 @@ export interface IProviderCompletionStreamParams extends IChatRequest {
    * Messages API requires the field, so it falls back to `DEFAULT_ANTHROPIC_MAX_TOKENS`.
    */
   readonly maxTokens?: number;
+  /**
+   * Prompt-caching plan for this request. Omitted, nothing cache-related is sent — the request
+   * body is byte-identical to a build predating this feature. See {@link AiAssist.IAiCacheRequest}.
+   * Validated against this request's own `system` at the point it is applied, and gated per
+   * provider exactly as `IProviderCompletionParams.cache` is on the non-streaming path.
+   */
+  readonly cache?: IAiCacheRequest;
 }
 
 /**

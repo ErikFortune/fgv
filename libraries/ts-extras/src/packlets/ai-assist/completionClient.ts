@@ -55,6 +55,8 @@ import {
   usesMaxCompletionTokensField
 } from './model';
 import { type IAiCacheRequest } from './cacheRequest';
+import { aiCompletionUsage } from './converters';
+import type { IAiCompletionUsage } from './usageTypes';
 import {
   anthropicEffortToBudgetTokens,
   checkTemperatureConflict,
@@ -998,6 +1000,19 @@ export async function callProviderCompletion(
  * CORS, and API key forwarding. The request body serializes the unified
  * {@link AiAssist.IChatRequest} shape (`system?` + `messages`). Enforces the same
  * non-empty / trailing-user-turn and image-input invariants as the direct path.
+ *
+ * @remarks
+ * Two parameters are handled before the body is composed, rather than forwarded.
+ * `tier` is resolved here and sent as a concrete `modelOverride`, because both
+ * halves of the resolution live on the descriptor the caller already holds — so a
+ * proxy needs no `tier` vocabulary, where a `tier` body field it did not understand
+ * would be ignored and silently serve a frontier request from the base model.
+ * `endpoint` is **refused**: it names where the prompt must go, the proxy is what
+ * makes that call, and the field has never been sent to one — so honoring it is
+ * unverifiable and ignoring it would reach the provider's default upstream instead
+ * of the host the caller pinned. Use `callProviderCompletion`, or point the
+ * proxy itself at the intended upstream.
+ *
  * @param proxyUrl - Base URL of the proxy server
  * @param params - Same parameters as {@link callProviderCompletion}
  * @public
@@ -1019,7 +1034,9 @@ export async function callProxiedCompletion(
     thinking,
     maxTokens,
     structuredOutput,
-    cache
+    cache,
+    tier,
+    endpoint
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -1028,6 +1045,52 @@ export async function callProxiedCompletion(
   }
   if (splitResult.value.prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
     return fail(`provider "${descriptor.id}" does not accept image input`);
+  }
+
+  // `endpoint` names the upstream the request must reach. Unlike `tier` it cannot be
+  // resolved on this side, because the proxy is the one making that call — it would
+  // have to be forwarded and honored. No proxy honors it: the field has never been
+  // sent, so every deployed proxy would ignore it and fall back to the provider's
+  // public API.
+  //
+  // Silently is the problem. A caller names an endpoint to pin *where the prompt
+  // goes* — a self-hosted model, a LAN deployment, a residency boundary — so the
+  // failure is not a degraded answer, it is the content going somewhere they
+  // explicitly said it must not, discoverable only by watching the proxy's traffic.
+  // That is the same shape as the structured-output silent-drop this function
+  // already refuses to allow, with a worse consequence.
+  //
+  // So refuse rather than pretend. Honoring `endpoint` over a proxy needs a wire
+  // field AND a report-back the caller can verify, the way `structuredOutput` is
+  // acknowledged below; until that protocol exists, the direct path is where this
+  // parameter works.
+  if (endpoint !== undefined) {
+    return fail(
+      `callProxiedCompletion: endpoint is not supported on the proxied path — a proxy ` +
+        `cannot confirm it honored it, and silently reaching the provider's default ` +
+        `upstream would send the request somewhere the caller excluded. Use ` +
+        `callProviderCompletion, or route the proxy itself at the intended upstream.`
+    );
+  }
+
+  // The quality tier is resolved HERE rather than forwarded, because it can be:
+  // the tier walk and the alias map both live on the descriptor, which is
+  // client-side, so this side already holds everything the resolution needs.
+  // Sending the concrete model through the existing `modelOverride` field means a
+  // proxy needs no new vocabulary and an already-deployed one honors the tier
+  // without being updated — where a `tier` body field it did not understand would
+  // be ignored, silently serving a frontier request from the base model.
+  //
+  // Only when a tier was actually asked for. With no tier, `modelOverride` passes
+  // through exactly as before, including absent — which is what lets a proxy apply
+  // its own default.
+  let effectiveModelOverride: ModelSpec | undefined = modelOverride;
+  if (tier !== undefined) {
+    const tierResult = resolveProviderModel(descriptor, modelOverride, tier);
+    if (tierResult.isFailure()) {
+      return fail(tierResult.message);
+    }
+    effectiveModelOverride = tierResult.value;
   }
 
   const body: Record<string, unknown> = {
@@ -1043,9 +1106,10 @@ export async function callProxiedCompletion(
   if (system !== undefined) {
     body.system = system;
   }
-  if (modelOverride !== undefined) {
-    body.modelOverride = modelOverride;
+  if (effectiveModelOverride !== undefined) {
+    body.modelOverride = effectiveModelOverride;
   }
+
   if (tools && tools.length > 0) {
     body.tools = tools;
   }
@@ -1068,6 +1132,14 @@ export async function callProxiedCompletion(
             schema: structuredOutput.schema.toJson(),
             ...(structuredOutput.onUnsupported !== undefined
               ? { onUnsupported: structuredOutput.onUnsupported }
+              : {}),
+            // Part of the request, not a local-only concern: the hoist is applied
+            // where the wire schema is built, which on this path is the proxy. Drop
+            // it and an opted-in caller's schema gets refused or degraded instead of
+            // hoisted, and `onUnsupported` reports a constraint loss the caller had
+            // already opted out of.
+            ...(structuredOutput.adaptOptionalToNullable !== undefined
+              ? { adaptOptionalToNullable: structuredOutput.adaptOptionalToNullable }
               : {})
           }
         : {
@@ -1105,12 +1177,24 @@ export async function callProxiedCompletion(
   // rather than a response claiming an enforcement nobody verified — a proxy
   // predating this feature drops the constraint silently, which is the exact
   // failure this surface exists to remove.
+  // A proxy relaying `callProviderCompletion`'s result carries an already-normalized
+  // IAiCompletionUsage, not a provider wire shape — so this validates that shape
+  // rather than reaching for the per-provider normalizers. A proxy that reports
+  // nothing, or reports something malformed, yields `undefined`: the documented
+  // "no normalized usage exposed", never a partially-trusted object and never a
+  // fabricated zero.
+  const usage: IAiCompletionUsage | undefined = aiCompletionUsage.convert(response.usage).orDefault();
+
+  // Built once: the two returns differ only in the enforcement they report, and
+  // duplicating the shape is how a field added to one and not the other drifts.
+  const base = {
+    content: response.content,
+    truncated: response.truncated === true,
+    ...(usage !== undefined ? { usage } : {})
+  };
+
   if (structuredOutput === undefined) {
-    return succeed({
-      content: response.content,
-      truncated: response.truncated === true,
-      structuredOutput: 'none'
-    });
+    return succeed({ ...base, structuredOutput: 'none' });
   }
   if (!isStructuredOutputEnforcement(response.structuredOutput)) {
     return fail(
@@ -1119,9 +1203,5 @@ export async function callProxiedCompletion(
         `dropped the request silently`
     );
   }
-  return succeed({
-    content: response.content,
-    truncated: response.truncated === true,
-    structuredOutput: response.structuredOutput
-  });
+  return succeed({ ...base, structuredOutput: response.structuredOutput });
 }

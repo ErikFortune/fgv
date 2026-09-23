@@ -705,6 +705,35 @@ describe('callProxiedListModels', () => {
     global.fetch = originalFetch;
   });
 
+  test('endpoint is refused, while capabilityConfig stays a disclosed no-op', async () => {
+    // The two unusable params here are NOT the same case. `capabilityConfig`
+    // overrides how a model id is classified and the proxy returns models already
+    // classified, so an override could only ever arrive too late — ignoring it
+    // yields the default classification, which the docstring has always said. But
+    // `endpoint` names which server answers at all, so ignoring it lists the
+    // provider's public catalog in place of the host the caller pinned.
+    //
+    // Wrong impls this catches: dropping `endpoint` (the original bug), and
+    // over-correcting by refusing `capabilityConfig` too, which would break
+    // existing callers over a documented no-op.
+    const refused = await AiAssist.callProxiedListModels('http://localhost:3001', {
+      descriptor: makeImageDescriptor(),
+      apiKey: 'test-key',
+      endpoint: 'http://192.168.1.50:8080/v1'
+    });
+    expect(refused).toFailWith(/endpoint is not supported on the proxied path/i);
+    expect(global.fetch as jest.Mock).not.toHaveBeenCalled();
+
+    mockFetchResponse({ models: [{ id: 'gpt-4o', capabilities: ['chat'] }] });
+    const accepted = await AiAssist.callProxiedListModels('http://localhost:3001', {
+      descriptor: makeImageDescriptor(),
+      apiKey: 'test-key',
+      capabilityConfig: { global: [{ idPattern: /^gpt-/, capabilities: ['chat'] }] }
+    });
+    expect(accepted).toSucceed();
+    expect(JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body).capabilityConfig).toBeUndefined();
+  });
+
   test('calls the proxy list-models endpoint and rebuilds capabilities as Set', async () => {
     mockFetchResponse({
       models: [

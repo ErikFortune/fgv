@@ -23,6 +23,43 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## A browser story for client-tool turns (CORS pre-flight + a proxied entry point)
+
+`callProviderCompletionStream` pre-flights `IAiProviderDescriptor.streamingCorsRestricted` and
+returns a legible `Result.fail` before fetch when the descriptor is CORS-restricted and the call is
+not proxied. `executeClientToolTurn` is also a streaming entry point and does neither: it never
+reads the flag, and there is no proxied client-tool variant. So a browser client-tool turn against
+`xai-grok` (the one registry descriptor that sets the flag) reaches a direct fetch and dies with a
+CORS error rather than an actionable refusal.
+
+The plain completion paths have a complete browser story — the CORS flags plus
+`callProxiedCompletion` / `callProxiedCompletionStream`. The client-tool path has neither half. It
+was never given one.
+
+**Why deferred**: there is no browser consumer. Every caller of `executeClientToolTurn` is Node-side
+— `@fgv/ts-extras-mcp`, `@fgv/ts-agent-memory`, and the testbed scenarios; nothing in
+`ts-web-extras`, `ts-app-shell`, `ts-res-ui-components`, or any app. Closing the gap is a feature,
+not a bug fix, and speculatively shaping an API for a consumer that does not exist is how the
+surface accretes things nobody asked for.
+
+Adding the guard *alone* would be worse than the status quo: its natural message points the caller
+at `callProxiedCompletionStream`, a route that cannot carry a client-tool turn, because the proxy
+stream adapter allowlists four of the seven `IAiStreamEvent` variants and silently drops the three
+`client-tool-*` ones. An opaque CORS failure at least fails loudly; a proxy that quietly discards
+tool calls fails in the middle of a conversation.
+
+**Dependencies**: a real browser consumer. If one appears, this is one coherent change — proxied
+client-tool entry point, full event passthrough on the proxy adapter, and the pre-flight guard —
+not three separate fixes.
+
+**Reference**: raised by Copilot on #678 as a blocking finding; declined there with this reasoning,
+after confirming against the code that nothing advertises browser support for client-tool turns (the
+"works on all four providers" claim is provider coverage, and that sentence now says so). The
+documentation shipped in #678 states the current behavior; this entry records why it was documented
+rather than fixed.
+
+---
+
 ## A restamped `embeddingRef` synthesizes the scoped key rather than recovering the index's
 
 `IMemoryStore.reconcile(kind, 'record-vector')` repairs the case where the index holds a vector but

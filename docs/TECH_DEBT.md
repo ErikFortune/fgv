@@ -76,6 +76,35 @@ in-or-out of the slice depending on `prefixEnd`'s position. Regression tests use
 zero-byte stable run in the prefix". Design rule recorded at design.md §5.1b. This item is
 retired; the `as Record<string, …>` item below remains outstanding.)*
 
+- **[P2] D2 does not treat a body as conditional when no winning candidate is a conditional
+  `'match'` — a conditional candidate that lost this resolve is invisible to it.**
+  `checkConditionalBody` in `libraries/ts-prompt-assist/src/packlets/resolve/cacheStabilityAnalysis.ts`
+  marks a body qualifier-conditional only when a *winning* candidate matched (`matchType ===
+  'match'`, not `'matchAsDefault'`) on a non-empty condition set. The same blind spot covers a
+  body whose only conditional winners matched as `matchAsDefault`: their axes are folded in when
+  some other winner is a conditional `'match'`, and ignored otherwise. Take the common shape: an unconditional full base plus partials conditioned on a
+  volatile axis. On a resolve where no partial matches, the body reads `'frozen'`. On the next
+  resolve a partial can match and change it. That is a false `'frozen'`, the expensive direction
+  under design.md §1's asymmetry.
+  `prompt-assist-qualifier-stability` (#689) folds losing candidates in **once some winner is
+  conditional**, because its own relaxation would otherwise have introduced exactly this shape. It
+  left the all-unconditional-winners case as it found it: closing it adds refutations to bodies
+  that are not refuted today, which was outside that stream's compatibility contract.
+
+  **Trigger**: the next change to D2, or the first report of a cache miss on a prompt whose
+  diagnostics called it `'frozen'`.
+
+  **Scope sketch**: when `candidates` is supplied, treat any candidate with a non-empty condition
+  set as conditioning the body whether or not it won. With the axis declarations from #689 this
+  costs a consumer nothing on `'frozen'`-declared axes. It will add refutations for undeclared
+  ones, so run the repo-wide `rush test` and expect downstream fixtures that count findings.
+
+  **Not a P3**: it produces a false `'frozen'` on an ordinary authoring shape, and a false
+  `'frozen'` costs the whole prefix silently on every request.
+
+  **Reference**: `.ai/tasks/completed/2026-09/prompt-assist-qualifier-stability/result.md`
+  § "Found during implementation — losing candidates".
+
 - **[P2] `as Record<string, …>` after a `typeof` guard — a P1 anti-pattern, 32 sites in
   production source across 11 packages.**
   `CODE_REVIEW_CHECKLIST.md` lists "manual type checking with unsafe casts" as **P1 CRITICAL** and
@@ -377,6 +406,38 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   **Reference**: PR #377 (ts-extras Yaml fix + micro-test pattern landed); original L13 lessons-pending entry; earlier ts-extras `Crypto` bug.
 
 ## P3 — Opportunistic cleanup
+
+- **[P3] `createChildFile` / `createChildFileBytes` accept a child name containing a path
+  separator and silently `joinPaths` it into a nested path.**
+  `DirectoryItem.createChildFile` / `createChildFileBytes`
+  (`ts-json-base/src/packlets/file-tree/directoryItem.ts`) pass `name` straight to
+  `hal.joinPaths(this.absolutePath, name)` with no validation. A caller handing them
+  `'sub/child.txt'` gets a file one level down; on Windows `'sub\\child.txt'` does the same,
+  because `joinPaths` is `path.join`. `'..'` is worse, because `path.join` **normalizes** it —
+  `joinPaths('/a/b', '..')` is `/a`, a path outside the directory entirely.
+
+  The sibling `writeChildAtomically`, added by the `filetree-atomic-write` stream, rejects all
+  of these before touching the store. So the package now has two adjacent child-creating methods
+  with different name contracts, which is the actual defect: a caller who learns the strict rule
+  from one reasonably assumes it of the other.
+
+  **Trigger**: the next change that touches `DirectoryItem`'s child-creation methods for any
+  other reason, or the first consumer report of a traversal through one of them.
+
+  **Scope sketch**: lift the validation `writeChildAtomically` already performs into a shared
+  private helper and call it from all three. The work is small; the cost is that it is a
+  **behavior change on two established methods** of a stability-obligated package — a call that
+  succeeds today starts failing. That needs its own change file and a note in
+  `CAPABILITIES.md`, and it wants to be someone's deliberate decision rather than a rider on an
+  unrelated stream.
+
+  **Not a P2**: no known consumer passes a separator-bearing name, and neither method is
+  reachable from the atomic protocol, so nothing is currently exposed to it. It is a contract
+  inconsistency and a latent traversal, not a live one.
+
+  **Reference**: dispositioned out of F1 of `filetree-atomic-write` by its `code-reviewer` pass,
+  and out of F2 for the same reason — see
+  `.ai/tasks/completed/2026-09/filetree-atomic-write/result.md` § *Known follow-up*.
 
 - **[P3] A field added to a converted entity can be silently dropped — and the compiler cannot
   catch it. The dangerous shape is an entity with *more than one* converter.**

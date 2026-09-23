@@ -1220,6 +1220,11 @@ interface IAiClientToolTurnResult {
     readonly fullText: string;
     readonly toolConflicts: IAiToolConflictReport;
     readonly truncated: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly usage?: IAiCompletionUsage;
 }
 
 // @public
@@ -1502,6 +1507,7 @@ interface IAiToolEnablement {
 // @public
 interface IAiWebSearchToolConfig {
     readonly allowedDomains?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly blockedDomains?: ReadonlyArray<string>;
     readonly enableImageUnderstanding?: boolean;
     readonly maxUses?: number;
@@ -1511,6 +1517,7 @@ interface IAiWebSearchToolConfig {
 
 // @public
 interface IAnthropicThinkingConfig {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly effort?: 'low' | 'medium' | 'high' | 'max';
 }
 
@@ -1760,6 +1767,8 @@ interface IEncryptionResult {
 // @public
 interface IExecuteClientToolTurnParams extends IChatRequest {
     readonly apiKey: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly cache?: IAiCacheRequest;
     readonly clientTools: ReadonlyArray<IAiClientTool>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly continuationMessages?: ReadonlyArray<JsonObject>;
@@ -1781,6 +1790,8 @@ interface IExecuteClientToolTurnParams extends IChatRequest {
 //
 // @public
 interface IExecuteClientToolTurnResult {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly events: AsyncIterable<IAiStreamEvent>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly nextTurn: Promise<Result<IAiClientToolTurnResult>>;
@@ -2216,6 +2227,8 @@ interface IProviderCompletionParams extends IChatRequest {
 // @public
 interface IProviderCompletionStreamParams extends IChatRequest {
     readonly apiKey: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly cache?: IAiCacheRequest;
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
@@ -2351,6 +2364,7 @@ interface IResolvedImageOptions {
 
 // @public
 interface IResolvedThinkingConfig {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly anthropicEffort?: IAnthropicThinkingConfig['effort'];
     readonly geminiThinkingBudget?: number;
     readonly openAiEffort?: IOpenAiThinkingConfig['effort'];
@@ -3270,6 +3284,8 @@ type StructuredOutputRequest = ISchemaStructuredOutputRequest | IJsonObjectStruc
 // @public
 const SUPPORTED_SCHEMES: ReadonlyArray<string>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 function supportsCacheUsageReporting(descriptor: IAiProviderDescriptor): boolean;
 

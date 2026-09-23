@@ -24,7 +24,9 @@
  */
 
 import { type Converter, Converters, type Validator, Validators } from '@fgv/ts-utils';
-import { type JsonSchema } from '@fgv/ts-json-base';
+import { type JsonSchema, Converters as JsonConverters } from '@fgv/ts-json-base';
+
+import type { AiCacheReportingLevel, IAiCompletionUsage } from './usageTypes';
 
 import {
   type AiProviderId,
@@ -211,4 +213,60 @@ export const aiAssistSettings: Converter<IAiAssistSettings> = Converters.strictO
   defaultProvider: aiProviderId.optional(),
   proxyUrl: Converters.string.optional(),
   proxyAllProviders: Converters.boolean.optional()
+});
+
+/**
+ * Converter for {@link AiAssist.AiCacheReportingLevel}.
+ *
+ * @remarks
+ * Internal because it is not exported from the packlet barrel, so nothing
+ * outside this package can reach it — a `@public` tag would have claimed a
+ * reachability that does not exist. Its only consumer is
+ * {@link aiCompletionUsage} below. Promoting it later is additive and free;
+ * exporting it now to match the tag would add surface nobody has asked for,
+ * and un-exporting is the one direction that breaks callers.
+ * @internal
+ */
+export const aiCacheReportingLevel: Converter<AiCacheReportingLevel> =
+  Converters.enumeratedValue<AiCacheReportingLevel>(['reads', 'reads-and-writes']);
+
+/**
+ * Converter for {@link AiAssist.IAiCompletionUsage}.
+ *
+ * @remarks
+ * For the **proxy** path, where the usage block arrives already normalized rather
+ * than in a provider wire shape — the proxy ran `callProviderCompletion` and is
+ * relaying its `IAiCompletionUsage`. The per-provider helpers in
+ * `usageNormalization` translate wire shapes and are the wrong tool here; this
+ * validates the normalized shape itself.
+ *
+ * `reports` is required, matching the interface: a usage block that cannot say
+ * which of reads/writes it is able to report is not a usage block this package
+ * will hand on. A proxy relaying a malformed one gets the whole field dropped
+ * rather than a partially-trusted object.
+ *
+ * **Not `strictObject`, deliberately.** This validates a payload from a network
+ * peer that may be running a *newer* build of this library. Under strict rules one
+ * unrecognized field — a future token count, an echoed setting — would fail the
+ * conversion and drop the entire usage block, and `.orDefault()` would render that
+ * indistinguishable from "the provider reported nothing". Tolerating unknown fields
+ * is the same forward-compatibility posture the rest of the proxy path takes toward
+ * a peer of a different version. Required fields stay required; only openness to
+ * extra ones changes.
+ *
+ * Internal for the same reason as {@link aiCacheReportingLevel}: it is not in
+ * the packlet barrel, and its only consumer is `callProxiedCompletion`'s
+ * read-back. A proxy implementor validating the usage block they relay is the
+ * plausible external consumer, and exporting it for them is additive whenever
+ * one actually turns up.
+ * @internal
+ */
+export const aiCompletionUsage: Converter<IAiCompletionUsage> = Converters.object<IAiCompletionUsage>({
+  reports: aiCacheReportingLevel,
+  uncachedInputTokens: Converters.number.optional(),
+  cachedInputTokens: Converters.number.optional(),
+  cacheWriteTokens: Converters.number.optional(),
+  outputTokens: Converters.number.optional(),
+  totalInputTokens: Converters.number.optional(),
+  raw: JsonConverters.jsonObject.optional()
 });

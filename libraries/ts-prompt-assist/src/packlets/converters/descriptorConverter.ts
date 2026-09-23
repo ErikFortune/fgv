@@ -25,9 +25,10 @@ const expectedAxisConverter: Converter<IExpectedQualifierAxis> = Converters.obje
   {
     name: Convert.axisName,
     description: Converters.string.optional(),
-    suggestedValues: Converters.arrayOf(Converters.string).optional()
+    suggestedValues: Converters.arrayOf(Converters.string).optional(),
+    stability: EnumConvert.promptCacheStability.optional()
   },
-  { optionalFields: ['description', 'suggestedValues'] }
+  { optionalFields: ['description', 'suggestedValues', 'stability'] }
 );
 
 const qualifierMetadataConverter: Converter<IPromptQualifierMetadata> =

@@ -3,7 +3,10 @@ on:
   push:
     branches: ['main']
   pull_request:
-    branches: ['main', 'release', 'prerelease', 'hotfix']
+    # 'integration/**' covers multi-version stream branches that collect several PRs
+    # and squash to 'release' as one landing. Without it those PRs get no CI at all,
+    # and the constituent work would be unverified until the final squash.
+    branches: ['main', 'release', 'prerelease', 'hotfix', 'integration/**']
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -39,6 +39,7 @@
 import { captureAsyncResult, fail, type Logging, Result, succeed } from '@fgv/ts-utils';
 import { type JsonArray, type JsonObject } from '@fgv/ts-json-base';
 
+import { type IAiCacheRequest } from '../cacheRequest';
 import {
   type AiServerToolConfig,
   type AiToolConfig,
@@ -53,6 +54,7 @@ import {
   resolveProviderModel
 } from '../model';
 import { resolveToolConflicts } from '../toolFormats';
+import type { IAiCompletionUsage } from '../usageTypes';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { splitChatRequest } from '../chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from '../endpoint';
@@ -63,7 +65,11 @@ import { callAnthropicStream } from './anthropic';
 import { callOpenAiResponsesStream } from './openaiResponses';
 import { callGeminiStream } from './gemini';
 import { type IStreamApiConfig } from './common';
-import { supportsCacheUsageReporting } from '../streamUsageCapability';
+import {
+  supportsCacheUsageReporting,
+  supportsPromptCacheBreakpoints,
+  supportsPromptCacheRouting
+} from '../streamUsageCapability';
 
 // ============================================================================
 // Tool-result accumulation (internal)
@@ -535,6 +541,17 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
    * pre-policy behavior: a `Result.fail` up front, before any wire call.
    */
   readonly toolConflictPolicy?: AiToolConflictPolicy;
+  /**
+   * Prompt-caching plan for this request. Omitted, nothing cache-related is sent — the request
+   * body is byte-identical to a build predating this feature. See {@link AiAssist.IAiCacheRequest}.
+   *
+   * @remarks
+   * `executeClientToolTurn` represents a single round of a multi-round tool loop; a caller
+   * driving several rounds passes this on **each** call, and it is validated against — and
+   * applied to — that round's own `system` each time, never cached across rounds. Gated per
+   * provider exactly as `IProviderCompletionParams.cache` is on the non-streaming path.
+   */
+  readonly cache?: IAiCacheRequest;
 }
 
 /**
@@ -544,14 +561,37 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
 export interface IExecuteClientToolTurnResult {
   /**
    * The unified-event iterable. Callers iterate this to drive the streaming UI.
-   * The iterable forwards `text-delta`, `tool-event`, `client-tool-call-start`,
-   * `client-tool-call-done`, and `client-tool-result` events through.
+   *
+   * @remarks
+   * Forwards every event the underlying adapter emits: `text-delta`,
+   * `tool-event`, `done` and `error` come through from the provider stream, and
+   * `client-tool-call-start`, `client-tool-call-done` and `client-tool-result`
+   * are the tool-dispatch events this layer adds.
+   *
+   * The `done` event is the terminal one and carries
+   * {@link AiAssist.IAiStreamDone.usage} when the provider reports it — this
+   * iterable is not a text-only view. A caller that only wants the token counts
+   * can read them off {@link AiAssist.IAiClientToolTurnResult.usage} instead of
+   * matching on events — but it must still iterate this to completion, because
+   * that is what drives `nextTurn` to resolve at all.
+   *
+   * (An earlier version of this comment listed only the five non-terminal
+   * events. It was describing the tool-dispatch subset, but it read as the
+   * complete set, and at least one consumer reasonably concluded from it that
+   * usage never crossed the package boundary on this path. It always did.)
    */
   readonly events: AsyncIterable<IAiStreamEvent>;
   /**
    * Resolves when the stream terminates. On success, carries the
    * {@link AiAssist.IAiClientToolTurnResult} with the optional continuation for the
    * next round. On failure, carries the error message.
+   *
+   * @remarks
+   * **You must drive `events` for this to resolve.** It is settled from inside
+   * the generator backing `events`, and an async generator does not start until
+   * something iterates it — so `await nextTurn` on its own waits forever, and
+   * the response body is never drained. Iterate `events` to completion (ignore
+   * the events if you do not want them) and then await this.
    */
   readonly nextTurn: Promise<Result<IAiClientToolTurnResult>>;
 }
@@ -607,7 +647,8 @@ export function executeClientToolTurn(
     endpoint,
     onBeforeToolExecute,
     maxTokens,
-    toolConflictPolicy
+    toolConflictPolicy,
+    cache
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -712,9 +753,21 @@ export function executeClientToolTurn(
           anthropicBuffer,
           continuationMessages,
           isAdaptiveThinkingModel(descriptor, config.model),
-          maxTokens
+          maxTokens,
+          cache
         );
-      case 'openai':
+      case 'openai': {
+        // Same gating as callProviderCompletion's 'openai' case in completionClient.ts — see the
+        // comment there for why breakpoints and the routing key are gated independently. Client-tool
+        // turns always route OpenAI through the Responses API, which takes the routing key as a body
+        // field on every supporting provider, so there is no chatCompletionsHeader to thread here.
+        const routing = supportsPromptCacheRouting(descriptor);
+        const breakpoints = supportsPromptCacheBreakpoints(descriptor) ? cache?.systemBreakpoints : undefined;
+        const routedKey = routing !== undefined ? cache?.cacheKey : undefined;
+        const gatedCache: IAiCacheRequest | undefined =
+          breakpoints !== undefined || routedKey !== undefined
+            ? { systemBreakpoints: breakpoints, cacheKey: routedKey }
+            : undefined;
         return callOpenAiResponsesStream(
           config,
           prompt,
@@ -728,8 +781,10 @@ export function executeClientToolTurn(
           openAiCallMap,
           continuationMessages,
           maxTokens,
-          supportsCacheUsageReporting(descriptor)
+          supportsCacheUsageReporting(descriptor),
+          gatedCache
         );
+      }
       case 'gemini':
         return callGeminiStream(
           config,
@@ -769,12 +824,16 @@ export function executeClientToolTurn(
 
     let truncated = false;
     let fullText = '';
+    let usage: IAiCompletionUsage | undefined;
     let streamError: string | undefined;
 
     for await (const event of streamResult.value) {
       if (event.type === 'done') {
         truncated = event.truncated;
         fullText = event.fullText;
+        // Absent when the provider reported nothing — carried through as absent
+        // rather than defaulted, so a caller can tell "not reported" from zero.
+        usage = event.usage;
         yield event;
         continue;
       }
@@ -968,7 +1027,7 @@ export function executeClientToolTurn(
     }
 
     if (toolResults.length === 0) {
-      resolveNextTurn(succeed({ continuation: undefined, truncated, fullText, toolConflicts }));
+      resolveNextTurn(succeed({ continuation: undefined, truncated, fullText, toolConflicts, usage }));
       return;
     }
 
@@ -1013,7 +1072,7 @@ export function executeClientToolTurn(
       continuation = { ...continuation, messages: [...continuationMessages, ...continuation.messages] };
     }
 
-    resolveNextTurn(succeed({ continuation, truncated, fullText, toolConflicts }));
+    resolveNextTurn(succeed({ continuation, truncated, fullText, toolConflicts, usage }));
   }
 
   return succeed({

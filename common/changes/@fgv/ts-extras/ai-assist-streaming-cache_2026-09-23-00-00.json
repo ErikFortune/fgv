@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: thread cache?: IAiCacheRequest through the streaming request paths — callProviderCompletionStream and executeClientToolTurn — the way completionClient already threads it through callProviderCompletion. Each streaming adapter (Anthropic, OpenAI Chat Completions, OpenAI/xAI Responses) now builds its system content through the same cache-aware builder the non-streaming path uses (buildAnthropicSystem / buildOpenAiChatSystemContent / buildOpenAiResponsesSystemContent), validating systemBreakpoints against that call's own system and failing the request rather than dropping the plan. executeClientToolTurn validates and applies cache fresh on every call, since each call represents one round of a multi-round tool loop and a later round's system can differ from an earlier one's. Capability gating is reused verbatim from completionClient.ts (supportsPromptCacheBreakpoints / supportsPromptCacheRouting, gated independently); a descriptor confirming neither gets a request body byte-identical to one built with no cache at all. callProxiedCompletionStream now forwards cache as a plain body field, exactly as callProxiedCompletion already does — unlike endpoint, a proxy that ignores it degrades to the no-cache request it would have sent anyway rather than misdirecting the request, so there is no #679-style reason to refuse it. Additive and optional; every existing caller's request body is unchanged.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "ErikFortune@outlook.com"
+}

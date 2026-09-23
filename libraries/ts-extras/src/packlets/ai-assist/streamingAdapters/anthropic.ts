@@ -31,10 +31,11 @@
  * @packageDocumentation
  */
 
-import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { fail, type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 import { type JsonObject } from '@fgv/ts-json-base';
 
-import { buildAnthropicMessages } from '../chatRequestBuilders';
+import { buildAnthropicMessages, buildAnthropicSystem } from '../chatRequestBuilders';
+import { type IAiCacheRequest } from '../cacheRequest';
 import { anthropicAuthHeaders } from '../endpoint';
 import {
   AiPrompt,
@@ -533,16 +534,21 @@ export async function callAnthropicStream(
   accumulationBuffer?: Map<number, IAccumulatedBlock>,
   continuationMessages?: ReadonlyArray<JsonObject>,
   useAdaptiveThinking: boolean = false,
-  maxTokens?: number
+  maxTokens?: number,
+  cache?: IAiCacheRequest
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, {
     head: messagesBefore,
     rawTail: continuationMessages
   });
+  const systemResult = buildAnthropicSystem(prompt.system, cache);
+  if (systemResult.isFailure()) {
+    return fail(systemResult.message);
+  }
   const body: Record<string, unknown> = {
     model: config.model,
-    system: prompt.system,
+    system: systemResult.value,
     messages,
     // Anthropic's Messages API requires max_tokens on every request — see
     // AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS for why only this provider defaults it.
