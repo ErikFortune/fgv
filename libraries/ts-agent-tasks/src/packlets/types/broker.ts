@@ -239,8 +239,8 @@ export interface IBoundTaskView {
  */
 export interface IListCompletionRequest {
   readonly limit: number;
-  /** Continue after this candidate, as returned in `next`. */
-  readonly after?: TaskId;
+  /** Continue where a previous pass stopped, as returned in its `next`. */
+  readonly after?: PageCursor;
 }
 
 /**
@@ -248,12 +248,14 @@ export interface IListCompletionRequest {
  * @remarks
  * `completed` names only lists this principal completed. A candidate it may not complete, or
  * that no longer qualifies when rechecked under the writer, is left as it is and not reported.
- * `next` is present when the pass stopped at its limit.
+ * `next` is present when the pass stopped at its limit. It is an opaque continuation, bound to the
+ * view and the policy epoch it was issued under: the candidate it resumes after may be one this
+ * principal cannot see, so it is never named.
  * @public
  */
 export interface IListCompletionReport {
   readonly completed: ReadonlyArray<ITaskMutationResult>;
-  readonly next?: TaskId;
+  readonly next?: PageCursor;
 }
 
 /**

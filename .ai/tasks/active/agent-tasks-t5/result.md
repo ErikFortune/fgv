@@ -291,3 +291,15 @@ The writer section checked the policy epoch first, then awaited re-reads, cycle-
 Test: a writer whose reads change the host policy mid-section. The catalog, command and creation (with parent) commits are each refused with nothing written, and so is a replayed receipt. Revert checks: each of the four checks disabled on its own turns 2–4 tests red. Package: 1,158 tests, 100% on all four metrics, lint clean.
 
 Round 4 is narrower than rounds 1–3: one class, a refinement of an existing guard rather than a missing one. The loop takes one more round to see whether the profile has turned.
+
+### Copilot round 5 — 3 high: 2 real, 1 not reproducible
+
+| finding | disposition |
+|---|---|
+| the pump's `next` was the raw last candidate id, so a hidden automatic list at the page boundary was named to the caller | **fixed**: `IListCompletionRequest.after` / `IListCompletionReport.next` are now an opaque `PageCursor` from a separate `pump`-prefixed `ViewCursorTable<TaskId>`, bound to the view and policy epoch. The candidate never leaves the broker, and a continuation still resumes past skipped candidates. This is what `development-design.md` §524 already specified ("no denied counts/keys escape. Return a next-page handle"). **Breaking** on the public types, which is fine on this active surface |
+| a query authorized and projected the page as of its generation, and only the epoch was rechecked, so a commit during the policy's awaits (e.g. a re-scope) could return a stale summary | **fixed**: `queryView` fails with `conflict`/`safe` unless `repository.health().generation` still equals the page's generation. The generation is checked, never returned |
+| the returned unresolved projection shares `scopes`/`responsibility` with the resident reference | **does not reproduce**: the strict `projectedReference` converter rebuilds each nested value (an array converter for `scopes`, an object converter for `responsibility`), so the output shares no structure. A clone was tried and removed as redundant. A test that mutates the returned references from both `inspect` and `query` and re-reads the index pins the property |
+
+Tests: a hidden list as the whole first page yields no completion and an opaque continuation that resumes onto the next list; a continuation from another view, a query cursor, and a continuation after an epoch change are each refused as not live; a commit while the page is being authorized fails the query; the returned unresolved references are isolated. Revert checks: the generation fence (1 red); a boundary rule that withholds `next` when nothing visible completed (1 red). Package: 1,162 tests, 100% on all four metrics, lint clean.
+
+Round 5 is still substantive: one disclosure path and one stale-read path, and both are real. The loop continues to round 6.

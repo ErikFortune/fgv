@@ -264,10 +264,47 @@ describe('the completion pump', () => {
     }
     const first = (await h.writer.reconcileListCompletions({ limit: 1 })).orThrow();
     expect(first.completed.map((c) => c.taskId)).toEqual(['m']);
-    expect(first.next).toBe('m');
+    expect(first.next).toBeDefined();
     const second = (await h.writer.reconcileListCompletions({ limit: 1, after: first.next })).orThrow();
     expect(second.completed.map((c) => c.taskId)).toEqual(['n']);
     expect(await h.writer.reconcileListCompletions({ limit: 0 })).toFailWith(/reconcileListCompletions/);
+  });
+
+  test('the continuation never names a candidate, even a hidden one at the page boundary', async () => {
+    for (const id of ['m', 'n']) {
+      await list(h.writer, id);
+      await track(h.writer, `${id}-child`, { parentId: id });
+      await succeedTask(h, h.writer, `${id}-child`);
+    }
+    h.policy.hide('m');
+    const first = (await h.writer.reconcileListCompletions({ limit: 1 })).orThrow();
+    // m was the whole page and was skipped unseen; the continuation still resumes past it.
+    expect(first.completed).toEqual([]);
+    expect(first.next).toBeDefined();
+    expect(first.next).not.toBe('m');
+    const second = (await h.writer.reconcileListCompletions({ limit: 1, after: first.next })).orThrow();
+    expect(second.completed.map((c) => c.taskId)).toEqual(['n']);
+  });
+
+  test('a continuation is bound to its view and policy epoch, and is not a query cursor', async () => {
+    for (const id of ['m', 'n']) {
+      await list(h.writer, id);
+      await track(h.writer, `${id}-child`, { parentId: id });
+      await succeedTask(h, h.writer, `${id}-child`);
+    }
+    const policy = h.policy;
+    const next = (await h.writer.reconcileListCompletions({ limit: 1 })).orThrow().next;
+    expect(await bindWriter(h, {}).reconcileListCompletions({ limit: 1, after: next })).toFailWith(
+      /not a live cursor of this view/
+    );
+    const queried = (await h.writer.query({ limit: 1 })).orThrow().nextCursor;
+    expect(await h.writer.reconcileListCompletions({ limit: 1, after: queried })).toFailWith(
+      /not a live cursor of this view/
+    );
+    policy.epoch = 'epoch-2';
+    expect(await h.writer.reconcileListCompletions({ limit: 1, after: next })).toFailWith(
+      /not a live cursor of this view under the current policy/
+    );
   });
 
   test('the idempotency key names the list and its eligibility revision', async () => {

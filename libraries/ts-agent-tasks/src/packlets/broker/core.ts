@@ -15,6 +15,7 @@ import {
   ITaskEnvironment,
   Instant,
   OperationId,
+  TaskId,
   TaskResult,
   TaskRevision
 } from '../types';
@@ -86,6 +87,8 @@ export class BrokerCore {
   public readonly converters: TaskConverters;
   public readonly audience: TaskAudienceResolver;
   public readonly cursors: ViewCursorTable = new ViewCursorTable();
+  /** The pump's continuations: the candidate they resume after never leaves the broker. */
+  public readonly pumpCursors: ViewCursorTable<TaskId> = new ViewCursorTable<TaskId>('pump');
   private readonly _queue: WriterQueue = new WriterQueue();
   private _views: number = 0;
 

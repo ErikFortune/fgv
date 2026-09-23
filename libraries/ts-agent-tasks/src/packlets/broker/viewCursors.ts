@@ -12,10 +12,10 @@ import { ok, taskFailure } from './failures';
  */
 export const maxViewCursors: number = 256;
 
-interface IViewCursor {
+interface IViewCursor<TInner> {
   readonly view: number;
   readonly epoch: string;
-  readonly inner: PageCursor;
+  readonly inner: TInner;
 }
 
 /**
@@ -29,12 +29,18 @@ interface IViewCursor {
  * `cursor-stale`; paging restarts from a new query.
  * @internal
  */
-export class ViewCursorTable {
-  private readonly _handles: Map<string, IViewCursor> = new Map();
+export class ViewCursorTable<TInner = PageCursor> {
+  private readonly _handles: Map<string, IViewCursor<TInner>> = new Map();
   private _next: number = 0;
+  private readonly _prefix: string;
 
-  public issue(view: number, epoch: string, inner: PageCursor): PageCursor {
-    const token: string = `view.${++this._next}`;
+  /** Tables with distinct prefixes issue disjoint tokens, so one table's token never resolves in another. */
+  public constructor(prefix: string = 'view') {
+    this._prefix = prefix;
+  }
+
+  public issue(view: number, epoch: string, inner: TInner): PageCursor {
+    const token: string = `${this._prefix}.${++this._next}`;
     if (this._handles.size >= maxViewCursors) {
       // Map iteration is insertion order: the first key is the oldest handle.
       this._handles.delete(this._handles.keys().next().value!);
@@ -43,8 +49,8 @@ export class ViewCursorTable {
     return token as PageCursor;
   }
 
-  public resolve(token: PageCursor, view: number, epoch: string): TaskResult<PageCursor> {
-    const handle: IViewCursor | undefined = this._handles.get(token);
+  public resolve(token: PageCursor, view: number, epoch: string): TaskResult<TInner> {
+    const handle: IViewCursor<TInner> | undefined = this._handles.get(token);
     if (handle === undefined || handle.view !== view || handle.epoch !== epoch) {
       return taskFailure(
         `cursor ${token}: not a live cursor of this view under the current policy; restart the query`,

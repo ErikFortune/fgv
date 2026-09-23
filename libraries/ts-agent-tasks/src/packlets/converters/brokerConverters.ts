@@ -198,7 +198,7 @@ export function buildBrokerConverters(
 
   const listCompletion: Converter<IListCompletionRequest> = Converters.strictObject<IListCompletionRequest>({
     limit: queries.limit,
-    after: ids.taskId.optional()
+    after: queries.pageCursor.optional()
   });
 
   // The parameters of the union member whose command set includes `C`.

@@ -38,7 +38,8 @@ const unreadableIssue: string = 'some tasks within this view could not be read; 
  * dropped and never counted; repository issues (which name tasks) are reduced to one generic
  * line; the page carries no repository generation. The cursor is a view handle bound to this
  * view and to the policy epoch the page was answered under, and a policy change during the page
- * fails it rather than mixing two policies.
+ * fails it rather than mixing two policies. So does a commit during the page: every answer is
+ * about the index at the page's generation, which is checked, never returned.
  * @internal
  */
 export async function queryView(
@@ -106,6 +107,11 @@ export async function queryView(
   const after = ctx.epoch();
   if (after.isFailure() || after.value !== epoch.value) {
     return changedSinceAuthorized('the authorization policy');
+  }
+  // Every answer above was given about the page as the index held it at its generation. A commit
+  // since — possibly one that moved a returned task out of this view — makes the page stale.
+  if (core.repository.health().generation !== page.generation) {
+    return changedSinceAuthorized('a task in this page');
   }
   const issues: ReadonlyArray<string> = page.issues.length > 0 ? [unreadableIssue] : [];
   return ok({

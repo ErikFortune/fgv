@@ -90,7 +90,24 @@ export async function reconcileListCompletions(
     return taskFailure(`reconcileListCompletions: ${converted.message}`, 'invalid', 'after-host-action');
   }
   const request: IListCompletionRequest = converted.value;
-  const candidates = await core.repository.listCompletionCandidates(request);
+  // The continuation is opaque and bound to this view and policy: the candidate it resumes after
+  // may be one this principal cannot see.
+  const epoch = ctx.epoch();
+  if (epoch.isFailure()) {
+    return propagate(epoch);
+  }
+  let after: TaskId | undefined = undefined;
+  if (request.after !== undefined) {
+    const resolved = core.pumpCursors.resolve(request.after, ctx.view, epoch.value);
+    if (resolved.isFailure()) {
+      return propagate(resolved);
+    }
+    after = resolved.value;
+  }
+  const candidates = await core.repository.listCompletionCandidates({
+    limit: request.limit,
+    ...(after !== undefined ? { after } : {})
+  });
   if (candidates.isFailure()) {
     return propagate(candidates);
   }
@@ -107,7 +124,10 @@ export async function reconcileListCompletions(
   }
   const next: TaskId | undefined =
     candidates.value.length === request.limit ? candidates.value[candidates.value.length - 1] : undefined;
-  return ok({ completed, ...(next !== undefined ? { next } : {}) });
+  return ok({
+    completed,
+    ...(next !== undefined ? { next: core.pumpCursors.issue(ctx.view, epoch.value, next) } : {})
+  });
 }
 
 async function _completeOne(

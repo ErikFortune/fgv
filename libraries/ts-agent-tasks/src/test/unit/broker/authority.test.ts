@@ -158,6 +158,7 @@ describe('visibility: scopes and policy, both required', () => {
     const writer = bindWriter(h, { authorization: broken });
     expect(await writer.query({})).toFailWith(/policy epoch unavailable/);
     expect(await writer.inspect(tid('visible'))).toFailWith(/policy epoch unavailable/);
+    expect(await writer.reconcileListCompletions({ limit: 1 })).toFailWith(/policy epoch unavailable/);
     expect(
       await writer.reassign({
         taskId: tid('visible'),
@@ -812,6 +813,44 @@ describe('host code is handed copies, never the broker state', () => {
     });
     expect(await h.writer.inspect(tid('t'))).toSucceedAndSatisfy((inspection) => {
       expect(inspection.state === 'resolved' && inspection.envelope.title).toBe('task t');
+    });
+  });
+});
+
+describe('a query returns only what the index held at the page it authorized', () => {
+  test('a commit while the page is being authorized fails the page', async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 't');
+    const other = bindWriter(h, { principal: 'bob' });
+    const policy = h.policy;
+    policy.afterDecision = async (request) => {
+      if (request.action === 'read' && request.task?.envelope.id === tid('t')) {
+        policy.afterDecision = undefined;
+        await other.updateTracked({
+          taskId: tid('t'),
+          operationId: op(),
+          expectedRevision: rev(1),
+          patch: { title: 'moved' }
+        });
+      }
+    };
+    expect(await h.writer.query({})).toFailWith(
+      /a task in this page changed after the operation was authorized/
+    );
+    expect(await h.writer.query({})).toSucceed();
+  });
+
+  test('a returned unresolved projection shares nothing with the resident reference', async () => {
+    const h = await brokerHarness();
+    await registerVendor(h, 'u', { unresolved: true, responsibility: ada });
+    const inspected = (await h.writer.inspect(tid('u'))).orThrow();
+    const queried = (await h.writer.query({})).orThrow().unresolved[0];
+    for (const reference of [inspected.state === 'unresolved' ? inspected.reference : undefined, queried]) {
+      (reference!.scopes as unknown as unknown[]).length = 0;
+      (reference!.responsibility as { key: string }).key = 'mallory';
+    }
+    expect(await h.writer.query({})).toSucceedAndSatisfy((page) => {
+      expect(page.unresolved).toEqual([expect.objectContaining({ scopes: [alpha], responsibility: ada })]);
     });
   });
 });

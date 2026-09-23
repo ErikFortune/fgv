@@ -539,12 +539,12 @@ export interface IListCompletionReport {
     // (undocumented)
     readonly completed: ReadonlyArray<ITaskMutationResult>;
     // (undocumented)
-    readonly next?: TaskId;
+    readonly next?: PageCursor;
 }
 
 // @public
 export interface IListCompletionRequest {
-    readonly after?: TaskId;
+    readonly after?: PageCursor;
     // (undocumented)
     readonly limit: number;
 }
