@@ -35,6 +35,9 @@ export interface ITaskBrokerCreateParams {
   readonly converters?: TaskConverters;
 }
 
+/** The broker's private constructor, captured for {@link createTaskBroker}; never exported. */
+let construct: (core: BrokerCore) => TaskBroker;
+
 /**
  * The task broker: host-bound views and writers over one repository, plus the trusted host
  * operations that are not a principal's to perform.
@@ -51,36 +54,17 @@ export interface ITaskBrokerCreateParams {
 export class TaskBroker {
   private readonly _core: BrokerCore;
 
+  static {
+    construct = (core: BrokerCore): TaskBroker => new TaskBroker(core);
+  }
+
   private constructor(core: BrokerCore) {
     this._core = core;
   }
 
   /** Creates a broker over a repository. */
   public static create(params: ITaskBrokerCreateParams): Result<TaskBroker> {
-    return TaskBroker._create(params, noAudience);
-  }
-
-  /**
-   * Creates a broker with an update audience resolver. Internal: the resolver is the seam
-   * subscriptions (T7) fill in; until then updates are owed to no one.
-   * @internal
-   */
-  public static _create(params: ITaskBrokerCreateParams, audience: TaskAudienceResolver): Result<TaskBroker> {
-    const converters: Result<TaskConverters> =
-      params.converters !== undefined ? succeed(params.converters) : TaskConverters.create();
-    return converters.onSuccess((c) =>
-      captureResult(
-        () =>
-          new TaskBroker(
-            new BrokerCore({
-              repository: params.repository,
-              environment: params.environment,
-              converters: c,
-              audience
-            })
-          )
-      )
-    );
+    return createTaskBroker(params, noAudience);
   }
 
   /** Binds a read-only view to one principal. The returned object has no mutation method. */
@@ -135,4 +119,30 @@ export class TaskBroker {
       ? ok(checked.value)
       : taskFailure(`bind: ${checked.message}`, 'invalid', 'after-host-action');
   }
+}
+
+/**
+ * Creates a broker with an update audience resolver. Not part of the package surface: the
+ * resolver sees whole envelopes, bindings included, and is the seam subscriptions (T7) fill in.
+ * Until then the public {@link TaskBroker.create} owes updates to no one.
+ * @internal
+ */
+export function createTaskBroker(
+  params: ITaskBrokerCreateParams,
+  audience: TaskAudienceResolver
+): Result<TaskBroker> {
+  const converters: Result<TaskConverters> =
+    params.converters !== undefined ? succeed(params.converters) : TaskConverters.create();
+  return converters.onSuccess((c) =>
+    captureResult(() =>
+      construct(
+        new BrokerCore({
+          repository: params.repository,
+          environment: params.environment,
+          converters: c,
+          audience
+        })
+      )
+    )
+  );
 }

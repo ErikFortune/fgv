@@ -1819,8 +1819,6 @@ export class TaskBroker {
     bind(params: IBoundTaskViewParams): TaskResult<IBoundTaskWriter>;
     bindView(params: IBoundTaskViewParams): TaskResult<IBoundTaskView>;
     static create(params: ITaskBrokerCreateParams): Result<TaskBroker>;
-    // @internal
-    static _create(params: ITaskBrokerCreateParams, audience: TaskAudienceResolver): Result<TaskBroker>;
     registerExternal(principal: string, request: unknown): Promise<TaskResult<TaskRegistrationResult>>;
 }
 

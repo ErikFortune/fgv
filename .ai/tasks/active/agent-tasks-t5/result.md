@@ -152,7 +152,7 @@ closeout reservation and are accepted).
 **Updates owed to no one are not retained.** With no subscriptions until T7, an update's audience
 is empty and nobody could ever acknowledge it (a later subscription starts from a baseline, never
 back-history), so T5 writes no update payloads in production and adds no update growth. The
-`TaskAudienceResolver` seam is internal (`TaskBroker._create`); tests use it to pin categories,
+`TaskAudienceResolver` seam is internal (`createTaskBroker` in the broker packlet, not exported from the package); tests use it to pin categories,
 `required` and before ∪ after audiences.
 
 ---
@@ -316,3 +316,13 @@ Round 5 is still substantive: one disclosure path and one stale-read path, and b
 Tests: a task changed while its commands are being authorized is not inspected (and is inspected once settled); a failing closing re-read is reported; a details projection that is not JSON fails the inspection. Revert checks: the inspection fence (1 red); details validation (1 red). Package: 1,164 tests, 100% on all four metrics, lint clean.
 
 The profile is narrowing. Rounds 4–6 found extensions of guards already in place (epoch placement, fences at the end of reads), and half of round 6 does not hold up on inspection. One more round decides whether the loop stops.
+
+### Copilot round 7: 1 high, fixed as surface hygiene; the loop stops here
+
+| finding | disposition |
+|---|---|
+| `TaskBroker._create(params, audience)` was a public static despite `@internal`, so it was in the API report and callable by any consumer; the resolver sees whole envelopes, bindings and artifacts included | **fixed**: the seam is now `createTaskBroker`, a module-level function in `broker/taskBroker.ts` that reaches the private constructor through a class static block. The broker packlet index exports `TaskBroker` and `ITaskBrokerCreateParams` by name, not `export *`, so the factory is not part of the package. `_create` is gone from `ts-agent-tasks.api.md`. Test fixtures import the factory by internal path. It was not an escalation: whoever constructs a broker already holds the `ITaskRepository` and can read every envelope directly. But an internal seam should not be a published member |
+
+Test: the public surface has no `_`-prefixed static on `TaskBroker`. Adding one back fails it. ESM, bundler, tarball and capability-docs verifiers all pass. Package: 1,164 tests, 100%, lint clean, 0 build warnings.
+
+**Copilot review loop driven by implementer; stopped at 7 rounds on diminishing returns.** Rounds 1–3 found real disclosure and liveness defects in new code paths. Rounds 4–6 found extensions of guards already in place, and by round 6 half the findings did not hold up. Round 7 found a single surface-hygiene item with no exploitable path. Every finding from every round is fixed or dispositioned above.

@@ -31,6 +31,8 @@ import {
   taskListDescriptor,
   trackedTaskDescriptor
 } from '../../index';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { createTaskBroker } from '../../packlets/broker/taskBroker';
 import { converters } from './fixtures';
 import { at, environment, memoryRoot, vendorDescriptor, vendorKind } from './storageFixtures';
 
@@ -131,7 +133,7 @@ export function harnessOver(
     readonly logger?: Logging.InMemoryLogger;
   }
 ): IBrokerHarness {
-  const broker = TaskBroker._create(
+  const broker = createTaskBroker(
     { repository, environment: env },
     options?.audience ?? noAudience
   ).orThrow();

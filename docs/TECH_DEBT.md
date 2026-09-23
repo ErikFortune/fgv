@@ -115,7 +115,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 - **[P2] `ts-agent-tasks` broker hand-offs T5 left for T6/T7/T8 by design — each has a trigger
   that is the next slice's first step.**
   (1) **T7:** updates are planned per mutation, but an update owed to no one is not retained, and
-  audiences come from an *internal* `TaskAudienceResolver` seam (`TaskBroker._create`) that answers
+  audiences come from an *internal* `TaskAudienceResolver` seam (`createTaskBroker`, not exported from the package) that answers
   "nobody" in production. When subscriptions fill it, every accepted update must first reserve its
   per-audience acknowledgement evidence (design §8.6 allocation 2) — the seam writes audience links
   with no such reservation today, which is why it is not a host option. (2) **T8:** `archive`

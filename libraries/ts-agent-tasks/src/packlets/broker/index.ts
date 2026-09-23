@@ -4,4 +4,5 @@
  */
 
 export { defaultTaskProjector } from './projection';
-export * from './taskBroker';
+// `createTaskBroker` stays internal: the audience seam is not part of the package surface.
+export { ITaskBrokerCreateParams, TaskBroker } from './taskBroker';

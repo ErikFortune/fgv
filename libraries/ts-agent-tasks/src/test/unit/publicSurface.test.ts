@@ -18,6 +18,8 @@ describe('public surface', () => {
     // It does not re-export FileTree. T5 adds exactly one broker and its request converters.
     expect(names).not.toContain('FileTree');
     expect(names.filter((n) => /broker/i.test(n)).sort()).toEqual(['TaskBroker', 'buildBrokerConverters']);
+    // The update-audience seam sees whole envelopes; it is reachable only inside the package.
+    expect(Object.getOwnPropertyNames(TaskLib.TaskBroker).filter((n) => n.startsWith('_'))).toEqual([]);
     expect(names.filter((n) => /^fs|filesystem/i.test(n))).toEqual([]);
   });
 
