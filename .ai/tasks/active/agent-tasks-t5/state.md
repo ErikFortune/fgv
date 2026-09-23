@@ -101,3 +101,40 @@ closeout's two slots.
 
 Implement types + converters, `implementations` (transition table, list policy, update planning),
 storage index additions, `broker` packlet; then tests from the plan's list.
+
+---
+
+## 2026-09-23 — implementation and scenario tests in; layer-1 review running
+
+**Done.** Types (`authority.ts`, `broker.ts`, `trackedCommands.ts`), `brokerConverters`,
+`implementations` packlet (transition table, list policy, update planning, envelope-field
+helper), storage additions (`childStates`, `listCompletionCandidates`, candidate index with a
+per-parent succeeded-child count, automatic-list flag read from details at index time), `broker`
+packlet (TaskBroker, bound view/writer, access context, projection, catalog-mutation pipeline,
+commands, creation, reads, pump, writer queue, view cursors). Docs: package CAPABILITIES broker
+section, README, index row + one shortcut, T1 table notes, change file. Conformance: two new
+checks + negatives.
+
+**Decisions taken while implementing (beyond the kickoff list).**
+- `null` removed from every request shape (`@rushstack/no-new-null`, and no rule disables):
+  `responsibility: IResponsibility | 'unassigned'`, `parent: { taskId } | 'root'` (tagged so no
+  task id can be read as the root), patch `clear: ['description' | 'progress']`,
+  `set-description`/`set-progress` with the value omitted clear it.
+- `ITaskAccessRequest.task` is an envelope-only `ITaskSummary` (design sketched `ITaskSnapshot`),
+  so policy runs on resident data and never sees details; `role` added.
+- Page `issues` from the repository (which name quarantined ids) collapse to one generic line.
+
+**Tests so far** (all green): transition table 7×11 exhaustive + patches; authority (hidden vs
+foreign identical on 8 entry points, scope/policy both required, fail-closed policy, fabricated
+principal/scope filter, projector failure ×5 + details, revocation between check and commit,
+cursor binding/eviction/epoch); hierarchy (self, cycle, concurrent cycle via an untouched task,
+terminal/archived edges, tombstone anchoring, cross-source); reassignment (preservation,
+no child reassignment, no grant, source lookup, observation-only external, A→B vs stale A for a
+patch and a command, concurrent same-key replay); commands; updates via the internal audience
+seam; lists (empty/manual/automatic, hidden/partial children, in-writer membership recheck,
+nesting, reopen/rebuild candidates); capacity (non-archived, retained, per-task holdback,
+resident-payload saturation with protected terminal); real-process crash (killed after success
+returned, after rename, before rename).
+
+**Next.** Take layer-1 findings → coverage closure (faulty-repository tests for the defensive
+in-gate branches) → gates → result.md → PR into `integration/agent-tasks-v1`.
