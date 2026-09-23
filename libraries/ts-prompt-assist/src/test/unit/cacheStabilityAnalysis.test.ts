@@ -683,6 +683,24 @@ describe('analyzePromptCacheStability', () => {
         expect(refutations(findings)[0].detail).toMatch(/^candidate 0:/);
       });
 
+      test('a matchAsDefault winner is folded in like a losing candidate', () => {
+        const findings = analyzePromptCacheStability({
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map(),
+          candidateMatches: [
+            match(0),
+            { candidateIndex: 1, matchType: 'matchAsDefault', conditions: [condition()] }
+          ],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A, 'frozen')],
+          candidates: [candidate({ lang: 'en' }), candidate({ tone: 'formal' })],
+          qualifiers
+        });
+        const refuted = refutations(findings);
+        expect(refuted.map((f) => f.downgradedTo)).toEqual(['per-request', 'per-request']);
+        expect(refuted[0].detail).toMatch(/^candidate\(s\) 1: did not match this resolve/);
+      });
+
       test('losing candidates are not consulted when no winner is conditional, as before', () => {
         const findings = analyzePromptCacheStability({
           sections: TEMPLATE_THEN_SLOT,

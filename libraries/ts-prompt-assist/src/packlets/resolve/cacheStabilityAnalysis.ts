@@ -451,7 +451,14 @@ function checkCompetingCandidates(
   axes: Map<string, IConditioningAxis>,
   findings: IPromptCacheFinding[]
 ): void {
-  const winning = new Set(candidateMatches.map((match) => match.candidateIndex));
+  // Only the conditional `'match'` winners have already been credited. Every other candidate — one
+  // that lost, or one that won only as a `matchAsDefault` fallback — is a way the body can differ
+  // when one of its qualifiers changes, so its axes count here.
+  const winning = new Set(
+    candidateMatches
+      .filter((match) => match.matchType === 'match' && match.conditions.length > 0)
+      .map((match) => match.candidateIndex)
+  );
   const competing = candidates
     .map((candidate, index) => ({
       index,
@@ -471,7 +478,9 @@ function checkCompetingCandidates(
   findings.push({
     kind: 'stability-refuted',
     detail:
-      `candidate(s) ${competing.map((entry) => entry.index).join(', ')}: did not match this resolve, but ` +
+      `candidate(s) ${competing
+        .map((entry) => entry.index)
+        .join(', ')}: did not match this resolve on their conditions, but ` +
       `are conditioned on ${describeRefutingConditioning(conditioning, winnersStability)} — a change there ` +
       `could select a different body, so the body is not '${winnersStability}'`,
     claimed: { stability: 'frozen', origin: 'derived' },
