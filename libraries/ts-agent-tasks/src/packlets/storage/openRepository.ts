@@ -28,6 +28,7 @@ import { checkTaskClaims, withOwnership } from './claims';
 import {
   checkBounds,
   checkCreationEvidence,
+  checkOperationCount,
   checkPendingIdentity,
   checkRegistrationDraft,
   pendingIdentity,
@@ -610,7 +611,9 @@ function _scan(
     // The per-value maxima the closeout claims were sized against hold for a stored record as
     // they do for a draft: a record under its total ceiling can still hold one value over them.
     const bounded: Result<IStoredCatalogOperation> = checkCreationEvidence(record).onSuccess((creation) =>
-      checkBounds(record, profile).onSuccess(() => succeed(creation))
+      checkBounds(record, profile)
+        .onSuccess(() => checkOperationCount(record, profile))
+        .onSuccess(() => succeed(creation))
     );
     if (bounded.isFailure()) {
       scan.blocking('record-invalid', `${name}: ${bounded.message}`, name);
@@ -664,7 +667,9 @@ function _scan(
         entry.operationId,
         entry.request
       ).onSuccess((creation) =>
-        canonicallyEqual(registrationIdentity(record, creation), pendingIdentity(entry))
+        record.recordRevision !== 1
+          ? fail<true>(`it is record revision ${record.recordRevision}, not the first record`)
+          : canonicallyEqual(registrationIdentity(record, creation), pendingIdentity(entry))
           ? succeed<true>(true)
           : fail<true>(`its creation operation's catalog operation, principal or record type differs`)
       );

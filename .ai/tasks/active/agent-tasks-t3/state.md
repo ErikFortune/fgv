@@ -171,3 +171,9 @@ M63–M64 red, 783 tests. Rounds: 10, 8, 3, 4, 8, 4, 4. Findings keep being real
 edge-of-contract (host callback misbehaviour, API-misuse lifetimes) rather than integrity
 gaps in the storage protocol. Round 8 decides: if it is of this kind or smaller, stop the loop
 on diminishing returns and request CodeRabbit.
+
+## 2026-09-23 — Copilot round 8 addressed; loop stopped
+
+Four high (all read-path re-checks of write-path invariants), fixed; M65–M68 red; 787 tests.
+Copilot loop stopped after 8 rounds on diminishing returns (reasoning in result.md). Next: one
+`@coderabbitai review`, then address its findings.

@@ -154,6 +154,25 @@ export function firstRecordType(record: ITaskCommitRecord): ITaskCommitRecord['r
 }
 
 /**
+ * Checks a stored record's operation count against the per-task limit less the closeout slots
+ * it still owes — the same bound every write applies — so a record edited out of band past it
+ * cannot open writable.
+ */
+export function checkOperationCount(record: ITaskCommitRecord, profile: ITaskCapacityProfile): Result<true> {
+  const archived: boolean = record.recordType === 'resolved' && record.archived;
+  const terminal: boolean =
+    record.recordType === 'resolved' && isTerminalTaskStatus(record.task.envelope.lifecycle.status);
+  const held: number = archived ? 0 : terminal ? 1 : 2;
+  const limit: number = profile.perOwner.maxOperationsPerTask - held;
+  return record.operations.length <= limit
+    ? succeed(true)
+    : fail(
+        `${record.operations.length} operations, over the per-task limit of ${limit} ` +
+          `(${profile.perOwner.maxOperationsPerTask} less ${held} held for closeout)`
+      );
+}
+
+/**
  * Checks a pending entry with no record by the rules registration applies: its creation
  * identity is one a registration could have written, and its request is within bounds. An
  * entry no registration can ever resume would hold its reservations forever.
@@ -343,6 +362,10 @@ export function checkOperations(
       return fail(`operation '${op.operationId}': a stored request cannot change`);
     }
     byId.delete(op.operationId);
+  }
+  // The creation operation stays first: registration replay and open both read it there.
+  if (next[0].operationId !== current[0].operationId) {
+    return fail(`the creation operation '${current[0].operationId}' must remain the first operation`);
   }
   const fresh: ReadonlyArray<string> = Array.from(byId.keys());
   if (added === undefined) {

@@ -144,10 +144,12 @@ function _resolvedInvariants<
 function _unresolvedInvariants<T extends Pick<IUnresolvedTaskCommitRecord, 'reference' | 'operations'>>(
   value: T
 ): Result<T> {
-  // The registration operation is the record's reason to exist: an unresolved record with no
-  // operation has no dedup evidence for the registration that wrote it.
-  if (value.operations.length < 1) {
-    return fail(`task ${value.reference.id}: an unresolved record carries its registration operation`);
+  // The registration operation is the record's reason to exist, and nothing else can reach an
+  // unresolved record: its only replacement is first resolution. So it carries exactly one.
+  if (value.operations.length !== 1) {
+    return fail(
+      `task ${value.reference.id}: an unresolved record carries exactly its registration operation`
+    );
   }
   return _operationsBelongTo(value.reference.id, value.operations)
     .onSuccess(() => succeed(value))

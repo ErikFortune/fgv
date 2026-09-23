@@ -77,7 +77,8 @@ responsibility, scopes) or archive the task — a source owns execution state, a
 carry operation evidence. A replay succeeds only if everything the retry offers is already
 committed.
 
-Every replacement keeps all operation evidence with its request unchanged, keeps every retained
+Every replacement keeps all operation evidence with its request unchanged and the creation
+operation first, keeps every retained
 update byte-identical (a required one is removed only by maintenance), advances `recordRevision`
 by one, and is refused on a stale `expectedRevision` **or** `expectedRecordRevision` — the two are
 separate so pruning cannot erase a receipt committed underneath it. Every read-back checks the
@@ -129,7 +130,9 @@ UTF-8 (durable mode), JSON, format version, strict converters, filename/ID agree
 stored profile's per-value bounds, that every capacity claim is one this release would have
 written (owner, ownership, purpose, every bundle dimension present and at most its maximum,
 disposition matching the record's state, and a first-resolution claim only on a task registered by
-`register-external`), that its first operation is its creation evidence, that a pending entry with
+`register-external`), that its first operation is its creation evidence (and, for an unresolved
+record, its only operation), that its operation count is within the per-task limit less the
+closeout slots it still owes, that a pending entry with
 no record is one a registration could resume,
 claim-id uniqueness across the repository, the parent graph (a
 pending registration is not a live parent), and that committed usage fits the stored profile. A

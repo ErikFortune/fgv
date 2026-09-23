@@ -204,6 +204,10 @@ round-4 head (d2643334), after two whose target lines had moved (M21, M34) were 
 | M62 | a resumed registration never completes a landed record | 3 |
 | M63 | a throwing identity callback escapes | 2 |
 | M64 | close releases the root under an active writer | 1 |
+| M65 | an unresolved record may carry extra operations | 1 |
+| M66 | a replacement may reorder the creation operation | 1 |
+| M67 | open ignores the per-task operation limit | 2 |
+| M68 | open completion accepts a later record revision | 1 |
 
 **Three findings came from the exercise rather than from the suite:**
 
@@ -275,7 +279,7 @@ Every step `.github/workflows/ci.yml` runs, run locally on the final code:
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint run before the final commit |
-| `rushx test` (package) | **783 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
+| `rushx test` (package) | **787 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
 | `rush rebuild` (repo-wide) | `SUCCESS: 37 operations`, exit 0, no warnings |
 | `rush test` (repo-wide) | `SUCCESS: 36 operations`, exit 0 |
 | `verify-capability-docs.mjs` | router 19,587/24,000, 24/24 documented, 75 reflexes, 0 failed |
@@ -380,4 +384,24 @@ The profile narrowed again: each finding is a place round 2's checks still trust
 | a host `newId` that throws escaped the Result contract, and at initialize skipped the ownership release | `mintId` wraps the host callback with `captureResult`; used for the repository id and every claim id |
 | `close` released the root while a writer callback was still between writes | `close` is refused (`conflict`, `safe`) while a writer is active; documented on `ITaskRepository.close` |
 | the PR description and the `docs/WORKSTREAMS.md` entry carried stale test and mutation counts | both brought to the checked-in evidence |
+
+### Copilot round 8 — 4 high, all fixed; the loop stops here
+
+| finding | fix |
+|---|---|
+| an unresolved record could carry operations beyond its registration | the unresolved converter requires exactly one operation |
+| a replacement could move the creation operation out of first place | `checkOperations` keeps the creation operation at index 0 |
+| open never applied the per-task operation limit | `checkOperationCount` at open: the limit less the closeout slots the record still owes, as every write applies |
+| open's completion joined a landed record of any revision | it must be record revision 1 |
+
+**Stopping the Copilot loop after 8 rounds, on diminishing returns** (cap 10). Findings per
+round: 10, 8, 3, 4, 8, 4, 4, 4 — 45 in all: 39 fixed, 2 declined with design citations, 4 stale
+counts corrected. Rounds 1–4 found integrity gaps in the protocol itself (partial identity
+comparisons, pending-entry recovery, manifest fencing). From round 5 on, every code finding was
+one of: a write-path rule not yet re-applied on the read path (open re-validating an invariant a
+write already enforces), a host-misuse lifetime (a throwing callback, `close` under a writer), or
+a regression of the previous round's own fix. Round 8 is entirely the first kind. That space is
+enumerable but unbounded in the loop's terms — each round names the next invariant — and each
+item guards only against out-of-band edits, which open already reports and never repairs. The
+loop has stopped yielding protocol findings; CodeRabbit gets its single review next.
 

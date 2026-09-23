@@ -1205,3 +1205,81 @@ describe('copilot round 7: host callbacks and the writer lifetime', () => {
     expect(await FileTreeTaskRepository.open(params(root, 'session'))).toSucceed();
   });
 });
+
+describe('copilot round 8: write-path invariants re-checked where records are trusted', () => {
+  test('a replacement cannot move the creation operation out of first place', async () => {
+    const repository = await initialized(memoryRoot() as Root);
+    const created = (await repository.withWriter((w) => w.register(registration('t1')))).orThrow();
+    const draft = nextDraft(created, {
+      envelope: envelope('t1', 2, { title: 'renamed' }),
+      operation: catalogOp('op-2', 'update-tracked', {})
+    });
+    expect(
+      await repository.withWriter((w) =>
+        w.commit({
+          purpose: 'operation',
+          operationId: 'op-2' as OperationId,
+          taskId: t1,
+          expectedRevision: rev(1),
+          expectedRecordRevision: 1,
+          record: { ...draft, operations: [...draft.operations].reverse() }
+        })
+      )
+    ).toFailWithDetail(
+      /the creation operation 'op-create-t1' must remain the first operation/,
+      code('invalid')
+    );
+  });
+
+  test.each<[string, number, Record<string, JsonValue>]>([
+    ['an open task holds two closeout slots', 2, {}],
+    [
+      'a terminal task holds one',
+      1,
+      { lifecycle: { status: 'succeeded', outcome: { summary: 'ok', artifacts: [] } } }
+    ]
+  ])('open refuses a record over its per-task operation limit: %s', async (__, held, lifecycle) => {
+    const root = memoryRoot() as Root;
+    const repository = await initialized(root);
+    (await repository.withWriter((w) => w.register(registration('t1')))).orThrow();
+    repository.close();
+    const record = readJson(root, 'task-t1.json');
+    const task = record.task as JsonObject;
+    const [creation] = record.operations as JsonObject[];
+    const limit: number = defaultTaskCapacityProfile.perOwner.maxOperationsPerTask - held;
+    const extra = Array.from({ length: limit }, (___, i) => ({
+      ...creation,
+      operationId: `op-extra-${i}`,
+      operation: 'update-tracked',
+      request: {}
+    }));
+    writeJson(root, 'task-t1.json', {
+      ...record,
+      task: { ...task, envelope: { ...(task.envelope as JsonObject), ...lifecycle } },
+      operations: [creation, ...extra]
+    });
+    expect(blocked(await open(root)).issues).toEqual([
+      expect.objectContaining({
+        code: 'record-invalid',
+        message: expect.stringContaining(`${limit + 1} operations, over the per-task limit of ${limit}`)
+      })
+    ]);
+  });
+
+  test('open completes a pending entry only over its first record, not a later revision', async () => {
+    const root = await parentAndChild();
+    const record = readJson(root, 'task-t2.json');
+    markPending(root, 't2', {
+      operationId: 'op-create-t2',
+      request: creationOf(root, 't2').request,
+      capacityClaims: pendingClaims(record)
+    });
+    writeJson(root, 'task-t2.json', { ...record, recordRevision: 2 });
+    expect(blocked(await open(root)).issues).toEqual([
+      expect.objectContaining({
+        code: 'integrity',
+        message: expect.stringMatching(/it is record revision 2, not the first record/)
+      })
+    ]);
+  });
+});

@@ -152,8 +152,11 @@ describe('storage record converters', () => {
     const draft = unresolvedRegistration('u1').record;
     const record = { ...draft, formatVersion: 1, recordRevision: 1, capacityClaims: [] };
     expect(storage.record.convert(record)).toSucceed();
+    expect(
+      storage.record.convert({ ...record, operations: [...record.operations, ...record.operations] })
+    ).toFailWith(/carries exactly its registration operation/i);
     expect(storage.record.convert({ ...record, operations: [] })).toFailWith(
-      /carries its registration operation/i
+      /carries exactly its registration operation/i
     );
   });
 
