@@ -212,4 +212,20 @@ returns rather than assuming it.
 
 ## Gates
 
-Filled in below as they are run on the final source.
+Every step `.github/workflows/ci.yml` runs, run locally on the final source:
+
+| gate | result |
+|---|---|
+| `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
+| `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
+| `rushx lint` / `rushx fixlint` | clean; fixlint run before the final commits |
+| `rushx test` (package) | **1,140 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
+| `rush rebuild` (repo-wide) | exit 0, no warnings — required: `ITaskRepository` gained two members |
+| `rush test` (repo-wide) | exit 0, 37 projects — required: a widened accepted set is invisible to a rebuild |
+| `verify-capability-docs.mjs` | router 20,016/24,000, 24/24 documented, 75 reflexes, 0 failed |
+| `generate-capability-feed.mjs --check` | 0 stale |
+| `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
+| `verify-bundler-resolution.mjs` | 20 checked, 0 failed |
+| `verify-tarball-exports.mjs` | 26 packages, 205 paths, 0 failed |
+
+**Layer 2 (Copilot) is driven on the PR**; its record is appended below as it happens.
