@@ -309,3 +309,20 @@ clean build. The pushed commits were never affected.
 | **(medium, previously missed)** `_resumeRegistration` (a T3 path) read and parsed its landed record outside the materialization gate | the read runs in `gate.run`; tests observe `inFlight === 1` inside it, and a retryable `conflict` when four reads are already in flight |
 
 The finding profile is still substantive (a real bound escape), so the loop continues.
+
+### Copilot round 4 — 2 high: one real and fixed, one not reproducible
+
+| finding | disposition |
+|---|---|
+| **(high)** `_readLanded` (resumed registration) parsed a landed file without the record-byte bound | fixed in 1ec1a953: it shares `_readBounded` with the committed-record read, which refuses an over-bound file before parsing. The regression test uses non-JSON text one byte over the bound, and the error names the bound rather than a parse error. The test was red on the old code and is green on the fix |
+| **(high)** `perf/residentMemory.js` overlays `envelope()` output, so it resets the cohort lifecycle and revision | does not reproduce. `fresh` is `cohort.envelope(id)`, which returns payload fields only. Every M1 arm opened `ready`, which an archived record with a pending envelope could not do |
+
+### Copilot round 5 — 1 high, not reproducible → loop stopped
+
+The sole finding claimed that the bounded-quarantine test should expect 17 visits, not 18. That misses
+`KeyStream`'s one key of lookahead. The test passes locally and has passed in CI since 02c2762d.
+
+**Copilot review loop driven by implementer; stopped at 5 rounds on diminishing returns.** Rounds 1–4
+each surfaced at least one real bound or fencing gap, all fixed with a test that goes red when
+reverted. Round 5 produced only a non-reproducing count. Final package state: 907 tests, 100% on all
+four metrics, lint clean, mutation matrix 92/92.
