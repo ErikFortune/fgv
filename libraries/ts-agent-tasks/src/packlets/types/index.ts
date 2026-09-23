@@ -15,6 +15,7 @@ export * from './environment';
 export * from './failure';
 export * from './ids';
 export * from './lifecycle';
+export * from './query';
 export * from './registry';
 export * from './source';
 export * from './storage';

@@ -9,8 +9,12 @@ import * as TaskLib from '../../index';
 describe('public surface', () => {
   test('exports the FileTree repository (T3) but no broker and no filesystem of its own', () => {
     const names: ReadonlyArray<string> = Object.keys(TaskLib);
-    // T3 adds exactly one repository implementation, over an injected FileTree root.
-    expect(names.filter((n) => /repository/i.test(n))).toEqual(['FileTreeTaskRepository']);
+    // T3 adds exactly one repository implementation, over an injected FileTree root; T4 adds the
+    // behavioural conformance runner a custom implementation is checked with.
+    expect(names.filter((n) => /repository/i.test(n))).toEqual([
+      'FileTreeTaskRepository',
+      'runTaskRepositoryConformance'
+    ]);
     // It does not re-export FileTree, and there is no broker yet (T5).
     for (const forbidden of ['FileTree', 'TaskBroker']) {
       expect(names).not.toContain(forbidden);

@@ -41,6 +41,12 @@ export class FaultyRoot implements FileTree.IAtomicFileTreeDirectoryItem {
   /** Present file children without the strict-text capability. */
   public hideStrictText: boolean = false;
   public capabilities: FileTree.IAtomicWriteCapabilities | undefined;
+  /**
+   * Called before every file read, with the file's name: host code running inside a record
+   * read, as a custom accessor's would. Present file children without the strict-text
+   * capability while it is set.
+   */
+  public onRead: ((name: string) => void) | undefined;
 
   public readonly inner: FileTree.IAtomicFileTreeDirectoryItem;
 
@@ -65,9 +71,10 @@ export class FaultyRoot implements FileTree.IAtomicFileTreeDirectoryItem {
     if (this.failChildren) {
       return failWithDetail('injected: cannot list', undefined);
     }
-    if (!this.hideStrictText) {
+    if (!this.hideStrictText && this.onRead === undefined) {
       return this.inner.getChildren();
     }
+    const hook = (name: string): void => this.onRead?.(name);
     return this.inner.getChildren().onSuccess((children) =>
       succeed(
         children.map(
@@ -80,8 +87,14 @@ export class FaultyRoot implements FileTree.IAtomicFileTreeDirectoryItem {
                   baseName: child.baseName,
                   extension: child.extension,
                   contentType: child.contentType,
-                  getContents: () => child.getContents(),
-                  getRawContents: () => child.getRawContents()
+                  getContents: () => {
+                    hook(child.name);
+                    return child.getContents();
+                  },
+                  getRawContents: () => {
+                    hook(child.name);
+                    return child.getRawContents();
+                  }
                 }
               : child
         )
