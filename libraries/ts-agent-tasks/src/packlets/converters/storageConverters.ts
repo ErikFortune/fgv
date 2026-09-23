@@ -250,6 +250,9 @@ export function buildStorageConverters(
         id: ids.identifier,
         state: Converters.literal('pending'),
         operationId: ids.operationId,
+        operation: Converters.enumeratedValue<TaskCatalogOperationType>(allTaskCatalogOperationTypes),
+        principalKey,
+        recordType: Converters.enumeratedValue<ITaskCommitRecord['recordType']>(['resolved', 'unresolved']),
         request: JsonConverters.jsonValue,
         capacityClaims: capacity.claims
       })

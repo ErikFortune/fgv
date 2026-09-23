@@ -211,8 +211,9 @@ export interface ILiveInventoryEntry {
  * not have been written yet.
  *
  * @remarks
- * The canonical creation request is kept here only while the entry is pending — it is what a
- * resumed registration must match — and is cleared when the entry goes live, because the
+ * The creation operation's identity — its id, catalog operation, principal and canonical
+ * request — and the first record's type are kept here only while the entry is pending: they are
+ * what a resumed registration must match. They are cleared when the entry goes live, because the
  * accepted evidence is then in the record. The entry owns its capacity claims until then.
  * @public
  */
@@ -220,6 +221,12 @@ export interface IPendingInventoryEntry {
   readonly id: string;
   readonly state: 'pending';
   readonly operationId: OperationId;
+  /** The creation catalog operation, part of what a resumed registration must match. */
+  readonly operation: TaskCatalogOperationType;
+  /** The principal the registration was accepted for. */
+  readonly principalKey: string;
+  /** Whether the registration writes a resolved or an unresolved first record. */
+  readonly recordType: ITaskCommitRecord['recordType'];
   readonly request: JsonValue;
   readonly capacityClaims: ReadonlyArray<ITaskCapacityClaim>;
 }

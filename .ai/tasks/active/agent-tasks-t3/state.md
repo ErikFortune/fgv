@@ -142,3 +142,9 @@ Eight findings (5 high, 3 medium), all real and fixed; M37–M47 each verified r
 Three findings (2 high, 1 medium), all real and fixed; M48–M50 verified red. 763 tests, 100%.
 Finding count is falling (10 → 8 → 3) and narrowing to one-field gaps in round-2 checks; one
 more round to confirm the trend before calling diminishing returns.
+
+## 2026-09-23 — Copilot round 4 addressed
+
+Four findings (all high), all real; M51–M54 verified red. 768 tests, 100%. Findings went
+10 → 8 → 3 → 4 and are still substantive (each a real integrity gap), so the loop continues.
+A full mutation re-run (M1–M27 confirmed red before it was stopped) resumes after this push.

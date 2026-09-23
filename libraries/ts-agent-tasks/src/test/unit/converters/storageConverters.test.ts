@@ -199,6 +199,9 @@ describe('manifest and inventory converters', () => {
         id: 't1',
         state: 'pending',
         operationId: 'op-1',
+        operation: 'create-tracked',
+        principalKey: 'host',
+        recordType: 'resolved',
         request: { a: 1 },
         capacityClaims: []
       })

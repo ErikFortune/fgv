@@ -99,17 +99,36 @@ async function parentAndChild(): Promise<Root> {
   return root;
 }
 
-/** Rewrites the manifest so `id`'s entry is pending, carrying the given evidence. */
+/**
+ * Rewrites the manifest so `id`'s entry is pending, carrying the given evidence. The creation
+ * operation's catalog name, principal and record type default to a tracked registration's.
+ */
 function markPending(
   root: Root,
   id: string,
-  evidence: { operationId: string; request: JsonValue; capacityClaims: JsonValue }
+  evidence: {
+    operationId: string;
+    request: JsonValue;
+    capacityClaims: JsonValue;
+    operation?: string;
+    principalKey?: string;
+    recordType?: string;
+  }
 ): void {
   const manifest = readJson(root, 'repository.json');
   writeJson(root, 'repository.json', {
     ...manifest,
     tasks: (manifest.tasks as JsonObject[]).map((entry) =>
-      entry.id === id ? { id, state: 'pending', ...evidence } : entry
+      entry.id === id
+        ? {
+            id,
+            state: 'pending',
+            operation: 'create-tracked',
+            principalKey: 'host',
+            recordType: 'resolved',
+            ...evidence
+          }
+        : entry
     )
   });
 }
@@ -776,5 +795,150 @@ describe('copilot round 3: what open and registration still took on trust', () =
         )
       })
     ]);
+  });
+});
+
+describe('copilot round 4: identity held across every boundary', () => {
+  test('an observation cannot change catalog metadata or archive the task', async () => {
+    const repository = await initialized(memoryRoot() as Root);
+    const created = (await repository.withWriter((w) => w.register(registration('t1')))).orThrow();
+    const observe =
+      (
+        change: Parameters<typeof nextDraft>[1]
+      ): ((w: ITaskRepositoryWriter) => Promise<TaskResult<ITaskCommitRecord>>) =>
+      (w) =>
+        w.commit({
+          purpose: 'observation',
+          taskId: t1,
+          expectedRevision: rev(1),
+          expectedRecordRevision: 1,
+          record: nextDraft(created, {
+            sourceRevision: { epoch: 'e1', token: '1' },
+            updates: ['lifecycle'],
+            ...change
+          })
+        });
+    for (const envelopeChange of [
+      { title: 'renamed by the source' },
+      { parentId: 'other' as TaskId },
+      { scopes: [] }
+    ]) {
+      expect(
+        await repository.withWriter(observe({ envelope: envelope('t1', 2, envelopeChange) }))
+      ).toFailWithDetail(/an observation cannot change catalog metadata/i, code('invalid'));
+    }
+    expect(
+      await repository.withWriter(
+        observe({
+          envelope: envelope('t1', 2, {
+            lifecycle: { status: 'succeeded', outcome: { summary: 'ok', artifacts: [] } }
+          }),
+          archived: true
+        })
+      )
+    ).toFailWithDetail(/an observation cannot archive a task/i, code('invalid'));
+  });
+
+  test('a resumed registration must match the pending creation in full, not only id and request', async () => {
+    const inner = memoryRoot() as Root;
+    const root = new FaultyRoot(inner);
+    const repository = (await FileTreeTaskRepository.initialize(params(root, 'session'))).orThrow();
+    root.faults.push({ name: 'task-t1.json', when: 'before', visibility: 'unchanged' });
+    await repository.withWriter((w) => w.register(registration('t1')));
+    const base = registration('t1');
+    const draft = base.record.recordType === 'resolved' ? base.record : undefined;
+    const [creation] = draft!.operations;
+    for (const changed of [
+      { ...creation, principalKey: 'someone-else' },
+      { ...creation, operation: 'create-list' as const }
+    ]) {
+      expect(
+        await repository.withWriter((w) =>
+          w.register({ ...base, record: { ...draft!, operations: [changed] } })
+        )
+      ).toFailWithDetail(/a different registration of this id is pending/i, code('conflict'));
+    }
+    // The original retry still resumes.
+    expect(await repository.withWriter((w) => w.register(base))).toSucceed();
+  });
+
+  test('open completes a pending entry only when the record matches its principal and catalog operation', async () => {
+    const root = await parentAndChild();
+    const record = readJson(root, 'task-t2.json');
+    markPending(root, 't2', {
+      operationId: 'op-create-t2',
+      request: creationOf(root, 't2').request,
+      capacityClaims: pendingClaims(record),
+      principalKey: 'someone-else'
+    });
+    expect(blocked(await open(root)).issues).toEqual([
+      expect.objectContaining({
+        code: 'integrity',
+        message: expect.stringMatching(/catalog operation, principal or record type differs/)
+      })
+    ]);
+  });
+
+  test('a replay reports success only for what was committed', async () => {
+    const repository = await initialized(memoryRoot() as Root);
+    const created = (await repository.withWriter((w) => w.register(registration('t1')))).orThrow();
+    const request = {
+      purpose: 'operation' as const,
+      operationId: 'op-2' as OperationId,
+      taskId: t1,
+      expectedRevision: rev(1),
+      expectedRecordRevision: 1,
+      record: nextDraft(created, {
+        envelope: envelope('t1', 2, { title: 'renamed' }),
+        operation: catalogOp('op-2', 'update-tracked', { title: 'renamed' })
+      })
+    };
+    expect(await repository.withWriter((w) => w.commit(request))).toSucceed();
+    const smuggled = {
+      ...request,
+      record: {
+        ...request.record,
+        operations: [...request.record.operations, catalogOp('op-3', 'update-tracked', {})]
+      }
+    };
+    expect(await repository.withWriter((w) => w.commit(smuggled))).toFailWithDetail(
+      /a replay of 'op-2' offers operations that were never committed/,
+      code('conflict')
+    );
+  });
+
+  test('the manifest is fenced like a record: an out-of-band edit is never overwritten', async () => {
+    const inner = memoryRoot() as Root;
+    const root = new FaultyRoot(inner);
+    const repository = (await FileTreeTaskRepository.initialize(params(root, 'session'))).orThrow();
+    (await repository.withWriter((w) => w.register(registration('t1')))).orThrow();
+    // Our own manifest writes do not trip the check.
+    (await repository.withWriter((w) => w.register(registration('t2')))).orThrow();
+
+    const raised = {
+      ...defaultTaskCapacityProfile,
+      limits: {
+        ...defaultTaskCapacityProfile.limits,
+        'retained-tasks': defaultTaskCapacityProfile.limits['retained-tasks'] + 1
+      }
+    };
+    // A manifest that cannot be re-read refuses the rewrite safely, before anything is written.
+    root.failChildren = true;
+    expect(await repository.withWriter((w) => w.raiseCapacityLimits(raised))).toFailWithDetail(
+      /repository\.json: cannot be re-read before rewriting it: .*cannot list/,
+      expect.objectContaining({ code: 'storage-unavailable', retry: 'safe' })
+    );
+    root.failChildren = false;
+    expect(repository.health().state).toBe('ready');
+
+    const manifest = readJson(inner, 'repository.json');
+    writeJson(inner, 'repository.json', { ...manifest, tasks: (manifest.tasks as JsonObject[]).slice(1) });
+    const edited = readText(inner, 'repository.json');
+    expect(await repository.withWriter((w) => w.raiseCapacityLimits(raised))).toFailWithDetail(
+      /repository\.json differs from the one this repository committed/,
+      code('storage-corrupt')
+    );
+    expect(repository.health().state).toBe('unavailable');
+    expect(readText(inner, 'repository.json')).toBe(edited);
   });
 });

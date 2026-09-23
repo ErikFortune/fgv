@@ -247,7 +247,16 @@ describe('open refuses a writable repository over detectable corruption, and rew
       ...manifest,
       tasks: [
         { id: 't1', state: 'live' },
-        { id: 't2', state: 'pending', operationId: 'op-someone-else', request: {}, capacityClaims: [] }
+        {
+          id: 't2',
+          state: 'pending',
+          operationId: 'op-someone-else',
+          operation: 'create-tracked',
+          principalKey: 'host',
+          recordType: 'resolved',
+          request: {},
+          capacityClaims: []
+        }
       ]
     });
     freeze();
@@ -272,6 +281,9 @@ describe('open refuses a writable repository over detectable corruption, and rew
           id: 't2',
           state: 'pending',
           operationId,
+          operation: 'create-tracked',
+          principalKey: 'host',
+          recordType: 'resolved',
           request: (record.operations as JsonObject[])[0].request,
           capacityClaims: []
         }
@@ -473,7 +485,18 @@ describe('consumer and source records: what this release owns of them', () => {
 
   test('a pending consumer registration is not readable by this release', async () => {
     const root = await withEntries({
-      consumers: [{ id: 's1', state: 'pending', operationId: 'op-sub', request: {}, capacityClaims: [] }]
+      consumers: [
+        {
+          id: 's1',
+          state: 'pending',
+          operationId: 'op-sub',
+          operation: 'create-tracked',
+          principalKey: 'host',
+          recordType: 'resolved',
+          request: {},
+          capacityClaims: []
+        }
+      ]
     });
     expect(blocked(await open(root)).issues).toEqual([
       issue(

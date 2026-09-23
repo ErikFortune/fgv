@@ -189,6 +189,10 @@ UNVERIFIED — never as "nothing went red"** (F2's lesson). Final run, against t
 | M48 | registration may overwrite an unnamed record file | 1 |
 | M49 | a claim may omit a bundle dimension | 1 |
 | M50 | open accepts any first operation | 1 |
+| M51 | an observation may change the catalog or archive | 1 |
+| M52 | a pending retry matches on id and request only | 2 |
+| M53 | a replay may report uncommitted operations | 1 |
+| M54 | the manifest is rewritten without checking it | 1 |
 
 **Three findings came from the exercise rather than from the suite:**
 
@@ -260,7 +264,7 @@ Every step `.github/workflows/ci.yml` runs, run locally on the final code:
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint run before the final commit |
-| `rushx test` (package) | **763 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
+| `rushx test` (package) | **768 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
 | `rush rebuild` (repo-wide) | `SUCCESS: 37 operations`, exit 0, no warnings |
 | `rush test` (repo-wide) | `SUCCESS: 36 operations`, exit 0 |
 | `verify-capability-docs.mjs` | router 19,587/24,000, 24/24 documented, 75 reflexes, 0 failed |
@@ -324,4 +328,15 @@ The profile narrowed again: each finding is a place round 2's checks still trust
 | registration could overwrite a record-shaped file open had reported as unexpected and promised to leave alone | a new identity re-lists and refuses (`conflict`) if its record name exists; a failed listing refuses `storage-unavailable`, `safe` |
 | `checkTaskClaims` validated only the charges present, so a claim missing a dimension undercounted its reservation | a claim must name every dimension its bundle reserves; spending shrinks a charge but never removes it |
 | open never required the first operation to be creation evidence, which registration replay answers from | `checkCreationEvidence` (shared with registration) runs at open: a creation catalog operation, `register-external` for an unresolved record |
+
+### Copilot round 4 — 4 high, all real, all fixed
+
+| finding | fix |
+|---|---|
+| an observation could reparent, retitle or rescope a task, or archive it, with no catalog operation | `checkPurpose`: an observation preserves catalog metadata and `archived` |
+| a pending entry held only operation id and request, so a retry after a crash could switch the catalog operation, principal or first-record type | `IPendingInventoryEntry` now carries `operation`, `principalKey` and `recordType`; a resumed registration and open's completion both compare the full `IRegistrationIdentity` |
+| a commit replay reported success for a draft carrying extra, never-committed operations | a replay requires every offered operation to be committed identically |
+| the manifest was never re-checked after open, so an out-of-band edit could be overwritten | every manifest rewrite first re-lists and re-reads it against the committed fingerprint; a mismatch fences (`storage-corrupt`), an unreadable manifest refuses `safe` |
+
+`IPendingInventoryEntry` is public (T3's own vocabulary), so the API report changes.
 

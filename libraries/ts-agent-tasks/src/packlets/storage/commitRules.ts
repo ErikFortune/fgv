@@ -6,7 +6,9 @@
 import { JsonValue } from '@fgv/ts-json-base';
 import { Result, fail, succeed } from '@fgv/ts-utils';
 import {
+  IPendingInventoryEntry,
   IResolvedTaskRecordDraft,
+  IStoredCatalogOperation,
   IStoredTaskOperation,
   ITaskCapacityProfile,
   ITaskCommitRecord,
@@ -74,7 +76,9 @@ const creations: ReadonlySet<TaskCatalogOperationType> = new Set<TaskCatalogOper
  * and `register-external` for an unresolved record. Registration replay answers from that slot
  * for the task's whole lifetime.
  */
-export function checkCreationEvidence(record: ITaskCommitRecord | ITaskRecordDraft): Result<true> {
+export function checkCreationEvidence(
+  record: ITaskCommitRecord | ITaskRecordDraft
+): Result<IStoredCatalogOperation> {
   const op: IStoredTaskOperation = record.operations[0];
   if (op.type !== 'catalog' || !creations.has(op.operation)) {
     return fail(`operation '${op.operationId}' is not a creation operation`);
@@ -82,31 +86,70 @@ export function checkCreationEvidence(record: ITaskCommitRecord | ITaskRecordDra
   if (record.recordType === 'unresolved' && op.operation !== 'register-external') {
     return fail(`an unresolved record is created only by 'register-external'`);
   }
-  return succeed(true);
+  return succeed(op);
 }
 
 /**
  * Checks a registration draft: it carries exactly its creation operation, whose stored
  * request is the registration's canonical request, and a first record is not archived.
+ * Returns the creation operation.
  */
 export function checkRegistrationDraft(
-  draft: ITaskRecordDraft,
+  draft: ITaskRecordDraft | ITaskCommitRecord,
   operationId: OperationId,
   request: JsonValue
-): Result<true> {
+): Result<IStoredCatalogOperation> {
   if (draft.operations.length !== 1 || draft.operations[0].operationId !== operationId) {
     return fail(`a first record carries exactly its creation operation '${operationId}'`);
-  }
-  const creation: Result<true> = checkCreationEvidence(draft);
-  if (creation.isFailure()) {
-    return creation;
   }
   if (draft.recordType === 'resolved' && draft.archived) {
     return fail(`a first record cannot be archived`);
   }
-  return canonicallyEqual(draft.operations[0].request, request)
-    ? succeed(true)
-    : fail(`the creation operation's request differs from the registration request`);
+  return checkCreationEvidence(draft).onSuccess((creation) =>
+    canonicallyEqual(creation.request, request)
+      ? succeed(creation)
+      : fail<IStoredCatalogOperation>(
+          `the creation operation's request differs from the registration request`
+        )
+  );
+}
+
+/**
+ * Everything that makes a registration the same registration: the creation operation's
+ * identity and the type of first record it writes. A pending entry holds exactly this, so a
+ * resumed registration — or the record open finds for it — is matched on all of it.
+ */
+export interface IRegistrationIdentity {
+  readonly operationId: OperationId;
+  readonly operation: TaskCatalogOperationType;
+  readonly principalKey: string;
+  readonly recordType: ITaskCommitRecord['recordType'];
+  readonly request: JsonValue;
+}
+
+/** The identity of a registration, from its (checked) creation operation. */
+export function registrationIdentity(
+  record: ITaskRecordDraft | ITaskCommitRecord,
+  creation: IStoredCatalogOperation
+): IRegistrationIdentity {
+  return {
+    operationId: creation.operationId,
+    operation: creation.operation,
+    principalKey: creation.principalKey,
+    recordType: record.recordType,
+    request: creation.request
+  };
+}
+
+/** The identity a pending entry holds. */
+export function pendingIdentity(entry: IPendingInventoryEntry): IRegistrationIdentity {
+  return {
+    operationId: entry.operationId,
+    operation: entry.operation,
+    principalKey: entry.principalKey,
+    recordType: entry.recordType,
+    request: entry.request
+  };
 }
 
 /**
@@ -127,29 +170,7 @@ export function checkIdentity(
   if (current.recordType === 'unresolved') {
     const reference = current.reference;
     // First resolution preserves identity and every piece of catalog metadata (§8.3).
-    const same: boolean = canonicallyEqual(
-      {
-        id: reference.id,
-        kind: reference.kind,
-        detailVersion: reference.detailVersion,
-        title: reference.title,
-        parentId: reference.parentId,
-        responsibility: reference.responsibility,
-        scopes: reference.scopes,
-        binding: reference.binding
-      },
-      {
-        id: next.id,
-        kind: next.kind,
-        detailVersion: next.detailVersion,
-        title: next.title,
-        parentId: next.parentId,
-        responsibility: next.responsibility,
-        scopes: next.scopes,
-        binding: next.binding
-      }
-    );
-    if (!same) {
+    if (!canonicallyEqual(_catalog(reference), _catalog(next))) {
       return fail(`first resolution must preserve the registration's identity and catalog metadata`);
     }
     if (next.revision <= reference.revision) {
@@ -203,6 +224,16 @@ export function checkPurpose(
       ? succeed(true)
       : fail(`first resolution is an observation; a '${purpose}' commit cannot resolve a task`);
   }
+  if (purpose === 'observation') {
+    // A source owns execution state, not the catalog: identity, placement, responsibility and
+    // scopes change only by catalog operation, with its evidence — and so does archiving.
+    if (!canonicallyEqual(_catalog(current.task.envelope), _catalog(draft.task.envelope))) {
+      return fail(`an observation cannot change catalog metadata; that takes a catalog operation`);
+    }
+    if (draft.archived !== current.archived) {
+      return fail(`an observation cannot archive a task; that takes a catalog operation`);
+    }
+  }
   if (purpose !== 'observation' && !canonicallyEqual(current.sourceRevision, draft.sourceRevision)) {
     return fail(`only an observation may change the committed source revision`);
   }
@@ -210,6 +241,29 @@ export function checkPurpose(
     return fail(`maintenance cannot change semantic state; it changes receipts, pruning and telemetry only`);
   }
   return succeed(true);
+}
+
+/** Identity and catalog metadata: what only registration or a catalog operation sets. */
+function _catalog(from: {
+  readonly id: TaskId;
+  readonly kind: unknown;
+  readonly detailVersion: number;
+  readonly title: string;
+  readonly parentId?: TaskId;
+  readonly responsibility?: unknown;
+  readonly scopes: unknown;
+  readonly binding?: unknown;
+}): unknown {
+  return {
+    id: from.id,
+    kind: from.kind,
+    detailVersion: from.detailVersion,
+    title: from.title,
+    parentId: from.parentId,
+    responsibility: from.responsibility,
+    scopes: from.scopes,
+    binding: from.binding
+  };
 }
 
 /**

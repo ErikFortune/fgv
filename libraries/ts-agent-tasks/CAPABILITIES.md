@@ -72,12 +72,18 @@ change. `ITaskRepositoryWriter.commit` takes one of three purposes:
   new update.
 
 Only an observation may change a committed `sourceRevision`, and only an observation may resolve
-an unresolved record.
+an unresolved record. An observation in turn may not change catalog metadata (title, parent,
+responsibility, scopes) or archive the task — a source owns execution state, and catalog changes
+carry operation evidence. A replay succeeds only if everything the retry offers is already
+committed.
 
 Every replacement keeps all operation evidence with its request unchanged, keeps every retained
 update byte-identical (a required one is removed only by maintenance), advances `recordRevision`
 by one, and is refused on a stale `expectedRevision` **or** `expectedRecordRevision` — the two are
-separate so pruning cannot erase a receipt committed underneath it. Identity, kind, detail
+separate so pruning cannot erase a receipt committed underneath it. Every read-back checks the
+record against a fingerprint of what was committed, and every manifest rewrite first checks the
+manifest the same way: an out-of-band change fences the repository rather than being trusted or
+overwritten. Identity, kind, detail
 version, creation time and source binding never change; terminal state is absorbing; an archived
 record (`archived: true`, the tombstone) is immutable. These are storage integrity rules, not
 transition policy — which lifecycle moves are allowed is the broker's (a later slice).
@@ -86,8 +92,8 @@ transition policy — which lifecycle moves are allowed is the broker's (a later
 (with the canonical creation request and the task's capacity claims), then the record, then marks
 the entry *live*. A pending registration is not an accepted task — `read` returns `undefined` —
 but it holds its reservations, survives a crash, is reported by the next open, and **resumes when
-the host retries the same registration**: same task id, operation id and canonically equal
-request, same claim ids, no second charge. A pending entry whose record did land is completed by
+the host retries the same registration**: same task id, operation id, catalog operation,
+principal, first-record type and canonically equal request, same claim ids, no second charge. A pending entry whose record did land is completed by
 the next open. The same identity with anything else is a `conflict`. A live identity replays. A new
 identity whose record file already exists on disk — one the inventory does not name — is a
 `conflict`, and the file is left untouched.

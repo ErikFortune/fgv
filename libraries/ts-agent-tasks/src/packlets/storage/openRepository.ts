@@ -4,7 +4,7 @@
  */
 
 import { FileTree } from '@fgv/ts-json-base';
-import { Converter, Converters, Result, fail } from '@fgv/ts-utils';
+import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { TaskConverters } from '../converters';
 import {
   IPendingInventoryEntry,
@@ -24,7 +24,13 @@ import {
   taskStorageFormatVersion
 } from '../types';
 import { checkTaskClaims, withOwnership } from './claims';
-import { checkBounds, checkCreationEvidence, checkRegistrationDraft } from './commitRules';
+import {
+  checkBounds,
+  checkCreationEvidence,
+  checkRegistrationDraft,
+  pendingIdentity,
+  registrationIdentity
+} from './commitRules';
 import { classify, ok, propagate, taskFailure, writeRetry } from './failures';
 import {
   canonicallyEqual,
@@ -71,7 +77,8 @@ export interface IRepositoryState {
   readonly environment: ITaskEnvironment;
   readonly mode: TaskRepositoryMode;
   readonly manifest: ITaskRepositoryManifest;
-  readonly manifestBytes: number;
+  /** The manifest's exact committed text, so the instance can tell if it changes underneath. */
+  readonly manifestText: string;
   readonly tasks: Map<TaskId, ITaskProjection>;
   readonly pending: Map<string, IPendingInventoryEntry>;
   readonly ledger: CapacityLedger;
@@ -248,7 +255,7 @@ export function initializeRepository(
         environment: params.environment,
         mode: acquired.mode,
         manifest: created.value.manifest,
-        manifestBytes: created.value.bytes,
+        manifestText: created.value.text,
         tasks: new Map(),
         pending: new Map(),
         ledger,
@@ -379,7 +386,7 @@ function _completeRegistrations(
   converters: TaskConverters,
   manifest: ITaskRepositoryManifest,
   done: ReadonlySet<string>
-): TaskResult<{ manifest: ITaskRepositoryManifest; bytes: number }> {
+): TaskResult<{ manifest: ITaskRepositoryManifest; bytes: number; text: string }> {
   const next: ITaskRepositoryManifest = {
     ...manifest,
     manifestRevision: manifest.manifestRevision + 1,
@@ -395,8 +402,8 @@ function _completeRegistrations(
   ).onSuccess((encoded) => {
     const written = store.write(manifestName, encoded.text);
     return written.isSuccess()
-      ? ok({ manifest: next, bytes: encoded.bytes })
-      : taskFailure<{ manifest: ITaskRepositoryManifest; bytes: number }>(
+      ? ok({ manifest: next, bytes: encoded.bytes, text: encoded.text })
+      : taskFailure<{ manifest: ITaskRepositoryManifest; bytes: number; text: string }>(
           `open: completing pending registrations failed: ${written.message}`,
           'storage-unavailable',
           writeRetry(written.detail)
@@ -532,7 +539,7 @@ function _scan(
           {
             taskId,
             ownership: 'pending',
-            unresolved: entry.capacityClaims.some((c) => c.purpose === 'first-resolution'),
+            unresolved: entry.recordType === 'unresolved',
             archived: false
           },
           profile
@@ -627,7 +634,15 @@ function _scan(
         withOwnership(entry.capacityClaims, 'live'),
         record.capacityClaims
       );
-      const sameCreation: Result<true> = checkRegistrationDraft(record, entry.operationId, entry.request);
+      const sameCreation: Result<true> = checkRegistrationDraft(
+        record,
+        entry.operationId,
+        entry.request
+      ).onSuccess((creation) =>
+        canonicallyEqual(registrationIdentity(record, creation), pendingIdentity(entry))
+          ? succeed<true>(true)
+          : fail<true>(`its creation operation's catalog operation, principal or record type differs`)
+      );
       if (!sameClaims || sameCreation.isFailure()) {
         scan.blocking(
           'integrity',
@@ -754,16 +769,15 @@ function _scan(
   }
 
   // ---- complete registrations that died after their record was written ----
-  const completion: TaskResult<{ manifest: ITaskRepositoryManifest; bytes: number }> =
+  const completion: TaskResult<{ manifest: ITaskRepositoryManifest; bytes: number; text: string }> =
     completed.length === 0
-      ? ok({ manifest, bytes: manifestRead.bytes })
+      ? ok({ manifest, bytes: manifestRead.bytes, text: manifestRead.text })
       : _completeRegistrations(store, converters, manifest, new Set<string>(completed));
   if (completion.isFailure()) {
     return propagate(completion);
   }
   ledger.apply(new Map([['repository', manifestEntry(completion.value.bytes, profile)]]));
   const finalManifest: ITaskRepositoryManifest = completion.value.manifest;
-  const finalBytes: number = completion.value.bytes;
 
   const state: IRepositoryState = {
     store,
@@ -773,7 +787,7 @@ function _scan(
     environment: params.environment,
     mode: acquired.mode,
     manifest: finalManifest,
-    manifestBytes: finalBytes,
+    manifestText: completion.value.text,
     tasks,
     pending,
     ledger,

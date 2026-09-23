@@ -342,8 +342,11 @@ export interface IPendingInventoryEntry {
     readonly capacityClaims: ReadonlyArray<ITaskCapacityClaim>;
     // (undocumented)
     readonly id: string;
+    readonly operation: TaskCatalogOperationType;
     // (undocumented)
     readonly operationId: OperationId;
+    readonly principalKey: string;
+    readonly recordType: ITaskCommitRecord['recordType'];
     // (undocumented)
     readonly request: JsonValue;
     // (undocumented)

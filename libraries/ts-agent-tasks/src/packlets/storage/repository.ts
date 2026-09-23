@@ -16,6 +16,7 @@ import {
   ITaskInventoryEntry,
   ITaskKindRegistry,
   ITaskRecordDraft,
+  IStoredCatalogOperation,
   IStoredTaskOperation,
   ITaskRecoveryReport,
   ITaskRepositoryManifest,
@@ -33,6 +34,9 @@ import {
   checkOperations,
   checkPurpose,
   checkRegistrationDraft,
+  IRegistrationIdentity,
+  pendingIdentity,
+  registrationIdentity,
   checkUpdates,
   idOf,
   revisionOf,
@@ -127,6 +131,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
   private readonly _pending: Map<string, IPendingInventoryEntry>;
   private readonly _ledger: CapacityLedger;
   private _manifest: ITaskRepositoryManifest;
+  private _manifestFingerprint: string;
   private _state: ITaskRepositoryHealth['state'];
   private _generation: number;
   private readonly _issues: string[];
@@ -145,6 +150,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     this._pending = state.pending;
     this._ledger = state.ledger;
     this._manifest = state.manifest;
+    this._manifestFingerprint = fingerprintOf(state.manifestText);
     this._state = 'ready';
     this._generation = 0;
     this._issues = [];
@@ -330,10 +336,15 @@ export class FileTreeTaskRepository implements ITaskRepository {
         'after-host-action'
       );
     }
-    const shape: Result<true> = checkRegistrationDraft(draft, operationId, request.request);
+    const shape: Result<IStoredCatalogOperation> = checkRegistrationDraft(
+      draft,
+      operationId,
+      request.request
+    );
     if (shape.isFailure()) {
       return taskFailure(`register ${taskId}: ${shape.message}`, 'invalid', 'after-host-action');
     }
+    const identity: IRegistrationIdentity = registrationIdentity(draft, shape.value);
 
     // An identity already in the inventory is either this registration again — a lost-response
     // retry, which must neither charge twice nor release early — or a different one, refused.
@@ -353,11 +364,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     }
     const pending: IPendingInventoryEntry | undefined = this._pending.get(taskId);
     if (pending !== undefined) {
-      const same: boolean = canonicallyEqual(
-        { operationId: pending.operationId, request: pending.request },
-        { operationId, request: request.request }
-      );
-      if (!same) {
+      if (!canonicallyEqual(pendingIdentity(pending), identity)) {
         return taskFailure(
           `register ${taskId}: a different registration of this id is pending`,
           'conflict',
@@ -376,7 +383,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
         pending !== undefined
           ? this._writeRegistration(taskId, operationId, validated, pending)
           : this._checkUnclaimedName(taskId, operationId).onSuccess(() =>
-              this._newRegistration(taskId, operationId, request, validated)
+              this._newRegistration(taskId, identity, validated)
             )
       );
   }
@@ -408,10 +415,10 @@ export class FileTreeTaskRepository implements ITaskRepository {
   /** Step 1: preflight every dimension, then commit the pending inventory entry. */
   private _newRegistration(
     taskId: TaskId,
-    operationId: OperationId,
-    request: ITaskRegistrationRequest,
+    identity: IRegistrationIdentity,
     draft: ITaskRecordDraft
   ): TaskResult<ITaskCommitRecord> {
+    const operationId: OperationId = identity.operationId;
     const profile: ITaskCapacityProfile = this.profile;
     const claims: Result<ReadonlyArray<ITaskCapacityClaim>> = mintRegistrationClaims(
       taskId,
@@ -426,8 +433,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     const entry: IPendingInventoryEntry = {
       id: taskId,
       state: 'pending',
-      operationId,
-      request: request.request,
+      ...identity,
       capacityClaims: claims.value
     };
     const pendingManifest: ITaskRepositoryManifest = this._withEntry(entry);
@@ -574,9 +580,16 @@ export class FileTreeTaskRepository implements ITaskRepository {
         const stored = current.operations.find((op) => op.operationId === operationId);
         if (stored !== undefined) {
           const offered = draft.operations.find((op) => op.operationId === operationId);
-          if (offered === undefined || !sameOperation(stored, offered)) {
+          // A replay reports success for what is committed, so everything the retry offers
+          // must already be committed, identically. An extra operation was never applied.
+          const allCommitted: boolean = draft.operations.every((op) =>
+            current.operations.some((committed) => sameOperation(committed, op))
+          );
+          if (offered === undefined || !sameOperation(stored, offered) || !allCommitted) {
             return taskFailure<ITaskCommitRecord>(
-              `commit ${taskId}: operation '${operationId}' is already recorded with a different request`,
+              offered !== undefined && sameOperation(stored, offered)
+                ? `commit ${taskId}: a replay of '${operationId}' offers operations that were never committed`
+                : `commit ${taskId}: operation '${operationId}' is already recorded with a different request`,
               'conflict',
               'after-host-action',
               { operationId }
@@ -999,8 +1012,17 @@ export class FileTreeTaskRepository implements ITaskRepository {
    * treated as proof that nothing happened (design §8.2).
    */
   private _writeFile(name: string, text: string, operationId: OperationId | undefined): TaskResult<true> {
+    if (name === manifestName) {
+      const current: TaskResult<true> = this._checkManifest(operationId);
+      if (current.isFailure()) {
+        return current;
+      }
+    }
     const written = this._store.write(name, text);
     if (written.isSuccess()) {
+      if (name === manifestName) {
+        this._manifestFingerprint = fingerprintOf(text);
+      }
       return ok(true);
     }
     // A store that fails without classifying the failure has told us nothing about what a
@@ -1028,6 +1050,32 @@ export class FileTreeTaskRepository implements ITaskRepository {
           'storage-unavailable',
           'reconcile-first'
         );
+  }
+
+  /**
+   * The manifest is committed state as much as a task record is: before it is rewritten, the
+   * one on disk must still be the one this instance last wrote or read. Anything else is an
+   * out-of-band change — an entry removed, a policy edited — and rewriting over it would erase
+   * it, so the repository fences instead.
+   */
+  private _checkManifest(operationId: OperationId | undefined): TaskResult<true> {
+    const detail = operationId !== undefined ? { operationId } : undefined;
+    // Re-list first: a store may hand out file items that snapshot their content.
+    const text: Result<string> = this._store.list().onSuccess(() => this._store.read(manifestName));
+    if (text.isFailure()) {
+      return taskFailure(
+        `${manifestName}: cannot be re-read before rewriting it: ${text.message}`,
+        'storage-unavailable',
+        'safe',
+        detail
+      );
+    }
+    if (fingerprintOf(text.value) === this._manifestFingerprint) {
+      return ok(true);
+    }
+    const message: string = `${manifestName} differs from the one this repository committed`;
+    this._fence(message);
+    return taskFailure(message, 'storage-corrupt', 'after-host-action', detail);
   }
 
   private _relist(operationId: OperationId): TaskResult<true> {
