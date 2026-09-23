@@ -189,8 +189,10 @@ found the peak fixture at 66,000,000 bytes, under its own 64 MiB precondition �
 harness still holding the repository through `open`'s result — dropped, all arms re-run; (3) after
 the second, settled heap after rebuild sat ~6.4 MiB above settled-after-open because the harness's
 inspection snapshot referenced the old generation — dropped, all arms re-run. **All three recorded
-runs passed every prediction**; the numbers below are the third, on `31914e3a` (source identical to
-the reviewed code; later commits touch only the harness and docs).
+runs passed every prediction**. The numbers below come from a fourth run, on `1ec1a953`, the final
+source after Copilot rounds 1–4, from a clean build. None of the manifest changed. Raw data:
+`m1-early.json`. The third run, on `31914e3a` before review, differed only in the second decimal
+(control +92.12, ratio 0.139, open 16.37, buffering control 76.68).
 
 ### Early measurements
 
@@ -199,19 +201,19 @@ Node v22.22.2, V8 12.4.254.21, Linux 6.18 x64, ext4 `/tmp`. Medians of five, `[m
 | cohort | measured | prediction | |
 |---|---|---|---|
 | fixture | allocated 16.07 of 16; released 99.8% (all five identical) | ≥ 80%; 80–120% | **held** |
-| archived, post-GC heap above baseline | minimal 1.02 / 2.55 / 15.32 at 0 / 1k / 10k; control 1.13 / 11.49 / 103.61 | — | |
-| archived, 1k → 10k increment | minimal **+12.76**, control **+92.12**, ratio **0.139** | ≤ 0.25 and ≥ 1 MiB | **held** |
+| archived, post-GC heap above baseline | minimal 1.02 / 2.55 / 15.31 at 0 / 1k / 10k; control 1.13 / 11.49 / 103.61 | — | |
+| archived, 1k → 10k increment | minimal **+12.76**, control **+92.11**, ratio **0.138** | ≤ 0.25 and ≥ 1 MiB | **held** |
 | archived, entry counts at 10k | projections 10,100; summaries 100; children 10,000; sources 10,000; hot-query task reads 0 | linear | **held** |
 | terminal, post-GC heap | 1.85 / 5.09 / 8.16 at 100 / 500 / 900 | — | |
 | terminal, 100 → 900 growth | **6.31** for 4.58 of added presentation | ≥ 50% − 2 MiB | **held** |
 | terminal, archiving 900 releases | **5.36** of 5.15 presentation; projections kept, summaries back to 100 | ≥ 50% − 2 MiB | **held** |
-| cold peak, 68.66 MiB cold details | open **16.37** [16.35–16.42] above settled; rebuild **17.88** [17.78–17.89]; bound 33.17 | ≤ bound | **held** |
-| cold peak, buffering control | **76.68** [76.33–76.87] above settled | > bound | **held** |
+| cold peak, 68.66 MiB cold details | open **16.41** [16.24–16.42] above settled; rebuild **17.88** [17.78–17.88]; bound 33.17 | ≤ bound | **held** |
+| cold peak, buffering control | **76.40** [76.16–76.57] above settled | > bound | **held** |
 
 Descriptive, not predicted: the minimal archived projection costs **≈ 1.45 KB per archived task**
 (12.76 MiB / 9,000) — T3's projection object, its fingerprint string, index memberships, a child-set
 entry and the 128-byte canonical source key. At 10k archived the cold open's sampled peak sits
-20.5–20.9 MiB above settled and a warm rebuild's 32.0–32.4 MiB: records are parsed one at a time,
+20.8–21.1 MiB above settled and a warm rebuild's 31.8–32.5 MiB: records are parsed one at a time,
 so the peak is allocation that no GC has yet reclaimed, not live records — sampled heap cannot
 distinguish the two, and M1's later peak cohorts should add an allocation-profile arm. Warm
 rebuild settles to within 0.04 MiB of the post-open heap (old generation released). Post-close
@@ -326,3 +328,6 @@ The sole finding claimed that the bounded-quarantine test should expect 17 visit
 each surfaced at least one real bound or fencing gap, all fixed with a test that goes red when
 reverted. Round 5 produced only a non-reproducing count. Final package state: 907 tests, 100% on all
 four metrics, lint clean, mutation matrix 92/92.
+
+M1 was re-run on `1ec1a953`, the final source, from a clean build, and every prediction held (table
+above). The counter suite (0 / 1,000 / 10,000) passes on the same source as part of the 907.
