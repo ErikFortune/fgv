@@ -160,8 +160,8 @@ const MUTATIONS = [
   m(
     'M20 a write failure is ignored (success before the boundary)',
     S + 'repository.ts',
-    "          .onSuccess(() => this._writeFile(recordName('task', taskId), built.encoded.text, operationId))\n          .onSuccess(() => {\n            this._tasks.set",
-    "          .onSuccess(() => {\n            this._writeFile(recordName('task', taskId), built.encoded.text, operationId);\n            return ok<true>(true);\n          })\n          .onSuccess(() => {\n            this._tasks.set"
+    "          .onSuccess(() => this._writeFile(recordName('task', taskId), built.encoded.text, operationId))\n          .onSuccess(() => {\n            this._cache.delete(taskId);",
+    "          .onSuccess(() => {\n            this._writeFile(recordName('task', taskId), built.encoded.text, operationId);\n            return ok<true>(true);\n          })\n          .onSuccess(() => {\n            this._cache.delete(taskId);"
   ),
   m(
     'M21 first resolution may change catalog metadata',
