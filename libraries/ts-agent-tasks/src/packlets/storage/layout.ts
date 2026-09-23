@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Normalizer, Result, captureResult, succeed } from '@fgv/ts-utils';
+import { Hash, Normalizer, Result, captureResult, succeed } from '@fgv/ts-utils';
 import { TaskInventoryRecordKind } from '../types';
 
 /**
@@ -91,6 +91,19 @@ function _withoutUndefined(value: unknown): unknown {
     return result;
   }
   return value;
+}
+
+/**
+ * A fingerprint of a record's exact stored text: its UTF-8 length and CRC-32.
+ *
+ * @remarks
+ * Read-back compares the whole record, not just its revision, without holding every record's
+ * text resident. This detects out-of-band change and damage; it is not tamper evidence — a
+ * writer with access to the root is inside the trust boundary.
+ * @internal
+ */
+export function fingerprintOf(text: string): string {
+  return `${utf8Length(text)}:${Hash.Crc32Normalizer.crc32Hash([text])}`;
 }
 
 /**

@@ -125,3 +125,9 @@ to tmpfs: 75 tests, 37 per filesystem + the qualification guard.
 
 **Next:** layer-1 `code-reviewer` (running) → mutation pass (`scratchpad/mutate.py`, 24
 mutations; UNVERIFIED if a pattern is absent or it does not build) → coverage closure → gates.
+
+## 2026-09-23 — Copilot round 1 addressed
+
+Ten findings (3 high, 7 medium), all verified real and fixed; regression tests in
+`storage/evidence.test.ts`, reverts M27–M36 each verified red. 742 tests, 100% coverage. Next:
+push, reply/resolve threads, re-request Copilot; CodeRabbit once the Copilot loop settles.

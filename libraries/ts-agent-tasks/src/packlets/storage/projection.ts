@@ -14,7 +14,7 @@ import {
   isTerminalTaskStatus
 } from '../types';
 import { DimensionAmounts, ILedgerEntry, heldCharges, zeroAmounts } from './ledger';
-import { utf8Length } from './layout';
+import { fingerprintOf, utf8Length } from './layout';
 
 /**
  * The minimal resident projection of one live task (design §7): identity, graph edge,
@@ -33,13 +33,16 @@ export interface ITaskProjection {
   readonly archived: boolean;
   /** False when the kind/version is not registered: the record is quarantined. */
   readonly known: boolean;
+  /** The `fingerprintOf` fingerprint of the record text this instance read or wrote. */
+  readonly fingerprint: string;
 }
 
 /**
  * Projects a validated record.
  * @internal
  */
-export function projectRecord(record: ITaskCommitRecord, known: boolean): ITaskProjection {
+export function projectRecord(record: ITaskCommitRecord, known: boolean, text: string): ITaskProjection {
+  const fingerprint: string = fingerprintOf(text);
   if (record.recordType === 'resolved') {
     const envelope = record.task.envelope;
     return {
@@ -51,7 +54,8 @@ export function projectRecord(record: ITaskCommitRecord, known: boolean): ITaskP
       detailVersion: envelope.detailVersion,
       ...(envelope.parentId !== undefined ? { parentId: envelope.parentId } : {}),
       archived: record.archived,
-      known
+      known,
+      fingerprint
     };
   }
   const reference = record.reference;
@@ -64,7 +68,8 @@ export function projectRecord(record: ITaskCommitRecord, known: boolean): ITaskP
     detailVersion: reference.detailVersion,
     ...(reference.parentId !== undefined ? { parentId: reference.parentId } : {}),
     archived: false,
-    known
+    known,
+    fingerprint
   };
 }
 

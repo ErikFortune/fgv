@@ -260,12 +260,18 @@ describe('open refuses a writable repository over detectable corruption, and rew
       ...manifest,
       tasks: [
         { id: 't1', state: 'live' },
-        { id: 't2', state: 'pending', operationId, request: {}, capacityClaims: [] }
+        {
+          id: 't2',
+          state: 'pending',
+          operationId,
+          request: (record.operations as JsonObject[])[0].request,
+          capacityClaims: []
+        }
       ]
     });
     freeze();
     expect(blocked(await open(root)).issues).toEqual([
-      issue('integrity', 'blocking', /present for pending registration 'op-create-t2'/)
+      issue('integrity', 'blocking', /present for pending registration 'op-create-t2'.*its claims differ/)
     ]);
     expect(operationId).toBe('op-create-t2');
     unchanged();

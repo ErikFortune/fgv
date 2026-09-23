@@ -23,6 +23,7 @@ import {
   defaultTaskCapacityProfile,
   taskStorageFormatVersion
 } from '../types';
+import { checkBounds, checkRegistrationDraft } from './commitRules';
 import { classify, ok, propagate, taskFailure, writeRetry } from './failures';
 import {
   canonicallyEqual,
@@ -127,7 +128,16 @@ function _acquireWith(params: ITaskRepositoryOpenParams, converters: TaskConvert
     if (ownership.isFailure()) {
       return taskFailure<IAcquired>(ownership.message, 'conflict', 'after-host-action');
     }
-    params.registry.freeze();
+    // A registry that will not freeze could change kinds under committed data; refuse.
+    const frozen: Result<number> = params.registry.freeze();
+    if (frozen.isFailure()) {
+      ownership.value.release();
+      return taskFailure<IAcquired>(
+        `the kind registry could not be frozen: ${frozen.message}`,
+        'invalid',
+        'after-host-action'
+      );
+    }
     const listed: Result<{ removed: ReadonlyArray<string>; names: ReadonlyArray<string> }> = store.value
       .cleanup()
       .onSuccess((removed) => store.value.list().onSuccess((names) => ok({ removed, names })));
@@ -286,7 +296,7 @@ function _readJson(
   scan: Scan,
   name: string,
   limit: number | undefined
-): { readonly parsed: unknown; readonly bytes: number } | undefined {
+): { readonly parsed: unknown; readonly text: string; readonly bytes: number } | undefined {
   const text: Result<string> = store.read(name);
   if (text.isFailure()) {
     scan.blocking('unreadable', text.message, name);
@@ -302,7 +312,7 @@ function _readJson(
     scan.blocking('unreadable', `${name}: not JSON: ${parsed.message}`, name);
     return undefined;
   }
-  return { parsed: parsed.value, bytes };
+  return { parsed: parsed.value, text: text.value, bytes };
 }
 
 /**
@@ -482,9 +492,13 @@ function _scan(
   const stillPending: Array<{ taskId: TaskId; operationId: OperationId }> = [];
   const claimOwners: Map<string, string> = new Map<string, string>();
   const named: Set<string> = new Set<string>([manifestName]);
-  // Every task the inventory names, whether or not its record validated: a child of a parent
-  // whose record is already reported broken is not *also* a dangling edge.
-  const inventoried: Set<string> = new Set<string>(manifest.tasks.map((entry) => entry.id));
+  // Every task the inventory names live, whether or not its record validated: a child of a
+  // parent whose record is already reported broken is not *also* a dangling edge. A pending
+  // entry is not an accepted task — registration never admits a child under one — so it joins
+  // only once its registration is completed below.
+  const inventoried: Set<string> = new Set<string>(
+    manifest.tasks.filter((entry) => entry.state === 'live').map((entry) => entry.id)
+  );
 
   const noteClaims = (owner: string, claimIds: ReadonlyArray<string>): void => {
     for (const claimId of claimIds) {
@@ -549,6 +563,13 @@ function _scan(
       scan.blocking('record-id-mismatch', `${name}: holds task ${recordId}`, name);
       continue;
     }
+    // The per-value maxima the closeout claims were sized against hold for a stored record as
+    // they do for a draft: a record under its total ceiling can still hold one value over them.
+    const bounded: Result<true> = checkBounds(record, profile);
+    if (bounded.isFailure()) {
+      scan.blocking('record-invalid', `${name}: ${bounded.message}`, name);
+      continue;
+    }
 
     // An unregistered kind is quarantined, never rewritten; a registered one must convert.
     const kind = record.recordType === 'resolved' ? record.task.envelope : record.reference;
@@ -575,19 +596,21 @@ function _scan(
       const sameClaims: boolean =
         pendingClaims.size === record.capacityClaims.length &&
         record.capacityClaims.every((c) => pendingClaims.has(c.claimId));
-      const hasOperation: boolean = record.operations.some((op) => op.operationId === entry.operationId);
-      if (!sameClaims || !hasOperation) {
+      const sameCreation: Result<true> = checkRegistrationDraft(record, entry.operationId, entry.request);
+      if (!sameClaims || sameCreation.isFailure()) {
         scan.blocking(
           'integrity',
-          `${name}: present for pending registration '${entry.operationId}' but does not carry its operation and claims`,
+          `${name}: present for pending registration '${entry.operationId}' but is not that registration's ` +
+            `first record: ${sameCreation.isFailure() ? sameCreation.message : 'its claims differ'}`,
           name
         );
         continue;
       }
       completed.push(taskId);
+      inventoried.add(taskId);
     }
 
-    tasks.set(taskId, projectRecord(record, known));
+    tasks.set(taskId, projectRecord(record, known, read.text));
     ledger.apply(
       new Map([
         [

@@ -160,11 +160,21 @@ UNVERIFIED — never as "nothing went red"** (F2's lesson). Final run, against t
 | M19 | committed updates mutable | 1 |
 | M20 | a write failure is ignored (success before the boundary) | 3 |
 | M21 | first resolution may change catalog metadata | 1 |
-| M22 | open completes a pending entry whose record carries other claims | 1 |
+| M22 | open completes a pending entry whose record carries other claims | 2 |
 | M23 | per-task operations: no closeout holdback | 1 |
 | M24 | observation replay ignores a differing projection | 1 |
 | M25 | profile admits `maxOperationsPerTask` below creation + closeout | 1 |
 | M26 | `raiseCapacityLimits` skips admission | 1 |
+| M27 | pending completion ignores the creation request | 1 |
+| M28 | registration replay matches any operation by id | 1 |
+| M29 | read-back compares the revision only | 1 |
+| M30 | registry `freeze()` result ignored | 1 |
+| M31 | pending entries count as live parents | 1 |
+| M32 | unresolved `read` skips quarantine | 1 |
+| M33 | root listing drops directories | 1 |
+| M34 | open skips per-value bounds | 1 |
+| M35 | replay identity omits the catalog operation name | 1 |
+| M36 | bounds not re-checked after kind normalization | 1 |
 
 **Three findings came from the exercise rather than from the suite:**
 
@@ -236,7 +246,7 @@ Every step `.github/workflows/ci.yml` runs, run locally on the final code:
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint run before the final commit |
-| `rushx test` (package) | **728 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
+| `rushx test` (package) | **742 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
 | `rush rebuild` (repo-wide) | `SUCCESS: 37 operations`, exit 0, no warnings |
 | `rush test` (repo-wide) | `SUCCESS: 36 operations`, exit 0 |
 | `verify-capability-docs.mjs` | router 19,587/24,000, 24/24 documented, 75 reflexes, 0 failed |
@@ -250,3 +260,23 @@ The repo-wide rebuild matters here for a specific reason: T3 revised shared voca
 rebuild is the check that nothing outside the package was implementing it.
 
 **Layer 2 (Copilot) is driven on the PR**; its record is appended below as it happens.
+
+### Copilot round 1 — 3 high, 7 medium, all real, all fixed
+
+Every finding had the same shape: something trusted as "the same one" compared a subset of what
+makes it that one. M27–M36 above are the reverts of these fixes; each turns exactly its new test
+in `evidence.test.ts` red.
+
+| finding | fix |
+|---|---|
+| pending completion checked operation id and claims only | the record must be that registration's first record: `checkRegistrationDraft` against the entry's operation id and canonical request, plus the claim ids |
+| registration replay accepted any stored operation with the id | only `operations[0]`, the creation evidence, can answer a registration replay. M28 first went **0 red**: the catalog-name check already refused the obvious case, so the test now uses a later operation that carries a creation name — storage does not police later operations' vocabulary |
+| read-back compared id and `recordRevision` only | each projection keeps a fingerprint of the exact committed text (UTF-8 length + CRC-32 via `Hash.Crc32Normalizer`); a same-revision out-of-band edit fences. Damage detection, not tamper evidence — documented at `fingerprintOf` |
+| `registry.freeze()` result ignored | propagated as `invalid`; ownership released |
+| pending entries counted as live parents | parent set is live entries plus registrations completed during the scan |
+| unresolved `read()` skipped quarantine | fails `unknown-kind-version` like a resolved record |
+| `list()` dropped directories, so `initialize` adopted a root holding one | all child names returned; only files are readable |
+| open never applied `checkBounds` | applied per record; a value over its bound blocks as `record-invalid` |
+| commit replay omitted the catalog operation name | one `sameOperation` identity (id, type, catalog name, request) now serves commit replay, registration replay and `checkOperations` |
+| bounds checked before the kind's encoder normalized the details | re-checked on the normalized draft |
+

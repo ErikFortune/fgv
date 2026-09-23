@@ -107,11 +107,14 @@ committed record byte-for-byte, re-establishing the flush boundary rather than r
 success whose directory entry was never flushed.
 
 **Open validates everything and initializes nothing.** `open` requires a valid `repository.json`;
-`initialize` accepts only an empty root. Open reclaims interrupted writes' working files (valid only
+`initialize` accepts only an empty root — no files and no directories. Both refuse a kind
+registry that fails to freeze. Open reclaims interrupted writes' working files (valid only
 now, under exclusive in-process ownership), then checks every named record's presence, strict
-UTF-8 (durable mode), JSON, format version, strict converters, filename/ID agreement, claim-id
-uniqueness across the repository, the parent graph, and that committed usage fits the stored
-profile. **Anything blocking returns a read-only `ITaskRecoveryHandle`**, never a writable
+UTF-8 (durable mode), JSON, format version, strict converters, filename/ID agreement, the
+stored profile's per-value bounds, claim-id uniqueness across the repository, the parent graph (a
+pending registration is not a live parent), and that committed usage fits the stored profile. A
+pending entry whose record landed is completed only when that record is its registration — same
+creation operation, request and claim ids. **Anything blocking returns a read-only `ITaskRecoveryHandle`**, never a writable
 repository, and nothing is repaired or rewritten. Open performs no clock read, no ID mint and no
 source I/O: **it never starts or reattaches external work.** `ITaskRecoveryReport` says what open
 found (`ITaskRecoveryIssue`, blocking or advisory) and did (completed registrations, reclaimed

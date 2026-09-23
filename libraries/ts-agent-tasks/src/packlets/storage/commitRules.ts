@@ -46,6 +46,20 @@ export function idOf(record: ITaskCommitRecord | ITaskRecordDraft): TaskId {
   return record.recordType === 'resolved' ? record.task.envelope.id : record.reference.id;
 }
 
+/**
+ * What makes two records of one operation the same operation: its kind, its catalog
+ * operation name, and its canonical request. Receipts are outcomes, not identity.
+ */
+export function sameOperation(a: IStoredTaskOperation, b: IStoredTaskOperation): boolean {
+  const identity = (op: IStoredTaskOperation): unknown => ({
+    operationId: op.operationId,
+    type: op.type,
+    operation: op.type === 'catalog' ? op.operation : undefined,
+    request: op.request
+  });
+  return canonicallyEqual(identity(a), identity(b));
+}
+
 /** The catalog operations that may create a task. */
 const creations: ReadonlySet<TaskCatalogOperationType> = new Set<TaskCatalogOperationType>([
   'create-tracked',
@@ -163,15 +177,7 @@ export function checkOperations(
     if (kept === undefined) {
       return fail(`operation '${op.operationId}' is dedup evidence and cannot be dropped`);
     }
-    const same: boolean = canonicallyEqual(
-      { type: op.type, request: op.request, operation: op.type === 'catalog' ? op.operation : undefined },
-      {
-        type: kept.type,
-        request: kept.request,
-        operation: kept.type === 'catalog' ? kept.operation : undefined
-      }
-    );
-    if (!same) {
+    if (!sameOperation(op, kept)) {
       return fail(`operation '${op.operationId}': a stored request cannot change`);
     }
     byId.delete(op.operationId);

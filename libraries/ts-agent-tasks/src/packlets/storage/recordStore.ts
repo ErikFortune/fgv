@@ -68,7 +68,11 @@ export class RecordStore {
     });
   }
 
-  /** Re-lists the root, returning every file name in it. */
+  /**
+   * Re-lists the root, returning the name of every child in it — directories included, so
+   * that an "empty root" check and an unexpected-content report see everything. Only files
+   * are readable.
+   */
   public list(): Result<ReadonlyArray<string>> {
     return this.root.getChildren().onSuccess((children) => {
       const files: Map<string, FileTree.IFileTreeFileItem> = new Map<string, FileTree.IFileTreeFileItem>();
@@ -78,7 +82,7 @@ export class RecordStore {
         }
       }
       this._files = files;
-      return succeed(Array.from(files.keys()));
+      return succeed(children.map((child) => child.name));
     });
   }
 

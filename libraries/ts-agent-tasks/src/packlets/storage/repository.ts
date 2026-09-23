@@ -16,6 +16,7 @@ import {
   ITaskInventoryEntry,
   ITaskKindRegistry,
   ITaskRecordDraft,
+  IStoredTaskOperation,
   ITaskRecoveryReport,
   ITaskRepositoryManifest,
   ITaskSnapshot,
@@ -34,12 +35,14 @@ import {
   checkUpdates,
   idOf,
   revisionOf,
+  sameOperation,
   updatesOf
 } from './commitRules';
 import { classify, ok, propagate, taskFailure } from './failures';
 import {
   canonicallyEqual,
   encodeRecord,
+  fingerprintOf,
   IEncodedRecord,
   manifestName,
   parseJson,
@@ -191,7 +194,15 @@ export class FileTreeTaskRepository implements ITaskRepository {
       }
       const record: ITaskCommitRecord = read.record;
       if (record.recordType === 'unresolved') {
-        return ok<TaskRegistrationResult | undefined>({ state: 'unresolved', reference: record.reference });
+        const reference = record.reference;
+        // Quarantine applies to an unresolved record exactly as to a resolved one.
+        return this._registry.has(reference.kind, reference.detailVersion)
+          ? ok<TaskRegistrationResult | undefined>({ state: 'unresolved', reference })
+          : taskFailure<TaskRegistrationResult | undefined>(
+              `read ${id}: ${reference.kind}@${reference.detailVersion} is not registered; the record is quarantined`,
+              'unknown-kind-version',
+              'after-host-action'
+            );
       }
       return this._registry
         .convert(record.task)
@@ -327,7 +338,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     // retry, which must neither charge twice nor release early — or a different one, refused.
     const live: ITaskProjection | undefined = this._tasks.get(taskId);
     if (live !== undefined) {
-      return this._replayRegistration(taskId, operationId, request);
+      return this._replayRegistration(taskId, operationId, draft.operations[0]);
     }
     const pending: IPendingInventoryEntry | undefined = this._pending.get(taskId);
     if (pending !== undefined) {
@@ -434,7 +445,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
             .onSuccess(() => {
               this._setManifest(liveManifest);
               this._pending.delete(taskId);
-              this._tasks.set(taskId, projectRecord(built.record, true));
+              this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
               this._ledger.apply(
                 new Map([
                   [taskKey(taskId), recordEntry],
@@ -455,12 +466,13 @@ export class FileTreeTaskRepository implements ITaskRepository {
   private _replayRegistration(
     taskId: TaskId,
     operationId: OperationId,
-    request: ITaskRegistrationRequest
+    creation: IStoredTaskOperation
   ): TaskResult<ITaskCommitRecord> {
     return this._readCommitted(taskId).onSuccess((read) => {
       const record: ITaskCommitRecord = read!.record;
-      const creation = record.operations.find((op) => op.operationId === operationId);
-      if (creation === undefined || !canonicallyEqual(creation.request, request.request)) {
+      // Only the record's creation evidence — its first operation — can answer a registration
+      // replay. A later operation that happens to share the id and request is not a creation.
+      if (!sameOperation(record.operations[0], creation)) {
         return taskFailure<ITaskCommitRecord>(
           `register ${taskId}: this id is already registered by a different operation or request`,
           'conflict',
@@ -517,13 +529,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
         const stored = current.operations.find((op) => op.operationId === operationId);
         if (stored !== undefined) {
           const offered = draft.operations.find((op) => op.operationId === operationId);
-          const same: boolean =
-            offered !== undefined &&
-            canonicallyEqual(
-              { type: stored.type, request: stored.request },
-              { type: offered.type, request: offered.request }
-            );
-          if (!same) {
+          if (offered === undefined || !sameOperation(stored, offered)) {
             return taskFailure<ITaskCommitRecord>(
               `commit ${taskId}: operation '${operationId}' is already recorded with a different request`,
               'conflict',
@@ -699,7 +705,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
           .admit(new Map([[taskKey(taskId), entry]]))
           .onSuccess(() => this._writeFile(recordName('task', taskId), built.encoded.text, operationId))
           .onSuccess(() => {
-            this._tasks.set(taskId, projectRecord(built.record, true));
+            this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
             this._ledger.apply(new Map([[taskKey(taskId), entry]]));
             this._generation++;
             return ok(built.record);
@@ -804,7 +810,19 @@ export class FileTreeTaskRepository implements ITaskRepository {
             'after-host-action'
           );
     }
-    return this._registry.convert(draft.task).onSuccess((task) => ok<ITaskRecordDraft>({ ...draft, task }));
+    // The registered converter's canonical output is what gets stored, and its encoder can
+    // grow the details, so the bounds hold for the normalized draft too.
+    return this._registry.convert(draft.task).onSuccess((task) => {
+      const normalized: ITaskRecordDraft = { ...draft, task };
+      const rebounded: Result<true> = checkBounds(normalized, this.profile);
+      return rebounded.isSuccess()
+        ? ok(normalized)
+        : taskFailure<ITaskRecordDraft>(
+            `task ${idOf(draft)}: as normalized by its kind: ${rebounded.message}`,
+            'invalid',
+            'after-host-action'
+          );
+    });
   }
 
   /**
@@ -1027,6 +1045,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
                 `${name}: holds ${idOf(record)} record ${record.recordRevision}, expected ${id} record ${
                   projection.recordRevision
                 }`
+              );
+            }
+            if (fingerprintOf(text) !== projection.fingerprint) {
+              return fail<IReadRecord>(
+                `${name}: record ${record.recordRevision} differs from the one this repository committed`
               );
             }
             return ok<IReadRecord>({ record, encoded: { text, bytes } });
