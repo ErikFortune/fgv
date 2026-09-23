@@ -1,42 +1,232 @@
 # Result — `agent-tasks-t3`
 
 **T3 does not close the stream.** Artifacts stay in `.ai/tasks/active/agent-tasks-t3/`. Written
-2026-09-22.
+2026-09-22/23.
 
 ---
 
 ## What shipped
 
-**`FileTreeTaskRepository`** — one repository implementation over an injected
-`FileTree` root. The in-memory and Node "adapters" are the two FileTree accessors that implement
-the F1/F2 atomic capability; the storage packlet never imports `node:fs`, never sees a native
-path, and never branches on which accessor is behind the root.
+**`FileTreeTaskRepository`** — one repository implementation over an injected `FileTree` root.
+The in-memory and Node "adapters" are the two FileTree accessors that implement the F1/F2 atomic
+capability. The storage packlet never imports `node:fs`, never sees a native path, and never
+branches on which accessor is behind the root (`grep` over `src/packlets`: the only hit is a doc
+comment saying so).
 
-- `initialize` (empty root only) and `open` (existing manifest only), each taking
+- **Factories.** `initialize` (empty root only) and `open` (existing manifest only), each taking
   `{ root, mode, environment, registry, converters?, profile? }`. `open` returns
   `{ state: 'ready', repository }` or `{ state: 'recovery-required', recovery }`.
-- **Mode** `'session' | { durable: 'process-crash' }`. Durable on any root whose capability
-  inquiry lacks `'process-crash'` fails `unsupported` before any I/O. Nothing stronger can be
-  requested.
-- **Private single-writer coordinator**: `withWriter(action)` hands an exclusive, lifetime-bound
+- **Mode** `'session' | { durable: 'process-crash' }`. Durable on a root whose capability inquiry
+  lacks `'process-crash'` fails `unsupported` before any I/O; nothing stronger can be requested.
+- **Private single-writer coordinator.** `withWriter(action)` hands an exclusive, lifetime-bound
   `ITaskRepositoryWriter` (`readCommit`, `register`, `commit`, `raiseCapacityLimits`). Nesting and
-  concurrency are refused, not queued; a stale handle fails; no rollback is claimed.
-- **Strict JSON storage records** (`IResolvedTaskCommitRecord` / `IUnresolvedTaskCommitRecord`),
-  RFC 8785 canonical encoding, validated by one converter on both the write path and the read
-  path.
+  concurrency are refused (`conflict`, `retry: 'safe'`), never queued; a stale handle fails; no
+  rollback is claimed.
+- **Strict JSON storage records** — `IResolvedTaskCommitRecord` / `IUnresolvedTaskCommitRecord`,
+  RFC 8785 canonical encoding. **One converter runs on the write path (over the exact record about
+  to be written) and on the read path.**
 - **Flat repository inventory** (`repository.json`): format, repository id, the stored capacity
   profile, and `tasks` / `consumers` / `sources` entries (`live`, or `pending` with the canonical
-  request and the claims it owns).
+  request and the claims it owns). Rewritten on registration and on a limit increase only.
 - **Ordered record registration**: pending entry → record → live entry.
 - **One-task atomic replacement** of state + owed updates + operation evidence + claims, with
-  three explicit purposes (`operation` / `observation` / `maintenance`).
-- **Inventory-backed missing-record detection** and open-time validation of every record, the
-  parent graph, claim-id uniqueness and the stored policy.
+  three explicit purposes: `operation` (replay checked before preconditions), `observation`
+  (deduplicated by source revision; a different projection at the same revision is `source-gap`)
+  and `maintenance` (no semantic revision change, no new operation or update; may prune).
+- **Inventory-backed missing-record detection** plus open-time validation of every record's
+  presence, strict UTF-8 (durable), JSON, format version, strict converters, filename/ID agreement,
+  claim-id uniqueness across the repository, the parent graph, and fit to the stored policy.
 - **Diagnostic recovery handle** (`ITaskRecoveryHandle`: `report`, `readRaw`, `close`) that holds
   the root and writes nothing.
-- **A3**: profile persisted in the manifest; claims persisted in their owning record (pending
+- **A3.** Profile persisted in the manifest; claims persisted in their owning record (pending
   entry, then task record, by the same claim ids); the derived `CapacityLedger` rebuilt at every
-  open; admission of every dimension under the writer before any write; `capacityStatus()`;
-  `raiseCapacityLimits` (atomic; lowering refused; preflighted against the policy it commits).
+  open, never persisted; admission of every dimension under the writer before any write, against
+  the protocol's widest state; per-record byte ceilings including reserved growth; a per-task
+  operation limit that holds the closeout's two slots back; `capacityStatus()`;
+  `raiseCapacityLimits` (atomic, lowering refused, preflighted against the policy it commits).
 
-*(The mutation, coverage and gate sections below are completed at the end of the slice.)*
+---
+
+## T1 vocabulary: exercised and revised
+
+T1's declared-vs-exercised table (`.ai/tasks/active/agent-tasks-t1/result.md`) carries a **T3**
+note on every row T3 touched. The short form:
+
+| set | T3 |
+|---|---|
+| `CapacityClaimPurpose` | **Revised 5 → 6: `first-resolution` added.** §8.6 requires an unresolved registration to reserve first resolution *and* closeout — two bundles. `maximumResolutionCharges` computes the new one. `terminal-closeout` and `first-resolution` are minted, spent and consumed for real. |
+| `CapacityClaimDisposition` | **Semantics revised.** A `reserved` claim's charges shrink by what a protected step spends, so `used + reserved` holds steady across a step that stays inside its reservation; a `consumed` claim reserves nothing. T1's "disposition change, not charge change" could not express a closeout spent across two steps (terminal, then archive). `indeterminate` still has no producer; read from disk it fences all growth (tested). |
+| `CapacityClaimOwnership` | Both exercised. **Settled: no third state.** Pending → live is joined on claim ids. |
+| `TaskCapacityState` | **Settled as distinct.** `draining` = a dimension has no headroom; `admission-blocked` = growth fenced regardless of headroom by an `indeterminate` claim. All four produced. |
+| `UpdateCategory` | **Update identity fixed as `taskUpdateId` = `<taskId>:<revision>:<ordinal>`**, collision-free when read from the right, checked on every stored update. The ordinal is now on disk, so **reordering `allUpdateCategories` is a storage-format change.** The update-id bound grew by `maxUpdateIdSuffixLength` (19). |
+| `TaskFailureCode` | Exercised for real: `storage-unavailable`, `storage-corrupt`, `commit-indeterminate` (always with its operation id), `unsupported`, `source-gap`, `not-found-or-denied`, `unknown-kind-version`, `backpressure`, `conflict`, `invalid`. Still predictions: `source-unavailable`, `invalid-receipt`, `cursor-stale`, `retention-blocked`. |
+| `CommandState`, `CommandRejectionReason`, `RecoveryDeclaration` | Stored, not chosen. `idempotency-conflict`'s precondition now exists (storage refuses an operation id reused with a different request, as a `conflict` failure); whether it surfaces as that rejection reason is T5's. |
+| profile converter | Now also requires the combined unresolved bundle (resolution + closeout) to fit, and `maxOperationsPerTask ≥ 1 + closeout's operation slots`. |
+
+**New closed sets T3 added:** `TaskCatalogOperationType` (11), `StoredCommandDispatch` (3),
+`TaskInventoryRecordKind` (3), `TaskRecoveryIssueCode` (11).
+
+**Source-history spelling (open question 2):** not named anywhere in T3; nothing to follow or
+revise. **Executor-payload dereference (open question 1):** did not surface — storage holds task
+records only and dereferences nothing. **`isKeyOf` null-prototype hazard (open question 3):** the
+read path parses with `JSON.parse`, which never produces a null-prototype object, so every
+converter on the storage boundary is safe from it; recorded in `layout.ts`. Not fixed, as
+instructed.
+
+### Decisions that deviate from, or sharpen, the design text
+
+1. **Archive tombstones live in the task record only** (`archived: true`); the inventory names the
+   task and does not change on archive. §8.3 says the inventory "contains … archive tombstones";
+   doing both is a dual write with no atomicity between files and an inventory rewrite on a
+   routine mutation, which the brief forbids introducing silently.
+2. **Unknown *kind* is quarantined (advisory, never rewritten); unknown *format* or envelope
+   *schema* version blocks** — the ledger cannot account for what it cannot read. "Survives a
+   round trip" is tested as byte-identity after open + close.
+3. **Consumer and source records are named in the inventory format now**, validated only by header
+   (`formatVersion`, filename/ID). T6/T7 own their content; a pending consumer/source entry blocks
+   (no T3 writer produces one).
+4. **Admission is checked against the protocol's widest state**, not the settled footprint: while
+   the record is being written the manifest still carries the pending entry's request and claims
+   (~1 KiB more). The capacity test measures that peak rather than assuming it.
+5. **Replay re-establishes the flush boundary** by rewriting the committed record and manifest
+   byte-for-byte (§8.2 last paragraph), for registration, operation and observation replays.
+6. **Open completes pending registrations whose record landed** (the only write open makes), and
+   performs no clock read, ID mint, logging or source I/O — tested with spies.
+
+---
+
+## The crash-window matrix, and which guarantee each test proves
+
+Harness (`storage/crash.test.ts`): a child process opens a real durable repository on a real
+directory and `SIGKILL`s **itself** at a leaf boundary of the *N*th atomic write of one writer
+call, by patching the operations object `FsFileTreeAccessors` calls through (F2's technique). The
+parent reopens through the real Node path. **Run on ext4 (`/tmp`) and tmpfs (`/dev/shm`)**, 37
+tests each, plus a guard that fails if the platform is Linux and the matrix would be skipped.
+Predictions were written in `state.md` before the first run; **all held.** The first run's only
+two reds were a harness defect (the "retry" was rebuilt from the post-commit record, so it was not
+a retry) — fixed by building every scenario request from the pre-commit state.
+
+| window (§8.4) | kill points | proves |
+|---|---|---|
+| **No success before the boundary** | uninterrupted child logging each leaf op | a registration returns only after write 3's directory flush; a mutation after its one write's. The acceptance criterion invisible to a passing suite, pinned as an event order |
+| C1 before/during temp, before rename (pending entry) | write 1: before-open, mid-write, before-rename | nothing accepted, **nothing reserved**; orphan temp reclaimed at reopen; retry registers once |
+| C2 after rename (pending entry) | write 1: after-rename, after-directory-flush | pending registration reported; **reservations survive the crash** (7 updates reserved, 1 identity used); `read` says not accepted; retry resumes with the **same claim ids**, no second charge |
+| C3 temp never promoted (record) | write 2: before-open, mid-write, before-rename | same as C2; no `task-t1.json` exists — a temp is never read as a record |
+| C4 record landed, entry pending | write 2: after-rename, after-directory-flush | open completes the registration; claim counted **once**; retry is a replay |
+| C5 live entry not yet visible | write 3: before-open, mid-write, before-rename | same as C4 |
+| C6 live, response lost | write 3: after-rename, after-directory-flush | no issues; retry replays without allocating |
+| C7 mutation before rename | before-open, mid-write, before-rename | old record **byte-identical**; retry applies once (record revision 2) |
+| C8 mutation after rename | after-rename, after-directory-flush | new record whole — state, owed update, operation; retry is a **replay**, record revision stays 2 |
+| C9 terminal commit | all five | lifecycle, both owed updates, the operation **and the spent closeout claim** land together or not at all; `used + reserved` equals its acceptance value either way |
+| C10 first resolution | all five | unresolved whole (both claims reserved) or resolved whole (identity, obligations, `first-resolution` consumed); retry of the same observation replays |
+| C11 limit increase | all five | old policy or new policy, whole |
+| C12 orphan temps | every before-rename/mid-write row | reclaimed at exclusive reopen; the surviving record untouched |
+
+**Out of T3's matrix, deliberately:** source save and cursor windows, the dispatch marker (T6),
+context issuance and acknowledgement (T7).
+
+**What no test here establishes:** anything about OS crashes or power loss. The kernel keeps
+running in every test, so flushed and unflushed data are indistinguishable to all of them. The
+claim is `'process-crash'` on F2's qualified filesystems and nothing stronger.
+
+---
+
+## What was mutated, and what went red
+
+`scratchpad/mutate.py` neuters one protection, rebuilds, runs the storage suites, records what went
+red and restores. **A mutation whose pattern is absent, or that does not build, is reported
+UNVERIFIED — never as "nothing went red"** (F2's lesson). Final run, against the committed code:
+
+| # | protection neutered | red |
+|---|---|---|
+| M1 | skip the pending-inventory write | 35 |
+| M2 | mark live before writing the record | 20 |
+| M3 | treat visibility `unknown` as unchanged | 3 |
+| M4 | never fence | 6 |
+| M5 | no operation replay (precondition decides) | 10 |
+| M6 | drop the operation-superset check | 1 |
+| M7 | skip the flush-boundary rewrite on replay | 3 |
+| M8 | double-charge on pending → live | 26 |
+| M9 | no strict UTF-8 in durable mode | 2 |
+| M10 | initialize adopts a non-empty root | 1 |
+| M11 | durable accepted on a session-only root | 1 |
+| M12 | ledger ignores pending-entry claims | 13 |
+| M13 | in-place lowering allowed | 1 |
+| M14 | archive does not consume the closeout claim | 1 |
+| M15 | admission never refuses on a limit | 4 |
+| M16 | open does not complete a landed registration | 15 |
+| M17 | open does not reclaim interrupted working files | 16 |
+| M18 | terminal state not absorbing | 1 |
+| M19 | committed updates mutable | 1 |
+| M20 | a write failure is ignored (success before the boundary) | 3 |
+| M21 | first resolution may change catalog metadata | 1 |
+| M22 | open completes a pending entry whose record carries other claims | 1 |
+| M23 | per-task operations: no closeout holdback | 1 |
+| M24 | observation replay ignores a differing projection | 1 |
+| M25 | profile admits `maxOperationsPerTask` below creation + closeout | 1 |
+| M26 | `raiseCapacityLimits` skips admission | 1 |
+
+**Three findings came from the exercise rather than from the suite:**
+
+1. **M22 went 0 red on the first run** — a real test gap. The only pending-entry integrity test used
+   a *different operation id*, so the claim-id half of the join was never exercised. A test with the
+   same operation and foreign claims now pins it.
+2. **M4 and M17 did not build on the first attempt** and were recorded UNVERIFIED, then redone with
+   mutations that build. M17 is the orphan-reclamation step; counting it from round one would have
+   rested the C12 claim on no evidence.
+3. The coverage refactor changed seven mutation sites; the pass was re-run in full afterwards rather
+   than trusting the first run against code that no longer existed.
+
+---
+
+## Layer-1 review
+
+`code-reviewer` on the diff before coverage closure returned **Requires changes**:
+
+- **P1 (fixed)** — a profile with `maxOperationsPerTask` of 1 or 2 converted cleanly and then refused
+  every registration forever: the per-task holdback needs one creation plus closeout's two slots.
+  The profile converter now requires it (M25).
+- **P2 (fixed)** — `raiseCapacityLimits` was the one write without admission; a raise could commit a
+  manifest over its own ceiling and brick the next open. Now preflighted against the policy being
+  committed (M26). **The same gap existed at `initialize`** (found while fixing it); also fixed and
+  tested.
+- **P3 (applied)** — a comment on `_buildRecord`'s identical-looking ternary (it narrows the union).
+- **P3 (kept)** — `spendClaim` always allocates, so a transition step rebuilds the record once more
+  even when nothing was spent. Harmless and bounded; not worth the special case.
+
+**Coverage closure, after review.** 100% statements, branches, functions and lines, **no `c8
+ignore`**. Most gaps were branches that should not exist, and were removed rather than tested:
+`RecordStore.read` now fails on an absent file instead of returning `undefined`; `canonicallyEqual`
+returns a boolean (an uncomparable value compares unequal, which every caller treats as refusal);
+`taskUsage` counts bytes without a failure path (`JSON.stringify` length equals the canonical
+length); the ledger always holds the manifest's entry; `state.ts` (type-only, never loaded) folded
+into `openRepository.ts`. The rest got behaviour tests (`storage/edges.test.ts`).
+
+---
+
+## What a later slice must decide
+
+1. **T4** — the repository reads records on demand; resident summaries and indexes are T4's. Read
+   today lists the root once and caches `FileItem`s; creation re-lists, because
+   `IFileTreeDirectoryItem` has **no child-by-name lookup** (an upstream gap, not escalated as a
+   blocker: creation is already O(identities)).
+2. **T5** — transition policy. Storage enforces only integrity (identity, evidence retention,
+   update immutability, terminal absorbency, revision monotonicity). Whether a reused operation id
+   surfaces as `CommandState.rejected: idempotency-conflict` or a `conflict` failure is T5's call.
+3. **T6** — source records' content (`source-<id>.json` is header-only here) and the observation
+   path's replay semantics (`source-gap` on one revision, two projections) need confirming against
+   real adapters.
+4. **T7** — consumer records' content and converters; **claim audiences are empty** in T3 because no
+   subscription exists, and `acknowledgement-ids` used is 0. Subscription creation must expand
+   closeout claims' audiences and reservations.
+5. **T8** — pruning is `maintenance`; archive consumes the closeout claim **including its
+   acknowledgement reservation**, which is safe only once T8 enforces that archive requires every
+   owed update acknowledged or disposed.
+6. **Format** — adding the stop intent (T9) or any other field to a v1 record is a format change a
+   T3 reader refuses (blocking, bytes kept). Decide whether those land as v1 before promotion.
+
+---
+
+## Gates
+
+*(completed at the end of the slice — see below)*
