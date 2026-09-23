@@ -374,7 +374,9 @@ function resolveSlotStability(
  * Emits one finding per conditionally-matched candidate whose conditioning is
  * less stable than the derived `'frozen'` default, naming the axes responsible
  * and their declared levels. A candidate conditioned only on `'frozen'` axes
- * refutes nothing and produces no finding.
+ * refutes nothing and produces no finding. Once the body is conditional, the
+ * candidates that did *not* win are folded in too — see
+ * {@link checkCompetingCandidates}.
  */
 function checkConditionalBody(
   candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>,
@@ -414,12 +416,67 @@ function checkConditionalBody(
     }
   }
 
+  const winnersStability = leastStable([...axes.values()].map((axis) => axis.stability));
+  if (candidates !== undefined && axes.size > 0 && unattributed.length === 0) {
+    checkCompetingCandidates(candidateMatches, candidates, declared, winnersStability, axes, findings);
+  }
+
   const all = conditioningOf([...axes.values()]);
   return {
     axes: all.axes,
     unattributed,
     stability: unattributed.length > 0 ? 'per-request' : all.stability
   };
+}
+
+/**
+ * Once the body is known to be qualifier-conditional, the candidates that did **not** win this
+ * resolve matter too: a change in a qualifier one of them is conditioned on can bring it into a
+ * later resolve and change the body. Before axes could declare a stability this needed no separate
+ * check — any conditional winner already made the body `'per-request'`, the floor. Now that a body
+ * conditioned only on `'frozen'` axes stays `'frozen'`, crediting the winners' axes alone would let
+ * a competing candidate conditioned on a volatile axis go unseen, so their axes are folded into the
+ * body's conditioning here and a finding names them whenever they lower it.
+ *
+ * Only reached when every winning conditional match was attributed to its axes: an unattributed
+ * match already puts the body at `'per-request'`, which nothing here can lower further. And only
+ * when some winner was conditional at all — a body whose winners are all unconditional is not
+ * treated as qualifier-conditional, exactly as before axes could declare a stability.
+ */
+function checkCompetingCandidates(
+  candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>,
+  candidates: ReadonlyArray<IPromptCandidateRecord>,
+  declared: ReadonlyMap<string, PromptCacheStability>,
+  winnersStability: PromptCacheStability,
+  axes: Map<string, IConditioningAxis>,
+  findings: IPromptCacheFinding[]
+): void {
+  const winning = new Set(candidateMatches.map((match) => match.candidateIndex));
+  const competing = candidates
+    .map((candidate, index) => ({
+      index,
+      axes: conditioningQualifierNames(candidate)
+        .map((name) => conditioningAxis(name, declared))
+        .filter((axis) => isLessStable(axis.stability, winnersStability))
+    }))
+    .filter((entry) => !winning.has(entry.index) && entry.axes.length > 0);
+  if (competing.length === 0) {
+    return;
+  }
+
+  const competingAxes = new Map<string, IConditioningAxis>();
+  competing.forEach((entry) => entry.axes.forEach((axis) => competingAxes.set(axis.name, axis)));
+  const conditioning = conditioningOf([...competingAxes.values()]);
+  competingAxes.forEach((axis, name) => axes.set(name, axis));
+  findings.push({
+    kind: 'stability-refuted',
+    detail:
+      `candidate(s) ${competing.map((entry) => entry.index).join(', ')}: did not match this resolve, but ` +
+      `are conditioned on ${describeRefutingConditioning(conditioning, winnersStability)} — a change there ` +
+      `could select a different body, so the body is not '${winnersStability}'`,
+    claimed: { stability: 'frozen', origin: 'derived' },
+    downgradedTo: conditioning.stability
+  });
 }
 
 /**

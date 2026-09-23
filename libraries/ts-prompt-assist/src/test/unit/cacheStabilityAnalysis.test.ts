@@ -619,6 +619,103 @@ describe('analyzePromptCacheStability', () => {
       expect(refutations(findings)).toEqual([expect.objectContaining({ downgradedTo: 'per-conversation' })]);
     });
 
+    describe('candidates that did not win this resolve', () => {
+      const qualifiers = declaring([
+        { name: 'lang', stability: 'frozen' },
+        { name: 'persona', stability: 'per-conversation' }
+      ]);
+
+      test('a losing candidate on a volatile axis refutes a body whose winners are conditioned only on frozen axes', () => {
+        const findings = analyzePromptCacheStability({
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map(),
+          candidateMatches: [match(0)],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A, 'frozen')],
+          candidates: [candidate({ lang: 'en' }), candidate({ lang: 'en', tone: 'formal' })],
+          qualifiers
+        });
+        const refuted = refutations(findings);
+        expect(refuted).toEqual([
+          expect.objectContaining({
+            claimed: { stability: 'frozen', origin: 'derived' },
+            downgradedTo: 'per-request'
+          }),
+          expect.objectContaining({ slot: SLOT_A, downgradedTo: 'per-request' })
+        ]);
+        expect(refuted[0].detail).toMatch(/^candidate\(s\) 1: did not match this resolve/);
+        expect(refuted[0].detail).toMatch(/qualifier 'tone' \(no declared stability/);
+        // The frozen axis the losing candidate shares with the winner is not what refutes.
+        expect(refuted[0].detail).not.toMatch(/'lang'/);
+        expect(refuted[1].detail).toMatch(/qualifier 'tone'/);
+      });
+
+      test('a losing candidate lowers the body only to its own least stable axis', () => {
+        const findings = analyzePromptCacheStability({
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map(),
+          candidateMatches: [match(0)],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A, 'per-conversation')],
+          candidates: [candidate({ lang: 'en' }), candidate({ persona: 'pirate' })],
+          qualifiers
+        });
+        // Template default refuted to per-conversation; the per-conversation slot claim stands.
+        expect(refutations(findings).map((f) => [f.slot, f.downgradedTo])).toEqual([
+          [undefined, 'per-conversation']
+        ]);
+      });
+
+      test('a losing candidate conditioned only on axes at least as stable as the winners changes nothing', () => {
+        const findings = analyzePromptCacheStability({
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map(),
+          candidateMatches: [match(0)],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A, 'per-conversation')],
+          candidates: [candidate({ persona: 'pirate' }), candidate({ lang: 'fr' }), candidate({})],
+          qualifiers
+        });
+        // Only the winner's own per-conversation finding; no competing-candidate finding.
+        expect(refutations(findings).map((f) => [f.slot, f.downgradedTo])).toEqual([
+          [undefined, 'per-conversation']
+        ]);
+        expect(refutations(findings)[0].detail).toMatch(/^candidate 0:/);
+      });
+
+      test('losing candidates are not consulted when no winner is conditional, as before', () => {
+        const findings = analyzePromptCacheStability({
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map(),
+          candidateMatches: [match(0, 0)],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A, 'frozen')],
+          candidates: [candidate({}), candidate({ tone: 'formal' })],
+          qualifiers
+        });
+        expect(refutations(findings)).toEqual([]);
+      });
+
+      test('an undeclared winning axis already puts the body at per-request, so no extra finding is added', () => {
+        const common = {
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map<SlotName, IBindingTraceEntry>(),
+          candidateMatches: [match(0)],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A, 'frozen')]
+        };
+        const withoutCompetitor = analyzePromptCacheStability({
+          ...common,
+          candidates: [candidate({ tone: 'formal' })]
+        });
+        const withCompetitor = analyzePromptCacheStability({
+          ...common,
+          candidates: [candidate({ tone: 'formal' }), candidate({ tone: 'casual', mood: 'grim' })]
+        });
+        expect(refutations(withCompetitor)).toEqual(refutations(withoutCompetitor));
+      });
+    });
+
     describe('a match whose conditioning axes cannot be determined is treated as per-request', () => {
       const qualifiers = declaring([{ name: 'lang', stability: 'frozen' }]);
       const cases: ReadonlyArray<[string, ReadonlyArray<IPromptCandidateRecord> | undefined]> = [
