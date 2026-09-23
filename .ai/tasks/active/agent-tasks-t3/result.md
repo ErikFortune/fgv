@@ -194,6 +194,10 @@ round-4 head (d2643334), after two whose target lines had moved (M21, M34) were 
 | M52 | a pending retry matches on id and request only | 2 |
 | M53 | a replay may report uncommitted operations | 1 |
 | M54 | the manifest is rewritten without checking it | 1 |
+| M55 | any task may hold a first-resolution claim | 1 |
+| M56 | registration replay ignores the first-record type | 1 |
+| M57 | pending entries without a record are not checked | 3 |
+| M58 | a resumed registration overwrites an appeared file | 1 |
 
 **Three findings came from the exercise rather than from the suite:**
 
@@ -265,7 +269,7 @@ Every step `.github/workflows/ci.yml` runs, run locally on the final code:
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint run before the final commit |
-| `rushx test` (package) | **768 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
+| `rushx test` (package) | **774 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
 | `rush rebuild` (repo-wide) | `SUCCESS: 37 operations`, exit 0, no warnings |
 | `rush test` (repo-wide) | `SUCCESS: 36 operations`, exit 0 |
 | `verify-capability-docs.mjs` | router 19,587/24,000, 24/24 documented, 75 reflexes, 0 failed |
@@ -340,4 +344,17 @@ The profile narrowed again: each finding is a place round 2's checks still trust
 | the manifest was never re-checked after open, so an out-of-band edit could be overwritten | every manifest rewrite first re-lists and re-reads it against the committed fingerprint; a mismatch fences (`storage-corrupt`), an unreadable manifest refuses `safe` |
 
 `IPendingInventoryEntry` is public (T3's own vocabulary), so the API report changes.
+
+### Copilot round 5 — 6 high, 1 medium, 1 low: 5 fixed, 2 declined with reasons, 1 doc
+
+| finding | disposition |
+|---|---|
+| a tracked record could carry a forged, consumed first-resolution claim | fixed: a first-resolution claim is valid only on a task whose creation is `register-external` |
+| registration replay ignored the first-record type | fixed: compared through `firstRecordType`, which survives first resolution (unresolved now, or holding the first-resolution claim) |
+| a pending entry with no record was admitted on claim checks alone | fixed: `checkPendingIdentity` — a creation operation, `register-external` for unresolved, request within bound — else blocking |
+| a resumed pending registration could overwrite a record file that appeared out of band | fixed: the resume path runs the same unclaimed-name check as a new registration |
+| the PR description's counts were stale | fixed in the description |
+| a resolved first record created by `register-external` should be refused | **declined**: `registerExternal` takes an optional `initialObservation` (design §7, `IRegisterExternalTask`), whose registration writes a resolved first record. Unresolved ⇒ `register-external` is the invariant; the converse is not |
+| commit replay should require the offered post-state to equal the committed record | **declined**: a lost-response retry is prepared against the record it read, which later commits may have advanced. The dedup key is the operation's identity; round 4 already requires every offered operation to be committed. Comparing derived state would refuse legitimate retries |
+| observation replay should compare catalog fields and evidence arrays too | **declined** on the same ground: the dedup key is the source revision plus its semantic projection (design §5, *Source API and reconciliation*); catalog fields and owed updates in a retried draft may be stale for the same reason |
 

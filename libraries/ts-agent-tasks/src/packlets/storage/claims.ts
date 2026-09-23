@@ -127,6 +127,8 @@ export interface ITaskClaimExpectation {
   readonly ownership: CapacityClaimOwnership;
   /** The holder is an unresolved record, or a pending registration of one. */
   readonly unresolved: boolean;
+  /** The task was registered by `register-external`: the only origin a first resolution has. */
+  readonly external: boolean;
   readonly archived: boolean;
 }
 
@@ -194,6 +196,9 @@ function _claimProblem(
   }
   if (seen.has(claim.purpose)) {
     return `a second '${claim.purpose}' claim`;
+  }
+  if (claim.purpose === 'first-resolution' && !expected.external) {
+    return `a first-resolution claim on a task that was not registered by 'register-external'`;
   }
   // Spending shrinks a charge but never removes it, so a claim names exactly its bundle's
   // dimensions for its whole life. A missing one would hold nothing where the closeout path

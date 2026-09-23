@@ -17,7 +17,6 @@ import {
   ITaskKindRegistry,
   ITaskRecordDraft,
   IStoredCatalogOperation,
-  IStoredTaskOperation,
   ITaskRecoveryReport,
   ITaskRepositoryManifest,
   ITaskSnapshot,
@@ -34,6 +33,7 @@ import {
   checkOperations,
   checkPurpose,
   checkRegistrationDraft,
+  firstRecordType,
   IRegistrationIdentity,
   pendingIdentity,
   registrationIdentity,
@@ -360,7 +360,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
           { operationId }
         );
       }
-      return this._replayRegistration(taskId, operationId, draft.operations[0]);
+      return this._replayRegistration(taskId, operationId, identity);
     }
     const pending: IPendingInventoryEntry | undefined = this._pending.get(taskId);
     if (pending !== undefined) {
@@ -381,7 +381,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
       )
       .onSuccess((validated) =>
         pending !== undefined
-          ? this._writeRegistration(taskId, operationId, validated, pending)
+          ? // A resumed registration writes a name the inventory has held since its pending
+            // entry; a file there now appeared out of band, and is not ours to overwrite.
+            this._checkUnclaimedName(taskId, operationId).onSuccess(() =>
+              this._writeRegistration(taskId, operationId, validated, pending)
+            )
           : this._checkUnclaimedName(taskId, operationId).onSuccess(() =>
               this._newRegistration(taskId, identity, validated)
             )
@@ -404,7 +408,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     }
     return listed.value.includes(name)
       ? taskFailure(
-          `register ${taskId}: ${name} already exists but the inventory does not name it; it is left untouched`,
+          `register ${taskId}: ${name} already exists but this repository never committed it; it is left untouched`,
           'conflict',
           'after-host-action',
           { operationId }
@@ -517,13 +521,24 @@ export class FileTreeTaskRepository implements ITaskRepository {
   private _replayRegistration(
     taskId: TaskId,
     operationId: OperationId,
-    creation: IStoredTaskOperation
+    identity: IRegistrationIdentity
   ): TaskResult<ITaskCommitRecord> {
     return this._readCommitted(taskId).onSuccess((read) => {
       const record: ITaskCommitRecord = read!.record;
       // Only the record's creation evidence — its first operation — can answer a registration
-      // replay. A later operation that happens to share the id and request is not a creation.
-      if (!sameOperation(record.operations[0], creation)) {
+      // replay, and it is compared with the whole registration identity, first-record type
+      // included. A later operation that happens to share the id and request is not a creation.
+      const offered: IStoredCatalogOperation = {
+        type: 'catalog',
+        operationId: identity.operationId,
+        operation: identity.operation,
+        principalKey: identity.principalKey,
+        request: identity.request,
+        receipt: null
+      };
+      const same: boolean =
+        sameOperation(record.operations[0], offered) && firstRecordType(record) === identity.recordType;
+      if (!same) {
         return taskFailure<ITaskCommitRecord>(
           `register ${taskId}: this id is already registered by a different operation or request`,
           'conflict',

@@ -148,3 +148,11 @@ more round to confirm the trend before calling diminishing returns.
 Four findings (all high), all real; M51–M54 verified red. 768 tests, 100%. Findings went
 10 → 8 → 3 → 4 and are still substantive (each a real integrity gap), so the loop continues.
 A full mutation re-run (M1–M27 confirmed red before it was stopped) resumes after this push.
+
+## 2026-09-23 — Copilot round 5 addressed
+
+Eight findings: five fixed (M55–M58 red), two declined with design citations (replay dedups on
+identity, not derived post-state), one PR-description nit. 774 tests, 100%. The fixed findings
+are now narrow cross-checks between already-validated fields; the two declines re-argue an
+already-settled replay contract. Treating this as the onset of diminishing returns: one more
+round to confirm, then stop the loop and request CodeRabbit.

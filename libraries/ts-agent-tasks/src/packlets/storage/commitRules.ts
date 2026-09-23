@@ -141,6 +141,42 @@ export function registrationIdentity(
   };
 }
 
+/**
+ * The type of a record's first record: unresolved if it still is, or if it holds the
+ * first-resolution claim only an unresolved registration is given. A registration replay
+ * compares against this, not the record's current type, which first resolution changes.
+ */
+export function firstRecordType(record: ITaskCommitRecord): ITaskCommitRecord['recordType'] {
+  return record.recordType === 'unresolved' ||
+    record.capacityClaims.some((c) => c.purpose === 'first-resolution')
+    ? 'unresolved'
+    : 'resolved';
+}
+
+/**
+ * Checks a pending entry with no record by the rules registration applies: its creation
+ * identity is one a registration could have written, and its request is within bounds. An
+ * entry no registration can ever resume would hold its reservations forever.
+ */
+export function checkPendingIdentity(
+  entry: IPendingInventoryEntry,
+  profile: ITaskCapacityProfile
+): Result<true> {
+  if (!creations.has(entry.operation)) {
+    return fail(`operation '${entry.operationId}' is not a creation operation`);
+  }
+  if (entry.recordType === 'unresolved' && entry.operation !== 'register-external') {
+    return fail(`an unresolved record is created only by 'register-external'`);
+  }
+  return encodeRecord(entry.request).onSuccess((encoded) =>
+    encoded.bytes > profile.encoded.maxOperationRequestBytes
+      ? fail<true>(
+          `the pending request is ${encoded.bytes} bytes, over the bound of ${profile.encoded.maxOperationRequestBytes}`
+        )
+      : succeed<true>(true)
+  );
+}
+
 /** The identity a pending entry holds. */
 export function pendingIdentity(entry: IPendingInventoryEntry): IRegistrationIdentity {
   return {

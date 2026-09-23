@@ -95,8 +95,8 @@ but it holds its reservations, survives a crash, is reported by the next open, a
 the host retries the same registration**: same task id, operation id, catalog operation,
 principal, first-record type and canonically equal request, same claim ids, no second charge. A pending entry whose record did land is completed by
 the next open. The same identity with anything else is a `conflict`. A live identity replays. A new
-identity whose record file already exists on disk — one the inventory does not name — is a
-`conflict`, and the file is left untouched.
+identity — or a resumed pending one — whose record file already exists on disk without this
+repository having committed it is a `conflict`, and the file is left untouched.
 
 **An external task can be registered unresolved.** An `IUnresolvedTaskCommitRecord` carries the
 registration and its binding and invents no lifecycle; `read` returns
@@ -125,7 +125,9 @@ now, under exclusive in-process ownership), then checks every named record's pre
 UTF-8 (durable mode), JSON, format version, strict converters, filename/ID agreement, the
 stored profile's per-value bounds, that every capacity claim is one this release would have
 written (owner, ownership, purpose, every bundle dimension present and at most its maximum,
-disposition matching the record's state), that its first operation is its creation evidence,
+disposition matching the record's state, and a first-resolution claim only on a task registered by
+`register-external`), that its first operation is its creation evidence, that a pending entry with
+no record is one a registration could resume,
 claim-id uniqueness across the repository, the parent graph (a
 pending registration is not a live parent), and that committed usage fits the stored profile. A
 pending entry whose record landed is completed only when that record is its registration — same

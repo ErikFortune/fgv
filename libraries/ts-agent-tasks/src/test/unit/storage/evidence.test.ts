@@ -29,7 +29,8 @@ import {
   params,
   registration,
   registry,
-  unresolvedRegistration
+  unresolvedRegistration,
+  vendorKind
 } from '../../helpers/storageFixtures';
 import { FaultyRoot } from '../../helpers/faultyRoot';
 
@@ -729,7 +730,7 @@ describe('copilot round 3: what open and registration still took on trust', () =
     writeJson(inner, 'task-t1.json', { operator: 'notes' });
     const before = readText(inner, 'task-t1.json');
     expect(await repository.withWriter((w) => w.register(registration('t1')))).toFailWithDetail(
-      /task-t1\.json already exists but the inventory does not name it/,
+      /task-t1\.json already exists but this repository never committed it/,
       code('conflict')
     );
     expect(readText(inner, 'task-t1.json')).toBe(before);
@@ -940,5 +941,110 @@ describe('copilot round 4: identity held across every boundary', () => {
     );
     expect(repository.health().state).toBe('unavailable');
     expect(readText(inner, 'repository.json')).toBe(edited);
+  });
+});
+
+describe('copilot round 5: the external origin, and pending recovery', () => {
+  test('a first-resolution claim is only ever held by a task registered by register-external', async () => {
+    const root = memoryRoot() as Root;
+    const repository = await initialized(root);
+    (await repository.withWriter((w) => w.register(registration('t1')))).orThrow();
+    (await repository.withWriter((w) => w.register(unresolvedRegistration('u1')))).orThrow();
+    repository.close();
+    // Graft u1's first-resolution claim, consumed and relabelled, onto the tracked t1.
+    const u1Claim = (readJson(root, 'task-u1.json').capacityClaims as JsonObject[]).find(
+      (c) => c.purpose === 'first-resolution'
+    )!;
+    const t1Record = readJson(root, 'task-t1.json');
+    writeJson(root, 'task-t1.json', {
+      ...t1Record,
+      capacityClaims: [
+        ...(t1Record.capacityClaims as JsonObject[]),
+        {
+          ...u1Claim,
+          claimId: 'forged',
+          owner: { owner: 'task', taskId: 't1' },
+          taskId: 't1',
+          disposition: 'consumed'
+        }
+      ]
+    });
+    expect(blocked(await open(root)).issues).toEqual([
+      expect.objectContaining({
+        code: 'integrity',
+        message: expect.stringMatching(/task-t1\.json: .*not registered by 'register-external'/)
+      })
+    ]);
+  });
+
+  test('a registration replay compares the first-record type, before and after first resolution', async () => {
+    const repository = await initialized(memoryRoot() as Root);
+    const unresolved = unresolvedRegistration('u1');
+    (await repository.withWriter((w) => w.register(unresolved))).orThrow();
+    // The same operation and request, presenting a resolved first record: not this registration.
+    const resolvedDraft = registration('u1', {
+      operationId: unresolved.operationId,
+      request: unresolved.request,
+      envelope: { kind: vendorKind }
+    });
+    const draft = resolvedDraft.record.recordType === 'resolved' ? resolvedDraft.record : undefined;
+    const asResolved = {
+      ...resolvedDraft,
+      record: {
+        ...draft!,
+        task: { envelope: draft!.task.envelope, details: { job: 'j-u1' } },
+        operations: unresolved.record.operations
+      }
+    };
+    expect(await repository.withWriter((w) => w.register(asResolved))).toFailWithDetail(
+      /already registered by a different operation or request/i,
+      code('conflict')
+    );
+    // The original retry still replays.
+    expect(await repository.withWriter((w) => w.register(unresolved))).toSucceed();
+  });
+
+  test.each<[string, Record<string, JsonValue>, RegExp]>([
+    ['whose operation is not a creation', { operation: 'update-tracked' }, /is not a creation operation/],
+    [
+      'unresolved but not created by register-external',
+      { recordType: 'unresolved' },
+      /an unresolved record is created only by 'register-external'/
+    ],
+    [
+      'whose request is over its bound',
+      { request: { pad: 'x'.repeat(defaultTaskCapacityProfile.encoded.maxOperationRequestBytes) } },
+      /the pending request is \d+ bytes, over the bound/
+    ]
+  ])('a pending entry with no record %s blocks open', async (__, change, message) => {
+    const root = await parentAndChild();
+    const record = readJson(root, 'task-t2.json');
+    markPending(root, 't2', {
+      operationId: 'op-create-t2',
+      request: creationOf(root, 't2').request,
+      capacityClaims: pendingClaims(record),
+      ...change
+    });
+    root.deleteChild('task-t2.json').orThrow();
+    expect(blocked(await open(root)).issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'integrity', message: expect.stringMatching(message) })
+      ])
+    );
+  });
+
+  test('a resumed registration never overwrites a record file that appeared while it was pending', async () => {
+    const inner = memoryRoot() as Root;
+    const root = new FaultyRoot(inner);
+    const repository = (await FileTreeTaskRepository.initialize(params(root, 'session'))).orThrow();
+    root.faults.push({ name: 'task-t1.json', when: 'before', visibility: 'unchanged' });
+    await repository.withWriter((w) => w.register(registration('t1')));
+    writeJson(inner, 'task-t1.json', { operator: 'notes' });
+    const before = readText(inner, 'task-t1.json');
+    expect(await repository.withWriter((w) => w.register(registration('t1')))).toFailWithDetail(
+      /task-t1\.json already exists but this repository never committed it/,
+      code('conflict')
+    );
+    expect(readText(inner, 'task-t1.json')).toBe(before);
   });
 });

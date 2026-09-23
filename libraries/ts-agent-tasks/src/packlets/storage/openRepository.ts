@@ -8,6 +8,7 @@ import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { TaskConverters } from '../converters';
 import {
   IPendingInventoryEntry,
+  IStoredCatalogOperation,
   ITaskCapacityProfile,
   ITaskCommitRecord,
   ITaskRecoveryIssue,
@@ -27,6 +28,7 @@ import { checkTaskClaims, withOwnership } from './claims';
 import {
   checkBounds,
   checkCreationEvidence,
+  checkPendingIdentity,
   checkRegistrationDraft,
   pendingIdentity,
   registrationIdentity
@@ -534,15 +536,18 @@ function _scan(
       } else {
         // Pending with no record: an incomplete registration, not an accepted task. Its
         // reservations stay held until the host resumes it.
-        const pendingClaims: Result<true> = checkTaskClaims(
-          entry.capacityClaims,
-          {
-            taskId,
-            ownership: 'pending',
-            unresolved: entry.recordType === 'unresolved',
-            archived: false
-          },
-          profile
+        const pendingClaims: Result<true> = checkPendingIdentity(entry, profile).onSuccess(() =>
+          checkTaskClaims(
+            entry.capacityClaims,
+            {
+              taskId,
+              ownership: 'pending',
+              unresolved: entry.recordType === 'unresolved',
+              external: entry.operation === 'register-external',
+              archived: false
+            },
+            profile
+          )
         );
         if (pendingClaims.isFailure()) {
           scan.blocking('integrity', `${name}: pending registration: ${pendingClaims.message}`, name);
@@ -587,7 +592,9 @@ function _scan(
     }
     // The per-value maxima the closeout claims were sized against hold for a stored record as
     // they do for a draft: a record under its total ceiling can still hold one value over them.
-    const bounded: Result<true> = checkCreationEvidence(record).onSuccess(() => checkBounds(record, profile));
+    const bounded: Result<IStoredCatalogOperation> = checkCreationEvidence(record).onSuccess((creation) =>
+      checkBounds(record, profile).onSuccess(() => succeed(creation))
+    );
     if (bounded.isFailure()) {
       scan.blocking('record-invalid', `${name}: ${bounded.message}`, name);
       continue;
@@ -598,6 +605,7 @@ function _scan(
         taskId,
         ownership: 'live',
         unresolved: record.recordType === 'unresolved',
+        external: bounded.value.operation === 'register-external',
         archived: record.recordType === 'resolved' && record.archived
       },
       profile
