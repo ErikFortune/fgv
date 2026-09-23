@@ -183,7 +183,10 @@ export interface ITaskRepository {
   /** Trusted host capacity status. Never for a model-facing tool. */
   capacityStatus(): TaskResult<ITaskCapacityStatus>;
   health(): ITaskRepositoryHealth;
-  /** Releases the root. Every later call fails. */
+  /**
+   * Releases the root. Every later call fails. Refused (`conflict`, `retry: 'safe'`) while a
+   * `withWriter` callback is active: the root is not released under a writer.
+   */
   close(): Result<boolean>;
 }
 

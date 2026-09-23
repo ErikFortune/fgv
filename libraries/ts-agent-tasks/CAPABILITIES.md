@@ -108,7 +108,8 @@ catalog metadata the registration fixed. No other replacement of an unresolved r
 
 **`withWriter` is serialization, not a transaction.** One writer per repository: a nested or
 concurrent `withWriter` is refused (`conflict`, `retry: 'safe'`), never queued; a handle used after
-its callback returns fails. A replacement that succeeded stays committed if the callback later
+its callback returns fails; `close` is refused while a callback is active, so the root is never
+released under a writer. A replacement that succeeded stays committed if the callback later
 fails or throws — there is no rollback, and none is claimed.
 
 **A failure is classified by what a reader can now see.** A write failing with FileTree visibility

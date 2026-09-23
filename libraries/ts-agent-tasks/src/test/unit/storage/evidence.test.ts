@@ -5,7 +5,7 @@
 
 import '@fgv/ts-utils-jest';
 import { FileTree, JsonObject, JsonValue } from '@fgv/ts-json-base';
-import { Converters, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
 import {
   FileTreeTaskRepository,
   ITaskCommitRecord,
@@ -14,6 +14,7 @@ import {
   ITaskRepository,
   ITaskRepositoryWriter,
   OperationId,
+  TaskEnvironment,
   TaskResult,
   TaskId,
   TaskKind,
@@ -1151,5 +1152,56 @@ describe('copilot round 6: open completion and resumed registration', () => {
       code('conflict')
     );
     expect(readText(inner, 'task-t1.json')).toBe(before);
+  });
+});
+
+describe('copilot round 7: host callbacks and the writer lifetime', () => {
+  function throwingIds(after: number): TaskEnvironment {
+    let minted: number = 0;
+    return TaskEnvironment.create({
+      logger: new Logging.InMemoryLogger('detail'),
+      clock: () => 0,
+      newId: () => {
+        if (++minted > after) {
+          throw new Error('id service unavailable');
+        }
+        return succeed(`env-${Date.now()}-${minted}`);
+      }
+    }).orThrow();
+  }
+
+  test('an identity callback that throws during initialize is a failure, and the root is released', async () => {
+    const root = memoryRoot() as Root;
+    expect(
+      await FileTreeTaskRepository.initialize(params(root, 'session', { environment: throwingIds(0) }))
+    ).toFailWithDetail(/id service unavailable/, code('invalid'));
+    expect(await FileTreeTaskRepository.initialize(params(root, 'session'))).toSucceed();
+  });
+
+  test('an identity callback that throws during registration refuses safely, with nothing written', async () => {
+    const root = memoryRoot() as Root;
+    const repository = (
+      await FileTreeTaskRepository.initialize(params(root, 'session', { environment: throwingIds(1) }))
+    ).orThrow();
+    const before = readText(root, 'repository.json');
+    expect(await repository.withWriter((w) => w.register(registration('t1')))).toFailWithDetail(
+      /id service unavailable/,
+      expect.objectContaining({ code: 'storage-unavailable', retry: 'safe' })
+    );
+    expect(readText(root, 'repository.json')).toBe(before);
+    expect(repository.health().state).toBe('ready');
+  });
+
+  test('close is refused while a writer callback is active, and succeeds after it returns', async () => {
+    const root = memoryRoot() as Root;
+    const repository = await initialized(root);
+    expect(
+      await repository.withWriter(async (w) => {
+        expect(repository.close()).toFailWithDetail(/a writer callback is active/, code('conflict'));
+        return w.register(registration('t1'));
+      })
+    ).toSucceed();
+    expect(repository.close()).toSucceedWith(true);
+    expect(await FileTreeTaskRepository.open(params(root, 'session'))).toSucceed();
   });
 });

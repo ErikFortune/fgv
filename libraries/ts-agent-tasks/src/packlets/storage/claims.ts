@@ -16,6 +16,7 @@ import {
   maximumClosureCharges,
   maximumResolutionCharges
 } from '../types';
+import { mintId } from './failures';
 import { DimensionAmounts } from './ledger';
 
 /**
@@ -39,7 +40,7 @@ export function mintRegistrationClaims(
   environment: ITaskEnvironment,
   claimId: Converter<CapacityClaimId>
 ): Result<ReadonlyArray<ITaskCapacityClaim>> {
-  const mint = (): Result<CapacityClaimId> => environment.newId().onSuccess((raw) => claimId.convert(raw));
+  const mint = (): Result<CapacityClaimId> => mintId(environment).onSuccess((raw) => claimId.convert(raw));
   const closeout: Result<ITaskCapacityClaim> = maximumClosureCharges(profile).onSuccess((charges) =>
     mint().onSuccess((id) =>
       succeed<ITaskCapacityClaim>({

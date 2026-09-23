@@ -33,7 +33,7 @@ import {
   pendingIdentity,
   registrationIdentity
 } from './commitRules';
-import { classify, ok, propagate, taskFailure, writeRetry } from './failures';
+import { classify, mintId, ok, propagate, taskFailure, writeRetry } from './failures';
 import {
   canonicallyEqual,
   encodeRecord,
@@ -200,8 +200,7 @@ export function initializeRepository(
       converters.capacity.profile
         .convert(params.profile ?? defaultTaskCapacityProfile)
         .onSuccess((profile) =>
-          params.environment
-            .newId()
+          mintId(params.environment)
             .onSuccess((raw) => converters.ids.identifier.convert(raw))
             .onSuccess((repositoryId) =>
               converters.storage.manifest.convert({

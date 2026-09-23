@@ -246,6 +246,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
     if (this._state === 'closed') {
       return ok(false);
     }
+    // Releasing the root while a writer callback is between writes would let a second instance
+    // open it and interleave commits with the first.
+    if (this._writer !== undefined) {
+      return taskFailure('close: a writer callback is active; close after it returns', 'conflict', 'safe');
+    }
     this._state = 'closed';
     this._writer = undefined;
     this._ownership.release();

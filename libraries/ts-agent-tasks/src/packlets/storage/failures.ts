@@ -4,8 +4,15 @@
  */
 
 import { FileTree } from '@fgv/ts-json-base';
-import { DetailedFailure, Result, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
-import { ICapacityFailure, ITaskFailure, OperationId, TaskFailureCode, TaskResult } from '../types';
+import { DetailedFailure, Result, captureResult, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
+import {
+  ICapacityFailure,
+  ITaskEnvironment,
+  ITaskFailure,
+  OperationId,
+  TaskFailureCode,
+  TaskResult
+} from '../types';
 
 /**
  * Builds a classified task failure.
@@ -61,4 +68,14 @@ export function propagate<T>(failure: DetailedFailure<unknown, ITaskFailure>): T
  */
 export function writeRetry(failure: FileTree.IAtomicWriteFailure | undefined): ITaskFailure['retry'] {
   return failure?.visibility === 'unchanged' ? 'safe' : 'reconcile-first';
+}
+
+/**
+ * Mints an identity through the host's environment, turning a callback that throws into a
+ * failure. `newId` is Result-valued by contract, but it is host code: a repository that has
+ * already taken ownership of a root must not let a thrown exception skip its release path.
+ * @internal
+ */
+export function mintId(environment: ITaskEnvironment): Result<string> {
+  return captureResult(() => environment.newId()).onSuccess((minted) => minted);
 }

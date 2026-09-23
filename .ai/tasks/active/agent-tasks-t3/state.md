@@ -163,3 +163,11 @@ Four findings (3 high, 1 medium), all real; one was a regression introduced by t
 resume check. M59–M62 red; 780 tests, 100%. Findings are still substantive, so the loop
 continues (round 7 of a 10 cap). Upstream gap noted: FileTree cannot say whether a root is
 disk-backed, which is what session/session same-directory detection would need.
+
+## 2026-09-23 — Copilot round 7 addressed
+
+Two high (host callback throw, close under writer) and two low (stale counts); all fixed,
+M63–M64 red, 783 tests. Rounds: 10, 8, 3, 4, 8, 4, 4. Findings keep being real but are now
+edge-of-contract (host callback misbehaviour, API-misuse lifetimes) rather than integrity
+gaps in the storage protocol. Round 8 decides: if it is of this kind or smaller, stop the loop
+on diminishing returns and request CodeRabbit.

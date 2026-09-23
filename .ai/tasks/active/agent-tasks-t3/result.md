@@ -202,6 +202,8 @@ round-4 head (d2643334), after two whose target lines had moved (M21, M34) were 
 | M60 | open completion does not re-check the manifest | 1 |
 | M61 | a durable claim ignores session holders of the path | 2 |
 | M62 | a resumed registration never completes a landed record | 3 |
+| M63 | a throwing identity callback escapes | 2 |
+| M64 | close releases the root under an active writer | 1 |
 
 **Three findings came from the exercise rather than from the suite:**
 
@@ -273,7 +275,7 @@ Every step `.github/workflows/ci.yml` runs, run locally on the final code:
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint run before the final commit |
-| `rushx test` (package) | **780 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
+| `rushx test` (package) | **783 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
 | `rush rebuild` (repo-wide) | `SUCCESS: 37 operations`, exit 0, no warnings |
 | `rush test` (repo-wide) | `SUCCESS: 36 operations`, exit 0 |
 | `verify-capability-docs.mjs` | router 19,587/24,000, 24/24 documented, 75 reflexes, 0 failed |
@@ -370,4 +372,12 @@ The profile narrowed again: each finding is a place round 2's checks still trust
 | open's completion write rewrote the manifest without checking it was still the scanned one | `_completeRegistrations` re-lists and compares the on-disk manifest with the scanned text; a change refuses (`storage-corrupt`), an unreadable manifest refuses `safe`, nothing written either way |
 | a Node directory could be open once as a session and once as a durable repository | one owner table: held by item always, and by path while a durable repository holds it. **Residual, documented:** two *session* repositories over one real directory through two items are not detected — FileTree does not expose what backs a root, and the brief makes an upstream capability an escalation, not a T3 change |
 | **regression from round 5:** after a clean failure of the live write, a retry saw its own landed record and refused it as out-of-band | `_resumeRegistration`: a landed record that is exactly the pending registration's first record (identity, claims, record revision 1) finishes step 3 over the record as it is; anything else is `conflict` and left untouched. M62 first went red on only two tests — rewriting identical bytes is indistinguishable — so the success test now retries with a different title, which only finishing-over-landed preserves |
+
+### Copilot round 7 — 2 high, 2 low, all fixed
+
+| finding | fix |
+|---|---|
+| a host `newId` that throws escaped the Result contract, and at initialize skipped the ownership release | `mintId` wraps the host callback with `captureResult`; used for the repository id and every claim id |
+| `close` released the root while a writer callback was still between writes | `close` is refused (`conflict`, `safe`) while a writer is active; documented on `ITaskRepository.close` |
+| the PR description and the `docs/WORKSTREAMS.md` entry carried stale test and mutation counts | both brought to the checked-in evidence |
 
