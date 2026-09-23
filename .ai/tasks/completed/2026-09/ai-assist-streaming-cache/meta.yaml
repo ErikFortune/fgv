@@ -1,0 +1,53 @@
+id: ai-assist-streaming-cache
+status: shipped
+packages: ['@fgv/ts-extras']
+prs:
+  [] # PR not yet opened this session — code is complete, tested, and pushed to
+  # claude/ai-assist-streaming-cache; fill in once a PR exists
+opened: 2026-09-23
+closed: 2026-09-23
+summary:
+  intended: >
+    Thread cache?: IAiCacheRequest through the streaming request paths of
+    @fgv/ts-extras/ai-assist — callProviderCompletionStream and executeClientToolTurn — the
+    way completionClient.ts already threads it through the non-streaming callProviderCompletion,
+    per a re-verified PersonAIlity gap report: no streaming path could carry a cache plan at all.
+  shipped: >
+    cache? added to IProviderCompletionStreamParams and IExecuteClientToolTurnParams. All three
+    per-provider streaming adapters (Anthropic, OpenAI Chat Completions, OpenAI/xAI Responses)
+    now route prompt.system through the same cache-aware system builders the non-streaming path
+    uses (buildAnthropicSystem / buildOpenAiChatSystemContent / buildOpenAiResponsesSystemContent),
+    propagating a validation failure rather than dropping the plan. streamingClient.ts and
+    clientToolContinuationBuilder.ts both reuse completionClient.ts's independent
+    breakpoints/routing-key gating verbatim at their 'openai' dispatch case.
+    executeClientToolTurn validates cache fresh on every call (one call = one round of a
+    multi-round loop). callProxiedCompletionStream now forwards cache as a plain body field,
+    matching callProxiedCompletion's existing behavior — a considered decision, not a default,
+    documented in result.md and contrasted with the #679 endpoint-refusal precedent (cache
+    degrades to no-caching if a proxy ignores it; endpoint would misdirect the request).
+  diverged: >
+    None from the brief itself. This stream is the direct closure of a gap the prior
+    ai-assist-prompt-caching stream's own meta.yaml named explicitly in its diverged field:
+    "Streaming request emission (a cache? field on IProviderCompletionStreamParams) was left out
+    of C3 entirely... a narrower posture than OQ-5's precedent might suggest." One test was added
+    mid-stream (an invalid-breakpoint-on-OpenAI-Chat-Completions-stream case) after the first
+    coverage run flagged two uncovered lines in openaiChat.ts's early-return path — not a scope
+    change, just coverage closure.
+  sourceLine: '**Shipped:** `cache?: IAiCacheRequest` now flows through every streaming request path in `@fgv/ts-extras/ai-assist` — `callProviderCompletionStream`, `executeClientToolTurn`, and `callProxiedCompletionStream` — the way `completionClient.ts` already threaded it through `callProviderCompletion` / `callProxiedCompletion`.'
+  headline: >
+    A tool-augmented or streamed chat turn can now carry prompt-cache breakpoints and a routing
+    key, closing the one remaining hole (streaming) in ai-assist's prompt-cache emission surface.
+relatedStreams:
+  - id: ai-assist-prompt-caching
+    relationship: 'parent — its own meta.yaml diverged field named streaming emission as the
+      gap this stream closes'
+keywords:
+  - prompt cache streaming
+  - cache_control streaming
+  - prompt_cache_breakpoint streaming
+  - executeClientToolTurn cache
+  - callProviderCompletionStream cache
+  - callProxiedCompletionStream cache forwarding
+  - per-round cache validation
+  - x-grok-conv-id streaming
+sourceHash: 180c11d3263e0e00 # sha256/16 over brief.md, result.md, state.md

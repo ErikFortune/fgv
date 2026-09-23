@@ -128,7 +128,13 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `ai-assist-streaming-cache` 🟢
+### `ai-assist-streaming-cache` 🔵
+
+**Status: implementation complete, pushed to branch; PR not yet opened.** All acceptance
+criteria below verified, `code-reviewer` approved with no P1/P2 findings, repo-wide `rebuild` +
+`test` both green. Exit artifact migrated to
+`.ai/tasks/completed/2026-09/ai-assist-streaming-cache/` (see its `README.md`/`result.md`) —
+this entry moves to the Shipped list once a PR exists and merges.
 
 **Mission.** Thread `cache?: IAiCacheRequest` through the **streaming** request paths of
 `@fgv/ts-extras/ai-assist`, as `completionClient` already threads it through the non-streaming ones,
@@ -169,7 +175,7 @@ both touch `LIBRARY_CAPABILITIES.md` and this file, **own section only**.
 
 **Branch:** `claude/ai-assist-streaming-cache`, off `release` at `af05bb319`. **PRs into `release`.**
 
-**Artifact pointer:** `.ai/tasks/active/ai-assist-streaming-cache/`.
+**Artifact pointer:** `.ai/tasks/completed/2026-09/ai-assist-streaming-cache/`.
 
 ### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
 
