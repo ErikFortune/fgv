@@ -112,6 +112,21 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   `.ai/tasks/completed/<month>/agent-tasks-t4/` when the `agent-tasks-v1` cluster finalizes
   (this family finalizes at cluster close, not per slice). The PR link is the stable anchor.
 
+- **[P2] `ts-agent-tasks` broker hand-offs T5 left for T6/T7/T8 by design — each has a trigger
+  that is the next slice's first step.**
+  (1) **T7:** updates are planned per mutation, but an update owed to no one is not retained, and
+  audiences come from an *internal* `TaskAudienceResolver` seam (`TaskBroker._create`) that answers
+  "nobody" in production. When subscriptions fill it, every accepted update must first reserve its
+  per-audience acknowledgement evidence (design §8.6 allocation 2) — the seam writes audience links
+  with no such reservation today, which is why it is not a host option. (2) **T8:** `archive`
+  refuses a task while any retained update has a non-empty audience (`retention-blocked`); T8
+  replaces that with acknowledgement/disposition evidence and pruning. (3) **T6:** an external
+  task's commands are `rejected: unsupported` and recorded under their key until dispatch exists.
+  (4) **T9:** no stop latch is checked by list completion or relationship operations yet.
+  **Trigger:** the start of T6, T7, T8 and T9 respectively. **Reference:** the `agent-tasks-t5`
+  stream's `result.md` § *What a later slice must decide* (at `.ai/tasks/active/agent-tasks-t5/`
+  until the `agent-tasks-v1` cluster finalizes).
+
 *(The `checkThreshold` zero-byte-section measure gap (shipped in C2, #669) was fixed by C3 of
 `ai-assist-prompt-caching`: a section with `chars === 0` now contributes `0` to the measured total
 via an explicit filter before every check in `checkThreshold`, rather than being incidentally
