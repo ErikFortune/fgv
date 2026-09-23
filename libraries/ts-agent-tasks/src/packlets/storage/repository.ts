@@ -632,7 +632,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
         : taskFailure('writer: this handle is no longer active', 'invalid', 'after-host-action');
     return {
       readCommit: async (id: TaskId) =>
-        guard().onSuccess(() => this._readCommitted(id).onSuccess((read) => ok(read?.record))),
+        guard().onSuccess(() => this._readCommitted(id, true).onSuccess((read) => ok(read?.record))),
       register: async (request: ITaskRegistrationRequest) => guard().onSuccess(() => this._register(request)),
       commit: async (request: ITaskCommitRequest) => guard().onSuccess(() => this._commit(request)),
       raiseCapacityLimits: async (profile: ITaskCapacityProfile) =>
@@ -916,7 +916,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     operationId: OperationId,
     identity: IRegistrationIdentity
   ): TaskResult<ITaskCommitRecord> {
-    return this._readCommitted(taskId).onSuccess((read) => {
+    return this._readCommitted(taskId, true).onSuccess((read) => {
       const record: ITaskCommitRecord = read!.record;
       // Only the record's creation evidence — its first operation — can answer a registration
       // replay, and it is compared with the whole registration identity, first-record type
@@ -984,7 +984,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
       );
     }
 
-    return this._readCommitted(taskId).onSuccess((read) => {
+    return this._readCommitted(taskId, true).onSuccess((read) => {
       const current: ITaskCommitRecord = read!.record;
 
       // Replay is checked before the preconditions: a lost-response retry carries the revision
@@ -1527,7 +1527,13 @@ export class FileTreeTaskRepository implements ITaskRepository {
    * Reads a live task's record from disk and checks it is still the record this instance
    * committed. A record that disagrees is out-of-band change or loss, and fences.
    */
-  private _readCommitted(id: TaskId): TaskResult<IReadRecord | undefined> {
+  /**
+   * Reads a live task's record. `uncached` reads the file even when the cache holds the record:
+   * every writer path uses it, because a write's precondition must be checked against what is
+   * on disk — a cached copy cannot notice that the file changed out of band, and a write over it
+   * would erase that change instead of fencing.
+   */
+  private _readCommitted(id: TaskId, uncached: boolean = false): TaskResult<IReadRecord | undefined> {
     const usable: TaskResult<true> = this._usable();
     if (usable.isFailure()) {
       return propagate(usable);
@@ -1536,11 +1542,9 @@ export class FileTreeTaskRepository implements ITaskRepository {
     if (projection === undefined) {
       return ok(undefined);
     }
-    const cached: ICachedRecord | undefined = this._cache.get(
-      id,
-      projection.recordRevision,
-      projection.fingerprint
-    );
+    const cached: ICachedRecord | undefined = uncached
+      ? undefined
+      : this._cache.get(id, projection.recordRevision, projection.fingerprint);
     if (cached !== undefined) {
       return ok(cached);
     }

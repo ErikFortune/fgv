@@ -285,3 +285,17 @@ Both high-severity tests were confirmed red against the pre-fix code, then green
 currency:** the counter suite is part of the package suite and re-ran on this code (901 passing,
 100%). M1 was measured on `31914e3a`; this round changes index bookkeeping (a `Set` per task add)
 and gating, so M1 is re-run at the end of the Copilot loop before its numbers are claimed as final.
+
+### Copilot round 2 — 1 high inline, 1 medium "previously missed", plus round 1's two unposted single-vote items
+
+| finding | fix |
+|---|---|
+| **(high)** with the record cache on, writer preconditions (`commit`, registration replay, the writer's `readCommit`) could be answered from the cache, so a record changed out of band was overwritten instead of fencing | every writer path reads uncached; read-only APIs may still hit the cache. Test changes the file behind a cached entry and asserts the commit fails `storage-corrupt` and leaves the out-of-band text in place — red without the fix |
+| **(medium, previously missed)** quarantine diagnostics drained every quarantined task in the selection's scopes on every page, due queries included — work proportional to unrelated history | the diagnostic names at most 16 and says "and more": 18 visits for 2,000 quarantined tasks, ordinary and due alike (test) |
+| (round 1, single vote, not posted) the conformance runner ignored `close()`'s result | a repository that will not close after a check fails that check (test) |
+| (round 1, single vote, not posted) bound quarantine diagnostics to preserve the candidate budget | same fix as the medium above |
+
+A process note: the round-1 revert check compiled a reverted file with `tsc --outDir lib`, and
+Heft's incremental build later kept that stale output, so one test run in this round went red on
+the *fixed* source. `heft test --clean` restored it (903 passing, 100%); every check since uses a
+clean build. The pushed commits were never affected.

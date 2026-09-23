@@ -12,7 +12,7 @@ import { SortedKeySet } from '../../../packlets/storage/sortedKeys';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { TaskIndex } from '../../../packlets/storage/taskIndex';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { evaluateTasks } from '../../../packlets/storage/queries';
+import { evaluateDue, evaluateTasks } from '../../../packlets/storage/queries';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { RecordCache } from '../../../packlets/storage/workingSet';
 import { scope } from '../../helpers/queryFixtures';
@@ -105,19 +105,27 @@ describe('query evaluation', () => {
     expect(bob.unresolved).toHaveLength(0);
   });
 
-  test('more quarantined tasks than a page names are counted, not listed', () => {
+  test('more quarantined tasks than a page names are reported as more, with bounded work', () => {
     const index = new TaskIndex();
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 2000; i++) {
       index
-        .put(`q${String(i).padStart(2, '0')}` as TaskId, {
+        .put(`q${String(i).padStart(4, '0')}` as TaskId, {
           category: 'quarantined',
           scopes: [scope('a')],
           archived: false
         })
         .orThrow();
     }
+    const before = counter.candidateVisits;
     const page = evaluateTasks(index, all, 10, undefined, counter);
-    expect(page.issues.join()).toMatch(/q00, .*q15 and 4 more/);
+    expect(page.issues.join()).toMatch(/q0000, .*q0015 and more/);
+    // Sixteen named, the one that says "more", and one key of stream lookahead — not 2,000.
+    expect(counter.candidateVisits - before).toBe(18);
+    // A due query reports the same bounded diagnostic.
+    const dueBefore = counter.candidateVisits;
+    const due = evaluateDue(index, all, '2026-01-01T00:00:00.000Z', 10, undefined, counter);
+    expect(due.issues.join()).toMatch(/and more/);
+    expect(counter.candidateVisits - dueBefore).toBe(18);
   });
 });
 

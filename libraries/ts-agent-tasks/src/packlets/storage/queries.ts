@@ -167,23 +167,25 @@ function _quarantineIssues(
       streams.push(new KeyStream<'q'>(set, undefined, 'q', counter));
     }
   }
+  // Bounded like everything else on a page: name at most `maxNamedQuarantined` and say whether
+  // there are more, rather than counting every quarantined task a scope holds.
   const merged: MergedStream<'q'> = new MergedStream(streams);
   const ids: string[] = [];
-  let total: number = 0;
+  let more: boolean = false;
   for (let next = merged.next(); next !== undefined; next = merged.next()) {
-    total++;
-    if (ids.length < maxNamedQuarantined) {
-      ids.push(next.key);
+    if (ids.length === maxNamedQuarantined) {
+      more = true;
+      break;
     }
+    ids.push(next.key);
   }
-  if (total === 0) {
+  if (ids.length === 0) {
     return [];
   }
-  const more: string = total > ids.length ? ` and ${total - ids.length} more` : '';
   return [
-    `tasks ${ids.join(
-      ', '
-    )}${more} match these scopes but their kind is not registered; they are quarantined and not listed`
+    `tasks ${ids.join(', ')}${
+      more ? ' and more' : ''
+    } match these scopes but their kind is not registered; they are quarantined and not listed`
   ];
 }
 

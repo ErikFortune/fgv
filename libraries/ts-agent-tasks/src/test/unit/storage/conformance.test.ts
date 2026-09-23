@@ -155,4 +155,10 @@ describe('conformance checks catch a misbehaving repository', () => {
       )
     ).toFailWith(/source lookup found someone-else/i);
   });
+
+  test('one that will not close after a check', async () => {
+    expect(
+      await runTaskRepositoryConformance(broken(() => ({ close: () => fail('still busy') })))
+    ).toFailWith(/scopes are a union.*close after the check failed: still busy/i);
+  });
 });

@@ -422,6 +422,61 @@ describe('bounded working space', () => {
     expect(inspectRepository(repository)!.cache).toEqual({ entries: 0, charge: 0 });
   });
 
+  test('writes re-read the record: a cached copy never hides an out-of-band change from a writer', async () => {
+    const root = new FaultyRoot(memoryRoot() as FileTree.IAtomicFileTreeDirectoryItem);
+    const repository = (
+      await FileTreeTaskRepository.initialize(
+        params(root, 'session', { recordCache: { maxEntries: 4, maxEncodedBytes: 1024 * 1024 } })
+      )
+    ).orThrow();
+    await addTask(repository, 'a', { scopes: [A] });
+    const current = (await repository.readCommit('a' as TaskId)).orThrow()!;
+    expect(inspectRepository(repository)!.cache.entries).toBe(1);
+    // Changed behind the repository's back: same record, different text.
+    const text = (
+      root.inner
+        .getChildren()
+        .orThrow()
+        .find((c) => c.name === 'task-a.json') as FileTree.IFileTreeFileItem
+    )
+      .getRawContents()
+      .orThrow();
+    outOfBand(root, 'task-a.json', `${text} `);
+    // A read may still be answered from the cache; a writer's precondition is not.
+    expect(await repository.readCommit('a' as TaskId)).toSucceed();
+    if (current.recordType !== 'resolved') {
+      throw new Error('resolved expected');
+    }
+    expect(
+      await repository.withWriter((w) =>
+        w.commit({
+          purpose: 'operation',
+          operationId: 'op-x' as OperationId,
+          taskId: 'a' as TaskId,
+          expectedRevision: 1 as TaskRevision,
+          expectedRecordRevision: 1,
+          record: nextDraft(current, {
+            envelope: { revision: 2 as TaskRevision, lifecycle: succeeded },
+            operation: catalogOp('op-x', 'update-tracked', {})
+          })
+        })
+      )
+    ).toFailWithDetail(
+      /differs from the one this repository committed/i,
+      expect.objectContaining({ code: 'storage-corrupt' })
+    );
+    // The out-of-band text was not overwritten.
+    const after = (
+      root.inner
+        .getChildren()
+        .orThrow()
+        .find((c) => c.name === 'task-a.json') as FileTree.IFileTreeFileItem
+    )
+      .getRawContents()
+      .orThrow();
+    expect(after).toBe(`${text} `);
+  });
+
   test('a record larger than the cache charge is never held', async () => {
     const repository = (
       await FileTreeTaskRepository.initialize(

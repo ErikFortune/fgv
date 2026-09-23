@@ -461,13 +461,19 @@ export async function runTaskRepositoryConformance(
     }
     const repository: ITaskRepository = created.value;
     const outcome: Result<Result<true>> = await captureAsyncResult(() => check.run(repository));
-    const result: Result<true> = outcome.onSuccess((inner) => inner);
+    // A repository that will not close after a check has left something active; that is a failure
+    // of the check, not something to ignore.
+    const result: Result<true> = outcome
+      .onSuccess((inner) => inner)
+      .onSuccess(() =>
+        repository.close().withErrorFormat((message) => `close after the check failed: ${message}`)
+      )
+      .onSuccess(() => succeed<true>(true));
     results.push(
       result.isSuccess()
         ? { name: check.name, passed: true }
         : { name: check.name, passed: false, message: result.message }
     );
-    repository.close();
   }
   const failed: ReadonlyArray<ITaskRepositoryConformanceCheck> = results.filter((c) => !c.passed);
   return failed.length === 0
