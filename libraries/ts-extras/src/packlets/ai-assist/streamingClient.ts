@@ -29,6 +29,7 @@
 
 import { fail, Result } from '@fgv/ts-utils';
 
+import { type IAiCacheRequest } from './cacheRequest';
 import { splitChatRequest } from './chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from './endpoint';
 import {
@@ -39,7 +40,12 @@ import {
   resolveProviderModel,
   usesMaxCompletionTokensField
 } from './model';
-import { supportsCacheUsageReporting, supportsStreamUsageOption } from './streamUsageCapability';
+import {
+  supportsCacheUsageReporting,
+  supportsPromptCacheBreakpoints,
+  supportsPromptCacheRouting,
+  supportsStreamUsageOption
+} from './streamUsageCapability';
 import { callAnthropicStream } from './streamingAdapters/anthropic';
 import { type IProviderCompletionStreamParams, type IStreamApiConfig } from './streamingAdapters/common';
 import { callGeminiStream } from './streamingAdapters/gemini';
@@ -118,7 +124,8 @@ export async function callProviderCompletionStream(
     signal,
     endpoint,
     thinking,
-    maxTokens
+    maxTokens,
+    cache
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -173,7 +180,16 @@ export async function callProviderCompletionStream(
   };
 
   switch (descriptor.apiFormat) {
-    case 'openai':
+    case 'openai': {
+      // Same gating as callProviderCompletion's 'openai' case in completionClient.ts — see the
+      // comment there for why breakpoints and the routing key are gated independently.
+      const routing = supportsPromptCacheRouting(descriptor);
+      const breakpoints = supportsPromptCacheBreakpoints(descriptor) ? cache?.systemBreakpoints : undefined;
+      const routedKey = routing !== undefined ? cache?.cacheKey : undefined;
+      const gatedCache: IAiCacheRequest | undefined =
+        breakpoints !== undefined || routedKey !== undefined
+          ? { systemBreakpoints: breakpoints, cacheKey: routedKey }
+          : undefined;
       // Responses-API-only models (e.g. gpt-5.5-pro) 400 on /chat/completions, so they route
       // to the Responses stream even with no tools requested — same path the tools case uses.
       if (hasTools || isResponsesOnlyModel(descriptor, config.model)) {
@@ -189,7 +205,8 @@ export async function callProviderCompletionStream(
           undefined,
           undefined,
           maxTokens,
-          supportsCacheUsageReporting(descriptor)
+          supportsCacheUsageReporting(descriptor),
+          gatedCache
         );
       }
       return callOpenAiChatStream(
@@ -202,8 +219,11 @@ export async function callProviderCompletionStream(
         resolvedThinking,
         maxTokens,
         usesMaxCompletionTokensField(descriptor),
-        supportsStreamUsageOption(descriptor)
+        supportsStreamUsageOption(descriptor),
+        gatedCache,
+        routing?.chatCompletionsHeader
       );
+    }
     case 'anthropic':
       return callAnthropicStream(
         config,
@@ -217,7 +237,8 @@ export async function callProviderCompletionStream(
         undefined,
         undefined,
         isAdaptiveThinkingModel(descriptor, config.model),
-        maxTokens
+        maxTokens,
+        cache
       );
     case 'gemini':
       return callGeminiStream(

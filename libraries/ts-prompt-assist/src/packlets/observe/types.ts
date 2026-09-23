@@ -7,7 +7,13 @@ import { Result } from '@fgv/ts-utils';
 import { PromptId, ScopeKey, SlotName } from '../types';
 import { IQualifierContext } from '../types';
 import { PromptSubstitutions } from '../types';
-import { IPromptResolveTrace, ISafeguardFinding, ISlotProvenanceEntry, SafeguardDisposition } from '../types';
+import {
+  IPromptComposition,
+  IPromptResolveTrace,
+  ISafeguardFinding,
+  ISlotProvenanceEntry,
+  SafeguardDisposition
+} from '../types';
 
 /**
  * The output-contract kind surfaced on a successful resolve observation — a
@@ -140,6 +146,12 @@ export interface IPromptResolveObservation extends IPromptObservationBase {
    * surfaced so a store can filter on disposition without walking the trace.
    */
   readonly safeguardFindings?: ReadonlyArray<ISafeguardFinding>;
+  /**
+   * Present on success, and only when the request supplied
+   * {@link IPromptResolveRequest.composition}: the resolve's
+   * {@link IResolvedPrompt.composition}, carried whole. See {@link IPromptComposition}.
+   */
+  readonly composition?: IPromptComposition;
   /** Present on failure: the failure `Result`'s message. */
   readonly error?: string;
 }

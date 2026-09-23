@@ -1767,6 +1767,8 @@ interface IEncryptionResult {
 // @public
 interface IExecuteClientToolTurnParams extends IChatRequest {
     readonly apiKey: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly cache?: IAiCacheRequest;
     readonly clientTools: ReadonlyArray<IAiClientTool>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly continuationMessages?: ReadonlyArray<JsonObject>;
@@ -2225,6 +2227,8 @@ interface IProviderCompletionParams extends IChatRequest {
 // @public
 interface IProviderCompletionStreamParams extends IChatRequest {
     readonly apiKey: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly cache?: IAiCacheRequest;
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
