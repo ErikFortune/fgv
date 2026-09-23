@@ -751,6 +751,21 @@ describe('analyzePromptCacheStability', () => {
       });
     });
 
+    test('a duplicate declaration that omits stability makes the axis per-request', () => {
+      const findings = analyzePromptCacheStability({
+        sections: [section({ kind: 'template', start: 0, chars: 5 })],
+        mergedBindings: new Map(),
+        candidateMatches: [match(0)],
+        resourceBindingResolutions: [],
+        slots: [],
+        candidates: [candidate({ lang: 'en' })],
+        qualifiers: declaring([{ name: 'lang', stability: 'frozen' }, { name: 'lang' }])
+      });
+      const refuted = refutations(findings);
+      expect(refuted).toEqual([expect.objectContaining({ downgradedTo: 'per-request' })]);
+      expect(refuted[0].detail).toMatch(/qualifier 'lang' \(no declared stability, so 'per-request'\)/);
+    });
+
     describe('a match whose conditioning axes cannot be determined is treated as per-request', () => {
       const qualifiers = declaring([{ name: 'lang', stability: 'frozen' }]);
       const cases: ReadonlyArray<[string, ReadonlyArray<IPromptCandidateRecord> | undefined]> = [

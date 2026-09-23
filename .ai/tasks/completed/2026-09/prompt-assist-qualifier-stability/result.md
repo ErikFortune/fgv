@@ -169,4 +169,11 @@ which is a behaviour change outside this stream's contract.
   - Two P3s, both dispositioned: folding `matchAsDefault` winners in slightly overstates their
     risk, which is intentional and conservative; the all-unconditional-winners gap predates this
     stream (above).
-- **Layer 2, Copilot:** requested on #689. Its outcome is recorded on the PR, not here.
+- **Layer 2, Copilot:** requested on #689; the full thread record is on the PR.
+  - Round 1 findings were stale artifacts (already fixed by the finalize commit), incomplete detail
+    wording (fixed), and a redundant `optionalFields` entry (kept, to match its neighbours).
+  - Round 2 found a real false-`'frozen'` path, now fixed: a duplicate axis declaration that omits
+    `stability` was skipped, so `[{ lang, frozen }, { lang }]` read `'frozen'`. An omitted
+    `stability` now makes the axis `'per-request'`, and a regression test pins it (it goes red when
+    the fix is reverted).
+- **Repo-wide `rush test` on 69835aff** (the head before the round-2 fix): green, 35 operations.

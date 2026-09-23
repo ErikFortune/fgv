@@ -57,4 +57,4 @@ relatedStreams:
       describes D2 as refuting on any conditional body, which is correct as a record of that stream
   - id: prompt-composition-metadata
     relationship: introduced `IPromptComposition`, which Ask A carries onto the observation record
-sourceHash: 8c03fad94e58ffbc # sha256/16 over brief.md, result.md, state.md
+sourceHash: bca429447f575ffc # sha256/16 over brief.md, result.md, state.md

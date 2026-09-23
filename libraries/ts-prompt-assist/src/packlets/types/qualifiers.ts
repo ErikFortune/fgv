@@ -42,7 +42,8 @@ export interface IExpectedQualifierAxis {
    * same axis) or as a call-site override that D2 would honor (which would turn a verified
    * diagnostic into an unfalsifiable assertion).
    *
-   * An axis declared more than once takes the least stable of its declarations.
+   * An axis declared more than once takes the least stable of its declarations, and an entry that
+   * omits `stability` counts as the `'per-request'` default.
    */
   readonly stability?: PromptCacheStability;
 }

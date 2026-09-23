@@ -496,17 +496,23 @@ function checkCompetingCandidates(
 /**
  * Each expected axis's declared stability, keyed by name. An axis declared more than once takes
  * the least stable of its declarations — the governing asymmetry (design.md §1) again: a false
- * `'frozen'` is the expensive mistake.
+ * `'frozen'` is the expensive mistake. A declaration that omits `stability` is the
+ * `'per-request'` default, the least stable level, so one such entry makes the whole axis
+ * `'per-request'`; it is left out of the map, and so reported as having no declared stability.
  */
 function declaredAxisStability(
   qualifiers: IPromptQualifierMetadata | undefined
 ): ReadonlyMap<string, PromptCacheStability> {
   const declared = new Map<string, PromptCacheStability>();
+  const defaulted = new Set<string>();
   for (const axis of qualifiers?.expected ?? []) {
-    if (axis.stability !== undefined) {
+    if (axis.stability === undefined) {
+      defaulted.add(axis.name);
+    } else {
       declared.set(axis.name, leastStable([declared.get(axis.name) ?? 'frozen', axis.stability]));
     }
   }
+  defaulted.forEach((name) => declared.delete(name));
   return declared;
 }
 
