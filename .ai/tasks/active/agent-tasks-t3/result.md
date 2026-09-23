@@ -133,15 +133,27 @@ claim is `'process-crash'` on F2's qualified filesystems and nothing stronger.
 
 ## What was mutated, and what went red
 
-`scratchpad/mutate.py` neuters one protection, rebuilds, runs the storage suites, records what went
-red and restores. **A mutation whose pattern is absent, or that does not build, is reported
-UNVERIFIED — never as "nothing went red"** (F2's lesson). Final run: all 54 re-run against the
-round-4 head (d2643334), after two whose target lines had moved (M21, M34) were re-pointed:
+`libraries/ts-agent-tasks/perf/mutationMatrix.js` neuters one protection, rebuilds, runs the storage
+and capacity suites, records what went red and restores. It is checked in and runs on demand (it is
+a measurement, not a test); `--check` lists rows whose protected line has moved, and `--pkg` runs it
+on a copy so the working tree stays clean. **A mutation whose pattern is absent, or that does not
+build, is reported UNVERIFIED — never as "nothing went red"** (F2's lesson).
+
+**Currency.** All 92 rows were run against the final source — 2ad7b003; the later commits add only
+tests and the script, and the code under test is byte-identical. Before that run `--check` found
+**eight M1–M70 rows gone stale** against it (M2, M8, M28, M34, M43, M50, M64, M70 — moved by the
+round-5 to CodeRabbit refactors); each was re-pointed at the line that now carries the protection,
+and M58 was re-pointed from the name check a resume no longer calls to the landed-record refusal it
+does. M71–M92 isolate protections added in `347d93385..2ad7b003b` that no earlier row isolated: M55–M70
+each neutered a whole check and were run once against the commit that introduced them, with only
+M69–M70's output kept. The nine rows the full run did not turn red were re-run after the gap tests
+below; their cell shows both runs. Counts for the other 83 rows are from before those five tests
+were added, so they are lower bounds.
 
 | # | protection neutered | red |
 |---|---|---|
-| M1 | skip the pending-inventory write | 35 |
-| M2 | mark live before writing the record | 20 |
+| M1 | skip the pending-inventory write | 37 |
+| M2 | mark live before writing the record | 22 |
 | M3 | treat visibility `unknown` as unchanged | 3 |
 | M4 | never fence | 6 |
 | M5 | no operation replay (precondition decides) | 13 |
@@ -155,7 +167,7 @@ round-4 head (d2643334), after two whose target lines had moved (M21, M34) were 
 | M13 | in-place lowering allowed | 1 |
 | M14 | archive does not consume the closeout claim | 2 |
 | M15 | admission never refuses on a limit | 4 |
-| M16 | open does not complete a landed registration | 17 |
+| M16 | open does not complete a landed registration | 19 |
 | M17 | open does not reclaim interrupted working files | 16 |
 | M18 | terminal state not absorbing | 1 |
 | M19 | committed updates mutable | 1 |
@@ -166,7 +178,7 @@ round-4 head (d2643334), after two whose target lines had moved (M21, M34) were 
 | M24 | observation replay ignores a differing projection | 1 |
 | M25 | profile admits `maxOperationsPerTask` below creation + closeout | 1 |
 | M26 | `raiseCapacityLimits` skips admission | 1 |
-| M27 | pending completion ignores the creation request | 2 |
+| M27 | pending completion ignores the creation request | 3 |
 | M28 | registration replay matches any operation by id | 1 |
 | M29 | read-back compares the revision only | 1 |
 | M30 | registry `freeze()` result ignored | 1 |
@@ -178,8 +190,8 @@ round-4 head (d2643334), after two whose target lines had moved (M21, M34) were 
 | M36 | bounds not re-checked after kind normalization | 1 |
 | M37 | a resolved record may carry no operations | 1 |
 | M38 | operation identity omits the principal | 1 |
-| M39 | open does not validate record claims | 10 |
-| M40 | open does not validate pending-entry claims | 1 |
+| M39 | open does not validate record claims | 11 |
+| M40 | open does not validate pending-entry claims | 4 |
 | M41 | pending join by claim ids only | 1 |
 | M42 | registration replay rewrites a quarantined record | 1 |
 | M43 | any purpose may resolve a task | 1 |
@@ -197,7 +209,7 @@ round-4 head (d2643334), after two whose target lines had moved (M21, M34) were 
 | M55 | any task may hold a first-resolution claim | 1 |
 | M56 | registration replay ignores the first-record type | 1 |
 | M57 | pending entries without a record are not checked | 3 |
-| M58 | a resumed registration overwrites an appeared file | 1 |
+| M58 | a resumed registration overwrites an appeared file | 2 |
 | M59 | first resolution may archive | 1 |
 | M60 | open completion does not re-check the manifest | 1 |
 | M61 | a durable claim ignores session holders of the path | 2 |
@@ -210,8 +222,54 @@ round-4 head (d2643334), after two whose target lines had moved (M21, M34) were 
 | M68 | open completion accepts a later record revision | 1 |
 | M69 | raising a profile leaves existing record limits stale | 1 |
 | M70 | commit purpose and operation id are trusted | 1 |
+| M71 | claim minting bypasses the captured host id | 1 (first run: did not build) |
+| M72 | initialize bypasses the captured host id | 1 (first run: did not build) |
+| M73 | the first-record type ignores a first-resolution claim | 1 (first run: 0) |
+| M74 | open holds no operations back for closeout | 2 |
+| M75 | a pending entry may name a non-creation operation | 1 |
+| M76 | a pending unresolved entry may name any creation | 1 |
+| M77 | a pending request is not bounded at open | 1 |
+| M78 | open treats every record as externally registered | 1 |
+| M79 | open treats every pending entry as externally registered | 1 (first run: 0) |
+| M80 | open completion ignores a failed manifest re-read | 1 |
+| M81 | a resume finishes over a landed record at a later revision | 1 (first run: 0) |
+| M82 | a resume ignores the landed record's identity | 1 |
+| M83 | a resume ignores the landed record's claims | 1 (first run: 0) |
+| M84 | registration replay ignores the principal | 1 (first run: 0) |
+| M85 | ownership ignores the item that already holds the root | 2 |
+| M86 | a session claim ignores a durable holder of the path | 1 |
+| M87 | release leaks a session holder of the path | 1 |
+| M88 | a commit's operation id is not validated | 1 |
+| M89 | the manifest is limited as a task record | 2 |
+| M90 | a consumer record is limited as a task record | 0 (first run: 0) |
+| M91 | a source record is limited as a task record | 0 (first run: 0) |
+| M92 | a raised profile does not reach status | 1 |
 
-**Three findings came from the exercise rather than from the suite:**
+**What the final run found** — no defect; five test gaps and one mutant that could not build:
+
+1. **Four write-path protections were unpinned (M73, M81, M83, M84).** The round-5 test titled
+   "…before and after first resolution" never resolved the task, so a registration retried after
+   first resolution — replayable only because the consumed first-resolution claim marks the record
+   as registered unresolved — had no test. Nor did a resume refusing a landed record that differs
+   only in its record revision, or only in its claims, nor a registration replay under another
+   principal (the round-2 principal test is a commit replay). One test each now; each row goes red
+   on exactly that test.
+2. **M79 (read path): a pending entry's `external` flag** was never the deciding check. A test now
+   holds a resolved-first pending entry carrying a first-resolution claim in the disposition its
+   holder implies, which only the origin check refuses.
+3. **M71, M72 did not build** — the mutant's `mintId ? … : …` is a constant condition the compiler
+   rejects. Re-pointed to a mutant that builds; both go red. Recorded because a row that does not
+   build is exactly the silent miss this discipline exists for.
+4. **M90, M91 stay 0 red, by disposition.** They map consumer and source record keys to their own
+   encoded ceilings. T3 never writes either kind of record, so the ceiling is applied only by open's
+   over-limit report and by status — defence in depth against out-of-band content the design says
+   open reports and never repairs. T6/T7, which write those records, own the tests that make these
+   rows go red; the rows stay in the matrix so their 0 is visible until then.
+5. **The two priority write-path protections** in the range each go red on the test written for
+   them: `setProfile` re-limiting on a raise (M69, and M92 for the status half) and the commit-kind
+   converter (M70 whole, M88 the operation id alone).
+
+**Earlier runs found three more, from the exercise rather than from the suite:**
 
 1. **M22 went 0 red on the first run** — a real test gap. The only pending-entry integrity test used
    a *different operation id*, so the claim-id half of the join was never exercised. A test with the
@@ -281,8 +339,8 @@ Every step `.github/workflows/ci.yml` runs, run locally on the final code:
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint run before the final commit |
-| `rushx test` (package) | **789 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
-| `rush rebuild` (repo-wide) | `SUCCESS: 37 operations`, exit 0, no warnings |
+| `rushx test` (package) | **794 passed; 100% statements, branches, functions, lines; no `c8 ignore`** (re-run after the mutation-matrix gap tests) |
+| `rush rebuild` (repo-wide) | `SUCCESS: 37 operations`, exit 0, no warnings (not re-run for the mutation-matrix commits: they add tests and a `perf/` script and move no source) |
 | `rush test` (repo-wide) | `SUCCESS: 36 operations`, exit 0 |
 | `verify-capability-docs.mjs` | router 19,587/24,000, 24/24 documented, 75 reflexes, 0 failed |
 | `generate-capability-feed.mjs --check` | 0 stale |

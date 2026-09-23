@@ -467,13 +467,13 @@ const MUTATIONS = [
     'M71 claim minting bypasses the captured host id',
     S + 'claims.ts',
     '  const mint = (): Result<CapacityClaimId> => mintId(environment).onSuccess(',
-    '  const mint = (): Result<CapacityClaimId> => (mintId ? environment.newId() : environment.newId()).onSuccess('
+    '  const mint = (): Result<CapacityClaimId> => (true ? environment.newId() : mintId(environment)).onSuccess('
   ),
   m(
     'M72 initialize bypasses the captured host id',
     S + 'openRepository.ts',
     '          mintId(params.environment)',
-    '          (mintId ? params.environment.newId() : params.environment.newId())'
+    '          (true ? params.environment.newId() : mintId(params.environment))'
   ),
   m(
     'M73 the first-record type ignores a first-resolution claim',

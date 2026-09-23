@@ -9,6 +9,8 @@ import { Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
 import {
   FileTreeTaskRepository,
   ITaskCommitRecord,
+  ITaskCommitRequest,
+  ITaskEnvelope,
   ITaskKindRegistry,
   ITaskRecoveryReport,
   ITaskRepository,
@@ -31,6 +33,7 @@ import {
   registration,
   registry,
   unresolvedRegistration,
+  update,
   vendorKind
 } from '../../helpers/storageFixtures';
 import { FaultyRoot } from '../../helpers/faultyRoot';
@@ -1328,5 +1331,137 @@ describe('coderabbit review', () => {
     const raised = { ...tight, encoded: { ...tight.encoded, maxTaskRecordBytes: exact + 1000 } };
     expect(await repository.withWriter((w) => w.raiseCapacityLimits(raised))).toSucceed();
     expect(row(repository).limit).toBe(exact + 1000);
+  });
+});
+
+describe('mutation-matrix gaps', () => {
+  /** The first resolution of an unresolved record, preserving its catalog metadata. */
+  function resolution(current: ITaskCommitRecord): ITaskCommitRequest {
+    if (current.recordType !== 'unresolved') {
+      throw new Error('expected unresolved');
+    }
+    const ref = current.reference;
+    const env: ITaskEnvelope = {
+      schemaVersion: 1,
+      id: ref.id,
+      kind: ref.kind,
+      detailVersion: ref.detailVersion,
+      revision: rev(2),
+      title: ref.title,
+      stopPolicy: 'none',
+      scopes: ref.scopes,
+      lifecycle: { status: 'running' },
+      attention: [],
+      binding: ref.binding,
+      recovery: 'reattach',
+      observation: { state: 'current', observedAt: '2026-09-22T12:05:00.000Z' as never },
+      createdAt: '2026-09-22T12:00:00.000Z' as never,
+      changedAt: '2026-09-22T12:05:00.000Z' as never
+    };
+    return {
+      purpose: 'observation',
+      taskId: ref.id,
+      expectedRevision: ref.revision,
+      expectedRecordRevision: current.recordRevision,
+      record: {
+        recordType: 'resolved',
+        task: { envelope: env, details: { job: `j-${ref.id}` } },
+        sourceRevision: { epoch: 'e1', token: '1' },
+        operations: current.operations,
+        updates: [update(env, 'lifecycle'), update(env, 'observation')],
+        archived: false
+      }
+    };
+  }
+
+  test('a registration retried after first resolution still replays as the unresolved registration it was', async () => {
+    const repository = await initialized(memoryRoot() as Root);
+    const unresolved = unresolvedRegistration('u1');
+    const created = (await repository.withWriter((w) => w.register(unresolved))).orThrow();
+    (await repository.withWriter((w) => w.commit(resolution(created)))).orThrow();
+    // The record is resolved now; its consumed first-resolution claim is what says it was
+    // registered unresolved, so the original retry is still that registration.
+    expect(await repository.withWriter((w) => w.register(unresolved))).toSucceedAndSatisfy((record) => {
+      expect(record.recordType).toBe('resolved');
+      expect(record.recordRevision).toBe(2);
+    });
+  });
+
+  test('a registration retried under another principal is a conflict, not a replay', async () => {
+    const repository = await initialized(memoryRoot() as Root);
+    const original = registration('t1');
+    (await repository.withWriter((w) => w.register(original))).orThrow();
+    const draft = original.record.recordType === 'resolved' ? original.record : undefined;
+    const [creation] = draft!.operations;
+    const elsewhere = {
+      ...original,
+      record: { ...draft!, operations: [{ ...creation, principalKey: 'someone-else' }] }
+    };
+    expect(await repository.withWriter((w) => w.register(elsewhere))).toFailWithDetail(
+      /already registered by a different operation or request/i,
+      code('conflict')
+    );
+    expect(await repository.withWriter((w) => w.register(original))).toSucceed();
+  });
+
+  /** t1's pending entry committed and its record landed, but the live write failed cleanly. */
+  async function landedButPending(): Promise<{ inner: Root; repository: ITaskRepository }> {
+    const inner = memoryRoot() as Root;
+    const root = new FaultyRoot(inner);
+    const repository = (await FileTreeTaskRepository.initialize(params(root, 'session'))).orThrow();
+    root.faults.push({ name: 'repository.json', when: 'before', visibility: 'unchanged', skip: 1 });
+    expect(await repository.withWriter((w) => w.register(registration('t1')))).toFail();
+    return { inner, repository };
+  }
+
+  test.each<[string, (record: JsonObject) => JsonObject]>([
+    ['is a later record revision', (record) => ({ ...record, recordRevision: 2 })],
+    [
+      'carries other claims',
+      (record) => ({
+        ...record,
+        capacityClaims: (record.capacityClaims as JsonObject[]).map((c) => ({
+          ...c,
+          claimId: `${String(c.claimId)}-other`
+        }))
+      })
+    ]
+  ])('a resume does not finish over a landed record that %s', async (__, change) => {
+    const { inner, repository } = await landedButPending();
+    writeJson(inner, 'task-t1.json', change(readJson(inner, 'task-t1.json')));
+    const before = readText(inner, 'task-t1.json');
+    expect(await repository.withWriter((w) => w.register(registration('t1')))).toFailWithDetail(
+      /is not this registration's first record.*left untouched/,
+      code('conflict')
+    );
+    expect(readText(inner, 'task-t1.json')).toBe(before);
+  });
+
+  test("a pending entry not created by 'register-external' may not hold a first-resolution claim", async () => {
+    const root = memoryRoot() as Root;
+    const repository = await initialized(root);
+    (await repository.withWriter((w) => w.register(unresolvedRegistration('u1')))).orThrow();
+    repository.close();
+    const record = readJson(root, 'task-u1.json');
+    // A resolved-first registration carrying a first-resolution claim in the disposition a
+    // resolved holder implies: only the origin check can refuse it.
+    markPending(root, 'u1', {
+      operationId: 'op-register-u1',
+      request: creationOf(root, 'u1').request,
+      capacityClaims: (record.capacityClaims as JsonObject[]).map((c) => ({
+        ...c,
+        ownership: 'pending',
+        disposition: c.purpose === 'first-resolution' ? 'consumed' : c.disposition
+      }))
+    });
+    root.deleteChild('task-u1.json').orThrow();
+    expect(blocked(await open(root)).issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'integrity',
+          message: expect.stringContaining("not registered by 'register-external'")
+        })
+      ])
+    );
   });
 });

@@ -182,3 +182,14 @@ Copilot loop stopped after 8 rounds on diminishing returns (reasoning in result.
 
 Retry at 04:16Z ran; three minor findings, all real, fixed; M69–M70 red; 789 tests. Review
 layers complete: code-reviewer, Copilot (8 rounds, stopped on diminishing returns), CodeRabbit.
+
+## 2026-09-23 — mutation matrix re-run against the final source, and checked in
+
+Orchestrator: the protections added in `347d93385..2ad7b003b` had not been watched to fail against the
+final head. The script moved from the scratchpad to `libraries/ts-agent-tasks/perf/mutationMatrix.js`
+(Node, per the `perf/` convention). `--check` found eight M1–M70 rows stale (re-pointed) and M58 on a
+removed call (re-pointed); M71–M92 added. Full run on 2ad7b003: 83 red, M71/M72 did not build, seven
+0 red. Five gap tests added (M73, M79, M81, M83, M84 — no defect; the round-5 "after first
+resolution" test never resolved); M71/M72 re-pointed; all nine re-run: seven red, M90/M91 0 red by
+disposition (read-path limits for records only T6/T7 write). 794 tests, 100%. Not re-triggering
+Copilot or CodeRabbit, per the instruction; no defect surfaced to reopen the loop.
