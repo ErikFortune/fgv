@@ -12,6 +12,7 @@ import { IEnvelopeConverters, buildEnvelopeConverters } from './envelopeConverte
 import { IFailureConverters, buildFailureConverters } from './failureConverters';
 import { IIdentityConverters, buildIdentityConverters } from './identityConverters';
 import { IStorageConverters, buildStorageConverters } from './storageConverters';
+import { IQueryConverters, buildQueryConverters } from './queryConverters';
 import { IValueConverters, buildValueConverters } from './valueConverters';
 
 /**
@@ -83,6 +84,8 @@ export class TaskConverters {
   public readonly context: IContextConverters;
   /** Storage record, inventory and manifest converters. */
   public readonly storage: IStorageConverters;
+  /** Repository query, due-query, owed-update query and page-cursor converters. */
+  public readonly queries: IQueryConverters;
 
   private constructor(bounds: ITaskFieldBounds) {
     this.bounds = bounds;
@@ -102,6 +105,7 @@ export class TaskConverters {
       this.capacity,
       this.context
     );
+    this.queries = buildQueryConverters(bounds, this.ids, this.values);
   }
 
   /**

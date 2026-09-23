@@ -128,6 +128,65 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-t4` ✅ (slice T4 of the agent-tasks plan) — landed on the integration branch via [#687](https://github.com/ErikFortune/fgv/pull/687)
+
+**Mission.** Land **T4** — indexed selection, paging, due and outstanding discovery: full resident
+summaries and indexes for non-archived tasks, a minimal archived identity/graph/source/status
+projection, an unresolved-reference projection, separately indexed bounded owed/pinned payloads,
+§7's bounded caches and working concurrency, staged rebuild with generation and health, and bounded
+keyset pagination.
+
+**The slice's centre of gravity:** lifetime operation and acknowledgement/disposition history is
+**on-demand data, not resident index content**. Most of the acceptance criteria are consequences of
+that.
+
+**Package surface:** `libraries/ts-agent-tasks` — query and index modules alongside T3's storage,
+plus the M1 harness under `perf/` beside T3's mutation matrix.
+
+**Out-of-scope:** the broker (T5), sources (T6), subscriptions (T7), retention (T8), cascade stop
+(T9); any business-layer filesystem bypass — everything goes through `FileTree` and T3's repository;
+every other package, consumed unchanged.
+
+**Dependencies.** T3 (`f8961a97`), landed.
+
+**The review gate is a design constraint, not a checklist item:** *"An implementation that filters a
+full `listEntries()` array fails even if a small fixture is fast."* It rules out the shape that
+passes every functional test on a small corpus and collapses at scale — which is why the evidence
+here is **counters, not timings**. Assert candidate visits and record reads; warm summary and owed
+queries must perform **zero** task-file reads; `listOwed` must not scan terminal history; rebuild
+must parse, project and release each body rather than collect an all-record array. Hold the
+open/matching set fixed while growing unrelated retained terminal history through **0, 1,000 and
+10,000**, archived and non-archived cohorts separately. Heap and RSS claims belong only to M1.
+
+**M1 starts here and does not finish here.** Author the harness and prediction manifest in this
+slice, run early measurements once the real open/rebuild path exists, repeat after T7/T8. The
+measurement rules in `TESTING_GUIDELINES.md` § *Measurement Harnesses* were each paid for — most
+pointedly, state the prediction **before** running, since a threshold chosen after seeing the result
+measures nothing.
+
+**Vocabulary licence, with a new constraint.** T1's unions remain revisable and nothing has reached
+`release` — but **T3 wrote them into records on disk**, so a revision touching a *persisted* shape is
+now a storage-format change needing a migration story or an explicit statement that no persisted
+record carries the member.
+
+**Carried forward from T3:** an evidence run is only evidence of the code it was run against. T3's
+mutation matrix was run against an intermediate head while five review rounds landed after it;
+re-running on the final source found nine rows that reddened nothing, five of them real coverage
+gaps. Counter evidence and M1 numbers get **re-run after review findings**, before they are claimed.
+
+**Parallel with:** `ai-assist-streaming-cache` (different package, different base branch, no code
+overlap) — both touch `LIBRARY_CAPABILITIES.md` and this file, **own section only**.
+
+**Outcome.** Resident indexes answer `query` / `queryDue` / `listOwed` / `lookupSource` with no
+record reads; server-held keyset cursors; archive keeps identity, edges and source; post-commit
+index failure fences as `commit-indeterminate`; staged `rebuildIndexes` shared with open; bounded
+read concurrency and optional record cache; `runTaskRepositoryConformance`. Counter predictions held
+at 0 / 1,000 / 10,000 (archived and non-archived separately); M1 early run held every prediction.
+No T1 member or persisted shape revised. **Open for the orchestrator:** the default capacity profile
+admits 146 concurrent non-archived tasks, not 1,000 (closeout reservations of `resident-payload-bytes`).
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-t4/`.
+
 ### `agent-tasks-t3` ✅ (slice T3 of the agent-tasks plan) — landed on the integration branch via [#686](https://github.com/ErikFortune/fgv/pull/686)
 
 **Mission.** Land **T3** — FileTree records, durable commit and reopen: injected-root session and

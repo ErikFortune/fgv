@@ -67,6 +67,48 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] The default capacity profile advertises 1,000 concurrent non-archived tasks and admits
+  146 — the two published limits are mutually unreachable.**
+  `defaultTaskCapacityLimits` in
+  `libraries/ts-agent-tasks/src/packlets/types/capacityProfile.ts` declares both
+  `'non-archived-tasks': 1000` and `'resident-payload-bytes': 64 * MiB`. Every registration's
+  closeout reserves `allUpdateCategories.length × encoded.maxUpdateBytes` of
+  `resident-payload-bytes` — 7 categories × 64 KiB = 448 KiB — so the payload limit is exhausted
+  at ⌊64 MiB / 448 KiB⌋ = **146** registrations. The `agent-tasks-t4` implementer confirmed it
+  empirically: the 147th registration is refused. Verified independently at orchestration time
+  from the three constants.
+
+  This is not the ordinary "maxima are concurrent constraints, not a promise that every maximum
+  can be reached together" caveat the implementation plan states at §328. That caveat covers
+  limits that trade against each other under unusual mixes. Here the headline limit is
+  unreachable by a factor of ~7 under *ordinary* use — registering tasks and nothing else — so a
+  consumer sizing against the advertised number is wrong before they start.
+
+  **Not introduced by T4**, which surfaced it and correctly declined to fix it: the arithmetic
+  belongs to T1/T3's reservation model and the profile to T8's qualification.
+
+  **Trigger**: T8 (profile qualification), or the first consumer sizing a deployment against
+  `defaultTaskCapacityLimits`, whichever comes first. **T8 cannot sign off the profile without
+  resolving this** — that is the load-bearing reason this is recorded here rather than left in a
+  stream artifact.
+
+  **Scope sketch**: three candidate resolutions, and the choice is a design decision, not a
+  cleanup. (a) The closeout reserve is worst-case-per-category and may be far larger than any
+  real task needs — charge actual rather than maximum, if the reservation model permits it.
+  (b) Raise `resident-payload-bytes` to whatever actually admits 1,000 (≈448 MiB), which may be
+  an honest number or may reveal that 1,000 was never the right target. (c) Lower
+  `'non-archived-tasks'` to the number the profile can actually serve, and say so. Note the
+  surface is `@public` and its own docstring already calls the profile *proposed* pending
+  "the planned residency and reopen measurements before the profile is advertised" — so
+  correcting it now costs nothing downstream.
+
+  **Not a P3**: a published default that overstates capacity by 7× is a sizing error consumers
+  inherit silently, and the failure surfaces as refused registrations in production rather than
+  at build time.
+
+  **Reference**: `.ai/tasks/completed/2026-09/agent-tasks-t4/result.md` § the orchestrator
+  decision item, and [#687](https://github.com/ErikFortune/fgv/pull/687).
+
 *(The `checkThreshold` zero-byte-section measure gap (shipped in C2, #669) was fixed by C3 of
 `ai-assist-prompt-caching`: a section with `chars === 0` now contributes `0` to the measured total
 via an explicit filter before every check in `checkThreshold`, rather than being incidentally

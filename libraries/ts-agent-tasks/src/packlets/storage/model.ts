@@ -7,6 +7,12 @@ import { FileTree, JsonValue } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
 import { TaskConverters } from '../converters';
 import {
+  IDueTaskQuery,
+  IOwedUpdatePage,
+  IOwedUpdateQuery,
+  ISourceBinding,
+  ITaskPage,
+  ITaskQuery,
   ITaskCapacityProfile,
   ITaskCapacityStatus,
   ITaskCommitRecord,
@@ -59,6 +65,29 @@ export interface ITaskRepositoryOpenParams {
    * `defaultTaskCapacityProfile`.
    */
   readonly profile?: ITaskCapacityProfile;
+  /**
+   * The optional shared parsed-record cache. Disabled when omitted — the default, because every
+   * held record is resident memory a host did not ask for. At most 32 entries and 8 MiB of
+   * encoded charge.
+   */
+  readonly recordCache?: ITaskRecordCacheOptions;
+}
+
+/**
+ * Parsed-record cache limits.
+ *
+ * @remarks
+ * One cache per repository, shared by every record read — never one per task, subscription or
+ * source. An entry is valid only for the record revision and exact text it was read at. With a
+ * cache, a read that hits it does not re-read the file, so out-of-band damage to a cached record
+ * is detected at its next uncached read rather than at this one.
+ * @public
+ */
+export interface ITaskRecordCacheOptions {
+  /** At most 32. */
+  readonly maxEntries: number;
+  /** Encoded bytes charged for held records. At most 8 MiB. */
+  readonly maxEncodedBytes: number;
 }
 
 /**
@@ -145,14 +174,17 @@ export interface ITaskRepositoryWriter {
  * Health of a repository's committed view.
  *
  * @remarks
- * `unavailable` means the repository is fenced: a write's outcome is unknown, or a record no
- * longer agrees with what was committed. Every further operation fails until the host closes
- * it and reopens, which re-reads what is actually on disk. `generation` advances on every
- * committed change.
+ * `unavailable` means the repository is fenced: a write's outcome is unknown, a record no
+ * longer agrees with what was committed, or an index update failed after its record committed.
+ * Every further operation fails until the host rebuilds the indexes
+ * ({@link ITaskRepository.rebuildIndexes}) or closes and reopens — both re-read what is actually
+ * on disk. `rebuilding` is the window in which a rebuild has released the old index and not yet
+ * published the new one; queries are fenced throughout it. `generation` advances on every
+ * committed change and on every rebuild.
  * @public
  */
 export interface ITaskRepositoryHealth {
-  readonly state: 'ready' | 'unavailable' | 'closed';
+  readonly state: 'ready' | 'rebuilding' | 'unavailable' | 'closed';
   readonly generation: number;
   readonly issues: ReadonlyArray<string>;
 }
@@ -180,6 +212,43 @@ export interface ITaskRepository {
    * already active — nesting is rejected, and a concurrent caller retries.
    */
   withWriter<T>(action: (writer: ITaskRepositoryWriter) => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
+  /**
+   * One page of non-archived tasks matching a selection, ordered by task id.
+   *
+   * @remarks
+   * Answered from resident indexes: a warm query reads no task record. Scopes are a union,
+   * deduplicated before paging; unresolved references that match are returned separately and
+   * make the page `partial`. The cursor is valid only at the page's generation — any committed
+   * change restarts paging (`cursor-stale`), and a cursor presented with a different query is
+   * `invalid`. This is a trusted host API, not an authorization boundary.
+   */
+  query(request: ITaskQuery): Promise<TaskResult<ITaskPage>>;
+  /**
+   * One page of due candidates: waiting tasks whose `notBefore` is present and at or before the
+   * cutoff, ordered by `(notBefore, taskId)`. Never starts or changes a task.
+   */
+  queryDue(request: IDueTaskQuery): Promise<TaskResult<ITaskPage>>;
+  /**
+   * One page of the updates a subscription is owed, including terminal and archived tasks'
+   * obligations. Reads no task record and no lifecycle index.
+   */
+  listOwed(request: IOwedUpdateQuery): Promise<TaskResult<IOwedUpdatePage>>;
+  /**
+   * The retained task — archived included — bound to a source binding, if any. A binding is
+   * bound to at most one retained task.
+   */
+  lookupSource(binding: ISourceBinding): Promise<TaskResult<TaskId | undefined>>;
+  /**
+   * Discards the resident indexes and rebuilds them from the committed records, in bounded
+   * sequential passes.
+   *
+   * @remarks
+   * The way out of a fence. The old index and every cursor are released before the new
+   * generation is built; queries are fenced while it runs. A root that no longer validates leaves
+   * the repository `unavailable` with the problems listed — it never becomes healthy and empty.
+   * Refused (`conflict`, `retry: 'safe'`) while a writer is active.
+   */
+  rebuildIndexes(): Promise<TaskResult<ITaskRepositoryHealth>>;
   /** Trusted host capacity status. Never for a model-facing tool. */
   capacityStatus(): TaskResult<ITaskCapacityStatus>;
   health(): ITaskRepositoryHealth;

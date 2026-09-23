@@ -5,6 +5,15 @@
 
 import { FileTree } from '@fgv/ts-json-base';
 import { DetailedResult, Result, fail, succeed } from '@fgv/ts-utils';
+import { TaskInventoryRecordKind } from '../types';
+import { manifestName, parseRecordName } from './layout';
+
+/**
+ * File reads by record kind, counted at the one place the storage packlet reads a file. The
+ * query-performance evidence ("a warm query reads no task record") is stated against these.
+ * @internal
+ */
+export type RecordReadCounts = Record<TaskInventoryRecordKind | 'manifest' | 'other', number>;
 
 /**
  * The one place the storage packlet touches a `FileTree`.
@@ -26,6 +35,8 @@ export class RecordStore {
   public readonly guarantee: FileTree.AtomicWriteGuarantee;
   private readonly _strictText: boolean;
   private _files: Map<string, FileTree.IFileTreeFileItem>;
+  /** Every read attempted through this store, by record kind. */
+  public readonly reads: RecordReadCounts = { task: 0, consumer: 0, source: 0, manifest: 0, other: 0 };
 
   private constructor(
     root: FileTree.IAtomicFileTreeDirectoryItem,
@@ -88,6 +99,7 @@ export class RecordStore {
 
   /** Reads a file's text. Fails if the last listing saw no file of that name. */
   public read(name: string): Result<string> {
+    this.reads[name === manifestName ? 'manifest' : parseRecordName(name)?.kind ?? 'other']++;
     const file: FileTree.IFileTreeFileItem | undefined = this._files.get(name);
     if (file === undefined) {
       return fail(`${name}: not present`);

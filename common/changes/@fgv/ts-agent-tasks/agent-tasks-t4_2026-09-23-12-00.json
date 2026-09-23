@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "Indexed selection on the task repository: query, queryDue and listOwed answered from resident indexes kept current on every commit (no record reads), with scope unions deduplicated before paging, lifecycle class/status selection, parent and responsibility filters, due candidates ordered by notBefore, and owed updates listed per subscription independent of lifecycle. Server-held keyset cursors bound to the normalized query and generation; archive keeps identity, edges and source binding resident; lookupSource and source-binding uniqueness; staged rebuildIndexes shared with open, fencing on a post-commit index failure; bounded read concurrency and an optional parsed-record cache; and runTaskRepositoryConformance for custom repositories.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

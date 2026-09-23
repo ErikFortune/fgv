@@ -32,12 +32,14 @@ import {
   checkPendingIdentity,
   checkRegistrationDraft,
   pendingIdentity,
-  registrationIdentity
+  registrationIdentity,
+  updatesOf
 } from './commitRules';
 import { classify, mintId, ok, propagate, taskFailure, writeRetry } from './failures';
 import {
   canonicallyEqual,
   encodeRecord,
+  fingerprintOf,
   manifestName,
   parseJson,
   parseRecordName,
@@ -46,6 +48,7 @@ import {
 } from './layout';
 import { CapacityLedger } from './ledger';
 import {
+  ITaskRecordCacheOptions,
   ITaskRecoveryHandle,
   ITaskRepository,
   ITaskRepositoryOpenParams,
@@ -65,6 +68,8 @@ import {
 } from './projection';
 import { RecordStore } from './recordStore';
 import { IRootOwnership, acquireRoot } from './rootOwnership';
+import { IndexContent, TaskIndex } from './taskIndex';
+import { MaterializationGate, maxRecordCacheBytes, maxRecordCacheEntries } from './workingSet';
 
 type Guarantee = FileTree.AtomicWriteGuarantee;
 
@@ -86,6 +91,10 @@ export interface IRepositoryState {
   readonly pending: Map<string, IPendingInventoryEntry>;
   readonly ledger: CapacityLedger;
   readonly report: ITaskRecoveryReport;
+  readonly index: TaskIndex;
+  readonly evidence: IScanEvidence;
+  readonly gate: MaterializationGate;
+  readonly recordCache?: ITaskRecordCacheOptions;
 }
 
 const modeConverter: Converter<TaskRepositoryMode> = Converters.oneOf<TaskRepositoryMode>([
@@ -129,7 +138,24 @@ function _acquire(params: ITaskRepositoryOpenParams): TaskResult<IAcquired> {
   ).onSuccess((converters) => _acquireWith(params, converters));
 }
 
+const recordCacheConverter: Converter<ITaskRecordCacheOptions> =
+  Converters.strictObject<ITaskRecordCacheOptions>({
+    maxEntries: Converters.number.withConstraint(
+      (n: number) => Number.isSafeInteger(n) && n >= 1 && n <= maxRecordCacheEntries
+    ),
+    maxEncodedBytes: Converters.number.withConstraint(
+      (n: number) => Number.isSafeInteger(n) && n >= 1 && n <= maxRecordCacheBytes
+    )
+  });
+
 function _acquireWith(params: ITaskRepositoryOpenParams, converters: TaskConverters): TaskResult<IAcquired> {
+  if (params.recordCache !== undefined && recordCacheConverter.convert(params.recordCache).isFailure()) {
+    return taskFailure(
+      `recordCache: at most ${maxRecordCacheEntries} entries and ${maxRecordCacheBytes} encoded bytes, each at least 1`,
+      'invalid',
+      'after-host-action'
+    );
+  }
   return _guarantee(params.mode).onSuccess((guarantee) => {
     const store: Result<RecordStore> = RecordStore.create(params.root, guarantee);
     if (store.isFailure()) {
@@ -261,6 +287,17 @@ export function initializeRepository(
         tasks: new Map(),
         pending: new Map(),
         ledger,
+        index: new TaskIndex(),
+        evidence: {
+          taskPassReads: 0,
+          consumerPassReads: 0,
+          sourcePassReads: 0,
+          selectedPassReads: 0,
+          graphMarks: 0,
+          owedDescriptors: 0
+        },
+        gate: new MaterializationGate(),
+        recordCache: params.recordCache,
         report: {
           repositoryId: created.value.manifest.repositoryId,
           issues: [],
@@ -458,8 +495,114 @@ function _scan(
   acquired: IAcquired,
   factory: RepositoryFactory
 ): TaskResult<TaskRepositoryOpenResult> {
-  const { store, converters } = acquired;
+  const gate: MaterializationGate = new MaterializationGate();
+  return scanRoot({
+    store: acquired.store,
+    converters: acquired.converters,
+    registry: params.registry,
+    removed: acquired.removed,
+    names: acquired.names,
+    expectedProfile: params.profile,
+    gate
+  }).onSuccess((outcome) => {
+    if (outcome.state === 'blocked') {
+      return _recovery(acquired, outcome.report);
+    }
+    const state: IRepositoryState = {
+      ...outcome.scanned,
+      store: acquired.store,
+      ownership: acquired.ownership,
+      converters: acquired.converters,
+      registry: params.registry,
+      environment: params.environment,
+      mode: acquired.mode,
+      gate,
+      recordCache: params.recordCache
+    };
+    return ok<TaskRepositoryOpenResult>({ state: 'ready', repository: factory(state) });
+  });
+}
+
+/**
+ * What a scan needs: a store already listed (and, at exclusive open or rebuild, cleaned of
+ * interrupted working files), the converters and registry, and the gate every record parse
+ * passes through.
+ * @internal
+ */
+export interface IScanInput {
+  readonly store: RecordStore;
+  readonly converters: TaskConverters;
+  readonly registry: ITaskKindRegistry;
+  readonly removed: ReadonlyArray<string>;
+  readonly names: ReadonlyArray<string>;
+  /** On open, the profile the host expects; any difference refuses. Absent on rebuild. */
+  readonly expectedProfile?: ITaskCapacityProfile;
+  readonly gate: MaterializationGate;
+}
+
+/**
+ * Everything a successful scan establishes.
+ * @internal
+ */
+export interface IScanned {
+  readonly manifest: ITaskRepositoryManifest;
+  readonly manifestText: string;
+  readonly tasks: Map<TaskId, ITaskProjection>;
+  readonly pending: Map<string, IPendingInventoryEntry>;
+  readonly ledger: CapacityLedger;
+  readonly index: TaskIndex;
+  readonly report: ITaskRecoveryReport;
+  readonly evidence: IScanEvidence;
+}
+
+/**
+ * What a scan did, for the counter evidence: records read in each pass, the graph-validation
+ * workspace, and the most records ever parsed at once.
+ * @internal
+ */
+export interface IScanEvidence {
+  readonly taskPassReads: number;
+  readonly consumerPassReads: number;
+  readonly sourcePassReads: number;
+  readonly selectedPassReads: number;
+  readonly graphMarks: number;
+  readonly owedDescriptors: number;
+}
+
+/**
+ * The outcome of a scan: a healthy projection, or the blocking problems that prevent one.
+ * @internal
+ */
+export type ScanOutcome =
+  | { readonly state: 'ready'; readonly scanned: IScanned }
+  | { readonly state: 'blocked'; readonly report: ITaskRecoveryReport };
+
+/**
+ * Builds one generation of the resident projection from the committed records, in bounded
+ * sequential passes (design §7, *Bounded open/rebuild*).
+ *
+ * @remarks
+ * 1. **Task pass.** The manifest, then each task record one at a time: validated exactly as
+ *    open always has, projected into the minimal entry and the query index, and its owed updates
+ *    reduced to **descriptors without payloads**. The parsed record is released before the next
+ *    is read. No all-record array exists at any point.
+ * 2. **Consumer and source pass.** One record at a time. This release validates their headers
+ *    only; the exact-acknowledgement join that decides which descriptors are already satisfied
+ *    belongs to subscriptions, so every audience link is owed.
+ * 3. **Graph validation**, O(N + E): one mark per task.
+ * 4. **Selected-task pass.** Only records holding owed descriptors are re-read, each checked
+ *    against the fingerprint the task pass saw, and only their owed payloads are kept.
+ *
+ * Open and rebuild both run this; the only write it performs is completing pending registrations
+ * whose record already landed.
+ * @internal
+ */
+export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
+  const { store, converters, gate } = input;
   const scan: Scan = new Scan();
+  const acquired = input;
+  const params = { registry: input.registry, profile: input.expectedProfile };
+  const readsBefore = { ...store.reads };
   const baseReport = (): ITaskRecoveryReport => ({
     issues: scan.issues,
     completedRegistrations: [],
@@ -481,7 +624,7 @@ function _scan(
       `${manifestName} is missing from a root that holds ${acquired.names.length} other file(s); ` +
         `a repository is never initialized over existing content`
     );
-    return _recovery(acquired, baseReport());
+    return ok<ScanOutcome>({ state: 'blocked', report: baseReport() });
   }
   const manifestRead = _readJson(store, scan, manifestName, undefined);
   const manifest: ITaskRepositoryManifest | undefined =
@@ -496,7 +639,7 @@ function _scan(
           'manifest-invalid'
         );
   if (manifest === undefined || manifestRead === undefined) {
-    return _recovery(acquired, baseReport());
+    return ok<ScanOutcome>({ state: 'blocked', report: baseReport() });
   }
   const profile: ITaskCapacityProfile = manifest.profile;
 
@@ -519,6 +662,10 @@ function _scan(
   const completed: TaskId[] = [];
   const stillPending: Array<{ taskId: TaskId; operationId: OperationId }> = [];
   const claimOwners: Map<string, string> = new Map<string, string>();
+  const index: TaskIndex = new TaskIndex();
+  // Pass 1 keeps only which tasks owe updates, and how many links: never a payload.
+  const owedTasks: TaskId[] = [];
+  let owedDescriptors: number = 0;
   const named: Set<string> = new Set<string>([manifestName]);
   // Every task the inventory names live, whether or not its record validated: a child of a
   // parent whose record is already reported broken is not *also* a dangling edge. A pending
@@ -588,18 +735,28 @@ function _scan(
       continue;
     }
 
-    const read = _readJson(store, scan, name, recordLimit);
+    const materialized = gate.track(() => {
+      const text = _readJson(store, scan, name, recordLimit);
+      return {
+        read: text,
+        record:
+          text === undefined
+            ? undefined
+            : _convertVersioned(
+                converters,
+                scan,
+                name,
+                text.parsed,
+                (from) => converters.storage.record.convert(from),
+                'record-invalid'
+              )
+      };
+    });
+    const read = materialized.read;
+    const record: ITaskCommitRecord | undefined = materialized.record;
     if (read === undefined) {
       continue;
     }
-    const record: ITaskCommitRecord | undefined = _convertVersioned(
-      converters,
-      scan,
-      name,
-      read.parsed,
-      (from) => converters.storage.record.convert(from),
-      'record-invalid'
-    );
     if (record === undefined) {
       continue;
     }
@@ -686,6 +843,16 @@ function _scan(
       inventoried.add(taskId);
     }
 
+    const indexed: Result<true> = index.put(taskId, _indexContent(record, known));
+    if (indexed.isFailure()) {
+      scan.blocking('integrity', `${name}: ${indexed.message}`, name);
+      continue;
+    }
+    const links: number = updatesOf(record).reduce((total, update) => total + update.audience.length, 0);
+    if (links > 0) {
+      owedTasks.push(taskId);
+      owedDescriptors += links;
+    }
     tasks.set(taskId, projectRecord(record, known, read.text));
     ledger.apply(
       new Map([
@@ -721,19 +888,28 @@ function _scan(
       }
       const limit: number =
         kind === 'consumer' ? profile.encoded.maxConsumerRecordBytes : profile.encoded.maxSourceRecordBytes;
-      const read = _readJson(store, scan, name, Math.min(limit, profile.limits['record-bytes']));
-      if (read === undefined) {
-        continue;
-      }
-      const header = _convertVersioned(
-        converters,
-        scan,
-        name,
-        read.parsed,
-        (from) => converters.storage.header.convert(from),
-        'record-invalid'
-      );
-      if (header === undefined) {
+      // Counted like every other record parse: a re-entrant read from host accessor code during
+      // this pass must see it in flight.
+      const materialized = gate.track(() => {
+        const text = _readJson(store, scan, name, Math.min(limit, profile.limits['record-bytes']));
+        return {
+          read: text,
+          header:
+            text === undefined
+              ? undefined
+              : _convertVersioned(
+                  converters,
+                  scan,
+                  name,
+                  text.parsed,
+                  (from) => converters.storage.header.convert(from),
+                  'record-invalid'
+                )
+        };
+      });
+      const read = materialized.read;
+      const header = materialized.header;
+      if (read === undefined || header === undefined) {
         continue;
       }
       if (header.id !== entry.id) {
@@ -766,16 +942,52 @@ function _scan(
       scan.blocking('integrity', `task ${projection.id}: parent ${projection.parentId} is not a live task`);
     }
   }
-  for (const start of tasks.values()) {
-    const seen: Set<TaskId> = new Set<TaskId>();
-    let cursor: ITaskProjection | undefined = start;
-    while (cursor?.parentId !== undefined) {
-      if (seen.has(cursor.id)) {
-        scan.blocking('integrity', `task ${start.id}: its parent chain is cyclic`);
-        break;
+  // One mark per task: 1 while its parent chain is being walked, 2 once known acyclic. Every
+  // task is walked once, so validation is O(N + E), never O(N x depth).
+  const marks: Map<TaskId, 1 | 2> = new Map<TaskId, 1 | 2>();
+  for (const start of tasks.keys()) {
+    const path: TaskId[] = [];
+    let cursor: TaskId | undefined = start;
+    while (cursor !== undefined && !marks.has(cursor)) {
+      marks.set(cursor, 1);
+      path.push(cursor);
+      cursor = tasks.get(cursor)?.parentId;
+    }
+    if (cursor !== undefined && marks.get(cursor) === 1) {
+      scan.blocking('integrity', `task ${start}: its parent chain is cyclic`);
+    }
+    for (const id of path) {
+      marks.set(id, 2);
+    }
+  }
+
+  // ---- pass 3: re-read only the records that owe updates, and keep just those payloads ----
+  const readsBeforeSelected: number = store.reads.task;
+  if (!scan.isBlocked) {
+    for (const taskId of owedTasks) {
+      const name: string = recordName('task', taskId);
+      const projection: ITaskProjection = tasks.get(taskId)!;
+      const reloaded: ITaskCommitRecord | undefined = gate.track(() => {
+        const text = _readJson(store, scan, name, recordLimit);
+        if (text === undefined) {
+          return undefined;
+        }
+        if (fingerprintOf(text.text) !== projection.fingerprint) {
+          scan.blocking('integrity', `${name}: changed between the task pass and the owed-update pass`, name);
+          return undefined;
+        }
+        return _convertVersioned(
+          converters,
+          scan,
+          name,
+          text.parsed,
+          (from) => converters.storage.record.convert(from),
+          'record-invalid'
+        );
+      });
+      if (reloaded !== undefined) {
+        index.putOwed(taskId, updatesOf(reloaded));
       }
-      seen.add(cursor.id);
-      cursor = tasks.get(cursor.parentId);
     }
   }
 
@@ -795,7 +1007,7 @@ function _scan(
   });
 
   if (scan.isBlocked) {
-    return _recovery(acquired, report({ completedRegistrations: [] }));
+    return ok<ScanOutcome>({ state: 'blocked', report: report({ completedRegistrations: [] }) });
   }
 
   // ---- complete registrations that died after their record was written ----
@@ -812,21 +1024,50 @@ function _scan(
     return propagate(completion);
   }
   ledger.apply(new Map([['repository', manifestEntry(completion.value.bytes, profile)]]));
-  const finalManifest: ITaskRepositoryManifest = completion.value.manifest;
 
-  const state: IRepositoryState = {
-    store,
-    ownership: acquired.ownership,
-    converters,
-    registry: params.registry,
-    environment: params.environment,
-    mode: acquired.mode,
-    manifest: finalManifest,
-    manifestText: completion.value.text,
-    tasks,
-    pending,
-    ledger,
-    report: report()
-  };
-  return ok<TaskRepositoryOpenResult>({ state: 'ready', repository: factory(state) });
+  return ok<ScanOutcome>({
+    state: 'ready',
+    scanned: {
+      manifest: completion.value.manifest,
+      manifestText: completion.value.text,
+      tasks,
+      pending,
+      ledger,
+      index,
+      report: report(),
+      evidence: {
+        taskPassReads: readsBeforeSelected - readsBefore.task,
+        consumerPassReads: store.reads.consumer - readsBefore.consumer,
+        sourcePassReads: store.reads.source - readsBefore.source,
+        selectedPassReads: store.reads.task - readsBeforeSelected,
+        graphMarks: marks.size,
+        owedDescriptors
+      }
+    }
+  });
 }
+
+/** What a validated record contributes to the index. */
+function _indexContent(record: ITaskCommitRecord, known: boolean): IndexContent {
+  if (!known) {
+    const source = record.recordType === 'resolved' ? record.task.envelope : record.reference;
+    return {
+      category: 'quarantined',
+      scopes: source.scopes,
+      ...(source.parentId !== undefined ? { parentId: source.parentId } : {}),
+      ...(source.binding !== undefined ? { binding: source.binding } : {}),
+      archived: record.recordType === 'resolved' && record.archived
+    };
+  }
+  if (record.recordType === 'unresolved') {
+    return { category: 'unresolved', reference: record.reference };
+  }
+  return { category: record.archived ? 'archived' : 'summary', envelope: record.task.envelope };
+}
+
+/**
+ * What a committed record contributes to the index. The same mapping the scan applies, used by
+ * the write path so a live commit and a rebuild index a record identically.
+ * @internal
+ */
+export const indexContentOf: (record: ITaskCommitRecord, known: boolean) => IndexContent = _indexContent;

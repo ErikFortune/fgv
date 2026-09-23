@@ -4,10 +4,28 @@
  */
 
 import { FileTree } from '@fgv/ts-json-base';
-import { Converter, Converters, Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
+import {
+  Converter,
+  Converters,
+  Result,
+  captureAsyncResult,
+  captureResult,
+  fail,
+  succeed
+} from '@fgv/ts-utils';
 import { TaskConverters } from '../converters';
 import {
+  IDueTaskQuery,
+  IOwedUpdatePage,
+  IOwedUpdateQuery,
   IPendingInventoryEntry,
+  ISourceBinding,
+  ITaskPage,
+  ITaskQuery,
+  ITaskSummary,
+  ITaskUpdate,
+  PageCursor,
+  defaultTaskPageLimit,
   ITaskCapacityClaim,
   ITaskCapacityProfile,
   ITaskCapacityStatus,
@@ -32,6 +50,7 @@ import {
   checkIdentity,
   checkOperations,
   checkPurpose,
+  checkSourceIdentity,
   checkRegistrationDraft,
   firstRecordType,
   IRegistrationIdentity,
@@ -65,7 +84,25 @@ import {
   TaskRepositoryMode,
   TaskRepositoryOpenResult
 } from './model';
-import { IRepositoryState, initializeRepository, openRepository } from './openRepository';
+import {
+  IRepositoryState,
+  IScanEvidence,
+  indexContentOf,
+  initializeRepository,
+  openRepository,
+  scanRoot
+} from './openRepository';
+import {
+  INormalizedSelection,
+  IPageEvaluation,
+  evaluateDue,
+  evaluateOwed,
+  evaluateTasks,
+  normalizeSelection
+} from './queries';
+import { IVisitCounter } from './sortedKeys';
+import { TaskIndex } from './taskIndex';
+import { CursorTable, ICachedRecord, MaterializationGate, RecordCache } from './workingSet';
 import {
   ITaskProjection,
   isTerminalRecord,
@@ -79,6 +116,7 @@ import {
   taskUsage
 } from './projection';
 import { RecordStore } from './recordStore';
+import { registerInspector } from './internals';
 import { IRootOwnership } from './rootOwnership';
 
 /** The validated purpose of a commit, and the operation it records when there is one. */
@@ -126,17 +164,23 @@ export class FileTreeTaskRepository implements ITaskRepository {
   public readonly repositoryId: string;
   /** {@inheritDoc ITaskRepository.mode} */
   public readonly mode: TaskRepositoryMode;
-  /** {@inheritDoc ITaskRepository.report} */
-  public readonly report: ITaskRecoveryReport;
 
   private readonly _store: RecordStore;
   private readonly _ownership: IRootOwnership;
   private readonly _converters: TaskConverters;
   private readonly _registry: ITaskKindRegistry;
   private readonly _environment: ITaskEnvironment;
-  private readonly _tasks: Map<TaskId, ITaskProjection>;
-  private readonly _pending: Map<string, IPendingInventoryEntry>;
-  private readonly _ledger: CapacityLedger;
+  private _tasks: Map<TaskId, ITaskProjection>;
+  private _pending: Map<string, IPendingInventoryEntry>;
+  private _ledger: CapacityLedger;
+  /** The one live index generation; `undefined` only while a rebuild has released it. */
+  private _index: TaskIndex | undefined;
+  private _report: ITaskRecoveryReport;
+  private _evidence: IScanEvidence;
+  private readonly _gate: MaterializationGate;
+  private readonly _cache: RecordCache;
+  private readonly _cursors: CursorTable;
+  private readonly _visits: IVisitCounter;
   private _manifest: ITaskRepositoryManifest;
   private _manifestFingerprint: string;
   /**
@@ -152,7 +196,23 @@ export class FileTreeTaskRepository implements ITaskRepository {
   private constructor(state: IRepositoryState) {
     this.repositoryId = state.manifest.repositoryId;
     this.mode = state.mode;
-    this.report = state.report;
+    this._report = state.report;
+    this._index = state.index;
+    this._evidence = state.evidence;
+    this._gate = state.gate;
+    this._cache = new RecordCache(state.recordCache);
+    this._cursors = new CursorTable(state.environment, state.converters.ids.identifier);
+    this._visits = { candidateVisits: 0 };
+    registerInspector(this, () => ({
+      reads: this._store.reads,
+      visits: this._visits,
+      gate: this._gate,
+      index: this._index,
+      projections: this._tasks,
+      evidence: this._evidence,
+      cursorHandles: this._cursors.size,
+      cache: { entries: this._cache.size, charge: this._cache.charge }
+    }));
     this._store = state.store;
     this._ownership = state.ownership;
     this._converters = state.converters;
@@ -209,6 +269,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
     return this._manifest.profile;
   }
 
+  /** {@inheritDoc ITaskRepository.report} */
+  public get report(): ITaskRecoveryReport {
+    return this._report;
+  }
+
   // ------------------------------------------------------------------------------------------
   // Reads
   // ------------------------------------------------------------------------------------------
@@ -256,6 +321,251 @@ export class FileTreeTaskRepository implements ITaskRepository {
     });
   }
 
+  // ------------------------------------------------------------------------------------------
+  // Queries — answered from the resident index, never from records
+  // ------------------------------------------------------------------------------------------
+
+  /** {@inheritDoc ITaskRepository.query} */
+  public async query(request: ITaskQuery): Promise<TaskResult<ITaskPage>> {
+    return this._queryable().onSuccess((index) =>
+      this._convertQuery(this._converters.queries.query, request).onSuccess((query) => {
+        const selection: INormalizedSelection = normalizeSelection(query.selection);
+        return this._page({ type: 'tasks', selection }, query, (after, limit) =>
+          evaluateTasks(index, selection, limit, after, this._visits)
+        );
+      })
+    );
+  }
+
+  /** {@inheritDoc ITaskRepository.queryDue} */
+  public async queryDue(request: IDueTaskQuery): Promise<TaskResult<ITaskPage>> {
+    return this._queryable().onSuccess((index) =>
+      this._convertQuery(this._converters.queries.dueQuery, request).onSuccess((query) => {
+        const selection: INormalizedSelection = normalizeSelection(query.selection);
+        return this._page({ type: 'due', selection, cutoff: query.cutoff }, query, (after, limit) =>
+          evaluateDue(index, selection, query.cutoff, limit, after, this._visits)
+        );
+      })
+    );
+  }
+
+  /** {@inheritDoc ITaskRepository.listOwed} */
+  public async listOwed(request: IOwedUpdateQuery): Promise<TaskResult<IOwedUpdatePage>> {
+    return this._queryable().onSuccess((index) =>
+      this._convertQuery(this._converters.queries.owedQuery, request).onSuccess((query) =>
+        this._page({ type: 'owed', subscription: query.subscription }, query, (after, limit) =>
+          evaluateOwed(index, query.subscription, limit, after, this._visits)
+        ).onSuccess((page) =>
+          ok<IOwedUpdatePage>({
+            updates: page.items,
+            ...(page.nextCursor !== undefined ? { nextCursor: page.nextCursor } : {}),
+            generation: page.generation,
+            completeness: 'complete'
+          })
+        )
+      )
+    );
+  }
+
+  /** {@inheritDoc ITaskRepository.lookupSource} */
+  public async lookupSource(binding: ISourceBinding): Promise<TaskResult<TaskId | undefined>> {
+    return this._queryable().onSuccess((index) =>
+      classify(this._converters.values.sourceBinding.convert(binding), 'invalid', 'after-host-action')
+        // The same bound every stored binding meets: a lookup never canonicalizes more than a
+        // binding could ever be.
+        .onSuccess((converted) => {
+          const bound: Result<true> = checkSourceIdentity(converted, this.profile);
+          return bound.isSuccess()
+            ? classify(index.sourceOwner(converted), 'invalid', 'after-host-action')
+            : taskFailure<TaskId | undefined>(
+                `lookupSource: ${bound.message}`,
+                'invalid',
+                'after-host-action'
+              );
+        })
+    );
+  }
+
+  /** {@inheritDoc ITaskRepository.rebuildIndexes} */
+  public async rebuildIndexes(): Promise<TaskResult<ITaskRepositoryHealth>> {
+    if (this._state === 'closed') {
+      return taskFailure('rebuildIndexes: closed', 'storage-unavailable', 'after-host-action');
+    }
+    if (this._writer !== undefined || this._state === 'rebuilding') {
+      return taskFailure(
+        'rebuildIndexes: a writer or another rebuild is active; retry after it returns',
+        'conflict',
+        'safe'
+      );
+    }
+    // Release the old generation before building the new one: the two never coexist, and
+    // nothing can answer from the old index while the new one is incomplete.
+    this._state = 'rebuilding';
+    this._index = undefined;
+    this._tasks = new Map();
+    this._pending = new Map();
+    this._cursors.clear();
+    this._cache.clear();
+    const scanned = this._store
+      .cleanup()
+      .onSuccess((removed) => this._store.list().onSuccess((names) => succeed({ removed, names })));
+    const outcome = scanned.isFailure()
+      ? taskFailure<never>(`rebuildIndexes: ${scanned.message}`, 'storage-unavailable', 'safe')
+      : scanRoot({
+          store: this._store,
+          converters: this._converters,
+          registry: this._registry,
+          removed: scanned.value.removed,
+          names: scanned.value.names,
+          gate: this._gate
+        });
+    if (outcome.isFailure()) {
+      this._state = 'unavailable';
+      this._issues.push(`rebuild failed: ${outcome.message}`);
+      return propagate(outcome);
+    }
+    if (outcome.value.state === 'blocked') {
+      const report: ITaskRecoveryReport = outcome.value.report;
+      const blocking: string[] = report.issues
+        .filter((issue) => issue.severity === 'blocking')
+        .map((issue) => issue.message);
+      this._report = report;
+      this._state = 'unavailable';
+      this._issues.splice(0, this._issues.length, ...blocking.map((m) => `rebuild found: ${m}`));
+      return taskFailure(
+        `rebuildIndexes: the committed records do not validate (${blocking.join('; ')}); the repository ` +
+          `stays unavailable — close it and open it for a recovery handle`,
+        'storage-corrupt',
+        'after-host-action'
+      );
+    }
+    const fresh = outcome.value.scanned;
+    this._manifest = fresh.manifest;
+    this._manifestFingerprint = fingerprintOf(fresh.manifestText);
+    this._tasks = fresh.tasks;
+    this._pending = fresh.pending;
+    this._ledger = fresh.ledger;
+    this._index = fresh.index;
+    this._report = fresh.report;
+    this._evidence = fresh.evidence;
+    this._issues.splice(0, this._issues.length);
+    this._state = 'ready';
+    this._generation++;
+    return ok(this.health());
+  }
+
+  /** The live index, or why queries are fenced. */
+  private _queryable(): TaskResult<TaskIndex> {
+    return this._usable().onSuccess(() => ok(this._index!));
+  }
+
+  private _convertQuery<T>(converter: Converter<T>, request: unknown): TaskResult<T> {
+    return classify(converter.convert(request), 'invalid', 'after-host-action').withErrorFormat(
+      (message) => `query: ${message}`
+    );
+  }
+
+  /**
+   * Resolves a query's cursor, evaluates one page and issues the next cursor.
+   *
+   * @remarks
+   * The descriptor — the normalized query, without its limit — is what a cursor is bound to,
+   * and is bounded by the profile's `maxQueryDescriptorBytes` because a handle retains it.
+   */
+  private _page<TItem extends ITaskSummary | ITaskUpdate>(
+    descriptor: Record<string, unknown>,
+    query: { readonly limit?: number; readonly cursor?: PageCursor },
+    evaluate: (after: string | undefined, limit: number) => IPageEvaluation<TItem>
+  ): TaskResult<Omit<ITaskPage, 'items'> & { readonly items: ReadonlyArray<TItem> }> {
+    // The descriptor is built from converted, normalized values in a fixed key order, so its
+    // JSON text is already canonical for equality — and serializing it cannot fail.
+    const text: string = JSON.stringify(descriptor);
+    const bytes: number = utf8Length(text);
+    const max: number = this.profile.encoded.maxQueryDescriptorBytes;
+    if (bytes > max) {
+      return taskFailure(
+        `query: the normalized query is ${bytes} bytes, over the bound of ${max}`,
+        'invalid',
+        'after-host-action'
+      );
+    }
+    const generation: number = this._generation;
+    const position: TaskResult<string | undefined> =
+      query.cursor === undefined
+        ? ok(undefined)
+        : this._cursors.resolve(query.cursor, text, generation).onSuccess((p) => ok(p.after));
+    return position.onSuccess((after) => {
+      const evaluated: IPageEvaluation<TItem> = evaluate(after, query.limit ?? defaultTaskPageLimit);
+      const next: TaskResult<PageCursor | undefined> =
+        evaluated.next === undefined
+          ? ok(undefined)
+          : this._cursors.issue({ descriptor: text, generation, after: evaluated.next });
+      return next.onSuccess((nextCursor) => {
+        const items = evaluated.items;
+        const external: boolean =
+          evaluated.unresolved.length > 0 ||
+          items.some((item) => 'envelope' in item && item.envelope.binding !== undefined);
+        return ok({
+          items,
+          unresolved: evaluated.unresolved,
+          ...(nextCursor !== undefined ? { nextCursor } : {}),
+          generation,
+          completeness:
+            evaluated.unresolved.length > 0 || evaluated.issues.length > 0 ? 'partial' : 'complete',
+          freshness: external ? 'source-projection' : 'native-current',
+          issues: evaluated.issues
+        });
+      });
+    });
+  }
+
+  /**
+   * Patches the index for a record that has just committed. The write is already durable, so a
+   * failure here cannot be reported as "nothing happened": the repository fences and the
+   * operation is reported indeterminate until the indexes are rebuilt from disk.
+   */
+  private _applyIndex(
+    taskId: TaskId,
+    record: ITaskCommitRecord,
+    operationId: OperationId | undefined
+  ): TaskResult<ITaskCommitRecord> {
+    const index: TaskIndex = this._index!;
+    const applied: Result<true> = captureResult(() =>
+      index.put(taskId, indexContentOf(record, true)).onSuccess(() => {
+        index.putOwed(taskId, updatesOf(record));
+        return succeed<true>(true);
+      })
+    ).onSuccess((inner) => inner);
+    if (applied.isSuccess()) {
+      return ok(record);
+    }
+    const message: string = `task ${taskId}: committed, but the index update failed (${applied.message}); rebuild the indexes`;
+    this._fence(message);
+    return operationId !== undefined
+      ? taskFailure(message, 'commit-indeterminate', 'reconcile-first', { operationId })
+      : taskFailure(message, 'storage-unavailable', 'reconcile-first');
+  }
+
+  /** A source binding maps to exactly one retained task, archived ones included. */
+  private _checkSource(taskId: TaskId, draft: ITaskRecordDraft, operationId: OperationId): TaskResult<true> {
+    const binding: ISourceBinding | undefined =
+      draft.recordType === 'resolved' ? draft.task.envelope.binding : draft.reference.binding;
+    if (binding === undefined) {
+      return ok(true);
+    }
+    return classify(this._index!.sourceHolder(binding, taskId), 'invalid', 'after-host-action').onSuccess(
+      (holder) =>
+        holder === undefined
+          ? ok<true>(true)
+          : taskFailure<true>(
+              `register ${taskId}: source ${binding.sourceId} already binds this reference to task ${holder}`,
+              'conflict',
+              'after-host-action',
+              { operationId }
+            )
+    );
+  }
+
   /** {@inheritDoc ITaskRepository.health} */
   public health(): ITaskRepositoryHealth {
     return { state: this._state, generation: this._generation, issues: [...this._issues] };
@@ -271,8 +581,15 @@ export class FileTreeTaskRepository implements ITaskRepository {
     if (this._writer !== undefined) {
       return taskFailure('close: a writer callback is active; close after it returns', 'conflict', 'safe');
     }
+    // A rebuild is between reads of the root it holds; releasing it mid-scan would let the scan
+    // publish a ready generation over a root this instance no longer owns.
+    if (this._state === 'rebuilding') {
+      return taskFailure('close: a rebuild is in progress; close after it returns', 'conflict', 'safe');
+    }
     this._state = 'closed';
     this._writer = undefined;
+    this._cursors.clear();
+    this._cache.clear();
     this._ownership.release();
     return ok(true);
   }
@@ -324,7 +641,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
         : taskFailure('writer: this handle is no longer active', 'invalid', 'after-host-action');
     return {
       readCommit: async (id: TaskId) =>
-        guard().onSuccess(() => this._readCommitted(id).onSuccess((read) => ok(read?.record))),
+        guard().onSuccess(() => this._readCommitted(id, true).onSuccess((read) => ok(read?.record))),
       register: async (request: ITaskRegistrationRequest) => guard().onSuccess(() => this._register(request)),
       commit: async (request: ITaskCommitRequest) => guard().onSuccess(() => this._commit(request)),
       raiseCapacityLimits: async (profile: ITaskCapacityProfile) =>
@@ -401,6 +718,9 @@ export class FileTreeTaskRepository implements ITaskRepository {
 
     return this._validateDraft(draft)
       .onSuccess((validated) => this._checkParent(taskId, validated).onSuccess(() => ok(validated)))
+      .onSuccess((validated) =>
+        this._checkSource(taskId, validated, operationId).onSuccess(() => ok(validated))
+      )
       .onSuccess((validated) =>
         this._checkOperationCount(taskId, validated.operations.length, 2).onSuccess(() => ok(validated))
       )
@@ -532,7 +852,38 @@ export class FileTreeTaskRepository implements ITaskRepository {
     if (!listed.value.includes(name)) {
       return this._writeRegistration(taskId, operationId, draft, entry);
     }
-    const landed: Result<IReadRecord> = this._store.read(name).onSuccess((text) =>
+    // A record parse like any other: inside the materialization gate.
+    const gated: TaskResult<Result<IReadRecord>> = this._gate.run(`register ${taskId}`, () =>
+      ok(this._readLanded(name, entry))
+    );
+    if (gated.isFailure()) {
+      return propagate(gated);
+    }
+    const landed: Result<IReadRecord> = gated.value;
+    if (landed.isFailure()) {
+      return taskFailure(
+        `register ${taskId}: ${name} already exists but is not this registration's first record ` +
+          `(${landed.message}); it is left untouched`,
+        'conflict',
+        'after-host-action',
+        { operationId }
+      );
+    }
+    return this._finishRegistration(taskId, operationId, landed.value, false);
+  }
+
+  /** Reads a task record's text, refusing it before any parse when it is over the record bound. */
+  private _readBounded(name: string): Result<{ text: string; bytes: number }> {
+    const limit: number = taskRecordLimit(this.profile);
+    return this._store.read(name).onSuccess((text) => {
+      const bytes: number = utf8Length(text);
+      return bytes > limit ? fail(`${name}: ${bytes} bytes exceeds ${limit}`) : succeed({ text, bytes });
+    });
+  }
+
+  /** Reads a landed record and checks it is exactly the pending registration's first record. */
+  private _readLanded(name: string, entry: IPendingInventoryEntry): Result<IReadRecord> {
+    return this._readBounded(name).onSuccess(({ text }) =>
       parseJson(text)
         .onSuccess((parsed) => this._converters.storage.record.convert(parsed))
         .onSuccess((record) =>
@@ -545,16 +896,6 @@ export class FileTreeTaskRepository implements ITaskRepository {
           )
         )
     );
-    if (landed.isFailure()) {
-      return taskFailure(
-        `register ${taskId}: ${name} already exists but is not this registration's first record ` +
-          `(${landed.message}); it is left untouched`,
-        'conflict',
-        'after-host-action',
-        { operationId }
-      );
-    }
-    return this._finishRegistration(taskId, operationId, landed.value, false);
   }
 
   /** Admits the record, writes it if it has not landed, then marks the entry live. */
@@ -591,7 +932,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
               ])
             );
             this._generation++;
-            return ok(built.record);
+            return this._applyIndex(taskId, built.record, operationId);
           })
       );
   }
@@ -605,7 +946,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     operationId: OperationId,
     identity: IRegistrationIdentity
   ): TaskResult<ITaskCommitRecord> {
-    return this._readCommitted(taskId).onSuccess((read) => {
+    return this._readCommitted(taskId, true).onSuccess((read) => {
       const record: ITaskCommitRecord = read!.record;
       // Only the record's creation evidence — its first operation — can answer a registration
       // replay, and it is compared with the whole registration identity, first-record type
@@ -673,7 +1014,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
       );
     }
 
-    return this._readCommitted(taskId).onSuccess((read) => {
+    return this._readCommitted(taskId, true).onSuccess((read) => {
       const current: ITaskCommitRecord = read!.record;
 
       // Replay is checked before the preconditions: a lost-response retry carries the revision
@@ -864,10 +1205,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
           .admit(new Map([[taskKey(taskId), entry]]))
           .onSuccess(() => this._writeFile(recordName('task', taskId), built.encoded.text, operationId))
           .onSuccess(() => {
+            this._cache.delete(taskId);
             this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
             this._ledger.apply(new Map([[taskKey(taskId), entry]]));
             this._generation++;
-            return ok(built.record);
+            return this._applyIndex(taskId, built.record, operationId);
           })
       );
   }
@@ -934,9 +1276,13 @@ export class FileTreeTaskRepository implements ITaskRepository {
     if (this._state === 'closed') {
       return taskFailure('repository: closed', 'storage-unavailable', 'after-host-action');
     }
+    if (this._state === 'rebuilding') {
+      return taskFailure('repository: the indexes are being rebuilt; retry', 'storage-unavailable', 'safe');
+    }
     if (this._state === 'unavailable') {
       return taskFailure(
-        `repository: fenced (${this._issues.join('; ')}); close and reopen to reconcile with what is on disk`,
+        `repository: fenced (${this._issues.join('; ')}); rebuild the indexes, or close and reopen, to ` +
+          `reconcile with what is on disk`,
         'storage-unavailable',
         'reconcile-first'
       );
@@ -1211,7 +1557,13 @@ export class FileTreeTaskRepository implements ITaskRepository {
    * Reads a live task's record from disk and checks it is still the record this instance
    * committed. A record that disagrees is out-of-band change or loss, and fences.
    */
-  private _readCommitted(id: TaskId): TaskResult<IReadRecord | undefined> {
+  /**
+   * Reads a live task's record. `uncached` reads the file even when the cache holds the record:
+   * every writer path uses it, because a write's precondition must be checked against what is
+   * on disk — a cached copy cannot notice that the file changed out of band, and a write over it
+   * would erase that change instead of fencing.
+   */
+  private _readCommitted(id: TaskId, uncached: boolean = false): TaskResult<IReadRecord | undefined> {
     const usable: TaskResult<true> = this._usable();
     if (usable.isFailure()) {
       return propagate(usable);
@@ -1220,17 +1572,15 @@ export class FileTreeTaskRepository implements ITaskRepository {
     if (projection === undefined) {
       return ok(undefined);
     }
+    const cached: ICachedRecord | undefined = uncached
+      ? undefined
+      : this._cache.get(id, projection.recordRevision, projection.fingerprint);
+    if (cached !== undefined) {
+      return ok(cached);
+    }
     const name: string = recordName('task', id);
-    const limit: number = taskRecordLimit(this.profile);
-    const read: Result<IReadRecord> = this._store
-      .read(name)
-      .onSuccess((text) => {
-        const bytes: number = utf8Length(text);
-        return bytes > limit
-          ? fail<{ text: string; bytes: number }>(`${name}: ${bytes} bytes exceeds ${limit}`)
-          : succeed({ text, bytes });
-      })
-      .onSuccess(({ text, bytes }) =>
+    return this._gate.run(`read ${id}`, () => {
+      const read: Result<IReadRecord> = this._readBounded(name).onSuccess(({ text, bytes }) =>
         parseJson(text)
           .onSuccess((parsed) => this._converters.storage.record.convert(parsed))
           .onSuccess((record) => {
@@ -1249,10 +1599,12 @@ export class FileTreeTaskRepository implements ITaskRepository {
             return ok<IReadRecord>({ record, encoded: { text, bytes } });
           })
       );
-    if (read.isFailure()) {
-      this._fence(read.message);
-      return taskFailure(read.message, 'storage-corrupt', 'after-host-action');
-    }
-    return ok(read.value);
+      if (read.isFailure()) {
+        this._fence(read.message);
+        return taskFailure<IReadRecord | undefined>(read.message, 'storage-corrupt', 'after-host-action');
+      }
+      this._cache.put(id, read.value, projection.fingerprint);
+      return ok<IReadRecord | undefined>(read.value);
+    });
   }
 }

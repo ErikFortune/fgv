@@ -4,7 +4,15 @@
  */
 
 import { FileTree } from '@fgv/ts-json-base';
-import { DetailedFailure, Result, captureResult, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
+import {
+  DetailedFailure,
+  Result,
+  captureResult,
+  fail,
+  failWithDetail,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
 import {
   ICapacityFailure,
   ITaskEnvironment,
@@ -78,4 +86,15 @@ export function writeRetry(failure: FileTree.IAtomicWriteFailure | undefined): I
  */
 export function mintId(environment: ITaskEnvironment): Result<string> {
   return captureResult(() => environment.newId()).onSuccess((minted) => minted);
+}
+
+/**
+ * Reads the host clock as epoch milliseconds. The clock is host code: a throw or a non-finite
+ * reading becomes a failure, as `TaskEnvironment.now()` treats it.
+ * @internal
+ */
+export function readClock(environment: ITaskEnvironment): Result<number> {
+  return captureResult(() => environment.clock()).onSuccess((epochMs) =>
+    Number.isFinite(epochMs) ? succeed(epochMs) : fail<number>(`clock returned ${epochMs}`)
+  );
 }

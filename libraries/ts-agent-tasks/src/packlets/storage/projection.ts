@@ -10,6 +10,7 @@ import {
   ITaskCommitRecord,
   TaskId,
   TaskKind,
+  TaskLifecycleStatus,
   TaskRevision,
   isTerminalTaskStatus
 } from '../types';
@@ -18,8 +19,9 @@ import { fingerprintOf, utf8Length } from './layout';
 
 /**
  * The minimal resident projection of one live task (design §7): identity, graph edge,
- * revisions, and what the ledger needs. No summary, no details, no update payloads — those
- * are read on demand, and the query indexes are T4's.
+ * revisions, final status, and what the ledger needs. This is all an archived task keeps
+ * resident. No summary, no details, no update payloads: a non-archived task's summary and
+ * memberships live in the query index, and everything else is read on demand.
  * @internal
  */
 export interface ITaskProjection {
@@ -30,6 +32,8 @@ export interface ITaskProjection {
   readonly kind: TaskKind;
   readonly detailVersion: number;
   readonly parentId?: TaskId;
+  /** The lifecycle status; absent for an unresolved record, which has none. */
+  readonly status?: TaskLifecycleStatus;
   readonly archived: boolean;
   /** False when the kind/version is not registered: the record is quarantined. */
   readonly known: boolean;
@@ -53,6 +57,7 @@ export function projectRecord(record: ITaskCommitRecord, known: boolean, text: s
       kind: envelope.kind,
       detailVersion: envelope.detailVersion,
       ...(envelope.parentId !== undefined ? { parentId: envelope.parentId } : {}),
+      status: envelope.lifecycle.status,
       archived: record.archived,
       known,
       fingerprint

@@ -140,7 +140,7 @@ Test exact-fit/one-over counts and encoded bytes; old defaults versus stored pol
 
 **Review gate:** inspect task commit contents and return ordering; validate each crash window against design §8.4. Release remains blocked until indexed behavior in T4 and durable obligations in T7–T8 are complete.
 
-### T4 — Indexed selection, paging, due and outstanding discovery
+### T4 — Indexed selection, paging, due and outstanding discovery — ✅ implemented on `integration/agent-tasks-v1` ([#687](https://github.com/ErikFortune/fgv/pull/687))
 
 **Dependencies:** T3. **Affected package:** `ts-agent-tasks` storage/query modules.
 
