@@ -24,10 +24,13 @@ export interface IExpectedQualifierAxis {
    * Consulted by the conditional-body check (design.md §9, D2) in
    * `analyzePromptCacheStability`: when a winning candidate matched on conditions, a stability
    * claim on the body — a slot's `cacheStability`, a call-site override, or the derived
-   * `'frozen'` default of a `'template'` section — is refuted only when an axis that actually
-   * conditioned that candidate is declared **less stable than the claim**. A body conditioned
-   * solely on `'frozen'` axes is as stable as its text; one conditioned on a `'per-conversation'`
-   * axis is at most `'per-conversation'`.
+   * `'frozen'` default of a `'template'` section — is refuted only when an axis that conditions
+   * the body is declared **less stable than the claim**. Those axes are the winning candidates'
+   * own, plus — once any winner is conditional — the axes of every other candidate in the record
+   * (those that lost this resolve, and those that won only as a `matchAsDefault` fallback), since a
+   * change in one of them can select a different body next time. A body conditioned solely on
+   * `'frozen'` axes is as stable as its text; one conditioned on a `'per-conversation'` axis is at
+   * most `'per-conversation'`.
    *
    * **This is not a way to make a claim survive the evidence against it.** Without it, the check
    * cannot tell "conditioned on something that never changes" from "conditioned on something that

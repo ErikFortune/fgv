@@ -81,7 +81,9 @@ interface IConditioningAxis {
 
 /**
  * What conditioned the resolve's body: the axes of every winning candidate that matched on
- * conditions, deduplicated by name, plus the matches that could not be attributed to any axis.
+ * conditions, plus any lower-stability axes of the competing candidates
+ * {@link checkCompetingCandidates} folds in, deduplicated by name, plus the matches that could not
+ * be attributed to any axis.
  * An empty value (no axes, nothing unattributed) means the body is not qualifier-conditional.
  */
 interface IBodyConditioning {
@@ -249,9 +251,10 @@ function collapseEmptyStableRuns(
  *    check nor the caller has actually examined.
  * 3. The resolve's body is itself qualifier-conditional (D2) on an axis
  *    declared less stable than the claim — a slot's presence or position can
- *    change along with which candidate wins, and the winning candidate can
- *    change as often as its least stable conditioning axis does, so the claim
- *    is lowered to that axis's level — see {@link checkConditionalBody}. An
+ *    change along with which candidate wins, and which candidates win can
+ *    change as often as the least stable axis conditioning the winners or the
+ *    candidates competing with them does, so the claim is lowered to that
+ *    axis's level — see {@link checkConditionalBody}. An
  *    axis with no declared stability is `'per-request'`, which refutes every
  *    claim better than `'per-request'`.
  *
@@ -580,8 +583,9 @@ function leastStable(stabilities: ReadonlyArray<PromptCacheStability>): PromptCa
 /**
  * D3 — derived signals with no hints at all. A `'template'` section is
  * `'frozen'` unless D2 refuted it, in which case it takes the body's
- * conditioning level — the least stable axis that conditioned a winning
- * candidate (`'per-request'` for an undeclared one). A `'slot'` section uses its resolved
+ * conditioning level — the least stable axis conditioning a winning
+ * candidate or, once the body is conditional, a competing one (`'per-request'`
+ * for an undeclared one). A `'slot'` section uses its resolved
  * effective stability, defaulting to `'per-request'` (R-a) when neither an
  * authored nor a call-site claim exists — this default is exactly the
  * "unclassified" case design.md §9 describes: no hint was ever recorded for

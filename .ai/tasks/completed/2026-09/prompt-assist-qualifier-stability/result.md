@@ -133,8 +133,11 @@ level, and lowers the body to match. It never fires when the winners are already
 undeclared case identical — a test pins that adding a competitor to an undeclared-axis body
 changes no refutation.
 
-**Still pre-existing and not addressed:** a body whose winners are *all unconditional* is not
-treated as conditional, even if a losing candidate is conditioned on a volatile axis. The old
+**Still pre-existing and not addressed:** a body whose winners include no conditional `'match'` —
+every winner unconditional, or every conditional winner a `matchAsDefault` fallback — is not
+treated as conditional, even if another candidate is conditioned on a volatile axis. (So a
+`matchAsDefault` winner's axes count when some other winner is a conditional `'match'`, and not
+otherwise.) The old
 check had exactly this gap and this stream does not change it (a test pins that losing candidates
 are not consulted then). Closing it would add refutations to bodies that are not refuted today,
 which is a behaviour change outside this stream's contract.
@@ -152,7 +155,9 @@ which is a behaviour change outside this stream's contract.
   The expected casualty class did not occur: nothing outside this package asserts on D2's findings
   (`grep` for `stability-refuted` / `cacheFindings` outside `ts-prompt-assist/src` finds nothing).
 - **Watched-it-fail:** neutering the competing-candidate fold-in (`competing.length >= 0` →
-  early return) turns exactly the two tests that depend on it red. The first attempt at this
+  early return) turns red exactly the four tests in "candidates that did not win this resolve"
+  that depend on it (401 of 405 pass). When first run it turned two red; the other two tests were
+  added afterwards, and the antagonist pass re-ran the neuter to get the current count. The first attempt at this
   neuter (`if (false as boolean)`) did not compile, and a run that collided with a concurrent
   repo-wide build failed for an unrelated reason; neither was counted as a result.
 - **Layer 1, `code-reviewer`, two passes:**

@@ -47,8 +47,9 @@ Tests pin this, and all pre-existing tests pass unmodified. The repo-wide `rush 
 
 ## Left open
 
-A body whose winners are all unconditional is still blind to a volatile losing candidate. This gap
-predates the stream. Closing it would add refutations to bodies that are not refuted today, so it
+A body whose winners include no conditional `'match'` is still blind to a volatile competing
+candidate. That covers every winner being unconditional, or every conditional winner having matched
+only as `matchAsDefault`. This gap predates the stream. Closing it would add refutations to bodies that are not refuted today, so it
 needs its own decision.
 
 ## Artifacts

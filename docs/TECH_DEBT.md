@@ -76,11 +76,13 @@ in-or-out of the slice depending on `prefixEnd`'s position. Regression tests use
 zero-byte stable run in the prefix". Design rule recorded at design.md §5.1b. This item is
 retired; the `as Record<string, …>` item below remains outstanding.)*
 
-- **[P2] D2 does not treat a body as conditional when every winning candidate is unconditional —
-  a conditional candidate that lost this resolve is invisible to it.**
+- **[P2] D2 does not treat a body as conditional when no winning candidate is a conditional
+  `'match'` — a conditional candidate that lost this resolve is invisible to it.**
   `checkConditionalBody` in `libraries/ts-prompt-assist/src/packlets/resolve/cacheStabilityAnalysis.ts`
-  marks a body qualifier-conditional only when a *winning* candidate matched on a non-empty
-  condition set. Take the common shape: an unconditional full base plus partials conditioned on a
+  marks a body qualifier-conditional only when a *winning* candidate matched (`matchType ===
+  'match'`, not `'matchAsDefault'`) on a non-empty condition set. The same blind spot covers a
+  body whose only conditional winners matched as `matchAsDefault`: their axes are folded in when
+  some other winner is a conditional `'match'`, and ignored otherwise. Take the common shape: an unconditional full base plus partials conditioned on a
   volatile axis. On a resolve where no partial matches, the body reads `'frozen'`. On the next
   resolve a partial can match and change it. That is a false `'frozen'`, the expensive direction
   under design.md §1's asymmetry.

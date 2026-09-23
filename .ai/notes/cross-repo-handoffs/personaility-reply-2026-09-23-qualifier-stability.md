@@ -156,6 +156,7 @@ are recorded here so the note matches the code:
   declaring `personality.archetype` `frozen` could have produced a false `frozen` that you did not
   get before.
 
-One gap remains and is recorded in our `TECH_DEBT.md`. When *every* winning candidate is
-unconditional, a losing conditional candidate is not seen at all. That was already true before
+One gap remains and is recorded in our `TECH_DEBT.md`. When no winning candidate is a conditional
+match (every winner unconditional, or conditional only as a `matchAsDefault` fallback), a
+competing conditional candidate is not seen at all. That was already true before
 this change, and this change does not alter it.
