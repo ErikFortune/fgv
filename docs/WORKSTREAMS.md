@@ -128,57 +128,6 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `ai-assist-streaming-cache` 🔵
-
-**Status: ✅ shipped via [#688](https://github.com/ErikFortune/fgv/pull/688).** All acceptance
-criteria verified, `code-reviewer` approved with no P1/P2 findings, repo-wide `rebuild` + `test`
-green. Exit artifact at `.ai/tasks/completed/2026-09/ai-assist-streaming-cache/`.
-
-*Written anticipating merge, per the artifact protocol — a PR cannot observe its own merge, so an
-author-time-accurate marker is guaranteed wrong on landing.* Layer 2 (Copilot / CodeRabbit) runs on
-#688; it had not run when the branch was first pushed.
-
-**Mission.** Thread `cache?: IAiCacheRequest` through the **streaming** request paths of
-`@fgv/ts-extras/ai-assist`, as `completionClient` already threads it through the non-streaming ones,
-so a tool-augmented or streamed turn can carry system-prompt cache breakpoints and a routing key.
-
-**Origin.** A PersonAIlity ask, verified against our own source before acting (both sides have
-shipped a wrong sweep before). **All their claims held.** They reported it against compiled
-`5.1.0-56` rather than declarations — their `#664` lesson — and source agrees with dist.
-
-**The gap, and it is wider than the ask.** `cache?: IAiCacheRequest` appears in exactly one file in
-the packlet: `completionClient.ts`. `callProviderCompletion` honors it and `callProxiedCompletion`
-forwards it; **`callProviderCompletionStream` and `executeClientToolTurn` have zero `cache`
-references between them.** So it is not that the tool turn is missing what its sibling has — **no
-streaming path can send a cache plan at all**, and a tool-less streaming turn is equally unable to.
-The two are separate request paths (`streamingClient.ts:63–72` documents that client tools
-deliberately do not flow through `callProviderCompletionStream`), so both need threading; fixing
-only the one they hit leaves the sibling hole open.
-
-**Package surface:** `ts-extras/ai-assist` — `streamingClient.ts`, `clientToolContinuationBuilder.ts`
-and the per-provider stream builders they call. An **active surface**, so additive and free.
-
-**Out-of-scope:** `completionClient`'s existing behaviour (it is the reference, not the target); any
-change to `IAiCacheRequest`, `validateAiCacheRequest` or the `supportsPromptCache*` predicates;
-`ts-prompt-assist`, consumed unchanged. If the **proxied** streaming path cannot honor `cache`
-without a proxy-side protocol change, it **refuses explicitly the way #679 refused `endpoint`** —
-silently accepting a field no deployed proxy reads is the defect #679 existed to fix.
-
-**Acceptance criteria.** `cache?` on both entry points, honored end to end; validation **per round**
-against that round's own `system`, failing the round rather than dropping the plan; breakpoints and
-routing key **independently gated** (the comment at `completionClient.ts:915` records why gating
-them together was wrong); a descriptor supporting neither gets a **byte-identical** body to the
-no-`cache` case. **Tests assert the request body, not success** — #679's lesson, since a dropped
-parameter still returns 200. Plus the repo gates, including a repo-wide `rush test`: this widens
-what these functions *accept* without moving a signature, which a rebuild cannot see.
-
-**Parallel with:** `agent-tasks-t4` (different package, different base branch, no code overlap) —
-both touch `LIBRARY_CAPABILITIES.md` and this file, **own section only**.
-
-**Branch:** `claude/ai-assist-streaming-cache`, off `release` at `af05bb319`. **PRs into `release`.**
-
-**Artifact pointer:** `.ai/tasks/completed/2026-09/ai-assist-streaming-cache/`.
-
 ### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
 
 **Status:** 🟢 **shipped to `release`** — all five units merged 2026-08-12, plus one unplanned refactor that unblocked them. Nothing published yet; the alpha still has to go out. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md`, `…-reply-2026-08-11-ask-package.md`, `…-status-2026-08-12-stream-a.md`, `…-status-2026-08-12-shipped.md`.
@@ -513,8 +462,8 @@ here so a stream can be found by id without opening them; each archive links bac
 the same "docs ship with the code" rule as everywhere else, so the working ledger never
 accumulates history again.
 
-**[2026-09](workstreams/2026-09.md)** — 4 shipped
-`filetree-atomic-write` · `ai-assist-prompt-caching` · `ai-assist-thinking-anchoring` · `prompt-composition-metadata`
+**[2026-09](workstreams/2026-09.md)** — 5 shipped
+`ai-assist-streaming-cache` · `filetree-atomic-write` · `ai-assist-prompt-caching` · `ai-assist-thinking-anchoring` · `prompt-composition-metadata`
 
 **[2026-08](workstreams/2026-08.md)** — 19 shipped
 `converters-single-line` · `schema-optional-translation` · `json-schema-nullable` · `sqlite-vec-throwaway-clear-statement` · `filetree-faithful-copy` · `ai-assist-structured-output` · `agent-memory-kind-collision-guard` · `sqlite-vec-statement-lifetime` · `fragment-query-scoping` · `agent-memory-derived-state-reconciliation` · `agent-memory-index-partial-read` · `vector-rebuild-report-by-kind` · `sqlite-vec-path-open` · `module-resolution-upgrade` · `publish-tarball-gate` · `ts-utils-async-detailed-result` · `fetch-primitive-threat-model` · `ts-prompt-assist-features` · `async-result-family`
