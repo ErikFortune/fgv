@@ -156,7 +156,7 @@ Deterministically inspect the internal projection shape and counters: archived s
 
 ## 5. Broker and delivery
 
-### T5 — Bound authority, tracked hierarchy and reassignment — 🔵 in flight on `claude/agent-tasks-t5`
+### T5 — Bound authority, tracked hierarchy and reassignment — ✅ implemented on `integration/agent-tasks-v1` ([#691](https://github.com/ErikFortune/fgv/pull/691))
 
 **Dependencies:** T1, T3, T4. **Affected package:** `ts-agent-tasks` broker/implementations.
 
