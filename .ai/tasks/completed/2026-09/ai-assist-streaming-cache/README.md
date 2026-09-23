@@ -1,8 +1,7 @@
 # ai-assist-streaming-cache — prompt-cache emission on the streaming paths
 
-**Shipped**: 2026-09-23, pushed to `claude/ai-assist-streaming-cache`. PR: not yet opened —
-code, tests, and change file are complete and pushed; open a PR from that branch against
-`release` to carry this record.
+**Shipped**: 2026-09-23 via [#688](https://github.com/ErikFortune/fgv/pull/688), from
+`claude/ai-assist-streaming-cache` against `release`.
 
 ## Summary
 
@@ -101,11 +100,13 @@ run as a deliberate second pass rather than a re-read:
   all trace cleanly; no unsupported claims found.
 - Verified `sourceLine` appears **verbatim** in `result.md`'s opening line — confirmed by direct
   string match.
-- Checked `prs: []` and the `docs/WORKSTREAMS.md` status marker (🔵, not ✅) against the actual
-  state (no PR opened, nothing merged) — both correctly reflect that no PR exists yet, rather
-  than anticipating one that hasn't been created. This is the one place this stream's closure
-  deviates from the repo's usual "PR anticipates its own merge" convention, and it deviates
-  because there is no PR to anticipate a number for, not because the convention was rejected.
+- Checked `prs: []` and the `docs/WORKSTREAMS.md` status marker against the state at the time —
+  no PR existed, so neither anticipated a number it could not know. **Superseded 2026-09-23:**
+  the stream was finalized *before* a PR was opened, which is earlier than the convention
+  intends (`/finalize-task` ships **in** the PR). Once [#688](https://github.com/ErikFortune/fgv/pull/688)
+  existed, `meta.yaml` became `prs: [688]` and the ledger marker became ✅, which is what the
+  "a PR anticipates its own merge" convention asks for. The deviation was one of sequencing, not
+  of judgement, and it is now closed.
 - Re-examined `diverged`: not left empty by default — the direct-parent connection to
   `ai-assist-prompt-caching`'s own recorded gap, and the one coverage-driven test addition, are
   both real and both stated.
@@ -122,5 +123,5 @@ checked against `brief.md` and `result.md` as source of truth.
 - Brief: `brief.md`
 - Live state: `state.md`
 - Exit artifact: `result.md`
-- PR: not yet opened (branch `claude/ai-assist-streaming-cache`, based on `release` at
-  `af05bb319`)
+- PR: [#688](https://github.com/ErikFortune/fgv/pull/688) (branch
+  `claude/ai-assist-streaming-cache`, based on `release` at `af05bb319`)
