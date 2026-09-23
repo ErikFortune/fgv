@@ -17,7 +17,13 @@ import {
   Runtime
 } from '@fgv/ts-res';
 import { PromptId, ScopeKey, SlotName } from '../types';
-import { IPromptCandidateRecord, IPromptDescriptor, IPromptSlot, IStoredPromptRecord } from '../types';
+import {
+  IPromptCandidateRecord,
+  IPromptDescriptor,
+  IPromptQualifierMetadata,
+  IPromptSlot,
+  IStoredPromptRecord
+} from '../types';
 import { PromptSubstitutions } from '../types';
 import {
   IPromptLibraryQualifiersInput,
@@ -1174,7 +1180,9 @@ export class PromptLibrary<
                   candidateMatches,
                   resourceBindings.traceEntries,
                   descriptor.slots,
-                  req.cacheStability
+                  req.cacheStability,
+                  walked.record.candidates,
+                  descriptor.qualifiers
                 );
           return succeed<IResolvedPrompt>({
             id: req.id,
@@ -1212,7 +1220,9 @@ export class PromptLibrary<
     candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>,
     resourceBindingResolutions: ReadonlyArray<IResourceBindingTraceEntry>,
     slots: ReadonlyArray<IPromptSlot>,
-    callSiteCacheStability: ReadonlyMap<SlotName, PromptCacheStability> | undefined
+    callSiteCacheStability: ReadonlyMap<SlotName, PromptCacheStability> | undefined,
+    candidates: ReadonlyArray<IPromptCandidateRecord>,
+    qualifiers: IPromptQualifierMetadata | undefined
   ): IPromptComposition {
     const measure = options.measure;
     // Accumulated as sections are built rather than summed afterwards: a later sum would need a
@@ -1280,6 +1290,8 @@ export class PromptLibrary<
       slots,
       callSiteOverrides: callSiteCacheStability,
       prefaceStability: this._safetyPolicy?.antiJailbreakPrefaceStability,
+      candidates,
+      qualifiers,
       options: options.cacheDiagnostics
     });
     // Attaches the same effective stability the D1–D5 checks above just reasoned over to each

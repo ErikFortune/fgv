@@ -11,9 +11,12 @@ import { analyzePromptCacheStability } from '../../packlets/resolve';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { deriveCacheBreakpointOffsets } from '../../packlets/resolve/cacheStabilityAnalysis';
 import {
+  AxisName,
   IBindingTraceEntry,
   ICandidateMatchTraceEntry,
   IPromptCacheFinding,
+  IPromptCandidateRecord,
+  IPromptQualifierMetadata,
   IPromptSection,
   IPromptSlot,
   IResourceBindingTraceEntry,
@@ -45,6 +48,28 @@ function condition(): TsResRuntime.IConditionMatchResult {
 
 function resourceBinding(slotName: SlotName): IResourceBindingTraceEntry {
   return { slot: slotName } as unknown as IResourceBindingTraceEntry;
+}
+
+function candidate(conditions: IPromptCandidateRecord['conditions']): IPromptCandidateRecord {
+  return { conditions, body: 'body' };
+}
+
+function declaring(
+  axes: ReadonlyArray<{ readonly name: string; readonly stability?: PromptCacheStability }>
+): IPromptQualifierMetadata {
+  return { expected: axes.map((axis) => ({ ...axis, name: axis.name as unknown as AxisName })) };
+}
+
+function match(candidateIndex: number, conditionCount: number = 1): ICandidateMatchTraceEntry {
+  return {
+    candidateIndex,
+    matchType: 'match',
+    conditions: Array.from({ length: conditionCount }, condition)
+  };
+}
+
+function refutations(findings: ReadonlyArray<IPromptCacheFinding>): ReadonlyArray<IPromptCacheFinding> {
+  return findings.filter((f) => f.kind === 'stability-refuted');
 }
 
 function findingKinds(findings: ReadonlyArray<IPromptCacheFinding>): string[] {
@@ -306,6 +331,340 @@ describe('analyzePromptCacheStability', () => {
         slots: []
       });
       expect(findings.filter((f) => f.kind === 'stability-refuted')).toEqual([]);
+    });
+  });
+
+  describe('D2 — qualifier-declared stability (IExpectedQualifierAxis.stability)', () => {
+    const TEMPLATE_THEN_SLOT: IPromptSection[] = [
+      section({ kind: 'template', start: 0, chars: 5 }),
+      section({ kind: 'slot', slot: SLOT_A, start: 5, chars: 1 })
+    ];
+
+    describe('compatibility: an undeclared axis reproduces the pre-declaration refutations exactly', () => {
+      // Each case is run twice — once with no attribution data at all (the pre-declaration input
+      // shape) and once attributed to an axis that declares no stability — and both must produce
+      // the same refutations, differing only in how `detail` explains them.
+      const cases: ReadonlyArray<[string, IPromptQualifierMetadata | undefined]> = [
+        ['no qualifier metadata', undefined],
+        ['an expected axis with no stability', declaring([{ name: 'tone' }])],
+        ['stability declared only on a different axis', declaring([{ name: 'lang', stability: 'frozen' }])]
+      ];
+
+      test.each(cases)('%s', (__name, qualifiers) => {
+        const common = {
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map<SlotName, IBindingTraceEntry>(),
+          candidateMatches: [match(0)],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A, 'frozen')]
+        };
+        const unattributed = refutations(analyzePromptCacheStability(common));
+        const attributed = refutations(
+          analyzePromptCacheStability({ ...common, candidates: [candidate({ tone: 'formal' })], qualifiers })
+        );
+
+        const shape = (f: IPromptCacheFinding): unknown => ({
+          slot: f.slot,
+          claimed: f.claimed,
+          downgradedTo: f.downgradedTo
+        });
+        expect(attributed.map(shape)).toEqual(unattributed.map(shape));
+        expect(attributed.map(shape)).toEqual([
+          {
+            slot: undefined,
+            claimed: { stability: 'frozen', origin: 'derived' },
+            downgradedTo: 'per-request'
+          },
+          { slot: SLOT_A, claimed: { stability: 'frozen', origin: 'authored' }, downgradedTo: 'per-request' }
+        ]);
+        for (const finding of attributed) {
+          expect(finding.detail).toMatch(/qualifier 'tone' \(no declared stability, so 'per-request'\)/);
+        }
+      });
+
+      test('a call-site override is refuted by an undeclared axis, as before', () => {
+        const findings = analyzePromptCacheStability({
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map(),
+          candidateMatches: [match(0)],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A)],
+          callSiteOverrides: new Map([[SLOT_A, 'frozen']]),
+          candidates: [candidate({ tone: 'formal' })]
+        });
+        expect(refutations(findings)).toContainEqual(
+          expect.objectContaining({
+            slot: SLOT_A,
+            claimed: { stability: 'frozen', origin: 'call-site' },
+            downgradedTo: 'per-request'
+          })
+        );
+      });
+    });
+
+    describe("a 'frozen'-declared conditioning axis", () => {
+      const qualifiers = declaring([{ name: 'tone', stability: 'frozen' }]);
+
+      test('does not refute a template section — no finding, and the section stays frozen', () => {
+        const findings = analyzePromptCacheStability({
+          sections: [section({ kind: 'template', start: 0, chars: 5, measured: 100 })],
+          mergedBindings: new Map(),
+          candidateMatches: [match(0)],
+          resourceBindingResolutions: [],
+          slots: [],
+          candidates: [candidate({ tone: 'formal' })],
+          qualifiers,
+          options: { minCacheablePrefixTokens: 50 }
+        });
+        // A wholly cacheable, above-threshold prefix: only possible if the template stayed frozen.
+        expect(findings).toEqual([]);
+      });
+
+      test('does not refute an authored frozen slot claim', () => {
+        const findings = analyzePromptCacheStability({
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map(),
+          candidateMatches: [match(0)],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A, 'frozen')],
+          candidates: [candidate({ tone: 'formal' })],
+          qualifiers
+        });
+        expect(refutations(findings)).toEqual([]);
+        expect(findingKinds(findings)).not.toContain('cache-hostile-ordering');
+      });
+
+      test('does not refute a frozen call-site override', () => {
+        const findings = analyzePromptCacheStability({
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map(),
+          candidateMatches: [match(0)],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A)],
+          callSiteOverrides: new Map([[SLOT_A, 'frozen']]),
+          candidates: [candidate({ tone: 'formal' })],
+          qualifiers
+        });
+        expect(refutations(findings)).toEqual([]);
+      });
+
+      test('does not shield a slot from the other refutation checks', () => {
+        const findings = analyzePromptCacheStability({
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map([[SLOT_A, bindingEntry({ chainBindingCount: 2 })]]),
+          candidateMatches: [match(0)],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A, 'frozen')],
+          candidates: [candidate({ tone: 'formal' })],
+          qualifiers
+        });
+        expect(refutations(findings)).toEqual([
+          expect.objectContaining({ slot: SLOT_A, downgradedTo: 'per-request' })
+        ]);
+        expect(refutations(findings)[0].detail).toMatch(/2 scopes/);
+      });
+    });
+
+    describe("a 'per-conversation'-declared conditioning axis", () => {
+      const qualifiers = declaring([{ name: 'persona', stability: 'per-conversation' }]);
+
+      test('refutes a frozen claim down to per-conversation, naming the axis and its declaration', () => {
+        const findings = analyzePromptCacheStability({
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map(),
+          candidateMatches: [match(0)],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A, 'frozen')],
+          candidates: [candidate({ persona: 'pirate' })],
+          qualifiers
+        });
+        const refuted = refutations(findings);
+        expect(refuted).toEqual([
+          expect.objectContaining({
+            claimed: { stability: 'frozen', origin: 'derived' },
+            downgradedTo: 'per-conversation'
+          }),
+          expect.objectContaining({
+            slot: SLOT_A,
+            claimed: { stability: 'frozen', origin: 'authored' },
+            downgradedTo: 'per-conversation'
+          })
+        ]);
+        for (const finding of refuted) {
+          expect(finding.detail).toMatch(/qualifier 'persona' \(declared 'per-conversation'\)/);
+        }
+      });
+
+      test('does not refute a per-conversation slot claim', () => {
+        const findings = analyzePromptCacheStability({
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map(),
+          candidateMatches: [match(0)],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A, 'per-conversation')],
+          candidates: [candidate({ persona: 'pirate' })],
+          qualifiers
+        });
+        // Only the candidate-level finding against the template's derived 'frozen' default.
+        expect(refutations(findings)).toEqual([
+          expect.objectContaining({ downgradedTo: 'per-conversation' })
+        ]);
+        expect(refutations(findings)[0].slot).toBeUndefined();
+        // Template and slot are both per-conversation now: one run, nothing hostile.
+        expect(findingKinds(findings)).not.toContain('cache-hostile-ordering');
+      });
+    });
+
+    test('names only the axes less stable than the claim when a candidate is conditioned on several', () => {
+      const findings = analyzePromptCacheStability({
+        sections: TEMPLATE_THEN_SLOT,
+        mergedBindings: new Map(),
+        candidateMatches: [match(0, 3)],
+        resourceBindingResolutions: [],
+        slots: [slot(SLOT_A, 'per-conversation')],
+        candidates: [candidate({ lang: 'en', persona: 'pirate', tone: 'formal' })],
+        qualifiers: declaring([
+          { name: 'lang', stability: 'frozen' },
+          { name: 'persona', stability: 'per-conversation' }
+        ])
+      });
+      const refuted = refutations(findings);
+      expect(refuted.map((f) => f.downgradedTo)).toEqual(['per-request', 'per-request']);
+      // The template's 'frozen' default is refuted by both non-frozen axes...
+      expect(refuted[0].detail).toMatch(/'persona' \(declared 'per-conversation'\), qualifier 'tone'/);
+      expect(refuted[0].detail).not.toMatch(/'lang'/);
+      // ...but a 'per-conversation' claim only by the axis less stable than that.
+      expect(refuted[1].slot).toBe(SLOT_A);
+      expect(refuted[1].detail).toMatch(/qualifier 'tone' \(no declared stability/);
+      expect(refuted[1].detail).not.toMatch(/'persona'|'lang'/);
+    });
+
+    test('emits a finding only for the winning candidates whose conditioning is less than frozen', () => {
+      const findings = analyzePromptCacheStability({
+        sections: [section({ kind: 'template', start: 0, chars: 5 })],
+        mergedBindings: new Map(),
+        candidateMatches: [match(0), match(1)],
+        resourceBindingResolutions: [],
+        slots: [],
+        candidates: [candidate({ lang: 'en' }), candidate({ tone: 'formal' })],
+        qualifiers: declaring([{ name: 'lang', stability: 'frozen' }])
+      });
+      const refuted = refutations(findings);
+      expect(refuted).toHaveLength(1);
+      expect(refuted[0].detail).toMatch(/^candidate 1: .*qualifier 'tone'/);
+    });
+
+    test('still ignores a matchAsDefault candidate, whatever its axis is declared as', () => {
+      const findings = analyzePromptCacheStability({
+        sections: [section({ kind: 'template', start: 0, chars: 5 })],
+        mergedBindings: new Map(),
+        candidateMatches: [{ candidateIndex: 0, matchType: 'matchAsDefault', conditions: [condition()] }],
+        resourceBindingResolutions: [],
+        slots: [slot(SLOT_A, 'frozen')],
+        candidates: [candidate({ tone: 'formal' })],
+        qualifiers: declaring([{ name: 'tone', stability: 'per-request' }])
+      });
+      expect(refutations(findings)).toEqual([]);
+    });
+
+    test('reads qualifier names from the array form of a condition set', () => {
+      const findings = analyzePromptCacheStability({
+        sections: [section({ kind: 'template', start: 0, chars: 5 })],
+        mergedBindings: new Map(),
+        candidateMatches: [match(0, 2)],
+        resourceBindingResolutions: [],
+        slots: [],
+        candidates: [
+          candidate([
+            { qualifierName: 'lang', value: 'en' },
+            { qualifierName: 'lang', value: 'fr', priority: 10 }
+          ])
+        ],
+        qualifiers: declaring([{ name: 'lang', stability: 'per-conversation' }])
+      });
+      const refuted = refutations(findings);
+      expect(refuted).toEqual([expect.objectContaining({ downgradedTo: 'per-conversation' })]);
+      // A qualifier named twice is reported once.
+      expect(refuted[0].detail.match(/'lang'/g)).toHaveLength(1);
+    });
+
+    test('reads qualifier names from the record-with-details form of a condition set', () => {
+      const findings = analyzePromptCacheStability({
+        sections: [section({ kind: 'template', start: 0, chars: 5, measured: 100 })],
+        mergedBindings: new Map(),
+        candidateMatches: [match(0)],
+        resourceBindingResolutions: [],
+        slots: [],
+        candidates: [candidate({ lang: { value: 'en', priority: 500 } })],
+        qualifiers: declaring([{ name: 'lang', stability: 'frozen' }]),
+        options: { minCacheablePrefixTokens: 50 }
+      });
+      expect(findings).toEqual([]);
+    });
+
+    test('an axis declared more than once takes the least stable declaration', () => {
+      const findings = analyzePromptCacheStability({
+        sections: [section({ kind: 'template', start: 0, chars: 5 })],
+        mergedBindings: new Map(),
+        candidateMatches: [match(0)],
+        resourceBindingResolutions: [],
+        slots: [],
+        candidates: [candidate({ lang: 'en' })],
+        qualifiers: declaring([
+          { name: 'lang', stability: 'frozen' },
+          { name: 'lang', stability: 'per-conversation' },
+          { name: 'lang', stability: 'frozen' }
+        ])
+      });
+      expect(refutations(findings)).toEqual([expect.objectContaining({ downgradedTo: 'per-conversation' })]);
+    });
+
+    describe('a match whose conditioning axes cannot be determined is treated as per-request', () => {
+      const qualifiers = declaring([{ name: 'lang', stability: 'frozen' }]);
+      const cases: ReadonlyArray<[string, ReadonlyArray<IPromptCandidateRecord> | undefined]> = [
+        ['no candidates supplied', undefined],
+        ['a candidate index past the end of the candidates', [candidate({ lang: 'en' })]],
+        ['a declaration naming no qualifier', [candidate({ lang: 'en' }), candidate({})]],
+        [
+          'a record declaration whose only key is undefined',
+          [candidate({ lang: 'en' }), candidate({ lang: undefined })]
+        ]
+      ];
+
+      test.each(cases)('%s', (__name, candidates) => {
+        const findings = analyzePromptCacheStability({
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map(),
+          candidateMatches: [match(1)],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A, 'frozen')],
+          candidates,
+          qualifiers
+        });
+        const refuted = refutations(findings);
+        expect(refuted.map((f) => f.downgradedTo)).toEqual(['per-request', 'per-request']);
+        for (const finding of refuted) {
+          expect(finding.detail).toMatch(/candidate\(s\) 1, whose qualifiers are not known to this check/);
+        }
+      });
+
+      test('an unattributed match lowers the whole body even when another is conditioned only on frozen axes', () => {
+        const findings = analyzePromptCacheStability({
+          sections: TEMPLATE_THEN_SLOT,
+          mergedBindings: new Map(),
+          candidateMatches: [match(0), match(1)],
+          resourceBindingResolutions: [],
+          slots: [slot(SLOT_A, 'frozen')],
+          candidates: [candidate({ lang: 'en' })],
+          qualifiers
+        });
+        const refuted = refutations(findings);
+        expect(refuted).toHaveLength(2);
+        expect(refuted[1]).toMatchObject({ slot: SLOT_A, downgradedTo: 'per-request' });
+        // The frozen axis does not refute the frozen claim, so only the unknown match is named.
+        expect(refuted[1].detail).not.toMatch(/'lang'/);
+        expect(refuted[1].detail).toMatch(/candidate\(s\) 1,/);
+      });
     });
   });
 

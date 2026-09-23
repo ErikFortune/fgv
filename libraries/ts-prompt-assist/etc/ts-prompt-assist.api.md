@@ -211,6 +211,7 @@ export interface IExpectedQualifierAxis {
     readonly description?: string;
     // (undocumented)
     readonly name: AxisName;
+    readonly stability?: PromptCacheStability;
     // (undocumented)
     readonly suggestedValues?: ReadonlyArray<string>;
 }
@@ -312,10 +313,12 @@ export interface IPromptCacheFinding {
 export interface IPromptCacheStabilityAnalysisParams {
     readonly callSiteOverrides?: ReadonlyMap<SlotName, PromptCacheStability>;
     readonly candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>;
+    readonly candidates?: ReadonlyArray<IPromptCandidateRecord>;
     readonly mergedBindings: ReadonlyMap<SlotName, IBindingTraceEntry>;
     // (undocumented)
     readonly options?: IPromptCacheDiagnosticOptions;
     readonly prefaceStability?: PromptCacheStability;
+    readonly qualifiers?: IPromptQualifierMetadata;
     readonly resourceBindingResolutions: ReadonlyArray<IResourceBindingTraceEntry>;
     readonly sections: ReadonlyArray<IPromptSection>;
     readonly slots: ReadonlyArray<IPromptSlot>;
