@@ -213,16 +213,17 @@ function _stale<T>(identity: ITaskMutationIdentity, found: ITaskCommitRecord | u
  * @remarks
  * The order is the authorization contract:
  *
- * 1. read the subject; not visible → the same failure as a foreign id;
- * 2. an operation already recorded under this id replays (re-authorized) or conflicts;
- * 3. unresolved and archived subjects take no catalog change; operation-specific admission;
- * 4. a stale expected revision is refused;
- * 5. authorize the action on the subject and on every related task in its role, capturing the
- *    policy epoch first;
- * 6. inside the serialized writer: refuse if the epoch moved or any authorized record changed,
+ * 1. read the subject and capture the policy epoch, before any question is put to the policy;
+ * 2. not visible → the same failure as a foreign id;
+ * 3. an operation already recorded under this id replays (re-authorized) or conflicts;
+ * 4. authorize the action on the subject — before anything action-specific is disclosed;
+ * 5. unresolved and archived subjects take no catalog change; operation-specific admission; a
+ *    stale expected revision is refused;
+ * 6. authorize every related task in its role;
+ * 7. inside the serialized writer: refuse if the epoch moved or any authorized record changed,
  *    evaluate against the records as they are now, and commit.
  *
- * Nothing between 5 and 6 is trusted: step 6 re-reads everything step 5 authorized.
+ * Nothing before 7 is trusted: step 7 re-reads everything the earlier steps authorized.
  * @internal
  */
 export async function runCatalogMutation<TReceipt extends ITaskMutationResult>(
@@ -237,12 +238,24 @@ export async function runCatalogMutation<TReceipt extends ITaskMutationResult>(
   }
   const record: ITaskCommitRecord = read.value;
   const subject: AccessSubject = subjectOf(record);
+  // The epoch is captured before the first question is put to the policy, so every answer this
+  // operation relies on — visibility, the action, each related task — is covered by the recheck
+  // inside the writer.
+  const epoch = ctx.epoch();
+  if (epoch.isFailure()) {
+    return propagate(epoch);
+  }
   if (!(await ctx.sees(subject))) {
     return notFound(taskId, operationId);
   }
   const replayed: IStoredTaskOperation | undefined = storedOperation(record, operationId);
   if (replayed !== undefined) {
     return replayCatalog(ctx, subject, replayed, mutation);
+  }
+  // Authority is decided before any mutation-specific fact about the task is disclosed: a
+  // principal that may read but not perform this action learns nothing from the refusal.
+  if (!(await ctx.may(mutation.action, subject, 'subject', mutation.access))) {
+    return denied(taskId, mutation.action, operationId);
   }
   if (record.recordType === 'unresolved') {
     return taskFailure(
@@ -268,14 +281,6 @@ export async function runCatalogMutation<TReceipt extends ITaskMutationResult>(
   }
   if (revisionOf(record) !== expectedRevision) {
     return _stale(mutation.identity, record);
-  }
-
-  const epoch = ctx.epoch();
-  if (epoch.isFailure()) {
-    return propagate(epoch);
-  }
-  if (!(await ctx.may(mutation.action, subject, 'subject', mutation.access))) {
-    return denied(taskId, mutation.action, operationId);
   }
   const related = mutation.related !== undefined ? await mutation.related(record) : ok([]);
   if (related.isFailure()) {

@@ -443,6 +443,91 @@ describe('policy revocation between check and commit', () => {
   });
 });
 
+describe('authority is decided before anything action-specific is disclosed', () => {
+  test('a reader without the action learns only that it is not permitted', async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 't');
+    await succeedTask(h, h.writer, 't');
+    (await h.writer.archive({ taskId: tid('t'), operationId: op(), expectedRevision: rev(2) })).orThrow();
+    await track(h.writer, 'open');
+    await registerVendor(h, 'u', { unresolved: true });
+    h.policy.deny.push((r) => r.action !== 'read');
+    // Without the refusal order, each of these would disclose a fact about the task: archived,
+    // not a list, unresolved, stale revision.
+    expect(
+      await h.writer.reassign({
+        taskId: tid('t'),
+        operationId: op(),
+        expectedRevision: rev(3),
+        responsibility: ada
+      })
+    ).toFailWith(/'reassign' is not permitted/);
+    expect(
+      await h.writer.completeList({
+        taskId: tid('open'),
+        operationId: op(),
+        expectedRevision: rev(9),
+        outcome: { summary: 's', artifacts: [] }
+      })
+    ).toFailWith(/'complete-list' is not permitted/);
+    expect(
+      await h.writer.reassign({
+        taskId: tid('u'),
+        operationId: op(),
+        expectedRevision: rev(1),
+        responsibility: ada
+      })
+    ).toFailWith(/'reassign' is not permitted/);
+    for (const id of ['t', 'u']) {
+      expect(
+        await h.writer.execute({
+          taskId: tid(id),
+          operationId: op(),
+          expectedRevision: rev(1),
+          command: 'start',
+          parameters: {}
+        })
+      ).toSucceedWith(expect.objectContaining({ result: { state: 'rejected', reason: 'denied' } }));
+    }
+  });
+
+  test('a policy change during a parent check refuses the creation it would have allowed', async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 'p');
+    const policy = h.policy;
+    policy.afterDecision = (request) => {
+      if (request.role === 'parent') {
+        policy.afterDecision = undefined;
+        policy.epoch = 'epoch-2';
+      }
+    };
+    expect(
+      await h.writer.createTracked({ taskId: tid('c'), operationId: op(), title: 'c', parentId: tid('p') })
+    ).toFailWith(/authorization policy changed after the operation was authorized/);
+    expect(await h.repository.readCommit(tid('c'))).toSucceedWith(undefined);
+  });
+
+  test('a policy change during the visibility check refuses the mutation it would have allowed', async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 't');
+    const policy = h.policy;
+    policy.afterDecision = (request) => {
+      if (request.action === 'read') {
+        policy.afterDecision = undefined;
+        policy.epoch = 'epoch-2';
+      }
+    };
+    expect(
+      await h.writer.reassign({
+        taskId: tid('t'),
+        operationId: op(),
+        expectedRevision: rev(1),
+        responsibility: ada
+      })
+    ).toFailWith(/authorization policy changed/);
+  });
+});
+
 describe('view cursors', () => {
   let h: IBrokerHarness;
   let cursor: PageCursor;

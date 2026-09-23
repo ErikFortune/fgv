@@ -131,6 +131,12 @@ export async function createNative(
     ...(request.responsibility !== undefined ? { targetResponsibility: request.responsibility } : {})
   };
 
+  // Captured before the first question is put to the policy, so the recheck inside the writer
+  // covers every answer this creation relies on — the parent's included.
+  const epoch = ctx.epoch();
+  if (epoch.isFailure()) {
+    return propagate(epoch);
+  }
   const existing = await core.repository.readCommit(taskId);
   if (existing.isFailure()) {
     return propagate(existing);
@@ -152,6 +158,9 @@ export async function createNative(
       ? _committedReceipt(core, record)
       : denied(taskId, 'create', operationId);
   }
+  if (!(await ctx.mayCreate(access))) {
+    return denied(taskId, 'create', operationId);
+  }
   if (scopes.length === 0) {
     return taskFailure(`${operation}: this view has no creation scopes`, 'invalid', 'after-host-action', {
       operationId
@@ -169,13 +178,6 @@ export async function createNative(
       return propagate(open);
     }
     parent = read.value;
-  }
-  const epoch = ctx.epoch();
-  if (epoch.isFailure()) {
-    return propagate(epoch);
-  }
-  if (!(await ctx.mayCreate(access))) {
-    return denied(taskId, 'create', operationId);
   }
 
   return core.gated(async (writer) => {

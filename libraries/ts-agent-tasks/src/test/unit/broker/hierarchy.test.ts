@@ -120,7 +120,7 @@ describe('creation under a parent', () => {
     const other = bindWriter(h, { principal: 'bob' });
     const policy = h.policy;
     policy.afterDecision = async (request) => {
-      if (request.action === 'create' && request.role === 'subject') {
+      if (request.action === 'create' && request.role === 'parent') {
         policy.afterDecision = undefined;
         await succeedTask(h, other, 'p');
       }

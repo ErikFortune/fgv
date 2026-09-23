@@ -82,11 +82,12 @@ type Prepared =
  */
 function _prepare(
   core: BrokerCore,
-  record: IResolvedTaskCommitRecord,
+  record: ITaskCommitRecord,
   request: ICommandRequest
 ): TaskResult<{ readonly prepared: Prepared; readonly stored: ICommandRequest }> {
-  if (!isNativeKind(record.task.envelope)) {
-    // An external task's commands are dispatched to its source, which T6 implements.
+  // An unresolved registration, and an external task — whose commands are dispatched to its source,
+  // which T6 implements — support none.
+  if (record.recordType === 'unresolved' || !isNativeKind(record.task.envelope)) {
     return ok({ prepared: { kind: 'refuse', reason: 'unsupported' }, stored: request });
   }
   if (!trackedTaskCommandNames.includes(request.command as TrackedTaskCommandName)) {
@@ -144,31 +145,30 @@ export async function execute(
   }
   const record: ITaskCommitRecord = read.value;
   const subject: AccessSubject = subjectOf(record);
+  // Captured before the first question is put to the policy, so the recheck inside the writer
+  // covers every answer this command relies on.
+  const epoch = ctx.epoch();
+  if (epoch.isFailure()) {
+    return propagate(epoch);
+  }
   if (!(await ctx.sees(subject))) {
     return notFound(taskId, operationId);
   }
-  if (record.recordType === 'unresolved') {
-    // An unresolved registration never authorizes execution commands; its one operation is its
-    // registration, so a reused key can only conflict.
-    const registration: IStoredTaskOperation | undefined = storedOperation(record, operationId);
-    return registration !== undefined
-      ? _replay(ctx, subject, registration, request)
-      : _rejected(request, 'unsupported');
-  }
   // Replay compares the request as it was stored, so a native task's parameters are converted
-  // first; a request whose parameters cannot convert can never equal a stored one.
+  // first; a request whose parameters cannot convert can never equal a stored one. An unresolved
+  // registration's one operation is its registration, so a reused key there can only conflict.
   const prepared = _prepare(core, record, request);
   const stored: IStoredTaskOperation | undefined = storedOperation(record, operationId);
   if (stored !== undefined) {
     return _replay(ctx, subject, stored, prepared.isSuccess() ? prepared.value.stored : request);
   }
-  const epoch = ctx.epoch();
-  if (epoch.isFailure()) {
-    return propagate(epoch);
-  }
-  // Command authority is decided before anything else about the command, archived or not.
+  // Command authority is decided before anything else about the command is disclosed.
   if (!(await ctx.may('command', subject, 'subject', { command: request.command }))) {
     return _rejected(request, 'denied');
+  }
+  if (record.recordType === 'unresolved') {
+    // An unresolved registration never authorizes execution commands, and takes no write.
+    return _rejected(request, 'unsupported');
   }
   if (record.archived) {
     // A tombstone takes no write at all, so this refusal cannot be recorded; it holds no key.

@@ -551,7 +551,7 @@ describe('request and precondition refusals on every operation', () => {
     }
   });
 
-  test('a stale expected revision is refused before authorization', async () => {
+  test('a stale expected revision is refused after the action is authorized', async () => {
     h.policy.calls.splice(0);
     expect(
       await h.writer.reassign({
@@ -561,7 +561,7 @@ describe('request and precondition refusals on every operation', () => {
         responsibility: ada
       })
     ).toFailWith(/expected revision 5, found resolved revision 1/);
-    expect(h.policy.calls.map((c) => c.action)).toEqual(['read']);
+    expect(h.policy.calls.map((c) => c.action)).toEqual(['read', 'reassign']);
   });
 
   test('only a terminal task can be archived', async () => {

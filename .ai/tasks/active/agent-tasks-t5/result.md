@@ -229,3 +229,15 @@ Every step `.github/workflows/ci.yml` runs, run locally on the final source:
 | `verify-tarball-exports.mjs` | 26 packages, 205 paths, 0 failed |
 
 **Layer 2 (Copilot) is driven on the PR**; its record is appended below as it happens.
+
+### Copilot round 1 — 1 high, 1 medium, 1 low; all real, all fixed as a class
+
+| finding | fix |
+|---|---|
+| **(high)** child creation captured the policy epoch *after* the parent's visibility/authority checks, so a policy change during a parent check was invisible to the in-writer recheck | fixed for **every** operation, not only creation: the epoch is captured before the first question is put to the policy (catalog pipeline, commands, creation). Tests: an epoch bumped during a parent check refuses the creation; one bumped during the visibility check refuses a mutation. Reverting the creation fix turns 2 tests red |
+| **(medium)** the catalog pipeline ran admission (unresolved, archived, not-a-list, stale revision) before `may(action)`, so a principal with read but not the action learned mutation-specific facts — the same class layer-1 P2 #1 found in `execute` | authority is now decided before anything action-specific in the catalog pipeline, commands (unresolved included) and creation (before scopes and parent checks). Test: a reader without any action gets `not permitted`/`denied` from an archived, unresolved, non-list or stale target. Reverting turns 2 tests red |
+| **(low)** `docs/WORKSTREAMS.md` still said T5 was not started | the T5 entry now carries the shipped marker for #691, anticipating merge per the artifact protocol |
+
+The layer-1 P2 and Copilot's medium are one defect class found twice: an ordering in which a
+refusal can disclose state before authority is decided. The fix is now uniform across entry points.
+Package after the round: 1,143 tests, 100% on all four metrics, lint clean.

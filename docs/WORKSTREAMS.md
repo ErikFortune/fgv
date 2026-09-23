@@ -128,10 +128,13 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-t5` 🔵 (slice T5 of the agent-tasks plan)
+### `agent-tasks-t5` ✅ (slice T5 of the agent-tasks plan) — landed on the integration branch via [#691](https://github.com/ErikFortune/fgv/pull/691)
 
-**Status:** 🔵 in flight — branch created off `integration/agent-tasks-v1` at `536858eb9`, brief
-written, not yet started. Artifacts at `.ai/tasks/active/agent-tasks-t5/`.
+**Status:** ✅ shipped 2026-09-23 via [#691](https://github.com/ErikFortune/fgv/pull/691) into
+`integration/agent-tasks-v1` (not `release`; the cluster promotes as one). `TaskBroker` with
+authorization re-verified inside the serialized writer, fail-closed projection, the tracked
+transition table, list completion over a rebuilt candidate index, hierarchy integrity and
+responsibility-only reassignment; no new A3 reservation. Record: `.ai/tasks/active/agent-tasks-t5/result.md`.
 
 **Mission.** The broker layer over T4's indexed storage: host-bound views and sanitized
 projections, create/update of tracked work, task-list completion, scopes and graph integrity,
