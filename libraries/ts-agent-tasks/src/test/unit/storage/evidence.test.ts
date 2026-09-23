@@ -1283,3 +1283,50 @@ describe('copilot round 8: write-path invariants re-checked where records are tr
     ]);
   });
 });
+
+describe('coderabbit review', () => {
+  test('a commit purpose is validated, not trusted, and so is its operation id', async () => {
+    const repository = await initialized(memoryRoot() as Root);
+    const created = (await repository.withWriter((w) => w.register(registration('t1')))).orThrow();
+    const base = {
+      taskId: t1,
+      expectedRevision: rev(1),
+      expectedRecordRevision: 1,
+      record: nextDraft(created, { envelope: envelope('t1', 2, { lifecycle: { status: 'running' } }) })
+    };
+    expect(
+      await repository.withWriter((w) => w.commit({ ...base, purpose: 'bogus' } as never))
+    ).toFailWithDetail(/commit: .*bogus/i, code('invalid'));
+    expect(
+      await repository.withWriter((w) =>
+        w.commit({ ...base, purpose: 'operation', operationId: 'x'.repeat(500) as OperationId })
+      )
+    ).toFailWithDetail(/commit: .*operation/i, code('invalid'));
+    // Nothing moved.
+    expect((await repository.readCommit(t1)).orThrow()!.recordRevision).toBe(1);
+  });
+
+  test('raising a per-record bound re-limits the records already held, at once', async () => {
+    const probeRoot = memoryRoot() as Root;
+    const probe = await initialized(probeRoot);
+    (await probe.withWriter((w) => w.register(unresolvedRegistration('u1')))).orThrow();
+    const row = (repository: ITaskRepository): { used: number; reserved: number; limit: number } =>
+      repository
+        .capacityStatus()
+        .orThrow()
+        .dimensions.find((d) => d.dimension === 'record-bytes')!;
+    const exact: number = row(probe).used + row(probe).reserved;
+    const tight = {
+      ...defaultTaskCapacityProfile,
+      encoded: { ...defaultTaskCapacityProfile.encoded, maxTaskRecordBytes: exact }
+    };
+    const repository = (
+      await FileTreeTaskRepository.initialize(params(memoryRoot(), 'session', { profile: tight }))
+    ).orThrow();
+    (await repository.withWriter((w) => w.register(unresolvedRegistration('u1')))).orThrow();
+    expect(row(repository).limit).toBe(exact);
+    const raised = { ...tight, encoded: { ...tight.encoded, maxTaskRecordBytes: exact + 1000 } };
+    expect(await repository.withWriter((w) => w.raiseCapacityLimits(raised))).toSucceed();
+    expect(row(repository).limit).toBe(exact + 1000);
+  });
+});

@@ -179,8 +179,8 @@ every step `ci.yml` runs.
 [#686](https://github.com/ErikFortune/fgv/pull/686): `FileTreeTaskRepository`, the `storage`
 packlet, storage record/inventory converters, and the T1 revisions (`first-resolution` claim
 purpose, claim charges that shrink as spent, `taskUpdateId`). Durable mode rests on a real-Node
-crash matrix on ext4 and tmpfs and 68 mutations watched to fail (26 from implementation, 42 from
-eight Copilot review rounds). Carried forward: claim audiences
+crash matrix on ext4 and tmpfs and 70 mutations watched to fail (26 from implementation, 44 from
+eight Copilot rounds and one CodeRabbit review). Carried forward: claim audiences
 are empty until T7's subscriptions expand them; archive's release of acknowledgement reservations
 is safe only once T8 gates archive on acknowledgement; consumer/source record content is T6/T7's;
 two session repositories over one real directory through two items are not detected until

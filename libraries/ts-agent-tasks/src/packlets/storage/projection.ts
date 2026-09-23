@@ -100,6 +100,26 @@ export function taskRecordLimit(profile: ITaskCapacityProfile): number {
 }
 
 /**
+ * The per-record ceiling of any ledger entry, by its key: the manifest, a consumer or source
+ * record, or a task record. The one place the mapping lives, so an entry built at open and an
+ * entry re-limited after `raiseCapacityLimits` cannot disagree.
+ * @internal
+ */
+export function recordLimitFor(key: string, profile: ITaskCapacityProfile): number {
+  const cap: number = profile.limits['record-bytes'];
+  if (key === 'repository') {
+    return Math.min(cap, profile.encoded.maxInventoryRecordBytes);
+  }
+  if (key.startsWith('consumer:')) {
+    return Math.min(cap, profile.encoded.maxConsumerRecordBytes);
+  }
+  if (key.startsWith('source:')) {
+    return Math.min(cap, profile.encoded.maxSourceRecordBytes);
+  }
+  return taskRecordLimit(profile);
+}
+
+/**
  * A task record's usage, as the ledger counts it.
  *
  * @remarks
@@ -172,12 +192,7 @@ export function manifestEntry(bytes: number, profile: ITaskCapacityProfile): ILe
   const used: DimensionAmounts = zeroAmounts();
   used['record-bytes'] = bytes;
   used['logical-bytes'] = bytes;
-  return ledgerEntry(
-    'repository',
-    used,
-    [],
-    Math.min(profile.limits['record-bytes'], profile.encoded.maxInventoryRecordBytes)
-  );
+  return ledgerEntry('repository', used, [], recordLimitFor('repository', profile));
 }
 
 /**
@@ -194,7 +209,5 @@ export function opaqueEntry(
   used[kind === 'consumer' ? 'subscriptions' : 'sources'] = 1;
   used['record-bytes'] = bytes;
   used['logical-bytes'] = bytes;
-  const limit: number =
-    kind === 'consumer' ? profile.encoded.maxConsumerRecordBytes : profile.encoded.maxSourceRecordBytes;
-  return ledgerEntry(id, used, [], Math.min(profile.limits['record-bytes'], limit));
+  return ledgerEntry(id, used, [], recordLimitFor(`${kind}:${id}`, profile));
 }

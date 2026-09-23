@@ -37,7 +37,8 @@ const params = { root, mode: { durable: 'process-crash' }, environment, registry
 
 // Once, into an empty root:
 const repository = (await FileTreeTaskRepository.initialize(params)).orThrow();
-// Afterwards:
+// Afterwards (a root is held by one instance at a time, so close before reopening):
+repository.close();
 const opened = (await FileTreeTaskRepository.open(params)).orThrow();
 if (opened.state === 'recovery-required') { /* inspect opened.recovery.report; nothing is writable */ }
 ```

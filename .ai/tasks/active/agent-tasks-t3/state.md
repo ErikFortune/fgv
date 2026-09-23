@@ -177,3 +177,8 @@ on diminishing returns and request CodeRabbit.
 Four high (all read-path re-checks of write-path invariants), fixed; M65–M68 red; 787 tests.
 Copilot loop stopped after 8 rounds on diminishing returns (reasoning in result.md). Next: one
 `@coderabbitai review`, then address its findings.
+
+## 2026-09-23 — CodeRabbit review addressed
+
+Retry at 04:16Z ran; three minor findings, all real, fixed; M69–M70 red; 789 tests. Review
+layers complete: code-reviewer, Copilot (8 rounds, stopped on diminishing returns), CodeRabbit.

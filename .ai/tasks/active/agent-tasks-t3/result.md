@@ -208,6 +208,8 @@ round-4 head (d2643334), after two whose target lines had moved (M21, M34) were 
 | M66 | a replacement may reorder the creation operation | 1 |
 | M67 | open ignores the per-task operation limit | 2 |
 | M68 | open completion accepts a later record revision | 1 |
+| M69 | raising a profile leaves existing record limits stale | 1 |
+| M70 | commit purpose and operation id are trusted | 1 |
 
 **Three findings came from the exercise rather than from the suite:**
 
@@ -279,7 +281,7 @@ Every step `.github/workflows/ci.yml` runs, run locally on the final code:
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint run before the final commit |
-| `rushx test` (package) | **787 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
+| `rushx test` (package) | **789 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
 | `rush rebuild` (repo-wide) | `SUCCESS: 37 operations`, exit 0, no warnings |
 | `rush test` (repo-wide) | `SUCCESS: 36 operations`, exit 0 |
 | `verify-capability-docs.mjs` | router 19,587/24,000, 24/24 documented, 75 reflexes, 0 failed |
@@ -404,4 +406,15 @@ a regression of the previous round's own fix. Round 8 is entirely the first kind
 enumerable but unbounded in the loop's terms — each round names the next invariant — and each
 item guards only against out-of-band edits, which open already reports and never repairs. The
 loop has stopped yielding protocol findings; CodeRabbit gets its single review next.
+
+### CodeRabbit — one review, 3 minor findings, all fixed
+
+The first `@coderabbitai review` (03:12Z) reported "Review failed" with no reason; the one retry an
+hour later (04:16Z) ran and reviewed the full diff.
+
+| finding | fix |
+|---|---|
+| the `CAPABILITIES.md` example reopened a root the initialized repository still held | the example closes before reopening |
+| `raiseCapacityLimits` left every existing ledger entry's per-record ceiling at the old profile's value, so status stayed `draining` until a rewrite or reopen | `CapacityLedger.setProfile` re-limits every entry through `recordLimitFor(key, profile)` — now the single key→ceiling mapping, used when entries are built too |
+| `_commit` trusted `purpose` and `operationId` at runtime; a caller outside the types could send a purpose none of the checks key on | a discriminated converter validates the purpose and converts the operation id before anything else |
 

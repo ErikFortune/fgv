@@ -4,7 +4,7 @@
  */
 
 import { FileTree } from '@fgv/ts-json-base';
-import { Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
 import { TaskConverters } from '../converters';
 import {
   IPendingInventoryEntry,
@@ -74,11 +74,18 @@ import {
   pendingEntry,
   projectRecord,
   taskKey,
+  recordLimitFor,
   taskRecordLimit,
   taskUsage
 } from './projection';
 import { RecordStore } from './recordStore';
 import { IRootOwnership } from './rootOwnership';
+
+/** The validated purpose of a commit, and the operation it records when there is one. */
+interface ICommitKind {
+  readonly purpose: ITaskCommitRequest['purpose'];
+  readonly operationId?: OperationId;
+}
 
 interface IReadRecord {
   readonly record: ITaskCommitRecord;
@@ -132,6 +139,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
   private readonly _ledger: CapacityLedger;
   private _manifest: ITaskRepositoryManifest;
   private _manifestFingerprint: string;
+  /**
+   * Validates a commit's purpose rather than trusting it: a commit that is none of the three
+   * would pass every purpose-keyed check as if it were an unevidenced semantic change.
+   */
+  private readonly _commitKind: Converter<ICommitKind>;
   private _state: ITaskRepositoryHealth['state'];
   private _generation: number;
   private readonly _issues: string[];
@@ -151,6 +163,14 @@ export class FileTreeTaskRepository implements ITaskRepository {
     this._ledger = state.ledger;
     this._manifest = state.manifest;
     this._manifestFingerprint = fingerprintOf(state.manifestText);
+    this._commitKind = Converters.discriminatedObject<ICommitKind>('purpose', {
+      operation: Converters.object<ICommitKind>({
+        purpose: Converters.literal('operation'),
+        operationId: state.converters.ids.operationId
+      }),
+      observation: Converters.object<ICommitKind>({ purpose: Converters.literal('observation') }),
+      maintenance: Converters.object<ICommitKind>({ purpose: Converters.literal('maintenance') })
+    });
     this._state = 'ready';
     this._generation = 0;
     this._issues = [];
@@ -618,17 +638,22 @@ export class FileTreeTaskRepository implements ITaskRepository {
 
   private _commit(request: ITaskCommitRequest): TaskResult<ITaskCommitRecord> {
     const converters: TaskConverters = this._converters;
-    const inputs: Result<{ taskId: TaskId; draft: ITaskRecordDraft }> = converters.ids.taskId
-      .convert(request.taskId)
-      .onSuccess((taskId) =>
-        converters.storage.draft.convert(request.record).onSuccess((draft) => ok({ taskId, draft }))
-      );
+    const inputs: Result<{ taskId: TaskId; draft: ITaskRecordDraft; operationId: OperationId | undefined }> =
+      converters.ids.taskId
+        .convert(request.taskId)
+        .onSuccess((taskId) =>
+          this._commitKind
+            .convert(request)
+            .onSuccess((converted) =>
+              converters.storage.draft
+                .convert(request.record)
+                .onSuccess((draft) => ok({ taskId, draft, operationId: converted.operationId }))
+            )
+        );
     if (inputs.isFailure()) {
       return taskFailure(`commit: ${inputs.message}`, 'invalid', 'after-host-action');
     }
-    const { taskId, draft } = inputs.value;
-    const operationId: OperationId | undefined =
-      request.purpose === 'operation' ? request.operationId : undefined;
+    const { taskId, draft, operationId } = inputs.value;
     const projection: ITaskProjection | undefined = this._tasks.get(taskId);
     if (projection === undefined) {
       return taskFailure(`commit ${taskId}: no live task`, 'not-found-or-denied', 'after-host-action');
@@ -893,7 +918,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
         .onSuccess(() => this._writeFile(manifestName, encoded.text, undefined))
         .onSuccess(() => {
           this._setManifest(manifest);
-          this._ledger.setProfile(profile);
+          this._ledger.setProfile(profile, (key) => recordLimitFor(key, profile));
           this._ledger.apply(new Map([['repository', manifestEntry(encoded.bytes, profile)]]));
           this._generation++;
           return ok(profile);

@@ -119,8 +119,16 @@ export class CapacityLedger {
     this._entries = new Map<string, ILedgerEntry>([['repository', manifest]]);
   }
 
-  public setProfile(profile: ITaskCapacityProfile): void {
+  /**
+   * Replaces the governing profile. Every entry's per-record ceiling was computed from the old
+   * one, so each is re-limited by `recordLimitOf` from its key: a raised bound must be visible
+   * to status and admission at once, not only after the record is next rewritten or reopened.
+   */
+  public setProfile(profile: ITaskCapacityProfile, recordLimitOf: (key: string) => number): void {
     this._profile = profile;
+    for (const [key, entry] of this._entries) {
+      this._entries.set(key, { ...entry, recordLimit: recordLimitOf(key) });
+    }
   }
 
   /** Applies a change that has already been admitted and committed. */
