@@ -49,4 +49,4 @@ keywords:
   - callProxiedCompletionStream cache forwarding
   - per-round cache validation
   - x-grok-conv-id streaming
-sourceHash: 180c11d3263e0e00 # sha256/16 over brief.md, result.md, state.md
+sourceHash: d4289f49e427ae34 # sha256/16 over brief.md, result.md, state.md

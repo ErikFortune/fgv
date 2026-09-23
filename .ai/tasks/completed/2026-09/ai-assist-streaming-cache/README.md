@@ -32,11 +32,15 @@ the prior `ai-assist-prompt-caching` stream's own exit record named explicitly a
   gates `cache` at its `'openai'` case exactly as the non-streaming dispatcher does.
 - `libraries/ts-extras/src/packlets/ai-assist/streamingAdapters/proxy.ts` —
   `callProxiedCompletionStream` forwards `cache` as a plain `body.cache` field.
-- `libraries/ts-extras/src/test/unit/ai-assist/streamingCache.test.ts` — new, 22 tests, sibling
+- `libraries/ts-extras/src/test/unit/ai-assist/streamingCache.test.ts` — new, 21 tests, sibling
   to `apiClient.cache.test.ts`.
 - `libraries/ts-extras/CAPABILITIES.md` — extended the "Prompt-cache breakpoint emission"
   paragraph with the streaming extension.
 - `common/changes/@fgv/ts-extras/ai-assist-streaming-cache_2026-09-23-00-00.json`.
+- `libraries/ts-extras/etc/ts-extras.api.md` — the two new `cache?` fields (and, with them, two
+  new `ae-unresolved-link` warnings; 368 → 370).
+- `docs/WORKSTREAMS.md` + `docs/workstreams/2026-09.md` — this stream's ledger entry, archived to
+  the month file per the shipped-streams rule rather than left in `Active workstreams`.
 
 ## Per-phase summaries
 

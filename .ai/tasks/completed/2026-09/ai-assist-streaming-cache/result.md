@@ -101,8 +101,14 @@ to `callProviderCompletionStream` on the server side.
       closing) — **Approved, no P1/P2 findings.** Full report quoted in the PR description /
       available in session transcript. Two P3/advisory notes, both "nothing to fix, flagging for
       awareness": the `ae-unresolved-link` warnings on the two new `cache?` fields in
-      `etc/ts-extras.api.md` are the same pre-existing pattern the non-streaming
-      `IProviderCompletionParams.cache` field already carries (not new drift), and the test file's
+      `etc/ts-extras.api.md` follow the same pre-existing `{@link AiAssist.<Symbol>}` pattern the
+      non-streaming `IProviderCompletionParams.cache` field already carries. **Corrected 2026-09-23
+      after Copilot raised it:** the *pattern* is pre-existing, but these two *warnings* are new —
+      the file goes 368 → 370. The original wording here ("not new drift") overstated that and is
+      wrong as written. The fields are still left as they are, on sibling-consistency grounds (94
+      uses of the form in this packlet; changing 2 would document the same type two ways one line
+      apart in the report), and moving the family to a resolvable form is its own chore. And the
+      test file's
       `if (result.isFailure()) return;` narrowing style matches the sibling `apiClient.cache.test.ts`
       convention rather than `toSucceedAndSatisfy` (necessary here since the assertion is on a
       mocked `fetch` call, a side effect, not on the `Result`'s own value).
