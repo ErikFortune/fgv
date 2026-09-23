@@ -52,7 +52,11 @@ const MANIFEST = {
   amendments: [
     '2026-09-23, after a one-repetition shakeout run and before any recorded run: the peak fixture ' +
       'was 1,100 x 60,000 bytes = 66,000,000 bytes, under its own stated 64 MiB precondition, and the ' +
-      "harness's precondition check refused it. The fixture count was raised to 1,200; no threshold changed."
+      "harness's precondition check refused it. The fixture count was raised to 1,200; no threshold changed.",
+    '2026-09-23, after the first recorded run (all predictions held): the post-close residual is not a ' +
+      'prediction, but it was inflated because the measuring child still held the repository through ' +
+      "open's result and the inspection. Both references are now dropped before the after-close sample, " +
+      'and every arm was re-run so all reported numbers come from one harness version.'
   ],
   predictions: {
     fixture:
@@ -430,7 +434,7 @@ async function measure(dir, variant) {
   const { pkg, internals } = lib();
   const baseline = settle();
   const peak = { heapUsed: 0 };
-  const opened = (
+  let opened = (
     await pkg.FileTreeTaskRepository.open({
       root: sampledRoot(dir, peak),
       mode: { durable: 'process-crash' },
@@ -447,9 +451,11 @@ async function measure(dir, variant) {
     );
   }
   let repository = opened.repository;
+  // The open result holds the repository too; drop it, or "after close" measures the harness.
+  opened = undefined;
   const openPeak = peak.heapUsed;
   const afterOpen = settle();
-  const inspection = internals.inspectRepository(repository);
+  let inspection = internals.inspectRepository(repository);
   const shape = {
     projections: inspection.projections.size,
     summaries: inspection.index.summaries.size,
@@ -465,7 +471,7 @@ async function measure(dir, variant) {
   const hotReads = inspection.reads.task - readsBefore;
 
   const out = { variant, baseline, afterOpen, openPeak, shape, hotReads };
-  const ids = [...inspection.projections.keys()];
+  let ids = [...inspection.projections.keys()];
 
   if (variant === 'full-summary-control') {
     // Perf-only control: what retaining every archived task's full summary and details costs.
@@ -511,6 +517,8 @@ async function measure(dir, variant) {
   }
   repository.close().orThrow();
   repository = undefined;
+  inspection = undefined;
+  ids = undefined;
   out.afterClose = settle();
   out.maxRssKiB = process.resourceUsage().maxRSS;
   return out;
