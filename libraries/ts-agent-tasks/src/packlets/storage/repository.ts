@@ -200,7 +200,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     this._evidence = state.evidence;
     this._gate = state.gate;
     this._cache = new RecordCache(state.recordCache);
-    this._cursors = new CursorTable(state.environment);
+    this._cursors = new CursorTable(state.environment, state.converters.ids.identifier);
     this._visits = { candidateVisits: 0 };
     registerInspector(this, () => ({
       reads: this._store.reads,
@@ -571,6 +571,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
     // open it and interleave commits with the first.
     if (this._writer !== undefined) {
       return taskFailure('close: a writer callback is active; close after it returns', 'conflict', 'safe');
+    }
+    // A rebuild is between reads of the root it holds; releasing it mid-scan would let the scan
+    // publish a ready generation over a root this instance no longer owns.
+    if (this._state === 'rebuilding') {
+      return taskFailure('close: a rebuild is in progress; close after it returns', 'conflict', 'safe');
     }
     this._state = 'closed';
     this._writer = undefined;

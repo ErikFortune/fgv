@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result } from '@fgv/ts-utils';
+import { Converter, Result } from '@fgv/ts-utils';
 import { ITaskCommitRecord, ITaskEnvironment, PageCursor, TaskId, TaskResult } from '../types';
 import { mintId, ok, taskFailure } from './failures';
 import { IEncodedRecord } from './layout';
@@ -63,8 +63,11 @@ export class CursorTable {
   private _epoch: string | undefined;
   private _sequence: number = 0;
 
-  public constructor(environment: ITaskEnvironment) {
+  private readonly _identifier: Converter<string>;
+
+  public constructor(environment: ITaskEnvironment, identifier: Converter<string>) {
     this._environment = environment;
+    this._identifier = identifier;
   }
 
   public get size(): number {
@@ -77,6 +80,16 @@ export class CursorTable {
       const minted: Result<string> = mintId(this._environment);
       if (minted.isFailure()) {
         return taskFailure(`cursor: ${minted.message}`, 'storage-unavailable', 'safe');
+      }
+      // The host's ID factory promises uniqueness, not syntax: a token must round-trip through
+      // the page-cursor converter, so the epoch must be a bounded identifier.
+      const valid: Result<string> = this._identifier.convert(minted.value);
+      if (valid.isFailure()) {
+        return taskFailure(
+          `cursor: the host ID factory minted ${valid.message}`,
+          'invalid',
+          'after-host-action'
+        );
       }
       this._epoch = minted.value;
     }

@@ -469,3 +469,56 @@ describe('open-time source identity', () => {
     ).rejects.toThrow(/dup00001.*already bound to task dup00000/i);
   });
 });
+
+describe('copilot round 1 regressions', () => {
+  test('close is refused while a rebuild holds the root; the rebuild then completes ready', async () => {
+    const { root, repository } = await faultyRepository();
+    await addTask(repository, 'a', { scopes: [A] });
+    let closed: ReturnType<ITaskRepository['close']> | undefined;
+    root.onRead = (name) => {
+      if (name === 'task-a.json' && closed === undefined) {
+        closed = repository.close();
+      }
+    };
+    expect(await repository.rebuildIndexes()).toSucceedAndSatisfy((h) => expect(h.state).toBe('ready'));
+    root.onRead = undefined;
+    expect(closed).toFailWithDetail(
+      /rebuild is in progress/i,
+      expect.objectContaining({ code: 'conflict', retry: 'safe' })
+    );
+    expect(await openTasks(repository)).toEqual(['a']);
+    expect(repository.close()).toSucceedWith(true);
+  });
+
+  test('consumer and source records are parsed inside the materialization gate', async () => {
+    const { root, repository } = await faultyRepository();
+    await addTask(repository, 'a', { scopes: [A] });
+    const manifestFile = root.inner
+      .getChildren()
+      .orThrow()
+      .find((c) => c.name === 'repository.json') as FileTree.IFileTreeFileItem;
+    const manifest = JSON.parse(manifestFile.getRawContents().orThrow());
+    outOfBand(
+      root,
+      'repository.json',
+      JSON.stringify({
+        ...manifest,
+        consumers: [{ id: 's1', state: 'live' }],
+        sources: [{ id: 'acme', state: 'live' }]
+      })
+    );
+    outOfBand(root, 'consumer-s1.json', JSON.stringify({ formatVersion: 1, id: 's1' }));
+    outOfBand(root, 'source-acme.json', JSON.stringify({ formatVersion: 1, id: 'acme' }));
+    const inFlight: Record<string, number> = {};
+    root.onRead = (name) => {
+      inFlight[name] = inspectRepository(repository)!.gate.inFlight;
+    };
+    (await repository.rebuildIndexes()).orThrow();
+    root.onRead = undefined;
+    expect(inFlight['consumer-s1.json']).toBe(1);
+    expect(inFlight['source-acme.json']).toBe(1);
+    expect(inspectRepository(repository)!.evidence).toEqual(
+      expect.objectContaining({ consumerPassReads: 1, sourcePassReads: 1 })
+    );
+  });
+});

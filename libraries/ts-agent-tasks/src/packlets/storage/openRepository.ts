@@ -888,19 +888,28 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
       }
       const limit: number =
         kind === 'consumer' ? profile.encoded.maxConsumerRecordBytes : profile.encoded.maxSourceRecordBytes;
-      const read = _readJson(store, scan, name, Math.min(limit, profile.limits['record-bytes']));
-      if (read === undefined) {
-        continue;
-      }
-      const header = _convertVersioned(
-        converters,
-        scan,
-        name,
-        read.parsed,
-        (from) => converters.storage.header.convert(from),
-        'record-invalid'
-      );
-      if (header === undefined) {
+      // Counted like every other record parse: a re-entrant read from host accessor code during
+      // this pass must see it in flight.
+      const materialized = gate.track(() => {
+        const text = _readJson(store, scan, name, Math.min(limit, profile.limits['record-bytes']));
+        return {
+          read: text,
+          header:
+            text === undefined
+              ? undefined
+              : _convertVersioned(
+                  converters,
+                  scan,
+                  name,
+                  text.parsed,
+                  (from) => converters.storage.header.convert(from),
+                  'record-invalid'
+                )
+        };
+      });
+      const read = materialized.read;
+      const header = materialized.header;
+      if (read === undefined || header === undefined) {
         continue;
       }
       if (header.id !== entry.id) {

@@ -91,6 +91,14 @@ export function sourceKey(binding: ISourceBinding): Result<string> {
   }).onSuccess((encoded) => succeed(encoded.text));
 }
 
+/**
+ * A task's scope keys, each once. The scopes converter admits a repeated scope, and every set
+ * holds a task once, so a membership list with a repeat would be removed twice.
+ */
+function _distinctKeys(scopes: ReadonlyArray<ITaskScope>): string[] {
+  return Array.from(new Set(scopes.map(labelKey)));
+}
+
 function _setIn<K>(map: Map<K, SortedKeySet>, key: K, member: string): void {
   let set: SortedKeySet | undefined = map.get(key);
   if (set === undefined) {
@@ -305,7 +313,7 @@ export class TaskIndex {
       return;
     }
     if (content.category === 'quarantined') {
-      const scopeKeys: string[] = content.archived ? [] : content.scopes.map(labelKey);
+      const scopeKeys: string[] = content.archived ? [] : _distinctKeys(content.scopes);
       for (const scope of scopeKeys) {
         _setIn(this.quarantinedByScope, scope, id);
       }
@@ -314,7 +322,7 @@ export class TaskIndex {
     }
     if (content.category === 'unresolved') {
       const reference: IUnresolvedTaskReference = content.reference;
-      const scopeKeys: string[] = reference.scopes.map(labelKey);
+      const scopeKeys: string[] = _distinctKeys(reference.scopes);
       for (const scope of scopeKeys) {
         _setIn(this.unresolvedByScope, scope, id);
       }
@@ -325,7 +333,7 @@ export class TaskIndex {
 
     const envelope: ITaskEnvelope = content.envelope;
     const status: TaskLifecycleStatus = envelope.lifecycle.status;
-    const scopeKeys: string[] = envelope.scopes.map(labelKey);
+    const scopeKeys: string[] = _distinctKeys(envelope.scopes);
     const lifecycle = envelope.lifecycle;
     const due: string | undefined =
       lifecycle.status === 'waiting' && lifecycle.reason.notBefore !== undefined

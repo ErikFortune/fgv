@@ -271,3 +271,17 @@ Every step `.github/workflows/ci.yml` runs, run locally on the final source:
 | `verify-tarball-exports.mjs` | 26 packages, 205 paths, 0 failed |
 
 **Layer 2 (Copilot) is driven on the PR**; its record is appended below as it happens.
+
+### Copilot round 1 — 2 high, 2 medium, all real, all fixed
+
+| finding | fix |
+|---|---|
+| `close` did not treat `rebuilding` as active: a re-entrant close from accessor code mid-scan released the root, then the scan published `ready` over it | `close` refuses (`conflict`, `safe`) while rebuilding; test closes from inside the scan and asserts the rebuild still completes ready and a later close succeeds |
+| a task naming one scope twice (the scopes converter admits it) was removed twice, dereferencing a deleted set — a successful write became a `commit-indeterminate` fence | scope keys are deduplicated for every category; test changes and archives an `[A, A]` task |
+| the consumer/source pass parsed records outside the materialization gate | the pass runs inside `gate.track`; test observes `inFlight === 1` during both reads |
+| the cursor epoch was the raw host ID, so a non-identifier produced a page whose cursor the next request rejects | the epoch is validated with the identifier converter; a bad one fails `invalid` before any handle is issued |
+
+Both high-severity tests were confirmed red against the pre-fix code, then green. **Evidence
+currency:** the counter suite is part of the package suite and re-ran on this code (901 passing,
+100%). M1 was measured on `31914e3a`; this round changes index bookkeeping (a `Set` per task add)
+and gating, so M1 is re-run at the end of the Copilot loop before its numbers are claimed as final.

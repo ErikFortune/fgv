@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { fail } from '@fgv/ts-utils';
+import { fail, succeed } from '@fgv/ts-utils';
 import {
   FileTreeTaskRepository,
   IDueTaskQuery,
@@ -446,6 +446,28 @@ describe('cursors and change', () => {
     );
   });
 
+  test('a host ID factory that mints a non-identifier cannot produce an unusable cursor', async () => {
+    const { TaskEnvironment } = await import('../../../index');
+    const { environment } = await import('../../helpers/storageFixtures');
+    const base = environment().env;
+    let badIds = false;
+    const env = TaskEnvironment.create({
+      logger: base.logger,
+      clock: base.clock,
+      newId: () => (badIds ? succeed('not an identifier') : base.newId())
+    }).orThrow();
+    const repository = (
+      await FileTreeTaskRepository.initialize(params(memoryRoot(), 'session', { environment: env }))
+    ).orThrow();
+    await addTask(repository, 'a', { scopes: [A] });
+    await addTask(repository, 'b', { scopes: [A] });
+    badIds = true;
+    expect(await repository.query({ selection: select(), limit: 1 })).toFailWithDetail(
+      /host ID factory minted/i,
+      expect.objectContaining({ code: 'invalid' })
+    );
+  });
+
   test('an oversized normalized query is refused before any handle retains it', async () => {
     const { defaultTaskCapacityProfile } = await import('../../../index');
     const profile = {
@@ -697,6 +719,19 @@ describe('index maintenance on mutation', () => {
       expect(r).toEqual(expect.objectContaining({ state: 'resolved', archived: true }));
     });
     expect(taskReads(repository)).toBe(reads + 1);
+  });
+
+  test('a task that names one scope twice is indexed, changed and archived like any other', async () => {
+    const { repository } = await sessionRepository();
+    await addTask(repository, 'twice', { scopes: [A, A] });
+    expect(ids((await page(repository, { selection: select() })).items)).toEqual(['twice']);
+    await change(repository, 'twice', { lifecycle: succeeded });
+    expect(
+      ids((await page(repository, { selection: select({ lifecycleClass: 'terminal' }) })).items)
+    ).toEqual(['twice']);
+    await change(repository, 'twice', {}, { archive: true });
+    expect((await page(repository, { selection: select() })).items).toEqual([]);
+    expect(repository.health().state).toBe('ready');
   });
 
   test('a binding is bound to one retained task; a second registration of it is refused', async () => {
