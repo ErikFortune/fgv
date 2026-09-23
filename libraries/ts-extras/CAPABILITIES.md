@@ -68,7 +68,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-09-23** — A tool-augmented or streamed chat turn can now carry prompt-cache breakpoints and a routing key, closing the one remaining hole (streaming) in ai-assist's prompt-cache emission surface.
+- **2026-09-23** — A tool-augmented or streamed chat turn can now carry prompt-cache breakpoints and a routing key, closing the one remaining hole (streaming) in ai-assist's prompt-cache emission surface. ([#688](https://github.com/ErikFortune/fgv/pull/688))
 - **2026-09-07** — ai-assist now places explicit prompt-cache breakpoints on Anthropic and OpenAI requests built from a ts-prompt-assist resolve, reports cache usage across every provider that supplies it, and diagnoses a cache-hostile composition before any request is sent. ([#671](https://github.com/ErikFortune/fgv/pull/671))
 - **2026-09-07** — Thinking config loses a required provider field that gated nothing, and gains 'none' — the cross-provider spelling for off that every provider had except the generic vocabulary. ([#667](https://github.com/ErikFortune/fgv/pull/667))
 - **2026-09-02** — Shipped: a rendered template, and a resolved prompt, can now say what they are made of — order, absolute size and binding provenance per section, with offsets computed during the render because recovering them by search is silently wrong. ([#663](https://github.com/ErikFortune/fgv/pull/663))
