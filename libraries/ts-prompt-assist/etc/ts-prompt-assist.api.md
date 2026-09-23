@@ -547,6 +547,7 @@ export interface IPromptRegistry<TResponse extends IPromptResponseBase = IPrompt
 // @public
 export interface IPromptResolveObservation extends IPromptObservationBase {
     readonly body?: string;
+    readonly composition?: IPromptComposition;
     readonly error?: string;
     readonly outcome: 'success' | 'failure';
     readonly outputKind?: PromptObservationOutputKind;

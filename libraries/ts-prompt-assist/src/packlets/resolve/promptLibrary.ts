@@ -1405,7 +1405,8 @@ export class PromptLibrary<
         body: resolved.body,
         outputKind: resolved.descriptor.output.kind,
         trace: resolved.trace,
-        safeguardFindings: resolved.trace.safeguardFindings
+        safeguardFindings: resolved.trace.safeguardFindings,
+        composition: resolved.composition
       };
     }
     return { ...base, phase: 'resolve', outcome: 'failure', error: result.message };
