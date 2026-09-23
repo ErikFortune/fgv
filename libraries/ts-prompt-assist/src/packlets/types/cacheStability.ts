@@ -36,7 +36,10 @@ export type PromptCacheStability = 'frozen' | 'per-conversation' | 'per-request'
  * applies), not declared by anyone. Refutation is an outcome, not an
  * origin — a refuted hint keeps its original origin and has its
  * `stability` lowered; only a claim that was never declared at all (the
- * template/preface default) carries `'derived'` as its origin.
+ * template/preface default) carries `'derived'` as its origin. A finding
+ * against the template default after an earlier refutation already lowered it
+ * (the conditional-body check's competing-candidate finding) claims that
+ * lowered level, still with origin `'derived'`.
  * @public
  */
 export type PromptCacheStabilityOrigin = 'authored' | 'call-site' | 'derived';
@@ -58,7 +61,11 @@ export interface IPromptCacheStabilityHint {
  * the claim is downgraded, never upgraded. Fires for a declared slot claim
  * (multi-scope binding, a resource-bound slot, or a slot inside a
  * qualifier-conditional body) and for the derived `'template'` `'frozen'`
- * default (a qualifier-conditional body). A `'preface'` section's stability —
+ * default (a qualifier-conditional body). A qualifier-conditional body refutes
+ * a claim only when an axis conditioning it — a winning candidate's, or once
+ * a winner is conditional, a competing candidate's — is declared (or defaults,
+ * as `'per-request'`) less stable than the claim; see
+ * {@link IExpectedQualifierAxis.stability}. A `'preface'` section's stability —
  * whether the `'frozen'` default or an explicit
  * {@link IPromptSafetyPolicy.antiJailbreakPrefaceStability} — is trusted, not
  * refuted: no resolve-time evidence can check it (see

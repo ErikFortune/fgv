@@ -185,6 +185,7 @@ markers.*
 <!-- BEGIN GENERATED: recent-additions -->
 
 - **2026-09-23** — A tool-augmented or streamed chat turn can now carry prompt-cache breakpoints and a routing key, closing the one remaining hole… ([#688](https://github.com/ErikFortune/fgv/pull/688)) · `ts-extras`
+- **2026-09-23** — Shipped: a qualifier axis can declare how often it changes, so a body conditioned only on never-changing axes is no longer refuted… ([#689](https://github.com/ErikFortune/fgv/pull/689)) · `ts-prompt-assist`
 - **2026-09-21** — A FileTree can now replace a file such that a reader never sees a torn write, and on a root whose filesystem was actually qualified… ([#682](https://github.com/ErikFortune/fgv/pull/682)) · `ts-json-base`
 - **2026-09-07** — ai-assist now places explicit prompt-cache breakpoints on Anthropic and OpenAI requests built from a ts-prompt-assist resolve… ([#671](https://github.com/ErikFortune/fgv/pull/671)) · `ts-extras` `ts-prompt-assist`
 - **2026-09-07** — Thinking config loses a required provider field that gated nothing, and gains 'none' — the cross-provider spelling for off that… ([#667](https://github.com/ErikFortune/fgv/pull/667)) · `ts-extras`
@@ -193,8 +194,7 @@ markers.*
 - **2026-08-23** — Shipped: an opt-in that hoists the optionals a schema already proves safe to hoist, rather than a boolean asserting they are. ([#659](https://github.com/ErikFortune/fgv/pull/659)) · `ts-extras` `ts-json-base`
 - **2026-08-22** — Shipped: a capability-aware copy with a single guarantee — every file that lands is byte-identical to its source, or the copy says… ([#653](https://github.com/ErikFortune/fgv/pull/653)) · `ts-json-base`
 - **2026-08-22** — Shipped: `nullable: true` on every factory — the spelling OpenAI strict mode accepts for an absent-able field, where… ([#655](https://github.com/ErikFortune/fgv/pull/655)) · `ts-json-base` `ts-extras` `ts-extras-mcp`
-- **2026-08-22** — Shipped: the rebuild-path table clear runs through `exec`, so the one statement `release()` could never reach no longer exists. ([#654](https://github.com/ErikFortune/fgv/pull/654)) · `ts-agent-memory-sqlite-vec`
 
-*Showing the 10 most recent of 43. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 44. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

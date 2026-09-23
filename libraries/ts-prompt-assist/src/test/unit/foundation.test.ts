@@ -262,6 +262,35 @@ describe('ts-prompt-assist foundation', () => {
       expect(descriptorConverter.convert(descYaml)).toFail();
     });
 
+    test('descriptorConverter round-trips an expected qualifier axis stability declaration', () => {
+      const descYaml = {
+        id: 'g',
+        title: 'G',
+        schemaVersion: '1',
+        surface: 'chat',
+        slots: [],
+        qualifiers: { expected: [{ name: 'lang', stability: 'frozen' }, { name: 'tone' }] },
+        output: { kind: 'free-text' }
+      };
+      expect(descriptorConverter.convert(descYaml)).toSucceedAndSatisfy((d) => {
+        expect(d.qualifiers?.expected?.[0].stability).toBe('frozen');
+        expect(d.qualifiers?.expected?.[1]).not.toHaveProperty('stability');
+      });
+    });
+
+    test('descriptorConverter rejects an invalid expected qualifier axis stability value', () => {
+      const descYaml = {
+        id: 'g',
+        title: 'G',
+        schemaVersion: '1',
+        surface: 'chat',
+        slots: [],
+        qualifiers: { expected: [{ name: 'lang', stability: 'sometimes' }] },
+        output: { kind: 'free-text' }
+      };
+      expect(descriptorConverter.convert(descYaml)).toFail();
+    });
+
     test('promptFileConverter fails on non-object input', () => {
       expect(promptFileConverter.convert('not an object')).toFailWith(/expected an object/);
     });

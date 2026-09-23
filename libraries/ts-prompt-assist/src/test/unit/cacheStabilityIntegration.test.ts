@@ -5,6 +5,7 @@
 
 import '@fgv/ts-utils-jest';
 import {
+  AxisName,
   IPromptSafetyPolicy,
   IPromptStore,
   IPromptStoreFixtureSeed,
@@ -118,6 +119,32 @@ function innerRecord(): IStoredPromptRecord {
       output: { kind: 'free-text' }
     },
     candidates: [{ conditions: {}, body: 'everyone' }]
+  };
+}
+
+function langConditionedRecord(
+  langStability?: 'frozen' | 'per-conversation' | 'per-request'
+): IStoredPromptRecord {
+  return {
+    scope: SCOPE,
+    id: PROMPT,
+    descriptor: {
+      id: PROMPT,
+      title: 'p',
+      schemaVersion: '1',
+      surface: 'chat',
+      slots: [{ name: TOPIC, description: 'topic', cacheStability: 'frozen' }],
+      qualifiers: {
+        expected: [
+          {
+            name: 'lang' as unknown as AxisName,
+            ...(langStability === undefined ? {} : { stability: langStability })
+          }
+        ]
+      },
+      output: { kind: 'free-text' }
+    },
+    candidates: [{ conditions: { lang: 'en' }, body: 'static prefix {{{topic}}}' }]
   };
 }
 
@@ -298,6 +325,66 @@ describe('prompt-cache stability diagnostics — end-to-end wiring', () => {
     expect(result).toSucceedAndSatisfy((r) => {
       expect(r.slots.get(TOPIC)?.value).toBe('from-a');
       expect(r.slots.get(TOPIC)?.winningScope).toBe(SCOPE);
+    });
+  });
+
+  describe('qualifier-declared stability on a conditioned body', () => {
+    async function resolveConditioned(
+      langStability?: 'frozen' | 'per-conversation' | 'per-request'
+    ): Promise<Result<IResolvedPrompt>> {
+      const lib = await buildLib([langConditionedRecord(langStability)]);
+      return lib.resolve({
+        id: PROMPT,
+        chain: [SCOPE],
+        qualifiers: { lang: 'en' },
+        substitutions: { topic: 'x' },
+        composition: {}
+      });
+    }
+
+    test('an axis with no declared stability still refutes the template and a frozen slot claim', async () => {
+      expect(await resolveConditioned()).toSucceedAndSatisfy((r) => {
+        expect(refutedFindings(r)).toEqual([
+          expect.objectContaining({
+            claimed: { stability: 'frozen', origin: 'derived' },
+            downgradedTo: 'per-request',
+            detail: expect.stringMatching(/qualifier 'lang' \(no declared stability, so 'per-request'\)/)
+          }),
+          expect.objectContaining({
+            slot: TOPIC,
+            claimed: { stability: 'frozen', origin: 'authored' },
+            downgradedTo: 'per-request'
+          })
+        ]);
+        expect(r.composition!.sections.map((s) => [s.kind, s.effectiveStability])).toEqual([
+          ['template', 'per-request'],
+          ['slot', 'per-request']
+        ]);
+      });
+    });
+
+    test("a 'frozen'-declared axis refutes neither the template section nor the frozen slot claim", async () => {
+      expect(await resolveConditioned('frozen')).toSucceedAndSatisfy((r) => {
+        expect(refutedFindings(r)).toEqual([]);
+        expect(r.composition!.sections.map((s) => [s.kind, s.effectiveStability])).toEqual([
+          ['template', 'frozen'],
+          ['slot', 'frozen']
+        ]);
+      });
+    });
+
+    test("a 'per-conversation'-declared axis lowers both to per-conversation, naming the axis", async () => {
+      expect(await resolveConditioned('per-conversation')).toSucceedAndSatisfy((r) => {
+        const refuted = refutedFindings(r) as ReadonlyArray<{ detail: string; downgradedTo: string }>;
+        expect(refuted.map((f) => f.downgradedTo)).toEqual(['per-conversation', 'per-conversation']);
+        for (const finding of refuted) {
+          expect(finding.detail).toMatch(/qualifier 'lang' \(declared 'per-conversation'\)/);
+        }
+        expect(r.composition!.sections.map((s) => s.effectiveStability)).toEqual([
+          'per-conversation',
+          'per-conversation'
+        ]);
+      });
     });
   });
 

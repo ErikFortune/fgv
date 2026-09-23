@@ -462,8 +462,8 @@ here so a stream can be found by id without opening them; each archive links bac
 the same "docs ship with the code" rule as everywhere else, so the working ledger never
 accumulates history again.
 
-**[2026-09](workstreams/2026-09.md)** — 5 shipped
-`ai-assist-streaming-cache` · `filetree-atomic-write` · `ai-assist-prompt-caching` · `ai-assist-thinking-anchoring` · `prompt-composition-metadata`
+**[2026-09](workstreams/2026-09.md)** — 6 shipped
+`prompt-assist-qualifier-stability` · `ai-assist-streaming-cache` · `filetree-atomic-write` · `ai-assist-prompt-caching` · `ai-assist-thinking-anchoring` · `prompt-composition-metadata`
 
 **[2026-08](workstreams/2026-08.md)** — 19 shipped
 `converters-single-line` · `schema-optional-translation` · `json-schema-nullable` · `sqlite-vec-throwaway-clear-statement` · `filetree-faithful-copy` · `ai-assist-structured-output` · `agent-memory-kind-collision-guard` · `sqlite-vec-statement-lifetime` · `fragment-query-scoping` · `agent-memory-derived-state-reconciliation` · `agent-memory-index-partial-read` · `vector-rebuild-report-by-kind` · `sqlite-vec-path-open` · `module-resolution-upgrade` · `publish-tarball-gate` · `ts-utils-async-detailed-result` · `fetch-primitive-threat-model` · `ts-prompt-assist-features` · `async-result-family`

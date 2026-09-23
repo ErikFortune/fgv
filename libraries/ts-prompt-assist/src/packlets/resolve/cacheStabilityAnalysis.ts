@@ -3,12 +3,15 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { ResourceJson } from '@fgv/ts-res';
 import {
   IBindingTraceEntry,
   ICandidateMatchTraceEntry,
   IPromptCacheDiagnosticOptions,
   IPromptCacheFinding,
   IPromptCacheStabilityHint,
+  IPromptCandidateRecord,
+  IPromptQualifierMetadata,
   IPromptSection,
   IPromptSlot,
   IResourceBindingTraceEntry,
@@ -40,6 +43,23 @@ export interface IPromptCacheStabilityAnalysisParams {
    * See design.md §15 (OQ-7) for why there is no refutation check for this claim, unlike D1/D2.
    */
   readonly prefaceStability?: PromptCacheStability;
+  /**
+   * The winning record's candidates — {@link IStoredPromptRecord.candidates}. Joined to
+   * `candidateMatches` by `candidateIndex`, so the conditional-body check (D2) can name the
+   * qualifiers that conditioned each winning candidate from the declarations this package already
+   * holds.
+   * @remarks
+   * Omitted, or when a match's declaration cannot be found or names no qualifier, the match's
+   * conditioning axes are unknown and are treated as `'per-request'` — the least stable level, and
+   * exactly the behaviour this check had before it could attribute a match to its axes.
+   */
+  readonly candidates?: ReadonlyArray<IPromptCandidateRecord>;
+  /**
+   * The descriptor's qualifier metadata — {@link IPromptDescriptor.qualifiers}. Supplies each
+   * axis's declared {@link IExpectedQualifierAxis.stability}; an axis with no declaration is
+   * `'per-request'`.
+   */
+  readonly qualifiers?: IPromptQualifierMetadata;
   readonly options?: IPromptCacheDiagnosticOptions;
 }
 
@@ -48,6 +68,30 @@ const STABILITY_LEVEL: Readonly<Record<PromptCacheStability, number>> = {
   'per-conversation': 1,
   'per-request': 0
 };
+
+/**
+ * A qualifier that conditioned a winning candidate, with the stability it is declared at.
+ */
+interface IConditioningAxis {
+  readonly name: string;
+  readonly stability: PromptCacheStability;
+  /** False when the descriptor declares no stability for the axis, so the default applied. */
+  readonly declared: boolean;
+}
+
+/**
+ * What conditioned the resolve's body: the axes of every winning candidate that matched on
+ * conditions, plus any lower-stability axes of the competing candidates
+ * {@link checkCompetingCandidates} folds in, deduplicated by name, plus the matches that could not
+ * be attributed to any axis.
+ * An empty value (no axes, nothing unattributed) means the body is not qualifier-conditional.
+ */
+interface IBodyConditioning {
+  readonly axes: ReadonlyArray<IConditioningAxis>;
+  readonly unattributed: ReadonlyArray<ICandidateMatchTraceEntry>;
+  /** The least stable level any conditioning input allows the body — `'frozen'` when there is none. */
+  readonly stability: PromptCacheStability;
+}
 
 interface IStabilityRun {
   readonly level: number;
@@ -107,18 +151,20 @@ export function computeCacheStabilityAnalysis(
     slots,
     callSiteOverrides,
     prefaceStability = 'frozen',
+    candidates,
+    qualifiers,
     options
   } = params;
   const findings: IPromptCacheFinding[] = [];
 
   const resourceBoundSlots = new Set(resourceBindingResolutions.map((entry) => entry.slot));
-  const bodyConditional = checkConditionalBody(candidateMatches, findings);
+  const bodyConditioning = checkConditionalBody(candidateMatches, candidates, qualifiers, findings);
   const slotEffective = resolveSlotStability(
     slots,
     mergedBindings,
     resourceBoundSlots,
     callSiteOverrides,
-    bodyConditional,
+    bodyConditioning,
     findings
   );
 
@@ -132,7 +178,7 @@ export function computeCacheStabilityAnalysis(
   // findings are keyed on slots and candidates, not section length, and are
   // unaffected either way.
   const perSection = sections.map((section) =>
-    effectiveSectionStability(section, slotEffective, bodyConditional, prefaceStability)
+    effectiveSectionStability(section, slotEffective, bodyConditioning, prefaceStability)
   );
 
   const runs = foldRuns(perSection);
@@ -203,22 +249,28 @@ function collapseEmptyStableRuns(
  *    per level of nesting — so a resource-bound slot's claim is refuted
  *    unconditionally rather than risk trusting an inner resolve neither this
  *    check nor the caller has actually examined.
- * 3. The resolve's body is itself qualifier-conditional (D2,
- *    `bodyConditional`) — a slot's presence or position can change along
- *    with which candidate wins, so a `'frozen'`/`'per-conversation'` claim on
- *    a slot inside that body is exactly as unverifiable as a template
- *    section's — see {@link checkConditionalBody}.
+ * 3. The resolve's body is itself qualifier-conditional (D2) on an axis
+ *    declared less stable than the claim — a slot's presence or position can
+ *    change along with which candidate wins, and which candidates win can
+ *    change as often as the least stable axis conditioning the winners or the
+ *    candidates competing with them does, so the claim is lowered to that
+ *    axis's level — see {@link checkConditionalBody}. An
+ *    axis with no declared stability is `'per-request'`, which refutes every
+ *    claim better than `'per-request'`.
  *
- * All three are evidence the value *may* vary, not proof that it *does* —
- * the governing asymmetry (design.md §1) makes the downgrade correct anyway,
- * since a false `'frozen'` is the expensive mistake.
+ * Cases 1 and 2 downgrade to `'per-request'`; case 3 downgrades to the
+ * body's conditioning level, which is `'per-request'` unless every
+ * conditioning axis is declared more stable. All three are evidence the value
+ * *may* vary, not proof that it *does* — the governing asymmetry (design.md
+ * §1) makes the downgrade correct anyway, since a false `'frozen'` is the
+ * expensive mistake.
  */
 function resolveSlotStability(
   slots: ReadonlyArray<IPromptSlot>,
   mergedBindings: ReadonlyMap<SlotName, IBindingTraceEntry>,
   resourceBoundSlots: ReadonlySet<SlotName>,
   callSiteOverrides: ReadonlyMap<SlotName, PromptCacheStability> | undefined,
-  bodyConditional: boolean,
+  bodyConditioning: IBodyConditioning,
   findings: IPromptCacheFinding[]
 ): ReadonlyMap<SlotName, PromptCacheStability> {
   const effective = new Map<SlotName, PromptCacheStability>();
@@ -269,18 +321,18 @@ function resolveSlotStability(
         continue;
       }
 
-      if (bodyConditional) {
+      if (isLessStable(bodyConditioning.stability, hint.stability)) {
         findings.push({
           kind: 'stability-refuted',
           slot: slot.name,
           detail:
             `slot '${slot.name}': claimed '${hint.stability}' (${hint.origin}), but the resolve's body is ` +
-            `qualifier-conditional — a different matching candidate could change this slot's presence or ` +
-            `position, so its stability is unverified`,
+            `conditioned on ${describeRefutingConditioning(bodyConditioning, hint.stability)} — a ` +
+            `different matching candidate could change this slot's presence or position just as often`,
           claimed: hint,
-          downgradedTo: 'per-request'
+          downgradedTo: bodyConditioning.stability
         });
-        effective.set(slot.name, 'per-request');
+        effective.set(slot.name, bodyConditioning.stability);
         continue;
       }
     }
@@ -297,45 +349,249 @@ function resolveSlotStability(
  * slot sections' values already substituted in — so a per-section
  * attribution back to "which candidate produced this text" is not available
  * from `IPromptComposition` (candidates are joined before segmentation
- * runs). Applied at the coarser granularity the data actually supports
- * instead: if *any* candidate matched with a non-empty, non-`matchAsDefault`
- * condition set, the whole body is qualifier-conditional — a different
- * matching candidate on a later resolve could change which text and which
- * slots appear, and where. This is body-wide, not template-section-only: a
- * `'template'` section is downgraded (via {@link effectiveSectionStability})
- * and so is any slot claiming better than `'per-request'` stability (via
- * {@link resolveSlotStability}'s `bodyConditional` check) — a slot's
- * presence and position inside a conditional body is exactly as unverified
- * as the surrounding template text, whether or not the body renders any
- * literal `'template'` section at all.
+ * runs). Applied body-wide instead: every candidate that matched with a
+ * non-empty, non-`matchAsDefault` condition set conditions the whole body — a
+ * different matching candidate on a later resolve could change which text and
+ * which slots appear, and where.
+ *
+ * *How often* that can happen is a property of the qualifiers that did the
+ * conditioning, which the trace does not name (`IConditionMatchResult` carries
+ * only priority, match type and score). This package authored the condition
+ * declarations, though: `candidateIndex` joins each match back to its
+ * {@link IPromptCandidateRecord.conditions}, keyed by qualifier name, and each
+ * name's {@link IExpectedQualifierAxis.stability} says how often it changes.
+ * The body is then exactly as stable as its least stable conditioning axis. An
+ * undeclared axis is `'per-request'`; a match whose declaration is unavailable
+ * (no `candidates` supplied, an out-of-range index, or a declaration naming no
+ * qualifier) is treated as `'per-request'` too — so with nothing declared,
+ * every refutation this check made before it could attribute a match still
+ * fires.
+ *
+ * This is body-wide, not template-section-only: a `'template'` section takes
+ * the body's conditioning level (via {@link effectiveSectionStability}) and so
+ * does any slot claiming better than it (via {@link resolveSlotStability}) — a
+ * slot's presence and position inside a conditional body is exactly as
+ * unverified as the surrounding template text, whether or not the body
+ * renders any literal `'template'` section at all.
+ *
+ * Emits one finding per conditionally-matched candidate whose conditioning is
+ * less stable than the derived `'frozen'` default, naming the axes responsible
+ * and their declared levels. A candidate conditioned only on `'frozen'` axes
+ * refutes nothing and produces no finding. Once the body is conditional, the
+ * candidates that did *not* win are folded in too — see
+ * {@link checkCompetingCandidates}.
  */
 function checkConditionalBody(
   candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>,
+  candidates: ReadonlyArray<IPromptCandidateRecord> | undefined,
+  qualifiers: IPromptQualifierMetadata | undefined,
   findings: IPromptCacheFinding[]
-): boolean {
-  const conditionalCandidates = candidateMatches.filter(
-    (match) => match.matchType === 'match' && match.conditions.length > 0
-  );
-  if (conditionalCandidates.length === 0) {
-    return false;
+): IBodyConditioning {
+  const declared = declaredAxisStability(qualifiers);
+  const axes = new Map<string, IConditioningAxis>();
+  const unattributed: ICandidateMatchTraceEntry[] = [];
+
+  for (const match of candidateMatches) {
+    if (match.matchType !== 'match' || match.conditions.length === 0) {
+      continue;
+    }
+    const names = conditioningQualifierNames(candidates?.[match.candidateIndex]);
+    const matchConditioning: IBodyConditioning =
+      names.length === 0
+        ? { axes: [], unattributed: [match], stability: 'per-request' }
+        : conditioningOf(names.map((name) => conditioningAxis(name, declared)));
+
+    matchConditioning.axes.forEach((axis) => axes.set(axis.name, axis));
+    unattributed.push(...matchConditioning.unattributed);
+
+    if (isLessStable(matchConditioning.stability, 'frozen')) {
+      findings.push({
+        kind: 'stability-refuted',
+        detail:
+          `candidate ${match.candidateIndex}: matched on ${match.conditions.length} condition(s) — ` +
+          `the body is conditioned on ${describeRefutingConditioning(
+            matchConditioning,
+            'frozen'
+          )}, not frozen`,
+        claimed: { stability: 'frozen', origin: 'derived' },
+        downgradedTo: matchConditioning.stability
+      });
+    }
   }
 
-  for (const match of conditionalCandidates) {
-    findings.push({
-      kind: 'stability-refuted',
-      detail:
-        `candidate ${match.candidateIndex}: matched on ${match.conditions.length} condition(s) — ` +
-        `the body is qualifier-conditional, not frozen`,
-      claimed: { stability: 'frozen', origin: 'derived' },
-      downgradedTo: 'per-request'
-    });
+  const winnersStability = leastStable([...axes.values()].map((axis) => axis.stability));
+  if (candidates !== undefined && axes.size > 0 && unattributed.length === 0) {
+    checkCompetingCandidates(candidateMatches, candidates, declared, winnersStability, axes, findings);
   }
-  return true;
+
+  const all = conditioningOf([...axes.values()]);
+  return {
+    axes: all.axes,
+    unattributed,
+    stability: unattributed.length > 0 ? 'per-request' : all.stability
+  };
+}
+
+/**
+ * Once the body is known to be qualifier-conditional, the candidates that did **not** win this
+ * resolve matter too: a change in a qualifier one of them is conditioned on can bring it into a
+ * later resolve and change the body. Before axes could declare a stability this needed no separate
+ * check — any conditional winner already made the body `'per-request'`, the floor. Now that a body
+ * conditioned only on `'frozen'` axes stays `'frozen'`, crediting the winners' axes alone would let
+ * a competing candidate conditioned on a volatile axis go unseen, so their axes are folded into the
+ * body's conditioning here and a finding names them whenever they lower it.
+ *
+ * Only reached when every winning conditional match was attributed to its axes: an unattributed
+ * match already puts the body at `'per-request'`, which nothing here can lower further. And only
+ * when some winner was conditional at all — a body whose winners are all unconditional is not
+ * treated as qualifier-conditional, exactly as before axes could declare a stability.
+ */
+function checkCompetingCandidates(
+  candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>,
+  candidates: ReadonlyArray<IPromptCandidateRecord>,
+  declared: ReadonlyMap<string, PromptCacheStability>,
+  winnersStability: PromptCacheStability,
+  axes: Map<string, IConditioningAxis>,
+  findings: IPromptCacheFinding[]
+): void {
+  // Only the conditional `'match'` winners have already been credited. Every other candidate — one
+  // that lost, or one that won only as a `matchAsDefault` fallback — is a way the body can differ
+  // when one of its qualifiers changes, so its axes count here.
+  const winning = new Set(
+    candidateMatches
+      .filter((match) => match.matchType === 'match' && match.conditions.length > 0)
+      .map((match) => match.candidateIndex)
+  );
+  const competing = candidates
+    .map((candidate, index) => ({
+      index,
+      axes: conditioningQualifierNames(candidate)
+        .map((name) => conditioningAxis(name, declared))
+        .filter((axis) => isLessStable(axis.stability, winnersStability))
+    }))
+    .filter((entry) => !winning.has(entry.index) && entry.axes.length > 0);
+  if (competing.length === 0) {
+    return;
+  }
+
+  const competingAxes = new Map<string, IConditioningAxis>();
+  competing.forEach((entry) => entry.axes.forEach((axis) => competingAxes.set(axis.name, axis)));
+  const conditioning = conditioningOf([...competingAxes.values()]);
+  competingAxes.forEach((axis, name) => axes.set(name, axis));
+  findings.push({
+    kind: 'stability-refuted',
+    detail:
+      `candidate(s) ${competing
+        .map((entry) => entry.index)
+        .join(', ')}: did not match this resolve on their conditions, but ` +
+      `are conditioned on ${describeRefutingConditioning(conditioning, winnersStability)} — a change there ` +
+      `could select a different body, so the body is not '${winnersStability}'`,
+    // The level this finding contradicts is the one the winners already established — which a
+    // per-candidate finding above may already have lowered from `'frozen'` — not `'frozen'` itself.
+    claimed: { stability: winnersStability, origin: 'derived' },
+    downgradedTo: conditioning.stability
+  });
+}
+
+/**
+ * Each expected axis's declared stability, keyed by name. An axis declared more than once takes
+ * the least stable of its declarations — the governing asymmetry (design.md §1) again: a false
+ * `'frozen'` is the expensive mistake. A declaration that omits `stability` is the
+ * `'per-request'` default, the least stable level, so one such entry makes the whole axis
+ * `'per-request'`; it is left out of the map, and so reported as having no declared stability.
+ */
+function declaredAxisStability(
+  qualifiers: IPromptQualifierMetadata | undefined
+): ReadonlyMap<string, PromptCacheStability> {
+  const declared = new Map<string, PromptCacheStability>();
+  const defaulted = new Set<string>();
+  for (const axis of qualifiers?.expected ?? []) {
+    if (axis.stability === undefined) {
+      defaulted.add(axis.name);
+    } else {
+      declared.set(axis.name, leastStable([declared.get(axis.name) ?? 'frozen', axis.stability]));
+    }
+  }
+  defaulted.forEach((name) => declared.delete(name));
+  return declared;
+}
+
+function conditioningAxis(
+  name: string,
+  declared: ReadonlyMap<string, PromptCacheStability>
+): IConditioningAxis {
+  const stability = declared.get(name);
+  return stability === undefined
+    ? { name, stability: 'per-request', declared: false }
+    : { name, stability, declared: true };
+}
+
+function conditioningOf(axes: ReadonlyArray<IConditioningAxis>): IBodyConditioning {
+  return { axes, unattributed: [], stability: leastStable(axes.map((axis) => axis.stability)) };
+}
+
+/**
+ * The qualifier names a candidate's condition declaration conditions on, in declaration order and
+ * without duplicates. Empty for a missing candidate or a declaration that names no qualifier.
+ */
+function conditioningQualifierNames(candidate: IPromptCandidateRecord | undefined): ReadonlyArray<string> {
+  const conditions = candidate?.conditions;
+  if (conditions === undefined) {
+    return [];
+  }
+  const names = isConditionArray(conditions)
+    ? conditions.map((condition) => condition.qualifierName)
+    : Object.entries(conditions)
+        .filter(([, value]) => value !== undefined)
+        .map(([name]) => name);
+  return [...new Set(names)];
+}
+
+function isConditionArray(
+  conditions: ResourceJson.Json.ConditionSetDecl
+): conditions is ResourceJson.Json.ConditionSetDeclAsArray {
+  return Array.isArray(conditions);
+}
+
+/**
+ * Names what refutes a claim at `claim`: every conditioning axis declared less stable than it,
+ * with its declared (or defaulted) level, then any match whose axes could not be determined.
+ */
+function describeRefutingConditioning(conditioning: IBodyConditioning, claim: PromptCacheStability): string {
+  const parts = conditioning.axes
+    .filter((axis) => isLessStable(axis.stability, claim))
+    .map((axis) =>
+      axis.declared
+        ? `qualifier '${axis.name}' (declared '${axis.stability}')`
+        : `qualifier '${axis.name}' (no declared stability, so 'per-request')`
+    );
+  if (conditioning.unattributed.length > 0) {
+    const indices = conditioning.unattributed.map((match) => match.candidateIndex).join(', ');
+    parts.push(
+      `the conditions of candidate(s) ${indices}, whose qualifiers are not known to this check ` +
+        `(so 'per-request')`
+    );
+  }
+  return parts.join(', ');
+}
+
+function isLessStable(stability: PromptCacheStability, than: PromptCacheStability): boolean {
+  return STABILITY_LEVEL[stability] < STABILITY_LEVEL[than];
+}
+
+function leastStable(stabilities: ReadonlyArray<PromptCacheStability>): PromptCacheStability {
+  return stabilities.reduce<PromptCacheStability>(
+    (least, stability) => (isLessStable(stability, least) ? stability : least),
+    'frozen'
+  );
 }
 
 /**
  * D3 — derived signals with no hints at all. A `'template'` section is
- * `'frozen'` unless D2 refuted it. A `'slot'` section uses its resolved
+ * `'frozen'` unless D2 refuted it, in which case it takes the body's
+ * conditioning level — the least stable axis conditioning a winning
+ * candidate or, once the body is conditional, a competing one (`'per-request'`
+ * for an undeclared one). A `'slot'` section uses its resolved
  * effective stability, defaulting to `'per-request'` (R-a) when neither an
  * authored nor a call-site claim exists — this default is exactly the
  * "unclassified" case design.md §9 describes: no hint was ever recorded for
@@ -360,7 +616,7 @@ function checkConditionalBody(
 function effectiveSectionStability(
   section: IPromptSection,
   slotEffective: ReadonlyMap<SlotName, PromptCacheStability>,
-  bodyConditional: boolean,
+  bodyConditioning: IBodyConditioning,
   prefaceStability: PromptCacheStability
 ): PromptCacheStability {
   if (section.kind === 'slot') {
@@ -375,7 +631,7 @@ function effectiveSectionStability(
     return slotEffective.get(section.slot as SlotName) ?? 'per-request';
   }
   if (section.kind === 'template') {
-    return bodyConditional ? 'per-request' : 'frozen';
+    return bodyConditioning.stability;
   }
   return prefaceStability;
 }
