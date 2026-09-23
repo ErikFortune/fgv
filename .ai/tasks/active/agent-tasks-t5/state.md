@@ -82,9 +82,12 @@ closeout's two slots.
   open/`rebuildIndexes`. The automatic flag is read from list details when the record is indexed.
   `ITaskRepository` gains `childStates(parentId)` and `listCompletionCandidates({after, limit})`
   — a widened shared contract: repo-wide rebuild + conformance checks.
-- **Rejected command receipts** are persisted as evidence (`invalid-transition`, `unsupported`,
-  stale `conflict`), except `denied` (a principal without command authority cannot consume a
-  task's capacity) and `idempotency-conflict` (the key already holds other evidence).
+- **Rejected command receipts** evaluated against a live task are persisted as evidence
+  (table `invalid-transition`, `unsupported`, stale `conflict`). Not persisted: `denied` (a
+  principal without command authority cannot consume a task's capacity), `idempotency-conflict`
+  (the key already holds evidence), and `invalid-transition` on an archived tombstone (a tombstone
+  takes no write, so the key stays free). Command authority is always decided first — *corrected
+  after layer-1 review P2 #1*, which found the archived refusal short-circuiting it.
 - **Changed since authorization** → `conflict` failure, never a persisted rejection.
 - **Unresolved records** take no catalog change (`unsupported`), per design §8.3.
 - **Terminal**: responsibility and scopes may change; title/description/progress/attention and

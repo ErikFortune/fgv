@@ -166,6 +166,12 @@ describe('command receipts', () => {
       expect.objectContaining({ result: { state: 'rejected', reason: 'invalid-transition' } })
     );
     expect(await recordOf(h, 't')).toEqual(before);
+    // Command authority is still decided first: a principal without it is denied, not told the
+    // task's lifecycle state.
+    h.policy.denyOn('command', 't');
+    expect(await run(h, 't', 'set-title', { title: 'x' }, 3, op())).toSucceedWith(
+      expect.objectContaining({ result: { state: 'rejected', reason: 'denied' } })
+    );
   });
 });
 

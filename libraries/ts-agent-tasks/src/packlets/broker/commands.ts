@@ -120,8 +120,9 @@ function _prepare(
  * A hidden or foreign task fails `not-found-or-denied`. A visible task answers with a receipt:
  * `denied` (not recorded — a principal without command authority cannot consume a task's
  * capacity), `idempotency-conflict` for a reused key (not recorded — the key already holds
- * evidence), or an evaluated outcome that is recorded under the key: `unsupported`, a stale
- * `conflict`, `invalid-transition`, or `applied`. A same-state no-op is `applied` at the current
+ * evidence), `invalid-transition` for an archived tombstone (not recorded — a tombstone takes no
+ * write, so the key stays free), or an evaluated outcome that is recorded under the key:
+ * `unsupported`, a stale `conflict`, a table `invalid-transition`, or `applied`. A same-state no-op is `applied` at the current
  * revision without advancing it. External tasks' commands belong to their source (T6) and are
  * `unsupported` here.
  * @internal
@@ -161,18 +162,20 @@ export async function execute(
   if (stored !== undefined) {
     return _replay(ctx, subject, stored, prepared.isSuccess() ? prepared.value.stored : request);
   }
-  if (record.archived) {
-    return _rejected(request, 'invalid-transition');
-  }
-  if (prepared.isFailure()) {
-    return propagate(prepared);
-  }
   const epoch = ctx.epoch();
   if (epoch.isFailure()) {
     return propagate(epoch);
   }
+  // Command authority is decided before anything else about the command, archived or not.
   if (!(await ctx.may('command', subject, 'subject', { command: request.command }))) {
     return _rejected(request, 'denied');
+  }
+  if (record.archived) {
+    // A tombstone takes no write at all, so this refusal cannot be recorded; it holds no key.
+    return _rejected(request, 'invalid-transition');
+  }
+  if (prepared.isFailure()) {
+    return propagate(prepared);
   }
   const { prepared: plan, stored: storedRequest } = prepared.value;
 
