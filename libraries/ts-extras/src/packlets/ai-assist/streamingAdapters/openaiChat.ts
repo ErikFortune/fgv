@@ -26,10 +26,15 @@
  * @packageDocumentation
  */
 
-import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { fail, type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 import { type JsonObject } from '@fgv/ts-json-base';
 
-import { buildMessages, buildOpenAiChatUserContent } from '../chatRequestBuilders';
+import {
+  buildMessages,
+  buildOpenAiChatSystemContent,
+  buildOpenAiChatUserContent
+} from '../chatRequestBuilders';
+import { type IAiCacheRequest } from '../cacheRequest';
 import { bearerAuthHeader } from '../endpoint';
 import { AiPrompt, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
@@ -195,10 +200,16 @@ export async function callOpenAiChatStream(
   resolvedThinking?: IResolvedThinkingConfig,
   maxTokens?: number,
   useMaxCompletionTokensField: boolean = false,
-  includeStreamUsage: boolean = false
+  includeStreamUsage: boolean = false,
+  cache?: IAiCacheRequest,
+  cacheKeyHeader?: string
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/chat/completions`;
-  const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
+  const systemContentResult = buildOpenAiChatSystemContent(prompt.system, cache);
+  if (systemContentResult.isFailure()) {
+    return fail(systemContentResult.message);
+  }
+  const messages = buildMessages(systemContentResult.value, buildOpenAiChatUserContent(prompt), {
     head: messagesBefore
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
@@ -206,7 +217,15 @@ export async function callOpenAiChatStream(
   const body: Record<string, unknown> = {
     model: config.model,
     messages,
-    stream: true
+    stream: true,
+    // Pure additive routing plumbing — see the identical field and gating comment on
+    // callOpenAiCompletion's body in completionClient.ts. `cacheKeyHeader` is set when the
+    // provider carries the routing key as a header instead (xAI), so the body field is
+    // omitted in that case to avoid sending an unrecognized field twice.
+    ...(cache?.cacheKey !== undefined && cacheKeyHeader === undefined
+      ? // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field name
+        { prompt_cache_key: cache.cacheKey }
+      : {})
   };
   // Chat Completions omits the usage block from every streaming response unless asked —
   // unlike the Responses API and Anthropic, which report it unconditionally. Gated per
@@ -236,6 +255,11 @@ export async function callOpenAiChatStream(
     Object.assign(body, resolvedThinking.otherParams);
   }
   const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
+  // Sticky-routing key, when the provider carries it as a header rather than a body field —
+  // see the identical header on callOpenAiCompletion's request in completionClient.ts.
+  if (cache?.cacheKey !== undefined && cacheKeyHeader !== undefined) {
+    headers[cacheKeyHeader] = cache.cacheKey;
+  }
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI streaming completion: model=${config.model}`);
   const conn = await openSseConnection(url, headers, body, logger, signal);

@@ -30,10 +30,15 @@
  * @packageDocumentation
  */
 
-import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { fail, type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 import { type JsonObject } from '@fgv/ts-json-base';
 
-import { buildMessages, buildOpenAiResponsesUserContent } from '../chatRequestBuilders';
+import {
+  buildMessages,
+  buildOpenAiResponsesSystemContent,
+  buildOpenAiResponsesUserContent
+} from '../chatRequestBuilders';
+import { type IAiCacheRequest } from '../cacheRequest';
 import { bearerAuthHeader } from '../endpoint';
 import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
@@ -483,10 +488,15 @@ export async function callOpenAiResponsesStream(
   functionCallMap?: Map<string, IAccumulatedFunctionCall>,
   continuationMessages?: ReadonlyArray<JsonObject>,
   maxTokens?: number,
-  reportsUsage: boolean = false
+  reportsUsage: boolean = false,
+  cache?: IAiCacheRequest
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/responses`;
-  const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
+  const systemContentResult = buildOpenAiResponsesSystemContent(prompt.system, cache);
+  if (systemContentResult.isFailure()) {
+    return fail(systemContentResult.message);
+  }
+  const input = buildMessages(systemContentResult.value, buildOpenAiResponsesUserContent(prompt), {
     head: messagesBefore,
     rawTail: continuationMessages
   });
@@ -495,7 +505,15 @@ export async function callOpenAiResponsesStream(
   const body: Record<string, unknown> = {
     model: config.model,
     input,
-    stream: true
+    stream: true,
+    // See the identical field and gating comment on callOpenAiResponsesCompletion's body in
+    // completionClient.ts — same routing plumbing, confirmed on both Chat Completions and the
+    // Responses API. The Responses API takes the routing key as a body field on every provider
+    // that supports it (see supportsPromptCacheRouting), so there is no header variant here.
+    ...(cache?.cacheKey !== undefined
+      ? // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field name
+        { prompt_cache_key: cache.cacheKey }
+      : {})
   };
   // `tools` is omitted entirely when none are requested — a Responses-only model routed
   // here for tier/model reasons (not tools) must not send an empty tools array.
