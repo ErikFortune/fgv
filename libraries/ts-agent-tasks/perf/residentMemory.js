@@ -56,7 +56,11 @@ const MANIFEST = {
     '2026-09-23, after the first recorded run (all predictions held): the post-close residual is not a ' +
       'prediction, but it was inflated because the measuring child still held the repository through ' +
       "open's result and the inspection. Both references are now dropped before the after-close sample, " +
-      'and every arm was re-run so all reported numbers come from one harness version.'
+      'and every arm was re-run so all reported numbers come from one harness version.',
+    '2026-09-23, after the second recorded run (all predictions held again): settled heap after a ' +
+      'rebuild sat ~6.4 MiB above settled heap after open at 10,000 archived tasks, because the ' +
+      "harness's inspection snapshot still referenced the old generation's maps. The snapshot is now " +
+      'dropped before the rebuild is measured; every arm re-run again.'
   ],
   predictions: {
     fixture:
@@ -510,6 +514,9 @@ async function measure(dir, variant) {
     out.projectionsAfterArchive = internals.inspectRepository(repository).projections.size;
   }
   if (variant === 'minimal' || variant === 'rebuild') {
+    // The inspection snapshot references this generation's maps; holding it across a rebuild
+    // would measure the harness keeping the old generation alive.
+    inspection = undefined;
     peak.heapUsed = 0;
     (await repository.rebuildIndexes()).orThrow();
     out.rebuildPeak = peak.heapUsed;
