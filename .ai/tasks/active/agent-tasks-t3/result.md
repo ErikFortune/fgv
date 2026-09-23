@@ -135,7 +135,8 @@ claim is `'process-crash'` on F2's qualified filesystems and nothing stronger.
 
 `scratchpad/mutate.py` neuters one protection, rebuilds, runs the storage suites, records what went
 red and restores. **A mutation whose pattern is absent, or that does not build, is reported
-UNVERIFIED — never as "nothing went red"** (F2's lesson). Final run, against the committed code:
+UNVERIFIED — never as "nothing went red"** (F2's lesson). Final run: all 54 re-run against the
+round-4 head (d2643334), after two whose target lines had moved (M21, M34) were re-pointed:
 
 | # | protection neutered | red |
 |---|---|---|
@@ -143,29 +144,29 @@ UNVERIFIED — never as "nothing went red"** (F2's lesson). Final run, against t
 | M2 | mark live before writing the record | 20 |
 | M3 | treat visibility `unknown` as unchanged | 3 |
 | M4 | never fence | 6 |
-| M5 | no operation replay (precondition decides) | 10 |
+| M5 | no operation replay (precondition decides) | 13 |
 | M6 | drop the operation-superset check | 1 |
 | M7 | skip the flush-boundary rewrite on replay | 3 |
 | M8 | double-charge on pending → live | 26 |
 | M9 | no strict UTF-8 in durable mode | 2 |
-| M10 | initialize adopts a non-empty root | 1 |
+| M10 | initialize adopts a non-empty root | 2 |
 | M11 | durable accepted on a session-only root | 1 |
 | M12 | ledger ignores pending-entry claims | 13 |
 | M13 | in-place lowering allowed | 1 |
-| M14 | archive does not consume the closeout claim | 1 |
+| M14 | archive does not consume the closeout claim | 2 |
 | M15 | admission never refuses on a limit | 4 |
-| M16 | open does not complete a landed registration | 15 |
+| M16 | open does not complete a landed registration | 17 |
 | M17 | open does not reclaim interrupted working files | 16 |
 | M18 | terminal state not absorbing | 1 |
 | M19 | committed updates mutable | 1 |
 | M20 | a write failure is ignored (success before the boundary) | 3 |
 | M21 | first resolution may change catalog metadata | 1 |
-| M22 | open completes a pending entry whose record carries other claims | 2 |
+| M22 | open completes a pending entry whose record carries other claims | 3 |
 | M23 | per-task operations: no closeout holdback | 1 |
 | M24 | observation replay ignores a differing projection | 1 |
 | M25 | profile admits `maxOperationsPerTask` below creation + closeout | 1 |
 | M26 | `raiseCapacityLimits` skips admission | 1 |
-| M27 | pending completion ignores the creation request | 1 |
+| M27 | pending completion ignores the creation request | 2 |
 | M28 | registration replay matches any operation by id | 1 |
 | M29 | read-back compares the revision only | 1 |
 | M30 | registry `freeze()` result ignored | 1 |
@@ -177,7 +178,7 @@ UNVERIFIED — never as "nothing went red"** (F2's lesson). Final run, against t
 | M36 | bounds not re-checked after kind normalization | 1 |
 | M37 | a resolved record may carry no operations | 1 |
 | M38 | operation identity omits the principal | 1 |
-| M39 | open does not validate record claims | 9 |
+| M39 | open does not validate record claims | 10 |
 | M40 | open does not validate pending-entry claims | 1 |
 | M41 | pending join by claim ids only | 1 |
 | M42 | registration replay rewrites a quarantined record | 1 |
