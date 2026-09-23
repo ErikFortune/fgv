@@ -229,4 +229,24 @@ into `openRepository.ts`. The rest got behaviour tests (`storage/edges.test.ts`)
 
 ## Gates
 
-*(completed at the end of the slice — see below)*
+Every step `.github/workflows/ci.yml` runs, run locally on the final code:
+
+| gate | result |
+|---|---|
+| `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
+| `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
+| `rushx lint` / `rushx fixlint` | clean; fixlint run before the final commit |
+| `rushx test` (package) | **728 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
+| `rush rebuild` (repo-wide) | `SUCCESS: 37 operations`, exit 0, no warnings |
+| `rush test` (repo-wide) | `SUCCESS: 36 operations`, exit 0 |
+| `verify-capability-docs.mjs` | router 19,587/24,000, 24/24 documented, 75 reflexes, 0 failed |
+| `generate-capability-feed.mjs --check` | 0 stale |
+| `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
+| `verify-bundler-resolution.mjs` | 20 checked, 0 failed |
+| `verify-tarball-exports.mjs` | 26 packages, 205 paths, 0 failed |
+
+The repo-wide rebuild matters here for a specific reason: T3 revised shared vocabulary
+(`CapacityClaimPurpose`, the update-id bound) and `ts-agent-tasks` has no consumers yet, so the
+rebuild is the check that nothing outside the package was implementing it.
+
+**Layer 2 (Copilot) is driven on the PR**; its record is appended below as it happens.
