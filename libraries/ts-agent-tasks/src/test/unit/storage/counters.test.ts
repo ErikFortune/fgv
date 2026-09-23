@@ -250,7 +250,7 @@ describe.each<CohortKind>(['terminal', 'archived', 'future'])('unrelated %s hist
       })
     );
     expect(seedReads).toBe(total + 10);
-    (await repository.rebuildIndexes()).orThrow();
+    expect(await repository.rebuildIndexes()).toSucceed();
     const inspection = inspectRepository(repository)!;
     expect(inspection.evidence).toEqual(
       expect.objectContaining({ taskPassReads: total, selectedPassReads: 10, graphMarks: total })

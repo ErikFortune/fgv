@@ -468,6 +468,47 @@ describe('cursors and change', () => {
     );
   });
 
+  test.each<[string, () => number]>([
+    [
+      'throws',
+      () => {
+        throw new Error('clock offline');
+      }
+    ],
+    ['returns a non-finite reading', () => Number.NaN]
+  ])('a host clock that %s fails a paged query instead of escaping it', async (__, broken) => {
+    const { TaskEnvironment } = await import('../../../index');
+    const { environment } = await import('../../helpers/storageFixtures');
+    const base = environment().env;
+    let clockBroken = false;
+    const env = TaskEnvironment.create({
+      logger: base.logger,
+      clock: () => (clockBroken ? broken() : base.clock()),
+      newId: () => base.newId()
+    }).orThrow();
+    const repository = (
+      await FileTreeTaskRepository.initialize(params(memoryRoot(), 'session', { environment: env }))
+    ).orThrow();
+    await addTask(repository, 'a', { scopes: [A] });
+    await addTask(repository, 'b', { scopes: [A] });
+    await addTask(repository, 'c', { scopes: [A] });
+    const cursor = (await page(repository, { selection: select(), limit: 1 })).nextCursor!;
+    clockBroken = true;
+    // Issuing a handle and resolving one both read the clock.
+    expect(await repository.query({ selection: select(), limit: 1 })).toFailWithDetail(
+      /cursor: the host clock/i,
+      expect.objectContaining({ code: 'storage-unavailable', retry: 'safe' })
+    );
+    expect(await repository.query({ selection: select(), limit: 1, cursor })).toFailWithDetail(
+      /cursor: the host clock/i,
+      expect.objectContaining({ code: 'storage-unavailable', retry: 'safe' })
+    );
+    clockBroken = false;
+    expect(await repository.query({ selection: select(), limit: 1, cursor })).toSucceedAndSatisfy((next) =>
+      expect(ids(next.items)).toEqual(['b'])
+    );
+  });
+
   test('an oversized normalized query is refused before any handle retains it', async () => {
     const { defaultTaskCapacityProfile } = await import('../../../index');
     const profile = {
@@ -523,9 +564,10 @@ describe('due candidates', () => {
   }
 
   test('absent excluded, equal and before included, after excluded; ordered by notBefore then id', async () => {
-    const result = (await repository.queryDue(due())).orThrow();
-    expect(ids(result.items)).toEqual(['early', 'before', 'equal']);
-    expect(result.completeness).toBe('complete');
+    expect(await repository.queryDue(due())).toSucceedAndSatisfy((result) => {
+      expect(ids(result.items)).toEqual(['early', 'before', 'equal']);
+      expect(result.completeness).toBe('complete');
+    });
   });
 
   test('paging keeps (notBefore, id) order across pages', async () => {
@@ -607,14 +649,15 @@ describe('owed updates', () => {
     await addTask(repository, 'b', { scopes: [B], audience: ['s1', 's2'] });
     await addTask(repository, 'c', { scopes: [A] });
     await change(repository, 'a', { lifecycle: succeeded }, { audience: ['s1'] });
-    const owed = (await repository.listOwed({ subscription: s1 })).orThrow();
-    expect(owed.updates.map((u) => u.id)).toEqual(['a:1:0', 'a:2:0', 'b:1:0']);
-    expect(owed.completeness).toBe('complete');
-    expect((await repository.listOwed({ subscription: s2 })).orThrow().updates.map((u) => u.id)).toEqual([
-      'b:1:0'
-    ]);
-    expect((await repository.listOwed({ subscription: 's3' as SubscriptionId })).orThrow().updates).toEqual(
-      []
+    expect(await repository.listOwed({ subscription: s1 })).toSucceedAndSatisfy((owed) => {
+      expect(owed.updates.map((u) => u.id)).toEqual(['a:1:0', 'a:2:0', 'b:1:0']);
+      expect(owed.completeness).toBe('complete');
+    });
+    expect(await repository.listOwed({ subscription: s2 })).toSucceedAndSatisfy((owed) =>
+      expect(owed.updates.map((u) => u.id)).toEqual(['b:1:0'])
+    );
+    expect(await repository.listOwed({ subscription: 's3' as SubscriptionId })).toSucceedAndSatisfy((owed) =>
+      expect(owed.updates).toEqual([])
     );
 
     // Terminal, then archived: gone from every lifecycle query, still owed.

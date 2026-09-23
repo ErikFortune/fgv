@@ -5,7 +5,7 @@
 
 import { Converter, Result } from '@fgv/ts-utils';
 import { ITaskCommitRecord, ITaskEnvironment, PageCursor, TaskId, TaskResult } from '../types';
-import { mintId, ok, taskFailure } from './failures';
+import { mintId, ok, propagate, readClock, taskFailure } from './failures';
 import { IEncodedRecord } from './layout';
 import { ITaskRecordCacheOptions } from './model';
 
@@ -93,7 +93,11 @@ export class CursorTable {
       }
       this._epoch = minted.value;
     }
-    const now: number = this._environment.clock();
+    const clock: TaskResult<number> = this._now();
+    if (clock.isFailure()) {
+      return propagate(clock);
+    }
+    const now: number = clock.value;
     this._expire(now);
     while (this._handles.size >= maxCursorHandles) {
       this._handles.delete(this._handles.keys().next().value!);
@@ -105,7 +109,11 @@ export class CursorTable {
 
   /** Resolves a token for a query at the current generation. */
   public resolve(token: PageCursor, descriptor: string, generation: number): TaskResult<ICursorPosition> {
-    const now: number = this._environment.clock();
+    const clock: TaskResult<number> = this._now();
+    if (clock.isFailure()) {
+      return propagate(clock);
+    }
+    const now: number = clock.value;
     this._expire(now);
     const handle: ICursorHandle | undefined = this._handles.get(token);
     if (handle === undefined) {
@@ -137,6 +145,13 @@ export class CursorTable {
   /** Drops every handle — a rebuild or close releases the old generation's cursors. */
   public clear(): void {
     this._handles.clear();
+  }
+
+  private _now(): TaskResult<number> {
+    const read: Result<number> = readClock(this._environment);
+    return read.isFailure()
+      ? taskFailure(`cursor: the host ${read.message}`, 'storage-unavailable', 'safe')
+      : ok(read.value);
   }
 
   private _expire(now: number): void {

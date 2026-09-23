@@ -80,8 +80,8 @@ not fixed, as instructed.
 
 ## Counter evidence at 0 / 1,000 / 10,000
 
-`src/test/unit/storage/counters.test.ts`, run on the final source (897 tests, 100% on all four
-metrics). Predictions were written in `state.md` before the first run; **all held on the first
+`src/test/unit/storage/counters.test.ts`, run on the final source (909 tests after the CodeRabbit
+fixes, 100% on all four metrics). Predictions were written in `state.md` before the first run; **all held on the first
 run and on the final one.** Fixed matching set: 20 open tasks in scope A (14 pending, 5 waiting
 due, 1 waiting past the cutoff), 10 owing subscription `s1`. Unrelated history grows **in the same
 scope**, one cohort at a time, seeded by cloning a real-API template and validated by the real
@@ -331,3 +331,16 @@ four metrics, lint clean, mutation matrix 92/92.
 
 M1 was re-run on `1ec1a953`, the final source, from a clean build, and every prediction held (table
 above). The counter suite (0 / 1,000 / 10,000) passes on the same source as part of the 907.
+
+### CodeRabbit — one manual review on 607c0f09
+
+| finding | disposition |
+|---|---|
+| **(minor)** `CursorTable` read the host clock directly, so a throwing clock escaped `query`/`queryDue`/`listOwed` as a rejected promise, and a `NaN` reading meant handles never expired | fixed: `issue` and `resolve` read the clock through `readClock`, which applies `TaskEnvironment.now()`'s guards (captured throw, finite check). A failure comes back as `storage-unavailable` / `retry: 'safe'`. The tests, for a throwing clock and a `NaN` clock, were red on the old code |
+| **(minor)** this file cited 897 tests for the final counter run | fixed (above) |
+| **(minor)** `counters.test.ts` asserted a rebuild with `.orThrow()` | now `toSucceed()` |
+| (nitpick) `.orThrow()` extraction in `query.test.ts` assertions | the single-shot assertions (due ordering, owed per subscription) now use `toSucceedAndSatisfy`. Paging tests keep extracting the page whose cursor the next step consumes, as `page()` does throughout the file |
+
+Package after these fixes: 909 tests, 100% on all four metrics, lint clean, mutation matrix 92/92.
+M1 is not re-run: the change touches only cursor-handle clock reads, which M1 does not exercise, and
+no index or read path.
