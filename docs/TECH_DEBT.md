@@ -106,8 +106,11 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   inherit silently, and the failure surfaces as refused registrations in production rather than
   at build time.
 
-  **Reference**: `.ai/tasks/completed/2026-09/agent-tasks-t4/result.md` § the orchestrator
-  decision item, and [#687](https://github.com/ErikFortune/fgv/pull/687).
+  **Reference**: [#687](https://github.com/ErikFortune/fgv/pull/687), and the T4 stream's
+  `result.md` § the orchestrator decision item — at
+  `.ai/tasks/active/agent-tasks-t4/` today, moving to
+  `.ai/tasks/completed/<month>/agent-tasks-t4/` when the `agent-tasks-v1` cluster finalizes
+  (this family finalizes at cluster close, not per slice). The PR link is the stable anchor.
 
 *(The `checkThreshold` zero-byte-section measure gap (shipped in C2, #669) was fixed by C3 of
 `ai-assist-prompt-caching`: a section with `chars === 0` now contributes `0` to the measured total
