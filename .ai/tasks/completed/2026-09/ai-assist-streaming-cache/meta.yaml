@@ -1,9 +1,8 @@
 id: ai-assist-streaming-cache
 status: shipped
 packages: ['@fgv/ts-extras']
-prs:
-  [] # PR not yet opened this session — code is complete, tested, and pushed to
-  # claude/ai-assist-streaming-cache; fill in once a PR exists
+prs: [688]
+openPrs: []
 opened: 2026-09-23
 closed: 2026-09-23
 summary:

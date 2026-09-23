@@ -65,7 +65,12 @@ function mockSseResponse(chunks: ReadonlyArray<string>): void {
     status: 200,
     body: makeReadable(chunks),
     text: jest.fn().mockResolvedValue(''),
-    headers: new Map([['content-type', 'text/event-stream']])
+    // `Headers` rather than a `Map`: nothing in the streaming path reads a response
+    // header today, so this is fidelity rather than a fix — but a `Map` is
+    // case-sensitive where `Headers` is not, so the day someone adds a
+    // `response.headers.get('content-type')` check, a `Map` mock would diverge from
+    // runtime silently instead of failing.
+    headers: new Headers({ 'content-type': 'text/event-stream' })
   };
   (global.fetch as jest.Mock).mockResolvedValue(response);
 }
