@@ -39,6 +39,7 @@
 import { captureAsyncResult, fail, type Logging, Result, succeed } from '@fgv/ts-utils';
 import { type JsonArray, type JsonObject } from '@fgv/ts-json-base';
 
+import { type IAiCacheRequest } from '../cacheRequest';
 import {
   type AiServerToolConfig,
   type AiToolConfig,
@@ -64,7 +65,11 @@ import { callAnthropicStream } from './anthropic';
 import { callOpenAiResponsesStream } from './openaiResponses';
 import { callGeminiStream } from './gemini';
 import { type IStreamApiConfig } from './common';
-import { supportsCacheUsageReporting } from '../streamUsageCapability';
+import {
+  supportsCacheUsageReporting,
+  supportsPromptCacheBreakpoints,
+  supportsPromptCacheRouting
+} from '../streamUsageCapability';
 
 // ============================================================================
 // Tool-result accumulation (internal)
@@ -536,6 +541,17 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
    * pre-policy behavior: a `Result.fail` up front, before any wire call.
    */
   readonly toolConflictPolicy?: AiToolConflictPolicy;
+  /**
+   * Prompt-caching plan for this request. Omitted, nothing cache-related is sent — the request
+   * body is byte-identical to a build predating this feature. See {@link AiAssist.IAiCacheRequest}.
+   *
+   * @remarks
+   * `executeClientToolTurn` represents a single round of a multi-round tool loop; a caller
+   * driving several rounds passes this on **each** call, and it is validated against — and
+   * applied to — that round's own `system` each time, never cached across rounds. Gated per
+   * provider exactly as `IProviderCompletionParams.cache` is on the non-streaming path.
+   */
+  readonly cache?: IAiCacheRequest;
 }
 
 /**
@@ -631,7 +647,8 @@ export function executeClientToolTurn(
     endpoint,
     onBeforeToolExecute,
     maxTokens,
-    toolConflictPolicy
+    toolConflictPolicy,
+    cache
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -736,9 +753,21 @@ export function executeClientToolTurn(
           anthropicBuffer,
           continuationMessages,
           isAdaptiveThinkingModel(descriptor, config.model),
-          maxTokens
+          maxTokens,
+          cache
         );
-      case 'openai':
+      case 'openai': {
+        // Same gating as callProviderCompletion's 'openai' case in completionClient.ts — see the
+        // comment there for why breakpoints and the routing key are gated independently. Client-tool
+        // turns always route OpenAI through the Responses API, which takes the routing key as a body
+        // field on every supporting provider, so there is no chatCompletionsHeader to thread here.
+        const routing = supportsPromptCacheRouting(descriptor);
+        const breakpoints = supportsPromptCacheBreakpoints(descriptor) ? cache?.systemBreakpoints : undefined;
+        const routedKey = routing !== undefined ? cache?.cacheKey : undefined;
+        const gatedCache: IAiCacheRequest | undefined =
+          breakpoints !== undefined || routedKey !== undefined
+            ? { systemBreakpoints: breakpoints, cacheKey: routedKey }
+            : undefined;
         return callOpenAiResponsesStream(
           config,
           prompt,
@@ -752,8 +781,10 @@ export function executeClientToolTurn(
           openAiCallMap,
           continuationMessages,
           maxTokens,
-          supportsCacheUsageReporting(descriptor)
+          supportsCacheUsageReporting(descriptor),
+          gatedCache
         );
+      }
       case 'gemini':
         return callGeminiStream(
           config,

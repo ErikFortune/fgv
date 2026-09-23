@@ -145,7 +145,11 @@ async function* translateProxyStream(response: Response): AsyncGenerator<IAiStre
  * `callProxiedCompletion`: `tier` is resolved here and sent as a concrete
  * `modelOverride`, so a proxy needs no `tier` vocabulary; `endpoint` is refused,
  * because a proxy cannot confirm it honored it and reaching the provider's default
- * upstream instead would send the request somewhere the caller excluded.
+ * upstream instead would send the request somewhere the caller excluded. `cache`,
+ * by contrast, is forwarded as a plain `body.cache` field exactly as
+ * `callProxiedCompletion` forwards it — a proxy that ignores it degrades to the
+ * request it would have sent anyway, never a misdirected one, so there is no
+ * `endpoint`-style reason to refuse it.
  *
  * The proxy server is responsible for opening the upstream SSE connection,
  * translating provider-native events to the unified vocabulary, and
@@ -171,7 +175,8 @@ export async function callProxiedCompletionStream(
     thinking,
     maxTokens,
     tier,
-    endpoint
+    endpoint,
+    cache
   } = params;
 
   // Enforce the same unified-request invariants the direct entry points apply
@@ -237,6 +242,16 @@ export async function callProxiedCompletionStream(
   // correct upstream provider field (see AiAssist.usesMaxCompletionTokensField).
   if (maxTokens !== undefined) {
     body.maxTokens = maxTokens;
+  }
+  // `IAiCacheRequest` is plain numbers and a string — JSON-serializable as-is, forwarded exactly
+  // as `callProxiedCompletion` forwards it (completionClient.ts). This is a considered decision,
+  // not a default: unlike `endpoint` above, a proxy that does not understand `cache` degrades to
+  // the no-cache request it would have sent anyway — it never sends the prompt anywhere the
+  // caller excluded, so there is no correctness reason to refuse it the way #679 refused
+  // `endpoint`. No shipped proxy implementation is known to read this field yet; a caller relying
+  // on it should confirm their proxy forwards `cache` through to `callProviderCompletionStream`.
+  if (cache !== undefined) {
+    body.cache = cache;
   }
 
   /* c8 ignore next 1 - optional logger */
