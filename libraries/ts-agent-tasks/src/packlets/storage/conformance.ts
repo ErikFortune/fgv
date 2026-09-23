@@ -24,6 +24,8 @@ import {
   TaskResult,
   TaskRevision,
   UpdateCategory,
+  taskListDetailVersion,
+  taskListKind,
   taskUpdateId,
   trackedTaskDetailVersion,
   trackedTaskKind
@@ -49,8 +51,8 @@ export interface ITaskRepositoryConformanceReport {
 }
 
 /**
- * Creates one empty, writable repository whose registry has `fgv.tracked@1` registered. Called
- * once per check, so no check depends on another's state.
+ * Creates one empty, writable repository whose registry has `fgv.tracked@1` and `fgv.task-list@1`
+ * registered. Called once per check, so no check depends on another's state.
  * @public
  */
 export type TaskRepositoryFactory = () => Promise<TaskResult<ITaskRepository>>;
@@ -63,6 +65,9 @@ const B: ITaskScope = { namespace: 'conformance', key: 'b' };
 
 interface IShape {
   readonly scopes?: ReadonlyArray<ITaskScope>;
+  readonly parentId?: string;
+  /** Registers a `fgv.task-list@1` with this completion instead of a tracked task. */
+  readonly list?: 'manual' | 'all-children-succeeded';
   readonly lifecycle?: TaskLifecycle;
   readonly audience?: ReadonlyArray<string>;
   readonly binding?: ISourceBinding;
@@ -72,10 +77,11 @@ function _envelope(id: string, revision: number, shape: IShape): ITaskEnvelope {
   return {
     schemaVersion: 1,
     id: id as TaskId,
-    kind: trackedTaskKind,
-    detailVersion: trackedTaskDetailVersion,
+    kind: shape.list !== undefined ? taskListKind : trackedTaskKind,
+    detailVersion: shape.list !== undefined ? taskListDetailVersion : trackedTaskDetailVersion,
     revision: revision as TaskRevision,
     title: `conformance ${id}`,
+    ...(shape.parentId !== undefined ? { parentId: shape.parentId as TaskId } : {}),
     stopPolicy: 'none',
     scopes: shape.scopes ?? [A],
     lifecycle: shape.lifecycle ?? { status: 'pending' },
@@ -113,12 +119,12 @@ function _registration(id: string, shape: IShape): ITaskRegistrationRequest {
     request,
     record: {
       recordType: 'resolved',
-      task: { envelope, details: {} },
+      task: { envelope, details: shape.list !== undefined ? { completion: shape.list } : {} },
       operations: [
         {
           type: 'catalog',
           operationId: `create-${id}` as OperationId,
-          operation: 'create-tracked',
+          operation: shape.list !== undefined ? 'create-list' : 'create-tracked',
           request,
           principalKey: 'conformance',
           receipt: null
@@ -408,6 +414,46 @@ const checks: ReadonlyArray<{
       ])
   },
   {
+    name: 'childStates lists every retained child, archived included, with its final status',
+    run: async (r) =>
+      _seq([
+        () => _add(r, 'p'),
+        () => _add(r, 'c1', { parentId: 'p', lifecycle: succeeded }),
+        () => _add(r, 'c2', { parentId: 'p' }),
+        () => _change(r, 'c1', undefined, true),
+        async () =>
+          (await r.childStates('p' as TaskId)).asResult.onSuccess((children) =>
+            _same(
+              'children',
+              children.map((c) => `${c.id}:${c.state}:${c.status}:${c.archived}`),
+              ['c1:resolved:succeeded:true', 'c2:resolved:pending:false']
+            )
+          ),
+        async () => _code('an unknown parent', await r.childStates('none' as TaskId), 'not-found-or-denied')
+      ])
+  },
+  {
+    name: 'list-completion candidates are automatic lists whose every child succeeded, kept current by commits',
+    run: async (r) => {
+      const candidates = async (expected: ReadonlyArray<string>): Promise<Result<true>> =>
+        (await r.listCompletionCandidates({ limit: 10 })).asResult.onSuccess((ids) =>
+          _same('candidates', ids, expected)
+        );
+      return _seq([
+        () => _add(r, 'auto', { list: 'all-children-succeeded' }),
+        () => _add(r, 'manual', { list: 'manual' }),
+        () => _add(r, 'empty', { list: 'all-children-succeeded' }),
+        () => _add(r, 'a1', { parentId: 'auto' }),
+        () => _add(r, 'm1', { parentId: 'manual', lifecycle: succeeded }),
+        () => candidates([]),
+        () => _change(r, 'a1', succeeded),
+        () => candidates(['auto']),
+        () => _add(r, 'a2', { parentId: 'auto' }),
+        () => candidates([])
+      ]);
+    }
+  },
+  {
     name: 'a rebuild answers exactly as before, at a newer generation',
     run: async (r) =>
       _seq([
@@ -441,8 +487,9 @@ const checks: ReadonlyArray<{
  * semantics as `FileTreeTaskRepository`: scope unions deduplicated before paging, lifecycle
  * classes, exact pages without a trailing empty one, cursors that refuse a different query and
  * go stale on change, due boundaries, owed updates that outlive open work and archive, archive
- * that removes a task from queries but not its identity or source binding, and a rebuild that
- * answers exactly as before. Framework-free: it succeeds with the report when every check
+ * that removes a task from queries but not its identity or source binding, the complete child set
+ * archived children included, list-completion candidates kept current by every commit, and a
+ * rebuild that answers exactly as before. Framework-free: it succeeds with the report when every check
  * passes, and fails naming the checks that did not, so any test runner can assert it.
  *
  * It checks behaviour, not data structures — the resident-index shape and work counters are the
