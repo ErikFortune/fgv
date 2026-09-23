@@ -256,9 +256,12 @@ export function checkPurpose(
   purpose: 'operation' | 'observation' | 'maintenance'
 ): Result<true> {
   if (current.recordType === 'unresolved') {
-    return purpose === 'observation'
-      ? succeed(true)
-      : fail(`first resolution is an observation; a '${purpose}' commit cannot resolve a task`);
+    if (purpose !== 'observation') {
+      return fail(`first resolution is an observation; a '${purpose}' commit cannot resolve a task`);
+    }
+    return draft.archived
+      ? fail(`an observation cannot archive a task; that takes a catalog operation`)
+      : succeed(true);
   }
   if (purpose === 'observation') {
     // A source owns execution state, not the catalog: identity, placement, responsibility and

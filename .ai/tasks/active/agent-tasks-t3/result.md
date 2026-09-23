@@ -198,6 +198,10 @@ round-4 head (d2643334), after two whose target lines had moved (M21, M34) were 
 | M56 | registration replay ignores the first-record type | 1 |
 | M57 | pending entries without a record are not checked | 3 |
 | M58 | a resumed registration overwrites an appeared file | 1 |
+| M59 | first resolution may archive | 1 |
+| M60 | open completion does not re-check the manifest | 1 |
+| M61 | a durable claim ignores session holders of the path | 2 |
+| M62 | a resumed registration never completes a landed record | 3 |
 
 **Three findings came from the exercise rather than from the suite:**
 
@@ -269,7 +273,7 @@ Every step `.github/workflows/ci.yml` runs, run locally on the final code:
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint run before the final commit |
-| `rushx test` (package) | **774 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
+| `rushx test` (package) | **780 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
 | `rush rebuild` (repo-wide) | `SUCCESS: 37 operations`, exit 0, no warnings |
 | `rush test` (repo-wide) | `SUCCESS: 36 operations`, exit 0 |
 | `verify-capability-docs.mjs` | router 19,587/24,000, 24/24 documented, 75 reflexes, 0 failed |
@@ -357,4 +361,13 @@ The profile narrowed again: each finding is a place round 2's checks still trust
 | a resolved first record created by `register-external` should be refused | **declined**: `registerExternal` takes an optional `initialObservation` (design §7, `IRegisterExternalTask`), whose registration writes a resolved first record. Unresolved ⇒ `register-external` is the invariant; the converse is not |
 | commit replay should require the offered post-state to equal the committed record | **declined**: a lost-response retry is prepared against the record it read, which later commits may have advanced. The dedup key is the operation's identity; round 4 already requires every offered operation to be committed. Comparing derived state would refuse legitimate retries |
 | observation replay should compare catalog fields and evidence arrays too | **declined** on the same ground: the dedup key is the source revision plus its semantic projection (design §5, *Source API and reconciliation*); catalog fields and owed updates in a retried draft may be stale for the same reason |
+
+### Copilot round 6 — 3 high, 1 medium, all real, all fixed
+
+| finding | fix |
+|---|---|
+| a first-resolution observation could arrive archived, creating a tombstone with no archive operation | `checkPurpose` refuses an archived first resolution |
+| open's completion write rewrote the manifest without checking it was still the scanned one | `_completeRegistrations` re-lists and compares the on-disk manifest with the scanned text; a change refuses (`storage-corrupt`), an unreadable manifest refuses `safe`, nothing written either way |
+| a Node directory could be open once as a session and once as a durable repository | one owner table: held by item always, and by path while a durable repository holds it. **Residual, documented:** two *session* repositories over one real directory through two items are not detected — FileTree does not expose what backs a root, and the brief makes an upstream capability an escalation, not a T3 change |
+| **regression from round 5:** after a clean failure of the live write, a retry saw its own landed record and refused it as out-of-band | `_resumeRegistration`: a landed record that is exactly the pending registration's first record (identity, claims, record revision 1) finishes step 3 over the record as it is; anything else is `conflict` and left untouched. M62 first went red on only two tests — rewriting identical bytes is indistinguishable — so the success test now retries with a different title, which only finishing-over-landed preserves |
 

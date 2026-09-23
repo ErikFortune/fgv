@@ -673,6 +673,17 @@ describe('first resolution of an unresolved registration', () => {
     });
   });
 
+  test('first resolution cannot archive the task it resolves', async () => {
+    const base = resolution(unresolved, {
+      lifecycle: { status: 'succeeded', outcome: { summary: 'ok', artifacts: [] } }
+    });
+    const archived = { ...base, record: { ...base.record, archived: true } };
+    expect(await write(repository, (w) => w.commit(archived))).toFailWithDetail(
+      /an observation cannot archive a task/i,
+      code('invalid')
+    );
+  });
+
   test('first resolution is an observation: no other purpose can resolve a task', async () => {
     const base = resolution(unresolved);
     expect(await write(repository, (w) => w.commit({ ...base, purpose: 'maintenance' }))).toFailWithDetail(

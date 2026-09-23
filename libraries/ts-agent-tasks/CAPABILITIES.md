@@ -95,8 +95,10 @@ but it holds its reservations, survives a crash, is reported by the next open, a
 the host retries the same registration**: same task id, operation id, catalog operation,
 principal, first-record type and canonically equal request, same claim ids, no second charge. A pending entry whose record did land is completed by
 the next open. The same identity with anything else is a `conflict`. A live identity replays. A new
-identity — or a resumed pending one — whose record file already exists on disk without this
-repository having committed it is a `conflict`, and the file is left untouched.
+identity whose record file already exists on disk without this repository having committed it
+is a `conflict`, and the file is left untouched. A resumed pending registration whose own first
+record already landed (the live write failed cleanly) finishes over that record as it is; any
+other file at its name is a `conflict` and left untouched.
 
 **An external task can be registered unresolved.** An `IUnresolvedTaskCommitRecord` carries the
 registration and its binding and invents no lifecycle; `read` returns
@@ -135,9 +137,12 @@ creation operation, request and claim ids. **Anything blocking returns a read-on
 repository, and nothing is repaired or rewritten. Open performs no clock read, no ID mint and no
 source I/O: **it never starts or reattaches external work.** `ITaskRecoveryReport` says what open
 found (`ITaskRecoveryIssue`, blocking or advisory) and did (completed registrations, reclaimed
-temporaries). A second instance over the same root in one process is refused — by path for a
-durable root, by item for a session root. That is a guard against accidents, not cross-process
-fencing: exclusivity between processes is the host's deployment requirement.
+temporaries). A second instance over the same root in one process is refused — by item always,
+and by path while a durable repository holds it, so one directory cannot be open as a session
+and a durable repository at once. Two session repositories over one real directory through two
+different items are not detected: FileTree does not say whether a root is disk-backed. That is a
+guard against accidents, not cross-process fencing: exclusivity between processes is the host's
+deployment requirement.
 
 **Unknown data is kept, not rewritten.** A record written by a newer storage format (or a newer
 envelope schema) blocks open and is left byte-identical. A structurally valid task whose kind is

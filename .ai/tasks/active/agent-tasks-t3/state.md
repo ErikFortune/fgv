@@ -156,3 +156,10 @@ identity, not derived post-state), one PR-description nit. 774 tests, 100%. The 
 are now narrow cross-checks between already-validated fields; the two declines re-argue an
 already-settled replay contract. Treating this as the onset of diminishing returns: one more
 round to confirm, then stop the loop and request CodeRabbit.
+
+## 2026-09-23 — Copilot round 6 addressed
+
+Four findings (3 high, 1 medium), all real; one was a regression introduced by the round-5
+resume check. M59–M62 red; 780 tests, 100%. Findings are still substantive, so the loop
+continues (round 7 of a 10 cap). Upstream gap noted: FileTree cannot say whether a root is
+disk-backed, which is what session/session same-directory detection would need.

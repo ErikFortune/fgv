@@ -386,9 +386,27 @@ export function openRepository(
 function _completeRegistrations(
   store: RecordStore,
   converters: TaskConverters,
-  manifest: ITaskRepositoryManifest,
+  scanned: { manifest: ITaskRepositoryManifest; text: string },
   done: ReadonlySet<string>
 ): TaskResult<{ manifest: ITaskRepositoryManifest; bytes: number; text: string }> {
+  const manifest: ITaskRepositoryManifest = scanned.manifest;
+  // The one write open performs is fenced like every other manifest rewrite: the manifest on
+  // disk must still be the one the scan validated, or the write would erase whatever changed.
+  const current: Result<string> = store.list().onSuccess(() => store.read(manifestName));
+  if (current.isFailure()) {
+    return taskFailure(
+      `open: ${manifestName} cannot be re-read before completing registrations: ${current.message}`,
+      'storage-unavailable',
+      'safe'
+    );
+  }
+  if (current.value !== scanned.text) {
+    return taskFailure(
+      `open: ${manifestName} changed after it was scanned; nothing was written`,
+      'storage-corrupt',
+      'after-host-action'
+    );
+  }
   const next: ITaskRepositoryManifest = {
     ...manifest,
     manifestRevision: manifest.manifestRevision + 1,
@@ -780,7 +798,12 @@ function _scan(
   const completion: TaskResult<{ manifest: ITaskRepositoryManifest; bytes: number; text: string }> =
     completed.length === 0
       ? ok({ manifest, bytes: manifestRead.bytes, text: manifestRead.text })
-      : _completeRegistrations(store, converters, manifest, new Set<string>(completed));
+      : _completeRegistrations(
+          store,
+          converters,
+          { manifest, text: manifestRead.text },
+          new Set<string>(completed)
+        );
   if (completion.isFailure()) {
     return propagate(completion);
   }

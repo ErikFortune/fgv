@@ -381,11 +381,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
       )
       .onSuccess((validated) =>
         pending !== undefined
-          ? // A resumed registration writes a name the inventory has held since its pending
-            // entry; a file there now appeared out of band, and is not ours to overwrite.
-            this._checkUnclaimedName(taskId, operationId).onSuccess(() =>
-              this._writeRegistration(taskId, operationId, validated, pending)
-            )
+          ? this._resumeRegistration(taskId, operationId, validated, pending)
           : this._checkUnclaimedName(taskId, operationId).onSuccess(() =>
               this._newRegistration(taskId, identity, validated)
             )
@@ -484,34 +480,95 @@ export class FileTreeTaskRepository implements ITaskRepository {
     draft: ITaskRecordDraft,
     entry: IPendingInventoryEntry
   ): TaskResult<ITaskCommitRecord> {
+    return this._buildRecord(draft, 1, withOwnership(entry.capacityClaims, 'live')).onSuccess((built) =>
+      this._finishRegistration(taskId, operationId, built, true)
+    );
+  }
+
+  /**
+   * A resumed registration. If its record never landed, steps 2 and 3 run as usual. If a file
+   * is already at its name, it is either this registration's own first record — step 2 landed
+   * and step 3 failed cleanly — in which case only step 3 runs, over the record as it is on
+   * disk; or it is something else, which is refused and left untouched.
+   */
+  private _resumeRegistration(
+    taskId: TaskId,
+    operationId: OperationId,
+    draft: ITaskRecordDraft,
+    entry: IPendingInventoryEntry
+  ): TaskResult<ITaskCommitRecord> {
+    const name: string = recordName('task', taskId);
+    const listed: Result<ReadonlyArray<string>> = this._store.list();
+    if (listed.isFailure()) {
+      return taskFailure(`register ${taskId}: ${listed.message}`, 'storage-unavailable', 'safe', {
+        operationId
+      });
+    }
+    if (!listed.value.includes(name)) {
+      return this._writeRegistration(taskId, operationId, draft, entry);
+    }
+    const landed: Result<IReadRecord> = this._store.read(name).onSuccess((text) =>
+      parseJson(text)
+        .onSuccess((parsed) => this._converters.storage.record.convert(parsed))
+        .onSuccess((record) =>
+          checkRegistrationDraft(record, entry.operationId, entry.request).onSuccess((creation) =>
+            record.recordRevision === 1 &&
+            canonicallyEqual(registrationIdentity(record, creation), pendingIdentity(entry)) &&
+            canonicallyEqual(record.capacityClaims, withOwnership(entry.capacityClaims, 'live'))
+              ? succeed<IReadRecord>({ record, encoded: { text, bytes: utf8Length(text) } })
+              : fail<IReadRecord>(`its identity or claims differ from the pending registration`)
+          )
+        )
+    );
+    if (landed.isFailure()) {
+      return taskFailure(
+        `register ${taskId}: ${name} already exists but is not this registration's first record ` +
+          `(${landed.message}); it is left untouched`,
+        'conflict',
+        'after-host-action',
+        { operationId }
+      );
+    }
+    return this._finishRegistration(taskId, operationId, landed.value, false);
+  }
+
+  /** Admits the record, writes it if it has not landed, then marks the entry live. */
+  private _finishRegistration(
+    taskId: TaskId,
+    operationId: OperationId,
+    built: IReadRecord,
+    writeRecord: boolean
+  ): TaskResult<ITaskCommitRecord> {
     const profile: ITaskCapacityProfile = this.profile;
     const liveManifest: ITaskRepositoryManifest = this._withEntry({ id: taskId, state: 'live' });
-    return this._buildRecord(draft, 1, withOwnership(entry.capacityClaims, 'live')).onSuccess((built) => {
-      const recordEntry: ILedgerEntry = this._ledgerForRecord(taskId, built.record, built.encoded);
-      // The claims move from the pending entry to the record by the same IDs: the record's
-      // entry replaces the pending one, so nothing is charged twice or released early.
-      return this._ledger
-        .admit(new Map([[taskKey(taskId), recordEntry]]))
-        .onSuccess(() => this._encodeManifest(liveManifest))
-        .onSuccess((manifestEncoded) =>
-          this._writeFile(recordName('task', taskId), built.encoded.text, operationId)
-            .onSuccess(() => this._relist(operationId))
-            .onSuccess(() => this._writeFile(manifestName, manifestEncoded.text, operationId))
-            .onSuccess(() => {
-              this._setManifest(liveManifest);
-              this._pending.delete(taskId);
-              this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
-              this._ledger.apply(
-                new Map([
-                  [taskKey(taskId), recordEntry],
-                  ['repository', manifestEntry(manifestEncoded.bytes, profile)]
-                ])
-              );
-              this._generation++;
-              return ok(built.record);
-            })
-        );
-    });
+    const recordEntry: ILedgerEntry = this._ledgerForRecord(taskId, built.record, built.encoded);
+    // The claims move from the pending entry to the record by the same IDs: the record's
+    // entry replaces the pending one, so nothing is charged twice or released early.
+    return this._ledger
+      .admit(new Map([[taskKey(taskId), recordEntry]]))
+      .onSuccess(() => this._encodeManifest(liveManifest))
+      .onSuccess((manifestEncoded) =>
+        (writeRecord
+          ? this._writeFile(recordName('task', taskId), built.encoded.text, operationId).onSuccess(() =>
+              this._relist(operationId)
+            )
+          : ok<true>(true)
+        )
+          .onSuccess(() => this._writeFile(manifestName, manifestEncoded.text, operationId))
+          .onSuccess(() => {
+            this._setManifest(liveManifest);
+            this._pending.delete(taskId);
+            this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
+            this._ledger.apply(
+              new Map([
+                [taskKey(taskId), recordEntry],
+                ['repository', manifestEntry(manifestEncoded.bytes, profile)]
+              ])
+            );
+            this._generation++;
+            return ok(built.record);
+          })
+      );
   }
 
   /**

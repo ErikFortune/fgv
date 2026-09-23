@@ -1042,7 +1042,112 @@ describe('copilot round 5: the external origin, and pending recovery', () => {
     writeJson(inner, 'task-t1.json', { operator: 'notes' });
     const before = readText(inner, 'task-t1.json');
     expect(await repository.withWriter((w) => w.register(registration('t1')))).toFailWithDetail(
-      /task-t1\.json already exists but this repository never committed it/,
+      /task-t1\.json already exists but is not this registration's first record .*left untouched/,
+      code('conflict')
+    );
+    expect(readText(inner, 'task-t1.json')).toBe(before);
+  });
+});
+
+describe('copilot round 6: open completion and resumed registration', () => {
+  async function withPendingT2(): Promise<Root> {
+    const root = await parentAndChild();
+    const record = readJson(root, 'task-t2.json');
+    markPending(root, 't2', {
+      operationId: 'op-create-t2',
+      request: creationOf(root, 't2').request,
+      capacityClaims: pendingClaims(record)
+    });
+    return root;
+  }
+
+  /** A root whose second listing runs `between` first — the moment after open's scan. */
+  function afterScan(inner: Root, between: (root: FaultyRoot) => void): FaultyRoot {
+    const root = new FaultyRoot(inner);
+    const list = root.getChildren.bind(root);
+    let calls: number = 0;
+    root.getChildren = () => {
+      calls++;
+      if (calls === 2) {
+        between(root);
+      }
+      return list();
+    };
+    return root;
+  }
+
+  test("open's completion write is refused when the manifest changed after the scan", async () => {
+    const inner = await withPendingT2();
+    let edited: string = '';
+    const root = afterScan(inner, () => {
+      writeJson(inner, 'repository.json', { ...readJson(inner, 'repository.json'), manifestRevision: 99 });
+      edited = readText(inner, 'repository.json');
+    });
+    expect(await FileTreeTaskRepository.open(params(root, 'session'))).toFailWithDetail(
+      /repository\.json changed after it was scanned; nothing was written/,
+      code('storage-corrupt')
+    );
+    expect(readText(inner, 'repository.json')).toBe(edited);
+    // And the root was released.
+    expect(await FileTreeTaskRepository.open(params(inner, 'session'))).toSucceed();
+  });
+
+  test("open's completion write is refused safely when the manifest cannot be re-read", async () => {
+    const inner = await withPendingT2();
+    const root = afterScan(inner, (r) => {
+      r.failChildren = true;
+    });
+    expect(await FileTreeTaskRepository.open(params(root, 'session'))).toFailWithDetail(
+      /cannot be re-read before completing registrations/,
+      expect.objectContaining({ code: 'storage-unavailable', retry: 'safe' })
+    );
+  });
+
+  test('a retry finishes a registration whose record landed but whose live write failed', async () => {
+    const inner = memoryRoot() as Root;
+    const root = new FaultyRoot(inner);
+    const repository = (await FileTreeTaskRepository.initialize(params(root, 'session'))).orThrow();
+    // Let the pending write through; fail the live write cleanly.
+    root.faults.push({ name: 'repository.json', when: 'before', visibility: 'unchanged', skip: 1 });
+    expect(await repository.withWriter((w) => w.register(registration('t1')))).toFailWithDetail(
+      /before anything became visible/,
+      code('storage-unavailable')
+    );
+    const landed = readText(inner, 'task-t1.json');
+    // A listing failure refuses the retry safely.
+    root.failChildren = true;
+    expect(await repository.withWriter((w) => w.register(registration('t1')))).toFailWithDetail(
+      /cannot list/,
+      expect.objectContaining({ code: 'storage-unavailable', retry: 'safe' })
+    );
+    root.failChildren = false;
+    // The retry's draft differs outside the registration identity: the landed record wins.
+    const retitled = registration('t1', { envelope: { title: 'retitled on retry' } });
+    expect(await repository.withWriter((w) => w.register(retitled))).toSucceedAndSatisfy((record) => {
+      expect(record.recordRevision).toBe(1);
+      expect(record.recordType === 'resolved' && record.task.envelope.title).toBe('task t1');
+    });
+    // Step 3 only: the landed record was not rewritten, and the entry is live.
+    expect(readText(inner, 'task-t1.json')).toBe(landed);
+    expect(readJson(inner, 'repository.json').tasks).toEqual([{ id: 't1', state: 'live' }]);
+    expect(await repository.read(t1)).toSucceed();
+  });
+
+  test('a landed record that is not exactly this registration is refused and left alone', async () => {
+    const inner = memoryRoot() as Root;
+    const root = new FaultyRoot(inner);
+    const repository = (await FileTreeTaskRepository.initialize(params(root, 'session'))).orThrow();
+    root.faults.push({ name: 'repository.json', when: 'before', visibility: 'unchanged', skip: 1 });
+    await repository.withWriter((w) => w.register(registration('t1')));
+    const record = readJson(inner, 'task-t1.json');
+    const [creation] = record.operations as JsonObject[];
+    writeJson(inner, 'task-t1.json', {
+      ...record,
+      operations: [{ ...creation, principalKey: 'someone-else' }]
+    });
+    const before = readText(inner, 'task-t1.json');
+    expect(await repository.withWriter((w) => w.register(registration('t1')))).toFailWithDetail(
+      /its identity or claims differ from the pending registration.*left untouched/,
       code('conflict')
     );
     expect(readText(inner, 'task-t1.json')).toBe(before);

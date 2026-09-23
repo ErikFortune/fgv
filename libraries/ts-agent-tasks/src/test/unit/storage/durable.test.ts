@@ -30,6 +30,25 @@ describe('durable mode on the Node filesystem', () => {
     ).orThrow();
   }
 
+  test('one directory cannot be open as a session and a durable repository at once, either way round', async () => {
+    const durable = await initialize();
+    expect(await FileTreeTaskRepository.open(params(nodeRootAt(dir), 'session'))).toFailWithDetail(
+      /already open in this process/i,
+      expect.objectContaining({ code: 'conflict' })
+    );
+    durable.close();
+    const session = (await FileTreeTaskRepository.open(params(nodeRootAt(dir), 'session'))).orThrow();
+    expect(
+      await FileTreeTaskRepository.open(params(nodeRootAt(dir), { durable: 'process-crash' }))
+    ).toFailWithDetail(/already open in this process/i, expect.objectContaining({ code: 'conflict' }));
+    if (session.state === 'ready') {
+      session.repository.close();
+    }
+    expect(
+      await FileTreeTaskRepository.open(params(nodeRootAt(dir), { durable: 'process-crash' }))
+    ).toSucceed();
+  });
+
   test('initializes, commits and reopens durably', async () => {
     const repository = await initialize();
     expect(repository.mode).toEqual({ durable: 'process-crash' });

@@ -14,20 +14,26 @@ import { Result, fail, succeed } from '@fgv/ts-utils';
  * It is not fencing and claims nothing across processes: exclusivity between processes is a
  * host deployment requirement, and opening one root from competing processes is unsupported.
  *
- * A durable root is identified by its absolute path, which is process-global for the Node
- * store. A session root is identified by the directory item itself: two in-memory trees both
- * rooted at `/` are different roots, and a path key would wrongly treat them as one.
+ * One table covers both modes, so a root cannot be open once as a session repository and once
+ * as a durable one. A root is held by its directory item always, and by its absolute path while
+ * any durable repository holds it: a durable root's path is process-global for the Node store,
+ * so a second item for the same path is the same root. Session roots are not refused by path
+ * alone — two in-memory trees both rooted at `/` are different roots, and FileTree does not say
+ * which roots are disk-backed — so two session repositories over the same real directory through
+ * two different items are not detected. Distinguishing them needs a FileTree capability that
+ * says what backs a root.
  *
  * Nothing is registered at import; the tables fill only as repositories open, and a closed
  * repository releases its entry.
  * @internal
  */
-const durableOwners: Set<string> = new Set<string>();
-const sessionOwners: WeakSet<FileTree.IFileTreeDirectoryItem> =
-  new WeakSet<FileTree.IFileTreeDirectoryItem>();
+const itemOwners: WeakSet<FileTree.IFileTreeDirectoryItem> = new WeakSet<FileTree.IFileTreeDirectoryItem>();
+const durablePaths: Set<string> = new Set<string>();
+const sessionPaths: Map<string, number> = new Map<string, number>();
 
 /**
- * A held claim on a root. `release` is idempotent.
+ * A held claim on a root. Its holder releases it exactly once: a repository's `close` and a
+ * recovery handle's `close` are both idempotent themselves.
  * @internal
  */
 export interface IRootOwnership {
@@ -39,25 +45,30 @@ export interface IRootOwnership {
  * @internal
  */
 export function acquireRoot(root: FileTree.IFileTreeDirectoryItem, durable: boolean): Result<IRootOwnership> {
+  const path: string = root.absolutePath;
+  const sessions: number = sessionPaths.get(path) ?? 0;
+  if (itemOwners.has(root) || durablePaths.has(path) || (durable && sessions > 0)) {
+    return fail(`${path}: this root is already open in this process`);
+  }
+  itemOwners.add(root);
   if (durable) {
-    const key: string = root.absolutePath;
-    if (durableOwners.has(key)) {
-      return fail(`${key}: this root is already open in this process`);
-    }
-    durableOwners.add(key);
-    return succeed({
-      release: (): void => {
-        durableOwners.delete(key);
-      }
-    });
+    durablePaths.add(path);
+  } else {
+    sessionPaths.set(path, sessions + 1);
   }
-  if (sessionOwners.has(root)) {
-    return fail(`${root.absolutePath}: this root is already open in this process`);
-  }
-  sessionOwners.add(root);
   return succeed({
     release: (): void => {
-      sessionOwners.delete(root);
+      itemOwners.delete(root);
+      if (durable) {
+        durablePaths.delete(path);
+        return;
+      }
+      const remaining: number = sessionPaths.get(path)! - 1;
+      if (remaining > 0) {
+        sessionPaths.set(path, remaining);
+      } else {
+        sessionPaths.delete(path);
+      }
     }
   });
 }

@@ -197,8 +197,17 @@ describe('open', () => {
   });
 
   test('two different in-memory roots at the same path are different roots', async () => {
-    await initialized(memoryRoot());
-    expect(await FileTreeTaskRepository.initialize(params(memoryRoot(), 'session'))).toSucceed();
+    const first = await initialized(memoryRoot());
+    const secondRoot = memoryRoot();
+    const second = (await FileTreeTaskRepository.initialize(params(secondRoot, 'session'))).orThrow();
+    // Closing one leaves the other held: session holders of one path are counted, not collapsed.
+    first.close();
+    expect(await FileTreeTaskRepository.open(params(secondRoot, 'session'))).toFailWithDetail(
+      /already open in this process/i,
+      code('conflict')
+    );
+    second.close();
+    expect(await FileTreeTaskRepository.open(params(secondRoot, 'session'))).toSucceed();
   });
 
   test('open freezes the kind registry, so no kind can appear under committed data', async () => {
