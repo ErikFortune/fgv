@@ -50,6 +50,7 @@ import {
   checkIdentity,
   checkOperations,
   checkPurpose,
+  checkSourceIdentity,
   checkRegistrationDraft,
   firstRecordType,
   IRegistrationIdentity,
@@ -369,11 +370,19 @@ export class FileTreeTaskRepository implements ITaskRepository {
   /** {@inheritDoc ITaskRepository.lookupSource} */
   public async lookupSource(binding: ISourceBinding): Promise<TaskResult<TaskId | undefined>> {
     return this._queryable().onSuccess((index) =>
-      classify(
-        this._converters.values.sourceBinding.convert(binding),
-        'invalid',
-        'after-host-action'
-      ).onSuccess((converted) => classify(index.sourceOwner(converted), 'invalid', 'after-host-action'))
+      classify(this._converters.values.sourceBinding.convert(binding), 'invalid', 'after-host-action')
+        // The same bound every stored binding meets: a lookup never canonicalizes more than a
+        // binding could ever be.
+        .onSuccess((converted) => {
+          const bound: Result<true> = checkSourceIdentity(converted, this.profile);
+          return bound.isSuccess()
+            ? classify(index.sourceOwner(converted), 'invalid', 'after-host-action')
+            : taskFailure<TaskId | undefined>(
+                `lookupSource: ${bound.message}`,
+                'invalid',
+                'after-host-action'
+              );
+        })
     );
   }
 
@@ -843,7 +852,29 @@ export class FileTreeTaskRepository implements ITaskRepository {
     if (!listed.value.includes(name)) {
       return this._writeRegistration(taskId, operationId, draft, entry);
     }
-    const landed: Result<IReadRecord> = this._store.read(name).onSuccess((text) =>
+    // A record parse like any other: inside the materialization gate.
+    const gated: TaskResult<Result<IReadRecord>> = this._gate.run(`register ${taskId}`, () =>
+      ok(this._readLanded(name, entry))
+    );
+    if (gated.isFailure()) {
+      return propagate(gated);
+    }
+    const landed: Result<IReadRecord> = gated.value;
+    if (landed.isFailure()) {
+      return taskFailure(
+        `register ${taskId}: ${name} already exists but is not this registration's first record ` +
+          `(${landed.message}); it is left untouched`,
+        'conflict',
+        'after-host-action',
+        { operationId }
+      );
+    }
+    return this._finishRegistration(taskId, operationId, landed.value, false);
+  }
+
+  /** Reads a landed record and checks it is exactly the pending registration's first record. */
+  private _readLanded(name: string, entry: IPendingInventoryEntry): Result<IReadRecord> {
+    return this._store.read(name).onSuccess((text) =>
       parseJson(text)
         .onSuccess((parsed) => this._converters.storage.record.convert(parsed))
         .onSuccess((record) =>
@@ -856,16 +887,6 @@ export class FileTreeTaskRepository implements ITaskRepository {
           )
         )
     );
-    if (landed.isFailure()) {
-      return taskFailure(
-        `register ${taskId}: ${name} already exists but is not this registration's first record ` +
-          `(${landed.message}); it is left untouched`,
-        'conflict',
-        'after-host-action',
-        { operationId }
-      );
-    }
-    return this._finishRegistration(taskId, operationId, landed.value, false);
   }
 
   /** Admits the record, writes it if it has not landed, then marks the entry live. */

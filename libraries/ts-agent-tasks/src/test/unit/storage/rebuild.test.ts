@@ -526,6 +526,65 @@ describe('open-time source identity', () => {
 });
 
 describe('copilot round 1 regressions', () => {
+  test('a resumed registration reads its landed record inside the materialization gate', async () => {
+    const { root, repository } = await faultyRepository();
+    root.onRead = () => undefined;
+    // The pending entry and the record land; marking it live fails before anything is visible.
+    root.faults.push({ name: 'repository.json', when: 'before', visibility: 'unchanged', skip: 1 });
+    expect(
+      await repository.withWriter((w) => w.register(shapedRegistration('a', { scopes: [A] })))
+    ).toFailWithDetail(
+      /before anything became visible/i,
+      expect.objectContaining({ code: 'storage-unavailable', retry: 'safe' })
+    );
+    const inFlight: number[] = [];
+    root.onRead = (name) => {
+      if (name === 'task-a.json') {
+        inFlight.push(inspectRepository(repository)!.gate.inFlight);
+      }
+    };
+    expect(
+      await repository.withWriter((w) => w.register(shapedRegistration('a', { scopes: [A] })))
+    ).toSucceed();
+    root.onRead = undefined;
+    expect(inFlight).toEqual([1]);
+    expect(await openTasks(repository)).toEqual(['a']);
+  });
+
+  test('a resumed registration is refused, retryably, when four reads are already in flight', async () => {
+    const { root, repository } = await faultyRepository();
+    root.onRead = () => undefined;
+    await addTask(repository, 'b', { scopes: [A] });
+    root.faults.push({ name: 'repository.json', when: 'before', visibility: 'unchanged', skip: 1 });
+    expect(await repository.withWriter((w) => w.register(shapedRegistration('a', { scopes: [A] })))).toFail();
+    let resumed: Promise<TaskResult<unknown>> | undefined;
+    const nested: Array<Promise<TaskResult<unknown>>> = [];
+    let depth = 0;
+    root.onRead = (name) => {
+      if (name !== 'task-b.json') {
+        return;
+      }
+      depth++;
+      // Three nested reads of b under the outer one: four in flight when the resume starts.
+      if (depth < 4) {
+        nested.push(repository.readCommit('b' as TaskId));
+      } else if (resumed === undefined) {
+        resumed = repository.withWriter((w) => w.register(shapedRegistration('a', { scopes: [A] })));
+      }
+    };
+    expect(await repository.readCommit('b' as TaskId)).toSucceed();
+    root.onRead = undefined;
+    await Promise.all(nested);
+    expect(await resumed!).toFailWithDetail(
+      /already in flight \(limit 4\)/i,
+      expect.objectContaining({ code: 'conflict', retry: 'safe' })
+    );
+    // Retried outside the burst, the registration completes.
+    expect(
+      await repository.withWriter((w) => w.register(shapedRegistration('a', { scopes: [A] })))
+    ).toSucceed();
+  });
+
   test('close is refused while a rebuild holds the root; the rebuild then completes ready', async () => {
     const { root, repository } = await faultyRepository();
     await addTask(repository, 'a', { scopes: [A] });

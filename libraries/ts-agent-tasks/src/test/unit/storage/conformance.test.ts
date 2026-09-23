@@ -161,4 +161,22 @@ describe('conformance checks catch a misbehaving repository', () => {
       await runTaskRepositoryConformance(broken(() => ({ close: () => fail('still busy') })))
     ).toFailWith(/scopes are a union.*close after the check failed: still busy/i);
   });
+
+  test('a failed check still closes its repository, and a close failure never masks the reason', async () => {
+    let closes = 0;
+    const result = await runTaskRepositoryConformance(
+      broken((r) => ({
+        query: () => failing('no index'),
+        close: () => {
+          closes++;
+          return r.close().onSuccess(() => fail('also would not close'));
+        }
+      }))
+    );
+    // Every check ran against its own repository, and every one was closed.
+    expect(closes).toBe(9);
+    expect(result).toFailWith(/scopes are a union.*: no index/i);
+    // The check's own failure is what is reported, not the close.
+    expect(result).not.toFailWith(/scopes are a union[^;]*also would not close/i);
+  });
 });

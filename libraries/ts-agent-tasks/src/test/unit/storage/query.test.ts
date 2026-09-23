@@ -760,6 +760,10 @@ describe('index maintenance on mutation', () => {
     expect(await repository.read('y' as TaskId)).toSucceedWith(undefined);
     expect(await repository.read('z' as TaskId)).toSucceedWith(undefined);
     expect(await repository.lookupSource(binding('nobody'))).toSucceedWith(undefined);
+    // A lookup never canonicalizes more than a stored binding could ever be.
+    expect(
+      await repository.lookupSource({ sourceId: 'acme', referenceVersion: 1, reference: 'x'.repeat(5000) })
+    ).toFailWithDetail(/over the bound of 4096/i, expect.objectContaining({ code: 'invalid' }));
     expect(await repository.lookupSource({ sourceId: 'bad id!' } as never)).toFailWithDetail(
       /./,
       expect.objectContaining({ code: 'invalid' })

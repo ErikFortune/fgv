@@ -299,3 +299,13 @@ A process note: the round-1 revert check compiled a reverted file with `tsc --ou
 Heft's incremental build later kept that stale output, so one test run in this round went red on
 the *fixed* source. `heft test --clean` restored it (903 passing, 100%); every check since uses a
 clean build. The pushed commits were never affected.
+
+### Copilot round 3 — 1 high, 1 medium inline, 1 medium "previously missed", all fixed
+
+| finding | fix |
+|---|---|
+| **(high)** `lookupSource` canonicalized a caller's binding of any size — the reference is unbounded JSON — escaping the source-identity bound every stored binding meets | the binding is checked against `maxSourceIdentityBytes` (shared `checkSourceIdentity`) before a key is built; a 5,000-byte reference fails `invalid` (test) |
+| **(medium)** the conformance runner closed a repository only when its check passed, leaking ownership on every failure | it closes after every check; a close failure fails a passing check and never masks a failing one's reason (test counts nine closes on nine failed checks) |
+| **(medium, previously missed)** `_resumeRegistration` (a T3 path) read and parsed its landed record outside the materialization gate | the read runs in `gate.run`; tests observe `inFlight === 1` inside it, and a retryable `conflict` when four reads are already in flight |
+
+The finding profile is still substantive (a real bound escape), so the loop continues.

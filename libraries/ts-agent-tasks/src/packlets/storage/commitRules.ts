@@ -413,6 +413,20 @@ export function checkUpdates(
 }
 
 /**
+ * Checks a source binding against the profile's canonical source-identity bound — the bound every
+ * stored binding meets, so a lookup key is never larger than a stored one could be.
+ */
+export function checkSourceIdentity(binding: unknown, profile: ITaskCapacityProfile): Result<true> {
+  return encodeRecord(binding).onSuccess((e) =>
+    e.bytes > profile.encoded.maxSourceIdentityBytes
+      ? fail<true>(
+          `the source binding is ${e.bytes} bytes, over the bound of ${profile.encoded.maxSourceIdentityBytes}`
+        )
+      : succeed<true>(true)
+  );
+}
+
+/**
  * Checks the per-value encoded bounds and per-owner counts of a draft against the stored
  * profile.
  *
