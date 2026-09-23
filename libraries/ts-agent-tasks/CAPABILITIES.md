@@ -88,7 +88,9 @@ the entry *live*. A pending registration is not an accepted task — `read` retu
 but it holds its reservations, survives a crash, is reported by the next open, and **resumes when
 the host retries the same registration**: same task id, operation id and canonically equal
 request, same claim ids, no second charge. A pending entry whose record did land is completed by
-the next open. The same identity with anything else is a `conflict`. A live identity replays.
+the next open. The same identity with anything else is a `conflict`. A live identity replays. A new
+identity whose record file already exists on disk — one the inventory does not name — is a
+`conflict`, and the file is left untouched.
 
 **An external task can be registered unresolved.** An `IUnresolvedTaskCommitRecord` carries the
 registration and its binding and invents no lifecycle; `read` returns
@@ -116,7 +118,8 @@ registry that fails to freeze. Open reclaims interrupted writes' working files (
 now, under exclusive in-process ownership), then checks every named record's presence, strict
 UTF-8 (durable mode), JSON, format version, strict converters, filename/ID agreement, the
 stored profile's per-value bounds, that every capacity claim is one this release would have
-written (owner, ownership, purpose, at most its bundle, disposition matching the record's state),
+written (owner, ownership, purpose, every bundle dimension present and at most its maximum,
+disposition matching the record's state), that its first operation is its creation evidence,
 claim-id uniqueness across the repository, the parent graph (a
 pending registration is not a live parent), and that committed usage fits the stored profile. A
 pending entry whose record landed is completed only when that record is its registration — same

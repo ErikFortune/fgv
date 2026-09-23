@@ -136,3 +136,9 @@ push, reply/resolve threads, re-request Copilot; CodeRabbit once the Copilot loo
 
 Eight findings (5 high, 3 medium), all real and fixed; M37–M47 each verified red. 760 tests,
 100% coverage, zero warnings. Next: push, reply/resolve, re-request Copilot (round 3).
+
+## 2026-09-23 — Copilot round 3 addressed
+
+Three findings (2 high, 1 medium), all real and fixed; M48–M50 verified red. 763 tests, 100%.
+Finding count is falling (10 → 8 → 3) and narrowing to one-field gaps in round-2 checks; one
+more round to confirm the trend before calling diminishing returns.

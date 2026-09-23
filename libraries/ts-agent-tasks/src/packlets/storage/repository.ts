@@ -375,8 +375,34 @@ export class FileTreeTaskRepository implements ITaskRepository {
       .onSuccess((validated) =>
         pending !== undefined
           ? this._writeRegistration(taskId, operationId, validated, pending)
-          : this._newRegistration(taskId, operationId, request, validated)
+          : this._checkUnclaimedName(taskId, operationId).onSuccess(() =>
+              this._newRegistration(taskId, operationId, request, validated)
+            )
       );
+  }
+
+  /**
+   * A new identity's record name must be free on disk, not only in the inventory. Open keeps a
+   * record-shaped file the inventory does not name as unexpected data and never touches it, so
+   * registering over it would overwrite exactly what open promised to leave alone. The root is
+   * re-listed first: the file may have appeared since the last listing.
+   */
+  private _checkUnclaimedName(taskId: TaskId, operationId: OperationId): TaskResult<true> {
+    const name: string = recordName('task', taskId);
+    const listed: Result<ReadonlyArray<string>> = this._store.list();
+    if (listed.isFailure()) {
+      return taskFailure(`register ${taskId}: ${listed.message}`, 'storage-unavailable', 'safe', {
+        operationId
+      });
+    }
+    return listed.value.includes(name)
+      ? taskFailure(
+          `register ${taskId}: ${name} already exists but the inventory does not name it; it is left untouched`,
+          'conflict',
+          'after-host-action',
+          { operationId }
+        )
+      : ok(true);
   }
 
   /** Step 1: preflight every dimension, then commit the pending inventory entry. */

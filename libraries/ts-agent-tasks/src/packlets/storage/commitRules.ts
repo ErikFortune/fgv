@@ -70,6 +70,22 @@ const creations: ReadonlySet<TaskCatalogOperationType> = new Set<TaskCatalogOper
 ]);
 
 /**
+ * Checks a record's first operation is its creation evidence: a creation catalog operation,
+ * and `register-external` for an unresolved record. Registration replay answers from that slot
+ * for the task's whole lifetime.
+ */
+export function checkCreationEvidence(record: ITaskCommitRecord | ITaskRecordDraft): Result<true> {
+  const op: IStoredTaskOperation = record.operations[0];
+  if (op.type !== 'catalog' || !creations.has(op.operation)) {
+    return fail(`operation '${op.operationId}' is not a creation operation`);
+  }
+  if (record.recordType === 'unresolved' && op.operation !== 'register-external') {
+    return fail(`an unresolved record is created only by 'register-external'`);
+  }
+  return succeed(true);
+}
+
+/**
  * Checks a registration draft: it carries exactly its creation operation, whose stored
  * request is the registration's canonical request, and a first record is not archived.
  */
@@ -81,17 +97,14 @@ export function checkRegistrationDraft(
   if (draft.operations.length !== 1 || draft.operations[0].operationId !== operationId) {
     return fail(`a first record carries exactly its creation operation '${operationId}'`);
   }
-  const op: IStoredTaskOperation = draft.operations[0];
-  if (op.type !== 'catalog' || !creations.has(op.operation)) {
-    return fail(`operation '${operationId}' is not a creation operation`);
-  }
-  if (draft.recordType === 'unresolved' && op.operation !== 'register-external') {
-    return fail(`an unresolved record is created only by 'register-external'`);
+  const creation: Result<true> = checkCreationEvidence(draft);
+  if (creation.isFailure()) {
+    return creation;
   }
   if (draft.recordType === 'resolved' && draft.archived) {
     return fail(`a first record cannot be archived`);
   }
-  return canonicallyEqual(op.request, request)
+  return canonicallyEqual(draft.operations[0].request, request)
     ? succeed(true)
     : fail(`the creation operation's request differs from the registration request`);
 }

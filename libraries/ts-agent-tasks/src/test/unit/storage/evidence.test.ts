@@ -31,6 +31,7 @@ import {
   registry,
   unresolvedRegistration
 } from '../../helpers/storageFixtures';
+import { FaultyRoot } from '../../helpers/faultyRoot';
 
 /**
  * Evidence integrity: every place a stored record, inventory entry or operation is trusted as
@@ -694,6 +695,84 @@ describe('copilot round 2: open validates what claims are, not only which', () =
         code: 'integrity',
         message: expect.stringMatching(
           /task-t2\.json: pending registration: .*ownership 'live', expected 'pending'/
+        )
+      })
+    ]);
+  });
+});
+
+describe('copilot round 3: what open and registration still took on trust', () => {
+  test('registration never overwrites a record-shaped file the inventory does not name', async () => {
+    const inner = memoryRoot() as Root;
+    const root = new FaultyRoot(inner);
+    const repository = (await FileTreeTaskRepository.initialize(params(root, 'session'))).orThrow();
+    // Appears after open: only a fresh listing can see it.
+    writeJson(inner, 'task-t1.json', { operator: 'notes' });
+    const before = readText(inner, 'task-t1.json');
+    expect(await repository.withWriter((w) => w.register(registration('t1')))).toFailWithDetail(
+      /task-t1\.json already exists but the inventory does not name it/,
+      code('conflict')
+    );
+    expect(readText(inner, 'task-t1.json')).toBe(before);
+    expect(
+      repository
+        .capacityStatus()
+        .orThrow()
+        .dimensions.find((d) => d.dimension === 'retained-tasks')!.used
+    ).toBe(0);
+    // A listing that fails refuses before anything is written, and safely.
+    root.failChildren = true;
+    expect(await repository.withWriter((w) => w.register(registration('t2')))).toFailWithDetail(
+      /register t2: .*cannot list/,
+      expect.objectContaining({ code: 'storage-unavailable', retry: 'safe' })
+    );
+    expect(repository.health().state).toBe('ready');
+  });
+
+  test('a claim must still name every dimension its bundle reserves', async () => {
+    const root = memoryRoot() as Root;
+    const repository = await initialized(root);
+    (await repository.withWriter((w) => w.register(registration('t1')))).orThrow();
+    repository.close();
+    const record = readJson(root, 'task-t1.json');
+    const [claim] = record.capacityClaims as JsonObject[];
+    const charges = claim.charges as JsonObject[];
+    writeJson(root, 'task-t1.json', { ...record, capacityClaims: [{ ...claim, charges: charges.slice(1) }] });
+    expect(blocked(await open(root)).issues).toEqual([
+      expect.objectContaining({
+        code: 'integrity',
+        message: expect.stringContaining(`does not charge '${charges[0].dimension as string}'`)
+      })
+    ]);
+  });
+
+  test("a record's first operation must be its creation evidence", async () => {
+    const root = memoryRoot() as Root;
+    const repository = await initialized(root);
+    (await repository.withWriter((w) => w.register(registration('t1')))).orThrow();
+    (await repository.withWriter((w) => w.register(unresolvedRegistration('u1')))).orThrow();
+    repository.close();
+    const t1Record = readJson(root, 'task-t1.json');
+    const [t1Creation] = t1Record.operations as JsonObject[];
+    writeJson(root, 'task-t1.json', {
+      ...t1Record,
+      operations: [{ ...t1Creation, operation: 'update-tracked' }]
+    });
+    const u1Record = readJson(root, 'task-u1.json');
+    const [u1Creation] = u1Record.operations as JsonObject[];
+    writeJson(root, 'task-u1.json', {
+      ...u1Record,
+      operations: [{ ...u1Creation, operation: 'create-tracked' }]
+    });
+    expect(blocked(await open(root)).issues).toEqual([
+      expect.objectContaining({
+        code: 'record-invalid',
+        message: expect.stringMatching(/task-t1\.json: operation 'op-create-t1' is not a creation operation/)
+      }),
+      expect.objectContaining({
+        code: 'record-invalid',
+        message: expect.stringMatching(
+          /task-u1\.json: an unresolved record is created only by 'register-external'/
         )
       })
     ]);

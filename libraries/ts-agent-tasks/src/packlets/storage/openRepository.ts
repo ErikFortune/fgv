@@ -24,7 +24,7 @@ import {
   taskStorageFormatVersion
 } from '../types';
 import { checkTaskClaims, withOwnership } from './claims';
-import { checkBounds, checkRegistrationDraft } from './commitRules';
+import { checkBounds, checkCreationEvidence, checkRegistrationDraft } from './commitRules';
 import { classify, ok, propagate, taskFailure, writeRetry } from './failures';
 import {
   canonicallyEqual,
@@ -580,7 +580,7 @@ function _scan(
     }
     // The per-value maxima the closeout claims were sized against hold for a stored record as
     // they do for a draft: a record under its total ceiling can still hold one value over them.
-    const bounded: Result<true> = checkBounds(record, profile);
+    const bounded: Result<true> = checkCreationEvidence(record).onSuccess(() => checkBounds(record, profile));
     if (bounded.isFailure()) {
       scan.blocking('record-invalid', `${name}: ${bounded.message}`, name);
       continue;

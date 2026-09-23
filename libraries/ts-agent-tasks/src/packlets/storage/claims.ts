@@ -195,6 +195,14 @@ function _claimProblem(
   if (seen.has(claim.purpose)) {
     return `a second '${claim.purpose}' claim`;
   }
+  // Spending shrinks a charge but never removes it, so a claim names exactly its bundle's
+  // dimensions for its whole life. A missing one would hold nothing where the closeout path
+  // still needs room.
+  for (const max of bundle) {
+    if (!claim.charges.some((c) => c.dimension === max.dimension)) {
+      return `does not charge '${max.dimension}', which its bundle reserves`;
+    }
+  }
   for (const charge of claim.charges) {
     const max: ITaskCapacityCharge | undefined = bundle.find((c) => c.dimension === charge.dimension);
     if (max === undefined || charge.amount > max.amount) {
