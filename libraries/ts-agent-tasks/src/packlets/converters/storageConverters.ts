@@ -127,6 +127,11 @@ function _resolvedInvariants<
   T extends Pick<IResolvedTaskCommitRecord, 'task' | 'operations' | 'updates' | 'archived'>
 >(value: T): Result<T> {
   const envelope = value.task.envelope;
+  // A task's creation operation is dedup evidence for its whole retained lifetime, and an
+  // operation is never dropped, so every resolved record carries at least that one.
+  if (value.operations.length < 1) {
+    return fail(`task ${envelope.id}: a record carries at least its creation operation`);
+  }
   if (value.archived && !isTerminalTaskStatus(envelope.lifecycle.status)) {
     return fail(`task ${envelope.id}: only a terminal task can be archived`);
   }

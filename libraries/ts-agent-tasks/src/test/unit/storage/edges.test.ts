@@ -8,12 +8,15 @@ import fs from 'fs';
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import {
   FileTreeTaskRepository,
+  ITaskCapacityCharge,
   ITaskCapacityProfile,
   ITaskCommitRecord,
   ITaskRepository,
   TaskId,
   TaskRevision,
-  defaultTaskCapacityProfile
+  defaultTaskCapacityProfile,
+  maximumClosureCharges,
+  maximumResolutionCharges
 } from '../../../index';
 import { converters } from '../../helpers/fixtures';
 import { FaultyRoot } from '../../helpers/faultyRoot';
@@ -226,16 +229,33 @@ describe('damage discovered after open', () => {
   });
 
   test('a record whose bytes fit but whose reserved growth no longer fits the stored policy blocks open', async () => {
+    // The smallest per-record bound a valid profile allows still holds a registration's whole
+    // reservation (closeout plus first resolution), so it is the record itself that has to
+    // have grown: here, by operations added out of band, each within its own bound.
     const root = memoryRoot() as Root;
     const repository = await initialized(root);
     (await repository.withWriter((w) => w.register(registration('t1')))).orThrow();
     repository.close();
-    const bytes: number = JSON.stringify(readJson(root, 'task-t1.json')).length;
+    const recordBytes = (charges: ReadonlyArray<ITaskCapacityCharge>): number =>
+      charges.find((c) => c.dimension === 'record-bytes')!.amount;
+    const bundle: number =
+      recordBytes(maximumClosureCharges(defaultTaskCapacityProfile).orThrow()) +
+      recordBytes(maximumResolutionCharges(defaultTaskCapacityProfile).orThrow());
+
+    const record = readJson(root, 'task-t1.json');
+    const [creation] = record.operations as JsonObject[];
+    const extra = Array.from({ length: 5 }, (__, i) => ({
+      ...creation,
+      operationId: `op-extra-${i}`,
+      operation: 'update-tracked',
+      request: { pad: 'x'.repeat(120000) }
+    }));
+    writeJson(root, 'task-t1.json', { ...record, operations: [creation, ...extra] });
     const manifest = readJson(root, 'repository.json');
     const profile = manifest.profile as JsonObject;
     writeJson(root, 'repository.json', {
       ...manifest,
-      profile: { ...profile, encoded: { ...(profile.encoded as JsonObject), maxTaskRecordBytes: bytes + 10 } }
+      profile: { ...profile, encoded: { ...(profile.encoded as JsonObject), maxTaskRecordBytes: bundle } }
     });
     const opened = (await FileTreeTaskRepository.open(params(root, 'session'))).orThrow();
     expect(opened.state === 'recovery-required' && opened.recovery.report.issues).toEqual([

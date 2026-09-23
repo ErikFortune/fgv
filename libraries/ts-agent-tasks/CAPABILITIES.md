@@ -64,11 +64,15 @@ change. `ITaskRepositoryWriter.commit` takes one of three purposes:
 - `operation` — must add exactly its own stored operation. **A repeated operation id replays**:
   the committed record comes back and nothing is applied twice — checked *before* the revision
   preconditions, because a lost-response retry carries the revision it expected before its own
-  commit. The same id with a different request is a `conflict`.
+  commit. The same id with a different request, catalog operation or principal is a `conflict`.
 - `observation` — a source projection, deduplicated by `sourceRevision`. The same source revision
   projecting the same state is a replay; projecting a different state is `source-gap`.
-- `maintenance` — receipt evolution, telemetry, pruning: no semantic revision change, no new
-  operation, no new update.
+- `maintenance` — receipt evolution, telemetry, pruning: no semantic change at all (envelope,
+  details and `archived` are fixed; only observation timestamps may move), no new operation, no
+  new update.
+
+Only an observation may change a committed `sourceRevision`, and only an observation may resolve
+an unresolved record.
 
 Every replacement keeps all operation evidence with its request unchanged, keeps every retained
 update byte-identical (a required one is removed only by maintenance), advances `recordRevision`
@@ -111,7 +115,9 @@ success whose directory entry was never flushed.
 registry that fails to freeze. Open reclaims interrupted writes' working files (valid only
 now, under exclusive in-process ownership), then checks every named record's presence, strict
 UTF-8 (durable mode), JSON, format version, strict converters, filename/ID agreement, the
-stored profile's per-value bounds, claim-id uniqueness across the repository, the parent graph (a
+stored profile's per-value bounds, that every capacity claim is one this release would have
+written (owner, ownership, purpose, at most its bundle, disposition matching the record's state),
+claim-id uniqueness across the repository, the parent graph (a
 pending registration is not a live parent), and that committed usage fits the stored profile. A
 pending entry whose record landed is completed only when that record is its registration — same
 creation operation, request and claim ids. **Anything blocking returns a read-only `ITaskRecoveryHandle`**, never a writable

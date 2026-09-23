@@ -673,6 +673,22 @@ describe('first resolution of an unresolved registration', () => {
     });
   });
 
+  test('first resolution is an observation: no other purpose can resolve a task', async () => {
+    const base = resolution(unresolved);
+    expect(await write(repository, (w) => w.commit({ ...base, purpose: 'maintenance' }))).toFailWithDetail(
+      /first resolution is an observation; a 'maintenance' commit cannot resolve/i,
+      code('invalid')
+    );
+    expect(
+      await write(repository, (w) =>
+        w.commit({ ...base, purpose: 'operation', operationId: 'op-resolve' as never })
+      )
+    ).toFailWithDetail(
+      /first resolution is an observation; a 'operation' commit cannot resolve/i,
+      code('invalid')
+    );
+  });
+
   test('catalog metadata the registration fixed cannot change on resolution', async () => {
     for (const overrides of [
       { title: 'renamed' },

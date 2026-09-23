@@ -72,7 +72,12 @@ function _fits(
   what: string
 ): Result<ReadonlyArray<ITaskCapacityCharge>> {
   for (const charge of charges) {
-    const limit: number = profile.limits[charge.dimension];
+    // Every protected bundle belongs to one task record, whose per-record ceiling is the
+    // tighter of the repository limit and the encoded task-record bound.
+    const limit: number =
+      charge.dimension === 'record-bytes'
+        ? Math.min(profile.limits['record-bytes'], profile.encoded.maxTaskRecordBytes)
+        : profile.limits[charge.dimension];
     if (charge.amount > limit) {
       return fail(
         `capacity profile: ${what} needs ${charge.amount} of '${charge.dimension}' but the ` +

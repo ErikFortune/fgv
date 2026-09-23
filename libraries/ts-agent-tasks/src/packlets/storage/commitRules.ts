@@ -48,13 +48,15 @@ export function idOf(record: ITaskCommitRecord | ITaskRecordDraft): TaskId {
 
 /**
  * What makes two records of one operation the same operation: its kind, its catalog
- * operation name, and its canonical request. Receipts are outcomes, not identity.
+ * operation name, the principal it was accepted for, and its canonical request. Receipts are
+ * outcomes, not identity.
  */
 export function sameOperation(a: IStoredTaskOperation, b: IStoredTaskOperation): boolean {
   const identity = (op: IStoredTaskOperation): unknown => ({
     operationId: op.operationId,
     type: op.type,
     operation: op.type === 'catalog' ? op.operation : undefined,
+    principalKey: op.principalKey,
     request: op.request
   });
   return canonicallyEqual(identity(a), identity(b));
@@ -97,11 +99,16 @@ export function checkRegistrationDraft(
 /**
  * Checks identity and catalog metadata a replacement must preserve.
  */
-export function checkIdentity(current: ITaskCommitRecord, draft: ITaskRecordDraft): Result<true> {
+export function checkIdentity(
+  current: ITaskCommitRecord,
+  draft: ITaskRecordDraft
+): Result<IResolvedTaskRecordDraft> {
   if (draft.recordType === 'unresolved') {
     // V1 disallows metadata changes to an unresolved record until it is resolved (§8.3), and
     // nothing else about it can change: it has no lifecycle.
-    return fail(`an unresolved record can only be replaced by its first resolution`);
+    return fail<IResolvedTaskRecordDraft>(
+      `an unresolved record can only be replaced by its first resolution`
+    );
   }
   const next = draft.task.envelope;
   if (current.recordType === 'unresolved') {
@@ -135,7 +142,7 @@ export function checkIdentity(current: ITaskCommitRecord, draft: ITaskRecordDraf
     if (next.revision <= reference.revision) {
       return fail(`first resolution must advance the revision past ${reference.revision}`);
     }
-    return succeed(true);
+    return succeed(draft);
   }
   const previous = current.task.envelope;
   if (
@@ -159,7 +166,56 @@ export function checkIdentity(current: ITaskCommitRecord, draft: ITaskRecordDraf
   ) {
     return fail(`terminal state is absorbing; it cannot change`);
   }
+  return succeed(draft);
+}
+
+/**
+ * Checks what a commit's purpose licenses, beyond identity.
+ *
+ * @remarks
+ * - First resolution is an observation: an unresolved record is replaced only by the source
+ *   projection that resolves it (design §8.3), and that projection's source revision is its
+ *   dedup evidence.
+ * - Outside an observation, a committed `sourceRevision` is dedup evidence and does not move.
+ * - Maintenance changes no semantic state: only receipts, update pruning and observation
+ *   timestamps. Its semantic revision is unchanged, and so is everything that revision orders.
+ */
+export function checkPurpose(
+  current: ITaskCommitRecord,
+  draft: IResolvedTaskRecordDraft,
+  purpose: 'operation' | 'observation' | 'maintenance'
+): Result<true> {
+  if (current.recordType === 'unresolved') {
+    return purpose === 'observation'
+      ? succeed(true)
+      : fail(`first resolution is an observation; a '${purpose}' commit cannot resolve a task`);
+  }
+  if (purpose !== 'observation' && !canonicallyEqual(current.sourceRevision, draft.sourceRevision)) {
+    return fail(`only an observation may change the committed source revision`);
+  }
+  if (purpose === 'maintenance' && !canonicallyEqual(_semantic(current), _semantic(draft))) {
+    return fail(`maintenance cannot change semantic state; it changes receipts, pruning and telemetry only`);
+  }
   return succeed(true);
+}
+
+/**
+ * A resolved record's semantic content: everything but observation timestamps and the
+ * revision, which the caller's own revision rule governs.
+ */
+function _semantic(record: IResolvedTaskRecordDraft): unknown {
+  const envelope = record.task.envelope;
+  const health = envelope.observation;
+  return {
+    envelope: {
+      ...envelope,
+      revision: undefined,
+      observation:
+        health.state === 'current' ? { state: health.state } : { state: health.state, reason: health.reason }
+    },
+    details: record.task.details,
+    archived: record.archived
+  };
 }
 
 /**

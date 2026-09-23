@@ -211,7 +211,15 @@ describe('open refuses a writable repository over detectable corruption, and rew
   test('a claim id held by two records — the join key recovery depends on', async () => {
     const one = readJson(root, 'task-t1.json');
     const two = readJson(root, 'task-t2.json');
-    writeJson(root, 'task-t2.json', { ...two, capacityClaims: one.capacityClaims });
+    // t2's own claims, relabelled with t1's ids: each is otherwise a valid t2 reservation.
+    const oneClaims = one.capacityClaims as JsonObject[];
+    writeJson(root, 'task-t2.json', {
+      ...two,
+      capacityClaims: (two.capacityClaims as JsonObject[]).map((c, i) => ({
+        ...c,
+        claimId: oneClaims[i].claimId
+      }))
+    });
     freeze();
     expect(blocked(await open(root)).issues).toEqual([
       issue('integrity', 'blocking', /claim id-\d+ is held by both t1 and t2/)

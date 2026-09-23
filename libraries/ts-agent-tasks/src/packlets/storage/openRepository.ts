@@ -23,6 +23,7 @@ import {
   defaultTaskCapacityProfile,
   taskStorageFormatVersion
 } from '../types';
+import { checkTaskClaims, withOwnership } from './claims';
 import { checkBounds, checkRegistrationDraft } from './commitRules';
 import { classify, ok, propagate, taskFailure, writeRetry } from './failures';
 import {
@@ -526,6 +527,20 @@ function _scan(
       } else {
         // Pending with no record: an incomplete registration, not an accepted task. Its
         // reservations stay held until the host resumes it.
+        const pendingClaims: Result<true> = checkTaskClaims(
+          entry.capacityClaims,
+          {
+            taskId,
+            ownership: 'pending',
+            unresolved: entry.capacityClaims.some((c) => c.purpose === 'first-resolution'),
+            archived: false
+          },
+          profile
+        );
+        if (pendingClaims.isFailure()) {
+          scan.blocking('integrity', `${name}: pending registration: ${pendingClaims.message}`, name);
+          continue;
+        }
         scan.advisory(
           'pending-registration',
           `${taskId}: registration '${entry.operationId}' was accepted into the inventory but its record ` +
@@ -570,6 +585,20 @@ function _scan(
       scan.blocking('record-invalid', `${name}: ${bounded.message}`, name);
       continue;
     }
+    const claimed: Result<true> = checkTaskClaims(
+      record.capacityClaims,
+      {
+        taskId,
+        ownership: 'live',
+        unresolved: record.recordType === 'unresolved',
+        archived: record.recordType === 'resolved' && record.archived
+      },
+      profile
+    );
+    if (claimed.isFailure()) {
+      scan.blocking('integrity', `${name}: ${claimed.message}`, name);
+      continue;
+    }
 
     // An unregistered kind is quarantined, never rewritten; a registered one must convert.
     const kind = record.recordType === 'resolved' ? record.task.envelope : record.reference;
@@ -592,10 +621,12 @@ function _scan(
     if (entry.state === 'pending') {
       // Pending with a present record: the protocol died after step 2. Complete step 3, but
       // only if the record really is this registration — same operation, same claims.
-      const pendingClaims: Set<string> = new Set<string>(entry.capacityClaims.map((c) => c.claimId));
-      const sameClaims: boolean =
-        pendingClaims.size === record.capacityClaims.length &&
-        record.capacityClaims.every((c) => pendingClaims.has(c.claimId));
+      // The record holds exactly the entry's claims, moved to live ownership and otherwise
+      // unchanged: its first write spends nothing.
+      const sameClaims: boolean = canonicallyEqual(
+        withOwnership(entry.capacityClaims, 'live'),
+        record.capacityClaims
+      );
       const sameCreation: Result<true> = checkRegistrationDraft(record, entry.operationId, entry.request);
       if (!sameClaims || sameCreation.isFailure()) {
         scan.blocking(

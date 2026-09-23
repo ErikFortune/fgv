@@ -12,7 +12,9 @@ import {
   ITaskKindRegistry,
   ITaskRecoveryReport,
   ITaskRepository,
+  ITaskRepositoryWriter,
   OperationId,
+  TaskResult,
   TaskId,
   TaskKind,
   TaskRepositoryOpenResult,
@@ -111,6 +113,11 @@ function markPending(
   });
 }
 
+/** A record's claims as its pending registration held them. */
+function pendingClaims(record: JsonObject): JsonValue {
+  return (record.capacityClaims as JsonObject[]).map((c) => ({ ...c, ownership: 'pending' }));
+}
+
 function creationOf(root: Root, id: string): JsonObject {
   return (readJson(root, `task-${id}.json`).operations as JsonObject[])[0];
 }
@@ -160,7 +167,7 @@ describe('a pending entry completes only against its own registration', () => {
     markPending(root, 't2', {
       operationId: 'op-create-t2',
       request: { someone: 'else' },
-      capacityClaims: record.capacityClaims
+      capacityClaims: pendingClaims(record)
     });
     const before = readText(root, 'repository.json');
     expect(blocked(await open(root)).issues).toEqual([
@@ -189,7 +196,7 @@ describe('a pending entry completes only against its own registration', () => {
     markPending(root, 't2', {
       operationId: 'op-create-t2',
       request: creationOf(root, 't2').request,
-      capacityClaims: record.capacityClaims
+      capacityClaims: pendingClaims(record)
     });
     const repository = ready(await open(root));
     expect(repository.report.completedRegistrations).toEqual(['t2']);
@@ -203,7 +210,7 @@ describe('a pending registration is not a live parent', () => {
     markPending(root, 't1', {
       operationId: 'op-create-t1',
       request: creationOf(root, 't1').request,
-      capacityClaims: record.capacityClaims
+      capacityClaims: pendingClaims(record)
     });
     root.deleteChild('task-t1.json').orThrow();
     expect(blocked(await open(root)).issues).toEqual(
@@ -222,7 +229,7 @@ describe('a pending registration is not a live parent', () => {
     markPending(root, 't1', {
       operationId: 'op-create-t1',
       request: creationOf(root, 't1').request,
-      capacityClaims: record.capacityClaims
+      capacityClaims: pendingClaims(record)
     });
     const repository = ready(await open(root));
     expect(repository.report.completedRegistrations).toEqual(['t1']);
@@ -383,5 +390,312 @@ describe('read-back compares the whole record', () => {
       code('storage-corrupt')
     );
     expect(repository.health().state).toBe('unavailable');
+  });
+});
+
+describe('copilot round 2: evidence that must hold for a whole lifetime', () => {
+  test('a resolved record with no operations is invalid, not a writable task', async () => {
+    const root = memoryRoot() as Root;
+    const repository = await initialized(root);
+    (await repository.withWriter((w) => w.register(registration('t1')))).orThrow();
+    repository.close();
+    writeJson(root, 'task-t1.json', { ...readJson(root, 'task-t1.json'), operations: [] });
+    expect(blocked(await open(root)).issues).toEqual([
+      expect.objectContaining({
+        code: 'record-invalid',
+        message: expect.stringMatching(/carries at least its creation operation/)
+      })
+    ]);
+  });
+
+  test('the principal is part of an operation: a retry under another principal is a conflict', async () => {
+    const repository = await initialized(memoryRoot() as Root);
+    const created = (await repository.withWriter((w) => w.register(registration('t1')))).orThrow();
+    const commit =
+      (principalKey: string): ((w: ITaskRepositoryWriter) => Promise<TaskResult<ITaskCommitRecord>>) =>
+      (w) =>
+        w.commit({
+          purpose: 'operation',
+          operationId: 'op-2' as OperationId,
+          taskId: t1,
+          expectedRevision: rev(1),
+          expectedRecordRevision: 1,
+          record: nextDraft(created, {
+            envelope: envelope('t1', 2, { title: 'renamed' }),
+            operation: { ...catalogOp('op-2', 'update-tracked', { title: 'renamed' }), principalKey }
+          })
+        });
+    expect(await repository.withWriter(commit('host'))).toSucceed();
+    expect(await repository.withWriter(commit('someone-else'))).toFailWithDetail(
+      /already recorded with a different request/i,
+      code('conflict')
+    );
+  });
+
+  test('a quarantined record is not rewritten by a registration replay', async () => {
+    const root = memoryRoot() as Root;
+    const repository = await initialized(root);
+    (await repository.withWriter((w) => w.register(unresolvedRegistration('u1')))).orThrow();
+    repository.close();
+    const before = readText(root, 'task-u1.json');
+    const reopened = ready(await open(root, registry({ withoutVendor: true })));
+    expect(await reopened.withWriter((w) => w.register(unresolvedRegistration('u1')))).toFailWithDetail(
+      /acme\.job@1 is not registered; the record is quarantined/,
+      code('unknown-kind-version')
+    );
+    expect(readText(root, 'task-u1.json')).toBe(before);
+  });
+
+  test("a profile whose per-record bound cannot hold a task's own reservation is refused", async () => {
+    const profile = {
+      ...defaultTaskCapacityProfile,
+      encoded: { ...defaultTaskCapacityProfile.encoded, maxTaskRecordBytes: 1000000 }
+    };
+    expect(
+      await FileTreeTaskRepository.initialize(params(memoryRoot(), 'session', { profile }))
+    ).toFailWithDetail(
+      /terminal closeout needs \d+ of 'record-bytes' but the limit is 1000000/,
+      code('invalid')
+    );
+  });
+});
+
+describe('copilot round 2: what each commit purpose may change', () => {
+  let repository: ITaskRepository;
+  let observed: ITaskCommitRecord;
+
+  beforeEach(async () => {
+    repository = await initialized(memoryRoot() as Root);
+    const created = (await repository.withWriter((w) => w.register(registration('t1')))).orThrow();
+    observed = (
+      await repository.withWriter((w) =>
+        w.commit({
+          purpose: 'observation',
+          taskId: t1,
+          expectedRevision: rev(1),
+          expectedRecordRevision: 1,
+          record: nextDraft(created, {
+            envelope: envelope('t1', 2, { lifecycle: { status: 'running' } }),
+            updates: ['lifecycle'],
+            sourceRevision: { epoch: 'e1', token: '1' }
+          })
+        })
+      )
+    ).orThrow();
+  });
+
+  function maintenance(
+    change: Parameters<typeof nextDraft>[1]
+  ): (w: ITaskRepositoryWriter) => Promise<TaskResult<ITaskCommitRecord>> {
+    return (w) =>
+      w.commit({
+        purpose: 'maintenance',
+        taskId: t1,
+        expectedRevision: rev(2),
+        expectedRecordRevision: 2,
+        record: nextDraft(observed, change)
+      });
+  }
+
+  test('outside an observation the committed source revision does not move, or disappear', async () => {
+    const current = observed.recordType === 'resolved' ? observed : undefined;
+    const cleared = { ...nextDraft(observed, {}), sourceRevision: undefined };
+    expect(
+      await repository.withWriter(maintenance({ sourceRevision: { epoch: 'e1', token: '9' } }))
+    ).toFailWithDetail(/only an observation may change the committed source revision/i, code('invalid'));
+    expect(
+      await repository.withWriter((w) =>
+        w.commit({
+          purpose: 'operation',
+          operationId: 'op-2' as OperationId,
+          taskId: t1,
+          expectedRevision: rev(2),
+          expectedRecordRevision: 2,
+          record: {
+            ...cleared,
+            task: { ...current!.task, envelope: envelope('t1', 3, { lifecycle: { status: 'running' } }) },
+            operations: [...current!.operations, catalogOp('op-2', 'update-tracked', {})]
+          }
+        })
+      )
+    ).toFailWithDetail(/only an observation may change the committed source revision/i, code('invalid'));
+  });
+
+  test('maintenance changes no semantic state', async () => {
+    for (const change of [
+      { envelope: { title: 'renamed' } },
+      { details: { note: 'x' } },
+      {
+        envelope: {
+          observation: {
+            state: 'stale' as const,
+            checkedAt: '2026-09-22T12:10:00.000Z' as never,
+            reason: 'poll timed out'
+          }
+        }
+      }
+    ]) {
+      expect(await repository.withWriter(maintenance(change))).toFailWithDetail(
+        /maintenance cannot change semantic state/i,
+        code('invalid')
+      );
+    }
+  });
+
+  test('maintenance may refresh observation telemetry', async () => {
+    expect(
+      await repository.withWriter(
+        maintenance({
+          envelope: { observation: { state: 'current', observedAt: '2026-09-22T12:30:00.000Z' as never } }
+        })
+      )
+    ).toSucceedAndSatisfy((record) => {
+      expect(record.recordRevision).toBe(3);
+    });
+  });
+});
+
+describe('copilot round 2: open validates what claims are, not only which', () => {
+  type Claim = JsonObject;
+  async function withClaims(
+    edit: (claims: Claim[]) => Claim[],
+    options?: { unresolved?: boolean }
+  ): Promise<ITaskRecoveryReport> {
+    const root = memoryRoot() as Root;
+    const repository = await initialized(root);
+    const id = options?.unresolved === true ? 'u1' : 't1';
+    (
+      await repository.withWriter((w) =>
+        w.register(options?.unresolved === true ? unresolvedRegistration('u1') : registration('t1'))
+      )
+    ).orThrow();
+    repository.close();
+    const record = readJson(root, `task-${id}.json`);
+    writeJson(root, `task-${id}.json`, { ...record, capacityClaims: edit(record.capacityClaims as Claim[]) });
+    return blocked(await open(root));
+  }
+
+  function closeout(claims: Claim[]): Claim {
+    return claims.find((c) => c.purpose === 'terminal-closeout')!;
+  }
+
+  test.each<[string, (claims: Claim[]) => Claim[], RegExp]>([
+    [
+      'owned by another task',
+      (claims) => [{ ...closeout(claims), owner: { owner: 'task', taskId: 't9' }, taskId: 't9' }],
+      /not owned by task t1/
+    ],
+    [
+      'held with pending ownership by a live record',
+      (claims) => [{ ...closeout(claims), ownership: 'pending' }],
+      /ownership 'pending', expected 'live'/
+    ],
+    [
+      'a second closeout claim',
+      (claims) => [...claims, { ...closeout(claims), claimId: 'another-claim' }],
+      /a second 'terminal-closeout' claim/
+    ],
+    [
+      'charging more than its bundle',
+      (claims) => [
+        {
+          ...closeout(claims),
+          charges: (closeout(claims).charges as JsonObject[]).map((c) => ({
+            ...c,
+            amount: (c.amount as number) + 1
+          }))
+        }
+      ],
+      /more than its bundle reserves/
+    ],
+    [
+      'charging a dimension its bundle does not',
+      (claims) => [
+        {
+          ...closeout(claims),
+          charges: [...(closeout(claims).charges as JsonObject[]), { dimension: 'sources', amount: 1 }]
+        }
+      ],
+      /of 'sources', more than its bundle reserves/
+    ],
+    [
+      'consumed before the task was archived',
+      (claims) => [{ ...closeout(claims), disposition: 'consumed' }],
+      /disposition 'consumed', expected 'reserved'/
+    ],
+    ['holding no closeout claim at all', () => [], /holds no terminal-closeout claim/],
+    [
+      'of a purpose a task record never holds',
+      (claims) => {
+        const held = closeout(claims);
+        return [
+          ...claims,
+          {
+            claimVersion: held.claimVersion,
+            claimId: 'settle-1',
+            owner: held.owner,
+            ownership: held.ownership,
+            disposition: held.disposition,
+            charges: held.charges,
+            purpose: 'accepted-operation-settlement',
+            taskId: 't1',
+            operationId: 'op-x'
+          }
+        ];
+      },
+      /does not hold a 'accepted-operation-settlement' claim/
+    ]
+  ])('a claim %s blocks open', async (__, edit, message) => {
+    expect((await withClaims(edit)).issues).toEqual([
+      expect.objectContaining({ code: 'integrity', message: expect.stringMatching(message) })
+    ]);
+  });
+
+  test('an unresolved record must still hold its first-resolution reservation', async () => {
+    const report = await withClaims((claims) => claims.filter((c) => c.purpose !== 'first-resolution'), {
+      unresolved: true
+    });
+    expect(report.issues).toEqual([
+      expect.objectContaining({
+        code: 'integrity',
+        message: expect.stringMatching(/holds no first-resolution claim/)
+      })
+    ]);
+  });
+
+  test("a pending entry's claims are checked too, and joined to a landed record in full", async () => {
+    const root = await parentAndChild();
+    const record = readJson(root, 'task-t2.json');
+    const claims = record.capacityClaims as Claim[];
+    // Landed record, same ids, one charge altered: not that registration's claims.
+    markPending(root, 't2', {
+      operationId: 'op-create-t2',
+      request: creationOf(root, 't2').request,
+      capacityClaims: claims.map((c) => ({
+        ...c,
+        ownership: 'pending',
+        charges: (c.charges as JsonObject[]).map((charge, i) =>
+          i === 0 ? { ...charge, amount: (charge.amount as number) - 1 } : charge
+        )
+      }))
+    });
+    expect(blocked(await open(root)).issues).toEqual([
+      expect.objectContaining({ code: 'integrity', message: expect.stringMatching(/its claims differ/) })
+    ]);
+    // No landed record: the entry's own claims must be a pending registration's.
+    markPending(root, 't2', {
+      operationId: 'op-create-t2',
+      request: creationOf(root, 't2').request,
+      capacityClaims: claims
+    });
+    root.deleteChild('task-t2.json').orThrow();
+    expect(blocked(await open(root)).issues).toEqual([
+      expect.objectContaining({
+        code: 'integrity',
+        message: expect.stringMatching(
+          /task-t2\.json: pending registration: .*ownership 'live', expected 'pending'/
+        )
+      })
+    ]);
   });
 });

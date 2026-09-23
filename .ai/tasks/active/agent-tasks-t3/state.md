@@ -131,3 +131,8 @@ mutations; UNVERIFIED if a pattern is absent or it does not build) → coverage 
 Ten findings (3 high, 7 medium), all verified real and fixed; regression tests in
 `storage/evidence.test.ts`, reverts M27–M36 each verified red. 742 tests, 100% coverage. Next:
 push, reply/resolve threads, re-request Copilot; CodeRabbit once the Copilot loop settles.
+
+## 2026-09-23 — Copilot round 2 addressed
+
+Eight findings (5 high, 3 medium), all real and fixed; M37–M47 each verified red. 760 tests,
+100% coverage, zero warnings. Next: push, reply/resolve, re-request Copilot (round 3).

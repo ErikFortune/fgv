@@ -175,6 +175,17 @@ UNVERIFIED — never as "nothing went red"** (F2's lesson). Final run, against t
 | M34 | open skips per-value bounds | 1 |
 | M35 | replay identity omits the catalog operation name | 1 |
 | M36 | bounds not re-checked after kind normalization | 1 |
+| M37 | a resolved record may carry no operations | 1 |
+| M38 | operation identity omits the principal | 1 |
+| M39 | open does not validate record claims | 9 |
+| M40 | open does not validate pending-entry claims | 1 |
+| M41 | pending join by claim ids only | 1 |
+| M42 | registration replay rewrites a quarantined record | 1 |
+| M43 | any purpose may resolve a task | 1 |
+| M44 | source revision may move outside observations | 1 |
+| M45 | maintenance may change semantic state | 1 |
+| M46 | pending manifest growth not counted in the ledger | 1 |
+| M47 | profile fit ignores the per-record bound | 1 |
 
 **Three findings came from the exercise rather than from the suite:**
 
@@ -246,7 +257,7 @@ Every step `.github/workflows/ci.yml` runs, run locally on the final code:
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint run before the final commit |
-| `rushx test` (package) | **742 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
+| `rushx test` (package) | **760 passed; 100% statements, branches, functions, lines; no `c8 ignore`** |
 | `rush rebuild` (repo-wide) | `SUCCESS: 37 operations`, exit 0, no warnings |
 | `rush test` (repo-wide) | `SUCCESS: 36 operations`, exit 0 |
 | `verify-capability-docs.mjs` | router 19,587/24,000, 24/24 documented, 75 reflexes, 0 failed |
@@ -279,4 +290,25 @@ in `evidence.test.ts` red.
 | open never applied `checkBounds` | applied per record; a value over its bound blocks as `record-invalid` |
 | commit replay omitted the catalog operation name | one `sameOperation` identity (id, type, catalog name, request) now serves commit replay, registration replay and `checkOperations` |
 | bounds checked before the kind's encoder normalized the details | re-checked on the normalized draft |
+
+### Copilot round 2 — 5 high, 3 medium, all real, all fixed
+
+Round 1 made storage compare the whole identity it relies on; round 2 found what that identity
+was still missing, and two places where a commit purpose licensed more than its contract says.
+
+| finding | fix |
+|---|---|
+| a resolved record with `operations: []` converted, then crashed replay on `operations[0]` | the record converter requires at least the creation operation |
+| `principalKey` not part of operation identity | `sameOperation` includes it, so it is immutable and a retry under another principal is a `conflict` |
+| open trusted claims' owner, ownership, purpose, charges and disposition | `checkTaskClaims` checks each claim against what this release writes, for records and for pending entries; a pending entry joins its landed record by full claim equality, not ids. `indeterminate` passes (the ledger fences on it — the designed posture, which an existing test pins) |
+| a registration replay rewrote a quarantined record | refused with `unknown-kind-version` before replay |
+| any purpose could resolve an unresolved record, and non-observations could move or clear `sourceRevision` | `checkPurpose`: first resolution is an observation; only an observation changes `sourceRevision` |
+| same-revision maintenance could change lifecycle, details or `archived` | maintenance must leave semantic content unchanged; only observation timestamps may move |
+| after a pending manifest write and a clean record-write failure, the ledger kept the old manifest size | the pending step applies the new manifest entry; a test pins the still-open instance's status to what a reopen computes |
+| a profile whose `maxTaskRecordBytes` is below a protected bundle validated, then refused every registration | profile fitting uses the per-record ceiling for `record-bytes` |
+
+Two existing tests were written against states a valid profile or claim set can no longer reach,
+and were re-derived rather than deleted: the per-record exact-fit test now measures an unresolved
+registration (the largest reservation a profile must hold), and the "reserved growth no longer
+fits" test now grows the record out of band instead of shrinking the bound below the bundle.
 

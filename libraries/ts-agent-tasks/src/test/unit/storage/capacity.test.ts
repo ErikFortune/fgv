@@ -220,16 +220,20 @@ describe('admission — exact fit and one over', () => {
   });
 
   test('per-record bytes: a record plus its reserved growth must fit its own ceiling', async () => {
+    // An unresolved registration carries the largest reservation a profile must hold (closeout
+    // plus first resolution), so it is the one whose exact fit a valid profile can express.
+    const registerUnresolved = async (repository: ITaskRepository): ReturnType<typeof register> =>
+      repository.withWriter((w) => w.register(unresolvedRegistration('a')));
     const probe = await repositoryWith(profileWith({}, { maxTaskRecordBytes: 8000000 }));
-    expect(await register(probe, 'a')).toSucceed();
+    expect(await registerUnresolved(probe)).toSucceed();
     const recordRow = row(probe, 'record-bytes');
     expect(recordRow.limitingRecordIds).toEqual(['a']);
     const exact: number = committed(recordRow);
 
     const fits = await repositoryWith(profileWith({}, { maxTaskRecordBytes: exact }));
-    expect(await register(fits, 'a')).toSucceed();
+    expect(await registerUnresolved(fits)).toSucceed();
     const short = await repositoryWith(profileWith({}, { maxTaskRecordBytes: exact - 1 }));
-    expect(await register(short, 'a')).toFailWithDetail(
+    expect(await registerUnresolved(short)).toFailWithDetail(
       /record a would be \d+ bytes including its reserved growth/i,
       expect.objectContaining({
         capacity: expect.objectContaining({ dimension: 'record-bytes', recordId: 'a', limit: exact - 1 })

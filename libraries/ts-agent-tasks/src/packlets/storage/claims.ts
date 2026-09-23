@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Converter, Result, mapResults, succeed } from '@fgv/ts-utils';
+import { Converter, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import {
   CapacityClaimId,
   CapacityClaimOwnership,
@@ -116,4 +116,98 @@ export function spendClaim(
     }));
     return { ...claim, charges, disposition: consume ? 'consumed' : 'reserved' };
   });
+}
+
+/**
+ * What a task's claims must be, given the state of the record (or pending entry) holding them.
+ * @internal
+ */
+export interface ITaskClaimExpectation {
+  readonly taskId: TaskId;
+  readonly ownership: CapacityClaimOwnership;
+  /** The holder is an unresolved record, or a pending registration of one. */
+  readonly unresolved: boolean;
+  readonly archived: boolean;
+}
+
+/**
+ * Checks a task's claims against what the repository would have written for it.
+ *
+ * @remarks
+ * The claim-id join at open proves only which reservation is which. This proves each one is a
+ * reservation this release computes: owned by this task, held with the expected ownership, of
+ * a purpose a task record holds, still at most its bundle's maximum in every dimension it
+ * charges, and in the disposition the record's state implies — a closeout claim reserved
+ * until the archive consumes it, a first-resolution claim reserved exactly while the record is
+ * unresolved. An `indeterminate` claim passes: the ledger fences all growth while one stands,
+ * which is the recovery posture that state exists to force.
+ * @internal
+ */
+export function checkTaskClaims(
+  claims: ReadonlyArray<ITaskCapacityClaim>,
+  expected: ITaskClaimExpectation,
+  profile: ITaskCapacityProfile
+): Result<true> {
+  return maximumClosureCharges(profile).onSuccess((closeout) =>
+    maximumResolutionCharges(profile).onSuccess((resolution) => {
+      const seen: Set<CapacityClaimPurpose> = new Set<CapacityClaimPurpose>();
+      for (const claim of claims) {
+        if (claim.purpose !== 'terminal-closeout' && claim.purpose !== 'first-resolution') {
+          return fail<true>(`claim ${claim.claimId}: a task record does not hold a '${claim.purpose}' claim`);
+        }
+        const bundle: ReadonlyArray<ITaskCapacityCharge> =
+          claim.purpose === 'terminal-closeout' ? closeout : resolution;
+        const problem: string | undefined = _claimProblem(claim, expected, bundle, seen);
+        if (problem !== undefined) {
+          return fail<true>(`claim ${claim.claimId}: ${problem}`);
+        }
+        seen.add(claim.purpose);
+      }
+      if (!seen.has('terminal-closeout')) {
+        return fail<true>(`task ${expected.taskId} holds no terminal-closeout claim`);
+      }
+      if (expected.unresolved && !seen.has('first-resolution')) {
+        return fail<true>(`unresolved task ${expected.taskId} holds no first-resolution claim`);
+      }
+      return succeed<true>(true);
+    })
+  );
+}
+
+type TaskHeldClaim = Extract<ITaskCapacityClaim, { purpose: 'terminal-closeout' | 'first-resolution' }>;
+
+function _claimProblem(
+  claim: TaskHeldClaim,
+  expected: ITaskClaimExpectation,
+  bundle: ReadonlyArray<ITaskCapacityCharge>,
+  seen: ReadonlySet<CapacityClaimPurpose>
+): string | undefined {
+  if (
+    claim.owner.owner !== 'task' ||
+    claim.owner.taskId !== expected.taskId ||
+    claim.taskId !== expected.taskId
+  ) {
+    return `not owned by task ${expected.taskId}`;
+  }
+  if (claim.ownership !== expected.ownership) {
+    return `ownership '${claim.ownership}', expected '${expected.ownership}'`;
+  }
+  if (seen.has(claim.purpose)) {
+    return `a second '${claim.purpose}' claim`;
+  }
+  for (const charge of claim.charges) {
+    const max: ITaskCapacityCharge | undefined = bundle.find((c) => c.dimension === charge.dimension);
+    if (max === undefined || charge.amount > max.amount) {
+      return `charges ${charge.amount} of '${charge.dimension}', more than its bundle reserves`;
+    }
+  }
+  // A resolved record holds a first-resolution claim only if it was registered unresolved,
+  // and then its resolution consumed it.
+  const consumed: boolean = claim.purpose === 'terminal-closeout' ? expected.archived : !expected.unresolved;
+  const disposition: string = consumed ? 'consumed' : 'reserved';
+  // `indeterminate` is the one other state a claim may be in: the ledger fences all growth
+  // while it stands, so it is accounted for rather than guessed at.
+  return claim.disposition === disposition || claim.disposition === 'indeterminate'
+    ? undefined
+    : `disposition '${claim.disposition}', expected '${disposition}'`;
 }

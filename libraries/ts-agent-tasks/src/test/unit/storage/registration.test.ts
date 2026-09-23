@@ -133,9 +133,13 @@ describe('registration — the ordered inventory protocol', () => {
   test('a pending registration survives reopen, still holding its reservation, and resumes', async () => {
     root.faults.push({ name: 'task-t1.json', when: 'before', visibility: 'unchanged' });
     await repository.withWriter((w) => w.register(registration('t1')));
+    // The still-usable instance counts exactly what is on disk: the manifest that now carries
+    // the pending entry, its request and its claims — the figure a reopen computes from scratch.
+    const before = repository.capacityStatus().orThrow().dimensions;
     repository.close();
 
     const reopened = await open(inner);
+    expect(reopened.capacityStatus().orThrow().dimensions).toEqual(before);
     expect(reopened.report.pendingRegistrations).toEqual([{ taskId: 't1', operationId: 'op-create-t1' }]);
     expect(reopened.report.issues).toEqual([
       expect.objectContaining({ code: 'pending-registration', severity: 'advisory' })

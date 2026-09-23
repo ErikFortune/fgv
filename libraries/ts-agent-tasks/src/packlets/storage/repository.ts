@@ -31,6 +31,7 @@ import {
   checkBounds,
   checkIdentity,
   checkOperations,
+  checkPurpose,
   checkRegistrationDraft,
   checkUpdates,
   idOf,
@@ -338,6 +339,16 @@ export class FileTreeTaskRepository implements ITaskRepository {
     // retry, which must neither charge twice nor release early — or a different one, refused.
     const live: ITaskProjection | undefined = this._tasks.get(taskId);
     if (live !== undefined) {
+      // A replay rewrites the record to re-establish its flush boundary, and a quarantined
+      // record is never rewritten.
+      if (!live.known) {
+        return taskFailure(
+          `register ${taskId}: ${live.kind}@${live.detailVersion} is not registered; the record is quarantined`,
+          'unknown-kind-version',
+          'after-host-action',
+          { operationId }
+        );
+      }
       return this._replayRegistration(taskId, operationId, draft.operations[0]);
     }
     const pending: IPendingInventoryEntry | undefined = this._pending.get(taskId);
@@ -415,7 +426,15 @@ export class FileTreeTaskRepository implements ITaskRepository {
         this._writeFile(manifestName, manifestEncoded.text, operationId).onSuccess(() => {
           this._setManifest(pendingManifest);
           this._pending.set(taskId, entry);
-          this._ledger.apply(new Map([[taskKey(taskId), pendingEntry(entry, taskRecordLimit(profile))]]));
+          // The manifest that now holds the pending entry, request and claims is the committed
+          // one; if the record write then fails cleanly, the repository stays usable and must
+          // count exactly what is on disk.
+          this._ledger.apply(
+            new Map([
+              [taskKey(taskId), pendingEntry(entry, taskRecordLimit(profile))],
+              ['repository', manifestEntry(manifestEncoded.bytes, profile)]
+            ])
+          );
           this._generation++;
           return this._writeRegistration(taskId, operationId, draft, entry);
         })
@@ -604,7 +623,8 @@ export class FileTreeTaskRepository implements ITaskRepository {
   ): TaskResult<true> {
     const maintenance: boolean = request.purpose === 'maintenance';
     const checked: Result<true> = checkIdentity(current, draft)
-      .onSuccess(() => {
+      .onSuccess((resolved) => checkPurpose(current, resolved, request.purpose).onSuccess(() => ok(resolved)))
+      .onSuccess((resolved) => {
         const nextRevision = revisionOf(draft);
         const currentRevision = revisionOf(current);
         if (maintenance ? nextRevision !== currentRevision : nextRevision < currentRevision) {
@@ -614,10 +634,8 @@ export class FileTreeTaskRepository implements ITaskRepository {
               : `the revision cannot move backwards from ${currentRevision} to ${nextRevision}`
           );
         }
-        if (request.purpose === 'observation') {
-          if (draft.recordType !== 'resolved' || draft.sourceRevision === undefined) {
-            return fail<true>(`an observation carries the source revision that deduplicates it`);
-          }
+        if (request.purpose === 'observation' && resolved.sourceRevision === undefined) {
+          return fail<true>(`an observation carries the source revision that deduplicates it`);
         }
         return ok<true>(true);
       })
