@@ -458,3 +458,14 @@ describe('bounded working space', () => {
     ).toFailWithDetail(/recordCache/i, expect.objectContaining({ code: 'invalid' }));
   });
 });
+
+describe('open-time source identity', () => {
+  test('two records bound to one source reference block open', async () => {
+    const { seedRepository } = await import('../../helpers/cohorts');
+    const { binding } = await import('../../helpers/queryFixtures');
+    // Clones of one bound template share its binding: exactly what registration refuses.
+    await expect(
+      seedRepository([], [{ prefix: 'dup', count: 2, shape: { scopes: [A], binding: binding('shared') } }])
+    ).rejects.toThrow(/dup00001.*already bound to task dup00000/i);
+  });
+});

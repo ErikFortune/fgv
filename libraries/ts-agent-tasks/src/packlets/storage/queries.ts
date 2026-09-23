@@ -328,11 +328,11 @@ export function evaluateDue(
   let next: string | undefined = undefined;
   let examined: number = 0;
   for (let candidate = merged.next(); candidate !== undefined; candidate = merged.next()) {
-    const summary: ITaskSummary | undefined = index.summaries.get(dueKeyTask(candidate.key));
-    const lifecycle = summary?.envelope.lifecycle;
+    // A due key is added and removed with its task's summary, so the summary exists; everything
+    // it implies is still re-checked on the summary itself.
+    const summary: ITaskSummary = index.summaries.get(dueKeyTask(candidate.key))!;
+    const lifecycle = summary.envelope.lifecycle;
     const due: boolean =
-      summary !== undefined &&
-      lifecycle !== undefined &&
       lifecycle.status === 'waiting' &&
       lifecycle.reason.notBefore !== undefined &&
       lifecycle.reason.notBefore <= cutoff &&
@@ -342,7 +342,7 @@ export function evaluateDue(
         next = lastIncluded;
         break;
       }
-      items.push(summary!);
+      items.push(summary);
       lastIncluded = candidate.key;
     }
     examined++;

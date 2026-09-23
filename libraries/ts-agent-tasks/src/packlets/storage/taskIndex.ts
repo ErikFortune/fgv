@@ -237,9 +237,10 @@ export class TaskIndex {
     this.summaries.delete(id);
     this.unresolved.delete(id);
     if (m.parentId !== undefined) {
-      const siblings: Set<TaskId> | undefined = this.children.get(m.parentId);
-      siblings?.delete(id);
-      if (siblings?.size === 0) {
+      // A membership's parent edge was added with it, so its sibling set exists.
+      const siblings: Set<TaskId> = this.children.get(m.parentId)!;
+      siblings.delete(id);
+      if (siblings.size === 0) {
         this.children.delete(m.parentId);
       }
       _unsetIn(this.activeChildren, m.parentId, id);

@@ -4,9 +4,10 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { fail, succeed, succeedWithDetail } from '@fgv/ts-utils';
+import { fail, failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import {
   FileTreeTaskRepository,
+  ITaskFailure,
   ITaskRepository,
   ITaskRepositoryConformanceReport,
   TaskResult,
@@ -67,5 +68,91 @@ describe('the repository conformance suite', () => {
         }
       });
     expect(await runTaskRepositoryConformance(() => wrapped(throwing))).toFailWith(/rebuild.*boom/i);
+  });
+});
+
+describe('conformance checks catch a misbehaving repository', () => {
+  const base = async (): Promise<ITaskRepository> =>
+    (await FileTreeTaskRepository.initialize(params(memoryRoot(), 'session'))).orThrow();
+  const failing = <T>(message: string): Promise<TaskResult<T>> =>
+    Promise.resolve(failWithDetail<T, ITaskFailure>(message, { code: 'invalid', retry: 'safe' }));
+
+  const broken =
+    (patch: (r: ITaskRepository) => object): (() => Promise<TaskResult<ITaskRepository>>) =>
+    async (): Promise<TaskResult<ITaskRepository>> => {
+      const r = await base();
+      return succeedWithDetail(Object.assign(Object.create(r), patch(r)));
+    };
+
+  test('one whose writer refuses everything', async () => {
+    expect(
+      await runTaskRepositoryConformance(broken(() => ({ withWriter: () => failing('read-only') })))
+    ).toFailWith(/paging returns every task.*read-only/i);
+  });
+
+  test('one whose queries fail', async () => {
+    const result = await runTaskRepositoryConformance(broken(() => ({ query: () => failing('no index') })));
+    expect(result).toFailWith(/paging returns every task.*no index/i);
+    expect(result).toFailWith(/cursor is refused.*no index/i);
+    expect(result).toFailWith(/a rebuild answers.*no index/i);
+  });
+
+  test('one that loses records, or whose rebuild does not advance', async () => {
+    expect(
+      await runTaskRepositoryConformance(
+        broken(() => ({ readCommit: async () => succeedWithDetail(undefined) }))
+      )
+    ).toFailWith(/owed updates stay listed.*no resolved record to change/i);
+    expect(
+      await runTaskRepositoryConformance(
+        broken(() => ({
+          rebuildIndexes: async () => succeedWithDetail({ state: 'ready', generation: 0, issues: [] })
+        }))
+      )
+    ).toFailWith(/a rebuild answers.*generation 0/i);
+    expect(
+      await runTaskRepositoryConformance(broken(() => ({ rebuildIndexes: () => failing('cannot rebuild') })))
+    ).toFailWith(/a rebuild answers.*cannot rebuild/i);
+  });
+
+  test('one whose cursors misbehave, whose archive loses identity, or whose failures are unclassified', async () => {
+    const ignoresCursor = await runTaskRepositoryConformance(
+      broken((r) => ({
+        query: async (q: Parameters<ITaskRepository['query']>[0]) =>
+          (
+            await r.query({ ...q, cursor: undefined })
+          ).onSuccess((page) => succeedWithDetail({ ...page, nextCursor: 'forever.1' }))
+      }))
+    );
+    expect(ignoresCursor).toFailWith(/a cursor after the last task/i);
+    expect(ignoresCursor).toFailWith(/different query: expected a 'invalid' failure, got success/i);
+
+    expect(
+      await runTaskRepositoryConformance(
+        broken((r) => ({
+          query: (q: Parameters<ITaskRepository['query']>[0]) =>
+            q.cursor !== undefined ? Promise.resolve(fail('unclassified')) : r.query(q)
+        }))
+      )
+    ).toFailWith(/different query: expected a 'invalid' failure, got undefined/i);
+
+    // Every cursor refused as a different query: right for one check, wrong for the stale one.
+    expect(
+      await runTaskRepositoryConformance(
+        broken((r) => ({
+          query: (q: Parameters<ITaskRepository['query']>[0]) =>
+            q.cursor !== undefined ? failing('always a different query') : r.query(q)
+        }))
+      )
+    ).toFailWith(/after a change: expected a 'cursor-stale' failure, got invalid/i);
+
+    expect(
+      await runTaskRepositoryConformance(broken(() => ({ read: async () => succeedWithDetail(undefined) })))
+    ).toFailWith(/not readable as archived/i);
+    expect(
+      await runTaskRepositoryConformance(
+        broken(() => ({ lookupSource: async () => succeedWithDetail('someone-else') }))
+      )
+    ).toFailWith(/source lookup found someone-else/i);
   });
 });

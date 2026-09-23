@@ -284,6 +284,9 @@ describe('unresolved and quarantined tasks', () => {
     const repository = (await FileTreeTaskRepository.initialize(params(root, 'session'))).orThrow();
     await addTask(repository, 'known', { scopes: [A] });
     await addTask(repository, 'vend', { scopes: [A], vendor: true });
+    // An unresolved registration of the same kind carries a source binding into quarantine.
+    (await repository.withWriter((w) => w.register(unresolvedRegistration('vref')))).orThrow();
+    await addTask(repository, 'vkid', { scopes: [C], vendor: true, parentId: 'known' });
     repository.close().orThrow();
     const { registry } = await import('../../helpers/storageFixtures');
     const reopened = (
@@ -296,7 +299,13 @@ describe('unresolved and quarantined tasks', () => {
     const result = await page(repo, { selection: select() });
     expect(ids(result.items)).toEqual(['known']);
     expect(result.completeness).toBe('partial');
-    expect(result.issues.join()).toMatch(/vend.*not registered/i);
+    expect(result.issues.join()).toMatch(/vend, vref.*not registered/i);
+    expect(result.issues.join()).not.toMatch(/vkid/);
+    expect(result.unresolved).toEqual([]);
+    // Quarantine keeps the graph: the unregistered child is still the known task's child.
+    expect([...inspectRepository(repo)!.index!.children.get('known' as TaskId)!]).toEqual(['vkid']);
+    // Its binding is still held: identity survives quarantine.
+    expect(await repo.lookupSource(binding('j-vref'))).toSucceedWith('vref' as TaskId);
     // A selection that does not reach it is complete.
     expect((await page(repo, { selection: select({ scopes: [B] }) })).completeness).toBe('complete');
   });
@@ -720,5 +729,45 @@ describe('index maintenance on mutation', () => {
       /./,
       expect.objectContaining({ code: 'invalid' })
     );
+  });
+});
+
+describe('the page candidate budget', () => {
+  jest.setTimeout(60000);
+
+  test('a page that runs out of candidates returns a cursor, even when it found nothing', async () => {
+    const { seedRepository } = await import('../../helpers/cohorts');
+    const { repository } = await seedRepository(
+      [{ id: 'zz-match', shape: { scopes: [A], responsibility: person('y') } }],
+      [
+        // 1,100 tasks in A that a responsibility filter rejects, and a larger set for 'y' elsewhere,
+        // so the scope union — not the responsibility set — drives the query.
+        { prefix: 'ax', count: 1100, shape: { scopes: [A], responsibility: person('x') } },
+        { prefix: 'by', count: 1200, shape: { scopes: [B], responsibility: person('y') } },
+        {
+          prefix: 'dx',
+          count: 1100,
+          shape: { scopes: [C], responsibility: person('x'), lifecycle: waiting(minutesAfter(1)) }
+        }
+      ]
+    );
+    const selection = select({ responsibility: person('y') });
+    const first = await page(repository, { selection });
+    expect(first.items).toEqual([]);
+    expect(first.nextCursor).toBeDefined();
+    const second = await page(repository, { selection, cursor: first.nextCursor });
+    expect(ids(second.items)).toEqual(['zz-match']);
+    expect(second.nextCursor).toBeUndefined();
+
+    const due: IDueTaskQuery = {
+      selection: { scopes: [C], lifecycleClass: 'open', responsibility: person('y') },
+      cutoff: minutesAfter(60) as never
+    };
+    const firstDue = (await repository.queryDue(due)).orThrow();
+    expect(firstDue.items).toEqual([]);
+    expect(firstDue.nextCursor).toBeDefined();
+    const secondDue = (await repository.queryDue({ ...due, cursor: firstDue.nextCursor })).orThrow();
+    expect(secondDue.items).toEqual([]);
+    expect(secondDue.nextCursor).toBeUndefined();
   });
 });

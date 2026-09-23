@@ -468,19 +468,18 @@ export class FileTreeTaskRepository implements ITaskRepository {
     query: { readonly limit?: number; readonly cursor?: PageCursor },
     evaluate: (after: string | undefined, limit: number) => IPageEvaluation<TItem>
   ): TaskResult<Omit<ITaskPage, 'items'> & { readonly items: ReadonlyArray<TItem> }> {
-    const encoded: Result<IEncodedRecord> = encodeRecord(descriptor);
-    if (encoded.isFailure()) {
-      return taskFailure(`query: ${encoded.message}`, 'invalid', 'after-host-action');
-    }
+    // The descriptor is built from converted, normalized values in a fixed key order, so its
+    // JSON text is already canonical for equality — and serializing it cannot fail.
+    const text: string = JSON.stringify(descriptor);
+    const bytes: number = utf8Length(text);
     const max: number = this.profile.encoded.maxQueryDescriptorBytes;
-    if (encoded.value.bytes > max) {
+    if (bytes > max) {
       return taskFailure(
-        `query: the normalized query is ${encoded.value.bytes} bytes, over the bound of ${max}`,
+        `query: the normalized query is ${bytes} bytes, over the bound of ${max}`,
         'invalid',
         'after-host-action'
       );
     }
-    const text: string = encoded.value.text;
     const generation: number = this._generation;
     const position: TaskResult<string | undefined> =
       query.cursor === undefined
