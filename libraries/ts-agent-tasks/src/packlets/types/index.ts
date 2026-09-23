@@ -17,5 +17,6 @@ export * from './ids';
 export * from './lifecycle';
 export * from './registry';
 export * from './source';
+export * from './storage';
 export * from './summary';
 export * from './updates';

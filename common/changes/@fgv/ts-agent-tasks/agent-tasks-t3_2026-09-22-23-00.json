@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "Add FileTreeTaskRepository: task records over an injected FileTree root, with one-record atomic commit of state, owed updates and dedup evidence; the ordered inventory registration protocol; open-time validation with a read-only recovery handle; and the derived A3 capacity ledger with persisted claims, admission and explicit limit increase. Durable mode claims process-crash survival only, on FileTree-qualified roots. Revises T1 vocabulary: adds the first-resolution claim purpose and maximumResolutionCharges, lets a reserved claim's charges shrink as they are spent, and fixes update identity as taskUpdateId.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

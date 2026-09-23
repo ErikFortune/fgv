@@ -13,7 +13,8 @@ import {
   SubscriptionId,
   TaskId,
   TaskKind,
-  UpdateId
+  UpdateId,
+  maxUpdateIdSuffixLength
 } from '../types';
 import { boundedIdentifier } from './primitives';
 
@@ -53,7 +54,9 @@ export function buildIdentityConverters(bounds: ITaskFieldBounds): IIdentityConv
     taskId: boundedIdentifier(max, 'task id').withBrand('TaskId'),
     taskKind: boundedIdentifier(max, 'task kind').withBrand('TaskKind'),
     operationId: boundedIdentifier(max, 'operation id').withBrand('OperationId'),
-    updateId: boundedIdentifier(max, 'update id').withBrand('UpdateId'),
+    // An update id is the tuple encoding `<taskId>:<revision>:<ordinal>` (see
+    // `taskUpdateId`), so it must be able to hold a maximum-length task id plus that suffix.
+    updateId: boundedIdentifier(max + maxUpdateIdSuffixLength, 'update id').withBrand('UpdateId'),
     consumerId: boundedIdentifier(max, 'consumer id').withBrand('ConsumerId'),
     subscriptionId: boundedIdentifier(max, 'subscription id').withBrand('SubscriptionId'),
     deliveryId: boundedIdentifier(max, 'delivery id').withBrand('DeliveryId'),

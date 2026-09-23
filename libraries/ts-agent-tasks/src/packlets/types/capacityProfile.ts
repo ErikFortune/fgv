@@ -218,3 +218,47 @@ export function maximumSettlementCharges(
     )
     .withErrorFormat((message: string) => `maximumSettlementCharges: ${message}`);
 }
+
+/**
+ * The maximum capacity an unresolved registration's first resolution can charge.
+ *
+ * @remarks
+ * Design §8.6: "any unresolved registration also reserves first resolution and the path
+ * through terminal closeout". First resolution replaces the unresolved reference with a
+ * whole snapshot and may owe one required payload of every update category, so this is the
+ * snapshot plus the per-category payloads, their audience links and acknowledgement
+ * evidence. It is reserved *in addition to* {@link maximumClosureCharges}, because the task
+ * that resolves must still be able to finish.
+ *
+ * Fails rather than returning an inexact figure, for the same reason as the closeout bundle.
+ * @public
+ */
+export function maximumResolutionCharges(
+  profile: ITaskCapacityProfile
+): Result<ReadonlyArray<ITaskCapacityCharge>> {
+  const categories: number = allUpdateCategories.length;
+  const audience: number = profile.perOwner.maxAudiencePerUpdate;
+  const encoded: ITaskEncodedBounds = profile.encoded;
+
+  return populateObject<{ links: number; snapshotBytes: number; updateBytes: number }>({
+    links: () => _product(categories, audience, 'resolution audience links'),
+    snapshotBytes: () =>
+      _sum([encoded.maxEnvelopeBytes, encoded.maxDetailBytes], 'resolution snapshot bytes'),
+    updateBytes: () => _product(categories, encoded.maxUpdateBytes, 'resolution update bytes')
+  })
+    .onSuccess((parts) =>
+      _sum([parts.snapshotBytes, parts.updateBytes], 'resolution record bytes').onSuccess((recordBytes) =>
+        succeed(
+          _charges([
+            ['updates', categories],
+            ['audience-links', parts.links],
+            ['acknowledgement-ids', parts.links],
+            ['record-bytes', recordBytes],
+            ['logical-bytes', recordBytes],
+            ['resident-payload-bytes', parts.updateBytes]
+          ])
+        )
+      )
+    )
+    .withErrorFormat((message: string) => `maximumResolutionCharges: ${message}`);
+}

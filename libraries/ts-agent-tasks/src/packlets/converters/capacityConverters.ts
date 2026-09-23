@@ -24,6 +24,7 @@ import {
   allCapacityDimensions,
   capacityPressureThreshold,
   maximumClosureCharges,
+  maximumResolutionCharges,
   maximumSettlementCharges
 } from '../types';
 import { IFailureConverters } from './failureConverters';
@@ -51,13 +52,32 @@ export interface ICapacityConverters {
 /**
  * Checks that a profile's limits can hold one protected bundle of charges.
  */
+/**
+ * Adds two bundles dimension by dimension.
+ */
+function _combine(
+  a: ReadonlyArray<ITaskCapacityCharge>,
+  b: ReadonlyArray<ITaskCapacityCharge>
+): ReadonlyArray<ITaskCapacityCharge> {
+  const totals: Map<CapacityDimension, number> = new Map<CapacityDimension, number>();
+  for (const charge of [...a, ...b]) {
+    totals.set(charge.dimension, (totals.get(charge.dimension) ?? 0) + charge.amount);
+  }
+  return Array.from(totals.entries()).map(([dimension, amount]) => ({ dimension, amount }));
+}
+
 function _fits(
   charges: ReadonlyArray<ITaskCapacityCharge>,
   profile: ITaskCapacityProfile,
   what: string
 ): Result<ReadonlyArray<ITaskCapacityCharge>> {
   for (const charge of charges) {
-    const limit: number = profile.limits[charge.dimension];
+    // Every protected bundle belongs to one task record, whose per-record ceiling is the
+    // tighter of the repository limit and the encoded task-record bound.
+    const limit: number =
+      charge.dimension === 'record-bytes'
+        ? Math.min(profile.limits['record-bytes'], profile.encoded.maxTaskRecordBytes)
+        : profile.limits[charge.dimension];
     if (charge.amount > limit) {
       return fail(
         `capacity profile: ${what} needs ${charge.amount} of '${charge.dimension}' but the ` +
@@ -175,6 +195,28 @@ export function buildCapacityConverters(
         maximumClosureCharges(value).onSuccess((charges) => _fits(charges, value, 'terminal closeout')),
         maximumSettlementCharges(value).onSuccess((charges) =>
           _fits(charges, value, 'accepted-operation settlement')
+        ),
+        // Per task, a registration's own creation operation must fit alongside the closeout's
+        // operation slots, which the repository holds back from ordinary work (T3). A profile
+        // below that validates here and then refuses every registration forever.
+        maximumClosureCharges(value).onSuccess((closeout) => {
+          const held: number = closeout
+            .filter((c) => c.dimension === 'operations')
+            .reduce((total, c) => total + c.amount, 0);
+          return value.perOwner.maxOperationsPerTask < held + 1
+            ? fail<ReadonlyArray<ITaskCapacityCharge>>(
+                `capacity profile: maxOperationsPerTask ${value.perOwner.maxOperationsPerTask} cannot hold a ` +
+                  `creation operation plus the ${held} operation slots closeout reserves; a profile must be ` +
+                  `able to finish the work it can accept`
+              )
+            : succeed(closeout);
+        }),
+        // An unresolved registration holds both bundles at once (T3), so the pair must fit
+        // together, not merely each on its own.
+        maximumClosureCharges(value).onSuccess((closeout) =>
+          maximumResolutionCharges(value).onSuccess((resolution) =>
+            _fits(_combine(closeout, resolution), value, 'unresolved registration (resolution + closeout)')
+          )
         )
       ]).onSuccess(() => succeed(value))
   );
@@ -250,6 +292,13 @@ export function buildCapacityConverters(
       taskId: ids.taskId,
       audience: audience
     }),
+    'first-resolution': Converters.strictObject<Extract<ITaskCapacityClaim, { purpose: 'first-resolution' }>>(
+      {
+        ...common,
+        purpose: Converters.literal('first-resolution'),
+        taskId: ids.taskId
+      }
+    ),
     'accepted-operation-settlement': Converters.strictObject<
       Extract<ITaskCapacityClaim, { purpose: 'accepted-operation-settlement' }>
     >({

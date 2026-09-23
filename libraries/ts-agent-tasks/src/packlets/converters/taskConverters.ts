@@ -11,6 +11,7 @@ import { IContextConverters, buildContextConverters } from './contextConverters'
 import { IEnvelopeConverters, buildEnvelopeConverters } from './envelopeConverters';
 import { IFailureConverters, buildFailureConverters } from './failureConverters';
 import { IIdentityConverters, buildIdentityConverters } from './identityConverters';
+import { IStorageConverters, buildStorageConverters } from './storageConverters';
 import { IValueConverters, buildValueConverters } from './valueConverters';
 
 /**
@@ -80,6 +81,8 @@ export class TaskConverters {
   public readonly capacity: ICapacityConverters;
   /** Summary, update, context input, budget and inclusion-receipt converters. */
   public readonly context: IContextConverters;
+  /** Storage record, inventory and manifest converters. */
+  public readonly storage: IStorageConverters;
 
   private constructor(bounds: ITaskFieldBounds) {
     this.bounds = bounds;
@@ -90,6 +93,15 @@ export class TaskConverters {
     this.commands = buildCommandConverters(bounds, this.ids);
     this.capacity = buildCapacityConverters(bounds, this.ids, this.values, this.failures);
     this.context = buildContextConverters(bounds, this.ids, this.values, this.envelopes);
+    this.storage = buildStorageConverters(
+      bounds,
+      this.ids,
+      this.values,
+      this.envelopes,
+      this.commands,
+      this.capacity,
+      this.context
+    );
   }
 
   /**

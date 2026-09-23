@@ -7,13 +7,20 @@
 import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { DetailedResult } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { JsonSchema } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 
 // @public
+export const allCapacityClaimPurposes: ReadonlyArray<CapacityClaimPurpose>;
+
+// @public
 export const allCapacityDimensions: ReadonlyArray<CapacityDimension>;
+
+// @public
+export const allTaskCatalogOperationTypes: ReadonlyArray<TaskCatalogOperationType>;
 
 // @public
 export const allTaskFailureCodes: ReadonlyArray<TaskFailureCode>;
@@ -55,6 +62,9 @@ export function buildFailureConverters(bounds: ITaskFieldBounds, ids: IIdentityC
 export function buildIdentityConverters(bounds: ITaskFieldBounds): IIdentityConverters;
 
 // @public
+export function buildStorageConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters, values: IValueConverters, envelopes: IEnvelopeConverters, commands: ICommandConverters, capacity: ICapacityConverters, context: IContextConverters): IStorageConverters;
+
+// @public
 export function buildValueConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters): IValueConverters;
 
 // @public
@@ -80,7 +90,7 @@ export type CapacityClaimOwner = {
 export type CapacityClaimOwnership = 'pending' | 'live';
 
 // @public
-export type CapacityClaimPurpose = 'terminal-closeout' | 'accepted-operation-settlement' | 'subscription-acknowledgement' | 'receipt-preparation' | 'admitted-source-replay';
+export type CapacityClaimPurpose = 'terminal-closeout' | 'first-resolution' | 'accepted-operation-settlement' | 'subscription-acknowledgement' | 'receipt-preparation' | 'admitted-source-replay';
 
 // @public
 export type CapacityDimension = 'retained-tasks' | 'non-archived-tasks' | 'subscriptions' | 'sources' | 'updates' | 'audience-links' | 'acknowledgement-ids' | 'operations' | 'record-bytes' | 'logical-bytes' | 'resident-payload-bytes';
@@ -135,6 +145,25 @@ export const defaultTaskPerOwnerLimits: ITaskPerOwnerLimits;
 
 // @public
 export type DeliveryId = Brand<string, 'DeliveryId'>;
+
+// @public
+export class FileTreeTaskRepository implements ITaskRepository {
+    capacityStatus(): TaskResult<ITaskCapacityStatus>;
+    close(): Result<boolean>;
+    // (undocumented)
+    health(): ITaskRepositoryHealth;
+    static initialize(params: ITaskRepositoryOpenParams): Promise<TaskResult<ITaskRepository>>;
+    // (undocumented)
+    readonly mode: TaskRepositoryMode;
+    static open(params: ITaskRepositoryOpenParams): Promise<TaskResult<TaskRepositoryOpenResult>>;
+    get profile(): ITaskCapacityProfile;
+    read(id: TaskId): Promise<TaskResult<TaskRegistrationResult | undefined>>;
+    readCommit(id: TaskId): Promise<TaskResult<ITaskCommitRecord | undefined>>;
+    readonly report: ITaskRecoveryReport;
+    // (undocumented)
+    readonly repositoryId: string;
+    withWriter<T>(action: (writer: ITaskRepositoryWriter) => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
+}
 
 // @public
 export interface ICapacityConverters {
@@ -294,10 +323,73 @@ export interface IInclusionEntry {
 }
 
 // @public
+export interface ILiveInventoryEntry {
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    readonly state: 'live';
+}
+
+// @public
 export type Instant = Brand<string, 'TaskInstant'>;
 
 // @public
 export const instant: Converter<Instant>;
+
+// @public
+export interface IPendingInventoryEntry {
+    // (undocumented)
+    readonly capacityClaims: ReadonlyArray<ITaskCapacityClaim>;
+    // (undocumented)
+    readonly id: string;
+    readonly operation: TaskCatalogOperationType;
+    // (undocumented)
+    readonly operationId: OperationId;
+    readonly principalKey: string;
+    readonly recordType: ITaskCommitRecord['recordType'];
+    // (undocumented)
+    readonly request: JsonValue;
+    // (undocumented)
+    readonly state: 'pending';
+}
+
+// @public
+export interface IResolvedTaskCommitRecord {
+    // (undocumented)
+    readonly archived: boolean;
+    // (undocumented)
+    readonly capacityClaims: ReadonlyArray<ITaskCapacityClaim>;
+    // (undocumented)
+    readonly formatVersion: 1;
+    // (undocumented)
+    readonly operations: ReadonlyArray<IStoredTaskOperation>;
+    // (undocumented)
+    readonly recordRevision: number;
+    // (undocumented)
+    readonly recordType: 'resolved';
+    // (undocumented)
+    readonly sourceRevision?: ISourceRevision;
+    // (undocumented)
+    readonly task: ITaskSnapshot;
+    // (undocumented)
+    readonly updates: ReadonlyArray<ITaskUpdate>;
+}
+
+// @public
+export interface IResolvedTaskRecordDraft {
+    // (undocumented)
+    readonly archived: boolean;
+    // (undocumented)
+    readonly operations: ReadonlyArray<IStoredTaskOperation>;
+    // (undocumented)
+    readonly recordType: 'resolved';
+    // (undocumented)
+    readonly sourceRevision?: ISourceRevision;
+    // (undocumented)
+    readonly task: ITaskSnapshot;
+    // (undocumented)
+    readonly updates: ReadonlyArray<ITaskUpdate>;
+}
 
 // @public
 export interface IResponsibility {
@@ -353,6 +445,66 @@ export interface ISourceRevision {
 export function isTerminalTaskStatus(status: TaskLifecycleStatus): boolean;
 
 // @public
+export interface IStorageConverters {
+    // (undocumented)
+    readonly draft: Converter<ITaskRecordDraft>;
+    readonly formatVersion: Converter<number>;
+    // (undocumented)
+    readonly header: Converter<ITaskRecordHeader>;
+    // (undocumented)
+    readonly inventoryEntry: Converter<ITaskInventoryEntry>;
+    // (undocumented)
+    readonly manifest: Converter<ITaskRepositoryManifest>;
+    // (undocumented)
+    readonly operation: Converter<IStoredTaskOperation>;
+    // (undocumented)
+    readonly operations: Converter<ReadonlyArray<IStoredTaskOperation>>;
+    // (undocumented)
+    readonly record: Converter<ITaskCommitRecord>;
+    // (undocumented)
+    readonly resolvedRecord: Converter<IResolvedTaskCommitRecord>;
+    // (undocumented)
+    readonly unresolvedRecord: Converter<IUnresolvedTaskCommitRecord>;
+    // (undocumented)
+    readonly updates: Converter<ReadonlyArray<ITaskUpdate>>;
+}
+
+// @public
+export interface IStoredCatalogOperation {
+    // (undocumented)
+    readonly operation: TaskCatalogOperationType;
+    // (undocumented)
+    readonly operationId: OperationId;
+    // (undocumented)
+    readonly principalKey: string;
+    // (undocumented)
+    readonly receipt: JsonValue;
+    // (undocumented)
+    readonly request: JsonValue;
+    // (undocumented)
+    readonly type: 'catalog';
+}
+
+// @public
+export interface IStoredCommandOperation {
+    // (undocumented)
+    readonly dispatch: StoredCommandDispatch;
+    // (undocumented)
+    readonly operationId: OperationId;
+    // (undocumented)
+    readonly principalKey: string;
+    // (undocumented)
+    readonly receipt: ICommandReceipt;
+    // (undocumented)
+    readonly request: ICommandRequest;
+    // (undocumented)
+    readonly type: 'command';
+}
+
+// @public
+export type IStoredTaskOperation = IStoredCommandOperation | IStoredCatalogOperation;
+
+// @public
 export interface ITaskCapacityCharge {
     // (undocumented)
     readonly amount: number;
@@ -365,6 +517,9 @@ export type ITaskCapacityClaim = (ITaskCapacityClaimCommon & {
     readonly purpose: 'terminal-closeout';
     readonly taskId: TaskId;
     readonly audience: ReadonlyArray<SubscriptionId>;
+}) | (ITaskCapacityClaimCommon & {
+    readonly purpose: 'first-resolution';
+    readonly taskId: TaskId;
 }) | (ITaskCapacityClaimCommon & {
     readonly purpose: 'accepted-operation-settlement';
     readonly taskId: TaskId;
@@ -460,6 +615,29 @@ export interface ITaskCommandHandle {
     // (undocumented)
     readonly name: string;
     validate(parameters: unknown): Result<JsonValue>;
+}
+
+// @public
+export type ITaskCommitRecord = IResolvedTaskCommitRecord | IUnresolvedTaskCommitRecord;
+
+// @public
+export type ITaskCommitRequest = (ITaskCommitRequestBase & {
+    readonly purpose: 'operation';
+    readonly operationId: OperationId;
+}) | (ITaskCommitRequestBase & {
+    readonly purpose: 'observation';
+}) | (ITaskCommitRequestBase & {
+    readonly purpose: 'maintenance';
+});
+
+// @public
+export interface ITaskCommitRequestBase {
+    readonly expectedRecordRevision: number;
+    readonly expectedRevision: TaskRevision;
+    // (undocumented)
+    readonly record: ITaskRecordDraft;
+    // (undocumented)
+    readonly taskId: TaskId;
 }
 
 // @public
@@ -666,6 +844,9 @@ export interface ITaskInclusionReceipt {
 }
 
 // @public
+export type ITaskInventoryEntry = ILiveInventoryEntry | IPendingInventoryEntry;
+
+// @public
 export interface ITaskKindDescriptor<T> {
     // (undocumented)
     readonly commands?: ReadonlyArray<ITaskCommandHandle>;
@@ -756,11 +937,134 @@ export interface ITaskReason {
 }
 
 // @public
+export type ITaskRecordDraft = IResolvedTaskRecordDraft | IUnresolvedTaskRecordDraft;
+
+// @public
+export interface ITaskRecordHeader {
+    // (undocumented)
+    readonly formatVersion: 1;
+    // (undocumented)
+    readonly id: string;
+}
+
+// @public
+export interface ITaskRecoveryHandle {
+    // (undocumented)
+    close(): Result<boolean>;
+    readRaw(name: string): Result<string>;
+    // (undocumented)
+    readonly report: ITaskRecoveryReport;
+}
+
+// @public
+export interface ITaskRecoveryIssue {
+    // (undocumented)
+    readonly code: TaskRecoveryIssueCode;
+    // (undocumented)
+    readonly message: string;
+    // (undocumented)
+    readonly recordName?: string;
+    // (undocumented)
+    readonly severity: 'blocking' | 'advisory';
+}
+
+// @public
+export interface ITaskRecoveryReport {
+    readonly completedRegistrations: ReadonlyArray<TaskId>;
+    // (undocumented)
+    readonly issues: ReadonlyArray<ITaskRecoveryIssue>;
+    readonly pendingRegistrations: ReadonlyArray<{
+        readonly taskId: TaskId;
+        readonly operationId: OperationId;
+    }>;
+    readonly removedTemporaries: ReadonlyArray<string>;
+    // (undocumented)
+    readonly repositoryId?: string;
+}
+
+// @public
 export interface ITaskReference {
     // (undocumented)
     readonly key: string;
     // (undocumented)
     readonly namespace: string;
+}
+
+// @public
+export interface ITaskRegistrationRequest {
+    // (undocumented)
+    readonly operationId: OperationId;
+    // (undocumented)
+    readonly record: ITaskRecordDraft;
+    // (undocumented)
+    readonly request: JsonValue;
+    // (undocumented)
+    readonly taskId: TaskId;
+}
+
+// @public
+export interface ITaskRepository {
+    capacityStatus(): TaskResult<ITaskCapacityStatus>;
+    close(): Result<boolean>;
+    // (undocumented)
+    health(): ITaskRepositoryHealth;
+    // (undocumented)
+    readonly mode: TaskRepositoryMode;
+    readonly profile: ITaskCapacityProfile;
+    read(id: TaskId): Promise<TaskResult<TaskRegistrationResult | undefined>>;
+    readCommit(id: TaskId): Promise<TaskResult<ITaskCommitRecord | undefined>>;
+    readonly report: ITaskRecoveryReport;
+    // (undocumented)
+    readonly repositoryId: string;
+    withWriter<T>(action: (writer: ITaskRepositoryWriter) => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
+}
+
+// @public
+export interface ITaskRepositoryHealth {
+    // (undocumented)
+    readonly generation: number;
+    // (undocumented)
+    readonly issues: ReadonlyArray<string>;
+    // (undocumented)
+    readonly state: 'ready' | 'unavailable' | 'closed';
+}
+
+// @public
+export interface ITaskRepositoryManifest {
+    // (undocumented)
+    readonly consumers: ReadonlyArray<ITaskInventoryEntry>;
+    // (undocumented)
+    readonly formatVersion: 1;
+    // (undocumented)
+    readonly manifestRevision: number;
+    // (undocumented)
+    readonly profile: ITaskCapacityProfile;
+    // (undocumented)
+    readonly repositoryId: string;
+    // (undocumented)
+    readonly sources: ReadonlyArray<ITaskInventoryEntry>;
+    // (undocumented)
+    readonly tasks: ReadonlyArray<ITaskInventoryEntry>;
+}
+
+// @public
+export interface ITaskRepositoryOpenParams {
+    readonly converters?: TaskConverters;
+    // (undocumented)
+    readonly environment: ITaskEnvironment;
+    // (undocumented)
+    readonly mode: TaskRepositoryMode;
+    readonly profile?: ITaskCapacityProfile;
+    readonly registry: ITaskKindRegistry;
+    readonly root: FileTree.FileTreeItem;
+}
+
+// @public
+export interface ITaskRepositoryWriter {
+    commit(request: ITaskCommitRequest): Promise<TaskResult<ITaskCommitRecord>>;
+    raiseCapacityLimits(profile: ITaskCapacityProfile): Promise<TaskResult<ITaskCapacityProfile>>;
+    readCommit(id: TaskId): Promise<TaskResult<ITaskCommitRecord | undefined>>;
+    register(request: ITaskRegistrationRequest): Promise<TaskResult<ITaskCommitRecord>>;
 }
 
 // @public
@@ -801,6 +1105,32 @@ export interface ITaskUpdate {
     readonly snapshot: ITaskSummary;
     // (undocumented)
     readonly taskId: TaskId;
+}
+
+// @public
+export interface IUnresolvedTaskCommitRecord {
+    // (undocumented)
+    readonly capacityClaims: ReadonlyArray<ITaskCapacityClaim>;
+    // (undocumented)
+    readonly formatVersion: 1;
+    // (undocumented)
+    readonly operations: ReadonlyArray<IStoredTaskOperation>;
+    // (undocumented)
+    readonly recordRevision: number;
+    // (undocumented)
+    readonly recordType: 'unresolved';
+    // (undocumented)
+    readonly reference: IUnresolvedTaskReference;
+}
+
+// @public
+export interface IUnresolvedTaskRecordDraft {
+    // (undocumented)
+    readonly operations: ReadonlyArray<IStoredTaskOperation>;
+    // (undocumented)
+    readonly recordType: 'unresolved';
+    // (undocumented)
+    readonly reference: IUnresolvedTaskReference;
 }
 
 // @public
@@ -879,7 +1209,13 @@ export interface IWaitingReason extends ITaskReason {
 export function maximumClosureCharges(profile: ITaskCapacityProfile): Result<ReadonlyArray<ITaskCapacityCharge>>;
 
 // @public
+export function maximumResolutionCharges(profile: ITaskCapacityProfile): Result<ReadonlyArray<ITaskCapacityCharge>>;
+
+// @public
 export function maximumSettlementCharges(profile: ITaskCapacityProfile): Result<ReadonlyArray<ITaskCapacityCharge>>;
+
+// @public
+export const maxUpdateIdSuffixLength: number;
 
 // @public
 export const nonNegativeAmount: Converter<number>;
@@ -943,6 +1279,9 @@ export type SourceHistoryDeclaration = {
 };
 
 // @public
+export type StoredCommandDispatch = 'not-sent' | 'possibly-sent' | 'settled';
+
+// @public
 export type SubscriptionId = Brand<string, 'SubscriptionId'>;
 
 // @public
@@ -952,6 +1291,9 @@ export type TaskCapacityLimits = {
 
 // @public
 export type TaskCapacityState = 'ok' | 'pressure' | 'admission-blocked' | 'draining';
+
+// @public
+export type TaskCatalogOperationType = 'create-tracked' | 'create-list' | 'register-external' | 'update-tracked' | 'reassign' | 'change-scopes' | 'reparent' | 'stop' | 'release-stop' | 'archive' | 'complete-list';
 
 // @public
 export const taskContextLimits: ITaskContextLimits;
@@ -989,6 +1331,7 @@ export class TaskConverters {
     readonly envelopes: IEnvelopeConverters;
     readonly failures: IFailureConverters;
     readonly ids: IIdentityConverters;
+    readonly storage: IStorageConverters;
     readonly values: IValueConverters;
 }
 
@@ -1018,6 +1361,9 @@ export type TaskId = Brand<string, 'TaskId'>;
 
 // @public
 export type TaskInputCompleteness = 'complete' | 'partial';
+
+// @public
+export type TaskInventoryRecordKind = 'task' | 'consumer' | 'source';
 
 // @public
 export type TaskKind = Brand<string, 'TaskKind'>;
@@ -1075,6 +1421,33 @@ export const taskListDetailVersion: number;
 export const taskListKind: TaskKind;
 
 // @public
+export type TaskRecoveryIssueCode = 'manifest-missing' | 'manifest-invalid' | 'unreadable' | 'unknown-format-version' | 'record-invalid' | 'record-missing' | 'record-id-mismatch' | 'integrity' | 'unknown-kind' | 'unexpected-record' | 'pending-registration';
+
+// @public
+export type TaskRegistrationResult = {
+    readonly state: 'resolved';
+    readonly task: ITaskSnapshot;
+    readonly archived: boolean;
+} | {
+    readonly state: 'unresolved';
+    readonly reference: IUnresolvedTaskReference;
+};
+
+// @public
+export type TaskRepositoryMode = 'session' | {
+    readonly durable: 'process-crash';
+};
+
+// @public
+export type TaskRepositoryOpenResult = {
+    readonly state: 'ready';
+    readonly repository: ITaskRepository;
+} | {
+    readonly state: 'recovery-required';
+    readonly recovery: ITaskRecoveryHandle;
+};
+
+// @public
 export type TaskResult<T> = DetailedResult<T, ITaskFailure>;
 
 // @public
@@ -1082,6 +1455,12 @@ export type TaskRevision = Brand<number, 'TaskRevision'>;
 
 // @public
 export const taskRevision: Converter<TaskRevision>;
+
+// @public
+export const taskStorageFormatVersion: 1;
+
+// @public
+export function taskUpdateId(taskId: TaskId, revision: TaskRevision, category: UpdateCategory): UpdateId;
 
 // @public
 export const terminalTaskStatuses: ReadonlyArray<TaskLifecycleStatus>;

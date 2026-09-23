@@ -104,13 +104,19 @@ export interface ITaskCapacityCharge {
  * What a capacity claim reserves room for.
  *
  * @remarks
- * These five purposes are exactly the protected allocations: a task's terminal closeout,
- * an accepted operation's settlement, a subscription's exact acknowledgement or
- * disposition, a prepared receipt manifest, and an admitted source replay envelope.
+ * These six purposes are exactly the protected allocations: a task's terminal closeout,
+ * an unresolved registration's first resolution, an accepted operation's settlement, a
+ * subscription's exact acknowledgement or disposition, a prepared receipt manifest, and an
+ * admitted source replay envelope.
+ *
+ * `first-resolution` was added by T3. Design §8.6 requires that "any unresolved
+ * registration also reserves first resolution and the path through terminal closeout" —
+ * two bundles, not one — and T1's five purposes had nowhere to put the first.
  * @public
  */
 export type CapacityClaimPurpose =
   | 'terminal-closeout'
+  | 'first-resolution'
   | 'accepted-operation-settlement'
   | 'subscription-acknowledgement'
   | 'receipt-preparation'
@@ -140,6 +146,14 @@ export type CapacityClaimOwnership = 'pending' | 'live';
  * Whether a claim's charge is still reserved or has been converted to committed use.
  *
  * @remarks
+ * A `reserved` claim's `charges` are what it *still* holds. A protected step spends from its
+ * own claim and the claim's charges shrink by what was spent, so the ledger's
+ * `used + reserved` is unchanged by a step that stays within its reservation — the committed
+ * data replaces the reservation it was made from. A `consumed` claim reserves nothing; its
+ * remaining charges are retained as evidence of what was released. (T3 revision: T1 described
+ * conversion as a disposition change only, which cannot express a closeout path that spends
+ * its reservation across two steps — the terminal transition and the archive.)
+ *
  * `indeterminate` is not an error state to clear on sight: ambiguity about whether a
  * claim was consumed fences admission and cleanup until recovery resolves it, because
  * the one thing a finite ledger must never do is assume the capacity is free.
@@ -182,6 +196,10 @@ export type ITaskCapacityClaim =
       readonly audience: ReadonlyArray<SubscriptionId>;
     })
   | (ITaskCapacityClaimCommon & {
+      readonly purpose: 'first-resolution';
+      readonly taskId: TaskId;
+    })
+  | (ITaskCapacityClaimCommon & {
       readonly purpose: 'accepted-operation-settlement';
       readonly taskId: TaskId;
       readonly operationId: OperationId;
@@ -221,12 +239,32 @@ export interface ITaskCapacityDimensionStatus {
  *
  * @remarks
  * Capacity pressure is deliberately distinct from corruption and index health: a full
- * valid repository opens in `draining`, not as something broken. `admission-blocked`
- * means a requested growth cannot fit; reads, acknowledgement, disposition, settlement
- * of already-accepted work, pruning and archive all remain callable in both states.
+ * valid repository opens in `draining`, not as something broken. Reads, acknowledgement,
+ * disposition, settlement of already-accepted work, pruning and archive all remain callable
+ * in every state.
+ *
+ * T3 settled what separates the two blocked states:
+ * - `draining` — at least one dimension has no headroom left (`available === 0`). Ordinary
+ *   growth that needs that dimension is refused; growth that does not is still admitted.
+ * - `admission-blocked` — admission is fenced *regardless of headroom*, because a claim's
+ *   consumption is `indeterminate`. The ledger cannot know what is free, so it admits nothing.
+ * - `pressure` — some dimension is at or past {@link capacityPressureThreshold}.
  * @public
  */
 export type TaskCapacityState = 'ok' | 'pressure' | 'admission-blocked' | 'draining';
+
+/**
+ * Every {@link CapacityClaimPurpose}.
+ * @public
+ */
+export const allCapacityClaimPurposes: ReadonlyArray<CapacityClaimPurpose> = [
+  'terminal-closeout',
+  'first-resolution',
+  'accepted-operation-settlement',
+  'subscription-acknowledgement',
+  'receipt-preparation',
+  'admitted-source-replay'
+];
 
 /**
  * Trusted host-facing capacity status. Never exposed unredacted through a model tool.

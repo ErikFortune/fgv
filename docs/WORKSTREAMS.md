@@ -128,6 +128,67 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-t3` ✅ (slice T3 of the agent-tasks plan) — landed on the integration branch via [#686](https://github.com/ErikFortune/fgv/pull/686)
+
+**Mission.** Land **T3** — FileTree records, durable commit and reopen: injected-root session and
+durable factories, a private single-writer coordinator, strict JSON storage records, a flat
+repository inventory, ordered record registration, one-task atomic replacement of state + owed
+updates + operation, inventory-backed missing-record detection, and a diagnostic recovery handle.
+One repository implementation with in-memory and Node adapters, not two implementations.
+
+**This is the slice the reference consumer is waiting on** — and the first where getting it wrong
+loses data rather than returning a bad value.
+
+**Package surface:** `libraries/ts-agent-tasks` — a new `storage` packlet, storage-record additions
+to `converters`, and permitted revisions to `types`.
+
+**Out-of-scope:** the broker (T5), indexes/paging (T4), subscriptions and acknowledgement (T7),
+retention and backpressure (T8), cascade stop (T9); source *execution* — an unavailable source
+registers as an unresolved reference with no invented lifecycle; **any business-layer filesystem
+bypass** — everything goes through `FileTree`, which is what F1/F2 exist to prevent; the deferred
+input protocol; every other package, consumed unchanged.
+
+**Dependencies.** T1 (`1337c27c`) and **F2**, both landed. T2 (`0249e85d`) is not a dependency but
+precedes it on the branch.
+
+**Durability is bounded and may not be widened.** F2 qualified the atomic capability **Linux-only**,
+per root by positive filesystem identification — `ext2/3/4` and `tmpfs` qualify, everything else
+including **`overlayfs`** is refused. A1 caps the claim at `'process-crash'`. A non-qualifying root
+must **fail durable construction**, never silently degrade to session mode. No durable success may
+precede the FileTree atomic boundary — the acceptance criterion whose violation is invisible in a
+passing suite.
+
+**Last cheap moment for the vocabulary.** T1 shipped ~101 union members with about half
+choice-unexercised; T2 exercised the rendering slice; **T3 is the first to touch the storage,
+operation and recovery members.** It holds the same revision licence — but T3 writes this
+vocabulary into records on disk, so a revision *after* T3 is a storage-format migration rather than
+a diff.
+
+**Landing shape.** PRs into `integration/agent-tasks-v1`. **T1+T2+T3 is the intended first squash to
+`release`.** T1+T2 alone was considered and deliberately not promoted: it gives a consumer only a
+renderer for task data they already hold, which is not what the driving consumer is waiting for.
+
+**Acceptance criteria.** Plan § T3's six, plus the A3 additions (persisted profile and claims, the
+derived capacity ledger, preflight of every count and byte dimension under the writer, reservations
+surviving the same crash boundaries as acceptance, explicit finite-limit increase with no in-place
+lowering) — and the crash acceptance matrix run **through the real Node FileTree path**, validated
+against design §8.4, with no mocked successful store substituting for it. Plus the repo gates and
+every step `ci.yml` runs.
+
+**T3 status.** Shipped to `integration/agent-tasks-v1` via
+[#686](https://github.com/ErikFortune/fgv/pull/686): `FileTreeTaskRepository`, the `storage`
+packlet, storage record/inventory converters, and the T1 revisions (`first-resolution` claim
+purpose, claim charges that shrink as spent, `taskUpdateId`). Durable mode rests on a real-Node
+crash matrix on ext4 and tmpfs and a 92-row mutation matrix (`perf/mutationMatrix.js`, checked
+in for T7/T8 to re-run) run against the final source: 90 red, two consumer/source record-limit
+rows left at 0 for T6/T7 to pin. Carried forward: claim audiences
+are empty until T7's subscriptions expand them; archive's release of acknowledgement reservations
+is safe only once T8 gates archive on acknowledgement; consumer/source record content is T6/T7's;
+two session repositories over one real directory through two items are not detected until
+FileTree can say what backs a root (an upstream capability). Details in `result.md`.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-t3/`.
+
 ### `agent-tasks-t2` ✅ (slice T2 of the agent-tasks plan) — landed on the integration branch via [#685](https://github.com/ErikFortune/fgv/pull/685)
 
 **Mission.** Land **T2** — the pure context and snapshot-only entry point: deterministic selection
@@ -156,8 +217,12 @@ where the identical discovery costs a storage-format change. So T2 holds explici
 T1's types, and is expected to update T1's declared-vs-exercised table rather than leave it
 describing a vocabulary that has moved.
 
-**Landing shape.** PRs into `integration/agent-tasks-v1`. **T1 + T2 is the intended first squash to
-`release`** — the first coherent consumer-facing unit. T3 and beyond form later batches.
+**Landing shape.** PRs into `integration/agent-tasks-v1`. *(Revised 2026-09-22: this entry
+originally said T1+T2 would be the first squash to `release`. It is now **T1+T2+T3** — asked what
+T1+T2 gives a consumer, the honest answer is a renderer for task data they already hold, with no
+way to have tasks at all, which is not what the driving consumer is waiting for. Promoting it would
+also have ended the cheap-revision licence on the half of T1's vocabulary that T3 is the first to
+touch. See the `agent-tasks-t3` entry.)*
 
 **Acceptance criteria.** Plan § T2's six (determinism; no filesystem/clock/random/checkpoint; only
 actually-included revisions and update IDs in receipts; a required payload that does not fit stays

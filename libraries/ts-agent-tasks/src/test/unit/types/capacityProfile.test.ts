@@ -14,6 +14,7 @@ import {
   defaultTaskEncodedBounds,
   defaultTaskPerOwnerLimits,
   maximumClosureCharges,
+  maximumResolutionCharges,
   maximumSettlementCharges
 } from '../../../index';
 
@@ -196,5 +197,56 @@ describe('inexact charges fail rather than reserving the wrong amount', () => {
     expect(
       maximumSettlementCharges(withEncoded({ maxStoredOperationBytes: Number.MAX_SAFE_INTEGER }))
     ).toFailWith(/maximumSettlementCharges: settlement record bytes: the sum is not exactly representable/i);
+  });
+
+  test('the first-resolution charge fails the same way, on each of its terms', () => {
+    expect(maximumResolutionCharges(withEncoded({ maxUpdateBytes: Number.MAX_SAFE_INTEGER }))).toFailWith(
+      /maximumResolutionCharges: resolution update bytes: .*not exactly representable/i
+    );
+    expect(
+      maximumResolutionCharges(
+        withEncoded({ maxEnvelopeBytes: Number.MAX_SAFE_INTEGER, maxDetailBytes: Number.MAX_SAFE_INTEGER })
+      )
+    ).toFailWith(/resolution snapshot bytes/i);
+    const half: number = Math.floor(Number.MAX_SAFE_INTEGER / 2);
+    expect(
+      maximumResolutionCharges(
+        withEncoded({ maxEnvelopeBytes: half, maxDetailBytes: 1, maxUpdateBytes: Math.floor(half / 7) + 1 })
+      )
+    ).toFailWith(/resolution record bytes/i);
+    expect(
+      maximumResolutionCharges({
+        ...defaultTaskCapacityProfile,
+        perOwner: { ...defaultTaskPerOwnerLimits, maxAudiencePerUpdate: Number.MAX_SAFE_INTEGER }
+      })
+    ).toFailWith(/resolution audience links/i);
+  });
+});
+
+describe('maximumResolutionCharges (T3)', () => {
+  test('reserves a whole snapshot and one required payload of every category, with audience evidence', () => {
+    expect(maximumResolutionCharges(defaultTaskCapacityProfile)).toSucceedAndSatisfy((charges) => {
+      const categories: number = allUpdateCategories.length;
+      const audience: number = defaultTaskPerOwnerLimits.maxAudiencePerUpdate;
+      const bytes: number =
+        defaultTaskEncodedBounds.maxEnvelopeBytes +
+        defaultTaskEncodedBounds.maxDetailBytes +
+        categories * defaultTaskEncodedBounds.maxUpdateBytes;
+      expect(charges).toEqual([
+        { dimension: 'updates', amount: categories },
+        { dimension: 'audience-links', amount: categories * audience },
+        { dimension: 'acknowledgement-ids', amount: categories * audience },
+        { dimension: 'record-bytes', amount: bytes },
+        { dimension: 'logical-bytes', amount: bytes },
+        { dimension: 'resident-payload-bytes', amount: categories * defaultTaskEncodedBounds.maxUpdateBytes }
+      ]);
+    });
+  });
+
+  test('claims no identity and no operation slot: resolution is an observation, not an operation', () => {
+    expect(maximumResolutionCharges(defaultTaskCapacityProfile)).toSucceedAndSatisfy((charges) => {
+      expect(charges.map((c) => c.dimension)).not.toContain('operations');
+      expect(charges.map((c) => c.dimension)).not.toContain('retained-tasks');
+    });
   });
 });
