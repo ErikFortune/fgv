@@ -872,9 +872,18 @@ export class FileTreeTaskRepository implements ITaskRepository {
     return this._finishRegistration(taskId, operationId, landed.value, false);
   }
 
+  /** Reads a task record's text, refusing it before any parse when it is over the record bound. */
+  private _readBounded(name: string): Result<{ text: string; bytes: number }> {
+    const limit: number = taskRecordLimit(this.profile);
+    return this._store.read(name).onSuccess((text) => {
+      const bytes: number = utf8Length(text);
+      return bytes > limit ? fail(`${name}: ${bytes} bytes exceeds ${limit}`) : succeed({ text, bytes });
+    });
+  }
+
   /** Reads a landed record and checks it is exactly the pending registration's first record. */
   private _readLanded(name: string, entry: IPendingInventoryEntry): Result<IReadRecord> {
-    return this._store.read(name).onSuccess((text) =>
+    return this._readBounded(name).onSuccess(({ text }) =>
       parseJson(text)
         .onSuccess((parsed) => this._converters.storage.record.convert(parsed))
         .onSuccess((record) =>
@@ -1570,35 +1579,26 @@ export class FileTreeTaskRepository implements ITaskRepository {
       return ok(cached);
     }
     const name: string = recordName('task', id);
-    const limit: number = taskRecordLimit(this.profile);
     return this._gate.run(`read ${id}`, () => {
-      const read: Result<IReadRecord> = this._store
-        .read(name)
-        .onSuccess((text) => {
-          const bytes: number = utf8Length(text);
-          return bytes > limit
-            ? fail<{ text: string; bytes: number }>(`${name}: ${bytes} bytes exceeds ${limit}`)
-            : succeed({ text, bytes });
-        })
-        .onSuccess(({ text, bytes }) =>
-          parseJson(text)
-            .onSuccess((parsed) => this._converters.storage.record.convert(parsed))
-            .onSuccess((record) => {
-              if (idOf(record) !== id || record.recordRevision !== projection.recordRevision) {
-                return fail<IReadRecord>(
-                  `${name}: holds ${idOf(record)} record ${record.recordRevision}, expected ${id} record ${
-                    projection.recordRevision
-                  }`
-                );
-              }
-              if (fingerprintOf(text) !== projection.fingerprint) {
-                return fail<IReadRecord>(
-                  `${name}: record ${record.recordRevision} differs from the one this repository committed`
-                );
-              }
-              return ok<IReadRecord>({ record, encoded: { text, bytes } });
-            })
-        );
+      const read: Result<IReadRecord> = this._readBounded(name).onSuccess(({ text, bytes }) =>
+        parseJson(text)
+          .onSuccess((parsed) => this._converters.storage.record.convert(parsed))
+          .onSuccess((record) => {
+            if (idOf(record) !== id || record.recordRevision !== projection.recordRevision) {
+              return fail<IReadRecord>(
+                `${name}: holds ${idOf(record)} record ${record.recordRevision}, expected ${id} record ${
+                  projection.recordRevision
+                }`
+              );
+            }
+            if (fingerprintOf(text) !== projection.fingerprint) {
+              return fail<IReadRecord>(
+                `${name}: record ${record.recordRevision} differs from the one this repository committed`
+              );
+            }
+            return ok<IReadRecord>({ record, encoded: { text, bytes } });
+          })
+      );
       if (read.isFailure()) {
         this._fence(read.message);
         return taskFailure<IReadRecord | undefined>(read.message, 'storage-corrupt', 'after-host-action');

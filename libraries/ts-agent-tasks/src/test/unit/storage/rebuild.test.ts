@@ -585,6 +585,25 @@ describe('copilot round 1 regressions', () => {
     ).toSucceed();
   });
 
+  test('a resumed registration refuses an oversized landed file before parsing it', async () => {
+    const { root, repository } = await faultyRepository();
+    root.faults.push({ name: 'repository.json', when: 'before', visibility: 'unchanged', skip: 1 });
+    expect(await repository.withWriter((w) => w.register(shapedRegistration('a', { scopes: [A] })))).toFail();
+    // Replaced out of band with text over the record bound that is not even JSON: a parse would
+    // report a syntax error, so the byte message proves the bound was checked first.
+    const limit: number = Math.min(
+      repository.profile.limits['record-bytes'],
+      repository.profile.encoded.maxTaskRecordBytes
+    );
+    outOfBand(root, 'task-a.json', '{'.repeat(limit + 1));
+    expect(
+      await repository.withWriter((w) => w.register(shapedRegistration('a', { scopes: [A] })))
+    ).toFailWithDetail(
+      /task-a\.json already exists but is not this registration's first record \(task-a\.json: \d+ bytes exceeds \d+\)/,
+      expect.objectContaining({ code: 'conflict' })
+    );
+  });
+
   test('close is refused while a rebuild holds the root; the rebuild then completes ready', async () => {
     const { root, repository } = await faultyRepository();
     await addTask(repository, 'a', { scopes: [A] });
