@@ -144,6 +144,13 @@ export class TaskKindRegistry implements ITaskKindRegistry {
     return this._registrations.has(_key(kind, detailVersion));
   }
 
+  /** {@inheritDoc ITaskKindRegistry.getCommand} */
+  public getCommand(kind: TaskKind, detailVersion: number, name: string): Result<ITaskCommandHandle> {
+    const key: string = _key(kind, detailVersion);
+    const command: ITaskCommandHandle | undefined = this._registrations.get(key)?.commands.get(name);
+    return command === undefined ? fail(`${key}: no command '${name}'`) : succeed(command);
+  }
+
   /** {@inheritDoc ITaskKindRegistry.freeze} */
   public freeze(): Result<number> {
     this._frozen = true;

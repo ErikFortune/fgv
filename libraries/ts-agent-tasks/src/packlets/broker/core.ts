@@ -11,6 +11,7 @@ import {
   IReassignmentResult,
   IStoredTaskOperation,
   ITaskMutationResult,
+  ITaskSource,
   ITaskCommitRecord,
   ITaskEnvironment,
   Instant,
@@ -86,10 +87,14 @@ export class BrokerCore {
   public readonly environment: ITaskEnvironment;
   public readonly converters: TaskConverters;
   public readonly audience: TaskAudienceResolver;
+  /** The attached sources, by id. A task whose source is not here is left exactly as it is. */
+  public readonly sources: ReadonlyMap<string, ITaskSource>;
   public readonly cursors: ViewCursorTable = new ViewCursorTable();
   /** The pump's continuations: the candidate they resume after never leaves the broker. */
   public readonly pumpCursors: ViewCursorTable<TaskId> = new ViewCursorTable<TaskId>('pump');
   private readonly _queue: WriterQueue = new WriterQueue();
+  /** One reconciliation pass per source at a time: the tail of each source's chain. */
+  private readonly _sourcePasses: Map<string, Promise<unknown>> = new Map();
   private _views: number = 0;
 
   public constructor(params: {
@@ -97,11 +102,24 @@ export class BrokerCore {
     readonly environment: ITaskEnvironment;
     readonly converters: TaskConverters;
     readonly audience: TaskAudienceResolver;
+    readonly sources?: ReadonlyMap<string, ITaskSource>;
   }) {
     this.repository = params.repository;
     this.environment = params.environment;
     this.converters = params.converters;
     this.audience = params.audience;
+    this.sources = params.sources ?? new Map();
+  }
+
+  /**
+   * Runs a reconciliation pass after every earlier pass of the same source has finished, so two
+   * passes never read the same cursor and race to commit past each other.
+   */
+  public serializedPass<T>(sourceId: string, pass: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> {
+    const previous: Promise<unknown> = this._sourcePasses.get(sourceId) ?? Promise.resolve();
+    const turn: Promise<TaskResult<T>> = previous.then(pass, pass);
+    this._sourcePasses.set(sourceId, turn);
+    return turn;
   }
 
   /** A fresh identity for a bound view, which its cursors are bound to. */

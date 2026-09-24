@@ -22,7 +22,10 @@ import {
   ITaskKindRegistry,
   ITaskRecordDraft,
   ITaskRecoveryReport,
+  ISourceReplayEnvelope,
+  ITaskSourceRecord,
   OperationId,
+  SourceHistoryContract,
   TaskId,
   TaskRegistrationResult,
   TaskResult,
@@ -112,6 +115,12 @@ export interface ITaskRegistrationRequest {
   readonly operationId: OperationId;
   readonly request: JsonValue;
   readonly record: ITaskRecordDraft;
+  /**
+   * A `source-replay` registration's finite remaining envelope. Storage reserves it as an
+   * `admitted-source-replay` claim alongside the closeout (design § 8.6); the source must be the
+   * record's own binding's. Part of the registration: a retry must offer the same one.
+   */
+  readonly sourceReplay?: { readonly sourceId: string; readonly envelope: ISourceReplayEnvelope };
 }
 
 /**
@@ -145,8 +154,33 @@ export interface ITaskCommitRequestBase {
  */
 export type ITaskCommitRequest =
   | (ITaskCommitRequestBase & { readonly purpose: 'operation'; readonly operationId: OperationId })
-  | (ITaskCommitRequestBase & { readonly purpose: 'observation' })
+  | (ITaskCommitRequestBase & {
+      readonly purpose: 'observation';
+      /**
+       * Required updates this observation delivers from a `source-replay` feed. Spent from the
+       * task's replay envelope; an observation that would overdraw it is refused as `source-gap` —
+       * the source broke its declared finite contract. Ignored for a task that holds no envelope.
+       */
+      readonly requiredUpdates?: number;
+    })
   | (ITaskCommitRequestBase & { readonly purpose: 'maintenance' });
+
+/**
+ * A replacement of one broker source-checkpoint record.
+ *
+ * @remarks
+ * `expectedRecordRevision` is `0` to create the record. A cursor is committed only after every
+ * observation of the page it follows has committed; the repository cannot check that ordering —
+ * it is the caller's — but it does refuse a stale revision, so two passes cannot interleave.
+ * @public
+ */
+export interface ITaskSourceCommitRequest {
+  readonly sourceId: string;
+  readonly history: SourceHistoryContract;
+  readonly expectedRecordRevision: number;
+  readonly cursor?: string;
+  readonly pages: number;
+}
 
 /**
  * The exclusive, lifetime-bound writer a {@link ITaskRepository.withWriter} callback receives.
@@ -164,6 +198,23 @@ export interface ITaskRepositoryWriter {
   register(request: ITaskRegistrationRequest): Promise<TaskResult<ITaskCommitRecord>>;
   /** Atomically replaces one task record: state, owed updates and dedup evidence together. */
   commit(request: ITaskCommitRequest): Promise<TaskResult<ITaskCommitRecord>>;
+  /** Reads a source's committed checkpoint record, if it has one. */
+  readSource(sourceId: string): Promise<TaskResult<ITaskSourceRecord | undefined>>;
+  /**
+   * Creates or replaces a source's checkpoint record. Creation charges one `sources` identity,
+   * retained for the repository's lifetime.
+   */
+  commitSource(request: ITaskSourceCommitRequest): Promise<TaskResult<ITaskSourceRecord>>;
+  /**
+   * Extends a task's `source-replay` envelope. New admission: the added updates and bytes are
+   * charged against ordinary headroom now, before the producer relies on them, and refused with
+   * `backpressure` when they do not fit. Fails for a task that holds no open envelope. Returns the
+   * envelope the task now holds.
+   */
+  extendReplayEnvelope(
+    taskId: TaskId,
+    add: ISourceReplayEnvelope
+  ): Promise<TaskResult<ISourceReplayEnvelope>>;
   /**
    * Raises the stored capacity limits. Every limit and bound must be at least its stored
    * value — lowering in place is unsupported. The policy is replaced atomically; no record is
@@ -200,6 +251,8 @@ export interface ITaskRepository {
   readonly mode: TaskRepositoryMode;
   /** The stored capacity profile governing admission. */
   readonly profile: ITaskCapacityProfile;
+  /** The frozen kind registry the repository validates details and command schemas with. */
+  readonly registry: ITaskKindRegistry;
   /** What open found and did. */
   readonly report: ITaskRecoveryReport;
   /**
@@ -263,6 +316,14 @@ export interface ITaskRepository {
   listCompletionCandidates(
     request: IListCompletionCandidateQuery
   ): Promise<TaskResult<ReadonlyArray<TaskId>>>;
+  /**
+   * Tasks holding an external command whose dispatch is not settled — an intent never sent, or a
+   * send whose outcome is unknown — ordered by id. Answered from the resident index, rebuilt from
+   * the records at open, so a crash between marker and result leaves a discoverable command.
+   */
+  unsettledCommands(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
+  /** A source's committed checkpoint record, if it has one. Reads no task record. */
+  readSource(sourceId: string): Promise<TaskResult<ITaskSourceRecord | undefined>>;
   /**
    * Discards the resident indexes and rebuilds them from the committed records, in bounded
    * sequential passes.

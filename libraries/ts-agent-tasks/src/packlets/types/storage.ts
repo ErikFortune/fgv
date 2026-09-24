@@ -8,7 +8,7 @@ import { ITaskCapacityClaim, ITaskCapacityProfile } from './capacity';
 import { ICommandReceipt, ICommandRequest } from './commands';
 import { ITaskSnapshot } from './envelope';
 import { OperationId, TaskId } from './ids';
-import { ISourceRevision } from './source';
+import { ISourceRevision, SourceHistoryContract } from './source';
 import { IUnresolvedTaskReference } from './summary';
 import { ITaskUpdate } from './updates';
 
@@ -86,6 +86,12 @@ export interface IStoredCommandOperation {
   readonly principalKey: string;
   readonly dispatch: StoredCommandDispatch;
   readonly receipt: ICommandReceipt;
+  /**
+   * The source revision a `source-replay` source reported the command's effect at. The receipt
+   * stays `accepted` until the feed commits a projection at or past it, then becomes `applied`
+   * in that same commit. (T6: additive and optional — no record written before T6 carries it.)
+   */
+  readonly awaiting?: ISourceRevision;
 }
 
 /**
@@ -271,6 +277,26 @@ export interface ITaskRepositoryManifest {
 export interface ITaskRecordHeader {
   readonly formatVersion: 1;
   readonly id: string;
+}
+
+/**
+ * A broker source-checkpoint record (`source-<sourceId>.json`): the committed reconciliation
+ * position for one source.
+ *
+ * @remarks
+ * Local progress only — never permission to garbage-collect the source, and never a copy of the
+ * executor's own job record (design § 8.3). `cursor` is written only after every observation of the
+ * page it follows has committed, so it may lag the task records but never lead them.
+ * @public
+ */
+export interface ITaskSourceRecord {
+  readonly formatVersion: 1;
+  readonly id: string;
+  readonly recordRevision: number;
+  readonly history: SourceHistoryContract;
+  readonly cursor?: string;
+  /** Pages committed through this record, for diagnostics. */
+  readonly pages: number;
 }
 
 /**

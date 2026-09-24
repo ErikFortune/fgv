@@ -641,7 +641,11 @@ describe('copilot round 1 regressions', () => {
       })
     );
     outOfBand(root, 'consumer-s1.json', JSON.stringify({ formatVersion: 1, id: 's1' }));
-    outOfBand(root, 'source-acme.json', JSON.stringify({ formatVersion: 1, id: 'acme' }));
+    outOfBand(
+      root,
+      'source-acme.json',
+      JSON.stringify({ formatVersion: 1, id: 'acme', recordRevision: 1, history: 'observed-state', pages: 0 })
+    );
     const inFlight: Record<string, number> = {};
     root.onRead = (name) => {
       inFlight[name] = inspectRepository(repository)!.gate.inFlight;

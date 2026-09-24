@@ -235,13 +235,19 @@ describe('source values', () => {
     ['reattached', { state: 'reattached', value: projection }],
     ['completed', { state: 'completed', value: projection }],
     ['resumable', { state: 'resumable', reference: { token: 'r' } }],
-    ['unrecoverable', { state: 'unrecoverable', reason: 'source deleted the job' }],
+    ['unrecoverable', { state: 'unrecoverable', reason: 'source deleted the job', value: projection }],
     ['unavailable', { state: 'unavailable', reason: 'source down' }],
     ['unresolved', { state: 'unresolved', reason: 'source cannot say' }]
   ])('converts the %s recovery result', (state: string, value: JsonValue) => {
     expect(values.recoveryResult.convert(value)).toSucceedAndSatisfy((result) => {
       expect(result.state).toBe(state);
     });
+  });
+
+  test('an unrecoverable result without the source-confirmed projection converts to nothing', () => {
+    expect(
+      values.recoveryResult.convert({ state: 'unrecoverable', reason: 'source deleted the job' })
+    ).toFail();
   });
 
   test('an unknown recovery state converts to nothing', () => {

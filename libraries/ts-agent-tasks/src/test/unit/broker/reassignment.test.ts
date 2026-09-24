@@ -188,8 +188,9 @@ describe('external tasks', () => {
     const h = await brokerHarness();
     await registerVendor(h, 'v1', { responsibility: ada });
     const before = await record(h, 'v1');
-    // The source is observation-only: the broker dispatches no command to it.
-    const receipt = (
+    // The kind declares no commands, so the task is observation-only: nothing can be dispatched to
+    // it (T6: the source is not even attached here, and the refusal records nothing).
+    expect(
       await h.writer.execute({
         taskId: tid('v1'),
         operationId: op(),
@@ -197,8 +198,7 @@ describe('external tasks', () => {
         command: 'cancel',
         parameters: {}
       })
-    ).orThrow();
-    expect(receipt.result).toEqual({ state: 'rejected', reason: 'unsupported' });
+    ).toFailWithDetail(/not attached/i, { code: 'source-unavailable', retry: 'after-host-action' });
     expect(await reassign(h, 'v1', bob)).toSucceed();
     const after = await record(h, 'v1');
     expect(after.task.envelope.binding).toEqual(before.task.envelope.binding);

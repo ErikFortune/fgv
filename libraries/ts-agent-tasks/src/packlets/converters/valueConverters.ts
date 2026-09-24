@@ -214,7 +214,8 @@ export function buildValueConverters(bounds: ITaskFieldBounds, ids: IIdentityCon
     }),
     unrecoverable: Converters.strictObject<Extract<RecoveryResult, { state: 'unrecoverable' }>>({
       state: Converters.literal('unrecoverable'),
-      reason: summary
+      reason: summary,
+      value: sourceProjection
     }),
     unavailable: Converters.strictObject<Extract<RecoveryResult, { state: 'unavailable' | 'unresolved' }>>({
       state: Converters.literal('unavailable'),

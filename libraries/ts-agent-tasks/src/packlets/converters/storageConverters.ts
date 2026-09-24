@@ -17,6 +17,8 @@ import {
   ITaskInventoryEntry,
   ITaskRecordDraft,
   ITaskRecordHeader,
+  ITaskSourceRecord,
+  SourceHistoryContract,
   ITaskRepositoryManifest,
   ITaskUpdate,
   IUnresolvedTaskCommitRecord,
@@ -34,8 +36,14 @@ import { ICommandConverters } from './commandConverters';
 import { IContextConverters } from './contextConverters';
 import { IEnvelopeConverters } from './envelopeConverters';
 import { IIdentityConverters } from './identityConverters';
-import { boundedSingleLine, positiveSafeInteger } from './primitives';
+import { boundedSingleLine, nonNegativeSafeInteger, positiveSafeInteger } from './primitives';
 import { IValueConverters } from './valueConverters';
+
+/**
+ * The longest source cursor any profile can admit, in UTF-16 code units: the default
+ * `maxSourceCursorBytes` (4 KiB). A cursor is also checked against the stored profile's byte bound.
+ */
+const maxSourceCursorLength: number = 4096;
 
 /**
  * Converters for the records the storage packlet writes and reads.
@@ -62,6 +70,8 @@ export interface IStorageConverters {
   readonly inventoryEntry: Converter<ITaskInventoryEntry>;
   readonly manifest: Converter<ITaskRepositoryManifest>;
   readonly header: Converter<ITaskRecordHeader>;
+  /** A broker source-checkpoint record, validated in full. */
+  readonly sourceRecord: Converter<ITaskSourceRecord>;
   /**
    * Reads only `formatVersion` from an otherwise unvalidated object, so a record written by a
    * newer storage format can be *reported* as such rather than as generic corruption.
@@ -178,7 +188,8 @@ export function buildStorageConverters(
     request: commands.request,
     principalKey,
     dispatch: Converters.enumeratedValue<StoredCommandDispatch>(['not-sent', 'possibly-sent', 'settled']),
-    receipt: commands.receipt
+    receipt: commands.receipt,
+    awaiting: values.sourceRevision.optional()
   });
 
   const catalog: Converter<IStoredCatalogOperation> = Converters.strictObject<IStoredCatalogOperation>({
@@ -286,6 +297,17 @@ export function buildStorageConverters(
     id: ids.identifier
   });
 
+  // A cursor is opaque source text; the stored profile's `maxSourceCursorBytes` is checked by the
+  // repository, which holds the profile. This is only the representable ceiling.
+  const sourceRecord: Converter<ITaskSourceRecord> = Converters.strictObject<ITaskSourceRecord>({
+    formatVersion: Converters.literal<1>(1),
+    id: ids.sourceId,
+    recordRevision,
+    history: Converters.enumeratedValue<SourceHistoryContract>(['observed-state', 'source-replay']),
+    cursor: boundedSingleLine(maxSourceCursorLength, 'source cursor').optional(),
+    pages: nonNegativeSafeInteger
+  });
+
   const formatVersion: Converter<number> = Converters.object<{ formatVersion: number }>({
     formatVersion: Converters.number
   }).map((value) => succeed(value.formatVersion));
@@ -301,6 +323,7 @@ export function buildStorageConverters(
     inventoryEntry,
     manifest,
     header,
+    sourceRecord,
     formatVersion
   };
 }

@@ -444,13 +444,20 @@ describe('consumer and source records: what this release owns of them', () => {
     return root;
   }
 
-  test('a present record with a matching header is accepted, opaque, and charged', async () => {
+  test('a present consumer record with a matching header is accepted opaque, a source record in full, and both are charged', async () => {
     const root = await withEntries({
       consumers: [{ id: 's1', state: 'live' }],
       sources: [{ id: 'acme', state: 'live' }]
     });
     writeJson(root, 'consumer-s1.json', { formatVersion: 1, id: 's1', laterSliceContent: { a: 1 } });
-    writeJson(root, 'source-acme.json', { formatVersion: 1, id: 'acme', cursor: 'c-9' });
+    writeJson(root, 'source-acme.json', {
+      formatVersion: 1,
+      id: 'acme',
+      recordRevision: 3,
+      history: 'source-replay',
+      cursor: 'c-9',
+      pages: 2
+    });
     const repository = ready(await open(root));
     expect(repository.capacityStatus()).toSucceedAndSatisfy((status) => {
       expect(status.dimensions.find((d) => d.dimension === 'subscriptions')?.used).toBe(1);

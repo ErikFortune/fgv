@@ -40,15 +40,24 @@ import {
   ITaskRecoveryReport,
   ITaskRepositoryManifest,
   ITaskSnapshot,
+  ISourceReplayEnvelope,
+  ITaskSourceRecord,
   OperationId,
   TaskId,
   TaskRegistrationResult,
   TaskResult,
   isTerminalTaskStatus
 } from '../types';
-import { mintRegistrationClaims, spendClaim, withOwnership } from './claims';
+import {
+  ISourceReplayAdmission,
+  mintRegistrationClaims,
+  replayCharges,
+  spendClaim,
+  withOwnership
+} from './claims';
 import {
   checkBounds,
+  checkCommandEvolution,
   checkIdentity,
   checkOperations,
   checkPurpose,
@@ -79,6 +88,7 @@ import { CapacityLedger, DimensionAmounts, ILedgerEntry, zeroAmounts } from './l
 import {
   ITaskCommitRequest,
   ITaskRegistrationRequest,
+  ITaskSourceCommitRequest,
   ITaskRepository,
   ITaskRepositoryHealth,
   ITaskRepositoryOpenParams,
@@ -89,6 +99,7 @@ import {
 import {
   IRepositoryState,
   IScanEvidence,
+  ISourceRecordState,
   indexContentOf,
   initializeRepository,
   openRepository,
@@ -110,6 +121,7 @@ import {
   isTerminalRecord,
   ledgerEntry,
   manifestEntry,
+  opaqueEntry,
   pendingEntry,
   projectRecord,
   taskKey,
@@ -117,6 +129,12 @@ import {
   taskRecordLimit,
   taskUsage
 } from './projection';
+import {
+  extendReplayClaims,
+  mintSettlements,
+  replayAdmission,
+  spendExecutionClaims
+} from './executionClaims';
 import { RecordStore } from './recordStore';
 import { registerInspector } from './internals';
 import { IRootOwnership } from './rootOwnership';
@@ -174,6 +192,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
   private readonly _environment: ITaskEnvironment;
   private _tasks: Map<TaskId, ITaskProjection>;
   private _pending: Map<string, IPendingInventoryEntry>;
+  private _sources: Map<string, ISourceRecordState>;
   private _ledger: CapacityLedger;
   /** The one live index generation; `undefined` only while a rebuild has released it. */
   private _index: TaskIndex | undefined;
@@ -222,6 +241,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     this._environment = state.environment;
     this._tasks = state.tasks;
     this._pending = state.pending;
+    this._sources = state.sources;
     this._ledger = state.ledger;
     this._manifest = state.manifest;
     this._manifestFingerprint = fingerprintOf(state.manifestText);
@@ -269,6 +289,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
   /** {@inheritDoc ITaskRepository.profile} */
   public get profile(): ITaskCapacityProfile {
     return this._manifest.profile;
+  }
+
+  /** {@inheritDoc ITaskRepository.registry} */
+  public get registry(): ITaskKindRegistry {
+    return this._registry;
   }
 
   /** {@inheritDoc ITaskRepository.report} */
@@ -432,6 +457,29 @@ export class FileTreeTaskRepository implements ITaskRepository {
     );
   }
 
+  /** {@inheritDoc ITaskRepository.unsettledCommands} */
+  public async unsettledCommands(
+    request: IListCompletionCandidateQuery
+  ): Promise<TaskResult<ReadonlyArray<TaskId>>> {
+    return this._queryable().onSuccess((index) =>
+      this._convertQuery(this._converters.broker.listCompletion, request).onSuccess((query) => {
+        const keys: ReadonlyArray<string> = index.unsettledCommands.keys;
+        const start: number = index.unsettledCommands.startAfter(query.after);
+        // Every key in the set is a task id the index added under that brand.
+        return ok(keys.slice(start, start + query.limit).map((key) => key as TaskId));
+      })
+    );
+  }
+
+  /** {@inheritDoc ITaskRepository.readSource} */
+  public async readSource(sourceId: string): Promise<TaskResult<ITaskSourceRecord | undefined>> {
+    return this._usable().onSuccess(() =>
+      classify(this._converters.ids.sourceId.convert(sourceId), 'invalid', 'after-host-action').onSuccess(
+        (id) => ok(this._sources.get(id)?.record)
+      )
+    );
+  }
+
   /** {@inheritDoc ITaskRepository.rebuildIndexes} */
   public async rebuildIndexes(): Promise<TaskResult<ITaskRepositoryHealth>> {
     if (this._state === 'closed') {
@@ -450,6 +498,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     this._index = undefined;
     this._tasks = new Map();
     this._pending = new Map();
+    this._sources = new Map();
     this._cursors.clear();
     this._cache.clear();
     const scanned = this._store
@@ -490,6 +539,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     this._manifestFingerprint = fingerprintOf(fresh.manifestText);
     this._tasks = fresh.tasks;
     this._pending = fresh.pending;
+    this._sources = fresh.sources;
     this._ledger = fresh.ledger;
     this._index = fresh.index;
     this._report = fresh.report;
@@ -690,6 +740,16 @@ export class FileTreeTaskRepository implements ITaskRepository {
         guard().onSuccess(() => this._readCommitted(id, true).onSuccess((read) => ok(read?.record))),
       register: async (request: ITaskRegistrationRequest) => guard().onSuccess(() => this._register(request)),
       commit: async (request: ITaskCommitRequest) => guard().onSuccess(() => this._commit(request)),
+      readSource: async (sourceId: string) =>
+        guard().onSuccess(() =>
+          classify(this._converters.ids.sourceId.convert(sourceId), 'invalid', 'after-host-action').onSuccess(
+            (id) => ok(this._sources.get(id)?.record)
+          )
+        ),
+      commitSource: async (request: ITaskSourceCommitRequest) =>
+        guard().onSuccess(() => this._commitSource(request)),
+      extendReplayEnvelope: async (taskId: TaskId, add: ISourceReplayEnvelope) =>
+        guard().onSuccess(() => this._extendReplay(taskId, add)),
       raiseCapacityLimits: async (profile: ITaskCapacityProfile) =>
         guard().onSuccess(() => this._raiseLimits(profile))
     };
@@ -723,6 +783,14 @@ export class FileTreeTaskRepository implements ITaskRepository {
         'invalid',
         'after-host-action'
       );
+    }
+    const replay: TaskResult<ISourceReplayAdmission | undefined> = this._replayAdmission(
+      taskId,
+      draft,
+      request
+    );
+    if (replay.isFailure()) {
+      return propagate(replay);
     }
     const shape: Result<IStoredCatalogOperation> = checkRegistrationDraft(
       draft,
@@ -774,9 +842,28 @@ export class FileTreeTaskRepository implements ITaskRepository {
         pending !== undefined
           ? this._resumeRegistration(taskId, operationId, validated, pending)
           : this._checkUnclaimedName(taskId, operationId).onSuccess(() =>
-              this._newRegistration(taskId, identity, validated)
+              this._newRegistration(taskId, identity, validated, replay.value)
             )
       );
+  }
+
+  /**
+   * Validates a registration's `source-replay` envelope: an external registration of the source its
+   * binding names, with a finite envelope the profile's update bound can carry.
+   */
+  private _replayAdmission(
+    taskId: TaskId,
+    draft: ITaskRecordDraft,
+    request: ITaskRegistrationRequest
+  ): TaskResult<ISourceReplayAdmission | undefined> {
+    if (request.sourceReplay === undefined) {
+      return ok(undefined);
+    }
+    return classify(
+      replayAdmission(draft, request.sourceReplay, this._converters, this.profile),
+      'invalid',
+      'after-host-action'
+    ).withErrorFormat((message) => `register ${taskId}: ${message}`);
   }
 
   /**
@@ -807,7 +894,8 @@ export class FileTreeTaskRepository implements ITaskRepository {
   private _newRegistration(
     taskId: TaskId,
     identity: IRegistrationIdentity,
-    draft: ITaskRecordDraft
+    draft: ITaskRecordDraft,
+    replay: ISourceReplayAdmission | undefined
   ): TaskResult<ITaskCommitRecord> {
     const operationId: OperationId = identity.operationId;
     const profile: ITaskCapacityProfile = this.profile;
@@ -816,7 +904,8 @@ export class FileTreeTaskRepository implements ITaskRepository {
       draft.recordType === 'unresolved',
       profile,
       this._environment,
-      this._converters.ids.capacityClaimId
+      this._converters.ids.capacityClaimId,
+      replay
     );
     if (claims.isFailure()) {
       return taskFailure(`register ${taskId}: ${claims.message}`, 'storage-unavailable', 'safe');
@@ -1113,8 +1202,24 @@ export class FileTreeTaskRepository implements ITaskRepository {
               'after-host-action'
             );
           }
-          return this._reestablish(read!, undefined).onSuccess(() => ok(current));
+          // The same projection again is a replay — unless observation health changed, which is
+          // semantic (an outage beginning or ending) and commits at the same source revision.
+          const health = (r: typeof draft | typeof current): unknown => {
+            const h = r.task.envelope.observation;
+            return h.state === 'current' ? { state: h.state } : { state: h.state, reason: h.reason };
+          };
+          if (canonicallyEqual(health(current), health(draft))) {
+            return this._reestablish(read!, undefined).onSuccess(() => ok(current));
+          }
         }
+      }
+      const requiredUpdates: number = request.purpose === 'observation' ? request.requiredUpdates ?? 0 : 0;
+      if (!Number.isSafeInteger(requiredUpdates) || requiredUpdates < 0) {
+        return taskFailure<ITaskCommitRecord>(
+          `commit ${taskId}: requiredUpdates must be a non-negative safe integer`,
+          'invalid',
+          'after-host-action'
+        );
       }
 
       if (projection.archived) {
@@ -1140,7 +1245,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
       return this._checkReplacement(current, draft, request)
         .onSuccess(() => this._validateDraft(draft))
         .onSuccess((validated) => this._checkParent(taskId, validated).onSuccess(() => ok(validated)))
-        .onSuccess((validated) => this._replace(taskId, read!, validated, operationId));
+        .onSuccess((validated) => this._replace(taskId, read!, validated, operationId, requiredUpdates));
     });
   }
 
@@ -1174,6 +1279,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
           request.purpose === 'operation' ? request.operationId : undefined
         )
       )
+      .onSuccess(() => checkCommandEvolution(current.operations, draft.operations))
       .onSuccess(() =>
         // An unresolved draft never reaches here (identity refuses it), and an unresolved current
         // record has no updates: first resolution adds them all.
@@ -1194,7 +1300,8 @@ export class FileTreeTaskRepository implements ITaskRepository {
     taskId: TaskId,
     current: IReadRecord,
     draft: ITaskRecordDraft,
-    operationId: OperationId | undefined
+    operationId: OperationId | undefined,
+    requiredUpdates: number = 0
   ): TaskResult<ITaskCommitRecord> {
     const record: ITaskCommitRecord = current.record;
     const recordRevision: number = record.recordRevision + 1;
@@ -1215,7 +1322,19 @@ export class FileTreeTaskRepository implements ITaskRepository {
     // Growth is measured against the current record's own usage — the same figure its ledger
     // entry holds — so a step spends exactly what it adds.
     const previous: ILedgerEntry = this._ledgerForRecord(taskId, record, current.encoded);
-    return this._buildRecord(draft, recordRevision, record.capacityClaims)
+    const minted: TaskResult<ReadonlyArray<ITaskCapacityClaim>> = mintSettlements(
+      taskId,
+      this.profile,
+      this._environment,
+      this._converters.ids.capacityClaimId,
+      record,
+      draft
+    );
+    if (minted.isFailure()) {
+      return propagate(minted);
+    }
+    const startingClaims: ReadonlyArray<ITaskCapacityClaim> = minted.value;
+    return this._buildRecord(draft, recordRevision, startingClaims)
       .onSuccess((provisional) => {
         const provisionalEntry: ILedgerEntry = this._ledgerForRecord(
           taskId,
@@ -1226,8 +1345,21 @@ export class FileTreeTaskRepository implements ITaskRepository {
         for (const dimension of Object.keys(growth) as Array<keyof DimensionAmounts>) {
           growth[dimension] = provisionalEntry.used[dimension] - previous.used[dimension];
         }
-        let claims: ReadonlyArray<ITaskCapacityClaim> = record.capacityClaims;
         const next: ITaskCommitRecord = provisional.record;
+        // Settlements and the replay envelope spend first, from a shared growth figure each spend
+        // reduces, so no two claims are credited with the same growth.
+        const spent: TaskResult<ReadonlyArray<ITaskCapacityClaim>> = spendExecutionClaims(
+          taskId,
+          record,
+          next,
+          startingClaims,
+          growth,
+          requiredUpdates
+        );
+        if (spent.isFailure()) {
+          return propagate<{ built: IReadRecord; entry: ILedgerEntry }>(spent);
+        }
+        let claims: ReadonlyArray<ITaskCapacityClaim> = spent.value;
         if (record.recordType === 'unresolved' && next.recordType === 'resolved') {
           claims = spendClaim(claims, 'first-resolution', growth, true);
         } else if (
@@ -1240,7 +1372,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
         if (next.recordType === 'resolved' && next.archived) {
           claims = spendClaim(claims, 'terminal-closeout', growth, true);
         }
-        return claims === record.capacityClaims
+        return claims === startingClaims
           ? ok({ built: provisional, entry: provisionalEntry })
           : this._buildRecord(draft, recordRevision, claims).onSuccess((built) =>
               ok({ built, entry: this._ledgerForRecord(taskId, built.record, built.encoded) })
@@ -1258,6 +1390,205 @@ export class FileTreeTaskRepository implements ITaskRepository {
             return this._applyIndex(taskId, built.record, operationId);
           })
       );
+  }
+
+  /** {@inheritDoc ITaskRepositoryWriter.extendReplayEnvelope} */
+  private _extendReplay(taskId: TaskId, add: ISourceReplayEnvelope): TaskResult<ISourceReplayEnvelope> {
+    const added = this._converters.values.sourceReplayEnvelope
+      .convert(add)
+      .onSuccess((envelope) =>
+        replayCharges(envelope, this.profile).onSuccess((charges) => succeed({ envelope, charges }))
+      );
+    if (added.isFailure()) {
+      return taskFailure(`extendReplayEnvelope ${taskId}: ${added.message}`, 'invalid', 'after-host-action');
+    }
+    const projection: ITaskProjection | undefined = this._tasks.get(taskId);
+    if (projection === undefined || !projection.known || projection.archived) {
+      return taskFailure(
+        `extendReplayEnvelope ${taskId}: no live, writable task`,
+        'not-found-or-denied',
+        'after-host-action'
+      );
+    }
+    return this._readCommitted(taskId, true).onSuccess((read) => {
+      const record: ITaskCommitRecord = read!.record;
+      const extended = extendReplayClaims(record, added.value.envelope, added.value.charges);
+      if (extended.isFailure()) {
+        return taskFailure<ISourceReplayEnvelope>(
+          `extendReplayEnvelope ${taskId}: ${extended.message}`,
+          'invalid',
+          'after-host-action'
+        );
+      }
+      const { claims, envelope, draft } = extended.value;
+      return this._buildRecord(draft, record.recordRevision + 1, claims).onSuccess((built) => {
+        const entry: ILedgerEntry = this._ledgerForRecord(taskId, built.record, built.encoded);
+        return this._ledger
+          .admit(new Map([[taskKey(taskId), entry]]))
+          .onSuccess(() => this._writeFile(recordName('task', taskId), built.encoded.text, undefined))
+          .onSuccess(() => {
+            this._cache.delete(taskId);
+            this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
+            this._ledger.apply(new Map([[taskKey(taskId), entry]]));
+            this._generation++;
+            return this._applyIndex(taskId, built.record, undefined);
+          })
+          .onSuccess(() => ok<ISourceReplayEnvelope>(envelope));
+      });
+    });
+  }
+
+  // ------------------------------------------------------------------------------------------
+  // Source-checkpoint records
+  // ------------------------------------------------------------------------------------------
+
+  /**
+   * Creates or replaces a source's checkpoint record.
+   *
+   * @remarks
+   * Replacement checks the file on disk is still the one this instance committed, as the manifest
+   * does: an out-of-band edit fences rather than being erased. Creation writes the record, then the
+   * live inventory entry. A crash between the two leaves an uninventoried file; a retry of the same
+   * creation adopts it only when it is byte-for-byte what that retry would write, and refuses
+   * anything else — so a crash can never make the cursor lead its committed observations.
+   */
+  private _commitSource(request: ITaskSourceCommitRequest): TaskResult<ITaskSourceRecord> {
+    const converted: Result<{ id: string; current: ISourceRecordState | undefined }> =
+      this._converters.ids.sourceId.convert(request.sourceId).onSuccess((id) => {
+        const cursorBytes: number = utf8Length(request.cursor ?? '');
+        return cursorBytes > this.profile.encoded.maxSourceCursorBytes
+          ? fail(
+              `the cursor is ${cursorBytes} bytes, over the bound of ${this.profile.encoded.maxSourceCursorBytes}`
+            )
+          : succeed({ id, current: this._sources.get(id) });
+      });
+    if (converted.isFailure()) {
+      return taskFailure(`commitSource: ${converted.message}`, 'invalid', 'after-host-action');
+    }
+    const { id, current } = converted.value;
+    const revision: number = current?.record.recordRevision ?? 0;
+    if (request.expectedRecordRevision !== revision) {
+      return taskFailure(
+        `commitSource ${id}: expected record ${request.expectedRecordRevision}, found ${revision}`,
+        'conflict',
+        'reconcile-first'
+      );
+    }
+    if (current !== undefined && current.record.history !== request.history) {
+      return taskFailure(
+        `commitSource ${id}: a source's history contract is fixed ('${current.record.history}')`,
+        'invalid',
+        'after-host-action'
+      );
+    }
+    const record: ITaskSourceRecord = {
+      formatVersion: 1,
+      id,
+      recordRevision: revision + 1,
+      history: request.history,
+      ...(request.cursor !== undefined ? { cursor: request.cursor } : {}),
+      pages: request.pages
+    };
+    const name: string = recordName('source', id);
+    const converter = this._converters.storage.sourceRecord;
+    const encoded: TaskResult<IEncodedRecord> = classify(
+      _encodeValidated(record, (from) => converter.convert(from)),
+      'invalid',
+      'after-host-action'
+    ).withErrorFormat((message) => `commitSource ${id}: ${message}`);
+    if (encoded.isFailure()) {
+      return propagate(encoded);
+    }
+    const entry: ILedgerEntry = opaqueEntry(id, 'source', encoded.value.bytes, this.profile);
+    const key: string = `source:${id}`;
+    if (current !== undefined) {
+      return this._checkSourceOnDisk(name, current)
+        .onSuccess(() => this._ledger.admit(new Map([[key, entry]])))
+        .onSuccess(() => this._writeFile(name, encoded.value.text, undefined))
+        .onSuccess(() => {
+          this._sources.set(id, {
+            record,
+            fingerprint: fingerprintOf(encoded.value.text),
+            bytes: encoded.value.bytes
+          });
+          this._ledger.apply(new Map([[key, entry]]));
+          return ok(record);
+        });
+    }
+    return this._createSource(id, name, record, encoded.value, entry);
+  }
+
+  private _createSource(
+    id: string,
+    name: string,
+    record: ITaskSourceRecord,
+    encoded: IEncodedRecord,
+    entry: ILedgerEntry
+  ): TaskResult<ITaskSourceRecord> {
+    const manifest: ITaskRepositoryManifest = {
+      ...this._manifest,
+      manifestRevision: this._manifest.manifestRevision + 1,
+      sources: [...this._manifest.sources, { id, state: 'live' as const }].sort((a, b) =>
+        a.id < b.id ? -1 : 1
+      )
+    };
+    const listed: Result<ReadonlyArray<string>> = this._store.list();
+    if (listed.isFailure()) {
+      return taskFailure(`commitSource ${id}: ${listed.message}`, 'storage-unavailable', 'safe');
+    }
+    let landed: boolean = false;
+    if (listed.value.includes(name)) {
+      const text: Result<string> = this._store.read(name);
+      if (text.isFailure() || text.value !== encoded.text) {
+        return taskFailure(
+          `commitSource ${id}: ${name} already exists but this repository never committed it, and it is not ` +
+            `this creation's record; it is left untouched`,
+          'conflict',
+          'after-host-action'
+        );
+      }
+      landed = true;
+    }
+    return this._encodeManifest(manifest).onSuccess((manifestEncoded) =>
+      this._ledger
+        .admit(
+          new Map([
+            [`source:${id}`, entry],
+            ['repository', manifestEntry(manifestEncoded.bytes, this.profile)]
+          ])
+        )
+        .onSuccess(() => (landed ? ok<true>(true) : this._writeFile(name, encoded.text, undefined)))
+        .onSuccess(() => this._writeFile(manifestName, manifestEncoded.text, undefined))
+        .onSuccess(() => {
+          this._setManifest(manifest);
+          this._sources.set(id, { record, fingerprint: fingerprintOf(encoded.text), bytes: encoded.bytes });
+          this._ledger.apply(
+            new Map([
+              [`source:${id}`, entry],
+              ['repository', manifestEntry(manifestEncoded.bytes, this.profile)]
+            ])
+          );
+          return ok(record);
+        })
+    );
+  }
+
+  /** A source record must still be the one this instance committed before it is replaced. */
+  private _checkSourceOnDisk(name: string, current: ISourceRecordState): TaskResult<true> {
+    const text: Result<string> = this._store.list().onSuccess(() => this._store.read(name));
+    if (text.isFailure()) {
+      return taskFailure(
+        `${name}: cannot be re-read before rewriting it: ${text.message}`,
+        'storage-unavailable',
+        'safe'
+      );
+    }
+    if (fingerprintOf(text.value) === current.fingerprint) {
+      return ok(true);
+    }
+    const message: string = `${name} differs from the one this repository committed`;
+    this._fence(message);
+    return taskFailure(message, 'storage-corrupt', 'after-host-action');
   }
 
   // ------------------------------------------------------------------------------------------
