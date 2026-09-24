@@ -440,6 +440,8 @@ describe('execution claims survive a restart and are validated at open', () => {
   test('open refuses a replay-envelope claim naming a source that does not execute the task, or a second one', async () => {
     for (const edit of [
       (c: JsonObject): JsonObject[] => [{ ...c, sourceId: 'elsewhere' }],
+      (c: JsonObject): JsonObject[] => [{ ...c, owner: { owner: 'task', taskId: 'other' } }],
+      (c: JsonObject): JsonObject[] => [{ ...c, ownership: 'pending' }],
       (c: JsonObject): JsonObject[] => [c, { ...c, claimId: 'dup-2' }]
     ]) {
       const h = await sourceHarness({ history: 'source-replay' });

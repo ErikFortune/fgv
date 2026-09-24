@@ -178,8 +178,10 @@ export async function observeTask(
 /** What one page contributed to a pass. */
 interface IPageOutcome {
   readonly observations: ReadonlyArray<ISourceObservationReport>;
-  /** Everything in the page committed (or was a safe duplicate or unknown binding). */
-  readonly committed: boolean;
+  /**
+   * Absent when everything in the page committed (or was a safe duplicate or an unknown binding);
+   * otherwise why the cursor may not move past it.
+   */
   readonly stop?: SourceReconcileStop;
   readonly issue?: string;
 }
@@ -223,20 +225,15 @@ async function _applyPage(
   core: BrokerCore,
   source: ITaskSource,
   page: ISourceReconcilePage
-): Promise<TaskResult<IPageOutcome>> {
+): Promise<IPageOutcome> {
   const replay: boolean = source.history === 'source-replay';
   const mode: ObservationMode = replay ? 'feed' : 'direct';
   const reports: ISourceObservationReport[] = [];
-  let committed: boolean = true;
+  let blocked: boolean = false;
   for (const entry of page.observations) {
     const applied = await _applyRead(core, source, entry.binding, entry.observation, mode);
     if (applied.isFailure()) {
-      return ok({
-        observations: reports,
-        committed: false,
-        stop: 'storage',
-        issue: applied.message
-      });
+      return { observations: reports, stop: 'storage', issue: applied.message };
     }
     const report: ISourceObservationReport = applied.value;
     reports.push(report);
@@ -246,20 +243,19 @@ async function _applyPage(
       // carries no owed history, so the rest of it is still applied — a terminal observation
       // spends its own reservation and must not wait behind ordinary sampling — but the cursor
       // stays put. A feed stops here.
-      committed = false;
       if (replay) {
-        return ok({ observations: reports, committed, stop: 'capacity-blocked' });
+        return { observations: reports, stop: 'capacity-blocked' };
       }
+      blocked = true;
     } else if (replay && (outcome === 'contract-violation' || outcome === 'incomparable')) {
-      return ok({
+      return {
         observations: reports,
-        committed: false,
         stop: outcome === 'incomparable' ? 'order' : 'contract-violation',
-        ...(report.message !== undefined ? { issue: report.message } : {})
-      });
+        issue: `${report.message}`
+      };
     }
   }
-  return ok({ observations: reports, committed });
+  return blocked ? { observations: reports, stop: 'capacity-blocked' } : { observations: reports };
 }
 
 /**
@@ -290,10 +286,8 @@ export async function reconcileSource(
       'after-host-action'
     );
   }
+  // `maxPages` arrives converted: a positive safe integer, or absent.
   const maxPages: number = request.maxPages ?? defaultMaxPages;
-  if (!Number.isSafeInteger(maxPages) || maxPages < 1) {
-    return taskFailure(`reconcile: maxPages must be a positive integer`, 'invalid', 'after-host-action');
-  }
   return core.serializedPass(source.id, () => _pass(core, source, maxPages));
 }
 
@@ -390,14 +384,11 @@ async function _pages(
       return _finish(source, read, 'order', [broken]);
     }
   }
-  const applied = await _applyPage(core, source, page.value);
-  if (applied.isFailure()) {
-    return propagate(applied);
-  }
-  const seen: IPassState = { ...read, observations: [...read.observations, ...applied.value.observations] };
-  const issue: ReadonlyArray<string> = applied.value.issue !== undefined ? [applied.value.issue] : [];
-  if (!applied.value.committed) {
-    return _finish(source, seen, applied.value.stop ?? 'capacity-blocked', issue);
+  const applied: IPageOutcome = await _applyPage(core, source, page.value);
+  const seen: IPassState = { ...read, observations: [...read.observations, ...applied.observations] };
+  const issue: ReadonlyArray<string> = applied.issue !== undefined ? [applied.issue] : [];
+  if (applied.stop !== undefined) {
+    return _finish(source, seen, applied.stop, issue);
   }
   // Every observation of the page is committed: now, and only now, the cursor.
   const next: string | undefined = page.value.checkpoint ?? page.value.nextCursor ?? state.cursor;

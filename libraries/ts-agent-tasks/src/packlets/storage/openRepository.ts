@@ -738,6 +738,8 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
               unresolved: entry.recordType === 'unresolved',
               external: entry.operation === 'register-external',
               archived: false,
+              // A pending registration's record does not exist yet, so it holds no command.
+              commands: new Map(),
               ...pendingSource(entry)
             },
             profile

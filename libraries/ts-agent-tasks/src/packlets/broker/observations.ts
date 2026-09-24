@@ -120,7 +120,7 @@ export function compareRevisions(
 function _categories(
   before: ITaskEnvelope | undefined,
   after: ITaskEnvelope,
-  detailsChanged: boolean
+  progressChanged: boolean
 ): ReadonlyArray<UpdateCategory> {
   const categories: UpdateCategory[] = [];
   if (before === undefined || !canonicallySame(before.lifecycle, after.lifecycle)) {
@@ -132,7 +132,7 @@ function _categories(
   if (before !== undefined && !canonicallySame(before.attention, after.attention)) {
     categories.push('attention');
   }
-  if (before !== undefined && (!_same(before.progress, after.progress) || detailsChanged)) {
+  if (before !== undefined && progressChanged) {
     categories.push('progress');
   }
   if (before !== undefined && before.observation.state !== after.observation.state) {
@@ -440,28 +440,23 @@ async function _applyInWriter(
   const revision: TaskRevision = (before.revision + 1) as TaskRevision;
   // Execution fields from the source (an absent progress is cleared); catalog fields from the
   // latest committed record.
-  const next: ITaskEnvelope = {
-    schemaVersion: before.schemaVersion,
-    id: before.id,
-    kind: before.kind,
-    detailVersion: before.detailVersion,
+  const { progress: committedProgress, ...catalog } = before;
+  const advanced: ITaskEnvelope = {
+    ...catalog,
     revision,
-    title: before.title,
-    ...(before.description !== undefined ? { description: before.description } : {}),
-    ...(before.parentId !== undefined ? { parentId: before.parentId } : {}),
-    stopPolicy: before.stopPolicy,
-    ...(before.responsibility !== undefined ? { responsibility: before.responsibility } : {}),
-    scopes: before.scopes,
     lifecycle: projection.lifecycle,
-    ...(projection.progress !== undefined ? { progress: projection.progress } : {}),
     attention: projection.attention,
-    ...(before.binding !== undefined ? { binding: before.binding } : {}),
-    recovery: before.recovery,
     observation: { state: 'current', observedAt: projection.observedAt },
-    createdAt: before.createdAt,
     changedAt: now
   };
-  const categories = _categories(before, next, !canonicallySame(current.task.details, projection.details));
+  const next: ITaskEnvelope =
+    projection.progress !== undefined ? { ...advanced, progress: projection.progress } : advanced;
+  const categories = _categories(
+    before,
+    next,
+    !_same(committedProgress, projection.progress) ||
+      !canonicallySame(current.task.details, projection.details)
+  );
   const updates = planUpdates(before, next, categories, core.audience);
   const operations = settle(
     _confirmAwaiting(source, current.operations, projection.revision, revision),
@@ -492,11 +487,12 @@ async function _commit(
   binding: ISourceBinding,
   current: ITaskCommitRecord,
   request: ITaskCommitRequest,
-  success: SourceObservationOutcome = 'applied'
+  success: SourceObservationOutcome = 'applied',
+  message?: string
 ): Promise<TaskResult<ISourceObservationReport>> {
   const committed = await writer.commit(request);
   if (committed.isSuccess()) {
-    return ok(_report(binding, success, committed.value));
+    return ok(_report(binding, success, committed.value, message));
   }
   const code = codeOf(committed);
   if (code === 'backpressure') {
@@ -584,7 +580,8 @@ export async function applyHealth(
           updates
         )
       },
-      outcome
+      outcome,
+      reason
     );
     return committed;
   });

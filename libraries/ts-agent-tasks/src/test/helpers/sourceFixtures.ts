@@ -498,6 +498,10 @@ export interface ISourceHarnessOptions {
   /** Attach the source to the broker (default true). */
   readonly attach?: boolean;
   readonly executor?: SimulatedExecutor;
+  /** A host clock to use instead of the fixed one. */
+  readonly clock?: () => number;
+  /** A host ID factory to use instead of the sequential one. */
+  readonly newId?: () => Result<string>;
 }
 
 /** A registry with the tracked, list, vendor and job kinds. */
@@ -519,7 +523,16 @@ export async function sourceHarness(options?: ISourceHarnessOptions): Promise<IS
       : controllableSource(executor, options?.lookup === true ? { lookup: true } : undefined);
   const registry = sourceRegistry(source);
   const root = options?.root ?? memoryRoot();
-  const { env, logger } = environment('s');
+  const base = environment('s');
+  const logger = base.logger;
+  const env: TaskEnvironment =
+    options?.clock === undefined && options?.newId === undefined
+      ? base.env
+      : TaskEnvironment.create({
+          logger,
+          clock: options.clock ?? base.env.clock,
+          newId: options.newId ?? base.env.newId
+        }).orThrow();
   const repository = (
     await FileTreeTaskRepository.initialize({
       root,

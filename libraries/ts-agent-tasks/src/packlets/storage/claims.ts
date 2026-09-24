@@ -188,8 +188,7 @@ export function spendOne(
   claims: ReadonlyArray<ITaskCapacityClaim>,
   select: (claim: ITaskCapacityClaim) => boolean,
   growth: DimensionAmounts,
-  consume: boolean,
-  update?: (claim: ITaskCapacityClaim) => ITaskCapacityClaim
+  consume: boolean
 ): ReadonlyArray<ITaskCapacityClaim> {
   return claims.map((claim) => {
     if (!select(claim) || claim.disposition !== 'reserved') {
@@ -200,12 +199,7 @@ export function spendOne(
       growth[charge.dimension] -= spent;
       return { dimension: charge.dimension, amount: charge.amount - spent };
     });
-    const spentClaim: ITaskCapacityClaim = {
-      ...claim,
-      charges,
-      disposition: consume ? 'consumed' : 'reserved'
-    };
-    return update !== undefined ? update(spentClaim) : spentClaim;
+    return { ...claim, charges, disposition: consume ? 'consumed' : 'reserved' };
   });
 }
 
@@ -268,8 +262,8 @@ export interface ITaskClaimExpectation {
   readonly terminal?: boolean;
   /** The task's source id, when it has a binding. */
   readonly sourceId?: string;
-  /** Every stored command, by operation id: `true` once its dispatch is settled. */
-  readonly commands?: ReadonlyMap<OperationId, boolean>;
+  /** Every stored command, by operation id: `true` once its dispatch is settled. None when pending. */
+  readonly commands: ReadonlyMap<OperationId, boolean>;
 }
 
 /**
@@ -336,7 +330,7 @@ export function checkTaskClaims(
           return fail<true>(`unresolved task ${expected.taskId} holds no first-resolution claim`);
         }
         // An uncertain or unsent command holds its settlement reservation until it settles.
-        for (const [operationId, isSettled] of expected.commands ?? []) {
+        for (const [operationId, isSettled] of expected.commands) {
           if (!isSettled && !settled.has(operationId)) {
             return fail<true>(`unsettled command '${operationId}' holds no settlement claim`);
           }
@@ -396,7 +390,7 @@ function _settlementProblem(
   if (claim.ownership !== 'live') {
     return `ownership '${claim.ownership}', expected 'live'`;
   }
-  const isSettled: boolean | undefined = expected.commands?.get(claim.operationId);
+  const isSettled: boolean | undefined = expected.commands.get(claim.operationId);
   if (isSettled === undefined) {
     return `names command '${claim.operationId}', which the record does not hold`;
   }

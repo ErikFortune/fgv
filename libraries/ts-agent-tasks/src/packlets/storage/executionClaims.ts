@@ -118,23 +118,33 @@ export function spendExecutionClaims(
       spent,
       (c) => c.claimId === replay.claimId,
       terminal || resolution ? zeroAmounts() : growth,
-      terminal,
-      (c) =>
-        c.purpose !== 'admitted-source-replay'
-          ? c
-          : {
-              ...c,
-              envelope: {
-                remainingRequiredUpdates: c.envelope.remainingRequiredUpdates - requiredUpdates,
-                // The claim's resident charge *is* the remaining byte envelope: both start equal
-                // (see `replayCharges`) and every spend shrinks the charge, so reading it back keeps
-                // the two in lockstep rather than accounting the bytes twice.
-                remainingRequiredBytes:
-                  c.charges.find((charge) => charge.dimension === 'resident-payload-bytes')?.amount ?? 0
-              }
+      terminal
+    ).map((c) =>
+      c.claimId !== replay.claimId
+        ? c
+        : {
+            ...replay,
+            charges: c.charges,
+            disposition: c.disposition,
+            envelope: {
+              remainingRequiredUpdates: replay.envelope.remainingRequiredUpdates - requiredUpdates,
+              // The claim's resident charge *is* the remaining byte envelope: both start equal
+              // (see `replayCharges`) and every spend shrinks the charge, so reading it back keeps
+              // the two in lockstep rather than accounting the bytes twice.
+              remainingRequiredBytes: amountsOf(c.charges)['resident-payload-bytes']
             }
+          }
     )
   );
+}
+
+/** Charges as an amount per dimension; a dimension a list does not charge is zero. */
+function amountsOf(charges: ReadonlyArray<ITaskCapacityCharge>): DimensionAmounts {
+  const amounts: DimensionAmounts = zeroAmounts();
+  for (const charge of charges) {
+    amounts[charge.dimension] += charge.amount;
+  }
+  return amounts;
 }
 
 /**
@@ -187,6 +197,7 @@ export function extendReplayClaims(
     remainingRequiredUpdates: open.envelope.remainingRequiredUpdates + add.remainingRequiredUpdates,
     remainingRequiredBytes: open.envelope.remainingRequiredBytes + add.remainingRequiredBytes
   };
+  const added: DimensionAmounts = amountsOf(charges);
   const claims: ReadonlyArray<ITaskCapacityClaim> = record.capacityClaims.map((c) =>
     c.claimId !== open.claimId
       ? c
@@ -195,7 +206,7 @@ export function extendReplayClaims(
           envelope,
           charges: open.charges.map((charge) => ({
             dimension: charge.dimension,
-            amount: charge.amount + (charges.find((a) => a.dimension === charge.dimension)?.amount ?? 0)
+            amount: charge.amount + added[charge.dimension]
           }))
         }
   );

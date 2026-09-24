@@ -5,6 +5,7 @@
 
 import { JsonValue } from '@fgv/ts-json-base';
 import {
+  DetailedFailure,
   Result,
   captureAsyncResult,
   captureResult,
@@ -138,11 +139,8 @@ async function _host<T>(what: string, call: () => Promise<Result<T>>): Promise<T
 }
 
 /** Re-raises a task failure under another value type. */
-function _relay<T>(failure: { readonly message: string; readonly detail?: ITaskFailure }): TaskResult<T> {
-  return failWithDetail<T, ITaskFailure>(
-    failure.message,
-    failure.detail ?? { code: 'source-unavailable', retry: 'safe' }
-  );
+function _relay<T>(failure: DetailedFailure<unknown, ITaskFailure>): TaskResult<T> {
+  return failWithDetail<T, ITaskFailure>(failure.message, failure.detail);
 }
 
 function _lift<T>(what: string, result: Result<T>): TaskResult<T> {

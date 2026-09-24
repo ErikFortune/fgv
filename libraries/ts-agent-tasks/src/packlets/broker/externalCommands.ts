@@ -29,7 +29,7 @@ import {
 import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, subjectOf } from './access';
 import { BrokerCore, canonicallySame, revisionOf, storedOperation } from './core';
-import { changedSinceAuthorized, codeOf, ok, propagate, taskFailure } from './failures';
+import { changedSinceAuthorized, ok, propagate, taskFailure } from './failures';
 import { applyProjection, compareRevisions } from './observations';
 import { callSource, sourceOf } from './reconciliation';
 
@@ -97,14 +97,47 @@ function _authorizationSubject(record: IResolvedTaskCommitRecord): unknown {
   };
 }
 
-/** The stored command under `operationId`, when the record holds one. */
-function _stored(
+/** A resolved record and one of its stored commands. */
+interface ICommandInRecord {
+  readonly record: IResolvedTaskCommitRecord;
+  readonly command: IStoredCommandOperation;
+}
+
+/**
+ * The stored command under `operationId` in a record read inside the writer.
+ *
+ * @remarks
+ * A task record is never removed and its dedup evidence never dropped, so a command recorded once is
+ * always there. A repository that answers otherwise is not keeping its contract, and the broker says
+ * so rather than guessing.
+ */
+function _commandIn(
   record: ITaskCommitRecord | undefined,
+  taskId: TaskId,
   operationId: IStoredTaskOperation['operationId']
-): IStoredCommandOperation | undefined {
+): TaskResult<ICommandInRecord> {
   const op: IStoredTaskOperation | undefined =
-    record !== undefined ? storedOperation(record, operationId) : undefined;
-  return op?.type === 'command' ? op : undefined;
+    record !== undefined && record.recordType === 'resolved'
+      ? storedOperation(record, operationId)
+      : undefined;
+  return record !== undefined && record.recordType === 'resolved' && op !== undefined && op.type === 'command'
+    ? ok({ record, command: op })
+    : taskFailure(
+        `task ${taskId}: the repository no longer holds command '${operationId}'`,
+        'storage-corrupt',
+        'after-host-action',
+        { operationId }
+      );
+}
+
+/** Reads a command inside the writer. */
+async function _readCommand(
+  writer: ITaskRepositoryWriter,
+  taskId: TaskId,
+  operationId: IStoredTaskOperation['operationId']
+): Promise<TaskResult<ICommandInRecord>> {
+  const read = await writer.readCommit(taskId);
+  return read.isSuccess() ? _commandIn(read.value, taskId, operationId) : propagate(read);
 }
 
 /**
@@ -173,21 +206,22 @@ export async function executeExternal(
       ? { state: 'rejected', reason: 'conflict' }
       : undefined;
 
-  const intent = await core.gated(async (writer): Promise<TaskResult<ICommandReceipt | undefined>> => {
+  type Intent = ICommandInRecord | 'replay';
+  const intent = await core.gated(async (writer): Promise<TaskResult<Intent>> => {
     const reread = await writer.readCommit(taskId);
     if (reread.isFailure()) {
-      return propagate<ICommandReceipt | undefined>(reread);
+      return propagate<Intent>(reread);
     }
     const found: ITaskCommitRecord | undefined = reread.value;
     if (found !== undefined && storedOperation(found, operationId) !== undefined) {
       // The same key committed while this one waited: answered through the ordinary replay path.
-      return ok<ICommandReceipt | undefined>(undefined);
+      return ok<Intent>('replay');
     }
     if (found === undefined || found.recordType !== 'resolved' || revisionOf(found) !== revisionOf(record)) {
-      return changedSinceAuthorized<ICommandReceipt | undefined>(`task ${taskId}`, operationId);
+      return changedSinceAuthorized<Intent>(`task ${taskId}`, operationId);
     }
     if (!ctx.epochIs(epoch)) {
-      return changedSinceAuthorized<ICommandReceipt | undefined>('the authorization policy', operationId);
+      return changedSinceAuthorized<Intent>('the authorization policy', operationId);
     }
     const receipt: ICommandReceipt = _receipt(prepared.stored, refusal ?? { state: 'accepted' });
     const operation: IStoredCommandOperation = {
@@ -204,14 +238,20 @@ export async function executeExternal(
       taskId,
       expectedRevision: revisionOf(found),
       expectedRecordRevision: found.recordRevision,
-      record: { ..._draft(found, [...found.operations, operation]) }
+      record: _draft(found, [...found.operations, operation])
     });
-    return committed.isSuccess() ? ok<ICommandReceipt | undefined>(receipt) : propagate(committed);
+    return committed.isSuccess() ? _commandIn(committed.value, taskId, operationId) : propagate(committed);
   });
-  if (intent.isFailure() || intent.value === undefined || refusal !== undefined) {
-    return intent;
+  if (intent.isFailure()) {
+    return propagate(intent);
   }
-  return dispatchIntent(core, ctx, taskId, operationId);
+  if (intent.value === 'replay') {
+    return ok(undefined);
+  }
+  if (refusal !== undefined) {
+    return ok(intent.value.command.receipt);
+  }
+  return dispatchIntent(core, ctx, intent.value.record, intent.value.command, bound.value);
 }
 
 /**
@@ -229,50 +269,26 @@ export async function executeExternal(
 export async function dispatchIntent(
   core: BrokerCore,
   ctx: AccessContext,
-  taskId: TaskId,
-  operationId: IStoredTaskOperation['operationId']
+  record: IResolvedTaskCommitRecord,
+  command: IStoredCommandOperation,
+  bound: { readonly source: ITaskSource; readonly binding: ISourceBinding }
 ): Promise<TaskResult<ICommandReceipt>> {
-  const read = await core.repository.readCommit(taskId);
-  if (read.isFailure()) {
-    return propagate(read);
-  }
-  const record: ITaskCommitRecord | undefined = read.value;
-  const stored: IStoredCommandOperation | undefined = _stored(record, operationId);
-  if (record === undefined || record.recordType !== 'resolved' || stored === undefined) {
-    return taskFailure(
-      `task ${taskId}: no command '${operationId}'`,
-      'not-found-or-denied',
-      'after-host-action',
-      {
-        operationId
-      }
-    );
-  }
-  if (stored.dispatch !== 'not-sent') {
-    return ok(stored.receipt);
-  }
-  const bound = sourceOf(core, record);
-  if (bound.isFailure()) {
-    return propagate(bound);
-  }
+  const taskId: TaskId = record.task.envelope.id;
+  const operationId = command.operationId;
   const epoch = ctx.epoch();
   if (epoch.isFailure()) {
     return propagate(epoch);
   }
   const permitted: boolean = await ctx.may('command', subjectOf(record), 'subject', {
-    command: stored.request.command
+    command: command.request.command
   });
 
   const marked = await core.gated(async (writer): Promise<TaskResult<IMarked>> => {
-    const again = await writer.readCommit(taskId);
-    if (again.isFailure()) {
-      return propagate<IMarked>(again);
+    const read = await _readCommand(writer, taskId, operationId);
+    if (read.isFailure()) {
+      return propagate<IMarked>(read);
     }
-    const current: ITaskCommitRecord | undefined = again.value;
-    const now: IStoredCommandOperation | undefined = _stored(current, operationId);
-    if (current === undefined || current.recordType !== 'resolved' || now === undefined) {
-      return changedSinceAuthorized<IMarked>(`task ${taskId}`, operationId);
-    }
+    const { record: current, command: now } = read.value;
     if (now.dispatch !== 'not-sent') {
       // Another caller reached the dispatch boundary first and wrote the marker: that caller sends,
       // and this one must not — a second send of a non-deduplicated command is a second effect.
@@ -314,7 +330,7 @@ export async function dispatchIntent(
   }
   // The record as the marker gate read it: a conditional command's precondition is the source
   // revision committed *now*, not one read before an observation that landed meanwhile.
-  return _send(core, bound.value.source, bound.value.binding, marked.value.record, marked.value.command);
+  return _send(core, bound.source, bound.binding, marked.value.record, marked.value.command);
 }
 
 /**
@@ -355,15 +371,15 @@ async function _send(
   const sent = await callSource(`dispatch ${command.request.command}`, () =>
     source.dispatch(binding, command.request, conditional ? record.sourceRevision : undefined)
   );
-  const answer: SourceCommandLookup = sent.isSuccess()
+  const answer: SourceCommandResult = sent.isSuccess()
     ? _validated(core, sent.value)
     : { state: 'indeterminate', reason: _bounded(core, `the send failed; outcome unknown: ${sent.message}`) };
   return settleCommand(core, source, binding, record.task.envelope.id, command, answer);
 }
 
 /** A source's answer, converted; one that does not convert is an uncertain outcome, never a receipt. */
-function _validated(core: BrokerCore, answer: unknown): SourceCommandLookup {
-  const converted = core.converters.sources.commandLookup.convert(answer);
+function _validated(core: BrokerCore, answer: unknown): SourceCommandResult {
+  const converted = core.converters.sources.commandResult.convert(answer);
   return converted.isSuccess()
     ? converted.value
     : {
@@ -394,22 +410,18 @@ export async function settleCommand(
   binding: ISourceBinding,
   taskId: TaskId,
   command: IStoredCommandOperation,
-  answer: SourceCommandLookup
+  answer: SourceCommandResult
 ): Promise<TaskResult<ICommandReceipt>> {
   const operationId = command.operationId;
   if (answer.state === 'applied' && source.history === 'observed-state') {
     return _settleApplied(core, source, binding, taskId, command, answer.observation);
   }
   const settled = await core.gated(async (writer): Promise<TaskResult<ICommandReceipt>> => {
-    const read = await writer.readCommit(taskId);
+    const read = await _readCommand(writer, taskId, operationId);
     if (read.isFailure()) {
       return propagate<ICommandReceipt>(read);
     }
-    const current: ITaskCommitRecord | undefined = read.value;
-    const now: IStoredCommandOperation | undefined = _stored(current, operationId);
-    if (current === undefined || current.recordType !== 'resolved' || now === undefined) {
-      return changedSinceAuthorized<ICommandReceipt>(`task ${taskId}`, operationId);
-    }
+    const { record: current, command: now } = read.value;
     if (now.dispatch === 'settled') {
       return ok(now.receipt);
     }
@@ -433,7 +445,7 @@ function _answered(
   source: ITaskSource,
   current: IResolvedTaskCommitRecord,
   now: IStoredCommandOperation,
-  answer: SourceCommandLookup,
+  answer: SourceCommandResult,
   maxReason: number
 ): IStoredCommandOperation {
   switch (answer.state) {
@@ -485,8 +497,6 @@ function _answered(
           reason: `${keyExpiredPrefix}: ${answer.reason}`.slice(0, maxReason)
         })
       };
-    case 'not-found':
-      return now;
     default:
       return {
         ...now,
@@ -552,15 +562,11 @@ async function _settleApplied(
     outcome === 'stale' ||
     outcome === 'health-changed';
   const settled = await core.gated(async (writer): Promise<TaskResult<ICommandReceipt>> => {
-    const read = await writer.readCommit(taskId);
+    const read = await _readCommand(writer, taskId, command.operationId);
     if (read.isFailure()) {
       return propagate<ICommandReceipt>(read);
     }
-    const current: ITaskCommitRecord | undefined = read.value;
-    const now: IStoredCommandOperation | undefined = _stored(current, command.operationId);
-    if (current === undefined || current.recordType !== 'resolved' || now === undefined) {
-      return changedSinceAuthorized<ICommandReceipt>(`task ${taskId}`, command.operationId);
-    }
+    const { record: current, command: now } = read.value;
     if (now.dispatch === 'settled') {
       return ok(now.receipt);
     }
@@ -576,21 +582,16 @@ async function _settleApplied(
 }
 
 /**
- * A failure writing a command's outcome is `commit-indeterminate`: the send happened, or may have,
- * and the record says `possibly-sent` until something settles it. Two classifications pass through
- * as they are: `commit-indeterminate` itself, and `conflict` — the record moved for a reason that is
- * not this write (the task was changed or removed under it), which `changedSinceAuthorized` already
- * states precisely; the command stays `possibly-sent` either way, for the pump.
+ * A failure writing a command's outcome is `commit-indeterminate`, carrying the command's operation
+ * id: the send happened, or may have, and the record says `possibly-sent` until something settles
+ * it. (Settlement writes are maintenance and observation commits, which carry no operation id of
+ * their own, so storage's classification of them is always re-stated here with the command's.)
  */
 function _indeterminateOnWriteFailure(
   result: TaskResult<ICommandReceipt>,
   operationId: IStoredTaskOperation['operationId']
 ): TaskResult<ICommandReceipt> {
-  if (result.isSuccess()) {
-    return result;
-  }
-  const code = codeOf(result);
-  return code === 'commit-indeterminate' || code === 'conflict'
+  return result.isSuccess()
     ? result
     : taskFailure(
         `the command was dispatched, but persisting its outcome failed: ${result.message}`,
@@ -674,7 +675,7 @@ async function _resolveOne(
   }
   const { source, binding } = bound.value;
   if (command.dispatch === 'not-sent') {
-    const sent = await dispatchIntent(core, ctx, taskId, operationId);
+    const sent = await dispatchIntent(core, ctx, record, command, bound.value);
     return sent.isFailure() ? propagate(sent) : done('dispatched', sent.value.result);
   }
 
@@ -685,7 +686,13 @@ async function _resolveOne(
     if (found.isFailure()) {
       return done('unavailable');
     }
-    const answer: SourceCommandLookup = _validated(core, found.value);
+    const converted = core.converters.sources.commandLookup.convert(found.value);
+    const answer: SourceCommandLookup = converted.isSuccess()
+      ? converted.value
+      : {
+          state: 'indeterminate',
+          reason: _bounded(core, `the source's lookup breaks its contract: ${converted.message}`)
+        };
     if (answer.state !== 'not-found' && answer.state !== 'indeterminate') {
       const settled = await settleCommand(core, source, binding, taskId, command, answer);
       if (settled.isFailure()) {
