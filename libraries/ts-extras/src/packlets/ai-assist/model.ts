@@ -1158,10 +1158,18 @@ export type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
 export type AiImageQuality = GptImageQuality;
 
 /** Model names in the GPT Image family. @public */
-export type GptImageModelNames = 'gpt-image-1' | 'gpt-image-1.5' | 'gpt-image-2';
+export type GptImageModelNames =
+  | 'gpt-image-1'
+  | 'gpt-image-1.5'
+  | 'gpt-image-2'
+  | 'gpt-image-2.5-sunburst'
+  | 'gpt-image-2.5-flare';
 
 /** Model names in the xAI Grok Imagine family. @public */
-export type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality';
+export type GrokImagineModelNames =
+  | 'grok-imagine-image'
+  | 'grok-imagine-image-quality'
+  | 'grok-imagine-image-2.0';
 
 /** Model names in the Gemini Flash Image family. @public */
 export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image';
@@ -1466,7 +1474,9 @@ export type AnthropicThinkingModelNames =
   | 'claude-opus-4-7'
   | 'claude-opus-4-8'
   | 'claude-opus-5'
-  | 'claude-fable-5';
+  | 'claude-opus-5-5'
+  | 'claude-fable-5'
+  | 'claude-fable-5-1';
 
 /**
  * Model IDs for OpenAI thinking-capable models.
@@ -1475,8 +1485,6 @@ export type AnthropicThinkingModelNames =
 export type OpenAiThinkingModelNames =
   | 'o3'
   | 'o4-mini'
-  | 'o3-deep-research'
-  | 'o4-mini-deep-research'
   | 'gpt-5'
   | 'gpt-5.1'
   | 'gpt-5.2'
@@ -1486,7 +1494,10 @@ export type OpenAiThinkingModelNames =
   | 'gpt-5.6-sol'
   | 'gpt-5.6-terra'
   | 'gpt-5.6-luna'
-  | 'gpt-5-pro';
+  | 'gpt-5-pro'
+  | 'gpt-6-astra'
+  | 'gpt-6-sol'
+  | 'gpt-6-luna';
 
 /**
  * Model IDs for Google Gemini thinking-capable models.
@@ -1494,14 +1505,22 @@ export type OpenAiThinkingModelNames =
  */
 export type GeminiThinkingModelNames =
   | 'gemini-3.1-pro-preview'
+  | 'gemini-3.8-flash'
   | 'gemini-3.5-flash'
+  | 'gemini-3.5-flash-lite'
   | 'gemini-3.1-flash-lite';
 
 /**
  * Model IDs for xAI thinking-capable models.
  * @public
  */
-export type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4' | 'grok-4.5';
+export type XAiThinkingModelNames =
+  | 'grok-3-mini'
+  | 'grok-4.3'
+  | 'grok-4'
+  | 'grok-4.5'
+  | 'grok-4.6'
+  | 'grok-4.7';
 
 /**
  * Anthropic-specific thinking configuration.

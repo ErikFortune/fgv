@@ -395,7 +395,7 @@ const ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME: string;
 function anthropicEffortToBudgetTokens(effort: NonNullable<IAnthropicThinkingConfig['effort']>): number;
 
 // @public
-type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8' | 'claude-opus-5' | 'claude-fable-5';
+type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8' | 'claude-opus-5' | 'claude-opus-5-5' | 'claude-fable-5' | 'claude-fable-5-1';
 
 // @public
 const ARGON2ID_OWASP_MIN: IArgon2idParams;
@@ -1016,7 +1016,7 @@ const GCM_IV_SIZE: number;
 type GeminiFlashImageModelNames = 'gemini-3.1-flash-image';
 
 // @public
-type GeminiThinkingModelNames = 'gemini-3.1-pro-preview' | 'gemini-3.5-flash' | 'gemini-3.1-flash-lite';
+type GeminiThinkingModelNames = 'gemini-3.1-pro-preview' | 'gemini-3.8-flash' | 'gemini-3.5-flash' | 'gemini-3.5-flash-lite' | 'gemini-3.1-flash-lite';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1031,7 +1031,7 @@ function getProviderDescriptor(id: string): Result<IAiProviderDescriptor>;
 function getProviderDescriptors(): ReadonlyArray<IAiProviderDescriptor>;
 
 // @public
-type GptImageModelNames = 'gpt-image-1' | 'gpt-image-1.5' | 'gpt-image-2';
+type GptImageModelNames = 'gpt-image-1' | 'gpt-image-1.5' | 'gpt-image-2' | 'gpt-image-2.5-sunburst' | 'gpt-image-2.5-flare';
 
 // @public
 type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
@@ -1040,7 +1040,7 @@ type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
 type GptImageSize = '1024x1024' | '1536x1024' | '1024x1536' | 'auto';
 
 // @public
-type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality';
+type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality' | 'grok-imagine-image-2.0';
 
 declare namespace Hash {
     export {
@@ -3010,7 +3010,7 @@ const nodeCryptoProvider: NodeCryptoProvider;
 const nodeHostResolver: HostResolver;
 
 // @public
-type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'o3-deep-research' | 'o4-mini-deep-research' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.4-mini' | 'gpt-5.5' | 'gpt-5.5-pro' | 'gpt-5.6-sol' | 'gpt-5.6-terra' | 'gpt-5.6-luna' | 'gpt-5-pro';
+type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.4-mini' | 'gpt-5.5' | 'gpt-5.5-pro' | 'gpt-5.6-sol' | 'gpt-5.6-terra' | 'gpt-5.6-luna' | 'gpt-5-pro' | 'gpt-6-astra' | 'gpt-6-sol' | 'gpt-6-luna';
 
 // @beta
 function parseCsvString(body: string, options?: CsvOptions): Result<unknown>;
@@ -3357,7 +3357,7 @@ function validateCacheBreakpoints(systemLength: number, cache: IAiCacheRequest, 
 function validateResolvedOptions(modelId: string, capability: IAiImageModelCapability, resolved: IResolvedImageOptions): Result<IResolvedImageOptions>;
 
 // @public
-type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4' | 'grok-4.5';
+type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4' | 'grok-4.5' | 'grok-4.6' | 'grok-4.7';
 
 declare namespace Yaml {
     export {

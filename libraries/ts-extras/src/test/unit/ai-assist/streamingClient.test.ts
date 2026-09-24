@@ -919,9 +919,9 @@ describe('callProviderCompletionStream', () => {
       expect(JSON.parse(fetchCall[1].body).tools).toEqual([{ type: 'web_search' }]);
     });
 
-    test('real OpenAI registry descriptor: frontier resolves gpt-5.6-sol via the /chat/completions stream', async () => {
-      // gpt-5.6-sol (unlike its predecessor gpt-5.5-pro) works on chat completions, so the
-      // frontier tier no longer routes through the Responses-only path.
+    test('real OpenAI registry descriptor: frontier resolves gpt-6-astra via the /chat/completions stream', async () => {
+      // gpt-6-astra (unlike the earlier frontier target gpt-5.5-pro) works on chat completions, so
+      // the frontier tier does not route through the Responses-only path.
       const openai = AiAssist.getProviderDescriptor('openai').orThrow();
       mockSseResponse(openAiChatSse(['ok']));
       const result = await AiAssist.callProviderCompletionStream({
@@ -933,7 +933,7 @@ describe('callProviderCompletionStream', () => {
       expect(result).toSucceed();
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
       expect(fetchCall[0]).toBe('https://api.openai.com/v1/chat/completions');
-      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.6-sol');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-6-astra');
     });
 
     test('real OpenAI registry descriptor: a gpt-5.5-pro modelOverride still routes via the /responses stream', async () => {

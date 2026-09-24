@@ -348,6 +348,7 @@ async function callOpenAiImagesEdits(
 /** Calls xAI /images/edits with JSON body (not multipart); up to 3 source images. @internal */
 async function callXaiImagesEdits(
   config: IAiApiConfig,
+  capability: IAiImageModelCapability,
   request: IAiImageGenerationParams,
   resolved: IResolvedImageOptions,
   logger?: Logging.ILogger,
@@ -375,6 +376,9 @@ async function callXaiImagesEdits(
   }
   if (resolved.resolution !== undefined) {
     body.resolution = resolved.resolution;
+  }
+  if (capability.supportsQualityParam && resolved.quality !== undefined) {
+    body.quality = resolved.quality;
   }
   if (resolved.otherParams !== undefined) {
     Object.assign(body, resolved.otherParams);
@@ -433,6 +437,9 @@ async function callXaiImageGeneration(
   }
   if (resolved.resolution !== undefined) {
     body.resolution = resolved.resolution;
+  }
+  if (capability.supportsQualityParam && resolved.quality !== undefined) {
+    body.quality = resolved.quality;
   }
   if (resolved.otherParams !== undefined) {
     Object.assign(body, resolved.otherParams);
@@ -587,7 +594,7 @@ export async function callProviderImageGeneration(
     case 'xai-images-edits': {
       const refs = request.referenceImages ?? [];
       if (refs.length > 0) {
-        const editsResult = await callXaiImagesEdits(config, request, resolved, logger, signal);
+        const editsResult = await callXaiImagesEdits(config, capability, request, resolved, logger, signal);
         return editsResult.onSuccess((json) => normalizeXaiImageResponse(json, capability));
       }
       return callXaiImageGeneration(config, request, capability, resolved, logger, signal);
