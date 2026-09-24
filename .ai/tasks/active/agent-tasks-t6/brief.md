@@ -22,41 +22,39 @@ external status optimistically.**
   close**, not per slice — T1 through T5 are all still under `active/`. Do **not** run
   `/finalize-task` or migrate to `completed/`.
 
-## ⚠️ The open question that is now yours — STOP when you reach it
+## The question that used to be open — DECIDED, build against it
 
 **Executor-payload dereference: may terminal presentation dereference an executor-owned payload
 after the broker update is acknowledged?**
 
-This is a §8.3 / T6 / T8 decision. It has been carried, undecided, through **five consecutive
-slices** — it reached none of T1–T4, and T5 confirmed it did not reach the broker either, because
-the broker never dereferences a reference, the default projection removes artifact references, and
-an update's presentation is the bounded envelope frozen with its revision.
+**Decided 2026-09-24: no.** Terminal presentation shows the bounded projection only. It never
+follows a reference to an executor-owned payload. Reaching that payload is a **separately-authorized
+host action**, outside terminal presentation entirely.
 
-**T6 is where it stops being avoidable**, because source adapters are exactly what hold
-executor-owned payloads, and the plan's own T6 test list already brushes against it: *"Add a
-layering fixture with an executor-owned payload larger than 64 KiB and a bounded task projection
-that fits `details`. Prove that task/source-checkpoint records do not copy retained source text or
-execution checkpoints, and that recovery resolves the original source binding."*
+This was carried undecided through T1–T5 and was going to land on you. It is settled *before* T6
+rather than during it, so you build against a stated contract instead of stopping mid-slice.
 
-The design's stated principle is in `development-design.md:193`: **"References carry identifiers,
-not automatic dereference permission. Raw binding and detail fields are not implicitly
-model-visible."** That tells you references are not *automatically* dereferenceable. It does not
-tell you whether terminal presentation is an authorized exception.
+**Where it is written down**, both of which you should read rather than relying on this brief:
 
-**The fork, so it can be answered crisply:**
+- `development-design.md` at the bounds paragraph — the existing rule *"references carry
+  identifiers, not automatic dereference permission"* now states explicitly that **terminal
+  presentation is not an exception**.
+- `implementation-plan.md` § 1 — the decision record, with the alternative that was declined and
+  why.
 
-- **(A) No dereference, ever.** Terminal presentation shows the bounded projection only; an
-  executor-owned payload is reachable solely by a separately-authorized host action. Simplest, and
-  consistent with the layering fixture's "records do not copy retained source text".
-- **(B) Dereference permitted at terminal presentation, under the same authorization the update
-  carried.** Richer terminal output, but it makes presentation a read path against external storage,
-  with its own failure, latency and capacity story — and a second place payload size must be bounded.
+**What this means concretely for T6.** The plan's layering fixture is now a straightforward
+consequence rather than an open design: *an executor-owned payload larger than 64 KiB, a bounded
+task projection that fits `details`, and proof that task and source-checkpoint records do not copy
+retained source text or execution checkpoints, with recovery resolving the original source binding.*
+Measure the serialized adapter projection independently of the execution record. The 1 MiB broker
+source-checkpoint bound is **not** an executor-job limit — external storage keeps its own capacity
+and durability contract.
 
-**You do not decide this.** Build everything that does not depend on it, and when you reach the
-point where the answer changes a signature or a test, **stop and surface it to the orchestrator**
-with what you have learned about which way the code wants to go. Evidence from the implementation is
-exactly what has been missing for five slices; a recommendation with reasons is welcome, a decision
-is not.
+**If the implementation pushes back on this, say so.** The decision was made from the design rule
+and an asymmetry argument — permitting dereference later as an authorized host action breaks
+nothing, while withdrawing it would be a contract change — not from evidence inside the adapter
+layer. You are the first slice to hold these payloads. If building against it turns up a concrete
+reason it is wrong, **surface that**; it is exactly the evidence the decision was made without.
 
 ## The second open question, which *is* yours to close
 

@@ -139,18 +139,20 @@ recovery, source cursor storage, operation receipts, and safe uncertain-outcome 
 deterministic controllable and observation-only test sources. The bar in one line: **the source
 owns execution truth, and the broker never sets external status optimistically.**
 
-**The deferred question lands here.** *May terminal presentation dereference an executor-owned
-payload after the broker update is acknowledged?* — a §8.3/T6/T8 decision carried undecided through
-**five slices**. It genuinely reached none of them: T5 verified the broker never dereferences a
-reference, the default projection strips artifact references, and an update's presentation is the
-bounded envelope frozen with its revision. T6 is where it stops being avoidable, because source
-adapters hold executor-owned payloads and the plan's own T6 fixture pairs a >64 KiB executor payload
-with a bounded projection that fits `details`. The brief states the fork — (A) never dereference,
-(B) dereference under the update's authorization — and instructs the implementer to **stop and
-surface with a recommendation, not decide**. Orchestrator lean is (A): it is the natural reading of
-`development-design.md:193` ("references carry identifiers, not automatic dereference permission"),
-and (B) can be added later as an authorized host action whereas walking it back would be a contract
-change.
+**The deferred question is decided, before the slice rather than during it.** *May terminal
+presentation dereference an executor-owned payload after the broker update is acknowledged?* —
+carried undecided through **five slices**, and it genuinely reached none of them: T5 verified the
+broker never dereferences a reference, the default projection strips artifact references, and an
+update's presentation is the bounded envelope frozen with its revision. **Decided 2026-09-24: no.**
+Terminal presentation shows the bounded projection only; reaching an executor-owned payload is a
+separately-authorized host action. Recorded in `development-design.md` at the bounds rule (terminal
+presentation is explicitly *not* an exception to "references carry identifiers, not automatic
+dereference permission") and in `implementation-plan.md` § 1 with the declined alternative. The
+asymmetry decided it: permitting dereference later as an authorized host action breaks nothing,
+whereas withdrawing it would be a contract change. T6 builds against a stated contract, and its
+brief asks the implementer to surface any concrete reason the decision is wrong — T6 is the first
+slice to hold these payloads, and the decision was made from the design rule rather than from
+evidence inside the adapter layer.
 
 **The second question closes here.** Source-history spelling: §5 says `'latest-snapshot' |
 'replayable-updates'`, §1 and §8.6 say `'observed-state'` / `'source-replay'`. T1 unified on §8.6
