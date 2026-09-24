@@ -128,6 +128,52 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `ai-assist-model-catalog-2026-09` 🔴 (blocked on network egress)
+
+**Status:** 🔴 blocked — branch created off `release` at `d01e39901`, brief written, **cannot start
+until the environment's network policy allows the provider documentation hosts.** At setup time all
+four were refused at the proxy with a 403 on CONNECT: `platform.openai.com` /
+`developers.openai.com`, `docs.anthropic.com`, `ai.google.dev`, `docs.x.ai`. Artifacts at
+`.ai/tasks/active/ai-assist-model-catalog-2026-09/`.
+
+**Mission.** A provider-line rotation across the four tier providers — **OpenAI, Anthropic, Gemini,
+xAI**. Groq and Mistral are out until they bump in priority; Ollama is context-dependent and carries
+no catalog default to rotate.
+
+**Sourcing contract, and the reason the stream is blocked rather than degraded.** Every identifier
+must come from a fetched documentation page, cited by URL and fetch date. `WebSearch` may *find*
+pages and may signal that a generation moved; it may **not** supply identifiers, because it returns
+a summariser's rendering and what the catalog needs is an exact API string. `gpt-6-astra` vs
+`gpt-6.0-astra` vs the display name "GPT-6 Astra" are three different things and only one is an id —
+and a plausible-but-wrong id resolves cleanly in the registry and fails on the wire, which is the one
+case the alias layer cannot catch. The brief makes step zero a reachability probe that **stops** if
+any host is blocked.
+
+**Not a one-line edit.** `docs/TECH_DEBT.md` carries a P3 entry whose stated purpose is *"so the two
+manual axes are not forgotten on the next rotation"* — this is that rotation. Per provider: the
+`aliases` map and `defaultModel` slots; the capability-detection `idPattern` rules; and the typed
+`*ModelNames` unions. Plus the per-model capability tables the entry does not enumerate
+(`responsesOnlyModelPrefixes`, `usesMaxCompletionTokensField`, `supportsStreamUsageOption`, the
+prompt-cache predicates, image/embedding entries). **Already concrete:** OpenAI's rules top out at
+`/^gpt-5/` and xAI's at `/^grok-4\.5/`, so a GPT-6 or Grok-5 line has *no matching rule* and its ids
+would fall through to the base capability set.
+
+**The live confirmation is the user's gate.** This environment has no provider credentials and the
+agent is told not to seek any. The stream's output is offline-green plus a cited id list; the user
+runs the per-provider testbed scenarios against it before merge. The PR must not claim to be
+verified against the providers.
+
+**Parallel with:** `agent-tasks-t6` — different package (`ts-extras` vs `ts-agent-tasks`), different
+branch line (`release` vs `integration/agent-tasks-v1`), no code overlap. Both touch
+`LIBRARY_CAPABILITIES.md` and this file, **own section only**, and being on different branches any
+conflict surfaces harmlessly at the next merge-up.
+
+**Package surface:** `libraries/ts-extras`, `ai-assist` packlet only.
+
+**Landing shape.** PR into `release`, single landing.
+
+**Artifact pointer:** `.ai/tasks/active/ai-assist-model-catalog-2026-09/`.
+
 ### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
 
 **Status:** 🟢 **shipped to `release`** — all five units merged 2026-08-12, plus one unplanned refactor that unblocked them. Nothing published yet; the alpha still has to go out. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md`, `…-reply-2026-08-11-ask-package.md`, `…-status-2026-08-12-stream-a.md`, `…-status-2026-08-12-shipped.md`.
