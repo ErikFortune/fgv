@@ -406,7 +406,7 @@ compaction/deletion design before it adopts. Raising finite limits postpones
 exhaustion; it does not satisfy indefinite fixed-resource operation.
 
 **History class.** The ingestion adapter is `observed-state`, not
-`replayable-updates`: optional and coalescible progress, required terminal delivery,
+`source-replay`: optional and coalescible progress, required terminal delivery,
 applicable attention obligations preserved. The finite `source-replay` envelope in
 §8.6 therefore does not constrain this port. That requirement remains in force for
 any adapter that requests the stronger guarantee, and generic replayable-source tests
