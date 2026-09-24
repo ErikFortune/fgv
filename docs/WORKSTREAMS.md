@@ -128,6 +128,61 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-t6` 🔵 (slice T6 of the agent-tasks plan)
+
+**Status:** 🔵 in flight — branch created off `integration/agent-tasks-v1` at `30da05785` (the T5
+landing), brief written, not yet started. Artifacts at `.ai/tasks/active/agent-tasks-t6/`.
+
+**Mission.** Source adapters, commands and reconciliation: an external helper with typed
+projections and commands, a source revision comparator, push hints, paged reconciliation and
+recovery, source cursor storage, operation receipts, and safe uncertain-outcome handling, plus
+deterministic controllable and observation-only test sources. The bar in one line: **the source
+owns execution truth, and the broker never sets external status optimistically.**
+
+**The deferred question lands here.** *May terminal presentation dereference an executor-owned
+payload after the broker update is acknowledged?* — a §8.3/T6/T8 decision carried undecided through
+**five slices**. It genuinely reached none of them: T5 verified the broker never dereferences a
+reference, the default projection strips artifact references, and an update's presentation is the
+bounded envelope frozen with its revision. T6 is where it stops being avoidable, because source
+adapters hold executor-owned payloads and the plan's own T6 fixture pairs a >64 KiB executor payload
+with a bounded projection that fits `details`. The brief states the fork — (A) never dereference,
+(B) dereference under the update's authorization — and instructs the implementer to **stop and
+surface with a recommendation, not decide**. Orchestrator lean is (A): it is the natural reading of
+`development-design.md:193` ("references carry identifiers, not automatic dereference permission"),
+and (B) can be added later as an authorized host action whereas walking it back would be a contract
+change.
+
+**The second question closes here.** Source-history spelling: §5 says `'latest-snapshot' |
+'replayable-updates'`, §1 and §8.6 say `'observed-state'` / `'source-replay'`. T1 unified on §8.6
+and named T6 as confirmer; T6 corrects §5 in its own PR.
+
+**Review gate:** no blind re-execution, no second authoritative lifecycle store — with the plan's
+own trap named, that *the ingestion compatibility adapter's empty command set supplies no command
+evidence*, so a test source that accepts commands and does nothing would pass everything.
+
+**Loop expectation set deliberately.** T6 is not an authorization boundary, but it carries the same
+shape of risk on a different axis: correctness is a property of **ordering and of who owns truth**
+— cursor advance versus commit, accepted versus applied, hint versus required feed, dispatch versus
+reservation. Per the authorization-boundary section codified from T5's seven-round loop, a clean
+layer-1 pass carries little information here; budget for a substantive layer 2.
+
+**Carries the capacity constraint.** T6 adds pre-dispatch command-result reservations, and the
+default profile is already over-subscribed at an effective 146 against a declared 1,000
+(`docs/TECH_DEBT.md`, P2). Must not silently worsen it; must state any new per-registration figure;
+must stop and surface if A3 proves unimplementable rather than merely tight.
+
+**Package surface:** `libraries/ts-agent-tasks` only — implementations, broker and storage packlets.
+
+**Out-of-scope:** tools (I1); T7 subscriptions and receipts; T8 retention; T9 cascade stop; every
+package outside `ts-agent-tasks`; the `ts-utils` `isKeyOf` fix; and the three known CI flakes, which
+are to be recognised and re-triggered rather than fixed from this branch.
+
+**Artifacts stay in `active/`** — this family finalizes at cluster close.
+
+**Landing shape.** PR into `integration/agent-tasks-v1`, not `release`.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-t6/`.
+
 ### `agent-tasks-t5` ✅ (slice T5 of the agent-tasks plan) — landed on the integration branch via [#691](https://github.com/ErikFortune/fgv/pull/691)
 
 **Status:** ✅ shipped 2026-09-23 via [#691](https://github.com/ErikFortune/fgv/pull/691) into
