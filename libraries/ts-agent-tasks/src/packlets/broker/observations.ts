@@ -34,6 +34,16 @@ import { BrokerCore, canonicallySame } from './core';
 import { codeOf, ok, propagate, taskFailure } from './failures';
 
 /**
+ * Transforms the operations of the commit an observation makes — the hook that lets a command's
+ * receipt settle in the very commit that records the projection reflecting its effect.
+ * @internal
+ */
+export type SettleCommands = (
+  operations: ReadonlyArray<IStoredTaskOperation>,
+  revision: TaskRevision
+) => ReadonlyArray<IStoredTaskOperation>;
+
+/**
  * How an observation reached the broker, which decides what it may do.
  *
  * - `direct` — an `observed-state` read, listing entry or command result: committed when newer.
@@ -248,7 +258,8 @@ export async function applyProjection(
   source: ITaskSource,
   binding: ISourceBinding,
   projection: ISourceProjection,
-  mode: ObservationMode
+  mode: ObservationMode,
+  settle?: SettleCommands
 ): Promise<TaskResult<ISourceObservationReport>> {
   const owner = await core.repository.lookupSource(binding);
   if (owner.isFailure()) {
@@ -259,7 +270,7 @@ export async function applyProjection(
   }
   const taskId: TaskId = owner.value;
   const outcome = await core.gated((writer) =>
-    _applyInWriter(core, writer, source, taskId, binding, projection, mode)
+    _applyInWriter(core, writer, source, taskId, binding, projection, mode, settle ?? ((ops) => ops))
   );
   return outcome;
 }
@@ -271,7 +282,8 @@ async function _applyInWriter(
   taskId: TaskId,
   binding: ISourceBinding,
   projection: ISourceProjection,
-  mode: ObservationMode
+  mode: ObservationMode,
+  settle: SettleCommands
 ): Promise<TaskResult<ISourceObservationReport>> {
   const read = await writer.readCommit(taskId);
   if (read.isFailure()) {
@@ -304,7 +316,7 @@ async function _applyInWriter(
         recordType: 'resolved',
         task: { envelope: envelope.value, details: projection.details },
         sourceRevision: projection.revision,
-        operations: current.operations,
+        operations: settle(current.operations, envelope.value.revision),
         updates,
         archived: false
       }
@@ -372,7 +384,7 @@ async function _applyInWriter(
             after,
             current.task.details,
             current.sourceRevision,
-            current.operations,
+            settle(current.operations, after.revision),
             updates
           )
         },
@@ -401,7 +413,7 @@ async function _applyInWriter(
             after,
             current.task.details,
             current.sourceRevision,
-            current.operations,
+            settle(current.operations, after.revision),
             []
           )
         },
@@ -451,7 +463,10 @@ async function _applyInWriter(
   };
   const categories = _categories(before, next, !canonicallySame(current.task.details, projection.details));
   const updates = planUpdates(before, next, categories, core.audience);
-  const operations = _confirmAwaiting(source, current.operations, projection.revision, revision);
+  const operations = settle(
+    _confirmAwaiting(source, current.operations, projection.revision, revision),
+    revision
+  );
   return _commit(core, writer, binding, current, {
     purpose: 'observation',
     taskId,

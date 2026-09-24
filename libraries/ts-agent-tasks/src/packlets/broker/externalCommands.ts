@@ -23,7 +23,8 @@ import {
   SourceCommandResult,
   SourceRevisionOrder,
   TaskId,
-  TaskResult
+  TaskResult,
+  TaskRevision
 } from '../types';
 import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, subjectOf } from './access';
@@ -80,6 +81,19 @@ function _draft(
     operations,
     updates: current.updates,
     archived: current.archived
+  };
+}
+
+/** What an authorization decision about a task depends on: its catalog placement, not its execution. */
+function _authorizationSubject(record: IResolvedTaskCommitRecord): unknown {
+  const envelope = record.task.envelope;
+  return {
+    id: envelope.id,
+    kind: envelope.kind,
+    scopes: envelope.scopes,
+    responsibility: envelope.responsibility ?? null,
+    parentId: envelope.parentId ?? null,
+    archived: record.archived
   };
 }
 
@@ -249,22 +263,29 @@ export async function dispatchIntent(
     command: stored.request.command
   });
 
-  const marked = await core.gated(async (writer): Promise<TaskResult<IStoredCommandOperation>> => {
+  const marked = await core.gated(async (writer): Promise<TaskResult<IMarked>> => {
     const again = await writer.readCommit(taskId);
     if (again.isFailure()) {
-      return propagate<IStoredCommandOperation>(again);
+      return propagate<IMarked>(again);
     }
     const current: ITaskCommitRecord | undefined = again.value;
     const now: IStoredCommandOperation | undefined = _stored(current, operationId);
     if (current === undefined || current.recordType !== 'resolved' || now === undefined) {
-      return changedSinceAuthorized<IStoredCommandOperation>(`task ${taskId}`, operationId);
+      return changedSinceAuthorized<IMarked>(`task ${taskId}`, operationId);
     }
     if (now.dispatch !== 'not-sent') {
-      // Another caller reached the dispatch boundary first; that one sends.
-      return ok(now);
+      // Another caller reached the dispatch boundary first and wrote the marker: that caller sends,
+      // and this one must not — a second send of a non-deduplicated command is a second effect.
+      return ok<IMarked>({ send: false, command: now, record: current });
+    }
+    // Authority was decided against the subject as read before the writer; a catalog change since
+    // (scopes, responsibility, placement) could change that answer. Execution fields may move
+    // freely — a source observation is not an authorization input.
+    if (!canonicallySame(_authorizationSubject(record), _authorizationSubject(current))) {
+      return _unsent<IMarked>(`task ${taskId}`, operationId);
     }
     if (!ctx.epochIs(epoch.value)) {
-      return changedSinceAuthorized<IStoredCommandOperation>('the authorization policy', operationId);
+      return _unsent<IMarked>('the authorization policy', operationId);
     }
     const next: IStoredCommandOperation = permitted
       ? { ...now, dispatch: 'possibly-sent' }
@@ -280,16 +301,41 @@ export async function dispatchIntent(
       expectedRecordRevision: current.recordRevision,
       record: _draft(current, _withCommand(current, next))
     });
-    return committed.isSuccess() ? ok(next) : propagate<IStoredCommandOperation>(committed);
+    return committed.isSuccess()
+      ? ok<IMarked>({ send: permitted, command: next, record: current })
+      : propagate<IMarked>(committed);
   });
   if (marked.isFailure()) {
     return propagate(marked);
   }
   // Not ours to send: someone else holds the marker, or authority was withdrawn and it is settled.
-  if (marked.value.dispatch !== 'possibly-sent' || !permitted) {
-    return ok(marked.value.receipt);
+  if (!marked.value.send) {
+    return ok(marked.value.command.receipt);
   }
-  return _send(core, bound.value.source, bound.value.binding, record, marked.value);
+  // The record as the marker gate read it: a conditional command's precondition is the source
+  // revision committed *now*, not one read before an observation that landed meanwhile.
+  return _send(core, bound.value.source, bound.value.binding, marked.value.record, marked.value.command);
+}
+
+/**
+ * The refusal at the dispatch boundary when what authority was decided on moved: the intent stays
+ * recorded and unsent, and only the pump — re-authorizing against the task as it is — sends it.
+ */
+function _unsent<T>(what: string, operationId: IStoredTaskOperation['operationId']): TaskResult<T> {
+  return taskFailure<T>(
+    `${what} changed after the command was authorized; its intent is recorded and was not sent — ` +
+      `resolveCommands dispatches it after re-authorizing`,
+    'conflict',
+    'safe',
+    { operationId }
+  );
+}
+
+/** What the marker gate decided: whether this caller owns the send, and the record it decided on. */
+interface IMarked {
+  readonly send: boolean;
+  readonly command: IStoredCommandOperation;
+  readonly record: IResolvedTaskCommitRecord;
 }
 
 /** Sends a marked command and persists what the source said. */
@@ -466,9 +512,10 @@ async function _persist(
 
 /**
  * An `applied` answer from an `observed-state` source: the projection is committed through the
- * ordinary ordering rules, then the command settles `applied` at the task's revision. Two commits,
- * each merged onto the latest record; if the second fails the command stays `possibly-sent` and
- * the pump's lookup settles it later — the projection itself is already correct either way.
+ * ordinary ordering rules and the command settles `applied` in that same commit. When the
+ * projection commits nothing — the task already reflects it (stale, unchanged), or the broker
+ * refused it — a second commit settles the command: `applied` at the current revision if the
+ * effect is already reflected, `accepted` if the projection was refused.
  */
 async function _settleApplied(
   core: BrokerCore,
@@ -478,7 +525,22 @@ async function _settleApplied(
   command: IStoredCommandOperation,
   observation: Extract<SourceCommandResult, { state: 'applied' }>['observation']
 ): Promise<TaskResult<ICommandReceipt>> {
-  const applied = await applyProjection(core, source, binding, observation, 'direct');
+  // The receipt settles `applied` inside the very commit that records the projection reflecting
+  // the effect — there is no window in which one is durable without the other.
+  const settleInCommit = (
+    operations: ReadonlyArray<IStoredTaskOperation>,
+    revision: TaskRevision
+  ): ReadonlyArray<IStoredTaskOperation> =>
+    operations.map((op) =>
+      op.operationId === command.operationId && op.type === 'command' && op.dispatch !== 'settled'
+        ? {
+            ...op,
+            dispatch: 'settled',
+            receipt: _receipt(op.request, { state: 'applied', appliedRevision: revision })
+          }
+        : op
+    );
+  const applied = await applyProjection(core, source, binding, observation, 'direct', settleInCommit);
   if (applied.isFailure()) {
     return _indeterminateOnWriteFailure(propagate<ICommandReceipt>(applied), command.operationId);
   }
@@ -515,7 +577,10 @@ async function _settleApplied(
 
 /**
  * A failure writing a command's outcome is `commit-indeterminate`: the send happened, or may have,
- * and the record says `possibly-sent` until something settles it.
+ * and the record says `possibly-sent` until something settles it. Two classifications pass through
+ * as they are: `commit-indeterminate` itself, and `conflict` — the record moved for a reason that is
+ * not this write (the task was changed or removed under it), which `changedSinceAuthorized` already
+ * states precisely; the command stays `possibly-sent` either way, for the pump.
  */
 function _indeterminateOnWriteFailure(
   result: TaskResult<ICommandReceipt>,
@@ -557,6 +622,8 @@ export async function resolveCommands(
     return taskFailure(`resolveCommands: ${converted.message}`, 'invalid', 'after-host-action');
   }
   const request: ICommandResolutionRequest = converted.value;
+  // A best-effort candidate list, read outside the writer: every action below re-reads and
+  // re-validates inside its own writer section, so nothing here is taken as authoritative.
   const ids = await core.repository.unsettledCommands({ limit: request.limit });
   if (ids.isFailure()) {
     return propagate(ids);

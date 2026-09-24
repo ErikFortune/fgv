@@ -126,6 +126,9 @@ export function spendExecutionClaims(
               ...c,
               envelope: {
                 remainingRequiredUpdates: c.envelope.remainingRequiredUpdates - requiredUpdates,
+                // The claim's resident charge *is* the remaining byte envelope: both start equal
+                // (see `replayCharges`) and every spend shrinks the charge, so reading it back keeps
+                // the two in lockstep rather than accounting the bytes twice.
                 remainingRequiredBytes:
                   c.charges.find((charge) => charge.dimension === 'resident-payload-bytes')?.amount ?? 0
               }

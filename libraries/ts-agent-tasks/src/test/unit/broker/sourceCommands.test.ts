@@ -393,7 +393,6 @@ describe('uncertain outcomes', () => {
     let refuse = true;
     const repository = hooked(h.repository, (request, next) =>
       refuse &&
-      request.purpose === 'maintenance' &&
       request.record.operations.some(
         (o) => o.operationId === key && o.type === 'command' && o.dispatch === 'settled'
       )
@@ -568,5 +567,99 @@ describe('source-replay commands', () => {
     expect(await run(h, 'j1', 'pause', { reason: 'x' }, key)).toSucceedAndSatisfy((receipt) => {
       expect(receipt.result.state).toBe('applied');
     });
+  });
+});
+
+describe('the dispatch boundary under concurrency', () => {
+  test('a caller that finds the marker already written never sends a second time', async () => {
+    const h = await ready();
+    const key = op();
+    let checks = 0;
+    let pump: Promise<unknown> | undefined;
+    let reached: () => void = () => undefined;
+    const pumpSending = new Promise<void>((resolve) => (reached = resolve));
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    // The pump's send (the first to reach the executor) blocks until the test releases it.
+    Object.assign(h.executor, {
+      onDispatch: async () => {
+        reached();
+        await held;
+      }
+    });
+    // The caller's authority recheck at the dispatch boundary starts the pump, and waits until the
+    // pump has written the marker and is sending — then the caller reaches the marker gate itself.
+    Object.assign(h.policy, {
+      afterDecision: async (request: { action: string }) => {
+        if (request.action === 'command' && checks++ === 1) {
+          pump = h.writer.resolveCommands({ limit: 10 });
+          await pumpSending;
+        }
+      }
+    });
+    expect(await run(h, 'j1', 'cancel', { reason: 'x' }, key)).toSucceedAndSatisfy((receipt) => {
+      // The caller did not send: it answers with the receipt as the marker left it.
+      expect(receipt.result).toEqual({ state: 'accepted' });
+    });
+    release();
+    await pump;
+    expect(h.executor.dispatches.get(key)).toBe(1);
+    expect(h.executor.jobs.get('j1')!.applied).toHaveLength(1);
+    expect((await commandOf(h, 'j1', key)).receipt.result.state).toBe('applied');
+  });
+
+  test('a conditional command carries the source revision committed at the marker, not an earlier read', async () => {
+    const h = await ready();
+    let checks = 0;
+    Object.assign(h.policy, {
+      afterDecision: async (request: { action: string }) => {
+        if (request.action === 'command' && checks++ === 1) {
+          // An observation lands between the caller's first read and its marker.
+          h.executor.change('j1', (j) => (j.step = 1));
+          expect(await h.broker.observe(tid('j1'))).toSucceed();
+        }
+      }
+    });
+    expect(await run(h, 'j1', 'cancel', { reason: 'x' })).toSucceedAndSatisfy((receipt) => {
+      expect(receipt.result.state).toBe('applied');
+    });
+    expect(h.executor.jobs.get('j1')!.lifecycle.status).toBe('cancelled');
+  });
+
+  test('a catalog change between authorization and the marker leaves the intent unsent for the pump', async () => {
+    const h = await ready();
+    const key = op();
+    let checks = 0;
+    Object.assign(h.policy, {
+      afterDecision: async (request: { action: string }) => {
+        if (request.action === 'command' && checks++ === 1) {
+          expect(
+            await h.writer.reassign({
+              taskId: tid('j1'),
+              operationId: op(),
+              expectedRevision: rev(1),
+              responsibility: bob
+            })
+          ).toSucceed();
+        }
+      }
+    });
+    expect(await run(h, 'j1', 'pause', { reason: 'x' }, key)).toFailWithDetail(
+      /intent is recorded and was not sent/,
+      {
+        code: 'conflict',
+        retry: 'safe',
+        operationId: key
+      }
+    );
+    expect((await commandOf(h, 'j1', key)).dispatch).toBe('not-sent');
+    expect(h.executor.dispatches.size).toBe(0);
+    // The pump, re-authorized against the task as it is now, dispatches it.
+    expect(await h.writer.resolveCommands({ limit: 10 })).toSucceedAndSatisfy((report) => {
+      expect(report.resolutions).toEqual([
+        expect.objectContaining({ operationId: key, action: 'dispatched' })
+      ]);
+    });
+    expect(h.executor.jobs.get('j1')!.applied).toEqual([`pause:${key}`]);
   });
 });
