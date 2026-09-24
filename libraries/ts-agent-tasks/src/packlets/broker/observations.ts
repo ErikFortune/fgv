@@ -71,23 +71,27 @@ function _idOf(record: ITaskCommitRecord): TaskId {
   return record.recordType === 'resolved' ? record.task.envelope.id : record.reference.id;
 }
 
-/** The execution projection a source owns: everything an observation may change. */
-function _execution(envelope: ITaskEnvelope, details: JsonValue): unknown {
+/**
+ * The execution projection a source owns: everything an observation may change. An absent
+ * `progress` is left out rather than carried as `undefined`, which canonical comparison refuses.
+ */
+function _execution(from: {
+  readonly lifecycle: unknown;
+  readonly progress?: unknown;
+  readonly attention: unknown;
+  readonly details: JsonValue;
+}): unknown {
   return {
-    lifecycle: envelope.lifecycle,
-    progress: envelope.progress,
-    attention: envelope.attention,
-    details
+    lifecycle: from.lifecycle,
+    ...(from.progress !== undefined ? { progress: from.progress } : {}),
+    attention: from.attention,
+    details: from.details
   };
 }
 
-function _projected(projection: ISourceProjection): unknown {
-  return {
-    lifecycle: projection.lifecycle,
-    progress: projection.progress,
-    attention: projection.attention,
-    details: projection.details
-  };
+/** Equality of two optional values: both absent, or both present and canonically equal. */
+function _same(a: unknown, b: unknown): boolean {
+  return a === undefined || b === undefined ? a === b : canonicallySame(a, b);
 }
 
 /** Orders `a` relative to `b` by the source's own comparator; a throw or failure is a contract issue. */
@@ -118,7 +122,7 @@ function _categories(
   if (before !== undefined && !canonicallySame(before.attention, after.attention)) {
     categories.push('attention');
   }
-  if (before !== undefined && (!canonicallySame(before.progress, after.progress) || detailsChanged)) {
+  if (before !== undefined && (!_same(before.progress, after.progress) || detailsChanged)) {
     categories.push('progress');
   }
   if (before !== undefined && before.observation.state !== after.observation.state) {
@@ -333,7 +337,7 @@ async function _applyInWriter(
   }
 
   if (order === 'same') {
-    if (!canonicallySame(_execution(before, current.task.details), _projected(projection))) {
+    if (!canonicallySame(_execution({ ...before, details: current.task.details }), _execution(projection))) {
       return ok(
         _report(
           binding,

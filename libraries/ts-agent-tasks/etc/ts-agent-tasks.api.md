@@ -184,6 +184,61 @@ export function evaluateTrackedCommand(envelope: ITaskEnvelope, command: Tracked
 }): TrackedTransition;
 
 // @public
+export type ExternalCommandResult<TDetails> = Exclude<SourceCommandResult, {
+    readonly state: 'applied';
+}> | {
+    readonly state: 'applied';
+    readonly observation: ExternalProjection<TDetails>;
+};
+
+// @public
+export type ExternalProjection<TDetails> = Omit<ISourceProjection, 'details'> & {
+    readonly details: TDetails;
+};
+
+// @public
+export type ExternalRead<TDetails> = {
+    readonly state: 'observed';
+    readonly value: ExternalProjection<TDetails>;
+} | {
+    readonly state: 'unavailable' | 'missing';
+    readonly reason: string;
+};
+
+// @public
+export type ExternalRecovery<TDetails> = {
+    readonly state: 'reattached' | 'completed';
+    readonly value: ExternalProjection<TDetails>;
+} | {
+    readonly state: 'resumable';
+    readonly reference: JsonValue;
+} | {
+    readonly state: 'unrecoverable';
+    readonly reason: string;
+    readonly value: ExternalProjection<TDetails>;
+} | {
+    readonly state: 'unavailable' | 'unresolved';
+    readonly reason: string;
+};
+
+// @public
+export class ExternalTaskSource<TDetails> implements ITaskSource {
+    static command<TDetails, P>(descriptor: ITaskCommandDescriptor<P>, apply: (binding: ISourceBinding, parameters: P, request: ICommandRequest, expectedSourceRevision?: ISourceRevision) => Promise<Result<ExternalCommandResult<TDetails>>>): IExternalCommand<TDetails>;
+    get commandHandles(): ReadonlyArray<ITaskCommandHandle>;
+    compare(a: ISourceRevision, b: ISourceRevision): Result<SourceRevisionOrder>;
+    static create<TDetails>(params: IExternalTaskSourceParams<TDetails>): Result<ExternalTaskSource<TDetails>>;
+    dispatch(binding: ISourceBinding, request: ICommandRequest, expectedSourceRevision?: ISourceRevision): Promise<TaskResult<SourceCommandResult>>;
+    // (undocumented)
+    readonly history: SourceHistoryContract;
+    // (undocumented)
+    readonly id: string;
+    readonly lookupCommand?: (binding: ISourceBinding, request: ICommandRequest) => Promise<TaskResult<SourceCommandLookup>>;
+    observe(binding: ISourceBinding): Promise<TaskResult<SourceRead>>;
+    reconcile(cursor?: string): Promise<TaskResult<ISourceReconcilePage>>;
+    recover(binding: ISourceBinding): Promise<TaskResult<RecoveryResult>>;
+}
+
+// @public
 export class FileTreeTaskRepository implements ITaskRepository {
     capacityStatus(): TaskResult<ITaskCapacityStatus>;
     childStates(parentId: TaskId): Promise<TaskResult<ReadonlyArray<ITaskChildState>>>;
@@ -511,6 +566,55 @@ export interface IEnvelopeConverters {
     readonly envelope: Converter<ITaskEnvelope>;
     // (undocumented)
     readonly snapshot: Converter<ITaskSnapshot>;
+}
+
+// @public
+export interface IExternalCommand<TDetails> {
+    // (undocumented)
+    apply(binding: ISourceBinding, request: ICommandRequest, expectedSourceRevision?: ISourceRevision): Promise<Result<ExternalCommandResult<TDetails>>>;
+    readonly handle: ITaskCommandHandle;
+}
+
+// @public
+export interface IExternalPage<TDetails> {
+    // (undocumented)
+    readonly checkpoint?: string;
+    // (undocumented)
+    readonly completeness: 'complete' | 'partial' | 'gap';
+    // (undocumented)
+    readonly coverage: SourceReconcileCoverage;
+    // (undocumented)
+    readonly issues: ReadonlyArray<string>;
+    // (undocumented)
+    readonly nextCursor?: string;
+    // (undocumented)
+    readonly observations: ReadonlyArray<{
+        readonly binding: ISourceBinding;
+        readonly observation: ExternalRead<TDetails>;
+    }>;
+}
+
+// @public
+export interface IExternalTaskSourceParams<TDetails> {
+    // (undocumented)
+    readonly commands?: ReadonlyArray<IExternalCommand<TDetails>>;
+    // (undocumented)
+    readonly compare: (a: ISourceRevision, b: ISourceRevision) => Result<SourceRevisionOrder>;
+    readonly encodeDetails: (details: TDetails) => Result<JsonValue>;
+    // (undocumented)
+    readonly feed: (cursor: string | undefined) => Promise<Result<IExternalPage<TDetails>>>;
+    // (undocumented)
+    readonly history: SourceHistoryContract;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    readonly lookupCommand?: (binding: ISourceBinding, request: ICommandRequest) => Promise<Result<ExternalCommandResult<TDetails> | {
+        readonly state: 'not-found';
+    }>>;
+    // (undocumented)
+    readonly read: (binding: ISourceBinding) => Promise<Result<ExternalRead<TDetails>>>;
+    // (undocumented)
+    readonly recover: (binding: ISourceBinding) => Promise<Result<ExternalRecovery<TDetails>>>;
 }
 
 // @public
@@ -1701,8 +1805,6 @@ export interface ITaskSnapshot<T = JsonValue> {
     readonly envelope: ITaskEnvelope;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-tasks" does not have an export "ExternalTaskSource"
-//
 // @public
 export interface ITaskSource {
     compare(a: ISourceRevision, b: ISourceRevision): Result<SourceRevisionOrder>;
