@@ -68,6 +68,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-09-24** — ai-assist's tier and image aliases now point at GPT-6, Gemini 3.8 Flash and Grok 4.7, each id cited from a fetched provider page; Anthropic's are held until structured output stops forcing a tool call. ([#692](https://github.com/ErikFortune/fgv/pull/692))
 - **2026-09-23** — A tool-augmented or streamed chat turn can now carry prompt-cache breakpoints and a routing key, closing the one remaining hole (streaming) in ai-assist's prompt-cache emission surface. ([#688](https://github.com/ErikFortune/fgv/pull/688))
 - **2026-09-07** — ai-assist now places explicit prompt-cache breakpoints on Anthropic and OpenAI requests built from a ts-prompt-assist resolve, reports cache usage across every provider that supplies it, and diagnoses a cache-hostile composition before any request is sent. ([#671](https://github.com/ErikFortune/fgv/pull/671))
 - **2026-09-07** — Thinking config loses a required provider field that gated nothing, and gains 'none' — the cross-provider spelling for off that every provider had except the generic vocabulary. ([#667](https://github.com/ErikFortune/fgv/pull/667))

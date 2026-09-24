@@ -1,0 +1,51 @@
+id: ai-assist-model-catalog-2026-09
+status: shipped
+packages: ['@fgv/ts-extras']
+prs: [692]
+openPrs: []
+opened: 2026-09-24
+closed: 2026-09-24
+summary:
+  intended: >
+    Rotate the ai-assist model catalog for OpenAI, Anthropic, Gemini and xAI. Every identifier had
+    to come from a fetched documentation page, cited by URL and date. The brief named three manual
+    axes (aliases/defaultModel, the listModels idPattern rules, the *ModelNames unions) plus the
+    per-model capability tables. Each capability edit needed a cited release note, and the check had
+    to record which tables were left unchanged. Output was offline-green plus a cited id list for the
+    user's testbed run; no live verification.
+  shipped: >
+    OpenAI tiers moved to gpt-6-luna / gpt-6-sol / gpt-6-astra and the image alias to
+    gpt-image-2.5-sunburst. Gemini flash moved to gemini-3.8-flash and flash-lite to
+    gemini-3.5-flash-lite. xAI flagship moved to grok-4.7 and imagine to grok-imagine-image-2.0.
+    New idPatterns: /^gpt-6/, /^grok-4\.7/, /^grok-4\.6/. The unions gained the new ids and dropped
+    two OpenAI deep-research ids that were already shut down. A new quality-capable xAI image entry
+    shipped, plus the builder wiring that makes the capability true. Every capability table was
+    checked and its disposition recorded. The cited id table is in result.md.
+  diverged: >
+    Anthropic was not rotated, although the brief scoped four providers. claude-opus-5-5 and
+    claude-fable-5-1 reject forced tool_choice, which is the only Anthropic structured-output
+    mechanism, so the aliases were held and a P2 was filed. Three things shipped that the brief did
+    not name. First, code wiring: the xAI image builders never sent quality, so the capability flag
+    alone would have been a false claim. Second, test-pin updates in samples/testbed, outside the
+    declared package surface, caught by the repo-wide test. Third, a third manual axis (the per-model
+    capability declarations) was recorded in the TECH_DEBT P3 entry the brief pointed at.
+  sourceLine: "**Shipped:** ai-assist's tier and image aliases now resolve to the current OpenAI, Gemini and xAI lines, each id taken from a fetched provider page — while Anthropic's are held, because its successors reject the forced tool call its structured output depends on."
+  headline: >
+    ai-assist's tier and image aliases now point at GPT-6, Gemini 3.8 Flash and Grok 4.7, each id
+    cited from a fetched provider page; Anthropic's are held until structured output stops forcing
+    a tool call.
+relatedStreams:
+  - id: ai-assist-model-aliases
+    relationship: 'predecessor — built the alias layer and filed the manual-axes TECH_DEBT entry this rotation executed'
+keywords:
+  - provider line rotation
+  - model deprecation
+  - idPattern capability detection
+  - ModelNames unions
+  - GPT-6
+  - forced tool_choice
+  - structured output
+  - grok-imagine quality
+  - documentation-sourced identifiers
+  - not live-verified
+sourceHash: f0427acec0802385 # sha256/16 over brief.md, result.md
