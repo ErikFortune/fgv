@@ -26,8 +26,12 @@ import { SortedKeySet } from './sortedKeys';
  * @internal
  */
 export type IndexContent =
-  /** Resolved and not archived: the full summary and every applicable membership. */
-  | { readonly category: 'summary'; readonly envelope: ITaskEnvelope }
+  /**
+   * Resolved and not archived: the full summary and every applicable membership. `automaticList`
+   * marks a task list whose details ask for completion when all children succeed — read from the
+   * details when the record is indexed, because details are never resident.
+   */
+  | { readonly category: 'summary'; readonly envelope: ITaskEnvelope; readonly automaticList?: boolean }
   /** Archived: identity, graph edge, final status and source identity only. */
   | { readonly category: 'archived'; readonly envelope: ITaskEnvelope }
   /** Registered, first observation not arrived: the bounded reference, no lifecycle. */
@@ -54,11 +58,17 @@ export interface IMemberships {
   readonly status?: TaskLifecycleStatus;
   readonly responsibilityKey?: string;
   readonly dueKey?: string;
+  readonly automaticList?: boolean;
 }
 
 /** A collision-free key for a `(namespace, key)` pair. */
 export function labelKey(label: ITaskScope | IResponsibility): string {
   return JSON.stringify([label.namespace, label.key]);
+}
+
+/** Whether a membership counts as a succeeded child: resolved (archived or not) and succeeded. */
+function _succeeded(m: IMemberships): boolean {
+  return (m.category === 'summary' || m.category === 'archived') && m.status === 'succeeded';
 }
 
 /** The due-set key: canonical instants are fixed-width, so code-unit order is time order. */
@@ -149,6 +159,14 @@ export class TaskIndex {
   public readonly sources: Map<string, TaskId> = new Map();
   public readonly owedBySubscription: Map<SubscriptionId, SortedKeySet> = new Map();
   public readonly owedPayloads: Map<string, ITaskUpdate> = new Map();
+  /**
+   * Open automatic task lists with at least one child, every one of which has succeeded: the
+   * list-completion candidates (design §4, *Built-ins*). Derived from the graph on every commit
+   * and at every rebuild, never persisted.
+   */
+  public readonly listCandidates: SortedKeySet = new SortedKeySet();
+  /** Per parent, how many of its children are resolved (archived or not) and succeeded. */
+  private readonly _succeededChildren: Map<TaskId, number> = new Map();
   private readonly _owedKeysByTask: Map<TaskId, ReadonlyArray<string>> = new Map();
   private readonly _memberships: Map<TaskId, IMemberships> = new Map();
 
@@ -252,7 +270,12 @@ export class TaskIndex {
         this.children.delete(m.parentId);
       }
       _unsetIn(this.activeChildren, m.parentId, id);
+      if (_succeeded(m)) {
+        this._countSucceeded(m.parentId, -1);
+      }
+      this._recheckCandidate(m.parentId);
     }
+    this.listCandidates.delete(id);
     if (m.sourceKey !== undefined) {
       this.sources.delete(m.sourceKey);
     }
@@ -286,6 +309,43 @@ export class TaskIndex {
   }
 
   private _add(id: TaskId, content: IndexContent, source: string | undefined): void {
+    this._addMemberships(id, content, source);
+    const m: IMemberships = this._memberships.get(id)!;
+    if (m.parentId !== undefined) {
+      if (_succeeded(m)) {
+        this._countSucceeded(m.parentId, 1);
+      }
+      this._recheckCandidate(m.parentId);
+    }
+    this._recheckCandidate(id);
+  }
+
+  private _countSucceeded(parentId: TaskId, delta: number): void {
+    const count: number = (this._succeededChildren.get(parentId) ?? 0) + delta;
+    if (count === 0) {
+      this._succeededChildren.delete(parentId);
+    } else {
+      this._succeededChildren.set(parentId, count);
+    }
+  }
+
+  /** Re-derives one task's candidacy from its membership and its children's. */
+  private _recheckCandidate(id: TaskId): void {
+    const m: IMemberships | undefined = this._memberships.get(id);
+    const children: number = this.children.get(id)?.size ?? 0;
+    const candidate: boolean =
+      m?.automaticList === true &&
+      !isTerminalTaskStatus(m.status!) &&
+      children > 0 &&
+      this._succeededChildren.get(id) === children;
+    if (candidate) {
+      this.listCandidates.add(id);
+    } else {
+      this.listCandidates.delete(id);
+    }
+  }
+
+  private _addMemberships(id: TaskId, content: IndexContent, source: string | undefined): void {
     const parentId: TaskId | undefined =
       content.category === 'unresolved'
         ? content.reference.parentId
@@ -376,7 +436,8 @@ export class TaskIndex {
       scopeKeys,
       status,
       ...(responsibilityKey !== undefined ? { responsibilityKey } : {}),
-      ...(due !== undefined ? { dueKey: due } : {})
+      ...(due !== undefined ? { dueKey: due } : {}),
+      ...(content.automaticList === true ? { automaticList: true } : {})
     });
   }
 }

@@ -15,11 +15,13 @@ on its own, and importing it has no side effects.
 
 ## What ships today
 
-Four things: the **vocabulary** (the `types` and `converters` packlets), the **snapshot-only
+Five things: the **vocabulary** (the `types` and `converters` packlets), the **snapshot-only
 context entry point** (the `context` packlet), **durable task storage** (the `storage` packlet:
-`FileTreeTaskRepository`), and **indexed selection** over that storage — scope/lifecycle queries,
+`FileTreeTaskRepository`), **indexed selection** over that storage — scope/lifecycle queries,
 due candidates and owed updates answered from resident indexes, with keyset paging, a staged
-rebuild and a reusable conformance suite for custom repositories. The broker, delivery, tools and
+rebuild and a reusable conformance suite for custom repositories — and the **broker**
+(`TaskBroker`): principal-bound views and writers, tracked work and task lists, hierarchy and
+reassignment, with authorization at every read and mutation. Source adapters, delivery, tools and
 prompt integration follow in later slices, and are deliberately absent from the export surface
 rather than stubbed.
 
@@ -257,6 +259,12 @@ repository `unavailable` with the problems listed. It never publishes an empty i
 open/initialize) is **off by default**, one per repository, at most 32 entries and 8 MiB of
 encoded charge.
 
+**The authoritative graph.** `childStates(parentId)` lists every retained child — archived,
+unresolved and quarantined ones included — with its state and final status, from resident data.
+`listCompletionCandidates({ limit, after })` lists open automatic task lists whose every child
+has succeeded; every commit maintains it and open/rebuild reconstructs it from the records. Both
+are trusted host reads; the broker decides from them.
+
 **Custom repositories.** `runTaskRepositoryConformance(factory)` runs the behavioural contract
 above against any `ITaskRepository` and succeeds with a report or fails naming each check that
 did not pass — framework-free, so it drops into any test runner:
@@ -264,6 +272,80 @@ did not pass — framework-free, so it drops into any test runner:
 ```ts
 expect(await runTaskRepositoryConformance(() => MyRepository.createEmpty())).toSucceed();
 ```
+
+## Bound authority — `TaskBroker`
+
+**Hand a principal a bound view or writer, never the repository.** Repository APIs are trusted
+host contracts with no authorization; the broker is the boundary a model tool, an actor or a
+remote caller should get.
+
+```ts
+const broker = TaskBroker.create({ repository, environment }).orThrow();
+const writer = broker
+  .bind({ principal: 'agent:ada', scopes: [projectScope], authorization: policy })
+  .orThrow();
+const view = broker.bindView({ principal: 'agent:bob', scopes: [projectScope], authorization: policy }).orThrow();
+
+await writer.createTaskList({ taskId, operationId, title: 'Ingest batch 7', completion: 'all-children-succeeded' });
+await writer.createTracked({ taskId: child, operationId: op2, title: 'Page 1', parentId: taskId });
+await writer.execute({ taskId: child, operationId: op3, expectedRevision, command: 'start', parameters: {} });
+await writer.reconcileListCompletions({ limit: 50 }); // host-pumped; completes eligible lists
+```
+
+**Visibility needs both.** A task is visible to a binding only when one of its scopes is among
+the binding's selectors **and** the host policy's `check({ action: 'read' })` allows it. Scopes are
+labels; responsibility, parentage, source binding and receipts grant nothing. A hidden task and a
+foreign id fail identically (`not-found-or-denied`, same message).
+
+**Authorization is not a wrapper.** Every operation authorizes its subject — and, for a
+relationship change, each affected parent in its `role` (`parent`, `previous-parent`,
+`new-parent`) — then re-reads everything it authorized inside one serialized writer section and
+refuses (`conflict`, `retry: 'safe'`) if the policy epoch moved or a record changed. Supply a
+host `ITaskAuthorization` whose `policyEpoch()` changes whenever its answers might. A check that
+fails, throws or rejects is a denial. Requests carry no principal or scope field; a fabricated one
+is `invalid`.
+
+**Views emit projected data only.** `IProjectedTaskEnvelope` has no `binding` member, details
+appear only through a host `ITaskProjector.details`, and `defaultTaskProjector` also removes
+outcome artifact references. A projector that fails, throws, adds a field or describes another
+task **fails the call — nothing falls back to unprojected data**. Query pages drop denied
+candidates before inclusion, count nothing, carry no repository generation, and bind their cursor
+to the view and the policy epoch. `bindView` returns an object with no mutation method.
+
+**Tracked work.** `fgv.tracked@1` commands are a transition table, not `setStatus`: `start`
+(pending→running), `wait`/`pause` (with a reason), `resume` (waiting/paused→running), `succeed` /
+`fail` / `cancel` (terminal, absorbing), and `set-title` / `set-description` / `set-progress` /
+`set-attention` in open states. Restating the current state is `applied` at the current revision.
+Receipts: `applied`, or `rejected` with `invalid-transition`, `unsupported` (unknown command, an
+external task's command — its source's), `conflict` (stale revision), `denied` or
+`idempotency-conflict`. The first three are recorded under the operation id and replay; `denied`
+and `idempotency-conflict` are returned and never recorded.
+
+**Task lists.** `fgv.task-list@1` succeeds only from its **complete** child set — archived,
+unresolved and hidden children included: `completeList` explicitly (the only way an empty list
+completes), or the pump for `all-children-succeeded` lists with at least one child. The pump reads
+the repository's completion-candidate index (rebuilt from records at open, so a crash between a
+last child's success and the list's completion leaves a candidate), authorizes `complete-list`,
+and rechecks membership inside the writer. Nothing runs unless the host pumps it.
+
+**Hierarchy.** One parent, no self-parent, no cycle, no missing parent — checked inside the writer
+against the graph as it is then. Terminal edges are immutable: a terminal task keeps its parent,
+a terminal parent keeps its children and takes no new one. An archived tombstone still anchors its
+children.
+
+**Reassignment changes responsibility and nothing else.** `reassign` preserves id, record, parent,
+children, scopes, outcome, details, claims and source binding; it never reassigns children, grants
+access or quiesces work (a stale write simply conflicts). `'unassigned'` is explicit — the field
+is required. External tasks, observation-only ones included, may be reassigned; their source
+binding and `lookupSource` never move.
+
+**Capacity.** The broker adds no reservation: terminal transitions and list completion spend the
+task's `terminal-closeout` claim, so at a saturated profile new identities are refused
+(`backpressure`) while same-key replays, completion of accepted work and archive proceed.
+
+**Host operations.** `registerExternal(principal, request)` registers an externally executed task
+with host-supplied scopes and binding — unresolved until its first observation, or resolved from
+an `initialObservation`. An update owed to no one is not retained; subscriptions arrive later.
 
 ## Rendering task context without a broker
 
@@ -482,9 +564,9 @@ fragment is caught at the mint rather than at the filename.
 
 ## Not in scope
 
-No broker, subscription, delivery service, acknowledgement, retention or pruning policy, cascade
-stop, tool factory or prompt integration **yet** — those are later slices, and their absence from
-the export surface is deliberate. **Permanently** out of scope: an input-request/answer protocol, a task runner or
+No source adapter or command dispatch, subscription, delivery service, acknowledgement, retention
+or pruning policy, cascade stop, tool factory or prompt integration **yet** — those are later
+slices, and their absence from the export surface is deliberate. **Permanently** out of scope: an input-request/answer protocol, a task runner or
 scheduler, an executor, a retry policy, cross-repository parenting, execution migration,
 multi-process ownership, general event sourcing, and dependency DAGs.
 

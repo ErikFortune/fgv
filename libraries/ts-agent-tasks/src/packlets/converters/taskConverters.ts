@@ -5,6 +5,7 @@
 
 import { Result, captureResult, fail, populateObject, succeed } from '@fgv/ts-utils';
 import { ITaskFieldBounds, defaultTaskFieldBounds } from '../types';
+import { IBrokerConverters, buildBrokerConverters } from './brokerConverters';
 import { ICapacityConverters, buildCapacityConverters } from './capacityConverters';
 import { ICommandConverters, buildCommandConverters } from './commandConverters';
 import { IContextConverters, buildContextConverters } from './contextConverters';
@@ -86,6 +87,8 @@ export class TaskConverters {
   public readonly storage: IStorageConverters;
   /** Repository query, due-query, owed-update query and page-cursor converters. */
   public readonly queries: IQueryConverters;
+  /** Broker request, receipt and projected-value converters. */
+  public readonly broker: IBrokerConverters;
 
   private constructor(bounds: ITaskFieldBounds) {
     this.bounds = bounds;
@@ -106,6 +109,7 @@ export class TaskConverters {
       this.context
     );
     this.queries = buildQueryConverters(bounds, this.ids, this.values);
+    this.broker = buildBrokerConverters(bounds, this.ids, this.values, this.queries);
   }
 
   /**

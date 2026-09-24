@@ -898,3 +898,47 @@ For **Result-integration-boundary packages wrapping a native library with subtle
 Observed on #562 (`SqliteVecFragmentIndex`): layer 1 approved clean with no P1/P2 and independently re-derived the correctness-critical logic, yet Copilot then surfaced three real persisted-data robustness gaps across two rounds (a `bigint` leak into a `number`-typed public field; a corrupt-key parse that silently fabricated a wrong result instead of failing loudly; an unvalidated write-side offset that either threw or persisted an unreadable value). All three were runtime-mode specifics, invisible to a reads-against-intent pass.
 
 **Rule:** on a native-boundary package, do **not** treat a clean layer-1 pass as license to expect a nitpick-only Copilot loop. Budget for layer 2 to be *substantive* on rounds 1–2, and don't call diminishing returns until the finding profile actually goes nitpicky. This is the inverse of the well-prepared pure-TS PR where layer 1 catches everything and Copilot only polishes — and a substantive Copilot round here is not evidence that layer 1 was skipped.
+
+### Authorization boundaries are the same blind spot, and the loop runs longer
+
+The section above generalizes. **Any surface whose correctness is a property of *ordering* rather
+than of values under-covers at layer 1**, for the same structural reason: the internal reviewer
+reads against intent and repo patterns, and an authorization defect is usually not visible in the
+intent. Every check is present; one of them runs at the wrong moment.
+
+Observed on #691 (`ts-agent-tasks` T5, the broker's bound-authority slice). Layer 1 returned **no
+P1s and one P2**, and the implementation already had authorization on every entry point. The
+Copilot loop then ran **seven rounds**, of which the first six each found a real disclosure or
+liveness defect:
+
+| round | what was actually wrong |
+|---|---|
+| 1 | the policy epoch was captured *after* a question it needed to cover |
+| 2 | a replayed receipt was not re-authorized the way the original operation was |
+| 3 | a caller-chosen operation id could claim the pump's key; host code was handed resident state rather than copies |
+| 4 | the in-writer epoch recheck sat before the section's last `await` instead of immediately before the write |
+| 5 | a query was not fenced by the index generation it had authorized |
+| 6 | an inspection answered from a record it had not re-read |
+
+None of those is a missing check. Every one is a check in the wrong place relative to an `await`, a
+replay, or a read. That is precisely the class a reads-against-intent pass cannot see, because the
+intent — "authorize, then act" — is satisfied by the broken version too.
+
+**Rule:** treat a surface as an authorization boundary when a wrong answer *discloses* something or
+*acts on stale permission* — brokers, projections, policy epochs, replay and idempotency paths,
+anything with a check-then-commit window. On such a surface, a clean layer-1 pass carries even less
+information than it does on a native boundary, and the expected layer-2 loop is **longer than two
+rounds**. Do not call diminishing returns while rounds are still finding real ordering defects; #691
+correctly ran to seven and stopped when round 7 produced a lone surface-hygiene item.
+
+**The corollary matters as much:** a long Copilot loop on this kind of surface is *not* evidence
+that layer 1 was skipped or that the implementer was careless. Elsewhere in this document a round-5+
+loop is flagged as a signal worth surfacing; here it is the expected shape, and the thing worth
+surfacing would be a *short* one.
+
+**What to ask for at layer 1 instead**, since "run code-reviewer" under-delivers here: have the
+implementer enumerate, in `result.md`, every check-then-act window in the diff — each `await`
+between an authorization and its write, each replay path, each cached read — and say what re-checks
+after it. #691 did this and it is why its threat-model section reads as a list of ordering
+guarantees rather than a list of checks. A protection that cannot be named this way is one nobody
+has located precisely enough to test.

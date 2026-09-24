@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+export * from './brokerConverters';
 export * from './builtinKinds';
 export * from './capacityConverters';
 export * from './commandConverters';

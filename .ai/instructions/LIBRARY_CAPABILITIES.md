@@ -44,7 +44,7 @@ getting-started material. This index routes; it does not duplicate.
 | [`ts-extras-transformers`](libraries/ts-extras-transformers/CAPABILITIES.md) · [`ts-web-extras-transformers`](libraries/ts-web-extras-transformers/CAPABILITIES.md) | Local HuggingFace models — classify, embed, summarize |
 | [`ts-extras-mcp`](libraries/ts-extras-mcp/CAPABILITIES.md) | MCP server tools → ai-assist client tools |
 | [`ts-extras-ollama`](libraries/ts-extras-ollama/CAPABILITIES.md) | Ollama *native* API — model management, grammar-constrained output |
-| [`ts-agent-tasks`](libraries/ts-agent-tasks/CAPABILITIES.md) | Agent task recording and mediation — envelope, lifecycle/observation/command/recovery unions, kind+command registry, finite capacity model, snapshot-only context renderer with pure inclusion receipts, FileTree task repository with one-record atomic commit, resident-index queries/paging/due/owed. **Records work; runs no agent loop** |
+| [`ts-agent-tasks`](libraries/ts-agent-tasks/CAPABILITIES.md) | Agent task recording and mediation — envelope, lifecycle/observation/command/recovery unions, kind+command registry, finite capacity model, snapshot-only context renderer with pure inclusion receipts, FileTree task repository with one-record atomic commit, resident-index queries/paging/due/owed, principal-bound broker (authorized projected views, lists, hierarchy, reassignment). **Records work; runs no agent loop** |
 | [`ts-agent-memory`](libraries/ts-agent-memory/CAPABILITIES.md) | Agent memory/knowledge vault — records, dedup (`dedupScopeFor`), edges, retrieval, `IVectorIndex` / `IFragmentVectorIndex`, `embedsKind` |
 | [`ts-agent-memory-sqlite-vec`](libraries/ts-agent-memory-sqlite-vec/CAPABILITIES.md) | Durable vector + fragment indexes (SQLite `vec0`) |
 | [`ts-prompt-assist`](libraries/ts-prompt-assist/CAPABILITIES.md) | Conditional prompt authoring, resolution, composition, observation |
@@ -127,6 +127,7 @@ detail. `· pkg` names the owning package.*
 - **Rendering task snapshots into bounded prompt context, with a receipt of exactly what was included?** → `TaskContextRenderer` `ITaskInclusionReceipt` · `ts-agent-tasks`
 - **Persisting agent task state + owed updates so a process crash loses neither?** → `FileTreeTaskRepository` `FileTree` · `ts-agent-tasks`
 - **Selecting agent tasks by scope/lifecycle, due time or owed update without reading records?** → `FileTreeTaskRepository` `runTaskRepositoryConformance` · `ts-agent-tasks`
+- **Giving a principal (model tool, actor) authorized, projected access to agent tasks?** → `TaskBroker` `ITaskAuthorization` `defaultTaskProjector` · `ts-agent-tasks`
 - **Storing agent memory / a knowledge vault?** → `FileTree` `FileTreeMemoryStore` · `ts-agent-memory`
 - **Semantic recall over that vault** → `InMemoryCosineIndex` `SqliteVecVectorIndex` `SqliteVecFragmentIndex` `FragmentSemanticRetriever` · `ts-agent-memory`
 - **Vector/fragment embeddings must survive a process restart?** → `SqliteVecVectorIndex` `SqliteVecFragmentIndex` · `ts-agent-memory-sqlite-vec`

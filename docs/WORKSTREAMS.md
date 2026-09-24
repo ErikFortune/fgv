@@ -128,6 +128,53 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-t5` ✅ (slice T5 of the agent-tasks plan) — landed on the integration branch via [#691](https://github.com/ErikFortune/fgv/pull/691)
+
+**Status:** ✅ shipped 2026-09-23 via [#691](https://github.com/ErikFortune/fgv/pull/691) into
+`integration/agent-tasks-v1` (not `release`; the cluster promotes as one). `TaskBroker` with
+authorization re-verified inside the serialized writer, fail-closed projection, the tracked
+transition table, list completion over a rebuilt candidate index, hierarchy integrity and
+responsibility-only reassignment; no new A3 reservation. Record: `.ai/tasks/active/agent-tasks-t5/result.md`.
+
+**Mission.** The broker layer over T4's indexed storage: host-bound views and sanitized
+projections, create/update of tracked work, task-list completion, scopes and graph integrity,
+current-authority and policy-epoch checks, and a revisioned responsibility operation carrying
+assignment updates. Typed direct API, no native business I/O. The acceptance bar in one line:
+**parentage, responsibility, visibility and authority remain independent.**
+
+**The gate is a threat model, not a perf budget.** T4's evidence was counters; T5's is adversarial
+tests — fabricated principals and scope filters, foreign IDs, policy revocation between check and
+commit, and a projector failure that must **not** fall back to full data. Authorization belongs at
+every read and mutation boundary rather than in one entry-point wrapper a later refactor routes
+around.
+
+**Base moved under this cluster.** `release` was merged up into `integration/agent-tasks-v1` at
+`8ecb53a5`, so the branch now carries F1+F2 atomic write, ai-assist streaming cache (#688) and
+prompt-assist qualifier stability (#689). No overlap with `ts-agent-tasks`, which depends only on
+`@fgv/ts-json-base` and `@fgv/ts-utils`. Repo-wide `rush rebuild` on the merged tree: 37 operations,
+zero warnings.
+
+**Carries a live constraint from T4.** The default capacity profile declares
+`'non-archived-tasks': 1000` beside `'resident-payload-bytes': 64 * MiB` while each registration
+already reserves 448 KiB, so the effective ceiling is 146 (`docs/TECH_DEBT.md`, P2). T5 **adds**
+reservations under A3, so it must not silently worsen that arithmetic, must state any new
+per-registration total, and must **stop and surface** if A3 proves unimplementable under the
+current profile rather than merely tight.
+
+**Package surface:** `libraries/ts-agent-tasks` only — broker and implementation packlets, their
+types, converters and tests; plus the plan's T5 status line.
+
+**Out-of-scope:** tools (the plan says tools are not required yet to exercise the authority
+contract — the ai-assist tool factory is I1); T6 source adapters; T7 subscriptions and receipts;
+T8 retention; every package outside `ts-agent-tasks`; the `ts-utils` `isKeyOf` fix, still escalated
+and still not to be folded in.
+
+**Artifacts stay in `active/`** — this family finalizes at **cluster close**, not per slice.
+
+**Landing shape.** PR into `integration/agent-tasks-v1`, not `release`.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-t5/`.
+
 ### `agent-tasks-t4` ✅ (slice T4 of the agent-tasks plan) — landed on the integration branch via [#687](https://github.com/ErikFortune/fgv/pull/687)
 
 **Mission.** Land **T4** — indexed selection, paging, due and outstanding discovery: full resident

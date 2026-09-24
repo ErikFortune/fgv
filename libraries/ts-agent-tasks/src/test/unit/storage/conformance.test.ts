@@ -13,16 +13,17 @@ import {
   TaskResult,
   runTaskRepositoryConformance
 } from '../../../index';
+import { brokerRegistry } from '../../helpers/brokerFixtures';
 import { memoryRoot, nodeRoot, params } from '../../helpers/storageFixtures';
 
 describe('the repository conformance suite', () => {
   test('the FileTree repository passes it over an in-memory root', async () => {
     expect(
       await runTaskRepositoryConformance(() =>
-        FileTreeTaskRepository.initialize(params(memoryRoot(), 'session'))
+        FileTreeTaskRepository.initialize(params(memoryRoot(), 'session', { registry: brokerRegistry() }))
       )
     ).toSucceedAndSatisfy((report: ITaskRepositoryConformanceReport) => {
-      expect(report.checks.length).toBeGreaterThanOrEqual(9);
+      expect(report.checks.length).toBeGreaterThanOrEqual(11);
       expect(report.checks.every((c) => c.passed)).toBe(true);
     });
   });
@@ -30,7 +31,9 @@ describe('the repository conformance suite', () => {
   test('the FileTree repository passes it durably over a real Node root', async () => {
     expect(
       await runTaskRepositoryConformance(() =>
-        FileTreeTaskRepository.initialize(params(nodeRoot().root, { durable: 'process-crash' }))
+        FileTreeTaskRepository.initialize(
+          params(nodeRoot().root, { durable: 'process-crash' }, { registry: brokerRegistry() })
+        )
       )
     ).toSucceed();
   });
@@ -73,7 +76,9 @@ describe('the repository conformance suite', () => {
 
 describe('conformance checks catch a misbehaving repository', () => {
   const base = async (): Promise<ITaskRepository> =>
-    (await FileTreeTaskRepository.initialize(params(memoryRoot(), 'session'))).orThrow();
+    (
+      await FileTreeTaskRepository.initialize(params(memoryRoot(), 'session', { registry: brokerRegistry() }))
+    ).orThrow();
   const failing = <T>(message: string): Promise<TaskResult<T>> =>
     Promise.resolve(failWithDetail<T, ITaskFailure>(message, { code: 'invalid', retry: 'safe' }));
 
@@ -156,6 +161,25 @@ describe('conformance checks catch a misbehaving repository', () => {
     ).toFailWith(/source lookup found someone-else/i);
   });
 
+  test('one whose graph reads drop children or candidates', async () => {
+    expect(
+      await runTaskRepositoryConformance(broken(() => ({ childStates: async () => succeedWithDetail([]) })))
+    ).toFailWith(/childStates lists every retained child.*children: expected/i);
+    expect(
+      await runTaskRepositoryConformance(
+        broken((r) => ({
+          childStates: async (id: Parameters<ITaskRepository['childStates']>[0]) =>
+            id === 'none' ? succeedWithDetail([]) : r.childStates(id)
+        }))
+      )
+    ).toFailWith(/an unknown parent: expected a 'not-found-or-denied' failure, got success/i);
+    expect(
+      await runTaskRepositoryConformance(
+        broken(() => ({ listCompletionCandidates: async () => succeedWithDetail([]) }))
+      )
+    ).toFailWith(/list-completion candidates.*candidates: expected \[auto\], got \[\]/i);
+  });
+
   test('one that will not close after a check', async () => {
     expect(
       await runTaskRepositoryConformance(broken(() => ({ close: () => fail('still busy') })))
@@ -174,7 +198,7 @@ describe('conformance checks catch a misbehaving repository', () => {
       }))
     );
     // Every check ran against its own repository, and every one was closed.
-    expect(closes).toBe(9);
+    expect(closes).toBe(11);
     expect(result).toFailWith(/scopes are a union.*: no index/i);
     // The check's own failure is what is reported, not the close.
     expect(result).not.toFailWith(/scopes are a union[^;]*also would not close/i);
