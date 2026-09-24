@@ -4,7 +4,7 @@
  */
 
 import { FileTree, JsonSchema, JsonValue } from '@fgv/ts-json-base';
-import { Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
 import {
   ExternalCommandResult,
   ExternalProjection,
@@ -58,7 +58,10 @@ export interface IJobDetails {
   readonly ref: string;
 }
 
-const jobDetails = Converters.strictObject<IJobDetails>({ step: Converters.number, ref: Converters.string });
+const jobDetails: Converter<IJobDetails> = Converters.strictObject<IJobDetails>({
+  step: Converters.number,
+  ref: Converters.string
+});
 
 /** One simulated executor job: the executor's own record, which it keeps and the broker never copies. */
 export interface ISimulatedJob {
@@ -439,7 +442,7 @@ export function controllableSource(
       command('cancel', reasonSchema, 'none', true),
       command('advance', advanceSchema, 'none', false)
     ],
-    ...(options?.lookup === true ? { lookupCommand: async (_b, r) => executor.lookup(r) } : {})
+    ...(options?.lookup === true ? { lookupCommand: async (__, r) => executor.lookup(r) } : {})
   }).orThrow();
 }
 
