@@ -67,6 +67,47 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] CI reddens for reasons unrelated to the diff — three known causes, each costing an
+  investigation before it is recognised.** Every one was hit during the 2026-09-23/24 publish and
+  agent-tasks cluster work, and each cost a log read to distinguish from a real failure. None
+  affects published output; all of them waste reviewer and agent time and erode the signal that a
+  red check means something.
+
+  **(a) Wall-clock assertions.** `libraries/ts-extras/src/test/unit/md5Normalizer.browser.test.ts:165`
+  asserts `expect(endTime - startTime).toBeLessThan(300)`. It failed CI at **335 ms** on #691 — 12%
+  over a hardcoded threshold on a shared runner — having passed on the same branch nine hours
+  earlier. `TESTING_GUIDELINES.md` already states the rule this breaks: *"A millisecond assertion on
+  a CI runner measures the runner."* Siblings, tightest first: the same file's 300 ms;
+  `ts-extras/.../saferFetchRetry.test.ts:502` at 500 ms; `ts-res` `deltaGenerator.enumeration` at
+  2000 ms and `deltaGenerator.core` at 5000 ms. (`ts-sudoku-lib` has four more, out of scope —
+  that package is leaving this repo.) **Remedy:** assert the property the test is really about —
+  a counter, a call count, an absence of quadratic blowup — or delete the assertion. Raising the
+  threshold buys time and keeps the defect. The existing safer-fetch entry in this file is the same
+  family and should be closed with this one.
+
+  **(b) `rush install` does not retry a dependency fetch.** On #687 the job died in 71 seconds:
+  `onnxruntime-node`'s postinstall hit `ETIMEDOUT`/`ENETUNREACH` fetching its native binary and Rush
+  reported *"Giving up after 1 attempts"*, having built nothing. It reads like a broken lockfile
+  rather than a network blip. **Remedy:** a retry around the install step, or a cached/vendored
+  binary for that package.
+
+  **(c) An Argon2id test mock derives colliding keys from distinct salts.**
+  `libraries/ts-extras/src/test/unit/crypto/keystore/keyStoreArgon2id.test.ts`'s
+  `makeDeterministicKey` folds the salt in as `seed += salt[i] * (i + 1)` — a weighted **sum**. Two
+  different 16-byte salts sharing that sum derive an identical key, so *"returns false when salt does
+  not match"* gets `true`. Roughly **1 run in 7,000** by the spread of that sum. Observed once on
+  #687. **Remedy:** make the mock's derivation depend on salt *content* rather than a weighted sum —
+  hashing the salt bytes, or folding position-sensitively (e.g. `seed = seed * 31 + salt[i]`).
+
+  **Trigger**: the next time any of these reddens a PR, or the next person who has to explain to a
+  reviewer that a red check is not real. **(a) is the one worth doing first** — it is the only one
+  that fires on ordinary runner load rather than needing bad luck or a network fault.
+
+  **Not a P3**: the cost is not the individual failure, it is that a red check stops meaning
+  anything. Three separate "this one isn't real" investigations in two days is the evidence.
+
+  **Reference**: #691 (a), #687 (b and c).
+
 *(The `checkThreshold` zero-byte-section measure gap (shipped in C2, #669) was fixed by C3 of
 `ai-assist-prompt-caching`: a section with `chars === 0` now contributes `0` to the measured total
 via an explicit filter before every check in `checkThreshold`, rather than being incidentally
