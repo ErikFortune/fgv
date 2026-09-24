@@ -75,16 +75,16 @@ function makeContext(
 // ---------------------------------------------------------------------------
 
 describe('resolveTierResolutions', () => {
-  test('resolves OpenAI base/advanced/frontier directly (frontier → gpt-5.6-sol, no cascade)', () => {
-    // The gpt-5.6 family works on chat completions, so the frontier tier no longer needs the
+  test('resolves OpenAI base/advanced/frontier directly (frontier → gpt-6-astra, no cascade)', () => {
+    // The gpt-6 family works on chat completions, so the frontier tier no longer needs the
     // Responses-only routing its predecessor gpt-5.5-pro required: a frontier request resolves
-    // @openai:pro → gpt-5.6-sol directly.
+    // @openai:pro → gpt-6-astra directly.
     expect(resolveTierResolutions(openai, ['base', 'advanced', 'frontier'])).toSucceedAndSatisfy(
       (resolutions) => {
         expect(resolutions).toEqual([
-          { tier: 'base', alias: '@openai:mini', concrete: 'gpt-5.6-luna', cascaded: false },
-          { tier: 'advanced', alias: '@openai:flagship', concrete: 'gpt-5.6-terra', cascaded: false },
-          { tier: 'frontier', alias: '@openai:pro', concrete: 'gpt-5.6-sol', cascaded: false }
+          { tier: 'base', alias: '@openai:mini', concrete: 'gpt-6-luna', cascaded: false },
+          { tier: 'advanced', alias: '@openai:flagship', concrete: 'gpt-6-sol', cascaded: false },
+          { tier: 'frontier', alias: '@openai:pro', concrete: 'gpt-6-astra', cascaded: false }
         ]);
       }
     );
@@ -106,7 +106,7 @@ describe('resolveTierResolutions', () => {
         expect(resolutions[0]).toEqual({
           tier: 'base',
           alias: '@google-gemini:flash',
-          concrete: 'gemini-3.5-flash',
+          concrete: 'gemini-3.8-flash',
           cascaded: false
         });
         expect(resolutions[1]).toEqual({
@@ -130,9 +130,9 @@ describe('resolveTierResolutions', () => {
       (resolutions) => {
         expect(resolutions).toEqual([
           { tier: 'base', alias: '@xai-grok:standard', concrete: 'grok-4.3', cascaded: false },
-          { tier: 'advanced', alias: '@xai-grok:flagship', concrete: 'grok-4.5', cascaded: false },
+          { tier: 'advanced', alias: '@xai-grok:flagship', concrete: 'grok-4.7', cascaded: false },
           // frontier has no key → resolves to the advanced (flagship) alias, flagged cascaded.
-          { tier: 'frontier', alias: '@xai-grok:flagship', concrete: 'grok-4.5', cascaded: true }
+          { tier: 'frontier', alias: '@xai-grok:flagship', concrete: 'grok-4.7', cascaded: true }
         ]);
       }
     );
@@ -246,9 +246,9 @@ describe('runTierCanary (offline — STOP-FLAG)', () => {
       logger
     );
     expect(result).toSucceedAndSatisfy((report: string) => {
-      expect(report).toMatch(/\[PASS\] image\s+@openai:image -> gpt-image-2/);
+      expect(report).toMatch(/\[PASS\] image\s+@openai:image -> gpt-image-2\.5-sunburst/);
     });
-    expect(logger.logged).toContain('resolved @openai:image -> gpt-image-2 (image)');
+    expect(logger.logged).toContain('resolved @openai:image -> gpt-image-2.5-sunburst (image)');
   });
 
   test('fails when a resolver bug is present (prefixed with the provider id)', async () => {
@@ -292,9 +292,9 @@ describe('runTierCanary (live — injected completion)', () => {
     );
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/LIVE-VERIFIED/);
-      expect(report).toMatch(/\[PASS\] base\s+gpt-5\.6-luna/);
-      // frontier resolves to gpt-5.6-sol (direct frontier key; chat-completions-callable).
-      expect(report).toMatch(/\[PASS\] frontier\s+gpt-5\.6-sol/);
+      expect(report).toMatch(/\[PASS\] base\s+gpt-6-luna/);
+      // frontier resolves to gpt-6-astra (direct frontier key; chat-completions-callable).
+      expect(report).toMatch(/\[PASS\] frontier\s+gpt-6-astra/);
     });
   });
 
@@ -310,7 +310,7 @@ describe('runTierCanary (live — injected completion)', () => {
     );
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/LIVE BLOCKED/);
-      expect(report).toMatch(/\[BLOCKED\(access\)\] frontier\s+gpt-5\.6-sol\s+\(AI API returned 403/);
+      expect(report).toMatch(/\[BLOCKED\(access\)\] frontier\s+gpt-6-astra\s+\(AI API returned 403/);
     });
   });
 
@@ -333,7 +333,7 @@ describe('runTierCanary (live — injected completion)', () => {
 
   test('a non-chat-completions id is a real failure tagged FAIL(endpoint) (not a stale id)', async () => {
     // Exercises the wrong-endpoint → FAILED verdict wiring (the classifier itself is unit-tested
-    // above). The frontier tier now resolves to gpt-5.6-sol (chat-completions-callable in the
+    // above). The frontier tier now resolves to gpt-6-astra (chat-completions-callable in the
     // real client); this offline test drives the FAIL(endpoint) verdict wiring via an injected
     // wrong-endpoint failure, independent of the real routing.
     const deps: ITierCanaryDeps = {
@@ -351,7 +351,7 @@ describe('runTierCanary (live — injected completion)', () => {
       new Logging.InMemoryLogger()
     );
     expect(result).toFailWith(/FAILED — a tier is not chat-completions-callable/);
-    expect(result).toFailWith(/\[FAIL\(endpoint\)\] frontier\s+gpt-5\.6-sol/);
+    expect(result).toFailWith(/\[FAIL\(endpoint\)\] frontier\s+gpt-6-astra/);
   });
 
   test('a 404 on a tier is a real failure (id-wrong — stale alias value)', async () => {
@@ -377,7 +377,7 @@ describe('runTierCanary (live — injected completion)', () => {
       deps,
       new Logging.InMemoryLogger()
     );
-    expect(result).toFailWith(/\[FAIL\] base\s+gemini-3\.5-flash\s+\(HTTP 200 but empty body\)/);
+    expect(result).toFailWith(/\[FAIL\] base\s+gemini-3\.8-flash\s+\(HTTP 200 but empty body\)/);
   });
 
   test('a generic live failure is an error failure', async () => {
@@ -477,8 +477,8 @@ describe('model-tier scenarios', () => {
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/=== xai-grok model-tier canary ===/);
       expect(report).toMatch(/@xai-grok:standard -> grok-4\.3\b/);
-      expect(report).toMatch(/@xai-grok:flagship -> grok-4\.5 \(cascaded from a lower tier\)/);
-      expect(report).toMatch(/\[PASS\] image\s+@xai-grok:imagine -> grok-imagine-image-quality\b/);
+      expect(report).toMatch(/@xai-grok:flagship -> grok-4\.7 \(cascaded from a lower tier\)/);
+      expect(report).toMatch(/\[PASS\] image\s+@xai-grok:imagine -> grok-imagine-image-2\.0\b/);
       expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
     });
   });

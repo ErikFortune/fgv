@@ -152,7 +152,7 @@ function makeTierScenario(params: ITierScenarioParams): IScenario {
 
 /**
  * OpenAI model-tier canary — exercises `base` / `advanced` / `frontier` (all three tiers now resolve
- * to the gpt-5.6 family: luna / terra / sol) plus the `image` tier resolution (`gpt-image-2`). The
+ * to the gpt-6 family: luna / sol / astra) plus the `image` tier resolution (`gpt-image-2.5-sunburst`). The
  * 5.6 family works on chat completions, so the frontier tier no longer needs the Responses-only
  * routing its predecessor `gpt-5.5-pro` required (that id remains reachable via `modelOverride` and
  * still routes via `responsesOnlyModelPrefixes`). `image` is a flagged access risk: a
@@ -165,8 +165,8 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
   title: 'OpenAI Model Tiers',
   description:
     'Resolves and (with OPENAI_API_KEY) live-canaries the OpenAI base/advanced/frontier tiers ' +
-    '(gpt-5.6-luna / gpt-5.6-terra / gpt-5.6-sol) plus the image tier (gpt-image-2). Logs each ' +
-    'alias -> concrete id. gpt-image-2 (image) may be access-gated — reported BLOCKED, not failed. ' +
+    '(gpt-6-luna / gpt-6-sol / gpt-6-astra) plus the image tier (gpt-image-2.5-sunburst). Logs each ' +
+    'alias -> concrete id. gpt-image-2.5-sunburst (image) may be access-gated — reported BLOCKED, not failed. ' +
     'Web-runnable.',
   tags: ['openai'],
   tiers: ['base', 'advanced', 'frontier'],
@@ -234,9 +234,9 @@ export const geminiModelTiersScenario: IScenario = makeTierScenario({
 
 /**
  * xAI model-tier canary — exercises `base` / `advanced` and a `frontier` request that cascades to
- * the `advanced` (grok-4.5) id, plus the `image` tier resolution (`@xai-grok:imagine` →
- * `grok-imagine-image-quality`). Added with the xAI alias-registry adoption to provide the first
- * live proof that `@xai-grok:flagship` → `grok-4.5` answers — once run with `XAI_API_KEY`; the
+ * the `advanced` (grok-4.7) id, plus the `image` tier resolution (`@xai-grok:imagine` →
+ * `grok-imagine-image-2.0`). Added with the xAI alias-registry adoption to provide the first
+ * live proof that the `@xai-grok:flagship` target answers — once run with `XAI_API_KEY`; the
  * keyless run is the STOP-FLAG resolver-only state. Requires `XAI_API_KEY` for the live half.
  * @public
  */
@@ -245,8 +245,8 @@ export const xaiModelTiersScenario: IScenario = makeTierScenario({
   title: 'xAI Model Tiers',
   description:
     'Resolves and (with XAI_API_KEY) live-canaries the xAI base/advanced tiers (grok-4.3 / ' +
-    'grok-4.5) plus a frontier request that cascades to the advanced (grok-4.5) id, and resolves ' +
-    'the image tier (grok-imagine-image-quality). Logs each alias -> concrete id. Web-runnable.',
+    'grok-4.7) plus a frontier request that cascades to the advanced (grok-4.7) id, and resolves ' +
+    'the image tier (grok-imagine-image-2.0). Logs each alias -> concrete id. Web-runnable.',
   tags: ['xai', 'grok'],
   tiers: ['base', 'advanced', 'frontier'],
   imageTier: true,

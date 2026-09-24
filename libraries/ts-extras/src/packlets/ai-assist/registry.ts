@@ -229,7 +229,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       '@openai:flagship': 'gpt-6-sol', // advanced tier (was gpt-5.6-terra, no shutdown announced as of 2026-09-24; before that gpt-5.5)
       '@openai:pro': 'gpt-6-astra', // frontier tier (was gpt-5.6-sol, no shutdown announced as of 2026-09-24; before that gpt-5.5-pro, Responses-API-only). NOTE: astra's reasoning.effort is low..max — it has no 'none'
       '@openai:nano': 'gpt-5.4-nano', // NON-tier alias; modelOverride only (unchanged; not deprecated as of 2026-09-24)
-      '@openai:image': 'gpt-image-2.5-sunburst', // image (matches the gpt-image- capability prefix; was gpt-image-2, not deprecated; before that gpt-image-1.5, shutdown 2026-12-01)
+      '@openai:image': 'gpt-image-2.5-sunburst', // image (matches the gpt-image- capability prefix; was gpt-image-2 — itself not deprecated; before that gpt-image-1.5, which shuts down 2026-12-01)
       '@openai:embedding': 'text-embedding-3-small' // NOT deprecated — aliased for uniformity
       // NOTE: gpt-5.1 deliberately absent — retired March 2026.
     },
