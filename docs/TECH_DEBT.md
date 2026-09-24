@@ -414,7 +414,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P3**: it blocks a tier rotation outright, and the capability table is currently wrong for two real, documented ids.
 
-  **Reference**: `ai-assist-model-catalog-2026-09` stream (`.ai/tasks/active/ai-assist-model-catalog-2026-09/result.md`).
+  **Reference**: `ai-assist-model-catalog-2026-09` stream (`.ai/tasks/completed/2026-09/ai-assist-model-catalog-2026-09/result.md`).
 
 ## P3 — Opportunistic cleanup
 
@@ -842,12 +842,12 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P2**: no shipped-behavior regression; the alias layer's value is precisely bounded and the doc (`LIBRARY_CAPABILITIES.md`, packlet README) states the boundary explicitly. This entry exists so the two manual axes are not forgotten on the next rotation.
 
-  **2026-09 rotation (executed this entry)**: added `/^gpt-6/`, `/^grok-4\.7/`, `/^grok-4\.6/`; bumped the OpenAI/Gemini/xAI/Anthropic thinking unions and the GPT Image / Grok Imagine unions; dropped `o3-deep-research` / `o4-mini-deep-research` (shut down 2026-07-23). It also showed there is a **third** manual axis this entry did not name: the per-model capability declarations (`structuredOutput`, `imageGeneration`, `responsesOnlyModelPrefixes`, `adaptiveThinkingModelPrefixes`). A successor can change what a declared mechanism does — see the P2 Anthropic structured-output entry, which held two aliases back. The id-by-id record, with sources, is in `.ai/tasks/active/ai-assist-model-catalog-2026-09/result.md`.
+  **2026-09 rotation (executed this entry)**: added `/^gpt-6/`, `/^grok-4\.7/`, `/^grok-4\.6/`; bumped the OpenAI/Gemini/xAI/Anthropic thinking unions and the GPT Image / Grok Imagine unions; dropped `o3-deep-research` / `o4-mini-deep-research` (shut down 2026-07-23). It also showed there is a **third** manual axis this entry did not name: the per-model capability declarations (`structuredOutput`, `imageGeneration`, `responsesOnlyModelPrefixes`, `adaptiveThinkingModelPrefixes`). A successor can change what a declared mechanism does — see the P2 Anthropic structured-output entry, which held two aliases back. The id-by-id record, with sources, is in `.ai/tasks/completed/2026-09/ai-assist-model-catalog-2026-09/result.md`.
 
   **Reference**: `ai-assist-model-aliases` design §3 + Tier 2 manual-axis bumps (`.ai/tasks/completed/2026-06/ai-assist-model-aliases/state.md`).
 
 - **[P3] ai-assist sends a thinking effort the resolved model may not accept, and three provider knobs are narrower than the model now allows.**
-  All documented 2026-09-24 on the pages cited in `.ai/tasks/active/ai-assist-model-catalog-2026-09/result.md`:
+  All documented 2026-09-24 on the pages cited in `.ai/tasks/completed/2026-09/ai-assist-model-catalog-2026-09/result.md`:
   1. **`'none'` effort has no per-model gate.** `thinkingOptionsResolver.ts` maps `'none'` to `reasoning_effort: 'none'` (OpenAI, xAI) or `thinkingBudget: 0` (Gemini) regardless of model. `gpt-6-astra` (`@openai:pro`) lists effort `low`..`max`; `grok-4.7` (`@xai-grok:flagship`) and `grok-4.5` list `low`..`xhigh`; `gemini-3.8-flash` (`@google-gemini:flash`) lists thinking levels `low`/`medium`/`high` and says `minimal` "returns an error" — its behaviour on `thinkingBudget: 0` is undocumented. Each is a candidate wire 400 on a `thinking: { effort: 'none' }` request to that tier.
   2. **`gpt-image-2.5-*` qualities `xhigh` / `max`** are not expressible: `GptImageQuality` is `low | medium | high | auto`, so `@openai:image` cannot reach them (refused locally, not silently).
   3. **xAI image edits are capped at 3 reference images** (`imageGenerationClient.ts`); `grok-imagine-image-2.0` accepts up to five. Refused locally, not silently.

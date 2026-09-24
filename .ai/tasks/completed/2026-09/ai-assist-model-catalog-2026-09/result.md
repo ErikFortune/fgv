@@ -218,6 +218,21 @@ on xAI; base on Gemini with and without thinking; `@google-gemini:flash-lite` vi
 image generation on `@openai:image` and `@xai-grok:imagine` (and the latter with `quality: 'medium'`).
 Each run should log the resolved id listed in §1.
 
-## 7. Gates
+## 7. Gates (all run 2026-09-24, on the final tree)
 
-Filled in below from the actual runs. See the PR description for the final state.
+| gate | result |
+|---|---|
+| `rushx build` (ts-extras) | pass, zero warnings once `etc/ts-extras.api.md` was committed (the union edits change the API report) |
+| `rushx lint` / `rushx fixlint` (ts-extras, testbed) | clean |
+| `rushx test` (ts-extras) | pass, 100% statements / branches / functions / lines |
+| repo-wide `install-run-rush.js test` | **35/35 pass**, after the testbed fix below. The first run failed on a missing `ts-extras/lib`, a build collision with a reviewer agent building the same package at the same time. The second run failed in `samples/testbed` — exactly the casualty class the brief predicted. |
+| `rush change --verify --target-branch origin/release` | pass (`@fgv/ts-extras` change file; `samples/testbed` is unpublished) |
+| `verify-capability-docs`, `generate-capability-feed --check`, `verify-esm-entrypoints`, `verify-bundler-resolution`, `verify-tarball-exports` | pass. The last two first needed their autoinstallers (`rush-bundler-check`, `rush-pack-check`) installed in this container. |
+| `code-reviewer` (layer 1) | no P1. **P2** `gpt-image-2.5-flare` in `GptImageModelNames` "unverified": **dispositioned, no change**. It is documented under "Model IDs" on <https://developers.openai.com/api/docs/models/gpt-image-2.5-flare> (§1.1); the reviewer's brief named only the aliased id. **P3** ambiguous `@openai:image` comment: fixed. |
+
+**Outside the declared package surface.** The brief scoped the stream to `libraries/ts-extras`.
+The repo-wide test showed `samples/testbed` pinning the old concrete ids. That covered the
+model-tier canary tests, the image-scenario capability test, and the canary's user-visible
+description strings (`src/scenarios/modelTiers/index.ts`). Those pins were updated. No testbed logic
+changed. A PR that leaves the repo-wide suite red is not mergeable, and the repo's rule is to fix
+consumers rather than leave them broken.
