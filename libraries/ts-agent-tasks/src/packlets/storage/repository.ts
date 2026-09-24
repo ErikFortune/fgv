@@ -1130,6 +1130,15 @@ export class FileTreeTaskRepository implements ITaskRepository {
       return taskFailure(`commit: ${inputs.message}`, 'invalid', 'after-host-action');
     }
     const { taskId, draft, operationId } = inputs.value;
+    // Validated before anything else, replays included: a malformed request never succeeds.
+    const requiredUpdates: number = request.purpose === 'observation' ? request.requiredUpdates ?? 0 : 0;
+    if (!Number.isSafeInteger(requiredUpdates) || requiredUpdates < 0) {
+      return taskFailure(
+        `commit ${taskId}: requiredUpdates must be a non-negative safe integer`,
+        'invalid',
+        'after-host-action'
+      );
+    }
     const projection: ITaskProjection | undefined = this._tasks.get(taskId);
     if (projection === undefined) {
       return taskFailure(`commit ${taskId}: no live task`, 'not-found-or-denied', 'after-host-action');
@@ -1212,14 +1221,6 @@ export class FileTreeTaskRepository implements ITaskRepository {
             return this._reestablish(read!, undefined).onSuccess(() => ok(current));
           }
         }
-      }
-      const requiredUpdates: number = request.purpose === 'observation' ? request.requiredUpdates ?? 0 : 0;
-      if (!Number.isSafeInteger(requiredUpdates) || requiredUpdates < 0) {
-        return taskFailure<ITaskCommitRecord>(
-          `commit ${taskId}: requiredUpdates must be a non-negative safe integer`,
-          'invalid',
-          'after-host-action'
-        );
       }
 
       if (projection.archived) {
