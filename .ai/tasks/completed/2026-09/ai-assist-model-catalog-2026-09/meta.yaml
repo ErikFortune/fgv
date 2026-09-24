@@ -20,15 +20,21 @@ summary:
     New idPatterns: /^gpt-6/, /^grok-4\.7/, /^grok-4\.6/. The unions gained the new ids and dropped
     two OpenAI deep-research ids that were already shut down. A new quality-capable xAI image entry
     shipped, plus the builder wiring that makes the capability true. Every capability table was
-    checked and its disposition recorded. The cited id table is in result.md.
+    checked and its disposition recorded. The cited id table is in result.md. Not live-verified:
+    the user's testbed run is a pre-merge gate still open when this was written, and so is the
+    Copilot review loop.
   diverged: >
     Anthropic was not rotated, although the brief scoped four providers. claude-opus-5-5 and
     claude-fable-5-1 reject forced tool_choice, which is the only Anthropic structured-output
-    mechanism, so the aliases were held and a P2 was filed. Three things shipped that the brief did
-    not name. First, code wiring: the xAI image builders never sent quality, so the capability flag
-    alone would have been a false claim. Second, test-pin updates in samples/testbed, outside the
-    declared package surface, caught by the repo-wide test. Third, a third manual axis (the per-model
-    capability declarations) was recorded in the TECH_DEBT P3 entry the brief pointed at.
+    mechanism, so the aliases were held and a P2 was filed. Step zero said to stop if any
+    documentation host was blocked. docs.anthropic.com still was, but the sweep proceeded because
+    docs.claude.com now redirects to platform.claude.com, which was reachable. Two things shipped
+    that the brief did not name. First, code wiring: the xAI image builders never sent the resolved
+    quality option, so the capability flag alone would have been a false claim. Second, test-pin
+    updates in samples/testbed, outside the declared package surface, caught by the repo-wide test.
+    The TECH_DEBT manual-axes entry, which counted two axes, now names the per-model capability
+    declarations as a third. The brief already listed those tables. code-reviewer ran after
+    coverage was already at 100% (no coverage-closure phase occurred), not before it.
   sourceLine: "**Shipped:** ai-assist's tier and image aliases now resolve to the current OpenAI, Gemini and xAI lines, each id taken from a fetched provider page — while Anthropic's are held, because its successors reject the forced tool call its structured output depends on."
   headline: >
     ai-assist's tier and image aliases now point at GPT-6, Gemini 3.8 Flash and Grok 4.7, each id
@@ -48,4 +54,4 @@ keywords:
   - grok-imagine quality
   - documentation-sourced identifiers
   - not live-verified
-sourceHash: f0427acec0802385 # sha256/16 over brief.md, result.md
+sourceHash: 9154d17d1569d03d # sha256/16 over brief.md, result.md

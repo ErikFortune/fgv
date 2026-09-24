@@ -304,7 +304,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       // no frontier key → a frontier request cascades advanced → grok-4.7 (see resolveModel)
     },
     aliases: {
-      '@xai-grok:standard': 'grok-4.3', // base tier; NOT deprecated — superseded as flagship by grok-4.5
+      '@xai-grok:standard': 'grok-4.3', // base tier; NOT deprecated (as of 2026-09-24) — superseded as flagship by grok-4.5, then grok-4.7
       '@xai-grok:flagship': 'grok-4.7', // advanced tier; reasoning effort low..xhigh, default high (was grok-4.5, no retirement announced as of 2026-09-24)
       '@xai-grok:imagine': 'grok-imagine-image-2.0' // image tier (was grok-imagine-image-quality, retired 2026-11-02 — after that its slug redirects to grok-imagine-image-2.0 at quality 'low')
     },

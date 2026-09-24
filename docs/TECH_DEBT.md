@@ -850,7 +850,10 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   All documented 2026-09-24 on the pages cited in `.ai/tasks/completed/2026-09/ai-assist-model-catalog-2026-09/result.md`:
   1. **`'none'` effort has no per-model gate.** `thinkingOptionsResolver.ts` maps `'none'` to `reasoning_effort: 'none'` (OpenAI, xAI) or `thinkingBudget: 0` (Gemini) regardless of model. `gpt-6-astra` (`@openai:pro`) lists effort `low`..`max`; `grok-4.7` (`@xai-grok:flagship`) and `grok-4.5` list `low`..`xhigh`; `gemini-3.8-flash` (`@google-gemini:flash`) lists thinking levels `low`/`medium`/`high` and says `minimal` "returns an error" — its behaviour on `thinkingBudget: 0` is undocumented. Each is a candidate wire 400 on a `thinking: { effort: 'none' }` request to that tier.
   2. **`gpt-image-2.5-*` qualities `xhigh` / `max`** are not expressible: `GptImageQuality` is `low | medium | high | auto`, so `@openai:image` cannot reach them (refused locally, not silently).
-  3. **xAI image edits are capped at 3 reference images** (`imageGenerationClient.ts`); `grok-imagine-image-2.0` accepts up to five. Refused locally, not silently.
+  3. **xAI image edits are capped at 3 reference images** (`imageGenerationClient.ts`); `grok-imagine-image-2.0` accepts "up to five source images for editing" (xAI's `imagine-image-quality-nov-2` migration guide). Refused locally, not silently.
+  4. **`/^gemini-3/` over-matches.** It classifies `gemini-3.8-live`, `*-tts` and `*-transcribe` ids as chat + thinking in `listModels`. This predates the rotation (`gemini-3.1-flash-tts-preview` had it). Detection accumulates across rules, so a sibling rule cannot subtract it; the fix is a narrower pattern.
+  5. **Unconfirmed retirement claim.** A registry comment says `gpt-5.1` was "retired March 2026", yet `OpenAiThinkingModelNames` still lists it, and OpenAI's deprecations page (fetched 2026-09-24) records no `gpt-5.1` shutdown. One of the two is wrong.
+  6. **For the next rotation:** `gemini-3.8-pro` appears in code samples on Google's thinking page but on no model or deprecation page as of 2026-09-24. Check whether it is listed before moving `@google-gemini:pro` off `gemini-3.1-pro-preview`.
 
   **Trigger**: a testbed run that 400s on item 1, or a consumer asking for the higher qualities / more references.
 

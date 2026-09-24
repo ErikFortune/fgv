@@ -152,7 +152,7 @@ export interface ITierCanarySpec {
   readonly descriptor: AiAssist.IAiProviderDescriptor;
   /** The completion tiers to resolve + fire, in report order. */
   readonly tiers: ReadonlyArray<CanaryTier>;
-  /** When true, also resolve + log the `image` tier (e.g. OpenAI's `@openai:image → gpt-image-2`). */
+  /** When true, also resolve + log the `image` tier (e.g. OpenAI's `@openai:image → gpt-image-2.5-sunburst`). */
   readonly imageTier?: boolean;
 }
 

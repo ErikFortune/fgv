@@ -22,8 +22,9 @@ forced `tool_choice`, and ai-assist's Anthropic structured output is built on fo
 - **The pattern that worked for sourcing:** `WebFetch` for reachability, then `curl` the raw page
   (or its `.md` rendering) and quote from that. A summariser rendered one image model's display
   name as if it were an id.
-- **The rotation has three manual axes, not two.** A successor can change what a declared mechanism
-  does, as the forced-tool rejection did here. `docs/TECH_DEBT.md` records this.
+- **The TECH_DEBT manual-axes entry now counts three axes, not two.** It adds the per-model
+  capability declarations. A successor can change what a declared mechanism does, as the
+  forced-tool rejection did here.
 
 ## Files
 
@@ -33,12 +34,16 @@ forced `tool_choice`, and ai-assist's Anthropic structured output is built on fo
 - `libraries/ts-extras/src/packlets/ai-assist/imageGenerationClient.ts`: xAI builders send
   `quality` when the capability declares it.
 - Tests in `libraries/ts-extras/src/test/unit/ai-assist/`, and pins in `samples/testbed`.
+- `libraries/ts-extras/etc/ts-extras.api.md` (the union changes) and
+  `common/changes/@fgv/ts-extras/ai-assist-model-catalog-2026-09_2026-09-24-23-00.json`.
 - Docs: `libraries/ts-extras/CAPABILITIES.md`, the ai-assist `README.md`, `docs/TECH_DEBT.md` (one
   new P2, one new P3, the manual-axes P3 extended), `docs/FUTURE.md` (one stale line).
 
 ## Open
 
-- The live testbed confirmation (the user's gate).
+- The live testbed confirmation. This is the user's gate and was still open at merge time. If it
+  fails, this record is wrong about the ids that failed.
+- The Copilot review loop on #692.
 - The P2: a non-forcing Anthropic structured-output format. This unblocks the Anthropic rotation.
 - The P3: per-model accepted thinking effort, GPT Image 2.5 `xhigh`/`max`, and the xAI edits
   reference cap.

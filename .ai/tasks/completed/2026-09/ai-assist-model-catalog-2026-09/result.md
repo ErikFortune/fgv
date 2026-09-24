@@ -104,7 +104,9 @@ under "Forced tool use is not supported": *"`tool_choice` set to `{"type": "any"
 also apply on Claude Fable 5.1"*. ai-assist's only Anthropic structured-output mechanism is
 `anthropic-tool-forced` (`structuredOutput.ts`), which sends `tool_choice: { type: 'tool', name }`.
 Rotating `@anthropic:opus` would therefore turn every advanced-tier structured-output call into a
-provider 400. That needs a new wire format, which is a feature rather than a rotation. It is filed as
+provider 400. The same section names the replacement: *"For schema-valid JSON, keep `tool_choice:
+{"type": "auto"}` and set `strict: true` with strict tool use, or move the schema to structured
+outputs."* That needs a new wire format, which is a feature rather than a rotation. It is filed as
 a P2 in `docs/TECH_DEBT.md`.
 
 ### 1.5 Seen and deliberately not adopted
@@ -152,8 +154,8 @@ rules, so a sibling rule cannot fix it, and it is not a rotation edit.
 | `adaptiveThinkingModelPrefixes` (anthropic) | **no** (comment added) | The dash-bounded matcher already covers `claude-opus-5-5` and `claude-fable-5-1` through `claude-opus-5` and `claude-fable-5`. Both are "Adaptive (always on)" per the overview. Our `'none'` effort omits the `thinking` field, which the Opus 5.5 page says is accepted ("Omit the `thinking` field…"). |
 | `structuredOutput` (anthropic) | no — **and the reason the aliases were held** | See §1.4. |
 | `structuredOutput` (openai, gemini, xai) | no | Catch-all entries. Every GPT-6, Gemini 3.8 / 3.5-lite and grok-4.7 page lists structured outputs as supported. |
-| `imageGeneration` (openai) | no | `gpt-image-2.5-*` matches the existing `gpt-image-` entry. The image-generation guide (<https://developers.openai.com/api/docs/guides/image-generation>) lists the recommended sizes `1024x1024`, `1536x1024` and `1024x1536` plus `auto`, and qualities `low`, `medium`, `high`, `xhigh`, `max`, `auto`. The declared sets are subsets of these, so they stay valid. `xhigh` and `max` are not reachable: that would mean widening the public `GptImageQuality` type (TECH_DEBT P3). |
-| `imageGeneration` (xai) | **yes** — new `grok-imagine-image-2.0` entry | <https://docs.x.ai/developers/model-capabilities/images/generation.md> § Quality: *"Allowed values are `low`, `medium`, and `auto` … The parameter is only supported for `grok-imagine-image-2.0`."* The new entry declares `supportsQualityParam: true` and `acceptedQualities: ['low','medium','auto']`. It is a longer-prefix sibling, so `grok-imagine-image` and `-quality` keep `supportsQualityParam: false`. **Both xAI image builders previously never sent `quality` at all**, so the flag alone would have been a false claim. `callXaiImageGeneration` and `callXaiImagesEdits` now send it, gated on the capability. |
+| `imageGeneration` (openai) | no | `gpt-image-2.5-*` matches the existing `gpt-image-` entry. The image-generation guide (<https://developers.openai.com/api/docs/guides/image-generation>) lists the recommended sizes `1024x1024`, `1536x1024` and `1024x1536` plus `auto`, and qualities `low`, `medium`, `high`, `xhigh`, `max`, `auto`. The declared sets are subsets of these, so they stay valid. The entry's other fields (`maxCount: 10`, reference-image input, `output_format` style) were **not** re-verified against the 2.5 pages. The guide describes 2.5 as supporting both the generations and edits endpoints, and output format is among its customizable options, but no 2.5 page states a per-request image count. `xhigh` and `max` are not reachable: that would mean widening the public `GptImageQuality` type (TECH_DEBT P3). |
+| `imageGeneration` (xai) | **yes** — new `grok-imagine-image-2.0` entry | <https://docs.x.ai/developers/model-capabilities/images/generation.md> § Quality: *"Allowed values are `low`, `medium`, and `auto` … The parameter is only supported for `grok-imagine-image-2.0`."* The new entry declares `supportsQualityParam: true` and `acceptedQualities: ['low','medium','auto']`. It is a longer-prefix sibling, so `grok-imagine-image` and `-quality` keep `supportsQualityParam: false`. **Neither xAI image builder previously sent the resolved `quality` option.** A caller could only get `quality` onto the wire through a provider `config` block, which lands in `otherParams`. So the flag alone would have been a false claim. `callXaiImageGeneration` and `callXaiImagesEdits` now send it, gated on the capability. The entry's other fields (`format: 'xai-images-edits'`, `acceptsImageReferenceInput`, `maxCount: 10`, `outputParamStyle: 'response-format'`, `defaultOutputMimeType`) are copied from the `grok-imagine-` family entry. The retirement guide justifies that: *"The request and response shapes are unchanged. Every parameter accepted today is accepted after the switch"* when `-quality` is served by 2.0. The same guide says 2.0 *"additionally accepts … up to five source images for editing"*. The builder's 3-image cap was left as is (TECH_DEBT P3). |
 | `imageGeneration` (gemini) | no | Image alias unchanged. |
 | `embedding` (all) | no | Embedding aliases unchanged. `resolveEmbeddingCapability` matches concrete ids, and none moved. |
 | `serverToolsExclusiveWithClientTools` (gemini) | no | Unrelated to model ids. |
@@ -187,6 +189,7 @@ here.
 |---|---|---|
 | `grok-imagine-image-quality` | retired **2026-11-02**; afterwards served by `grok-imagine-image-2.0` at `quality: "low"` | xAI migration guide |
 | `claude-haiku-4-5-20251001` (`@anthropic:haiku`) | retirement not sooner than **2026-10-15** | Anthropic deprecations |
+| `o3-deep-research`, `o4-mini-deep-research` | **shut down 2026-07-23** (removed from `OpenAiThinkingModelNames`) | OpenAI deprecations |
 | `o4-mini`, `gpt-image-1` | shutdown **2026-10-23** | OpenAI deprecations |
 | `gpt-image-1.5` | shutdown **2026-12-01** (replacement `gpt-image-2`) | OpenAI deprecations |
 | `gpt-5-2025-08-07`, `gpt-5-pro-2025-10-06`, `o3-2025-04-16` | shutdown **2026-12-11** | OpenAI deprecations |
@@ -228,6 +231,9 @@ Each run should log the resolved id listed in §1.
 | repo-wide `install-run-rush.js test` | **35/35 pass**, after the testbed fix below. The first run failed on a missing `ts-extras/lib`, a build collision with a reviewer agent building the same package at the same time. The second run failed in `samples/testbed` — exactly the casualty class the brief predicted. |
 | `rush change --verify --target-branch origin/release` | pass (`@fgv/ts-extras` change file; `samples/testbed` is unpublished) |
 | `verify-capability-docs`, `generate-capability-feed --check`, `verify-esm-entrypoints`, `verify-bundler-resolution`, `verify-tarball-exports` | pass. The last two first needed their autoinstallers (`rush-bundler-check`, `rush-pack-check`) installed in this container. |
+| testbed `rushx build` / `rushx test` | build: zero warnings; tests: all suites pass |
+| layer-1 ordering | **Not in the brief's order.** The brief asks for `code-reviewer` before coverage closure. Here the first full `ts-extras` run after the pin updates was already at 100%, so no coverage-closure phase happened, and the reviewer ran after that. No `c8 ignore` was added. |
+| Copilot review loop | **not yet run** at the time of writing |
 | `code-reviewer` (layer 1) | no P1. **P2** `gpt-image-2.5-flare` in `GptImageModelNames` "unverified": **dispositioned, no change**. It is documented under "Model IDs" on <https://developers.openai.com/api/docs/models/gpt-image-2.5-flare> (§1.1); the reviewer's brief named only the aliased id. **P3** ambiguous `@openai:image` comment: fixed. |
 
 **Outside the declared package surface.** The brief scoped the stream to `libraries/ts-extras`.
