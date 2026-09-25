@@ -117,7 +117,7 @@ ceiling 146.** T6 adds:
 | acceptance | evidence |
 |---|---|
 | source owns truth; never optimistic | `accepted` leaves lifecycle unchanged until an observation; the executor's own state is asserted in command tests |
-| controllable source really applies | reverting `SimulatedExecutor._apply` to a no-op turns **17** tests red |
+| controllable source really applies | reverting `SimulatedExecutor._apply` to a no-op turns **18** tests red |
 | cursor only after committed projections | gap / order / contract / capacity stops leave the cursor; saving the cursor before the page turns 5 tests red |
 | push-vs-poll ordering | rev-3 hint before feed rev-2: rev 2 commits first, then 3; applying replay hints directly turns the test red |
 | freshness refresh ≠ violation | same revision, later `observedAt`: maintenance commit, no revision |
@@ -126,14 +126,16 @@ ceiling 146.** T6 adds:
 | restart has no side effects | reopening storage and creating the broker make no source call (read, page, recover, dispatch, lookup all counted); the committed cursor survives |
 | layering (≥ 64 KiB payload) | 200 KiB payload never in any record; projection measured alone < 100 bytes |
 
-**Revert check — run on the final source.** 18 protections reverted one at a time; every one turned
-its tests red (failing tests in parentheses): replay hint applied directly (1), cursor saved past a
-capacity block (2), second send after the marker (1), non-idempotent resend (3), no settlement
-reservation (13), accepted recorded as applied (2), executor stops applying (17), same-revision
-conflict accepted (2), envelope overdraw (1), no authority recheck at dispatch (1), stale
-precondition (1), active-only counted complete (1), no feed order check (1), no subject check at
-marker (1), cursor saved before observations (5), no epoch fence at resend (1), no subject fence
-at resend (1), resend after another caller settled (1).
+**Revert check — run on the final source.** 38 protections reverted one at a time (the 18 from
+implementation and layer 1, plus 20 added across the Copilot rounds); every one turned its tests
+red. The implementation-era ones, with failing tests in parentheses: replay hint applied directly
+(1), cursor saved past a capacity block (2), second send after the marker (1), non-idempotent resend
+(3), no settlement reservation (14), accepted recorded as applied (2), executor stops applying (18),
+same-revision conflict accepted (5), envelope overdraw (1), no authority recheck at dispatch (1),
+stale precondition (1), active-only counted complete (1), no feed order check (3), no subject check
+at marker (1), cursor saved before observations (9), no epoch fence at resend (1), no subject fence
+at resend (1), resend after another caller settled (1). The review-round ones (M21–M38) are listed
+with their rounds below.
 
 ## Review
 
@@ -235,7 +237,7 @@ and substantive and stopped when the finding profile went to hygiene.
 
 ## Gates
 
-`rushx build` (zero warnings), `rushx lint`, `rushx fixlint`, `rushx test` — **1,353 tests, 100 %
+`rushx build` (zero warnings), `rushx lint`, `rushx fixlint`, `rushx test` — **1,373 tests, 100 %
 statements/branches/functions/lines, zero `c8 ignore`**. `rush change --verify --target-branch
 origin/integration/agent-tasks-v1`; repo-wide `rebuild` and `test`; `verify-capability-docs`,
 `generate-capability-feed --check`, `verify-esm-entrypoints`, `verify-bundler-resolution`,

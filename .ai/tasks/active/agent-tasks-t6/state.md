@@ -57,19 +57,17 @@ orchestrator's `5bcae5ce` deciding the dereference question). PR target: `integr
 
 ## Done
 
-- Implementation, tests (1,353, 100 % coverage, zero `c8 ignore`), layer-1 review and its fixes.
-- Post-review self-audit of ordering windows found W4 (pump resend unfenced) — fixed (`605e482b`).
-- Revert check: 18 protections, all red (script: see result.md list).
-- Docs: `CAPABILITIES.md` External sources section; router shortcut + package row; design § 5
-  spelling; TECH_DEBT capacity amendment + T6 hand-off entry (T5's T6 item marked resolved);
-  `result.md`.
+- Implementation, tests (1,373, 100 % coverage, zero `c8 ignore`), layer-1 review and its fixes.
+- PR #693 into `integration/agent-tasks-v1`; Copilot loop ran 6 rounds (22 defects fixed in rounds
+  1–5, round 6 hygiene only) and stopped on diminishing returns. Every thread answered and resolved.
+- Revert check on the final source: 38 protections, all red.
+- Repo-wide rebuild and test exit 0 on the final source; all verify scripts pass; CI green on head.
+- Docs: CAPABILITIES, router, design § 5 spelling, TECH_DEBT, plan status, ledger, result.md.
 
 ## Open
 
-- Repo-wide `rebuild` + `test` and the verify scripts on the final source.
-- (done) Plan T6 status line + WORKSTREAMS entry anticipate merge via #693.
-- Open PR into `integration/agent-tasks-v1`; drive the Copilot loop; record rounds in result.md.
+- Nothing in scope. The PR waits on the orchestrator/owner to merge into the integration branch.
 
 ## Next concrete step
 
-Run the repo-wide gates; open the PR; commit the status lines with its number; request Copilot.
+None for this slice; T7/T8/T9 hand-offs are in `docs/TECH_DEBT.md`.
