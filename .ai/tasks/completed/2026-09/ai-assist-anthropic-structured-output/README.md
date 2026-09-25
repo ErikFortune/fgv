@@ -13,7 +13,8 @@ aliases could not rotate. And the `''` catch-all capability entry claimed both i
 mechanism that failed on them.
 
 This stream adds `anthropic-output-format` (Anthropic's JSON outputs, `output_config.format`) and
-declares it for those two ids by `modelPrefix`. Every other line keeps `anthropic-tool-forced`.
+declares it by `modelPrefix` for those two ids and for `claude-mythos-5-1`, which rejects forcing
+too. Every other line keeps `anthropic-tool-forced`.
 The stream then rotates `@anthropic:opus` → `claude-opus-5-5` and `@anthropic:fable` →
 `claude-fable-5-1`.
 
@@ -35,6 +36,12 @@ The stream then rotates `@anthropic:opus` → `claude-opus-5-5` and `@anthropic:
 - **The canary's `structuredOutputProbe`** checks the reported enforcement against the registry, so
   a live run catches a declared format that the provider rejects or that the adapter fails to send.
 
+## Open
+
+- The maintainer's live `anthropic-model-tiers` run.
+- The web-search TECH_DEBT P3.
+- The Copilot review loop (layer 2) had not run at close-out.
+
 ## Files
 
 - `libraries/ts-extras/src/packlets/ai-assist/`: `structuredOutputTypes.ts` (format union),
@@ -42,6 +49,7 @@ The stream then rotates `@anthropic:opus` → `claude-opus-5-5` and `@anthropic:
   (`output_config` merge), `registry.ts` (capability entries, aliases), `README.md`
 - `libraries/ts-extras/CAPABILITIES.md`, `etc/ts-extras.api.md`, change file
 - `samples/testbed/src/scenarios/modelTiers/` (probe) and its tests
+- `result.md` §9 records the independent antagonist pass and what it changed
 - `docs/TECH_DEBT.md` (P2 removed, P3 added)
 
 Archived alongside: `brief.md` (as briefed) and `result.md` (as shipped).

@@ -642,11 +642,13 @@ async function callAnthropicCompletion(
     Object.assign(body, resolvedThinking.otherParams);
   }
 
-  // The structured-output wire carries `tools` + `tool_choice` of its own, so the
-  // server-tool assignment below would clobber it. `resolveStructuredOutput`
-  // refuses that combination up front, which is what makes the two mutually
-  // exclusive — but that is an invariant held in a DIFFERENT FILE, and a future
-  // second Anthropic capability entry (or a relaxed conflict guard) would
+  // The forced-tool wire (`'tool-forced'`) carries `tools` + `tool_choice` of its
+  // own, so the server-tool assignment below would clobber it. (The
+  // `'anthropic-output-format'` wire lives in `output_config` and carries no tools,
+  // which is why this checks the enforcement, not merely that a wire exists.)
+  // `resolveStructuredOutput` refuses forced-tool + server tools up front, which is
+  // what makes the two mutually exclusive — but that is an invariant held in a
+  // DIFFERENT FILE, and a relaxed conflict guard (or a new tools-based format) would
   // reintroduce silent clobbering with nothing failing at this line. So assert it
   // here rather than trusting a comment across a file boundary.
   // Unreachable through the public API — resolveStructuredOutput refuses this

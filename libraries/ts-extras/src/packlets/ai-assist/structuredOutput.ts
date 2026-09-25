@@ -21,9 +21,8 @@ import { toGeminiParameterSchema } from './toolFormats';
  * Used only by `'anthropic-tool-forced'`: that mechanism forces a tool, so a tool
  * must exist to be forced. (`'anthropic-output-format'` sends no tool at all.) The
  * name is fgv-owned and never reaches the caller — the structured-output resolver
- * re-serializes the tool's
- * `input` back into `IAiCompletionResponse.content`, so a caller's converter sees
- * a JSON string exactly as it does on every other provider.
+ * re-serializes the tool's `input` back into `IAiCompletionResponse.content`, so a
+ * caller's converter sees a JSON string exactly as it does on every other provider.
  * @public
  */
 export const ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME: string = 'fgv_structured_output';
@@ -288,8 +287,8 @@ function isOpenAiStrictFormat(format: IAiStructuredOutputCapability['format']): 
  * that *would* conflict does not conflict when the request degraded to sending
  * nothing. Anthropic + `json-object` is exactly that case, on both Anthropic
  * formats: the mode has no expression there, so the wire is empty and there is
- * nothing to conflict with —
- * rejecting it would refuse a request that was about to become harmless.
+ * nothing to conflict with — rejecting it would refuse a request that was about to
+ * become harmless.
  * @internal
  */
 function conflictsWithServerTools(

@@ -91,13 +91,23 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // output_config.effort) and 400s on the legacy thinking.type: 'enabled' + budget_tokens
     // shape; see AiAssist.isAdaptiveThinkingModel. The dash-bounded match also covers
     // claude-opus-5-5 and claude-fable-5-1, which are adaptive-only (always on) as well.
-    adaptiveThinkingModelPrefixes: ['claude-sonnet-5', 'claude-opus-5', 'claude-fable-5'],
-    // Two mechanisms, split by what each line accepts. claude-opus-5-5 and claude-fable-5-1
-    // return a 400 on a forced tool_choice ({type:'any'} / {type:'tool'}): "Forced tool use is
-    // not supported", https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5
-    // ("The first three also apply on Claude Fable 5.1"). They get JSON outputs
-    // (`output_config.format`), which both are listed as supporting on
-    // https://platform.claude.com/docs/en/build-with-claude/structured-outputs (both fetched
+    // claude-mythos-5-1 ("Same capabilities as Claude Fable 5.1"; budget_tokens and disabled both
+    // 400, https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1, fetched
+    // 2026-09-25) is listed by its own id: no page fetched says the same of claude-mythos-5.
+    adaptiveThinkingModelPrefixes: [
+      'claude-sonnet-5',
+      'claude-opus-5',
+      'claude-fable-5',
+      'claude-mythos-5-1'
+    ],
+    // Two mechanisms, split by what each line accepts. claude-opus-5-5, claude-fable-5-1 and
+    // claude-mythos-5-1 return a 400 on a forced tool_choice ({type:'any'} / {type:'tool'}):
+    // "Forced tool use is not supported",
+    // https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5 and
+    // https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1 ("Claude Fable
+    // 5.1 and Claude Mythos 5.1 don't support forced tool use"). They get JSON outputs
+    // (`output_config.format`), which all three are listed as supporting on
+    // https://platform.claude.com/docs/en/build-with-claude/structured-outputs (all fetched
     // 2026-09-25). Every other line keeps forced tool use under the catch-all: the '' entry
     // is only correct because the longer prefixes win for the two that reject it (longest
     // prefix wins; array order does not matter).
@@ -105,6 +115,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     structuredOutput: [
       { modelPrefix: 'claude-opus-5-5', format: 'anthropic-output-format' },
       { modelPrefix: 'claude-fable-5-1', format: 'anthropic-output-format' },
+      { modelPrefix: 'claude-mythos-5-1', format: 'anthropic-output-format' },
       { modelPrefix: '', format: 'anthropic-tool-forced' }
     ]
   },
@@ -617,7 +628,7 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
       // Broadened from /^claude-opus-4/ and /^claude-sonnet-4/ so the sonnet-5+ / opus-5+ lines
       // are detected as thinking-capable. Detection accumulates across matching rules, so this is
       // purely additive: every existing opus-4 / sonnet-4 id still matches. Both broadenings are
-      // now load-bearing: claude-sonnet-5 and claude-opus-5 (the advanced-tier target) would
+      // now load-bearing: claude-sonnet-5 and claude-opus-5-5 (the advanced-tier target) would
       // otherwise hit only /^claude-/ and lose thinking. The fable rule keeps the
       // AnthropicThinkingModelNames union honest — claude-fable-5 (modelOverride-only) would
       // otherwise fall to the /^claude-/ catch-all and be detected without thinking.

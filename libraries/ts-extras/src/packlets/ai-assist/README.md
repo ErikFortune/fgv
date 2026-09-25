@@ -298,8 +298,8 @@ Gemini's schema is an OpenAPI-3.0 subset that **rejects** draft-07 keywords rath
 than ignoring them, so the schema goes through the same sanitizer the Gemini tool
 path uses.
 
-Anthropic has two mechanisms, split by model line. `claude-opus-5-5` and
-`claude-fable-5-1` return a 400 on a forced `tool_choice`, so they declare
+Anthropic has two mechanisms, split by model line. `claude-opus-5-5`,
+`claude-fable-5-1` and `claude-mythos-5-1` return a 400 on a forced `tool_choice`, so they declare
 `anthropic-output-format`: Anthropic's JSON outputs, constrained decoding with the
 reply as text, reported as `'schema'`. (`tool_choice: auto` + a `strict` tool was the
 other documented option and was declined: `auto` lets the model answer in text

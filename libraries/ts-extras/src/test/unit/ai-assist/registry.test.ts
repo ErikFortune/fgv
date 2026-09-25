@@ -155,6 +155,7 @@ describe('AiAssist.registry', () => {
       ['claude-opus-5-5', 'anthropic-output-format'],
       ['claude-opus-5-5-20260922', 'anthropic-output-format'],
       ['claude-fable-5-1', 'anthropic-output-format'],
+      ['claude-mythos-5-1', 'anthropic-output-format'],
       ['@anthropic:opus', 'anthropic-output-format'],
       ['@anthropic:fable', 'anthropic-output-format'],
       ['claude-opus-5', 'anthropic-tool-forced'],
@@ -166,8 +167,13 @@ describe('AiAssist.registry', () => {
       expect(AiAssist.resolveStructuredOutputCapability(desc, model)?.format).toBe(format);
     });
 
-    test('the rotated ids stay adaptive-thinking models (dash-bounded match on the 5-family prefixes)', () => {
-      for (const id of ['claude-opus-5-5', 'claude-fable-5-1', 'claude-opus-5-5-20260922']) {
+    test('the rotated ids and claude-mythos-5-1 are adaptive-thinking models', () => {
+      for (const id of [
+        'claude-opus-5-5',
+        'claude-fable-5-1',
+        'claude-opus-5-5-20260922',
+        'claude-mythos-5-1'
+      ]) {
         expect(AiAssist.isAdaptiveThinkingModel(desc, id)).toBe(true);
       }
     });

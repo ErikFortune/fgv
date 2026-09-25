@@ -1713,6 +1713,33 @@ describe('structured output', () => {
       expect('output_config' in body).toBe(false);
     });
 
+    test('claude-mythos-5-1 (raw id) gets the adaptive thinking shape and the output format together', async () => {
+      // Declared by its own id on both tables: its page says a manual budget and a forced
+      // tool_choice both 400, so either table falling back to the catch-all is a provider error.
+      mockFetchResponse(anthropicThinkingThenText('{"foo":"bar"}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: anthropic,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        modelOverride: 'claude-mythos-5-1',
+        thinking: { effort: 'low' },
+        structuredOutput: { mode: 'schema', schema: fooSchema, onUnsupported: 'fail' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('schema');
+      });
+      const body = lastRequestBody();
+      expect(body.model).toBe('claude-mythos-5-1');
+      expect(body.thinking).toEqual({ type: 'adaptive' });
+      expect(body.output_config).toEqual({
+        effort: 'low',
+        format: { type: 'json_schema', schema: fooSchema.toJson() }
+      });
+      expect('tool_choice' in body).toBe(false);
+    });
+
     test('thinking effort and the format share output_config — neither overwrites the other', async () => {
       // claude-opus-5-5 always thinks, so a structured-output call with an effort is the
       // ordinary case, not an edge. A plain Object.assign of the wire drops `effort`.

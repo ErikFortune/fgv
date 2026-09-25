@@ -25,7 +25,8 @@ comes from the raw page text (the `.md` rendering of each URL).
 | D6 | <https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool.md> | web search citations always on; tool versions |
 | D7 | <https://platform.claude.com/docs/en/agents-and-tools/tool-use/server-tools.md> | checked for structured-output interaction; none stated |
 | D8 | <https://platform.claude.com/docs/en/build-with-claude/effort.md> | effort levels on the rotated ids |
-| D9 | <https://platform.claude.com/docs/en/about-claude/model-deprecations.md> | both successors Active; predecessors' retirement dates |
+| D9 | <https://platform.claude.com/docs/en/about-claude/model-deprecations.md> | all four ids Active, with "not sooner than" retirement dates |
+| D10 | <https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1.md> | "Claude Fable 5.1 and Claude Mythos 5.1 don't support forced tool use"; Mythos 5.1 "Same capabilities as Claude Fable 5.1"; adaptive thinking always on, budget and disabled both 400 |
 
 All fetched 2026-09-25.
 
@@ -45,11 +46,11 @@ needs a re-ask loop or a new failure mode. JSON outputs constrain the reply itse
 documented exceptions every schema format has. It is also the smaller *behavioral* surface: no
 synthetic tool, no `tool_use` re-serialization, and no tools-channel ownership.
 
-Both rotated ids are in D2's `supportedModels` list (`claude-opus-5-5`, `claude-fable-5-1`), and the
+Both rotated ids, and `claude-mythos-5-1`, are in D2's `supportedModels` list, and the
 feature is `status: ga` with no beta header. D2: "The `output_format` parameter has moved to
 `output_config.format`, and beta headers are no longer required."
 
-**Declared by prefix, only for the two ids that reject forcing.** D2 lists every current Claude line
+**Declared by prefix, only for the ids that reject forcing** (`claude-opus-5-5`, `claude-fable-5-1`, `claude-mythos-5-1`). D2 lists every current Claude line
 as supported, so JSON outputs *could* replace forced tool use everywhere. That was not done. It
 would change the reported enforcement from `'tool-forced'` to `'schema'` for existing
 callers on `claude-sonnet-5`, `claude-opus-5` and the rest, and the brief scoped the change to the
@@ -60,6 +61,14 @@ lines that reject forcing. `anthropic-tool-forced` stays under the `''` catch-al
 limitations says `additionalProperties` must be `false` for objects, so `{type:'object'}` would
 constrain the reply to `{}`. `jsonObjectWire` returns `undefined`, so `json-object` routes through
 `onUnsupported` exactly as it does on the forced format.
+
+**Two further documented constraints, checked.** D2 § Feature compatibility: *"Message
+Prefilling: Incompatible with JSON outputs"*. Not reachable: the completion path builds messages
+as `head` then the user prompt (`buildAnthropicMessages` with no `rawTail`), so the last turn is
+always the user's. D2 § Prompt modification: changing `output_config.format` *"will invalidate any
+prompt cache for that conversation thread"*. That is a cost, not a correctness issue. ai-assist's
+cache breakpoints (#671/#688) remain valid. A caller alternating schemas on one cached prefix pays
+a cache write each time, the same as changing a tool set.
 
 **No schema sanitizer was added.** D2 rejects some keywords with a 400: numeric and string
 constraints, recursion, and `additionalProperties` other than `false`. `JsonSchema`'s builders emit
@@ -137,8 +146,9 @@ one call site to `Object.assign` turns exactly the effort test red (1 failed / 8
 | `aliases` `@anthropic:fable` | `claude-fable-5` → **`claude-fable-5-1`** | D9: Active, not sooner than 2027-09-01 |
 | `aliases` `@anthropic:sonnet`, `@anthropic:haiku` | none | not in scope; unchanged ids |
 | `defaultModel` | none (comment only) | `advanced` still names `@anthropic:opus`; frontier still cascades |
-| `structuredOutput` | **two new longer-prefix entries** (`claude-opus-5-5`, `claude-fable-5-1` → `anthropic-output-format`); `''` → `anthropic-tool-forced` kept | D1, D2. Tested per id, including a dated snapshot, both aliases, and five lines that keep forcing |
+| `structuredOutput` | **three new longer-prefix entries** (`claude-opus-5-5`, `claude-fable-5-1`, `claude-mythos-5-1` → `anthropic-output-format`); `''` → `anthropic-tool-forced` kept | D1, D2, D10. Tested per id, including a dated snapshot, both aliases, and five lines that keep forcing |
 | `adaptiveThinkingModelPrefixes` | none, **verified rather than inherited** | `isExactOrDashBoundedPrefix('claude-opus-5-5', 'claude-opus-5')` is true because the next char is `-`, and likewise `claude-fable-5-1` / `claude-fable-5`. A new registry test asserts `isAdaptiveThinkingModel` for `claude-opus-5-5`, `claude-fable-5-1` and `claude-opus-5-5-20260922`. D1: adaptive is the only accepted shape on both |
+| `adaptiveThinkingModelPrefixes` + `claude-mythos-5-1` | **added** (its own id, not `claude-mythos-5`) | D10: "Adaptive thinking is always on. `thinking: {"type": "enabled"}` with `budget_tokens` and `thinking: {"type": "disabled"}` both return a 400 error." Without it, an effort on a `claude-mythos-5-1` override took the legacy budget shape. No fetched page says the same of `claude-mythos-5`, so that prefix was not used. A wire test pins adaptive + `output_config` for it |
 | `thinkingRequiredModelPrefixes` | none (not declared) | D1: "Omit the `thinking` field, or send `thinking: {"type": "adaptive"}`". ai-assist's `'none'` omits the field, so it is accepted. Existing test already asserts `claude-opus-5-5` is not thinking-required |
 | effort values | none | D8: `xhigh` and `max` are both listed for Claude Opus 5.5 and Claude Fable 5.1; `low`/`medium`/`high` are universal |
 | `supportedTools: ['web_search']` | none | ai-assist sends `web_search_20250305`. D6 lists it as a current version, and D1 § Feature support lists server-side tools |
@@ -147,9 +157,11 @@ one call site to `Object.assign` turns exactly the effort test red (1 failed / 8
 | `AnthropicThinkingModelNames` | none | both ids already added by #692 |
 | `temperature` handling | none | unchanged; the Claude-5 family already rejects it |
 
-Not checked: **`claude-mythos-5-1`**. D1 says the forced-tool rejection applies to Fable 5.1, not
-Mythos, and Mythos is not in `AnthropicThinkingModelNames` or any alias. If someone overrides to
-it, it falls under the catch-all.
+**`claude-mythos-5-1`** is a documented id (D2 `supportedModels`, D8, D10) that no alias reaches.
+D10 states it rejects forced tool use and is adaptive-only, so it is declared on both tables (see
+§9 for how this was first missed). It is **not** added to `AnthropicThinkingModelNames` or to a
+`listModels` thinking `idPattern` (it falls to `/^claude-/`). Those are the manual-axes union and
+detection rules, which track ids ai-assist names, and no alias names Mythos.
 
 ## 6. Testbed probe
 
@@ -174,7 +186,7 @@ run therefore exercises **both** Anthropic mechanisms live:
 It also gives `claude-fable-5-1` its first plain live row. The seam stays coverage-ignored like
 the existing ones. The classification and verdict logic is covered offline through injected deps.
 
-## 7. Gates (all run 2026-09-25, on the final tree)
+## 7. Gates (2026-09-25; the final run is after the §9 fixes, commit noted below)
 
 | gate | result |
 |---|---|
@@ -194,3 +206,31 @@ the existing ones. The classification and verdict logic is covered offline throu
 
 - **TECH_DEBT P3**: whether web search + `output_config.format` is accepted (§3).
 - **Not done, deliberately**: moving the other Claude lines from forced tool use to JSON outputs (§1).
+- **Copilot review loop (layer 2)**: not run at close-out.
+- **Live run**: pending the maintainer.
+
+## 9. Antagonist pass (independent reviewer, 2026-09-25) and what it changed
+
+No P1. The doc quotes were checked verbatim against the saved pages, along with test counts and
+the existence of every claimed test. Findings and dispositions:
+
+- **F3 — `claude-mythos-5-1` was skipped on an unsourced negative inference.** An earlier draft of
+  §5 said *"D1 says the forced-tool rejection applies to Fable 5.1, not Mythos"*. D1 says nothing
+  about Mythos. Fetching D10 showed Mythos 5.1 **does** reject forced tool use and **is**
+  adaptive-only. **Fixed**: declared on `structuredOutput` and `adaptiveThinkingModelPrefixes`,
+  with a registry test and a wire test. This was the acceptance item "no mechanism that 400s for
+  any documented id", and it had not been met.
+- **F1 — stale adapter comment** (`completionClient.ts`, the forced-tool clobber assertion) still
+  described a hypothetical second Anthropic entry. **Fixed.**
+- **F2 — stale `idPattern` comment** named `claude-opus-5` as the advanced-tier target. **Fixed.**
+- **F4 — "all run on the final tree" was not demonstrable.** The logs predated the last
+  (comment-only) commit. **Fixed** by re-running every gate after these fixes (§7).
+- **F5 — `meta.yaml` `packages` omitted the testbed.** **Declined, with a note in the file.**
+  `packages` feeds the consumer-facing capability feed, and listing `@fgv/testbed` there tagged the
+  feed line with an unpublished sample. That is the same choice #692 made. The brief's out-of-scope
+  line ("every package outside `ts-extras`") conflicts with its own instruction to add the probe.
+  That tension is recorded in `diverged`.
+- **F6 — Copilot loop missing from the open lists.** **Fixed** (§8, README, ledger).
+- **F7 — prefill and prompt-cache constraints not dispositioned.** **Fixed** (§1).
+- **F8 — two ragged comment wraps.** **Fixed.**
+- **F9 — "predecessors' retirement dates" overstated D9.** **Fixed** (D9 row).

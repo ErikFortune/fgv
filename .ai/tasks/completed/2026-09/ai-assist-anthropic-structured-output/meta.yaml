@@ -1,6 +1,6 @@
 id: ai-assist-anthropic-structured-output
 status: shipped
-packages: ['@fgv/ts-extras']
+packages: ['@fgv/ts-extras'] # published packages only; samples/testbed also touched (unpublished)
 prs: [694]
 openPrs: []
 opened: 2026-09-25
@@ -29,7 +29,10 @@ summary:
     was kept on that basis and the open question filed as a P3, rather than relaxed. The
     output_config merge was not in the brief: the naive wire assignment would have dropped
     output_config.effort on an always-thinking model. The testbed probe also added a plain live row
-    for @anthropic:fable, which no tier reaches.
+    for @anthropic:fable, which no tier reaches. The antagonist pass found claude-mythos-5-1, a
+    documented id no alias reaches, had been skipped on an unsourced inference; the Fable 5.1 page
+    says it rejects forcing and is adaptive-only, so it was declared on both tables. The brief put
+    every package outside ts-extras out of scope while asking for a testbed probe; the probe shipped.
   sourceLine: "**Shipped:** Anthropic structured output no longer depends on forcing a tool call on the lines that reject it — `claude-opus-5-5` and `claude-fable-5-1` get Anthropic's JSON outputs, and `@anthropic:opus` / `@anthropic:fable` rotate to them."
   headline: >
     Anthropic structured output works on Claude Opus 5.5 and Fable 5.1 via JSON outputs instead of a
@@ -52,4 +55,4 @@ keywords:
   - Claude Fable 5.1
   - provider line rotation
   - capability catch-all
-sourceHash: e5a2a7f27bc1af2f # sha256/16 over brief.md, result.md
+sourceHash: 0fd6adb6b911e329 # sha256/16 over brief.md, result.md
