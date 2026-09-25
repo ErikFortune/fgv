@@ -87,6 +87,21 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   **Not introduced by T4**, which surfaced it and correctly declined to fix it: the arithmetic
   belongs to T1/T3's reservation model and the profile to T8's qualification.
 
+  **T6 amendment (2026-09-24) — the per-registration figure is unchanged; in-flight commands
+  lower the ceiling further.** T6 adds two reservations, neither charged at registration of an
+  ordinary task: (1) an `accepted-operation-settlement` claim per **in-flight external command**
+  (reserved when the intent is recorded, before dispatch; consumed when the command settles),
+  charging `maxUpdateBytes` = **64 KiB** of `resident-payload-bytes` (plus one update, 32 audience
+  links/acknowledgement ids, and stored-operation + receipt + update record bytes); (2) an
+  `admitted-source-replay` claim on a task registered against a `source-replay` source, charging
+  exactly the finite envelope the host declares (`remainingRequiredBytes` resident, ≤ 64 KiB per
+  declared update). So the registration baseline stays **448 KiB → 146**. With one in-flight
+  command per task it is 448 + 64 = 512 KiB → ⌊64 MiB / 512 KiB⌋ = **128**; each further
+  concurrent in-flight command on a task costs another 64 KiB, and a `source-replay` task costs
+  its envelope on top. A command held as uncertain (non-idempotent, or its key expired) keeps its
+  reservation until something settles it — see the T6 hand-off entry below. Whichever resolution
+  T8 picks must size these two claims too.
+
   **Trigger**: T8 (profile qualification), or the first consumer sizing a deployment against
   `defaultTaskCapacityLimits`, whichever comes first. **T8 cannot sign off the profile without
   resolving this** — that is the load-bearing reason this is recorded here rather than left in a
@@ -120,12 +135,37 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   per-audience acknowledgement evidence (design §8.6 allocation 2) — the seam writes audience links
   with no such reservation today, which is why it is not a host option. (2) **T8:** `archive`
   refuses a task while any retained update has a non-empty audience (`retention-blocked`); T8
-  replaces that with acknowledgement/disposition evidence and pruning. (3) **T6:** an external
-  task's commands are `rejected: unsupported` and recorded under their key until dispatch exists.
-  (4) **T9:** no stop latch is checked by list completion or relationship operations yet.
+  replaces that with acknowledgement/disposition evidence and pruning. (3) ~~**T6:** an external
+  task's commands are `rejected: unsupported` and recorded under their key until dispatch exists.~~
+  **Resolved by T6** — external commands dispatch through their source (see the next entry for
+  what T6 hands on). (4) **T9:** no stop latch is checked by list completion or relationship operations yet.
   **Trigger:** the start of T6, T7, T8 and T9 respectively. **Reference:** the `agent-tasks-t5`
   stream's `result.md` § *What a later slice must decide* (at `.ai/tasks/active/agent-tasks-t5/`
   until the `agent-tasks-v1` cluster finalizes).
+
+- **[P2] `ts-agent-tasks` source hand-offs T6 left for T7/T8/T9 — each is the named slice's to
+  decide, and none is safe to leave implicit.**
+  (1) **T8 — held commands never settle on their own.** A `possibly-sent` command the pump holds
+  (non-idempotent with no lookup answer, or its source key expired) stays unsettled indefinitely,
+  keeping its 64 KiB settlement reservation and blocking `archive` (`retention-blocked`, "unsettled
+  command"). Only a later `lookupCommand` that finds it settles it; an ordinary observation does
+  not, and a source with no lookup never will. T8 needs an explicit, audited host disposition for a held command
+  (e.g. "abandoned: outcome unknown") that consumes the reservation without claiming an outcome.
+  (2) **T8 — a `source-replay` task registered after the feed passed its revisions.** The feed
+  reports an observation for a binding no task holds as `unknown-binding` and the pass moves on,
+  so revisions emitted before registration are never replayed into the task. Hosts must register
+  (or register with an `initialObservation`) before the source emits for that binding; T8's
+  recovery journeys should either enforce that ordering or detect the gap.
+  (3) **T7 — audience charges on the T6 claims.** Settlement and replay claims reserve
+  `maxAudiencePerUpdate` links/acknowledgement ids per update, but the audience seam still
+  answers "nobody"; when T7 fills it, it must spend these reservations rather than mint new ones.
+  (4) **T9 — `ITaskSource.capabilities()` and the source side of a stop.** Design §5 lists
+  `capabilities()`; T6 omitted it (commands are declared by the kind registry, which is the one
+  authority T6 needed). A cascade stop that must ask a source to stop is T9's to add, together
+  with whatever capability report it needs.
+  **Trigger:** the start of T7, T8 and T9 respectively. **Reference:** the `agent-tasks-t6`
+  stream's `result.md` § *Hand-offs* (at `.ai/tasks/active/agent-tasks-t6/` until the
+  `agent-tasks-v1` cluster finalizes).
 
 *(The `checkThreshold` zero-byte-section measure gap (shipped in C2, #669) was fixed by C3 of
 `ai-assist-prompt-caching`: a section with `chars === 0` now contributes `0` to the measured total

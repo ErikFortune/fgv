@@ -57,13 +57,19 @@ orchestrator's `5bcae5ce` deciding the dereference question). PR target: `integr
 
 ## Done
 
-- Required reading; design above.
+- Implementation, tests (1,353, 100 % coverage, zero `c8 ignore`), layer-1 review and its fixes.
+- Post-review self-audit of ordering windows found W4 (pump resend unfenced) — fixed (`605e482b`).
+- Revert check: 18 protections, all red (script: see result.md list).
+- Docs: `CAPABILITIES.md` External sources section; router shortcut + package row; design § 5
+  spelling; TECH_DEBT capacity amendment + T6 hand-off entry (T5's T6 item marked resolved);
+  `result.md`.
 
 ## Open
 
-- Everything from implementation onward.
+- Repo-wide `rebuild` + `test` and the verify scripts on the final source.
+- Plan T6 status line + WORKSTREAMS entry anticipating merge (needs the PR number).
+- Open PR into `integration/agent-tasks-v1`; drive the Copilot loop; record rounds in result.md.
 
 ## Next concrete step
 
-Types (`types/source.ts`, stored command `awaiting`, registry `getCommand`, repository `registry`),
-then storage (claims, checkpoint record, unsettled-command index, health-only observation).
+Run the repo-wide gates; open the PR; commit the status lines with its number; request Copilot.
