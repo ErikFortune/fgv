@@ -402,6 +402,12 @@ function _convertVersioned<T>(
   return converted.value;
 }
 
+/** A converted consumer or source record: its header, and the full source record when it is one. */
+interface IOpaqueRecord {
+  readonly header: ITaskRecordHeader;
+  readonly source?: ITaskSourceRecord;
+}
+
 /**
  * Opens an existing repository.
  *
@@ -929,10 +935,10 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
         const text = _readJson(store, scan, name, Math.min(limit, profile.limits['record-bytes']));
         return {
           read: text,
-          header:
+          converted:
             text === undefined
               ? undefined
-              : _convertVersioned(
+              : _convertVersioned<IOpaqueRecord>(
                   converters,
                   scan,
                   name,
@@ -943,29 +949,30 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
                           .convert(from)
                           .onSuccess((record) =>
                             utf8Length(record.cursor ?? '') > profile.encoded.maxSourceCursorBytes
-                              ? fail<ITaskRecordHeader>(
+                              ? fail<IOpaqueRecord>(
                                   `its cursor is over the bound of ${profile.encoded.maxSourceCursorBytes} bytes`
                                 )
-                              : succeed<ITaskRecordHeader>(record)
+                              : succeed<IOpaqueRecord>({ header: record, source: record })
                           )
-                      : converters.storage.header.convert(from),
+                      : converters.storage.header
+                          .convert(from)
+                          .onSuccess((header) => succeed<IOpaqueRecord>({ header })),
                   'record-invalid'
                 )
         };
       });
       const read = materialized.read;
-      const header = materialized.header;
-      if (read === undefined || header === undefined) {
+      const converted = materialized.converted;
+      if (read === undefined || converted === undefined) {
         continue;
       }
-      if (header.id !== entry.id) {
-        scan.blocking('record-id-mismatch', `${name}: holds ${kind} ${header.id}`, name);
+      if (converted.header.id !== entry.id) {
+        scan.blocking('record-id-mismatch', `${name}: holds ${kind} ${converted.header.id}`, name);
         continue;
       }
-      if (kind === 'source') {
-        // Converted by the full source-record converter above; this is the same value.
+      if (converted.source !== undefined) {
         sources.set(entry.id, {
-          record: header as ITaskSourceRecord,
+          record: converted.source,
           fingerprint: fingerprintOf(read.text),
           bytes: read.bytes
         });

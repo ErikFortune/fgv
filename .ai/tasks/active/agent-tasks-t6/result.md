@@ -222,6 +222,16 @@ fence) — fixed with three tests and three reverts.
   projection; at the awaited revision the feed's projection must match, else the receipt stays
   `accepted` (a settled receipt is final; storage admits exactly that resolution) and stops
   waiting. Revert M38 turns its test red.
+- **Round 6** — no inline findings. Two summary-only items: an unchecked `as ITaskSourceRecord` at
+  open (flagged in round 2's summary too, and missed then) — fixed by carrying the typed source
+  record out of the converter callback; and a claim that the adoption doc's corrected sentence
+  reverses the consumer's contract — it does not ("the ingestion adapter is `observed-state`, not
+  `source-replay`" names the weaker contract it keeps), so left as is.
+
+**Loop stopped after 6 rounds on diminishing returns.** Rounds 1–5 each found real ordering,
+ownership or validation defects (22 fixed in all, each with a test that fails when reverted);
+round 6 found none inline. Consistent with the authorization-boundary guidance, the loop ran long
+and substantive and stopped when the finding profile went to hygiene.
 
 ## Gates
 
