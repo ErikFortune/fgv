@@ -14,6 +14,7 @@ import {
   ITaskRepository,
   ITaskScope,
   ITaskSubscriptionRegistration,
+  ITaskUpdate,
   Instant,
   OperationId,
   SubscriptionId,
@@ -168,12 +169,17 @@ describe('subscription registration: the ordered inventory protocol', () => {
 
   test('a crash after the record landed completes the registration at the next open', async () => {
     const { root, repository } = await faultyRepository();
+    // Already live before the crash: at reopen its inventory entry is left exactly as it was.
+    await register(repository, registration('s0'));
     root.faults.push({ name: 'consumer-s1.json', when: 'after', visibility: 'unknown' });
     expect(await register(repository, registration('s1'))).toFail();
     repository.close().orThrow();
     const r = readyOf(await reopened(root));
     expect(r.report.completedSubscriptions).toEqual(['s1']);
     expect(r.subscription('s1' as SubscriptionId)).toSucceedAndSatisfy((s) =>
+      expect(s?.recordRevision).toBe(1)
+    );
+    expect(r.subscription('s0' as SubscriptionId)).toSucceedAndSatisfy((s) =>
       expect(s?.recordRevision).toBe(1)
     );
     await addTask(r, 't', { scopes: [A] });
@@ -303,6 +309,33 @@ describe('subscription registration: the ordered inventory protocol', () => {
       expect.objectContaining({ code: 'invalid' })
     );
     expect(await register(repository, baseline())).toSucceed();
+  });
+
+  test('a baseline given in any order is stored in id order', async () => {
+    const { repository } = await faultyRepository();
+    await addTask(repository, 't', { scopes: [A] });
+    await addTask(repository, 'a', { scopes: [A] });
+    const entry = async (id: string): Promise<ITaskUpdate> => {
+      const commit = (await repository.readCommit(id as TaskId)).orThrow()!;
+      const envelope = commit.recordType === 'resolved' ? commit.task.envelope : (undefined as never);
+      return {
+        id: `${id}:1:initial` as UpdateId,
+        taskId: id as TaskId,
+        revision: 1 as TaskRevision,
+        category: 'lifecycle',
+        required: true,
+        snapshot: { envelope },
+        audience: ['s1' as SubscriptionId]
+      };
+    };
+    const record = (
+      await register(repository, {
+        ...registration('s1'),
+        specification: { ...registration('s1').specification, start: 'current' },
+        baseline: [await entry('t'), await entry('a')]
+      })
+    ).orThrow();
+    expect(record.baseline.map((b) => b.id)).toEqual(['a:1:initial', 't:1:initial']);
   });
 });
 
@@ -474,6 +507,48 @@ describe('issued receipts at the storage boundary', () => {
     );
   });
 
+  test('a start-current subscription refuses an entry naming an ordinary id that was never owed', async () => {
+    const { repository: r } = await faultyRepository();
+    await addTask(r, 't', { scopes: [A] });
+    const current = (await r.readCommit('t' as TaskId)).orThrow()!;
+    const envelope = current.recordType === 'resolved' ? current.task.envelope : (undefined as never);
+    (
+      await register(r, {
+        ...registration('s2', [A]),
+        specification: { ...registration('s2', [A]).specification, start: 'current' },
+        baseline: [
+          {
+            id: 't:1:initial' as UpdateId,
+            taskId: 't' as TaskId,
+            revision: 1 as TaskRevision,
+            category: 'lifecycle',
+            required: true,
+            snapshot: { envelope },
+            audience: ['s2' as SubscriptionId]
+          }
+        ]
+      })
+    ).orThrow();
+    expect(
+      await r.withWriter((w) =>
+        w.issueReceipt({
+          subscriptionId: 's2' as SubscriptionId,
+          expectedRecordRevision: 1,
+          receipt: {
+            version: 1,
+            deliveryId: 'd9',
+            included: [{ taskId: 'nope', revision: 1, updateIds: [uid('nope', 1, 'lifecycle')] }]
+          } as never,
+          issuedAt: at as Instant,
+          expiresAt: later(60)
+        })
+      )
+    ).toFailWithDetail(
+      /not owed to this subscription/i,
+      expect.objectContaining({ code: 'invalid-receipt' })
+    );
+  });
+
   test('a manifest over the issued-receipt bound is refused', async () => {
     const r = (
       await FileTreeTaskRepository.initialize(
@@ -561,6 +636,91 @@ describe('issued receipts at the storage boundary', () => {
     (await repository.rebuildIndexes()).orThrow();
     expect(await owedIds(repository, 's1')).toEqual([uid('t', 2, 'lifecycle')]);
     expect(inspectRepository(repository)!.evidence.consumerPassReads).toBe(1);
+  });
+
+  // A non-required update may be dropped by any commit (coalescing); the drop releases its owed
+  // link without acknowledging it, so a manifest that already named it can no longer be honoured.
+  test('an owed update a later commit drops is released, and a receipt that named it is refused', async () => {
+    const progressCommit = async (revision: number, drop: boolean): Promise<TaskResult<unknown>> => {
+      const current = (await repository.readCommit('t' as TaskId)).orThrow()!;
+      const record = current.recordType === 'resolved' ? current : (undefined as never);
+      const env = { ...record.task.envelope, revision: revision as TaskRevision, title: `rev ${revision}` };
+      const operationId = `op-progress-${revision}` as OperationId;
+      return repository.withWriter((w) =>
+        w.commit({
+          purpose: 'operation',
+          operationId,
+          taskId: 't' as TaskId,
+          expectedRevision: (revision - 1) as TaskRevision,
+          expectedRecordRevision: record.recordRevision,
+          record: {
+            recordType: 'resolved',
+            task: { envelope: env, details: record.task.details },
+            operations: [
+              ...record.operations,
+              {
+                type: 'catalog',
+                operationId,
+                operation: 'update-tracked',
+                request: { revision },
+                principalKey: 'host',
+                receipt: null
+              }
+            ],
+            updates: [
+              ...record.updates.filter((u) => !(drop && u.category === 'progress')),
+              {
+                id: uid('t', revision, 'progress'),
+                taskId: 't' as TaskId,
+                revision: revision as TaskRevision,
+                category: 'progress',
+                required: false,
+                snapshot: { envelope: env },
+                audience: ['s1'] as SubscriptionId[]
+              }
+            ],
+            archived: false
+          }
+        })
+      );
+    };
+    expect(await progressCommit(2, false)).toSucceed();
+    (
+      await issue(receipt('d1', [{ taskId: 't', revision: 2, updateIds: [uid('t', 2, 'progress')] }]))
+    ).orThrow();
+    const owedBefore: number = held(repository, 'acknowledgement-ids');
+    expect(await progressCommit(3, true)).toSucceed();
+    expect(await owedIds(repository, 's1')).toEqual([uid('t', 1, 'lifecycle'), uid('t', 3, 'progress')]);
+    // One link released, one added: the subscription's owed reservation is unchanged in size.
+    expect(held(repository, 'acknowledgement-ids')).toBe(owedBefore);
+    expect(
+      await repository.withWriter((w) =>
+        w.acknowledgeReceipt({
+          subscriptionId: 's1' as SubscriptionId,
+          expectedRecordRevision: 2,
+          deliveryId: 'd1' as DeliveryId,
+          at: at as Instant
+        })
+      )
+    ).toFailWithDetail(
+      /names t:2:\S+, which subscription s1 is not owed/i,
+      expect.objectContaining({ code: 'invalid-receipt' })
+    );
+  });
+
+  test("a subscription owed nothing cannot issue another subscription's owed update", async () => {
+    await subscribeTo(repository, 's2', [B]);
+    expect(
+      await repository.withWriter((w) =>
+        w.issueReceipt({
+          subscriptionId: 's2' as SubscriptionId,
+          expectedRecordRevision: 1,
+          receipt: receipt('d1', [{ taskId: 't', revision: 1, updateIds: [uid('t', 1, 'lifecycle')] }]),
+          issuedAt: at as Instant,
+          expiresAt: later(60)
+        })
+      )
+    ).toFailWithDetail(/t:1:0/i, expect.objectContaining({ code: 'invalid-receipt' }));
   });
 
   test('abandonment removes exactly one manifest', async () => {
@@ -806,5 +966,146 @@ describe('subscription records at open', () => {
     expect(codes(await reopened(root)).join('\n')).toMatch(
       /audience subscriptions, over 0|maxAudiencePerUpdate/
     );
+  });
+
+  test('a stored update owed to more subscriptions than a validly-lowered profile allows blocks (checkAudiences itself)', async () => {
+    // Unlike the test above — whose limit of 0 fails the profile's own converter before
+    // checkAudiences ever runs — this lowers to a still-valid 1, so the record-level audience
+    // check is the one that actually refuses it.
+    const root = memoryRoot();
+    const r = (await FileTreeTaskRepository.initialize(params(root, 'session'))).orThrow();
+    await subscribeTo(r, 's1', [A]);
+    await subscribeTo(r, 's2', [A]);
+    await addTask(r, 't', { scopes: [A] });
+    const profile = r.profile;
+    r.close().orThrow();
+    const manifestFile = root
+      .getChildren()
+      .orThrow()
+      .find((c) => c.name === 'repository.json') as FileTree.IFileTreeFileItem;
+    const manifest = JSON.parse(manifestFile.getRawContents().orThrow());
+    (root as FileTree.IAtomicFileTreeDirectoryItem)
+      .writeChildAtomically(
+        'repository.json',
+        JSON.stringify({
+          ...manifest,
+          profile: { ...profile, perOwner: { ...profile.perOwner, maxAudiencePerUpdate: 1 } }
+        }),
+        { guarantee: 'session' }
+      )
+      .orThrow();
+    expect(codes(await reopened(root))).toEqual([
+      expect.stringMatching(/record-invalid: .*names 2 audience subscriptions, over 1/)
+    ]);
+  });
+
+  test('a pending entry whose claim count is wrong (not merely its disposition) blocks', async () => {
+    const root = new FaultyRoot(memoryRoot() as FileTree.IAtomicFileTreeDirectoryItem);
+    const r = (await FileTreeTaskRepository.initialize(params(root, 'session'))).orThrow();
+    root.faults.push({ name: 'consumer-s1.json', when: 'before', visibility: 'unchanged' });
+    expect(await register(r, registration('s1'))).toFail();
+    r.close().orThrow();
+    const manifestFile = root.inner
+      .getChildren()
+      .orThrow()
+      .find((c) => c.name === 'repository.json') as FileTree.IFileTreeFileItem;
+    const manifest = JSON.parse(manifestFile.getRawContents().orThrow());
+    const write = (name: string, value: unknown): void => {
+      root.inner.writeChildAtomically(name, JSON.stringify(value), { guarantee: 'session' }).orThrow();
+    };
+    write('repository.json', {
+      ...manifest,
+      consumers: manifest.consumers.map((e: Record<string, unknown>) => ({
+        ...e,
+        // A second activation claim under a different id, rather than merely mis-disposing the
+        // one claim, breaks the pending shape check itself.
+        capacityClaims: (e.capacityClaims as Array<Record<string, unknown>>).concat(
+          (e.capacityClaims as Array<Record<string, unknown>>).map((c) => ({
+            ...c,
+            claimId: `${c.claimId}-2`
+          }))
+        )
+      }))
+    });
+    expect(codes(await reopened(root))).toEqual([
+      expect.stringMatching(/integrity: .*pending subscription holds exactly its activation claim/)
+    ]);
+  });
+
+  test('a live receipt-preparation claim whose charges are exact but whose disposition is neither reserved nor indeterminate blocks', async () => {
+    const root = memoryRoot();
+    const r = (await FileTreeTaskRepository.initialize(params(root, 'session'))).orThrow();
+    await subscribeTo(r, 's1', [A]);
+    r.close().orThrow();
+    const file = root
+      .getChildren()
+      .orThrow()
+      .find((c) => c.name === 'consumer-s1.json') as FileTree.IFileTreeFileItem;
+    const record = JSON.parse(file.getRawContents().orThrow());
+    (root as FileTree.IAtomicFileTreeDirectoryItem)
+      .writeChildAtomically(
+        'consumer-s1.json',
+        JSON.stringify({
+          ...record,
+          capacityClaims: (record.capacityClaims as Array<Record<string, unknown>>).map((c) =>
+            c.purpose === 'receipt-preparation' ? { ...c, disposition: 'consumed' } : c
+          )
+        }),
+        { guarantee: 'session' }
+      )
+      .orThrow();
+    expect(codes(await reopened(root))).toEqual([
+      expect.stringMatching(/integrity: .*a receipt-preparation claim reserves exactly/)
+    ]);
+  });
+
+  test('a subscription whose acknowledgement history exceeds a lowered per-owner limit blocks at open', async () => {
+    const root = memoryRoot();
+    const r = (await FileTreeTaskRepository.initialize(params(root, 'session'))).orThrow();
+    await subscribeTo(r, 's1', [A]);
+    await addTask(r, 't', { scopes: [A] });
+    (
+      await r.withWriter((w) =>
+        w.issueReceipt({
+          subscriptionId: 's1' as SubscriptionId,
+          expectedRecordRevision: 1,
+          receipt: {
+            version: 1,
+            deliveryId: 'd1',
+            included: [{ taskId: 't', revision: 1, updateIds: [uid('t', 1, 'lifecycle')] }]
+          } as never,
+          issuedAt: at as Instant,
+          expiresAt: later(60)
+        })
+      )
+    ).orThrow();
+    (
+      await r.withWriter((w) =>
+        w.acknowledgeReceipt({
+          subscriptionId: 's1' as SubscriptionId,
+          expectedRecordRevision: 2,
+          deliveryId: 'd1' as DeliveryId,
+          at: at as Instant
+        })
+      )
+    ).orThrow();
+    const profile = r.profile;
+    r.close().orThrow();
+    const manifestFile = root
+      .getChildren()
+      .orThrow()
+      .find((c) => c.name === 'repository.json') as FileTree.IFileTreeFileItem;
+    const manifest = JSON.parse(manifestFile.getRawContents().orThrow());
+    (root as FileTree.IAtomicFileTreeDirectoryItem)
+      .writeChildAtomically(
+        'repository.json',
+        JSON.stringify({
+          ...manifest,
+          profile: { ...profile, perOwner: { ...profile.perOwner, maxAcknowledgementIdsPerSubscription: 1 } }
+        }),
+        { guarantee: 'session' }
+      )
+      .orThrow();
+    expect(codes(await reopened(root)).join('\n')).toMatch(/acknowledgement-ids \(s1\)/);
   });
 });

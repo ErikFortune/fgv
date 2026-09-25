@@ -628,6 +628,7 @@ export interface IDeliveryConverters {
     readonly issued: Converter<IIssuedTaskReceipt>;
     // (undocumented)
     readonly policy: Converter<ITaskDeliveryPolicy>;
+    readonly policyOverrides: Converter<Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>>;
     // (undocumented)
     readonly receiptAbandonment: Converter<ITaskReceiptAbandonment>;
     // (undocumented)

@@ -7,7 +7,8 @@ import '@fgv/ts-utils-jest';
 import { JsonObject } from '@fgv/ts-json-base';
 import { TaskId, TaskRevision, baselineUpdateId } from '../../../index';
 import { converters } from '../../helpers/fixtures';
-import { at, update } from '../../helpers/contextFixtures';
+import { update } from '../../helpers/contextFixtures';
+import { at } from '../../helpers/storageFixtures';
 
 const bid = (id: string, revision: number): string =>
   baselineUpdateId(id as unknown as TaskId, revision as unknown as TaskRevision);
@@ -54,8 +55,7 @@ describe('an issued receipt naming another delivery', () => {
     const receipt = {
       version: 1,
       deliveryId: 'd-2',
-      included: [{ taskId: 't', revision: 1, updateIds: ['t:1:0'] }],
-      completeness: 'complete'
+      included: [{ taskId: 't', revision: 1, updateIds: ['t:1:0'] }]
     };
     expect(
       delivery.issued.convert({
@@ -66,6 +66,18 @@ describe('an issued receipt naming another delivery', () => {
         acknowledged: false
       })
     ).toFailWith(/its receipt names another delivery/);
+  });
+
+  test('is refused when it would expire no later than it was issued', () => {
+    expect(
+      delivery.issued.convert({
+        deliveryId: 'd-1',
+        receipt: { version: 1, deliveryId: 'd-1', included: [] },
+        issuedAt: at,
+        expiresAt: at,
+        acknowledged: false
+      })
+    ).toFailWith(/it expires no later than it was issued/);
   });
 });
 
@@ -86,8 +98,7 @@ describe('consumer record invariants', () => {
       receipt: {
         version: 1,
         deliveryId,
-        included: [],
-        completeness: 'complete'
+        included: []
       },
       issuedAt: at,
       expiresAt: '2026-09-22T13:00:00.000Z',
@@ -100,15 +111,13 @@ describe('consumer record invariants', () => {
 
   test('a from-now subscription may not carry a baseline', () => {
     expect(
-      delivery.consumerRecord.convert(
-        record({ baseline: [update(baselineUpdateId('t' as never, 1 as never), 't', 1, 'lifecycle', true)] })
-      )
+      delivery.consumerRecord.convert(record({ baseline: [update(bid('t', 1), 't', 1, 'lifecycle', true)] }))
     ).toFailWith(/a from-now subscription has no baseline/);
   });
 
   test('baseline obligations must be unique and ascending', () => {
-    const a = update(baselineUpdateId('a' as never, 1 as never), 'a', 1, 'lifecycle', true);
-    const b = update(baselineUpdateId('b' as never, 1 as never), 'b', 1, 'lifecycle', true);
+    const a = update(bid('a', 1), 'a', 1, 'lifecycle', true);
+    const b = update(bid('b', 1), 'b', 1, 'lifecycle', true);
     expect(delivery.consumerRecord.convert(record({ start: 'current', baseline: [b, a] }))).toFailWith(
       /baseline obligations must be unique and ascending/
     );
@@ -123,7 +132,7 @@ describe('consumer record invariants', () => {
 
   test('a baseline entry owed to any audience but its own subscription is refused', () => {
     const wrongAudience = {
-      ...update(baselineUpdateId('a' as never, 1 as never), 'a', 1, 'lifecycle', true),
+      ...update(bid('a', 1), 'a', 1, 'lifecycle', true),
       audience: ['someone-else']
     };
     expect(
@@ -132,7 +141,7 @@ describe('consumer record invariants', () => {
   });
 
   test('a baseline entry that is not required is refused', () => {
-    const optional = update(baselineUpdateId('a' as never, 1 as never), 'a', 1, 'lifecycle', false);
+    const optional = update(bid('a', 1), 'a', 1, 'lifecycle', false);
     expect(delivery.consumerRecord.convert(record({ start: 'current', baseline: [optional] }))).toFailWith(
       /a baseline obligation is required/
     );

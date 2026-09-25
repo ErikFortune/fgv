@@ -156,6 +156,18 @@ describe('a checkpoint store that fails is never trusted into an acknowledgeable
     expect(await pendingIds(deliveryOf(h, 'sub'))).toEqual([uid('a', 1, 'lifecycle')]);
   });
 
+  test('an operation against a record the store has quietly lost fences with "missing from the store"', async () => {
+    const delivery = deliveryOf(h, 'sub');
+    const issued = (await delivery.prepare()).orThrow();
+    // The repository's resident book still expects a record; the store no longer has it.
+    store.records.delete('sub' as never);
+    expect(await delivery.abandon(issued.deliveryId)).toFailWithDetail(
+      /its checkpoint is missing from the store/i,
+      expect.objectContaining({ code: 'storage-corrupt' })
+    );
+    expect(h.repository.health().state).toBe('unavailable');
+  });
+
   test("a store that answers another subscription's record at open blocks the open", async () => {
     await subscribed(h, 'other');
     h.repository.close().orThrow();
@@ -224,6 +236,78 @@ describe('a checkpoint store that fails is never trusted into an acknowledgeable
     store.records.set('stray', { ...stray, id: 'stray' as SubscriptionId });
     expect(await subscribeAs(h, 'stray')).toFailWithDetail(
       /already holds a record this repository never committed/i,
+      expect.objectContaining({ code: 'conflict' })
+    );
+  });
+
+  test('a store that throws while checking for an existing record fails the new registration', async () => {
+    store.fault = 'throw';
+    expect(await subscribeAs(h, 'fresh')).toFailWithDetail(
+      /checkpoint store exploded/i,
+      expect.objectContaining({ code: 'storage-corrupt' })
+    );
+  });
+});
+
+describe('a checkpoint store misbehaving at the edges of a write', () => {
+  test('an older record answered before any write fences, naming both revisions', async () => {
+    const store = new InMemoryCheckpointStore();
+    const h = await deliveryHarness({ checkpoints: store });
+    await subscribed(h, 'sub');
+    await track(h.writer, 'a');
+    const delivery = deliveryOf(h, 'sub');
+    const issued = (await delivery.prepare()).orThrow();
+    store.fault = 'stale';
+    expect(await delivery.abandon(issued.deliveryId)).toFailWithDetail(
+      /returned record 1, not the record 2 this repository committed/i,
+      expect.objectContaining({ code: 'storage-corrupt' })
+    );
+    expect(h.repository.health().state).toBe('unavailable');
+  });
+
+  test('a store that stores nothing for a brand-new subscription is caught by the read-back', async () => {
+    const store = new InMemoryCheckpointStore();
+    const h = await deliveryHarness({ checkpoints: store });
+    store.fault = 'neutered';
+    expect(await subscribeAs(h, 'sub')).toFailWithDetail(
+      /reported a write it does not hold \(it reads back something else\)/i,
+      expect.objectContaining({ code: 'storage-corrupt' })
+    );
+    expect(store.records.size).toBe(0);
+  });
+
+  test('a read-back that fails after a successful write fences, and returns no context', async () => {
+    const store = new InMemoryCheckpointStore();
+    const h = await deliveryHarness({ checkpoints: store });
+    await subscribed(h, 'sub');
+    await track(h.writer, 'a');
+    store.fault = 'fail-read-back';
+    expect(await deliveryOf(h, 'sub').prepare()).toFailWithDetail(
+      /reported a write it does not hold \(checkpoint sub: checkpoint store read failed\)/i,
+      expect.objectContaining({ code: 'storage-corrupt' })
+    );
+    expect(h.repository.health().state).toBe('unavailable');
+  });
+
+  test('a resumed registration refuses a landed first record that carries no activation claim', async () => {
+    const store = new InMemoryCheckpointStore();
+    const h = await deliveryHarness({ checkpoints: store });
+    store.fault = 'fail-unchanged';
+    expect(await subscribeAs(h, 'sub')).toFailWithDetail(
+      /before anything became visible/i,
+      expect.objectContaining({ code: 'storage-unavailable' })
+    );
+    // The same registration, completed elsewhere, supplies a first record of the right shape.
+    const other = new InMemoryCheckpointStore();
+    await subscribed(await deliveryHarness({ checkpoints: other }), 'sub');
+    const landed = other.records.get('sub')!;
+    store.fault = 'none';
+    store.records.set('sub', {
+      ...landed,
+      capacityClaims: landed.capacityClaims.filter((c) => c.purpose !== 'subscription-activation')
+    });
+    expect(await subscribeAs(h, 'sub')).toFailWithDetail(
+      /not this registration's first record \(its activation claim differs\)/i,
       expect.objectContaining({ code: 'conflict' })
     );
   });

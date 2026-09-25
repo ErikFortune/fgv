@@ -315,6 +315,94 @@ describe('source checkpoint records', () => {
       })
     ]);
   });
+
+  test('a pending source inventory entry — nothing in this release writes one — blocks open', async () => {
+    const h = await sourceHarness();
+    (
+      await h.repository.withWriter((w) =>
+        w.commitSource({
+          sourceId: 'exec',
+          history: 'observed-state',
+          expectedRecordRevision: 0,
+          cursor: 'c1',
+          pages: 1
+        })
+      )
+    ).orThrow();
+    const root = h.root as Root;
+    const manifest = readJson(root, 'repository.json');
+    writeJson(root, 'repository.json', {
+      ...manifest,
+      sources: (manifest.sources as JsonObject[]).map((e) => ({
+        id: e.id,
+        state: 'pending',
+        operationId: 'op-pending-source',
+        operation: 'create-tracked',
+        principalKey: 'host',
+        recordType: 'resolved',
+        request: {},
+        capacityClaims: []
+      }))
+    });
+    expect(blockedOf(await reopen(h)).issues).toEqual([
+      expect.objectContaining({
+        code: 'record-invalid',
+        message: expect.stringMatching(/pending source registrations are not readable/)
+      })
+    ]);
+  });
+
+  test('a source named live by the inventory but whose record file is missing blocks open', async () => {
+    const h = await sourceHarness();
+    (
+      await h.repository.withWriter((w) =>
+        w.commitSource({
+          sourceId: 'exec',
+          history: 'observed-state',
+          expectedRecordRevision: 0,
+          cursor: 'c1',
+          pages: 1
+        })
+      )
+    ).orThrow();
+    const root = h.root as Root;
+    root.deleteChild('source-exec.json');
+    expect(blockedOf(await reopen(h)).issues).toEqual([
+      expect.objectContaining({
+        code: 'record-missing',
+        message: expect.stringMatching(/named live by the inventory but missing/)
+      })
+    ]);
+  });
+
+  test('a source record naming a different id than its inventory entry blocks open', async () => {
+    const h = await sourceHarness();
+    (
+      await h.repository.withWriter((w) =>
+        w.commitSource({
+          sourceId: 'exec',
+          history: 'observed-state',
+          expectedRecordRevision: 0,
+          cursor: 'c1',
+          pages: 1
+        })
+      )
+    ).orThrow();
+    writeJson(h.root as Root, 'source-exec.json', {
+      formatVersion: 1,
+      id: 'someone-else',
+      recordRevision: 1,
+      history: 'observed-state',
+      cursor: 'c1',
+      pages: 1
+    });
+    expect(blockedOf(await reopen(h)).issues).toEqual([
+      expect.objectContaining({
+        code: 'record-id-mismatch',
+        message: expect.stringMatching(/holds source someone-else/)
+      })
+    ]);
+  });
 });
 
 describe('execution claims survive a restart and are validated at open', () => {

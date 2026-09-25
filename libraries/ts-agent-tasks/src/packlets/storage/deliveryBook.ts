@@ -120,9 +120,9 @@ export class DeliveryBook {
     return potential.sort();
   }
 
-  /** A subscription's delivery units. */
+  /** An active subscription's delivery units (set when it is activated). */
   public unitsOf(subscription: SubscriptionId): number {
-    return this._units.get(subscription) ?? 0;
+    return this._units.get(subscription)!;
   }
 
   /** The potential audience the book holds for a task. */

@@ -47,6 +47,8 @@ export interface IDeliveryConverters {
   /** Categories strictly ascending, each once, including every mandatory one. */
   readonly categories: Converter<ReadonlyArray<UpdateCategory>>;
   readonly policy: Converter<ITaskDeliveryPolicy>;
+  /** A partial policy — a subscribe request's overrides, or a broker's delivery defaults. */
+  readonly policyOverrides: Converter<Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>>;
   readonly specification: Converter<ITaskSubscriptionSpecification>;
   readonly issued: Converter<IIssuedTaskReceipt>;
   /** A consumer record, with every invariant a record this release writes must keep. */
@@ -222,17 +224,20 @@ export function buildDeliveryConverters(
     return succeed(value);
   });
 
+  const policyOverrides: Converter<Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>> =
+    Converters.strictObject<Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>>({
+      durability: durability.optional(),
+      history: history.optional(),
+      categories: categories.optional()
+    });
+
   const subscribeRequest: Converter<ISubscribeRequest> = Converters.strictObject<ISubscribeRequest>({
     subscriptionId: ids.subscriptionId,
     operationId: ids.operationId,
     consumerId: ids.consumerId,
     selection: queries.selection,
     start,
-    policy: Converters.strictObject<NonNullable<ISubscribeRequest['policy']>>({
-      durability: durability.optional(),
-      history: history.optional(),
-      categories: categories.optional()
-    }).optional()
+    policy: policyOverrides.optional()
   });
 
   const registration: Converter<ITaskSubscriptionRegistration> =
@@ -270,6 +275,7 @@ export function buildDeliveryConverters(
     start,
     categories,
     policy,
+    policyOverrides,
     specification,
     issued,
     consumerRecord,

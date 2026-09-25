@@ -4,7 +4,15 @@
  */
 
 import { FileTree } from '@fgv/ts-json-base';
-import { DetailedResult, Logging, Result, failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
+import {
+  DetailedResult,
+  Logging,
+  Result,
+  fail,
+  failWithDetail,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
 import {
   CheckpointWriteVisibility,
   FileTreeTaskRepository,
@@ -46,7 +54,9 @@ export type CheckpointFault =
   /** `write` fails, saying it cannot tell. */
   | 'fail-unknown'
   /** `write` returns something that is not a result. */
-  | 'not-a-result';
+  | 'not-a-result'
+  /** `write` stores honestly, and every `read` after it fails. */
+  | 'fail-read-back';
 
 /**
  * A host checkpoint store over a map, which persists across repository reopen when the same
@@ -62,6 +72,7 @@ export class InMemoryCheckpointStore implements ITaskCheckpointStore {
   public readonly records: Map<string, ITaskConsumerRecord> = new Map();
   private readonly _previous: Map<string, ITaskConsumerRecord> = new Map();
   public fault: CheckpointFault = 'none';
+  private _wrote: boolean = false;
   public reads: number = 0;
   public writes: number = 0;
 
@@ -82,6 +93,10 @@ export class InMemoryCheckpointStore implements ITaskCheckpointStore {
       }
       case 'garbage':
         return succeed({ nonsense: true });
+      case 'fail-read-back':
+        return this._wrote
+          ? fail('checkpoint store read failed')
+          : succeed(structuredClone(this.records.get(subscriptionId)));
       default:
         return succeed(structuredClone(this.records.get(subscriptionId)));
     }
@@ -118,6 +133,7 @@ export class InMemoryCheckpointStore implements ITaskCheckpointStore {
       this._previous.set(subscriptionId, current);
     }
     this.records.set(subscriptionId, structuredClone(record));
+    this._wrote = this.fault === 'fail-read-back';
     return succeedWithDetail(true);
   }
 }

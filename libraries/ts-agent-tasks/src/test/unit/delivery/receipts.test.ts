@@ -5,6 +5,7 @@
 
 import '@fgv/ts-utils-jest';
 import {
+  Instant,
   DeliveryId,
   IBoundTaskDelivery,
   IPreparedTaskContext,
@@ -18,6 +19,7 @@ import {
   taskUpdateId
 } from '../../../index';
 import { alpha, command, op, revisionOf, succeedTask, tid, track } from '../../helpers/brokerFixtures';
+import { at } from '../../helpers/storageFixtures';
 import {
   IDeliveryHarness,
   committedIn,
@@ -25,6 +27,7 @@ import {
   deliveryHarness,
   deliveryOf,
   pendingIds,
+  reopen,
   subscribed
 } from '../../helpers/deliveryFixtures';
 
@@ -392,6 +395,48 @@ describe('baseline obligations', () => {
       baseline
     ]);
     expect(await pendingIds(delivery)).toEqual([]);
+  });
+
+  test('an acknowledged baseline stays acknowledged across reopen', async () => {
+    const h = await deliveryHarness();
+    await track(h.writer, 't');
+    await subscribed(h, 'sub', { start: 'current' });
+    const delivery = deliveryOf(h, 'sub');
+    const context = await prepared(delivery);
+    (await delivery.acknowledge(context.context.receipt)).orThrow();
+    const again = await reopen(h);
+    expect(await pendingIds(deliveryOf(again, 'sub'))).toEqual([]);
+    expect((await consumerRecord(again.repository, 'sub')).acknowledged).toEqual([
+      baselineUpdateId('t' as TaskId, 1 as TaskRevision)
+    ]);
+  });
+
+  test("a baseline id for a task outside the subscription's baseline cannot be issued", async () => {
+    const h = await deliveryHarness();
+    await track(h.writer, 't');
+    await subscribed(h, 'sub', { start: 'current' });
+    await track(h.writer, 'u');
+    expect(
+      await h.repository.withWriter((w) =>
+        w.issueReceipt({
+          subscriptionId: 'sub' as SubscriptionId,
+          expectedRecordRevision: 1,
+          receipt: {
+            version: 1,
+            deliveryId: 'forged' as DeliveryId,
+            included: [
+              {
+                taskId: 'u' as TaskId,
+                revision: 1 as TaskRevision,
+                updateIds: [baselineUpdateId('u' as TaskId, 1 as TaskRevision)]
+              }
+            ]
+          } as unknown as ITaskInclusionReceipt,
+          issuedAt: at as Instant,
+          expiresAt: '2030-01-01T00:00:00.000Z' as Instant
+        })
+      )
+    ).toFailWithDetail(/u:1:initial/i, expect.objectContaining({ code: 'invalid-receipt' }));
   });
 });
 

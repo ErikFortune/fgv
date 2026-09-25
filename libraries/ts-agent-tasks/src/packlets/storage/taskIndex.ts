@@ -334,7 +334,7 @@ export class TaskIndex {
   /**
    * Marks exact update ids as acknowledged by one subscription: each is removed from what it is
    * owed. A task update's link stays satisfied while its payload is retained; a baseline payload is
-   * released. Returns how many owed links this removed.
+   * released. Every id must be one the subscription is owed. Returns how many owed links this removed.
    */
   public satisfy(subscription: SubscriptionId, updateIds: Iterable<UpdateId>): number {
     let removed: number = 0;
@@ -354,8 +354,9 @@ export class TaskIndex {
         }
         continue;
       }
-      const bKey: string | undefined =
-        baseline !== undefined ? _baselineKeyOf(baseline, updateId) : undefined;
+      // Not a retained link, so an owed baseline obligation: callers pass only ids the subscription is
+      // owed (acknowledgement re-proves each with `isOwed`; open passes only retained links).
+      const bKey: string | undefined = _baselineKeyOf(baseline!, updateId);
       if (bKey !== undefined) {
         baseline!.delete(bKey);
         _unsetIn(this.owedBySubscription, subscription, bKey);

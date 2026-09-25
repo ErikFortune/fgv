@@ -811,13 +811,13 @@ export class SubscriptionRecords {
   private _replace(
     state: ISubscriptionState,
     record: ITaskConsumerRecord,
-    changes: Partial<Pick<ITaskConsumerRecord, 'acknowledged' | 'issued'>>,
+    changes: Pick<ITaskConsumerRecord, 'issued'> & Partial<Pick<ITaskConsumerRecord, 'acknowledged'>>,
     satisfied: ReadonlyArray<UpdateId> = []
   ): TaskResult<ITaskConsumerRecord> {
     const host: ISubscriptionHost = this._host;
     const profile: ITaskCapacityProfile = host.profile();
     const id: SubscriptionId = record.id;
-    const issued: ReadonlyArray<IIssuedTaskReceipt> = changes.issued ?? record.issued;
+    const issued: ReadonlyArray<IIssuedTaskReceipt> = changes.issued;
     const preparation: ITaskCapacityClaim = record.capacityClaims.find(
       (c) => c.purpose === 'receipt-preparation'
     )!;

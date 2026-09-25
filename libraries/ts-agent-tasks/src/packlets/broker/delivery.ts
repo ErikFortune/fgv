@@ -11,6 +11,7 @@ import {
   IInclusionEntry,
   IPreparedTaskContext,
   ISubscribeRequest,
+  ITaskCommitRecord,
   ITaskConsumerRecord,
   ITaskContext,
   ITaskContextBudget,
@@ -155,7 +156,9 @@ export async function subscribe(
   }
   const req: ISubscribeRequest = converted.value;
   const defaults: IResolvedDeliveryDefaults = core.delivery;
-  const policy: Result<ITaskDeliveryPolicy> = core.converters.delivery.policy.convert({
+  // Every field comes from the converted request or from defaults `TaskBroker.create` converted, and
+  // the policy has no rule across fields, so the assembled policy needs no second conversion.
+  const policy: ITaskDeliveryPolicy = {
     schemaVersion: 1,
     durability:
       req.policy?.durability ??
@@ -163,16 +166,13 @@ export async function subscribe(
       (core.repository.mode === 'session' ? 'session' : 'process-crash'),
     history: req.policy?.history ?? defaults.policy.history ?? 'observed-state',
     categories: req.policy?.categories ?? defaults.policy.categories ?? defaultDeliveryCategories
-  });
-  if (policy.isFailure()) {
-    return taskFailure(`subscribe: ${policy.message}`, 'invalid', 'after-host-action');
-  }
+  };
   for (let attempt = 1; attempt <= maxDeliveryAttempts; attempt++) {
     const outcome: TaskResult<ITaskSubscription | undefined> = await _subscribeOnce(
       core,
       access,
       req,
-      policy.value
+      policy
     );
     if (outcome.isFailure() || outcome.value !== undefined) {
       return outcome.isFailure() ? propagate(outcome) : ok(outcome.value!);
@@ -464,11 +464,11 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     if (record.isFailure()) {
       return propagate(record);
     }
-    const manifest = record.value?.issued.find((m) => m.deliveryId === deliveryId);
-    return record.value !== undefined &&
-      manifest !== undefined &&
-      canonicallySame(manifest.receipt, presented)
-      ? ok(record.value)
+    // Bound to a live subscription; one only ever leaves by T8's closure.
+    const live: ITaskConsumerRecord = record.value!;
+    const manifest = live.issued.find((m) => m.deliveryId === deliveryId);
+    return manifest !== undefined && canonicallySame(manifest.receipt, presented)
+      ? ok(live)
       : _invalidReceipt(this.subscriptionId);
   }
 
@@ -543,7 +543,7 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
       if (
         !this._access.epochIs(epoch.value) ||
         now.isFailure() ||
-        now.value?.recordRevision !== captured.recordRevision
+        now.value!.recordRevision !== captured.recordRevision
       ) {
         return ok<IPreparedTaskContext | undefined>(undefined);
       }
@@ -562,10 +562,10 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
         expiresAt: expiresAt.value
       });
       if (issued.isFailure()) {
-        // An update the render included was acknowledged by another receipt meanwhile: render again.
-        return issued.detail?.code === 'invalid-receipt'
-          ? ok<IPreparedTaskContext | undefined>(undefined)
-          : propagate<IPreparedTaskContext | undefined>(issued);
+        // Every owed id the render included was re-proved by the subscription's unchanged record
+        // revision above; storage still refuses (`invalid-receipt`, safe to retry) an id it no longer
+        // owes, which only a storage-level commit dropping an unacknowledged update can cause.
+        return propagate<IPreparedTaskContext | undefined>(issued);
       }
       return ok<IPreparedTaskContext | undefined>({
         context: rendered.value,
@@ -713,14 +713,14 @@ async function _fenceHolds(
     if (record.isFailure()) {
       return propagate(record);
     }
-    const actual: number | undefined =
-      record.value === undefined
-        ? undefined
-        : revision === 'record'
-        ? record.value.recordRevision
-        : record.value.recordType === 'resolved'
-        ? record.value.task.envelope.revision
-        : record.value.reference.revision;
+    // A task record is never deleted: an id authorized earlier is still readable.
+    const current: ITaskCommitRecord = record.value!;
+    const actual: number =
+      revision === 'record'
+        ? current.recordRevision
+        : current.recordType === 'resolved'
+        ? current.task.envelope.revision
+        : current.reference.revision;
     if (actual !== expected) {
       return ok(false);
     }

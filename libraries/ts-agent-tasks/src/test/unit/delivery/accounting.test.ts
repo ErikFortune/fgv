@@ -466,6 +466,29 @@ describe('the potential audience is capped at what the claims reserved', () => {
       'audience-links'
     );
   });
+
+  test('a move that adds no update audience is still refused when it would cover the task with too many potential subscribers', async () => {
+    // None of these subscriptions take 'relationship', so the change-scopes update itself is owed
+    // to nobody; only the *potential* coverage — everyone whose selection now matches — is over max.
+    const h = await deliveryHarness({ profile: lean });
+    const mandatoryOnly = { categories: ['attention', 'lifecycle', 'result'] as const };
+    await subscribed(h, 's1', mandatoryOnly);
+    await subscribed(h, 's2', mandatoryOnly);
+    await subscribed(h, 'b1', { scopes: [beta], ...mandatoryOnly });
+    await track(h.writer, 't');
+    const writer = h.broker
+      .bind({ principal: 'alice', scopes: [alpha, beta], authorization: h.policy })
+      .orThrow();
+    backpressure(
+      await writer.changeScopes({
+        taskId: tid('t'),
+        operationId: op(),
+        expectedRevision: await revisionOf(h.repository, 't'),
+        add: [beta]
+      }),
+      'audience-links'
+    );
+  });
 });
 
 describe('a subscription history is a lifetime charge', () => {
@@ -519,5 +542,29 @@ describe('a subscription history is a lifetime charge', () => {
     const delivery = deliveryOf(h, 'sub');
     expect(await delivery.acknowledge((await delivery.prepare()).orThrow().context.receipt)).toSucceed();
     expect((await succeedTask(h, h.writer, 'a')).result.state).toBe('applied');
+  });
+
+  test('a start-current registration whose own baseline and open units already exceed the limit is refused at activation', async () => {
+    const probe = await deliveryHarness();
+    await track(probe.writer, 'a');
+    await subscribed(probe, 'sub', { start: 'current', categories: ['attention', 'lifecycle', 'result'] });
+    const commitment = inspectRepository(probe.repository)!.ledger.entry('consumer:sub')!.perOwner!.amount;
+    const h = await deliveryHarness({
+      profile: profileWith(
+        {},
+        {
+          perOwner: {
+            ...defaultTaskCapacityProfile.perOwner,
+            maxAcknowledgementIdsPerSubscription: commitment - 1
+          }
+        }
+      )
+    });
+    await track(h.writer, 'a');
+    backpressure(
+      await subscribeAs(h, 'sub', { start: 'current', categories: ['attention', 'lifecycle', 'result'] }),
+      'acknowledgement-ids'
+    );
+    expect(h.repository.subscription('sub' as SubscriptionId)).toSucceedWith(undefined);
   });
 });

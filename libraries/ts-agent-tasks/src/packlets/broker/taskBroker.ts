@@ -287,12 +287,8 @@ function _deliveryDefaults(
       `TaskBroker.create: maxBaselineTasks must be a positive safe integer no greater than ${taskContextLimits.maxInputEntries}`
     );
   }
-  const policy = defaults?.policy ?? {};
-  if (policy.categories !== undefined) {
-    const categories = converters.delivery.categories.convert(policy.categories);
-    if (categories.isFailure()) {
-      return fail(`TaskBroker.create: delivery categories: ${categories.message}`);
-    }
-  }
-  return succeed({ policy, receiptLifetimeMs: lifetime, maxBaselineTasks: baseline });
+  return converters.delivery.policyOverrides
+    .convert(defaults?.policy ?? {})
+    .withErrorFormat((msg) => `TaskBroker.create: delivery policy: ${msg}`)
+    .onSuccess((policy) => succeed({ policy, receiptLifetimeMs: lifetime, maxBaselineTasks: baseline }));
 }

@@ -5,6 +5,7 @@
 
 import '@fgv/ts-utils-jest';
 import {
+  defaultTaskCapacityProfile,
   ITaskAccessRequest,
   ITaskSubscription,
   ITaskDeliveryDefaults,
@@ -166,6 +167,39 @@ describe('start policies', () => {
     );
     expect(tiny.repository.subscription('sub' as SubscriptionId)).toSucceedWith(undefined);
     expect(await subscribeAs(tiny, 'sub', { start: 'from-now' })).toSucceed();
+  });
+});
+
+describe('capture and pending page through the repository', () => {
+  test('a baseline larger than one query page is captured across pages', async () => {
+    // Past the default profile's resident ceiling (146 registrations), so the limit is raised.
+    const h = await deliveryHarness({
+      defaults: { maxBaselineTasks: 250 },
+      profile: {
+        ...defaultTaskCapacityProfile,
+        limits: { ...defaultTaskCapacityProfile.limits, 'resident-payload-bytes': 256 * 1024 * 1024 }
+      }
+    });
+    for (let i = 0; i < 201; i++) {
+      await track(h.writer, `t${String(i).padStart(3, '0')}`);
+    }
+    await subscribed(h, 'sub', { start: 'current' });
+    expect((await consumerRecord(h.repository, 'sub')).baseline).toHaveLength(201);
+  }, 60000);
+
+  test('pending pages by limit and cursor', async () => {
+    const h = await deliveryHarness();
+    await subscribed(h, 'sub');
+    await track(h.writer, 'a');
+    await track(h.writer, 'b');
+    await track(h.writer, 'c');
+    const delivery = deliveryOf(h, 'sub');
+    const first = (await delivery.pending({ limit: 2 })).orThrow();
+    expect(first.updates.map((u) => u.taskId)).toEqual(['a', 'b']);
+    expect(first.nextCursor).toBeDefined();
+    const second = (await delivery.pending({ limit: 2, cursor: first.nextCursor })).orThrow();
+    expect(second.updates.map((u) => u.taskId)).toEqual(['c']);
+    expect(second.nextCursor).toBeUndefined();
   });
 });
 
@@ -433,8 +467,12 @@ describe('the persisted delivery policy is authoritative', () => {
     expect(make({ receiptLifetimeMs: 0 })).toFailWith(/receiptLifetimeMs/);
     expect(make({ maxBaselineTasks: 0 })).toFailWith(/maxBaselineTasks/);
     expect(make({ maxBaselineTasks: 1e9 })).toFailWith(/maxBaselineTasks/);
-    expect(make({ policy: { categories: 'lifecycle' as never } })).toFailWith(/delivery categories/);
-    expect(make({ policy: { categories: ['progress'] } })).toFailWith(/delivery categories/);
+    expect(make({ policy: { categories: 'lifecycle' as never } })).toFailWith(/delivery policy/);
+    expect(make({ policy: { categories: ['progress'] } })).toFailWith(/delivery policy/);
+    // Every policy field is checked here, so `subscribe` never assembles an invalid policy.
+    expect(make({ policy: { durability: 'forever' as never } })).toFailWith(/delivery policy/);
+    expect(make({ policy: { history: 'guesswork' as never } })).toFailWith(/delivery policy/);
+    expect(make({ policy: { extra: true } as never })).toFailWith(/delivery policy/);
     expect(make({ policy: { categories: ['attention', 'lifecycle', 'result'] } })).toSucceed();
   });
 });
@@ -557,5 +595,26 @@ describe('source-replay subscriptions refuse what would weaken them', () => {
         .orThrow()
         .updates.map((u) => u.id)
     ).toEqual([uid('j1', 2, 'lifecycle')]);
+  });
+});
+
+describe('registration admission covers unresolved references too, not only resolved tasks', () => {
+  test('a subscription whose selection matches an unresolved external registration is admitted over it', async () => {
+    const h = await deliveryHarness();
+    await registerVendor(h, 'v', { unresolved: true });
+    // Admission succeeds and counts the unresolved reference toward potential coverage: a second
+    // subscription over a low ceiling is then refused for covering it too.
+    const lean = await deliveryHarness({
+      profile: {
+        ...h.repository.profile,
+        perOwner: { ...h.repository.profile.perOwner, maxAudiencePerUpdate: 1 }
+      }
+    });
+    await registerVendor(lean, 'v', { unresolved: true });
+    expect(await subscribeAs(lean, 's1')).toSucceed();
+    expect(await subscribeAs(lean, 's2')).toFailWithDetail(
+      /would be the 2th to cover the task/i,
+      expect.objectContaining({ code: 'backpressure' })
+    );
   });
 });
