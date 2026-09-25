@@ -202,7 +202,7 @@ Add a layering fixture with an executor-owned payload larger than 64 KiB and a b
 
 **Review gate:** no blind re-execution and no second authoritative lifecycle store. Verify the simulated source actually applies commands; the ingestion compatibility adapter's empty command set supplies no command evidence.
 
-### T7 — Subscriptions, exact issued receipts and acknowledgement — ✅ implemented on `integration/agent-tasks-v1` ([#PRNUM](https://github.com/ErikFortune/fgv/pull/PRNUM))
+### T7 — Subscriptions, exact issued receipts and acknowledgement — ✅ implemented on `integration/agent-tasks-v1` ([#695](https://github.com/ErikFortune/fgv/pull/695))
 
 **Dependencies:** T2, T5, T6. **Affected package:** `ts-agent-tasks` delivery/storage.
 

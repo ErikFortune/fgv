@@ -70,11 +70,7 @@ says. No missing-input stop.
 
 ## Next concrete step
 
-1. Coverage closure to 100% (a subagent is adding tests only; lines it judges unreachable get refactored
-   out of source, never `c8 ignore`).
-2. Full `heft test` zero warnings; `rushx fixlint`; api.md check (`etc/ts-agent-tasks.api.md`).
-3. Revert matrix on the FINAL source (evidence growth, watermark ack, satisfy join at open, read-back,
-   audience verification, epoch/revision fences, W6/W8 fences, neutered store) → fill result.md.
-4. Repo-wide `rebuild` and `test`; verify-esm-entrypoints, verify-bundler-resolution,
-   verify-tarball-exports, capability docs/feed.
-5. Push; open PR into `integration/agent-tasks-v1`; replace `PRNUM`; drive the Copilot loop.
+All gates green on the final source; PR [#695](https://github.com/ErikFortune/fgv/pull/695) open into
+`integration/agent-tasks-v1`. Revert matrix (22 rows) and coverage closure recorded in result.md.
+Now: drive the Copilot loop (expect a long one — authorization boundary); fold each round's fixes in
+with a revert check, update result.md § Review per round.

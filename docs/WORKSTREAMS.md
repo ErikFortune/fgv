@@ -128,9 +128,9 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-t7` ✅ (slice T7 of the agent-tasks plan) — landed on the integration branch via [#PRNUM](https://github.com/ErikFortune/fgv/pull/PRNUM)
+### `agent-tasks-t7` ✅ (slice T7 of the agent-tasks plan) — landed on the integration branch via [#695](https://github.com/ErikFortune/fgv/pull/695)
 
-**Status:** ✅ shipped 2026-09-25 via [#PRNUM](https://github.com/ErikFortune/fgv/pull/PRNUM) into
+**Status:** ✅ shipped 2026-09-25 via [#695](https://github.com/ErikFortune/fgv/pull/695) into
 `integration/agent-tasks-v1` (not `release`; the cluster promotes as one). Storage-owned
 subscriptions with persisted delivery policies and baselines; every audience computed and verified
 by storage, its acknowledgement evidence spent from the T5/T6 claims (pinned by the charge);
