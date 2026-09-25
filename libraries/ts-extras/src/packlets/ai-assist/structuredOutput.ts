@@ -20,8 +20,8 @@ import { toGeminiParameterSchema } from './toolFormats';
  * @remarks
  * Used only by `'anthropic-tool-forced'`: that mechanism forces a tool, so a tool
  * must exist to be forced. (`'anthropic-output-format'` sends no tool at all.) The
- * name is fgv-owned and never
- * reaches the caller — the structured-output resolver re-serializes the tool's
+ * name is fgv-owned and never reaches the caller — the structured-output resolver
+ * re-serializes the tool's
  * `input` back into `IAiCompletionResponse.content`, so a caller's converter sees
  * a JSON string exactly as it does on every other provider.
  * @public

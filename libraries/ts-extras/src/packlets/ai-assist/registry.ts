@@ -99,7 +99,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // (`output_config.format`), which both are listed as supporting on
     // https://platform.claude.com/docs/en/build-with-claude/structured-outputs (both fetched
     // 2026-09-25). Every other line keeps forced tool use under the catch-all: the '' entry
-    // is only correct because the longer prefixes above it win for the two that reject it.
+    // is only correct because the longer prefixes win for the two that reject it (longest
+    // prefix wins; array order does not matter).
     // A future line that rejects forcing must be added here, or it inherits the catch-all's 400.
     structuredOutput: [
       { modelPrefix: 'claude-opus-5-5', format: 'anthropic-output-format' },
