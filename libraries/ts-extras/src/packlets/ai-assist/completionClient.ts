@@ -61,7 +61,7 @@ import type { IAiCompletionUsage } from './usageTypes';
 import {
   anthropicEffortToBudgetTokens,
   checkTemperatureConflict,
-  mergeThinkingConfig,
+  resolveThinkingConfig,
   providerDiscriminatorForId,
   type IResolvedThinkingConfig
 } from './thinkingOptionsResolver';
@@ -837,7 +837,7 @@ export async function callProviderCompletion(
   let resolvedThinking: IResolvedThinkingConfig | undefined;
   if (thinking !== undefined) {
     if (discriminator !== undefined) {
-      const mergeResult = mergeThinkingConfig(
+      const mergeResult = resolveThinkingConfig(
         thinking,
         model,
         discriminator,
@@ -846,12 +846,12 @@ export async function callProviderCompletion(
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
       }
-      resolvedThinking = mergeResult.value;
+      resolvedThinking = mergeResult.value.resolved;
       const conflictResult = checkTemperatureConflict(
         resolvedThinking,
         discriminator,
         temperature,
-        thinking.effort
+        mergeResult.value.noneDegraded
       );
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);

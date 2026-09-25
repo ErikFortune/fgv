@@ -25,6 +25,7 @@ import {
   anthropicEffortToBudgetTokens,
   checkTemperatureConflict,
   mergeThinkingConfig,
+  resolveThinkingConfig,
   providerDiscriminatorForId
 } from '../../../packlets/ai-assist/thinkingOptionsResolver';
 // eslint-disable-next-line @rushstack/packlets/mechanics
@@ -789,18 +790,69 @@ describe('checkTemperatureConflict', () => {
 
     test('a degraded none plus temperature fails with a message that says none was sent as low', () => {
       expect(
-        mergeThinkingConfig({ effort: 'none' }, 'gpt-6-astra', 'openai', true).onSuccess((resolved) =>
-          checkTemperatureConflict(resolved, 'openai', 0.7, 'none')
+        resolveThinkingConfig({ effort: 'none' }, 'gpt-6-astra', 'openai', true).onSuccess((r) =>
+          checkTemperatureConflict(r.resolved, 'openai', 0.7, r.noneDegraded)
         )
       ).toFailWith(/thinking effort 'none' was sent as 'low'.*provider openai: remove temperature$/);
     });
 
     test('an accepted none plus temperature still passes', () => {
       expect(
-        mergeThinkingConfig({ effort: 'none' }, 'gpt-6-luna', 'openai', false).onSuccess((resolved) =>
-          checkTemperatureConflict(resolved, 'openai', 0.7, 'none')
+        resolveThinkingConfig({ effort: 'none' }, 'gpt-6-luna', 'openai', false).onSuccess((r) =>
+          checkTemperatureConflict(r.resolved, 'openai', 0.7, r.noneDegraded)
         )
       ).toSucceed();
+    });
+
+    test('reports noneDegraded only when the degraded value reaches the wire', () => {
+      expect(resolveThinkingConfig({ effort: 'none' }, 'gpt-6-astra', 'openai', true)).toSucceedAndSatisfy(
+        (r) => {
+          expect(r.resolved.openAiEffort).toBe('low');
+          expect(r.noneDegraded).toBe(true);
+        }
+      );
+      expect(resolveThinkingConfig({ effort: 'low' }, 'gpt-6-astra', 'openai', true)).toSucceedAndSatisfy(
+        (r) => {
+          expect(r.noneDegraded).toBe(false);
+        }
+      );
+    });
+
+    test('a provider block that rewrites the effort cancels the degrade', () => {
+      const config: IThinkingConfig = {
+        effort: 'none',
+        providers: [{ provider: 'openai', config: { effort: 'high' } }]
+      };
+      expect(resolveThinkingConfig(config, 'gpt-6-astra', 'openai', true)).toSucceedAndSatisfy((r) => {
+        expect(r.resolved.openAiEffort).toBe('high');
+        expect(r.noneDegraded).toBe(false);
+        expect(checkTemperatureConflict(r.resolved, 'openai', 0.7, r.noneDegraded)).toFailWith(
+          /^thinking mode is not compatible with temperature on provider openai: remove temperature or disable thinking$/
+        );
+      });
+    });
+
+    test('a provider block for another provider leaves the degrade in place', () => {
+      const config: IThinkingConfig = {
+        effort: 'none',
+        providers: [{ provider: 'google', config: { thinkingBudget: 8192 } }]
+      };
+      expect(resolveThinkingConfig(config, 'gpt-6-astra', 'openai', true)).toSucceedAndSatisfy((r) => {
+        expect(r.noneDegraded).toBe(true);
+      });
+    });
+
+    test('a gemini budget block cancels a gemini degrade', () => {
+      const config: IThinkingConfig = {
+        effort: 'none',
+        providers: [{ provider: 'google', config: { thinkingBudget: 2048 } }]
+      };
+      expect(resolveThinkingConfig(config, 'gemini-3.1-pro-preview', 'google', true)).toSucceedAndSatisfy(
+        (r) => {
+          expect(r.resolved.geminiThinkingBudget).toBe(2048);
+          expect(r.noneDegraded).toBe(false);
+        }
+      );
     });
 
     test('leaves none alone when the model accepts it', () => {

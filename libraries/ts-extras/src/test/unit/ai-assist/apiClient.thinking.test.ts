@@ -473,6 +473,20 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
+    test('none plus a provider block that sets the effort reports the effort actually sent', async () => {
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...testPrompt.toRequest(),
+        tier: 'frontier',
+        temperature: 0.7,
+        thinking: { effort: 'none', providers: [{ provider: 'openai', config: { effort: 'high' } }] }
+      });
+      expect(result).toFailWith(/remove temperature or disable thinking/);
+      expect(result).not.toFailWith(/was sent as 'low'/);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
     test("onUnsupported: 'fail' has no effect on an effort the model accepts", async () => {
       mockFetchResponse(openAiResponse('ok'));
       const result = await AiAssist.callProviderCompletion({

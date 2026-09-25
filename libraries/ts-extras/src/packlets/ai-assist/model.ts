@@ -1729,9 +1729,9 @@ export interface IThinkingConfig {
    * Whichever provider is in play, `'none'` also re-enables `temperature`: see
    * `checkTemperatureConflict` in `thinkingOptionsResolver.ts`.
    *
-   * The mapping is not model-aware (same posture as every other entry in this table —
-   * see `ModelSpecKey`'s remarks for why thinking availability isn't gated at the call
-   * path). Some models cannot run with thinking off at all. For example, Gemini Pro rejects
+   * The mapping is not model-aware, with one exception: `'none'`. Thinking *availability* is still
+   * not gated at the call path (see `ModelSpecKey`'s remarks), but some models cannot run with
+   * thinking off at all. For example, Gemini Pro rejects
    * `thinkingBudget: 0`, and `gpt-6-astra` and `grok-4.7` reject `reasoning_effort: 'none'`.
    * Each descriptor lists these in
    * {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes}, and a `'none'` sent to one of

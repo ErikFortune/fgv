@@ -264,9 +264,57 @@ export function mergeThinkingConfig(
   discriminator: ThinkingProviderDiscriminator,
   thinkingRequired: boolean = false
 ): Result<IResolvedThinkingConfig> {
+  return resolveThinkingConfig(config, resolvedModel, discriminator, thinkingRequired).onSuccess((r) =>
+    succeed(r.resolved)
+  );
+}
+
+/**
+ * The outcome of {@link resolveThinkingConfig}: the wire config, plus whether a generic `'none'`
+ * was actually sent as `'low'`.
+ * @internal
+ */
+export interface IThinkingResolution {
+  readonly resolved: IResolvedThinkingConfig;
+  /**
+   * True only when a generic `'none'` was degraded to `'low'` **and** no provider block then
+   * rewrote that provider's effort field, so the wire carries the degraded value.
+   */
+  readonly noneDegraded: boolean;
+}
+
+/** The resolved field that carries the effort for `discriminator`. */
+function effortFieldFor(
+  resolved: IResolvedThinkingConfig,
+  discriminator: ThinkingProviderDiscriminator
+): unknown {
+  switch (discriminator) {
+    case 'anthropic':
+      return resolved.anthropicEffort;
+    case 'openai':
+      return resolved.openAiEffort;
+    case 'google':
+      return resolved.geminiThinkingBudget;
+    case 'xai':
+      return resolved.xaiEffort;
+  }
+}
+
+/**
+ * {@link mergeThinkingConfig}, also reporting whether the `'none'` degrade reached the wire.
+ * The call paths use this so a later failure message can say what was actually sent.
+ * @internal
+ */
+export function resolveThinkingConfig(
+  config: IThinkingConfig,
+  resolvedModel: string,
+  discriminator: ThinkingProviderDiscriminator,
+  thinkingRequired: boolean
+): Result<IThinkingResolution> {
   let resolved: IResolvedThinkingConfig = {};
 
   let effort = config.effort;
+  let degraded = false;
   if (effort === 'none' && thinkingRequired) {
     if (config.onUnsupported === 'fail') {
       return fail(
@@ -275,6 +323,7 @@ export function mergeThinkingConfig(
       );
     }
     effort = 'low';
+    degraded = true;
   }
 
   // Tier 1: generic effort → common-subset mapping
@@ -301,8 +350,14 @@ export function mergeThinkingConfig(
     }
   }
 
+  const degradedValue = effortFieldFor(resolved, discriminator);
+  const outcome = (): IThinkingResolution => ({
+    resolved,
+    noneDegraded: degraded && effortFieldFor(resolved, discriminator) === degradedValue
+  });
+
   if (!config.providers) {
-    return succeed(resolved);
+    return succeed(outcome());
   }
 
   // Partition into tiers 2 and 3+4
@@ -320,7 +375,7 @@ export function mergeThinkingConfig(
     resolved = applyBlock(resolved, block, discriminator);
   }
 
-  return succeed(resolved);
+  return succeed(outcome());
 }
 
 /**
@@ -384,11 +439,8 @@ function applyBlock(
  * degraded to (see `mergeThinkingConfig`), so the usual advice to "disable thinking" would tell
  * the caller to do what they already did. That case gets its own message.
  */
-function temperatureConflict(
-  provider: string,
-  requestedEffort: IThinkingConfig['effort']
-): Result<undefined> {
-  if (requestedEffort === 'none') {
+function temperatureConflict(provider: string, noneDegraded: boolean): Result<undefined> {
+  if (noneDegraded) {
     return fail(
       `thinking effort 'none' was sent as 'low' because the model cannot run with thinking off, and ` +
         `thinking mode is not compatible with temperature on provider ${provider}: remove temperature`
@@ -407,8 +459,8 @@ function temperatureConflict(
  * effective effort is non-null and non-'none'), and xAI (conservative default
  * pending live verification). Gemini accepts temperature alongside thinking.
  *
- * `requestedEffort` is the caller's generic effort, before `mergeThinkingConfig` degraded it. It
- * affects only the failure message, never the decision.
+ * `noneDegraded` (from `resolveThinkingConfig`) says a generic `'none'` reached the wire as `'low'`.
+ * It affects only the failure message, never the decision.
  *
  * @internal
  */
@@ -416,7 +468,7 @@ export function checkTemperatureConflict(
   resolved: IResolvedThinkingConfig,
   discriminator: ThinkingProviderDiscriminator,
   temperature: number | undefined,
-  requestedEffort?: IThinkingConfig['effort']
+  noneDegraded: boolean = false
 ): Result<undefined> {
   if (temperature === undefined) {
     return succeed(undefined);
@@ -425,19 +477,19 @@ export function checkTemperatureConflict(
   switch (discriminator) {
     case 'anthropic':
       if (resolved.anthropicEffort !== undefined) {
-        return temperatureConflict('anthropic', requestedEffort);
+        return temperatureConflict('anthropic', noneDegraded);
       }
       break;
     case 'openai':
       // 'none' disables reasoning; temperature is accepted in that case
       if (resolved.openAiEffort !== undefined && resolved.openAiEffort !== 'none') {
-        return temperatureConflict('openai', requestedEffort);
+        return temperatureConflict('openai', noneDegraded);
       }
       break;
     case 'xai':
       // Conservative default: fail if xAI effort is active (per D8 — live verification pending)
       if (resolved.xaiEffort !== undefined && resolved.xaiEffort !== 'none') {
-        return temperatureConflict('xai', requestedEffort);
+        return temperatureConflict('xai', noneDegraded);
       }
       break;
     case 'google':

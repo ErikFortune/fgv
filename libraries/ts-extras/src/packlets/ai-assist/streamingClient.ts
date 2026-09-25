@@ -54,7 +54,7 @@ import { callOpenAiChatStream } from './streamingAdapters/openaiChat';
 import { callOpenAiResponsesStream } from './streamingAdapters/openaiResponses';
 import {
   checkTemperatureConflict,
-  mergeThinkingConfig,
+  resolveThinkingConfig,
   providerDiscriminatorForId,
   type IResolvedThinkingConfig
 } from './thinkingOptionsResolver';
@@ -161,7 +161,7 @@ export async function callProviderCompletionStream(
   let resolvedThinking: IResolvedThinkingConfig | undefined;
   if (thinking !== undefined) {
     if (discriminator !== undefined) {
-      const mergeResult = mergeThinkingConfig(
+      const mergeResult = resolveThinkingConfig(
         thinking,
         model,
         discriminator,
@@ -170,12 +170,12 @@ export async function callProviderCompletionStream(
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
       }
-      resolvedThinking = mergeResult.value;
+      resolvedThinking = mergeResult.value.resolved;
       const conflictResult = checkTemperatureConflict(
         resolvedThinking,
         discriminator,
         temperature,
-        thinking.effort
+        mergeResult.value.noneDegraded
       );
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
