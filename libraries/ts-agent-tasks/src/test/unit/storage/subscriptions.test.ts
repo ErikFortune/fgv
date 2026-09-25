@@ -441,6 +441,55 @@ describe('every commit names exactly the audience the repository computes', () =
   });
 });
 
+/** Commits a non-required progress update owed to `s1`, optionally dropping earlier progress. */
+async function progressCommit(
+  repository: ITaskRepository,
+  revision: number,
+  drop: boolean
+): Promise<TaskResult<unknown>> {
+  const current = (await repository.readCommit('t' as TaskId)).orThrow()!;
+  const record = current.recordType === 'resolved' ? current : (undefined as never);
+  const env = { ...record.task.envelope, revision: revision as TaskRevision, title: `rev ${revision}` };
+  const operationId = `op-progress-${revision}` as OperationId;
+  return repository.withWriter((w) =>
+    w.commit({
+      purpose: 'operation',
+      operationId,
+      taskId: 't' as TaskId,
+      expectedRevision: (revision - 1) as TaskRevision,
+      expectedRecordRevision: record.recordRevision,
+      record: {
+        recordType: 'resolved',
+        task: { envelope: env, details: record.task.details },
+        operations: [
+          ...record.operations,
+          {
+            type: 'catalog',
+            operationId,
+            operation: 'update-tracked',
+            request: { revision },
+            principalKey: 'host',
+            receipt: null
+          }
+        ],
+        updates: [
+          ...record.updates.filter((u) => !(drop && u.category === 'progress')),
+          {
+            id: uid('t', revision, 'progress'),
+            taskId: 't' as TaskId,
+            revision: revision as TaskRevision,
+            category: 'progress',
+            required: false,
+            snapshot: { envelope: env },
+            audience: ['s1'] as SubscriptionId[]
+          }
+        ],
+        archived: false
+      }
+    })
+  );
+}
+
 describe('issued receipts at the storage boundary', () => {
   let repository: ITaskRepository;
   beforeEach(async () => {
@@ -641,55 +690,12 @@ describe('issued receipts at the storage boundary', () => {
   // A non-required update may be dropped by any commit (coalescing); the drop releases its owed
   // link without acknowledging it, so a manifest that already named it can no longer be honoured.
   test('an owed update a later commit drops is released, and a receipt that named it is refused', async () => {
-    const progressCommit = async (revision: number, drop: boolean): Promise<TaskResult<unknown>> => {
-      const current = (await repository.readCommit('t' as TaskId)).orThrow()!;
-      const record = current.recordType === 'resolved' ? current : (undefined as never);
-      const env = { ...record.task.envelope, revision: revision as TaskRevision, title: `rev ${revision}` };
-      const operationId = `op-progress-${revision}` as OperationId;
-      return repository.withWriter((w) =>
-        w.commit({
-          purpose: 'operation',
-          operationId,
-          taskId: 't' as TaskId,
-          expectedRevision: (revision - 1) as TaskRevision,
-          expectedRecordRevision: record.recordRevision,
-          record: {
-            recordType: 'resolved',
-            task: { envelope: env, details: record.task.details },
-            operations: [
-              ...record.operations,
-              {
-                type: 'catalog',
-                operationId,
-                operation: 'update-tracked',
-                request: { revision },
-                principalKey: 'host',
-                receipt: null
-              }
-            ],
-            updates: [
-              ...record.updates.filter((u) => !(drop && u.category === 'progress')),
-              {
-                id: uid('t', revision, 'progress'),
-                taskId: 't' as TaskId,
-                revision: revision as TaskRevision,
-                category: 'progress',
-                required: false,
-                snapshot: { envelope: env },
-                audience: ['s1'] as SubscriptionId[]
-              }
-            ],
-            archived: false
-          }
-        })
-      );
-    };
-    expect(await progressCommit(2, false)).toSucceed();
+    expect(await progressCommit(repository, 2, false)).toSucceed();
     (
       await issue(receipt('d1', [{ taskId: 't', revision: 2, updateIds: [uid('t', 2, 'progress')] }]))
     ).orThrow();
     const owedBefore: number = held(repository, 'acknowledgement-ids');
-    expect(await progressCommit(3, true)).toSucceed();
+    expect(await progressCommit(repository, 3, true)).toSucceed();
     expect(await owedIds(repository, 's1')).toEqual([uid('t', 1, 'lifecycle'), uid('t', 3, 'progress')]);
     // One link released, one added: the subscription's owed reservation is unchanged in size.
     expect(held(repository, 'acknowledgement-ids')).toBe(owedBefore);
@@ -721,6 +727,32 @@ describe('issued receipts at the storage boundary', () => {
         })
       )
     ).toFailWithDetail(/t:1:0/i, expect.objectContaining({ code: 'invalid-receipt' }));
+  });
+
+  test('a drop releases its owed link inside admission: drop-and-add fits a subscription at its limit', async () => {
+    // s1 covers open `t` (1 unit × 7 categories) and is owed t:1:0 and t:2:progress: a commitment of 9.
+    const r = (
+      await FileTreeTaskRepository.initialize(
+        params(memoryRoot(), 'session', {
+          profile: {
+            ...repository.profile,
+            perOwner: { ...repository.profile.perOwner, maxAcknowledgementIdsPerSubscription: 9 }
+          }
+        })
+      )
+    ).orThrow();
+    await subscribeTo(r, 's1', [A]);
+    await addTask(r, 't', { scopes: [A] });
+    expect(await progressCommit(r, 2, false)).toSucceed();
+    expect(inspectRepository(r)!.ledger.entry('consumer:s1')!.perOwner!.amount).toBe(9);
+    // Adding one more without dropping would exceed it ...
+    expect(await progressCommit(r, 3, false)).toFailWithDetail(
+      /over its limit of 9/i,
+      expect.objectContaining({ code: 'backpressure' })
+    );
+    // ... while dropping the earlier progress releases a link in the same commit.
+    expect(await progressCommit(r, 3, true)).toSucceed();
+    expect(inspectRepository(r)!.ledger.entry('consumer:s1')!.perOwner!.amount).toBe(9);
   });
 
   test('abandonment removes exactly one manifest', async () => {

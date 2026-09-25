@@ -272,19 +272,23 @@ describe('no subscribe/mutate gap', () => {
     policy.afterDecision = undefined;
   });
 
-  test('a policy epoch that moves between capture and activation recaptures', async () => {
+  test('a policy epoch that moves between capture and activation recaptures under the new policy', async () => {
     const h = await deliveryHarness();
     const policy: TestPolicy = h.policy;
     await track(h.writer, 't');
     let fired: boolean = false;
-    policy.afterDecision = () => {
-      if (!fired) {
+    // The capture authorizes `t` under epoch 1; the policy then moves to an epoch that hides it. No
+    // task changed, so only the epoch recheck can notice the baseline was decided by a stale policy.
+    policy.afterDecision = (request: ITaskAccessRequest) => {
+      if (!fired && request.action === 'read' && request.task?.envelope.id === 't') {
         fired = true;
         policy.epoch = 'epoch-2';
+        policy.hide('t');
       }
     };
     expect(await subscribeAs(h, 'sub', { start: 'current' })).toSucceed();
     expect(fired).toBe(true);
+    expect((await consumerRecord(h.repository, 'sub')).baseline).toEqual([]);
   });
 
   test('a principal without subscribe authority is refused', async () => {
