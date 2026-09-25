@@ -38,6 +38,7 @@ import { checkSubscriptionClaims, checkTaskClaims, withOwnership } from './claim
 import { firstRecordProblem, pendingEntryOf } from './consumerRecords';
 import { DeliveryBook } from './deliveryBook';
 import {
+  checkAudiences,
   checkBounds,
   checkCreationEvidence,
   checkOperationCount,
@@ -860,6 +861,7 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
     // they do for a draft: a record under its total ceiling can still hold one value over them.
     const bounded: Result<IStoredCatalogOperation> = checkCreationEvidence(record).onSuccess((creation) =>
       checkBounds(record, profile)
+        .onSuccess(() => checkAudiences(record, profile))
         .onSuccess(() => checkOperationCount(record, profile))
         .onSuccess(() => succeed(creation))
     );
@@ -992,10 +994,15 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
       state.claims.map((c) => c.claimId)
     );
   }
-  // A link must name a live subscription: an audience member nobody can ever acknowledge for is an
-  // obligation with no owner.
+  // A link must name a subscription the inventory holds live: an audience member nobody can ever
+  // acknowledge for is an obligation with no owner. (One whose record is already reported broken is
+  // not also reported here.)
+  const liveConsumers: ReadonlySet<string> = new Set<string>([
+    ...manifest.consumers.filter((entry) => entry.state === 'live').map((entry) => entry.id),
+    ...consumers.completed
+  ]);
   for (const [updateId, audience] of linkDescriptors) {
-    const unknown: SubscriptionId | undefined = audience.find((id) => !consumers.subscriptions.has(id));
+    const unknown: SubscriptionId | undefined = audience.find((id) => !liveConsumers.has(id));
     if (unknown !== undefined) {
       scan.blocking(
         'integrity',

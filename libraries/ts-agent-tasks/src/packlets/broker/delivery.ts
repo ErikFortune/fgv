@@ -37,6 +37,7 @@ import {
   taskContextLimits
 } from '../types';
 import { AccessContext, AccessSubject, subjectOf } from './access';
+import { ITaskRepositoryWriter } from '../storage';
 import { BrokerCore, canonicallySame } from './core';
 import { ok, propagate, taskFailure } from './failures';
 import { projectEnvelope } from './projection';
@@ -359,6 +360,15 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     }
     const presented: ITaskInclusionReceipt = converted.value;
     const deliveryId: DeliveryId = converted.value.deliveryId;
+    // First: is this exactly a receipt this subscription issued and still holds? A fabricated,
+    // modified, shortened, enlarged, foreign or snapshot-only receipt is refused here, before any
+    // task it names is looked at — it gets one answer, whatever it names.
+    const matched: TaskResult<true> = await this._core.gated(async (writer) =>
+      (await this._issuedMatch(writer, deliveryId, presented)).onSuccess(() => ok<true>(true))
+    );
+    if (matched.isFailure()) {
+      return propagate(matched);
+    }
     const epoch: TaskResult<string> = this._access.epoch();
     if (epoch.isFailure()) {
       return propagate(epoch);
@@ -377,19 +387,11 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
       }
     }
     return this._core.gated(async (writer) => {
-      const record: TaskResult<ITaskConsumerRecord | undefined> = await writer.readSubscription(
-        this.subscriptionId
-      );
+      // Re-proved in the section that commits: the manifest may have been abandoned or expired, and
+      // the policy may have moved, since the checks above.
+      const record: TaskResult<ITaskConsumerRecord> = await this._issuedMatch(writer, deliveryId, presented);
       if (record.isFailure()) {
         return propagate<IAcknowledgementResult>(record);
-      }
-      const manifest = record.value?.issued.find((m) => m.deliveryId === deliveryId);
-      if (
-        record.value === undefined ||
-        manifest === undefined ||
-        !canonicallySame(manifest.receipt, presented)
-      ) {
-        return _invalidReceipt(this.subscriptionId);
       }
       if (!this._access.epochIs(epoch.value)) {
         return taskFailure<IAcknowledgementResult>(
@@ -413,6 +415,29 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
         })
       );
     });
+  }
+
+  /**
+   * The subscription's record, when it holds a manifest under `deliveryId` whose receipt is, in full
+   * canonical form, the one presented. Anything else is the one invalid-receipt answer.
+   */
+  private async _issuedMatch(
+    writer: ITaskRepositoryWriter,
+    deliveryId: DeliveryId,
+    presented: ITaskInclusionReceipt
+  ): Promise<TaskResult<ITaskConsumerRecord>> {
+    const record: TaskResult<ITaskConsumerRecord | undefined> = await writer.readSubscription(
+      this.subscriptionId
+    );
+    if (record.isFailure()) {
+      return propagate(record);
+    }
+    const manifest = record.value?.issued.find((m) => m.deliveryId === deliveryId);
+    return record.value !== undefined &&
+      manifest !== undefined &&
+      canonicallySame(manifest.receipt, presented)
+      ? ok(record.value)
+      : _invalidReceipt(this.subscriptionId);
   }
 
   /** {@inheritDoc IBoundTaskDelivery.abandon} */

@@ -4,6 +4,8 @@
  */
 
 import { TaskId } from '../types';
+import { DeliveryBook } from './deliveryBook';
+import { CapacityLedger } from './ledger';
 import { ITaskRepository } from './model';
 import { IScanEvidence } from './openRepository';
 import { ITaskProjection } from './projection';
@@ -32,6 +34,10 @@ export interface IRepositoryInspection {
   readonly evidence: IScanEvidence;
   readonly cursorHandles: number;
   readonly cache: { readonly entries: number; readonly charge: number };
+  /** Subscriptions, potential audiences and delivery units (T7). */
+  readonly book: DeliveryBook;
+  /** The derived capacity ledger, by record. */
+  readonly ledger: CapacityLedger;
 }
 
 const inspectors: WeakMap<object, () => IRepositoryInspection> = new WeakMap();

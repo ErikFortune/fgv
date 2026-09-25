@@ -460,13 +460,6 @@ export function checkBounds(draft: ITaskRecordDraft, profile: ITaskCapacityProfi
     }
     for (const update of resolved.updates) {
       checks.push(() => within(update, encoded.maxUpdateBytes, `update '${update.id}'`));
-      checks.push(() =>
-        update.audience.length > profile.perOwner.maxAudiencePerUpdate
-          ? fail(
-              `update '${update.id}' names ${update.audience.length} audience subscriptions, over ${profile.perOwner.maxAudiencePerUpdate}`
-            )
-          : succeed(true)
-      );
     }
   } else {
     checks.push(() => within(draft.reference, encoded.maxEnvelopeBytes, 'the unresolved reference'));
@@ -485,6 +478,21 @@ export function checkBounds(draft: ITaskRecordDraft, profile: ITaskCapacityProfi
     }
   }
   return succeed(true);
+}
+
+/**
+ * Checks a stored record's audiences against the per-update limit. A commit never writes one over it
+ * — its delivery plan refuses the growth with `backpressure` first — so at open one over it is a
+ * record this release did not write.
+ */
+export function checkAudiences(record: ITaskCommitRecord, profile: ITaskCapacityProfile): Result<true> {
+  const max: number = profile.perOwner.maxAudiencePerUpdate;
+  const over: ITaskUpdate | undefined = (record.recordType === 'resolved' ? record.updates : []).find(
+    (update) => update.audience.length > max
+  );
+  return over === undefined
+    ? succeed(true)
+    : fail(`update '${over.id}' names ${over.audience.length} audience subscriptions, over ${max}`);
 }
 
 /**

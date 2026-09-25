@@ -162,7 +162,7 @@ export class SubscriptionRecords {
     return this._mint().onSuccess((activationId) =>
       this._firstRecord(registration, activationId, undefined, admitted.value.units).onSuccess((first) =>
         this._pend(registration, first).onSuccess((entry) =>
-          this._write(id, 0, first.record, operationId).onSuccess(() =>
+          this._write(id, 0, first.read, operationId).onSuccess(() =>
             this._finish(entry, first, admitted.value.matched, admitted.value.units)
           )
         )
@@ -243,7 +243,7 @@ export class SubscriptionRecords {
         );
       }
       // Re-establish the flush boundary a lost response may have skipped, byte for byte.
-      return this._write(id, record.recordRevision, record, registration.operationId)
+      return this._write(id, record.recordRevision, read, registration.operationId)
         .onSuccess(() => this._host.writeManifest(this._host.manifest(), registration.operationId))
         .onSuccess(() => ok(record));
     });
@@ -477,7 +477,7 @@ export class SubscriptionRecords {
         );
       }
       return this._firstRecord(registration, activation.claimId, activation, units).onSuccess((first) =>
-        this._write(id, 0, first.record, registration.operationId).onSuccess(() =>
+        this._write(id, 0, first.read, registration.operationId).onSuccess(() =>
           this._finish(entry, first, matched, units)
         )
       );
@@ -843,7 +843,7 @@ export class SubscriptionRecords {
       return host
         .ledger()
         .admit(new Map([[subscriptionKey(id), entry]]))
-        .onSuccess(() => this._write(id, record.recordRevision, read.record, undefined))
+        .onSuccess(() => this._write(id, record.recordRevision, read, undefined))
         .onSuccess(() => {
           host.book().subscriptions.set(id, nextState);
           host.index().satisfy(id, satisfied);
@@ -861,18 +861,30 @@ export class SubscriptionRecords {
   private _write(
     id: SubscriptionId,
     expectedRecordRevision: number,
-    record: ITaskConsumerRecord,
+    expected: IConsumerRead,
     operationId: OperationId | undefined
   ): TaskResult<true> {
     const written: DetailedResult<true, CheckpointWriteVisibility> = this._host.checkpoints.write(
       id,
       expectedRecordRevision,
-      record
+      expected.record
     );
-    if (written.isSuccess()) {
-      return ok(true);
-    }
     const detail = operationId !== undefined ? { operationId } : undefined;
+    if (written.isSuccess()) {
+      // A store is host code: its success is checked, not believed. Reading the record back and
+      // finding anything but what was written means the checkpoint is not where the repository is
+      // about to say it is, so nothing that depends on it — an issued receipt, an acknowledgement —
+      // may be returned.
+      const back = this._host.checkpoints.read(id);
+      if (back.isSuccess() && back.value?.fingerprint === expected.fingerprint) {
+        return ok(true);
+      }
+      const message: string =
+        `${recordName('consumer', id)}: the checkpoint store reported a write it does not hold ` +
+        `(${back.isFailure() ? back.message : 'it reads back something else'})`;
+      this._host.fence(message);
+      return taskFailure(message, 'storage-corrupt', 'after-host-action', detail);
+    }
     if (written.detail === 'unchanged') {
       return taskFailure(
         `${recordName('consumer', id)}: the write failed before anything became visible: ${written.message}`,
