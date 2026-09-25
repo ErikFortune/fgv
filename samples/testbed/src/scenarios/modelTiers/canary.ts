@@ -42,7 +42,9 @@
  * 3. **Supplementary probes (keyed, opt-in per spec).** Each has its own report section:
  *    - thinking probes: one completion per tier and effort (`thinkingEfforts`)
  *    - strict-none probes: `'none'` plus `onUnsupported: 'fail'`, checked against
- *      `thinkingRequiredModelPrefixes` (`strictNoneProbe`)
+ *      `thinkingRequiredModelPrefixes` (`strictNoneProbe`). On a listed model, a second, raw
+ *      `'none'` bypasses the library gate, so the provider's own rejection keeps the listing
+ *      honest in the other direction.
  *    - model-override rows for aliases no tier reaches (`extraModels`)
  *    - one live image generation (`liveImage`, via {@link ITierCanaryDeps.generateImage})
  *    Any probe failure fails the run, the same as a tier failure.
@@ -159,6 +161,11 @@ export interface ICanaryCompleteOptions {
   readonly modelOverride?: string;
   /** Send `thinking.onUnsupported` alongside `effort` (the strict-none probe sends `'fail'`). */
   readonly onUnsupported?: 'degrade' | 'fail';
+  /**
+   * Send the provider's thinking-off value in an explicit provider block, which bypasses the
+   * library's `'none'` gate, so the provider itself answers whether it accepts `'none'`.
+   */
+  readonly rawNone?: boolean;
 }
 
 /**
@@ -476,7 +483,11 @@ function imageProbe(
   result: Result<AiAssist.IAiImageGenerationResponse>
 ): ICanaryProbeResult {
   if (result.isFailure()) {
-    return { label: 'image', concrete, outcome: classifyLiveFailure(result.message), detail: result.message };
+    // A rejected parameter is a real failure here, not a BLOCKED: the probe exists to verify the
+    // image parameters ai-assist sends (e.g. xAI `quality`), so a 400 on one of them is the finding.
+    const classified = classifyLiveFailure(result.message);
+    const outcome: TierLiveOutcome = classified === 'param-rejected' ? 'param-failed' : classified;
+    return { label: 'image', concrete, outcome, detail: result.message };
   }
   return result.value.images.some((img) => img.base64.length > 0)
     ? { label: 'image', concrete, outcome: 'live-pass' }
@@ -549,8 +560,38 @@ async function runStrictNoneProbes(
     const listed = AiAssist.isThinkingRequiredModel(spec.descriptor, resolution.concrete);
     const result = await deps.complete(resolution.tier, { effort: 'none', onUnsupported: 'fail' });
     rows.push(strictNoneProbe(label, resolution.concrete, listed, result));
+    if (listed) {
+      // The local refusal above never reaches the provider, so it cannot notice a provider that
+      // has started accepting 'none'. Ask the provider directly, bypassing the gate.
+      const raw = await deps.complete(resolution.tier, { rawNone: true });
+      rows.push(rawNoneProbe(`${resolution.tier} none raw`, resolution.concrete, raw));
+    }
   }
   return rows;
+}
+
+/**
+ * Classifies a raw-`none` probe on a listed model. A provider 400 (or rejected-parameter message)
+ * is the expected answer and passes: the listing is still needed. A success fails: the provider now
+ * accepts `'none'` and the `thinkingRequiredModelPrefixes` entry is stale.
+ */
+function rawNoneProbe(
+  label: string,
+  concrete: string,
+  result: Result<AiAssist.IAiCompletionResponse>
+): ICanaryProbeResult {
+  if (result.isSuccess()) {
+    return {
+      label,
+      concrete,
+      outcome: 'error',
+      detail: 'the provider accepted none; the thinking-required listing is stale'
+    };
+  }
+  const outcome = classifyThinkingFailure(result.message);
+  return outcome === 'param-failed'
+    ? { label, concrete, outcome: 'live-pass', detail: 'the provider still rejects none, as listed' }
+    : { label, concrete, outcome, detail: result.message };
 }
 
 /** Resolves (offline) and fires (live) each extra model via `modelOverride`. */

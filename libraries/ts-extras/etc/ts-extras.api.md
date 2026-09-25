@@ -2524,6 +2524,7 @@ function isValidMultibaseSpkiPublicKey(value: unknown): value is MultibaseSpkiPu
 // @public
 interface IThinkingConfig {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IThinkingConfig"
     readonly effort?: 'none' | 'low' | 'medium' | 'high';
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"

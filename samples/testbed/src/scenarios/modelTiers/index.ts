@@ -84,6 +84,16 @@ export async function resolveTierApiKey(
 }
 
 /**
+ * The explicit provider block that sends each rotated provider's thinking-off value, bypassing the
+ * library's `'none'` gate (an explicit block owns the wire). Used by the raw-`none` probe.
+ */
+const RAW_NONE_BLOCKS: Readonly<Record<string, AiAssist.IThinkingProviderConfig>> = {
+  openai: { provider: 'openai', config: { effort: 'none' } },
+  'xai-grok': { provider: 'xai', config: { effort: 'none' } },
+  'google-gemini': { provider: 'google', config: { thinkingBudget: 0 } }
+};
+
+/**
  * Builds the live-completion seam for a provider: given an already-resolved `apiKey` (or
  * `undefined`), returns a `complete` callback that fires a minimal completion at the requested
  * tier via the real `callProviderCompletion`; returns `undefined` (→ the keyless STOP-FLAG
@@ -102,6 +112,7 @@ function buildLiveComplete(
     return undefined;
   }
   const key = apiKey;
+  const rawNone = RAW_NONE_BLOCKS[descriptor.id];
   return (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
     AiAssist.callProviderCompletion({
       descriptor,
@@ -117,7 +128,8 @@ function buildLiveComplete(
               ...(options.onUnsupported !== undefined ? { onUnsupported: options.onUnsupported } : {})
             }
           }
-        : {})
+        : {}),
+      ...(options?.rawNone === true && rawNone !== undefined ? { thinking: { providers: [rawNone] } } : {})
     });
 }
 

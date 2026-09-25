@@ -485,6 +485,8 @@ describe('runTierCanary (thinking probes)', () => {
 describe('runTierCanary (strict-none probes)', () => {
   const REFUSAL =
     "thinking effort 'none' is not supported by gpt-6-astra: the model cannot run with thinking off";
+  const PROVIDER_REJECTS_NONE =
+    "AI API returned 400: 'reasoning_effort' does not support 'none' with this model";
   const spec = {
     providerId: 'openai',
     descriptor: openai,
@@ -492,22 +494,45 @@ describe('runTierCanary (strict-none probes)', () => {
     strictNoneProbe: true
   };
 
-  test("sends none + onUnsupported 'fail' per tier; a listed model refused locally and an unlisted one answering both pass", async () => {
+  /** A provider stand-in: refuses 'fail' locally on the listed frontier, rejects a raw none there. */
+  function answer(
+    tier: CanaryTier,
+    options: ICanaryCompleteOptions | undefined,
+    overrides: {
+      raw?: Result<AiAssist.IAiCompletionResponse>;
+      strict?: Result<AiAssist.IAiCompletionResponse>;
+    } = {}
+  ): Result<AiAssist.IAiCompletionResponse> {
+    if (tier === 'frontier' && options?.onUnsupported === 'fail') {
+      return overrides.strict ?? fail(REFUSAL);
+    }
+    if (options?.rawNone === true) {
+      return overrides.raw ?? fail(PROVIDER_REJECTS_NONE);
+    }
+    return pong();
+  }
+
+  test('a listed model refused locally, rejected by the provider on a raw none, and an unlisted one answering all pass', async () => {
     const complete = jest.fn(
       async (
         tier: CanaryTier,
         options?: ICanaryCompleteOptions
-      ): Promise<Result<AiAssist.IAiCompletionResponse>> =>
-        tier === 'frontier' && options?.onUnsupported === 'fail' ? fail(REFUSAL) : pong()
+      ): Promise<Result<AiAssist.IAiCompletionResponse>> => answer(tier, options)
     );
     const result = await runTierCanary(spec, { complete }, new Logging.InMemoryLogger());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/Strict-none probes \(effort none, onUnsupported 'fail'\):/);
       expect(report).toMatch(/\[PASS\] base none\+fail\s+gpt-6-luna/);
       expect(report).toMatch(/\[PASS\] frontier none\+fail\s+gpt-6-astra\s+\(refused locally, as listed\)/);
+      expect(report).toMatch(
+        /\[PASS\] frontier none raw\s+gpt-6-astra\s+\(the provider still rejects none, as listed\)/
+      );
+      expect(report).not.toMatch(/base none raw/);
       expect(report).toMatch(/LIVE-VERIFIED/);
     });
     expect(complete).toHaveBeenCalledWith('frontier', { effort: 'none', onUnsupported: 'fail' });
+    expect(complete).toHaveBeenCalledWith('frontier', { rawNone: true });
+    expect(complete).not.toHaveBeenCalledWith('base', { rawNone: true });
   });
 
   test('an unlisted model that rejects none is FAIL(param) — it belongs on the list', async () => {
@@ -515,32 +540,45 @@ describe('runTierCanary (strict-none probes)', () => {
       complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
         tier === 'base' && options?.onUnsupported === 'fail'
           ? fail('AI API returned 400: reasoning_effort does not support none')
-          : tier === 'frontier' && options?.onUnsupported === 'fail'
-          ? fail(REFUSAL)
-          : pong()
+          : answer(tier, options)
     };
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[FAIL\(param\)\] base none\+fail\s+gpt-6-luna/);
     expect(result).toFailWith(/FAILED — a thinking, strict-none, model-override or image probe failed/);
   });
 
-  test('a listed model whose call goes through fails — the list is stale', async () => {
-    const result = await runTierCanary(spec, { complete: async () => pong() }, new Logging.InMemoryLogger());
+  test('a listed model whose strict call goes through fails — the list is stale', async () => {
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        answer(tier, options, { strict: pong() })
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(
       /\[FAIL\] frontier none\+fail\s+gpt-6-astra\s+\(listed as thinking-required, but the call went through\)/
     );
   });
 
-  test('a listed model failing some other way is classified as a live failure', async () => {
+  test('a listed model whose provider now accepts a raw none fails — the listing is stale', async () => {
     const deps: ITierCanaryDeps = {
       complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
-        tier === 'frontier' && options?.onUnsupported === 'fail'
-          ? fail('AI API returned 403: org not verified')
-          : pong()
+        answer(tier, options, { raw: pong() })
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toFailWith(
+      /\[FAIL\] frontier none raw\s+gpt-6-astra\s+\(the provider accepted none; the thinking-required listing is stale\)/
+    );
+  });
+
+  test('a listed model failing some other way is classified as a live failure', async () => {
+    const denied = fail<AiAssist.IAiCompletionResponse>('AI API returned 403: org not verified');
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        answer(tier, options, { strict: denied, raw: denied })
     };
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[BLOCKED\(access\)\] frontier none\+fail\s+gpt-6-astra/);
+      expect(report).toMatch(/\[BLOCKED\(access\)\] frontier none raw\s+gpt-6-astra/);
     });
   });
 
@@ -657,6 +695,18 @@ describe('runTierCanary (live image probe)', () => {
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[BLOCKED\(access\)\] image\s+grok-imagine-image-2\.0/);
     });
+  });
+
+  test('a rejected image parameter fails the run as FAIL(param), not BLOCKED', async () => {
+    const result = await runTierCanary(
+      spec,
+      {
+        complete: async () => pong(),
+        generateImage: async () => fail('AI API returned 400: unsupported_value for quality')
+      },
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toFailWith(/\[FAIL\(param\)\] image\s+grok-imagine-image-2\.0/);
   });
 
   test('a rejected image request fails the run', async () => {

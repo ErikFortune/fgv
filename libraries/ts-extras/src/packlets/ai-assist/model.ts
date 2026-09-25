@@ -1727,8 +1727,10 @@ export interface IThinkingConfig {
    * `'none'` is the one cross-provider spelling for "thinking off". Anthropic has no
    * off value in its own effort vocabulary — off there means omitting the `thinking`
    * wire param entirely — so `'none'` maps to that omission rather than to a value.
-   * Whichever provider is in play, `'none'` also re-enables `temperature`: see
-   * `checkTemperatureConflict` in `thinkingOptionsResolver.ts`.
+   * On a model that accepts `'none'`, whichever provider is in play, `'none'` also re-enables
+   * `temperature` (see `checkTemperatureConflict` in `thinkingOptionsResolver.ts`). On a model
+   * listed in {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes} it does not: there
+   * `'none'` is sent as `'low'` (or refused), and on OpenAI and xAI that rejects `temperature`.
    *
    * The mapping is not model-aware, with one exception: `'none'`. Thinking *availability* is still
    * not gated at the call path (see `ModelSpecKey`'s remarks), but some models cannot run with
