@@ -50,6 +50,7 @@ import {
   type ModelSpec,
   type ModelSpecKey,
   isAdaptiveThinkingModel,
+  isThinkingRequiredModel,
   isResponsesOnlyModel,
   resolveProviderModel,
   usesMaxCompletionTokensField
@@ -836,8 +837,12 @@ export async function callProviderCompletion(
   let resolvedThinking: IResolvedThinkingConfig | undefined;
   if (thinking !== undefined) {
     if (discriminator !== undefined) {
-      const mergeResult = mergeThinkingConfig(thinking, model, discriminator);
-      /* c8 ignore next 3 - mergeThinkingConfig always succeeds; defensive guard */
+      const mergeResult = mergeThinkingConfig(
+        thinking,
+        model,
+        discriminator,
+        isThinkingRequiredModel(descriptor, model)
+      );
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
       }

@@ -569,6 +569,21 @@ export function isAdaptiveThinkingModel(descriptor: IAiProviderDescriptor, model
 }
 
 /**
+ * Whether a concrete (already-resolved) model cannot run with thinking off, per the descriptor's
+ * {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes} (exact-or-dash-bounded match).
+ *
+ * @param descriptor - The provider descriptor supplying the prefix list.
+ * @param modelId - The resolved concrete model id to test.
+ * @returns `true` when a generic `effort: 'none'` would be rejected by `modelId`.
+ * @public
+ */
+export function isThinkingRequiredModel(descriptor: IAiProviderDescriptor, modelId: string): boolean {
+  return (
+    descriptor.thinkingRequiredModelPrefixes?.some((p) => isExactOrDashBoundedPrefix(modelId, p)) ?? false
+  );
+}
+
+/**
  * Determines whether a provider's OpenAI-compatible Chat Completions request
  * should use the modern `max_completion_tokens` field instead of the legacy
  * `max_tokens` field for capping output length.
@@ -972,6 +987,19 @@ export interface IAiProviderDescriptor {
    * Empty or undefined means no model uses the adaptive shape.
    */
   readonly adaptiveThinkingModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
+   * {@link IAiProviderDescriptor.adaptiveThinkingModelPrefixes}) that cannot run with thinking off.
+   * The provider rejects the off value ai-assist would send for a generic `effort: 'none'`:
+   * `reasoning_effort: 'none'` (OpenAI, xAI) or `thinkingBudget: 0` (Gemini).
+   *
+   * @remarks
+   * A generic `'none'` on a listed model is handled by {@link IThinkingConfig.onUnsupported}. It
+   * is sent as `'low'` by default, or refused before the wire. Provider-specific blocks in
+   * {@link IThinkingConfig.providers} are sent verbatim and are not checked. Empty or undefined
+   * means every model accepts `'none'`.
+   */
+  readonly thinkingRequiredModelPrefixes?: ReadonlyArray<string>;
 }
 
 /**
@@ -1703,13 +1731,26 @@ export interface IThinkingConfig {
    *
    * The mapping is not model-aware (same posture as every other entry in this table —
    * see `ModelSpecKey`'s remarks for why thinking availability isn't gated at the call
-   * path). For Gemini specifically, `thinkingBudget: 0` is documented as valid only on
-   * Flash and Flash-Lite and erroring on Pro (see `IGeminiThinkingConfig.thinkingBudget`);
-   * `'none'` on a Pro-family model inherits that same caveat, exactly as an explicit
-   * `providers: [{ provider: 'google', config: { thinkingBudget: 0 } }]` block already did
-   * before this field existed.
+   * path). Some models cannot run with thinking off at all. For example, Gemini Pro rejects
+   * `thinkingBudget: 0`, and `gpt-6-astra` and `grok-4.7` reject `reasoning_effort: 'none'`.
+   * Each descriptor lists these in
+   * {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes}, and a `'none'` sent to one of
+   * them is handled by {@link IThinkingConfig.onUnsupported}. An explicit `providers` block
+   * (e.g. `{ provider: 'google', config: { thinkingBudget: 0 } }`) is still sent verbatim.
    */
   readonly effort?: 'none' | 'low' | 'medium' | 'high';
+  /**
+   * What to do when `effort` is `'none'` and the resolved model cannot run with thinking off
+   * (see {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes}).
+   * - `'degrade'` (default): send `'low'`, the least thinking the model accepts.
+   * - `'fail'`: refuse the call with a `Result.fail` before anything is sent.
+   *
+   * @remarks
+   * Pass `'fail'` when `'none'` is a correctness requirement (for example, a latency budget or a
+   * reply that must not carry reasoning tokens), rather than a preference. Has no effect on any
+   * other effort, or on a model that accepts `'none'`.
+   */
+  readonly onUnsupported?: 'degrade' | 'fail';
   /**
    * Optional per-provider precision blocks. Blocks for providers that don't
    * match the resolved model's provider are silently skipped.

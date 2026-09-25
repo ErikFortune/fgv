@@ -771,4 +771,28 @@ describe('checkTemperatureConflict', () => {
       expect(anthropicEffortToBudgetTokens('max')).toBe(32000);
     });
   });
+
+  describe("effort 'none' on a thinking-required model", () => {
+    test('degrades to low by default', () => {
+      expect(mergeThinkingConfig({ effort: 'none' }, 'gpt-6-astra', 'openai', true)).toSucceedAndSatisfy(
+        (r) => {
+          expect(r.openAiEffort).toBe('low');
+        }
+      );
+    });
+
+    test("fails when onUnsupported is 'fail'", () => {
+      expect(
+        mergeThinkingConfig({ effort: 'none', onUnsupported: 'fail' }, 'gpt-6-astra', 'openai', true)
+      ).toFailWith(/'none' is not supported by gpt-6-astra/);
+    });
+
+    test('leaves none alone when the model accepts it', () => {
+      expect(
+        mergeThinkingConfig({ effort: 'none', onUnsupported: 'fail' }, 'gpt-6-luna', 'openai', false)
+      ).toSucceedAndSatisfy((r) => {
+        expect(r.openAiEffort).toBe('none');
+      });
+    });
+  });
 });

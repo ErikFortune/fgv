@@ -151,6 +151,7 @@ rules, so a sibling rule cannot fix it, and it is not a rotation edit.
 | `supportsCacheUsageReporting` | no | Provider-id gate (`'openai'`, `'xai-grok'`). Every GPT-6 and grok-4.7 page lists cached-input pricing. |
 | `supportsPromptCacheBreakpoints` | no | Provider-id gate. |
 | `supportsPromptCacheRouting` | no | Provider-id gate. |
+| `thinkingRequiredModelPrefixes` (new) | **added** after the live run | See §6a. |
 | `adaptiveThinkingModelPrefixes` (anthropic) | **no** (comment added) | The dash-bounded matcher already covers `claude-opus-5-5` and `claude-fable-5-1` through `claude-opus-5` and `claude-fable-5`. Both are "Adaptive (always on)" per the overview. Our `'none'` effort omits the `thinking` field, which the Opus 5.5 page says is accepted ("Omit the `thinking` field…"). |
 | `structuredOutput` (anthropic) | no — **and the reason the aliases were held** | See §1.4. |
 | `structuredOutput` (openai, gemini, xai) | no | Catch-all entries. Every GPT-6, Gemini 3.8 / 3.5-lite and grok-4.7 page lists structured outputs as supported. |
@@ -229,6 +230,40 @@ Each of these is documented behaviour that no offline gate can observe:
 Each resolved id is logged, so every row can be checked against §1. The seams that make the live
 calls stay coverage-ignored like the existing ones. Everything else is covered offline through
 injected dependencies.
+
+## 6a. Live testbed run (user, 2026-09-25) and the fix it drove
+
+The user ran the extended model-tier canaries. **All ids answered.** Every tier completion passed,
+as did `@google-gemini:flash-lite` → `gemini-3.5-flash-lite` via `modelOverride`, and the live images
+from `gpt-image-2.5-sunburst` (quality `low`) and `grok-imagine-image-2.0` (quality `medium`, the
+newly wired param). The only failures were thinking `'none'`, on three models:
+
+| model | tier | provider error (verbatim excerpt) | new in this PR? |
+|---|---|---|---|
+| `gpt-6-astra` | OpenAI frontier | `'reasoning_effort' does not support 'none' with this model. Supported values are: 'low', 'medium', 'high', and 'xhigh'.` | yes (`gpt-5.6-sol` accepted it) |
+| `grok-4.7` | xAI advanced / frontier | ``This model does not support `reasoning_effort` value `none`.`` | yes, though `grok-4.5` documented the same limit |
+| `gemini-3.1-pro-preview` | Gemini advanced / frontier | `Budget 0 is invalid. This model only works in thinking mode.` | no, the model is unchanged |
+
+`gpt-6-luna`, `gpt-6-sol`, `grok-4.3` and `gemini-3.8-flash` accepted `'none'`.
+
+**Fix, per the user's direction: roll forward, and clamp by default with an opt-in failure.**
+- `IAiProviderDescriptor.thinkingRequiredModelPrefixes`, matched exact-or-dash-bounded like
+  `adaptiveThinkingModelPrefixes`, plus the `isThinkingRequiredModel` predicate.
+- Declared: `gpt-6-astra` (live); `grok-4.7` (live) and `grok-4.5` (its model page lists efforts
+  `low`..`xhigh`); `gemini-3.1-pro-preview` (live) and `gemini-2.5-pro` (the existing
+  `IGeminiThinkingConfig.thinkingBudget` doc: "error on Pro").
+- `IThinkingConfig.onUnsupported?: 'degrade' | 'fail'`. It is a separate option rather than a new
+  effort value, because it is a policy, not a level, and it reuses `structuredOutput`'s vocabulary.
+  `'degrade'` (the default) sends `'low'`. `'fail'` returns `Result.fail` before the wire.
+- Only the generic `effort` is adjusted. Provider blocks are sent verbatim, and
+  `executeClientToolTurn` takes an already-resolved wire config, so neither is checked.
+- Anthropic is not declared. Its `'none'` omits the `thinking` field, which the Opus 5.5 page says is
+  accepted ("Omit the `thinking` field …").
+- **No response-level report of the clamp.** Unlike `structuredOutput`, the completion response does
+  not say that `'none'` was sent as `'low'`. A caller who needs the guarantee passes `'fail'`.
+  This is a known gap, recorded here rather than built in this PR.
+- Tests pin the wire value per provider on the real descriptors. Breaking either call site
+  (`completionClient`, `streamingClient`) turns exactly that site's tests red.
 
 ## 7. Gates (all run 2026-09-24, on the final tree)
 

@@ -936,6 +936,34 @@ describe('callProviderCompletionStream', () => {
       expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-6-astra');
     });
 
+    test("real OpenAI registry descriptor: frontier + effort 'none' streams reasoning_effort 'low'", async () => {
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      mockSseResponse(openAiChatSse(['ok']));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'frontier',
+        thinking: { effort: 'none' }
+      });
+      expect(result).toSucceed();
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body).toMatchObject({ model: 'gpt-6-astra', reasoning_effort: 'low' });
+    });
+
+    test("real OpenAI registry descriptor: frontier + effort 'none' + onUnsupported 'fail' refuses the stream", async () => {
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'frontier',
+        thinking: { effort: 'none', onUnsupported: 'fail' }
+      });
+      expect(result).toFailWith(/thinking effort 'none' is not supported by gpt-6-astra/);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
     test('real OpenAI registry descriptor: a gpt-5.5-pro modelOverride still routes via the /responses stream', async () => {
       // The previous frontier target remains Responses-API-only and reachable via modelOverride.
       const openai = AiAssist.getProviderDescriptor('openai').orThrow();

@@ -132,6 +132,11 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // back without the host changing anything, so it wants the same evidence a
     // capability claim wants.
     serverToolsExclusiveWithClientTools: ['web_search'],
+    // Reject thinkingBudget 0. gemini-3.1-pro-preview: live 400 "Budget 0 is invalid. This model
+    // only works in thinking mode." (2026-09-25); Google's thinking page lists its levels as
+    // low/medium/high. gemini-2.5-pro: IGeminiThinkingConfig.thinkingBudget documents 0 as
+    // erroring on Pro.
+    thinkingRequiredModelPrefixes: ['gemini-3.1-pro-preview', 'gemini-2.5-pro'],
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
@@ -238,6 +243,9 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     streamingCorsRestricted: false,
     acceptsImageInput: true,
     responsesOnlyModelPrefixes: ['gpt-5.5-pro'],
+    // Reject reasoning_effort 'none'. gpt-6-astra: model page lists effort low..max, and a live
+    // call returned 400 "'reasoning_effort' does not support 'none' with this model" (2026-09-25).
+    thinkingRequiredModelPrefixes: ['gpt-6-astra'],
     // Declared once for the whole line. The Chat-Completions-vs-Responses split is
     // NOT declared here on purpose: the route depends on whether the call carries
     // server tools as well as on the model, so the same model takes both endpoints
@@ -312,6 +320,10 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: true,
     streamingCorsRestricted: true,
     acceptsImageInput: true,
+    // Reject reasoning_effort 'none'. Both model pages list efforts low..xhigh; grok-4.7 also
+    // returned a live 400 "This model does not support `reasoning_effort` value `none`"
+    // (2026-09-25). grok-4.3 lists 'none' and accepts it.
+    thinkingRequiredModelPrefixes: ['grok-4.7', 'grok-4.5'],
     structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }],
     imageGeneration: [
       {

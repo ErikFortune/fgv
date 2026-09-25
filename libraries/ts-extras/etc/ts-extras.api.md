@@ -143,6 +143,7 @@ declare namespace AiAssist {
         resolveProviderModel,
         isResponsesOnlyModel,
         isAdaptiveThinkingModel,
+        isThinkingRequiredModel,
         usesMaxCompletionTokensField,
         toDataUrl,
         IThinkingConfig,
@@ -1398,6 +1399,10 @@ interface IAiProviderDescriptor {
     readonly streamingCorsRestricted: boolean;
     readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
     readonly supportedTools: ReadonlyArray<AiServerToolType>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IThinkingConfig"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IThinkingConfig"
+    readonly thinkingRequiredModelPrefixes?: ReadonlyArray<string>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2503,6 +2508,11 @@ const isoDateTime: Converter<DateTime, unknown>;
 // @public
 function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId: string): boolean;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function isThinkingRequiredModel(descriptor: IAiProviderDescriptor, modelId: string): boolean;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2513,7 +2523,11 @@ function isValidMultibaseSpkiPublicKey(value: unknown): value is MultibaseSpkiPu
 
 // @public
 interface IThinkingConfig {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IThinkingConfig"
     readonly effort?: 'none' | 'low' | 'medium' | 'high';
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    readonly onUnsupported?: 'degrade' | 'fail';
     readonly providers?: ReadonlyArray<IThinkingProviderConfig>;
 }
 

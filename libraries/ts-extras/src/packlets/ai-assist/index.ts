@@ -84,6 +84,7 @@ export {
   resolveProviderModel,
   isResponsesOnlyModel,
   isAdaptiveThinkingModel,
+  isThinkingRequiredModel,
   usesMaxCompletionTokensField,
   toDataUrl,
   type IThinkingConfig,

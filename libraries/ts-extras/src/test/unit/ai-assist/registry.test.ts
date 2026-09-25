@@ -69,6 +69,27 @@ describe('AiAssist.registry', () => {
       expect(AiAssist.resolveProviderModel(desc, '@openai:pro', undefined)).toSucceedWith('gpt-6-astra');
     });
 
+    test('only the tier targets documented and observed to reject thinking-off are thinking-required', () => {
+      for (const [providerId, required, accepts] of [
+        ['openai', ['gpt-6-astra', 'gpt-6-astra-2026-09-01'], ['gpt-6-sol', 'gpt-6-luna', 'gpt-6-astral']],
+        [
+          'google-gemini',
+          ['gemini-3.1-pro-preview', 'gemini-2.5-pro'],
+          ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
+        ],
+        ['xai-grok', ['grok-4.7', 'grok-4.5'], ['grok-4.3', 'grok-4']],
+        ['anthropic', [], ['claude-opus-5', 'claude-opus-5-5']]
+      ] as const) {
+        const d = AiAssist.getProviderDescriptor(providerId).orThrow();
+        for (const id of required) {
+          expect(AiAssist.isThinkingRequiredModel(d, id)).toBe(true);
+        }
+        for (const id of accepts) {
+          expect(AiAssist.isThinkingRequiredModel(d, id)).toBe(false);
+        }
+      }
+    });
+
     test('no gpt-6 id is Responses-only — every tier target keeps both OpenAI routes', () => {
       for (const id of ['gpt-6-luna', 'gpt-6-sol', 'gpt-6-astra']) {
         expect(AiAssist.isResponsesOnlyModel(desc, id)).toBe(false);

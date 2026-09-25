@@ -246,39 +246,57 @@ function isModelSpecific(block: IThinkingProviderConfig): boolean {
  * temperature is accepted; see {@link IOpenAiThinkingConfig.effort} for the full
  * hybrid-mode semantics.
  *
+ * A generic `effort: 'none'` on a model that cannot run with thinking off (`thinkingRequired`)
+ * is sent as `'low'`, or refused when `config.onUnsupported` is `'fail'`. Provider blocks are
+ * not checked — a caller writing one has taken control of the wire value.
+ *
  * @param config - The caller's IThinkingConfig
  * @param resolvedModel - The concrete model string after registry resolution
  * @param discriminator - Coarse provider family
- * @returns Merged effective config for wire encoding
+ * @param thinkingRequired - Whether `resolvedModel` rejects the off value (see
+ *   `isThinkingRequiredModel`)
+ * @returns Merged effective config for wire encoding, or a failure when `'none'` is refused
  * @internal
  */
 export function mergeThinkingConfig(
   config: IThinkingConfig,
   resolvedModel: string,
-  discriminator: ThinkingProviderDiscriminator
+  discriminator: ThinkingProviderDiscriminator,
+  thinkingRequired: boolean = false
 ): Result<IResolvedThinkingConfig> {
   let resolved: IResolvedThinkingConfig = {};
 
+  let effort = config.effort;
+  if (effort === 'none' && thinkingRequired) {
+    if (config.onUnsupported === 'fail') {
+      return fail(
+        `thinking effort 'none' is not supported by ${resolvedModel}: the model cannot run with ` +
+          `thinking off (omit onUnsupported, or set it to 'degrade', to send 'low' instead)`
+      );
+    }
+    effort = 'low';
+  }
+
   // Tier 1: generic effort → common-subset mapping
-  if (config.effort !== undefined) {
+  if (effort !== undefined) {
     switch (discriminator) {
       case 'anthropic':
         // Anthropic has no 'none' value: "off" means no `thinking` wire param at all,
         // so 'none' leaves `anthropicEffort` unset rather than mapping to a value. That
         // also satisfies checkTemperatureConflict's anthropic gate (which fails only when
         // anthropicEffort is set), so temperature survives without any special-casing there.
-        if (config.effort !== 'none') {
-          resolved = { ...resolved, anthropicEffort: genericEffortToAnthropic(config.effort) };
+        if (effort !== 'none') {
+          resolved = { ...resolved, anthropicEffort: genericEffortToAnthropic(effort) };
         }
         break;
       case 'openai':
-        resolved = { ...resolved, openAiEffort: genericEffortToOpenAi(config.effort) };
+        resolved = { ...resolved, openAiEffort: genericEffortToOpenAi(effort) };
         break;
       case 'google':
-        resolved = { ...resolved, geminiThinkingBudget: genericEffortToGemini(config.effort) };
+        resolved = { ...resolved, geminiThinkingBudget: genericEffortToGemini(effort) };
         break;
       case 'xai':
-        resolved = { ...resolved, xaiEffort: genericEffortToXai(config.effort) };
+        resolved = { ...resolved, xaiEffort: genericEffortToXai(effort) };
         break;
     }
   }
