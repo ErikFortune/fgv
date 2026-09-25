@@ -1992,6 +1992,9 @@ export function maximumResolutionCharges(profile: ITaskCapacityProfile): Result<
 export function maximumSettlementCharges(profile: ITaskCapacityProfile): Result<ReadonlyArray<ITaskCapacityCharge>>;
 
 // @public
+export const maxSourceCursorLength: number;
+
+// @public
 export const maxTaskPageLimit: number;
 
 // @public

@@ -36,14 +36,13 @@ import { ICommandConverters } from './commandConverters';
 import { IContextConverters } from './contextConverters';
 import { IEnvelopeConverters } from './envelopeConverters';
 import { IIdentityConverters } from './identityConverters';
-import { boundedSingleLine, nonNegativeSafeInteger, positiveSafeInteger } from './primitives';
+import {
+  boundedSingleLine,
+  maxSourceCursorLength,
+  nonNegativeSafeInteger,
+  positiveSafeInteger
+} from './primitives';
 import { IValueConverters } from './valueConverters';
-
-/**
- * The longest source cursor any profile can admit, in UTF-16 code units: the default
- * `maxSourceCursorBytes` (4 KiB). A cursor is also checked against the stored profile's byte bound.
- */
-const maxSourceCursorLength: number = 4096;
 
 /**
  * Converters for the records the storage packlet writes and reads.

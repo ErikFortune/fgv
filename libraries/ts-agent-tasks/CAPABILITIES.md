@@ -364,7 +364,9 @@ may commit it. `'source-replay'`: the source replays every revision in order, an
 reconcile feed commits projections** — `observe`, push hints and command answers run a feed pass
 from the committed cursor instead, so a revision-3 hint cannot overtake revision 2's obligation.
 Registering against a `source-replay` source requires a finite envelope
-(`sourceReplay: { remainingRequiredUpdates, remainingRequiredBytes }`), reserved at admission;
+(`history: { history: 'source-replay', envelope: { remainingRequiredUpdates,
+remainingRequiredBytes } }`), reserved at admission — and from then on only that source's feed
+commits the task's projections, whatever source is later attached under its id;
 a feed that exceeds it is a `source-gap` with the cursor unmoved, and
 `extendReplayEnvelope(taskId, add)` is new admission.
 

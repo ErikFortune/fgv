@@ -187,8 +187,10 @@ interface IPageOutcome {
 }
 
 /**
- * For a `source-replay` feed, each binding's revisions within a page must strictly increase —
- * checked before anything in the page is applied, so a broken page commits nothing.
+ * For a `source-replay` feed, each binding's revisions within a page must not go backwards —
+ * checked before anything in the page is applied, so a broken page commits nothing. A repeated
+ * revision is an at-least-once duplicate, not a break: applying it is `unchanged`, or a contract
+ * violation if it carries a different state.
  */
 function _checkOrder(
   source: ITaskSource,
@@ -208,7 +210,7 @@ function _checkOrder(
     const previous: ISourceRevision | undefined = last.get(key);
     if (previous !== undefined) {
       const order: Result<SourceRevisionOrder> = compareRevisions(source, revision, previous);
-      if (order.isFailure() || order.value !== 'newer') {
+      if (order.isFailure() || (order.value !== 'newer' && order.value !== 'same')) {
         return (
           `revision ${revision.epoch}/${revision.token} of one binding does not follow ` +
           `${previous.epoch}/${previous.token} in the feed`

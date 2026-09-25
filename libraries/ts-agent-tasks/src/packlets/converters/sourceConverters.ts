@@ -15,7 +15,7 @@ import {
   SourceReconcileCoverage
 } from '../types';
 import { IValueConverters } from './valueConverters';
-import { boundedSingleLine, boundedText } from './primitives';
+import { boundedSingleLine, boundedText, maxSourceCursorLength } from './primitives';
 
 /**
  * Converters for what an external source returns.
@@ -41,8 +41,8 @@ export interface ISourceConverters {
 export function buildSourceConverters(bounds: ITaskFieldBounds, values: IValueConverters): ISourceConverters {
   const reason: Converter<string> = boundedText(bounds.maxSummaryLength, 'reason');
   // A cursor or checkpoint is opaque source text; the stored profile's byte bound is checked when
-  // it is committed. This is its representable ceiling (the default `maxSourceCursorBytes`).
-  const cursor: Converter<string> = boundedSingleLine(4096, 'source cursor');
+  // it is committed. This is its representable ceiling, which no profile may exceed.
+  const cursor: Converter<string> = boundedSingleLine(maxSourceCursorLength, 'source cursor');
 
   const read: Converter<SourceRead> = Converters.discriminatedObject<SourceRead>('state', {
     observed: Converters.strictObject<Extract<SourceRead, { state: 'observed' }>>({

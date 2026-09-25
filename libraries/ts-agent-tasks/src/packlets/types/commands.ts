@@ -72,6 +72,11 @@ export interface ICommandReceipt {
  * can refuse weaker dispatch. `idempotency: 'source-key'` states that the source itself
  * deduplicates the same key, which is what makes a safe resend possible after an
  * uncertain dispatch.
+ *
+ * `encode` produces the canonical parameters that are stored, deduplicated against and
+ * dispatched. Because `parameters` is also the wire schema, the encoded form must validate
+ * against it again: a descriptor whose encoder changes shape is refused when a command is
+ * validated.
  * @public
  */
 export interface ITaskCommandDescriptor<P> {

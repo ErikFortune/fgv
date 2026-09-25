@@ -64,6 +64,14 @@ export const positiveSafeInteger: Converter<number> = Converters.number.withCons
 );
 
 /**
+ * The longest source cursor or checkpoint the library represents: 4 KiB. A capacity profile's
+ * `maxSourceCursorBytes` may be lower but never higher, and every stored cursor is also checked
+ * against the stored profile's byte bound.
+ * @public
+ */
+export const maxSourceCursorLength: number = 4096;
+
+/**
  * Converts an unknown value to a non-negative safe integer.
  * @public
  */

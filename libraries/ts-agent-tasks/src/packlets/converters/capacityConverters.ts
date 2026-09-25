@@ -29,7 +29,13 @@ import {
 } from '../types';
 import { IFailureConverters } from './failureConverters';
 import { IIdentityConverters } from './identityConverters';
-import { boundedArrayOf, boundedSingleLine, nonNegativeSafeInteger, positiveSafeInteger } from './primitives';
+import {
+  boundedArrayOf,
+  boundedSingleLine,
+  maxSourceCursorLength,
+  nonNegativeSafeInteger,
+  positiveSafeInteger
+} from './primitives';
 import { IValueConverters } from './valueConverters';
 
 /**
@@ -171,7 +177,13 @@ export function buildCapacityConverters(
     maxSourceIdentityBytes: positiveSafeInteger,
     maxDispositionReasonBytes: positiveSafeInteger,
     maxQueryDescriptorBytes: positiveSafeInteger,
-    maxSourceCursorBytes: positiveSafeInteger,
+    // A cursor is also bounded in characters by the converters that read it, and a character is at
+    // least one UTF-8 byte, so a byte bound above that ceiling would admit cursors nothing can read.
+    maxSourceCursorBytes: positiveSafeInteger.withConstraint((value: number) =>
+      value <= maxSourceCursorLength
+        ? succeed(value)
+        : fail(`maxSourceCursorBytes ${value} is over the representable ceiling of ${maxSourceCursorLength}`)
+    ),
     maxTaskRecordBytes: positiveSafeInteger,
     maxConsumerRecordBytes: positiveSafeInteger,
     maxInventoryRecordBytes: positiveSafeInteger,

@@ -44,6 +44,17 @@ export function createTaskCommandHandle<P>(descriptor: ITaskCommandDescriptor<P>
         // parameters are stored and deduplicated against, so an encoder returning
         // something unrepresentable must fail here rather than downstream.
         .onSuccess((encoded: JsonValue) => JsonConverters.jsonValue.convert(encoded))
+        // The schema is also the wire schema: what is stored and dispatched is the encoded form, so it
+        // must validate as `P` again. An encoder that changes shape is refused here, before anything
+        // is recorded, rather than leaving a command no source can decode.
+        .onSuccess((canonical: JsonValue) =>
+          captureResult(() => descriptor.parameters.convert(canonical))
+            .onSuccess((decoded: Result<P>) => decoded)
+            .withErrorFormat(
+              (message: string) => `encoded parameters are not valid for the schema: ${message}`
+            )
+            .onSuccess(() => succeed(canonical))
+        )
         .withErrorFormat((message: string) => `command '${descriptor.name}': ${message}`)
   };
 }

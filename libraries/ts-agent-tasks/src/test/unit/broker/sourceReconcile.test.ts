@@ -240,6 +240,39 @@ describe('source-replay: only the feed commits projections', () => {
     ]);
   });
 
+  test('a task registered source-replay is moved only by its feed, even under a source attached as observed-state', async () => {
+    const h = await sourceHarness({ history: 'source-replay' });
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1');
+    const before = await recordOf(h, 'j1');
+    h.executor.change('j1', (j) => (j.step = 5));
+    // The same executor, re-attached under the same id with the weaker contract.
+    const swapped = Object.assign(Object.create(h.source) as object, { history: 'observed-state' });
+    const other = harnessWith(
+      h.repository,
+      h.env,
+      h.root,
+      h.logger,
+      h.executor,
+      swapped as typeof h.source,
+      h.registry
+    );
+    expect(await other.broker.observe(tid('j1'))).toSucceedAndSatisfy((report) => {
+      expect(report.outcome).toBe('contract-violation');
+      expect(report.message).toMatch(/registered source-replay/);
+    });
+    expect(await other.broker.recover(tid('j1'))).toSucceedAndSatisfy((outcome) => {
+      expect(outcome.observation?.outcome).toBe('contract-violation');
+    });
+    expect(await recordOf(h, 'j1')).toEqual(before);
+    // Its own feed still moves it.
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed();
+    const after = await recordOf(h, 'j1');
+    expect(after.recordType === 'resolved' && after.task.details).toEqual(
+      expect.objectContaining({ step: 5 })
+    );
+  });
+
   test('a replaying source registers with a finite envelope and no initial observation', async () => {
     const h = await sourceHarness({ history: 'source-replay' });
     h.executor.addJob('j1');
@@ -324,6 +357,34 @@ describe('source-replay: only the feed commits projections', () => {
     });
     expect(await recordOf(h, 'j1')).toEqual(before);
     expect(await h.repository.readSource('exec')).toSucceedWith(undefined);
+  });
+
+  test('a revision repeated within a page is a duplicate, not a break; a repeat with other content is a violation', async () => {
+    const h = await sourceHarness({ history: 'source-replay' });
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1');
+    h.executor.change('j1', (j) => (j.step = 1));
+    // At-least-once delivery: the feed carries revision 2 twice.
+    h.executor.feed.push({ ...h.executor.feed[1] });
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceedAndSatisfy((report) => {
+      expect(report.stopped).toBeUndefined();
+      expect(report.observations.map((o) => o.outcome)).toEqual(['applied', 'applied', 'unchanged']);
+      expect(report.cursor).toBe('3');
+    });
+
+    const other = await sourceHarness({ history: 'source-replay' });
+    other.executor.addJob('j1');
+    await registerJob(other, 'j1');
+    other.executor.change('j1', (j) => (j.step = 1));
+    const repeated = other.executor.feed[1];
+    other.executor.feed.push({
+      ...repeated,
+      projection: { ...repeated.projection, details: { ...repeated.projection.details, step: 9 } }
+    });
+    expect(await other.broker.reconcile({ sourceId: 'exec' })).toSucceedAndSatisfy((report) => {
+      expect(report.stopped).toBe('contract-violation');
+    });
+    expect(await other.repository.readSource('exec')).toSucceedWith(undefined);
   });
 
   test('a feed entry the broker cannot order across stops the pass', async () => {

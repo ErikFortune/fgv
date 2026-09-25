@@ -21,7 +21,7 @@ finalizes at cluster close. Written 2026-09-25.
   `source-unavailable`, never an escaped exception.
 - **Broker host operations**: `TaskBroker.create({ …, sources })`, `observe(taskId)`,
   `hint(binding)`, `reconcile({ sourceId, maxPages? })`, `recover(taskId)`,
-  `extendReplayEnvelope(taskId, add)`; `registerExternal` takes `sourceReplay` for a
+  `extendReplayEnvelope(taskId, add)`; `registerExternal` takes `history: { history: 'source-replay', envelope }` for a
   `source-replay` source. Bound writer: `execute` on an external kind dispatches through its source;
   `resolveCommands({ limit })` is the uncertain-command pump.
 - **Storage**: a per-source checkpoint record (`source-<id>.json`: history, cursor, page count,
@@ -146,7 +146,31 @@ list is best-effort and re-validated; replay-envelope byte lockstep; `indetermin
 After review, a self-audit of the windows table found **W4** (resend without an epoch/subject
 fence) — fixed with three tests and three reverts.
 
-**Layer 2 (Copilot).** See the PR; rounds recorded below as they run.
+**Layer 2 (Copilot).** Driven by the implementer.
+
+- **Round 1** — two high, one low, plus summary-only items. All but one real:
+  - *History contract trusted the attached source* (high, real): a task registered `source-replay`
+    could be moved by a direct read if a source under the same id were attached as
+    `observed-state` (no checkpoint yet to catch it). Now enforced inside the writer: a task holding
+    an `admitted-source-replay` claim commits projections only in feed mode — one check covering
+    observe, recover, reconcile and command answers.
+  - *Helper re-decodes encoded parameters* (high, real in substance): the descriptor's schema is
+    documented as the wire schema, but nothing enforced that `encode`'s output validates as `P`
+    again. The command handle now refuses a shape-changing encoder at validation, before anything is
+    recorded, so the helper's decode is sound; the contract is written on `ITaskCommandDescriptor`.
+  - *`sourceReplay` in CAPABILITIES.md* (low, real): the public shape is
+    `history: { history: 'source-replay', envelope }`. Fixed there and in this file.
+  - *Hard-coded 4,096-character cursor bound* (summary, real): a profile could declare
+    `maxSourceCursorBytes` above the ceiling the converters read. The profile field is now bounded
+    by a single exported `maxSourceCursorLength`.
+  - *Repeated revision in a feed page rejected* (summary, real — a liveness defect): an
+    at-least-once duplicate stopped the pass with the cursor unmoved, forever if the source keeps
+    serving that page. A repeat is now a duplicate (`unchanged`), or a contract violation if its
+    content differs.
+  - *Comparator failures classified as contract violations* (summary): kept. A comparator is pure
+    host code over the source's own revisions; one that cannot order them is breaking the contract,
+    not unreachable.
+  Each fix has a test that fails when the fix is reverted (M21, M22 plus the new cases).
 
 ## Gates
 

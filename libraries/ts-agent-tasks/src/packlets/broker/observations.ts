@@ -299,6 +299,20 @@ async function _applyInWriter(
   }
   const now: Instant = clock.value;
 
+  // The history guarantee is the task's, fixed at registration — not the attached source's. A task
+  // admitted as source-replay is moved only by its feed, whatever is attached under that id now.
+  if (mode !== 'feed' && current.capacityClaims.some((c) => c.purpose === 'admitted-source-replay')) {
+    return ok(
+      _report(
+        binding,
+        'contract-violation',
+        current,
+        `task ${taskId} was registered source-replay: only its source's feed commits its projections, ` +
+          `and source '${source.id}' is attached as '${source.history}'`
+      )
+    );
+  }
+
   if (current.recordType === 'unresolved') {
     const envelope = _firstEnvelope(core, current, projection, now);
     if (envelope.isFailure()) {

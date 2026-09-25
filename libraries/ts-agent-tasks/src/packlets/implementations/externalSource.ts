@@ -224,8 +224,9 @@ export class ExternalTaskSource<TDetails> implements ITaskSource {
   }
 
   /**
-   * A typed command: `apply` receives parameters already converted by `descriptor`, and its handle
-   * is the one to register on the kind.
+   * A typed command: `apply` receives the request's canonical parameters decoded by the
+   * descriptor's schema — which the registered handle guarantees they satisfy — and its handle is
+   * the one to register on the kind.
    */
   public static command<TDetails, P>(
     descriptor: ITaskCommandDescriptor<P>,
