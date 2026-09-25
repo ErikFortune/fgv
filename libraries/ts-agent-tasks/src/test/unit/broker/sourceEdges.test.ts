@@ -19,8 +19,6 @@ import {
   ITaskSource,
   OperationId,
   SourceRead,
-  SubscriptionId,
-  TaskAudienceResolver,
   TaskBroker,
   TaskResult,
   TaskRevision
@@ -41,8 +39,6 @@ import {
   sourceRegistry
 } from '../../helpers/sourceFixtures';
 import { catalogOp, environment, memoryRoot } from '../../helpers/storageFixtures';
-
-const everyone: TaskAudienceResolver = () => ['watcher' as SubscriptionId];
 
 async function ready(options?: Parameters<typeof sourceHarness>[0]): Promise<ISourceHarness> {
   const h = await sourceHarness(options);
@@ -97,7 +93,12 @@ function misbehaving(
               options.readSource !== undefined ? options.readSource(id) : w.readSource(id),
             commitSource: (r) => w.commitSource(r),
             extendReplayEnvelope: (id, add) => w.extendReplayEnvelope(id, add),
-            raiseCapacityLimits: (p) => w.raiseCapacityLimits(p)
+            raiseCapacityLimits: (p) => w.raiseCapacityLimits(p),
+            registerSubscription: (r) => w.registerSubscription(r),
+            readSubscription: (id) => w.readSubscription(id),
+            issueReceipt: (r) => w.issueReceipt(r),
+            acknowledgeReceipt: (r) => w.acknowledgeReceipt(r),
+            abandonReceipt: (r) => w.abandonReceipt(r)
           }) as never
       )
   });
@@ -111,7 +112,7 @@ function brokerOver(h: ISourceHarness, repository: ITaskRepository): ISourceHarn
 
 describe('observation edges', () => {
   test('health returning to current with a newer projection owes an observation update', async () => {
-    const h = await ready({ audience: everyone });
+    const h = await ready({ watch: true });
     h.executor.down = true;
     expect(await h.broker.observe(tid('j1'))).toSucceed();
     h.executor.down = false;

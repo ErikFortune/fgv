@@ -19,20 +19,20 @@ import {
   ITaskMutationResult,
   ITaskRepository,
   ITaskScope,
+  ITaskSubscription,
   OperationId,
-  TaskAudienceResolver,
+  SubscriptionId,
   TaskBroker,
   TaskEnvironment,
   TaskId,
   TaskKindRegistry,
   TaskRepositoryMode,
   TaskRevision,
-  noAudience,
+  UpdateCategory,
+  allUpdateCategories,
   taskListDescriptor,
   trackedTaskDescriptor
 } from '../../index';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import { createTaskBroker } from '../../packlets/broker/taskBroker';
 import { converters } from './fixtures';
 import { at, environment, memoryRoot, vendorDescriptor, vendorKind } from './storageFixtures';
 
@@ -103,7 +103,8 @@ export interface IBrokerHarness {
 /** A broker over a fresh session repository, and a writer bound to `alice` over `alpha`. */
 export async function brokerHarness(options?: {
   readonly profile?: ITaskCapacityProfile;
-  readonly audience?: TaskAudienceResolver;
+  /** Subscribe the all-seeing {@link watcher} before returning. */
+  readonly watch?: boolean;
   readonly root?: FileTree.IFileTreeDirectoryItem;
   readonly mode?: TaskRepositoryMode;
   readonly scopes?: ReadonlyArray<ITaskScope>;
@@ -119,7 +120,11 @@ export async function brokerHarness(options?: {
       ...(options?.profile !== undefined ? { profile: options.profile } : {})
     })
   ).orThrow();
-  return harnessOver(repository, env, root, { ...options, logger });
+  const harness: IBrokerHarness = harnessOver(repository, env, root, { ...options, logger });
+  if (options?.watch === true) {
+    await watch(harness.broker);
+  }
+  return harness;
 }
 
 /** A harness over an existing repository. */
@@ -128,15 +133,11 @@ export function harnessOver(
   env: TaskEnvironment,
   root: FileTree.IFileTreeDirectoryItem,
   options?: {
-    readonly audience?: TaskAudienceResolver;
     readonly scopes?: ReadonlyArray<ITaskScope>;
     readonly logger?: Logging.InMemoryLogger;
   }
 ): IBrokerHarness {
-  const broker = createTaskBroker(
-    { repository, environment: env },
-    options?.audience ?? noAudience
-  ).orThrow();
+  const broker = TaskBroker.create({ repository, environment: env }).orThrow();
   const policy = new TestPolicy();
   const writer = broker
     .bind({ principal: 'alice', scopes: options?.scopes ?? [alpha], authorization: policy })
@@ -300,3 +301,49 @@ export async function registerVendor(
 }
 
 export { vendorKind };
+
+/** The subscription {@link watch} creates by default. */
+export const watcher: SubscriptionId = 'watcher' as SubscriptionId;
+
+/** A host policy that allows everything, for trusted host bindings. */
+export const allowAll: ITaskAuthorization = {
+  check: async () => succeed(true),
+  policyEpoch: () => 'host'
+};
+
+/**
+ * Subscribes a host consumer — by default {@link watcher}, over every test scope, every lifecycle
+ * class, every category, from now.
+ */
+export async function watch(
+  broker: TaskBroker,
+  options?: {
+    readonly id?: string;
+    readonly consumer?: string;
+    readonly scopes?: ReadonlyArray<ITaskScope>;
+    readonly categories?: ReadonlyArray<UpdateCategory>;
+    readonly selection?: Record<string, unknown>;
+    readonly start?: 'current' | 'from-now';
+    readonly history?: 'observed-state' | 'source-replay';
+    readonly authorization?: ITaskAuthorization;
+  }
+): Promise<ITaskSubscription> {
+  const id: string = options?.id ?? watcher;
+  const scopes: ReadonlyArray<ITaskScope> = options?.scopes ?? [alpha, beta, gamma];
+  return (
+    await broker.subscribe(
+      { principal: 'host', scopes, authorization: options?.authorization ?? allowAll },
+      {
+        subscriptionId: id,
+        operationId: `subscribe-${id}`,
+        consumerId: options?.consumer ?? `consumer-${id}`,
+        selection: { scopes, lifecycleClass: 'all', ...(options?.selection ?? {}) },
+        start: options?.start ?? 'from-now',
+        policy: {
+          categories: options?.categories ?? [...allUpdateCategories].sort(),
+          ...(options?.history !== undefined ? { history: options.history } : {})
+        }
+      }
+    )
+  ).orThrow();
+}

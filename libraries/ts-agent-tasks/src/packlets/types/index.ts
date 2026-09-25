@@ -12,6 +12,7 @@ export * from './capacityProfile';
 export * from './commands';
 export * from './common';
 export * from './context';
+export * from './delivery';
 export * from './envelope';
 export * from './environment';
 export * from './failure';

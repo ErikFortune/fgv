@@ -25,7 +25,8 @@ import {
   capacityPressureThreshold,
   maximumClosureCharges,
   maximumResolutionCharges,
-  maximumSettlementCharges
+  maximumSettlementCharges,
+  maxUpdateIdSuffixLength
 } from '../types';
 import { IFailureConverters } from './failureConverters';
 import { IIdentityConverters } from './identityConverters';
@@ -109,6 +110,8 @@ export function buildCapacityConverters(
   values: IValueConverters,
   failures: IFailureConverters
 ): ICapacityConverters {
+  const maxUpdateId: number = bounds.maxIdLength + maxUpdateIdSuffixLength;
+  const minimumEvidenceBytes: number = maxUpdateId + 3;
   const charge: Converter<ITaskCapacityCharge> = Converters.strictObject<ITaskCapacityCharge>({
     dimension: failures.capacityDimension,
     amount: nonNegativeSafeInteger
@@ -176,6 +179,16 @@ export function buildCapacityConverters(
     maxIssuedReceiptBytes: positiveSafeInteger,
     maxSourceIdentityBytes: positiveSafeInteger,
     maxDispositionReasonBytes: positiveSafeInteger,
+    // One exact acknowledgement is an update id in a JSON array: quoted, with a separator. A bound
+    // below that could not hold the evidence it is reserved for.
+    maxAcknowledgementEvidenceBytes: positiveSafeInteger.withConstraint((value: number) =>
+      value >= minimumEvidenceBytes
+        ? succeed(value)
+        : fail(
+            `maxAcknowledgementEvidenceBytes ${value} cannot hold one exact acknowledgement of a ` +
+              `${maxUpdateId}-byte update id (at least ${minimumEvidenceBytes})`
+          )
+    ),
     maxQueryDescriptorBytes: positiveSafeInteger,
     // A cursor is also bounded in characters by the converters that read it, and a character is at
     // least one UTF-8 byte, so a byte bound above that ceiling would admit cursors nothing can read.
@@ -319,13 +332,12 @@ export function buildCapacityConverters(
       taskId: ids.taskId,
       operationId: ids.operationId
     }),
-    'subscription-acknowledgement': Converters.strictObject<
-      Extract<ITaskCapacityClaim, { purpose: 'subscription-acknowledgement' }>
+    'subscription-activation': Converters.strictObject<
+      Extract<ITaskCapacityClaim, { purpose: 'subscription-activation' }>
     >({
       ...common,
-      purpose: Converters.literal('subscription-acknowledgement'),
-      subscriptionId: ids.subscriptionId,
-      updateId: ids.updateId
+      purpose: Converters.literal('subscription-activation'),
+      subscriptionId: ids.subscriptionId
     }),
     'receipt-preparation': Converters.strictObject<
       Extract<ITaskCapacityClaim, { purpose: 'receipt-preparation' }>

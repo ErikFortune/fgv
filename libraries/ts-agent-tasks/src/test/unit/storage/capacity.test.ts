@@ -404,10 +404,10 @@ describe('raising limits', () => {
     // The manifest grows by the digits of the raised limit; with the inventory ceiling set just
     // above its current size, that growth must be caught at commit time, not at the next open.
     const probe = await repositoryWith(
-      profileWith({ 'retained-tasks': 9999 }, { maxInventoryRecordBytes: 999 })
+      profileWith({ 'retained-tasks': 9999 }, { maxInventoryRecordBytes: 9999 })
     );
     const size: number = row(probe, 'record-bytes').used;
-    expect(String(size + 2)).toHaveLength(3);
+    expect(String(size + 2)).toHaveLength(4);
     const tight = profileWith({ 'retained-tasks': 9999 }, { maxInventoryRecordBytes: size + 2 });
     const repository = await repositoryWith(tight);
     const raised = profileWith({ 'retained-tasks': 99999999 }, { maxInventoryRecordBytes: size + 2 });

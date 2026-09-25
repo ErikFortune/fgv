@@ -9,7 +9,8 @@ import { ITaskEnvelope, ITaskUpdate, SubscriptionId, UpdateCategory, taskUpdateI
  * Who is owed an update: the subscriptions whose selection matched the task before **or** after
  * the change, so an exit from a selection is still delivered.
  * @remarks
- * Subscriptions are T7's. Until then the broker's resolver answers "nobody".
+ * The broker's resolver is its repository's `audience`, which every commit is verified against: an
+ * update naming any other audience is refused (T7).
  * @public
  */
 export type TaskAudienceResolver = (
@@ -17,12 +18,6 @@ export type TaskAudienceResolver = (
   after: ITaskEnvelope,
   category: UpdateCategory
 ) => ReadonlyArray<SubscriptionId>;
-
-/**
- * The resolver with no subscriptions to consult.
- * @public
- */
-export const noAudience: TaskAudienceResolver = () => [];
 
 /**
  * Whether an update of a category is required: it must not be coalesced or expire before its
@@ -39,7 +34,7 @@ export function isRequiredCategory(category: UpdateCategory): boolean {
  * @remarks
  * An update owed to no one is not retained: nobody could ever acknowledge it, and a subscription
  * created later starts from a baseline rather than back-history. So the result holds only
- * updates with a non-empty audience.
+ * updates with a non-empty audience — which, once a repository has subscriptions, is most of them.
  * @public
  */
 export function planUpdates(

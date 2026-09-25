@@ -143,3 +143,15 @@ export function canonicallyEqual(a: unknown, b: unknown): boolean {
 export function parseJson(text: string): Result<unknown> {
   return captureResult((): unknown => JSON.parse(text));
 }
+
+/**
+ * Encodes a record after running the storage converter over it — the same converter the read
+ * path runs — so nothing is written that a restart would refuse to read.
+ * @internal
+ */
+export function encodeValidated<T>(value: T, convert: (from: unknown) => Result<T>): Result<IEncodedRecord> {
+  return encodeRecord(value)
+    .onSuccess((encoded) => parseJson(encoded.text))
+    .onSuccess((parsed) => convert(parsed))
+    .onSuccess((converted) => encodeRecord(converted));
+}

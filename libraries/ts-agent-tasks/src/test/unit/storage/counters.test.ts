@@ -8,7 +8,7 @@ import { ITaskRepository, Instant, SubscriptionId, TaskId } from '../../../index
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { IRepositoryInspection, inspectRepository } from '../../../packlets/storage/internals';
 import { ICohort, seedRepository } from '../../helpers/cohorts';
-import { ITaskShape, minutesAfter, scope, succeeded, waiting } from '../../helpers/queryFixtures';
+import { ITaskShape, minutesAfter, person, scope, succeeded, waiting } from '../../helpers/queryFixtures';
 
 /**
  * Query work as unrelated history grows — the performance gate, stated in counters.
@@ -23,6 +23,8 @@ import { ITaskShape, minutesAfter, scope, succeeded, waiting } from '../../helpe
 
 const A = scope('alpha');
 const s1 = 's1' as SubscriptionId;
+// s1 follows the owner's work in A: ten of the fixed tasks, and none of the unrelated history.
+const owner = person('owner');
 const cutoff = minutesAfter(60) as Instant;
 
 function fixedSet(): Array<{ id: string; shape: ITaskShape }> {
@@ -34,7 +36,7 @@ function fixedSet(): Array<{ id: string; shape: ITaskShape }> {
       shape: {
         scopes: [A],
         ...(lifecycle !== undefined ? { lifecycle } : {}),
-        ...(i < 10 ? { audience: ['s1'] } : {})
+        ...(i < 10 ? { responsibility: owner } : {})
       }
     });
   }
@@ -134,7 +136,11 @@ describe.each<CohortKind>(['terminal', 'archived', 'future'])('unrelated %s hist
 
   beforeAll(async () => {
     for (const size of sizes) {
-      const { repository } = await seedRepository(fixedSet(), [cohort(kind, size)]);
+      const { repository } = await seedRepository(
+        fixedSet(),
+        [cohort(kind, size)],
+        [{ id: 's1', scopes: [A], selection: { responsibility: owner } }]
+      );
       results.set(size, { repository, seedReads: inspectRepository(repository)!.reads.task });
     }
   });

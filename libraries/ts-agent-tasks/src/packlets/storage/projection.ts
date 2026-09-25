@@ -39,6 +39,17 @@ export interface ITaskProjection {
   readonly known: boolean;
   /** The `fingerprintOf` fingerprint of the record text this instance read or wrote. */
   readonly fingerprint: string;
+  /**
+   * Future commits that may owe a required update to a subscription: see `deliveryUnits`. What a
+   * subscription's admission reads of a live task without reading its record (T7). Absent on an
+   * archived projection, which keeps its minimal shape: an archived task is owed no future commit
+   * and is never in a subscription's potential audience.
+   */
+  readonly deliveryUnits?: number;
+  /** The task is bound to an external source. Absent when archived. */
+  readonly external?: boolean;
+  /** The task was admitted with a finite `source-replay` envelope. Absent when archived. */
+  readonly sourceReplay?: boolean;
 }
 
 /**
@@ -47,6 +58,10 @@ export interface ITaskProjection {
  */
 export function projectRecord(record: ITaskCommitRecord, known: boolean, text: string): ITaskProjection {
   const fingerprint: string = fingerprintOf(text);
+  const delivery = {
+    deliveryUnits: deliveryUnits(record),
+    sourceReplay: record.capacityClaims.some((claim) => claim.purpose === 'admitted-source-replay')
+  };
   if (record.recordType === 'resolved') {
     const envelope = record.task.envelope;
     return {
@@ -60,7 +75,8 @@ export function projectRecord(record: ITaskCommitRecord, known: boolean, text: s
       status: envelope.lifecycle.status,
       archived: record.archived,
       known,
-      fingerprint
+      fingerprint,
+      ...(record.archived ? {} : { ...delivery, external: envelope.binding !== undefined })
     };
   }
   const reference = record.reference;
@@ -74,8 +90,46 @@ export function projectRecord(record: ITaskCommitRecord, known: boolean, text: s
     ...(reference.parentId !== undefined ? { parentId: reference.parentId } : {}),
     archived: false,
     known,
-    fingerprint
+    fingerprint,
+    ...delivery,
+    external: true
   };
+}
+
+/**
+ * The delivery units a task holds against every subscription that could be in its audience.
+ *
+ * @remarks
+ * One unit is one future commit that may owe such a subscription a required update the task has
+ * already reserved room for: its first resolution and its terminal transition while they are still
+ * ahead, each unsettled external command, and each remaining `source-replay` revision. A
+ * subscription's own record reserves the acknowledgement evidence of those future links against its
+ * per-record ceiling and its per-subscription history limit, so the commit that makes them can never
+ * be refused on the subscription's account. (The repository-wide acknowledgement ids and bytes for
+ * them are in the task's own claims.) An archived task holds none.
+ * @internal
+ */
+export function deliveryUnits(record: ITaskCommitRecord): number {
+  if (record.recordType === 'resolved' && record.archived) {
+    return 0;
+  }
+  const lifecycle: number =
+    record.recordType === 'unresolved'
+      ? 2
+      : isTerminalTaskStatus(record.task.envelope.lifecycle.status)
+      ? 0
+      : 1;
+  const commands: number = record.operations.filter(
+    (op) => op.type === 'command' && op.dispatch !== 'settled'
+  ).length;
+  const replay: number = record.capacityClaims.reduce(
+    (total, claim) =>
+      claim.purpose === 'admitted-source-replay' && claim.disposition !== 'consumed'
+        ? total + claim.envelope.remainingRequiredUpdates
+        : total,
+    0
+  );
+  return lifecycle + commands + replay;
 }
 
 /**
@@ -201,18 +255,13 @@ export function manifestEntry(bytes: number, profile: ITaskCapacityProfile): ILe
 }
 
 /**
- * The ledger entry of a consumer or source record whose contents this release does not own.
+ * The ledger entry of a broker source-checkpoint record: one retained source identity and its bytes.
  * @internal
  */
-export function opaqueEntry(
-  id: string,
-  kind: 'consumer' | 'source',
-  bytes: number,
-  profile: ITaskCapacityProfile
-): ILedgerEntry {
+export function sourceEntry(id: string, bytes: number, profile: ITaskCapacityProfile): ILedgerEntry {
   const used: DimensionAmounts = zeroAmounts();
-  used[kind === 'consumer' ? 'subscriptions' : 'sources'] = 1;
+  used.sources = 1;
   used['record-bytes'] = bytes;
   used['logical-bytes'] = bytes;
-  return ledgerEntry(id, used, [], recordLimitFor(`${kind}:${id}`, profile));
+  return ledgerEntry(id, used, [], recordLimitFor(`source:${id}`, profile));
 }

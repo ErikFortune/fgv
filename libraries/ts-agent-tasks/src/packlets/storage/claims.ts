@@ -498,3 +498,68 @@ function _claimProblem(
     ? undefined
     : `disposition '${claim.disposition}', expected '${disposition}'`;
 }
+
+/**
+ * Checks a subscription's claims against what the repository would have written for it (T7).
+ *
+ * @remarks
+ * A pending registration holds exactly its `subscription-activation` claim, reserved. A live record
+ * holds that claim consumed — the same id, its reservation now the record itself — and one
+ * `receipt-preparation` claim whose charge is exactly the room for one manifest the record's
+ * current manifests leave (`preparationBytes`), because the ledger reads it as the reusable
+ * cleanup-preparation reservation. `indeterminate` passes, as for task claims: it fences growth.
+ * @internal
+ */
+export function checkSubscriptionClaims(
+  claims: ReadonlyArray<ITaskCapacityClaim>,
+  expected: {
+    readonly subscriptionId: string;
+    readonly ownership: CapacityClaimOwnership;
+    /** For a live record: the preparation claim's exact byte charge. */
+    readonly preparationBytes?: number;
+  }
+): Result<true> {
+  const owned = (claim: ITaskCapacityClaim): boolean =>
+    claim.owner.owner === 'subscription' && claim.owner.subscriptionId === expected.subscriptionId;
+  const activation: ReadonlyArray<ITaskCapacityClaim> = claims.filter(
+    (c) => c.purpose === 'subscription-activation'
+  );
+  const preparation: ReadonlyArray<ITaskCapacityClaim> = claims.filter(
+    (c) => c.purpose === 'receipt-preparation'
+  );
+  const live: boolean = expected.ownership === 'live';
+  if (activation.length !== 1 || preparation.length !== (live ? 1 : 0) || claims.length !== (live ? 2 : 1)) {
+    return fail(
+      live
+        ? `a live subscription holds exactly one activation and one receipt-preparation claim`
+        : `a pending subscription holds exactly its activation claim`
+    );
+  }
+  for (const claim of claims) {
+    if (!owned(claim) || !('subscriptionId' in claim) || claim.subscriptionId !== expected.subscriptionId) {
+      return fail(`claim ${claim.claimId}: not owned by subscription ${expected.subscriptionId}`);
+    }
+    if (claim.ownership !== expected.ownership) {
+      return fail(`claim ${claim.claimId}: ownership '${claim.ownership}', expected '${expected.ownership}'`);
+    }
+  }
+  const problem: string | undefined = _disposition(activation[0], live);
+  if (problem !== undefined) {
+    return fail(`claim ${activation[0].claimId}: ${problem}`);
+  }
+  if (live) {
+    const claim: ITaskCapacityClaim = preparation[0];
+    const bytes: number = expected.preparationBytes ?? 0;
+    const shape: boolean =
+      claim.charges.length === 2 &&
+      claim.charges.every(
+        (c) => (c.dimension === 'record-bytes' || c.dimension === 'logical-bytes') && c.amount === bytes
+      );
+    if (!shape || (claim.disposition !== 'reserved' && claim.disposition !== 'indeterminate')) {
+      return fail(
+        `claim ${claim.claimId}: a receipt-preparation claim reserves exactly ${bytes} record and logical bytes`
+      );
+    }
+  }
+  return succeed(true);
+}

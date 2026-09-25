@@ -17,8 +17,19 @@ import {
   ITaskQuery,
   ITaskCapacityProfile,
   ITaskCapacityStatus,
+  ITaskAcknowledgementCommit,
+  ITaskCheckpointStore,
   ITaskCommitRecord,
+  ITaskConsumerRecord,
+  ITaskEnvelope,
   ITaskEnvironment,
+  ITaskReceiptAbandonment,
+  ITaskReceiptAcknowledgement,
+  ITaskReceiptIssue,
+  ITaskSubscription,
+  ITaskSubscriptionRegistration,
+  SubscriptionId,
+  UpdateCategory,
   ITaskKindRegistry,
   ITaskRecordDraft,
   ITaskRecoveryReport,
@@ -76,6 +87,12 @@ export interface ITaskRepositoryOpenParams {
    * encoded charge.
    */
   readonly recordCache?: ITaskRecordCacheOptions;
+  /**
+   * Where subscription records are persisted. Defaults to the repository's own root. A
+   * `process-crash` repository refuses a `session` store: a weaker checkpoint cannot be paired with
+   * durable task state. Everything the store returns is validated; see `ITaskCheckpointStore`.
+   */
+  readonly checkpoints?: ITaskCheckpointStore;
 }
 
 /**
@@ -226,6 +243,34 @@ export interface ITaskRepositoryWriter {
    * migrated and nothing is reinterpreted.
    */
   raiseCapacityLimits(profile: ITaskCapacityProfile): Promise<TaskResult<ITaskCapacityProfile>>;
+  /**
+   * Registers a subscription through the ordered inventory protocol — pending entry holding its
+   * activation reservation, record through the checkpoint store, live entry — and activates it: from
+   * the next commit, it is in the audience of every update its selection matches. (T7.)
+   *
+   * @remarks
+   * Refused before anything is written when it would take any task's potential audience past
+   * `maxAudiencePerUpdate`, when it promises `source-replay` over an external task admitted without a
+   * finite envelope, when its policy is more durable than the repository, or when its baseline is not
+   * the committed state of tasks its selection matches. A retry with the same identity resumes or
+   * replays; anything else under the subscription id conflicts.
+   */
+  registerSubscription(request: ITaskSubscriptionRegistration): Promise<TaskResult<ITaskConsumerRecord>>;
+  /** Reads a live subscription's record through the checkpoint store, checked against what was committed. */
+  readSubscription(subscriptionId: SubscriptionId): Promise<TaskResult<ITaskConsumerRecord | undefined>>;
+  /**
+   * Issues one exact receipt manifest into a subscription's record. Every update id it names must be
+   * owed to the subscription or already acknowledged by it. Expired manifests are evicted in the same
+   * write; at most `maxOutstandingReceiptsPerSubscription` unexpired ones are held.
+   */
+  issueReceipt(request: ITaskReceiptIssue): Promise<TaskResult<ITaskConsumerRecord>>;
+  /**
+   * Acknowledges exactly one unexpired issued manifest: its update ids, and no others, join the
+   * subscription's history. A manifest already acknowledged replays without a write.
+   */
+  acknowledgeReceipt(request: ITaskReceiptAcknowledgement): Promise<TaskResult<ITaskAcknowledgementCommit>>;
+  /** Removes one issued manifest. What it named stays owed; history it produced stays. */
+  abandonReceipt(request: ITaskReceiptAbandonment): Promise<TaskResult<ITaskConsumerRecord>>;
 }
 
 /**
@@ -329,6 +374,18 @@ export interface ITaskRepository {
   unsettledCommands(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
   /** A source's committed checkpoint record, if it has one. Reads no task record. */
   readSource(sourceId: string): Promise<TaskResult<ITaskSourceRecord | undefined>>;
+  /**
+   * The subscriptions an update of `category` is owed to at a commit from `before` to `after`: every
+   * active subscription taking the category whose selection matches either. Every commit's new
+   * updates must name exactly this audience. (T7.)
+   */
+  audience(
+    before: ITaskEnvelope | undefined,
+    after: ITaskEnvelope,
+    category: UpdateCategory
+  ): ReadonlyArray<SubscriptionId>;
+  /** A live subscription's resident descriptor — never its history. */
+  subscription(subscriptionId: SubscriptionId): TaskResult<ITaskSubscription | undefined>;
   /**
    * Discards the resident indexes and rebuilds them from the committed records, in bounded
    * sequential passes.

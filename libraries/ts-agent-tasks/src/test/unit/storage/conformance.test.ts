@@ -198,7 +198,7 @@ describe('conformance checks catch a misbehaving repository', () => {
       }))
     );
     // Every check ran against its own repository, and every one was closed.
-    expect(closes).toBe(11);
+    expect(closes).toBe(13);
     expect(result).toFailWith(/scopes are a union.*: no index/i);
     // The check's own failure is what is reported, not the close.
     expect(result).not.toFailWith(/scopes are a union[^;]*also would not close/i);

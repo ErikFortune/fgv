@@ -28,6 +28,7 @@ import {
   person,
   scope,
   shapedRegistration,
+  subscribeTo,
   succeeded,
   waiting
 } from '../../helpers/queryFixtures';
@@ -645,10 +646,14 @@ describe('owed updates', () => {
     const { repository } = await sessionRepository();
     const s1 = 's1' as SubscriptionId;
     const s2 = 's2' as SubscriptionId;
-    await addTask(repository, 'a', { scopes: [A], audience: ['s1'] });
-    await addTask(repository, 'b', { scopes: [B], audience: ['s1', 's2'] });
+    const x = person('x');
+    // s1 follows x's work in A and B; s2 follows everything in B. c is nobody's.
+    await subscribeTo(repository, 's1', [A, B], { responsibility: x });
+    await subscribeTo(repository, 's2', [B]);
+    await addTask(repository, 'a', { scopes: [A], responsibility: x });
+    await addTask(repository, 'b', { scopes: [B], responsibility: x });
     await addTask(repository, 'c', { scopes: [A] });
-    await change(repository, 'a', { lifecycle: succeeded }, { audience: ['s1'] });
+    await change(repository, 'a', { lifecycle: succeeded });
     expect(await repository.listOwed({ subscription: s1 })).toSucceedAndSatisfy((owed) => {
       expect(owed.updates.map((u) => u.id)).toEqual(['a:1:0', 'a:2:0', 'b:1:0']);
       expect(owed.completeness).toBe('complete');
@@ -661,7 +666,7 @@ describe('owed updates', () => {
     );
 
     // Terminal, then archived: gone from every lifecycle query, still owed.
-    await change(repository, 'a', {}, { archive: true, audience: ['s1'] });
+    await change(repository, 'a', {}, { archive: true });
     expect((await page(repository, { selection: select() })).items.map((i) => i.envelope.id)).toEqual(['c']);
     const after = (await repository.listOwed({ subscription: s1, limit: 2 })).orThrow();
     expect(after.updates.map((u) => u.id)).toEqual(['a:1:0', 'a:2:0']);
@@ -674,9 +679,10 @@ describe('owed updates', () => {
 
   test('revisions order numerically, not as text', async () => {
     const { repository } = await sessionRepository();
-    await addTask(repository, 'a', { scopes: [A], audience: ['s1'] });
+    await subscribeTo(repository, 's1', [A]);
+    await addTask(repository, 'a', { scopes: [A] });
     for (let i = 0; i < 10; i++) {
-      await change(repository, 'a', { title: `rev ${i + 2}` }, { audience: ['s1'] });
+      await change(repository, 'a', { title: `rev ${i + 2}` });
     }
     const updates = (
       await repository.listOwed({ subscription: 's1' as SubscriptionId, limit: 200 })

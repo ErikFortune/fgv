@@ -5,8 +5,10 @@
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { TaskConverters } from '../converters';
-import { TaskAudienceResolver, noAudience } from '../implementations';
+import { TaskContextRenderer } from '../context';
 import {
+  IBoundTaskDelivery,
+  IBoundTaskDeliveryParams,
   IBoundTaskView,
   IBoundTaskViewParams,
   IBoundTaskWriter,
@@ -19,17 +21,27 @@ import {
   ITaskRecoveryOutcome,
   ITaskScope,
   ITaskSource,
+  ITaskSubscription,
   TaskId,
   TaskRegistrationResult,
-  TaskResult
+  TaskResult,
+  taskContextLimits
 } from '../types';
 import { ITaskRepository } from '../storage';
 import { AccessContext } from './access';
 import { BoundTaskView, BoundTaskWriter } from './boundTaskView';
 import { BrokerCore } from './core';
+import {
+  BoundTaskDelivery,
+  IResolvedDeliveryDefaults,
+  ITaskDeliveryDefaults,
+  defaultMaxBaselineTasks,
+  defaultReceiptLifetimeMs,
+  subscribe
+} from './delivery';
 import { extendReplayEnvelope, registerExternal } from './creation';
 import { observeBinding, observeTask, reconcileSource, recoverTask } from './reconciliation';
-import { ok, taskFailure } from './failures';
+import { ok, propagate as propagateTask, taskFailure } from './failures';
 import { defaultTaskProjector } from './projection';
 
 /**
@@ -48,10 +60,12 @@ export interface ITaskBrokerCreateParams {
    * recording nothing, and no pass touches it. Creating the broker calls no source.
    */
   readonly sources?: ReadonlyArray<ITaskSource>;
+  /**
+   * Defaults for new subscriptions and issued receipts. A subscription's policy is persisted when it
+   * is created: changing these later changes only subscriptions created after. (T7.)
+   */
+  readonly delivery?: ITaskDeliveryDefaults;
 }
-
-/** The broker's private constructor, captured for {@link createTaskBroker}; never exported. */
-let construct: (core: BrokerCore) => TaskBroker;
 
 /**
  * The task broker: host-bound views and writers over one repository, plus the trusted host
@@ -69,17 +83,92 @@ let construct: (core: BrokerCore) => TaskBroker;
 export class TaskBroker {
   private readonly _core: BrokerCore;
 
-  static {
-    construct = (core: BrokerCore): TaskBroker => new TaskBroker(core);
-  }
-
   private constructor(core: BrokerCore) {
     this._core = core;
   }
 
-  /** Creates a broker over a repository. */
+  /**
+   * Creates a broker over a repository. Updates are owed to the repository's subscriptions: every
+   * commit names exactly the audience the repository computes, and the repository verifies it.
+   */
   public static create(params: ITaskBrokerCreateParams): Result<TaskBroker> {
-    return createTaskBroker(params, noAudience);
+    const converters: Result<TaskConverters> =
+      params.converters !== undefined ? succeed(params.converters) : TaskConverters.create();
+    const sources: Map<string, ITaskSource> = new Map<string, ITaskSource>();
+    for (const source of params.sources ?? []) {
+      if (sources.has(source.id)) {
+        return fail(`TaskBroker.create: two sources share the id '${source.id}'`);
+      }
+      sources.set(source.id, source);
+    }
+    return converters.onSuccess((c) =>
+      _deliveryDefaults(c, params.delivery).onSuccess((delivery) =>
+        TaskContextRenderer.create({ converters: c, projection: (summary) => succeed(summary) }).onSuccess(
+          (renderer) =>
+            captureResult(
+              () =>
+                new TaskBroker(
+                  new BrokerCore({
+                    repository: params.repository,
+                    environment: params.environment,
+                    converters: c,
+                    delivery,
+                    renderer,
+                    sources
+                  })
+                )
+            )
+        )
+      )
+    );
+  }
+
+  /**
+   * Creates a subscription — a trusted host operation, recorded under `binding`'s principal, whose
+   * `current` baseline holds only what that principal may see. See {@link ISubscribeRequest}.
+   *
+   * @remarks
+   * The baseline is captured and authorized, then one writer section re-proves that no selected task
+   * moved or appeared and that the policy epoch is unchanged before it writes the record and activates
+   * the subscription — so no commit falls between the baseline and the first update owed. A
+   * `current` selection larger than the baseline bound is refused, never truncated.
+   */
+  public async subscribe(
+    binding: IBoundTaskViewParams,
+    request: unknown
+  ): Promise<TaskResult<ITaskSubscription>> {
+    const access: TaskResult<AccessContext> = this._access(binding);
+    return access.isFailure() ? propagateTask(access) : subscribe(this._core, access.value, request);
+  }
+
+  /**
+   * Binds a subscription's delivery to one principal. The subscription must exist and belong to
+   * `consumerId`; otherwise the answer is `not-found-or-denied`, the same for both.
+   */
+  public bindDelivery(params: IBoundTaskDeliveryParams): TaskResult<IBoundTaskDelivery> {
+    const ids = this._core.converters.ids;
+    const subscription: TaskResult<ITaskSubscription | undefined> = this._core.repository.subscription(
+      params.subscriptionId
+    );
+    const consumer = ids.consumerId.convert(params.consumerId);
+    if (subscription.isFailure()) {
+      return propagateTask(subscription);
+    }
+    if (
+      subscription.value === undefined ||
+      consumer.isFailure() ||
+      subscription.value.consumerId !== consumer.value
+    ) {
+      return taskFailure(
+        `bindDelivery: no subscription ${params.subscriptionId} for this consumer`,
+        'not-found-or-denied',
+        'after-host-action'
+      );
+    }
+    const found: ITaskSubscription = subscription.value;
+    return this._access(params).onSuccess((access) =>
+      ok<IBoundTaskDelivery>(new BoundTaskDelivery(this._core, access, found.id))
+    );
   }
 
   /** Binds a read-only view to one principal. The returned object has no mutation method. */
@@ -183,36 +272,27 @@ export class TaskBroker {
   }
 }
 
-/**
- * Creates a broker with an update audience resolver. Not part of the package surface: the
- * resolver sees whole envelopes, bindings included, and is the seam subscriptions (T7) fill in.
- * Until then the public {@link TaskBroker.create} owes updates to no one.
- * @internal
- */
-export function createTaskBroker(
-  params: ITaskBrokerCreateParams,
-  audience: TaskAudienceResolver
-): Result<TaskBroker> {
-  const converters: Result<TaskConverters> =
-    params.converters !== undefined ? succeed(params.converters) : TaskConverters.create();
-  const sources: Map<string, ITaskSource> = new Map<string, ITaskSource>();
-  for (const source of params.sources ?? []) {
-    if (sources.has(source.id)) {
-      return fail(`TaskBroker.create: two sources share the id '${source.id}'`);
-    }
-    sources.set(source.id, source);
+/** Resolves and validates delivery defaults. */
+function _deliveryDefaults(
+  converters: TaskConverters,
+  defaults: ITaskDeliveryDefaults | undefined
+): Result<IResolvedDeliveryDefaults> {
+  const lifetime: number = defaults?.receiptLifetimeMs ?? defaultReceiptLifetimeMs;
+  const baseline: number = defaults?.maxBaselineTasks ?? defaultMaxBaselineTasks;
+  if (!Number.isSafeInteger(lifetime) || lifetime < 1) {
+    return fail(`TaskBroker.create: receiptLifetimeMs must be a positive safe integer`);
   }
-  return converters.onSuccess((c) =>
-    captureResult(() =>
-      construct(
-        new BrokerCore({
-          repository: params.repository,
-          environment: params.environment,
-          converters: c,
-          audience,
-          sources
-        })
-      )
-    )
-  );
+  if (!Number.isSafeInteger(baseline) || baseline < 1 || baseline > taskContextLimits.maxInputEntries) {
+    return fail(
+      `TaskBroker.create: maxBaselineTasks must be a positive safe integer no greater than ${taskContextLimits.maxInputEntries}`
+    );
+  }
+  const policy = defaults?.policy ?? {};
+  if (policy.categories !== undefined) {
+    const categories = converters.delivery.categories.convert(policy.categories);
+    if (categories.isFailure()) {
+      return fail(`TaskBroker.create: delivery categories: ${categories.message}`);
+    }
+  }
+  return succeed({ policy, receiptLifetimeMs: lifetime, maxBaselineTasks: baseline });
 }

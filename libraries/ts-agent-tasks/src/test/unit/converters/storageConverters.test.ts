@@ -12,6 +12,9 @@ import {
   TaskId,
   TaskRevision,
   defaultTaskCapacityProfile,
+  allUpdateCategories,
+  baselineUpdateId,
+  maxUpdateIdSuffixLength,
   taskUpdateId
 } from '../../../index';
 import { converters } from '../../helpers/fixtures';
@@ -50,11 +53,22 @@ describe('taskUpdateId', () => {
     expect(ids.size).toBe(4);
   });
 
-  test('a maximum-length task id at the maximum revision still has a valid update id', () => {
+  test('a maximum-length task id at the maximum revision still has a valid update and baseline id', () => {
     const longest = 'x'.repeat(converters.bounds.maxIdLength) as TaskId;
     const id = taskUpdateId(longest, Number.MAX_SAFE_INTEGER as TaskRevision, 'relationship');
     expect(converters.ids.updateId.convert(id)).toSucceedWith(id);
-    expect(converters.ids.updateId.convert(`${id}0`)).toFailWith(/exceeds the maximum/i);
+    // The baseline suffix is the longest one (T7): it fits exactly, and one more character does not.
+    const baseline = baselineUpdateId(longest, Number.MAX_SAFE_INTEGER as TaskRevision);
+    expect(baseline).toHaveLength(converters.bounds.maxIdLength + maxUpdateIdSuffixLength);
+    expect(converters.ids.updateId.convert(baseline)).toSucceedWith(baseline);
+    expect(converters.ids.updateId.convert(`${baseline}0`)).toFailWith(/exceeds the maximum/i);
+  });
+
+  test('a baseline id never equals a task update id of the same task and revision', () => {
+    const baseline = baselineUpdateId('t' as TaskId, 3 as TaskRevision);
+    for (const category of allUpdateCategories) {
+      expect(taskUpdateId('t' as TaskId, 3 as TaskRevision, category)).not.toBe(baseline);
+    }
   });
 });
 
@@ -240,14 +254,6 @@ describe('manifest and inventory converters', () => {
         perOwner: { ...defaultTaskCapacityProfile.perOwner, maxOperationsPerTask: 3 }
       })
     ).toSucceed();
-  });
-
-  test('the header converter validates only what this release owns', () => {
-    expect(storage.header.convert({ formatVersion: 1, id: 's1', anything: { else: true } })).toSucceedWith({
-      formatVersion: 1,
-      id: 's1'
-    });
-    expect(storage.header.convert({ formatVersion: 2, id: 's1' })).toFail();
   });
 
   test('the format-version reader reads only the version', () => {

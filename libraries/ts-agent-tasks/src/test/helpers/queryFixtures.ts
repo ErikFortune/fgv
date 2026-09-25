@@ -8,8 +8,12 @@ import {
   IResolvedTaskRecordDraft,
   IResponsibility,
   ISourceBinding,
+  ConsumerId,
   ITaskCommitRecord,
+  ITaskConsumerRecord,
   ITaskEnvelope,
+  ITaskSelection,
+  Instant,
   ITaskRegistrationRequest,
   ITaskRepository,
   ITaskScope,
@@ -20,7 +24,8 @@ import {
   TaskKind,
   TaskLifecycle,
   TaskRevision,
-  UpdateCategory
+  UpdateCategory,
+  allUpdateCategories
 } from '../../index';
 import { at, catalogOp, creationRequest, envelope, nextDraft, update, vendorKind } from './storageFixtures';
 
@@ -52,23 +57,63 @@ export interface ITaskShape {
   readonly parentId?: string;
   readonly responsibility?: IResponsibility;
   readonly binding?: ISourceBinding;
-  /** Subscriptions the creation update is owed to. */
-  readonly audience?: ReadonlyArray<string>;
   /** Register as the external vendor kind, with typed details. */
   readonly vendor?: boolean;
 }
 
-/** An update owed to an audience. */
+/**
+ * An update owed to whoever the repository says it is owed to: every commit's audience is verified
+ * against the repository's own subscriptions (T7), so a fixture computes it the same way.
+ */
 export function owed(
+  repository: Pick<ITaskRepository, 'audience'>,
+  before: ITaskEnvelope | undefined,
   env: ITaskEnvelope,
-  category: UpdateCategory,
-  audience: ReadonlyArray<string>
+  category: UpdateCategory
 ): ITaskUpdate {
-  return { ...update(env, category), audience: audience as ReadonlyArray<SubscriptionId> };
+  return { ...update(env, category), audience: repository.audience(before, env, category) };
+}
+
+/**
+ * Registers a subscription directly through the repository writer: from now, every category, over a
+ * selection (by default every lifecycle class of the given scopes).
+ */
+export async function subscribeTo(
+  repository: ITaskRepository,
+  id: string,
+  scopes: ReadonlyArray<ITaskScope>,
+  selection?: Partial<ITaskSelection>
+): Promise<ITaskConsumerRecord> {
+  return (
+    await repository.withWriter((w) =>
+      w.registerSubscription({
+        subscriptionId: id as SubscriptionId,
+        operationId: `op-subscribe-${id}` as OperationId,
+        principalKey: 'host',
+        specification: {
+          consumerId: `consumer-${id}` as ConsumerId,
+          selection: { scopes, lifecycleClass: 'all', ...selection },
+          start: 'from-now',
+          policy: {
+            schemaVersion: 1,
+            durability: repository.mode === 'session' ? 'session' : 'process-crash',
+            history: 'observed-state',
+            categories: [...allUpdateCategories].sort()
+          }
+        },
+        baseline: [],
+        createdAt: at as Instant
+      })
+    )
+  ).orThrow();
 }
 
 /** The registration of a task of a given shape. */
-export function shapedRegistration(id: string, shape: ITaskShape = {}): ITaskRegistrationRequest {
+export function shapedRegistration(
+  id: string,
+  shape: ITaskShape = {},
+  repository?: Pick<ITaskRepository, 'audience'>
+): ITaskRegistrationRequest {
   const operationId: string = `op-create-${id}`;
   const request: JsonValue = creationRequest(id);
   const env: ITaskEnvelope = envelope(id, 1, {
@@ -83,7 +128,9 @@ export function shapedRegistration(id: string, shape: ITaskShape = {}): ITaskReg
     recordType: 'resolved',
     task: { envelope: env, details: shape.vendor === true ? { job: `j-${id}` } : {} },
     operations: [catalogOp(operationId, 'create-tracked', request)],
-    updates: [owed(env, 'lifecycle', shape.audience ?? [])],
+    updates: [
+      repository !== undefined ? owed(repository, undefined, env, 'lifecycle') : update(env, 'lifecycle')
+    ],
     archived: false
   };
   return { taskId: id as TaskId, operationId: operationId as OperationId, request, record };
@@ -95,7 +142,9 @@ export async function addTask(
   id: string,
   shape: ITaskShape = {}
 ): Promise<ITaskCommitRecord> {
-  return (await repository.withWriter((w) => w.register(shapedRegistration(id, shape)))).orThrow();
+  return (
+    await repository.withWriter((w) => w.register(shapedRegistration(id, shape, repository)))
+  ).orThrow();
 }
 
 /** Commits one catalog operation on a task, changing its envelope and owing one update. */
@@ -105,7 +154,6 @@ export async function change(
   patch: Partial<ITaskEnvelope>,
   options: {
     readonly archive?: boolean;
-    readonly audience?: ReadonlyArray<string>;
     readonly op?: string;
   } = {}
 ): Promise<ITaskCommitRecord> {
@@ -125,7 +173,7 @@ export async function change(
     ...draft,
     updates: [
       ...draft.updates,
-      owed(env, options.archive === true ? 'relationship' : 'lifecycle', options.audience ?? [])
+      owed(repository, current.task.envelope, env, options.archive === true ? 'relationship' : 'lifecycle')
     ]
   };
   return (

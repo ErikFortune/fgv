@@ -17,7 +17,6 @@ import {
   ITaskFieldBounds,
   ITaskInventoryEntry,
   ITaskRecordDraft,
-  ITaskRecordHeader,
   ITaskSourceRecord,
   SourceHistoryContract,
   ITaskRepositoryManifest,
@@ -35,6 +34,7 @@ import {
 import { ICapacityConverters } from './capacityConverters';
 import { ICommandConverters } from './commandConverters';
 import { IContextConverters } from './contextConverters';
+import { IDeliveryConverters } from './deliveryConverters';
 import { IEnvelopeConverters } from './envelopeConverters';
 import { IIdentityConverters } from './identityConverters';
 import {
@@ -69,7 +69,6 @@ export interface IStorageConverters {
   readonly draft: Converter<ITaskRecordDraft>;
   readonly inventoryEntry: Converter<ITaskInventoryEntry>;
   readonly manifest: Converter<ITaskRepositoryManifest>;
-  readonly header: Converter<ITaskRecordHeader>;
   /** A broker source-checkpoint record, validated in full. */
   readonly sourceRecord: Converter<ITaskSourceRecord>;
   /**
@@ -177,7 +176,8 @@ export function buildStorageConverters(
   envelopes: IEnvelopeConverters,
   commands: ICommandConverters,
   capacity: ICapacityConverters,
-  context: IContextConverters
+  context: IContextConverters,
+  delivery: IDeliveryConverters
 ): IStorageConverters {
   const principalKey: Converter<string> = boundedSingleLine(bounds.maxSummaryLength, 'principal key');
   const recordRevision: Converter<number> = positiveSafeInteger;
@@ -296,15 +296,8 @@ export function buildStorageConverters(
     manifestRevision: positiveSafeInteger,
     profile: capacity.profile,
     tasks: entries('task'),
-    consumers: entries('consumer'),
+    consumers: delivery.consumerInventory,
     sources: entries('source')
-  });
-
-  // Deliberately *not* strict: this validates only the part of a consumer or source record
-  // that this release owns, and leaves the rest for the slice that writes it.
-  const header: Converter<ITaskRecordHeader> = Converters.object<ITaskRecordHeader>({
-    formatVersion: Converters.literal<1>(1),
-    id: ids.identifier
   });
 
   // A cursor is opaque source text; the stored profile's `maxSourceCursorBytes` is checked by the
@@ -332,7 +325,6 @@ export function buildStorageConverters(
     draft,
     inventoryEntry,
     manifest,
-    header,
     sourceRecord,
     formatVersion
   };

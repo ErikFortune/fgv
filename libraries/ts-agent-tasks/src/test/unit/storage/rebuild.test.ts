@@ -29,7 +29,9 @@ import {
   ids,
   scope,
   shapedRegistration,
-  succeeded
+  succeeded,
+  person,
+  subscribeTo
 } from '../../helpers/queryFixtures';
 import { catalogOp, memoryRoot, nextDraft, params } from '../../helpers/storageFixtures';
 
@@ -53,9 +55,12 @@ function outOfBand(root: FaultyRoot, name: string, text: string): void {
 describe('rebuildIndexes', () => {
   test('rebuilds in staged passes: every task once, then only the records that owe updates', async () => {
     const { repository } = await faultyRepository();
+    // s1 follows x's work; s2 follows a's children. b is owed to s1; c to both; a to nobody.
+    await subscribeTo(repository, 's1', [A], { responsibility: person('x') });
+    await subscribeTo(repository, 's2', [A], { parentId: 'a' as TaskId });
     await addTask(repository, 'a', { scopes: [A] });
-    await addTask(repository, 'b', { scopes: [A], audience: ['s1'] });
-    await addTask(repository, 'c', { scopes: [A], parentId: 'a', audience: ['s1', 's2'] });
+    await addTask(repository, 'b', { scopes: [A], responsibility: person('x') });
+    await addTask(repository, 'c', { scopes: [A], parentId: 'a', responsibility: person('x') });
     await finishAndArchive(repository, 'a');
     const generation: number = repository.health().generation;
     const before: string[] = await openTasks(repository);
@@ -68,7 +73,7 @@ describe('rebuildIndexes', () => {
     const inspection = inspectRepository(repository)!;
     expect(inspection.evidence).toEqual({
       taskPassReads: 3,
-      consumerPassReads: 0,
+      consumerPassReads: 2,
       sourcePassReads: 0,
       selectedPassReads: 2,
       graphMarks: 3,
@@ -195,7 +200,8 @@ describe('rebuildIndexes', () => {
 
   test('a record that changes between the task pass and the owed-update pass blocks', async () => {
     const { root, repository } = await faultyRepository();
-    const created = await addTask(repository, 'b', { scopes: [A], audience: ['s1'] });
+    await subscribeTo(repository, 's1', [A]);
+    const created = await addTask(repository, 'b', { scopes: [A] });
     let reads = 0;
     root.onRead = (name) => {
       if (name === 'task-b.json' && ++reads === 2) {
@@ -216,7 +222,8 @@ describe('rebuildIndexes', () => {
 
   test('a record that disappears before the owed-update pass blocks', async () => {
     const { root, repository } = await faultyRepository();
-    await addTask(repository, 'b', { scopes: [A], audience: ['s1'] });
+    await subscribeTo(repository, 's1', [A]);
+    await addTask(repository, 'b', { scopes: [A] });
     let reads = 0;
     root.onRead = (name) => {
       if (name === 'task-b.json' && ++reads === 2) {
@@ -626,6 +633,7 @@ describe('copilot round 1 regressions', () => {
   test('consumer and source records are parsed inside the materialization gate', async () => {
     const { root, repository } = await faultyRepository();
     await addTask(repository, 'a', { scopes: [A] });
+    await subscribeTo(repository, 's1', [A]);
     const manifestFile = root.inner
       .getChildren()
       .orThrow()
@@ -636,11 +644,9 @@ describe('copilot round 1 regressions', () => {
       'repository.json',
       JSON.stringify({
         ...manifest,
-        consumers: [{ id: 's1', state: 'live' }],
         sources: [{ id: 'acme', state: 'live' }]
       })
     );
-    outOfBand(root, 'consumer-s1.json', JSON.stringify({ formatVersion: 1, id: 's1' }));
     outOfBand(
       root,
       'source-acme.json',

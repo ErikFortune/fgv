@@ -8,15 +8,11 @@ import {
   CapacityDimension,
   ITaskCapacityClaim,
   ITaskCapacityProfile,
-  SubscriptionId,
-  TaskAudienceResolver,
   TaskResult,
   defaultTaskCapacityProfile
 } from '../../../index';
 import { op, rev, tid } from '../../helpers/brokerFixtures';
 import { ISourceHarness, recordOf, registerJob, sourceHarness } from '../../helpers/sourceFixtures';
-
-const everyone: TaskAudienceResolver = () => ['watcher' as SubscriptionId];
 
 function profileWith(limits: Partial<ITaskCapacityProfile['limits']>): ITaskCapacityProfile {
   return { ...defaultTaskCapacityProfile, limits: { ...defaultTaskCapacityProfile.limits, ...limits } };
@@ -290,13 +286,13 @@ describe('A3: source-replay envelopes', () => {
       expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed();
       await registerJob(h, 'j2', { envelope: { remainingRequiredUpdates: 4, remainingRequiredBytes: 0 } });
     };
-    const probe = await sourceHarness({ history: 'source-replay', audience: everyone });
+    const probe = await sourceHarness({ history: 'source-replay', watch: true });
     probe.executor.jobs.set('j2', { ...probe.executor.addJob('j2'), job: 'j2' });
     probe.executor.feed.pop();
     await setup(probe);
     const h = await sourceHarness({
       history: 'source-replay',
-      audience: everyone,
+      watch: true,
       profile: profileWith({ 'resident-payload-bytes': held(probe, 'resident-payload-bytes') })
     });
     h.executor.jobs.set('j2', { ...h.executor.addJob('j2'), job: 'j2' });
@@ -310,7 +306,7 @@ describe('A3: source-replay envelopes', () => {
   });
 
   test('a feed revision whose resident bytes overdraw the declared byte envelope is a source-contract failure', async () => {
-    const h = await sourceHarness({ history: 'source-replay', audience: everyone });
+    const h = await sourceHarness({ history: 'source-replay', watch: true });
     h.executor.addJob('j1');
     await registerJob(h, 'j1', { envelope: { remainingRequiredUpdates: 4, remainingRequiredBytes: 1 } });
     expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed();
@@ -331,10 +327,10 @@ describe('A3: observed-state sampling at capacity', () => {
       await registerJob(h, 'a');
       await registerJob(h, 'b');
     };
-    const probe = await sourceHarness({ audience: everyone });
+    const probe = await sourceHarness({ watch: true });
     await setup(probe);
     const h = await sourceHarness({
-      audience: everyone,
+      watch: true,
       profile: profileWith({ 'resident-payload-bytes': held(probe, 'resident-payload-bytes') })
     });
     await setup(h);

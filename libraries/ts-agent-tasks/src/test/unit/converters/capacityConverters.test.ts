@@ -127,14 +127,17 @@ describe('capacity claims', () => {
     });
   });
 
-  test('a subscription-acknowledgement claim is joined by exact subscription and update', () => {
+  test('a subscription-activation claim names only its subscription', () => {
+    expect(
+      converters.capacity.claim.convert(claim('subscription-activation', { subscriptionId: 'sub-1' }))
+    ).toSucceedAndSatisfy((converted) => {
+      expect(converted.purpose === 'subscription-activation' && converted.subscriptionId).toBe('sub-1');
+    });
     expect(
       converters.capacity.claim.convert(
-        claim('subscription-acknowledgement', { subscriptionId: 'sub-1', updateId: 'upd-4' })
+        claim('subscription-activation', { subscriptionId: 'sub-1', updateId: 'upd-4' })
       )
-    ).toSucceedAndSatisfy((converted) => {
-      expect(converted.purpose === 'subscription-acknowledgement' && converted.updateId).toBe('upd-4');
-    });
+    ).toFail();
   });
 
   test('a receipt-preparation claim names only its subscription', () => {
@@ -258,10 +261,7 @@ describe('claim ownership and disposition', () => {
   );
 
   test('reserved-to-used conversion is a disposition change, not a charge change', () => {
-    const reserved: Record<string, JsonValue> = claim('subscription-acknowledgement', {
-      subscriptionId: 'sub-1',
-      updateId: 'upd-4'
-    });
+    const reserved: Record<string, JsonValue> = claim('subscription-activation', { subscriptionId: 'sub-1' });
     expect(converters.capacity.claim.convert({ ...reserved, disposition: 'consumed' })).toSucceedAndSatisfy(
       (consumed) => {
         expect(consumed.charges).toEqual([{ dimension: 'updates', amount: 7 }]);

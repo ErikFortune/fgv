@@ -432,7 +432,7 @@ describe('unknown data is retained without lossy rewrite', () => {
   });
 });
 
-describe('consumer and source records: what this release owns of them', () => {
+describe('consumer and source records', () => {
   async function withEntries(entries: { consumers?: unknown[]; sources?: unknown[] }): Promise<Root> {
     const root = await populated();
     const manifest = readJson(root, 'repository.json');
@@ -444,12 +444,8 @@ describe('consumer and source records: what this release owns of them', () => {
     return root;
   }
 
-  test('a present consumer record with a matching header is accepted opaque, a source record in full, and both are charged', async () => {
-    const root = await withEntries({
-      consumers: [{ id: 's1', state: 'live' }],
-      sources: [{ id: 'acme', state: 'live' }]
-    });
-    writeJson(root, 'consumer-s1.json', { formatVersion: 1, id: 's1', laterSliceContent: { a: 1 } });
+  test('a present source record is read in full and charged', async () => {
+    const root = await withEntries({ sources: [{ id: 'acme', state: 'live' }] });
     writeJson(root, 'source-acme.json', {
       formatVersion: 1,
       id: 'acme',
@@ -460,7 +456,7 @@ describe('consumer and source records: what this release owns of them', () => {
     });
     const repository = ready(await open(root));
     expect(repository.capacityStatus()).toSucceedAndSatisfy((status) => {
-      expect(status.dimensions.find((d) => d.dimension === 'subscriptions')?.used).toBe(1);
+      expect(status.dimensions.find((d) => d.dimension === 'subscriptions')?.used).toBe(0);
       expect(status.dimensions.find((d) => d.dimension === 'sources')?.used).toBe(1);
     });
   });
@@ -472,7 +468,7 @@ describe('consumer and source records: what this release owns of them', () => {
     ]);
   });
 
-  test('a consumer or source record whose header disagrees, or is from another format, blocks', async () => {
+  test('a consumer or source record that does not validate, or is from another format, blocks', async () => {
     const root = await withEntries({
       consumers: [
         { id: 's1', state: 'live' },
@@ -484,13 +480,13 @@ describe('consumer and source records: what this release owns of them', () => {
     writeJson(root, 'consumer-s2.json', { formatVersion: 2, id: 's2' });
     writeJson(root, 'source-acme.json', { id: 'acme' });
     expect(blocked(await open(root)).issues).toEqual([
-      issue('record-id-mismatch', 'blocking', /consumer-s1\.json: holds consumer s9/),
+      issue('record-invalid', 'blocking', /consumer-s1\.json/),
       issue('unknown-format-version', 'blocking', /consumer-s2\.json: storage format 2/),
       issue('record-invalid', 'blocking', /source-acme\.json/)
     ]);
   });
 
-  test('a pending consumer registration is not readable by this release', async () => {
+  test("a pending consumer entry in a task registration's shape is not a consumer entry", async () => {
     const root = await withEntries({
       consumers: [
         {
@@ -506,11 +502,7 @@ describe('consumer and source records: what this release owns of them', () => {
       ]
     });
     expect(blocked(await open(root)).issues).toEqual([
-      issue(
-        'record-invalid',
-        'blocking',
-        /consumer-s1\.json: pending consumer registrations are not readable/
-      )
+      issue('manifest-invalid', 'blocking', /repository\.json/)
     ]);
   });
 

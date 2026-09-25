@@ -11,9 +11,7 @@ import {
   ITaskEnvelope,
   ITaskRepository,
   ITaskRepositoryWriter,
-  ITaskUpdate,
-  SubscriptionId,
-  TaskAudienceResolver
+  ITaskUpdate
 } from '../../../index';
 import { op, tid } from '../../helpers/brokerFixtures';
 import {
@@ -28,9 +26,7 @@ import {
 } from '../../helpers/sourceFixtures';
 import { environment } from '../../helpers/storageFixtures';
 
-const sub: SubscriptionId = 'sub-1' as SubscriptionId;
 /** Owes every update to one subscription, so required updates are retained and visible. */
-const everyone: TaskAudienceResolver = () => [sub];
 
 function envelopeOf(record: Awaited<ReturnType<typeof recordOf>>): ITaskEnvelope {
   if (record.recordType !== 'resolved') {
@@ -62,7 +58,12 @@ function watched(
             readSource: (id) => w.readSource(id),
             commitSource: (r) => w.commitSource(r),
             extendReplayEnvelope: (id, add) => w.extendReplayEnvelope(id, add),
-            raiseCapacityLimits: (p) => w.raiseCapacityLimits(p)
+            raiseCapacityLimits: (p) => w.raiseCapacityLimits(p),
+            registerSubscription: (r) => w.registerSubscription(r),
+            readSubscription: (id) => w.readSubscription(id),
+            issueReceipt: (r) => w.issueReceipt(r),
+            acknowledgeReceipt: (r) => w.acknowledgeReceipt(r),
+            abandonReceipt: (r) => w.abandonReceipt(r)
           }) as never
       )
   });
@@ -252,7 +253,7 @@ describe('observed-state reconciliation', () => {
 
 describe('source-replay: only the feed commits projections', () => {
   test('a latest revision-3 hint before feed revision 2 commits revision 2 first, then 3', async () => {
-    const h = await sourceHarness({ history: 'source-replay', audience: everyone });
+    const h = await sourceHarness({ history: 'source-replay', watch: true });
     h.executor.addJob('j1'); // feed: rev 1
     await registerJob(h, 'j1');
     expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed(); // resolves at rev 1
@@ -280,7 +281,7 @@ describe('source-replay: only the feed commits projections', () => {
       return next();
     });
     const watchedBroker = harnessWith(repository, h.env, h.root, h.logger, h.executor, h.source, h.registry, {
-      audience: everyone
+      watch: true
     }).broker;
     expect(await watchedBroker.reconcile({ sourceId: 'exec' })).toSucceed();
     expect(commits).toEqual(['2', '3']);

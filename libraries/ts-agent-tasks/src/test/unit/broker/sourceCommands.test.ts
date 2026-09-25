@@ -70,7 +70,12 @@ function hooked(
             readSource: (id) => w.readSource(id),
             commitSource: (r) => w.commitSource(r),
             extendReplayEnvelope: (id, add) => w.extendReplayEnvelope(id, add),
-            raiseCapacityLimits: (p) => w.raiseCapacityLimits(p)
+            raiseCapacityLimits: (p) => w.raiseCapacityLimits(p),
+            registerSubscription: (r) => w.registerSubscription(r),
+            readSubscription: (id) => w.readSubscription(id),
+            issueReceipt: (r) => w.issueReceipt(r),
+            acknowledgeReceipt: (r) => w.acknowledgeReceipt(r),
+            abandonReceipt: (r) => w.abandonReceipt(r)
           }) as never
       )
   });
