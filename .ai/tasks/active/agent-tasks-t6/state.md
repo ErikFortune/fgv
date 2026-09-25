@@ -67,7 +67,7 @@ orchestrator's `5bcae5ce` deciding the dereference question). PR target: `integr
 ## Open
 
 - Repo-wide `rebuild` + `test` and the verify scripts on the final source.
-- Plan T6 status line + WORKSTREAMS entry anticipating merge (needs the PR number).
+- (done) Plan T6 status line + WORKSTREAMS entry anticipate merge via #693.
 - Open PR into `integration/agent-tasks-v1`; drive the Copilot loop; record rounds in result.md.
 
 ## Next concrete step

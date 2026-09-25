@@ -184,7 +184,7 @@ Crash after the last child succeeds but before list completion; reopen must rebu
 
 **Review gate:** threat-model/ownership pass, authorization at every read and mutation boundary, source metadata immutability.
 
-### T6 — Source adapters, commands and reconciliation — 🔵 in flight on `claude/agent-tasks-t6`
+### T6 — Source adapters, commands and reconciliation — ✅ implemented on `integration/agent-tasks-v1` ([#693](https://github.com/ErikFortune/fgv/pull/693))
 
 **Dependencies:** T5. **Affected package:** `ts-agent-tasks` implementations/broker/storage.
 

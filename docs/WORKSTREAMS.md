@@ -128,10 +128,15 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-t6` 🔵 (slice T6 of the agent-tasks plan)
+### `agent-tasks-t6` ✅ (slice T6 of the agent-tasks plan) — landed on the integration branch via [#693](https://github.com/ErikFortune/fgv/pull/693)
 
-**Status:** 🔵 in flight — branch created off `integration/agent-tasks-v1` at `30da05785` (the T5
-landing), brief written, not yet started. Artifacts at `.ai/tasks/active/agent-tasks-t6/`.
+**Status:** ✅ shipped 2026-09-25 via [#693](https://github.com/ErikFortune/fgv/pull/693) into
+`integration/agent-tasks-v1` (not `release`; the cluster promotes as one). `ITaskSource` /
+`ExternalTaskSource`, comparator-ordered observations, paged reconciliation with the cursor
+committed after the page, recovery over every outcome, and external commands that reserve their
+settlement before dispatch and hold uncertain non-idempotent outcomes. Registration baseline
+unchanged (146); each in-flight command reserves 64 KiB (128 at one per task). Record:
+`.ai/tasks/active/agent-tasks-t6/result.md`.
 
 **Mission.** Source adapters, commands and reconciliation: an external helper with typed
 projections and commands, a source revision comparator, push hints, paged reconciliation and
