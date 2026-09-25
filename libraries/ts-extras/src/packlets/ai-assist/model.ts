@@ -996,8 +996,9 @@ export interface IAiProviderDescriptor {
    * @remarks
    * A generic `'none'` on a listed model is handled by {@link IThinkingConfig.onUnsupported}. It
    * is sent as `'low'` by default, or refused before the wire. Provider-specific blocks in
-   * {@link IThinkingConfig.providers} are sent verbatim and are not checked. Empty or undefined
-   * means every model accepts `'none'`.
+   * {@link IThinkingConfig.providers} are sent verbatim and are not checked, and the `'none'`
+   * handling stands aside entirely when an applicable `'other'` block sets the provider's effort
+   * field on the wire. Empty or undefined means every model accepts `'none'`.
    */
   readonly thinkingRequiredModelPrefixes?: ReadonlyArray<string>;
 }

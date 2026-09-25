@@ -29,7 +29,7 @@ import {
   providerDiscriminatorForId
 } from '../../../packlets/ai-assist/thinkingOptionsResolver';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import type { IThinkingConfig } from '../../../packlets/ai-assist/model';
+import type { IThinkingConfig, IThinkingProviderConfig } from '../../../packlets/ai-assist/model';
 
 // ============================================================================
 // providerDiscriminatorForId
@@ -840,6 +840,54 @@ describe('checkTemperatureConflict', () => {
       expect(resolveThinkingConfig(config, 'gpt-6-astra', 'openai', true)).toSucceedAndSatisfy((r) => {
         expect(r.noneDegraded).toBe(true);
       });
+    });
+
+    test("an applicable 'other' block that sets the wire effort makes the none gate stand aside", () => {
+      const config: IThinkingConfig = {
+        effort: 'none',
+        onUnsupported: 'fail',
+        providers: [{ provider: 'other', models: ['gpt-6-astra'], config: { reasoning_effort: 'none' } }]
+      };
+      expect(resolveThinkingConfig(config, 'gpt-6-astra', 'openai', true)).toSucceedAndSatisfy((r) => {
+        expect(r.resolved.openAiEffort).toBe('none');
+        expect(r.resolved.otherParams).toEqual({ reasoning_effort: 'none' });
+        expect(r.noneDegraded).toBe(false);
+        expect(checkTemperatureConflict(r.resolved, 'openai', 0.7, r.noneDegraded)).toSucceed();
+      });
+    });
+
+    test("an 'other' block for a different model, or without an effort key, leaves the gate in place", () => {
+      const blocks: ReadonlyArray<IThinkingProviderConfig> = [
+        { provider: 'other', models: ['gpt-6-luna'], config: { reasoning_effort: 'none' } },
+        { provider: 'other', models: ['gpt-6-astra'], config: { store: false } }
+      ];
+      for (const block of blocks) {
+        expect(
+          resolveThinkingConfig({ effort: 'none', providers: [block] }, 'gpt-6-astra', 'openai', true)
+        ).toSucceedAndSatisfy((r) => {
+          expect(r.resolved.openAiEffort).toBe('low');
+          expect(r.noneDegraded).toBe(true);
+        });
+      }
+    });
+
+    test("a gemini 'other' block setting thinkingConfig makes the gate stand aside", () => {
+      const config: IThinkingConfig = {
+        effort: 'none',
+        providers: [
+          {
+            provider: 'other',
+            models: ['gemini-3.1-pro-preview'],
+            config: { thinkingConfig: { thinkingBudget: 0 } }
+          }
+        ]
+      };
+      expect(resolveThinkingConfig(config, 'gemini-3.1-pro-preview', 'google', true)).toSucceedAndSatisfy(
+        (r) => {
+          expect(r.resolved.geminiThinkingBudget).toBe(0);
+          expect(r.noneDegraded).toBe(false);
+        }
+      );
     });
 
     test('a gemini budget block cancels a gemini degrade', () => {

@@ -283,6 +283,35 @@ export interface IThinkingResolution {
   readonly noneDegraded: boolean;
 }
 
+/**
+ * The wire keys through which each provider carries its thinking effort, where an `'other'` block's
+ * `otherParams` land (merged last, so they win): the request body for OpenAI, xAI and Anthropic, and
+ * `generationConfig` for Gemini.
+ */
+const EFFORT_WIRE_KEYS: Readonly<Record<ThinkingProviderDiscriminator, ReadonlyArray<string>>> = {
+  openai: ['reasoning_effort', 'reasoning'],
+  xai: ['reasoning_effort', 'reasoning'],
+  google: ['thinkingConfig'],
+  anthropic: ['thinking', 'output_config']
+};
+
+/**
+ * True when an applicable `'other'` block sets `discriminator`'s effort field on the wire. The caller
+ * then owns that value, so the `'none'` gate stands aside, the same as for an explicit provider block.
+ */
+function otherBlockSetsWireEffort(
+  config: IThinkingConfig,
+  resolvedModel: string,
+  discriminator: ThinkingProviderDiscriminator
+): boolean {
+  return (config.providers ?? []).some(
+    (block) =>
+      block.provider === 'other' &&
+      blockApplies(block, resolvedModel, discriminator) &&
+      EFFORT_WIRE_KEYS[discriminator].some((key) => key in block.config)
+  );
+}
+
 /** The resolved field that carries the effort for `discriminator`. */
 function effortFieldFor(
   resolved: IResolvedThinkingConfig,
@@ -315,7 +344,11 @@ export function resolveThinkingConfig(
 
   let effort = config.effort;
   let degraded = false;
-  if (effort === 'none' && thinkingRequired) {
+  if (
+    effort === 'none' &&
+    thinkingRequired &&
+    !otherBlockSetsWireEffort(config, resolvedModel, discriminator)
+  ) {
     if (config.onUnsupported === 'fail') {
       return fail(
         `thinking effort 'none' is not supported by ${resolvedModel}: the model cannot run with ` +
