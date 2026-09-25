@@ -456,7 +456,10 @@ describe('value bounds at registration', () => {
     );
   });
 
-  test("an update's audience is bounded by the stored profile, not only the field bound", async () => {
+  // The stored-profile bound on an audience is enforced as backpressure on the potential audience
+  // (accounting.test) and re-checked at open (subscriptions.test); a caller cannot widen an audience
+  // past it, because a caller does not choose the audience at all.
+  test("an update's audience is the repository's to decide, whatever the stored bound", async () => {
     const profile: ITaskCapacityProfile = {
       ...defaultTaskCapacityProfile,
       perOwner: { ...defaultTaskCapacityProfile.perOwner, maxAudiencePerUpdate: 2 }
@@ -467,7 +470,7 @@ describe('value bounds at registration', () => {
     const wide = { ...update(env, 'lifecycle'), audience: ['s1', 's2', 's3'] as never };
     const record = base.record.recordType === 'resolved' ? { ...base.record, updates: [wide] } : base.record;
     expect(await repository.withWriter((w) => w.register({ ...base, record }))).toFailWithDetail(
-      /names 3 audience subscriptions, over 2/i,
+      /names audience \[s1, s2, s3\], but the subscriptions owed it are \[\]/i,
       code('invalid')
     );
   });

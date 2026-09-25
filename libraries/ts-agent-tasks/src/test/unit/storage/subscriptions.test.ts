@@ -12,6 +12,7 @@ import {
   IResolvedTaskRecordDraft,
   ITaskConsumerRecord,
   ITaskRepository,
+  ITaskScope,
   ITaskSubscriptionRegistration,
   Instant,
   OperationId,
@@ -39,7 +40,7 @@ const uid = (task: string, revision: number, category: Parameters<typeof taskUpd
 
 function registration(
   id: string,
-  scopes = [A],
+  scopes: ReadonlyArray<ITaskScope> = [A],
   extra?: Partial<ITaskSubscriptionRegistration>
 ): ITaskSubscriptionRegistration {
   return {
@@ -504,7 +505,7 @@ describe('issued receipts at the storage boundary', () => {
       await issue(receipt('d1', [{ taskId: 't', revision: 1, updateIds: [uid('t', 1, 'lifecycle')] }]))
     ).orThrow();
     const ack = (
-      at_: Instant,
+      when: Instant,
       deliveryId: string = 'd1',
       expected: number = 2
     ): Promise<TaskResult<unknown>> =>
@@ -513,7 +514,7 @@ describe('issued receipts at the storage boundary', () => {
           subscriptionId: 's1' as SubscriptionId,
           expectedRecordRevision: expected,
           deliveryId: deliveryId as DeliveryId,
-          at: at_
+          at: when
         })
       );
     expect(await ack(at as Instant, 'nope')).toFailWithDetail(
@@ -725,7 +726,7 @@ describe('subscription records at open', () => {
         'consumer-s1.json',
         JSON.stringify({
           ...record,
-          acknowledged: Array.from({ length: 5000 }, (_, i) => `x${String(i).padStart(8, '0')}:1:0`)
+          acknowledged: Array.from({ length: 5000 }, (__, i) => `x${String(i).padStart(8, '0')}:1:0`)
         }),
         { guarantee: 'session' }
       )

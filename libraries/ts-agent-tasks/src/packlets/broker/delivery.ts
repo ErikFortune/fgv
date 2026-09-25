@@ -323,8 +323,9 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
    * @remarks
    * 1. Capture the owed updates and the selection's current tasks, authorize and project them, mint a
    *    delivery id, and render — purely.
-   * 2. In one writer section: if the policy epoch or the subscription's record moved since the
-   *    capture, discard the render and capture again; otherwise issue the receipt's exact manifest.
+   * 2. In one writer section: if the policy epoch, the subscription's record, or any current task the
+   *    capture authorized moved since the capture, discard the render and capture again; otherwise
+   *    issue the receipt's exact manifest.
    *    Storage refuses a manifest naming an update the subscription is no longer owed.
    * 3. Return the context only once the manifest is committed. A failure returns nothing
    *    acknowledgeable.
@@ -350,16 +351,36 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
    * The receipt is converted strictly, then compared in full canonical form with the unexpired
    * manifest this subscription issued under its delivery id — a fabricated, modified, shortened,
    * enlarged, foreign or snapshot-only receipt matches none. Every entry's task is re-authorized for
-   * this principal before the writer is taken, and the policy epoch is rechecked inside it. Only then
-   * does storage add exactly the manifest's update ids to the exact history.
+   * this principal before the writer is taken; inside it, the policy epoch and the record revision of
+   * every task so authorized are rechecked, and a task that moved sends the whole acknowledgement
+   * round again. Only then does storage add exactly the manifest's update ids to the exact history.
    */
   public async acknowledge(receipt: unknown): Promise<TaskResult<IAcknowledgementResult>> {
     const converted: Result<ITaskInclusionReceipt> = this._core.converters.context.receipt.convert(receipt);
     if (converted.isFailure() || converted.value.deliveryId === undefined) {
       return _invalidReceipt(this.subscriptionId);
     }
-    const presented: ITaskInclusionReceipt = converted.value;
-    const deliveryId: DeliveryId = converted.value.deliveryId;
+    for (let attempt = 1; attempt <= maxDeliveryAttempts; attempt++) {
+      const outcome: TaskResult<IAcknowledgementResult | undefined> = await this._acknowledgeOnce(
+        converted.value,
+        converted.value.deliveryId
+      );
+      if (outcome.isFailure() || outcome.value !== undefined) {
+        return outcome.isFailure() ? propagate(outcome) : ok(outcome.value!);
+      }
+    }
+    return taskFailure(
+      `acknowledge ${this.subscriptionId}: the receipt's tasks kept changing while it was authorized; retry`,
+      'conflict',
+      'safe'
+    );
+  }
+
+  /** One authorize-then-commit attempt; `undefined` when a task it authorized moved and it should retry. */
+  private async _acknowledgeOnce(
+    presented: ITaskInclusionReceipt,
+    deliveryId: DeliveryId
+  ): Promise<TaskResult<IAcknowledgementResult | undefined>> {
     // First: is this exactly a receipt this subscription issued and still holds? A fabricated,
     // modified, shortened, enlarged, foreign or snapshot-only receipt is refused here, before any
     // task it names is looked at — it gets one answer, whatever it names.
@@ -377,28 +398,39 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     if (clock.isFailure()) {
       return propagate(clock);
     }
+    // Each entry's task is authorized from its committed record, and the record revision that
+    // decided it is fenced: the section that commits re-reads every one.
+    const fence: Map<TaskId, number> = new Map();
     for (const entry of presented.included) {
-      if (!(await this._mayAcknowledge(entry))) {
+      const authorized: number | undefined = await this._mayAcknowledge(entry);
+      if (authorized === undefined) {
         return taskFailure(
           `acknowledge ${this.subscriptionId}: the receipt includes a task this principal may not acknowledge`,
           'not-found-or-denied',
           'after-host-action'
         );
       }
+      fence.set(entry.taskId, authorized);
     }
     return this._core.gated(async (writer) => {
-      // Re-proved in the section that commits: the manifest may have been abandoned or expired, and
-      // the policy may have moved, since the checks above.
+      // Re-proved in the section that commits: the manifest may have been abandoned or expired, the
+      // policy may have moved, and a task may have been reassigned, since the checks above.
       const record: TaskResult<ITaskConsumerRecord> = await this._issuedMatch(writer, deliveryId, presented);
       if (record.isFailure()) {
-        return propagate<IAcknowledgementResult>(record);
+        return propagate<IAcknowledgementResult | undefined>(record);
       }
       if (!this._access.epochIs(epoch.value)) {
-        return taskFailure<IAcknowledgementResult>(
+        return taskFailure<IAcknowledgementResult | undefined>(
           `acknowledge ${this.subscriptionId}: the authorization policy changed; re-present the receipt`,
           'conflict',
           'safe'
         );
+      }
+      const held: TaskResult<boolean> = await _fenceHolds(writer, fence);
+      if (held.isFailure() || !held.value) {
+        return held.isFailure()
+          ? propagate<IAcknowledgementResult | undefined>(held)
+          : ok<IAcknowledgementResult | undefined>(undefined);
       }
       const committed = await writer.acknowledgeReceipt({
         subscriptionId: this.subscriptionId,
@@ -407,7 +439,7 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
         at: clock.value
       });
       return committed.onSuccess((c) =>
-        ok<IAcknowledgementResult>({
+        ok<IAcknowledgementResult | undefined>({
           subscriptionId: c.subscriptionId,
           deliveryId: c.deliveryId,
           newlyAcknowledged: c.newlyAcknowledged,
@@ -492,8 +524,9 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     if (clock.isFailure()) {
       return propagate(clock);
     }
+    const { fence, ...renderInput } = input.value;
     const rendered: TaskResult<ITaskContext> = core.renderer.render(
-      { ...input.value, deliveryId: deliveryId.value },
+      { ...renderInput, deliveryId: deliveryId.value },
       budget
     );
     if (rendered.isFailure()) {
@@ -513,6 +546,13 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
         now.value?.recordRevision !== captured.recordRevision
       ) {
         return ok<IPreparedTaskContext | undefined>(undefined);
+      }
+      // A current task the capture authorized and disclosed may have been reassigned since.
+      const held: TaskResult<boolean> = await _fenceHolds(writer, fence, 'task');
+      if (held.isFailure() || !held.value) {
+        return held.isFailure()
+          ? propagate<IPreparedTaskContext | undefined>(held)
+          : ok<IPreparedTaskContext | undefined>(undefined);
       }
       const issued = await writer.issueReceipt({
         subscriptionId: this.subscriptionId,
@@ -542,9 +582,11 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
       readonly unresolved: ReadonlyArray<IUnresolvedTaskReference>;
       readonly updates: ReadonlyArray<ITaskUpdate>;
       readonly completeness: 'complete' | 'partial';
+      readonly fence: ReadonlyMap<TaskId, number>;
     }>
   > {
     const core: BrokerCore = this._core;
+    const fence: Map<TaskId, number> = new Map();
     const owed: ITaskUpdate[] = [];
     let cursor: PageCursor | undefined = undefined;
     let partial: boolean = false;
@@ -592,12 +634,14 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
           return propagate(projected);
         }
         tasks.push({ envelope: projected.value });
+        fence.set(summary.envelope.id, summary.envelope.revision);
       }
     }
     const unresolved: IUnresolvedTaskReference[] = [];
     for (const reference of current.value.unresolved) {
       if (await this._access.sees({ reference })) {
         unresolved.push(reference);
+        fence.set(reference.id, reference.revision);
       }
     }
     const complete: boolean =
@@ -609,7 +653,8 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
       tasks,
       unresolved,
       updates: disclosed.value.updates.slice(0, taskContextLimits.maxInputEntries),
-      completeness: complete ? 'complete' : 'partial'
+      completeness: complete ? 'complete' : 'partial',
+      fence
     });
   }
 
@@ -641,14 +686,46 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
   }
 
   /** Whether this principal may see, and acknowledge, the task an entry names — as it is now. */
-  private async _mayAcknowledge(entry: IInclusionEntry): Promise<boolean> {
+  /** The record revision that authorized acknowledging an entry's task, or `undefined` when denied. */
+  private async _mayAcknowledge(entry: IInclusionEntry): Promise<number | undefined> {
     const record = await this._core.repository.readCommit(entry.taskId);
     if (record.isFailure() || record.value === undefined) {
-      return false;
+      return undefined;
     }
     const subject: AccessSubject = subjectOf(record.value);
-    return (await this._access.sees(subject)) && (await this._access.may('acknowledge', subject));
+    return (await this._access.sees(subject)) && (await this._access.may('acknowledge', subject))
+      ? record.value.recordRevision
+      : undefined;
   }
+}
+
+/**
+ * Whether every fenced task's committed record, re-read through the writer, is still at the revision
+ * that was authorized — its record revision, or with `'task'`, its task revision.
+ */
+async function _fenceHolds(
+  writer: ITaskRepositoryWriter,
+  fence: ReadonlyMap<TaskId, number>,
+  revision: 'record' | 'task' = 'record'
+): Promise<TaskResult<boolean>> {
+  for (const [taskId, expected] of fence) {
+    const record = await writer.readCommit(taskId);
+    if (record.isFailure()) {
+      return propagate(record);
+    }
+    const actual: number | undefined =
+      record.value === undefined
+        ? undefined
+        : revision === 'record'
+        ? record.value.recordRevision
+        : record.value.recordType === 'resolved'
+        ? record.value.task.envelope.revision
+        : record.value.reference.revision;
+    if (actual !== expected) {
+      return ok(false);
+    }
+  }
+  return ok(true);
 }
 
 /** The one answer every unacceptable receipt gets: nothing about why distinguishes one from another. */

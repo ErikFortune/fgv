@@ -27,7 +27,6 @@ import {
   audienceOf,
   catalogMatches,
   catalogOf,
-  historyCommitment,
   subscriptionEntry,
   subscriptionKey
 } from './subscriptions';
@@ -349,16 +348,6 @@ export class DeliveryBook {
       this._potential.set(taskId, [...this.potentialFor(taskId), id].sort());
     }
     this._units.set(id, units);
-  }
-
-  /** Whether a new subscription's history commitment fits its per-subscription limit. */
-  public static fitsHistory(
-    state: ISubscriptionState,
-    owed: number,
-    units: number,
-    profile: ITaskCapacityProfile
-  ): boolean {
-    return historyCommitment(state, owed, units) <= profile.perOwner.maxAcknowledgementIdsPerSubscription;
   }
 
   /** Live, non-archived tasks whose catalog fields a selection matches, in id order. */

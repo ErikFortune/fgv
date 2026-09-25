@@ -144,11 +144,6 @@ export class CapacityLedger {
     }
   }
 
-  /** Removes an entry — a pending registration replaced under another key. */
-  public remove(key: string): void {
-    this._entries.delete(key);
-  }
-
   /** The entry held under a key, for inspection. */
   public entry(key: string): ILedgerEntry | undefined {
     return this._entries.get(key);

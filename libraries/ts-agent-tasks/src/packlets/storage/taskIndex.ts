@@ -388,23 +388,6 @@ export class TaskIndex {
     return baseline !== undefined && _baselineKeyOf(baseline, updateId) !== undefined;
   }
 
-  /**
-   * The links a subscription is owed among one task's retained updates, by the task's owed keys.
-   */
-  public owedLinksOf(
-    id: TaskId
-  ): ReadonlyArray<{ readonly subscription: SubscriptionId; readonly key: string }> {
-    const links: Array<{ subscription: SubscriptionId; key: string }> = [];
-    for (const key of this._owedKeysByTask.get(id) ?? []) {
-      for (const subscription of this.owedPayloads.get(key)!.audience) {
-        if (this.owedBySubscription.get(subscription)?.has(key) === true) {
-          links.push({ subscription, key });
-        }
-      }
-    }
-    return links;
-  }
-
   private _remove(id: TaskId): void {
     const m: IMemberships | undefined = this._memberships.get(id);
     if (m === undefined) {

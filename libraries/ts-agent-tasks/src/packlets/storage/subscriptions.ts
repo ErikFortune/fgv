@@ -14,7 +14,6 @@ import {
   ITaskConsumerRecord,
   ITaskEnvelope,
   ITaskScope,
-  ITaskSelection,
   ITaskSubscription,
   Instant,
   SubscriptionId,
@@ -296,12 +295,4 @@ export function subscriptionEntry(
  */
 export function subscriptionKey(id: string): string {
   return `consumer:${id}`;
-}
-
-/**
- * The selection a descriptor was created with, for callers that hold only the resident state.
- * @internal
- */
-export function selectionOf(state: ISubscriptionState): ITaskSelection {
-  return state.descriptor.selection;
 }

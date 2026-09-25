@@ -17,6 +17,7 @@ import {
   taskUpdateId
 } from '../../../index';
 import {
+  TestPolicy,
   ada,
   alpha,
   beta,
@@ -30,7 +31,6 @@ import {
   watch
 } from '../../helpers/brokerFixtures';
 import {
-  IDeliveryHarness,
   consumerRecord,
   deliveryHarness,
   deliveryOf,
@@ -172,14 +172,15 @@ describe('start policies', () => {
 describe('no subscribe/mutate gap', () => {
   test('a terminal transition between baseline capture and activation is recaptured, never lost', async () => {
     const h = await deliveryHarness();
+    const policy: TestPolicy = h.policy;
     await track(h.writer, 't');
     let fired: boolean = false;
     // The policy's baseline check for `t` is where the capture has read it and is about to commit:
     // complete the task right there.
-    h.policy.afterDecision = async (request: ITaskAccessRequest) => {
+    policy.afterDecision = async (request: ITaskAccessRequest) => {
       if (!fired && request.action === 'read' && request.task?.envelope.id === 't') {
         fired = true;
-        h.policy.afterDecision = undefined;
+        policy.afterDecision = undefined;
         await succeedTask(h, h.writer, 't');
       }
     };
@@ -191,12 +192,13 @@ describe('no subscribe/mutate gap', () => {
 
   test('a task created between capture and activation is recaptured into the baseline', async () => {
     const h = await deliveryHarness();
+    const policy: TestPolicy = h.policy;
     await track(h.writer, 'a');
     let fired: boolean = false;
-    h.policy.afterDecision = async (request: ITaskAccessRequest) => {
+    policy.afterDecision = async (request: ITaskAccessRequest) => {
       if (!fired && request.action === 'read') {
         fired = true;
-        h.policy.afterDecision = undefined;
+        policy.afterDecision = undefined;
         await track(h.writer, 'b');
       }
     };
@@ -221,9 +223,10 @@ describe('no subscribe/mutate gap', () => {
 
   test('a selection that keeps changing is refused after bounded recaptures', async () => {
     const h = await deliveryHarness();
+    const policy: TestPolicy = h.policy;
     await track(h.writer, 't');
     let n: number = 0;
-    h.policy.afterDecision = async (request: ITaskAccessRequest) => {
+    policy.afterDecision = async (request: ITaskAccessRequest) => {
       if (request.action === 'read') {
         await track(h.writer, `extra${++n}`);
       }
@@ -232,17 +235,18 @@ describe('no subscribe/mutate gap', () => {
       /kept changing/i,
       expect.objectContaining({ code: 'conflict', retry: 'safe' })
     );
-    h.policy.afterDecision = undefined;
+    policy.afterDecision = undefined;
   });
 
   test('a policy epoch that moves between capture and activation recaptures', async () => {
     const h = await deliveryHarness();
+    const policy: TestPolicy = h.policy;
     await track(h.writer, 't');
     let fired: boolean = false;
-    h.policy.afterDecision = () => {
+    policy.afterDecision = () => {
       if (!fired) {
         fired = true;
-        h.policy.epoch = 'epoch-2';
+        policy.epoch = 'epoch-2';
       }
     };
     expect(await subscribeAs(h, 'sub', { start: 'current' })).toSucceed();

@@ -19,6 +19,7 @@ import {
   runSubscribe
 } from '../../helpers/deliveryCrashScenarios';
 import { committedIn, pendingIds } from '../../helpers/deliveryFixtures';
+// eslint-disable-next-line @rushstack/packlets/mechanics
 import { inspectRepository } from '../../../packlets/storage/internals';
 
 /**
