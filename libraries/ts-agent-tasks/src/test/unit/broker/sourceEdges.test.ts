@@ -31,6 +31,7 @@ import {
   IJobDetails,
   ISourceHarness,
   SimulatedExecutor,
+  controllableSource,
   harnessWith,
   jobKind,
   observationOnlySource,
@@ -73,6 +74,7 @@ function misbehaving(
       real: () => ReturnType<ITaskRepositoryWriter['commit']>
     ) => ReturnType<ITaskRepositoryWriter['commit']>;
     readonly repositoryReadCommit?: ITaskRepository['readCommit'];
+    readonly readSource?: ITaskRepositoryWriter['readSource'];
   }
 ): ITaskRepository {
   let calls = 0;
@@ -91,7 +93,8 @@ function misbehaving(
             register: (r) => w.register(r),
             commit: (r) =>
               options.commit !== undefined ? options.commit(r, () => w.commit(r)) : w.commit(r),
-            readSource: (id) => w.readSource(id),
+            readSource: (id) =>
+              options.readSource !== undefined ? options.readSource(id) : w.readSource(id),
             commitSource: (r) => w.commitSource(r),
             extendReplayEnvelope: (id, add) => w.extendReplayEnvelope(id, add),
             raiseCapacityLimits: (p) => w.raiseCapacityLimits(p)
@@ -382,6 +385,68 @@ describe('host failures', () => {
     const record = await recordOf(h, 'j1');
     const command = record.operations.find((o) => o.operationId === key);
     expect(command?.type === 'command' && command.dispatch).toBe('not-sent');
+  });
+
+  test('a source attached with a history other than its checkpoint admits nothing', async () => {
+    const h = await ready();
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed(); // checkpointed observed-state
+    const replay = new SimulatedExecutor('exec', 'source-replay');
+    replay.addJob('j2');
+    const swapped = harnessWith(
+      h.repository,
+      h.env,
+      h.root,
+      h.logger,
+      replay,
+      controllableSource(replay),
+      h.registry
+    );
+    expect(await registerJob(swapped, 'j2').catch((e: Error) => e.message)).toMatch(
+      /checkpointed as 'observed-state' and is attached as 'source-replay'/
+    );
+    expect(await h.repository.read(tid('j2'))).toSucceedWith(undefined);
+    // A checkpoint the writer cannot read refuses the registration the same way: nothing recorded.
+    replay.addJob('j3');
+    const unreadable = brokerOver(
+      swapped,
+      misbehaving(h.repository, { readSource: async () => fail('checkpoint unreadable') as never })
+    );
+    expect(await registerJob(unreadable, 'j3').catch((e: Error) => e.message)).toMatch(
+      /checkpoint unreadable/
+    );
+  });
+
+  test('an applied answer that breaks the source contract leaves the command uncertain', async () => {
+    const h = await ready();
+    const key = op();
+    const dispatch = h.executor.dispatch.bind(h.executor);
+    Object.assign(h.executor, {
+      // Applied at the revision already committed, but claiming other content.
+      dispatch: async (...args: Parameters<typeof dispatch>) =>
+        (await dispatch(...args)).onSuccess((a) =>
+          succeed(
+            a.state === 'applied'
+              ? {
+                  ...a,
+                  observation: {
+                    ...a.observation,
+                    revision: { epoch: 'e1', token: '1' },
+                    details: { ...a.observation.details, step: 42 }
+                  }
+                }
+              : a
+          )
+        )
+    });
+    expect(await execute(h, 'pause', { reason: 'x' }, key)).toSucceedAndSatisfy((receipt) => {
+      expect(receipt.result).toEqual({
+        state: 'indeterminate',
+        reason: expect.stringMatching(/breaks its contract/)
+      });
+    });
+    const record = await recordOf(h, 'j1');
+    const command = record.operations.find((o) => o.operationId === key);
+    expect(command?.type === 'command' && command.dispatch).toBe('possibly-sent');
   });
 
   test('two sources may not share an id', () => {

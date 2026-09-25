@@ -39,6 +39,15 @@ export function canonicallySame(a: unknown, b: unknown): boolean {
 }
 
 /**
+ * The canonical text of a JSON value — the same identity the repository keys bindings by, so two
+ * spellings of one reference are one key.
+ * @internal
+ */
+export function canonicalKey(value: unknown): Result<string> {
+  return normalizer.canonicalize(value);
+}
+
+/**
  * The semantic revision of a record.
  * @internal
  */

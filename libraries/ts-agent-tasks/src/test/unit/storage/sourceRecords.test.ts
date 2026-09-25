@@ -458,7 +458,24 @@ describe('execution claims survive a restart and are validated at open', () => {
       (c: JsonObject): JsonObject[] => [{ ...c, sourceId: 'elsewhere' }],
       (c: JsonObject): JsonObject[] => [{ ...c, owner: { owner: 'task', taskId: 'other' } }],
       (c: JsonObject): JsonObject[] => [{ ...c, ownership: 'pending' }],
-      (c: JsonObject): JsonObject[] => [c, { ...c, claimId: 'dup-2' }]
+      (c: JsonObject): JsonObject[] => [c, { ...c, claimId: 'dup-2' }],
+      // An envelope the profile cannot carry: bytes no declared update could hold.
+      (c: JsonObject): JsonObject[] => [
+        { ...c, envelope: { remainingRequiredUpdates: 0, remainingRequiredBytes: 5 } }
+      ],
+      // A dimension the envelope reserves, missing.
+      (c: JsonObject): JsonObject[] => [
+        { ...c, charges: (c.charges as JsonObject[]).filter((x) => x.dimension !== 'updates') }
+      ],
+      // The resident charge and the remaining byte envelope out of lockstep.
+      (c: JsonObject): JsonObject[] => [
+        {
+          ...c,
+          charges: (c.charges as JsonObject[]).map((x) =>
+            x.dimension === 'resident-payload-bytes' ? { ...x, amount: (x.amount as number) + 1 } : x
+          )
+        }
+      ]
     ]) {
       const h = await sourceHarness({ history: 'source-replay' });
       h.executor.addJob('j1');
@@ -473,6 +490,34 @@ describe('execution claims survive a restart and are validated at open', () => {
       });
       expect(blockedOf(await reopen(h)).issues).toEqual([expect.objectContaining({ code: 'integrity' })]);
     }
+  });
+
+  test('open refuses a command that awaits a feed revision without being settled accepted', async () => {
+    const h = await sourceHarness({ history: 'source-replay' });
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1');
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed();
+    h.executor.loseNextResponse = true;
+    expect(
+      await h.writer.execute({
+        taskId: tid('j1'),
+        operationId: op(),
+        expectedRevision: rev(2),
+        command: 'pause',
+        parameters: { reason: 'x' }
+      })
+    ).toSucceed();
+    const root = h.root as Root;
+    const record = readJson(root, 'task-j1.json');
+    writeJson(root, 'task-j1.json', {
+      ...record,
+      operations: (record.operations as JsonObject[]).map((o) =>
+        o.type === 'command' ? { ...o, awaiting: { epoch: 'e1', token: '9' } } : o
+      )
+    });
+    expect(JSON.stringify(blockedOf(await reopen(h)).issues)).toMatch(
+      /only a settled accepted command may await a feed revision/
+    );
   });
 
   test('a pending source-replay registration keeps its envelope claim valid across reopen', async () => {

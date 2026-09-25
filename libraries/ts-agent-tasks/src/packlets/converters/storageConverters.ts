@@ -189,7 +189,14 @@ export function buildStorageConverters(
     dispatch: Converters.enumeratedValue<StoredCommandDispatch>(['not-sent', 'possibly-sent', 'settled']),
     receipt: commands.receipt,
     awaiting: values.sourceRevision.optional()
-  });
+  }).withConstraint((stored: IStoredCommandOperation) =>
+    // `awaiting` means "settled accepted until the feed reaches this revision": on any other command
+    // it is a state nothing would ever resolve.
+    stored.awaiting === undefined ||
+    (stored.dispatch === 'settled' && stored.receipt.result.state === 'accepted')
+      ? succeed(stored)
+      : fail(`command ${stored.operationId}: only a settled accepted command may await a feed revision`)
+  );
 
   const catalog: Converter<IStoredCatalogOperation> = Converters.strictObject<IStoredCatalogOperation>({
     type: Converters.literal('catalog'),

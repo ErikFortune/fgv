@@ -281,9 +281,9 @@ describe('A3: source-replay envelopes', () => {
   });
 
   test('backpressure on a feed revision leaves the cursor where it was', async () => {
-    // The envelope reserves no bytes, so a retained update needs ordinary headroom — and there is
-    // none. A second, never-resolved registration keeps the profile above the minimum a
-    // repository must be able to finish.
+    // A progress-only revision owes no required update, so it draws nothing from the envelope: its
+    // retained update needs ordinary headroom — and there is none. A second, never-resolved
+    // registration keeps the profile above the minimum a repository must be able to finish.
     const setup = async (h: ISourceHarness): Promise<void> => {
       h.executor.addJob('j1');
       await registerJob(h, 'j1', { envelope: { remainingRequiredUpdates: 4, remainingRequiredBytes: 0 } });
@@ -302,10 +302,23 @@ describe('A3: source-replay envelopes', () => {
     h.executor.jobs.set('j2', { ...h.executor.addJob('j2'), job: 'j2' });
     h.executor.feed.pop();
     await setup(h);
-    h.executor.change('j1', (j) => (j.attention = [{ namespace: 'review', key: 'a' }]));
+    h.executor.change('j1', (j) => (j.progress = { completed: 1, total: 4 }));
     expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceedAndSatisfy((report) => {
       expect(report.stopped).toBe('capacity-blocked');
       expect(report.cursor).toBe('1');
+    });
+  });
+
+  test('a feed revision whose resident bytes overdraw the declared byte envelope is a source-contract failure', async () => {
+    const h = await sourceHarness({ history: 'source-replay', audience: everyone });
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1', { envelope: { remainingRequiredUpdates: 4, remainingRequiredBytes: 1 } });
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed();
+    h.executor.change('j1', (j) => (j.attention = [{ namespace: 'review', key: 'a' }]));
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceedAndSatisfy((report) => {
+      expect(report.stopped).toBe('contract-violation');
+      expect(report.cursor).toBe('1');
+      expect(report.issues.join()).toMatch(/resident bytes.*declared only 1 remaining/);
     });
   });
 });

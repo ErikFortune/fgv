@@ -303,7 +303,7 @@ export function checkTaskClaims(
             continue;
           }
           if (claim.purpose === 'admitted-source-replay') {
-            const problem: string | undefined = _replayProblem(claim, expected, seen);
+            const problem: string | undefined = _replayProblem(claim, expected, seen, profile);
             if (problem !== undefined) {
               return fail<true>(`claim ${claim.claimId}: ${problem}`);
             }
@@ -420,14 +420,33 @@ function _settlementProblem(
 
 /**
  * A replay-envelope claim is owned by this task, names the task's own source, is the only one, and
- * is reserved until the task is terminal. Its charges shrink as the feed spends them, so they are
- * bounded by the claim's own (remaining) envelope.
+ * is reserved until the task is terminal. Its envelope is one the profile can carry, it charges
+ * every dimension an envelope reserves, and its resident charge *is* its remaining byte envelope —
+ * the two move in lockstep, so a claim where they differ was not written by this release.
  */
 function _replayProblem(
   claim: ReplayClaim,
   expected: ITaskClaimExpectation,
-  seen: ReadonlySet<CapacityClaimPurpose>
+  seen: ReadonlySet<CapacityClaimPurpose>,
+  profile: ITaskCapacityProfile
 ): string | undefined {
+  const envelope: Result<ReadonlyArray<ITaskCapacityCharge>> = replayCharges(claim.envelope, profile);
+  if (envelope.isFailure()) {
+    return envelope.message;
+  }
+  const shape: string | undefined = _completeBundle(claim, envelope.value);
+  if (shape !== undefined) {
+    return shape;
+  }
+  const resident: number = claim.charges
+    .filter((c) => c.dimension === 'resident-payload-bytes')
+    .reduce((sum, c) => sum + c.amount, 0);
+  if (resident !== claim.envelope.remainingRequiredBytes) {
+    return (
+      `holds ${resident} resident bytes against an envelope of ${claim.envelope.remainingRequiredBytes} ` +
+      `remaining; the two are one quantity`
+    );
+  }
   if (claim.owner.owner !== 'task' || claim.owner.taskId !== expected.taskId) {
     return `not owned by task ${expected.taskId}`;
   }

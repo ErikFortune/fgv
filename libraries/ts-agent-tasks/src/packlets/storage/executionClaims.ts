@@ -109,10 +109,20 @@ export function spendExecutionClaims(
   if (requiredUpdates === 0 && !terminal) {
     return ok(spent);
   }
+  const resolution: boolean = record.recordType === 'unresolved';
+  const bytes: number = growth['resident-payload-bytes'];
+  if (!terminal && !resolution && bytes > replay.envelope.remainingRequiredBytes) {
+    return taskFailure(
+      `task ${taskId}: the observation adds ${bytes} resident bytes, but source '${replay.sourceId}' ` +
+        `declared only ${replay.envelope.remainingRequiredBytes} remaining; the source broke its ` +
+        `declared finite contract`,
+      'source-gap',
+      'after-host-action'
+    );
+  }
   // A terminal observation's own payloads come out of the closeout reservation, and a first
   // resolution's out of its own claim, so the envelope gives nothing to either: it counts the
   // update, and a terminal one releases the rest.
-  const resolution: boolean = record.recordType === 'unresolved';
   return ok(
     spendOne(
       spent,

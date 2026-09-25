@@ -349,6 +349,10 @@ export async function registerExternal(
     if (parentNow.isFailure()) {
       return propagate<ITaskMutationResult>(parentNow);
     }
+    const checkpoint = await _checkpointAgrees(core, writer, request);
+    if (checkpoint.isFailure()) {
+      return propagate<ITaskMutationResult>(checkpoint);
+    }
     const clock = core.now();
     if (clock.isFailure()) {
       return propagate<ITaskMutationResult>(clock);
@@ -363,6 +367,34 @@ export async function registerExternal(
     return propagate(read);
   }
   return read.value !== undefined ? ok(read.value) : notFound(taskId, operationId);
+}
+
+/**
+ * The attached source must be the one the repository has checkpointed under its id: a history that
+ * differs from the committed checkpoint's could admit a task no pass over that source may ever move.
+ */
+async function _checkpointAgrees(
+  core: BrokerCore,
+  writer: ITaskRepositoryWriter,
+  request: IRegisterExternalTask
+): Promise<TaskResult<true>> {
+  const source: ITaskSource | undefined = core.sources.get(request.binding.sourceId);
+  if (source === undefined) {
+    return ok(true);
+  }
+  const stored = await writer.readSource(source.id);
+  if (stored.isFailure()) {
+    return propagate(stored);
+  }
+  return stored.value === undefined || stored.value.history === source.history
+    ? ok(true)
+    : taskFailure(
+        `registerExternal: source '${source.id}' was checkpointed as '${stored.value.history}' and is ` +
+          `attached as '${source.history}'; nothing may be admitted against it until that is reconciled`,
+        'invalid',
+        'after-host-action',
+        { operationId: request.operationId }
+      );
 }
 
 /**

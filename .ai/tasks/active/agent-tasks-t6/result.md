@@ -196,6 +196,25 @@ fence) — fixed with three tests and three reverts.
   - *Settlement claim bundle shape*: open accepted a settlement claim missing a dimension. It now
     requires every dimension of the bundle, like the closeout and resolution claims.
   Reverts M25–M31 each turn their test red.
+- **Round 4** — six high; all real, all at the edges of the replay guarantee:
+  - *Admission ignored the persisted checkpoint's history*: a replay task could be admitted against
+    a source whose checkpoint every pass then refuses. Registration now reads the checkpoint inside
+    the writer and refuses on a mismatch.
+  - *An `applied` answer refused as a contract violation settled `accepted`*: for a replay-registered
+    task under a weaker attachment, that lost the feed confirmation for good. A contract-violating
+    answer now leaves the command uncertain (`indeterminate`, reservation held).
+  - *Feed-order keys were not canonical*: two spellings of one reference split its ordering. Keyed
+    canonically, as the repository keys bindings.
+  - *`awaiting` on a command that is not settled `accepted`* opened and blocked archive forever.
+    The stored-command converter now rejects it (open and commit).
+  - *Replay claims at open were not checked against their envelope*: now the envelope must be one
+    the profile carries, every dimension must be charged, and the resident charge must equal the
+    remaining byte envelope (they are one quantity).
+  - *Resident bytes overdrawing the byte envelope were silently taken from free capacity*: now a
+    source-contract failure, like overdrawing the update count. (The earlier backpressure test had
+    built its block from exactly such an overdraw; it now uses a progress-only revision, which
+    draws nothing from the envelope.)
+  Reverts M32–M37 each turn their test red.
 
 ## Gates
 

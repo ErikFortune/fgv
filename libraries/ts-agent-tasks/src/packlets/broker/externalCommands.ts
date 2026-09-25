@@ -625,8 +625,19 @@ async function _settleApplied(
       return ok(now.receipt);
     }
     // The effect is reconciled into a committed projection only if the projection committed (or was
-    // already reflected). One the broker refused — a contract violation, an epoch it cannot order,
-    // a capacity refusal — leaves the command accepted but not applied.
+    // already reflected). An answer that breaks the source's contract — including one that would move
+    // a task only its feed may move — says nothing reliable, so the outcome stays uncertain and the
+    // reservation held. Any other refusal (an epoch it cannot order, a capacity refusal) leaves the
+    // command accepted but not applied.
+    if (outcome === 'contract-violation') {
+      return _persist(writer, current, {
+        ...now,
+        receipt: _receipt(now.request, {
+          state: 'indeterminate',
+          reason: _bounded(core, `the source's applied answer breaks its contract: ${applied.value.message}`)
+        })
+      });
+    }
     const result: CommandState = effective
       ? { state: 'applied', appliedRevision: current.task.envelope.revision }
       : { state: 'accepted' };

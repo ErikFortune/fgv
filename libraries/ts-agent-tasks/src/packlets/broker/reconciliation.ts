@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureAsyncResult, fail, mapResults, succeed } from '@fgv/ts-utils';
 import {
   ISourceBinding,
   ISourceObservation,
@@ -24,7 +24,7 @@ import {
   TaskResult,
   isTerminalTaskStatus
 } from '../types';
-import { BrokerCore } from './core';
+import { BrokerCore, canonicalKey } from './core';
 import { notFound, ok, propagate, taskFailure } from './failures';
 import { ObservationMode, applyHealth, applyProjection, compareRevisions } from './observations';
 
@@ -198,16 +198,26 @@ function _checkOrder(
   observations: ReadonlyArray<ISourceObservation>,
   seen: ReadonlyMap<string, ISourceRevision>
 ): Result<ReadonlyMap<string, ISourceRevision>> {
+  // Keyed canonically, as the repository keys bindings: property order must not split one binding.
+  return mapResults(
+    observations.map((entry) =>
+      canonicalKey([entry.binding.sourceId, entry.binding.referenceVersion, entry.binding.reference])
+    )
+  ).onSuccess((keys) => _followsOrder(source, observations, keys, seen));
+}
+
+function _followsOrder(
+  source: ITaskSource,
+  observations: ReadonlyArray<ISourceObservation>,
+  keys: ReadonlyArray<string>,
+  seen: ReadonlyMap<string, ISourceRevision>
+): Result<ReadonlyMap<string, ISourceRevision>> {
   const last: Map<string, ISourceRevision> = new Map<string, ISourceRevision>(seen);
-  for (const entry of observations) {
+  for (const [index, entry] of observations.entries()) {
     if (entry.observation.state !== 'observed') {
       continue;
     }
-    const key: string = JSON.stringify([
-      entry.binding.sourceId,
-      entry.binding.referenceVersion,
-      entry.binding.reference
-    ]);
+    const key: string = keys[index];
     const revision: ISourceRevision = entry.observation.value.revision;
     const previous: ISourceRevision | undefined = last.get(key);
     if (previous !== undefined) {

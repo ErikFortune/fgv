@@ -458,6 +458,33 @@ describe('source-replay: only the feed commits projections', () => {
     });
   });
 
+  test('per-binding order treats two spellings of one reference as one binding', async () => {
+    const h = await sourceHarness({ history: 'source-replay' });
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1');
+    h.executor.change('j1', (j) => (j.step = 1));
+    h.executor.change('j1', (j) => (j.step = 2));
+    const [first, second, third] = h.executor.feed.splice(0);
+    h.executor.feed.push(first, third, second);
+    h.executor.pageSize = 2;
+    // The same reference, its properties in a different order on each page.
+    const page = h.executor.page.bind(h.executor);
+    h.executor.page = (cursor) =>
+      page(cursor).onSuccess((p) =>
+        succeed({
+          ...p,
+          observations: p.observations.map((o) => ({
+            ...o,
+            binding: { ...o.binding, reference: cursor === undefined ? { x: 1, y: 2 } : { y: 2, x: 1 } }
+          }))
+        })
+      );
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceedAndSatisfy((report) => {
+      expect(report.stopped).toBe('order');
+      expect(report.cursor).toBe('2');
+    });
+  });
+
   test('a feed entry the broker cannot order across stops the pass', async () => {
     const h = await sourceHarness({ history: 'source-replay' });
     h.executor.addJob('j1');
