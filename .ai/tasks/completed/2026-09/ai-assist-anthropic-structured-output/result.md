@@ -2,8 +2,8 @@
 
 **Shipped:** Anthropic structured output no longer depends on forcing a tool call on the lines that reject it — `claude-opus-5-5` and `claude-fable-5-1` get Anthropic's JSON outputs, and `@anthropic:opus` / `@anthropic:fable` rotate to them.
 
-**Live-verified by the maintainer's `anthropic-structured-output` run, 2026-09-25 (§6b).** All three
-probes passed, including `output_config.format` on `claude-opus-5-5` and `claude-fable-5-1`. The
+**Live-verified by the maintainer's `anthropic-structured-output` (3/3) and `anthropic-model-tiers`
+(11/11) runs, 2026-09-25 (§6b).** Every probe passed, including `output_config.format` on `claude-opus-5-5` and `claude-fable-5-1`. The
 agent itself made no live call: this environment has no provider credentials, and none were sought. Everything below is offline-green plus a cited record. The live gate is the
 maintainer's `anthropic-model-tiers` testbed run, which now carries a structured-output probe per
 tier and for `@anthropic:fable` (§6).
@@ -208,8 +208,14 @@ Resolved models, from the run's own log lines: `claude-sonnet-5`, `claude-opus-5
 successors the reply is bare JSON with exactly the three schema fields, so the constraint was
 applied, not merely accepted. The forced path on `claude-sonnet-5` is unchanged.
 
-**Not covered by this run:**
-- `anthropic-model-tiers`, whose probes include the tier canaries and the base / frontier rows.
+**Second run (maintainer, 2026-09-25): `anthropic-model-tiers` — LIVE-VERIFIED, 11/11.**
+- Resolver proof for base, advanced and frontier (the frontier request cascaded to `claude-opus-5-5`).
+- Live completions for `claude-sonnet-5` and `claude-opus-5-5` ×2, plus `claude-fable-5-1` via
+  `modelOverride`.
+- Structured-output probes: `base schema` returned `'tool-forced'`; `advanced`, `frontier` and
+  `@anthropic:fable` returned `'schema'`.
+
+**Not covered by either run:**
 - The `effort` + `format` merge. These probes send no thinking config, so `output_config` carried
   `format` alone.
 - `claude-mythos-5-1`: no alias reaches it, and access is Project-Glasswing-only.
@@ -230,14 +236,14 @@ applied, not merely accepted. The forced path on `claude-sonnet-5` is unchanged.
 | mutation check | reverting `mergeAnthropicStructuredWire` to `Object.assign` → exactly the effort-merge test fails (1 failed / 81 passed, on the pre-§9 file) |
 | antagonist pass | §9 |
 | Copilot loop | not run at close-out |
-| live | none from this environment; the maintainer's `anthropic-structured-output` run passed 3/3 (§6b) |
+| live | none from this environment; the maintainer's runs passed: `anthropic-structured-output` 3/3, `anthropic-model-tiers` 11/11 (§6b) |
 
 ## 8. Open items
 
 - **TECH_DEBT P3**: whether web search + `output_config.format` is accepted (§3).
 - **Not done, deliberately**: moving the other Claude lines from forced tool use to JSON outputs (§1).
 - **Copilot review loop (layer 2)**: not run at close-out.
-- **Live run**: `anthropic-structured-output` passed (§6b). `anthropic-model-tiers`, which carries the effort + format combination, has not run.
+- **Live runs**: both passed (§6b). The effort + format combination has **not** been sent live. Neither scenario sends a thinking effort with a schema. It is covered offline only.
 
 ## 9. Antagonist pass (independent reviewer, 2026-09-25) and what it changed
 

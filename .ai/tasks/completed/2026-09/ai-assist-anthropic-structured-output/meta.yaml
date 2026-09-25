@@ -22,8 +22,8 @@ summary:
     as a feature-level citations incompatibility. Both aliases rotated. The TECH_DEBT P2 was removed
     and a P3 filed for the web-search question. The testbed canary gained a structured-output probe
     per tier plus @anthropic:fable, and the anthropic-structured-output scenario gained opus and
-    fable probes. Live-verified by the maintainer's anthropic-structured-output run on 2026-09-25
-    (3/3 pass).
+    fable probes. Live-verified by the maintainer's anthropic-structured-output (3/3) and
+    anthropic-model-tiers (11/11) runs on 2026-09-25; effort + format not yet sent live.
   diverged: >
     Fork 3 did not resolve either way the brief anticipated. JSON outputs have no wire or API-level
     clash with tools, but Anthropic documents citations as incompatible with output_config.format,
@@ -57,4 +57,4 @@ keywords:
   - Claude Fable 5.1
   - provider line rotation
   - capability catch-all
-sourceHash: 28107ebb3ab878c6 # sha256/16 over brief.md, result.md
+sourceHash: 8789f52eaad295c6 # sha256/16 over brief.md, result.md

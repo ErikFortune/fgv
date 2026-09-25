@@ -1,8 +1,8 @@
 # ai-assist-anthropic-structured-output — non-forcing Anthropic structured output, and the Anthropic rotation
 
 **Shipped**: 2026-09-25 via [#694](https://github.com/ErikFortune/fgv/pull/694), from
-`claude/ai-assist-anthropic-structured-output` against `release`. **Live-verified** by the maintainer's `anthropic-structured-output` run on 2026-09-25:
-3/3 probes passed, including `output_config.format` on `claude-opus-5-5` and `claude-fable-5-1`
+`claude/ai-assist-anthropic-structured-output` against `release`. **Live-verified** by the maintainer's `anthropic-structured-output` (3/3) and
+`anthropic-model-tiers` (11/11) runs on 2026-09-25. Every probe passed, including `output_config.format` on `claude-opus-5-5` and `claude-fable-5-1`
 (`result.md` §6b). The agent made no live call.
 
 ## Summary
@@ -38,7 +38,7 @@ The stream then rotates `@anthropic:opus` → `claude-opus-5-5` and `@anthropic:
 
 ## Open
 
-- The `anthropic-model-tiers` run, which covers effort + format together.
+- A live effort + format request. Both live runs passed, but neither sent an effort with a schema.
 - The web-search TECH_DEBT P3.
 - The Copilot review loop (layer 2) had not run at close-out.
 
