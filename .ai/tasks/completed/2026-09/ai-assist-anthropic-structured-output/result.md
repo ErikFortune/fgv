@@ -2,8 +2,9 @@
 
 **Shipped:** Anthropic structured output no longer depends on forcing a tool call on the lines that reject it — `claude-opus-5-5` and `claude-fable-5-1` get Anthropic's JSON outputs, and `@anthropic:opus` / `@anthropic:fable` rotate to them.
 
-**No live Anthropic call was made from this environment.** It has no provider credentials, and none
-were sought. Everything below is offline-green plus a cited record. The live gate is the
+**Live-verified by the maintainer's `anthropic-structured-output` run, 2026-09-25 (§6b).** All three
+probes passed, including `output_config.format` on `claude-opus-5-5` and `claude-fable-5-1`. The
+agent itself made no live call: this environment has no provider credentials, and none were sought. Everything below is offline-green plus a cited record. The live gate is the
 maintainer's `anthropic-model-tiers` testbed run, which now carries a structured-output probe per
 tier and for `@anthropic:fable` (§6).
 
@@ -193,6 +194,27 @@ hostile: it asks for a markdown fence and an extra `funFact` field. So a pass th
 grammar suppressed both, which is a stronger live check than the canary's `{answer}` probe. A new
 offline test pins the scenario's hard-coded expectations to the registry.
 
+## 6b. Live run (maintainer, 2026-09-25): `anthropic-structured-output`
+
+```
+anthropic tool-forced: enforcement=tool-forced content={"city":"Paris","countryCode":"FR","populationMillions":2.1}
+anthropic output_config.format (@anthropic:opus): enforcement=schema content={"city":"Paris","countryCode":"FR","populationMillions":2.1}
+anthropic output_config.format (@anthropic:fable): enforcement=schema content={"city":"Paris","countryCode":"FR","populationMillions":2.1}
+3 passed, 0 skipped
+```
+
+Resolved models, from the run's own log lines: `claude-sonnet-5`, `claude-opus-5-5`,
+`claude-fable-5-1`. The prompt asks for a markdown fence and an extra `funFact` field. On both
+successors the reply is bare JSON with exactly the three schema fields, so the constraint was
+applied, not merely accepted. The forced path on `claude-sonnet-5` is unchanged.
+
+**Not covered by this run:**
+- `anthropic-model-tiers`, whose probes include the tier canaries and the base / frontier rows.
+- The `effort` + `format` merge. These probes send no thinking config, so `output_config` carried
+  `format` alone.
+- `claude-mythos-5-1`: no alias reaches it, and access is Project-Glasswing-only.
+- `web_search` + JSON outputs (TECH_DEBT P3).
+
 ## 7. Gates — final run on `f539be5e` (2026-09-25, after the §9 fixes)
 
 | gate | result |
@@ -208,14 +230,14 @@ offline test pins the scenario's hard-coded expectations to the registry.
 | mutation check | reverting `mergeAnthropicStructuredWire` to `Object.assign` → exactly the effort-merge test fails (1 failed / 81 passed, on the pre-§9 file) |
 | antagonist pass | §9 |
 | Copilot loop | not run at close-out |
-| live | **none from this environment**; pending the maintainer's `anthropic-model-tiers` run |
+| live | none from this environment; the maintainer's `anthropic-structured-output` run passed 3/3 (§6b) |
 
 ## 8. Open items
 
 - **TECH_DEBT P3**: whether web search + `output_config.format` is accepted (§3).
 - **Not done, deliberately**: moving the other Claude lines from forced tool use to JSON outputs (§1).
 - **Copilot review loop (layer 2)**: not run at close-out.
-- **Live run**: pending the maintainer.
+- **Live run**: `anthropic-structured-output` passed (§6b). `anthropic-model-tiers`, which carries the effort + format combination, has not run.
 
 ## 9. Antagonist pass (independent reviewer, 2026-09-25) and what it changed
 
