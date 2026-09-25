@@ -405,6 +405,17 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Reference**: PR #377 (ts-extras Yaml fix + micro-test pattern landed); original L13 lessons-pending entry; earlier ts-extras `Crypto` bug.
 
+- **[P2] ai-assist Anthropic structured output depends on forced `tool_choice`, which the current Anthropic lines reject — so `@anthropic:opus` / `@anthropic:fable` cannot rotate.**
+  `registry.ts` declares one Anthropic structured-output entry, `{ modelPrefix: '', format: 'anthropic-tool-forced' }`, and `structuredOutput.ts` implements it as a synthetic tool plus `tool_choice: { type: 'tool', name }`. Claude Opus 5.5 and Claude Fable 5.1 return a 400 `invalid_request_error` on `tool_choice` `{type:'any'}` / `{type:'tool'}` ("Forced tool use is not supported", <https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5.md>, fetched 2026-09-24). Anthropic's stated replacement is `tool_choice: auto` + `strict: true`, or its structured-outputs feature. Today the catch-all entry claims `claude-opus-5-5` / `claude-fable-5-1` support a mechanism that 400s on them, so a `modelOverride` to either with `structuredOutput` fails at the provider rather than being refused or degraded locally.
+
+  **Trigger**: the next Anthropic rotation (`claude-opus-5` retires not sooner than 2027-07-24, `claude-fable-5` not sooner than 2027-06-09), or the first consumer that needs structured output on either successor.
+
+  **Scope sketch**: add a non-forcing Anthropic `AiStructuredOutputFormat` (structured outputs or strict tool use — read Anthropic's structured-outputs page first), declare it by `modelPrefix` for the lines that reject forcing, keep `anthropic-tool-forced` for the rest, then rotate the two aliases. Until then the provider's 400 is the only signal: the capability model has no way to declare "no capability" for a prefix that sits under a `''` catch-all, so `onUnsupported` cannot apply.
+
+  **Not a P3**: it blocks a tier rotation outright, and the capability table is currently wrong for two real, documented ids.
+
+  **Reference**: `ai-assist-model-catalog-2026-09` stream (`.ai/tasks/completed/2026-09/ai-assist-model-catalog-2026-09/result.md`).
+
 ## P3 — Opportunistic cleanup
 
 - **[P3] `createChildFile` / `createChildFileBytes` accept a child name containing a path
@@ -831,7 +842,28 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P2**: no shipped-behavior regression; the alias layer's value is precisely bounded and the doc (`LIBRARY_CAPABILITIES.md`, packlet README) states the boundary explicitly. This entry exists so the two manual axes are not forgotten on the next rotation.
 
+  **2026-09 rotation (executed this entry)**: added `/^gpt-6/`, `/^grok-4\.7/`, `/^grok-4\.6/`; bumped the OpenAI/Gemini/xAI/Anthropic thinking unions and the GPT Image / Grok Imagine unions; dropped `o3-deep-research` / `o4-mini-deep-research` (shut down 2026-07-23). It also showed there is a **third** manual axis this entry did not name: the per-model capability declarations (`structuredOutput`, `imageGeneration`, `responsesOnlyModelPrefixes`, `adaptiveThinkingModelPrefixes`). A successor can change what a declared mechanism does — see the P2 Anthropic structured-output entry, which held two aliases back. The id-by-id record, with sources, is in `.ai/tasks/completed/2026-09/ai-assist-model-catalog-2026-09/result.md`.
+
   **Reference**: `ai-assist-model-aliases` design §3 + Tier 2 manual-axis bumps (`.ai/tasks/completed/2026-06/ai-assist-model-aliases/state.md`).
+
+- **[P3] ai-assist provider knobs narrower than the model now allows, and two listModels/registry loose ends.** *(Item 1, the thinking-`'none'` gate, was resolved in #692.)*
+  All documented 2026-09-24 on the pages cited in `.ai/tasks/completed/2026-09/ai-assist-model-catalog-2026-09/result.md`:
+  1. ~~**`'none'` effort has no per-model gate.**~~ **Resolved in #692.** The live testbed run (2026-09-25) confirmed 400s on `gpt-6-astra`, `grok-4.7` and `gemini-3.1-pro-preview`. Descriptors now declare `thinkingRequiredModelPrefixes`, and `IThinkingConfig.onUnsupported` (default `'degrade'`: `'none'` is sent as `'low'`; `'fail'`: refused before the wire) handles the generic `'none'` on them. Two gaps remain. Provider blocks are sent unchecked. Anthropic's always-on models (`claude-opus-5-5`, `claude-fable-5-1`) are not declared, because `'none'` there omits the `thinking` field, which Anthropic accepts.
+  2. **`gpt-image-2.5-*` qualities `xhigh` / `max`** are not expressible: `GptImageQuality` is `low | medium | high | auto`, so `@openai:image` cannot reach them (refused locally, not silently).
+  3. **xAI image edits are capped at 3 reference images** (`imageGenerationClient.ts`); `grok-imagine-image-2.0` accepts "up to five source images for editing" (xAI's `imagine-image-quality-nov-2` migration guide). Refused locally, not silently.
+  4. **`/^gemini-3/` over-matches.** It classifies `gemini-3.8-live`, `*-tts` and `*-transcribe` ids as chat + thinking in `listModels`. This predates the rotation (`gemini-3.1-flash-tts-preview` had it). Detection accumulates across rules, so a sibling rule cannot subtract it; the fix is a narrower pattern.
+  5. **Unconfirmed retirement claim.** A registry comment says `gpt-5.1` was "retired March 2026", yet `OpenAiThinkingModelNames` still lists it, and OpenAI's deprecations page (fetched 2026-09-24) records no `gpt-5.1` shutdown. One of the two is wrong.
+  6. **For the next rotation:** `gemini-3.8-pro` appears in code samples on Google's thinking page but on no model or deprecation page as of 2026-09-24. Check whether it is listed before moving `@google-gemini:pro` off `gemini-3.1-pro-preview`.
+  7. **The `'other'`-block override check does not know the endpoint.** The `'none'` gate stands aside when an applicable `'other'` block carries either OpenAI/xAI effort key (`reasoning_effort` or `reasoning`). Blocks are merged with a shallow `Object.assign`, so a key that *is* on the wire replaces the resolved effort, and key presence is the right test. But Chat Completions sends `reasoning_effort` and Responses sends `reasoning`, and the resolver runs before the endpoint is chosen. A block carrying only the other endpoint's key makes the gate stand aside while the generic `'none'` still reaches the wire. The result is a loud provider 400, and `onUnsupported: 'fail'` does not refuse it locally. The fix threads the chosen endpoint into `resolveThinkingConfig`.
+  8. **`gemini-2.5-pro` is gated but not in `GeminiThinkingModelNames`.** It is in `thinkingRequiredModelPrefixes` for callers who still reach it by `modelOverride`, but the union never listed it (neither did `release`). Google withdrew the 2026-10-16 shutdown and serves the 2.5 line to existing users only (as of 2026-09-24), so it is not a model new projects can pick. Decide at the next rotation: list it in the union, or drop it from the prefixes once Google shuts it down.
+
+  **Trigger**: a testbed run that 400s on item 1, or a consumer asking for the higher qualities / more references.
+
+  **Scope sketch**: item 1 wants a per-model accepted-effort declaration on the descriptor (sibling of `adaptiveThinkingModelPrefixes`) checked before the wire, failing or clamping by an explicit policy. Items 2–3 are additive widenings (a union member; a per-capability `maxReferenceImages`).
+
+  **Not a P2**: none is silent — each is either a loud provider error or a local refusal — and item 1 applies only to an explicit `'none'` request on those tiers.
+
+  **Reference**: `ai-assist-model-catalog-2026-09` stream.
 
 - **[P3] The capability resolvers in `ai-assist/registry.ts` return `| undefined` instead of `Result<T>`, and `undefined` is now three-ways ambiguous.**
   **Two functions, not one** (the original entry named only the first, and its line reference was

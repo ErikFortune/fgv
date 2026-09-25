@@ -36,6 +36,7 @@ import {
   type IAiStreamEvent,
   type ModelSpecKey,
   isAdaptiveThinkingModel,
+  isThinkingRequiredModel,
   isResponsesOnlyModel,
   resolveProviderModel,
   usesMaxCompletionTokensField
@@ -53,7 +54,7 @@ import { callOpenAiChatStream } from './streamingAdapters/openaiChat';
 import { callOpenAiResponsesStream } from './streamingAdapters/openaiResponses';
 import {
   checkTemperatureConflict,
-  mergeThinkingConfig,
+  resolveThinkingConfig,
   providerDiscriminatorForId,
   type IResolvedThinkingConfig
 } from './thinkingOptionsResolver';
@@ -160,13 +161,22 @@ export async function callProviderCompletionStream(
   let resolvedThinking: IResolvedThinkingConfig | undefined;
   if (thinking !== undefined) {
     if (discriminator !== undefined) {
-      const mergeResult = mergeThinkingConfig(thinking, model, discriminator);
-      /* c8 ignore next 3 - mergeThinkingConfig always succeeds; defensive guard */
+      const mergeResult = resolveThinkingConfig(
+        thinking,
+        model,
+        discriminator,
+        isThinkingRequiredModel(descriptor, model)
+      );
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
       }
-      resolvedThinking = mergeResult.value;
-      const conflictResult = checkTemperatureConflict(resolvedThinking, discriminator, temperature);
+      resolvedThinking = mergeResult.value.resolved;
+      const conflictResult = checkTemperatureConflict(
+        resolvedThinking,
+        discriminator,
+        temperature,
+        mergeResult.value.noneDegraded
+      );
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
       }

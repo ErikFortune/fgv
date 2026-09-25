@@ -23,8 +23,8 @@ fgv-stable token (`flash`, `pro`, `flash-image`, `embedding`, …) that outlives
 
 ```typescript
 // Registered today (each provider descriptor's `aliases` map):
-'@google-gemini:flash'  ->  'gemini-3.5-flash'   // fgv alias → concrete id
-'@openai:flagship'      ->  'gpt-5.6-terra'
+'@google-gemini:flash'  ->  'gemini-3.8-flash'   // fgv alias → concrete id
+'@openai:flagship'      ->  'gpt-6-sol'
 '@anthropic:opus'       ->  'claude-opus-5'
 
 // When an RHS is itself a provider-native undated alias rather than a dated snapshot, resolution
@@ -119,8 +119,8 @@ A tier request walks an **ordered fallback list** and takes the first key presen
 | `base` | `base` | always present |
 
 This is why a provider only needs to declare the tiers it actually differentiates. OpenAI wires all
-three tiers (`frontier` → `gpt-5.6-sol`, which works on chat completions); Anthropic and Gemini omit
-`frontier`, so a `frontier` request cascades to their `advanced` model (opus / pro). (The previous
+three tiers (`frontier` → `gpt-6-astra`, which works on chat completions); Anthropic and Gemini omit
+`frontier`, so a `frontier` request cascades to their `advanced` model (opus / pro). (An earlier
 frontier target `gpt-5.5-pro` is Responses-API-only; it remains reachable via `modelOverride` and is
 routed to the Responses API via `responsesOnlyModelPrefixes`.)
 `image`/`embedding` are unaffected — they keep their flat `modality → base` behavior.
@@ -147,13 +147,13 @@ there is no 2-D selection and no competition between the axes.
 
 | slot | OpenAI | Anthropic | Gemini |
 |---|---|---|---|
-| `base` | `@openai:mini` → `gpt-5.6-luna` | `@anthropic:sonnet` → `claude-sonnet-5` | `@google-gemini:flash` → `gemini-3.5-flash` |
-| `advanced` | `@openai:flagship` → `gpt-5.6-terra` | `@anthropic:opus` → `claude-opus-5` | `@google-gemini:pro` → `gemini-3.1-pro-preview` |
-| `frontier` | `@openai:pro` → `gpt-5.6-sol` | *(unset → advanced/opus)* | *(unset → advanced/pro)* |
+| `base` | `@openai:mini` → `gpt-6-luna` | `@anthropic:sonnet` → `claude-sonnet-5` | `@google-gemini:flash` → `gemini-3.8-flash` |
+| `advanced` | `@openai:flagship` → `gpt-6-sol` | `@anthropic:opus` → `claude-opus-5` | `@google-gemini:pro` → `gemini-3.1-pro-preview` |
+| `frontier` | `@openai:pro` → `gpt-6-astra` | *(unset → advanced/opus)* | *(unset → advanced/pro)* |
 
 ### Maintenance loop — one map edit + a testbed run
 
-When a provider bumps a line (e.g. `gemini-3.5-flash` → `gemini-4-flash`) or re-slots a tier:
+When a provider bumps a line (e.g. `gemini-3.8-flash` → `gemini-4-flash`) or re-slots a tier:
 
 1. **Edit one value.** For a line rotation, edit the map value in that descriptor's `aliases`
    (`registry.ts`). For a tier re-slot (e.g. promoting a model to `advanced`), edit the one `defaultModel`
@@ -175,19 +175,25 @@ It fixes **selection/default churn** only. Two axes remain manual on a provider 
 2. **The typed `*ModelNames` unions** (`GeminiThinkingModelNames`, etc.) used by the layered-options
    `models?` filters — enumerate concrete ids for compile-time ergonomics and must track real ids.
 
+And the per-model capability declarations on each descriptor (`structuredOutput`, `imageGeneration`,
+`embedding`, `responsesOnlyModelPrefixes`, `adaptiveThinkingModelPrefixes`) must be re-checked against
+the new ids: a successor can change what a declared mechanism does. The 2026-09 rotation held
+`@anthropic:opus` at `claude-opus-5` for exactly this reason — `claude-opus-5-5` rejects the forced
+`tool_choice` that `anthropic-tool-forced` structured output is built on.
+
 ### Gemini defaults (first migrated provider)
 
 `google-gemini`'s `defaultModel` references aliases that resolve to the Gemini 3.x line:
 
 | Alias | Resolves to | Role / tier slot |
 |---|---|---|
-| `@google-gemini:flash` | `gemini-3.5-flash` | `base` |
+| `@google-gemini:flash` | `gemini-3.8-flash` | `base` |
 | `@google-gemini:pro` | `gemini-3.1-pro-preview` | `advanced` (also the `frontier` cascade target) |
 | `@google-gemini:flash-image` | `gemini-3.1-flash-image` | `image` |
 | `@google-gemini:embedding` | `gemini-embedding-001` | `embedding` |
-| `@google-gemini:flash-lite` | `gemini-3.1-flash-lite` | non-tier role (`modelOverride` only) |
+| `@google-gemini:flash-lite` | `gemini-3.5-flash-lite` | non-tier role (`modelOverride` only) |
 
-The per-role version split (flash base at 3.5, the rest at 3.1) is from Google's deprecation table —
+The per-role version split (flash at 3.8, flash-lite at 3.5, pro and flash-image at 3.1) follows Google's models page —
 consumers reference the role alias and never see these numbers. OpenAI and Anthropic have since adopted
 the scheme with the same tier vocabulary (see the cross-provider tier table above). Note the `pro` role
 serves both the `advanced` slot and (via the cascade) `frontier`, which is exactly why alias roles are

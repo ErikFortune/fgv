@@ -919,9 +919,9 @@ describe('callProviderCompletionStream', () => {
       expect(JSON.parse(fetchCall[1].body).tools).toEqual([{ type: 'web_search' }]);
     });
 
-    test('real OpenAI registry descriptor: frontier resolves gpt-5.6-sol via the /chat/completions stream', async () => {
-      // gpt-5.6-sol (unlike its predecessor gpt-5.5-pro) works on chat completions, so the
-      // frontier tier no longer routes through the Responses-only path.
+    test('real OpenAI registry descriptor: frontier resolves gpt-6-astra via the /chat/completions stream', async () => {
+      // gpt-6-astra (unlike the earlier frontier target gpt-5.5-pro) works on chat completions, so
+      // the frontier tier does not route through the Responses-only path.
       const openai = AiAssist.getProviderDescriptor('openai').orThrow();
       mockSseResponse(openAiChatSse(['ok']));
       const result = await AiAssist.callProviderCompletionStream({
@@ -933,7 +933,51 @@ describe('callProviderCompletionStream', () => {
       expect(result).toSucceed();
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
       expect(fetchCall[0]).toBe('https://api.openai.com/v1/chat/completions');
-      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.6-sol');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-6-astra');
+    });
+
+    test("real OpenAI registry descriptor: frontier + effort 'none' streams reasoning_effort 'low'", async () => {
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      mockSseResponse(openAiChatSse(['ok']));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'frontier',
+        thinking: { effort: 'none' }
+      });
+      expect(result).toSucceed();
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body).toMatchObject({ model: 'gpt-6-astra', reasoning_effort: 'low' });
+    });
+
+    test("real OpenAI registry descriptor: frontier + effort 'none' + temperature names the degrade", async () => {
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'frontier',
+        temperature: 0.7,
+        thinking: { effort: 'none' }
+      });
+      expect(result).toFailWith(
+        /thinking effort 'none' was sent as 'low'.*provider openai: remove temperature/
+      );
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test("real OpenAI registry descriptor: frontier + effort 'none' + onUnsupported 'fail' refuses the stream", async () => {
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'frontier',
+        thinking: { effort: 'none', onUnsupported: 'fail' }
+      });
+      expect(result).toFailWith(/thinking effort 'none' is not supported by gpt-6-astra/);
+      expect(global.fetch).not.toHaveBeenCalled();
     });
 
     test('real OpenAI registry descriptor: a gpt-5.5-pro modelOverride still routes via the /responses stream', async () => {

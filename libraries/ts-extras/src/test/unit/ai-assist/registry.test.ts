@@ -45,33 +45,60 @@ describe('AiAssist.registry', () => {
   describe('openai model tiers (B2)', () => {
     const desc = AiAssist.getProviderDescriptor('openai').shouldNotFail('openai descriptor');
 
-    test('base tier resolves to gpt-5.6-luna', () => {
+    test('base tier resolves to gpt-6-luna', () => {
       // undefined context falls to base; explicit 'base' resolves identically.
-      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('gpt-5.6-luna');
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gpt-5.6-luna');
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('gpt-6-luna');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gpt-6-luna');
     });
 
-    test('advanced tier resolves to gpt-5.6-terra', () => {
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('gpt-5.6-terra');
+    test('advanced tier resolves to gpt-6-sol', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('gpt-6-sol');
     });
 
-    test('frontier resolves to gpt-5.6-sol via @openai:pro', () => {
-      // The OpenAI map carries a frontier key → @openai:pro → gpt-5.6-sol. Unlike its
-      // predecessor gpt-5.5-pro, the 5.6 family works on chat completions, so no
+    test('frontier resolves to gpt-6-astra via @openai:pro', () => {
+      // The OpenAI map carries a frontier key → @openai:pro → gpt-6-astra. Unlike the earlier
+      // gpt-5.5-pro, the gpt-6 family works on chat completions, so no
       // `responsesOnlyModelPrefixes` routing is needed for the frontier tier.
       // Real registry descriptor.
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('gpt-5.6-sol');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('gpt-6-astra');
     });
 
     test('the @openai:pro alias is also reachable via modelOverride', () => {
       // The alias backs the frontier tier and is independently reachable via modelOverride; a
       // direct gpt-5.5-pro override still routes to Responses through `responsesOnlyModelPrefixes`.
-      expect(AiAssist.resolveProviderModel(desc, '@openai:pro', undefined)).toSucceedWith('gpt-5.6-sol');
+      expect(AiAssist.resolveProviderModel(desc, '@openai:pro', undefined)).toSucceedWith('gpt-6-astra');
     });
 
-    test('image default resolves @openai:image → gpt-image-2 and routes via the gpt-image- capability', () => {
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gpt-image-2');
-      expect(AiAssist.resolveImageCapability(desc, 'gpt-image-2')).toMatchObject({
+    test('only the tier targets documented and observed to reject thinking-off are thinking-required', () => {
+      for (const [providerId, required, accepts] of [
+        ['openai', ['gpt-6-astra', 'gpt-6-astra-2026-09-01'], ['gpt-6-sol', 'gpt-6-luna', 'gpt-6-astral']],
+        [
+          'google-gemini',
+          ['gemini-3.1-pro-preview', 'gemini-2.5-pro'],
+          ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
+        ],
+        ['xai-grok', ['grok-4.7', 'grok-4.6', 'grok-4.5'], ['grok-4.3', 'grok-4']],
+        ['anthropic', [], ['claude-opus-5', 'claude-opus-5-5']]
+      ] as const) {
+        const d = AiAssist.getProviderDescriptor(providerId).orThrow();
+        for (const id of required) {
+          expect(AiAssist.isThinkingRequiredModel(d, id)).toBe(true);
+        }
+        for (const id of accepts) {
+          expect(AiAssist.isThinkingRequiredModel(d, id)).toBe(false);
+        }
+      }
+    });
+
+    test('no gpt-6 id is Responses-only — every tier target keeps both OpenAI routes', () => {
+      for (const id of ['gpt-6-luna', 'gpt-6-sol', 'gpt-6-astra']) {
+        expect(AiAssist.isResponsesOnlyModel(desc, id)).toBe(false);
+      }
+    });
+
+    test('image default resolves @openai:image → gpt-image-2.5-sunburst and routes via the gpt-image- capability', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gpt-image-2.5-sunburst');
+      expect(AiAssist.resolveImageCapability(desc, 'gpt-image-2.5-sunburst')).toMatchObject({
         modelPrefix: 'gpt-image-',
         format: 'openai-images'
       });
@@ -130,10 +157,10 @@ describe('AiAssist.registry', () => {
   describe('google-gemini model tiers (B4)', () => {
     const desc = AiAssist.getProviderDescriptor('google-gemini').shouldNotFail('google-gemini descriptor');
 
-    test('base tier resolves to gemini-3.5-flash', () => {
+    test('base tier resolves to gemini-3.8-flash', () => {
       // undefined context falls to base; explicit 'base' resolves identically.
-      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('gemini-3.5-flash');
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gemini-3.5-flash');
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('gemini-3.8-flash');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gemini-3.8-flash');
     });
 
     test('advanced tier resolves to gemini-3.1-pro-preview (reuses the @google-gemini:pro alias)', () => {
@@ -166,7 +193,7 @@ describe('AiAssist.registry', () => {
 
     test('the non-tier @google-gemini:flash-lite alias resolves via modelOverride only', () => {
       expect(AiAssist.resolveProviderModel(desc, '@google-gemini:flash-lite', undefined)).toSucceedWith(
-        'gemini-3.1-flash-lite'
+        'gemini-3.5-flash-lite'
       );
     });
   });
@@ -180,27 +207,37 @@ describe('AiAssist.registry', () => {
       expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('grok-4.3');
     });
 
-    test('advanced tier resolves to grok-4.5 via @xai-grok:flagship', () => {
+    test('advanced tier resolves to grok-4.7 via @xai-grok:flagship', () => {
       expect(AiAssist.resolveModel(desc.defaultModel, 'advanced')).toBe('@xai-grok:flagship');
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('grok-4.5');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('grok-4.7');
     });
 
     test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
       // The xAI map deliberately omits a frontier key, so a frontier request must cascade
-      // frontier → advanced → grok-4.5. This is the real registry descriptor, so it is the
+      // frontier → advanced → grok-4.7. This is the real registry descriptor, so it is the
       // live proof of the cascade against the shipped xAI defaults.
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('grok-4.5');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('grok-4.7');
     });
 
-    test('image tier resolves to grok-imagine-image-quality and routes via the grok-imagine- capability', () => {
+    test('image tier resolves to grok-imagine-image-2.0 and routes via its own quality-capable entry', () => {
       expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@xai-grok:imagine');
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith(
-        'grok-imagine-image-quality'
-      );
-      expect(AiAssist.resolveImageCapability(desc, 'grok-imagine-image-quality')).toMatchObject({
-        modelPrefix: 'grok-imagine-',
-        format: 'xai-images-edits'
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('grok-imagine-image-2.0');
+      expect(AiAssist.resolveImageCapability(desc, 'grok-imagine-image-2.0')).toMatchObject({
+        modelPrefix: 'grok-imagine-image-2.0',
+        format: 'xai-images-edits',
+        supportsQualityParam: true,
+        acceptedQualities: ['low', 'medium', 'auto']
       });
+    });
+
+    test('only grok-imagine-image-2.0 claims the quality param — the other grok-imagine ids do not', () => {
+      for (const id of ['grok-imagine-image', 'grok-imagine-image-quality']) {
+        expect(AiAssist.resolveImageCapability(desc, id)).toMatchObject({
+          modelPrefix: 'grok-imagine-',
+          format: 'xai-images-edits',
+          supportsQualityParam: false
+        });
+      }
     });
 
     test('grok-4.5 is detected as thinking-capable by the default capability config', () => {
@@ -237,12 +274,16 @@ describe('AiAssist.registry', () => {
           image: '@xai-grok:imagine'
         });
         expect(desc.supportedTools).toContain('web_search');
-        expect(desc.imageGeneration).toHaveLength(2);
+        expect(desc.imageGeneration).toHaveLength(3);
         expect(desc.imageGeneration?.[0]).toMatchObject({
+          modelPrefix: 'grok-imagine-image-2.0',
+          format: 'xai-images-edits'
+        });
+        expect(desc.imageGeneration?.[1]).toMatchObject({
           modelPrefix: 'grok-imagine-',
           format: 'xai-images-edits'
         });
-        expect(desc.imageGeneration?.[1]).toMatchObject({ modelPrefix: '', format: 'xai-images' });
+        expect(desc.imageGeneration?.[2]).toMatchObject({ modelPrefix: '', format: 'xai-images' });
       });
     });
 
@@ -263,7 +304,9 @@ describe('AiAssist.registry', () => {
         });
         // The default image model is now an alias that resolves to the surviving gpt-image id.
         expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@openai:image');
-        expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gpt-image-2');
+        expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith(
+          'gpt-image-2.5-sunburst'
+        );
       });
     });
 
@@ -534,7 +577,7 @@ describe('AiAssist.registry', () => {
         // Pre-guard this returned format 'xai-images' with acceptsImageReferenceInput false —
         // a different wire format from the one the concrete id dispatches to.
         expect(AiAssist.resolveImageCapability(descriptor, '@xai-grok:imagine')).toMatchObject({
-          modelPrefix: 'grok-imagine-',
+          modelPrefix: 'grok-imagine-image-2.0',
           format: 'xai-images-edits',
           acceptsImageReferenceInput: true
         });
