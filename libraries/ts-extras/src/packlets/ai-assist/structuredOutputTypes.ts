@@ -40,18 +40,28 @@ import { type JsonSchema } from '@fgv/ts-json-base';
  * Wire format a provider uses to express a structured-output constraint.
  *
  * @remarks
- * Four shapes, not one, and they differ in more than field names: the OpenAI
+ * Five shapes, not one, and they differ in more than field names: the OpenAI
  * pair carry the schema in the request body, Gemini carries it inside
- * `generationConfig`, and Anthropic has no response-format field at all —
- * its mechanism is forced tool use, which is why `'tool-forced'` is a distinct
- * {@link AiAssist.StructuredOutputEnforcement} value rather than a spelling of
- * `'schema'`.
+ * `generationConfig`, and Anthropic has two mechanisms that are not
+ * interchangeable:
+ *
+ * - `'anthropic-output-format'` — the schema goes in `output_config.format`
+ *   (Anthropic's JSON outputs) and the reply arrives as text. Generation is
+ *   constrained to the schema, so it reports `'schema'` exactly as the OpenAI and
+ *   Gemini formats do.
+ * - `'anthropic-tool-forced'` — the schema becomes a synthetic tool and
+ *   `tool_choice` forces it. The reply arrives as a `tool_use` block, which is why
+ *   it reports the distinct {@link AiAssist.StructuredOutputEnforcement} value
+ *   `'tool-forced'` rather than a spelling of `'schema'`. Retained for the lines
+ *   that still accept forcing; the lines that return a 400 on a forced
+ *   `tool_choice` declare `'anthropic-output-format'` instead.
  * @public
  */
 export type AiStructuredOutputFormat =
   | 'openai-json-schema'
   | 'openai-responses-format'
   | 'gemini-response-schema'
+  | 'anthropic-output-format'
   | 'anthropic-tool-forced';
 
 /**
@@ -95,7 +105,8 @@ export interface IAiStructuredOutputCapability {
  *
  * - `'none'` — nothing was sent; the resolved model declares no capability.
  * - `'json-mode'` — syntactically valid JSON is guaranteed; the shape is not.
- * - `'schema'` — generation was constrained to the supplied schema.
+ * - `'schema'` — generation was constrained to the supplied schema, and the reply
+ *   is the model's own text. Includes Anthropic's `output_config.format`.
  * - `'tool-forced'` — Anthropic-style forced tool use; the shape comes from the
  *   forced tool's input schema, and `content` is the re-serialized tool input.
  * @public

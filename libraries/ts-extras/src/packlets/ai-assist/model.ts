@@ -1492,7 +1492,9 @@ export interface IAiImageGenerationResponse {
  * Only thinking-capable lines are listed. The non-tier `@anthropic:haiku` alias (reachable via
  * `modelOverride` only) is deliberately omitted — it is not documented as thinking-capable, so
  * naming it in a thinking-model filter would be misleading. `claude-fable-5` (the `@anthropic:fable`
- * non-tier alias) is thinking-capable and reachable via `modelOverride`, so it is listed.
+ * non-tier alias) is thinking-capable and reachable via `modelOverride`, so it is listed; so is
+ * `claude-mythos-5-1`, which no alias reaches but which is a documented adaptive-thinking model
+ * (listed in `adaptiveThinkingModelPrefixes`).
  * @public
  */
 export type AnthropicThinkingModelNames =
@@ -1505,7 +1507,8 @@ export type AnthropicThinkingModelNames =
   | 'claude-opus-5'
   | 'claude-opus-5-5'
   | 'claude-fable-5'
-  | 'claude-fable-5-1';
+  | 'claude-fable-5-1'
+  | 'claude-mythos-5-1';
 
 /**
  * Model IDs for OpenAI thinking-capable models.

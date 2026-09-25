@@ -137,7 +137,8 @@ function buildLiveComplete(
             }
           }
         : {}),
-      ...(options?.rawNone === true && rawNone !== undefined ? { thinking: { providers: [rawNone] } } : {})
+      ...(options?.rawNone === true && rawNone !== undefined ? { thinking: { providers: [rawNone] } } : {}),
+      ...(options?.structuredOutput !== undefined ? { structuredOutput: options.structuredOutput } : {})
     });
   };
 }
@@ -175,6 +176,8 @@ interface ITierScenarioParams {
   readonly thinkingEfforts?: ReadonlyArray<CanaryThinkingEffort>;
   readonly extraModels?: ReadonlyArray<string>;
   readonly strictNoneProbe?: boolean;
+  readonly structuredOutputProbe?: boolean;
+  readonly structuredOutputEfforts?: ReadonlyArray<CanaryThinkingEffort>;
   /** Fire one live image generation at the `image` tier; `quality` is sent when set. */
   readonly liveImage?: { readonly quality?: AiAssist.AiImageQuality };
   readonly requiredSecrets: readonly ISecretSpec[];
@@ -204,6 +207,8 @@ function makeTierScenario(params: ITierScenarioParams): IScenario {
         thinkingEfforts: params.thinkingEfforts,
         extraModels: params.extraModels,
         strictNoneProbe: params.strictNoneProbe,
+        structuredOutputProbe: params.structuredOutputProbe,
+        structuredOutputEfforts: params.structuredOutputEfforts,
         liveImage: params.liveImage !== undefined
       };
 
@@ -269,7 +274,12 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
 
 /**
  * Anthropic model-tier canary — exercises `base` / `advanced` and a `frontier` request that
- * cascades to the `advanced` (opus) id (the log line for that request is the live cascade proof).
+ * cascades to the `advanced` (opus) id (the log line for that request is the live cascade proof),
+ * plus a live row for the `modelOverride`-only `@anthropic:fable` alias. Every one of those also
+ * gets a structured-output probe: the two Anthropic formats split by line (`claude-sonnet-5` forces
+ * a tool; `claude-opus-5-5` and `claude-fable-5-1` send `output_config.format`), so the run
+ * exercises both mechanisms live, not only the ids. Each probe is repeated with thinking effort
+ * `low`, so `output_config` carries `effort` and `format` together on the adaptive successors.
  * Requires `ANTHROPIC_API_KEY` for the live half.
  * @public
  */
@@ -278,10 +288,20 @@ export const anthropicModelTiersScenario: IScenario = makeTierScenario({
   title: 'Anthropic Model Tiers',
   description:
     'Resolves and (with ANTHROPIC_API_KEY) live-canaries the Anthropic base/advanced tiers plus a ' +
-    'frontier request that cascades to the advanced (opus) id — the cascade proof. Logs each ' +
+    'frontier request that cascades to the advanced (opus) id — the cascade proof — and ' +
+    '@anthropic:fable, and fires a schema structured-output probe on each (forced tool on ' +
+    'claude-sonnet-5, output_config.format on claude-opus-5-5 / claude-fable-5-1), with and ' +
+    'without thinking effort low. Logs each ' +
     'alias -> concrete id. Web-runnable.',
   tags: ['anthropic'],
   tiers: ['base', 'advanced', 'frontier'],
+  extraModels: ['@anthropic:fable'],
+  structuredOutputProbe: true,
+  // Repeat each schema probe with an effort: on claude-opus-5-5 / claude-fable-5-1 that sends
+  // output_config { effort, format } together; on claude-sonnet-5 it sends a forced tool with
+  // adaptive thinking, which Anthropic's thinking page says works ("incompatible with manual
+  // extended thinking but works with adaptive thinking").
+  structuredOutputEfforts: ['low'],
   requiredSecrets: [
     {
       id: AiAssist.providerApiKeySecretName('anthropic'),

@@ -29,7 +29,9 @@ import {
   type ICanaryCompleteOptions,
   type ITierCanaryDeps,
   classifyLiveFailure,
+  classifyStructuredProbe,
   classifyThinkingFailure,
+  expectedStructuredEnforcement,
   formatTierCanaryReport,
   resolveTierResolutions,
   runTierCanary
@@ -95,9 +97,9 @@ describe('resolveTierResolutions', () => {
   test('marks a frontier request as cascaded when the descriptor omits a frontier key (Anthropic)', () => {
     expect(resolveTierResolutions(anthropic, ['advanced', 'frontier'])).toSucceedAndSatisfy((resolutions) => {
       expect(resolutions).toEqual([
-        { tier: 'advanced', alias: '@anthropic:opus', concrete: 'claude-opus-5', cascaded: false },
+        { tier: 'advanced', alias: '@anthropic:opus', concrete: 'claude-opus-5-5', cascaded: false },
         // frontier has no key → resolves to the advanced (opus) alias, flagged cascaded.
-        { tier: 'frontier', alias: '@anthropic:opus', concrete: 'claude-opus-5', cascaded: true }
+        { tier: 'frontier', alias: '@anthropic:opus', concrete: 'claude-opus-5-5', cascaded: true }
       ]);
     });
   });
@@ -228,7 +230,7 @@ describe('runTierCanary (offline — STOP-FLAG)', () => {
       expect(report).toMatch(/=== anthropic model-tier canary ===/);
       expect(report).toMatch(/\[PASS\] base\s+@anthropic:sonnet -> claude-sonnet-5/);
       expect(report).toMatch(
-        /\[PASS\] frontier\s+@anthropic:opus -> claude-opus-5 \(cascaded from a lower tier\)/
+        /\[PASS\] frontier\s+@anthropic:opus -> claude-opus-5-5 \(cascaded from a lower tier\)/
       );
       expect(report).toMatch(/\[PENDING\] base/);
       expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
@@ -236,7 +238,7 @@ describe('runTierCanary (offline — STOP-FLAG)', () => {
     // The alias -> concrete log lines match the shipped maintenance-loop format.
     expect(logger.logged).toContain("resolved @anthropic:sonnet -> claude-sonnet-5 (tier 'base')");
     expect(logger.logged).toContain(
-      "resolved @anthropic:opus -> claude-opus-5 (tier 'frontier' request cascaded)"
+      "resolved @anthropic:opus -> claude-opus-5-5 (tier 'frontier' request cascaded)"
     );
   });
 
@@ -447,7 +449,9 @@ describe('runTierCanary (thinking probes)', () => {
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[PASS\] frontier\s+gpt-6-astra/);
     expect(result).toFailWith(/\[FAIL\(param\)\] frontier effort=none\s+gpt-6-astra\s+\(AI API returned 400/);
-    expect(result).toFailWith(/FAILED — a thinking, strict-none, model-override or image probe failed/);
+    expect(result).toFailWith(
+      /FAILED — a thinking, strict-none, model-override, structured-output or image probe failed/
+    );
   });
 
   test('an access-gated thinking probe is BLOCKED, not a failure', async () => {
@@ -544,7 +548,9 @@ describe('runTierCanary (strict-none probes)', () => {
     };
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[FAIL\(param\)\] base none\+fail\s+gpt-6-luna/);
-    expect(result).toFailWith(/FAILED — a thinking, strict-none, model-override or image probe failed/);
+    expect(result).toFailWith(
+      /FAILED — a thinking, strict-none, model-override, structured-output or image probe failed/
+    );
   });
 
   test('a listed model whose strict call goes through fails — the list is stale', async () => {
@@ -650,7 +656,9 @@ describe('runTierCanary (model-override probes)', () => {
     };
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[FAIL\(id\)\] @google-gemini:flash-lite\s+gemini-3\.5-flash-lite/);
-    expect(result).toFailWith(/FAILED — a thinking, strict-none, model-override or image probe failed/);
+    expect(result).toFailWith(
+      /FAILED — a thinking, strict-none, model-override, structured-output or image probe failed/
+    );
   });
 
   test('keyless, the override is resolved and PENDING', async () => {
@@ -669,6 +677,178 @@ describe('runTierCanary (model-override probes)', () => {
     expect(result).toFailWith(
       /google-gemini tier canary: model override '@google-gemini:nope': resolver failed/
     );
+  });
+});
+
+describe('runTierCanary (structured-output probes)', () => {
+  const spec = {
+    providerId: 'anthropic',
+    descriptor: anthropic,
+    tiers: ['base', 'advanced'] as ReadonlyArray<CanaryTier>,
+    extraModels: ['@anthropic:fable'],
+    structuredOutputProbe: true
+  };
+
+  /** Answers every structured probe as the registry says the model should, and plain rows with pong. */
+  function honest(
+    tier: CanaryTier,
+    options?: ICanaryCompleteOptions
+  ): Result<AiAssist.IAiCompletionResponse> {
+    if (options?.structuredOutput === undefined) {
+      return pong();
+    }
+    const concrete = AiAssist.resolveProviderModel(
+      anthropic,
+      options.modelOverride,
+      tier === 'base' ? undefined : tier
+    ).orThrow();
+    return succeed({
+      content: '{"answer":"pong"}',
+      truncated: false,
+      structuredOutput: expectedStructuredEnforcement(anthropic, concrete)
+    });
+  }
+
+  test('the registry splits Anthropic by line: forced tool on sonnet-5, schema on opus-5-5 / fable-5-1', () => {
+    expect(expectedStructuredEnforcement(anthropic, 'claude-sonnet-5')).toBe('tool-forced');
+    expect(expectedStructuredEnforcement(anthropic, 'claude-opus-5-5')).toBe('schema');
+    expect(expectedStructuredEnforcement(anthropic, 'claude-fable-5-1')).toBe('schema');
+    expect(expectedStructuredEnforcement(anthropic, '@anthropic:nope')).toBe('none');
+  });
+
+  test('fires one schema request per tier and per extra model, with onUnsupported fail', async () => {
+    const complete = jest.fn(async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+      honest(tier, options)
+    );
+    const result = await runTierCanary(spec, { complete }, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/Structured-output probes \(schema, onUnsupported 'fail'\):/);
+      expect(report).toMatch(/\[PASS\] base schema\s+claude-sonnet-5\s+\(enforcement 'tool-forced'\)/);
+      expect(report).toMatch(/\[PASS\] advanced schema\s+claude-opus-5-5\s+\(enforcement 'schema'\)/);
+      expect(report).toMatch(
+        /\[PASS\] @anthropic:fable schema\s+claude-fable-5-1\s+\(enforcement 'schema'\)/
+      );
+      expect(report).toMatch(/LIVE-VERIFIED/);
+    });
+    const structuredCalls = complete.mock.calls.filter(
+      ([, options]) => options?.structuredOutput !== undefined
+    );
+    expect(structuredCalls).toHaveLength(3);
+    for (const [, options] of structuredCalls) {
+      expect(options?.structuredOutput).toMatchObject({ mode: 'schema', onUnsupported: 'fail' });
+    }
+    expect(structuredCalls[2]).toEqual([
+      'base',
+      expect.objectContaining({ modelOverride: '@anthropic:fable' })
+    ]);
+  });
+
+  test('a provider 400 on the declared format is FAIL(param) and fails the run', async () => {
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        options?.structuredOutput !== undefined && tier === 'advanced'
+          ? fail('AI API returned 400: tool_choice: type "tool" and "any" are not supported for this model.')
+          : honest(tier, options)
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toFailWith(/\[FAIL\(param\)\] advanced schema\s+claude-opus-5-5/);
+    expect(result).toFailWith(/structured-output or image probe failed/);
+  });
+
+  test('keyless, every structured probe is PENDING', async () => {
+    const result = await runTierCanary(spec, {}, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[PENDING\] advanced schema\s+claude-opus-5-5/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-1/);
+    });
+  });
+
+  test('structuredOutputEfforts repeats every schema probe with the effort, sending both at once', async () => {
+    const complete = jest.fn(async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+      honest(tier, options)
+    );
+    const result = await runTierCanary(
+      { ...spec, structuredOutputEfforts: ['low'] },
+      { complete },
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[PASS\] base schema\s+claude-sonnet-5/);
+      expect(report).toMatch(
+        /\[PASS\] base schema\+effort=low\s+claude-sonnet-5\s+\(enforcement 'tool-forced'\)/
+      );
+      expect(report).toMatch(
+        /\[PASS\] advanced schema\+effort=low\s+claude-opus-5-5\s+\(enforcement 'schema'\)/
+      );
+      expect(report).toMatch(
+        /\[PASS\] @anthropic:fable schema\+effort=low\s+claude-fable-5-1\s+\(enforcement 'schema'\)/
+      );
+    });
+    const structuredCalls = complete.mock.calls.filter(
+      ([, options]) => options?.structuredOutput !== undefined
+    );
+    // 3 plain + 3 with effort (base, advanced, @anthropic:fable).
+    expect(structuredCalls).toHaveLength(6);
+    const withEffort = structuredCalls.filter(([, options]) => options?.effort !== undefined);
+    expect(withEffort).toHaveLength(3);
+    for (const [, options] of withEffort) {
+      expect(options).toMatchObject({
+        effort: 'low',
+        structuredOutput: { mode: 'schema', onUnsupported: 'fail' }
+      });
+    }
+    expect(withEffort[2]).toEqual(['base', expect.objectContaining({ modelOverride: '@anthropic:fable' })]);
+  });
+
+  test('without structuredOutputProbe no structured section is produced', async () => {
+    const result = await runTierCanary(
+      { ...spec, structuredOutputProbe: false },
+      { complete: async () => pong() },
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).not.toMatch(/Structured-output probes/);
+    });
+  });
+});
+
+describe('classifyStructuredProbe', () => {
+  function response(
+    content: string,
+    structuredOutput: AiAssist.StructuredOutputEnforcement
+  ): Result<AiAssist.IAiCompletionResponse> {
+    return succeed({ content, truncated: false, structuredOutput });
+  }
+
+  test('a matching enforcement and a conforming reply pass', () => {
+    expect(classifyStructuredProbe('l', 'm', 'schema', response('{"answer":"x"}', 'schema'))).toMatchObject({
+      outcome: 'live-pass'
+    });
+  });
+
+  test('an enforcement other than the declared one is an error, even with a conforming reply', () => {
+    // e.g. a request that silently degraded to 'none', or a format the adapter did not send.
+    expect(classifyStructuredProbe('l', 'm', 'schema', response('{"answer":"x"}', 'none'))).toMatchObject({
+      outcome: 'error',
+      detail: expect.stringMatching(/reported enforcement 'none', but the registry declares 'schema'/)
+    });
+  });
+
+  test('a reply that does not satisfy the schema is an error', () => {
+    expect(classifyStructuredProbe('l', 'm', 'schema', response('pong', 'schema'))).toMatchObject({
+      outcome: 'error',
+      detail: expect.stringMatching(/does not satisfy the probe schema/)
+    });
+    expect(classifyStructuredProbe('l', 'm', 'schema', response('{"other":1}', 'schema'))).toMatchObject({
+      outcome: 'error'
+    });
+  });
+
+  test('a local refusal (no declared capability) is an error, not a param failure', () => {
+    const refused = fail<AiAssist.IAiCompletionResponse>(
+      "provider 'anthropic' model 'x' declares no structured-output capability"
+    );
+    expect(classifyStructuredProbe('l', 'm', 'schema', refused)).toMatchObject({ outcome: 'error' });
   });
 });
 
@@ -868,6 +1048,22 @@ describe('model-tier scenarios', () => {
       expect(report).toMatch(/\[PENDING\] image\s+gpt-image-2\.5-sunburst/);
       expect(report).toMatch(/\[PENDING\] frontier none\+fail\s+gpt-6-astra/);
       expect(report).not.toMatch(/Model-override probes:/);
+    });
+  });
+
+  test('anthropic cli.run without a key resolves the rotated ids and lists the structured probes as PENDING', async () => {
+    if (!anthropicModelTiersScenario.cli) {
+      throw new Error('expected a CLI implementation');
+    }
+    const result = await anthropicModelTiersScenario.cli.run(makeContext());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/@anthropic:opus -> claude-opus-5-5 \(cascaded from a lower tier\)/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] base schema\s+claude-sonnet-5/);
+      expect(report).toMatch(/\[PENDING\] frontier schema\s+claude-opus-5-5/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] advanced schema\+effort=low\s+claude-opus-5-5/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\+effort=low\s+claude-fable-5-1/);
     });
   });
 });
