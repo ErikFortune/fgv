@@ -251,8 +251,8 @@ newly wired param). The only failures were thinking `'none'`, on three models:
 **Fix, per the user's direction: roll forward, and clamp by default with an opt-in failure.**
 - `IAiProviderDescriptor.thinkingRequiredModelPrefixes`, matched exact-or-dash-bounded like
   `adaptiveThinkingModelPrefixes`, plus the `isThinkingRequiredModel` predicate.
-- Declared: `gpt-6-astra` (live); `grok-4.7` (live) and `grok-4.5` (its model page lists efforts
-  `low`..`xhigh`); `gemini-3.1-pro-preview` (live) and `gemini-2.5-pro` (the existing
+- Declared: `gpt-6-astra` (live); `grok-4.7` (live), and `grok-4.6` and `grok-4.5` (their model pages
+  list efforts `low`..`xhigh`; `grok-4.6` added per Copilot round 5); `gemini-3.1-pro-preview` (live) and `gemini-2.5-pro` (the existing
   `IGeminiThinkingConfig.thinkingBudget` doc: "error on Pro").
 - `IThinkingConfig.onUnsupported?: 'degrade' | 'fail'`. It is a separate option rather than a new
   effort value, because it is a policy, not a level, and it reuses `structuredOutput`'s vocabulary.

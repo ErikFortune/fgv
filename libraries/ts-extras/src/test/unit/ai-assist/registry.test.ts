@@ -77,7 +77,7 @@ describe('AiAssist.registry', () => {
           ['gemini-3.1-pro-preview', 'gemini-2.5-pro'],
           ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
         ],
-        ['xai-grok', ['grok-4.7', 'grok-4.5'], ['grok-4.3', 'grok-4']],
+        ['xai-grok', ['grok-4.7', 'grok-4.6', 'grok-4.5'], ['grok-4.3', 'grok-4']],
         ['anthropic', [], ['claude-opus-5', 'claude-opus-5-5']]
       ] as const) {
         const d = AiAssist.getProviderDescriptor(providerId).orThrow();

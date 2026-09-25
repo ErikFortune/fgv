@@ -586,6 +586,8 @@ describe('runTierCanary (strict-none probes)', () => {
     const result = await runTierCanary(spec, {}, new Logging.InMemoryLogger());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[PENDING\] frontier none\+fail\s+gpt-6-astra/);
+      expect(report).toMatch(/\[PENDING\] frontier none raw\s+gpt-6-astra/);
+      expect(report).not.toMatch(/base none raw/);
     });
   });
 

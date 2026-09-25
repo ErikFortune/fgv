@@ -320,10 +320,10 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: true,
     streamingCorsRestricted: true,
     acceptsImageInput: true,
-    // Reject reasoning_effort 'none'. Both model pages list efforts low..xhigh; grok-4.7 also
+    // Reject reasoning_effort 'none'. All three model pages list efforts low..xhigh; grok-4.7 also
     // returned a live 400 "This model does not support `reasoning_effort` value `none`"
     // (2026-09-25). grok-4.3 lists 'none' and accepts it.
-    thinkingRequiredModelPrefixes: ['grok-4.7', 'grok-4.5'],
+    thinkingRequiredModelPrefixes: ['grok-4.7', 'grok-4.6', 'grok-4.5'],
     structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }],
     imageGeneration: [
       {

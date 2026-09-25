@@ -553,11 +553,18 @@ async function runStrictNoneProbes(
   }
   for (const resolution of resolutions) {
     const label = `${resolution.tier} none+fail`;
+    const listed = AiAssist.isThinkingRequiredModel(spec.descriptor, resolution.concrete);
     if (deps.complete === undefined) {
       rows.push({ label, concrete: resolution.concrete, outcome: 'not-run' });
+      if (listed) {
+        rows.push({
+          label: `${resolution.tier} none raw`,
+          concrete: resolution.concrete,
+          outcome: 'not-run'
+        });
+      }
       continue;
     }
-    const listed = AiAssist.isThinkingRequiredModel(spec.descriptor, resolution.concrete);
     const result = await deps.complete(resolution.tier, { effort: 'none', onUnsupported: 'fail' });
     rows.push(strictNoneProbe(label, resolution.concrete, listed, result));
     if (listed) {
