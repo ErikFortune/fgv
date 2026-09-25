@@ -111,7 +111,9 @@ export interface IExternalCommand<TDetails> {
  * @public
  */
 export interface IExternalTaskSourceParams<TDetails> {
+  /** {@inheritDoc ITaskSource.id} */
   readonly id: string;
+  /** {@inheritDoc ITaskSource.history} */
   readonly history: SourceHistoryContract;
   /** Encodes the host's detail type to the JSON the task kind stores — its registered `encode`. */
   readonly encodeDetails: (details: TDetails) => Result<JsonValue>;
@@ -166,7 +168,9 @@ function _lift<T>(what: string, result: Result<T>): TaskResult<T> {
  * @public
  */
 export class ExternalTaskSource<TDetails> implements ITaskSource {
+  /** {@inheritDoc ITaskSource.id} */
   public readonly id: string;
+  /** {@inheritDoc ITaskSource.history} */
   public readonly history: SourceHistoryContract;
   /** {@inheritDoc ITaskSource.lookupCommand} */
   public readonly lookupCommand?: (

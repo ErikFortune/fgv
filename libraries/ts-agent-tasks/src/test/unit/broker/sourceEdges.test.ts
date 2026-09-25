@@ -607,6 +607,18 @@ describe('the pump, at its edges', () => {
     });
   });
 
+  test('a policy epoch the pump cannot read fails the pass before anything is sent', async () => {
+    const h = await uncertain();
+    const sent = h.executor.dispatches.size;
+    Object.assign(h.policy, {
+      policyEpoch: () => {
+        throw new Error('epoch gone');
+      }
+    });
+    expect(await h.writer.resolveCommands({ limit: 10 })).toFailWith(/epoch gone/);
+    expect(h.executor.dispatches.size).toBe(sent);
+  });
+
   test('a record read that fails, outside or inside the writer, fails the pass', async () => {
     const h = await uncertain();
     const outside = brokerOver(
@@ -618,8 +630,17 @@ describe('the pump, at its edges', () => {
       h,
       misbehaving(h.repository, { readCommit: async () => fail('in-writer read failed') as never })
     );
-    expect(await inside.writer.resolveCommands({ limit: 10 })).toFailWith(
-      /persisting its outcome failed.*in-writer read failed/
+    // The resend gate reads first, and fails the pass before anything is sent.
+    const sent = h.executor.dispatches.size;
+    expect(await inside.writer.resolveCommands({ limit: 10 })).toFailWith(/in-writer read failed/);
+    expect(h.executor.dispatches.size).toBe(sent);
+    // Past the gate, a failure to persist the resend's answer is commit-indeterminate.
+    const unwritable = brokerOver(
+      h,
+      misbehaving(h.repository, { commit: async () => fail('disk full') as never })
+    );
+    expect(await unwritable.writer.resolveCommands({ limit: 10 })).toFailWith(
+      /persisting its outcome failed.*disk full/
     );
   });
 });

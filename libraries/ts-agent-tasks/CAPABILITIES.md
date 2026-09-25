@@ -1,7 +1,6 @@
 # `@fgv/ts-agent-tasks` — agent task recording and mediation
 
-> **This file is authoritative for what `@fgv/ts-agent-tasks` provides and what not to hand-roll.**
-> `README.md` is getting-started material. The always-loaded index at
+> **This file is authoritative for what `@fgv/ts-agent-tasks` provides and what not to hand-roll.** > `README.md` is getting-started material. The always-loaded index at
 > [`.ai/instructions/LIBRARY_CAPABILITIES.md`](../../.ai/instructions/LIBRARY_CAPABILITIES.md)
 > routes here; it never duplicates this content.
 
@@ -15,13 +14,15 @@ on its own, and importing it has no side effects.
 
 ## What ships today
 
-Five things: the **vocabulary** (the `types` and `converters` packlets), the **snapshot-only
+Six things: the **vocabulary** (the `types` and `converters` packlets), the **snapshot-only
 context entry point** (the `context` packlet), **durable task storage** (the `storage` packlet:
 `FileTreeTaskRepository`), **indexed selection** over that storage — scope/lifecycle queries,
 due candidates and owed updates answered from resident indexes, with keyset paging, a staged
 rebuild and a reusable conformance suite for custom repositories — and the **broker**
 (`TaskBroker`): principal-bound views and writers, tracked work and task lists, hierarchy and
-reassignment, with authorization at every read and mutation. Source adapters, delivery, tools and
+reassignment, with authorization at every read and mutation — and **external sources**
+(`ITaskSource`, `ExternalTaskSource`): observation, paged reconciliation, recovery and command
+dispatch for work a source executes, with the source owning execution truth. Delivery, tools and
 prompt integration follow in later slices, and are deliberately absent from the export surface
 rather than stubbed.
 
@@ -35,7 +36,10 @@ FileTree accessor, chosen at the host's boot edge.
 
 ```ts
 // Boot edge: provision the directory, pick the accessor, inject the root.
-const root = FileTree.DirectoryItem.create(dir, new FileTree.FsFileTreeAccessors({ prefix: dir, mutable: true })).orThrow();
+const root = FileTree.DirectoryItem.create(
+  dir,
+  new FileTree.FsFileTreeAccessors({ prefix: dir, mutable: true })
+).orThrow();
 const environment = TaskEnvironment.create({ logger, clock: Date.now, newId }).orThrow();
 const params = { root, mode: { durable: 'process-crash' }, environment, registry } as const;
 
@@ -44,7 +48,9 @@ const repository = (await FileTreeTaskRepository.initialize(params)).orThrow();
 // Afterwards (a root is held by one instance at a time, so close before reopening):
 repository.close();
 const opened = (await FileTreeTaskRepository.open(params)).orThrow();
-if (opened.state === 'recovery-required') { /* inspect opened.recovery.report; nothing is writable */ }
+if (opened.state === 'recovery-required') {
+  /* inspect opened.recovery.report; nothing is writable */
+}
 ```
 
 **Durability is exactly what the root can prove, and never degrades.** `{ durable: 'process-crash' }`
@@ -57,7 +63,7 @@ nothing that survives the process.
 
 **Nothing is acknowledged before the FileTree atomic boundary.** Every record is written with
 `writeChildAtomically` at the repository's guarantee, and every method returns success only after
-that call has — on Node, after the record is renamed into place *and* the directory flushed. The
+that call has — on Node, after the record is renamed into place _and_ the directory flushed. The
 real-Node crash suite pins the order: a registration's success is the event after the third
 write's directory flush, and a mutation's after its one write's.
 
@@ -66,8 +72,9 @@ state, every owed update (`ITaskUpdate`, one immutable payload per `(task, revis
 whose id is `taskUpdateId`), every operation's dedup evidence (`IStoredTaskOperation`), and the
 task's capacity claims — replaced together or not at all. Addresses are task-ID based and never
 change. `ITaskRepositoryWriter.commit` takes one of three purposes:
+
 - `operation` — must add exactly its own stored operation. **A repeated operation id replays**:
-  the committed record comes back and nothing is applied twice — checked *before* the revision
+  the committed record comes back and nothing is applied twice — checked _before_ the revision
   preconditions, because a lost-response retry carries the revision it expected before its own
   commit. The same id with a different request, catalog operation or principal is a `conflict`.
 - `observation` — a source projection, deduplicated by `sourceRevision`. The same source revision
@@ -94,9 +101,9 @@ version, creation time and source binding never change; terminal state is absorb
 record (`archived: true`, the tombstone) is immutable. These are storage integrity rules, not
 transition policy — which lifecycle moves are allowed is the broker's (a later slice).
 
-**Registration is the ordered inventory protocol.** `register` commits a *pending* inventory entry
+**Registration is the ordered inventory protocol.** `register` commits a _pending_ inventory entry
 (with the canonical creation request and the task's capacity claims), then the record, then marks
-the entry *live*. A pending registration is not an accepted task — `read` returns `undefined` —
+the entry _live_. A pending registration is not an accepted task — `read` returns `undefined` —
 but it holds its reservations, survives a crash, is reported by the next open, and **resumes when
 the host retries the same registration**: same task id, operation id, catalog operation,
 principal, first-record type and canonically equal request, same claim ids, no second charge. A pending entry whose record did land is completed by
@@ -284,9 +291,16 @@ const broker = TaskBroker.create({ repository, environment }).orThrow();
 const writer = broker
   .bind({ principal: 'agent:ada', scopes: [projectScope], authorization: policy })
   .orThrow();
-const view = broker.bindView({ principal: 'agent:bob', scopes: [projectScope], authorization: policy }).orThrow();
+const view = broker
+  .bindView({ principal: 'agent:bob', scopes: [projectScope], authorization: policy })
+  .orThrow();
 
-await writer.createTaskList({ taskId, operationId, title: 'Ingest batch 7', completion: 'all-children-succeeded' });
+await writer.createTaskList({
+  taskId,
+  operationId,
+  title: 'Ingest batch 7',
+  completion: 'all-children-succeeded'
+});
 await writer.createTracked({ taskId: child, operationId: op2, title: 'Page 1', parentId: taskId });
 await writer.execute({ taskId: child, operationId: op3, expectedRevision, command: 'start', parameters: {} });
 await writer.reconcileListCompletions({ limit: 50 }); // host-pumped; completes eligible lists
@@ -316,8 +330,7 @@ to the view and the policy epoch. `bindView` returns an object with no mutation 
 (pending→running), `wait`/`pause` (with a reason), `resume` (waiting/paused→running), `succeed` /
 `fail` / `cancel` (terminal, absorbing), and `set-title` / `set-description` / `set-progress` /
 `set-attention` in open states. Restating the current state is `applied` at the current revision.
-Receipts: `applied`, or `rejected` with `invalid-transition`, `unsupported` (unknown command, an
-external task's command — its source's), `conflict` (stale revision), `denied` or
+Receipts: `applied`, or `rejected` with `invalid-transition`, `unsupported` (unknown command), `conflict` (stale revision), `denied` or
 `idempotency-conflict`. The first three are recorded under the operation id and replay; `denied`
 and `idempotency-conflict` are returned and never recorded.
 
@@ -346,6 +359,62 @@ task's `terminal-closeout` claim, so at a saturated profile new identities are r
 **Host operations.** `registerExternal(principal, request)` registers an externally executed task
 with host-supplied scopes and binding — unresolved until its first observation, or resolved from
 an `initialObservation`. An update owed to no one is not retained; subscriptions arrive later.
+
+## External sources — `ITaskSource`, `ExternalTaskSource`
+
+**The source owns execution truth; the broker records what the source says, never what it
+expects.** Attach sources at `TaskBroker.create({ repository, environment, sources })`. Build one
+from typed callbacks with `ExternalTaskSource.create({ id, history, encodeDetails, compare, read,
+feed, recover, commands?, lookupCommand? })`; each command comes from
+`ExternalTaskSource.command(descriptor, apply)`, whose descriptor is the same one the kind
+registry declares (`idempotency: 'source-key' | 'none'`, `conditional`). A callback that fails or
+throws is `source-unavailable`, never an escaped exception; parameters the descriptor refuses
+never reach it.
+
+**History contract.** `'observed-state'`: the source can report its current state, and any read
+may commit it. `'source-replay'`: the source replays every revision in order, and **only its
+reconcile feed commits projections** — `observe`, push hints and command answers run a feed pass
+from the committed cursor instead, so a revision-3 hint cannot overtake revision 2's obligation.
+Registering against a `source-replay` source requires a finite envelope
+(`sourceReplay: { remainingRequiredUpdates, remainingRequiredBytes }`), reserved at admission;
+a feed that exceeds it is a `source-gap` with the cursor unmoved, and
+`extendReplayEnvelope(taskId, add)` is new admission.
+
+**Ordering by the source's comparator, never by timestamps.** For each observation:
+`newer` commits (execution fields only — catalog fields are the broker's, terminal is absorbing);
+`same` with the same execution state is a freshness refresh (no revision, no update); `same` with a
+different state is a source-contract violation (`source-gap`); `older` is stale and ignored;
+`incomparable` (e.g. a new epoch) is ignored until explicit `recover`.
+
+**Reconciliation.** `reconcile({ sourceId, maxPages? })` reads pages from the cursor in the
+source's checkpoint record, applies every observation, and only then commits the page's cursor. A
+gap, broken per-binding order, contract violation or backpressure stops the pass with the cursor
+where it was. A pass is complete only when the source says so **and** its coverage is
+`'all-bindings'` — an active-only listing never completes terminal discovery. Opening a repository
+calls no source.
+
+**Commands on external tasks.** `writer.execute` on an external kind: records the intent
+(`not-sent`, receipt `accepted`) **and reserves its settlement** before anything is sent,
+re-checks authority, marks `possibly-sent`, then dispatches outside the writer (a conditional
+command carries the source revision committed at the marker). Receipts: `rejected` (with the
+source's reason), `accepted` (sent; not yet observed applied — **accepted is not applied**),
+`applied` (at the revision whose observation committed it), or `indeterminate` (outcome unknown).
+An unattached source leaves the task untouched and answers `source-unavailable`.
+
+**Uncertain outcomes.** `writer.resolveCommands({ limit })` pumps unsettled commands: an intent
+never sent is dispatched; a `possibly-sent` one is looked up (`lookupCommand`), re-sent only when
+its command is `idempotency: 'source-key'` and the key has not expired, and otherwise **held** —
+never replayed. Revoked authority settles `rejected: denied` without sending.
+
+**Recovery.** `recover(taskId)` handles every `RecoveryResult`: `reattached` / `completed` /
+`unrecoverable` (which must carry a failed or cancelled projection) commit as observations, an
+incomparable epoch included; `unavailable` marks observation health; `resumable` and `unresolved`
+are reported and change nothing. Records hold the bounded projection only; an
+executor-owned payload stays in the executor, and terminal presentation never dereferences it.
+
+**Capacity.** Each in-flight external command holds a settlement reservation (64 KiB of resident
+payload at the default profile) until it settles; see `docs/TECH_DEBT.md` for the effective
+ceiling this implies.
 
 ## Rendering task context without a broker
 
@@ -393,7 +462,7 @@ Producing a receipt writes nothing; the bound delivery service that turns one in
 acknowledgement is a later slice.
 
 **Budgets are honest about their own framing.** `ITaskContextBudget` bounds items, visible-tree
-depth and UTF-16 characters of the *whole* text (default 20 / 3 / 8,000). The renderer reserves
+depth and UTF-16 characters of the _whole_ text (default 20 / 3 / 8,000). The renderer reserves
 the fixed framing plus the longest omission report any rendering can produce
 (`renderer.framingReserve`) before selecting anything, and rejects a `maxChars` below it — so the
 line saying what was dropped can never itself be dropped. No token count is claimed.
@@ -402,7 +471,7 @@ line saying what was dropped can never itself be dropped. No token count is clai
 terminal outcomes, other material changes, current open work, routine progress, unresolved
 diagnostics; ties break on task ID then revision, by ordinal comparison. Omission counts cover
 only what was supplied — nothing hidden is counted — and `exhaustive` is true only for complete
-input with nothing omitted and nothing abbreviated. Depth is depth in the *visible* forest: a parent that was not
+input with nothing omitted and nothing abbreviated. Depth is depth in the _visible_ forest: a parent that was not
 supplied ends the chain rather than being guessed at. **Nothing is aggregated from children** — a
 parent's own lifecycle is the only completion statement rendered, so a partial visible tree can
 never establish parent completion.
@@ -458,19 +527,19 @@ by omission — do not add one downstream by putting a request payload in a reas
 
 **Classified failures.** `TaskResult<T>` is `DetailedResult<T, ITaskFailure>`; `ITaskFailure`
 carries one of fourteen `TaskFailureCode`s, a retry disposition (`safe` / `reconcile-first` /
-`after-host-action`), an optional `operationId`, and — for `backpressure` and *only* for
+`after-host-action`), an optional `operationId`, and — for `backpressure` and _only_ for
 `backpressure`, enforced by the converter — an `ICapacityFailure`. `not-found-or-denied` is
 deliberately one code so a foreign identity and a hidden one are indistinguishable;
 `commit-indeterminate` says the durable effect may or may not exist and names the operation to
 resolve it by.
 
 **Commands are four states that do not collapse into each other.** `CommandState` is `rejected`
-(with one of six reasons), `accepted` (intent durably recorded — *not* applied), `applied` (with
+(with one of six reasons), `accepted` (intent durably recorded — _not_ applied), `applied` (with
 the revision it reached), or `indeterminate` (with its reason, keeping the operation ID rather
 than degrading into a generic retryable failure). `ICommandRequest` always carries an
 `operationId` and an `expectedRevision`; no timestamp is a concurrency token.
 
-**The detail converter runs on every path.** `convert`, `decode` *and* `encode` all validate
+**The detail converter runs on every path.** `convert`, `decode` _and_ `encode` all validate
 through the registered `Converter<T>`: TypeScript cannot stop a JS caller or an assertion handing
 over a `T` that violates a domain invariant, so an encoder that trusted its argument would turn
 that into a successful snapshot. `detailSchema`, where a kind supplies one, is the wire schema a
@@ -488,7 +557,7 @@ fails with `unknown-kind-version` rather than being treated as a validated curre
 erasure for command parameters: it closes over the descriptor's `JsonSchema` and encoder, so the
 only way to produce canonical parameters is to have passed that schema.
 
-**Built-ins.** `fgv.tracked@1` has *empty strict* details — every field a tracked task needs is
+**Built-ins.** `fgv.tracked@1` has _empty strict_ details — every field a tracked task needs is
 already an envelope field, and a second place to put them would be a second authority. Its eleven
 command **names** are `trackedTaskCommandNames` (narrow transitions plus typed metadata updates;
 no external `setStatus`); their parameter schemas belong to the slice that implements the
@@ -517,7 +586,7 @@ computed from — bytes are canonical UTF-8 lengths, never estimated heap sizes.
 `defaultTaskCapacityProfile` publishes the proposed initial limits; **they are engineering
 defaults, not measured safe maxima.** `maximumClosureCharges(profile)` and
 `maximumSettlementCharges(profile)` compute the protected completion and settlement charges from
-the profile alone, which is what lets admission reserve room to *finish* accepted work before
+the profile alone, which is what lets admission reserve room to _finish_ accepted work before
 accepting it — a ceiling without that room could refuse the terminal write that would free
 capacity. Both are `Result`-valued and **fail rather than return an inexact figure** when a
 profile's bounds push a product or sum past the safe-integer range: a charge is an admission
@@ -530,7 +599,7 @@ pressure, which is the wrong default for something admission consults.
 **Capacity claims are repository-generated data, never caller-issued authority.**
 `ITaskCapacityClaim` is discriminated on one of six `CapacityClaimPurpose`s (`allCapacityClaimPurposes`), carries the
 identities needed to reconstruct its consumption after a crash (an acknowledgement claim joins by
-exact subscription *and* update), and tracks `ownership: 'pending' | 'live'` for the
+exact subscription _and_ update), and tracks `ownership: 'pending' | 'live'` for the
 pending-to-live transfer and `disposition: 'reserved' | 'consumed' | 'indeterminate'` for the
 reserved-to-used conversion. `indeterminate` is not a state to clear on sight — ambiguity fences
 admission and cleanup until recovery resolves it. **Nothing in the library lets a caller mint
@@ -564,7 +633,7 @@ fragment is caught at the mint rather than at the filename.
 
 ## Not in scope
 
-No source adapter or command dispatch, subscription, delivery service, acknowledgement, retention
+No subscription, delivery service, acknowledgement, retention
 or pruning policy, cascade stop, tool factory or prompt integration **yet** — those are later
 slices, and their absence from the export surface is deliberate. **Permanently** out of scope: an input-request/answer protocol, a task runner or
 scheduler, an executor, a retry policy, cross-repository parenting, execution migration,
@@ -574,10 +643,10 @@ multi-process ownership, general event sourcing, and dependency DAGs.
 
 ## Recent additions
 
-*Newest first. **Generated** — see the repo index; do not hand-edit inside the markers.*
+_Newest first. **Generated** — see the repo index; do not hand-edit inside the markers._
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-*No stream has recorded a `sourceLine` against this package yet.*
+_No stream has recorded a `sourceLine` against this package yet._
 
 <!-- END GENERATED: recent-additions -->

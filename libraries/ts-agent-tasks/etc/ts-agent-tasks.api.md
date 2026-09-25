@@ -228,9 +228,7 @@ export class ExternalTaskSource<TDetails> implements ITaskSource {
     compare(a: ISourceRevision, b: ISourceRevision): Result<SourceRevisionOrder>;
     static create<TDetails>(params: IExternalTaskSourceParams<TDetails>): Result<ExternalTaskSource<TDetails>>;
     dispatch(binding: ISourceBinding, request: ICommandRequest, expectedSourceRevision?: ISourceRevision): Promise<TaskResult<SourceCommandResult>>;
-    // (undocumented)
     readonly history: SourceHistoryContract;
-    // (undocumented)
     readonly id: string;
     readonly lookupCommand?: (binding: ISourceBinding, request: ICommandRequest) => Promise<TaskResult<SourceCommandLookup>>;
     observe(binding: ISourceBinding): Promise<TaskResult<SourceRead>>;
@@ -603,9 +601,7 @@ export interface IExternalTaskSourceParams<TDetails> {
     readonly encodeDetails: (details: TDetails) => Result<JsonValue>;
     // (undocumented)
     readonly feed: (cursor: string | undefined) => Promise<Result<IExternalPage<TDetails>>>;
-    // (undocumented)
     readonly history: SourceHistoryContract;
-    // (undocumented)
     readonly id: string;
     // (undocumented)
     readonly lookupCommand?: (binding: ISourceBinding, request: ICommandRequest) => Promise<Result<ExternalCommandResult<TDetails> | {
@@ -1809,9 +1805,7 @@ export interface ITaskSnapshot<T = JsonValue> {
 export interface ITaskSource {
     compare(a: ISourceRevision, b: ISourceRevision): Result<SourceRevisionOrder>;
     dispatch(binding: ISourceBinding, request: ICommandRequest, expectedSourceRevision?: ISourceRevision): Promise<TaskResult<SourceCommandResult>>;
-    // (undocumented)
     readonly history: SourceHistoryContract;
-    // (undocumented)
     readonly id: string;
     lookupCommand?(binding: ISourceBinding, request: ICommandRequest): Promise<TaskResult<SourceCommandLookup>>;
     observe(binding: ISourceBinding): Promise<TaskResult<SourceRead>>;
@@ -1821,15 +1815,10 @@ export interface ITaskSource {
 
 // @public
 export interface ITaskSourceCommitRequest {
-    // (undocumented)
     readonly cursor?: string;
-    // (undocumented)
     readonly expectedRecordRevision: number;
-    // (undocumented)
     readonly history: SourceHistoryContract;
-    // (undocumented)
     readonly pages: number;
-    // (undocumented)
     readonly sourceId: string;
 }
 

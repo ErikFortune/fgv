@@ -175,10 +175,15 @@ export type ITaskCommitRequest =
  * @public
  */
 export interface ITaskSourceCommitRequest {
+  /** The source whose checkpoint record this writes. */
   readonly sourceId: string;
+  /** The source's history contract; it must match the record's once written. */
   readonly history: SourceHistoryContract;
+  /** The record revision this commit replaces (`0` creates the record). */
   readonly expectedRecordRevision: number;
+  /** The source cursor the next pass resumes from; absent starts the next pass from the beginning. */
   readonly cursor?: string;
+  /** The running count of pages committed against this source, as of this commit. */
   readonly pages: number;
 }
 

@@ -142,7 +142,9 @@ export type SourceCommandLookup = SourceCommandResult | { readonly state: 'not-f
  * @public
  */
 export interface ITaskSource {
+  /** The source id every binding it owns names as `sourceId`. */
   readonly id: string;
+  /** What the source guarantees about history: `observed-state` or `source-replay`. */
   readonly history: SourceHistoryContract;
   /** Orders two revisions. Fails for a revision the source cannot interpret. */
   compare(a: ISourceRevision, b: ISourceRevision): Result<SourceRevisionOrder>;

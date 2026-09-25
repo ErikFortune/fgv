@@ -377,6 +377,43 @@ async function _send(
   return settleCommand(core, source, binding, record.task.envelope.id, command, answer);
 }
 
+/**
+ * The boundary a pump resend passes: authority was decided before the lookup's `await`, so the
+ * resend is refused if the policy epoch or the authorized subject moved since. A command another
+ * caller settled meanwhile is returned as it now is, and not sent. The record returned is the one
+ * decided on, so a conditional resend carries the source revision committed now.
+ */
+async function _resendGate(
+  core: BrokerCore,
+  ctx: AccessContext,
+  epoch: string,
+  record: IResolvedTaskCommitRecord,
+  command: IStoredCommandOperation
+): Promise<TaskResult<ICommandInRecord>> {
+  const taskId: TaskId = record.task.envelope.id;
+  return core.gated(async (writer): Promise<TaskResult<ICommandInRecord>> => {
+    const read = await _readCommand(writer, taskId, command.operationId);
+    if (read.isFailure() || read.value.command.dispatch === 'settled') {
+      return read;
+    }
+    if (!canonicallySame(_authorizationSubject(record), _authorizationSubject(read.value.record))) {
+      return _unresent(`task ${taskId}`, command.operationId);
+    }
+    return ctx.epochIs(epoch) ? read : _unresent('the authorization policy', command.operationId);
+  });
+}
+
+/** The refusal at the resend boundary: the command stays uncertain and eligible for the next pass. */
+function _unresent<T>(what: string, operationId: IStoredTaskOperation['operationId']): TaskResult<T> {
+  return taskFailure<T>(
+    `${what} changed after the command was re-authorized; its outcome is still uncertain and it was ` +
+      `not resent — the next resolveCommands pass re-authorizes it`,
+    'conflict',
+    'safe',
+    { operationId }
+  );
+}
+
 /** A source's answer, converted; one that does not convert is an uncertain outcome, never a receipt. */
 function _validated(core: BrokerCore, answer: unknown): SourceCommandResult {
   const converted = core.converters.sources.commandResult.convert(answer);
@@ -666,6 +703,10 @@ async function _resolveOne(
   ): TaskResult<ICommandResolution> =>
     ok({ taskId, operationId, action, ...(result !== undefined ? { result } : {}) });
 
+  const epoch = ctx.epoch();
+  if (epoch.isFailure()) {
+    return propagate(epoch);
+  }
   if (!(await ctx.may('command', subjectOf(record), 'subject', { command: command.request.command }))) {
     return done('denied');
   }
@@ -710,8 +751,16 @@ async function _resolveOne(
     command.receipt.result.state === 'indeterminate' &&
     command.receipt.result.reason.startsWith(keyExpiredPrefix);
   if (handle.isSuccess() && handle.value.idempotency === 'source-key' && !expired) {
-    // The source deduplicates this key: resending it cannot apply the effect twice.
-    const resent = await _send(core, source, binding, record, command);
+    // The source deduplicates this key: resending it cannot apply the effect twice. A resend is still
+    // a dispatch, so it passes the same boundary a first send does.
+    const gate = await _resendGate(core, ctx, epoch.value, record, command);
+    if (gate.isFailure()) {
+      return propagate(gate);
+    }
+    if (gate.value.command.dispatch === 'settled') {
+      return done('resolved', gate.value.command.receipt.result);
+    }
+    const resent = await _send(core, source, binding, gate.value.record, gate.value.command);
     if (resent.isFailure()) {
       return propagate(resent);
     }

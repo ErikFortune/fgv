@@ -468,6 +468,89 @@ describe('authority at the dispatch boundary', () => {
     expect((await commandOf(h, 'j1', key)).dispatch).toBe('possibly-sent');
   });
 
+  test('a policy change between the pump authorization and its resend refuses the resend', async () => {
+    const h = await ready();
+    h.executor.loseNextResponse = true;
+    const key = op();
+    expect(await run(h, 'j1', 'pause', { reason: 'x' }, key)).toSucceed();
+    let checks = 0;
+    Object.assign(h.policy, {
+      afterDecision: (request: { action: string }) => {
+        if (request.action === 'command' && checks++ === 0) {
+          h.policy.epoch = 'epoch-2';
+        }
+      }
+    });
+    expect(await h.writer.resolveCommands({ limit: 10 })).toFailWithDetail(/not resent/, {
+      code: 'conflict',
+      retry: 'safe',
+      operationId: key
+    });
+    expect(h.executor.dispatches.get(key)).toBe(1);
+    expect((await commandOf(h, 'j1', key)).dispatch).toBe('possibly-sent');
+    // The next pass, authorized under the policy as it now is, resends.
+    expect(await h.writer.resolveCommands({ limit: 10 })).toSucceedAndSatisfy((report) => {
+      expect(report.resolutions.map((r) => r.action)).toEqual(['resolved']);
+    });
+    expect(h.executor.dispatches.get(key)).toBe(2);
+    expect(h.executor.jobs.get('j1')!.applied).toEqual([`pause:${key}`]);
+  });
+
+  test('a catalog change between the pump authorization and its resend refuses the resend', async () => {
+    const h = await ready();
+    h.executor.loseNextResponse = true;
+    const key = op();
+    expect(await run(h, 'j1', 'pause', { reason: 'x' }, key)).toSucceed();
+    let checks = 0;
+    Object.assign(h.policy, {
+      afterDecision: async (request: { action: string }) => {
+        if (request.action === 'command' && checks++ === 0) {
+          const record = await recordOf(h, 'j1');
+          expect(
+            await h.writer.reassign({
+              taskId: tid('j1'),
+              operationId: op(),
+              expectedRevision: record.recordType === 'resolved' ? record.task.envelope.revision : rev(1),
+              responsibility: bob
+            })
+          ).toSucceed();
+        }
+      }
+    });
+    expect(await h.writer.resolveCommands({ limit: 10 })).toFailWithDetail(/task j1 changed.*not resent/, {
+      code: 'conflict',
+      retry: 'safe',
+      operationId: key
+    });
+    expect(h.executor.dispatches.get(key)).toBe(1);
+  });
+
+  test('a command another pump settled while this one was deciding is reported, not resent', async () => {
+    const h = await ready();
+    h.executor.loseNextResponse = true;
+    const key = op();
+    expect(await run(h, 'j1', 'pause', { reason: 'x' }, key)).toSucceed();
+    let checks = 0;
+    Object.assign(h.policy, {
+      afterDecision: async (request: { action: string }) => {
+        if (request.action === 'command' && checks++ === 0) {
+          expect(await h.writer.resolveCommands({ limit: 10 })).toSucceed();
+        }
+      }
+    });
+    expect(await h.writer.resolveCommands({ limit: 10 })).toSucceedAndSatisfy((report) => {
+      expect(report.resolutions).toEqual([
+        expect.objectContaining({
+          operationId: key,
+          action: 'resolved',
+          result: expect.objectContaining({ state: 'applied' })
+        })
+      ]);
+    });
+    // Sent twice in all — the original and the inner pump's resend — never a third time.
+    expect(h.executor.dispatches.get(key)).toBe(2);
+  });
+
   test('a pump passes over tasks its principal cannot see', async () => {
     const h = await ready();
     h.executor.loseNextResponse = true;
@@ -653,6 +736,32 @@ describe('the dispatch boundary under concurrency', () => {
       }
     );
     expect((await commandOf(h, 'j1', key)).dispatch).toBe('not-sent');
+    expect(h.executor.dispatches.size).toBe(0);
+    // A pump whose own authorization is overtaken the same way sends nothing either.
+    let pumpChecks = 0;
+    Object.assign(h.policy, {
+      afterDecision: async (request: { action: string }) => {
+        if (request.action === 'command' && pumpChecks++ === 0) {
+          const record = await recordOf(h, 'j1');
+          expect(
+            await h.writer.reassign({
+              taskId: tid('j1'),
+              operationId: op(),
+              expectedRevision: record.recordType === 'resolved' ? record.task.envelope.revision : rev(1),
+              responsibility: 'unassigned'
+            })
+          ).toSucceed();
+        }
+      }
+    });
+    expect(await h.writer.resolveCommands({ limit: 10 })).toFailWithDetail(
+      /intent is recorded and was not sent/,
+      {
+        code: 'conflict',
+        retry: 'safe',
+        operationId: key
+      }
+    );
     expect(h.executor.dispatches.size).toBe(0);
     // The pump, re-authorized against the task as it is now, dispatches it.
     expect(await h.writer.resolveCommands({ limit: 10 })).toSucceedAndSatisfy((report) => {
