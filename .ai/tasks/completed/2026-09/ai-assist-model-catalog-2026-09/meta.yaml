@@ -20,9 +20,11 @@ summary:
     New idPatterns: /^gpt-6/, /^grok-4\.7/, /^grok-4\.6/. The unions gained the new ids and dropped
     two OpenAI deep-research ids that were already shut down. A new quality-capable xAI image entry
     shipped, plus the builder wiring that makes the capability true. Every capability table was
-    checked and its disposition recorded. The cited id table is in result.md. Not live-verified:
-    the user's testbed run is a pre-merge gate still open when this was written, and so is the
-    Copilot review loop.
+    checked and its disposition recorded. The cited id table is in result.md. After the first live
+    run, a thinking fix shipped: thinkingRequiredModelPrefixes plus IThinkingConfig.onUnsupported,
+    where 'none' is sent as 'low' by default and 'fail' refuses the call. The testbed canaries also
+    gained thinking, strict-none, model-override and live-image probes. Live-verified by the user's
+    testbed run on 2026-09-25 (OpenAI, Gemini, xAI).
   diverged: >
     Anthropic was not rotated, although the brief scoped four providers. claude-opus-5-5 and
     claude-fable-5-1 reject forced tool_choice, which is the only Anthropic structured-output
@@ -34,7 +36,10 @@ summary:
     updates in samples/testbed, outside the declared package surface, caught by the repo-wide test.
     The TECH_DEBT manual-axes entry, which counted two axes, now names the per-model capability
     declarations as a third. The brief already listed those tables. code-reviewer ran after
-    coverage was already at 100% (no coverage-closure phase occurred), not before it.
+    coverage was already at 100% (no coverage-closure phase occurred), not before it. The user's
+    live run found three models that reject thinking 'none'. That turned a pure rotation into one
+    new capability (the thinking-required declaration and onUnsupported), added at the user's
+    direction to roll forward rather than hold the frontier and advanced tiers back.
   sourceLine: "**Shipped:** ai-assist's tier and image aliases now resolve to the current OpenAI, Gemini and xAI lines, each id taken from a fetched provider page — while Anthropic's are held, because its successors reject the forced tool call its structured output depends on."
   headline: >
     ai-assist's tier and image aliases now point at GPT-6, Gemini 3.8 Flash and Grok 4.7, each id
@@ -53,5 +58,7 @@ keywords:
   - structured output
   - grok-imagine quality
   - documentation-sourced identifiers
-  - not live-verified
-sourceHash: 7f485cd20ca08239 # sha256/16 over brief.md, result.md
+  - live-verified by testbed
+  - thinking none clamp
+  - onUnsupported
+sourceHash: d924680192b1eba1 # sha256/16 over brief.md, result.md

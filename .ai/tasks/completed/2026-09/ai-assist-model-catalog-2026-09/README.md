@@ -1,8 +1,8 @@
 # ai-assist-model-catalog-2026-09 — provider-line rotation, documentation-sourced
 
 **Shipped**: 2026-09-24 via [#692](https://github.com/ErikFortune/fgv/pull/692), from
-`claude/ai-assist-model-catalog-2026-09` against `release`. **Not verified against the live
-provider APIs.** The user's testbed run is the confirmation gate.
+`claude/ai-assist-model-catalog-2026-09` against `release`. **Live-verified** by the user's
+testbed run on 2026-09-25: the OpenAI, Gemini and xAI canaries all passed (`result.md` §6a).
 
 ## Summary
 
@@ -26,6 +26,14 @@ forced `tool_choice`, and ai-assist's Anthropic structured output is built on fo
   capability declarations. A successor can change what a declared mechanism does, as the
   forced-tool rejection did here.
 
+## Added after the first live run
+
+The first run showed that three models reject thinking `'none'`: `gpt-6-astra`, `grok-4.7` and
+`gemini-3.1-pro-preview`. The fix adds `thinkingRequiredModelPrefixes` to the descriptors and an
+`IThinkingConfig.onUnsupported` option. By default `'none'` is sent as `'low'`; with `'fail'` the
+call is refused before anything is sent. The canary gained strict-none probes that keep the list
+honest against the providers.
+
 ## Files
 
 - `libraries/ts-extras/src/packlets/ai-assist/registry.ts`: aliases, `defaultModel` comments,
@@ -41,9 +49,8 @@ forced `tool_choice`, and ai-assist's Anthropic structured output is built on fo
 
 ## Open
 
-- The live testbed confirmation. This is the user's gate and was still open at merge time. If it
-  fails, this record is wrong about the ids that failed.
 - The Copilot review loop on #692.
 - The P2: a non-forcing Anthropic structured-output format. This unblocks the Anthropic rotation.
-- The P3: per-model accepted thinking effort, GPT Image 2.5 `xhigh`/`max`, and the xAI edits
-  reference cap.
+- The P3: GPT Image 2.5 `xhigh`/`max`, the xAI edits reference cap, and the `/^gemini-3/`
+  over-match. (Thinking `'none'` on models that cannot turn thinking off was fixed in this PR;
+  see `result.md` §6a.)

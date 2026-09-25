@@ -2,9 +2,11 @@
 
 **Shipped:** ai-assist's tier and image aliases now resolve to the current OpenAI, Gemini and xAI lines, each id taken from a fetched provider page — while Anthropic's are held, because its successors reject the forced tool call its structured output depends on.
 
-**Not verified against the providers.** No live API call was made. This environment has no provider
-credentials and none were sought. Every gate below is offline. The table in §1 is the list to check
-a testbed run against.
+**Live-verified by the user's testbed run, 2026-09-25** (§6a). The agent made no live API call;
+this environment has no provider credentials, and none were sought. The OpenAI, Gemini and xAI
+model-tier canaries passed in full after the thinking fix in §6a, including the thinking,
+strict-none, model-override and live-image probes. Anthropic was not rotated, and its canary was
+not part of that run.
 
 ---
 
