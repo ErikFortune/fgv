@@ -71,12 +71,18 @@ export type RecoveryDeclaration = 'reattach' | 'host-resume' | 'not-recoverable'
  * `resumable` returns work to the host for explicit approval; it never resumes on its
  * own. `unresolved` is distinct from `unavailable`: the source answered, but could not
  * establish what became of the work.
+ *
+ * `unrecoverable` carries the source's own terminal projection — `failed` or `cancelled` — at
+ * the revision it declares the work lost. (T6 revision: T1's variant carried a reason only,
+ * which left the broker to *invent* the failed state it applies. A source-confirmed failure is
+ * an observation like any other, with a revision that deduplicates it; no persisted record ever
+ * carried the old shape.)
  * @public
  */
 export type RecoveryResult =
   | { readonly state: 'reattached' | 'completed'; readonly value: ISourceProjection }
   | { readonly state: 'resumable'; readonly reference: JsonValue }
-  | { readonly state: 'unrecoverable'; readonly reason: string }
+  | { readonly state: 'unrecoverable'; readonly reason: string; readonly value: ISourceProjection }
   | { readonly state: 'unavailable' | 'unresolved'; readonly reason: string };
 
 /**

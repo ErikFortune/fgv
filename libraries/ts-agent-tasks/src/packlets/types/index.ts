@@ -20,6 +20,7 @@ export * from './lifecycle';
 export * from './query';
 export * from './registry';
 export * from './source';
+export * from './sourceAdapter';
 export * from './storage';
 export * from './summary';
 export * from './trackedCommands';

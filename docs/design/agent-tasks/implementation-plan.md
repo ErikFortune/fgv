@@ -26,6 +26,18 @@ All three material decisions were approved on 2026-09-21. The user reports orche
 
 Package naming, lifecycle vocabulary, strict schemas, pagination and receipt issuance are reasoned technical recommendations, not open product discovery. Document acceptance may approve them together. Consumer rollout choices below remain the consumer's responsibility and do not block standalone library implementation.
 
+**Executor-payload dereference — decided 2026-09-24, before T6 rather than during it.** Terminal
+presentation shows the bounded projection only; it never dereferences an executor-owned payload.
+Reaching that payload is a separately-authorized host action. This follows the existing rule in
+`development-design.md` — *references carry identifiers, not automatic dereference permission* — of
+which terminal presentation is now explicitly **not** an exception. The alternative considered was
+dereference-at-presentation under the authorization the update already carried; it was declined
+because it makes presentation a read path against external storage, with its own failure, latency
+and capacity story and a second place payload size must be bounded. The asymmetry decided it:
+permitting dereference later, as an authorized host action, breaks nothing, whereas withdrawing it
+would be a contract change on terminal presentation. The question had been carried undecided through
+T1–T5 and genuinely reached none of them.
+
 **Clarification versus new decision:** retained inventory/graph/source entries grow with archived history; non-archived includes terminal tasks awaiting cleanup; task archival does not erase exact subscription or operation history. Those correct ambiguities in the previous text. Selecting minimal resident projections, staged rather than single-pass rebuild, finite defaults, protected completion claims, replay-source admission bounds and empirical qualification is new design under A3. It is not authorized by A1/A2. The observation's suggested flat-memory prediction is rejected; the relevant prediction is a smaller per-archived-task slope plus bounded payload/history residency.
 
 ## 2. Traceability of every library gate
@@ -172,7 +184,7 @@ Crash after the last child succeeds but before list completion; reopen must rebu
 
 **Review gate:** threat-model/ownership pass, authorization at every read and mutation boundary, source metadata immutability.
 
-### T6 — Source adapters, commands and reconciliation
+### T6 — Source adapters, commands and reconciliation — ✅ implemented on `integration/agent-tasks-v1` ([#693](https://github.com/ErikFortune/fgv/pull/693))
 
 **Dependencies:** T5. **Affected package:** `ts-agent-tasks` implementations/broker/storage.
 

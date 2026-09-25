@@ -9,11 +9,13 @@ import {
   ICreateTaskList,
   ICreateTrackedTask,
   IRegisterExternalTask,
+  ISourceReplayEnvelope,
   IStoredCatalogOperation,
   ITaskCommitRecord,
   ITaskEnvelope,
   ITaskMutationResult,
   ITaskRecordDraft,
+  ITaskSource,
   ITaskUpdate,
   Instant,
   TaskCatalogOperationType,
@@ -275,6 +277,7 @@ async function _register(
     readonly principal: string;
     readonly receipt: ITaskMutationResult;
     readonly draft: (operation: IStoredCatalogOperation) => ITaskRecordDraft;
+    readonly sourceReplay?: { readonly sourceId: string; readonly envelope: ISourceReplayEnvelope };
   }
 ): Promise<TaskResult<ITaskMutationResult>> {
   const operation: IStoredCatalogOperation = {
@@ -289,7 +292,8 @@ async function _register(
     taskId: params.taskId,
     operationId: params.operationId,
     request: params.request,
-    record: params.draft(operation)
+    record: params.draft(operation),
+    ...(params.sourceReplay !== undefined ? { sourceReplay: params.sourceReplay } : {})
   });
   // A registration that replays answers with the receipt it committed the first time.
   return registered.isSuccess() ? _committedReceipt(core, registered.value) : propagate(registered);
@@ -328,6 +332,10 @@ export async function registerExternal(
       { operationId }
     );
   }
+  const qualified = _qualifyHistory(core, request);
+  if (qualified.isFailure()) {
+    return propagate(qualified);
+  }
   let parent: IRelatedTask | undefined = undefined;
   if (request.parentId !== undefined) {
     const read = await readExisting(core, request.parentId);
@@ -340,6 +348,10 @@ export async function registerExternal(
     const parentNow = await recheckParent(writer, parent, taskId, operationId);
     if (parentNow.isFailure()) {
       return propagate<ITaskMutationResult>(parentNow);
+    }
+    const checkpoint = await _checkpointAgrees(core, writer, request);
+    if (checkpoint.isFailure()) {
+      return propagate<ITaskMutationResult>(checkpoint);
     }
     const clock = core.now();
     if (clock.isFailure()) {
@@ -357,6 +369,94 @@ export async function registerExternal(
   return read.value !== undefined ? ok(read.value) : notFound(taskId, operationId);
 }
 
+/**
+ * The attached source must be the one the repository has checkpointed under its id: a history that
+ * differs from the committed checkpoint's could admit a task no pass over that source may ever move.
+ */
+async function _checkpointAgrees(
+  core: BrokerCore,
+  writer: ITaskRepositoryWriter,
+  request: IRegisterExternalTask
+): Promise<TaskResult<true>> {
+  const source: ITaskSource | undefined = core.sources.get(request.binding.sourceId);
+  if (source === undefined) {
+    return ok(true);
+  }
+  const stored = await writer.readSource(source.id);
+  if (stored.isFailure()) {
+    return propagate(stored);
+  }
+  return stored.value === undefined || stored.value.history === source.history
+    ? ok(true)
+    : taskFailure(
+        `registerExternal: source '${source.id}' was checkpointed as '${stored.value.history}' and is ` +
+          `attached as '${source.history}'; nothing may be admitted against it until that is reconciled`,
+        'invalid',
+        'after-host-action',
+        { operationId: request.operationId }
+      );
+}
+
+/**
+ * Qualifies a registration's history guarantee against the attached source (design § 8.6).
+ *
+ * @remarks
+ * The stronger `source-replay` guarantee is refused, before anything is recorded, unless the source
+ * is attached and replays; and a replaying source's registrations must declare the finite envelope
+ * they need, since only that makes the guarantee reservable. Such a registration takes no initial
+ * observation: its first state comes from the feed's order, never from an independent latest read.
+ */
+function _qualifyHistory(core: BrokerCore, request: IRegisterExternalTask): TaskResult<true> {
+  const source: ITaskSource | undefined = core.sources.get(request.binding.sourceId);
+  const { operationId } = request;
+  if (request.history?.history === 'source-replay') {
+    if (source?.history !== 'source-replay') {
+      return taskFailure(
+        `registerExternal: source '${request.binding.sourceId}' is not an attached source-replay source; ` +
+          `the source-replay guarantee is refused`,
+        'unsupported',
+        'after-host-action',
+        { operationId }
+      );
+    }
+    if (request.initialObservation !== undefined) {
+      return taskFailure(
+        `registerExternal: a source-replay registration is seeded by its feed, not an initial observation`,
+        'invalid',
+        'after-host-action',
+        { operationId }
+      );
+    }
+    return ok(true);
+  }
+  return source?.history === 'source-replay'
+    ? taskFailure(
+        `registerExternal: source '${source.id}' is source-replay; its registrations declare the finite ` +
+          `envelope they need`,
+        'invalid',
+        'after-host-action',
+        { operationId }
+      )
+    : ok(true);
+}
+
+/**
+ * Extends a `source-replay` task's finite envelope: new admission, charged before the source relies
+ * on it. Returns the envelope now held.
+ * @internal
+ */
+export async function extendReplayEnvelope(
+  core: BrokerCore,
+  taskId: TaskId,
+  add: ISourceReplayEnvelope
+): Promise<TaskResult<ISourceReplayEnvelope>> {
+  const id = core.converters.ids.taskId.convert(taskId);
+  if (id.isFailure()) {
+    return taskFailure(`extendReplayEnvelope: ${id.message}`, 'invalid', 'after-host-action');
+  }
+  return core.gated((writer) => writer.extendReplayEnvelope(id.value, add));
+}
+
 async function _registerExternal(
   core: BrokerCore,
   writer: ITaskRepositoryWriter,
@@ -366,12 +466,16 @@ async function _registerExternal(
   now: Instant
 ): Promise<TaskResult<ITaskMutationResult>> {
   const { taskId, operationId } = request;
+  const history = request.history;
   const common = {
     taskId,
     operationId,
     operation: 'register-external' as const,
     request: json,
-    principal
+    principal,
+    ...(history?.history === 'source-replay'
+      ? { sourceReplay: { sourceId: request.binding.sourceId, envelope: history.envelope } }
+      : {})
   };
   const observation = request.initialObservation;
   if (observation === undefined) {

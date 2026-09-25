@@ -88,6 +88,12 @@ export interface ITaskKindRegistry {
    */
   convert(snapshot: unknown): TaskResult<ITaskSnapshot>;
   has(kind: TaskKind, detailVersion: number): boolean;
+  /**
+   * The command handle a registered kind declares under `name`. Fails for an unregistered kind or
+   * an undeclared command. (T6: the broker validates an external command's parameters through the
+   * kind that registered them, the one authority for its schema.)
+   */
+  getCommand(kind: TaskKind, detailVersion: number, name: string): Result<ITaskCommandHandle>;
   readonly isFrozen: boolean;
   /** Freezes the registry, and reports how many registrations it holds. */
   freeze(): Result<number>;

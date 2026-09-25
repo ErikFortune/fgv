@@ -69,6 +69,9 @@ function bindAll(w: ITaskRepositoryWriter): ITaskRepositoryWriter {
     readCommit: (id) => w.readCommit(id),
     register: (r) => w.register(r),
     commit: (r) => w.commit(r),
+    readSource: (id) => w.readSource(id),
+    commitSource: (r) => w.commitSource(r),
+    extendReplayEnvelope: (id, add) => w.extendReplayEnvelope(id, add),
     raiseCapacityLimits: (p) => w.raiseCapacityLimits(p)
   };
 }

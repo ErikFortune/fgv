@@ -154,6 +154,7 @@ describe('the registry must actually freeze', () => {
       register: (descriptor) => inner.register(descriptor),
       convert: (snapshot) => inner.convert(snapshot),
       has: (kind, version) => inner.has(kind, version),
+      getCommand: (kind, version, name) => inner.getCommand(kind, version, name),
       isFrozen: false,
       freeze: (): Result<number> => fail('this registry is shared and stays open')
     };
@@ -662,13 +663,12 @@ describe('copilot round 2: open validates what claims are, not only which', () =
             ownership: held.ownership,
             disposition: held.disposition,
             charges: held.charges,
-            purpose: 'accepted-operation-settlement',
-            taskId: 't1',
-            operationId: 'op-x'
+            purpose: 'receipt-preparation',
+            subscriptionId: 's1'
           }
         ];
       },
-      /does not hold a 'accepted-operation-settlement' claim/
+      /does not hold a 'receipt-preparation' claim/
     ]
   ])('a claim %s blocks open', async (__, edit, message) => {
     expect((await withClaims(edit)).issues).toEqual([

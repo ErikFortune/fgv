@@ -13,6 +13,7 @@ import {
   IResolvedTaskCommitRecord,
   IStoredCommandOperation,
   IStoredTaskOperation,
+  ITaskCommandHandle,
   ITaskCommitRecord,
   ITaskEnvelope,
   ITaskUpdate,
@@ -28,6 +29,7 @@ import { advance, confirmUnchanged, nextDraft, readExisting } from './catalogMut
 import { isNativeKind } from './catalogOperations';
 import { BrokerCore, canonicallySame, revisionOf, storedOperation } from './core';
 import { changedSinceAuthorized, notFound, ok, propagate, taskFailure } from './failures';
+import { executeExternal, prepareExternal } from './externalCommands';
 
 /** A receipt that is returned but never stored. */
 function _rejected(request: ICommandRequest, reason: CommandRejectionReason): TaskResult<ICommandReceipt> {
@@ -73,6 +75,18 @@ async function _replay(
   return confirmUnchanged(core, ctx, epoch, request.taskId, record, stored.receipt, request.operationId);
 }
 
+/** A command converted for its task: through the tracked table, or its external kind's schema. */
+type Preparation =
+  | {
+      readonly kind: 'external';
+      readonly record: IResolvedTaskCommitRecord;
+      readonly result: TaskResult<{ readonly handle?: ITaskCommandHandle; readonly stored: ICommandRequest }>;
+    }
+  | {
+      readonly kind: 'native';
+      readonly result: TaskResult<{ readonly prepared: Prepared; readonly stored: ICommandRequest }>;
+    };
+
 /** What evaluation decided before the writer: a refusal to record, or a command to evaluate. */
 type Prepared =
   | { readonly kind: 'refuse'; readonly reason: 'unsupported' | 'conflict' }
@@ -88,9 +102,9 @@ function _prepare(
   record: ITaskCommitRecord,
   request: ICommandRequest
 ): TaskResult<{ readonly prepared: Prepared; readonly stored: ICommandRequest }> {
-  // An unresolved registration, and an external task — whose commands are dispatched to its source,
-  // which T6 implements — support none.
-  if (record.recordType === 'unresolved' || !isNativeKind(record.task.envelope)) {
+  // An unresolved registration supports none; an external task's commands go to its source
+  // (`executeExternal`) and never reach here.
+  if (record.recordType === 'unresolved') {
     return ok({ prepared: { kind: 'refuse', reason: 'unsupported' }, stored: request });
   }
   if (!trackedTaskCommandNames.includes(request.command as TrackedTaskCommandName)) {
@@ -127,8 +141,8 @@ function _prepare(
  * evidence), `invalid-transition` for an archived tombstone (not recorded — a tombstone takes no
  * write, so the key stays free), or an evaluated outcome that is recorded under the key:
  * `unsupported`, a stale `conflict`, a table `invalid-transition`, or `applied`. A same-state no-op is `applied` at the current
- * revision without advancing it. External tasks' commands belong to their source (T6) and are
- * `unsupported` here.
+ * revision without advancing it. An external task's command goes to its source through
+ * {@link executeExternal}: accepted is not applied, and the broker never sets its status.
  * @internal
  */
 export async function execute(
@@ -157,20 +171,20 @@ export async function execute(
   if (!(await ctx.sees(subject))) {
     return notFound(taskId, operationId);
   }
-  // Replay compares the request as it was stored, so a native task's parameters are converted
-  // first; a request whose parameters cannot convert can never equal a stored one. An unresolved
+  // Replay compares the request as it was stored, so a task's parameters are converted first —
+  // a native task's through the tracked table, an external task's through its kind's registered
+  // schema; a request whose parameters cannot convert can never equal a stored one. An unresolved
   // registration's one operation is its registration, so a reused key there can only conflict.
-  const prepared = _prepare(core, record, request);
+  const preparation: Preparation =
+    record.recordType === 'resolved' && !isNativeKind(record.task.envelope)
+      ? { kind: 'external', record, result: prepareExternal(core, record, request) }
+      : { kind: 'native', result: _prepare(core, record, request) };
+  const storedForm: ICommandRequest = preparation.result.isSuccess()
+    ? preparation.result.value.stored
+    : request;
   const stored: IStoredTaskOperation | undefined = storedOperation(record, operationId);
   if (stored !== undefined) {
-    return _replay(
-      core,
-      ctx,
-      epoch.value,
-      record,
-      stored,
-      prepared.isSuccess() ? prepared.value.stored : request
-    );
+    return _replay(core, ctx, epoch.value, record, stored, storedForm);
   }
   // Command authority is decided before anything else about the command is disclosed.
   if (!(await ctx.may('command', subject, 'subject', { command: request.command }))) {
@@ -184,10 +198,27 @@ export async function execute(
     // A tombstone takes no write at all, so this refusal cannot be recorded; it holds no key.
     return _rejected(request, 'invalid-transition');
   }
-  if (prepared.isFailure()) {
-    return propagate(prepared);
+  if (preparation.kind === 'external') {
+    if (preparation.result.isFailure()) {
+      return propagate(preparation.result);
+    }
+    const receipt = await executeExternal(
+      core,
+      ctx,
+      epoch.value,
+      preparation.record,
+      request,
+      preparation.result.value
+    );
+    if (receipt.isFailure()) {
+      return propagate(receipt);
+    }
+    return receipt.value !== undefined ? ok(receipt.value) : execute(core, ctx, input);
   }
-  const { prepared: plan, stored: storedRequest } = prepared.value;
+  if (preparation.result.isFailure()) {
+    return propagate(preparation.result);
+  }
+  const { prepared: plan, stored: storedRequest } = preparation.result.value;
 
   // `undefined` from the writer section means: the same command committed while this one waited.
   const outcome = await core.gated(async (writer): Promise<TaskResult<ICommandReceipt | undefined>> => {

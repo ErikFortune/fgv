@@ -435,6 +435,17 @@ function _archivable(record: IResolvedTaskCommitRecord): TaskResult<true> {
       'after-host-action'
     );
   }
+  if (
+    record.operations.some(
+      (op) => op.type === 'command' && (op.dispatch !== 'settled' || op.awaiting !== undefined)
+    )
+  ) {
+    return taskFailure(
+      `task ${id}: an external command is unsettled or awaiting its feed; its outcome must be resolved first`,
+      'retention-blocked',
+      'after-host-action'
+    );
+  }
   return ok(true);
 }
 

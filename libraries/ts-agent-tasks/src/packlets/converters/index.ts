@@ -14,6 +14,7 @@ export * from './identityConverters';
 export * from './kindRegistry';
 export * from './primitives';
 export * from './queryConverters';
+export * from './sourceConverters';
 export * from './storageConverters';
 export * from './taskConverters';
 export * from './taskEnvironment';

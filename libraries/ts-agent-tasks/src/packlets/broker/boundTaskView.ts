@@ -11,6 +11,8 @@ import {
   IBoundTaskWriter,
   IChangeTaskScopes,
   ICommandReceipt,
+  ICommandResolutionReport,
+  ICommandResolutionRequest,
   ICommandRequest,
   ICompleteTaskList,
   ICreateTaskList,
@@ -31,6 +33,7 @@ import { archive, changeScopes, completeList, reassign, reparent, updateTracked 
 import { execute } from './commands';
 import { BrokerCore } from './core';
 import { createNative } from './creation';
+import { resolveCommands } from './externalCommands';
 import { reconcileListCompletions } from './listCompletion';
 import { inspectView, queryView } from './reads';
 
@@ -108,5 +111,9 @@ export class BoundTaskWriter extends BoundTaskView implements IBoundTaskWriter {
     request: IListCompletionRequest
   ): Promise<TaskResult<IListCompletionReport>> {
     return reconcileListCompletions(this._core, this._access, request);
+  }
+
+  public resolveCommands(request: ICommandResolutionRequest): Promise<TaskResult<ICommandResolutionReport>> {
+    return resolveCommands(this._core, this._access, request);
   }
 }

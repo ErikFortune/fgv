@@ -15,7 +15,9 @@ import {
   ITaskEnvironment,
   ITaskKindRegistry,
   ITaskRecoveryReport,
+  ITaskRecordHeader,
   ITaskRepositoryManifest,
+  ITaskSourceRecord,
   OperationId,
   TaskId,
   TaskInventoryRecordKind,
@@ -33,8 +35,11 @@ import {
   checkOperationCount,
   checkPendingIdentity,
   checkRegistrationDraft,
+  commandSettlement,
+  hasUnsettledCommand,
   pendingIdentity,
   registrationIdentity,
+  sourceIdOf,
   updatesOf
 } from './commitRules';
 import { classify, mintId, ok, propagate, taskFailure, writeRetry } from './failures';
@@ -59,6 +64,7 @@ import {
 } from './model';
 import {
   ITaskProjection,
+  isTerminalRecord,
   ledgerEntry,
   manifestEntry,
   opaqueEntry,
@@ -91,6 +97,7 @@ export interface IRepositoryState {
   readonly manifestText: string;
   readonly tasks: Map<TaskId, ITaskProjection>;
   readonly pending: Map<string, IPendingInventoryEntry>;
+  readonly sources: Map<string, ISourceRecordState>;
   readonly ledger: CapacityLedger;
   readonly report: ITaskRecoveryReport;
   readonly index: TaskIndex;
@@ -288,6 +295,7 @@ export function initializeRepository(
         manifestText: created.value.text,
         tasks: new Map(),
         pending: new Map(),
+        sources: new Map(),
         ledger,
         index: new TaskIndex(),
         evidence: {
@@ -392,6 +400,12 @@ function _convertVersioned<T>(
     return undefined;
   }
   return converted.value;
+}
+
+/** A converted consumer or source record: its header, and the full source record when it is one. */
+interface IOpaqueRecord {
+  readonly header: ITaskRecordHeader;
+  readonly source?: ITaskSourceRecord;
 }
 
 /**
@@ -551,10 +565,22 @@ export interface IScanned {
   readonly manifestText: string;
   readonly tasks: Map<TaskId, ITaskProjection>;
   readonly pending: Map<string, IPendingInventoryEntry>;
+  readonly sources: Map<string, ISourceRecordState>;
   readonly ledger: CapacityLedger;
   readonly index: TaskIndex;
   readonly report: ITaskRecoveryReport;
   readonly evidence: IScanEvidence;
+}
+
+/**
+ * A committed source-checkpoint record as the repository holds it: small, bounded (at most the
+ * source-record bound), and resident for the repository's lifetime.
+ * @internal
+ */
+export interface ISourceRecordState {
+  readonly record: ITaskSourceRecord;
+  readonly fingerprint: string;
+  readonly bytes: number;
 }
 
 /**
@@ -687,6 +713,12 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
     }
   };
 
+  // A pending external registration names its source only in its stored request.
+  const pendingSource = (entry: IPendingInventoryEntry): { sourceId?: string } => {
+    const request = converters.broker.registerExternal.convert(entry.request);
+    return request.isSuccess() ? { sourceId: request.value.binding.sourceId } : {};
+  };
+
   // ---- task records ----
   const recordLimit: number = taskRecordLimit(profile);
   for (const entry of manifest.tasks) {
@@ -711,7 +743,10 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
               ownership: 'pending',
               unresolved: entry.recordType === 'unresolved',
               external: entry.operation === 'register-external',
-              archived: false
+              archived: false,
+              // A pending registration's record does not exist yet, so it holds no command.
+              commands: new Map(),
+              ...pendingSource(entry)
             },
             profile
           )
@@ -785,7 +820,10 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
         ownership: 'live',
         unresolved: record.recordType === 'unresolved',
         external: bounded.value.operation === 'register-external',
-        archived: record.recordType === 'resolved' && record.archived
+        archived: record.recordType === 'resolved' && record.archived,
+        terminal: isTerminalRecord(record),
+        ...(sourceIdOf(record) !== undefined ? { sourceId: sourceIdOf(record) } : {}),
+        commands: commandSettlement(record)
       },
       profile
     );
@@ -870,7 +908,8 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
     );
   }
 
-  // ---- consumer and source records: only what this release owns ----
+  // ---- consumer records: only what this release owns; source records in full ----
+  const sources: Map<string, ISourceRecordState> = new Map<string, ISourceRecordState>();
   const opaque = (kind: 'consumer' | 'source', entries: ITaskRepositoryManifest['consumers']): void => {
     for (const entry of entries) {
       const name: string = recordName(kind, entry.id);
@@ -896,27 +935,47 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
         const text = _readJson(store, scan, name, Math.min(limit, profile.limits['record-bytes']));
         return {
           read: text,
-          header:
+          converted:
             text === undefined
               ? undefined
-              : _convertVersioned(
+              : _convertVersioned<IOpaqueRecord>(
                   converters,
                   scan,
                   name,
                   text.parsed,
-                  (from) => converters.storage.header.convert(from),
+                  (from) =>
+                    kind === 'source'
+                      ? converters.storage.sourceRecord
+                          .convert(from)
+                          .onSuccess((record) =>
+                            utf8Length(record.cursor ?? '') > profile.encoded.maxSourceCursorBytes
+                              ? fail<IOpaqueRecord>(
+                                  `its cursor is over the bound of ${profile.encoded.maxSourceCursorBytes} bytes`
+                                )
+                              : succeed<IOpaqueRecord>({ header: record, source: record })
+                          )
+                      : converters.storage.header
+                          .convert(from)
+                          .onSuccess((header) => succeed<IOpaqueRecord>({ header })),
                   'record-invalid'
                 )
         };
       });
       const read = materialized.read;
-      const header = materialized.header;
-      if (read === undefined || header === undefined) {
+      const converted = materialized.converted;
+      if (read === undefined || converted === undefined) {
         continue;
       }
-      if (header.id !== entry.id) {
-        scan.blocking('record-id-mismatch', `${name}: holds ${kind} ${header.id}`, name);
+      if (converted.header.id !== entry.id) {
+        scan.blocking('record-id-mismatch', `${name}: holds ${kind} ${converted.header.id}`, name);
         continue;
+      }
+      if (converted.source !== undefined) {
+        sources.set(entry.id, {
+          record: converted.source,
+          fingerprint: fingerprintOf(read.text),
+          bytes: read.bytes
+        });
       }
       ledger.apply(new Map([[`${kind}:${entry.id}`, opaqueEntry(entry.id, kind, read.bytes, profile)]]));
     }
@@ -1034,6 +1093,7 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
       manifestText: completion.value.text,
       tasks,
       pending,
+      sources,
       ledger,
       index,
       report: report(),
@@ -1077,7 +1137,13 @@ function _indexContent(record: ITaskCommitRecord, known: boolean): IndexContent 
       .convert(record.task.details)
       .onSuccess((details) => succeed(details.completion === 'all-children-succeeded'))
       .orDefault(false);
-  return { category: 'summary', envelope, ...(automaticList ? { automaticList } : {}) };
+  const unsettled: boolean = hasUnsettledCommand(record);
+  return {
+    category: 'summary',
+    envelope,
+    ...(automaticList ? { automaticList } : {}),
+    ...(unsettled ? { unsettledCommands: true } : {})
+  };
 }
 
 /**

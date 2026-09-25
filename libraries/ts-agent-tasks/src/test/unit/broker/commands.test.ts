@@ -176,14 +176,18 @@ describe('command receipts', () => {
 });
 
 describe('tasks the broker does not execute', () => {
-  test('an external task: unsupported, recorded (its source owns commands)', async () => {
+  test('an external task whose source is not attached: source-unavailable, nothing recorded', async () => {
+    // T6: an external task's commands go to its source. With no source attached nothing about its
+    // execution changes — the command is refused before any intent is recorded.
     const h = await brokerHarness();
     await registerVendor(h, 'v');
+    const before = await recordOf(h, 'v');
     const key = op();
-    expect(await run(h, 'v', 'start', {}, 1, key)).toSucceedWith(
-      expect.objectContaining({ result: { state: 'rejected', reason: 'unsupported' } })
-    );
-    expect((await recordOf(h, 'v')).operations.some((o) => o.operationId === key)).toBe(true);
+    expect(await run(h, 'v', 'start', {}, 1, key)).toFailWithDetail(/not attached/i, {
+      code: 'source-unavailable',
+      retry: 'after-host-action'
+    });
+    expect(await recordOf(h, 'v')).toEqual(before);
   });
 
   test('an unresolved registration: unsupported, not recorded; its registration key conflicts', async () => {

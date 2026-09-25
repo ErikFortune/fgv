@@ -6,6 +6,8 @@
 import { Converters as JsonConverters, JsonValue } from '@fgv/ts-json-base';
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import {
+  ICommandResolutionRequest,
+  ISourceReconcileRequest,
   IArchiveTask,
   IBoundTaskQuery,
   IChangeTaskScopes,
@@ -67,6 +69,10 @@ export interface IBrokerConverters {
   readonly registerExternal: Converter<IRegisterExternalTask>;
   readonly boundQuery: Converter<IBoundTaskQuery>;
   readonly listCompletion: Converter<IListCompletionRequest>;
+  /** A pass of the uncertain-command pump. */
+  readonly commandResolution: Converter<ICommandResolutionRequest>;
+  /** A request to reconcile one source. */
+  readonly reconcile: Converter<ISourceReconcileRequest>;
   /** `{ command, parameters }` for one `fgv.tracked@1` command. */
   readonly trackedCommand: Converter<TrackedCommand>;
   readonly mutationResult: Converter<ITaskMutationResult>;
@@ -178,7 +184,8 @@ export function buildBrokerConverters(
     scopes: values.scopes,
     binding: values.sourceBinding,
     recovery: values.recoveryDeclaration,
-    initialObservation: values.sourceProjection.optional()
+    initialObservation: values.sourceProjection.optional(),
+    history: values.sourceHistoryDeclaration.optional()
   });
 
   const boundQuery: Converter<IBoundTaskQuery> = Converters.strictObject<IBoundTaskQuery>({
@@ -199,6 +206,16 @@ export function buildBrokerConverters(
   const listCompletion: Converter<IListCompletionRequest> = Converters.strictObject<IListCompletionRequest>({
     limit: queries.limit,
     after: queries.pageCursor.optional()
+  });
+
+  const commandResolution: Converter<ICommandResolutionRequest> =
+    Converters.strictObject<ICommandResolutionRequest>({
+      limit: queries.limit
+    });
+
+  const reconcile: Converter<ISourceReconcileRequest> = Converters.strictObject<ISourceReconcileRequest>({
+    sourceId: ids.sourceId,
+    maxPages: positiveSafeInteger.optional()
   });
 
   // The parameters of the union member whose command set includes `C`.
@@ -339,6 +356,8 @@ export function buildBrokerConverters(
     registerExternal,
     boundQuery,
     listCompletion,
+    commandResolution,
+    reconcile,
     trackedCommand,
     mutationResult,
     reassignmentResult,

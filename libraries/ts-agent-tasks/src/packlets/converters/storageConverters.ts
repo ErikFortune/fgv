@@ -6,6 +6,7 @@
 import { Converters as JsonConverters } from '@fgv/ts-json-base';
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import {
+  ICommandAwaiting,
   IPendingInventoryEntry,
   IResolvedTaskCommitRecord,
   IResolvedTaskRecordDraft,
@@ -17,6 +18,8 @@ import {
   ITaskInventoryEntry,
   ITaskRecordDraft,
   ITaskRecordHeader,
+  ITaskSourceRecord,
+  SourceHistoryContract,
   ITaskRepositoryManifest,
   ITaskUpdate,
   IUnresolvedTaskCommitRecord,
@@ -34,7 +37,12 @@ import { ICommandConverters } from './commandConverters';
 import { IContextConverters } from './contextConverters';
 import { IEnvelopeConverters } from './envelopeConverters';
 import { IIdentityConverters } from './identityConverters';
-import { boundedSingleLine, positiveSafeInteger } from './primitives';
+import {
+  boundedSingleLine,
+  maxSourceCursorLength,
+  nonNegativeSafeInteger,
+  positiveSafeInteger
+} from './primitives';
 import { IValueConverters } from './valueConverters';
 
 /**
@@ -62,6 +70,8 @@ export interface IStorageConverters {
   readonly inventoryEntry: Converter<ITaskInventoryEntry>;
   readonly manifest: Converter<ITaskRepositoryManifest>;
   readonly header: Converter<ITaskRecordHeader>;
+  /** A broker source-checkpoint record, validated in full. */
+  readonly sourceRecord: Converter<ITaskSourceRecord>;
   /**
    * Reads only `formatVersion` from an otherwise unvalidated object, so a record written by a
    * newer storage format can be *reported* as such rather than as generic corruption.
@@ -178,8 +188,19 @@ export function buildStorageConverters(
     request: commands.request,
     principalKey,
     dispatch: Converters.enumeratedValue<StoredCommandDispatch>(['not-sent', 'possibly-sent', 'settled']),
-    receipt: commands.receipt
-  });
+    receipt: commands.receipt,
+    awaiting: Converters.strictObject<ICommandAwaiting>({
+      revision: values.sourceRevision,
+      execution: boundedSingleLine(64, 'execution digest')
+    }).optional()
+  }).withConstraint((stored: IStoredCommandOperation) =>
+    // `awaiting` means "settled accepted until the feed reaches this revision": on any other command
+    // it is a state nothing would ever resolve.
+    stored.awaiting === undefined ||
+    (stored.dispatch === 'settled' && stored.receipt.result.state === 'accepted')
+      ? succeed(stored)
+      : fail(`command ${stored.operationId}: only a settled accepted command may await a feed revision`)
+  );
 
   const catalog: Converter<IStoredCatalogOperation> = Converters.strictObject<IStoredCatalogOperation>({
     type: Converters.literal('catalog'),
@@ -286,6 +307,17 @@ export function buildStorageConverters(
     id: ids.identifier
   });
 
+  // A cursor is opaque source text; the stored profile's `maxSourceCursorBytes` is checked by the
+  // repository, which holds the profile. This is only the representable ceiling.
+  const sourceRecord: Converter<ITaskSourceRecord> = Converters.strictObject<ITaskSourceRecord>({
+    formatVersion: Converters.literal<1>(1),
+    id: ids.sourceId,
+    recordRevision,
+    history: Converters.enumeratedValue<SourceHistoryContract>(['observed-state', 'source-replay']),
+    cursor: boundedSingleLine(maxSourceCursorLength, 'source cursor').optional(),
+    pages: nonNegativeSafeInteger
+  });
+
   const formatVersion: Converter<number> = Converters.object<{ formatVersion: number }>({
     formatVersion: Converters.number
   }).map((value) => succeed(value.formatVersion));
@@ -301,6 +333,7 @@ export function buildStorageConverters(
     inventoryEntry,
     manifest,
     header,
+    sourceRecord,
     formatVersion
   };
 }

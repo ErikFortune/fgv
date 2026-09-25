@@ -4,6 +4,7 @@
  */
 
 export * from './envelopeFields';
+export * from './externalSource';
 export * from './listPolicy';
 export * from './trackedTransitions';
 export * from './updatePlan';

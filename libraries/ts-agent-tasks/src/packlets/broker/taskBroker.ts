@@ -10,8 +10,16 @@ import {
   IBoundTaskView,
   IBoundTaskViewParams,
   IBoundTaskWriter,
+  ISourceBinding,
+  ISourceObservationReport,
+  ISourceReconcileReport,
+  ISourceReconcileRequest,
+  ISourceReplayEnvelope,
   ITaskEnvironment,
+  ITaskRecoveryOutcome,
   ITaskScope,
+  ITaskSource,
+  TaskId,
   TaskRegistrationResult,
   TaskResult
 } from '../types';
@@ -19,7 +27,8 @@ import { ITaskRepository } from '../storage';
 import { AccessContext } from './access';
 import { BoundTaskView, BoundTaskWriter } from './boundTaskView';
 import { BrokerCore } from './core';
-import { registerExternal } from './creation';
+import { extendReplayEnvelope, registerExternal } from './creation';
+import { observeBinding, observeTask, reconcileSource, recoverTask } from './reconciliation';
 import { ok, taskFailure } from './failures';
 import { defaultTaskProjector } from './projection';
 
@@ -33,6 +42,12 @@ export interface ITaskBrokerCreateParams {
   readonly environment: ITaskEnvironment;
   /** Converters to validate requests with. Defaults to the default field bounds. */
   readonly converters?: TaskConverters;
+  /**
+   * The external sources this broker reconciles and dispatches to, each under a distinct id. A task
+   * whose source is not attached is left exactly as it is: its commands fail `source-unavailable`
+   * recording nothing, and no pass touches it. Creating the broker calls no source.
+   */
+  readonly sources?: ReadonlyArray<ITaskSource>;
 }
 
 /** The broker's private constructor, captured for {@link createTaskBroker}; never exported. */
@@ -89,6 +104,53 @@ export class TaskBroker {
     return registerExternal(this._core, principal, request);
   }
 
+  /**
+   * Reads one task's binding from its source and applies it — a trusted host operation. For a
+   * `source-replay` source nothing is read: the outcome is `deferred`, and only
+   * {@link TaskBroker.reconcile} moves the task.
+   */
+  public observe(taskId: TaskId): Promise<TaskResult<ISourceObservationReport>> {
+    return observeTask(this._core, taskId);
+  }
+
+  /**
+   * A push hint from a source: never itself a delivery record. Triggers a fresh read of the binding
+   * (never an overwrite from the push), exactly as {@link TaskBroker.observe}.
+   */
+  public hint(binding: ISourceBinding): Promise<TaskResult<ISourceObservationReport>> {
+    return observeBinding(this._core, binding);
+  }
+
+  /**
+   * One reconciliation pass over a source, from its committed cursor — a trusted host operation.
+   * The cursor advances only past pages whose every observation committed.
+   */
+  public reconcile(request: ISourceReconcileRequest): Promise<TaskResult<ISourceReconcileReport>> {
+    const converted = this._core.converters.broker.reconcile.convert(request);
+    return converted.isSuccess()
+      ? reconcileSource(this._core, converted.value)
+      : Promise.resolve(taskFailure(`reconcile: ${converted.message}`, 'invalid', 'after-host-action'));
+  }
+
+  /**
+   * Explicit recovery of one task after a restart — a trusted host operation. Repository open and
+   * broker creation never do this.
+   */
+  public recover(taskId: TaskId): Promise<TaskResult<ITaskRecoveryOutcome>> {
+    return recoverTask(this._core, taskId);
+  }
+
+  /**
+   * Extends a `source-replay` task's finite envelope — new admission, charged now, before the source
+   * relies on it. Completion of work already admitted never depends on this.
+   */
+  public extendReplayEnvelope(
+    taskId: TaskId,
+    add: ISourceReplayEnvelope
+  ): Promise<TaskResult<ISourceReplayEnvelope>> {
+    return extendReplayEnvelope(this._core, taskId, add);
+  }
+
   private _access(params: IBoundTaskViewParams): TaskResult<AccessContext> {
     const broker = this._core.converters.broker;
     const values = this._core.converters.values;
@@ -133,6 +195,13 @@ export function createTaskBroker(
 ): Result<TaskBroker> {
   const converters: Result<TaskConverters> =
     params.converters !== undefined ? succeed(params.converters) : TaskConverters.create();
+  const sources: Map<string, ITaskSource> = new Map<string, ITaskSource>();
+  for (const source of params.sources ?? []) {
+    if (sources.has(source.id)) {
+      return fail(`TaskBroker.create: two sources share the id '${source.id}'`);
+    }
+    sources.set(source.id, source);
+  }
   return converters.onSuccess((c) =>
     captureResult(() =>
       construct(
@@ -140,7 +209,8 @@ export function createTaskBroker(
           repository: params.repository,
           environment: params.environment,
           converters: c,
-          audience
+          audience,
+          sources
         })
       )
     )

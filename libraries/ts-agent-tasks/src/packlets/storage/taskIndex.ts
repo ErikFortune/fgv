@@ -31,7 +31,13 @@ export type IndexContent =
    * marks a task list whose details ask for completion when all children succeed — read from the
    * details when the record is indexed, because details are never resident.
    */
-  | { readonly category: 'summary'; readonly envelope: ITaskEnvelope; readonly automaticList?: boolean }
+  | {
+      readonly category: 'summary';
+      readonly envelope: ITaskEnvelope;
+      readonly automaticList?: boolean;
+      /** The record holds an external command whose dispatch is not settled. */
+      readonly unsettledCommands?: boolean;
+    }
   /** Archived: identity, graph edge, final status and source identity only. */
   | { readonly category: 'archived'; readonly envelope: ITaskEnvelope }
   /** Registered, first observation not arrived: the bounded reference, no lifecycle. */
@@ -165,6 +171,8 @@ export class TaskIndex {
    * and at every rebuild, never persisted.
    */
   public readonly listCandidates: SortedKeySet = new SortedKeySet();
+  /** Tasks holding an unsettled external command, for the uncertain-command pump. */
+  public readonly unsettledCommands: SortedKeySet = new SortedKeySet();
   /** Per parent, how many of its children are resolved (archived or not) and succeeded. */
   private readonly _succeededChildren: Map<TaskId, number> = new Map();
   private readonly _owedKeysByTask: Map<TaskId, ReadonlyArray<string>> = new Map();
@@ -276,6 +284,7 @@ export class TaskIndex {
       this._recheckCandidate(m.parentId);
     }
     this.listCandidates.delete(id);
+    this.unsettledCommands.delete(id);
     if (m.sourceKey !== undefined) {
       this.sources.delete(m.sourceKey);
     }
@@ -430,6 +439,9 @@ export class TaskIndex {
       _setIn(this.activeChildren, parentId, id);
     }
     this.summaries.set(id, { envelope });
+    if (content.unsettledCommands === true) {
+      this.unsettledCommands.add(id);
+    }
     this._memberships.set(id, {
       category: 'summary',
       ...base,

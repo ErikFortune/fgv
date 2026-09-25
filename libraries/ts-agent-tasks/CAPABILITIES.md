@@ -15,13 +15,15 @@ on its own, and importing it has no side effects.
 
 ## What ships today
 
-Five things: the **vocabulary** (the `types` and `converters` packlets), the **snapshot-only
+Six things: the **vocabulary** (the `types` and `converters` packlets), the **snapshot-only
 context entry point** (the `context` packlet), **durable task storage** (the `storage` packlet:
 `FileTreeTaskRepository`), **indexed selection** over that storage — scope/lifecycle queries,
 due candidates and owed updates answered from resident indexes, with keyset paging, a staged
 rebuild and a reusable conformance suite for custom repositories — and the **broker**
 (`TaskBroker`): principal-bound views and writers, tracked work and task lists, hierarchy and
-reassignment, with authorization at every read and mutation. Source adapters, delivery, tools and
+reassignment, with authorization at every read and mutation — and **external sources**
+(`ITaskSource`, `ExternalTaskSource`): observation, paged reconciliation, recovery and command
+dispatch for work a source executes, with the source owning execution truth. Delivery, tools and
 prompt integration follow in later slices, and are deliberately absent from the export surface
 rather than stubbed.
 
@@ -316,8 +318,7 @@ to the view and the policy epoch. `bindView` returns an object with no mutation 
 (pending→running), `wait`/`pause` (with a reason), `resume` (waiting/paused→running), `succeed` /
 `fail` / `cancel` (terminal, absorbing), and `set-title` / `set-description` / `set-progress` /
 `set-attention` in open states. Restating the current state is `applied` at the current revision.
-Receipts: `applied`, or `rejected` with `invalid-transition`, `unsupported` (unknown command, an
-external task's command — its source's), `conflict` (stale revision), `denied` or
+Receipts: `applied`, or `rejected` with `invalid-transition`, `unsupported` (unknown command), `conflict` (stale revision), `denied` or
 `idempotency-conflict`. The first three are recorded under the operation id and replay; `denied`
 and `idempotency-conflict` are returned and never recorded.
 
@@ -346,6 +347,64 @@ task's `terminal-closeout` claim, so at a saturated profile new identities are r
 **Host operations.** `registerExternal(principal, request)` registers an externally executed task
 with host-supplied scopes and binding — unresolved until its first observation, or resolved from
 an `initialObservation`. An update owed to no one is not retained; subscriptions arrive later.
+
+## External sources — `ITaskSource`, `ExternalTaskSource`
+
+**The source owns execution truth; the broker records what the source says, never what it
+expects.** Attach sources at `TaskBroker.create({ repository, environment, sources })`. Build one
+from typed callbacks with `ExternalTaskSource.create({ id, history, encodeDetails, compare, read,
+feed, recover, commands?, lookupCommand? })`; each command comes from
+`ExternalTaskSource.command(descriptor, apply)`, whose descriptor is the same one the kind
+registry declares (`idempotency: 'source-key' | 'none'`, `conditional`). A callback that fails or
+throws is `source-unavailable`, never an escaped exception; parameters the descriptor refuses
+never reach it.
+
+**History contract.** `'observed-state'`: the source can report its current state, and any read
+may commit it. `'source-replay'`: the source replays every revision in order, and **only its
+reconcile feed commits projections** — `observe`, push hints and command answers run a feed pass
+from the committed cursor instead, so a revision-3 hint cannot overtake revision 2's obligation.
+Registering against a `source-replay` source requires a finite envelope
+(`history: { history: 'source-replay', envelope: { remainingRequiredUpdates,
+remainingRequiredBytes } }`), reserved at admission — and from then on only that source's feed
+commits the task's projections, whatever source is later attached under its id;
+a feed that exceeds it is a `source-gap` with the cursor unmoved, and
+`extendReplayEnvelope(taskId, add)` is new admission.
+
+**Ordering by the source's comparator, never by timestamps.** For each observation:
+`newer` commits (execution fields only — catalog fields are the broker's, terminal is absorbing);
+`same` with the same execution state is a freshness refresh (no revision, no update); `same` with a
+different state is a source-contract violation (`source-gap`); `older` is stale and ignored;
+`incomparable` (e.g. a new epoch) is ignored until explicit `recover`.
+
+**Reconciliation.** `reconcile({ sourceId, maxPages? })` reads pages from the cursor in the
+source's checkpoint record, applies every observation, and only then commits the page's cursor. A
+gap, broken per-binding order, contract violation or backpressure stops the pass with the cursor
+where it was. A pass is complete only when the source says so **and** its coverage is
+`'all-bindings'` — an active-only listing never completes terminal discovery. Opening a repository
+calls no source.
+
+**Commands on external tasks.** `writer.execute` on an external kind: records the intent
+(`not-sent`, receipt `accepted`) **and reserves its settlement** before anything is sent,
+re-checks authority, marks `possibly-sent`, then dispatches outside the writer (a conditional
+command carries the source revision committed at the marker). Receipts: `rejected` (with the
+source's reason), `accepted` (sent; not yet observed applied — **accepted is not applied**),
+`applied` (at the revision whose observation committed it), or `indeterminate` (outcome unknown).
+An unattached source leaves the task untouched and answers `source-unavailable`.
+
+**Uncertain outcomes.** `writer.resolveCommands({ limit })` pumps unsettled commands: an intent
+never sent is dispatched; a `possibly-sent` one is looked up (`lookupCommand`), re-sent only when
+its command is `idempotency: 'source-key'` and the key has not expired, and otherwise **held** —
+never replayed. Revoked authority settles `rejected: denied` without sending.
+
+**Recovery.** `recover(taskId)` handles every `RecoveryResult`: `reattached` / `completed` /
+`unrecoverable` (which must carry a failed or cancelled projection) commit as observations, an
+incomparable epoch included; `unavailable` marks observation health; `resumable` and `unresolved`
+are reported and change nothing. Records hold the bounded projection only; an executor-owned
+payload stays in the executor, and terminal presentation never dereferences it.
+
+**Capacity.** Each in-flight external command holds a settlement reservation (64 KiB of resident
+payload at the default profile) until it settles; see `docs/TECH_DEBT.md` for the effective
+ceiling this implies.
 
 ## Rendering task context without a broker
 
@@ -564,7 +623,7 @@ fragment is caught at the mint rather than at the filename.
 
 ## Not in scope
 
-No source adapter or command dispatch, subscription, delivery service, acknowledgement, retention
+No subscription, delivery service, acknowledgement, retention
 or pruning policy, cascade stop, tool factory or prompt integration **yet** — those are later
 slices, and their absence from the export surface is deliberate. **Permanently** out of scope: an input-request/answer protocol, a task runner or
 scheduler, an executor, a retry policy, cross-repository parenting, execution migration,

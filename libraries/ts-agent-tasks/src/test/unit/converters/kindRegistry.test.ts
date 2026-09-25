@@ -373,6 +373,20 @@ describe('command handles', () => {
     expect(command.validate({ by: 3 })).toSucceedWith({ by: 3 });
   });
 
+  test('an encoder whose output the schema does not admit is refused — the schema is the wire schema', () => {
+    const command = createTaskCommandHandle<IGrowParameters>({
+      name: 'grow',
+      parameters: growSchema,
+      // Renames the field: what would be stored and dispatched no longer decodes as `P`.
+      encode: (parameters: IGrowParameters): Result<JsonValue> => succeed({ amount: parameters.by }),
+      idempotency: 'none',
+      conditional: false
+    });
+    expect(command.validate({ by: 3 })).toFailWith(
+      /command 'grow': encoded parameters are not valid for the schema/i
+    );
+  });
+
   test('validate rejects parameters the schema does not admit', () => {
     const command = growHandle();
     expect(command.validate({ by: 'a lot' })).toFailWith(/command 'grow'/i);

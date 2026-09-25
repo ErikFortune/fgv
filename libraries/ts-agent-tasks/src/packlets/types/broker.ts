@@ -23,7 +23,8 @@ import { TaskResult } from './failure';
 import { OperationId, PageCursor, TaskId, TaskKind, TaskRevision, UpdateId } from './ids';
 import { TaskLifecycleClass } from './query';
 import { TaskLifecycleStatus } from './lifecycle';
-import { ISourceBinding, ISourceProjection, RecoveryDeclaration } from './source';
+import { ISourceBinding, ISourceProjection, RecoveryDeclaration, SourceHistoryDeclaration } from './source';
+import { ICommandResolutionReport, ICommandResolutionRequest } from './sourceAdapter';
 import { TaskListCompletion } from './builtins';
 
 /**
@@ -185,6 +186,15 @@ export interface IRegisterExternalTask {
   readonly binding: ISourceBinding;
   readonly recovery: RecoveryDeclaration;
   readonly initialObservation?: ISourceProjection;
+  /**
+   * The history guarantee this registration relies on. Absent means `observed-state`. A
+   * `source-replay` declaration states the finite remaining envelope the task needs to reach a
+   * terminal state; it is reserved at registration (design § 8.6) and is refused unless the
+   * broker has the source attached and that source is `source-replay`. A `source-replay`
+   * registration takes no `initialObservation`: its first state comes from the feed, never from
+   * an independent latest read that could jump owed history.
+   */
+  readonly history?: SourceHistoryDeclaration;
 }
 
 /**
@@ -276,6 +286,13 @@ export interface IBoundTaskWriter extends IBoundTaskView {
   completeList(request: ICompleteTaskList): Promise<TaskResult<ITaskMutationResult>>;
   archive(request: IArchiveTask): Promise<TaskResult<ITaskMutationResult>>;
   reconcileListCompletions(request: IListCompletionRequest): Promise<TaskResult<IListCompletionReport>>;
+  /**
+   * The uncertain-command pump: settles external commands left unsent or uncertain — by a lookup, a
+   * deduplicated resend, or a first dispatch of an intent that was never sent — each re-authorized
+   * for this principal at the dispatch boundary. Never re-sends a command its source cannot
+   * deduplicate. Repository open never runs it.
+   */
+  resolveCommands(request: ICommandResolutionRequest): Promise<TaskResult<ICommandResolutionReport>>;
 }
 
 /**

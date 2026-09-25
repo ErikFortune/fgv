@@ -10,7 +10,8 @@ import {
   TaskConverters,
   allCapacityDimensions,
   capacityPressureThreshold,
-  defaultTaskCapacityProfile
+  defaultTaskCapacityProfile,
+  maxSourceCursorLength
 } from '../../../index';
 import { claim, converters } from '../../helpers/fixtures';
 
@@ -581,5 +582,17 @@ describe('a profile must be able to finish the work it can accept', () => {
         encoded: { ...defaultTaskCapacityProfile.encoded, maxUpdateBytes: Number.MAX_SAFE_INTEGER }
       })
     ).toFailWith(/not exactly representable/i);
+  });
+
+  test('a source cursor bound above the representable cursor ceiling is refused', () => {
+    const withCursor = (bytes: number): unknown => ({
+      ...defaultTaskCapacityProfile,
+      encoded: { ...defaultTaskCapacityProfile.encoded, maxSourceCursorBytes: bytes }
+    });
+    expect(converters.capacity.profile.convert(withCursor(maxSourceCursorLength))).toSucceed();
+    expect(converters.capacity.profile.convert(withCursor(1024))).toSucceed();
+    expect(converters.capacity.profile.convert(withCursor(maxSourceCursorLength + 1))).toFailWith(
+      /over the representable ceiling of 4096/
+    );
   });
 });

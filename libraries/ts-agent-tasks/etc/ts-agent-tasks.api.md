@@ -82,6 +82,9 @@ export function buildIdentityConverters(bounds: ITaskFieldBounds): IIdentityConv
 export function buildQueryConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters, values: IValueConverters): IQueryConverters;
 
 // @public
+export function buildSourceConverters(bounds: ITaskFieldBounds, values: IValueConverters): ISourceConverters;
+
+// @public
 export function buildStorageConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters, values: IValueConverters, envelopes: IEnvelopeConverters, commands: ICommandConverters, capacity: ICapacityConverters, context: IContextConverters): IStorageConverters;
 
 // @public
@@ -181,6 +184,59 @@ export function evaluateTrackedCommand(envelope: ITaskEnvelope, command: Tracked
 }): TrackedTransition;
 
 // @public
+export type ExternalCommandResult<TDetails> = Exclude<SourceCommandResult, {
+    readonly state: 'applied';
+}> | {
+    readonly state: 'applied';
+    readonly observation: ExternalProjection<TDetails>;
+};
+
+// @public
+export type ExternalProjection<TDetails> = Omit<ISourceProjection, 'details'> & {
+    readonly details: TDetails;
+};
+
+// @public
+export type ExternalRead<TDetails> = {
+    readonly state: 'observed';
+    readonly value: ExternalProjection<TDetails>;
+} | {
+    readonly state: 'unavailable' | 'missing';
+    readonly reason: string;
+};
+
+// @public
+export type ExternalRecovery<TDetails> = {
+    readonly state: 'reattached' | 'completed';
+    readonly value: ExternalProjection<TDetails>;
+} | {
+    readonly state: 'resumable';
+    readonly reference: JsonValue;
+} | {
+    readonly state: 'unrecoverable';
+    readonly reason: string;
+    readonly value: ExternalProjection<TDetails>;
+} | {
+    readonly state: 'unavailable' | 'unresolved';
+    readonly reason: string;
+};
+
+// @public
+export class ExternalTaskSource<TDetails> implements ITaskSource {
+    static command<TDetails, P>(descriptor: ITaskCommandDescriptor<P>, apply: (binding: ISourceBinding, parameters: P, request: ICommandRequest, expectedSourceRevision?: ISourceRevision) => Promise<Result<ExternalCommandResult<TDetails>>>): IExternalCommand<TDetails>;
+    get commandHandles(): ReadonlyArray<ITaskCommandHandle>;
+    compare(a: ISourceRevision, b: ISourceRevision): Result<SourceRevisionOrder>;
+    static create<TDetails>(params: IExternalTaskSourceParams<TDetails>): Result<ExternalTaskSource<TDetails>>;
+    dispatch(binding: ISourceBinding, request: ICommandRequest, expectedSourceRevision?: ISourceRevision): Promise<TaskResult<SourceCommandResult>>;
+    readonly history: SourceHistoryContract;
+    readonly id: string;
+    readonly lookupCommand?: (binding: ISourceBinding, request: ICommandRequest) => Promise<TaskResult<SourceCommandLookup>>;
+    observe(binding: ISourceBinding): Promise<TaskResult<SourceRead>>;
+    reconcile(cursor?: string): Promise<TaskResult<ISourceReconcilePage>>;
+    recover(binding: ISourceBinding): Promise<TaskResult<RecoveryResult>>;
+}
+
+// @public
 export class FileTreeTaskRepository implements ITaskRepository {
     capacityStatus(): TaskResult<ITaskCapacityStatus>;
     childStates(parentId: TaskId): Promise<TaskResult<ReadonlyArray<ITaskChildState>>>;
@@ -199,10 +255,13 @@ export class FileTreeTaskRepository implements ITaskRepository {
     queryDue(request: IDueTaskQuery): Promise<TaskResult<ITaskPage>>;
     read(id: TaskId): Promise<TaskResult<TaskRegistrationResult | undefined>>;
     readCommit(id: TaskId): Promise<TaskResult<ITaskCommitRecord | undefined>>;
+    readSource(sourceId: string): Promise<TaskResult<ITaskSourceRecord | undefined>>;
     rebuildIndexes(): Promise<TaskResult<ITaskRepositoryHealth>>;
+    get registry(): ITaskKindRegistry;
     get report(): ITaskRecoveryReport;
     // (undocumented)
     readonly repositoryId: string;
+    unsettledCommands(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
     withWriter<T>(action: (writer: ITaskRepositoryWriter) => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
 }
 
@@ -284,6 +343,7 @@ export interface IBoundTaskWriter extends IBoundTaskView {
     reconcileListCompletions(request: IListCompletionRequest): Promise<TaskResult<IListCompletionReport>>;
     // (undocumented)
     reparent(request: IReparentTask): Promise<TaskResult<ITaskMutationResult>>;
+    resolveCommands(request: ICommandResolutionRequest): Promise<TaskResult<ICommandResolutionReport>>;
     // (undocumented)
     updateTracked(request: IUpdateTrackedTask): Promise<TaskResult<ITaskMutationResult>>;
 }
@@ -296,6 +356,7 @@ export interface IBrokerConverters {
     readonly boundQuery: Converter<IBoundTaskQuery>;
     // (undocumented)
     readonly changeScopes: Converter<IChangeTaskScopes>;
+    readonly commandResolution: Converter<ICommandResolutionRequest>;
     // (undocumented)
     readonly completeList: Converter<ICompleteTaskList>;
     // (undocumented)
@@ -316,6 +377,7 @@ export interface IBrokerConverters {
     readonly reassign: Converter<IReassignTask>;
     // (undocumented)
     readonly reassignmentResult: Converter<IReassignmentResult>;
+    readonly reconcile: Converter<ISourceReconcileRequest>;
     // (undocumented)
     readonly registerExternal: Converter<IRegisterExternalTask>;
     // (undocumented)
@@ -378,6 +440,14 @@ export interface IChangeTaskScopes extends ITaskMutationIdentity {
 }
 
 // @public
+export interface ICommandAwaiting {
+    // (undocumented)
+    readonly execution: string;
+    // (undocumented)
+    readonly revision: ISourceRevision;
+}
+
+// @public
 export interface ICommandConverters {
     // (undocumented)
     readonly commandName: Converter<string>;
@@ -413,6 +483,30 @@ export interface ICommandRequest {
     readonly parameters: JsonValue;
     // (undocumented)
     readonly taskId: TaskId;
+}
+
+// @public
+export interface ICommandResolution {
+    // (undocumented)
+    readonly action: 'dispatched' | 'resolved' | 'held' | 'denied' | 'unavailable';
+    // (undocumented)
+    readonly operationId: OperationId;
+    // (undocumented)
+    readonly result?: CommandState;
+    // (undocumented)
+    readonly taskId: TaskId;
+}
+
+// @public
+export interface ICommandResolutionReport {
+    // (undocumented)
+    readonly resolutions: ReadonlyArray<ICommandResolution>;
+}
+
+// @public
+export interface ICommandResolutionRequest {
+    // (undocumented)
+    readonly limit: number;
 }
 
 // @public
@@ -478,6 +572,53 @@ export interface IEnvelopeConverters {
     readonly envelope: Converter<ITaskEnvelope>;
     // (undocumented)
     readonly snapshot: Converter<ITaskSnapshot>;
+}
+
+// @public
+export interface IExternalCommand<TDetails> {
+    // (undocumented)
+    apply(binding: ISourceBinding, request: ICommandRequest, expectedSourceRevision?: ISourceRevision): Promise<Result<ExternalCommandResult<TDetails>>>;
+    readonly handle: ITaskCommandHandle;
+}
+
+// @public
+export interface IExternalPage<TDetails> {
+    // (undocumented)
+    readonly checkpoint?: string;
+    // (undocumented)
+    readonly completeness: 'complete' | 'partial' | 'gap';
+    // (undocumented)
+    readonly coverage: SourceReconcileCoverage;
+    // (undocumented)
+    readonly issues: ReadonlyArray<string>;
+    // (undocumented)
+    readonly nextCursor?: string;
+    // (undocumented)
+    readonly observations: ReadonlyArray<{
+        readonly binding: ISourceBinding;
+        readonly observation: ExternalRead<TDetails>;
+    }>;
+}
+
+// @public
+export interface IExternalTaskSourceParams<TDetails> {
+    // (undocumented)
+    readonly commands?: ReadonlyArray<IExternalCommand<TDetails>>;
+    // (undocumented)
+    readonly compare: (a: ISourceRevision, b: ISourceRevision) => Result<SourceRevisionOrder>;
+    readonly encodeDetails: (details: TDetails) => Result<JsonValue>;
+    // (undocumented)
+    readonly feed: (cursor: string | undefined) => Promise<Result<IExternalPage<TDetails>>>;
+    readonly history: SourceHistoryContract;
+    readonly id: string;
+    // (undocumented)
+    readonly lookupCommand?: (binding: ISourceBinding, request: ICommandRequest) => Promise<Result<ExternalCommandResult<TDetails> | {
+        readonly state: 'not-found';
+    }>>;
+    // (undocumented)
+    readonly read: (binding: ISourceBinding) => Promise<Result<ExternalRead<TDetails>>>;
+    // (undocumented)
+    readonly recover: (binding: ISourceBinding) => Promise<Result<ExternalRecovery<TDetails>>>;
 }
 
 // @public
@@ -652,6 +793,7 @@ export interface IRegisterExternalTask {
     readonly description?: string;
     // (undocumented)
     readonly detailVersion: number;
+    readonly history?: SourceHistoryDeclaration;
     // (undocumented)
     readonly initialObservation?: ISourceProjection;
     // (undocumented)
@@ -737,6 +879,41 @@ export interface ISourceBinding {
 }
 
 // @public
+export interface ISourceConverters {
+    // (undocumented)
+    readonly commandLookup: Converter<SourceCommandLookup>;
+    // (undocumented)
+    readonly commandResult: Converter<SourceCommandResult>;
+    // (undocumented)
+    readonly observation: Converter<ISourceObservation>;
+    // (undocumented)
+    readonly page: Converter<ISourceReconcilePage>;
+    // (undocumented)
+    readonly read: Converter<SourceRead>;
+}
+
+// @public
+export interface ISourceObservation {
+    // (undocumented)
+    readonly binding: ISourceBinding;
+    // (undocumented)
+    readonly observation: SourceRead;
+}
+
+// @public
+export interface ISourceObservationReport {
+    // (undocumented)
+    readonly binding: ISourceBinding;
+    // (undocumented)
+    readonly message?: string;
+    // (undocumented)
+    readonly outcome: SourceObservationOutcome;
+    readonly revision?: TaskRevision;
+    // (undocumented)
+    readonly taskId?: TaskId;
+}
+
+// @public
 export interface ISourceProjection {
     // (undocumented)
     readonly attention: ReadonlyArray<ITaskReference>;
@@ -750,6 +927,47 @@ export interface ISourceProjection {
     readonly progress?: ITaskProgress;
     // (undocumented)
     readonly revision: ISourceRevision;
+}
+
+// @public
+export interface ISourceReconcilePage {
+    // (undocumented)
+    readonly checkpoint?: string;
+    // (undocumented)
+    readonly completeness: 'complete' | 'partial' | 'gap';
+    // (undocumented)
+    readonly coverage: SourceReconcileCoverage;
+    // (undocumented)
+    readonly issues: ReadonlyArray<string>;
+    // (undocumented)
+    readonly nextCursor?: string;
+    // (undocumented)
+    readonly observations: ReadonlyArray<ISourceObservation>;
+}
+
+// @public
+export interface ISourceReconcileReport {
+    // (undocumented)
+    readonly complete: boolean;
+    // (undocumented)
+    readonly cursor?: string;
+    // (undocumented)
+    readonly issues: ReadonlyArray<string>;
+    // (undocumented)
+    readonly observations: ReadonlyArray<ISourceObservationReport>;
+    // (undocumented)
+    readonly pages: number;
+    // (undocumented)
+    readonly sourceId: string;
+    // (undocumented)
+    readonly stopped?: SourceReconcileStop;
+}
+
+// @public
+export interface ISourceReconcileRequest {
+    readonly maxPages?: number;
+    // (undocumented)
+    readonly sourceId: string;
 }
 
 // @public
@@ -793,6 +1011,7 @@ export interface IStorageConverters {
     readonly record: Converter<ITaskCommitRecord>;
     // (undocumented)
     readonly resolvedRecord: Converter<IResolvedTaskCommitRecord>;
+    readonly sourceRecord: Converter<ITaskSourceRecord>;
     // (undocumented)
     readonly unresolvedRecord: Converter<IUnresolvedTaskCommitRecord>;
     // (undocumented)
@@ -817,6 +1036,7 @@ export interface IStoredCatalogOperation {
 
 // @public
 export interface IStoredCommandOperation {
+    readonly awaiting?: ICommandAwaiting;
     // (undocumented)
     readonly dispatch: StoredCommandDispatch;
     // (undocumented)
@@ -866,6 +1086,7 @@ export interface ITaskBrokerCreateParams {
     // (undocumented)
     readonly environment: ITaskEnvironment;
     readonly repository: ITaskRepository;
+    readonly sources?: ReadonlyArray<ITaskSource>;
 }
 
 // @public
@@ -1001,6 +1222,7 @@ export type ITaskCommitRequest = (ITaskCommitRequestBase & {
     readonly operationId: OperationId;
 }) | (ITaskCommitRequestBase & {
     readonly purpose: 'observation';
+    readonly requiredUpdates?: number;
 }) | (ITaskCommitRequestBase & {
     readonly purpose: 'maintenance';
 });
@@ -1257,6 +1479,7 @@ export interface ITaskKindHandle<T> {
 export interface ITaskKindRegistry {
     convert(snapshot: unknown): TaskResult<ITaskSnapshot>;
     freeze(): Result<number>;
+    getCommand(kind: TaskKind, detailVersion: number, name: string): Result<ITaskCommandHandle>;
     // (undocumented)
     has(kind: TaskKind, detailVersion: number): boolean;
     // (undocumented)
@@ -1409,6 +1632,21 @@ export interface ITaskRecoveryIssue {
 }
 
 // @public
+export interface ITaskRecoveryOutcome {
+    // (undocumented)
+    readonly observation?: ISourceObservationReport;
+    // (undocumented)
+    readonly reason?: string;
+    // (undocumented)
+    readonly result: RecoveryResult['state'];
+    readonly resumable?: RecoveryResult & {
+        readonly state: 'resumable';
+    };
+    // (undocumented)
+    readonly taskId: TaskId;
+}
+
+// @public
 export interface ITaskRecoveryReport {
     readonly completedRegistrations: ReadonlyArray<TaskId>;
     // (undocumented)
@@ -1438,6 +1676,10 @@ export interface ITaskRegistrationRequest {
     readonly record: ITaskRecordDraft;
     // (undocumented)
     readonly request: JsonValue;
+    readonly sourceReplay?: {
+        readonly sourceId: string;
+        readonly envelope: ISourceReplayEnvelope;
+    };
     // (undocumented)
     readonly taskId: TaskId;
 }
@@ -1459,10 +1701,13 @@ export interface ITaskRepository {
     queryDue(request: IDueTaskQuery): Promise<TaskResult<ITaskPage>>;
     read(id: TaskId): Promise<TaskResult<TaskRegistrationResult | undefined>>;
     readCommit(id: TaskId): Promise<TaskResult<ITaskCommitRecord | undefined>>;
+    readSource(sourceId: string): Promise<TaskResult<ITaskSourceRecord | undefined>>;
     rebuildIndexes(): Promise<TaskResult<ITaskRepositoryHealth>>;
+    readonly registry: ITaskKindRegistry;
     readonly report: ITaskRecoveryReport;
     // (undocumented)
     readonly repositoryId: string;
+    unsettledCommands(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
     withWriter<T>(action: (writer: ITaskRepositoryWriter) => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
 }
 
@@ -1526,8 +1771,11 @@ export interface ITaskRepositoryOpenParams {
 // @public
 export interface ITaskRepositoryWriter {
     commit(request: ITaskCommitRequest): Promise<TaskResult<ITaskCommitRecord>>;
+    commitSource(request: ITaskSourceCommitRequest): Promise<TaskResult<ITaskSourceRecord>>;
+    extendReplayEnvelope(taskId: TaskId, add: ISourceReplayEnvelope): Promise<TaskResult<ISourceReplayEnvelope>>;
     raiseCapacityLimits(profile: ITaskCapacityProfile): Promise<TaskResult<ITaskCapacityProfile>>;
     readCommit(id: TaskId): Promise<TaskResult<ITaskCommitRecord | undefined>>;
+    readSource(sourceId: string): Promise<TaskResult<ITaskSourceRecord | undefined>>;
     register(request: ITaskRegistrationRequest): Promise<TaskResult<ITaskCommitRecord>>;
 }
 
@@ -1559,6 +1807,42 @@ export interface ITaskSnapshot<T = JsonValue> {
     readonly details: T;
     // (undocumented)
     readonly envelope: ITaskEnvelope;
+}
+
+// @public
+export interface ITaskSource {
+    compare(a: ISourceRevision, b: ISourceRevision): Result<SourceRevisionOrder>;
+    dispatch(binding: ISourceBinding, request: ICommandRequest, expectedSourceRevision?: ISourceRevision): Promise<TaskResult<SourceCommandResult>>;
+    readonly history: SourceHistoryContract;
+    readonly id: string;
+    lookupCommand?(binding: ISourceBinding, request: ICommandRequest): Promise<TaskResult<SourceCommandLookup>>;
+    observe(binding: ISourceBinding): Promise<TaskResult<SourceRead>>;
+    reconcile(cursor?: string): Promise<TaskResult<ISourceReconcilePage>>;
+    recover(binding: ISourceBinding): Promise<TaskResult<RecoveryResult>>;
+}
+
+// @public
+export interface ITaskSourceCommitRequest {
+    readonly cursor?: string;
+    readonly expectedRecordRevision: number;
+    readonly history: SourceHistoryContract;
+    readonly pages: number;
+    readonly sourceId: string;
+}
+
+// @public
+export interface ITaskSourceRecord {
+    // (undocumented)
+    readonly cursor?: string;
+    // (undocumented)
+    readonly formatVersion: 1;
+    // (undocumented)
+    readonly history: SourceHistoryContract;
+    // (undocumented)
+    readonly id: string;
+    readonly pages: number;
+    // (undocumented)
+    readonly recordRevision: number;
 }
 
 // @public
@@ -1716,6 +2000,9 @@ export function maximumResolutionCharges(profile: ITaskCapacityProfile): Result<
 export function maximumSettlementCharges(profile: ITaskCapacityProfile): Result<ReadonlyArray<ITaskCapacityCharge>>;
 
 // @public
+export const maxSourceCursorLength: number;
+
+// @public
 export const maxTaskPageLimit: number;
 
 // @public
@@ -1780,6 +2067,7 @@ export type RecoveryResult = {
 } | {
     readonly state: 'unrecoverable';
     readonly reason: string;
+    readonly value: ISourceProjection;
 } | {
     readonly state: 'unavailable' | 'unresolved';
     readonly reason: string;
@@ -1787,6 +2075,32 @@ export type RecoveryResult = {
 
 // @public
 export function runTaskRepositoryConformance(factory: TaskRepositoryFactory): Promise<Result<ITaskRepositoryConformanceReport>>;
+
+// @public
+export type SourceCommandLookup = SourceCommandResult | {
+    readonly state: 'not-found';
+};
+
+// @public
+export type SourceCommandRejection = 'unsupported' | 'conflict' | 'invalid-transition';
+
+// @public
+export type SourceCommandResult = {
+    readonly state: 'rejected';
+    readonly reason: SourceCommandRejection;
+} | {
+    readonly state: 'accepted';
+    readonly sourceReceipt: string;
+} | {
+    readonly state: 'applied';
+    readonly observation: ISourceProjection;
+} | {
+    readonly state: 'indeterminate';
+    readonly reason: string;
+} | {
+    readonly state: 'key-expired';
+    readonly reason: string;
+};
 
 // @public
 export type SourceHistoryContract = 'observed-state' | 'source-replay';
@@ -1798,6 +2112,27 @@ export type SourceHistoryDeclaration = {
     readonly history: 'source-replay';
     readonly envelope: ISourceReplayEnvelope;
 };
+
+// @public
+export type SourceObservationOutcome = 'applied' | 'refreshed' | 'health-changed' | 'unchanged' | 'stale' | 'incomparable' | 'deferred' | 'contract-violation' | 'capacity-blocked' | 'unknown-binding' | 'source-unavailable' | 'missing';
+
+// @public
+export type SourceRead = {
+    readonly state: 'observed';
+    readonly value: ISourceProjection;
+} | {
+    readonly state: 'unavailable' | 'missing';
+    readonly reason: string;
+};
+
+// @public
+export type SourceReconcileCoverage = 'all-bindings' | 'active-only';
+
+// @public
+export type SourceReconcileStop = 'page-limit' | 'gap' | 'order' | 'contract-violation' | 'capacity-blocked' | 'source-unavailable' | 'storage';
+
+// @public
+export type SourceRevisionOrder = 'older' | 'same' | 'newer' | 'incomparable';
 
 // @public
 export type StoredCommandDispatch = 'not-sent' | 'possibly-sent' | 'settled';
@@ -1819,6 +2154,11 @@ export class TaskBroker {
     bind(params: IBoundTaskViewParams): TaskResult<IBoundTaskWriter>;
     bindView(params: IBoundTaskViewParams): TaskResult<IBoundTaskView>;
     static create(params: ITaskBrokerCreateParams): Result<TaskBroker>;
+    extendReplayEnvelope(taskId: TaskId, add: ISourceReplayEnvelope): Promise<TaskResult<ISourceReplayEnvelope>>;
+    hint(binding: ISourceBinding): Promise<TaskResult<ISourceObservationReport>>;
+    observe(taskId: TaskId): Promise<TaskResult<ISourceObservationReport>>;
+    reconcile(request: ISourceReconcileRequest): Promise<TaskResult<ISourceReconcileReport>>;
+    recover(taskId: TaskId): Promise<TaskResult<ITaskRecoveryOutcome>>;
     registerExternal(principal: string, request: unknown): Promise<TaskResult<TaskRegistrationResult>>;
 }
 
@@ -1871,6 +2211,7 @@ export class TaskConverters {
     readonly failures: IFailureConverters;
     readonly ids: IIdentityConverters;
     readonly queries: IQueryConverters;
+    readonly sources: ISourceConverters;
     readonly storage: IStorageConverters;
     readonly values: IValueConverters;
 }
@@ -1925,6 +2266,7 @@ export class TaskKindRegistry implements ITaskKindRegistry {
     convert(snapshot: unknown): TaskResult<ITaskSnapshot>;
     static create(snapshot: Converter<ITaskSnapshot>): Result<TaskKindRegistry>;
     freeze(): Result<number>;
+    getCommand(kind: TaskKind, detailVersion: number, name: string): Result<ITaskCommandHandle>;
     // (undocumented)
     has(kind: TaskKind, detailVersion: number): boolean;
     // (undocumented)

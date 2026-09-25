@@ -9,6 +9,7 @@ import {
   IPendingInventoryEntry,
   IResolvedTaskRecordDraft,
   IStoredCatalogOperation,
+  IStoredCommandOperation,
   IStoredTaskOperation,
   ITaskCapacityProfile,
   ITaskCommitRecord,
@@ -295,6 +296,12 @@ export function checkPurpose(
   if (purpose !== 'observation' && !canonicallyEqual(current.sourceRevision, draft.sourceRevision)) {
     return fail(`only an observation may change the committed source revision`);
   }
+  if (draft.archived && !current.archived && hasPendingCommand(draft)) {
+    return fail(
+      `a task holding an unsettled command, or one awaiting its feed revision, cannot be archived; ` +
+        `its outcome is still owed`
+    );
+  }
   if (purpose === 'maintenance' && !canonicallyEqual(_semantic(current), _semantic(draft))) {
     return fail(`maintenance cannot change semantic state; it changes receipts, pruning and telemetry only`);
   }
@@ -475,6 +482,89 @@ export function checkBounds(draft: ITaskRecordDraft, profile: ITaskCapacityProfi
     const result: Result<true> = check();
     if (result.isFailure()) {
       return result;
+    }
+  }
+  return succeed(true);
+}
+
+/**
+ * Every stored command of a record, by operation id: `true` once its dispatch is settled.
+ */
+export function commandSettlement(
+  record: ITaskCommitRecord | ITaskRecordDraft
+): ReadonlyMap<OperationId, boolean> {
+  const commands: Map<OperationId, boolean> = new Map<OperationId, boolean>();
+  for (const op of record.operations) {
+    if (op.type === 'command') {
+      commands.set(op.operationId, op.dispatch === 'settled');
+    }
+  }
+  return commands;
+}
+
+/** Whether a record or draft holds a command whose dispatch is not settled. */
+export function hasUnsettledCommand(record: ITaskCommitRecord | ITaskRecordDraft): boolean {
+  return record.operations.some((op) => op.type === 'command' && op.dispatch !== 'settled');
+}
+
+/**
+ * Whether a record or draft holds a command whose outcome is not final: unsettled, or settled
+ * `accepted` while it awaits the feed revision that confirms it. Such a task cannot be archived —
+ * a tombstone takes no further observation, so the command could never finish.
+ */
+export function hasPendingCommand(record: ITaskCommitRecord | ITaskRecordDraft): boolean {
+  return record.operations.some(
+    (op) => op.type === 'command' && (op.dispatch !== 'settled' || op.awaiting !== undefined)
+  );
+}
+
+/** The source id of a record's binding, if it has one. */
+export function sourceIdOf(record: ITaskCommitRecord | ITaskRecordDraft): string | undefined {
+  return record.recordType === 'resolved'
+    ? record.task.envelope.binding?.sourceId
+    : record.reference.binding.sourceId;
+}
+
+const dispatchOrder: Readonly<Record<IStoredCommandOperation['dispatch'], number>> = {
+  'not-sent': 0,
+  'possibly-sent': 1,
+  settled: 2
+};
+
+/**
+ * Checks how a retained command may evolve: dispatch only moves forward (`not-sent` →
+ * `possibly-sent` → `settled`, never back — a marker on disk is the one thing that makes an
+ * uncertain send visible), and once settled the receipt is final, except that an `accepted` receipt
+ * awaiting a feed revision is resolved when the feed reaches it: `applied`, or left `accepted`.
+ */
+export function checkCommandEvolution(
+  current: ReadonlyArray<IStoredTaskOperation>,
+  next: ReadonlyArray<IStoredTaskOperation>
+): Result<true> {
+  const byId: Map<string, IStoredTaskOperation> = new Map(next.map((op) => [op.operationId, op]));
+  for (const before of current) {
+    const after: IStoredTaskOperation | undefined = byId.get(before.operationId);
+    if (before.type !== 'command' || after === undefined || after.type !== 'command') {
+      continue;
+    }
+    if (dispatchOrder[after.dispatch] < dispatchOrder[before.dispatch]) {
+      return fail(
+        `command '${before.operationId}': dispatch cannot move back from '${before.dispatch}' to '${after.dispatch}'`
+      );
+    }
+    if (before.dispatch === 'settled' && !canonicallyEqual(before, after)) {
+      // The one change a settled command admits: its awaited feed revision resolves it — `applied`
+      // when the feed confirms the answer there, still `accepted` when it contradicts it.
+      const resolved: boolean =
+        before.awaiting !== undefined &&
+        after.awaiting === undefined &&
+        before.receipt.result.state === 'accepted' &&
+        (after.receipt.result.state === 'applied' ||
+          canonicallyEqual(before.receipt.result, after.receipt.result)) &&
+        canonicallyEqual({ ...before.receipt, result: undefined }, { ...after.receipt, result: undefined });
+      if (!resolved) {
+        return fail(`command '${before.operationId}': a settled receipt is final`);
+      }
     }
   }
   return succeed(true);
