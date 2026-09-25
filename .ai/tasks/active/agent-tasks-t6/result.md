@@ -73,7 +73,7 @@ route — a separately authorized host action against the executor — needs no 
 | W5 | source read → observation commit | the read is outside the writer; inside it the record is re-read and the comparator runs against the revision committed *now*; execution fields only, catalog from the latest record; terminal absorbing |
 | W6 | observed-state `applied` answer → projection | the command settles in the same commit that records its projection — there is no state with one and not the other |
 | W7 | replay hint / observe / command answer → feed | none commits a projection (`deferred`); each runs a feed pass from the committed cursor. A replay `applied` answer leaves the receipt `accepted` with `awaiting` until the feed reaches that revision — the rev-3-hint-before-rev-2 test |
-| W8 | page → cursor | the cursor commits only after every observation in the page; a gap, broken per-binding order, contract violation or backpressure stops with the cursor unmoved; `commitSource` is fenced by record revision; passes over one source are serialized |
+| W8 | page → cursor | the cursor commits only after every observation in the page; a gap, broken per-binding order, a foreign binding, a contract violation (either history) or backpressure stops with the cursor unmoved; `commitSource` is fenced by record revision; passes over one source are serialized |
 | W9 | source-record creation → manifest | record-first, then manifest; a retry adopts only an exactly-initial record; an on-disk fence refuses anything else |
 | W10 | reservation → dispatch | the settlement claim is minted in storage in the intent's own commit, so a full repository refuses the intent before anything is recorded or sent; consumed only when dispatch settles |
 | W11 | replay envelope → feed commit | `requiredUpdates` is validated against the envelope inside the commit, before anything is written; overdraw is `source-gap` |
@@ -171,6 +171,14 @@ fence) — fixed with three tests and three reverts.
     host code over the source's own revisions; one that cannot order them is breaking the contract,
     not unreachable.
   Each fix has a test that fails when the fix is reverted (M21, M22 plus the new cases).
+- **Round 2** — one high, one medium; both real, both ordering/ownership:
+  - *Feed entries naming another source's binding were applied* (high): a faulty source could
+    write another source's tasks and advance its own checkpoint. A page with any foreign binding is
+    now a contract violation before anything in it is applied.
+  - *An observed-state contract violation let the cursor advance* (medium): the checkpoint moved
+    past an observation that did not commit, so the next pass skipped it. It now stops the cursor
+    like a capacity block — the rest of the page is still applied, the page is re-read next pass.
+  Both reverts (M23, M24) turn their tests red.
 
 ## Gates
 

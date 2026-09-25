@@ -161,6 +161,59 @@ describe('observed-state reconciliation', () => {
     });
   });
 
+  test('an observed-state page with contract violations applies the rest and leaves the cursor', async () => {
+    const h = await sourceHarness();
+    for (const job of ['a', 'b', 'c']) {
+      h.executor.addJob(job);
+      await registerJob(h, job);
+    }
+    // Two bindings re-listed at their committed revision with other content; one honestly advanced.
+    for (const job of ['a', 'c']) {
+      h.executor.change(job, (j) => (j.step = 7), false);
+      h.executor.jobs.get(job)!.token = 1;
+    }
+    h.executor.change('b', (j) => (j.step = 3));
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceedAndSatisfy((report) => {
+      expect(report.stopped).toBe('contract-violation');
+      expect(report.observations.map((o) => o.outcome)).toEqual([
+        'contract-violation',
+        'applied',
+        'contract-violation'
+      ]);
+      expect(report.issues.join()).toMatch(/different projection/);
+    });
+    const b = await recordOf(h, 'b');
+    expect(b.recordType === 'resolved' && b.task.details).toEqual(expect.objectContaining({ step: 3 }));
+    // The listing is re-read next pass rather than skipped.
+    expect(await h.repository.readSource('exec')).toSucceedWith(undefined);
+  });
+
+  test("a page naming another source's binding is refused before anything in it is applied", async () => {
+    const h = await sourceHarness();
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1');
+    h.executor.change('j1', (j) => (j.step = 4));
+    const before = await recordOf(h, 'j1');
+    const page = h.executor.page.bind(h.executor);
+    h.executor.page = (cursor) =>
+      page(cursor).onSuccess((p) =>
+        succeed({
+          ...p,
+          observations: [
+            ...p.observations,
+            { ...p.observations[0], binding: { ...p.observations[0].binding, sourceId: 'other' } }
+          ]
+        })
+      );
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceedAndSatisfy((report) => {
+      expect(report.stopped).toBe('contract-violation');
+      expect(report.observations).toEqual([]);
+      expect(report.issues.join()).toMatch(/listed a binding of source 'other'/);
+    });
+    expect(await recordOf(h, 'j1')).toEqual(before);
+    expect(await h.repository.readSource('exec')).toSucceedWith(undefined);
+  });
+
   test('a pass stops at its page limit, having committed the pages it read', async () => {
     const h = await sourceHarness();
     for (const job of ['a', 'b', 'c']) {

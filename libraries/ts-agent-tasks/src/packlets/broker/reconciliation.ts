@@ -231,7 +231,7 @@ async function _applyPage(
   const replay: boolean = source.history === 'source-replay';
   const mode: ObservationMode = replay ? 'feed' : 'direct';
   const reports: ISourceObservationReport[] = [];
-  let blocked: boolean = false;
+  let blocked: IPageOutcome | undefined = undefined;
   for (const entry of page.observations) {
     const applied = await _applyRead(core, source, entry.binding, entry.observation, mode);
     if (applied.isFailure()) {
@@ -240,24 +240,25 @@ async function _applyPage(
     const report: ISourceObservationReport = applied.value;
     reports.push(report);
     const outcome = report.outcome;
-    if (outcome === 'capacity-blocked') {
-      // Nothing past an uncommitted entry may be taken as committed. An observed-state listing
-      // carries no owed history, so the rest of it is still applied — a terminal observation
-      // spends its own reservation and must not wait behind ordinary sampling — but the cursor
-      // stays put. A feed stops here.
-      if (replay) {
-        return { observations: reports, stop: 'capacity-blocked' };
-      }
-      blocked = true;
-    } else if (replay && (outcome === 'contract-violation' || outcome === 'incomparable')) {
-      return {
+    if (outcome === 'capacity-blocked' || outcome === 'contract-violation') {
+      // Nothing past an uncommitted entry may be taken as committed, so the cursor stays put. An
+      // observed-state listing carries no owed history, so the rest of it is still applied — a
+      // terminal observation spends its own reservation and must not wait behind ordinary sampling
+      // or another binding's fault. A feed stops here.
+      const stop: IPageOutcome = {
         observations: reports,
-        stop: outcome === 'incomparable' ? 'order' : 'contract-violation',
+        stop: outcome,
         issue: `${report.message}`
       };
+      if (replay) {
+        return stop;
+      }
+      blocked = blocked ?? stop;
+    } else if (replay && outcome === 'incomparable') {
+      return { observations: reports, stop: 'order', issue: `${report.message}` };
     }
   }
-  return blocked ? { observations: reports, stop: 'capacity-blocked' } : { observations: reports };
+  return blocked !== undefined ? { ...blocked, observations: reports } : { observations: reports };
 }
 
 /**
@@ -379,6 +380,14 @@ async function _pages(
   };
   if (page.value.completeness === 'gap') {
     return _finish(source, read, 'gap');
+  }
+  // A source speaks only for its own bindings: one naming another source's binding is refused before
+  // anything in the page is applied, so a faulty source can never write another source's tasks.
+  const foreign = page.value.observations.find((entry) => entry.binding.sourceId !== source.id);
+  if (foreign !== undefined) {
+    return _finish(source, read, 'contract-violation', [
+      `source '${source.id}' listed a binding of source '${foreign.binding.sourceId}'`
+    ]);
   }
   if (source.history === 'source-replay') {
     const broken: string | undefined = _checkOrder(source, page.value.observations);
