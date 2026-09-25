@@ -81,7 +81,7 @@ Pinned by the charge, not the behaviour — `accounting.test.ts`:
 | W3 | activation protocol: pending entry → consumer record → live entry | the pending entry holds the `subscription-activation` claim before the record is written; open completes a pending entry whose record landed and matches, keeps the reservation for one whose record did not; a retry resumes with the same claim id or adopts the landed record; a different landed record is `conflict`. Real-Node `SIGKILL` at every rename boundary (`delivery/crash.test.ts`) |
 | W4 | accepted update → its evidence reservation | none needed: storage computes the audience and charges the evidence inside the same atomic commit that accepts the update; an audience that differs is refused |
 | W5 | activation ↔ a concurrent commit | both in the single writer: a commit before activation is in the baseline (W1), after it owes the subscription |
-| W6 | prepare: capture owed + current tasks, authorize, project, render (outside the writer) → issue | inside the writer: epoch, the consumer's record revision, and **the task revision of every current task the capture disclosed** (added after layer 1); storage refuses a manifest naming an id no longer owed (`invalid-receipt` → re-render). 3 attempts then `conflict`/`safe` |
+| W6 | prepare: capture owed + current tasks, authorize, project, render (outside the writer) → issue | inside the writer: epoch, the consumer's record revision (an acknowledgement or issue by anyone moves it, so every owed id the render included is still owed), and **the task revision of every current task the capture disclosed** (added after layer 1); otherwise re-render, 3 attempts then `conflict`/`safe`. Storage independently refuses a manifest naming an id the subscription is neither owed nor has acknowledged (`invalid-receipt`, safe to retry) |
 | W7 | issue → host processing → acknowledge | the manifest is committed before the context is returned; any issuance failure returns nothing acknowledgeable; acknowledgement happens only when the host presents the receipt after its own processing boundary. Abort = never presented = nothing acknowledged |
 | W8 | acknowledge: canonical manifest match → per-entry authorization (outside the writer) → commit | a second gated section re-matches the manifest (abandoned/expired since), rechecks the epoch, and **re-reads every authorized task's record revision** (added after layer 1; a moved task re-runs the whole round, 3 attempts, then `conflict`/`safe`) before storage acknowledges with the consumer's expected record revision |
 | W9 | storage ack/issue/abandon: read consumer record → write | the read is fingerprint-verified against committed state; the write carries the expected record revision; the write is read back and a store that reports a write it does not hold fences the repository (`storage-corrupt`); `unknown` visibility fences and answers `reconcile-first` |
@@ -147,7 +147,7 @@ subscription was owed can be archived in T7.
 | exact-ID falsifier | `receipts.test.ts` falsifier + *"an old receipt cannot consume an obligation committed after it was issued"* |
 | adversarial receipts | fabricated id, modified task/revision/update list, shortened, enlarged, duplicates, foreign subscription, foreign store, snapshot-only, malformed, replay before ack / after ack / after expiry, abandoned — one `invalid-receipt` answer, and the record unchanged |
 | fail-closed custom stores | `checkpoints.test.ts`: throwing, stale, foreign, garbage, fail-unchanged, fail-unknown, not-a-result, and a store that **stops persisting** — no acknowledgeable context, no reported acknowledgement |
-| neutered double goes red | making `InMemoryCheckpointStore.write` store nothing turned **17 of 22** checkpoint tests red |
+| neutered double goes red | making `InMemoryCheckpointStore.write` store nothing turns **22 of 28** checkpoint tests red (final source) |
 | host processing precedes checkpoint commit | *"prepare writes a manifest and acknowledges nothing; the renderer writes nothing"*; abort / abstention tests |
 | no subscribe/mutate gap | W1 tests: terminal transition and task creation in the gap, bounded recapture, epoch move |
 | B's baseline independent of A's acks | `subscribe.test.ts` |
@@ -161,6 +161,38 @@ subscription was owed can be archived in T7.
 | A3: lifetime history independent of open/archived | *"grows with acknowledgements, independently …, and survives reopen"* |
 | A3: expired manifests evicted separately from history | *"the first manifest converts the reservation; eviction and abandonment restore it; history stays"* |
 | A3: prepare/ack drain at saturation | *"with every additive dimension exactly full, new work is refused and delivery still drains"* |
+
+**Revert check — run on the final source.** 22 protections reverted one at a time; every one turns
+its tests red (failing tests in parentheses):
+
+| # | protection reverted | red |
+|---|---|---|
+| M1 | acknowledgement evidence not added to commit growth (mint instead of spend) | 5 |
+| M2 | acknowledgement by per-task watermark instead of exact ids | 1 (the falsifier) |
+| M3 | no exact-ID join at open | 2 |
+| M4 | no read-back after a checkpoint write | 5 |
+| M5 | caller-chosen audience accepted | 3 |
+| M6 | potential-audience cap off | 1 |
+| M7 | source-replay compatibility off | 2 |
+| M8 | subscribe: no epoch recheck in the activating writer | 1 |
+| M9 | subscribe: no re-query of the captured selection | 3 |
+| M10 | prepare: no consumer record-revision recheck | 1 |
+| M11 | prepare: no task-revision fence (W6) | 2 |
+| M12 | acknowledge: no record-revision fence (W8) | 3 |
+| M13 | acknowledge: no canonical receipt match | 3 |
+| M14 | acknowledge: no per-entry authorization | 3 |
+| M15 | acknowledge: no epoch recheck in the committing section | 1 |
+| M16 | storage: an expired manifest acknowledged | 3 |
+| M17 | storage: issue without the owed-or-acknowledged check | 4 |
+| M18 | storage: acknowledging an id no longer owed | 1 |
+| M19 | a session store accepted under a process-crash repository | 1 |
+| M20 | per-subscription history limit off | 2 |
+| M21 | test double: the checkpoint store stops persisting | 22 |
+| M22 | a dropped update releases no owed link at admission | 1 |
+
+M8 and M22 turned nothing red on the first run: the epoch test only asserted success, and no test
+exercised a drop at the admission limit. Both tests were strengthened (the new epoch now hides the
+task; a drop-and-add at exactly the per-subscription limit) and re-run red.
 
 ## Deviations from the design sketch
 
@@ -201,9 +233,27 @@ P3: four dead members removed (`selectionOf`, `DeliveryBook.fitsHistory`, `TaskI
 `CapacityLedger.remove`). Confirmed correct by the reviewer: exact-ID path, fail-closed store handling,
 adversarial coverage, no double counting in the delivery book.
 
+## Coverage closure
+
+Closed after layer 1, to 100 % statements/branches/functions/lines with **zero `c8 ignore`**. Branches
+that cannot execute were removed rather than tested: `subscribe` no longer re-converts a policy
+assembled from already-converted fields (broker delivery defaults are now converted whole, by the new
+`TaskConverters.delivery.policyOverrides`, at `TaskBroker.create`); `prepare` no longer treats an
+`invalid-receipt` from issue as a re-render signal (the unchanged consumer revision already proves
+every included id is still owed); a bound delivery's subscription, a fenced task's record and an
+active subscription's units are asserted present rather than defaulted; `_replace` requires the
+manifests it recomputes from. Two branches a coverage pass judged dead were reachable and are tested:
+storage permits any commit to drop a **non-required** update, which releases its owed link without an
+acknowledgement and makes a receipt that named it `invalid-receipt`.
+
 ## Gates
 
-*(filled on the final source)*
+*(repo-wide rebuild and test pending on the final source)*
+
+`rushx build` (zero warnings), `rushx lint`, `rushx fixlint` (no changes), `rushx test` — **1,587
+tests, 100 % statements/branches/functions/lines, zero `c8 ignore`**. `rush change --verify
+--target-branch origin/integration/agent-tasks-v1`; `verify-capability-docs`;
+`generate-capability-feed --check`.
 
 ## Hand-offs (routed to `docs/TECH_DEBT.md`)
 
