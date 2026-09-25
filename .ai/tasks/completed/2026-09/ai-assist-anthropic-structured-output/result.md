@@ -186,6 +186,13 @@ run therefore exercises **both** Anthropic mechanisms live:
 It also gives `claude-fable-5-1` its first plain live row. The seam stays coverage-ignored like
 the existing ones. The classification and verdict logic is covered offline through injected deps.
 
+**The dedicated `anthropic-structured-output` scenario** (`src/scenarios/structuredOutput/`) was
+missed at first. It still probed only the default model, i.e. only `tool-forced`. It now also probes
+`@anthropic:opus` and `@anthropic:fable` with `expect: 'schema'`. Its prompt is deliberately
+hostile: it asks for a markdown fence and an extra `funFact` field. So a pass there proves the
+grammar suppressed both, which is a stronger live check than the canary's `{answer}` probe. A new
+offline test pins the scenario's hard-coded expectations to the registry.
+
 ## 7. Gates — final run on `f539be5e` (2026-09-25, after the §9 fixes)
 
 | gate | result |
@@ -193,7 +200,7 @@ the existing ones. The classification and verdict logic is covered offline throu
 | repo-wide `install-run-rush.js rebuild` | **36/36 succeeded, 0 warnings** |
 | repo-wide `install-run-rush.js test` | **35/35 succeeded, 0 warnings**. The 100% coverage thresholds are enforced inside it |
 | ts-extras tests | 3103 pass (3101 before §9, plus the Mythos wire test and its registry row) |
-| testbed tests (`heft test`) | 576 pass, 100% all metrics |
+| testbed tests (`heft test`) | 576 pass, 100% all metrics; 577 after the structured-output scenario addition above (re-run, lint clean) |
 | `eslint` (ts-extras, testbed) | clean; `fixlint` run before the commit |
 | `rush change --verify --target-branch origin/release` | pass (`@fgv/ts-extras`, `minor`; `samples/testbed` is unpublished) |
 | `verify-capability-docs`, `generate-capability-feed --check`, `verify-esm-entrypoints`, `verify-bundler-resolution`, `verify-tarball-exports` | all pass. The last two first needed their autoinstallers installed in this container, as in #692 |
