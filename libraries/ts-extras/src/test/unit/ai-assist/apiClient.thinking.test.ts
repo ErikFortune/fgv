@@ -504,6 +504,23 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       expect(sentBody()).toMatchObject({ model: 'gpt-6-astra', reasoning_effort: 'none', temperature: 0.7 });
     });
 
+    test("onUnsupported: 'fail' does not refuse when a typed block sets the effort that goes out", async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...testPrompt.toRequest(),
+        tier: 'frontier',
+        thinking: {
+          effort: 'none',
+          onUnsupported: 'fail',
+          providers: [{ provider: 'openai', config: { effort: 'high' } }]
+        }
+      });
+      expect(result).toSucceed();
+      expect(sentBody()).toMatchObject({ model: 'gpt-6-astra', reasoning_effort: 'high' });
+    });
+
     test("onUnsupported: 'fail' has no effect on an effort the model accepts", async () => {
       mockFetchResponse(openAiResponse('ok'));
       const result = await AiAssist.callProviderCompletion({

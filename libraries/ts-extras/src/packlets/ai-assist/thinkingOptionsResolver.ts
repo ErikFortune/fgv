@@ -295,20 +295,34 @@ const EFFORT_WIRE_KEYS: Readonly<Record<ThinkingProviderDiscriminator, ReadonlyA
   anthropic: ['thinking', 'output_config']
 };
 
+/** Whether one applicable block sets `discriminator`'s effort, typed or through `otherParams`. */
+function blockSetsEffort(
+  block: IThinkingProviderConfig,
+  discriminator: ThinkingProviderDiscriminator
+): boolean {
+  switch (block.provider) {
+    case 'other':
+      return EFFORT_WIRE_KEYS[discriminator].some((key) => key in block.config);
+    case 'google':
+      return block.config.thinkingBudget !== undefined;
+    default:
+      return block.config.effort !== undefined;
+  }
+}
+
 /**
- * True when an applicable `'other'` block sets `discriminator`'s effort field on the wire. The caller
- * then owns that value, so the `'none'` gate stands aside, the same as for an explicit provider block.
+ * True when an applicable provider block sets `discriminator`'s effort — a typed block's `effort`
+ * (`thinkingBudget` on Gemini), or an `'other'` block's wire key. Blocks outrank the generic
+ * `effort`, so the caller then owns the value that reaches the wire, and the `'none'` gate stands
+ * aside: no degrade and no `'fail'` refusal.
  */
-function otherBlockSetsWireEffort(
+function providerBlockSetsEffort(
   config: IThinkingConfig,
   resolvedModel: string,
   discriminator: ThinkingProviderDiscriminator
 ): boolean {
   return (config.providers ?? []).some(
-    (block) =>
-      block.provider === 'other' &&
-      blockApplies(block, resolvedModel, discriminator) &&
-      EFFORT_WIRE_KEYS[discriminator].some((key) => key in block.config)
+    (block) => blockApplies(block, resolvedModel, discriminator) && blockSetsEffort(block, discriminator)
   );
 }
 
@@ -347,7 +361,7 @@ export function resolveThinkingConfig(
   if (
     effort === 'none' &&
     thinkingRequired &&
-    !otherBlockSetsWireEffort(config, resolvedModel, discriminator)
+    !providerBlockSetsEffort(config, resolvedModel, discriminator)
   ) {
     if (config.onUnsupported === 'fail') {
       return fail(

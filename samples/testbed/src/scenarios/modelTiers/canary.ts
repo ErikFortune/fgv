@@ -22,7 +22,8 @@
 
 /**
  * Shared model-tier canary logic for the per-provider tier scenarios
- * (`openai-model-tiers`, `anthropic-model-tiers`, `google-gemini-model-tiers`).
+ * (`openai-model-tiers`, `anthropic-model-tiers`, `google-gemini-model-tiers`,
+ * `xai-grok-model-tiers`).
  *
  * The canary has two halves, separated so the deterministic half is fully unit-testable
  * without any network access (the `mcpProbe` deps-injection pattern):
@@ -38,6 +39,13 @@
  *    injected via {@link ITierCanaryDeps.complete}. When no key is available the scenario omits
  *    `complete` and every tier is reported as `not-run` (STOP-FLAG: resolver verified, live
  *    canary pending the orchestrator's keyed run).
+ * 3. **Supplementary probes (keyed, opt-in per spec).** Each has its own report section:
+ *    - thinking probes: one completion per tier and effort (`thinkingEfforts`)
+ *    - strict-none probes: `'none'` plus `onUnsupported: 'fail'`, checked against
+ *      `thinkingRequiredModelPrefixes` (`strictNoneProbe`)
+ *    - model-override rows for aliases no tier reaches (`extraModels`)
+ *    - one live image generation (`liveImage`, via {@link ITierCanaryDeps.generateImage})
+ *    Any probe failure fails the run, the same as a tier failure.
  *
  * The verdict deliberately distinguishes a **resolver bug or stale id** (a real failure) from
  * **access-gating** (resolver correct, the key simply lacks access — e.g. gpt-image
