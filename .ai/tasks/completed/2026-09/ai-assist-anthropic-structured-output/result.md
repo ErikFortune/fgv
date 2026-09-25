@@ -258,14 +258,13 @@ A dropped effort remains invisible live and is pinned offline (§4).
 | layer-1 order | `code-reviewer` ran on the full diff **before** the first coverage run. No P1/P2. Two P3s fixed: a registry comment implied array order mattered (matching is longest-prefix), and a doc sentence was split. The first coverage run was already at 100%, so there was no gap-closure phase and no `c8 ignore` |
 | mutation check | reverting `mergeAnthropicStructuredWire` to `Object.assign` → exactly the effort-merge test fails (1 failed / 81 passed, on the pre-§9 file) |
 | antagonist pass | §9 |
-| Copilot loop | not run at close-out |
+| Copilot loop | 2 rounds: round 1 found 2 issues, both fixed; round 2 found none. Stopped on diminishing returns (§10) |
 | live | none from this environment; the maintainer's runs passed: `anthropic-structured-output` 3/3, `anthropic-model-tiers` 11/11 then 15/15 with effort + schema (§6b) |
 
 ## 8. Open items
 
 - **TECH_DEBT P3**: whether web search + `output_config.format` is accepted (§3).
 - **Not done, deliberately**: moving the other Claude lines from forced tool use to JSON outputs (§1).
-- **Copilot review loop (layer 2)**: not run at close-out.
 - **Live runs**: all three passed (§6b), including the effort + schema rows.
 - **TECH_DEBT P3**: forced tool + manual thinking on pre-Claude-5 lines (§6).
 
@@ -305,3 +304,10 @@ the existence of every claimed test. Findings and dispositions:
 
 The follow-up was re-validated before pushing: ts-extras 3104 at 100%, testbed 578 at 100%, a
 repo-wide `rush build` succeeded, lint was clean, and no build warnings after the api.md update.
+
+**Round 2 (on `67bba4e0`): no findings.** Both round-1 threads show as resolved. The overview's
+headline claims two moderate findings remain "in the registry pattern and canary handling". It
+posted no comments, though, and its own findings count reads "None", so the headline was treated
+as a summary artifact rather than a finding.
+
+**Loop stopped at 2 rounds on diminishing returns.** CI `build` is green on `67bba4e0`.

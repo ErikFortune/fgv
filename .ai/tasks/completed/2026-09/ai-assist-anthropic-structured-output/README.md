@@ -40,7 +40,6 @@ The stream then rotates `@anthropic:opus` → `claude-opus-5-5` and `@anthropic:
 
 - TECH_DEBT P3: forced tool + manual thinking on pre-Claude-5 lines, found while adding those rows.
 - The web-search TECH_DEBT P3.
-- The Copilot review loop (layer 2) had not run at close-out.
 
 ## Files
 
