@@ -595,4 +595,19 @@ describe('a profile must be able to finish the work it can accept', () => {
       /over the representable ceiling of 4096/
     );
   });
+
+  test('an acknowledgement evidence bound too small to hold one exact update id is refused', () => {
+    const withEvidence = (bytes: number): unknown => ({
+      ...defaultTaskCapacityProfile,
+      encoded: { ...defaultTaskCapacityProfile.encoded, maxAcknowledgementEvidenceBytes: bytes }
+    });
+    expect(
+      converters.capacity.profile.convert(
+        withEvidence(defaultTaskCapacityProfile.encoded.maxAcknowledgementEvidenceBytes)
+      )
+    ).toSucceed();
+    expect(converters.capacity.profile.convert(withEvidence(1))).toFailWith(
+      /cannot hold one exact acknowledgement of a \d+-byte update id/
+    );
+  });
 });
