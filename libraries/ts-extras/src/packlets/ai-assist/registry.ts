@@ -635,6 +635,10 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
       { idPattern: /^claude-opus-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^claude-sonnet-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^claude-fable-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      // claude-mythos-5-1 only: "Same capabilities as Claude Fable 5.1", adaptive thinking always on
+      // (https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1, fetched 2026-09-25).
+      // No fetched page states the other Mythos ids' capabilities, so the rule is not family-wide.
+      { idPattern: /^claude-mythos-5-1/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^claude-/, capabilities: ['chat', 'tools', 'vision'] }
     ],
     groq: [{ idPattern: /./, capabilities: ['chat'] }],

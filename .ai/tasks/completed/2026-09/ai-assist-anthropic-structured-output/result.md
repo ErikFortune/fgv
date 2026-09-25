@@ -154,15 +154,17 @@ one call site to `Object.assign` turns exactly the effort test red (1 failed / 8
 | effort values | none | D8: `xhigh` and `max` are both listed for Claude Opus 5.5 and Claude Fable 5.1; `low`/`medium`/`high` are universal |
 | `supportedTools: ['web_search']` | none | ai-assist sends `web_search_20250305`. D6 lists it as a current version, and D1 § Feature support lists server-side tools |
 | `acceptsImageInput` | none | D1 § Feature support: vision |
-| `DEFAULT_MODEL_CAPABILITY_CONFIG.anthropic` | none | `/^claude-opus-/` and `/^claude-fable-/` already tag both ids with thinking. The test table gains both ids |
-| `AnthropicThinkingModelNames` | none | both ids already added by #692 |
+| `DEFAULT_MODEL_CAPABILITY_CONFIG.anthropic` | **+ `/^claude-mythos-5-1/`** (Copilot round 1); otherwise none | `/^claude-opus-/` and `/^claude-fable-/` already tag both ids with thinking. The test table gains both ids |
+| `AnthropicThinkingModelNames` | **+ `claude-mythos-5-1`** (Copilot round 1) | the rotated ids were already added by #692 |
 | `temperature` handling | none | unchanged; the Claude-5 family already rejects it |
 
 **`claude-mythos-5-1`** is a documented id (D2 `supportedModels`, D8, D10) that no alias reaches.
 D10 states it rejects forced tool use and is adaptive-only, so it is declared on both tables (see
-§9 for how this was first missed). It is **not** added to `AnthropicThinkingModelNames` or to a
-`listModels` thinking `idPattern` (it falls to `/^claude-/`). Those are the manual-axes union and
-detection rules, which track ids ai-assist names, and no alias names Mythos.
+§9 for how this was first missed). Copilot round 1 then flagged a half-cascade: the id was declared
+adaptive but was still missing from `AnthropicThinkingModelNames` and from the `listModels` thinking
+`idPattern` (it fell to `/^claude-/`). The union already lists the alias-less Fable line, so "no
+alias names it" was not a reason. Both were added. The `idPattern` is `/^claude-mythos-5-1/`, not
+family-wide, because no fetched page states the other Mythos ids' capabilities.
 
 ## 6. Testbed probe
 
@@ -292,3 +294,14 @@ the existence of every claimed test. Findings and dispositions:
 - **F7 — prefill and prompt-cache constraints not dispositioned.** **Fixed** (§1).
 - **F8 — two ragged comment wraps.** **Fixed.**
 - **F9 — "predecessors' retirement dates" overstated D9.** **Fixed** (D9 row).
+
+## 10. Copilot loop
+
+**Round 1 (2026-09-25): two findings, both valid, both fixed.**
+- `claude-mythos-5-1` was declared adaptive but missing from `AnthropicThinkingModelNames` and the
+  thinking `idPattern`. This is the same half-cascade §9's F3 started; the §5 disposition "no alias
+  names it" was wrong, because the union already carries the alias-less Fable line.
+- `CAPABILITIES.md` still said "Four wire formats". It now says five.
+
+The follow-up was re-validated before pushing: ts-extras 3104 at 100%, testbed 578 at 100%, a
+repo-wide `rush build` succeeded, lint was clean, and no build warnings after the api.md update.

@@ -816,6 +816,7 @@ describe('DEFAULT_MODEL_CAPABILITY_CONFIG', () => {
     ['anthropic', 'claude-fable-5'],
     ['anthropic', 'claude-opus-5-5'],
     ['anthropic', 'claude-fable-5-1'],
+    ['anthropic', 'claude-mythos-5-1'],
     ['openai', 'gpt-5.6-terra']
   ] as const)('%s tags %s with the thinking capability', (provider, modelId) => {
     const rules = config.perProvider?.[provider] ?? [];
