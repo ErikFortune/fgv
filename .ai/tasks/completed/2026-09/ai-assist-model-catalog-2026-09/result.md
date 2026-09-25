@@ -216,10 +216,19 @@ Each of these is documented behaviour that no offline gate can observe:
 2. **Opus 5.5 / Fable 5.1 via `modelOverride` with `structuredOutput`** gets a provider 400 (§1.4).
 3. **`grok-imagine-image-2.0` + `quality`** is new on the wire. It has not been sent live.
 
-**Suggested testbed checks.** The base, advanced and frontier completions on OpenAI; base and advanced
-on xAI; base on Gemini with and without thinking; `@google-gemini:flash-lite` via `modelOverride`;
-image generation on `@openai:image` and `@xai-grok:imagine` (and the latter with `quality: 'medium'`).
-Each run should log the resolved id listed in §1.
+**Testbed coverage for these risks (added after the first review).** The model-tier canaries
+(`samples/testbed/src/scenarios/modelTiers/`) now also run:
+- **A thinking probe per tier** with effort `none` and `low`, for OpenAI, Gemini and xAI. A 400 on
+  a probe is `FAIL(param)` and fails the run, which is exactly risk 1. The `grok-4.7` / `none` case
+  predates this rotation (`grok-4.5` had it), so a red xAI run on that row is expected.
+- **A `modelOverride` row for `@google-gemini:flash-lite`**, the only rotated alias no tier reaches.
+- **One live image generation** on OpenAI (`gpt-image-2.5-sunburst`, quality `low`) and on xAI
+  (`grok-imagine-image-2.0`, quality `medium`, which is risk 3). An access-gated image reports
+  `BLOCKED`, not `FAIL`.
+
+Each resolved id is logged, so every row can be checked against §1. The seams that make the live
+calls stay coverage-ignored like the existing ones. Everything else is covered offline through
+injected dependencies.
 
 ## 7. Gates (all run 2026-09-24, on the final tree)
 

@@ -103,6 +103,12 @@ export type TierLiveOutcome =
   | 'wrong-endpoint'
   /** HTTP 404 / unknown-model: the alias value is stale — the maintenance-loop trigger, a real failure. */
   | 'id-wrong'
+  /**
+   * A thinking probe was rejected (HTTP 400, or a rejected-parameter message): the id answers, but
+   * not with the thinking effort ai-assist sent for it. A real failure: it is an ai-assist
+   * wire-mapping gap (e.g. `'none'` on a model with no `none` effort), not an access problem.
+   */
+  | 'param-failed'
   /** Any other live failure (or a 200 with an empty body) — a real failure. */
   | 'error'
   /** Live call not attempted (no API key) — STOP-FLAG: resolver verified, live pending a keyed run. */
@@ -129,16 +135,65 @@ export interface IImageResolution {
 }
 
 /**
- * Injected dependencies for {@link runTierCanary}. The single live seam is `complete`; omit it to
- * run the offline resolver proof only (the keyless STOP-FLAG path).
+ * A generic thinking effort a thinking probe sends (`IThinkingConfig.effort`).
+ * @public
+ */
+export type CanaryThinkingEffort = NonNullable<AiAssist.IThinkingConfig['effort']>;
+
+/**
+ * Per-call options for {@link ITierCanaryDeps.complete}. Absent fields mean the plain tier canary.
+ * @public
+ */
+export interface ICanaryCompleteOptions {
+  /** Send `thinking: { effort }` (a thinking probe). */
+  readonly effort?: CanaryThinkingEffort;
+  /** Send this `modelOverride` (an extra-model probe; alias or concrete id) instead of the tier. */
+  readonly modelOverride?: string;
+}
+
+/**
+ * The live result of one supplementary probe (thinking, extra model, or image).
+ * @public
+ */
+export interface ICanaryProbeResult {
+  /** Row label in the report (e.g. `frontier effort=none`, `@google-gemini:flash-lite`, `image`). */
+  readonly label: string;
+  /** The concrete id the probe targets. */
+  readonly concrete: string;
+  readonly outcome: TierLiveOutcome;
+  readonly detail?: string;
+}
+
+/**
+ * Results of the supplementary probes a spec opted into. Each list is empty when not requested.
+ * @public
+ */
+export interface ICanaryProbeResults {
+  readonly thinking: ReadonlyArray<ICanaryProbeResult>;
+  readonly extraModels: ReadonlyArray<ICanaryProbeResult>;
+  readonly image: ReadonlyArray<ICanaryProbeResult>;
+}
+
+/**
+ * Injected dependencies for {@link runTierCanary}. The live seams are `complete` and
+ * `generateImage`; omit them to run the offline resolver proof only (the keyless STOP-FLAG path).
  * @public
  */
 export interface ITierCanaryDeps {
   /**
-   * Fires a minimal live completion at the given tier. Omit (leave `undefined`) when no API key is
-   * available — every tier is then reported `not-run`.
+   * Fires a minimal live completion at the given tier (optionally with a thinking effort or a
+   * `modelOverride`). Omit (leave `undefined`) when no API key is available — every tier and
+   * completion probe is then reported `not-run`.
    */
-  readonly complete?: (tier: CanaryTier) => Promise<Result<AiAssist.IAiCompletionResponse>>;
+  readonly complete?: (
+    tier: CanaryTier,
+    options?: ICanaryCompleteOptions
+  ) => Promise<Result<AiAssist.IAiCompletionResponse>>;
+  /**
+   * Fires one live image generation at the descriptor's `image` tier. Omit when no API key is
+   * available — the image probe is then reported `not-run`.
+   */
+  readonly generateImage?: () => Promise<Result<AiAssist.IAiImageGenerationResponse>>;
 }
 
 /**
@@ -154,6 +209,18 @@ export interface ITierCanarySpec {
   readonly tiers: ReadonlyArray<CanaryTier>;
   /** When true, also resolve + log the `image` tier (e.g. OpenAI's `@openai:image → gpt-image-2.5-sunburst`). */
   readonly imageTier?: boolean;
+  /**
+   * Thinking efforts to probe on every tier, one extra live completion per (tier, effort). Catches
+   * an effort the resolved model rejects (e.g. `'none'` on a model whose effort floor is `low`).
+   */
+  readonly thinkingEfforts?: ReadonlyArray<CanaryThinkingEffort>;
+  /**
+   * Extra models (fgv aliases or concrete ids) to resolve and fire via `modelOverride` — for
+   * aliases no tier reaches (e.g. `@google-gemini:flash-lite`).
+   */
+  readonly extraModels?: ReadonlyArray<string>;
+  /** When true (and `imageTier` is set), fire one live image generation at the `image` tier. */
+  readonly liveImage?: boolean;
 }
 
 /**
@@ -246,6 +313,34 @@ export function classifyLiveFailure(message: string): TierLiveOutcome {
   return 'error';
 }
 
+/**
+ * Classifies a thinking-probe failure. Access, stale-id and endpoint signals keep their tier-canary
+ * meaning; an HTTP 400 or a rejected-parameter message becomes `param-failed` — on a probe whose
+ * only difference from the passing tier canary is the thinking config, that is the config being
+ * refused.
+ * @public
+ */
+export function classifyThinkingFailure(message: string): TierLiveOutcome {
+  const base = classifyLiveFailure(message);
+  if (base === 'access-gated' || base === 'id-wrong' || base === 'wrong-endpoint') {
+    return base;
+  }
+  if (base === 'param-rejected' || /returned 400/.test(message)) {
+    return 'param-failed';
+  }
+  return base;
+}
+
+/** True for the outcomes that fail a canary run. */
+function isRealFailure(outcome: TierLiveOutcome): boolean {
+  return (
+    outcome === 'id-wrong' ||
+    outcome === 'error' ||
+    outcome === 'wrong-endpoint' ||
+    outcome === 'param-failed'
+  );
+}
+
 /** Maps a {@link TierLiveOutcome} to the bracketed status tag used in the report. */
 function liveTag(outcome: TierLiveOutcome): string {
   switch (outcome) {
@@ -259,6 +354,8 @@ function liveTag(outcome: TierLiveOutcome): string {
       return 'FAIL(endpoint)';
     case 'id-wrong':
       return 'FAIL(id)';
+    case 'param-failed':
+      return 'FAIL(param)';
     case 'error':
       return 'FAIL';
     case 'not-run':
@@ -273,16 +370,20 @@ function liveTag(outcome: TierLiveOutcome): string {
 export function formatTierCanaryReport(
   spec: ITierCanarySpec,
   liveResults: ReadonlyArray<ITierLiveResult>,
-  imageResolution?: IImageResolution
+  imageResolution?: IImageResolution,
+  probes?: ICanaryProbeResults
 ): string {
-  const anyRealFailure = liveResults.some(
-    (r) => r.outcome === 'id-wrong' || r.outcome === 'error' || r.outcome === 'wrong-endpoint'
-  );
-  const anyNotRun = liveResults.some((r) => r.outcome === 'not-run');
-  const anyBlocked = liveResults.some((r) => r.outcome === 'access-gated' || r.outcome === 'param-rejected');
+  const probeResults = probes ? [...probes.thinking, ...probes.extraModels, ...probes.image] : [];
+  const outcomes = [...liveResults.map((r) => r.outcome), ...probeResults.map((r) => r.outcome)];
+  const anyTierFailure = liveResults.some((r) => isRealFailure(r.outcome));
+  const anyProbeFailure = probeResults.some((r) => isRealFailure(r.outcome));
+  const anyNotRun = outcomes.some((o) => o === 'not-run');
+  const anyBlocked = outcomes.some((o) => o === 'access-gated' || o === 'param-rejected');
 
-  const verdict = anyRealFailure
+  const verdict = anyTierFailure
     ? 'FAILED — a tier is not chat-completions-callable (wrong endpoint) or resolves to a stale id (see FAIL lines below)'
+    : anyProbeFailure
+    ? 'FAILED — a thinking, model-override or image probe failed (see FAIL lines below)'
     : anyNotRun
     ? 'RESOLVER-VERIFIED; LIVE CANARY PENDING (STOP-FLAG: set the provider API key to run the keyed gate)'
     : anyBlocked
@@ -306,6 +407,18 @@ export function formatTierCanaryReport(
     return `  [${liveTag(r.outcome)}] ${r.resolution.tier.padEnd(8)} ${r.resolution.concrete}${detail}`;
   });
 
+  const probeSection = (title: string, rows: ReadonlyArray<ICanaryProbeResult>): string[] =>
+    rows.length === 0
+      ? []
+      : [
+          '',
+          title,
+          ...rows.map((r) => {
+            const detail = r.detail ? `  (${r.detail})` : '';
+            return `  [${liveTag(r.outcome)}] ${r.label.padEnd(24)} ${r.concrete}${detail}`;
+          })
+        ];
+
   return [
     `=== ${spec.providerId} model-tier canary ===`,
     '',
@@ -314,9 +427,85 @@ export function formatTierCanaryReport(
     '',
     'Live canary (minimal completion per tier):',
     ...liveLines,
+    ...probeSection('Thinking probes (tier + effort):', probes?.thinking ?? []),
+    ...probeSection('Model-override probes:', probes?.extraModels ?? []),
+    ...probeSection('Live image probe:', probes?.image ?? []),
     '',
     `Verdict: ${verdict}`
   ].join('\n');
+}
+
+/** Classifies a completed (or failed) completion into a probe row. */
+function completionProbe(
+  label: string,
+  concrete: string,
+  result: Result<AiAssist.IAiCompletionResponse>,
+  classify: (message: string) => TierLiveOutcome
+): ICanaryProbeResult {
+  if (result.isFailure()) {
+    return { label, concrete, outcome: classify(result.message), detail: result.message };
+  }
+  return result.value.content.trim().length > 0
+    ? { label, concrete, outcome: 'live-pass' }
+    : { label, concrete, outcome: 'error', detail: 'HTTP 200 but empty body' };
+}
+
+/** Classifies a live image generation into a probe row. */
+function imageProbe(
+  concrete: string,
+  result: Result<AiAssist.IAiImageGenerationResponse>
+): ICanaryProbeResult {
+  if (result.isFailure()) {
+    return { label: 'image', concrete, outcome: classifyLiveFailure(result.message), detail: result.message };
+  }
+  return result.value.images.some((img) => img.base64.length > 0)
+    ? { label: 'image', concrete, outcome: 'live-pass' }
+    : { label: 'image', concrete, outcome: 'error', detail: 'HTTP 200 but no image data' };
+}
+
+/** Runs the thinking probes: one live completion per (tier, effort). */
+async function runThinkingProbes(
+  spec: ITierCanarySpec,
+  resolutions: ReadonlyArray<ITierResolution>,
+  deps: ITierCanaryDeps
+): Promise<ICanaryProbeResult[]> {
+  const rows: ICanaryProbeResult[] = [];
+  for (const resolution of resolutions) {
+    for (const effort of spec.thinkingEfforts ?? []) {
+      const label = `${resolution.tier} effort=${effort}`;
+      if (deps.complete === undefined) {
+        rows.push({ label, concrete: resolution.concrete, outcome: 'not-run' });
+        continue;
+      }
+      const result = await deps.complete(resolution.tier, { effort });
+      rows.push(completionProbe(label, resolution.concrete, result, classifyThinkingFailure));
+    }
+  }
+  return rows;
+}
+
+/** Resolves (offline) and fires (live) each extra model via `modelOverride`. */
+async function runExtraModelProbes(
+  spec: ITierCanarySpec,
+  deps: ITierCanaryDeps,
+  logger: Logging.ILogger
+): Promise<Result<ICanaryProbeResult[]>> {
+  const rows: ICanaryProbeResult[] = [];
+  for (const model of spec.extraModels ?? []) {
+    const concreteResult = AiAssist.resolveProviderModel(spec.descriptor, model, undefined);
+    if (concreteResult.isFailure()) {
+      return fail(`model override '${model}': resolver failed: ${concreteResult.message}`);
+    }
+    const concrete = concreteResult.value;
+    logger.info(`resolved ${model} -> ${concrete} (modelOverride)`);
+    if (deps.complete === undefined) {
+      rows.push({ label: model, concrete, outcome: 'not-run' });
+      continue;
+    }
+    const result = await deps.complete('base', { modelOverride: model });
+    rows.push(completionProbe(model, concrete, result, classifyLiveFailure));
+  }
+  return succeed(rows);
 }
 
 /**
@@ -347,11 +536,10 @@ export async function runTierCanary(
     );
   }
 
-  // Optional image-tier resolution — offline resolve + log only, no live image call.
-  // Image generation is a separate call path (callProviderImageGeneration) that this canary
-  // deliberately does not exercise: a live image request can fail for reasons unrelated to id
-  // rotation — some image models are access-gated (e.g. org verification on the gpt-image
-  // line) — so live image verification is a separate, explicit gate outside this scenario.
+  // Optional image-tier resolution — offline resolve + log. A live image call happens only when the
+  // spec opts in with `liveImage` (see the image probe below), because a live image request can
+  // fail for reasons unrelated to id rotation — some image models are access-gated (e.g. org
+  // verification on the gpt-image line) — which the probe reports as BLOCKED, not FAIL.
   let imageResolution: IImageResolution | undefined;
   if (spec.imageTier) {
     const alias = AiAssist.resolveModel(spec.descriptor.defaultModel, 'image');
@@ -387,13 +575,29 @@ export async function runTierCanary(
     }
   }
 
-  const report = formatTierCanaryReport(spec, liveResults, imageResolution);
+  const thinking = await runThinkingProbes(spec, resolutions, deps);
+  const extraModelsResult = await runExtraModelProbes(spec, deps, logger);
+  if (extraModelsResult.isFailure()) {
+    return fail(`${spec.providerId} tier canary: ${extraModelsResult.message}`);
+  }
+  const image: ICanaryProbeResult[] = [];
+  if (spec.liveImage && imageResolution) {
+    image.push(
+      deps.generateImage === undefined
+        ? { label: 'image', concrete: imageResolution.concrete, outcome: 'not-run' }
+        : imageProbe(imageResolution.concrete, await deps.generateImage())
+    );
+  }
+  const probes: ICanaryProbeResults = { thinking, extraModels: extraModelsResult.value, image };
 
-  // Verdict: a stale id (`id-wrong`), a non-chat-callable id (`wrong-endpoint`), or a plain `error`
-  // fails the run. `access-gated` / `param-rejected` (resolver + id correct; access or a
-  // completion-path parameter is the blocker) and `not-run` (STOP-FLAG: pending the keyed run) do not.
-  const realFailure = liveResults.some(
-    (r) => r.outcome === 'id-wrong' || r.outcome === 'error' || r.outcome === 'wrong-endpoint'
+  const report = formatTierCanaryReport(spec, liveResults, imageResolution, probes);
+
+  // Verdict: a stale id (`id-wrong`), a non-chat-callable id (`wrong-endpoint`), a rejected thinking
+  // config (`param-failed`), or a plain `error` — on a tier or on any probe — fails the run.
+  // `access-gated` / `param-rejected` (resolver + id correct; access or a completion-path parameter
+  // is the blocker) and `not-run` (STOP-FLAG: pending the keyed run) do not.
+  const realFailure = [...liveResults, ...thinking, ...probes.extraModels, ...image].some((r) =>
+    isRealFailure(r.outcome)
   );
   return realFailure ? fail(report) : succeed(report);
 }

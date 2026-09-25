@@ -26,8 +26,10 @@ import { AiAssist } from '@fgv/ts-extras';
 
 import {
   type CanaryTier,
+  type ICanaryCompleteOptions,
   type ITierCanaryDeps,
   classifyLiveFailure,
+  classifyThinkingFailure,
   formatTierCanaryReport,
   resolveTierResolutions,
   runTierCanary
@@ -393,6 +395,223 @@ describe('runTierCanary (live — injected completion)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Supplementary probes — thinking effort, model override, live image
+// ---------------------------------------------------------------------------
+
+function imageOk(base64: string = 'AAAA'): Result<AiAssist.IAiImageGenerationResponse> {
+  return succeed({ images: [{ mimeType: 'image/png', base64 }] });
+}
+
+describe('classifyThinkingFailure', () => {
+  test.each([
+    ['AI API returned 400: Unsupported value: reasoning_effort "none"', 'param-failed'],
+    ['AI API returned 400: `temperature` is deprecated for this model.', 'param-failed'],
+    ['AI API returned 403: org not verified', 'access-gated'],
+    ['AI API returned 404: no such model', 'id-wrong'],
+    ['AI API returned 404: This is not a chat model', 'wrong-endpoint'],
+    ['network boom', 'error']
+  ])('%s → %s', (message, expected) => {
+    expect(classifyThinkingFailure(message)).toBe(expected);
+  });
+});
+
+describe('runTierCanary (thinking probes)', () => {
+  const spec = {
+    providerId: 'openai',
+    descriptor: openai,
+    tiers: ['base', 'frontier'] as ReadonlyArray<CanaryTier>,
+    thinkingEfforts: ['none', 'low'] as const
+  };
+
+  test('fires one completion per (tier, effort) and passes when all answer', async () => {
+    const complete = jest.fn(async () => pong());
+    const result = await runTierCanary(spec, { complete }, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/Thinking probes \(tier \+ effort\):/);
+      expect(report).toMatch(/\[PASS\] base effort=none\s+gpt-6-luna/);
+      expect(report).toMatch(/\[PASS\] frontier effort=low\s+gpt-6-astra/);
+      expect(report).toMatch(/LIVE-VERIFIED/);
+    });
+    // 2 plain tier calls + 2 tiers × 2 efforts.
+    expect(complete).toHaveBeenCalledTimes(6);
+    expect(complete).toHaveBeenCalledWith('frontier', { effort: 'none' });
+  });
+
+  test('a rejected thinking effort fails the run as FAIL(param) while the plain tier still passes', async () => {
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        tier === 'frontier' && options?.effort === 'none'
+          ? fail('AI API returned 400: Unsupported value: reasoning_effort "none"')
+          : pong()
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toFailWith(/\[PASS\] frontier\s+gpt-6-astra/);
+    expect(result).toFailWith(/\[FAIL\(param\)\] frontier effort=none\s+gpt-6-astra\s+\(AI API returned 400/);
+    expect(result).toFailWith(/FAILED — a thinking, model-override or image probe failed/);
+  });
+
+  test('an access-gated thinking probe is BLOCKED, not a failure', async () => {
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        options?.effort === 'low' ? fail('AI API returned 403: org not verified') : pong()
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[BLOCKED\(access\)\] base effort=low/);
+      expect(report).toMatch(/LIVE BLOCKED/);
+    });
+  });
+
+  test('an empty-body thinking probe is an error failure', async () => {
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        options?.effort !== undefined
+          ? succeed({ content: ' ', truncated: false, structuredOutput: 'none' })
+          : pong()
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toFailWith(/\[FAIL\] base effort=none\s+gpt-6-luna\s+\(HTTP 200 but empty body\)/);
+  });
+
+  test('keyless, every thinking probe is PENDING', async () => {
+    const result = await runTierCanary(spec, {}, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[PENDING\] frontier effort=none\s+gpt-6-astra/);
+      expect(report).toMatch(/LIVE CANARY PENDING/);
+    });
+  });
+});
+
+describe('runTierCanary (model-override probes)', () => {
+  const spec = {
+    providerId: 'google-gemini',
+    descriptor: gemini,
+    tiers: ['base'] as ReadonlyArray<CanaryTier>,
+    extraModels: ['@google-gemini:flash-lite']
+  };
+
+  test('resolves, logs and fires the override via modelOverride', async () => {
+    const complete = jest.fn(async () => pong());
+    const logger = new Logging.InMemoryLogger();
+    const result = await runTierCanary(spec, { complete }, logger);
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/Model-override probes:/);
+      expect(report).toMatch(/\[PASS\] @google-gemini:flash-lite\s+gemini-3\.5-flash-lite/);
+    });
+    expect(complete).toHaveBeenCalledWith('base', { modelOverride: '@google-gemini:flash-lite' });
+    expect(logger.logged).toContain(
+      'resolved @google-gemini:flash-lite -> gemini-3.5-flash-lite (modelOverride)'
+    );
+  });
+
+  test('a stale override id fails the run as FAIL(id)', async () => {
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        options?.modelOverride !== undefined ? fail('AI API returned 404: no such model') : pong()
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toFailWith(/\[FAIL\(id\)\] @google-gemini:flash-lite\s+gemini-3\.5-flash-lite/);
+    expect(result).toFailWith(/FAILED — a thinking, model-override or image probe failed/);
+  });
+
+  test('keyless, the override is resolved and PENDING', async () => {
+    const result = await runTierCanary(spec, {}, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[PENDING\] @google-gemini:flash-lite\s+gemini-3\.5-flash-lite/);
+    });
+  });
+
+  test('an unregistered override alias fails the run offline', async () => {
+    const result = await runTierCanary(
+      { ...spec, extraModels: ['@google-gemini:nope'] },
+      {},
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toFailWith(
+      /google-gemini tier canary: model override '@google-gemini:nope': resolver failed/
+    );
+  });
+});
+
+describe('runTierCanary (live image probe)', () => {
+  const spec = {
+    providerId: 'xai-grok',
+    descriptor: xai,
+    tiers: ['base'] as ReadonlyArray<CanaryTier>,
+    imageTier: true,
+    liveImage: true
+  };
+
+  test('a returned image passes', async () => {
+    const result = await runTierCanary(
+      spec,
+      { complete: async () => pong(), generateImage: async () => imageOk() },
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/Live image probe:/);
+      expect(report).toMatch(/\[PASS\] image\s+grok-imagine-image-2\.0/);
+      expect(report).toMatch(/LIVE-VERIFIED/);
+    });
+  });
+
+  test('a 200 with no image data is an error failure', async () => {
+    const result = await runTierCanary(
+      spec,
+      { complete: async () => pong(), generateImage: async () => imageOk('') },
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toFailWith(/\[FAIL\] image\s+grok-imagine-image-2\.0\s+\(HTTP 200 but no image data\)/);
+  });
+
+  test('an access-gated image is BLOCKED, not a failure', async () => {
+    const result = await runTierCanary(
+      spec,
+      {
+        complete: async () => pong(),
+        generateImage: async () => fail('AI API returned 403: org must be verified')
+      },
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[BLOCKED\(access\)\] image\s+grok-imagine-image-2\.0/);
+    });
+  });
+
+  test('a rejected image request fails the run', async () => {
+    const result = await runTierCanary(
+      spec,
+      {
+        complete: async () => pong(),
+        generateImage: async () => fail('AI API returned 404: model not found')
+      },
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toFailWith(/\[FAIL\(id\)\] image\s+grok-imagine-image-2\.0/);
+  });
+
+  test('without a generateImage seam the probe is PENDING', async () => {
+    const result = await runTierCanary(spec, { complete: async () => pong() }, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[PENDING\] image\s+grok-imagine-image-2\.0/);
+    });
+  });
+
+  test('liveImage without imageTier fires nothing', async () => {
+    const generateImage = jest.fn(async () => imageOk());
+    const result = await runTierCanary(
+      { ...spec, imageTier: false },
+      { complete: async () => pong(), generateImage },
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).not.toMatch(/Live image probe:/);
+    });
+    expect(generateImage).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // formatTierCanaryReport — direct verdict coverage
 // ---------------------------------------------------------------------------
 
@@ -465,6 +684,9 @@ describe('model-tier scenarios', () => {
       expect(report).toMatch(/=== google-gemini model-tier canary ===/);
       expect(report).toMatch(/@google-gemini:pro -> gemini-3\.1-pro-preview \(cascaded from a lower tier\)/);
       expect(report).toMatch(/\[PASS\] image\s+@google-gemini:flash-image -> gemini-3\.1-flash-image\b/);
+      expect(report).toMatch(/\[PENDING\] frontier effort=none\s+gemini-3\.1-pro-preview/);
+      expect(report).toMatch(/\[PENDING\] @google-gemini:flash-lite\s+gemini-3\.5-flash-lite/);
+      expect(report).not.toMatch(/Live image probe:/);
       expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
     });
   });
@@ -479,7 +701,21 @@ describe('model-tier scenarios', () => {
       expect(report).toMatch(/@xai-grok:standard -> grok-4\.3\b/);
       expect(report).toMatch(/@xai-grok:flagship -> grok-4\.7 \(cascaded from a lower tier\)/);
       expect(report).toMatch(/\[PASS\] image\s+@xai-grok:imagine -> grok-imagine-image-2\.0\b/);
+      expect(report).toMatch(/\[PENDING\] advanced effort=none\s+grok-4\.7/);
+      expect(report).toMatch(/\[PENDING\] image\s+grok-imagine-image-2\.0/);
       expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
+    });
+  });
+
+  test('openai cli.run without a key lists the thinking and image probes as PENDING', async () => {
+    if (!openaiModelTiersScenario.cli) {
+      throw new Error('expected a CLI implementation');
+    }
+    const result = await openaiModelTiersScenario.cli.run(makeContext());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[PENDING\] frontier effort=none\s+gpt-6-astra/);
+      expect(report).toMatch(/\[PENDING\] image\s+gpt-image-2\.5-sunburst/);
+      expect(report).not.toMatch(/Model-override probes:/);
     });
   });
 });
