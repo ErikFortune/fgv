@@ -128,10 +128,17 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-t7` 🔵 (slice T7 of the agent-tasks plan)
+### `agent-tasks-t7` ✅ (slice T7 of the agent-tasks plan) — landed on the integration branch via [#PRNUM](https://github.com/ErikFortune/fgv/pull/PRNUM)
 
-**Status:** 🔵 in flight — branch created off `integration/agent-tasks-v1` at `6a0e6c4ea` (the T6
-landing), brief written, not yet started. Artifacts at `.ai/tasks/active/agent-tasks-t7/`.
+**Status:** ✅ shipped 2026-09-25 via [#PRNUM](https://github.com/ErikFortune/fgv/pull/PRNUM) into
+`integration/agent-tasks-v1` (not `release`; the cluster promotes as one). Storage-owned
+subscriptions with persisted delivery policies and baselines; every audience computed and verified
+by storage, its acknowledgement evidence spent from the T5/T6 claims (pinned by the charge);
+receipt manifests committed before a context is returned; exact-ID acknowledgement (the rev-3/rev-4
+falsifier passes); checkpoint writes read back and fenced. Ceiling unchanged on resident (146 / 128);
+a `current` baseline adds 64 KiB per covered task until acknowledged. Filling the seam makes every
+covered task `retention-blocked` at archive, even fully acknowledged — T8's. Record:
+`.ai/tasks/active/agent-tasks-t7/result.md`.
 
 **Mission.** Subscriptions, exact issued receipts and acknowledgement: consumer/subscription
 identity with start policies, serialized baseline creation, candidate audiences committed with
