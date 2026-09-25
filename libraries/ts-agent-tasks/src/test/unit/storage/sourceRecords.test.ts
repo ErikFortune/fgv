@@ -512,7 +512,9 @@ describe('execution claims survive a restart and are validated at open', () => {
     writeJson(root, 'task-j1.json', {
       ...record,
       operations: (record.operations as JsonObject[]).map((o) =>
-        o.type === 'command' ? { ...o, awaiting: { epoch: 'e1', token: '9' } } : o
+        o.type === 'command'
+          ? { ...o, awaiting: { revision: { epoch: 'e1', token: '9' }, execution: '1:0' } }
+          : o
       )
     });
     expect(JSON.stringify(blockedOf(await reopen(h)).issues)).toMatch(
@@ -620,7 +622,7 @@ describe('storage rules for command evolution', () => {
               ...op,
               dispatch: 'settled',
               receipt: { ...op.receipt, result: { state: 'accepted' } },
-              awaiting: { epoch: 'e1', token: '9' }
+              awaiting: { revision: { epoch: 'e1', token: '9' }, execution: '1:0' }
             }
           : op
     ]

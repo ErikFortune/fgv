@@ -623,12 +623,46 @@ describe('source-replay commands', () => {
     // The command's own observation did not move the task: the feed has not reached it.
     let record = await recordOf(h, 'j1');
     expect(record.recordType === 'resolved' && record.task.envelope.lifecycle.status).toBe('running');
-    expect((await commandOf(h, 'j1', key)).awaiting).toEqual({ epoch: 'e1', token: '2' });
+    expect((await commandOf(h, 'j1', key)).awaiting).toEqual({
+      revision: { epoch: 'e1', token: '2' },
+      execution: expect.any(String)
+    });
     expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed();
     record = await recordOf(h, 'j1');
     expect(record.recordType === 'resolved' && record.task.envelope.lifecycle.status).toBe('paused');
     const stored = await commandOf(h, 'j1', key);
     expect(stored.receipt.result).toEqual({ state: 'applied', appliedRevision: 3 });
+    expect(stored.awaiting).toBeUndefined();
+  });
+
+  test('a feed revision contradicting the awaited answer leaves the receipt accepted, not applied', async () => {
+    const h = await sourceHarness({ history: 'source-replay' });
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1');
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed();
+    const key = op();
+    const dispatch = h.executor.dispatch.bind(h.executor);
+    Object.assign(h.executor, {
+      // The answer names the revision the feed will carry, but claims other content there.
+      dispatch: async (...args: Parameters<typeof dispatch>) =>
+        (await dispatch(...args)).onSuccess((a) =>
+          succeed(
+            a.state === 'applied'
+              ? { ...a, observation: { ...a.observation, details: { ...a.observation.details, step: 77 } } }
+              : a
+          )
+        )
+    });
+    expect(await run(h, 'j1', 'pause', { reason: 'x' }, key)).toSucceedAndSatisfy((receipt) => {
+      expect(receipt.result).toEqual({ state: 'accepted' });
+    });
+    expect((await commandOf(h, 'j1', key)).awaiting).toBeDefined();
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed();
+    // The feed committed the revision — its own projection — and the command stops waiting unconfirmed.
+    const record = await recordOf(h, 'j1');
+    expect(record.recordType === 'resolved' && record.task.envelope.lifecycle.status).toBe('paused');
+    const stored = await commandOf(h, 'j1', key);
+    expect(stored.receipt.result).toEqual({ state: 'accepted' });
     expect(stored.awaiting).toBeUndefined();
   });
 

@@ -4,7 +4,7 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { Result } from '@fgv/ts-utils';
+import { Result, succeed } from '@fgv/ts-utils';
 import {
   CommandState,
   ICommandReceipt,
@@ -30,7 +30,7 @@ import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, subjectOf } from './access';
 import { BrokerCore, canonicallySame, revisionOf, storedOperation } from './core';
 import { changedSinceAuthorized, ok, propagate, taskFailure } from './failures';
-import { applyProjection, compareRevisions, sameExecution } from './observations';
+import { applyProjection, compareRevisions, executionDigest, sameExecution } from './observations';
 import { callSource, sourceOf } from './reconciliation';
 
 /**
@@ -536,12 +536,23 @@ function _answered(
           })
         };
       }
-      return {
+      const unknown: IStoredCommandOperation = {
         ...now,
-        dispatch: 'settled',
-        receipt: _receipt(now.request, { state: 'accepted' }),
-        awaiting: answer.observation.revision
+        receipt: _receipt(now.request, {
+          state: 'indeterminate',
+          reason: `the source's applied answer cannot be remembered for its feed confirmation`
+        })
       };
+      return executionDigest(answer.observation)
+        .onSuccess((execution) =>
+          succeed<IStoredCommandOperation>({
+            ...now,
+            dispatch: 'settled',
+            receipt: _receipt(now.request, { state: 'accepted' }),
+            awaiting: { revision: answer.observation.revision, execution }
+          })
+        )
+        .orDefault(unknown);
     }
     case 'key-expired':
       return {

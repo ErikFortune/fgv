@@ -87,11 +87,22 @@ export interface IStoredCommandOperation {
   readonly dispatch: StoredCommandDispatch;
   readonly receipt: ICommandReceipt;
   /**
-   * The source revision a `source-replay` source reported the command's effect at. The receipt
-   * stays `accepted` until the feed commits a projection at or past it, then becomes `applied`
-   * in that same commit. (T6: additive and optional — no record written before T6 carries it.)
+   * What a `source-replay` source reported the command's effect as. The receipt stays `accepted`
+   * until the feed commits that revision — `applied`, in that same commit, when the feed's projection
+   * there matches the answer's; left `accepted` when it does not — or a later one. (T6: additive and
+   * optional — no record written before T6 carries it.)
    */
-  readonly awaiting?: ISourceRevision;
+  readonly awaiting?: ICommandAwaiting;
+}
+
+/**
+ * The feed confirmation a `source-replay` command waits for: the revision its effect was reported
+ * at, and a digest of the execution projection reported there.
+ * @public
+ */
+export interface ICommandAwaiting {
+  readonly revision: ISourceRevision;
+  readonly execution: string;
 }
 
 /**

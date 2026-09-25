@@ -535,7 +535,7 @@ const dispatchOrder: Readonly<Record<IStoredCommandOperation['dispatch'], number
  * Checks how a retained command may evolve: dispatch only moves forward (`not-sent` →
  * `possibly-sent` → `settled`, never back — a marker on disk is the one thing that makes an
  * uncertain send visible), and once settled the receipt is final, except that an `accepted` receipt
- * awaiting a feed revision becomes `applied` when the feed reaches it.
+ * awaiting a feed revision is resolved when the feed reaches it: `applied`, or left `accepted`.
  */
 export function checkCommandEvolution(
   current: ReadonlyArray<IStoredTaskOperation>,
@@ -553,13 +553,16 @@ export function checkCommandEvolution(
       );
     }
     if (before.dispatch === 'settled' && !canonicallyEqual(before, after)) {
-      const confirmed: boolean =
+      // The one change a settled command admits: its awaited feed revision resolves it — `applied`
+      // when the feed confirms the answer there, still `accepted` when it contradicts it.
+      const resolved: boolean =
         before.awaiting !== undefined &&
         after.awaiting === undefined &&
         before.receipt.result.state === 'accepted' &&
-        after.receipt.result.state === 'applied' &&
+        (after.receipt.result.state === 'applied' ||
+          canonicallyEqual(before.receipt.result, after.receipt.result)) &&
         canonicallyEqual({ ...before.receipt, result: undefined }, { ...after.receipt, result: undefined });
-      if (!confirmed) {
+      if (!resolved) {
         return fail(`command '${before.operationId}': a settled receipt is final`);
       }
     }

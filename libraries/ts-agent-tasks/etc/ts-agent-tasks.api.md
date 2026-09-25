@@ -440,6 +440,14 @@ export interface IChangeTaskScopes extends ITaskMutationIdentity {
 }
 
 // @public
+export interface ICommandAwaiting {
+    // (undocumented)
+    readonly execution: string;
+    // (undocumented)
+    readonly revision: ISourceRevision;
+}
+
+// @public
 export interface ICommandConverters {
     // (undocumented)
     readonly commandName: Converter<string>;
@@ -1028,7 +1036,7 @@ export interface IStoredCatalogOperation {
 
 // @public
 export interface IStoredCommandOperation {
-    readonly awaiting?: ISourceRevision;
+    readonly awaiting?: ICommandAwaiting;
     // (undocumented)
     readonly dispatch: StoredCommandDispatch;
     // (undocumented)

@@ -6,6 +6,7 @@
 import { Converters as JsonConverters } from '@fgv/ts-json-base';
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import {
+  ICommandAwaiting,
   IPendingInventoryEntry,
   IResolvedTaskCommitRecord,
   IResolvedTaskRecordDraft,
@@ -188,7 +189,10 @@ export function buildStorageConverters(
     principalKey,
     dispatch: Converters.enumeratedValue<StoredCommandDispatch>(['not-sent', 'possibly-sent', 'settled']),
     receipt: commands.receipt,
-    awaiting: values.sourceRevision.optional()
+    awaiting: Converters.strictObject<ICommandAwaiting>({
+      revision: values.sourceRevision,
+      execution: boundedSingleLine(64, 'execution digest')
+    }).optional()
   }).withConstraint((stored: IStoredCommandOperation) =>
     // `awaiting` means "settled accepted until the feed reaches this revision": on any other command
     // it is a state nothing would ever resolve.

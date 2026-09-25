@@ -103,8 +103,9 @@ ceiling 146.** T6 adds:
 - **Revised:** `RecoveryResult.unrecoverable` carries the source's `value: ISourceProjection` so a
   source-confirmed failure commits as an ordinary observation (it must be failed or cancelled). Not
   persisted anywhere; no migration.
-- **Additive persisted field:** `IStoredCommandOperation.awaiting?: ISourceRevision`. Old records
-  read unchanged.
+- **Additive persisted field:** `IStoredCommandOperation.awaiting?: ICommandAwaiting` — the
+  revision a replay command's effect was reported at plus a digest of the answer's execution
+  projection. Old records read unchanged.
 - **Decided:** `ITaskSource.history` uses the § 8.6 spelling; `capabilities()` is omitted (the kind
   registry is the one command authority T6 needed — T9 owns any stop capability); `key-expired` is
   its own command-result state; `coverage` is required on every page.
@@ -215,6 +216,12 @@ fence) — fixed with three tests and three reverts.
     built its block from exactly such an overdraw; it now uses a progress-only revision, which
     draws nothing from the envelope.)
   Reverts M32–M37 each turn their test red.
+- **Round 5** — one high, real: the deferred twin of round 3's finding. An `applied` answer stored as
+  `awaiting` was confirmed by revision order alone, so a feed entry at that revision with other
+  content still settled it `applied`. `awaiting` now carries a digest of the answer's execution
+  projection; at the awaited revision the feed's projection must match, else the receipt stays
+  `accepted` (a settled receipt is final; storage admits exactly that resolution) and stops
+  waiting. Revert M38 turns its test red.
 
 ## Gates
 

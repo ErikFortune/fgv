@@ -4,7 +4,7 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { Converter, Converters, Result, captureResult } from '@fgv/ts-utils';
+import { Converter, Converters, Hash, Result, captureResult, succeed } from '@fgv/ts-utils';
 import { isRequiredCategory, planUpdates } from '../implementations';
 import {
   IResolvedTaskCommitRecord,
@@ -30,7 +30,7 @@ import {
   isTerminalTaskStatus
 } from '../types';
 import { ITaskCommitRequest, ITaskRepositoryWriter } from '../storage';
-import { BrokerCore, canonicallySame } from './core';
+import { BrokerCore, canonicalKey, canonicallySame } from './core';
 import { codeOf, ok, propagate, taskFailure } from './failures';
 
 /**
@@ -126,6 +126,16 @@ export function compareRevisions(
     .onSuccess((order) => revisionOrder.convert(order));
 }
 
+/**
+ * A digest of a projection's execution fields, canonical as `sameExecution` compares them: what a
+ * replay command's `applied` answer is remembered by until the feed reaches its revision.
+ */
+export function executionDigest(projection: ISourceProjection): Result<string> {
+  return canonicalKey(_execution(projection)).onSuccess((text) =>
+    succeed(`${text.length}:${Hash.Crc32Normalizer.crc32Hash([text])}`)
+  );
+}
+
 /** Whether a projection states exactly the execution a resolved record already holds. */
 export function sameExecution(record: IResolvedTaskCommitRecord, projection: ISourceProjection): boolean {
   return canonicallySame(
@@ -162,29 +172,45 @@ function _categories(
   return categories;
 }
 
-/** Commands a feed commit reaches: `accepted` receipts awaiting a revision at or before `revision`. */
+/**
+ * Commands a feed commit reaches: `accepted` receipts awaiting a revision at or before the one being
+ * committed. At the awaited revision itself the feed's projection must be the one the command's
+ * answer reported; if the source contradicted itself the receipt stays `accepted` (a settled receipt
+ * is final, and the effect was never confirmed) and stops waiting.
+ */
 function _confirmAwaiting(
   source: ITaskSource,
   operations: ReadonlyArray<IStoredTaskOperation>,
-  revision: ISourceRevision,
+  projection: ISourceProjection,
   taskRevision: TaskRevision
 ): ReadonlyArray<IStoredTaskOperation> {
   return operations.map((op) => {
     if (op.type !== 'command' || op.awaiting === undefined || op.receipt.result.state !== 'accepted') {
       return op;
     }
-    const order: Result<SourceRevisionOrder> = compareRevisions(source, revision, op.awaiting);
+    const awaiting = op.awaiting;
+    const order: Result<SourceRevisionOrder> = compareRevisions(
+      source,
+      projection.revision,
+      awaiting.revision
+    );
     if (order.isFailure() || (order.value !== 'same' && order.value !== 'newer')) {
       return op;
     }
-    // The feed has reached the revision the command's effect was reported at: applied, here.
+    const contradicted: boolean =
+      order.value === 'same' &&
+      executionDigest(projection)
+        .onSuccess((digest) => succeed(digest !== awaiting.execution))
+        .orDefault(true);
     return {
       type: 'command',
       operationId: op.operationId,
       request: op.request,
       principalKey: op.principalKey,
       dispatch: op.dispatch,
-      receipt: { ...op.receipt, result: { state: 'applied', appliedRevision: taskRevision } }
+      receipt: contradicted
+        ? op.receipt
+        : { ...op.receipt, result: { state: 'applied', appliedRevision: taskRevision } }
     };
   });
 }
@@ -493,10 +519,7 @@ async function _applyInWriter(
       !canonicallySame(current.task.details, projection.details)
   );
   const updates = planUpdates(before, next, categories, core.audience);
-  const operations = settle(
-    _confirmAwaiting(source, current.operations, projection.revision, revision),
-    revision
-  );
+  const operations = settle(_confirmAwaiting(source, current.operations, projection, revision), revision);
   return _commit(core, writer, binding, current, {
     purpose: 'observation',
     taskId,
